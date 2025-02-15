@@ -69,13 +69,24 @@ class ReceiveCounter
     MPI_Request m_recvReq;
 };
 
+template <typename T>
+constexpr size_t max_elements_per_message(size_t maxMsgSizeInBytes)
+{
+  return maxMsgSizeInBytes / sizeof(T);
+}
 
 template <typename T>
-std::vector<int>  get_send_counts(std::vector< std::vector<T> > sendLists)
+std::vector<int>  get_send_counts(std::vector< std::vector<T> > sendLists, size_t maxSendSizeInBytes)
 {
   std::vector<int> sendCounts(sendLists.size());
   for (unsigned int i=0; i < sendLists.size(); ++i)
-    sendCounts[i] = sendLists[i].size();
+  {
+    //size_t bytesToSend = sendLists[i].size() * sizeof(T);
+    //size_t elementsPerMessage = max_
+    int numSends = sendLists[i].size() / max_elements_per_message<T>(maxSendSizeInBytes);
+    numSends    += sendLists[i].size() %  max_elements_per_message<T>(maxSendSizeInBytes) == 0 ? 0 : 1;
+    sendCounts[i] = numSends;
+  }
 
   return sendCounts;
 }

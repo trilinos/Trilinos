@@ -189,6 +189,7 @@ TEST(CoarseSearchCorrectness, OverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 0.5;
   const unsigned expectedNumOverlap = 1;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -200,6 +201,7 @@ TEST(CoarseSearchCorrectness, NonOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 2.0;
   const unsigned expectedNumOverlap = 0;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -211,6 +213,7 @@ TEST(CoarseSearchCorrectness, JustEdgeOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 0.999999999;
   const unsigned expectedNumOverlap = 1;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -222,6 +225,7 @@ TEST(CoarseSearchCorrectness, NotQuiteEdgeOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 1.00001;
   const unsigned expectedNumOverlap = 0;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -233,6 +237,7 @@ TEST(CoarseSearchCorrectness, NotQuiteEdgeOverlappingSpheres_FloatTruncation_ARB
   double distanceBetweenSphereCenters = 1.0000000001;
   const unsigned expectedNumOverlap = 0;
   runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -368,6 +373,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_OverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 0.5;
   const unsigned expectedNumOverlap = 1;
   host_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -379,6 +385,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_NonOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 2.0;
   const unsigned expectedNumOverlap = 0;
   host_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -390,6 +397,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_JustEdgeOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 0.999999999;
   const unsigned expectedNumOverlap = 1;
   host_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 
@@ -401,6 +409,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_NotQuiteEdgeOverlappingSpheres_ARBORX)
   double distanceBetweenSphereCenters = 1.0000000001;
   const unsigned expectedNumOverlap = 0;
   host_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoSpheresTest(stk::search::ARBORX, distanceBetweenSphereCenters, radiusOfOneHalf, expectedNumOverlap);
 }
 

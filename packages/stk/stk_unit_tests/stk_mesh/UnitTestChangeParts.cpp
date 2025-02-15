@@ -910,7 +910,7 @@ TEST_F(TestChangePartsWithSelector, element_in_ranked_part_add_new_to_ranked_par
 
 TEST_F(TestChangePartsWithSelector, element_in_ranked_part_move_to_unranked_part_conflicting_partitions)
 {
-  if(get_bulk().parallel_size() > 1) { return; }
+  if(get_bulk().parallel_size() > 1) { GTEST_SKIP(); }
 
   unsigned numBlockParts = 2;
   unsigned numElem = 2;

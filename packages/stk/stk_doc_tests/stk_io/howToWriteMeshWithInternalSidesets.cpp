@@ -118,7 +118,7 @@ void testSidesetCreation(TestData &testData)
 
 
 
-TEST(StkIo, readABFromIoss_verifySideSetCreation_3D)
+TEST(StkIo, readABFromIoss_verifySideSetCreation_3D_externalFile)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
   if(stk::parallel_machine_size(comm) == 1)
@@ -139,7 +139,7 @@ TEST(StkIo, readABFromIoss_verifySideSetCreation_3D)
   }
 }
 
-TEST(StkIo, readABFromIoss_verifySideSetCreation_2D)
+TEST(StkIo, readABFromIoss_verifySideSetCreation_2D_externalFile)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
   if(stk::parallel_machine_size(comm) == 1)

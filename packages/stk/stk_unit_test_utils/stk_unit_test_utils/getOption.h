@@ -55,22 +55,6 @@ T get_command_line_option(const std::string &option, const T &defaultValue)
     return val;
 }
 
-namespace simple_fields {
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-bool has_option(const std::string& option);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-std::string get_option(const std::string& option, const std::string defaultString="no");
-
-template <typename T>
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-T get_command_line_option(const std::string &option, const T &defaultValue) {
-  return stk::unit_test_util::get_command_line_option(option, defaultValue);
-}
-
-} // namespace simple_fields
-
 }
 }
 

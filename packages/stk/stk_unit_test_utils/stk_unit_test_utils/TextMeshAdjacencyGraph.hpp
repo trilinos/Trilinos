@@ -628,7 +628,7 @@ class SideAdjacencyGraph
       int numSides = topo.num_sides();
       for (int side = 1; side <= numSides; ++side) {
 
-        if (topo.topology.is_shell_side_ordinal(static_cast<unsigned>(side))) { continue; }
+        if (topo.topology.has_mixed_rank_sides() && side-1 >= static_cast<int>(topo.topology.num_faces())) { continue; }
 
         if (m_indexGraph[elementIndex].sideReference[side - 1] == 0) {
           CurrentAdjacency adjacency(elementIndex, side);

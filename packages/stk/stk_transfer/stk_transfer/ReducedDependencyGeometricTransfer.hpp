@@ -51,6 +51,8 @@
 #include <stk_transfer/TransferBase.hpp>
 #include <stk_transfer/TransferUtil.hpp>
 #include <stk_transfer/ReducedDependencyCommData.hpp>
+#include "stk_util/parallel/CouplingVersions.hpp"
+#include "stk_util/parallel/ParallelReduceBool.hpp"
 
 
 namespace stk {
@@ -86,11 +88,20 @@ public :
   enum {Dimension = 3};
 
   ReducedDependencyGeometricTransfer(std::shared_ptr<MeshA> mesha,
-                    std::shared_ptr<MeshB> meshb,
-                    const std::string &name,
-                    stk::ParallelMachine pm,
-                    const double expansion_factor = 1.5,
-                    const stk::search::SearchMethod search_method = stk::search::KDTREE);
+      std::shared_ptr<MeshB> meshb,
+      const std::string &name,
+      stk::ParallelMachine pm,
+      const double expansion_factor = 1.5,
+      const stk::search::SearchMethod search_method = stk::search::KDTREE);
+
+  ReducedDependencyGeometricTransfer(std::shared_ptr<MeshA> mesha,
+      std::shared_ptr<MeshB> meshb,
+      const std::string &name,
+      stk::ParallelMachine pm,
+      InterpolateClass interpolate,
+      const double expansion_factor = 1.5,
+      const stk::search::SearchMethod search_method = stk::search::KDTREE);
+
   virtual ~ReducedDependencyGeometricTransfer(){};
   void coarse_search() override;
   void communication() override;
@@ -308,6 +319,30 @@ template <class INTERPOLATE> ReducedDependencyGeometricTransfer<INTERPOLATE>::Re
     STK_ThrowRequire(mesha || meshb);
   }
 
+  template <class INTERPOLATE>
+  ReducedDependencyGeometricTransfer<INTERPOLATE>::ReducedDependencyGeometricTransfer(std::shared_ptr<MeshA> mesha,
+      std::shared_ptr<MeshB> meshb,
+      const std::string &name,
+      stk::ParallelMachine pm,
+      InterpolateClass interpolate,
+      const double expansion_factor,
+      const stk::search::SearchMethod search_method)
+      : m_mesha(mesha),
+        m_meshb(meshb),
+        m_name(name),
+        m_expansion_factor(expansion_factor),
+        m_search_method(search_method),
+        m_interpolate(std::move(interpolate))
+
+  {
+    //In an mpmd program, there's no guarantee that the types specified for the entity keys are honored by each program,
+    //so for now, enforce that the types are 64bit for consistency during mpi comms
+    static_assert(8 == sizeof(typename InterpolateClass::EntityKeyA), "Size of EntityKeyA needs to be 64 bit");
+    static_assert(8 == sizeof(typename InterpolateClass::EntityKeyB), "Size of EntityKeyB needs to be 64 bit");
+    m_comm_data.m_shared_comm = pm;
+    STK_ThrowRequire(mesha || meshb);
+  }
+
 template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE>::coarse_search() {
 
   m_global_range_to_domain.clear();
@@ -356,7 +391,6 @@ template <class INTERPOlATE>
 void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename MeshB::EntityProcVec to_entity_keys,
     typename MeshA::EntityProcVec from_entity_keys )
 {
-
   // Find the winner
   std::map<EntityKeyB, std::pair<double, int> > filterMap;
 
@@ -364,7 +398,9 @@ void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename
   {
     int offset = m_comm_data.offset_and_num_keys_to_mesh[ii].first;
     for(int jj =0; jj < m_comm_data.offset_and_num_keys_to_mesh[ii].second; ++jj){
-      STK_ThrowRequireMsg(offset+jj < (int)to_points_distance_on_to_mesh.size(),"'offset+jj' ("<<offset<<"+"<<jj<<") required to be less than to_points_distance_on_to_mesh.size() ("<<to_points_distance_on_to_mesh.size()<<")");
+      STK_ThrowRequireMsg(offset + jj < (int) to_points_distance_on_to_mesh.size(),
+          "'offset+jj' (" << offset << "+" << jj << ") required to be less than to_points_distance_on_to_mesh.size() ("
+                          << to_points_distance_on_to_mesh.size() << ")");
       std::pair<double,int> dist_and_to_entity_index = std::make_pair(to_points_distance_on_to_mesh[offset+jj], offset+jj);
       auto key = to_entity_keys[offset+jj].id();
       if ( filterMap.find(key) == filterMap.end() )
@@ -405,7 +441,26 @@ void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename
 
   const int to_count = std::count(FilterMaskTo.begin(), FilterMaskTo.end(), 1);
   const int from_count = std::count(FilterMaskFrom.begin(), FilterMaskFrom.end(), 1);
-  m_interpolate.mask_parametric_coords(FilterMaskFrom, from_count);
+
+  if (stk::util::get_common_coupling_version() >= 15)
+  {
+    bool exception_on_local_proc = false;
+    std::string error_msg;
+    try {
+      m_interpolate.mask_parametric_coords(FilterMaskFrom, from_count);
+      error_msg = "error on another proc";
+    } catch (std::exception& e)
+    {
+      exception_on_local_proc = true;
+      error_msg = e.what();
+    }
+    
+    bool exception_on_any_proc = stk::is_true_on_any_proc(m_comm_data.m_shared_comm, exception_on_local_proc);
+    STK_ThrowRequireMsg(!exception_on_any_proc, error_msg);
+  } else
+  {
+    m_interpolate.mask_parametric_coords(FilterMaskFrom, from_count);
+  }
 
 
   from_entity_keys_masked.resize(from_count);

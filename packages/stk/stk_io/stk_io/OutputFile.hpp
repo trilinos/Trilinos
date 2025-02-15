@@ -86,6 +86,7 @@ public:
       m_checkFieldExistenceWhenCreatingNodesets(true),
       m_usePartIdForOutput(true),
       m_meshDefined(false),
+      m_meshWritten(false),
       m_fieldsDefined(false),
       m_anyGlobalVariablesDefined(false),
       m_appendingToMesh(false),
@@ -117,6 +118,7 @@ public:
       m_checkFieldExistenceWhenCreatingNodesets(true),
       m_usePartIdForOutput(true),
       m_meshDefined(false),
+      m_meshWritten(false),
       m_fieldsDefined(false),
       m_anyGlobalVariablesDefined(false),
       m_appendingToMesh(false),
@@ -149,6 +151,16 @@ public:
     void setup_output_params(OutputParams &params) const;
 
     bool set_multistate_suffixes(const std::vector<std::string>& multiStateSuffixes);
+
+    void reset_mesh_definition()
+    {
+      m_meshDefined   = false;
+      m_meshWritten   = false;
+      m_fieldsDefined = false;
+    }
+
+    void define_output_mesh(const stk::mesh::BulkData& bulk_data,
+                            const std::vector<std::vector<int>> &attributeOrdering);
 
     void write_output_mesh(const stk::mesh::BulkData& bulk_data,
                            const std::vector<std::vector<int>> &attributeOrdering);
@@ -223,8 +235,11 @@ public:
 
     std::vector<stk::mesh::Entity> get_output_entities(const stk::mesh::BulkData& bulk_data, const std::string &name);
 
-private:
     void define_output_fields(const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
+
+    const std::vector<stk::io::FieldAndName>& get_defined_output_fields() const { return m_namedFields; }
+
+private:
     void setup_output_file(const std::string &filename, MPI_Comm communicator,
                            Ioss::PropertyManager &property_manager,
                            char const* type = "exodus", bool openFileImmediately = true);
@@ -242,6 +257,7 @@ private:
     bool m_checkFieldExistenceWhenCreatingNodesets;
     bool m_usePartIdForOutput;
     bool m_meshDefined;
+    bool m_meshWritten;
     bool m_fieldsDefined;
     bool m_anyGlobalVariablesDefined;
     bool m_appendingToMesh;

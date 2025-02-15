@@ -76,7 +76,6 @@ TEST(stk_topology, shell_tri_3)
   EXPECT_TRUE(t.is_valid());
   EXPECT_TRUE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
-  EXPECT_TRUE(t.is_shell_with_face_sides()); //FIXME this will become false
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
   EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -422,10 +421,6 @@ void check_shell_tri_6_on_device()
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::TRI_6);
     NGP_EXPECT_EQ(t.face_topology(1), stk::topology::TRI_6);
 
-    NGP_EXPECT_EQ(t.shell_side_topology(0), stk::topology::SHELL_SIDE_BEAM_3);
-    NGP_EXPECT_EQ(t.shell_side_topology(1), stk::topology::SHELL_SIDE_BEAM_3);
-    NGP_EXPECT_EQ(t.shell_side_topology(2), stk::topology::SHELL_SIDE_BEAM_3);
-  
     NGP_EXPECT_EQ(t.side_topology(0), stk::topology::TRI_6);
     NGP_EXPECT_EQ(t.side_topology(1), stk::topology::TRI_6);
     NGP_EXPECT_EQ(t.side_topology(2), stk::topology::LINE_3);

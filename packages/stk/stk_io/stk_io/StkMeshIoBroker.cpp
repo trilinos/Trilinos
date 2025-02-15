@@ -112,11 +112,11 @@ std::string basename( std::string const& pathname )
 }
 
 template <typename T>
-bool is_index_valid(const std::vector<T> &file_vector, size_t input_file_index)
+bool is_index_valid(const std::vector<T> &file_vector, size_t file_index)
 {
     bool invalid = file_vector.empty() ||
-            input_file_index >= file_vector.size() ||
-            (file_vector[input_file_index].get()) == nullptr;
+            file_index >= file_vector.size() ||
+            (file_vector[file_index].get()) == nullptr;
     return !invalid;
 }
 
@@ -551,34 +551,80 @@ void StkMeshIoBroker::create_input_mesh()
 
 
 size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type,
-                                           char const* type, bool openFileImmediately)
+                                           char const* type, bool openFileImmediately,
+                                           const std::string& modelName)
 {
-    return create_output_mesh(filename, db_type, m_propertyManager, type, openFileImmediately);
+    return create_output_mesh(filename, db_type, m_propertyManager, type, openFileImmediately, modelName);
 }
 
 size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type,
-                                           double time,
-                                           char const* type, bool openFileImmediately)
+                                           double time, char const* type, bool openFileImmediately,
+                                           const std::string& modelName)
 {
-    return create_output_mesh(filename, db_type, m_propertyManager, time, type, openFileImmediately);
+    return create_output_mesh(filename, db_type, m_propertyManager, time, type, openFileImmediately, modelName);
 }
 
 size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type,
                                            Ioss::PropertyManager &properties,
-                                           double time,
-                                           char const* type, bool openFileImmediately)
+                                           double time, char const* type, bool openFileImmediately,
+                                           const std::string& modelName)
 {
     if(db_type == stk::io::APPEND_RESULTS) {
         properties.add(Ioss::Property("APPEND_OUTPUT", Ioss::DB_APPEND));
         properties.add(Ioss::Property("APPEND_OUTPUT_AFTER_TIME", time));
     }
 
-    return create_output_mesh(filename, db_type, properties, type, openFileImmediately);
+    return create_output_mesh(filename, db_type, properties, type, openFileImmediately, modelName);
+}
+
+void StkMeshIoBroker::create_dynamic_topology_observer(size_t outputFileIndex, const std::string& modelName)
+{
+  validate_output_file_index(outputFileIndex);
+
+  Ioss::Region *inputRegion = nullptr;
+  if (is_index_valid(m_inputFiles, m_activeMeshIndex)) {
+      inputRegion = get_input_ioss_region().get();
+  }
+
+  bool modelNameExists = !modelName.empty();
+  std::string origModelName = modelName;
+
+  if(!modelNameExists && nullptr != inputRegion) {
+    modelNameExists = inputRegion->property_exists("model_name");
+    if(modelNameExists) {
+      origModelName = inputRegion->get_property("model_name").get_string();
+    }
+  }
+
+  if(!modelNameExists) {
+    modelNameExists = property_exists("model_name");
+    if(modelNameExists) {
+      origModelName = property_get("model_name").get_string();
+    }
+  }
+
+  auto fileControlOption = get_ioss_file_control_option(m_dynamicTopologyFileOption);
+  auto outputRegion = get_output_ioss_region(outputFileIndex);
+  auto database = outputRegion->get_database();
+  auto usage = database->usage();
+  if(usage != Ioss::WRITE_RESTART && usage != Ioss::WRITE_RESULTS) {
+    fileControlOption = Ioss::FileControlOption::CONTROL_NONE;
+  }
+  auto observer = std::make_shared<stk::io::DynamicTopologyObserver>(*this, outputFileIndex, fileControlOption);
+
+  if(modelNameExists) {
+    auto broker = Ioss::DynamicTopologyBroker::broker();
+    broker->register_model(origModelName);
+    broker->register_observer(origModelName, observer, *outputRegion);
+  } else {
+    outputRegion->register_mesh_modification_observer(observer);
+  }
 }
 
 size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type,
                                            Ioss::PropertyManager &properties,
-                                           char const* type, bool openFileImmediately)
+                                           char const* type, bool openFileImmediately,
+                                           const std::string& modelName)
 {
     if(db_type == stk::io::APPEND_RESULTS) {
         properties.add(Ioss::Property("APPEND_OUTPUT", Ioss::DB_APPEND));
@@ -600,6 +646,22 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
             properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
         }
     }
+
+    // Enable dynamic topology if needed
+    if(m_dynamicTopologyFileOption == FileOption::USE_DYNAMIC_TOPOLOGY_GROUP_FILE) {
+      if(!properties.exists("ENABLE_FILE_GROUPS")) {
+        properties.add(Ioss::Property("ENABLE_FILE_GROUPS", 1));
+      }
+
+      properties.erase("FILE_TYPE");
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+
+      if(db_type == stk::io::APPEND_RESULTS) {
+        properties.erase("APPEND_OUTPUT");
+        properties.add(Ioss::Property("APPEND_OUTPUT", Ioss::DB_APPEND_GROUP));
+      }
+    }
+
     auto output_file = std::shared_ptr<impl::OutputFile>(new impl::OutputFile(out_filename, 
                                                          m_communicator, db_type,
                                                          properties, input_region, type, openFileImmediately));
@@ -610,6 +672,9 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
 
     m_outputFiles.push_back(output_file);
     size_t index_of_output_file = m_outputFiles.size()-1;
+
+    create_dynamic_topology_observer(index_of_output_file, modelName);
+
     return index_of_output_file;
 }
 
@@ -636,6 +701,20 @@ void StkMeshIoBroker::update_sidesets() {
     }
 }
 
+void StkMeshIoBroker::reset_output_mesh_definition(size_t output_file_index)
+{
+    validate_output_file_index(output_file_index);
+    m_outputFiles[output_file_index]->reset_mesh_definition();
+}
+
+void StkMeshIoBroker::define_output_mesh(size_t output_file_index)
+{
+    validate_output_file_index(output_file_index);
+    update_sidesets();
+    m_outputFiles[output_file_index]->set_enable_edge_io(m_enableEdgeIO);
+    m_outputFiles[output_file_index]->define_output_mesh(*m_bulkData, attributeFieldOrderingByPartOrdinal);
+}
+
 void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
 {
     validate_output_file_index(output_file_index);
@@ -659,6 +738,18 @@ int StkMeshIoBroker::write_defined_output_fields(size_t output_file_index, const
     validate_output_file_index(output_file_index);
     int current_output_step = m_outputFiles[output_file_index]->write_defined_output_fields(*m_bulkData, state);
     return current_output_step;
+}
+
+const std::vector<stk::io::FieldAndName>& StkMeshIoBroker::get_defined_output_fields(size_t output_file_index) const
+{
+  validate_output_file_index(output_file_index);
+  return m_outputFiles[output_file_index]->get_defined_output_fields();
+}
+
+void StkMeshIoBroker::define_output_fields(size_t output_file_index)
+{
+    validate_output_file_index(output_file_index);
+    m_outputFiles[output_file_index]->define_output_fields(*m_bulkData, attributeFieldOrderingByPartOrdinal);
 }
 
 int StkMeshIoBroker::process_output_request(size_t output_file_index, double time)
@@ -1293,6 +1384,17 @@ void StkMeshIoBroker::set_option_to_not_collapse_sequenced_fields()
     property_add(Ioss::Property("ENABLE_FIELD_RECOGNITION", "NO"));
 }
 
+void StkMeshIoBroker::enable_dynamic_topology(const FileOption fileOption)
+{
+  m_dynamicTopologyFileOption = fileOption;
+
+  if(fileOption == FileOption::USE_DYNAMIC_TOPOLOGY_GROUP_FILE) {
+    property_add(Ioss::Property("ENABLE_FILE_GROUPS", 1));
+  } else {
+    remove_property_if_exists("ENABLE_FILE_GROUPS");
+  }
+}
+
 int StkMeshIoBroker::get_num_time_steps() const
 {
     int numTimeSteps = 0;
@@ -1588,6 +1690,111 @@ void StkMeshIoBroker::use_simple_fields()
 {
 }
 
+int StkMeshIoBroker::num_mesh_groups(size_t inputFileIndex) const
+{
+  validate_input_file_index(inputFileIndex);
+  auto inputRegion = m_inputFiles[inputFileIndex]->get_input_ioss_region();
+  auto database = inputRegion->get_database();
+  return database->num_internal_change_set();
+}
+
+int StkMeshIoBroker::num_mesh_groups() const
+{
+  return num_mesh_groups(m_activeMeshIndex);
+}
+
+bool StkMeshIoBroker::load_mesh_group(size_t inputFileIndex, const std::string& groupName)
+{
+  validate_input_file_index(inputFileIndex);
+  auto inputRegion = m_inputFiles[inputFileIndex]->get_input_ioss_region();
+  bool status = inputRegion->load_internal_change_set_mesh(groupName);
+  m_inputFiles[inputFileIndex]->initialize_input_fields();
+
+  return status;
+}
+
+bool StkMeshIoBroker::load_mesh_group(const std::string& groupName)
+{
+  return load_mesh_group(m_activeMeshIndex, groupName);
+}
+
+bool StkMeshIoBroker::load_mesh_group(size_t inputFileIndex, const int groupIndex)
+{
+  validate_input_file_index(inputFileIndex);
+  auto inputRegion = m_inputFiles[inputFileIndex]->get_input_ioss_region();
+  bool status = inputRegion->load_internal_change_set_mesh(groupIndex);
+  m_inputFiles[inputFileIndex]->initialize_input_fields();
+
+  return status;
+}
+
+bool StkMeshIoBroker::load_mesh_group(const int groupIndex)
+{
+  return load_mesh_group(m_activeMeshIndex, groupIndex);
+}
+
+std::vector<std::string> StkMeshIoBroker::mesh_group_names(size_t inputFileIndex) const
+{
+  validate_input_file_index(inputFileIndex);
+  auto inputRegion = m_inputFiles[inputFileIndex]->get_input_ioss_region();
+  auto database = inputRegion->get_database();
+  return database->internal_change_set_describe(false);
+}
+
+std::vector<std::string> StkMeshIoBroker::mesh_group_names() const
+{
+  return mesh_group_names(m_activeMeshIndex);
+}
+
+std::shared_ptr<Ioss::DynamicTopologyObserver> StkMeshIoBroker::get_ioss_observer(size_t outputFileIndex) const
+{
+  validate_output_file_index(outputFileIndex);
+  auto outputRegion = m_outputFiles[outputFileIndex]->get_output_ioss_region();
+  auto observer = outputRegion->get_mesh_modification_observer();
+  return observer;
+}
+
+void StkMeshIoBroker::set_automatic_restart(size_t outputFileIndex, bool flag)
+{
+  auto observer = get_ioss_observer(outputFileIndex);
+  observer->set_automatic_restart(flag);
+}
+
+void StkMeshIoBroker::set_restart_requested(size_t outputFileIndex, bool flag)
+{
+  auto observer = get_ioss_observer(outputFileIndex);
+  observer->set_restart_requested(flag);
+}
+
+void StkMeshIoBroker::sync_topology_modification(size_t outputFileIndex, unsigned modFlag, unsigned cumulativeModFlag)
+{
+  auto observer = get_ioss_observer(outputFileIndex);
+  observer->sync_topology_modification(modFlag, cumulativeModFlag);
+}
+
+void StkMeshIoBroker::set_topology_modification(size_t outputFileIndex, unsigned flag)
+{
+  auto observer = get_ioss_observer(outputFileIndex);
+  observer->set_topology_modification(flag);
+}
+
+void StkMeshIoBroker::set_cumulative_topology_modification(size_t outputFileIndex, unsigned flag)
+{
+  auto observer = get_ioss_observer(outputFileIndex);
+  observer->set_cumulative_topology_modification(flag);
+}
+
+void StkMeshIoBroker::reset_topology_modification(size_t outputFileIndex)
+{
+  auto observer = get_ioss_observer(outputFileIndex);
+  observer->reset_topology_modification();
+}
+
+unsigned StkMeshIoBroker::get_topology_modification(size_t outputFileIndex) const
+{
+  auto observer = get_ioss_observer(outputFileIndex);
+  return observer->get_topology_modification();
+}
 
 } // namespace io
 } // namespace stk

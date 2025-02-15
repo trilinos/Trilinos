@@ -234,7 +234,7 @@ public:
 
   NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
   {
-    return bulk->volatile_fast_shared_comm_map<NgpMemSpace>(rank, proc);
+    return bulk->template volatile_fast_shared_comm_map<NgpMemSpace>(rank, proc);
   }
 
   stk::mesh::BulkData &get_bulk_on_host()

@@ -15,6 +15,7 @@
 #include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace transfer {

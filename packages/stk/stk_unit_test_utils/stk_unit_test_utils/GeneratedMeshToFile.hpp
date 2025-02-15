@@ -100,56 +100,6 @@ private:
   GeneratedMeshToFileWithTransientFields();
 };
 
-namespace simple_fields {
-
-class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
-GeneratedMeshToFile
-{
-public:
-  GeneratedMeshToFile(stk::ParallelMachine comm, stk::mesh::BulkData::AutomaticAuraOption auraOption);
-
-  void setup_mesh(const std::string &meshSizeSpec,
-                  const std::string &outputFileName,
-                  bool useBigIds = true);
-  void write_mesh();
-
-protected:
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr;
-  stk::mesh::BulkData& bulk;
-  stk::mesh::MetaData& meta;
-  stk::io::StkMeshIoBroker broker;
-  size_t outputFileIndex = 0;
-
-private:
-  GeneratedMeshToFile();
-};
-
-class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
-GeneratedMeshToFileWithTransientFields : public GeneratedMeshToFile
-{
-public:
-  GeneratedMeshToFileWithTransientFields(stk::ParallelMachine comm,
-                                         stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                                         const std::string& fieldBaseName,
-                                         stk::topology::rank_t rank);
-
-  virtual ~GeneratedMeshToFileWithTransientFields() = default;
-
-  void write_mesh_with_field(const std::vector<double>& timeSteps,
-                             const FieldValueSetter &fieldValueSetter,
-                             const std::string& globalVariableName);
-
-protected:
-  stk::topology::rank_t fieldRank;
-  stk::mesh::Field<double> &scalarField;
-  stk::mesh::Field<double> &vectorField;
-
-private:
-  GeneratedMeshToFileWithTransientFields();
-};
-
-} // namespace simple_fields
-
 }
 }
 

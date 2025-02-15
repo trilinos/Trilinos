@@ -2296,9 +2296,8 @@ BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal )
   if (in_bucket != NULL) {
     STK_ThrowAssertMsg(in_bucket->size() >= ordinal, "Detected bad bucket/ordinal.");
   }
-  MeshIndex &mesh_idx = mesh_index(entity);
-  mesh_idx.bucket = in_bucket;
-  mesh_idx.bucket_ordinal = ordinal;
+
+  m_mesh_indexes[entity.local_offset()] = {in_bucket, ordinal};
 }
 
 inline void

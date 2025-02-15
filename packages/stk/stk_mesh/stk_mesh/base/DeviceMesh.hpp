@@ -49,6 +49,7 @@
 
 #include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/NgpUtils.hpp>
+#include <stk_mesh/baseImpl/NgpMeshImpl.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
@@ -134,6 +135,15 @@ struct DeviceBucketT {
       }
     }
     return false;
+  }
+
+  KOKKOS_FUNCTION
+  const Kokkos::pair<const stk::mesh::PartOrdinal*,const stk::mesh::PartOrdinal*> superset_part_ordinals() const
+  {
+    STK_NGP_ThrowAssert(m_partOrdinals.size() > 0);
+    return Kokkos::pair<const stk::mesh::PartOrdinal*,const stk::mesh::PartOrdinal*>(
+             m_partOrdinals.data(), m_partOrdinals.data()+m_partOrdinals.size()
+           );
   }
 
   void initialize_bucket_attributes(const stk::mesh::Bucket &bucket);
@@ -502,9 +512,13 @@ public:
     static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, RemovePartOrdinalsMemorySpace>::accessible,
                   "The memory space of the 'removePartOrdinals' View is inaccessible from the DeviceMesh execution space");
 
-    using HostEntitiesType = typename std::remove_reference<decltype(entities)>::type::HostMirror;
-    using HostAddPartOrdinalsType = typename std::remove_reference<decltype(addPartOrdinals)>::type::HostMirror;
-    using HostRemovePartOrdinalsType = typename std::remove_reference<decltype(removePartOrdinals)>::type::HostMirror;
+    using PartOrdinalsViewType = typename std::remove_reference<decltype(addPartOrdinals)>::type;
+    const unsigned maxCurrentNumPartsPerEntity = impl::get_max_num_parts_per_entity(*this,entities);
+    const unsigned maxNewNumPartsPerEntity = maxCurrentNumPartsPerEntity + addPartOrdinals.size();
+    PartOrdinalsViewType newPartOrdinalsPerEntity("newPartOrdinals", entities.size()*(1+maxNewNumPartsPerEntity));
+    PartOrdinalsViewType sortedAddPartOrdinals = impl::get_sorted_view(addPartOrdinals);
+    impl::set_new_part_list_per_entity(*this, entities, sortedAddPartOrdinals, removePartOrdinals,
+                                       maxNewNumPartsPerEntity, newPartOrdinalsPerEntity);
   }
 
 private:

@@ -32,10 +32,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include "stk_util/stk_config.h"           // for STK_HAS_MPI
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for MPI_Allreduce, MPI_SUCCESS, ParallelMachine
-#include "stk_util/stk_config.h"           // for STK_HAS_MPI
 #include "stk_util/parallel/CouplingVersions.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include <sstream>                         // for basic_ostream::operator<<, operator<<, basic_o...
 #include <stdexcept>                       // for runtime_error
 #include <vector>                          // for vector
@@ -70,11 +71,7 @@ void all_write_string( ParallelMachine arg_comm ,
                        recv_count_ptr , 1 , MPI_INT ,
                        p_root , arg_comm );
 
-  if ( MPI_SUCCESS != result ) {
-    std::ostringstream msg ;
-    msg << "stk::all_write FAILED: MPI_Gather = " << result ;
-    throw std::runtime_error( msg.str() );
-  }
+  STK_ThrowRequireMsg( MPI_SUCCESS == result,"stk::all_write_string FAILED: MPI_Gather = " << result);
 
   // Receive counts are only non-zero on the root processor:
 
@@ -98,11 +95,7 @@ void all_write_string( ParallelMachine arg_comm ,
                           p_root, arg_comm );
   }
 
-  if ( MPI_SUCCESS != result ) {
-    std::ostringstream msg ;
-    msg << "stk::all_write FAILED: MPI_Gatherv = " << result ;
-    throw std::runtime_error( msg.str() );
-  }
+  STK_ThrowRequireMsg( MPI_SUCCESS == result,"stk::all_write_string FAILED: MPI_Gatherv = " << result);
 
   if ( p_root == static_cast<int>(p_rank) ) {
 //    arg_root_os << std::endl ;
@@ -130,10 +123,8 @@ void all_reduce( ParallelMachine  arg_comm ,
   MPI_Op_create(arg_op, 0 , &mpi_op);
 
   if (stk::util::get_common_coupling_version() >= 5) {
-    int errCode = MPI_Allreduce(arg_in, arg_out, arg_len, MPI_BYTE, mpi_op, arg_comm);
-    if (errCode != MPI_SUCCESS) {
-      throw std::runtime_error("MPI_Allreduce returned error code " + std::to_string(errCode));
-    }
+    const int errCode = MPI_Allreduce(arg_in, arg_out, arg_len, MPI_BYTE, mpi_op, arg_comm);
+    STK_ThrowRequireMsg(MPI_SUCCESS == errCode,"MPI_Allreduce returned error code " << errCode);
   } else
   {
     const int result_reduce =
@@ -142,12 +133,7 @@ void all_reduce( ParallelMachine  arg_comm ,
     const int result_bcast =
       MPI_Bcast(arg_out,arg_len,MPI_BYTE,0,arg_comm);
 
-    if ( MPI_SUCCESS != result_reduce || MPI_SUCCESS != result_bcast ) {
-      std::ostringstream msg ;
-      msg << "stk::all_reduce FAILED: MPI_Reduce = " << result_reduce
-          << " MPI_Bcast = " << result_bcast ;
-      throw std::runtime_error( msg.str() );
-    }
+    STK_ThrowRequireMsg( MPI_SUCCESS == result_reduce && MPI_SUCCESS == result_bcast,"stk::all_reduce FAILED: MPI_Reduce = " << result_reduce << " MPI_Bcast = " << result_bcast);
   }
 
   MPI_Op_free( & mpi_op );

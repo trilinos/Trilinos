@@ -128,25 +128,6 @@ inline std::string get_many_block_mesh_desc(unsigned numBlocks, unsigned numProc
   return oss.str();
 }
 
-namespace simple_fields {
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-std::string get_mesh_spec(unsigned dim);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-std::string get_mesh_spec(const std::string &optionName);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-std::vector<double> get_many_block_coordinates(unsigned numBlocks);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-void get_block_proc_distribution(unsigned numBlocks, unsigned numProc, std::vector<unsigned>& procs);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-std::string get_many_block_mesh_desc(unsigned numBlocks, unsigned numProc = 1);
-
-} // namespace simple_fields
-
 }
 }
 

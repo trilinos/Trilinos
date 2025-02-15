@@ -288,7 +288,7 @@ NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
   std::vector<int> comm_procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
 
   for (int proc : comm_procs) {
-    stk::mesh::HostCommMapIndices hostNgpMeshIndices = get_bulk().volatile_fast_shared_comm_map<stk::ngp::MemSpace>(stk::topology::NODE_RANK, proc);
+    stk::mesh::HostCommMapIndices hostNgpMeshIndices = get_bulk().template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(stk::topology::NODE_RANK, proc);
     stk::mesh::DeviceCommMapIndices deviceNgpMeshIndices("deviceNgpMeshIndices", hostNgpMeshIndices.extent(0));
 
     Kokkos::deep_copy(deviceNgpMeshIndices, hostNgpMeshIndices);
@@ -306,7 +306,7 @@ NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap_custom_NgpMemSpace)
   std::vector<int> comm_procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
 
   for (int proc : comm_procs) {
-    stk::mesh::HostCommMapIndices hostNgpMeshIndices = get_bulk().volatile_fast_shared_comm_map<stk::mesh::NgpMeshDefaultMemSpace>(stk::topology::NODE_RANK, proc);
+    stk::mesh::HostCommMapIndices hostNgpMeshIndices = get_bulk().template volatile_fast_shared_comm_map<stk::mesh::NgpMeshDefaultMemSpace>(stk::topology::NODE_RANK, proc);
     stk::mesh::DeviceCommMapIndices deviceNgpMeshIndices("deviceNgpMeshIndices", hostNgpMeshIndices.extent(0));
 
     Kokkos::deep_copy(deviceNgpMeshIndices, hostNgpMeshIndices);

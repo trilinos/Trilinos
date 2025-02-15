@@ -133,7 +133,7 @@ TEST(UnitTestingOfBucket, testBucket)
     /* Need to set some data in state, rotate look for it, rotate 3 more times
        and look for it again */
     for ( size_t i = 0 ; i != 10 ; ++i )
-      bulk.update_field_data_states ();
+      bulk.update_field_data_states();
   }
 
   // next, check has_superset (...) and membership functions
