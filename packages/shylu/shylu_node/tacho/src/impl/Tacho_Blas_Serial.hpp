@@ -27,6 +27,7 @@ template <typename T> struct BlasSerial {
                                         const T *x, int incx,
                          const T beta,  /* */ T *y, int incy) {
 
+    typedef ArithTraits<T> arith_traits;
     const T one(1), zero(0);
 
     {
@@ -53,9 +54,9 @@ template <typename T> struct BlasSerial {
       for (int j = 0; j < n; j++) {
         T val = 0.0;
         for (int i = 0; i < m; i++) {
-          val += (A[i + j*lda] * x[i*incx]);
+          val += (arith_traits::conj(A[i + j*lda]) * x[i*incx]);
         }
-        y[j*incx] += alpha * val;
+        y[j*incy] += alpha * val;
       }
     }
   }
@@ -103,7 +104,23 @@ template <typename T> struct BlasSerial {
           Kokkos::abort("gemm: transb is not valid");
         }
       } else {
-        Kokkos::abort("gemm: transa is not valid");
+        if (transb == 'N' || transb == 'n') {
+          for (int j = 0; j < n; j++) {
+            if (beta == zero) {
+              for (int i = 0; i < m; i++) C[i + j*ldc] = zero;
+            } else if (beta != one) {
+              for (int i = 0; i < m; i++) C[i + j*ldc] *= beta;
+            }
+            for (int l = 0; l < k; l++) {
+              T val = alpha * B[l + j*ldb] ;
+              for (int i = 0; i < m; i++) {
+                C[i + j*ldc] += (A[l + i*lda] * val);
+              }
+            }
+          }
+        } else {
+          Kokkos::abort("gemm: transa is not valid");
+        }
       }
     }
   }

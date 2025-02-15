@@ -75,7 +75,7 @@ public:
     checkInputs();
   }
 
-  void initialize(const Vector<Real> &x) {
+  void initialize(const Vector<Real> &x) override {
     RandVarFunctional<Real>::initialize(x);
     vec_.assign(2,static_cast<Real>(0));
   }
@@ -91,7 +91,7 @@ public:
   void updateValue(Objective<Real>         &obj,
                    const Vector<Real>      &x,
                    const std::vector<Real> &xstat,
-                   Real                    &tol) {
+                   Real                    &tol) override {
     const Real half(0.5), one(1);
     Real val = computeValue(obj,x,tol);
     Real pf1 = plusFunction_->evaluate(val-xstat[0],0);
@@ -101,7 +101,7 @@ public:
 
   Real getValue(const Vector<Real>      &x,
                 const std::vector<Real> &xstat,
-                SampleGenerator<Real>   &sampler) {
+                SampleGenerator<Real>   &sampler) override {
     const Real half(0.5);
     Real cvar(0);
     sampler.sumAll(&val_,&cvar,1);
@@ -112,7 +112,7 @@ public:
   void updateGradient(Objective<Real>         &obj,
                       const Vector<Real>      &x,
                       const std::vector<Real> &xstat,
-                      Real                    &tol) {
+                      Real                    &tol) override {
     const Real half(0.5), one(1);
     Real val = computeValue(obj,x,tol);
     Real pf1 = plusFunction_->evaluate(val-xstat[0],1);
@@ -128,7 +128,7 @@ public:
                    std::vector<Real>       &gstat,
                    const Vector<Real>      &x,
                    const std::vector<Real> &xstat,
-                   SampleGenerator<Real>   &sampler) {
+                   SampleGenerator<Real>   &sampler) override {
     const Real half(0.5);
     sampler.sumAll(&vec_[0],&gstat[0],2);
     sampler.sumAll(*g_,g);
@@ -141,7 +141,7 @@ public:
                      const std::vector<Real> &vstat,
                      const Vector<Real>      &x,
                      const std::vector<Real> &xstat,
-                     Real                    &tol) {
+                     Real                    &tol) override {
     const Real half(0.5), one(1);
     Real val = computeValue(obj,x,tol);
     Real pf11 = plusFunction_->evaluate(val-xstat[0],1);
@@ -163,7 +163,7 @@ public:
                   const std::vector<Real> &vstat,
                   const Vector<Real>      &x,
                   const std::vector<Real> &xstat,
-                  SampleGenerator<Real>   &sampler) {
+                  SampleGenerator<Real>   &sampler) override {
     sampler.sumAll(&vec_[0],&hvstat[0],2);
     sampler.sumAll(*hv_,hv);
   }

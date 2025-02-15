@@ -687,7 +687,7 @@ class RefMaxwell : public VerboseObject, public Xpetra::Operator<Scalar, LocalOr
   Teuchos::RCP<MultiVector> CoarseNullspace22_;
   //! Importer to coarse (1,1) hierarchy
   Teuchos::RCP<const Import> ImporterCoarse11_, Importer22_;
-  bool Dk_1_T_R11_colMapsMatch_;
+  bool Dk_1_T_R11_colMapsMatch_, asyncTransfers_;
   bool onlyBoundary11_, onlyBoundary22_;
   //! Parameter lists
   Teuchos::ParameterList parameterList_, precList11_, precList22_;
@@ -700,7 +700,7 @@ class RefMaxwell : public VerboseObject, public Xpetra::Operator<Scalar, LocalOr
   std::string mode_;
 
   //! Temporary memory
-  mutable Teuchos::RCP<MultiVector> P11res_, P11x_, P11resSubComm_, P11xSubComm_, DresIntermediate_, Dres_, DxIntermediate_, Dx_, DresSubComm_, DxSubComm_, residual_, P11resTmp_, DresTmp_, DTR11Tmp_;
+  mutable Teuchos::RCP<MultiVector> P11res_, P11x_, P11resSubComm_, P11xSubComm_, DresIntermediate_, Dres_, DxIntermediate_, Dx_, DresSubComm_, DxSubComm_, residual_, P11resTmp_, DresTmp_, DTR11Tmp_, P11x_colmap_, Dx_colmap_;
 };
 
 }  // namespace MueLu

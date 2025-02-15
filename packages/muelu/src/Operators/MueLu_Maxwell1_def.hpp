@@ -15,6 +15,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include "Xpetra_CrsMatrixWrap_decl.hpp"
 #include "Xpetra_Map.hpp"
 #include "Xpetra_CrsMatrixUtils.hpp"
 #include "Xpetra_MatrixUtils.hpp"
@@ -805,11 +806,11 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // We cannot use the Tpetra copy constructor, since it does not copy the graph.
 
     RCP<Matrix> D0copy       = MatrixFactory::Build(D0_Matrix->getRowMap(), D0_Matrix->getColMap(), 0);
-    RCP<CrsMatrix> D0copyCrs = rcp_dynamic_cast<CrsMatrixWrap>(D0copy, true)->getCrsMatrix();
+    RCP<CrsMatrix> D0copyCrs = toCrsMatrix(D0copy);
     ArrayRCP<const size_t> D0rowptr_RCP;
     ArrayRCP<const LO> D0colind_RCP;
     ArrayRCP<const SC> D0vals_RCP;
-    rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix()->getAllValues(D0rowptr_RCP, D0colind_RCP, D0vals_RCP);
+    toCrsMatrix(D0_Matrix)->getAllValues(D0rowptr_RCP, D0colind_RCP, D0vals_RCP);
 
     ArrayRCP<size_t> D0copyrowptr_RCP;
     ArrayRCP<LO> D0copycolind_RCP;
@@ -822,8 +823,8 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                             D0copycolind_RCP,
                             D0copyvals_RCP);
     D0copyCrs->expertStaticFillComplete(D0_Matrix->getDomainMap(), D0_Matrix->getRangeMap(),
-                                        rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix()->getCrsGraph()->getImporter(),
-                                        rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix()->getCrsGraph()->getExporter());
+                                        toCrsMatrix(D0_Matrix)->getCrsGraph()->getImporter(),
+                                        toCrsMatrix(D0_Matrix)->getCrsGraph()->getExporter());
     D0_Matrix_ = D0copy;
   } else
     D0_Matrix_ = MatrixFactory::BuildCopy(D0_Matrix);
