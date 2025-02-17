@@ -246,13 +246,15 @@ namespace Ifpack2 {
     this->IsComputed_ = false;
     TEUCHOS_ASSERT(!impl_->A.is_null()); // when initInternal is called, A_ must be set
     {
+      bool useSeqMethod = !impl_->tpetra_importer.is_null();
       BlockTriDiContainerDetails::performSymbolicPhase<MatrixType>
-        (impl_->A, 
-         impl_->blockGraph, 
-         impl_->part_interface, 
-         impl_->block_tridiags, 
-         impl_->a_minus_d, 
-         impl_->overlap_communication_and_computation);    
+        (impl_->A,
+         impl_->blockGraph,
+         impl_->part_interface,
+         impl_->block_tridiags,
+         impl_->a_minus_d,
+         impl_->overlap_communication_and_computation,
+         impl_->async_importer, useSeqMethod);
     }
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
   }
