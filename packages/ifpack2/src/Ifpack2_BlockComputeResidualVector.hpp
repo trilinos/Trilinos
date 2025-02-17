@@ -175,7 +175,7 @@ namespace Ifpack2 {
           amd.A_x_offsets_remote = i64_3d_view("amd.A_x_offsets_remote", numLocalRows, 2, maxNonownedEntriesPerRow);
           auto A_x_offsets = amd.A_x_offsets;
           auto A_x_offsets_remote = amd.A_x_offsets_remote;
-          // Now, populate all the offsets. Use ArithTraits<int64_t>::min to say that no entry is not present.
+          // Now, populate all the offsets. Use ArithTraits<int64_t>::min to mark absent entries.
           Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numLocalRows),
             KOKKOS_LAMBDA(local_ordinal_type i)
             {
@@ -188,9 +188,9 @@ namespace Ifpack2 {
                 if(entry < rowNumOwned) {
                   const size_type j = A_k0 + A_colindsub(rowBegin + entry);
                   const local_ordinal_type A_colind_at_j = A_colind(j);
-                  const auto loc = is_dm2cm_active ? dm2cm(A_colind_at_j) : A_colind_at_j;
-                  A_x_offsets(i, 0, entry) = j * blocksize_square;
-                  A_x_offsets(i, 1, entry) = loc * blocksize;
+                  const local_ordinal_type loc = is_dm2cm_active ? dm2cm(A_colind_at_j) : A_colind_at_j;
+                  A_x_offsets(i, 0, entry) = int64_t(j) * blocksize_square;
+                  A_x_offsets(i, 1, entry) = int64_t(loc) * blocksize;
                 }
                 else {
                   A_x_offsets(i, 0, entry) = Kokkos::ArithTraits<int64_t>::min();
@@ -205,9 +205,9 @@ namespace Ifpack2 {
                   if(entry < rowNumNonowned) {
                     const size_type j = A_k0 + A_colindsub_remote(rowBegin + entry);
                     const local_ordinal_type A_colind_at_j = A_colind(j);
-                    const auto loc = A_colind_at_j - numLocalRows;
-                    A_x_offsets_remote(i, 0, entry) = j * blocksize_square;
-                    A_x_offsets_remote(i, 1, entry) = loc * blocksize;
+                    const local_ordinal_type loc = A_colind_at_j - numLocalRows;
+                    A_x_offsets_remote(i, 0, entry) = int64_t(j) * blocksize_square;
+                    A_x_offsets_remote(i, 1, entry) = int64_t(loc) * blocksize;
                   }
                   else {
                     A_x_offsets_remote(i, 0, entry) = Kokkos::ArithTraits<int64_t>::min();
@@ -230,7 +230,7 @@ namespace Ifpack2 {
             }, Kokkos::Max<local_ordinal_type>(maxEntriesPerRow));
           amd.A_x_offsets = i64_3d_view("amd.A_x_offsets", numLocalRows, 2, maxEntriesPerRow);
           auto A_x_offsets = amd.A_x_offsets;
-          //Populate A,x offsets. Use ArithTraits<int64_t>::min to say that no entry is not present.
+          //Populate A,x offsets. Use ArithTraits<int64_t>::min to mark absent entries.
           //For x offsets, add a shift blocksize*numLocalRows to represent that it indexes into x_remote instead of x.
           Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numLocalRows),
             KOKKOS_LAMBDA(local_ordinal_type i)
@@ -246,11 +246,11 @@ namespace Ifpack2 {
                   A_x_offsets(i, 0, entry) = j * blocksize_square;
                   const local_ordinal_type A_colind_at_j = A_colind(j);
                   if(A_colind_at_j < numLocalRows) {
-                    const auto loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
-                    A_x_offsets(i, 1, entry) = loc * blocksize;
+                    const local_ordinal_type loc = is_dm2cm_active ? dm2cm[A_colind_at_j] : A_colind_at_j;
+                    A_x_offsets(i, 1, entry) = int64_t(loc) * blocksize;
                   }
                   else {
-                    A_x_offsets(i, 1, entry) = A_colind_at_j * blocksize;
+                    A_x_offsets(i, 1, entry) = int64_t(A_colind_at_j) * blocksize;
                   }
                 }
                 else {
