@@ -891,7 +891,7 @@ testEquilibration (Teuchos::FancyOStream& out,
       Teuchos::OSTab tab3 (out);
       auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
       Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
-                                            rowNormsVec, // ignored
+                                            rowNormsVec,
                                             colNormsVec,
                                             false, true,
                                             result2.assumeSymmetric,
@@ -905,7 +905,7 @@ testEquilibration (Teuchos::FancyOStream& out,
       Teuchos::OSTab tab3 (out);
       auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
       Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
-                                            result2.rowNorms, // ignored
+                                            result2.rowNorms,
                                             result2.assumeSymmetric ?
                                             result2.colNorms :
                                             result2.rowScaledColNorms,
@@ -919,7 +919,7 @@ testEquilibration (Teuchos::FancyOStream& out,
       Teuchos::OSTab tab3 (out);
       auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
       Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
-                                            rowNormsVec, // ignored
+                                            rowNormsVec,
                                             colNormsVec,
                                             true, true,
                                             result2.assumeSymmetric,
