@@ -462,10 +462,10 @@ class DualView : public ViewTraits<DataType, Properties...> {
   }
 
   KOKKOS_INLINE_FUNCTION
-  t_host view_host() const { return h_view; }
+  const t_host& view_host() const { return h_view; }
 
   KOKKOS_INLINE_FUNCTION
-  t_dev view_device() const { return d_view; }
+  const t_dev& view_device() const { return d_view; }
 
   KOKKOS_INLINE_FUNCTION constexpr bool is_allocated() const {
     return (d_view.is_allocated() && h_view.is_allocated());
