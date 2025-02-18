@@ -624,15 +624,7 @@ private:
 
     // We check to see if the memory is not aliased *or* if it is a supported
     // (heterogeneous memory) accelerator (for shared host/device memory).
-    if constexpr(Spaces::is_gpu_exec_space<typename DualViewType::execution_space>()) {
-      return true;
-    } else {
-      if constexpr(!deviceMemoryIsHostAccessible) {
-        return true;
-      } else {
-        return dualView.h_view.data() != dualView.d_view.data();
-      }
-    }
+    return !memoryIsAliased() || Spaces::is_gpu_exec_space<typename DualViewType::execution_space>();
   }
 
 

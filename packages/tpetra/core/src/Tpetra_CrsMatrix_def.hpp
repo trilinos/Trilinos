@@ -49,7 +49,6 @@
 #include "KokkosSparse_spmv.hpp"
 
 #include <memory>
-#include <cstring>
 #include <sstream>
 #include <typeinfo>
 #include <utility>
@@ -2424,104 +2423,14 @@ namespace Tpetra {
                            const impl_scalar_type newVals[],
                            const LocalOrdinal numElts)
   {
-
-    const LocalOrdinal LINV = Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
-
-    [[maybe_unused]] LocalOrdinal niv=0;
-    
-    { // new
-      typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
-
-      const bool sorted = graph.isSorted ();
-      const bool atomic = useAtomicUpdatesByDefault;  // FIXME
-      size_t hint = 0; // guess at the index's relative offset in the row
-      LO numValid = 0; // number of valid input column indices
-
-      if (graph.isLocallyIndexed ()) {
-        // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
-        // pointer does NOT change its reference count.  Thus, this
-        // code is still thread safe.
-        if (graph.colMap_.is_null ()) {
-          // NO input column indices are valid in this case, since if
-          // the column Map is null on the calling process, then the
-          // calling process owns no graph entries.
-          return numValid;
-        }
-        const map_type& colMap = * (graph.colMap_);
-
-        // Get a view of the column indices in the row.  This amortizes
-        // the cost of getting the view over all the entries of inds.
-        auto colInds = graph.getLocalIndsViewHost (rowInfo);
-        if (atomic) {
-          for (LO j = 0; j < numElts; ++j) {
-            const LO lclColInd = colMap.getLocalElement (inds[j]);
-            if (lclColInd != LINV) {
-              const size_t offset =
-                KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
-                                             lclColInd, hint, sorted);
-              if (offset != rowInfo.numEntries) {
-                Kokkos::atomic_store (&rowVals[offset], newVals[j]);
-                hint = offset + 1;
-                numValid++;
-              }
-            }
-          }
-        } else {
-          for (LO j = 0; j < numElts; ++j) {
-            const LO lclColInd = colMap.getLocalElement (inds[j]);
-            if (lclColInd != LINV) {
-              const size_t offset =
-                KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
-                                             lclColInd, hint, sorted);
-              if (offset != rowInfo.numEntries) {
-                rowVals[offset]= newVals[j];
-                hint = offset + 1;
-                numValid++;
-              }
-            }
-          }
-        }
-      }
-      else if (graph.isGloballyIndexed ()) {
-        // Get a view of the column indices in the row.  This amortizes
-        // the cost of getting the view over all the entries of inds.
-        auto colInds = graph.getGlobalIndsViewHost (rowInfo);
-
-        if (atomic) {
-          for (LO j = 0; j < numElts; ++j) {
-            const GO gblColInd = inds[j];
-            const size_t offset =
-              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
-                                           gblColInd, hint, sorted);
-            if (offset != rowInfo.numEntries) {
-              Kokkos::atomic_store (&rowVals[offset], newVals[j]);
-              hint = offset + 1;
-              numValid++;
-            }
-          }
-        } else {
-          for (LO j = 0; j < numElts; ++j) {
-            const GO gblColInd = inds[j];
-            const size_t offset =
-              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
-                                           gblColInd, hint, sorted);
-            if (offset != rowInfo.numEntries) {
-              rowVals[offset] = newVals[j];
-              hint = offset + 1;
-              numValid++;
-            }
-          }
-        }
-      }
-      // If the graph is neither locally nor globally indexed on the
-      // calling process, that means the calling process has no graph
-      // entries.  Thus, none of the input column indices are valid.
-      return numValid;
-    }
-    return LINV;
+    Teuchos::ArrayView<const GlobalOrdinal> indsT(inds, numElts);
+    auto fun =
+      [&](size_t const k, size_t const /*start*/, size_t const offset) {
+        rowVals[offset] = newVals[k];
+      };
+    std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+    return graph.findGlobalIndices(rowInfo, indsT, cb);
   }
-
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
@@ -2557,8 +2466,8 @@ namespace Tpetra {
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
     const crs_graph_type& graph = * (this->staticGraph_);
-    const RowInfo rowInfo = graph.getRowInfoFromGlobalRowIndex (globalRow);
 
+    const RowInfo rowInfo = graph.getRowInfoFromGlobalRowIndex (globalRow);
     if (rowInfo.localRow == Teuchos::OrdinalTraits<size_t>::invalid ()) {
       // The input local row is invalid on the calling process,
       // which means that the calling process summed 0 entries.
@@ -2566,7 +2475,6 @@ namespace Tpetra {
     }
 
     auto curRowVals = this->getValuesViewHostNonConst (rowInfo);
-
     const IST* const inVals = reinterpret_cast<const IST*> (inputVals);
     return this->replaceGlobalValuesImpl (curRowVals.data (), graph, rowInfo,
                                           inputGblColInds, inVals, numEnt);
@@ -3327,10 +3235,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         const map_type& colMap = * (staticGraph_->colMap_);
         auto curLclInds = staticGraph_->getLocalIndsViewHost(rowinfo);
         auto curVals = getValuesViewHost(rowinfo);
-        bool err = colMap.getGlobalElements(curLclInds.data(), numEntries, indices.data());
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(err, std::runtime_error, "getGlobalElements error");
-        // FIXME - this should/could be a kokkos deep copy?
-        std::memcpy((void*)values.data(), (const void*) curVals.data(), numEntries*sizeof(*values.data()));
+
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          values[j] = curVals[j];
+          indices[j] = colMap.getGlobalElement (curLclInds(j));
+        }
       }
       else if (staticGraph_->isGloballyIndexed ()) {
         auto curGblInds = staticGraph_->getGlobalIndsViewHost(rowinfo);
@@ -3560,7 +3469,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   setAllValues ( const local_matrix_device_type& localDeviceMatrix)
   {
     using ProfilingRegion=Details::ProfilingRegion;
-    ProfilingRegion region ("Tpetra::CrsMatrix::setAllValues1 from KokkosSparse::CrsMatrix");
+    ProfilingRegion region ("Tpetra::CrsMatrix::setAllValues from KokkosSparse::CrsMatrix");
 
     auto graph = localDeviceMatrix.graph;
     //FIXME how to check whether graph is allocated
@@ -3586,7 +3495,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     typedef impl_scalar_type IST;
     typedef typename local_graph_device_type::row_map_type row_map_type;
     //typedef typename row_map_type::non_const_value_type row_offset_type;
-    const char tfecfFuncName[] = "setAllValues2(ArrayRCP<size_t>, ArrayRCP<LO>, ArrayRCP<Scalar>): ";
+    const char tfecfFuncName[] = "setAllValues(ArrayRCP<size_t>, ArrayRCP<LO>, ArrayRCP<Scalar>): ";
 
     // The row offset type may depend on the execution space.  It may
     // not necessarily be size_t.  If it's not, we need to make a deep
@@ -5746,16 +5655,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void copyAndPermuteStaticGraphImpl(
-    const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& srcMat,
-    RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tgtMat,
-    const size_t numSameIDs,
-    const LocalOrdinal permuteToLIDs[],
-    const LocalOrdinal permuteFromLIDs[],
-    const size_t numPermutes
-  );
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermuteStaticGraph(
@@ -5765,10 +5664,192 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const LocalOrdinal permuteFromLIDs[],
     const size_t numPermutes)
   {
-    copyAndPermuteStaticGraphImpl(
-     srcMat, *this, numSameIDs, permuteToLIDs, permuteFromLIDs, numPermutes
-    );
-    return;
+    using Details::ProfilingRegion;
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using std::endl;
+    using LO = LocalOrdinal;
+    using GO = GlobalOrdinal;
+    const char tfecfFuncName[] = "copyAndPermuteStaticGraph";
+    const char suffix[] =
+      "  Please report this bug to the Tpetra developers.";
+    ProfilingRegion regionCAP
+      ("Tpetra::CrsMatrix::copyAndPermuteStaticGraph");
+
+    const bool debug = Details::Behavior::debug("CrsGraph");
+    const bool verbose = Details::Behavior::verbose("CrsGraph");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsGraph", tfecfFuncName);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+    }
+    const char* const prefix_raw =
+      verbose ? prefix.get()->c_str() : nullptr;
+
+    const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();
+    //
+    // Copy the first numSame row from source to target (this matrix).
+    // This involves copying rows corresponding to LIDs [0, numSame-1].
+    //
+    const map_type& srcRowMap = * (srcMat.getRowMap ());
+    nonconst_global_inds_host_view_type rowInds;
+    nonconst_values_host_view_type rowVals;
+    const LO numSameIDs_as_LID = static_cast<LO> (numSameIDs);
+    for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
+      // Global ID for the current row index in the source matrix.
+      // The first numSameIDs GIDs in the two input lists are the
+      // same, so sourceGID == targetGID in this case.
+      const GO sourceGID = srcRowMap.getGlobalElement (sourceLID);
+      const GO targetGID = sourceGID;
+
+      ArrayView<const GO>rowIndsConstView;
+      ArrayView<const Scalar> rowValsConstView;
+
+      if (sourceIsLocallyIndexed) {
+        const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
+        if (rowLength > static_cast<size_t> (rowInds.size())) {
+          Kokkos::resize(rowInds,rowLength);
+          Kokkos::resize(rowVals,rowLength);
+        }
+        // Resizing invalidates an Array's views, so we must make new
+        // ones, even if rowLength hasn't changed.
+        nonconst_global_inds_host_view_type rowIndsView = Kokkos::subview(rowInds,std::make_pair((size_t)0, rowLength));
+        nonconst_values_host_view_type rowValsView = Kokkos::subview(rowVals,std::make_pair((size_t)0, rowLength));
+
+        // The source matrix is locally indexed, so we have to get a
+        // copy.  Really it's the GIDs that have to be copied (because
+        // they have to be converted from LIDs).
+        size_t checkRowLength = 0;
+        srcMat.getGlobalRowCopy (sourceGID, rowIndsView,
+                                 rowValsView, checkRowLength);
+        if (debug) {
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (rowLength != checkRowLength, std::logic_error, "For "
+             "global row index " << sourceGID << ", the source "
+             "matrix's getNumEntriesInGlobalRow returns a row length "
+             "of " << rowLength << ", but getGlobalRowCopy reports "
+             "a row length of " << checkRowLength << "." << suffix);
+        }
+
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
+      }
+      else { // source matrix is globally indexed.
+        global_inds_host_view_type rowIndsView;
+        values_host_view_type rowValsView;
+        srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
+
+      }
+
+      // Applying a permutation to a matrix with a static graph
+      // means REPLACE-ing entries.
+      combineGlobalValues(targetGID, rowIndsConstView,
+                          rowValsConstView, REPLACE,
+                          prefix_raw, debug, verbose);
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Do permutes" << endl;
+    }
+
+    const map_type& tgtRowMap = * (this->getRowMap ());
+    for (size_t p = 0; p < numPermutes; ++p) {
+      const GO sourceGID = srcRowMap.getGlobalElement (permuteFromLIDs[p]);
+      const GO targetGID = tgtRowMap.getGlobalElement (permuteToLIDs[p]);
+
+      ArrayView<const GO> rowIndsConstView;
+      ArrayView<const Scalar> rowValsConstView;
+
+      if (sourceIsLocallyIndexed) {
+        const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
+        if (rowLength > static_cast<size_t> (rowInds.size ())) {
+          Kokkos::resize(rowInds,rowLength);
+          Kokkos::resize(rowVals,rowLength);
+        }
+        // Resizing invalidates an Array's views, so we must make new
+        // ones, even if rowLength hasn't changed.
+        nonconst_global_inds_host_view_type rowIndsView = Kokkos::subview(rowInds,std::make_pair((size_t)0, rowLength));
+        nonconst_values_host_view_type rowValsView = Kokkos::subview(rowVals,std::make_pair((size_t)0, rowLength));
+
+        // The source matrix is locally indexed, so we have to get a
+        // copy.  Really it's the GIDs that have to be copied (because
+        // they have to be converted from LIDs).
+        size_t checkRowLength = 0;
+        srcMat.getGlobalRowCopy(sourceGID, rowIndsView,
+                                rowValsView, checkRowLength);
+        if (debug) {
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (rowLength != checkRowLength, std::logic_error, "For "
+             "source matrix global row index " << sourceGID << ", "
+             "getNumEntriesInGlobalRow returns a row length of " <<
+             rowLength << ", but getGlobalRowCopy a row length of "
+             << checkRowLength << "." << suffix);
+        }
+
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
+      }
+      else {
+        global_inds_host_view_type rowIndsView;
+        values_host_view_type rowValsView;
+        srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
+      }
+
+      combineGlobalValues(targetGID, rowIndsConstView,
+                          rowValsConstView, REPLACE,
+                          prefix_raw, debug, verbose);
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5960,255 +6041,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void copyAndPermuteStaticGraphImpl(
-    const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& srcMat,
-    RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tgtMat,
-    const size_t numSameIDs,
-    const LocalOrdinal permuteToLIDs[],
-    const LocalOrdinal permuteFromLIDs[],
-    const size_t numPermutes
-  ) {
-    using Details::ProfilingRegion;
-    using Teuchos::Array;
-    //using Teuchos::ArrayView;
-    using std::endl;
-    using LO = LocalOrdinal;
-    using GO = GlobalOrdinal;
-
-    using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
-
-    using crs_matrix_type = CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-    typedef typename crs_matrix_type::local_inds_device_view_type::non_const_value_type local_inds_device_value_t; 
-    typedef typename crs_matrix_type::local_matrix_device_type k_local_matrix_device_type;
-
-    typedef typename Node::execution_space exec_space;
-    typedef Kokkos::RangePolicy<exec_space, LO> range_type;
-
-    const LocalOrdinal LINV = Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
-
-    const char tfecfFuncName[] = "copyAndPermuteStaticGraphImpl";
-    ProfilingRegion regionCAP
-      ("Tpetra::CrsMatrix::copyAndPermuteStaticGraphImpl");
-
-    // const bool debug = Details::Behavior::debug("CrsGraph");
-    // const bool verbose = Details::Behavior::verbose("CrsGraph");
-
-    const crs_matrix_type *srcMatCrsPtr = dynamic_cast<const crs_matrix_type *>(&srcMat);
-    TEUCHOS_TEST_FOR_EXCEPTION(srcMatCrsPtr == nullptr, std::runtime_error, "bad srcMatCrsPtr");
-    const crs_matrix_type& srcMatCrs = *srcMatCrsPtr;
-
-    crs_matrix_type *tgtMatCrsPtr = dynamic_cast<crs_matrix_type *>(&tgtMat);
-    TEUCHOS_TEST_FOR_EXCEPTION(tgtMatCrsPtr == nullptr, std::runtime_error, "bad tgtMatCrsPtr");
-    crs_matrix_type& tgtMatCrs = *tgtMatCrsPtr;
-
-    std::string prefix = tfecfFuncName;
-    // const char* const prefix_raw = prefix.c_str();
-
-    const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();
-    //
-    // Copy the first numSame row from source to target (this matrix).
-    // This involves copying rows corresponding to LIDs [0, numSame-1].
-    //
-    const auto& srcRowMap = * (srcMat.getRowMap ());
-    auto comm = srcRowMap.getComm();
-
-    const LO numSameIDs_as_LID = static_cast<LO> (numSameIDs);
-
-    auto my_replaceGlobalValuesImpl_scalar
-      = KOKKOS_LAMBDA(
-                      const bool sorted, const bool atomic, size_t hint[], 
-                      const size_t numInTgtRow,  const local_inds_device_value_t tgtColInds[], impl_scalar_type tgtRowVals[], 
-                      const local_inds_device_value_t lclColInd, const impl_scalar_type newVals
-                      ) -> LO
-      {
-       LO numValid = 0; // number of valid input column indices
-
-       if (atomic) {
-         if (lclColInd != LINV) {
-           const size_t offset =
-             KokkosSparse::findRelOffset (tgtColInds, numInTgtRow,
-                                          lclColInd, hint[0], sorted);
-           if (offset != numInTgtRow) {
-             Kokkos::atomic_store (&tgtRowVals[offset], newVals);
-             hint[0] = offset + 1;
-             numValid++;
-           }
-         }
-       } else {
-         if (lclColInd != LINV) {
-           const size_t offset =
-             KokkosSparse::findRelOffset (tgtColInds, numInTgtRow,
-                                          lclColInd, hint[0], sorted);
-           if (offset != numInTgtRow) {
-             tgtRowVals[offset] = newVals;
-             hint[0] = offset + 1;
-             numValid++;
-           }
-         }
-       }
-       return numValid;
-      };      
-
-    if (sourceIsLocallyIndexed) {
-
-      const k_local_matrix_device_type & srcMatDevice = srcMatCrs.getLocalMatrixDevice();
-      const k_local_matrix_device_type & tgtMatDevice = tgtMatCrs.getLocalMatrixDevice();
-
-      typename crs_matrix_type::row_ptrs_device_view_type tgtLocalRowPtrsDevice     = tgtMatCrs.getLocalRowPtrsDevice();
-      typename crs_matrix_type::local_inds_device_view_type tgtLocalColIndsDevice   = tgtMatCrs.getLocalIndicesDevice();
-      typename crs_matrix_type::row_ptrs_host_view_type srcLocalRowPtrsHost         = srcMatCrs.getLocalRowPtrsHost();
-      typename crs_matrix_type::row_ptrs_device_view_type srcLocalRowPtrsDevice     = srcMatCrs.getLocalRowPtrsDevice();
-      typename crs_matrix_type::local_inds_device_view_type srcLocalColIndsDevice   = srcMatCrs.getLocalIndicesDevice();
-
-      bool tgtMatIsSorted = tgtMatCrs.getCrsGraph()->isSorted();
-
-      using local_map_type = typename crs_matrix_type::map_type::local_map_type;
-
-      local_map_type local_map         = srcMat.getRowMap()->getLocalMap();
-      local_map_type local_col_map     = srcMat.getColMap()->getLocalMap();
-      local_map_type tgt_local_map     = tgtMatCrs.getRowMap()->getLocalMap();
-      local_map_type tgt_local_col_map = tgtMatCrs.getColMap()->getLocalMap();
-
-      auto vals  = srcMatCrs.getLocalValuesDevice (Access::ReadOnly);
-      auto tvals = tgtMatCrs.getLocalValuesDevice (Access::ReadWrite);
-
-      Kokkos::parallel_for
-        ("Tpetra_CrsMatrix::copyAndPermuteStaticGraphImpl",
-         range_type (0, numSameIDs_as_LID),
-         KOKKOS_LAMBDA(const LO sourceLID)
-         {
-           local_inds_device_value_t start = srcLocalRowPtrsDevice(sourceLID);
-           local_inds_device_value_t end = srcLocalRowPtrsDevice(sourceLID+1);
-           local_inds_device_value_t rowLength = (end - start);
-
-           local_inds_device_value_t tstart = tgtLocalRowPtrsDevice(sourceLID);
-           local_inds_device_value_t tend = tgtLocalRowPtrsDevice(sourceLID + 1);
-           local_inds_device_value_t numInTgtRow = (tend - tstart);
-
-           KOKKOS_ASSERT(static_cast<decltype(tvals.extent(0))>(tstart) < tvals.extent(0));
-           impl_scalar_type *tgtRowVals = reinterpret_cast<impl_scalar_type *>(&tvals(tstart));
-           const local_inds_device_value_t *tgtColInds = &tgtLocalColIndsDevice(tstart);
-
-           size_t hint=0;
-           for (LO j = 0; j < rowLength; j++) {
-             local_inds_device_value_t ci = srcLocalColIndsDevice(start + j);
-             GO gi = local_col_map.getGlobalElement(ci);
-             const local_inds_device_value_t lclColInd = tgt_local_col_map.getLocalElement(gi);
-             my_replaceGlobalValuesImpl_scalar(tgtMatIsSorted, false, &hint,
-                                               numInTgtRow, tgtColInds, tgtRowVals, 
-                                               lclColInd, vals(start+j));
-           }
-
-         });  // kokkos parallel_for
-
-    } else {
-      for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
-        // Global ID for the current row index in the source matrix.
-        // The first numSameIDs GIDs in the two input lists are the
-        // same, so sourceGID == targetGID in this case.
-        const GO sourceGID = srcRowMap.getGlobalElement (sourceLID);
-        const GO targetGID = sourceGID;
-
-        Teuchos::ArrayView<const GO> rowIndsConstView;
-        Teuchos::ArrayView<const Scalar> rowValsConstView;
-
-        typename crs_matrix_type::global_inds_host_view_type rowIndsView;
-        typename crs_matrix_type::values_host_view_type rowValsView;
-        srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
-        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
-        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
-        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
-        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
-        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
-                                                         rowIndsView.data(), rowIndsView.extent(0),
-                                                         Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                                                             reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
-                                                             Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
-        // KDDKDD UVM TEMPORARY:  KokkosView interface
-
-        // Applying a permutation to a matrix with a static graph
-        // means REPLACE-ing entries.
-        // FIXME - need to apply the same approach as above, maybe reuse my_replaceGlobalValuesImpl_scalar?
-        tgtMatCrs.replaceGlobalValues(targetGID, rowIndsConstView,
-                                      rowValsConstView);
-      }
-    }
-
-    // FIXME - need to apply the same approach as above to the permutes
-
-    //
-    // "Permute" part of "copy and permute."
-    //
-    typename crs_matrix_type::nonconst_global_inds_host_view_type rowInds;
-    typename crs_matrix_type::nonconst_values_host_view_type rowVals;
-
-    const auto& tgtRowMap = * (tgtMat.getRowMap ());
-    for (size_t p = 0; p < numPermutes; ++p) {
-      const GO sourceGID = srcRowMap.getGlobalElement (permuteFromLIDs[p]);
-      const GO targetGID = tgtRowMap.getGlobalElement (permuteToLIDs[p]);
-
-      Teuchos::ArrayView<const GO> rowIndsConstView;
-      Teuchos::ArrayView<const Scalar> rowValsConstView;
-
-      if (sourceIsLocallyIndexed) {
-        const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
-        if (rowLength > static_cast<size_t> (rowInds.size ())) {
-          Kokkos::resize(rowInds,rowLength);
-          Kokkos::resize(rowVals,rowLength);
-        }
-        // Resizing invalidates an Array's views, so we must make new
-        // ones, even if rowLength hasn't changed.
-        typename crs_matrix_type::nonconst_global_inds_host_view_type rowIndsView = Kokkos::subview(rowInds,std::make_pair((size_t)0, rowLength));
-        typename crs_matrix_type::nonconst_values_host_view_type rowValsView = Kokkos::subview(rowVals,std::make_pair((size_t)0, rowLength));
-
-        // The source matrix is locally indexed, so we have to get a
-        // copy.  Really it's the GIDs that have to be copied (because
-        // they have to be converted from LIDs).
-        size_t checkRowLength = 0;
-        srcMat.getGlobalRowCopy(sourceGID, rowIndsView,
-                                rowValsView, checkRowLength);
-
-        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
-        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
-        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
-        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
-        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
-                                                         rowIndsView.data(), rowIndsView.extent(0),
-                                                         Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                                                             reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
-                                                             Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
-        // KDDKDD UVM TEMPORARY:  KokkosView interface
-      }
-      else {
-        typename crs_matrix_type::global_inds_host_view_type rowIndsView;
-        typename crs_matrix_type::values_host_view_type rowValsView;
-        srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
-        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
-        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
-        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
-        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
-        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
-                                                         rowIndsView.data(), rowIndsView.extent(0),
-                                                         Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                                                             reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
-                                                             Teuchos::RCP_DISABLE_NODE_LOOKUP);
-        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
-        // KDDKDD UVM TEMPORARY:  KokkosView interface
-      }
-
-      tgtMatCrs.replaceGlobalValues(targetGID, rowIndsConstView,
-                                    rowValsConstView);
-    }
-
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   copyAndPermute(
@@ -6260,13 +6092,15 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using RMT = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const RMT& srcMat = dynamic_cast<const RMT&> (srcObj);
     if (isStaticGraph ()) {
-      TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_device () );
-      auto permuteToLIDs_d = permuteToLIDs.view_device ();
-      TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_device () );
-      auto permuteFromLIDs_d = permuteFromLIDs.view_device ();
-      copyAndPermuteStaticGraph(
-        srcMat, numSameIDs, permuteToLIDs_d.data(), permuteFromLIDs_d.data(), numPermute
-      );
+      TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
+      auto permuteToLIDs_h = permuteToLIDs.view_host ();
+      TEUCHOS_ASSERT( ! permuteFromLIDs.need_sync_host () );
+      auto permuteFromLIDs_h = permuteFromLIDs.view_host ();
+
+      copyAndPermuteStaticGraph(srcMat, numSameIDs,
+                                permuteToLIDs_h.data(),
+                                permuteFromLIDs_h.data(),
+                                numPermute);
     }
     else {
       copyAndPermuteNonStaticGraph(srcMat, numSameIDs, permuteToLIDs,
@@ -6985,16 +6819,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const bool verbose)
   {
     const char tfecfFuncName[] = "combineGlobalValues: ";
-    const bool isg = isStaticGraph ();
-    if (isg) {
+
+    if (isStaticGraph ()) {
       // INSERT doesn't make sense for a static graph, since you
       // aren't allowed to change the structure of the graph.
       // However, all the other combine modes work.
-      if (combineMode == REPLACE) {
-        replaceGlobalValues (globalRowIndex, columnIndices, values);
-      }
-      else if (combineMode == ADD) {
+      if (combineMode == ADD) {
         sumIntoGlobalValues (globalRowIndex, columnIndices, values);
+      }
+      else if (combineMode == REPLACE) {
+        replaceGlobalValues (globalRowIndex, columnIndices, values);
       }
       else if (combineMode == ABSMAX) {
         using ::Tpetra::Details::AbsMax;
@@ -7219,7 +7053,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     if (isStaticGraph ()) {
-
       using Details::unpackCrsMatrixAndCombineNew;
       unpackCrsMatrixAndCombineNew(*this, imports, numPacketsPerLID,
                                    importLIDs, constantNumPackets,
@@ -9009,7 +8842,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_TPETRA_MMM_TIMINGS
         Teuchos::TimeMonitor MMrc(*TimeMonitor::getNewTimer(prefix + std::string("TAFC sortAndMergeCrsEntries")));
 #endif
-
         Import_Util::sortAndMergeCrsEntries (CSR_rowptr_d,
                                              CSR_colind_LID_d,
                                              CSR_vals_d);
