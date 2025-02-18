@@ -1192,7 +1192,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
               // Deal with the situation where boundary conditions have only been enforced on rows, but not on columns.
               // We enforce dropping of these entries by assigning a very large number to the diagonal entries corresponding to BCs.
               if (!haveAddedToDiag)
-                localLaplDiagData[row] = STS::rmax();
+                localLaplDiagData[row] = STS::squareroot(STS::rmax());
             }
           }  // subtimer
           {
