@@ -30,8 +30,6 @@
 #include "Xpetra_MapExtractor.hpp"
 #include "Xpetra_MapExtractorFactory.hpp"
 
-#include "Xpetra_Matrix.hpp"
-#include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 
 #ifdef HAVE_XPETRA_THYRA
@@ -40,7 +38,7 @@
 #include <Thyra_LinearOpBase.hpp>
 #include <Thyra_BlockedLinearOpBase.hpp>
 #include <Thyra_PhysicallyBlockedLinearOpBase.hpp>
-#include "Xpetra_ThyraUtils.hpp"
+#include "Xpetra_ThyraUtils_decl.hpp"
 #endif
 
 #include "Xpetra_VectorFactory.hpp"
@@ -117,7 +115,7 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
    * Helper function only used in constructor of Xpetra_BlockedCrsMatrix for transforming a Thyra::BlockedLinearOp object
    * All GID entries are sorted and duplicates are eliminated.
    */
-  Teuchos::RCP<const Map> mergeMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& subMaps);
+  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> mergeMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& subMaps);
 
  public:
 #endif

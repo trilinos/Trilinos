@@ -16,8 +16,6 @@
 
 #include "Xpetra_ThyraUtils_decl.hpp"
 
-namespace Xpetra {
-
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node>>
 Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -879,8 +877,6 @@ ThyraUtils<double, int, long long, EpetraNode>::toThyra(const Teuchos::RCP<Xpetr
 #endif  // #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 
 #endif
-
-}  // namespace Xpetra
 
 #endif
 

@@ -19,6 +19,7 @@
 #include "Xpetra_Exceptions.hpp"
 
 #include "Xpetra_BlockedCrsMatrix_decl.hpp"
+#include "Xpetra_BlockedMap_decl.hpp"
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_BlockedMultiVector.hpp"
@@ -113,7 +114,7 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
       if (thyraOp->blockExists(r, c)) {
         // we only need at least one block in each block row to extract the range map
         Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> const_op = thyraOp->getBlock(r, c);  // nonConst access is not allowed.
-        Teuchos::RCP<const Xpetra::Matrix<Scalar, LO, GO, Node>> xop =
+        Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> xop =
             Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toXpetra(const_op);
         subRangeMaps[r] = xop->getRangeMap();
         if (r != c) is_diagonal_ = false;
@@ -131,7 +132,7 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
     numAllElements += subRangeMaps[v]->getGlobalNumElements();
   }
   if (fullRangeMap->getGlobalNumElements() != numAllElements) bRangeUseThyraStyleNumbering = true;
-  rangemaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fullRangeMap, subRangeMaps, bRangeUseThyraStyleNumbering));
+  rangemaps_ = Teuchos::rcp(new Xpetra::MapExtractor(fullRangeMap, subRangeMaps, bRangeUseThyraStyleNumbering));
 
   // build domain map extractor from Thyra::BlockedLinearOpBase object
   std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>> subDomainMaps(numDomainBlocks);
@@ -140,8 +141,8 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
       if (thyraOp->blockExists(r, c)) {
         // we only need at least one block in each block row to extract the range map
         Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> const_op = thyraOp->getBlock(r, c);  // nonConst access is not allowed.
-        Teuchos::RCP<const Xpetra::Matrix<Scalar, LO, GO, Node>> xop =
-            Xpetra::ThyraUtils<Scalar, LO, GO, Node>::toXpetra(const_op);
+        Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> xop =
+            Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toXpetra(const_op);
         subDomainMaps[c] = xop->getDomainMap();
         break;
       }
@@ -155,7 +156,7 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
     numAllElements += subDomainMaps[v]->getGlobalNumElements();
   }
   if (fullDomainMap->getGlobalNumElements() != numAllElements) bDomainUseThyraStyleNumbering = true;
-  domainmaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fullDomainMap, subDomainMaps, bDomainUseThyraStyleNumbering));
+  domainmaps_ = Teuchos::rcp(new Xpetra::MapExtractor(fullDomainMap, subDomainMaps, bDomainUseThyraStyleNumbering));
 
   // store numbering mode
   bRangeThyraMode_  = bRangeUseThyraStyleNumbering;
@@ -169,10 +170,10 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
         // TODO we do not support nested Thyra operators here!
         Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> const_op = thyraOp->getBlock(r, c);                                         // nonConst access is not allowed.
         Teuchos::RCP<Thyra::LinearOpBase<Scalar>> op             = Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar>>(const_op);  // cast away const
-        Teuchos::RCP<Xpetra::Matrix<Scalar, LO, GO, Node>> xop =
-            Xpetra::ThyraUtils<Scalar, LO, GO, Node>::toXpetra(op);
-        Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node>> xwrap =
-            Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node>>(xop, true);
+        Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> xop =
+            Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toXpetra(op);
+        Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>> xwrap =
+            Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(xop, true);
         blocks_.push_back(xwrap);
       } else {
         // add empty block
@@ -208,10 +209,10 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> BlockedCrsMat
   // since we use this to detect Thyra-style numbering or Xpetra-style
   // numbering. In Thyra-style numbering mode, the Xpetra::MapExtractor builds
   // the correct row maps.
-  const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+  const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
   std::sort(gids.begin(), gids.end());
   gids.erase(std::unique(gids.begin(), gids.end()), gids.end());
-  Teuchos::ArrayView<GO> gidsView(&gids[0], gids.size());
+  Teuchos::ArrayView<GlobalOrdinal> gidsView(&gids[0], gids.size());
   Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> fullMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(subMaps[0]->lib(), INVALID, gidsView, subMaps[0]->getIndexBase(), subMaps[0]->getComm());
   return fullMap;
 }
@@ -346,15 +347,15 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fillComplete(c
       // build full col map
       fullcolmap_ = Teuchos::null; // delete old full column map
 
-      std::vector<GO> colmapentries;
+      std::vector<GlobalOrdinal> colmapentries;
       for (size_t c = 0; c < Cols(); ++c) {
         // copy all local column lids of all block rows to colset
-        std::set<GO> colset;
+        std::set<GlobalOrdinal> colset;
         for (size_t r = 0; r < Rows(); ++r) {
           Teuchos::RCP<CrsMatrix> Ablock = getMatrix(r,c);
 
           if (Ablock != Teuchos::null) {
-            Teuchos::ArrayView<const GO> colElements = Ablock->getColMap()->getLocalElementList();
+            Teuchos::ArrayView<const GlobalOrdinal> colElements = Ablock->getColMap()->getLocalElementList();
             Teuchos::RCP<const Map>      colmap      = Ablock->getColMap();
             copy(colElements.getRawPtr(), colElements.getRawPtr() + colElements.size(), inserter(colset, colset.begin()));
           }
@@ -364,7 +365,7 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fillComplete(c
         colmapentries.reserve(colmapentries.size() + colset.size());
         copy(colset.begin(), colset.end(), back_inserter(colmapentries));
         sort(colmapentries.begin(), colmapentries.end());
-        typename std::vector<GO>::iterator gendLocation;
+        typename std::vector<GlobalOrdinal>::iterator gendLocation;
         gendLocation = std::unique(colmapentries.begin(), colmapentries.end());
         colmapentries.erase(gendLocation,colmapentries.end());
       }
@@ -374,7 +375,7 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fillComplete(c
       Teuchos::reduceAll(*(rangeMap->getComm()), Teuchos::REDUCE_SUM, colmapentries.size(), Teuchos::outArg(numGlobalElements));
 
       // store global full column map
-      const Teuchos::ArrayView<const GO> aView = Teuchos::ArrayView<const GO>(colmapentries);
+      const Teuchos::ArrayView<const GlobalOrdinal> aView = Teuchos::ArrayView<const GlobalOrdinal>(colmapentries);
       fullcolmap_ = MapFactory::Build(rangeMap->lib(), numGlobalElements, aView, 0, rangeMap->getComm());
 #endif
 }
@@ -1207,8 +1208,8 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> BlockedC
           size_t maxNumEntries = mat->getLocalMaxNumRowEntries();
 
           size_t numEntries;
-          Array<GO> inds(maxNumEntries);
-          Array<GO> inds2(maxNumEntries);
+          Array<GlobalOrdinal> inds(maxNumEntries);
+          Array<GlobalOrdinal> inds2(maxNumEntries);
           Array<SC> vals(maxNumEntries);
 
           // loop over all rows and add entries
@@ -1263,7 +1264,7 @@ typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_mat
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar>> BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getThyraOperator() {
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> thOp =
-      Xpetra::ThyraUtils<Scalar, LO, GO, Node>::toThyra(Teuchos::rcpFromRef(*this));
+      Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyra(Teuchos::rcpFromRef(*this));
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thOp));
 
   Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar>> thbOp =
@@ -1310,15 +1311,15 @@ void BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Add(const Matr
   size_t maxNumEntries = crsA->getLocalMaxNumRowEntries();
 
   size_t numEntries;
-  Array<GO> inds(maxNumEntries);
+  Array<GlobalOrdinal> inds(maxNumEntries);
   Array<SC> vals(maxNumEntries);
 
   RCP<const Map> rowMap = crsA->getRowMap();
   RCP<const Map> colMap = crsA->getColMap();
 
-  ArrayView<const GO> rowGIDs = crsA->getRowMap()->getLocalElementList();
+  ArrayView<const GlobalOrdinal> rowGIDs = crsA->getRowMap()->getLocalElementList();
   for (size_t i = 0; i < crsA->getLocalNumRows(); i++) {
-    GO row = rowGIDs[i];
+    GlobalOrdinal row = rowGIDs[i];
     crsA->getGlobalRowCopy(row, inds(), vals(), numEntries);
 
     if (scalarA != one)
