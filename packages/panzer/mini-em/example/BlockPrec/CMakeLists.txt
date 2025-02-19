@@ -22,7 +22,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   darcyTet.xml darcyHex.xml
   darcyTetAnalytic.xml darcyHexAnalytic.xml
   solverCG.xml solverGMRES.xml
-  solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml
+  solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml solverMueLuBarrier.xml
   solverMueLuOpenMP.xml solverMueLuCuda.xml solverMueLuTruncated.xml solverMueLuTPL.xml
   solverMueLuHO.xml solverMueLuHOCuda.xml
   solverAugmentationUseILU.xml
@@ -90,6 +90,7 @@ TRIBITS_ADD_TEST(
    POSTFIX_AND_ARGS_8 "2D"                  --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=maxwell2D.xml
    POSTFIX_AND_ARGS_9 "order1_analytic"     --solver=MueLu --linAlgebra=Tpetra --inputFile=maxwell-analyticSolution.xml
    POSTFIX_AND_ARGS_10 "order1_truncated"    --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --truncateMueLuHierarchy
+   POSTFIX_AND_ARGS_11 "order1_barriers"     --solver=MueLu --numTimeSteps=1 --linAlgebra=Tpetra --barriers
    NUM_MPI_PROCS 4
    )
 
@@ -120,6 +121,16 @@ TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16"
    ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml"
+   COMM mpi
+   NUM_MPI_PROCS 16
+   CATEGORIES PERFORMANCE
+   RUN_SERIAL
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16_barriers"
+   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --barriers"
    COMM mpi
    NUM_MPI_PROCS 16
    CATEGORIES PERFORMANCE

@@ -131,6 +131,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
     const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
     bool preferTPLs = false;
+    bool useBarriers = false;
     bool truncateMueLuHierarchy = false;
     solverType solver = MUELU;
     int numTimeSteps = 1;
@@ -159,6 +160,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("solverFile",&xml,"XML file with the solver params");
     clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
     clp.setOption("tpl", "no-tpl", &preferTPLs, "Prefer TPL usage over fused kernels");
+    clp.setOption("barriers", "no-barriers", &useBarriers, "Use barriers in the solver");
     clp.setOption("truncateMueLuHierarchy", "no-truncateMueLuHierarchy", &truncateMueLuHierarchy, "Truncate the MueLu hierarchy");
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("finalTime",&finalTime);
@@ -304,7 +306,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
         throw;
     }
 
-    RCP<Teuchos::ParameterList> lin_solver_pl = mini_em::getSolverParameters(linAlgebra, physics, solver, dim, comm, out, xml, basis_order, preferTPLs, truncateMueLuHierarchy);
+    RCP<Teuchos::ParameterList> lin_solver_pl = mini_em::getSolverParameters(linAlgebra, physics, solver, dim, comm, out, xml, basis_order, preferTPLs, useBarriers, truncateMueLuHierarchy);
 
     if (lin_solver_pl->sublist("Preconditioner Types").isSublist("Teko") &&
         lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").isSublist("Inverse Factory Library")) {
@@ -678,11 +680,20 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           // solve
           if (doSolveTimings)
             for (int rep = 0; rep < numReps; rep++) {
+              if (useBarriers) {
+                Teuchos::TimeMonitor solve_barrier_timer(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Solve barrier")));
+                comm->barrier();
+              }
               Thyra::assign(correction_vec.ptr(), zero);
               jacobian->solve(Thyra::NOTRANS, *residual, correction_vec.ptr());
             }
-          else
+          else {
+            if (useBarriers) {
+              Teuchos::TimeMonitor solve_barrier_timer(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: Solve barrier")));
+              comm->barrier();
+            }
             jacobian->solve(Thyra::NOTRANS, *residual, correction_vec.ptr());
+          }
           Thyra::V_StVpStV(solution_vec.ptr(), one, *solution_vec, -one, *correction_vec);
 
           // compute responses

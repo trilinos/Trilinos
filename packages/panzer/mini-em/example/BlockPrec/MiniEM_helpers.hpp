@@ -70,6 +70,7 @@ namespace mini_em {
                                                            std::string &xml,
                                                            int basis_order,
                                                            const bool preferTPLs = false,
+                                                           const bool useBarriers = false,
                                                            const bool truncateMueLuHierarchy = false);
 
   void setClosureParameters(physicsType physics,
