@@ -224,6 +224,7 @@ namespace Amesos2 {
     /// Gather matrix to MPI-0
     template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
     local_ordinal_t gather(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                           host_ordinal_type_array &recvCountRows, host_ordinal_type_array &recvDisplRows,
                            host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
                            host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
                            bool column_major, EPhase current_phase) const;

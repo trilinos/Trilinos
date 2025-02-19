@@ -192,6 +192,7 @@ namespace Amesos2 {
   ConcreteMatrixAdapter<
     KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>
     >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                   host_ordinal_type_array &recvCountRows, host_ordinal_type_array &recvDisplRows,
                    host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
                    host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
                    bool column_major, EPhase current_phase) const

@@ -89,6 +89,20 @@ namespace Amesos2 {
       "Not implemented.");
   }
 
+  template <typename Scalar, typename ExecutionSpace>
+  template<typename KV, typename host_ordinal_type_array>
+  int
+  MultiVecAdapter<
+    Kokkos::View<Scalar**, Kokkos::LayoutLeft, ExecutionSpace> >::gather (
+      KV& kokkos_new_data,
+      size_t ldv,
+      host_ordinal_type_array &recvCountRows,
+      host_ordinal_type_array &recvDisplRows,
+      EDistribution distribution ) const
+  {
+    return -1;
+  }
+
   template <typename Scalar, typename ExecutionSpace >
   std::string
   MultiVecAdapter<

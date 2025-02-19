@@ -262,6 +262,14 @@ namespace Amesos2 {
                                         node_t> > source_map,
                                         EDistribution distribution );
 
+    template<typename KV, typename host_ordinal_type_array>
+    LocalOrdinal
+    gather (KV& kokkos_new_data,
+            size_t ldv,
+	    host_ordinal_type_array &recvCountRows,
+	    host_ordinal_type_array &recvDisplRows,
+            EDistribution distribution) const;
+
 
     //! Get a short description of this adapter class
     std::string description () const;

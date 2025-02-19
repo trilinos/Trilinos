@@ -199,7 +199,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 #endif
 
-
       // NDE: Special case 
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
@@ -292,10 +291,6 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
  const Teuchos::Ptr<MultiVecAdapter<Vector> >  X,
  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
-#endif
-
   int ierr = 0; // returned error code
 
   using Teuchos::as;
@@ -338,6 +333,10 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   }
 
   if ( this->root_ ) { // do solve
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+#endif
+
     shylubasker_dtype * pxValues = function_map::convert_scalar(xValues_.data());
     shylubasker_dtype * pbValues = function_map::convert_scalar(bValues_.data());
     if (!ShyluBaskerTransposeRequest)
@@ -597,11 +596,11 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
         bool column_major = true;
         if (!is_contiguous_) {
           auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
-          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
-                                       column_major, current_phase);
+          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+                                       this->transpose_map, this->nzvals_t, column_major, current_phase);
         } else {
-          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
-                                           column_major, current_phase);
+          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+                                           this->transpose_map, this->nzvals_t, column_major, current_phase);
         }
         // gather failed (e.g., not implemened for KokkosCrsMatrix)
         // in case of the failure, it falls back to the original "do_get"

@@ -220,6 +220,10 @@ KLU2<Matrix,Vector>::solve_impl(
         host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
     }
     else {
+ 
+      B->gather(bValues_, as<size_t>(ld_rhs),
+                this->recvCountRows, this->recvDisplRows,
+                (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
 
       bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
         host_solve_array_t>::do_get(initialize_data, B, bValues_,
@@ -463,11 +467,11 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
         bool column_major = true;
         if (!is_contiguous_) {
           auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
-          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
-                                       column_major, current_phase);
+          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+                                       this->transpose_map, this->nzvals_t, column_major, current_phase);
         } else {
-          nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
-                                           column_major, current_phase);
+          nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+                                           this->transpose_map, this->nzvals_t, column_major, current_phase);
         }
         // gather failed (e.g., not implemened for KokkosCrsMatrix)
         // in case of the failure, it falls back to the original "do_get"

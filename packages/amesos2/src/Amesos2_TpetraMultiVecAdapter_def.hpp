@@ -581,6 +581,35 @@ namespace Amesos2 {
   }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
+  template<typename KV, typename host_ordinal_type_array>
+  LocalOrdinal
+  MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::gather (KV& kokkos_new_view, size_t ldv,
+                                 host_ordinal_type_array &recvCountRows,
+                                 host_ordinal_type_array &recvDisplRows,
+                                 EDistribution distribution) const
+  {
+    auto comm = this->mv_->getMap()->getComm();
+    auto myRank = comm->getRank();
+    if (myRank == 0) {
+      auto nRows = this->mv_->getGlobalLength();
+      auto nCols = this->mv_->getNumVectors();
+      Kokkos::resize(kokkos_new_view, nRows, nCols);
+    }
+    {
+      auto lclMV = this->mv_->getLocalViewHost(Tpetra::Access::ReadOnly);
+      Teuchos::gatherv<int, Scalar> (const_cast<Scalar*> (lclMV.data()), lclMV.extent(0),
+                                     reinterpret_cast<Scalar*> (kokkos_new_view.data()),
+                                     recvCountRows.data(), recvDisplRows.data(),
+                                     0, *comm);
+    }
+    return 0;
+  }
+
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
   std::string
   MultiVecAdapter<
     MultiVector<Scalar,

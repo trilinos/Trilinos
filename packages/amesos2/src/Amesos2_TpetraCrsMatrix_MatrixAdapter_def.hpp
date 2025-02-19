@@ -178,6 +178,7 @@ namespace Amesos2 {
   ConcreteMatrixAdapter<
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                   host_ordinal_type_array &recvCountRows, host_ordinal_type_array &recvDisplRows,
                    host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
                    host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
                    bool column_major, EPhase current_phase) const
@@ -281,6 +282,12 @@ namespace Amesos2 {
             Teuchos::gatherv<int, LocalOrdinal> (&lclRowptr_(sendIdx), myNRows, &pointers_[1],
                                                  recvCounts.data(), recvDispls.data(),
                                                  0, *comm);
+
+            // save row counts/displs
+            Kokkos::resize(recvCountRows, nRanks);
+            Kokkos::resize(recvDisplRows, nRanks+1);
+            Kokkos::deep_copy(recvCountRows, recvCounts);
+            Kokkos::deep_copy(recvDisplRows, recvDispls);
             if (myRank == 0) {
               // shift to global pointers
               pointers_[0] = 0;
