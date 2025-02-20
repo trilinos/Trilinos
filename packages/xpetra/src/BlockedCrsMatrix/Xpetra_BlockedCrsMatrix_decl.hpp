@@ -104,7 +104,7 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
    * \param domainMaps domain maps for all blocks
    * \param npr extimated number of entries per row in each block(!)
    */
-  BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& /* comm */);
+  BlockedCrsMatrix(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar>>& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int>>& /* comm */);
 
  private:
   //! mergeMaps
@@ -115,7 +115,7 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
    * Helper function only used in constructor of Xpetra_BlockedCrsMatrix for transforming a Thyra::BlockedLinearOp object
    * All GID entries are sorted and duplicates are eliminated.
    */
-  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> mergeMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >& subMaps);
+  Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> mergeMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>>& subMaps);
 
  public:
 #endif
@@ -384,7 +384,7 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
 
   //! sparse matrix-multivector multiplication for the region layout matrices (currently no blocked implementation)
   virtual void apply(const MultiVector& X, MultiVector& Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues,
-                     const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+                     const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node>>& regionInterfaceImporter,
                      const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const;
 
   //! \brief Computes the sparse matrix-multivector multiplication.
@@ -535,7 +535,7 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
   typename local_matrix_type::HostMirror getLocalMatrixHost() const;
 
 #ifdef HAVE_XPETRA_THYRA
-  Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > getThyraOperator();
+  Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar>> getThyraOperator();
 #endif
   //! Returns the block size of the storage mechanism
   LocalOrdinal GetStorageBlockSize() const;
@@ -573,9 +573,9 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
   Teuchos::RCP<const MapExtractor> domainmaps_;  ///< full domain map together with all partial domain maps
   Teuchos::RCP<const MapExtractor> rangemaps_;   ///< full range map together with all partial domain maps
 
-  std::vector<Teuchos::RCP<Matrix> > blocks_;  ///< row major matrix block storage
+  std::vector<Teuchos::RCP<Matrix>> blocks_;  ///< row major matrix block storage
 #ifdef HAVE_XPETRA_THYRA
-  Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thyraOp_;  ///< underlying thyra operator
+  Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar>> thyraOp_;  ///< underlying thyra operator
 #endif
   bool bRangeThyraMode_;   ///< boolean flag, which is true, if BlockedCrsMatrix has been created using Thyra-style numbering for sub blocks, i.e. all GIDs of submaps are contiguous and start from 0.
   bool bDomainThyraMode_;  ///< boolean flag, which is true, if BlockedCrsMatrix has been created using Thyra-style numbering for sub blocks, i.e. all GIDs of submaps are contiguous and start from 0.
