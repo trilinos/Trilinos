@@ -13,19 +13,18 @@
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Tempus_StepperExponentialEulerAppAction.hpp"
-#include "Tempus_StepperOptimizationInterface.hpp"
 
 
 namespace Tempus {
 
-/** \brief Backward Euler time stepper.
+/** \brief Exponential Euler time stepper.
  *
- *  For the implicit ODE system, \f$\mathcal{F}(\dot{x},x,t) = 0\f$,
- *  the solution, \f$\dot{x}\f$ and \f$x\f$, is determined using a
- *  solver (e.g., a non-linear solver, like NOX).
+ *  For the explicit ODE system, \f$\dot{x} = \mathcal{F}(x,t)\f$,
+ *  the solution, \f$x\f$, is determined using explicit evaluations of \f$\mathcal{F}\f$
+ *  and exponentials of a linear operator \f$W\f$.
  *
  *  <b> Algorithm </b>
- *  The single-timestep algorithm for Backward Euler is
+ *  The single-timestep algorithm for Exponential Euler is:
  *
  *  \f{center}{
  *    \parbox{5in}{
@@ -35,46 +34,34 @@ namespace Tempus {
  *    \begin{enumerate}
  *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
  *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *      \item {\bf Compute the predictor} (e.g., apply stepper to $x_n$).
- *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_SOLVE)}
- *      \item {\bf Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$}
- *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *      \item $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
+ *      \item {\bf Compute the explicit evaluation}  $f_{n-1} = \mathcal{F}(x_{n-1}, t_{n-1})$.
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_EXP)}
+ *      \item {\bf Compute $d_{n-1} = \exp(\Delta{t_{n-1}} W_{n-1}) f_{n-1}$.}
+ *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_EXP)}
+ *      \item $\dot{x}_n \leftarrow x_{n-1} + \Delta{t_n}d_n$
  *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
  *    \end{enumerate}
  *    \vspace{-10pt} \rule{5in}{0.4pt}
  *    }
  *  \f}
  *
- *  The First-Same-As-Last (FSAL) principle is not needed with Backward Euler.
+ *  The First-Same-As-Last (FSAL) principle is not needed with Exponential Euler.
  *  The default is to set useFSAL=false, however useFSAL=true will also work
  *  but have no affect (i.e., no-op).
  *
  *  <b> Iteration Matrix, \f$W\f$.</b>
  *  Recalling that the definition of the iteration matrix, \f$W\f$, is
  *  \f[
- *    W = \alpha \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
- *      + \beta  \frac{\partial \mathcal{F}_n}{\partial x_n},
+ *    W = \frac{\partial \mathcal{F}}{\partial x},
  *  \f]
- *  where \f$ \alpha \equiv \frac{\partial \dot{x}_n(x_n) }{\partial x_n}, \f$
- *  and \f$ \beta \equiv \frac{\partial x_n}{\partial x_n} = 1\f$, and
- *  the time derivative for Backward Euler is
- *  \f[
- *    \dot{x}_n(x_n) = \frac{x_n - x_{n-1}}{\Delta t},
- *  \f]
- *  we can determine that
- *  \f$ \alpha = \frac{1}{\Delta t} \f$
- *  and \f$ \beta = 1 \f$, and therefore write
- *  \f[
- *    W = \frac{1}{\Delta t}
- *        \frac{\partial \mathcal{F}_n}{\partial \dot{x}_n}
- *      + \frac{\partial \mathcal{F}_n}{\partial x_n}.
- *  \f]
+ *  to obtain that from the implicit model evaluator, we set
+ *  \f$ \alpha = 0 \f$ and \f$ \beta = 1 \f$.
+ *  TODO: Need to use exponential model evaluator:
+ *        explicit model evaluator plus W, or implicit model evaluator wrapper.
  */
 template<class Scalar>
 class StepperExponentialEuler :
-    virtual public Tempus::StepperImplicit<Scalar>,
-    virtual public Tempus::StepperOptimizationInterface<Scalar>
+    virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
@@ -124,8 +111,8 @@ public:
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() override;
     virtual Scalar getOrder() const override {return 1.0;}
     virtual Scalar getOrderMin() const override {return 1.0;}
-    virtual Scalar getOrderMax() const override {return 1.0;}
-
+    virtual Scalar getOrderMax() const override {return 2.0;}
+≈
     virtual bool isExplicit()         const override {return false;}
     virtual bool isImplicit()         const override {return true;}
     virtual bool isExplicitImplicit() const override
@@ -154,36 +141,6 @@ public:
   //@}
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
-
-  /// \name Implementation of StepperOptimizationInterface
-  //@{
-    virtual int stencilLength() const override;
-    virtual void computeStepResidual(
-      Thyra::VectorBase<Scalar>& residual,
-      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-      const Teuchos::Array<Scalar>& t,
-      const Thyra::VectorBase<Scalar>& p,
-      const int param_index) const override;
-    virtual void computeStepJacobian(
-      Thyra::LinearOpBase<Scalar>& jacobian,
-      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-      const Teuchos::Array<Scalar>& t,
-      const Thyra::VectorBase<Scalar>& p,
-      const int param_index,
-      const int deriv_index) const override;
-    virtual void computeStepParamDeriv(
-      Thyra::LinearOpBase<Scalar>& deriv,
-      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-      const Teuchos::Array<Scalar>& t,
-      const Thyra::VectorBase<Scalar>& p,
-      const int param_index) const override;
-    virtual void computeStepSolver(
-      Thyra::LinearOpWithSolveBase<Scalar>& jacobian_solver,
-      const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-      const Teuchos::Array<Scalar>& t,
-      const Thyra::VectorBase<Scalar>& p,
-      const int param_index) const override;
-  //@}
 
 private:
 
