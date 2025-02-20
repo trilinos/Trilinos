@@ -68,8 +68,8 @@ namespace Amesos2 {
                 Node> >::getMVPointer_impl() const
   {
   TEUCHOS_TEST_FOR_EXCEPTION( this->getGlobalNumVectors() != 1,
-		      std::invalid_argument,
-		      "Amesos2_TpetraMultiVectorAdapter: getMVPointer_impl should only be called for case with a single vector and single MPI process" );
+                      std::invalid_argument,
+                      "Amesos2_TpetraMultiVectorAdapter: getMVPointer_impl should only be called for case with a single vector and single MPI process" );
 
     auto contig_local_view_2d = mv_->getLocalViewHost(Tpetra::Access::ReadWrite);
     auto contig_local_view_1d = Kokkos::subview (contig_local_view_2d, Kokkos::ALL (), 0);
@@ -587,7 +587,7 @@ namespace Amesos2 {
     MultiVector<Scalar,
                 LocalOrdinal,
                 GlobalOrdinal,
-                Node> >::gather (KV& kokkos_new_view, size_t ldv,
+                Node> >::gather (KV& kokkos_new_view,
                                  host_ordinal_type_array &recvCountRows,
                                  host_ordinal_type_array &recvDisplRows,
                                  EDistribution distribution) const
@@ -605,6 +605,31 @@ namespace Amesos2 {
                                      reinterpret_cast<Scalar*> (kokkos_new_view.data()),
                                      recvCountRows.data(), recvDisplRows.data(),
                                      0, *comm);
+    }
+    return 0;
+  }
+
+  template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
+  template<typename KV, typename host_ordinal_type_array>
+  LocalOrdinal
+  MultiVecAdapter<
+    MultiVector<Scalar,
+                LocalOrdinal,
+                GlobalOrdinal,
+                Node> >::scatter (KV& kokkos_new_view,
+                                  host_ordinal_type_array &recvCountRows,
+                                  host_ordinal_type_array &recvDisplRows,
+                                  EDistribution distribution) const
+  {
+    auto comm = this->mv_->getMap()->getComm();
+    auto nRows = this->mv_->getLocalLength();
+    auto nCols = this->mv_->getNumVectors();
+    {
+      auto lclMV = this->mv_->getLocalViewHost(Tpetra::Access::OverwriteAll);
+      Teuchos::scatterv<int, Scalar> (reinterpret_cast<Scalar*> (kokkos_new_view.data()),
+                                      recvCountRows.data(), recvDisplRows.data(),
+                                      reinterpret_cast<Scalar*> (lclMV.data()), nRows,
+                                      0, *comm);
     }
     return 0;
   }

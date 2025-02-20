@@ -304,7 +304,6 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
     if ( single_proc_optimization() && nrhs == 1 ) {
 

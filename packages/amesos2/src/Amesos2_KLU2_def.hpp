@@ -202,12 +202,13 @@ KLU2<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
+  int rval = 0;
   bool bDidAssignX;
   bool bDidAssignB;
+  bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
     const bool initialize_data = true;
     const bool do_not_initialize_data = false;
@@ -220,23 +221,31 @@ KLU2<Matrix,Vector>::solve_impl(
         host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
     }
     else {
- 
-      B->gather(bValues_, as<size_t>(ld_rhs),
-                this->recvCountRows, this->recvDisplRows,
-                (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-
-      bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(initialize_data, B, bValues_,
-          as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
-
-      // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
-      bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
-          as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
+      if (gather_supported) {
+        rval = B->gather(bValues_, this->recvCountRows, this->recvDisplRows,
+                         (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+        if (rval == 0) {
+          X->gather(xValues_, this->recvCountRows, this->recvDisplRows,
+                    (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+          bDidAssignB = true;
+          bDidAssignX = false;
+        } else {
+          gather_supported = false;
+        }
+      }
+      if (!gather_supported) {
+        bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(initialize_data, B, bValues_,
+            as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+        // see Amesos2_Tacho_def.hpp for an explanation of why we 'get' X
+        bDidAssignX = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
+            as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+      }
 
       // klu_tsolve is going to put the solution x into the input b.
       // Copy b to x then solve in x.
@@ -349,13 +358,18 @@ KLU2<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-        as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        this->rowIndexBase_);
-
+    if (gather_supported) {
+      rval = X->scatter(xValues_, this->recvCountRows, this->recvDisplRows,
+                        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+      if (rval != 0) gather_supported = false;
+    }
+    if (!gather_supported) {
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+    }
   }
 
   return(ierr);

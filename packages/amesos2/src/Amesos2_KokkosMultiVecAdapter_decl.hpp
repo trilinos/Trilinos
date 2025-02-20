@@ -252,11 +252,17 @@ namespace Amesos2 {
 
     template<typename KV, typename host_ordinal_type_array>
     int
-    gather (KV& kokkos_new_data,
-            size_t ldv,
+    gather (KV& kokkos_new_view,
             host_ordinal_type_array &recvCountRows,
             host_ordinal_type_array &recvDisplRows,
             EDistribution distribution ) const;
+
+    template<typename KV, typename host_ordinal_type_array>
+    int
+    scatter (KV& kokkos_old_view,
+             host_ordinal_type_array &recvCountRows,
+             host_ordinal_type_array &recvDisplRows,
+             EDistribution distribution ) const;
 
     //! Get a short description of this adapter class
     std::string description () const;
