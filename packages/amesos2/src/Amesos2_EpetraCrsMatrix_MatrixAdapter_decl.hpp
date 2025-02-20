@@ -184,6 +184,11 @@ namespace Amesos2 {
             Teuchos::gatherv<int, local_ordinal_t> (&lclRowptr[sendIdx], myNRows, &pointers_[1],
                                                     recvCounts.data(), recvDispls.data(),
                                                     0, *comm);
+            // save row counts/displs
+            Kokkos::resize(recvCountRows, nRanks);
+            Kokkos::resize(recvDisplRows, nRanks+1);
+            Kokkos::deep_copy(recvCountRows, recvCounts);
+            Kokkos::deep_copy(recvDisplRows, recvDispls);
             if (myRank == 0) {
               // shift to global pointers
               pointers_[0] = 0;

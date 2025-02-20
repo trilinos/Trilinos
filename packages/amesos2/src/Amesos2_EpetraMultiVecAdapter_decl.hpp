@@ -241,12 +241,44 @@ namespace Amesos2 {
 
     template<typename KV, typename host_ordinal_type_array>
     int
-    gather (KV& kokkos_new_data,
-            size_t ldv,
+    gather (KV& kokkos_new_view,
             host_ordinal_type_array &recvCountRows,
             host_ordinal_type_array &recvDisplRows,
             EDistribution distribution) const
     {
+      auto comm = this->getComm();
+      auto myRank = comm->getRank();
+      auto nRows = this->mv_->GlobalLength();
+      if (myRank == 0) {
+        auto nCols = this->mv_->NumVectors();
+        Kokkos::resize(kokkos_new_view, nRows, nCols);
+      }
+      {
+        auto nRows = this->mv_->MyLength();
+        Teuchos::gatherv<int, scalar_t> (const_cast<scalar_t*> (this->mv_->Values()), nRows,
+                                         reinterpret_cast<scalar_t*> (kokkos_new_view.data()),
+                                         recvCountRows.data(), recvDisplRows.data(),
+                                         0, *comm);
+      }
+      return 0;
+    }
+
+    template<typename KV, typename host_ordinal_type_array>
+    int
+    scatter (KV& kokkos_new_view,
+             host_ordinal_type_array &recvCountRows,
+             host_ordinal_type_array &recvDisplRows,
+             EDistribution distribution) const
+    {
+      auto comm = this->getMap()->getComm();
+      auto nCols = this->mv_->NumVectors();
+      {
+        auto nRows = this->mv_->MyLength();
+        Teuchos::scatterv<int, scalar_t> (reinterpret_cast<scalar_t*> (kokkos_new_view.data()),
+                                          recvCountRows.data(), recvDisplRows.data(),
+                                          reinterpret_cast<scalar_t*> (this->mv_->Values()), nRows,
+                                          0, *comm);
+      }
       return 0;
     }
 
