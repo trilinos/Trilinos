@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -238,7 +238,7 @@ class TestPhactoriGeometricCellSampler1(unittest.TestCase):
     [[-1.5, 3.5, 6.5], [-1, -1, -1], [204.49305725097656], 0, 1, 6668, -1, -1]]
     }
     """
-    
+
     goldJson = json.loads(goldTestStringJson)
     ff = open("test_PhactoriGeometricCellSampler1_1.json", "r")
     testJson = json.load(ff)
@@ -567,5 +567,3 @@ if __name__ == '__main__':
     cc = Cone()
     rr = Show()
     unittest.main()
-
-

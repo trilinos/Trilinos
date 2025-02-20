@@ -4,6 +4,7 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <cstdlib>
@@ -18,7 +19,6 @@
 #include <string>
 #include <tokenize.h>
 #include <vector>
-#include <algorithm>
 
 #include "Ioex_Utils.h"
 #include "Ioss_Assembly.h"
@@ -88,7 +88,7 @@ namespace {
   template <typename T>
   void write_attribute_names(int exoid, ex_entity_type type, const std::vector<T *> &entities);
 
-  void query_groups(int exoid, Ioss::NameList& names, bool return_full_names);
+  void query_groups(int exoid, Ioss::NameList &names, bool return_full_names);
 
   class AssemblyTreeFilter
   {
@@ -231,6 +231,12 @@ namespace Ioex {
           "IOEX: Setting EX_VERBOSE|EX_DEBUG because EX_DEBUG environment variable is set.\n");
       ex_opts(EX_VERBOSE | EX_DEBUG);
     }
+    // This is also done down in the exodus library, but helps logic to do it here...
+    if (util().get_environment("EXODUS_VERBOSE", isParallel)) {
+      fmt::print(Ioss::DebugOut(), "IOEX: Exodus error reporting set to VERBOSE because "
+                                   "EXODUS_VERBOSE environment variable is set.\n");
+      ex_opts(EX_VERBOSE);
+    }
 
     if (!is_input()) {
       if (util().get_environment("EX_MODE", exodusMode, isParallel)) {
@@ -261,40 +267,57 @@ namespace Ioex {
 
     // See if there are any properties that need to (or can) be
     // handled prior to opening/creating database...
+    if (properties.exists("FILE_TYPE")) {
+      std::string type = properties.get("FILE_TYPE").get_string();
+      type             = Ioss::Utils::lowercase(type);
+      if (type == "netcdf3" || type == "netcdf-3") {
+        exodusMode = EX_CLOBBER; // Reset back to default...
+      }
+      if (type == "netcdf4" || type == "netcdf-4" || type == "hdf5") {
 #if NC_HAS_HDF5
+        exodusMode |= EX_NETCDF4;
+#else
+        fmt::print(Ioss::OUTPUT(), "IOEX: HDF5/netcdf-4 is not supported in this build.  FILE_TYPE "
+                                   "setting will be ignored.\n");
+#endif
+      }
+      else if (type == "netcdf5" || type == "netcdf-5" || type == "cdf5") {
+#if NC_HAS_CDF5
+        exodusMode |= EX_64BIT_DATA;
+#else
+        fmt::print(Ioss::OUTPUT(), "IOEX: CDF5/netcdf-5 is not supported in this build.  FILE_TYPE "
+                                   "setting will be ignored.\n");
+#endif
+      }
+    }
+
+    if (properties.exists("ENABLE_FILE_GROUPS")) {
+#if NC_HAS_HDF5
+      exodusMode |= EX_NETCDF4;
+      exodusMode |= EX_NOCLASSIC;
+#else
+      fmt::print(Ioss::OUTPUT(), "IOEX: HDF5/netcdf-4 is not supported in this build.  "
+                                 "ENABLE_FILE_GROUPS setting will be ignored.\n");
+#endif
+    }
+
     bool compress = ((properties.exists("COMPRESSION_LEVEL") &&
                       properties.get("COMPRESSION_LEVEL").get_int() > 0) ||
                      (properties.exists("COMPRESSION_SHUFFLE") &&
                       properties.get("COMPRESSION_SHUFFLE").get_int() > 0));
 
     if (compress) {
-      exodusMode |= EX_NETCDF4;
-    }
-#endif
-
-    if (properties.exists("FILE_TYPE")) {
-      std::string type = properties.get("FILE_TYPE").get_string();
-      if (type == "netcdf3" || type == "netcdf-3") {
-        exodusMode = EX_CLOBBER; // Reset back to default...
-      }
 #if NC_HAS_HDF5
-      if (type == "netcdf4" || type == "netcdf-4" || type == "hdf5") {
+      if (!(exodusMode & EX_NETCDF4)) {
+        fmt::print(Ioss::OUTPUT(), "IOEX: Compression requires netcdf-4/HDF5-based file.  Setting "
+                                   "file type to netcdf-4.\n");
         exodusMode |= EX_NETCDF4;
       }
-#endif
-#if NC_HAS_CDF5
-      else if (type == "netcdf5" || type == "netcdf-5" || type == "cdf5") {
-        exodusMode |= EX_64BIT_DATA;
-      }
+#else
+      fmt::print(Ioss::OUTPUT(), "IOEX: HDF5/netcdf-4 is not supported in this build.  Compression "
+                                 "setting will be ignored.\n");
 #endif
     }
-
-#if NC_HAS_HDF5
-    if (properties.exists("ENABLE_FILE_GROUPS")) {
-      exodusMode |= EX_NETCDF4;
-      exodusMode |= EX_NOCLASSIC;
-    }
-#endif
 
     if (properties.exists("MAXIMUM_NAME_LENGTH")) {
       maximumNameLength = properties.get("MAXIMUM_NAME_LENGTH").get_int();
@@ -406,10 +429,6 @@ namespace Ioex {
         bool overwrite = true;
         handle_output_file(write_message, nullptr, nullptr, overwrite, abort_if_error);
       }
-
-      if (!m_groupName.empty()) {
-        ex_get_group_id(m_exodusFilePtr, m_groupName.c_str(), &m_exodusFilePtr);
-      }
     }
     assert(m_exodusFilePtr >= 0);
     fileExists = true;
@@ -500,31 +519,52 @@ namespace Ioex {
     }
 
     ex_set_max_name_length(m_exodusFilePtr, maximumNameLength);
+
+    open_root_group_nl();
+    open_child_group_nl(0);
   }
 
-  bool BaseDatabaseIO::open_root_group_nl()
+  bool BaseDatabaseIO::supports_internal_change_set_nl() { return supports_group(); }
+
+  bool BaseDatabaseIO::supports_group() const
+  {
+    Ioss::SerializeIO serializeIO_(this);
+    int               exoid = get_file_pointer();
+
+    int64_t format = ex_inquire_int(exoid, EX_INQ_FILE_FORMAT);
+
+    if (format < 0) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not query file format for file '{}'.\n", get_filename());
+      IOSS_ERROR(errmsg);
+    }
+
+    return (NC_FORMAT_NETCDF4 == format);
+  }
+
+  bool BaseDatabaseIO::open_root_group_nl() const
   {
     // Get existing file pointer...
     bool success = false;
 
     Ioss::SerializeIO serializeIO_(this);
-    int exoid = get_file_pointer();
+    int               exoid = get_file_pointer();
 
-    int group_name_length = ex_inquire_int(exoid, EX_INQ_GROUP_NAME_LEN);
-    std::vector<char> group_name(group_name_length+1, '\0');
+    int               group_name_length = ex_inquire_int(exoid, EX_INQ_GROUP_NAME_LEN);
+    std::vector<char> group_name(group_name_length + 1, '\0');
 
     // Get name of this group...
     int   idum;
     float rdum;
-    int ierr = ex_inquire(exoid, EX_INQ_GROUP_NAME, &idum, &rdum, group_name.data());
+    int   ierr = ex_inquire(exoid, EX_INQ_GROUP_NAME, &idum, &rdum, group_name.data());
     if (ierr < 0) {
       std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Could not open root group of group named '{}' in file '{}'.\n", m_groupName,
-                 get_filename());
+      fmt::print(errmsg, "ERROR: Could not open root group of group named '{}' in file '{}'.\n",
+                 m_groupName, get_filename());
       IOSS_ERROR(errmsg);
     }
 
-    m_groupName = std::string(group_name.data());
+    m_groupName     = std::string(group_name.data());
     m_exodusFilePtr = ex_inquire_int(exoid, EX_INQ_GROUP_ROOT);
 
     if (m_exodusFilePtr < 0) {
@@ -537,13 +577,34 @@ namespace Ioex {
     return success;
   }
 
-  bool BaseDatabaseIO::open_group_nl(const std::string &group_name)
+  bool BaseDatabaseIO::open_internal_change_set_nl(const std::string &set_name)
+  {
+    if (set_name == m_groupName) {
+      return true;
+    }
+
+    // Check name for '/' which is not allowed since it is the
+    // separator character in a full group path
+    if (set_name.find('/') != std::string::npos) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Invalid group name '{}' contains a '/' which is not allowed.\n",
+                 set_name);
+      IOSS_ERROR(errmsg);
+    }
+
+    if (!open_root_group_nl())
+      return false;
+
+    return open_group_nl(set_name);
+  }
+
+  bool BaseDatabaseIO::open_group_nl(const std::string &group_name) const
   {
     // Get existing file pointer...
     bool success = false;
 
     Ioss::SerializeIO serializeIO_(this);
-    int exoid = get_file_pointer();
+    int               exoid = get_file_pointer();
 
     m_groupName = group_name;
     ex_get_group_id(exoid, m_groupName.c_str(), &m_exodusFilePtr);
@@ -558,13 +619,21 @@ namespace Ioex {
     return success;
   }
 
+  bool BaseDatabaseIO::create_internal_change_set_nl(const std::string &set_name)
+  {
+    if (!open_root_group_nl())
+      return false;
+
+    return create_subgroup_nl(set_name);
+  }
+
   bool BaseDatabaseIO::create_subgroup_nl(const std::string &group_name)
   {
     bool success = false;
     if (!is_input()) {
       // Get existing file pointer...
       Ioss::SerializeIO serializeIO_(this);
-      int exoid = get_file_pointer();
+      int               exoid = get_file_pointer();
 
       // Check name for '/' which is not allowed since it is the
       // separator character in a full group path
@@ -3221,13 +3290,29 @@ namespace Ioex {
     write_coordinate_frames(get_file_pointer(), get_region()->get_coordinate_frames());
   }
 
+  Ioss::NameList BaseDatabaseIO::internal_change_set_describe_nl(bool return_full_names)
+  {
+    Ioss::NameList names = groups_describe(return_full_names);
 
-  Ioss::NameList BaseDatabaseIO::groups_describe_nl(bool return_full_names)
+    // Downshift by 1 since the first is the root group "/"
+    int numNames = static_cast<int>(names.size());
+    for (int i = 0; i < numNames - 1; i++) {
+      names[i] = names[i + 1];
+    }
+
+    if (numNames > 0) {
+      names.resize(numNames - 1);
+    }
+
+    return names;
+  }
+
+  Ioss::NameList BaseDatabaseIO::groups_describe(bool return_full_names) const
   {
     Ioss::SerializeIO serializeIO_(this);
 
     Ioss::NameList names;
-    int group_root = ex_inquire_int(get_file_pointer(), EX_INQ_GROUP_ROOT);
+    int            group_root = ex_inquire_int(get_file_pointer(), EX_INQ_GROUP_ROOT);
     query_groups(group_root, names, return_full_names);
 
     return names;
@@ -3256,24 +3341,58 @@ namespace Ioex {
     activeNodeSetNodesIndex.clear();
   }
 
-  int BaseDatabaseIO::num_child_group_nl()
+  int BaseDatabaseIO::num_internal_change_set_nl()
+  {
+    // Save and reset state
+    int         currentExodusFilePtr = m_exodusFilePtr;
+    std::string currentGroupName     = m_groupName;
+
+    if (!open_root_group_nl()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not open root group.\n", m_groupName);
+      IOSS_ERROR(errmsg);
+    }
+
+    int numChildGroup = num_child_group();
+
+    m_exodusFilePtr = currentExodusFilePtr;
+    m_groupName     = currentGroupName;
+
+    return numChildGroup;
+  }
+
+  int BaseDatabaseIO::num_child_group() const
   {
     Ioss::SerializeIO serializeIO_(this);
-    int exoid = get_file_pointer();
-    exoid = ex_inquire_int(exoid, EX_INQ_GROUP_ROOT);
-    int num_children = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
+    int               exoid = get_file_pointer();
+    exoid                   = ex_inquire_int(exoid, EX_INQ_GROUP_ROOT);
+    int num_children        = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
     return num_children;
   }
 
-  bool BaseDatabaseIO::open_child_group_nl(int index)
+  bool BaseDatabaseIO::open_internal_change_set_nl(int index)
   {
-    if(index < 0) return false;
-    Ioss::SerializeIO serializeIO_(this);
-    int exoid = get_file_pointer();
-    int num_children = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
-    if(num_children == 0) return true;
+    if (!open_root_group_nl()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not open root group.\n", m_groupName);
+      IOSS_ERROR(errmsg);
+    }
 
-    if(index >= num_children) return false;
+    return open_child_group_nl(index);
+  }
+
+  bool BaseDatabaseIO::open_child_group_nl(int index) const
+  {
+    if (index < 0)
+      return false;
+    Ioss::SerializeIO serializeIO_(this);
+    int               exoid        = get_file_pointer();
+    int               num_children = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
+    if (num_children == 0)
+      return true;
+
+    if (index >= num_children)
+      return false;
 
     std::vector<int> children(num_children);
 
@@ -3284,8 +3403,8 @@ namespace Ioex {
 
     exoid = children[index];
 
-    int group_name_length = ex_inquire_int(exoid, EX_INQ_GROUP_NAME_LEN);
-    std::vector<char> group_name(group_name_length+1, '\0');
+    int               group_name_length = ex_inquire_int(exoid, EX_INQ_GROUP_NAME_LEN);
+    std::vector<char> group_name(group_name_length + 1, '\0');
 
     // Get name of this group...
     int   idum;
@@ -3296,7 +3415,7 @@ namespace Ioex {
     }
 
     m_exodusFilePtr = exoid;
-    m_groupName = std::string(group_name.data());
+    m_groupName     = std::string(group_name.data());
 
     return true;
   }
@@ -3603,13 +3722,13 @@ namespace {
 #endif
   }
 
-  void query_groups(int exoid, Ioss::NameList& names, bool return_full_names)
+  void query_groups(int exoid, Ioss::NameList &names, bool return_full_names)
   {
     int   idum;
     float rdum;
 
-    int group_name_length = ex_inquire_int(exoid, EX_INQ_GROUP_NAME_LEN);
-    std::vector<char> group_name(group_name_length+1, '\0');
+    int               group_name_length = ex_inquire_int(exoid, EX_INQ_GROUP_NAME_LEN);
+    std::vector<char> group_name(group_name_length + 1, '\0');
 
     // Get name of this group...
     int ierr = ex_inquire(exoid, EX_INQ_GROUP_NAME, &idum, &rdum, group_name.data());
@@ -3617,14 +3736,15 @@ namespace {
       Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
     }
 
-    if(return_full_names) {
+    if (return_full_names) {
       std::fill(group_name.begin(), group_name.end(), '\0');
       ierr = ex_inquire(exoid, EX_INQ_FULL_GROUP_NAME, &idum, &rdum, group_name.data());
       if (ierr < 0) {
         Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
       }
       names.push_back(std::string(group_name.data()));
-    } else {
+    }
+    else {
       names.push_back(std::string(group_name.data()));
     }
 

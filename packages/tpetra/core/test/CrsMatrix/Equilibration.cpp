@@ -203,6 +203,7 @@ struct EquilibrationTest {
   std::vector<mag_type> gblRowScaledColNorms;
   Teuchos::RCP<crs_matrix_type> A_leftScaled;
   Teuchos::RCP<crs_matrix_type> A_rightScaled;
+  Teuchos::RCP<crs_matrix_type> A_symScaled;
   bool lclFoundInf;
   bool lclFoundNan;
   bool lclFoundZeroDiag;
@@ -890,13 +891,42 @@ testEquilibration (Teuchos::FancyOStream& out,
       Teuchos::OSTab tab3 (out);
       auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
       Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
-                                            rowNormsVec, // ignored
+                                            rowNormsVec,
                                             colNormsVec,
                                             false, true,
                                             result2.assumeSymmetric,
                                             Tpetra::SCALING_DIVIDE);
       testCrsMatrixEquality (success, out, *(test.A_rightScaled), *A_copy);
     }
+
+
+    {
+      out << "Test sym-scaling CrsMatrix with Kokkos::View" << endl;
+      Teuchos::OSTab tab3 (out);
+      auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
+      Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
+                                            result2.rowNorms,
+                                            result2.assumeSymmetric ?
+                                            result2.colNorms :
+                                            result2.rowScaledColNorms,
+                                            true, true,
+                                            result2.assumeSymmetric,
+                                            Tpetra::SCALING_DIVIDE);
+      testCrsMatrixEquality (success, out, *(test.A_symScaled), *A_copy);
+    }
+    {
+      out << "Test sym-scaling CrsMatrix with Tpetra::Vector" << endl;
+      Teuchos::OSTab tab3 (out);
+      auto A_copy = deepCopyFillCompleteCrsMatrix (*(test.A));
+      Tpetra::leftAndOrRightScaleCrsMatrix (*A_copy,
+                                            rowNormsVec,
+                                            colNormsVec,
+                                            true, true,
+                                            result2.assumeSymmetric,
+                                            Tpetra::SCALING_DIVIDE);
+      testCrsMatrixEquality (success, out, *(test.A_symScaled), *A_copy);
+    }
+
   } // test computeRowAndColumnOneNorms
 
   reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1228,6 +1258,40 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
     return A_copy;
   } ();
 
+
+  out << "Compute symmetrically-scaled matrix" << endl;
+  Teuchos::RCP<crs_matrix_type> A_symScaled = [&] () {
+    Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
+    A_copy->resumeFill ();
+
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
+    auto val_h = Kokkos::create_mirror_view (A_lcl.values);
+    Kokkos::deep_copy (val_h, A_lcl.values);
+    auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
+    Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
+    auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
+    Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
+
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+      using size_type = typename decltype (A_lcl.graph)::size_type;
+      for (size_type k = ptr_h[lclRow]; k < ptr_h[lclRow+1]; ++k) {
+        const LO lclCol = ind_h[k];
+        const mag_type rowNorm = gblRowNorms[lclRow];
+        const mag_type rowScalingFactor = assumeSymmetric ?
+          KAM::sqrt (rowNorm) : rowNorm;
+        const mag_type colNorm = assumeSymmetric ?
+          gblColNorms[lclCol] : gblRowScaledColNorms[lclCol];
+        const mag_type colScalingFactor = assumeSymmetric ?
+          KAM::sqrt (colNorm) : colNorm;
+        const mag_type scalingFactor = rowScalingFactor * colScalingFactor;
+        val_h[k] = val_h[k] / scalingFactor;
+      }
+    }
+    Kokkos::deep_copy (A_lcl.values, val_h);
+    A_copy->fillComplete (A_copy->getDomainMap (), A_copy->getRangeMap ());
+    return A_copy;
+  } ();
+
   const bool lclFoundInf = false;
   const bool lclFoundNan = false;
   const bool lclFoundZeroDiag = false;
@@ -1249,6 +1313,7 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
     gblRowScaledColNorms,
     A_leftScaled,
     A_rightScaled,
+    A_symScaled,
     lclFoundInf,
     lclFoundNan,
     lclFoundZeroDiag,
@@ -1466,6 +1531,39 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
     return A_copy;
   } ();
 
+  out << "Compute symmetrically-scaled matrix" << endl;
+  Teuchos::RCP<crs_matrix_type> A_symScaled = [&] () {
+    Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
+    A_copy->resumeFill ();
+
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
+    auto val_h = Kokkos::create_mirror_view (A_lcl.values);
+    Kokkos::deep_copy (val_h, A_lcl.values);
+    auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
+    Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
+    auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
+    Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
+
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+      using size_type = typename decltype (A_lcl.graph)::size_type;
+      for (size_type k = ptr_h[lclRow]; k < ptr_h[lclRow+1]; ++k) {
+        const LO lclCol = ind_h[k];
+        const mag_type rowNorm = gblRowNorms[lclRow];
+        const mag_type rowScalingFactor = assumeSymmetric ?
+          KAM::sqrt (rowNorm) : rowNorm;
+        const mag_type colNorm = assumeSymmetric ?
+          gblColNorms[lclCol] : gblRowScaledColNorms[lclCol];
+        const mag_type colScalingFactor = assumeSymmetric ?
+          KAM::sqrt (colNorm) : colNorm;
+        const mag_type scalingFactor = rowScalingFactor * colScalingFactor;
+        val_h[k] = val_h[k] / scalingFactor;
+      }
+    }
+    Kokkos::deep_copy (A_lcl.values, val_h);
+    A_copy->fillComplete (A_copy->getDomainMap (), A_copy->getRangeMap ());
+    return A_copy;
+  } ();
+
   const bool lclFoundInf = false;
   const bool lclFoundNan = false;
   const bool lclFoundZeroDiag = myRank == 1 ? true : false;
@@ -1487,6 +1585,7 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
     gblRowScaledColNorms,
     A_leftScaled,
     A_rightScaled,
+    A_symScaled,
     lclFoundInf,
     lclFoundNan,
     lclFoundZeroDiag,
@@ -1704,6 +1803,39 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
     return A_copy;
   } ();
 
+  out << "Compute symmetrically-scaled matrix" << endl;
+  Teuchos::RCP<crs_matrix_type> A_symScaled = [&] () {
+    Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
+    A_copy->resumeFill ();
+
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
+    auto val_h = Kokkos::create_mirror_view (A_lcl.values);
+    Kokkos::deep_copy (val_h, A_lcl.values);
+    auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
+    Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
+    auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
+    Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
+
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+      using size_type = typename decltype (A_lcl.graph)::size_type;
+      for (size_type k = ptr_h[lclRow]; k < ptr_h[lclRow+1]; ++k) {
+        const LO lclCol = ind_h[k];
+        const mag_type rowNorm = gblRowNorms[lclRow];
+        const mag_type rowScalingFactor = assumeSymmetric ?
+          KAM::sqrt (rowNorm) : rowNorm;
+        const mag_type colNorm = assumeSymmetric ?
+          gblColNorms[lclCol] : gblRowScaledColNorms[lclCol];
+        const mag_type colScalingFactor = assumeSymmetric ?
+          KAM::sqrt (colNorm) : colNorm;
+        const mag_type scalingFactor = rowScalingFactor * colScalingFactor;
+        val_h[k] = val_h[k] / scalingFactor;
+      }
+    }
+    Kokkos::deep_copy (A_lcl.values, val_h);
+    A_copy->fillComplete (A_copy->getDomainMap (), A_copy->getRangeMap ());
+    return A_copy;
+  } ();
+
   const bool lclFoundInf = false;
   const bool lclFoundNan = false;
   const bool lclFoundZeroDiag = myRank == 1 ? true : false;
@@ -1725,6 +1857,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
     gblRowScaledColNorms,
     A_leftScaled,
     A_rightScaled,
+    A_symScaled,
     lclFoundInf,
     lclFoundNan,
     lclFoundZeroDiag,
@@ -1989,6 +2122,39 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
     return A_copy;
   } ();
 
+ out << "Compute symmetrically-scaled matrix" << endl;
+  Teuchos::RCP<crs_matrix_type> A_symScaled = [&] () {
+    Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
+    A_copy->resumeFill ();
+
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
+    auto val_h = Kokkos::create_mirror_view (A_lcl.values);
+    Kokkos::deep_copy (val_h, A_lcl.values);
+    auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
+    Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
+    auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
+    Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
+
+    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
+      using size_type = typename decltype (A_lcl.graph)::size_type;
+      for (size_type k = ptr_h[lclRow]; k < ptr_h[lclRow+1]; ++k) {
+        const LO lclCol = ind_h[k];
+        const mag_type rowNorm = gblRowNorms[lclRow];
+        const mag_type rowScalingFactor = assumeSymmetric ?
+          KAM::sqrt (rowNorm) : rowNorm;
+        const mag_type colNorm = assumeSymmetric ?
+          gblColNorms[lclCol] : gblRowScaledColNorms[lclCol];
+        const mag_type colScalingFactor = assumeSymmetric ?
+          KAM::sqrt (colNorm) : colNorm;
+        const mag_type scalingFactor = rowScalingFactor * colScalingFactor;
+        val_h[k] = val_h[k] / scalingFactor;
+      }
+    }
+    Kokkos::deep_copy (A_lcl.values, val_h);
+    A_copy->fillComplete (A_copy->getDomainMap (), A_copy->getRangeMap ());
+    return A_copy;
+  } ();
+
   const bool lclFoundInf = myRank == 1 ? true : false;
   const bool lclFoundNan = myRank == 2 ? true : false;
   const bool lclFoundZeroDiag = false;
@@ -2010,6 +2176,7 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
     gblRowScaledColNorms,
     A_leftScaled,
     A_rightScaled,
+    A_symScaled,
     lclFoundInf,
     lclFoundNan,
     lclFoundZeroDiag,
@@ -2035,14 +2202,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Equilibration, Test0, SC, LO, GO, NT)
   using Teuchos::reduceAll;
   using std::endl;
 
-  //const bool debugMode = true;
-  const bool debugMode = false;
-  RCP<FancyOStream> errStrmPtr = debugMode ?
-    Teuchos::getFancyOStream (rcpFromRef (std::cerr)) : Teuchos::null;
-  FancyOStream& testOut = debugMode ? *errStrmPtr : out;
-
-  testOut << "Test equilibration" << endl;
-  Teuchos::OSTab tab0 (testOut);
+  out << "Test equilibration" << endl;
+  Teuchos::OSTab tab0 (out);
   auto comm = Tpetra::getDefaultComm ();
 
   using test_return_type = EquilibrationTest<SC, LO, GO, NT>;
@@ -2081,9 +2242,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Equilibration, Test0, SC, LO, GO, NT)
       int gblSuccess = 0; // output argument
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEST_EQUALITY( gblSuccess, 1 );
+
       if (gblSuccess != 1) {
-        // Don't actually print the test output unless the test failed.
-        Tpetra::Details::gathervPrint (testOut, osPtr->str (), *comm);
+        Tpetra::Details::gathervPrint (out, osPtr->str (), *comm);
         out << "Test FAILED on some process!" << endl;
         return;
       }

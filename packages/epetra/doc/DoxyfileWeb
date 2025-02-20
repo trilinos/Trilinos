@@ -51,6 +51,12 @@ INPUT                  = ../src ../../aztecoo/src index.doc \
 
 FILE_PATTERNS          = E*.h
 
-EXAMPLE_PATH           = ../example/petra_power_method
+EXAMPLE_PATH           = ../example/petra_power_method/cxx_main.cpp \
+                         ../example/Lessons/Lesson01-Init \
+                         ../example/Lessons/Lesson02-Map-Vector \
+                         ../example/Lessons/Lesson03-Power-Method \
+                         ../example/Lessons/Lesson04-Sparse-Matrix-Fill \
+                         ../example/Lessons/Lesson05-Redistribution
+
 
 GENERATE_TAGFILE       = ../../common/tag_files/epetra.tag

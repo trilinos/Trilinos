@@ -149,6 +149,14 @@ def main():
         plt.plot(x0_view)
         plt.savefig('x0_view.png', dpi=800, bbox_inches='tight',pad_inches = 0)
 
+    success = True
+    if comm.getRank() == 0:
+        if success:
+            print("OK")
+        else:
+            print("FAIL")
+
+
 if __name__ == "__main__":
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()

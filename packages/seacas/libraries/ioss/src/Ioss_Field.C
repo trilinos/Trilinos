@@ -10,6 +10,7 @@
 #include "Ioss_VariableType.h"
 #include <cstddef>
 #include <cstdint>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <iostream>

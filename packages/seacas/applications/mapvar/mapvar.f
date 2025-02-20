@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -638,7 +638,7 @@ C else icompl = 0
         ICOMPL = 1
         IF (IM .GT. 1)THEN
 C ... Get the block b id from the previous time through...
-C     `IA(NMAP)` is the root of the `MP(1:3,1:MBLK)` array. 
+C     `IA(NMAP)` is the root of the `MP(1:3,1:MBLK)` array.
 C                      ida    idb    isc    ida    ida    idb         isc
 C     Memory ordering (1,1), (2,1), (3,1), (1,2), (2,2), (3,2), ..., (3,3)-
 C                     +0     +1     +2     +3     +4     +5

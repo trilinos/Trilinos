@@ -811,7 +811,7 @@ void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Allocate memory & copy
   P                   = rcp(new CrsMatrixWrap(A.getRowMap(), coarseColMap, 0));
-  RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  RCP<CrsMatrix> PCrs = toCrsMatrix(P);
   ArrayRCP<size_t> P_rowptr;
   ArrayRCP<LO> P_colind;
   ArrayRCP<SC> P_values;

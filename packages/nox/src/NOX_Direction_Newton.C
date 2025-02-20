@@ -15,7 +15,7 @@
 #include "NOX_Solver_LineSearchBased.H"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
-
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 NOX::Direction::Newton::
 Newton(const Teuchos::RCP<NOX::GlobalData>& gd,
@@ -39,23 +39,47 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   Teuchos::ParameterList& p = params.sublist("Newton");
 
-  doRescue = p.get("Rescue Bad Newton Solve", true);
-  if (!p.sublist("Linear Solver").isParameter("Tolerance"))
+  // Validate and set defaults
+  {
+    Teuchos::ParameterList validParams;
+    validParams.sublist("Linear Solver").disableRecursiveValidation();
+    validParams.sublist("Stratimikos Linear Solver").disableRecursiveValidation();
+    validParams.set<std::string>("Forcing Term Method", "Constant",
+      "Choice of forcing term used by the linear solver",
+      Teuchos::rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("Constant", "Type 1", "Type 2"))));
+    validParams.set("Forcing Term Minimum Tolerance", 1.0e-4);
+    validParams.set("Forcing Term Maximum Tolerance", 0.9);
+    validParams.set("Forcing Term Initial Tolerance", 0.01);
+    validParams.set("Forcing Term Alpha", 1.5);
+    validParams.set("Forcing Term Gamma", 0.9);
+    validParams.set("Rescue Bad Newton Solve", true);
+
+    // Not used in this direction object, but needed in the Inexact
+    // Newton Utils which uses the same parameter list. Need to
+    // consolidate the two objects eventually.
+    validParams.set("Set Tolerance in Parameter List",true);
+
+    p.validateParametersAndSetDefaults(validParams);
+  }
+
+  doRescue = p.get<bool>("Rescue Bad Newton Solve");
+
+  if (!p.sublist("Linear Solver").isType<double>("Tolerance"))
     p.sublist("Linear Solver").get("Tolerance", 1.0e-10);
 
+  method = p.get<std::string>("Forcing Term Method");
 
-  if ( p.get("Forcing Term Method", "Constant") == "Constant" ) {
+  if ( method == "Constant" ) {
     useAdjustableForcingTerm = false;
-    eta_k = p.sublist("Linear Solver").get("Tolerance", 1.0e-4);
+    eta_k = p.sublist("Linear Solver").get<double>("Tolerance");
   }
   else {
     useAdjustableForcingTerm = true;
-    method = p.get("Forcing Term Method", "Type 1");
-    eta_min = p.get("Forcing Term Minimum Tolerance", 1.0e-4);
-    eta_max = p.get("Forcing Term Maximum Tolerance", 0.9);
-    eta_initial = p.get("Forcing Term Initial Tolerance", 0.01);
-    alpha = p.get("Forcing Term Alpha", 1.5);
-    gamma = p.get("Forcing Term Gamma", 0.9);
+    eta_min = p.get<double>("Forcing Term Minimum Tolerance");
+    eta_max = p.get<double>("Forcing Term Maximum Tolerance");
+    eta_initial = p.get<double>("Forcing Term Initial Tolerance");
+    alpha = p.get<double>("Forcing Term Alpha");
+    gamma = p.get<double>("Forcing Term Gamma");
     eta_k = eta_min;
   }
 
@@ -76,7 +100,7 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
   // Reset the linear solver tolerance.
   if (useAdjustableForcingTerm) {
     resetForcingTerm(soln, solver.getPreviousSolutionGroup(),
-             solver.getNumIterations(), solver);
+                     solver.getNumIterations(), solver);
   }
   else {
     if (utils->isPrintType(Utils::Details)) {

@@ -167,24 +167,10 @@ void Piro::TempusSolver<Scalar>::initialize(
     const std::string stepperType = stepperPL->get<std::string>("Stepper Type", "Backward Euler");
     //*out_ << "Stepper Type = " << stepperType << "\n";
 
-    //
-    // *out_ << "\nB) Create the Stratimikos linear solver factory ...\n";
-    //
-    // This is the linear solve strategy that will be used to solve for the
-    // linear system with the W.
-    //
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-
-#ifdef HAVE_PIRO_MUELU
-    Stratimikos::enableMueLu(linearSolverBuilder);
-#endif
-
-    linearSolverBuilder.setParameterList(sublist(tempusPL, "Stratimikos", true));
     tempusPL->validateParameters(*getValidTempusParameters(
       tempusPL->get<std::string>("Integrator Name", "Tempus Integrator"), 
       integratorPL->get<std::string>("Stepper Name", "Tempus Stepper")
     ), 0);
-    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
 
     //
     *out_ << "\nC) Create and initalize the forward model ...\n";
@@ -287,11 +273,6 @@ void Piro::TempusSolver<Scalar>::initialize(
       }	
     }
     
-    // C.2) Create the Thyra-wrapped ModelEvaluator
-
-    thyraModel_ = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model_, lowsFactory));
-    const RCP<const Thyra::VectorSpaceBase<double> > x_space = thyraModel_->get_x_space();
-
     //
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
@@ -650,8 +631,12 @@ template <typename Scalar>
 void Piro::TempusSolver<Scalar>::
 setObserver() const
 {
-  Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
-  if (Teuchos::nonnull(piroObserver_)) {
+  // Do not create the tempus observer adapter if the user-provided Piro observer is already a tempus observer
+  Teuchos::RCP<Tempus::IntegratorObserver<Scalar> > observer;
+  observer = Teuchos::rcp_dynamic_cast<Tempus::IntegratorObserver<Scalar>>(piroObserver_);
+  if (Teuchos::is_null(observer) and Teuchos::nonnull(piroObserver_)) {
+    // The user did not provide a Tempus observer, so create an adapter one
+
     //Get solutionHistory from integrator
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory = piroTempusIntegrator_->getSolutionHistory();
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl = piroTempusIntegrator_->getTimeStepControl();
@@ -659,6 +644,7 @@ setObserver() const
     observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory,
                                 timeStepControl, piroObserver_, supports_x_dotdot_, abort_on_fail_at_min_dt_, sens_method_));
   }
+
   if (Teuchos::nonnull(observer)) {
     //Set observer in integrator
     piroTempusIntegrator_->clearObservers();

@@ -144,7 +144,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
     A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
     if (useAMGX) {
 #if defined(HAVE_MUELU_AMGX)
-      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> Ac      = Utilities::Op2NonConstTpetraCrs(A);
+      RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> Ac      = toTpetra(A);
       RCP<Tpetra::Operator<SC, LO, GO, NO>> At       = Teuchos::rcp_dynamic_cast<Tpetra::Operator<SC, LO, GO, NO>>(Ac);
       RCP<MueLu::TpetraOperator<SC, LO, GO, NO>> Top = MueLu::CreateTpetraPreconditioner(At, mueluList);
       Prec                                           = Teuchos::rcp(new Xpetra::TpetraOperator<SC, LO, GO, NO>(Top));
@@ -169,6 +169,8 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
       Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
       if (!coordinates.is_null())
         userParamList.set<RCP<CoordinateMultiVector>>("Coordinates", coordinates);
+      if (!material.is_null())
+        userParamList.set<RCP<Xpetra::MultiVector<SC, LO, GO, NO>>>("Material", material);
       if (!nullspace.is_null() && setNullSpace)
         userParamList.set<RCP<Xpetra::MultiVector<SC, LO, GO, NO>>>("Nullspace", nullspace);
       userParamList.set<Teuchos::Array<LO>>("Array<LO> lNodesPerDim", lNodesPerDim);
@@ -214,6 +216,153 @@ struct Matvec_Wrapper<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSe
 };
 #endif
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool cg_solve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A,
+              Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> b,
+              Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> x,
+              const double tolerance, const int max_iter, const bool barriers) {
+  using Teuchos::TimeMonitor;
+  using Vector         = Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using STS            = typename Teuchos::ScalarTraits<Scalar>;
+  using magnitude_type = typename STS::magnitudeType;
+
+  std::string cgTimerName            = "CG: total";
+  std::string cgBarrierTimerName     = "CG: total barrier";
+  std::string addTimerName           = "CG: axpby";
+  std::string matvecTimerName        = "CG: spmv";
+  std::string dotTimerName           = "CG: dot";
+  std::string matvecBarrierTimerName = "CG: barrier spmv";
+  std::string dotBarrierTimerName    = "CG: barrier dot";
+
+  auto comm  = A->getRowMap()->getComm();
+  int myproc = comm->getRank();
+
+  typedef typename Vector::scalar_type ScalarType;
+  typedef typename Vector::local_ordinal_type LO;
+  Teuchos::RCP<Vector> r, p, Ap;
+  // int max_iter=200;
+  // double tolerance = 1e-8;
+  r  = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A->getRangeMap());
+  p  = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A->getRangeMap());
+  Ap = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A->getRangeMap());
+
+  magnitude_type normr     = 0;
+  magnitude_type rtrans    = 0;
+  magnitude_type oldrtrans = 0;
+
+  LO print_freq = max_iter / 10;
+  print_freq    = std::min(print_freq, 50);
+  print_freq    = std::max(print_freq, 1);
+
+  if (barriers) {
+    TimeMonitor t(*TimeMonitor::getNewTimer(cgBarrierTimerName));
+    comm->barrier();
+  }
+  TimeMonitor timer(*TimeMonitor::getNewTimer(cgTimerName));
+
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+    p->update(1.0, *x, 0.0, *x, 0.0);
+  }
+  {
+    if (barriers) {
+      TimeMonitor t(*TimeMonitor::getNewTimer(matvecBarrierTimerName));
+      comm->barrier();
+    }
+    TimeMonitor t(*TimeMonitor::getNewTimer(matvecTimerName));
+    A->apply(*p, *Ap);
+  }
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+    r->update(1.0, *b, -1.0, *Ap, 0.0);
+  }
+  {
+    if (barriers) {
+      TimeMonitor t(*TimeMonitor::getNewTimer(dotBarrierTimerName));
+      comm->barrier();
+    }
+    TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
+    rtrans = r->dot(*r);
+  }
+
+  normr = std::sqrt(rtrans);
+
+  if (myproc == 0) {
+    std::cout << "Initial Residual = " << normr << std::endl;
+  }
+
+  magnitude_type brkdown_tol = std::numeric_limits<magnitude_type>::epsilon();
+  LO k;
+  for (k = 1; k <= max_iter && normr > tolerance; ++k) {
+    if (k == 1) {
+      TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+      p->update(1.0, *r, 0.0);
+    } else {
+      oldrtrans = rtrans;
+      {
+        if (barriers) {
+          TimeMonitor t(*TimeMonitor::getNewTimer(dotBarrierTimerName));
+          comm->barrier();
+        }
+        TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
+        rtrans = r->dot(*r);
+      }
+      {
+        TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+        magnitude_type beta = rtrans / oldrtrans;
+        p->update(1.0, *r, beta);
+      }
+    }
+    normr = std::sqrt(rtrans);
+    if (myproc == 0 && (k % print_freq == 0 || k == max_iter)) {
+      std::cout << "Iteration = " << k << "   Residual = " << normr << std::endl;
+    }
+
+    magnitude_type alpha    = 0;
+    magnitude_type p_ap_dot = 0;
+    {
+      if (barriers) {
+        TimeMonitor t(*TimeMonitor::getNewTimer(matvecBarrierTimerName));
+        comm->barrier();
+      }
+      TimeMonitor t(*TimeMonitor::getNewTimer(matvecTimerName));
+      A->apply(*p, *Ap);
+    }
+    {
+      if (barriers) {
+        TimeMonitor t(*TimeMonitor::getNewTimer(dotBarrierTimerName));
+        comm->barrier();
+      }
+      TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
+      p_ap_dot = Ap->dot(*p);
+    }
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
+      if (p_ap_dot < brkdown_tol) {
+        if (p_ap_dot < 0) {
+          std::cerr << "miniFE::cg_solve ERROR, numerical breakdown!" << std::endl;
+          return false;
+        } else
+          brkdown_tol = 0.1 * p_ap_dot;
+      }
+      alpha = rtrans / p_ap_dot;
+      x->update(alpha, *p, 1.0);
+      r->update(-alpha, *Ap, 1.0);
+    }
+  }
+  {
+    if (barriers) {
+      TimeMonitor t(*TimeMonitor::getNewTimer(dotBarrierTimerName));
+      comm->barrier();
+    }
+    TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
+    rtrans = r->dot(*r);
+  }
+
+  normr = std::sqrt(rtrans);
+  return true;
+}
+
 //*************************************************************************************
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
@@ -257,7 +406,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
   Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> Atpetra;
   Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO>> Xtpetra, Btpetra;
   if (lib == Xpetra::UseTpetra) {
-    Atpetra = Utilities::Op2NonConstTpetraCrs(A);
+    Atpetra = toTpetra(A);
     Xtpetra = rcp(&Xpetra::toTpetra(*X), false);
     Btpetra = rcp(&Xpetra::toTpetra(*B), false);
   }
@@ -459,6 +608,8 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
       if (profileSolve) cudaProfilerStop();
 #endif
 #endif  // ifdef HAVE_MUELU_BELOS
+    } else if (solveType == "simple_cg") {
+      cg_solve(A, B->getVector(0), X->getVectorNonConst(0), tol, maxIts, true);
     } else {
       throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
     }

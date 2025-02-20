@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -85,7 +85,7 @@ script:
         "plane normal":[1.0, 2.0, 3.0]
       }
     }
-  } 
+  }
 
 the plane normal does not need to be a unit vector: Phactori will normalize
 it for you (again, see PhactoriClipPlaneOperation)
@@ -183,4 +183,3 @@ colored by block index number (cylically).
       myDebugPrint3("PhactoriSliceWithPlanePlaneOperation::UpdateSlice returning\n")
 
 #phactori_combine_to_single_python_file_subpiece_end_1
-

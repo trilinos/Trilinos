@@ -33,12 +33,6 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegr
 }
 
 template <typename Scalar>
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::~ObserverToTempusIntegrationObserverAdapter()
-{
-  //Nothing to do
-}
-
-template <typename Scalar>
 void
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
 observeStartIntegrator(const Tempus::Integrator<Scalar>& integrator)
@@ -63,49 +57,6 @@ observeStartIntegrator(const Tempus::Integrator<Scalar>& integrator)
 
   this->observeTimeStep();
 }
-
-template <typename Scalar>
-void
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
-observeStartTimeStep(const Tempus::Integrator<Scalar>& )
-{
-  //Nothing to do
-}
-
-template <typename Scalar>
-void
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
-observeNextTimeStep(const Tempus::Integrator<Scalar>& )
-{
-  //Nothing to do
-}
-
-template <typename Scalar>
-void
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
-observeBeforeTakeStep(const Tempus::Integrator<Scalar>& )
-{
-  //Nothing to do
-}
-
-
-template <typename Scalar>
-void
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
-observeAfterTakeStep(const Tempus::Integrator<Scalar>& )
-{
-  //Nothing to do
-}
-
-
-template<class Scalar>
-void
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
-observeAfterCheckTimeStep(const Tempus::Integrator<Scalar>& integrator)
-{
-  //Nothing to do
-}
-
 
 template<class Scalar>
 void
@@ -137,35 +88,6 @@ observeEndTimeStep(const Tempus::Integrator<Scalar>& integrator)
         <<std::endl;
   }
   this->observeTimeStep();
-}
-
-
-template <typename Scalar>
-void
-Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::
-observeEndIntegrator(const Tempus::Integrator<Scalar>& integrator)
-{
-  //this->observeTimeStep();
-
-  std::string exitStatus;
-  //const Scalar runtime = integrator.getIntegratorTimer()->totalElapsedTime();
-  if (integrator.getSolutionHistory()->getCurrentState()->getSolutionStatus() ==
-      Tempus::Status::FAILED or integrator.getStatus() == Tempus::Status::FAILED) {
-    exitStatus = "Time integration FAILURE!";
-  } else {
-    exitStatus = "Time integration complete.";
-  }
-  std::time_t end = std::time(nullptr);
-  const Scalar runtime = integrator.getIntegratorTimer()->totalElapsedTime();
-  const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
-  Teuchos::OSTab ostab(out,0,"ScreenOutput");
-  *out << "============================================================================\n"
-       << "  Total runtime = " << runtime << " sec = "
-       << runtime/60.0 << " min\n"
-       << std::asctime(std::localtime(&end))
-       << exitStatus << "\n"
-       << std::endl;
-
 }
 
 template <typename Scalar>

@@ -8,6 +8,7 @@
 // *****************************************************************************
 // @HEADER
 
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 #include "MiniEM_Interpolation.hpp"
 #include "Panzer_Interpolation.hpp"
 
@@ -87,8 +88,10 @@ request(const Teko::RequestMesg & rm) {
       build();
     }
     return interp_;
-  } else
+  } else {
     TEUCHOS_ASSERT(false);
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
+  }
 }
 
 void

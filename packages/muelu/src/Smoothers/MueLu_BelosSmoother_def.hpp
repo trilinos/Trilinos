@@ -84,8 +84,8 @@ void BelosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupBelos(Level&
   bool useTpetra = A_->getRowMap()->lib() == Xpetra::UseTpetra;
 
   if (useTpetra) {
-    tBelosProblem_ = rcp(new Belos::LinearProblem<Scalar, tMV, tOP>());
-    RCP<tOP> tA    = Utilities::Op2NonConstTpetraCrs(A_);
+    tBelosProblem_    = rcp(new Belos::LinearProblem<Scalar, tMV, tOP>());
+    RCP<const tOP> tA = toTpetra(A_);
     tBelosProblem_->setOperator(tA);
 
     Belos::SolverFactory<SC, tMV, tOP> solverFactory;
@@ -104,8 +104,8 @@ void BelosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector
     if (InitialGuessIsZero) {
       X.putScalar(0.0);
 
-      RCP<Tpetra::MultiVector<SC, LO, GO, NO> > tpX       = rcpFromRef(Utilities::MV2NonConstTpetraMV(X));
-      RCP<const Tpetra::MultiVector<SC, LO, GO, NO> > tpB = rcpFromRef(Utilities::MV2TpetraMV(B));
+      RCP<Tpetra::MultiVector<SC, LO, GO, NO> > tpX       = toTpetra(rcpFromRef(X));
+      RCP<const Tpetra::MultiVector<SC, LO, GO, NO> > tpB = toTpetra(rcpFromRef(B));
 
       tBelosProblem_->setInitResVec(tpB);
       tBelosProblem_->setProblem(tpX, tpB);
@@ -116,8 +116,8 @@ void BelosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector
       RCP<MultiVector> Residual   = Utilities::Residual(*A_, X, B);
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
 
-      RCP<Tpetra::MultiVector<SC, LO, GO, NO> > tpX       = rcpFromRef(Utilities::MV2NonConstTpetraMV(*Correction));
-      RCP<const Tpetra::MultiVector<SC, LO, GO, NO> > tpB = rcpFromRef(Utilities::MV2TpetraMV(*Residual));
+      RCP<Tpetra::MultiVector<SC, LO, GO, NO> > tpX       = toTpetra(Correction);
+      RCP<const Tpetra::MultiVector<SC, LO, GO, NO> > tpB = toTpetra(Residual);
 
       tBelosProblem_->setInitResVec(tpB);
       tBelosProblem_->setProblem(tpX, tpB);

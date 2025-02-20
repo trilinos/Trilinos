@@ -613,7 +613,7 @@ void SemiCoarsenPFactory_kokkos<
       rowMap->lib(), NCLayers * itemp, NCLayers * NVertLines * DofsPerNode, 0,
       stridingInfo_, rowMap->getComm(), -1, 0);
   P                   = rcp(new CrsMatrixWrap(rowMap, coarseMap, 0));
-  RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+  RCP<CrsMatrix> PCrs = toCrsMatrix(P);
   PCrs->setAllValues(Pptr, Pcols, Pvals);
   PCrs->expertStaticFillComplete(coarseMap, Amat->getDomainMap());
 

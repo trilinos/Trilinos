@@ -112,6 +112,7 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
   IF (${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
     TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
     IF (${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_Experimental)
+      TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../../research/q2q1)
       APPEND_SET(HEADERS
         ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory_decl.hpp
         ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory_def.hpp

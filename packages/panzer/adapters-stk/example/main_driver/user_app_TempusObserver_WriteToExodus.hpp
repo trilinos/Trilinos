@@ -15,6 +15,8 @@
 #include "Tempus_IntegratorObserver.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_GlobalIndexer.hpp"
@@ -34,7 +36,8 @@ namespace user_app {
       m_mesh(mesh),
       m_dof_manager(dof_manager),
       m_lof(lof),
-      m_response_library(response_library)
+      m_response_library(response_library),
+      m_print_debug(false)
     {
       // get all element blocks and add them to the list
       std::vector<std::string> eBlocks;
@@ -45,18 +48,24 @@ namespace user_app {
       m_response_library->addResponse("Main Field Output",eBlocks,builder);
     }
 
-    void observeStartIntegrator(const Tempus::Integrator<double>& integrator) override {this->writeToExodus(integrator);};
-    void observeStartTimeStep(const Tempus::Integrator<double>& ) override {};
-    void observeNextTimeStep(const Tempus::Integrator<double>& ) override {};
-    void observeBeforeTakeStep(const Tempus::Integrator<double>& ) override {};
-    void observeAfterTakeStep(const Tempus::Integrator<double>& integrator) override {this->writeToExodus(integrator);}
-    void observeAfterCheckTimeStep(const Tempus::Integrator<double>& ) override {};
-    void observeEndTimeStep(const Tempus::Integrator<double>& ) override {};
-    void observeEndIntegrator(const Tempus::Integrator<double>& ) override {};
+    void observeStartIntegrator(const Tempus::Integrator<double>& integrator) override
+    {this->writeToExodus(integrator,"Tempus::Observer::writeToExodus(INITIAL_CONDITION)");}
+    void observeStartTimeStep(const Tempus::Integrator<double>& ) override {}
+    void observeNextTimeStep(const Tempus::Integrator<double>& ) override {}
+    void observeBeforeTakeStep(const Tempus::Integrator<double>& ) override {}
+    void observeAfterTakeStep(const Tempus::Integrator<double>& ) override {}
+    void observeAfterCheckTimeStep(const Tempus::Integrator<double>& ) override {}
+    void observeEndTimeStep(const Tempus::Integrator<double>& integrator) override
+    {this->writeToExodus(integrator,"Tempus::Observer::writeToExodus(END_TIME_STEP)");}
+    void observeEndIntegrator(const Tempus::Integrator<double>& ) override {}
 
-    void writeToExodus(const Tempus::Integrator<double>& integrator)
+    void writeToExodus(const Tempus::Integrator<double>& integrator, const std::string& timer_name)
     {
-
+      auto timer = Teuchos::TimeMonitor::getStackedTimer();
+      timer->start(timer_name);
+      if (m_print_debug) {
+        std::cout << "Writing to expdus with time step=" << integrator.getSolutionHistory()->getCurrentTime() << std::endl;
+      }
       Teuchos::RCP<const Thyra::VectorBase<double> > solution = integrator.getSolutionHistory()->getStateTimeIndexN()->getX();
 
       // initialize the assembly container
@@ -80,6 +89,7 @@ namespace user_app {
       m_response_library->addResponsesToInArgs<panzer::Traits::Residual>(ae_inargs);
       m_response_library->evaluate<panzer::Traits::Residual>(ae_inargs);
       m_mesh->writeToExodus(integrator.getSolutionHistory()->getCurrentTime());
+      timer->stop(timer_name);
     }
 
   protected:
@@ -88,6 +98,7 @@ namespace user_app {
     Teuchos::RCP<const panzer::GlobalIndexer> m_dof_manager;
     Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > m_lof;
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > m_response_library;
+    bool m_print_debug;
   };
 
 }

@@ -162,6 +162,18 @@ toXpetra(RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> ve
   return toXpetra(Teuchos::rcp_const_cast<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(vec));
 }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toTpetra(const Teuchos::RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& X) {
+  return Teuchos::rcp_dynamic_cast<Xpetra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(X, true)->getTpetra_Vector();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toTpetra(const Teuchos::RCP<const Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& X) {
+  return Teuchos::rcp_dynamic_cast<const Xpetra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(X, true)->getTpetra_Vector();
+}
+
 }  // namespace Xpetra
 
 #define XPETRA_TPETRAVECTOR_SHORT

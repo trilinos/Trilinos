@@ -164,13 +164,12 @@ class ex_options(Enum):
 if os.name == 'nt':
     so_prefix = ''
     so_suffix = 'dll'
+elif os.uname()[0] == 'Darwin':
+    so_prefix = 'lib'
+    so_suffix = 'dylib'
 else:
-    if os.uname()[0] == 'Darwin':
-        so_prefix = 'lib'
-        so_suffix = 'dylib'
-    else:
-        so_prefix = 'lib'
-        so_suffix = 'so'
+    so_prefix = 'lib'
+    so_suffix = 'so'
 pip_path = os.path.dirname(__file__)
 pip_so_path = os.path.join(pip_path, f"{so_prefix}exodus.{so_suffix}")
 try:
@@ -673,7 +672,7 @@ class exodus:
 
 
         >>> ex_pars = ex_init_params(num_dim=numDims, num_nodes=numNodes,
-        ...                          num_elem=numElems, num_elem_blk=numElemBlocks, num_assembly=numAssembly)
+        ...                          num_elem=numElems, num_elem_blk=numElemBlocks, num_assembly=numAssembly, num_blob=numBlob)
         >>> exo = exodus(file_name, mode=mode, title=title,
         ...             array_type=array_type, init_params=ex_pars)
         >>> with exodus(file_name, mode=mode, title=title,\
@@ -729,7 +728,10 @@ class exodus:
                     numElems = 0
                 if numBlocks is None:
                     numBlocks = 0
-
+                if numBlob is None:
+                    numBlob = 0
+                if numAssembly is None:
+                    numAssembly = 0
                 info = [title, numDims, numNodes, numElems, numBlocks,
                         numNodeSets, numSideSets]
                 if None not in info:
@@ -842,6 +844,7 @@ class exodus:
         self.numNodeSets = ctypes.c_longlong(p.num_node_sets)
         self.numSideSets = ctypes.c_longlong(p.num_side_sets)
         self.numAssembly = ctypes.c_longlong(p.num_assembly)
+        self.numBlob = ctypes.c_longlong(p.num_blob)
 
         EXODUS_LIB.ex_put_init_ext(self.fileId, ctypes.byref(p))
         return True

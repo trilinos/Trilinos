@@ -28,7 +28,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   int dofs_per_node = 1;
   bool perturbPivot = false;
   int nrhs = 1;
-  bool randomRHS = true;
+  bool randomRHS = false;
   bool onesRHS = false;
   std::string method_name = "chol";
   int method = 1; // 1 - Chol, 2 - LDL, 3 - SymLU
@@ -61,6 +61,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0, 1 and 2", &variant);
   opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
   opts.set_option<bool>("one-rhs", "Set RHS to be ones", &onesRHS);
+  opts.set_option<bool>("random-rhs", "Set RHS to be random", &randomRHS);
   opts.set_option<bool>("no-warmup", "Flag to turn off warmup", &no_warmup);
   opts.set_option<int>("nfacts", "# of factorizations to perform", &nfacts);
   opts.set_option<int>("nsolves", "# of solves to perform", &nsolves);

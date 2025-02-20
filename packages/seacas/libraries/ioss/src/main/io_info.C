@@ -51,6 +51,7 @@
 #include "Ioss_SurfaceSplit.h"
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
+#include "Ioss_use_fmt.h"
 #if defined(SEACAS_HAVE_EXODUS)
 #include "exodusII.h"
 #endif
@@ -92,7 +93,7 @@ namespace {
   }
 
   void file_info(const Info::Interface &interFace);
-  void group_info(Info::Interface &interFace);
+  void change_set_info(Info::Interface &interFace);
 
   void info_df(const Ioss::GroupingEntity *ge, const std::string &prefix)
   {
@@ -162,45 +163,22 @@ namespace {
     }
   }
 
-#if defined(SEACAS_HAVE_EXODUS)
-  int print_groups(int exoid, std::string prefix)
+  void change_set_info(Info::Interface &interFace)
   {
-    int   idum;
-    float rdum;
-    char  group_name[33];
-    // Print name of this group...
-    ex_inquire(exoid, EX_INQ_GROUP_NAME, &idum, &rdum, group_name);
-    if (group_name[0] == '/') {
-      fmt::print("{}/ (root)\n", prefix);
+    std::string           inpfile    = interFace.filename();
+    std::string           input_type = interFace.type();
+    Ioss::PropertyManager properties = set_properties(interFace);
+
+    auto              mode = Ioss::READ_RESTART;
+    Ioss::DatabaseIO *dbi  = Ioss::IOFactory::create(input_type, inpfile, mode,
+                                                     Ioss::ParallelUtils::comm_world(), properties);
+
+    Ioss::io_info_set_db_properties(interFace, dbi);
+    auto cs_names = dbi->internal_change_set_describe();
+    fmt::print("\t/ (root)\n");
+    for (const auto &cs_name : cs_names) {
+      fmt::print("\t\t{}\n", cs_name);
     }
-    else {
-      fmt::print("{}{}\n", prefix, group_name);
-    }
-
-    int              num_children = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
-    std::vector<int> children(num_children);
-    ex_get_group_ids(exoid, nullptr, Data(children));
-    prefix += '\t';
-    for (int i = 0; i < num_children; i++) {
-      print_groups(children[i], prefix);
-    }
-    return 0;
-  }
-#endif
-
-  void group_info(Info::Interface &interFace)
-  {
-#if defined(SEACAS_HAVE_EXODUS)
-    // Assume exodusII...
-    std::string inpfile       = interFace.filename();
-    float       vers          = 0.0;
-    int         CPU_word_size = 0;
-    int         IO_word_size  = 0;
-
-    int exoid = ex_open(inpfile.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &vers);
-
-    print_groups(exoid, "\t");
-#endif
   }
 
   void file_info(const Info::Interface &interFace)
@@ -234,7 +212,32 @@ namespace {
       info_timesteps(region);
     }
     else {
-      Ioss::io_info_file_info(interFace, region);
+      auto cs_list = Ioss::tokenize(interFace.change_set_name(), ",");
+      if (cs_list.empty()) {
+        cs_list.push_back("/");
+      }
+      else {
+        if (cs_list[0] == "ALL") {
+          cs_list = dbi->internal_change_set_describe();
+        }
+      }
+
+      bool first = true;
+      for (const auto &cs_name : cs_list) {
+        if (!first) {
+          fmt::print("-----------------------------------------------------------------------------"
+                     "-----------------------\n");
+        }
+        if (cs_name != "/") {
+          bool success = region.load_internal_change_set_mesh(cs_name);
+          if (!success) {
+            fmt::print("ERROR: Unable to open change set '{}' in file '{}'\n", cs_name, inpfile);
+            return;
+          }
+          first = false;
+        }
+        Ioss::io_info_file_info(interFace, region);
+      }
     }
   }
 
@@ -317,7 +320,11 @@ namespace {
       if (!sb->m_zoneConnectivity.empty()) {
         fmt::print("\tConnectivity with other blocks:\n");
         for (const auto &zgc : sb->m_zoneConnectivity) {
+#if defined __NVCC__
           std::cout << zgc << "\n";
+#else
+          fmt::print("{}\n", zgc);
+#endif
         }
       }
       if (!sb->m_boundaryConditions.empty()) {
@@ -331,7 +338,11 @@ namespace {
                    });
 
         for (const auto &bc : sb_bc) {
+#if defined __NVCC__
           std::cout << bc << "\n";
+#else
+          fmt::print("{}\n", bc);
+#endif
         }
       }
       if (interFace.compute_bbox()) {
@@ -643,7 +654,7 @@ namespace {
 
 namespace Ioss {
   void io_info_file_info(const Info::Interface &interFace) { file_info(interFace); }
-  void io_info_group_info(Info::Interface &interFace) { group_info(interFace); }
+  void io_info_change_set_info(Info::Interface &interFace) { change_set_info(interFace); }
 
   void io_info_set_db_properties(const Info::Interface &interFace, Ioss::DatabaseIO *dbi)
   {
@@ -662,16 +673,6 @@ namespace Ioss {
     dbi->set_field_recognition(!interFace.disable_field_recognition());
     if (interFace.ints_64_bit()) {
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
-    }
-
-    if (!interFace.groupname().empty()) {
-      bool success = dbi->open_group(interFace.groupname());
-      if (!success) {
-        std::string inpfile = interFace.filename();
-        fmt::print("ERROR: Unable to open group '{}' in file '{}'\n", interFace.groupname(),
-                   inpfile);
-        return;
-      }
     }
   }
 

@@ -135,6 +135,10 @@ namespace Ioss {
 
     static void copyright(std::ostream &out, const std::string &year_range);
 
+    IOSS_NODISCARD static bool check_valid_change_set_name(const std::string  &cs_name,
+                                                           const Ioss::Region &region,
+                                                           int                 rank = 0);
+
     static void check_dynamic_cast(const void *ptr)
     {
       if (ptr == nullptr) {
@@ -478,7 +482,7 @@ namespace Ioss {
                            std::vector<Ioss::Field> &fields);
 
     static int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
-                             const std::string &inout);
+                             std::string_view inout);
 
     static void calculate_sideblock_membership(IntVector &face_is_member, const SideBlock *sb,
                                                size_t int_byte_size, const void *element,
@@ -500,6 +504,9 @@ namespace Ioss {
      *  \param[in] sb Compute the offset for element sides in this SideBlock
      *  \returns The offset.
      */
+    IOSS_NODISCARD static int64_t get_side_offset(const Ioss::ElementTopology *parent_topo,
+                                                  const Ioss::ElementTopology *side_topo);
+
     IOSS_NODISCARD static int64_t get_side_offset(const Ioss::SideBlock *sb);
 
     IOSS_NODISCARD static unsigned int hash(const std::string &name);

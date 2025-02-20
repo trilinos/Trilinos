@@ -21,7 +21,7 @@
 #define EXCHECKI(funcall)                                                                          \
   if ((funcall) != NC_NOERR) {                                                                     \
     fprintf(stderr, "Error calling %s\n", TOSTRING(funcall));                                      \
-    return (EX_FATAL);                                                                             \
+    return EX_FATAL;                                                                               \
   }
 
 #define EXCHECKF(funcall)                                                                          \
@@ -66,7 +66,7 @@ static int is_truth_table_variable(const char *var_name)
   /* If copying just the "mesh" or "non-transient" portion of the
    * input DB, these are the variables that won't be copied:
    */
-  return (strstr(var_name, "_var_tab") != NULL);
+  return strstr(var_name, "_var_tab") != NULL;
 }
 
 static int is_non_mesh_variable(const char *var_name)
@@ -176,6 +176,7 @@ int ex_copy_transient(int in_exoid, int out_exoid)
 static int cpy_variable_data(int in_exoid, int out_exoid, int in_large, int mesh_only)
 {
   int nvars; /* number of variables */
+  /* NOTE: This is incorrect for files containing groups */
   EXCHECKI(nc_inq(in_exoid, NULL, &nvars, NULL, NULL));
   for (int varid = 0; varid < nvars; varid++) {
     bool         is_filtered;
@@ -216,6 +217,7 @@ static int cpy_variables(int in_exoid, int out_exoid, int in_large, int mesh_onl
 {
   int recdimid; /* id of unlimited dimension */
   int nvars;    /* number of variables */
+  /* NOTE: This is incorrect for files containing groups */
   EXCHECKI(nc_inq(in_exoid, NULL, &nvars, NULL, &recdimid));
   for (int varid = 0; varid < nvars; varid++) {
     struct ncvar var; /* variable */
@@ -259,6 +261,7 @@ static int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
 
   int ndims;    /* number of dimensions */
   int recdimid; /* id of unlimited dimension */
+  /* NOTE: This is incorrect for files containing groups */
   EXCHECKI(nc_inq(in_exoid, &ndims, NULL, NULL, &recdimid));
   for (int dimid = 0; dimid < ndims; dimid++) {
 
@@ -344,6 +347,7 @@ static int cpy_global_att(int in_exoid, int out_exoid)
   struct ncatt att; /* attribute */
 
   int ngatts;
+  /* NOTE: This is incorrect for files containing groups */
   EXCHECKI(nc_inq(in_exoid, NULL, NULL, &ngatts, NULL));
 
   /* copy global attributes */
@@ -413,7 +417,7 @@ static int cpy_att(int in_id, int out_id, int var_in_id, int var_out_id)
     nc_copy_att(in_id, var_in_id, att_nm, out_id, var_out_id);
   }
 
-  return (EX_NOERR);
+  return EX_NOERR;
 }
 /*! \endcond */
 
@@ -718,11 +722,11 @@ static int cpy_var_val(int in_id, int out_id, char *var_nm)
   /* Free the space that held the variable */
   free(void_ptr);
 
-  return (EX_NOERR);
+  return EX_NOERR;
 
 err_ret:
   free(void_ptr);
-  return (EX_FATAL);
+  return EX_FATAL;
 
 } /* end cpy_var_val() */
 
@@ -789,7 +793,7 @@ static int cpy_coord_val(int in_id, int out_id, char *var_nm, int in_large)
 
   /* Free the space that held the variable */
   free(void_ptr);
-  return (EX_NOERR);
+  return EX_NOERR;
 
 } /* end cpy_coord_val() */
 

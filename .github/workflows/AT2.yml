@@ -1,4 +1,4 @@
-name: AT2-EXPERIMENTAL
+name: AT2
 
 on:
   pull_request:
@@ -31,11 +31,11 @@ jobs:
             should_skip: ${{ steps.skip_check.outputs.should_skip }}
         steps:
         - id: skip_check
-          uses: fkirc/skip-duplicate-actions@v5
+          uses: fkirc/skip-duplicate-actions@f75f66ce1886f00957d99748a42c724f4330bdcf # v5.3.1
           with:
             skip_after_successful_duplicate: 'true'
 
-  gcc10-openmpi416-EXPERIMENTAL:
+  gcc10-openmpi4:
     needs: pre-checks
     runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
@@ -74,7 +74,7 @@ jobs:
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
-          bash -l -c "./get_dependencies.sh --container"
+          bash -l -c "./get_dependencies.sh"
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -89,14 +89,14 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-
+          export GENCONFIG_BUILD_NAME=rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --genconfig-build-name rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
+            --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
             --pullrequest-number ${{ github.event.pull_request.number }} \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
@@ -128,7 +128,7 @@ jobs:
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
-  gcc830-serial-EXPERIMENTAL:
+  gcc830:
     needs: pre-checks
     runs-on: [self-hosted, gcc-8.3.0_serial]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
@@ -167,7 +167,7 @@ jobs:
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
-          bash -l -c "./get_dependencies.sh --container"
+          bash -l -c "./get_dependencies.sh"
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -182,6 +182,7 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
+          export GENCONFIG_BUILD_NAME=rhel8_gcc-serial_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
 
           printf "\n\n\n"
 
@@ -189,7 +190,7 @@ jobs:
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --genconfig-build-name rhel8_gcc-serial_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
+            --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
             --pullrequest-number ${{ github.event.pull_request.number }} \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
@@ -221,7 +222,7 @@ jobs:
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
-  cuda11-EXPERIMENTAL:
+  cuda11:
     needs: pre-checks
     runs-on: [self-hosted, cuda-11.4.2_gcc-10.3.0_openmpi-4.1.6]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
@@ -260,7 +261,7 @@ jobs:
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
-          bash -l -c "./get_dependencies.sh --container"
+          bash -l -c "./get_dependencies.sh"
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -274,14 +275,14 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-
+          export GENCONFIG_BUILD_NAME=rhel8_cuda-11-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --genconfig-build-name rhel8_cuda-11-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables \
+            --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
             --pullrequest-number ${{ github.event.pull_request.number }} \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
@@ -314,7 +315,7 @@ jobs:
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
-  framework-tests-EXPERIMENTAL:
+  framework-tests:
     needs: pre-checks
     runs-on: [self-hosted, python-3.9]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
@@ -353,7 +354,7 @@ jobs:
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
-          bash -l -c "./get_dependencies.sh --container"
+          bash -l -c "./get_dependencies.sh"
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -367,14 +368,14 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-
+          export GENCONFIG_BUILD_NAME=rhel8_python_debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_pr-framework
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
-            --genconfig-build-name rhel8_python_debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_pr-framework \
+            --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
             --pullrequest-number ${{ github.event.pull_request.number }} \
             --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
             --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \

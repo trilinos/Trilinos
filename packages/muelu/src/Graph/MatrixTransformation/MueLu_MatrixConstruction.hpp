@@ -250,19 +250,23 @@ class PointwiseFillReuseFunctor {
   using memory_space       = typename local_matrix_type::memory_space;
   using results_view       = Kokkos::View<DecisionType*, memory_space>;
   using ATS                = Kokkos::ArithTraits<scalar_type>;
+  using magnitudeType      = typename ATS::magnitudeType;
 
   local_matrix_type A;
   results_view results;
   local_matrix_type filteredA;
   local_graph_type graph;
+  magnitudeType dirichletThreshold;
   const scalar_type zero = ATS::zero();
+  const scalar_type one  = ATS::one();
 
  public:
-  PointwiseFillReuseFunctor(local_matrix_type& A_, results_view& results_, local_matrix_type& filteredA_, local_graph_type& graph_)
+  PointwiseFillReuseFunctor(local_matrix_type& A_, results_view& results_, local_matrix_type& filteredA_, local_graph_type& graph_, magnitudeType dirichletThreshold_)
     : A(A_)
     , results(results_)
     , filteredA(filteredA_)
-    , graph(graph_) {}
+    , graph(graph_)
+    , dirichletThreshold(dirichletThreshold_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const local_ordinal_type rlid) const {
@@ -300,6 +304,8 @@ class PointwiseFillReuseFunctor {
     }
     if constexpr (lumping) {
       rowFilteredA.value(diagOffset) += diagCorrection;
+      if ((dirichletThreshold >= 0.0) && (ATS::real(rowFilteredA.value(diagOffset)) <= dirichletThreshold))
+        rowFilteredA.value(diagOffset) = one;
     }
   }
 };
@@ -319,17 +325,21 @@ class PointwiseFillNoReuseFunctor {
   using memory_space       = typename local_matrix_type::memory_space;
   using results_view       = Kokkos::View<DecisionType*, memory_space>;
   using ATS                = Kokkos::ArithTraits<scalar_type>;
+  using magnitudeType      = typename ATS::magnitudeType;
 
   local_matrix_type A;
   results_view results;
   local_matrix_type filteredA;
+  magnitudeType dirichletThreshold;
   const scalar_type zero = ATS::zero();
+  const scalar_type one  = ATS::one();
 
  public:
-  PointwiseFillNoReuseFunctor(local_matrix_type& A_, results_view& results_, local_matrix_type& filteredA_)
+  PointwiseFillNoReuseFunctor(local_matrix_type& A_, results_view& results_, local_matrix_type& filteredA_, magnitudeType dirichletThreshold_)
     : A(A_)
     , results(results_)
-    , filteredA(filteredA_) {}
+    , filteredA(filteredA_)
+    , dirichletThreshold(dirichletThreshold_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const local_ordinal_type rlid) const {
@@ -356,6 +366,8 @@ class PointwiseFillNoReuseFunctor {
     }
     if constexpr (lumping) {
       rowFilteredA.value(diagOffset) += diagCorrection;
+      if ((dirichletThreshold >= 0.0) && (ATS::real(rowFilteredA.value(diagOffset)) <= dirichletThreshold))
+        rowFilteredA.value(diagOffset) = one;
     }
   }
 };
@@ -785,6 +797,7 @@ class VectorFillFunctor {
   using OTS                     = Kokkos::ArithTraits<local_ordinal_type>;
   using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
   using permutation_type        = Kokkos::View<local_ordinal_type*, memory_space>;
+  using magnitudeType           = typename ATS::magnitudeType;
 
   local_matrix_type A;
   local_ordinal_type blockSize;
@@ -792,19 +805,22 @@ class VectorFillFunctor {
   results_view results;
   local_matrix_type filteredA;
   local_graph_type graph;
+  magnitudeType dirichletThreshold;
   const scalar_type zero = ATS::zero();
+  const scalar_type one  = ATS::one();
 
   BlockRowComparison<local_matrix_type> comparison;
   permutation_type permutation;
 
  public:
-  VectorFillFunctor(local_matrix_type& A_, local_ordinal_type blockSize_, block_indices_view_type ghosted_point_to_block_, results_view& results_, local_matrix_type& filteredA_, local_graph_type& graph_)
+  VectorFillFunctor(local_matrix_type& A_, local_ordinal_type blockSize_, block_indices_view_type ghosted_point_to_block_, results_view& results_, local_matrix_type& filteredA_, local_graph_type& graph_, magnitudeType dirichletThreshold_)
     : A(A_)
     , blockSize(blockSize_)
     , ghosted_point_to_block(ghosted_point_to_block_)
     , results(results_)
     , filteredA(filteredA_)
     , graph(graph_)
+    , dirichletThreshold(dirichletThreshold_)
     , comparison(BlockRowComparison(A, blockSize_, ghosted_point_to_block)) {
     permutation = permutation_type("permutation", A.nnz());
   }
@@ -844,6 +860,8 @@ class VectorFillFunctor {
       }
       if constexpr (lumping) {
         rowFilteredA.value(diagOffset) += diagCorrection;
+        if ((dirichletThreshold >= 0.0) && (ATS::real(rowFilteredA.value(diagOffset)) <= dirichletThreshold))
+          rowFilteredA.value(diagOffset) = one;
       }
     }
 

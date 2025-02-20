@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
-static const char *exi_get_metadata_attribute(char *name, const char *prefix, int pre_len)
+static const char *exi_get_metadata_attribute(const char *name, const char *prefix, int pre_len)
 {
   /*
    * Each field or basis attribute metadata attribute consists of 2 or more attributes.
@@ -30,7 +30,7 @@ static const char *exi_get_metadata_attribute(char *name, const char *prefix, in
   return NULL;
 }
 
-static const char *exi_get_attribute_metadata_name(char *attrib, int offset)
+static const char *exi_get_attribute_metadata_name(const char *attrib, int offset)
 {
   /*
    * PRECONDITION: `attrib` is a basis or field metadata attribute of the form
@@ -165,9 +165,9 @@ int ex_get_field_metadata(int exoid, ex_field *field)
       if (found == -1) {
         which = count;
         strcpy(field[count].name, fld_name);
-	/* Set default separator type... */
-	field[count].component_separator[0] = '_';
-	field[count].component_separator[1] = '\0';
+        /* Set default separator type... */
+        field[count].component_separator[0] = '_';
+        field[count].component_separator[1] = '\0';
 
         count++;
       }

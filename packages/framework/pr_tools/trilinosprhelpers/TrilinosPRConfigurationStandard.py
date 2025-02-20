@@ -87,6 +87,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                f"-Dsubprojects_file:FILEPATH={self.arg_filename_subprojects}",
                f"-DCTEST_DROP_SITE:STRING={self.arg_ctest_drop_site}",
                 "-DUSE_EXPLICIT_TRILINOS_CACHEFILE:BOOL=" + ("ON" if self.arg_use_explicit_cachefile else "OFF"),
+                "-DSKIP_RUN_TESTS:BOOL=" + ("ON" if self.arg_skip_run_tests else "OFF"),
              ]
 
         if self.arg_extra_configure_args:

@@ -44,8 +44,8 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
                                    viewNull);
 
     dualview_t dvNull(viewNull, viewNull_mirror);
-    size_t use_h = dvNull.h_view.use_count();
-    size_t use_d = dvNull.d_view.use_count();
+    size_t use_h = dvNull.view_host().use_count();
+    size_t use_d = dvNull.view_device().use_count();
 
     std::cout << "Null DualView:     "
               << "host.use_count = " << use_h << ";  "

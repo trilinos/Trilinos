@@ -117,11 +117,11 @@ namespace BaskerNS
       //           thread.team_rank());
       Int kid = basker->t_get_kid(thread);
       #endif
-      printf( " * kokkos_sfactor_init_factor(%d) *\n",kid ); fflush(stdout);
+      //printf( " * kokkos_sfactor_init_factor(%d) *\n",int(kid) ); fflush(stdout);
 
       basker->t_init_factor(kid);
 
-      printf( " * kokkos_sfactor_init_factor(%d) done *\n",kid ); fflush(stdout);
+      //printf( " * kokkos_sfactor_init_factor(%d) done *\n",int(kid) ); fflush(stdout);
       //This needs to be done earlier in ordering now
       //basker->t_init_2DA(kid);
 
@@ -384,9 +384,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         if(Options.verbose == BASKER_TRUE)
         {
           printf( " >> leaf_assign_nnz(LL(%d)(%d)) = (1.0 + %.1f + %.1f) + leaf_nnz[%d] = %d from AMD\n",(int)blk,0, 
-                  BASKER_DOM_NNZ_OVER,Options.user_fill,p,part_tree.leaf_nnz[p] );
+                  BASKER_DOM_NNZ_OVER,Options.user_fill,(int)p,(int)part_tree.leaf_nnz[p] );
           printf( " >> leaf_assign_nnz(LU(%d)(%d)) = (1.0 + %.1f + %.1f) + leaf_nnz[%d] = %d from AMD\n",(int)blk,(int)LU_size(blk)-1,
-                  BASKER_DOM_NNZ_OVER,Options.user_fill,p,part_tree.leaf_nnz[p] );
+                  BASKER_DOM_NNZ_OVER,Options.user_fill,(int)p,(int)part_tree.leaf_nnz[p] );
         }
         LL(blk)(0).nnz = part_tree.leaf_nnz[p] * fill_factor;
         LU(blk)(LU_size(blk)-1).nnz = part_tree.leaf_nnz[p] * fill_factor;
@@ -719,7 +719,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   #endif
     BASKER_MATRIX *MV = &M;
   
-    if((Options.symmetric == BASKER_TRUE))
+    if(Options.symmetric == BASKER_TRUE)
     {
     #ifdef BASKER_DEBUG_SFACTOR
       printf("symmetric\n");
@@ -2349,6 +2349,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    Int option
   )
   {
+    const Int izero = 0;
     if(option == 0 || option == 1)
     {
       const Int Int_MAX = std::numeric_limits<Int>::max();
@@ -2377,8 +2378,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         if (fill_factor > 1.0 && k_nnz > t_nnz) {
           t_nnz = k_nnz;
         }
-        Int mn = max(0,M.nrow*M.ncol);
-        if (mn > 0 && mn < t_nnz) {
+        Int mn = std::max(izero, M.nrow*M.ncol);
+        if (mn > izero && mn < t_nnz) {
           t_nnz = mn;
         }
         M.nnz = t_nnz;

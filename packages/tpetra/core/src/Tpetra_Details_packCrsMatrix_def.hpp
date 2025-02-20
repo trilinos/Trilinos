@@ -889,7 +889,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   Kokkos::View<char*, host_dev_type> exports_h (exports.getRawPtr (),
                                                 exports.size ());
   // DEEP_COPY REVIEW - DEVICE-TO-HOST
-  Kokkos::deep_copy (device_exec_space(), exports_h, exports_dv.d_view);
+  Kokkos::deep_copy (device_exec_space(), exports_h, exports_dv.view_device());
 }
 
 template<typename ST, typename LO, typename GO, typename NT>

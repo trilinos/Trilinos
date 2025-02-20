@@ -24,6 +24,8 @@
 
 using namespace std;
 
+//#define BASKER_TIMER_FINE
+
 namespace BaskerNS
 {
   ///wrapper init tree function for selection
@@ -1146,7 +1148,7 @@ namespace BaskerNS
           }
         }
         start_col = BASKER_FALSE;
-      }//over each row        
+      }//over each row
     }//over each colunm
 
   }//end find_2d_convert()
@@ -1286,7 +1288,7 @@ namespace BaskerNS
   // NDE: sfactor_copy2 is now only responsible for mapping blocks to 2D blocks
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::sfactor_copy2(bool alloc_BTFA, bool copy_BTFA)
+  int Basker<Int,Entry,Exe_Space>::sfactor_copy2(bool doSymbolic, bool alloc_BTFA, bool copy_BTFA)
   {
     //Timers
     #ifdef BASKER_TIMER_FINE
@@ -1310,19 +1312,55 @@ namespace BaskerNS
       #ifdef BASKER_TIMER_FINE 
       double twod_time = 0.0;
       Kokkos::Timer timer_twod;
+      Kokkos::Timer tic_twod;
       #endif
+      if (doSymbolic) {
+        // clear vals from ALM, AVM - views of views that store the local 2D block CCS reordered matrix info
+        clean_2d();
 
-      clean_2d(); // clear vals from ALM, AVM - views of views that store the local 2D block CCS reordered matrix info
+        //matrix_to_views_2D(BTF_A);
+        //Find starting point
+        find_2D_convert(BTF_A); //prepare CCS 'sizes' of each ALM(i)(j), AVM(i)(j) (nnz, col_idx, )
 
-      //matrix_to_views_2D(BTF_A);
-      //Find starting point
-      find_2D_convert(BTF_A); //prepare CCS 'sizes' of each ALM(i)(j), AVM(i)(j) (nnz, col_idx, )
+        // save ptrs
+        for(Int b = 0 ; b < tree.nblks; ++b) {
+          for(Int sb = 0; sb < LL_size(b); ++sb) {
+            for (int j = 0; j <= ALM(b)(sb).ncol; j++) {
+              ALM(b)(sb).dig_ptr(j) = ALM(b)(sb).col_ptr(j);
+            }
+          }
+          for(Int sb = 0; sb < LU_size(b); ++sb) {
+            for (int j = 0; j <= AVM(b)(sb).ncol; j++) {
+              AVM(b)(sb).dig_ptr(j) = AVM(b)(sb).col_ptr(j);
+            }
+          }
+        }
+      } else {
+        // load ptrs
+        for(Int b = 0 ; b < tree.nblks; ++b) {
+          for(Int sb = 0; sb < LL_size(b); ++sb) {
+            for (int j = 0; j <= ALM(b)(sb).ncol; j++) {
+              ALM(b)(sb).col_ptr(j) = ALM(b)(sb).dig_ptr(j);
+            }
+          }
+          for(Int sb = 0; sb < LU_size(b); ++sb) {
+            for (int j = 0; j <= AVM(b)(sb).ncol; j++) {
+              AVM(b)(sb).col_ptr(j) = AVM(b)(sb).dig_ptr(j);
+            }
+          }
+        }
+      }
+      #ifdef BASKER_TIMER_FINE
+      double tic_time = tic_twod.seconds();
+      std::cout << "    > Basker 2D convert time: " << tic_time << std::endl;
+      tic_twod.reset();
+      #endif
 
       //Fill 2D structure
       #ifdef BASKER_KOKKOS
       BASKER_BOOL keep_zeros = BASKER_FALSE;
       BASKER_BOOL alloc      = alloc_BTFA; //BASKER_FALSE;
-      #ifdef BASKER_PARALLEL_INIT_2D
+      #if 1//def BASKER_PARALLEL_INIT_2D
        kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, alloc, keep_zeros); // t_init_2DA; fill row_idx, vals into ALM, AVM calling convert2D
        Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
        Kokkos::fence();
@@ -1336,6 +1374,8 @@ namespace BaskerNS
       #endif
 
       #ifdef BASKER_TIMER_FINE
+      tic_time = tic_twod.seconds();
+      std::cout << "    > Basker init 2D time: " << tic_time << std::endl;
       tmp_time = timer_twod.seconds();
       twod_time += tmp_time;
       std::cout << "    Basker move into 2D ND reorder time: " << tmp_time << std::endl;
@@ -1352,7 +1392,7 @@ namespace BaskerNS
     double gperm_time = 0.0;
     Kokkos::Timer timer_gperm;
     #endif
-    if((Options.same_pattern == BASKER_TRUE))
+    if(Options.same_pattern == BASKER_TRUE)
     {
       if(same_pattern_flag == BASKER_FALSE)
       {
@@ -1400,4 +1440,5 @@ namespace BaskerNS
 
 }//end namespace basker
 
+#undef BASKER_TIMER_FINE
 #endif //end ifndefbasker_tree_hpp

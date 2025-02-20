@@ -126,8 +126,8 @@ MT compare_matrices(RCP<Matrix> &Ap, RCP<Matrix> &Ab) {
   SC one    = Teuchos::ScalarTraits<SC>::one();
   SC zero   = Teuchos::ScalarTraits<SC>::zero();
 
-  RCP<const CRS> Ap_t  = MueLu::Utilities<SC, LO, GO, NO>::Op2TpetraCrs(Ap);
-  auto Ab_t            = MueLu::Utilities<SC, LO, GO, NO>::Op2TpetraBlockCrs(Ab);
+  RCP<const CRS> Ap_t  = toTpetra(Ap);
+  auto Ab_t            = toTpetraBlock(Ab);
   RCP<CRS> Ab_as_point = Tpetra::convertToCrsMatrix<SC, LO, GO, NO>(*Ab_t);
 
   RCP<CRS> diff = rcp(new CRS(Ap_t->getCrsGraph()));
@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ParameterListInterpreter, PointCrs_vs_BlockCrs
     {
       using XCRS = Xpetra::TpetraBlockCrsMatrix<SC, LO, GO, NO>;
 
-      auto tA      = MueLu::Utilities<SC, LO, GO, NO>::Op2TpetraCrs(PointA);
+      auto tA      = toTpetra(PointA);
       auto bA      = Tpetra::convertToBlockCrsMatrix<SC, LO, GO, NO>(*tA, 1);
       RCP<XCRS> AA = rcp(new XCRS(bA));
       BlockA       = rcp(new CrsMatrixWrap(rcp_implicit_cast<CrsMatrix>(AA)));

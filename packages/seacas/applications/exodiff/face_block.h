@@ -8,7 +8,7 @@
 #include "exo_entity.h"
 #include <iostream>
 
-template <typename INT> class ExoII_Read;
+template <typename INT> class Exo_Read;
 
 template <typename INT> class Face_Block : public Exo_Entity
 {
@@ -33,5 +33,5 @@ private:
   std::string elmt_type{};
   int         num_faces_per_elmt{-1};
 
-  friend class ExoII_Read<INT>;
+  friend class Exo_Read<INT>;
 };

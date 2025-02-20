@@ -79,6 +79,9 @@
 static int *i8i4(int64_t size, const int64_t *i8)
 {
   int *i4 = malloc(size * sizeof(int));
+  if (i4 == NULL) {
+    return NULL;
+  }
   for (int64_t i = 0; i < size; i++) {
     i4[i] = i8[i];
   }
@@ -245,6 +248,10 @@ void F2C(expini, EXPINI)(int *idexo, char *title, void_int *num_dim, void_int *n
     slen = titlelen;
   }
   char *name = malloc((slen + 1) * sizeof(char));
+  if (name == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
   (void)ex_fstrncpy(name, title, slen);
 
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
@@ -866,6 +873,10 @@ void F2C(expecpp, EXPECPP)(int *idexo, int *obj_type, entity_id *elem_blk_id, in
     return;
   }
   int *counts4 = i8i4(block.num_entry, counts);
+  if (counts4 == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
   *ierr =
       ex_put_entity_count_per_polyhedra(*idexo, (ex_entity_type)*obj_type, *elem_blk_id, counts4);
   free(counts4);
@@ -2040,7 +2051,11 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
 void F2C(expvtt, EXPVTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
 {
   int *var_tab4 = i8i4((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab);
-  *ierr         = ex_put_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab4);
+  if (var_tab4 == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
+  *ierr = ex_put_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab4);
   free(var_tab4);
 }
 #else
@@ -2058,7 +2073,11 @@ void F2C(expvtt, EXPVTT)(int *idexo, int *num_entity, int *num_var, int *var_tab
 void F2C(expnstt, EXPNSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
 {
   int *var_tab4 = i8i4((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab);
-  *ierr         = ex_put_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab4);
+  if (var_tab4 == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
+  *ierr = ex_put_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab4);
   free(var_tab4);
 }
 #else
@@ -2076,7 +2095,11 @@ void F2C(expnstt, EXPNSTT)(int *idexo, int *num_entity, int *num_var, int *var_t
 void F2C(expsstt, EXPSSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
 {
   int *var_tab4 = i8i4((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab);
-  *ierr         = ex_put_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab4);
+  if (var_tab4 == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
+  *ierr = ex_put_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab4);
   free(var_tab4);
 }
 #else
@@ -2094,7 +2117,11 @@ void F2C(expsstt, EXPSSTT)(int *idexo, int *num_entity, int *num_var, int *var_t
 void F2C(exgvtt, EXGVTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
 {
   int *var_tab4 = malloc(*num_entity * *num_var * sizeof(int));
-  *ierr         = ex_get_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab4);
+  if (var_tab4 == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
+  *ierr = ex_get_truth_table(*idexo, EX_ELEM_BLOCK, *num_entity, *num_var, var_tab4);
   i4i8((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab4, var_tab);
   free(var_tab4);
 #else
@@ -2112,7 +2139,11 @@ void F2C(exgvtt, EXGVTT)(int *idexo, int *num_entity, int *num_var, int *var_tab
 void F2C(exgnstt, EXGNSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
 {
   int *var_tab4 = malloc(*num_entity * *num_var * sizeof(int));
-  *ierr         = ex_get_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab4);
+  if (var_tab4 == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
+  *ierr = ex_get_truth_table(*idexo, EX_NODE_SET, *num_entity, *num_var, var_tab4);
   i4i8((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab4, var_tab);
   free(var_tab4);
 }
@@ -2131,7 +2162,11 @@ void F2C(exgnstt, EXGNSTT)(int *idexo, int *num_entity, int *num_var, int *var_t
 void F2C(exgsstt, EXGSSTT)(int *idexo, int *num_entity, int *num_var, int64_t *var_tab, int *ierr)
 {
   int *var_tab4 = malloc(*num_entity * *num_var * sizeof(int));
-  *ierr         = ex_get_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab4);
+  if (var_tab4 == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
+  *ierr = ex_get_truth_table(*idexo, EX_SIDE_SET, *num_entity, *num_var, var_tab4);
   i4i8((int64_t)(*num_entity) * (int64_t)(*num_var), var_tab4, var_tab);
   free(var_tab4);
 }
@@ -2443,6 +2478,10 @@ void F2C(exgssc, EXGSSC)(int *idexo, entity_id *side_set_id, int64_t *side_set_n
   int64_t num_df_in_set    = 0;
   ex_get_set_param(*idexo, EX_SIDE_SET, *side_set_id, &num_sides_in_set, &num_df_in_set);
   int *cnt_list = malloc(num_sides_in_set * sizeof(int));
+  if (cnt_list == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
 
   *ierr = ex_get_side_set_node_count(*idexo, *side_set_id, cnt_list);
 
@@ -2465,6 +2504,10 @@ void F2C(exgcssc, EXGCSSC)(int *idexo, int64_t *side_set_node_cnt_list, int *ier
 {
   int  count    = ex_inquire_int(*idexo, EX_INQ_SS_ELEM_LEN);
   int *cnt_list = malloc(count * sizeof(int));
+  if (cnt_list == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
 
   *ierr = ex_get_concat_side_set_node_count(*idexo, cnt_list);
 
@@ -2877,6 +2920,10 @@ void F2C(exgii, EXGII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
   }
 
   char *file_type = (char *)malloc((slen + 1) * sizeof(char));
+  if (file_type == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
 
   if ((*ierr = ex_get_init_info(*idne, nproc, nproc_in_f, file_type)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
@@ -2914,6 +2961,10 @@ void F2C(expii, EXPII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
   }
 
   char *file_type = (char *)malloc((slen + 1) * sizeof(char));
+  if (file_type == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
 
   ex_fstrncpy(file_type, ftype, slen);
 
@@ -3528,6 +3579,10 @@ void F2C(exgelt, EXGELT)(int *idne, entity_id *elem_blk_id, char *elem_type, int
   }
 
   char *etype = (char *)malloc((slen + 1) * sizeof(char));
+  if (etype == NULL) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
 
   if ((*ierr = ex_get_elem_type(*idne, *elem_blk_id, etype)) != 0) {
     char errmsg[MAX_ERR_LENGTH];

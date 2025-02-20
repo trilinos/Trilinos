@@ -390,14 +390,22 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker)
     STANDARD_PASS_OUTPUT
     )
 
-    ##Copy shylubasker_test.xml, but do not test
-    ##depends on not included matrices
+    ##Copy shylubasker_test.xml
     TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyShyLUBaskerFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     SOURCE_FILES shylubasker_test.xml
     EXEDEPS Solver_Test
     )
 
+    ##Test only if ShyLU-Basker is enabled
+    TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME ShyLUBasker_Solver_Test
+    ARGS "--xml-params=shylubasker_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    )
 ENDIF()
 
 ##### MUMPS Tests ####

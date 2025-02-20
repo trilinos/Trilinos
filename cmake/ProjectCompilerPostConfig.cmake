@@ -1,5 +1,6 @@
 tribits_get_package_enable_status(Kokkos  KokkosEnable "")
 
+
 macro(disable_warnings_for_deprecated_packages)
     message(STATUS "Disabling all warnings/errors for deprecated packages")
     foreach(package ${DEPRECATED_PACKAGES})
@@ -12,6 +13,14 @@ macro(enable_warnings warnings)
     message(STATUS "Trilinos warnings enabled: ${warnings}")
     foreach(warning ${warnings})
         set(CMAKE_CXX_FLAGS "-W${warning} -Wno-error=${warning} ${CMAKE_CXX_FLAGS}")
+    endforeach()
+endmacro()
+
+
+macro(disable_warnings warnings)
+    message(STATUS "Trilinos warnings disabled: ${warnings}")
+    foreach(warning ${warnings})
+        set(CMAKE_CXX_FLAGS "-Wno-${warning} ${CMAKE_CXX_FLAGS}")
     endforeach()
 endmacro()
 
@@ -42,8 +51,41 @@ IF (KokkosEnable)
   # being treated as an internal package.
 ENDIF()
 
-set(upcoming_warnings shadow ${Trilinos_ADDITIONAL_WARNINGS})
-set(promoted_warnings parentheses sign-compare unused-variable reorder uninitialized)
+set(explicitly_disabled_warnings
+    deprecated-declarations
+    inline
+)
+set(upcoming_warnings
+    shadow
+    ${Trilinos_ADDITIONAL_WARNINGS}
+)
+set(promoted_warnings
+    address
+    aggressive-loop-optimizations
+    builtin-declaration-mismatch
+    cast-align
+    div-by-zero
+    format-extra-args
+    format
+    format-zero-length
+    init-self
+    int-to-pointer-cast
+    parentheses
+    reorder
+    return-type
+    sequence-point
+    sign-compare
+    strict-aliasing
+    switch
+    type-limits
+    uninitialized
+    unused-function
+    unused-label
+    unused-value
+    unused-variable
+    variadic-macros
+    write-strings
+)
 
 if("${Trilinos_WARNINGS_MODE}" STREQUAL "WARN")
     enable_warnings("${upcoming_warnings}")
@@ -52,4 +94,8 @@ if("${Trilinos_WARNINGS_MODE}" STREQUAL "WARN")
 elseif("${Trilinos_WARNINGS_MODE}" STREQUAL "ERROR")
     enable_errors("${promoted_warnings};${upcoming_warnings}")
     disable_warnings_for_deprecated_packages()
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    disable_warnings("${explicitly_disabled_warnings}")
 endif()

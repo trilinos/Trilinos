@@ -274,12 +274,8 @@ namespace Amesos2 {
                               MatrixTraits<Epetra_RowMatrix>::node_t> >
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getMap_impl() const
   {
-    // Should Map() be used (returns Epetra_BlockMap)
-    /*
-    printf("Amesos2_EpetraRowMatrix_AbstractMatrixAdapter: Epetra does not support a 'getMap()' method. Returning rcp(Teuchos::null). \
-        If your map contains non-contiguous GIDs please use Tpetra instead of Epetra. \n");
-    */
-    return( Teuchos::null );
+    const Epetra_BlockMap map = this->mat_->Map();
+    return( Util::epetra_map_to_tpetra_map<local_ordinal_t,global_ordinal_t,global_size_t,node_t>(map) );
   }
 
   template <class DerivedMat>
@@ -336,6 +332,39 @@ namespace Amesos2 {
     return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
 #else
     return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->get_impl(map, distribution);
+#endif
+  }
+
+  template <class DerivedMat>
+  RCP<const MatrixAdapter<DerivedMat> >
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::reindex_impl(Teuchos::RCP<const map_t> &contigRowMap,
+                                                                            Teuchos::RCP<const map_t> &contigColMap,
+                                                                            const EPhase current_phase) const
+  {
+    // Delegate implementation to subclass
+#ifdef __CUDACC__
+    // NVCC doesn't seem to like the static_cast, even though it is valid
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap, current_phase);
+#else
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->reindex_impl(contigRowMap, contigColMap, current_phase);
+#endif
+  }
+
+  template <class DerivedMat>
+  template<typename KV_S, typename KV_GO, typename KV_GS, typename host_ordinal_type_array, typename host_scalar_type_array>
+  typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::local_ordinal_t
+  AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                                host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
+                                host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
+                                bool column_major, EPhase current_phase) const
+  {
+#ifdef __CUDACC__
+    // NVCC doesn't seem to like the static_cast, even though it is valid
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, recvCounts, recvDispls, transpose_map, nzvals_t,
+                                                                               column_major, current_phase);
+#else
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, recvCounts, recvDispls, transpose_map, nzvals_t,
+                                                                              column_major, current_phase);
 #endif
   }
 

@@ -29,8 +29,8 @@
   if (envVarSet && (std::strcmp(envVarSet,"1") == 0)) \
     std::cout << (fn) << " called from " << callerstr \
               << " at " << filestr << ":"<<linnum \
-              << " host cnt " << dualView.h_view.use_count()  \
-              << " device cnt " << dualView.d_view.use_count()  \
+              << " host cnt " << getRawHostView().use_count()  \
+              << " device cnt " << getRawDeviceView().use_count()  \
               << std::endl; \
   }
 
@@ -143,7 +143,7 @@ public:
     : originalDualView(src.originalDualView),
       dualView(src.dualView)
   { }
-  
+
   //! Conversion assignment operator.
   template <class SrcDualViewType>
   WrappedDualView& operator=(const WrappedDualView<SrcDualViewType>& src) {
@@ -210,7 +210,7 @@ public:
   }
 
   size_t extent(const int i) const {
-    return dualView.h_view.extent(i);
+    return getRawHostView().extent(i);
   }
 
   void stride(size_t * stride_) const {
@@ -219,11 +219,11 @@ public:
 
 
   size_t origExtent(const int i) const {
-    return originalDualView.h_view.extent(i);
+    return getRawHostOriginalView().extent(i);
   }
 
   const char * label() const {
-    return dualView.d_view.label();
+    return getRawDeviceView().label();
   }
 
 
@@ -233,12 +233,12 @@ public:
   ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadOnly");
-    
+
     if(needsSyncPath()) {
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
     }
-    return dualView.view_host();
+    return getRawHostView();
   }
 
   t_host
@@ -255,7 +255,7 @@ public:
       originalDualView.modify_host();
     }
 
-    return dualView.view_host();
+    return getRawHostView();
   }
 
   t_host
@@ -275,7 +275,7 @@ public:
       dualView.clear_sync_state();
       dualView.modify_host();
     }
-    return dualView.view_host();
+    return getRawHostView();
   }
 
   typename t_dev::const_type
@@ -288,7 +288,7 @@ public:
       throwIfHostViewAlive();
       impl::sync_device(originalDualView);
     }
-    return dualView.view_device();
+    return getRawDeviceView();
   }
 
   t_dev
@@ -304,7 +304,7 @@ public:
       impl::sync_device(originalDualView);
       originalDualView.modify_device();
     }
-    return dualView.view_device();
+    return getRawDeviceView();
   }
 
   t_dev
@@ -324,7 +324,7 @@ public:
       dualView.clear_sync_state();
       dualView.modify_device();
     }
-    return dualView.view_device();
+    return getRawDeviceView();
   }
 
   template<class TargetDeviceType>
@@ -430,7 +430,7 @@ public:
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
     }
-    return getSubview(dualView.view_host(), offset, numEntries);
+    return getSubview(getRawHostView(), offset, numEntries);
   }
 
   t_host
@@ -446,7 +446,7 @@ public:
       impl::sync_host(originalDualView);
       originalDualView.modify_host();
     }
-    return getSubview(dualView.view_host(), offset, numEntries);
+    return getSubview(getRawHostView(), offset, numEntries);
   }
 
   t_host
@@ -470,7 +470,7 @@ public:
       throwIfHostViewAlive();
       impl::sync_device(originalDualView);
     }
-    return getSubview(dualView.view_device(), offset, numEntries);
+    return getSubview(getRawDeviceView(), offset, numEntries);
   }
 
   t_dev
@@ -486,7 +486,7 @@ public:
       impl::sync_device(originalDualView);
       originalDualView.modify_device();
     }
-    return getSubview(dualView.view_device(), offset, numEntries);
+    return getSubview(getRawDeviceView(), offset, numEntries);
   }
 
   t_dev
@@ -503,7 +503,7 @@ public:
 
   // Debugging functions to get copies of the view state
   typename t_host::HostMirror getHostCopy() const {
-    auto X_dev = dualView.view_host();
+    auto X_dev = getRawHostView();
     if(X_dev.span_is_contiguous()) {
       auto mirror = Kokkos::create_mirror_view(X_dev);
       Kokkos::deep_copy(mirror,X_dev);
@@ -518,7 +518,7 @@ public:
   }
 
   typename t_dev::HostMirror getDeviceCopy() const {
-    auto X_dev = dualView.view_device();
+    auto X_dev = getRawDeviceView();
     if(X_dev.span_is_contiguous()) {
       auto mirror = Kokkos::create_mirror_view(X_dev);
       Kokkos::deep_copy(mirror,X_dev);
@@ -534,11 +534,11 @@ public:
 
   // Debugging functions for validity checks
   bool is_valid_host() const {
-    return dualView.view_host().size() == 0   || dualView.view_host().data();
+    return getRawHostView().size() == 0   || getRawHostView().data();
   }
 
   bool is_valid_device() const {
-    return dualView.view_device().size() == 0 || dualView.view_device().data();
+    return getRawDeviceView().size() == 0 || getRawDeviceView().data();
   }
 
 
@@ -551,11 +551,11 @@ public:
   }
 
   int host_view_use_count() const {
-    return originalDualView.h_view.use_count();
+    return getRawHostOriginalView().use_count();
   }
 
   int device_view_use_count() const {
-    return originalDualView.d_view.use_count();
+    return getRawDeviceView().use_count();
   }
 
 
@@ -565,6 +565,39 @@ public:
   friend class ::Tpetra::MultiVector;
 
 private:
+
+  const auto& getRawHostOriginalView() const {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+    return originalDualView.h_view;
+#else
+    return originalDualView.view_host();
+#endif
+  }
+
+  const auto& getRawDeviceOriginalView() const {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+    return originalDualView.d_view;
+#else
+    return originalDualView.view_device();
+#endif
+  }
+
+  const auto& getRawHostView() const {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+    return dualView.h_view;
+#else
+    return dualView.view_host();
+#endif
+  }
+
+  const auto& getRawDeviceView() const {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+    return dualView.d_view;
+#else
+    return dualView.view_device();
+#endif
+  }
+
   // A Kokkos implementation of WrappedDualView will have to make these
   // functions publically accessable, but in the Tpetra version, we'd
   // really rather not.
@@ -597,7 +630,7 @@ private:
   }
 
   bool memoryIsAliased() const {
-    return deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data();
+    return deviceMemoryIsHostAccessible && getRawHostView().data() == getRawDeviceView().data();
   }
 
 
@@ -628,25 +661,25 @@ private:
   }
 
 
-  void throwIfViewsAreDifferentSizes() const {    
+  void throwIfViewsAreDifferentSizes() const {
     // Here we check *size* (the product of extents) rather than each extent individually.
     // This is mostly designed to catch people resizing one view, but not the other.
-    if(dualView.d_view.size() != dualView.h_view.size()) {    
+    if(getRawDeviceView().size() != getRawHostView().size()) {
         std::ostringstream msg;
-        msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
+        msg << "Tpetra::Details::WrappedDualView (name = " << getRawDeviceView().label()
             << "; host and device views are different sizes: "
-            << dualView.h_view.size() << " vs " <<dualView.h_view.size();
+            << getRawHostView().size() << " vs " <<getRawHostView().size();
         throw std::runtime_error(msg.str());
     }
   }
 
   void throwIfHostViewAlive() const {
     throwIfViewsAreDifferentSizes();
-    if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
+    if (getRawHostView().use_count() > getRawDeviceView().use_count()) {
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
-          << "; host use_count = " << dualView.h_view.use_count()
-          << "; device use_count = " << dualView.d_view.use_count() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << getRawDeviceView().label()
+          << "; host use_count = " << getRawHostView().use_count()
+          << "; device use_count = " << getRawDeviceView().use_count() << "): "
           << "Cannot access data on device while a host view is alive";
       throw std::runtime_error(msg.str());
     }
@@ -654,18 +687,18 @@ private:
 
   void throwIfDeviceViewAlive() const {
     throwIfViewsAreDifferentSizes();
-    if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
+    if (getRawDeviceView().use_count() > getRawHostView().use_count()) {
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
-          << "; host use_count = " << dualView.h_view.use_count()
-          << "; device use_count = " << dualView.d_view.use_count() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << getRawDeviceView().label()
+          << "; host use_count = " << getRawHostView().use_count()
+          << "; device use_count = " << getRawDeviceView().use_count() << "): "
           << "Cannot access data on host while a device view is alive";
       throw std::runtime_error(msg.str());
     }
   }
- 
+
   bool iAmASubview() {
-    return originalDualView.h_view != dualView.h_view;
+    return getRawHostOriginalView() != getRawHostView();
   }
 
   mutable DualViewType originalDualView;

@@ -76,7 +76,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, Apply, Scalar, LocalOrdinal, G
 
     X1->putScalar((SC)0.0);
 
-    tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
+    tH->apply(*(toTpetra(RHS1)), *(toTpetra(X1)));
 
     X1->norm2(norms);
     out << "after apply, ||X1|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;

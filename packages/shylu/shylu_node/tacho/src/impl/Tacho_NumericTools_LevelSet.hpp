@@ -1630,13 +1630,6 @@ public:
   }
 
   inline void extractCRS(bool lu) {
-#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
-     defined(KOKKOS_ENABLE_HIP)
-
-    const ordinal_type nrhs = 1;
-    const ordinal_type m = _m;
-    const value_type one(1);
-    const value_type zero(0);
 
     // ========================
     // free CRS, 
@@ -1649,7 +1642,15 @@ public:
 
     // ========================
     // workspace
+    const ordinal_type m = _m;
+    const ordinal_type nrhs = 1;
     Kokkos::resize(_w_vec, m, nrhs);
+
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
+    const value_type one(1);
+    const value_type zero(0);
+
     int ldw = _w_vec.stride(1);
 #if defined(KOKKOS_ENABLE_CUDA)
     cudaDataType computeType;
@@ -1702,6 +1703,7 @@ public:
     rocsparse_create_dnvec_descr(&vecX, m, (void*)_w_vec.data(), rocsparse_compute_type);
     rocsparse_create_dnvec_descr(&vecY, m, (void*)_w_vec.data(), rocsparse_compute_type);
 #endif
+#endif
 
     // allocate rowptrs
     Kokkos::resize(rowptrU, _team_serial_level_cut*(1+m));
@@ -1747,7 +1749,6 @@ public:
 
       // ========================
       // shift to generate rowptr
-      using range_type = Kokkos::pair<int, int>;
       {
         using range_policy_type = Kokkos::RangePolicy<exec_space>;
         Kokkos::parallel_scan("shiftRowptr", range_policy_type(0, m+1), rowptr_sum(s0.rowptrU));
@@ -1931,6 +1932,8 @@ public:
       }
       ptr += (1+m);
 
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
       // ========================
       // create NVIDIA/AMD data structures for SpMV
       size_t buffer_size_L = 0;
@@ -2079,10 +2082,13 @@ public:
             rocsparse_spmv_stage_preprocess,
            &buffer_size_L, (void*)buffer_L.data());
         #endif
-      } 
+      }
+#endif
 #endif
     }
 
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
 #if defined(KOKKOS_ENABLE_CUDA)
 #ifdef USE_SPMM_FOR_WORKSPACE_SIZE
     cusparseDestroyDnMat(vecX);
@@ -2404,10 +2410,19 @@ public:
   inline void solveGenericLowerOnDeviceVar2_SpMV(const ordinal_type lvl, const ordinal_type nlvls,
                                                  const ordinal_type pbeg, const ordinal_type pend,
                                                  const value_type_matrix &t) {
-#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
-     defined(KOKKOS_ENABLE_HIP)
     const ordinal_type m = t.extent(0);
     const ordinal_type nrhs = t.extent(1);
+    const ordinal_type old_nrhs = _w_vec.extent(1);
+
+    auto &s0 = _h_supernodes(_h_level_sids(pbeg));
+    if (old_nrhs != nrhs) {
+      // expand workspace
+      Kokkos::resize(_w_vec, m, nrhs);
+    }
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
+    const ordinal_type ldt = t.stride(1);
+
 #if defined(KOKKOS_ENABLE_CUDA)
     cudaDataType computeType = CUDA_R_64F;
     if (std::is_same<value_type, float>::value) {
@@ -2429,9 +2444,7 @@ public:
     // compute t = L^{-1}*w
     const value_type alpha (1);
     const value_type beta  (0);
-    if (_w_vec.extent(1) != size_t(nrhs)) {
-      // expand workspace
-      Kokkos::resize(_w_vec, m, nrhs);
+    if (old_nrhs != nrhs) {
       // attach to Cusparse/Rocsparse data struct
       int ldw = _w_vec.stride(1);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -2450,8 +2463,6 @@ public:
       rocsparse_create_dnvec_descr(&vecW, m, (void*)(_w_vec.data()), rocsparse_compute_type);
 #endif
     }
-    const ordinal_type ldt = t.stride(1);
-    auto &s0 = _h_supernodes(_h_level_sids(pbeg));
     #else
     exit(0);
     #endif
@@ -2569,6 +2580,7 @@ public:
     if (rocsparse_status_success != status) {
       printf( " Failed rocsparse_spmv for L\n" );
     }
+#endif
 #else
     const value_type zero(0);
     auto h_w = Kokkos::create_mirror_view_and_copy(host_memory_space(), ((nlvls-1-lvl)%2 == 0 ? t : _w_vec));
@@ -2611,7 +2623,6 @@ public:
         Kokkos::deep_copy(t, _w_vec);
       }
     }
-#endif
   }
 
   inline void solveCholeskyLowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
@@ -2773,13 +2784,13 @@ public:
   inline void solveGenericUpperOnDeviceVar2_SpMV(const ordinal_type lvl, const ordinal_type nlvls,
                                                  const ordinal_type pbeg, const ordinal_type pend,
                                                  const value_type_matrix &t) {
-#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
-     defined(KOKKOS_ENABLE_HIP)
     const ordinal_type m = t.extent(0);
     const ordinal_type nrhs = t.extent(1);
 
     auto &s0 = _h_supernodes(_h_level_sids(pbeg));
 
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
     #ifdef TACHO_INSERT_DIAGONALS
     // x = t & y = w (lvl = 0,2,4)
     // compute t = L^{-1}*w
@@ -2885,6 +2896,7 @@ public:
     if (rocsparse_status_success != status) {
       printf( " Failed rocsparse_spmv for U\n" );
     }
+#endif
 #else
     const value_type zero(0);
     auto h_w = Kokkos::create_mirror_view_and_copy(host_memory_space(), (lvl%2 == 0 ? t : _w_vec));
@@ -2913,7 +2925,6 @@ public:
         Kokkos::deep_copy(t, _w_vec);
       }
     }
-#endif
   }
 
   inline void solveCholeskyUpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
@@ -3301,7 +3312,7 @@ public:
 
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
-            const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+            const auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
 
             ConstUnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
             ConstUnmanagedViewType<value_type_matrix> D(_diag.data() + offm * 2, m, 2);

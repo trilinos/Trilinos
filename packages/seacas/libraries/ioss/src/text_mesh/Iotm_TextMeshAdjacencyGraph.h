@@ -94,7 +94,7 @@ namespace Iotm {
       struct FaceConnection
       {
         FaceConnection()
-            : thisSide(INVALID_SIDE), thatElement(INVALID_INDEX), thatSide(INVALID_SIDE){};
+            : thisSide(INVALID_SIDE), thatElement(INVALID_INDEX), thatSide(INVALID_SIDE) {};
 
         FaceConnection(int thisSide_, IndexType otherElement_, int otherSide_)
             : thisSide(thisSide_), thatElement(otherElement_), thatSide(otherSide_)
@@ -364,7 +364,8 @@ namespace Iotm {
         std::vector<EntityId> sideNodes =
             get_sorted_side_nodes(adjacency.elementIndex, adjacency.side);
 
-        for (int otherSide = 1; otherSide <= get_element_topology(neighborElementIndex).num_sides();
+        for (int otherSide = 1;
+             otherSide <= get_element_topology(neighborElementIndex).num_face_sides();
              ++otherSide) {
           std::vector<EntityId> otherSideNodes =
               get_sorted_side_nodes(neighborElementIndex, otherSide);
@@ -738,7 +739,7 @@ namespace Iotm {
         initialize_side_connectivity_graph(elementIndices);
 
         for (size_t elementIndex : elementIndices) {
-          int numSides = get_element_topology(elementIndex).num_sides();
+          int numSides = get_element_topology(elementIndex).num_face_sides();
           for (int side = 1; side <= numSides; ++side) {
             if (m_indexGraph[elementIndex].sideReference[side - 1] == 0) {
               CurrentAdjacency adjacency(elementIndex, side);
@@ -752,7 +753,7 @@ namespace Iotm {
       {
         for (size_t elementIndex : elementIndices) {
           m_indexGraph[elementIndex] =
-              FaceConnections(get_element_topology(elementIndex).num_sides());
+              FaceConnections(get_element_topology(elementIndex).num_face_sides());
         }
       }
 

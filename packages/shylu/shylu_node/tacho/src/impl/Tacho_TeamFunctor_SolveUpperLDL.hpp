@@ -214,7 +214,7 @@ public:
 
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+        const auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
 
         ConstUnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
         ConstUnmanagedViewType<value_type_matrix> D(_diag.data() + offm * 2, m, 2);

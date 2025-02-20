@@ -1,14 +1,14 @@
-C    Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
 C ... Each cavity is a single sideset id, but calculates volume of each cavity
-C     simultaneously and then outputs all data at the end.  Only reads the 
+C     simultaneously and then outputs all data at the end.  Only reads the
 C     displacements a single time for all cavities instead of once per cavity
 
-      SUBROUTINE MULTI_CAVITY (A, CRD, IDESS, NEESS, NNESS, IPEESS, 
+      SUBROUTINE MULTI_CAVITY (A, CRD, IDESS, NEESS, NNESS, IPEESS,
      *   IPNESS, LTEESS, LTNESS, FACESS, DISP, NUMNP, NDIM, NUMESS,
      *   TIME, ITMSEL, TITLE, CENT, CENTER)
 
@@ -128,4 +128,4 @@ C     NOTE: Positive delcav = shrink in cavity volume
 
       RETURN
       END
-      
+

@@ -6,7 +6,7 @@
 
   <!-- Wathen120 is a bad performance matrix that is symm with nice supernodes -->
   <ParameterList name="wathen120.mtx">
-    <ParameterList name="Basker">
+    <ParameterList name="ShyLUBasker">
       
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
@@ -221,13 +221,13 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
+    </ParameterList> <!-- end ShyLUBasker -->
   </ParameterList> <!-- end wathen120 -->
 
 
   <!-- Asic_680ks is a key matrix with medium performance first btf blk small -->
   <ParameterList name="asic_680ks.mtx">
-    <ParameterList name="Basker">
+    <ParameterList name="ShyLUBasker">
       
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
@@ -442,12 +442,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
+    </ParameterList> <!-- end ShyLUBasker -->
   </ParameterList> <!-- end asic680ks -->
 
   <!-- G2 Very bad matrix sym large supernodes -->
   <ParameterList name="G2_circuit.mtx">
-    <ParameterList name="Basker">
+    <ParameterList name="ShyLUBasker">
       
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
@@ -662,12 +662,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
+    </ParameterList> <!-- end ShyLUBasker -->
   </ParameterList> <!-- end G2_circuit -->
 
   <!-- Private Large Power Simulation Matrix, good very btf matrix -->
   <ParameterList name="power0.mtx">
-    <ParameterList name="Basker">
+    <ParameterList name="ShyLUBasker">
       
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
@@ -882,12 +882,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
+    </ParameterList> <!-- end ShyLUBasker -->
   </ParameterList> <!-- end power0 -->
 
   <!-- hvdc2, interesting matrix with need for pivoting -->
   <ParameterList name="hvdc2.mtx">
-    <ParameterList name="Basker">
+    <ParameterList name="ShyLUBasker">
       
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
@@ -1102,12 +1102,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
+    </ParameterList> <!-- end ShyLUBasker -->
   </ParameterList> <!-- end hvdc2 -->
 
   <!-- amesos_test_mat1 has good tests (limit to 4 threads) -->
   <ParameterList name="amesos2_test_mat1.mtx">
-    <ParameterList name="Basker">
+    <ParameterList name="ShyLUBasker">
       
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
@@ -1272,12 +1272,12 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
+    </ParameterList> <!-- end ShyLUBasker -->
   </ParameterList> <!-- end amesos2_test_mat1 -->
 
   <!-- amesos2_test_mat4 has good tests (limit to 4 threads) -->
   <ParameterList name="amesos2_test_mat4.mtx">
-    <ParameterList name="Basker">
+    <ParameterList name="ShyLUBasker">
       
       <!-- Test Epetra objects first -->
       <ParameterList name="epetra">
@@ -1442,7 +1442,7 @@
 	   </ParameterList> <!-- end solver_run_params -->
 	</ParameterList> <!-- end run-int-long-p#-default -->
       </ParameterList> <!-- end tpetra -->
-    </ParameterList> <!-- end Basker -->
+    </ParameterList> <!-- end ShyLUBasker -->
   </ParameterList> <!-- end amesos2_test_mat4 -->
  <!-- TO BE CONT... -->
 </ParameterList> <!-- end test_parms -->

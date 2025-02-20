@@ -200,8 +200,8 @@ int main(int argc, char* argv[]) {
   RCP<ADRXpetraProblem> Pr = ADR::Xpetra::BuildProblem<scalar_type, local_ordinal_type, global_ordinal_type, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), xpetraMap, matrixParameters.GetParameterList());
   RCP<Matrix> xpetraA      = Pr->BuildMatrix();
 
-  RCP<crs_matrix_type> A         = MueLuUtilities::Op2NonConstTpetraCrs(xpetraA);
-  RCP<const driver_map_type> map = MueLuUtilities::Map2TpetraMap(*xpetraMap);
+  RCP<crs_matrix_type> A         = toTpetra(xpetraA);
+  RCP<const driver_map_type> map = toTpetra(xpetraMap);
 
   // ===================================================
   // 	Domain Decomposition Preconditioner
@@ -252,8 +252,8 @@ int main(int argc, char* argv[]) {
   if (L->IsAvailable("R"))
     restr = L->template Get<RCP<Xpetra::Matrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>>("R");
 
-  RCP<crs_matrix_type> tpetra_prolong = MueLuUtilities::Op2NonConstTpetraCrs(prolong);
-  RCP<crs_matrix_type> tpetra_restr   = MueLuUtilities::Op2NonConstTpetraCrs(restr);
+  RCP<crs_matrix_type> tpetra_prolong = toTpetra(prolong);
+  RCP<crs_matrix_type> tpetra_restr   = toTpetra(restr);
 
 #include <Teuchos_TimeMonitor.hpp>
   RCP<Teuchos::Time> PbarSetUp = Teuchos::TimeMonitor::getNewCounter("Pbar: SetUp");

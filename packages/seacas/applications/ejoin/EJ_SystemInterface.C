@@ -196,18 +196,27 @@ void SystemInterface::enroll_options()
   options_.enroll("64-bit", GetLongOption::NoValue,
                   "True if forcing the use of 64-bit integers for the output file", nullptr);
 
-  options_.enroll(
-      "zlib", GetLongOption::NoValue,
-      "Use the Zlib / libz compression method if compression is enabled (default) [exodus only].",
-      nullptr);
+  options_.enroll("zlib", GetLongOption::NoValue,
+                  "Use the Zlib / libz compression method if compression is enabled (default) "
+                  "[exodus only, enables netcdf-4].",
+                  nullptr);
 
   options_.enroll("szip", GetLongOption::NoValue,
                   "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
+  options_.enroll("zstd", GetLongOption::NoValue,
+                  "Use Zstd compression. [exodus only, enables netcdf-4, experimental]", nullptr);
+  options_.enroll("bzip2", GetLongOption::NoValue,
+                  "Use Bzip2 compression. [exodus only, enables netcdf-4, experimental]", nullptr);
 
-  options_.enroll(
-      "compress", GetLongOption::MandatoryValue,
-      "Specify the hdf5 (netcdf4) compression level [0..9] to be used on the output file.",
-      nullptr);
+  options_.enroll("compress", GetLongOption::MandatoryValue,
+                  "Specify the compression level to be used.  Values depend on algorithm:\n"
+                  "\t\tzlib/bzip2:  0..9\t\tszip:  even, 4..32\t\tzstd:  -131072..22",
+                  nullptr);
+
+  options_.enroll("quantize_nsd", GetLongOption::MandatoryValue,
+                  "Use the lossy quantize compression method.  Value specifies number of digits to "
+                  "retain (1..15) [exodus only]",
+                  nullptr, nullptr, true);
 
   options_.enroll("disable_field_recognition", GetLongOption::NoValue,
                   "Do not try to combine scalar fields into higher-order fields such as\n"
@@ -417,17 +426,61 @@ bool SystemInterface::parse_options(int argc, char **argv)
     ints64bit_ = true;
   }
 
-  if (options_.retrieve("szip") != nullptr) {
-    szip_ = true;
-    zlib_ = false;
-  }
   zlib_ = (options_.retrieve("zlib") != nullptr);
+  szip_ = (options_.retrieve("szip") != nullptr);
+  zstd_ = (options_.retrieve("zstd") != nullptr);
+  bz2_  = (options_.retrieve("bzip2") != nullptr);
 
-  if (szip_ && zlib_) {
-    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
+  if (szip_ + zlib_ + zstd_ + bz2_ > 1) {
+    fmt::print(stderr,
+               "ERROR: Only one of 'szip' or 'zlib' or 'zstd' or 'bzip2' can be specified.\n");
   }
 
-  compressionLevel_ = options_.get_option_value("compress", compressionLevel_);
+  {
+    const char *temp = options_.retrieve("compress");
+    if (temp != nullptr) {
+      compressionLevel_ = std::strtol(temp, nullptr, 10);
+      if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
+        zlib_ = true;
+      }
+
+      if (zlib_ || bz2_) {
+        if (compressionLevel_ < 0 || compressionLevel_ > 9) {
+          fmt::print(stderr,
+                     "ERROR: Bad compression level {}, valid value is between 0 and 9 inclusive "
+                     "for gzip/zlib/bzip2 compression.\n",
+                     compressionLevel_);
+          return false;
+        }
+      }
+      else if (szip_) {
+        if (compressionLevel_ % 2 != 0) {
+          fmt::print(
+              stderr,
+              "ERROR: Bad compression level {}. Must be an even value for szip compression.\n",
+              compressionLevel_);
+          return false;
+        }
+        if (compressionLevel_ < 4 || compressionLevel_ > 32) {
+          fmt::print(stderr,
+                     "ERROR: Bad compression level {}, valid value is between 4 and 32 inclusive "
+                     "for szip compression.\n",
+                     compressionLevel_);
+          return false;
+        }
+      }
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("quantize_nsd");
+    if (temp != nullptr) {
+      quantizeNSD_ = std::strtol(temp, nullptr, 10);
+      if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
+        zlib_ = true;
+      }
+    }
+  }
 
   if (options_.retrieve("match_node_ids") != nullptr) {
     matchNodeIds_ = true;
@@ -540,7 +593,7 @@ void SystemInterface::show_version()
 {
   fmt::print("EJoin\n"
              "\t(A code for merging Exodus databases; with or without results data.)\n"
-             "\t(Version: {}) Modified: {}\n",
+             "\t(Version: {}) Modified: {}\n\n",
              qainfo[2], qainfo[1]);
 }
 

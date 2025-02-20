@@ -4185,7 +4185,7 @@ namespace {
       X->normInf (norms.template view<device_type> ());
       norms.sync_host ();
       for (size_t k = 0; k < numVecs; ++k) {
-        TEST_EQUALITY_CONST( norms.h_view(k), ONE );
+        TEST_EQUALITY_CONST( norms.view_host()(k), ONE );
       }
     }
   }
@@ -4252,7 +4252,7 @@ namespace {
     X_gbl.normInf (norms.template view<device_type> ());
     norms.sync_host ();
     for (size_t k = 0; k < numVecs; ++k) {
-      TEST_EQUALITY_CONST( norms.h_view(k), ONE );
+      TEST_EQUALITY_CONST( norms.view_host()(k), ONE );
     }
 
     // Now change the values in X_lcl.  X_gbl should see them.  Just
@@ -4269,7 +4269,7 @@ namespace {
     X_gbl.normInf (norms.template view<device_type> ());
     norms.sync_host ();
     for (size_t k = 0; k < numVecs; ++k) {
-      TEST_EQUALITY_CONST( norms.h_view(k), TWO );
+      TEST_EQUALITY_CONST( norms.view_host()(k), TWO );
     }
   }
 
@@ -4375,7 +4375,7 @@ namespace {
     X_gbl.normInf (norms.template view<device_type> ());
     norms.sync_host ();
     for (size_t k = 0; k < numVecs; ++k) {
-      TEST_EQUALITY_CONST( norms.h_view(k), ONE );
+      TEST_EQUALITY_CONST( norms.view_host()(k), ONE );
     }
 
     {
@@ -4405,7 +4405,7 @@ namespace {
     X_gbl.normInf (norms.template view<device_type> ());
     norms.sync_host ();
     for (size_t k = 0; k < numVecs; ++k) {
-      TEST_EQUALITY_CONST( norms.h_view(k), TWO );
+      TEST_EQUALITY_CONST( norms.view_host()(k), TWO );
     }
 
     {

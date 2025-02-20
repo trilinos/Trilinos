@@ -19,7 +19,7 @@ namespace Info {
   class IO_INFO_LIB_EXPORT Interface
   {
   public:
-    Interface();
+    explicit Interface(std::string app_version);
 
     bool parse_options(int argc, char **argv);
 
@@ -29,7 +29,7 @@ namespace Info {
     bool compute_bbox() const { return computeBBox_; }
     bool adjacencies() const { return adjacencies_; }
     bool ints_64_bit() const { return ints64Bit_; }
-    bool list_groups() const { return listGroups_; }
+    bool list_change_sets() const { return listChangeSets_; }
     bool show_config() const { return showConfig_; }
     bool query_timesteps_only() const { return queryTimeOnly_; }
     bool field_details() const { return fieldDetails_; }
@@ -41,10 +41,10 @@ namespace Info {
     std::string decomp_method() const { return decompMethod_; }
     std::string filename() const { return filename_; }
     std::string type() const { return filetype_; }
-    std::string groupname() const { return groupname_; }
+    std::string change_set_name() const { return changeSetName_; }
     std::string custom_field() const { return customField_; }
 
-    //! Dumps representation of data in this class to cerr
+    std::string version{};
 
   private:
     void enroll_options();
@@ -52,7 +52,7 @@ namespace Info {
     Ioss::GetLongOption options_;
     std::string         filetype_{"exodus"};
     std::string         filename_{};
-    std::string         groupname_{};
+    std::string         changeSetName_{};
     std::string         decompMethod_{};
     std::string         customField_{};
 
@@ -61,7 +61,7 @@ namespace Info {
     bool adjacencies_{false};
     bool ints64Bit_{false};
     bool computeBBox_{false};
-    bool listGroups_{false};
+    bool listChangeSets_{false};
     bool useGenericNames_{false};
     bool disableFieldRecognition_{false};
     bool showConfig_{false};

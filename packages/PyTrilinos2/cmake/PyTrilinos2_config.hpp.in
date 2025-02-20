@@ -1,0 +1,6 @@
+#ifndef PYTILINOS2_CONFIG_HPP
+#define PYTILINOS2_CONFIG_HPP
+
+#cmakedefine HAVE_PYTRILINOS2_MUELU
+
+#endif

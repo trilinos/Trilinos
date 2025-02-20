@@ -356,12 +356,12 @@ int main (int argc, char* argv[]) {
     // DualView<double**> for now, rather than a View<double*>.
     Kokkos::DualView<double**, Kokkos::LayoutLeft, device_type> b_lcl ("b", numLclRows, 1);
     b_lcl.modify_device ();
-    Kokkos::deep_copy (Kokkos::subview (b_lcl.d_view, Kokkos::ALL (), 0), forcingTerm);
+    Kokkos::deep_copy (Kokkos::subview (b_lcl.view_device(), Kokkos::ALL (), 0), forcingTerm);
     Tpetra::Vector<> b (A.getRangeMap (), b_lcl);
 
     Kokkos::DualView<double**, Kokkos::LayoutLeft, device_type> x_lcl ("b", numLclRows, 1);
     x_lcl.modify_device ();
-    Kokkos::deep_copy (Kokkos::subview (x_lcl.d_view, Kokkos::ALL (), 0), temperature);
+    Kokkos::deep_copy (Kokkos::subview (x_lcl.view_device(), Kokkos::ALL (), 0), temperature);
     Tpetra::Vector<> x (A.getDomainMap (), x_lcl);
 
     const int numIters = solve (x, A, b, dx); // solve the linear system
@@ -374,7 +374,7 @@ int main (int argc, char* argv[]) {
     // means that we have to make a deep copy back into the
     // 'temperature' output array.
     x_lcl.sync_device ();
-    Kokkos::deep_copy (temperature, Kokkos::subview (b_lcl.d_view, Kokkos::ALL (), 0));
+    Kokkos::deep_copy (temperature, Kokkos::subview (b_lcl.view_device(), Kokkos::ALL (), 0));
 
     // Correct the solution for the nonhomogenous Dirichlet boundary
     // conditions.

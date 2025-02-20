@@ -135,8 +135,7 @@ namespace {
     o_region.end_mode(Ioss::STATE_MODEL);
   }
 
-  void define_transient(const Ioss::Region &i_region, Ioss::Region &o_region,
-                        const std::string &elemFieldName)
+  void define_transient(Ioss::Region &o_region, const std::string &elemFieldName)
   {
     o_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
@@ -205,7 +204,7 @@ namespace {
       define_model(i_region, o_region);
       write_model(i_region, o_region);
 
-      define_transient(i_region, o_region, elemFieldName);
+      define_transient(o_region, elemFieldName);
       write_transient(o_region, elemFieldName);
 
       o_database->finalize_database();

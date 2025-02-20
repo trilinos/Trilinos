@@ -44,6 +44,8 @@
 #include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
+#include "MueLu_MatrixAnalysisFactory.hpp"
+#include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
@@ -274,6 +276,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       this->nullspaceToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "Nullspace");
     if (printList.isParameter("Coordinates"))
       this->coordinatesToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "Coordinates");
+    if (printList.isParameter("Material"))
+      this->materialToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "Material");
     if (printList.isParameter("Aggregates"))
       this->aggregatesToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "Aggregates");
     if (printList.isParameter("pcoarsen: element to node map"))
@@ -283,7 +287,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     for (auto iter = printList.begin(); iter != printList.end(); iter++) {
       const std::string& name = printList.name(iter);
       // Ignore the special cases
-      if (name == "Nullspace" || name == "Coordinates" || name == "Aggregates" || name == "pcoarsen: element to node map")
+      if (name == "Nullspace" || name == "Coordinates" || name == "Material" || name == "Aggregates" || name == "pcoarsen: element to node map")
         continue;
 
       this->matricesToPrint_[name] = Teuchos::getArrayFromStringParameter<int>(printList, name);
@@ -353,6 +357,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         }
       }
     }
+  }
+
+  useMaterial_ = false;
+  if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: distance laplacian metric", std::string, "material")) {
+    useMaterial_ = true;
   }
 
   if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable", bool, true)) {
@@ -643,6 +652,9 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // === Coordinates ===
   UpdateFactoryManager_Coordinates(paramList, defaultList, manager, levelID, keeps);
+
+  // === Material ===
+  UpdateFactoryManager_Material(paramList, defaultList, manager, levelID, keeps);
 
   // === Pre-Repartition Keeps for Reuse ===
   if ((reuseType == "RP" || reuseType == "RAP" || reuseType == "full") && levelID)
@@ -1038,6 +1050,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold", double, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: greedy Dirichlet", bool, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian metric", std::string, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical algo", std::string, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian directional weights", Teuchos::Array<double>, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring: localize color graph", bool, dropParams);
@@ -1046,6 +1059,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, dropParams);
     }
 
     if (!amalgFact.is_null())
@@ -1081,12 +1099,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: min agg size", int, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: max agg size", int, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: max selected neighbors", int, aggParams);
-    if (useKokkos_) {
-      // if not using kokkos refactor Uncoupled, there is no algorithm option (always Serial)
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase 1 algorithm", std::string, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic", bool, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, aggParams);
-    }
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: backend", std::string, aggParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase 1 algorithm", std::string, aggParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic", bool, aggParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 1", bool, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a", bool, aggParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b", bool, aggParams);
@@ -1298,6 +1314,16 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       RAPs->SetFactory("R", manager.GetFactory("R"));
   }
 
+  // Matrix analysis
+  if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "matrix: compute analysis", bool, true)) {
+    RCP<Factory> matrixAnalysisFact = rcp(new MatrixAnalysisFactory());
+
+    if (!RAP.is_null())
+      RAP->AddTransferFactory(matrixAnalysisFact);
+    else
+      RAPs->AddTransferFactory(matrixAnalysisFact);
+  }
+
   // Aggregate qualities
   if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: compute aggregate qualities", bool, true)) {
     RCP<Factory> aggQualityFact = rcp(new AggregateQualityEstimateFactory());
@@ -1332,6 +1358,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: coarse graph edges", bool, aggExportParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: build colormap", bool, aggExportParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: aggregate qualities", bool, aggExportParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: material", bool, aggExportParams);
     aggExport->SetParameterList(aggExportParams);
     aggExport->SetFactory("AggregateQualities", manager.GetFactory("AggregateQualities"));
     aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
@@ -1391,6 +1418,41 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       } else {
         auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
         RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
+      }
+    }
+  }
+}
+
+// ======================================================================================================
+// ========================================  Material ==================================================
+// =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    UpdateFactoryManager_Material(ParameterList& paramList, const ParameterList& /* defaultList */,
+                                  FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& /* keeps */) const {
+  bool have_userMaterial = false;
+  if (paramList.isParameter("Material") && !paramList.get<RCP<MultiVector> >("Material").is_null())
+    have_userMaterial = true;
+
+  if (useMaterial_) {
+    if (have_userMaterial) {
+      manager.SetFactory("Material", NoFactory::getRCP());
+    } else {
+      RCP<Factory> materialTransfer = rcp(new MultiVectorTransferFactory());
+      ParameterList materialTransferParameters;
+      materialTransferParameters.set("Vector name", "Material");
+      materialTransferParameters.set("Transfer name", "P");
+      materialTransferParameters.set("Normalize", true);
+      materialTransfer->SetParameterList(materialTransferParameters);
+      materialTransfer->SetFactory("Transfer factory", manager.GetFactory("Ptent"));
+      manager.SetFactory("Material", materialTransfer);
+
+      auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
+      if (!RAP.is_null()) {
+        RAP->AddTransferFactory(manager.GetFactory("Material"));
+      } else {
+        auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
+        RAPs->AddTransferFactory(manager.GetFactory("Material"));
       }
     }
   }
@@ -1684,15 +1746,19 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       newP->SetParameterList(newPparams);
       newP->SetFactory("Importer", manager.GetFactory("Importer"));
       newP->SetFactory("P", manager.GetFactory("P"));
+      manager.SetFactory("P", newP);
       if (!paramList.isParameter("semicoarsen: number of levels"))
         newP->SetFactory("Nullspace", manager.GetFactory("Ptent"));
       else
         newP->SetFactory("Nullspace", manager.GetFactory("P"));  // TogglePFactory
-      if (useCoordinates_)
+      if (useCoordinates_) {
         newP->SetFactory("Coordinates", manager.GetFactory("Coordinates"));
-      manager.SetFactory("P", newP);
-      if (useCoordinates_)
         manager.SetFactory("Coordinates", newP);
+      }
+      if (useMaterial_) {
+        newP->SetFactory("Material", manager.GetFactory("Material"));
+        manager.SetFactory("Material", newP);
+      }
       if (useBlockNumber_ && (levelID > 0)) {
         newP->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
         manager.SetFactory("BlockNumber", newP);

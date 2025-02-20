@@ -247,9 +247,9 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal,
     typedef typename KCRS::values_type::non_const_type scalar_view_t;
     typedef typename Kokkos::View<unsigned int *, typename lno_nnz_view_t::array_layout, typename lno_nnz_view_t::device_type> vcl_size_t_type;
 
-    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A, false));
-    RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B, false));
-    RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C, false));
+    RCP<const crs_matrix_type> Au = toTpetra(rcp(&A, false));
+    RCP<const crs_matrix_type> Bu = toTpetra(rcp(&B, false));
+    RCP<const crs_matrix_type> Cu = toTpetra(rcp(&C, false));
     RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
     const KCRS &Amat = Au->getLocalMatrixDevice();
@@ -414,9 +414,9 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal,
 
   using no_init_view = Kokkos::ViewAllocateWithoutInitializing;
 
-  RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A, false));
-  RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B, false));
-  RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C, false));
+  RCP<const crs_matrix_type> Au = toTpetra(rcp(&A, false));
+  RCP<const crs_matrix_type> Bu = toTpetra(rcp(&B, false));
+  RCP<const crs_matrix_type> Cu = toTpetra(rcp(&C, false));
   RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
   const KCRS &Amat = Au->getLocalMatrixDevice();
@@ -598,9 +598,9 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrd
     typedef typename KCRS::values_type::non_const_type scalar_view_t;
     typedef typename KCRS::device_type device_t;
 
-    RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A, false));
-    RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B, false));
-    RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C, false));
+    RCP<const crs_matrix_type> Au = toTpetra(rcpFromRef(A));
+    RCP<const crs_matrix_type> Bu = toTpetra(rcpFromRef(B));
+    RCP<const crs_matrix_type> Cu = toTpetra(rcpFromRef(C));
     RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
     const KCRS &Amat = Au->getLocalMatrixDevice();
@@ -794,9 +794,9 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::Kokk
       typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
       LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
       RCP<const import_type> Cimport;
-      RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A, false));
-      RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B, false));
-      RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C, false));
+      RCP<const crs_matrix_type> Au = toTpetra(rcp(&A, false));
+      RCP<const crs_matrix_type> Bu = toTpetra(rcp(&B, false));
+      RCP<const crs_matrix_type> Cu = toTpetra(rcp(&C, false));
       RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
       using no_init_view = Kokkos::ViewAllocateWithoutInitializing;

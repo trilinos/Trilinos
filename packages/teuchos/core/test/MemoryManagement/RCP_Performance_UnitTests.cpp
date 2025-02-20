@@ -30,7 +30,7 @@ double maxRcpRawAdjustRefCountRatio = 100.0;
 #ifdef HAVE_TEUCHOSCORE_CXX11
 double maxRcpSpAdjustRefCountRatio = 5.0;
 #endif
-double maxRcpRawObjAccessRatio = 13.5;
+double maxRcpRawObjAccessRatio = 20.0;  // See trilinos/Trilinos#13728
 
 const int intPrec = 8;
 const int dblPrec = 6;

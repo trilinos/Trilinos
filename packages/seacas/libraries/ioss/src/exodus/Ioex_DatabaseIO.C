@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -171,9 +171,6 @@ namespace Ioex {
         IOSS_ERROR(errmsg);
       }
     }
-
-    open_root_group_nl();
-    open_child_group_nl(0);
   }
 
   bool DatabaseIO::check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
@@ -376,6 +373,11 @@ namespace Ioex {
     if (is_ok) {
       ex_set_max_name_length(m_exodusFilePtr, maximumNameLength);
 
+      if (fileExists) {
+        open_root_group_nl();
+        open_child_group_nl(0);
+      }
+
       // Check properties handled post-create/open...
       if (properties.exists("COMPRESSION_METHOD")) {
         auto method                    = properties.get("COMPRESSION_METHOD").get_string();
@@ -391,17 +393,48 @@ namespace Ioex {
 #if NC_HAS_SZIP_WRITE
           exo_method = EX_COMPRESS_SZIP;
 #else
-          fmt::print(Ioss::WarnOut(), "The NetCDF library does not have SZip compression enabled."
-                                      " 'zlib' will be used instead.\n\n");
+          if (myProcessor == 0) {
+            fmt::print(Ioss::WarnOut(), "The NetCDF library does not have SZip compression enabled."
+                                        " 'zlib' will be used instead.\n\n");
+          }
+#endif
+        }
+        else if (method == "zstd") {
+#if NC_HAS_ZSTD == 1
+          exo_method = EX_COMPRESS_ZSTD;
+#else
+          if (myProcessor == 0) {
+            fmt::print(Ioss::WarnOut(),
+                       "The NetCDF library does not have ZStandard compression enabled."
+                       " 'zlib' will be used instead.\n\n");
+          }
+#endif
+        }
+        else if (method == "bzip2") {
+#if NC_HAS_BZ2 == 1
+          exo_method = EX_COMPRESS_BZ2;
+#else
+          if (myProcessor == 0) {
+            fmt::print(Ioss::WarnOut(),
+                       "The NetCDF library does not have Bzip2 / BZ2 compression enabled."
+                       " 'zlib' will be used instead.\n\n");
+          }
 #endif
         }
         else {
-          fmt::print(Ioss::WarnOut(),
-                     "Unrecognized compression method specified: '{}'."
-                     " 'zlib' will be used instead.\n\n",
-                     method);
+          if (myProcessor == 0) {
+            fmt::print(Ioss::WarnOut(),
+                       "Unrecognized compression method specified: '{}'."
+                       " 'zlib' will be used instead.\n\n",
+                       method);
+          }
         }
         ex_set_option(m_exodusFilePtr, EX_OPT_COMPRESSION_TYPE, exo_method);
+      }
+
+      if (properties.exists("COMPRESSION_QUANTIZE_NSD")) {
+        int quant_level = properties.get("COMPRESSION_QUANTIZE_NSD").get_int();
+        ex_set_option(m_exodusFilePtr, EX_OPT_QUANTIZE_NSD, quant_level);
       }
 
       if (properties.exists("COMPRESSION_LEVEL")) {
@@ -641,17 +674,24 @@ namespace Ioex {
     }
   }
 
-  void DatabaseIO::get_step_times_nl()
+  std::vector<double> DatabaseIO::internal_get_step_times_nl(bool setRegionTimeSteps)
   {
-    bool                exists         = false;
-    double              last_time      = DBL_MAX;
+    bool                exists     = false;
+    double              last_time  = DBL_MAX;
+    int                 tstepCount = 0;
     std::vector<double> tsteps(0);
+
+    // Use reference to make sure that no Region modifications occur based on the input flag
+    // setRegionTimeSteps flag determines whether we are actually populating the region
+    // timesteps or just querying the timesteps that are on a specific database without
+    // populating the regions timesteps data and setting the number of timesteps on the region
+    int &timestepCount = setRegionTimeSteps ? m_timestepCount : tstepCount;
 
     if (dbUsage == Ioss::WRITE_HISTORY) {
       if (myProcessor == 0) {
-        m_timestepCount = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
-        if (m_timestepCount <= 0) {
-          return;
+        timestepCount = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
+        if (timestepCount <= 0) {
+          return tsteps;
         }
 
         // For an exodus file, timesteps are global and are stored in the region.
@@ -659,86 +699,96 @@ namespace Ioex {
         // Read the timesteps and add them to the region.
         // Since we can't access the Region's stateCount directly, we just add
         // all of the steps and assume the Region is dealing with them directly...
-        tsteps.resize(m_timestepCount);
+        tsteps.resize(timestepCount);
 
         int error = ex_get_all_times(get_file_pointer(), Data(tsteps));
         if (error < 0) {
           Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
         }
 
-        int max_step = properties.get_optional("APPEND_OUTPUT_AFTER_STEP", m_timestepCount);
-        max_step     = std::min(max_step, m_timestepCount);
+        int max_step = properties.get_optional("APPEND_OUTPUT_AFTER_STEP", timestepCount);
+        max_step     = std::min(max_step, timestepCount);
 
         double max_time =
             properties.get_optional("APPEND_OUTPUT_AFTER_TIME", std::numeric_limits<double>::max());
 
         Ioss::Region *this_region = get_region();
+        int           numSteps    = 0;
         for (int i = 0; i < max_step; i++) {
           if (tsteps[i] <= max_time) {
-            this_region->add_state_nl(tsteps[i] * timeScaleFactor);
+            if (setRegionTimeSteps) {
+              this_region->add_state_nl(tsteps[i] * timeScaleFactor);
+            }
+
+            tsteps[i] *= timeScaleFactor;
+            numSteps++;
           }
         }
+        tsteps.resize(numSteps);
       }
     }
     else {
       {
         Ioss::SerializeIO serializeIO_(this);
-        m_timestepCount = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
+        timestepCount       = ex_inquire_int(get_file_pointer(), EX_INQ_TIME);
       }
-	// Need to sync timestep count across ranks if parallel...
-	if (isParallel) {
-	  auto min_timestep_count = util().global_minmax(m_timestepCount, Ioss::ParallelUtils::DO_MIN);
-	  if (min_timestep_count == 0) {
-	    auto max_timestep_count = util().global_minmax(m_timestepCount, Ioss::ParallelUtils::DO_MAX);
-	    if (max_timestep_count != 0) {
-	      if (myProcessor == 0) {
-		// NOTE: Don't want to warn on all processors if the
-		// timestep count is zero on some, but not all ranks.
-		fmt::print(Ioss::WarnOut(),
-			   "At least one database has no timesteps.  No times will be read on ANY"
-			   " database for consistency.\n");
-	      }
+      int exTimestepCount = timestepCount;
+      // Need to sync timestep count across ranks if parallel...
+      if (isParallel) {
+	auto min_timestep_count =
+	  util().global_minmax(timestepCount, Ioss::ParallelUtils::DO_MIN);
+	if (min_timestep_count == 0) {
+	  auto max_timestep_count =
+	    util().global_minmax(timestepCount, Ioss::ParallelUtils::DO_MAX);
+	  if (max_timestep_count != 0) {
+	    if (myProcessor == 0) {
+	      // NOTE: Don't want to warn on all processors if the
+	      // timestep count is zero on some, but not all ranks.
+	      fmt::print(Ioss::WarnOut(),
+			 "At least one database has no timesteps.  No times will be read on ANY"
+			 " database for consistency.\n");
 	    }
 	  }
-	  m_timestepCount = min_timestep_count;
 	}
-	
-        if (m_timestepCount <= 0) {
-          return;
-        }
+	timestepCount = min_timestep_count;
+      }
 
-        // For an exodus file, timesteps are global and are stored in the region.
-        // Read the timesteps and add to the region
-        tsteps.resize(m_timestepCount, -std::numeric_limits<double>::max());
+      if (timestepCount <= 0) {
+	return tsteps;
+      }
 
-        // The `EXODUS_CALL_GET_ALL_TIMES=NO` is typically only used in
-        // isSerialParallel mode and the client is responsible for
-        // making sure that the step times are handled correctly.  All
-        // databases will know about the number of timesteps, but if
-        // this is skipped, then the times will all be zero.  Use case
-        // is that in isSerialParallel, each call to
-        // `ex_get_all_times` for all files is performed sequentially,
-        // so if you have hundreds to thousands of files, the time for
-        // the call is additive and since timesteps are record
-        // variables in netCDF, accessing the data for all timesteps
-        // involves lseeks throughout the file.
-        bool call_ex_get_all_times = true;
-        Ioss::Utils::check_set_bool_property(properties, "EXODUS_CALL_GET_ALL_TIMES",
-                                             call_ex_get_all_times);
-        if (call_ex_get_all_times) {
-	  Ioss::SerializeIO serializeIO_(this);
-          int error = ex_get_all_times(get_file_pointer(), Data(tsteps));
-          if (error < 0) {
-            Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
-          }
-        }
+      // For an exodus file, timesteps are global and are stored in the region.
+      // Read the timesteps and add to the region
+      tsteps.resize(exTimestepCount, -std::numeric_limits<double>::max());
 
-        // See if the "last_written_time" attribute exists and if it
-        // does, check that it matches the largest time in 'tsteps'.
-	{
-	  Ioss::SerializeIO serializeIO_(this);
-	  exists = Ioex::read_last_time_attribute(get_file_pointer(), &last_time);
+      // The `EXODUS_CALL_GET_ALL_TIMES=NO` is typically only used in
+      // isSerialParallel mode and the client is responsible for
+      // making sure that the step times are handled correctly.  All
+      // databases will know about the number of timesteps, but if
+      // this is skipped, then the times will all be zero.  Use case
+      // is that in isSerialParallel, each call to
+      // `ex_get_all_times` for all files is performed sequentially,
+      // so if you have hundreds to thousands of files, the time for
+      // the call is additive and since timesteps are record
+      // variables in netCDF, accessing the data for all timesteps
+      // involves lseeks throughout the file.
+      bool call_ex_get_all_times = true;
+      Ioss::Utils::check_set_bool_property(properties, "EXODUS_CALL_GET_ALL_TIMES",
+					   call_ex_get_all_times);
+      if (call_ex_get_all_times) {
+	Ioss::SerializeIO serializeIO_(this);
+	int error = ex_get_all_times(get_file_pointer(), Data(tsteps));
+	if (error < 0) {
+	  Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
 	}
+      }
+
+      // See if the "last_written_time" attribute exists and if it
+      // does, check that it matches the largest time in 'tsteps'.
+      {
+	Ioss::SerializeIO serializeIO_(this);
+	exists = Ioex::read_last_time_attribute(get_file_pointer(), &last_time);
+      }
 
       if (exists && isParallel) {
         // Assume that if it exists on 1 processor, it exists on
@@ -759,17 +809,23 @@ namespace Ioex {
       // One use case is that job is restarting at a time prior to what has been
       // written to the results file, so want to start appending after
       // restart time instead of at end time on database.
-      int max_step = properties.get_optional("APPEND_OUTPUT_AFTER_STEP", m_timestepCount);
-      max_step     = std::min(max_step, m_timestepCount);
+      int max_step = properties.get_optional("APPEND_OUTPUT_AFTER_STEP", timestepCount);
+      max_step     = std::min(max_step, timestepCount);
 
       double max_time =
           properties.get_optional("APPEND_OUTPUT_AFTER_TIME", std::numeric_limits<double>::max());
       last_time = std::min(last_time, max_time);
 
       Ioss::Region *this_region = get_region();
+      int           numSteps    = 0;
       for (int i = 0; i < max_step; i++) {
         if (tsteps[i] <= last_time) {
-          this_region->add_state_nl(tsteps[i] * timeScaleFactor);
+          if (setRegionTimeSteps) {
+            this_region->add_state_nl(tsteps[i] * timeScaleFactor);
+          }
+
+          tsteps[i] *= timeScaleFactor;
+          numSteps++;
         }
         else {
           if (myProcessor == 0 && max_time == std::numeric_limits<double>::max()) {
@@ -786,8 +842,19 @@ namespace Ioex {
           }
         }
       }
+
+      tsteps.resize(numSteps);
     }
+
+    return tsteps;
   }
+
+  std::vector<double> DatabaseIO::get_db_step_times_nl()
+  {
+    return internal_get_step_times_nl(false);
+  }
+
+  void DatabaseIO::get_step_times_nl() { internal_get_step_times_nl(true); }
 
   void DatabaseIO::read_communication_metadata()
   {
