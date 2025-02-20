@@ -42,15 +42,20 @@ makeDualViewFromOwningHostView
   using execution_space = typename DeviceType::execution_space;
   using dual_view_type = Kokkos::DualView<ElementType*, DeviceType>;
 
-  typename Kokkos::DualView<ElementType*, DeviceType>::t_dev devView;
-  if (dv.extent (0) == hostView.extent (0))
-    devView = dv.view_device();
-  else
-    devView = Kokkos::create_mirror_view (DeviceType (), hostView);
-  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
-  Kokkos::deep_copy (execution_space(), devView, hostView);
-  dv = dual_view_type (devView, hostView);
-  execution_space().fence();
+  if constexpr(Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename DeviceType::memory_space>::accessible) {
+    // DualView only references one View, so we pass in the same View twice
+    dv = dual_view_type (hostView, hostView);
+  } else {
+    typename Kokkos::DualView<ElementType*, DeviceType>::t_dev devView;
+    if (dv.extent (0) == hostView.extent (0))
+      devView = dv.view_device();
+    else
+      devView = Kokkos::create_mirror_view (DeviceType (), hostView);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+    Kokkos::deep_copy (execution_space(), devView, hostView);
+    dv = dual_view_type (devView, hostView);
+    execution_space().fence();
+  }
 }
 
 template<class ElementType, class DeviceType>
