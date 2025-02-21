@@ -248,17 +248,19 @@ namespace Amesos2 {
     {
       auto comm = this->getComm();
       auto myRank = comm->getRank();
-      auto nRows = this->mv_->GlobalLength();
+      auto nCols = this->mv_->NumVectors();
       if (myRank == 0) {
-        auto nCols = this->mv_->NumVectors();
+        auto nRows = this->mv_->GlobalLength();
         Kokkos::resize(kokkos_new_view, nRows, nCols);
       }
       {
         auto nRows = this->mv_->MyLength();
-        Teuchos::gatherv<int, scalar_t> (const_cast<scalar_t*> (this->mv_->Values()), nRows,
-                                         reinterpret_cast<scalar_t*> (kokkos_new_view.data()),
-                                         recvCountRows.data(), recvDisplRows.data(),
-                                         0, *comm);
+        for (int j=0; j<nCols; j++) {
+          scalar_t * recvbuf = reinterpret_cast<scalar_t*> (myRank == 0 ? &kokkos_new_view(0,j) : kokkos_new_view.data());
+          Teuchos::gatherv<int, scalar_t> (const_cast<scalar_t*> ((*this->mv_)[j]), nRows,
+                                           recvbuf, recvCountRows.data(), recvDisplRows.data(),
+                                           0, *comm);
+        }
       }
       return 0;
     }
@@ -266,18 +268,21 @@ namespace Amesos2 {
     template<typename KV, typename host_ordinal_type_array>
     int
     scatter (KV& kokkos_new_view,
-             host_ordinal_type_array &recvCountRows,
-             host_ordinal_type_array &recvDisplRows,
+             host_ordinal_type_array &sendCountRows,
+             host_ordinal_type_array &sendDisplRows,
              EDistribution distribution) const
     {
       auto comm = this->getMap()->getComm();
+      auto myRank = comm->getRank();
       auto nCols = this->mv_->NumVectors();
       {
         auto nRows = this->mv_->MyLength();
-        Teuchos::scatterv<int, scalar_t> (reinterpret_cast<scalar_t*> (kokkos_new_view.data()),
-                                          recvCountRows.data(), recvDisplRows.data(),
-                                          reinterpret_cast<scalar_t*> (this->mv_->Values()), nRows,
-                                          0, *comm);
+        for (int j=0; j<nCols; j++) {
+          scalar_t * sendbuf = reinterpret_cast<scalar_t*> (myRank == 0 ? &kokkos_new_view(0,j) : kokkos_new_view.data());
+          Teuchos::scatterv<int, scalar_t> (sendbuf, sendCountRows.data(), sendDisplRows.data(),
+                                            reinterpret_cast<scalar_t*> ((*this->mv_)[j]), nRows,
+                                            0, *comm);
+        }
       }
       return 0;
     }
