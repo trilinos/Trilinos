@@ -36,6 +36,7 @@ KLU2<Matrix,Vector>::KLU2(
   : SolverCore<Amesos2::KLU2,Matrix,Vector>(A, X, B)
   , transFlag_(0)
   , is_contiguous_(true)
+  , use_gather_(true)
 {
   ::KLU2::klu_defaults<klu2_dtype, local_ordinal_type> (&(data_.common_)) ;
   data_.symbolic_ = NULL;
@@ -202,10 +203,11 @@ KLU2<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  int rval = 0;
   bool bDidAssignX;
   bool bDidAssignB;
-  bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
+  bool use_gather = use_gather_; // user param
+  use_gather = (use_gather && this->matrixA_->getComm()->getSize() > 1); // only with multiple MPIs
+  use_gather = (use_gather && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value)); // only for double or float
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
@@ -221,19 +223,19 @@ KLU2<Matrix,Vector>::solve_impl(
         host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_, as<size_t>(ld_rhs));
     }
     else {
-      if (gather_supported) {
-        rval = B->gather(bValues_, this->recvCountRows, this->recvDisplRows,
-                         (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+      if (use_gather) {
+        int rval = B->gather(bValues_, this->recvCountRows, this->recvDisplRows,
+                             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
         if (rval == 0) {
           X->gather(xValues_, this->recvCountRows, this->recvDisplRows,
                     (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-          bDidAssignB = true;
-          bDidAssignX = false;
+          bDidAssignB = true;  // TODO : find when we can avoid deep-copy
+          bDidAssignX = false; // TODO : find when we can avoid scatter
         } else {
-          gather_supported = false;
+          use_gather = false;
         }
       }
-      if (!gather_supported) {
+      if (!use_gather) {
         bDidAssignB = Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
           host_solve_array_t>::do_get(initialize_data, B, bValues_,
             as<size_t>(ld_rhs),
@@ -358,12 +360,12 @@ KLU2<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
-    if (gather_supported) {
-      rval = X->scatter(xValues_, this->recvCountRows, this->recvDisplRows,
-                        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-      if (rval != 0) gather_supported = false;
+    if (use_gather) {
+      int rval = X->scatter(xValues_, this->recvCountRows, this->recvDisplRows,
+                            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+      if (rval != 0) use_gather = false;
     }
-    if (!gather_supported) {
+    if (!use_gather) {
       Util::put_1d_data_helper_kokkos_view<
         MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
           as<size_t>(ld_rhs),
@@ -371,7 +373,6 @@ KLU2<Matrix,Vector>::solve_impl(
           this->rowIndexBase_);
     }
   }
-
   return(ierr);
 }
 
@@ -409,6 +410,9 @@ KLU2<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterLis
   if( parameterList->isParameter("IsContiguous") ){
     is_contiguous_ = parameterList->get<bool>("IsContiguous");
   }
+  if( parameterList->isParameter("UseCustomGather") ){
+    use_gather_ = parameterList->get<bool>("UseCustomGather");
+  }
 }
 
 
@@ -429,6 +433,7 @@ KLU2<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("Equil", true, "Whether to equilibrate the system before solve, does nothing now");
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
+    pl->set("UseCustomGather", true, "Whether to use new matrix-gather routine");
 
     setStringToIntegralParameter<int>("Trans", "NOTRANS",
                                       "Solve for the transpose system or not",
@@ -472,12 +477,14 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
 
     local_ordinal_type nnz_ret = -1;
-    bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
+    bool use_gather = use_gather_; // user param
+    use_gather = (use_gather && this->matrixA_->getComm()->getSize() > 1); // only with multiple MPIs
+    use_gather = (use_gather && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value)); // only for double or float
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
-      if (gather_supported) {
+      if (use_gather) {
         bool column_major = true;
         if (!is_contiguous_) {
           auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
@@ -489,9 +496,9 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
         }
         // gather failed (e.g., not implemened for KokkosCrsMatrix)
         // in case of the failure, it falls back to the original "do_get"
-        if (nnz_ret < 0) gather_supported = false;
+        if (nnz_ret < 0) use_gather = false;
       }
-      if (!gather_supported) {
+      if (!use_gather) {
         Util::get_ccs_helper_kokkos_view<
           MatrixAdapter<Matrix>,host_value_type_array,host_ordinal_type_array,host_ordinal_type_array>
           ::do_get(this->matrixA_.ptr(), host_nzvals_view_, host_rows_view_, host_col_ptr_view_, nnz_ret,
@@ -502,13 +509,12 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
 
     // gather return the total nnz_ret on every MPI process
-    if (gather_supported || this->root_) {
+    if (use_gather || this->root_) {
       TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                           std::runtime_error,
                           "Amesos2_KLU2 loadA_impl: Did not get the expected number of non-zero vals("
                           +std::to_string(nnz_ret)+" vs "+std::to_string(this->globalNumNonZeros_)+")");
     }
-
   } //end else single_process_optim_check = false
 
   return true;
