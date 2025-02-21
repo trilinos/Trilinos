@@ -132,7 +132,7 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
     numAllElements += subRangeMaps[v]->getGlobalNumElements();
   }
   if (fullRangeMap->getGlobalNumElements() != numAllElements) bRangeUseThyraStyleNumbering = true;
-  rangemaps_ = Teuchos::rcp(new Xpetra::MapExtractor(fullRangeMap, subRangeMaps, bRangeUseThyraStyleNumbering));
+  rangemaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fullRangeMap, subRangeMaps, bRangeUseThyraStyleNumbering));
 
   // build domain map extractor from Thyra::BlockedLinearOpBase object
   std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>> subDomainMaps(numDomainBlocks);
@@ -156,7 +156,7 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
     numAllElements += subDomainMaps[v]->getGlobalNumElements();
   }
   if (fullDomainMap->getGlobalNumElements() != numAllElements) bDomainUseThyraStyleNumbering = true;
-  domainmaps_ = Teuchos::rcp(new Xpetra::MapExtractor(fullDomainMap, subDomainMaps, bDomainUseThyraStyleNumbering));
+  domainmaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>(fullDomainMap, subDomainMaps, bDomainUseThyraStyleNumbering));
 
   // store numbering mode
   bRangeThyraMode_  = bRangeUseThyraStyleNumbering;
