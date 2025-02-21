@@ -133,7 +133,7 @@ public:
   /// \brief Apply the preconditioner to X, putting the result in Y.
   ///
   /// If the result of applying this preconditioner to a vector X is
-  /// \f$M^{-1} \cdot X$, then this method computes \f$\beta Y + \alpha M^{-1} \cdot X\f$.
+  /// \f$M^{-1} \cdot X\f$, then this method computes \f$\beta Y + \alpha M^{-1} \cdot X\f$.
   /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
@@ -388,7 +388,7 @@ public:
   /// \brief Apply the preconditioner to X, putting the result in Y.
   ///
   /// If the result of applying this preconditioner to a vector X is
-  /// \f$M^{-1} \cdot X$, then this method computes \f$\beta Y + \alpha M^{-1} \cdot X\f$.
+  /// \f$M^{-1} \cdot X\f$, then this method computes \f$\beta Y + \alpha M^{-1} \cdot X\f$.
   /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   void
   apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,

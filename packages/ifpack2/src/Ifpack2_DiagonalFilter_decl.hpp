@@ -129,7 +129,7 @@ public:
 
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   virtual size_t getLocalMaxNumRowEntries() const;
-  
+
   //! The number of degrees of freedom per mesh point.
   virtual LocalOrdinal getBlockSize () const;
 
@@ -251,7 +251,7 @@ public:
 
   //! Returns the Frobenius norm of the matrix.
   /** Computes and returns the Frobenius norm of the matrix, defined as:
-      \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
+      \f$ \|A\|_F = \sqrt{\sum_{i,j} \|a_{ij}\|^2} \f$
   */
   virtual mag_type getFrobeniusNorm() const;
 
