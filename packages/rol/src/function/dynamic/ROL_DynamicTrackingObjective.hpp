@@ -20,8 +20,8 @@
     \brief Defines the time-local contribution to a quadratic tracking
            objective
 
-           \f[ f_k(u,z) = \frac{1}{2} \int\limits_{t_{k-1}}^{t_k} \| u(t)-\tilde u(t)\|^2 
-                                              + \alpha \|z(t)\^2\,\mathm{d}t \f]
+           \f[ f_k(u,z) = \frac{1}{2} \int\limits_{t_{k-1}}^{t_k} \| u(t)-\tilde u(t)\|^2
+                                              + \alpha \|z(t)^2\,\mathrm{d}t \f]
 
            Currently approximates the integral with the trapezoidal rule.
 

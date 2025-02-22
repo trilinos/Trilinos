@@ -23,7 +23,6 @@
     \f[
        \mathcal{R}(X) = \mathbb{E}[X]
          + c \mathbb{E}\left[(X-\mathbb{E}[X])_+\right]
-         \right\}
     \f]
     where \f$(x)_+ = \max\{0,x\}\f$.
     \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.

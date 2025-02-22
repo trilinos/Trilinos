@@ -38,7 +38,7 @@
              c \\
              (x-l)z_l - \mu e \\
              (u-x)z_u - \mu e
-             \end{pmatrix} = -\begin{pmatrix} g_x \\ g_\lambda \\ g_{z_l} \\ g_{z_u}
+             \end{pmatrix} = -\begin{pmatrix} g_x \\ g_\lambda \\ g_{z_l} \\ g_{z_u} \end{pmatrix}
              \f]
 
              Using the last two equations, we have

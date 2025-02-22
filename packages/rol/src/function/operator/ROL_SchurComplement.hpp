@@ -24,12 +24,12 @@ namespace ROL {
            Let \f$Mx=b\f$ where 
            \f[ M = \begin{pmatrix} A & B \\ C & D \end{pmatrix} \f]
            \f[ x = \begin{pmatrix} y & z \end{pmatrix} \f]
-           \f[ b = \begin{pmayrix} u & v \end{pmatrix} \f]
+           \f[ b = \begin{pmatrix} u & v \end{pmatrix} \f]
 
            The block factorization is \f$ M=USL \f$ where 
            \f[ U = \begin{pmatrix} I & BD^{-1} \\ 0 & I \end{pmatrix} \f]
-           \f[ S = \begin{pmatrix} A-BD^{-1}C & 0 \\ 0 & D \end{pmatrix} \f] 
-           \f[ L = \begin{pmatrix} I & 0 \\ D^{-1} C & I \f]
+           \f[ S = \begin{pmatrix} A-BD^{-1}C & 0 \\ 0 & D \end{pmatrix} \f]
+           \f[ L = \begin{pmatrix} I & 0 \\ D^{-1} C & I \end{pmatrix} \f]
 
            We can rewrite \f$ USLx=b\f$ as the block-decoupled problem \f$ Sw=c \f$
            where \f$w=Lx\f$ and \f$ c=U^{-1}b \f$

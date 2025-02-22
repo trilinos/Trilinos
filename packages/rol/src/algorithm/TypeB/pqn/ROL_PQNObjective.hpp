@@ -20,7 +20,7 @@
     This class implements the PQN quasi-Newton objective for use with
     ROL::TypeB::QuasiNewtonAlgorithm.  Given a function
     \f$f:\mathcal{X}\to\mathbb{R}\f$ and a Hessian approximation
-    \f$B_k:\mathcal{X}}\to\mathcal{X}^*\f$, the functional is
+    \f$B_k:\mathcal{X}\to\mathcal{X}^*\f$, the functional is
     \f[
        q_k(x) = \frac{1}{2}\langle B_k (x-x_k),(x-x_k)\rangle_{\mathcal{X}^*,\mathcal{X}}
                 + \langle f'(x_k), (x-x_k)\rangle_{\mathcal{X}^*,\mathcal{X}}.

@@ -17,7 +17,7 @@
     \brief Provides the std::vector implementation to apply a linear operator,
       which encapsulates a tridiagonal matrix
 
-    \f[ T = \begin{matrix} 
+    \f[ T = \begin{pmatrix}
     a_0 & b_0 \\
     c_0 & a_1 & b_1 \\
         & c_1 & \ddots & \ddots \\
