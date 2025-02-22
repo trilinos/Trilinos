@@ -283,7 +283,7 @@ subclasses are shown below:
   subclass that represent the implicit addition of two or more constituent 
   <tt>Thyra::LinearOpBase</tt> objects of the form
 
-  \f$M =\; A_0 + A_1 + \ldots + A_{m-1}}\f$
+  \f$M =\; A_0 + A_1 + \ldots + A_{m-1}\f$
 
   composed out of one or more constituent linear operators
   \f$A_0, A_1 \ldots A_{m-1}\f$.
@@ -292,7 +292,7 @@ subclasses are shown below:
   subclass that defines a composite multiplicative
   <tt>Thyra::LinearOpBase</tt> of the form
 
-  \f$M =\; A_0 A_1 \ldots A_{m-1}}\f$
+  \f$M =\; A_0 A_1 \ldots A_{m-1}\f$
 
   composed out of one or more constituent linear operators
   \f$A_0, A_1 \ldots A_{m-1}\f$.

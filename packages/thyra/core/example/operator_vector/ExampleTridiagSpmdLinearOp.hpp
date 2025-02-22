@@ -23,7 +23,6 @@
  * of the global form:
  *
  \f[
-
  M=
  \left[\begin{array}{ccccc}
  d_{(1)} & u_{(1)}  \\
@@ -49,7 +48,6 @@
  * following sub-matrix is stored:
  *
  \f[
-
  \left[\begin{array}{cccccc}
  d_{(1)} & u_{(1)}  \\
  l_{(1)} & d_{(2)} & u_{(2)} \\
@@ -69,7 +67,6 @@
  * sub-matrix is stored:
  *
  \f[
-
  \left[\begin{array}{cccccc}
  l_{(g_i)} & d_{(g_i+1)} & u_{(g_i+1)} \\
          & \ddots  & \ddots    & \ddots \\
@@ -87,7 +84,6 @@
  * stored:
  *
  \f[
-
  \left[\begin{array}{cccccc}
  l_{(g_{N-1})} & d_{(g_{N-1}+1)} & u_{(g_{N-1}+1)} \\
          & \ddots  & \ddots    & \ddots \\
