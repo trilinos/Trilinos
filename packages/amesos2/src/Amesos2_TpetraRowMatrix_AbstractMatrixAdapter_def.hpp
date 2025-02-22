@@ -350,6 +350,7 @@ namespace Amesos2 {
   AbstractConcreteMatrixAdapter<
     Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, DerivedMat
     >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                                host_ordinal_type_array &perm_g2l,
                                 host_ordinal_type_array &recvCountRows, host_ordinal_type_array &recvDisplRows,
                                 host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
                                 host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
@@ -357,10 +358,10 @@ namespace Amesos2 {
   {
 #ifdef __CUDACC__
     // NVCC doesn't seem to like the static_cast, even though it is valid
-    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, recvCounts, recvDispls, recvCountRows, recvDisplRows,
+    return dynamic_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, perm_g2l, recvCounts, recvDispls, recvCountRows, recvDisplRows,
                                                                                transpose_map, nzvals_t, column_major, current_phase);
 #else
-    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, recvCounts, recvDispls, recvCountRows, recvDisplRows,
+    return static_cast<ConcreteMatrixAdapter<DerivedMat>*>(this)->gather_impl(nzvals, indices, pointers, perm_g2l, recvCounts, recvDispls, recvCountRows, recvDisplRows,
                                                                               transpose_map, nzvals_t, column_major, current_phase);
 #endif
   }

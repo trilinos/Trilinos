@@ -178,6 +178,7 @@ namespace Amesos2 {
   ConcreteMatrixAdapter<
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                   host_ordinal_type_array &perm_g2l,
                    host_ordinal_type_array &recvCountRows, host_ordinal_type_array &recvDisplRows,
                    host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
                    host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
@@ -212,8 +213,10 @@ namespace Amesos2 {
           global_ordinal_t rowIndexBase = rowMap->getIndexBase();
           global_ordinal_t colIndexBase = colMap->getIndexBase();
           // map from global to local
-          host_ordinal_type_array  perm_g2l;
-          host_ordinal_type_array  perm_l2g;
+          host_ordinal_type_array  perm_l2g; // map from GIDs
+          // true uses 'original' contiguous row inds 0:(n-1) (no need to perm sol or rhs), 
+          // false uses GIDs given by map (need to swap sol & rhs, but use matrix perm, e.g., fill-reducing)
+          bool swap_cols = false; //true;
           // workspace to transpose
           KV_GS pointers_t;
           KV_GO indices_t;
@@ -262,8 +265,8 @@ namespace Amesos2 {
                                                    0, *comm);
               if (myRank == 0) {
                 for (int i=0; i < nRows; i++) {
-                  perm_g2l(i) -= rowIndexBase;
-                  perm_l2g(perm_g2l(i)) = i;
+                  perm_g2l(i) -= rowIndexBase; // map to GIDs
+                  perm_l2g(perm_g2l(i)) = i;   // map from GIDs
                   if (i != perm_g2l(i)) need_to_perm = true;
                 }
               }
@@ -342,6 +345,16 @@ namespace Amesos2 {
             Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose index)");
             Teuchos::TimeMonitor GatherTimer(*gatherTime);
 #endif
+            if (swap_cols && need_to_perm) {
+              // convert col GIDs to 0:(n-1)
+              for (int i=0; i<ret; i++) {
+                if (column_major || need_to_perm) {
+                  indices_t(i) = perm_l2g(indices_t(i));
+                } else {
+                  indices(i) = perm_l2g(indices(i));
+                }
+              }
+            }
             // (note: column idexes are now in base-0)
             if (column_major) {
               // Map to transpose
@@ -361,7 +374,8 @@ namespace Amesos2 {
               }
               // nonzeroes in each column are sorted in ascending row
               for (int row=0; row<nRows; row++) {
-                int i = perm_l2g(row);
+                // if swap cols, then just use the original 0:(n-1), otherwise GIDs
+                int i = (swap_cols ? row : perm_l2g(row));
                 for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
                   int col = indices_t(k);
                   if (col < nRows) {
@@ -400,6 +414,10 @@ namespace Amesos2 {
             } else {
               Kokkos::resize(transpose_map, 0);
             }
+          }
+          if (!need_to_perm || swap_cols) {
+            // no need to perm rhs or sol
+            Kokkos::resize(perm_g2l, 0);
           }
         }
         //if(current_phase == NUMFACT) // Numerical values may be used in symbolic (e.g, MWM)

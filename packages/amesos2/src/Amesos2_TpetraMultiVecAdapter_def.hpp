@@ -588,26 +588,35 @@ namespace Amesos2 {
                 LocalOrdinal,
                 GlobalOrdinal,
                 Node> >::gather (KV& kokkos_new_view,
+                                 host_ordinal_type_array &perm_g2l,
                                  host_ordinal_type_array &recvCountRows,
                                  host_ordinal_type_array &recvDisplRows,
                                  EDistribution distribution) const
   {
     auto nCols = this->mv_->getNumVectors();
+    auto nRows = this->mv_->getGlobalLength();
     auto comm = this->mv_->getMap()->getComm();
     auto myRank = comm->getRank();
     if (myRank == 0) {
-      auto nRows = this->mv_->getGlobalLength();
       Kokkos::resize(kokkos_new_view, nRows, nCols);
+      if (perm_g2l.extent(0) == nRows) {
+        Kokkos::resize(this->buf_, nRows, 1);
+      } else {
+        Kokkos::resize(this->buf_, 0, 1);
+      }
     }
     {
-      auto nRows = this->mv_->getLocalLength();
+      auto nRows_l = this->mv_->getLocalLength();
       auto lclMV = this->mv_->getLocalViewHost(Tpetra::Access::ReadOnly);
       for (size_t j=0; j<nCols; j++) {
         Scalar * sendbuf = const_cast<Scalar*>       (&lclMV(0,j));
-        Scalar * recvbuf = reinterpret_cast<Scalar*> (myRank == 0 ? &kokkos_new_view(0,j) : kokkos_new_view.data());
-        Teuchos::gatherv<int, Scalar> (sendbuf, nRows,
+        Scalar * recvbuf = reinterpret_cast<Scalar*> (this->buf_.extent(0) > 0 || myRank != 0 ? this->buf_.data() : &kokkos_new_view(0,j));
+        Teuchos::gatherv<int, Scalar> (sendbuf, nRows_l,
                                        recvbuf, recvCountRows.data(), recvDisplRows.data(),
                                        0, *comm);
+        if (myRank == 0 && this->buf_.extent(0) > 0) {
+          for (global_size_t i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
+        }
       }
     }
     return 0;
@@ -621,21 +630,26 @@ namespace Amesos2 {
                 LocalOrdinal,
                 GlobalOrdinal,
                 Node> >::scatter (KV& kokkos_new_view,
+                                  host_ordinal_type_array &perm_g2l,
                                   host_ordinal_type_array &sendCountRows,
                                   host_ordinal_type_array &sendDisplRows,
                                   EDistribution distribution) const
   {
-    auto nRows = this->mv_->getLocalLength();
     auto nCols = this->mv_->getNumVectors();
+    auto nRows = this->mv_->getGlobalLength();
+    auto nRows_l = this->mv_->getLocalLength();
     auto comm = this->mv_->getMap()->getComm();
     auto myRank = comm->getRank();
     {
       auto lclMV = this->mv_->getLocalViewHost(Tpetra::Access::OverwriteAll);
       for (size_t j=0; j<nCols; j++) {
-        Scalar * sendbuf = reinterpret_cast<Scalar*> (myRank == 0 ? &kokkos_new_view(0,j) : kokkos_new_view.data());
+        if (myRank == 0 && this->buf_.extent(0) > 0) {
+          for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
+        }
+        Scalar * sendbuf = reinterpret_cast<Scalar*> (this->buf_.extent(0) > 0 || myRank != 0 ? this->buf_.data() : &kokkos_new_view(0,j));
         Scalar * recvbuf = reinterpret_cast<Scalar*> (&lclMV(0,j));
         Teuchos::scatterv<int, Scalar> (sendbuf, sendCountRows.data(), sendDisplRows.data(),
-                                        recvbuf, nRows,
+                                        recvbuf, nRows_l,
                                         0, *comm);
       }
     }

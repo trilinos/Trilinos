@@ -132,11 +132,19 @@ int main(int argc, char *argv[]) {
      *   [10]
      *   [10]]
      */
-    B->putScalar(10);
+    if (true) {
+      X->putScalar(1);
+      A->apply(*X, *B);
+    } else {
+      B->putScalar(10);
+    }
   } else {
     B = Tpetra::MatrixMarket::Reader<MAT>::readDenseFile (rhs_filename, comm, rngmap);
     numVectors = B->getNumVectors();
   }
+
+  // Randomize X
+  X->randomize();
 
   if (useZoltan2 || useParMETIS) {
 #if defined(HAVE_AMESOS2_XPETRA) && defined(HAVE_AMESOS2_ZOLTAN2)
@@ -197,7 +205,7 @@ int main(int argc, char *argv[]) {
   if( printMatrix ){
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
-  else if( verbose ){
+  else if( verbose && myRank == 0){
     std::cout << std::endl << A->description() << std::endl << std::endl;
   }
 

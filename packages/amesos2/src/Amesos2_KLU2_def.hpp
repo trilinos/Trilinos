@@ -186,7 +186,7 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
   TEUCHOS_TEST_FOR_EXCEPTION(info > 0, std::runtime_error,
-      "KLU2 numeric factorization failed");
+      "KLU2 numeric factorization failed(info="+std::to_string(info)+")");
 
   return(info);
 }
@@ -224,10 +224,10 @@ KLU2<Matrix,Vector>::solve_impl(
     }
     else {
       if (use_gather) {
-        int rval = B->gather(bValues_, this->recvCountRows, this->recvDisplRows,
+        int rval = B->gather(bValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
                              (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
         if (rval == 0) {
-          X->gather(xValues_, this->recvCountRows, this->recvDisplRows,
+          X->gather(xValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
                     (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
           bDidAssignB = true;  // TODO : find when we can avoid deep-copy
           bDidAssignX = false; // TODO : find when we can avoid scatter
@@ -361,7 +361,7 @@ KLU2<Matrix,Vector>::solve_impl(
     Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
     if (use_gather) {
-      int rval = X->scatter(xValues_, this->recvCountRows, this->recvDisplRows,
+      int rval = X->scatter(xValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
                             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
       if (rval != 0) use_gather = false;
     }
@@ -475,7 +475,6 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
       if (host_col_ptr_view_.extent(0) != (this->globalNumRows_ + 1))
         Kokkos::resize(host_col_ptr_view_, this->globalNumRows_ + 1);
     }
-
     local_ordinal_type nnz_ret = -1;
     bool use_gather = use_gather_; // user param
     use_gather = (use_gather && this->matrixA_->getComm()->getSize() > 1); // only with multiple MPIs
@@ -488,10 +487,10 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
         bool column_major = true;
         if (!is_contiguous_) {
           auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
-          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+          nnz_ret = contig_mat->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->perm_g2l, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
                                        this->transpose_map, this->nzvals_t, column_major, current_phase);
         } else {
-          nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+          nnz_ret = this->matrixA_->gather(host_nzvals_view_, host_rows_view_, host_col_ptr_view_, this->perm_g2l, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
                                            this->transpose_map, this->nzvals_t, column_major, current_phase);
         }
         // gather failed (e.g., not implemened for KokkosCrsMatrix)

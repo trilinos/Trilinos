@@ -321,10 +321,10 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
     } // end if ( single_proc_optimization() && nrhs == 1 )
     else {
       if (use_gather) {
-        int rval = B->gather(bValues_, this->recvCountRows, this->recvDisplRows,
+        int rval = B->gather(bValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
                              (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
         if (rval == 0) {
-          X->gather(xValues_, this->recvCountRows, this->recvDisplRows,
+          X->gather(xValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
                     (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
         } else {
           use_gather = false;
@@ -370,11 +370,10 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
       "Could not alloc needed working memory for solve" );
   {
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
     if (use_gather) {
-      int rval = X->scatter(xValues_, this->recvCountRows, this->recvDisplRows,
+      int rval = X->scatter(xValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
                             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
       if (rval != 0) use_gather = false;
     }
@@ -627,10 +626,10 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
         bool column_major = true;
         if (!is_contiguous_) {
           auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
-          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, this->perm_g2l, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
                                        this->transpose_map, this->nzvals_t, column_major, current_phase);
         } else {
-          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, this->perm_g2l, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
                                            this->transpose_map, this->nzvals_t, column_major, current_phase);
         }
         // gather failed (e.g., not implemened for KokkosCrsMatrix)
