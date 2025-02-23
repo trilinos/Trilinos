@@ -609,7 +609,7 @@ namespace Amesos2 {
       auto nRows_l = this->mv_->getLocalLength();
       auto lclMV = this->mv_->getLocalViewHost(Tpetra::Access::ReadOnly);
       for (size_t j=0; j<nCols; j++) {
-        Scalar * sendbuf = const_cast<Scalar*>       (&lclMV(0,j));
+        Scalar * sendbuf = const_cast<Scalar*> (nRows_l > 0 ? &lclMV(0,j) : lclMV.data());
         Scalar * recvbuf = reinterpret_cast<Scalar*> (this->buf_.extent(0) > 0 || myRank != 0 ? this->buf_.data() : &kokkos_new_view(0,j));
         Teuchos::gatherv<int, Scalar> (sendbuf, nRows_l,
                                        recvbuf, recvCountRows.data(), recvDisplRows.data(),
@@ -647,7 +647,7 @@ namespace Amesos2 {
           for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
         }
         Scalar * sendbuf = reinterpret_cast<Scalar*> (this->buf_.extent(0) > 0 || myRank != 0 ? this->buf_.data() : &kokkos_new_view(0,j));
-        Scalar * recvbuf = reinterpret_cast<Scalar*> (&lclMV(0,j));
+        Scalar * recvbuf = reinterpret_cast<Scalar*> (nRows_l > 0 ? &lclMV(0,j) : lclMV.data());
         Teuchos::scatterv<int, Scalar> (sendbuf, sendCountRows.data(), sendDisplRows.data(),
                                         recvbuf, nRows_l,
                                         0, *comm);
