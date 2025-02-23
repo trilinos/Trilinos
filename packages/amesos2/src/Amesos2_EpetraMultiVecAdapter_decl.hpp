@@ -250,17 +250,25 @@ namespace Amesos2 {
       auto comm = this->getComm();
       auto myRank = comm->getRank();
       auto nCols = this->mv_->NumVectors();
+      auto nRows = this->mv_->GlobalLength();
+      auto nRows_l = this->mv_->MyLength();
       if (myRank == 0) {
-        auto nRows = this->mv_->GlobalLength();
         Kokkos::resize(kokkos_new_view, nRows, nCols);
+        if (perm_g2l.extent(0) == nRows) {
+          Kokkos::resize(this->buf_, nRows, 1);
+        } else {
+          Kokkos::resize(this->buf_, 0, 1);
+        }
       }
       {
-        auto nRows = this->mv_->MyLength();
         for (int j=0; j<nCols; j++) {
-          scalar_t * recvbuf = reinterpret_cast<scalar_t*> (myRank == 0 ? &kokkos_new_view(0,j) : kokkos_new_view.data());
-          Teuchos::gatherv<int, scalar_t> (const_cast<scalar_t*> ((*this->mv_)[j]), nRows,
+          scalar_t * recvbuf = reinterpret_cast<scalar_t*> (myRank != 0 || this->buf_.extent(0) > 0 ? this->buf_.data() : &kokkos_new_view(0,j));
+          Teuchos::gatherv<int, scalar_t> (const_cast<scalar_t*> ((*this->mv_)[j]), nRows_l,
                                            recvbuf, recvCountRows.data(), recvDisplRows.data(),
                                            0, *comm);
+          if (myRank == 0 && this->buf_.extent(0) > 0) {
+            for (global_size_t i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
+          }
         }
       }
       return 0;
@@ -277,12 +285,16 @@ namespace Amesos2 {
       auto comm = this->getMap()->getComm();
       auto myRank = comm->getRank();
       auto nCols = this->mv_->NumVectors();
+      auto nRows = this->mv_->GlobalLength();
+      auto nRows_l = this->mv_->MyLength();
       {
-        auto nRows = this->mv_->MyLength();
         for (int j=0; j<nCols; j++) {
-          scalar_t * sendbuf = reinterpret_cast<scalar_t*> (myRank == 0 ? &kokkos_new_view(0,j) : kokkos_new_view.data());
+          if (myRank == 0 && this->buf_.extent(0) > 0) {
+            for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
+          }
+          scalar_t * sendbuf = reinterpret_cast<scalar_t*> (myRank != 0 || this->buf_.extent(0) > 0 ? this->buf_.data() : &kokkos_new_view(0,j));
           Teuchos::scatterv<int, scalar_t> (sendbuf, sendCountRows.data(), sendDisplRows.data(),
-                                            reinterpret_cast<scalar_t*> ((*this->mv_)[j]), nRows,
+                                            reinterpret_cast<scalar_t*> ((*this->mv_)[j]), nRows_l,
                                             0, *comm);
         }
       }
@@ -302,6 +314,7 @@ namespace Amesos2 {
 
     /// The multi-vector this adapter wraps
     Teuchos::RCP<multivec_t> mv_;
+    mutable Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> buf_;
 
     mutable Teuchos::RCP<Epetra_Import> importer_;
     mutable Teuchos::RCP<Epetra_Export> exporter_;
