@@ -34,7 +34,7 @@
 # There are a number of other options that you can change as
 # environment variables.  See the macros set_default_and_from_env(...)
 # in the file TribitsCTestDriverCore.cmake.  One option that you
-# might want to overridde, for instance is CTEST_BUILD_NAME so that
+# might want to override, for instance is CTEST_BUILD_NAME so that
 # you can insert a special name into the dashboard.
 #
 # When this script finishes running, the last package listed in

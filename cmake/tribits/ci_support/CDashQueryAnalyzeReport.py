@@ -541,7 +541,7 @@ def assertExpectedNumColsFromCsvFile(csvFileName, dataRow, lineList,
     raise Exception(
       "Error, for CSV file '"+csvFileName+"' the data row"+\
       " "+str(dataRow)+" "+str(lineList)+" has"+\
-      " "+str(len(lineList))+" entries which does not macth"+\
+      " "+str(len(lineList))+" entries which does not match"+\
       " the number of column headers "+str(len(columnHeadersList))+"!")
 
 
@@ -1075,7 +1075,7 @@ def lookupDictGivenLookupDict(lookupDict, listOfKeys, listOfValues,
 # given a list key/value pairs to match
 #
 # Once created, this object acts like a list of dicts in most cases but also
-# contains functions to search for speicfic dicts given a set of key/value
+# contains functions to search for specific dicts given a set of key/value
 # pairs.
 #
 # Any modifications to the dicts looked up with this object will edit the

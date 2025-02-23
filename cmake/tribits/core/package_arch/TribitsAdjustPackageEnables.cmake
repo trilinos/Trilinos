@@ -824,7 +824,7 @@ endmacro()
 # package ``<packageName>`` are set as EXTERNAL as well.  (We don't allow a
 # subset of subpackages in a parent package to be EXTERNAL and the other
 # subpackages to be INTERNAL.  That would be way too complicated to implement
-# and be way too confusing for implementors and users.)
+# and be way too confusing for implementers and users.)
 #
 macro(tribits_set_package_and_related_upstream_packages_to_external  packageName)
 

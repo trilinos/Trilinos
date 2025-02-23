@@ -141,7 +141,7 @@ endfunction()
 #     <tplName>
 #     [REQUIRED_HEADERS <header1> <header2> ...]
 #     [MUST_FIND_ALL_HEADERS]
-#     [REQUIRED_LIBS_NAMES <libname1> <libname2> ...]
+#     [REQUIRED_LIBS_NAMES "<libname1> <libname1alt1> ..." <libname2> ...]
 #     [MUST_FIND_ALL_LIBS]
 #     [NO_PRINT_ENABLE_SUCCESS_FAIL]
 #     )
@@ -165,11 +165,36 @@ endfunction()
 #     If set, then all of the header files listed in ``REQUIRED_HEADERS`` must
 #     be found (unless ``TPL_<tplName>_INCLUDE_DIRS`` is already set).
 #
-#   ``REQUIRED_LIBS_NAMES``
+#   ``REQUIRED_LIBS_NAMES "<libname1> <libname1alt1> ..." <libname2> ...``
 #
 #     List of libraries that are searched for when looking for the TPL's
-#     libraries using ``find_library()``.  This list can be overridden by the
-#     user by setting ``<tplName>_LIBRARY_NAMES`` (see below).
+#     libraries using ``find_library()``. A single list of library names of
+#     the form:
+#
+#       ``<libname1> <libname2> ...``
+#
+#     are searched for and must all be found and will define the libraries for
+#     this TPL on the link line in that order.  However, a library name along
+#     with alternate library names can be provided using outer quotes with
+#     inner spaces:
+#
+#       ``"<libname1> <libname1alt1> <libname1alt2> ..."``
+#
+#     In this case, first, ``<libname1>`` is looked for and used if it is
+#     found.  If not found, then the next alternate library name
+#     ``<libname1alt1>`` is looked for and is used if found. This continues
+#     with each successive alternate library name in the set until one is
+#     found.  If none of the libraries in the set alternative names are found,
+#     then this is an error.  Providing a set of alternate library names (in
+#     order of preference) allows the default find operation to look for
+#     different library names for different situations and implementations.
+#     For example, the BLAS library can be called ``blas``, ``openblas`` or
+#     ``atlas`` for different BLAS implementations and can be specified as:
+#
+#       ``"blas openblas atlas"``
+#
+#     The list of required library names can be overridden by the user by
+#     setting ``<tplName>_LIBRARY_NAMES`` (see below).
 #
 #   ``MUST_FIND_ALL_LIBS``
 #
@@ -206,7 +231,8 @@ endfunction()
 #   ``<tplName>_LIBRARY_NAMES`` (type ``STRING``)
 #
 #     List of library names to be looked for instead of what is specified in
-#     ``REQUIRED_LIBS_NAMES <libname1> <libname2> ...``.
+#     ``REQUIRED_LIBS_NAMES <libname1> <libname2> ...``.  If set, only a
+#     single set of libraries can be specified of which all need to be found.
 #
 #   ``<tplName>_LIB_ENABLED_DEPENDENCIES``
 #
@@ -385,10 +411,15 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
    #print_var(TPL_CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT)
   endif()
 
+  # Allow per-TPL shared lib find setting
+  if ("${${TPL_NAME}_FIND_SHARED_LIBS}" STREQUAL "")
+    set(${TPL_NAME}_FIND_SHARED_LIBS ${TPL_FIND_SHARED_LIBS})
+  endif()
+
   #print_var(TPL_FIND_SHARED_LIBS)
   #print_var(CMAKE_FIND_LIBRARY_SUFFIXES)
   # Set libraries to find
-  if (TPL_FIND_SHARED_LIBS)
+  if (${TPL_NAME}_FIND_SHARED_LIBS)
     # The default should be to find shared libs first
     set(TPL_CMAKE_FIND_LIBRARY_SUFFIXES ${TPL_CMAKE_FIND_LIBRARY_SUFFIXES_DEFAULT})
   else()
@@ -425,7 +456,7 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
 
       message( "-- Searching for libs in ${TPL_NAME}_LIBRARY_DIRS='${${TPL_NAME}_LIBRARY_DIRS}'")
 
-      set(LIBRARIES_FOUND)
+      set(LIBRARIES_FOUND "")
 
       foreach(LIBNAME_SET ${REQUIRED_LIBS_NAMES})
 
@@ -438,7 +469,7 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
         set(LIBNAME_LIST ${LIBNAME_SET})
         separate_arguments(LIBNAME_LIST)
 
-        set(LIBNAME_SET_LIB)
+        set(LIBNAME_SET_LIB "")
 
         foreach(LIBNAME ${LIBNAME_LIST})
 

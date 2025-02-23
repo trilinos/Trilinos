@@ -269,7 +269,7 @@ macro(enable_package_if_not_explicitly_excluded  TRIBITS_PACKAGE)
     if (${TRIBITS_PACKAGE}_EXPLICITY_EXCLUDED)
       message("NOT enabling explicitly set package ${TRIBITS_PACKAGE} since it was explicitly excluded!")
     else()
-       message("Enabling explicitly set package ${TRIBITS_PACKAGE} which was default or otherwise disabed!")
+       message("Enabling explicitly set package ${TRIBITS_PACKAGE} which was default or otherwise disabled!")
       set(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} ON)
     endif()
   else()
@@ -955,7 +955,7 @@ macro(tribits_ctest_package_by_package)
         set(PBP_CONFIGURE_PASSED TRUE)
         # load target properties and test keywords
         ctest_read_custom_files(BUILD "${CTEST_BINARY_DIRECTORY}")
-        # Overridde from this file!
+        # Override from this file!
         include("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
       else()
         message("\n${TRIBITS_PACKAGE} FAILED to configure!\n")
@@ -1384,7 +1384,7 @@ macro(tribits_ctest_all_at_once)
   # configure failed and the file CTestCustom.cmake does exist.  In this case,
   # CTest will just do nothing.
 
-  # Overridde any values by loading <projectDir>/CTestConfig.cmake
+  # Override any values by loading <projectDir>/CTestConfig.cmake
   include("${TRIBITS_PROJECT_ROOT}/CTestConfig.cmake")
 
   # Print out values read from project CTestCustom.cmake file
@@ -1531,7 +1531,7 @@ macro(tribits_ctest_all_at_once)
   if (NOT CTEST_DO_COVERAGE_TESTING)
   
     message("")
-    message("Skipping converage tests because CTEST_DO_COVERAGE_TESTING='${CTEST_DO_COVERAGE_TESTING}'!")
+    message("Skipping coverage tests because CTEST_DO_COVERAGE_TESTING='${CTEST_DO_COVERAGE_TESTING}'!")
     message("")
 
   elseif (NOT AAO_CONFIGURE_PASSED)

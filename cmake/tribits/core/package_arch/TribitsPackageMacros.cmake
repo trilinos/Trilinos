@@ -675,9 +675,9 @@ macro(tribits_package_postprocess_common)
 
   tribits_package_create_all_libs_interface_library()
 
-  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
-    # Create the configure file so external projects can find packages with a
-    # call to find_package(<package_name>).
+  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
+      AND (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
+    )
     tribits_write_package_client_export_files(${PACKAGE_NAME})
   endif()
 
@@ -695,7 +695,7 @@ macro(tribits_package_create_all_libs_interface_library)
 
     # Find all of the non-TESTONLY library targets
     tribits_get_all_build_targets_including_in_subdirs("${CMAKE_CURRENT_SOURCE_DIR}"
-      "STATIC_LIBRARY;SHARED_LIBRARY"
+      "STATIC_LIBRARY;SHARED_LIBRARY;INTERFACE_LIBRARY"
       allPackageBuildableLibTargetsList )
     #print_var(allPackageBuildableLibTargetsList)
     set(packageLibsInAllLibsList)

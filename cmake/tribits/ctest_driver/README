@@ -302,7 +302,7 @@ dashboards.  You would do this with:
 E) Debugging problems:
 ======================
 
-Debugging the inner CTest dashbaords should be more straightforward as
+Debugging the inner CTest dashboards should be more straightforward as
 described in D.1 above.
 
 When first getting the outer <Project>Driver script to run, there can be
