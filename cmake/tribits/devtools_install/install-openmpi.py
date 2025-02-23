@@ -55,7 +55,7 @@ the configured GCC compiler (see options --with-gcc --with-lib-dir).
       help="Command used to check out "+self.getProductName()+" and dependent source tarball(s)." )
     clp.add_option(
       "--extra-configure-options", dest="extraConfigureOptions", type="string", default="",
-      help="Extra options to add to the 'configure' cmmand for "+self.getProductName()+"." \
+      help="Extra options to add to the 'configure' command for "+self.getProductName()+"." \
       +"  Note: This does not override the hard-coded configure options." )
     clp.add_option(
       "--with-path", dest="withPath", type="string", default="",

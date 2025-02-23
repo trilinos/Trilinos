@@ -506,7 +506,7 @@ packages.
 
 If one wants to enable a package along with the enable of other packages, but
 not the test suite for that package, then one can use a "exclude-list"
-appraoch to disable the tests for that package by configuring with, for
+approach to disable the tests for that package by configuring with, for
 example::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
@@ -521,7 +521,7 @@ packages that might get implicitly enabled).  One might use this approach if
 one wants to build and install package ``<TRIBITS_PACKAGE_2>`` but does not
 want to build and run the test suite for that package.
 
-Alternatively, one can use an "include-list" appraoch to enable packages and
+Alternatively, one can use an "include-list" approach to enable packages and
 only enable tests for specific packages, for example, configuring with::
 
   -D <Project>_ENABLE_<TRIBITS_PACKAGE_1>=ON \
@@ -1487,6 +1487,13 @@ libraries.  The second flag tells cmake to locate static library versions of
 any required TPLs.  The third flag tells the auto-detection routines that
 search for extra required libraries (such as the mpi library and the gfortran
 library for gnu compilers) to locate static versions.
+
+The TPL_FIND_SHARED_LIBS setting can also be set per-TPL, in the case that
+the desire is to find shared libraries for one TPL, but static libraries for
+all others::
+
+ -D TPL_FIND_SHARED_LIBS=OFF \
+ -D <TPLNAME>_FIND_SHARED_LIBS=ON
 
 
 Changing include directories in downstream CMake projects to non-system

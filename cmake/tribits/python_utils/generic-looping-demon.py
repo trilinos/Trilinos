@@ -27,7 +27,7 @@ This simple program takes a command as input and runs it over and over again
 absolute time.
 
 The reason that the script takes an absolute time instead of a relative time
-is that this script is desiged to drive continuous itegration (CI) processes
+is that this script is designed to drive continuous integration (CI) processes
 where the CI process should shut down at some point.
 
 NOTE: The last iteration will not start later than --run-till=RUNTILL but the

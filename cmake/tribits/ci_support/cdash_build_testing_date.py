@@ -107,7 +107,7 @@ def getTimeZoneOffset(timeZoneStr):
 # Return a timezone aware datetime object given an input date and time given
 # in the format "<YYYY>-<MM>-<DD>T<hh>:<mm>:<ss> <TZ>".
 #
-# Note. the timzone <TZ> can be any of those supported by the function
+# Note. the timezone <TZ> can be any of those supported by the function
 # getTimeZoneOffset()
 def getBuildStartTimeUtcFromStr(buildStartTimeStr):
   buildStartTimeStrArray = buildStartTimeStr.split(" ")
@@ -156,7 +156,7 @@ def getDateOnlyFromDateTime(dateTime):
 #
 # buildStartTimeStr [in]: The 'buildstarttime' field string as returned from
 # CDash in the format "<YYYY>-<MM>-<DD>T<hh>:<mm>:<ss> <TZ>".  Note. the
-# timzone <TZ> can be any of those supported by the function
+# timezone <TZ> can be any of those supported by the function
 # getTimeZoneOffset()
 #
 # testingDayStartTimeUtcTD [in]: The testing day start time as the a timedelta

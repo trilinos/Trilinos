@@ -15,7 +15,7 @@ typedef Tracer::Space_Vector      Space_Vector;
 int nfail;
 int npass;
 
-#define UNIT_TEST(a) if (!a){ ++nfail; } else { ++npass; }
+#define UNIT_TEST(a) if (!(a)){ ++nfail; } else { ++npass; }
 
 //---------------------------------------------------------------------------//
 

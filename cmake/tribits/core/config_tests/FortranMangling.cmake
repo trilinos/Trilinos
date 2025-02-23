@@ -25,11 +25,11 @@ include(GlobalSet)
 #    appended.
 #
 # FC_FUNC_DEFAULT
-#    The default mange mangling for Fortran functions
+#    The default mangling for Fortran functions
 #    that do not contain an underscore.
 #
 # FC_FUNC__DEFAULT
-#    The default mange mangling for Fortran functions
+#    The default mangling for Fortran functions
 #    that do contain an underscore.
 #
 #  The Fortran 2003 name binding facilities and ISO_C_BINDING module

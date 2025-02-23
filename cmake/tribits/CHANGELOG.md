@@ -2,6 +2,12 @@
 ChangeLog for TriBITS
 ----------------------------------------
 
+## 2025-02-17:
+
+* **Added:** Added support for header-only libraries with
+  `tribits_add_library()` with new keyword `HEADERONLY`.  See
+  updated documentation.
+
 ## 2024-10-08:
 
 * **Changed:** The TriBITS framework find operation for
@@ -14,7 +20,7 @@ ChangeLog for TriBITS
   when upgrading TriBITS.  (This change can be made automatically in all of
   the project's CMake files by running the script
   `tribits/refactoring/to-python3.sh <dir>`.)  However, backward compatibility
-  is provided for users confiugring TriBITS CMake projects which set `-D
+  is provided for users configuring TriBITS CMake projects which set `-D
   PYTHON_EXECUTABLE=<path>`.  In this case, if user sets `-D
   PYTHON_EXECUTABLE=<path>` in the cache, TriBITS will set that value `<path>`
   to the variable `Python3_EXECUTABLE` and avoid the call to
@@ -292,7 +298,7 @@ ChangeLog for TriBITS
   `<tplName>_LIB_ALL_DEPENDENCIES`.  Now `<tplName>_LIB_ENABLED_DEPENDENCIES`
   is automatically set from `<tplName>_LIB_ALL_DEPENDENCIES` based on what
   TPLs are actually enabled.  This avoids the problem described below from
-  directly setting `<tplName>_LIB_ENABLED_DEPENDENCIES` without reguard to
+  directly setting `<tplName>_LIB_ENABLED_DEPENDENCIES` without regard to
   what TPLs are actually enabled.  This maintains backward compatibility for
   existing configure scripts where an upstream TPL may not be enabled in some
   strange configure scripts (see
@@ -347,7 +353,7 @@ ChangeLog for TriBITS
   (in order to simplify internal TriBITS logic).  However, a side-effect of
   this change is that CMake code that was ifed out with an `if
   (${PACKAGE_NAME}_ENABLE_<depPkg>)` statement (because that variable was not
-  defined and therefore defaults to `FLASE`) for a required upstream
+  defined and therefore defaults to `FALSE`) for a required upstream
   dependency `<depPkg>` will now be enabled.  (This mistake can happen when an
   optional dependency `<depPkg>` is changed to a required dependency but the
   `if()` statements based on `${PACKAGE_NAME}_ENABLE_<depPkg>` are not
