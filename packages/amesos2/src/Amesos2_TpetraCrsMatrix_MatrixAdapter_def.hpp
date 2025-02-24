@@ -227,8 +227,8 @@ namespace Amesos2 {
           bool need_to_perm = false;
           {
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(rowptr)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(rowptr)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             Teuchos::gather<int, LocalOrdinal> (&myNRows, 1, recvCounts.data(), 1, 0, *comm);
             if (myRank == 0) {
@@ -314,8 +314,8 @@ namespace Amesos2 {
           }
           {
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(colind)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(colind)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             // gather colinds
             if (myRank == 0) {
@@ -342,8 +342,8 @@ namespace Amesos2 {
           }
           if (myRank == 0) {
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose index)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose index)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             if (swap_cols && need_to_perm) {
               // convert col GIDs to 0:(n-1)
@@ -424,8 +424,8 @@ namespace Amesos2 {
         {
           {
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             // grab numerical values on host
             auto lclNzvals_d = lclMatrix.values;
@@ -448,8 +448,8 @@ namespace Amesos2 {
             // Insert Numerical values to transopose matrix
             ret = pointers(nRows);
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose values)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose values)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             if (transpose_map.extent(0) > 0) {
               for (int k=0; k<ret; k++) {

@@ -49,8 +49,6 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   "Kokkos node type not supported by experimental ShyLUBasker Amesos2");
   */
-  typedef Kokkos::OpenMP Exe_Space;
-
   ShyLUbasker = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space>();
   ShyLUbasker->Options.no_pivot      = BASKER_FALSE;
   ShyLUbasker->Options.static_delayed_pivot = 0;

@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     global_size_t nrows = 6;
     map = rcp( new MAP(nrows,0,comm) );
 
-    RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
+    A = rcp( new MAT(map,3) ); // max of three entries in a row
 
     /*
      * We will solve a system with a known solution, for which we will be using
