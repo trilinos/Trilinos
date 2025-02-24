@@ -542,7 +542,7 @@ namespace {
     }
     // Unit test created for 2 processes
     if (nProcs == 2) {
-      const global_size_t nrows = 6;
+      const GO nrows = 6;
       const GO numGlobalEntries = nrows;
 
       // Create one-base Map
@@ -557,7 +557,7 @@ namespace {
       }
       RCP< const map_type > map = rcp( new map_type(numGlobalEntries, elementList, indexBase, comm) );
 
-      // Create 2D matrix 
+      // Create 2D matrix
       RCP<MAT> A = rcp( new MAT(map,3) );
 
       Teuchos::Array<GO> gblColIndsBuf(3);
@@ -603,7 +603,6 @@ namespace {
       X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
       // Check result of solve
-      Array<Mag> xhatnorms(numVectors), xnorms(numVectors);
       Xhat->norm2(xhatnorms());
       X->norm2(xnorms());
     }
@@ -635,28 +634,30 @@ namespace {
     }
     // Unit test created for 2 processes
     if (nProcs == 2) {
-      const global_size_t nrows = 6;
+      const GO nrows = 6;
       const GO numGlobalEntries = nrows;
 
       // Create one-base Map
-      const GO indexBase = 0;
+      const GO indexBase = 1;
       typedef Tpetra::Map<LO,GO>  map_type;
       Array<GO> colList (5);
       if (myRank == 0) {
-        colList[0] = 0;
-        colList[1] = 1;
-        colList[2] = 2;
-        colList[3] = 3;
-        colList[4] = 6;
+        colList[0] = 0+indexBase;
+        colList[1] = 1+indexBase;
+        colList[2] = 2+indexBase;
+        colList[3] = 3+indexBase; // MPI-1
+        colList[4] = 6+indexBase; // Extra
       } else {
-        colList[0] = 2;
-        colList[1] = 3;
-        colList[2] = 4;
-        colList[3] = 5;
-        colList[4] = 6;
+        colList[0] = 2+indexBase; // MPI-0
+        colList[1] = 3+indexBase;
+        colList[2] = 4+indexBase;
+        colList[3] = 5+indexBase;
+        colList[4] = 6+indexBase; // Extra
       }
       RCP< const map_type > rowmap = rcp( new map_type(numGlobalEntries, indexBase, comm) );
       RCP< const map_type > colmap = rcp( new map_type(numGlobalEntries, colList, indexBase, comm) );
+      rowmap->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      colmap->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
       // Create 2D matrix 
       RCP<MAT> A = rcp( new MAT(rowmap,colmap,3) );
@@ -668,17 +669,17 @@ namespace {
         const GO gblRow = rowmap->getGlobalElement(lclRow);
         const GO gblCol = gblRow;
         LO numEnt = 0;
-        if (gblRow < nrows-1) {
+        if (gblRow < (nrows+indexBase)-1) {
           valsBuf[numEnt] = SCALAR(-1.0);
-          gblColIndsBuf[numEnt] = gblCol+1;
+          gblColIndsBuf[numEnt] = (gblCol+1);
           numEnt ++;
         }
         valsBuf[numEnt] = SCALAR(2.0);
         gblColIndsBuf[numEnt] = gblCol;
         numEnt ++;
-        if (gblRow > 0) {
+        if (gblRow > indexBase) {
           valsBuf[numEnt] = SCALAR(-1.0);
-          gblColIndsBuf[numEnt] = gblCol-1;
+          gblColIndsBuf[numEnt] = (gblCol-1);
           numEnt ++;
         }
 
@@ -697,6 +698,12 @@ namespace {
 
       // Create solver interface with Amesos2 factory method
       RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("KLU2", A, X, B);
+      {
+        // forcing to be non-contiguous to test reindexing
+        Teuchos::ParameterList amesos2_params("Amesos2");
+        amesos2_params.sublist("KLU2").set("IsContiguous", false, "Are GIDs Contiguous");
+        solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
+      }
       solver->symbolicFactorization().numericFactorization().solve();
 
       A->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
@@ -705,7 +712,6 @@ namespace {
       X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
 
       // Check result of solve
-      Array<Mag> xhatnorms(numVectors), xnorms(numVectors);
       Xhat->norm2(xhatnorms());
       X->norm2(xnorms());
     }
@@ -737,10 +743,10 @@ namespace {
     }
     // Unit test created for 2 processes
     if ( nProcs == 2 ) {
-      const global_size_t nrows = 6;
+      const GO nrows = 6;
       const GO numGlobalEntries = nrows;
 
-      // Create one-base Map
+      // Create one-base Map (reverse order)
       const GO indexBase = 0;
       typedef Tpetra::Map<LO,GO> map_type;
 
@@ -758,7 +764,7 @@ namespace {
       }
       RCP< const map_type > rowmap = rcp( new map_type(numGlobalEntries, rowList, indexBase, comm) );
 
-      // Create a 2D matrix
+      // Create a 2D matrix (not-symmetric)
       const LO numLocalEntries = LO(rowmap->getLocalNumElements());
       RCP<MAT> A = rcp( new MAT(rowmap,3) );
 
@@ -768,12 +774,12 @@ namespace {
         const GO gblRow = rowmap->getGlobalElement(lclRow);
         const GO gblCol = gblRow;
         LO numEnt = 0;
-        if (gblRow < gblRow-1) {
-          valsBuf[numEnt] = SCALAR(-1.0);
+        if (gblRow < nrows-1) {
+          valsBuf[numEnt] = SCALAR(-1-gblRow);
           gblColIndsBuf[numEnt] = gblCol+1;
           numEnt ++;
         }
-        valsBuf[numEnt] = SCALAR(2.0);
+        valsBuf[numEnt] = SCALAR(2+gblRow);
         gblColIndsBuf[numEnt] = gblCol;
         numEnt ++;
         if (gblRow > 0) {
@@ -983,10 +989,9 @@ namespace {
     using Teuchos::rcp;
     using Scalar = SCALAR;
 
-    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-
-    size_t myRank = comm->getRank();
-    const global_size_t numProcs = comm->getSize();
+    RCP<const Comm<int> > t_comm = Tpetra::getDefaultComm();
+    size_t myRank = t_comm->getRank();
+    const global_size_t numProcs = t_comm->getSize();
 
     // Unit test created for 2 processes
     if ( numProcs == 2 ) {
