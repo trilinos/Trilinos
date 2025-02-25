@@ -68,7 +68,7 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
   // add CrsMatrix objects in row,column order
   for (size_t r = 0; r < Rows(); ++r)
     for (size_t c = 0; c < Cols(); ++c)
-      blocks_.push_back(MatrixFactory::Build(getRangeMap(r, bRangeThyraMode_), numEntriesPerRow));
+      blocks_.push_back(Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(getRangeMap(r, bRangeThyraMode_), numEntriesPerRow));
 
   // Default view
   CreateDefaultView();
@@ -89,7 +89,7 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(Te
   // add CrsMatrix objects in row,column order
   for (size_t r = 0; r < Rows(); ++r)
     for (size_t c = 0; c < Cols(); ++c)
-      blocks_.push_back(MatrixFactory::Build(getRangeMap(r, bRangeThyraMode_), numEntriesPerRow));
+      blocks_.push_back(Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(getRangeMap(r, bRangeThyraMode_), numEntriesPerRow));
 
   // Default view
   CreateDefaultView();
@@ -177,7 +177,7 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
         blocks_.push_back(xwrap);
       } else {
         // add empty block
-        blocks_.push_back(MatrixFactory::Build(getRangeMap(r, bRangeThyraMode_), 0));
+        blocks_.push_back(Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(getRangeMap(r, bRangeThyraMode_), 0));
       }
     }
   }
@@ -1143,7 +1143,7 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> BlockedC
   for (LocalOrdinal lclRow = 0; lclRow < lclNumRows; ++lclRow)
     numEntPerRow[lclRow] = getNumEntriesInLocalRow(lclRow);
 
-  RCP<Matrix> sparse = MatrixFactory::Build(getFullRangeMap(), numEntPerRow);
+  RCP<Matrix> sparse = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(getFullRangeMap(), numEntPerRow);
 
   if (bRangeThyraMode_ == false) {
     // Xpetra mode
