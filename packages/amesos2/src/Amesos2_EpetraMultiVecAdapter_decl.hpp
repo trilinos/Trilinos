@@ -248,13 +248,13 @@ namespace Amesos2 {
             EDistribution distribution) const
     {
       auto comm = this->getComm();
-      auto myRank = comm->getRank();
-      auto nCols = this->mv_->NumVectors();
-      auto nRows = this->mv_->GlobalLength();
-      auto nRows_l = this->mv_->MyLength();
+      int myRank = comm->getRank();
+      int nCols = this->mv_->NumVectors();
+      int nRows = this->mv_->GlobalLength();
+      int nRows_l = this->mv_->MyLength();
       if (myRank == 0) {
         Kokkos::resize(kokkos_new_view, nRows, nCols);
-        if (perm_g2l.extent(0) == nRows) {
+        if (int(perm_g2l.extent(0)) == nRows) {
           Kokkos::resize(this->buf_, nRows, 1);
         } else {
           Kokkos::resize(this->buf_, 0, 1);
@@ -267,7 +267,7 @@ namespace Amesos2 {
                                            recvbuf, recvCountRows.data(), recvDisplRows.data(),
                                            0, *comm);
           if (myRank == 0 && this->buf_.extent(0) > 0) {
-            for (global_size_t i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
+            for (int i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
           }
         }
       }
@@ -283,14 +283,14 @@ namespace Amesos2 {
              EDistribution distribution) const
     {
       auto comm = this->getMap()->getComm();
-      auto myRank = comm->getRank();
-      auto nCols = this->mv_->NumVectors();
-      auto nRows = this->mv_->GlobalLength();
-      auto nRows_l = this->mv_->MyLength();
+      int myRank = comm->getRank();
+      int nCols = this->mv_->NumVectors();
+      int nRows = this->mv_->GlobalLength();
+      int nRows_l = this->mv_->MyLength();
       {
         for (int j=0; j<nCols; j++) {
           if (myRank == 0 && this->buf_.extent(0) > 0) {
-            for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
+            for (int i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
           }
           scalar_t * sendbuf = reinterpret_cast<scalar_t*> (myRank != 0 || this->buf_.extent(0) > 0 ? this->buf_.data() : &kokkos_new_view(0,j));
           Teuchos::scatterv<int, scalar_t> (sendbuf, sendCountRows.data(), sendDisplRows.data(),

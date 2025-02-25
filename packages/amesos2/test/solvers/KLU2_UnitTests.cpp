@@ -637,7 +637,7 @@ namespace {
       const GO nrows = 6;
       const GO numGlobalEntries = nrows;
 
-      // Create one-base Map
+      // Create one-base Map (e.g., reindex used to leave not-matched col GIDs to zero < indexBase)
       const GO indexBase = 1;
       typedef Tpetra::Map<LO,GO>  map_type;
       Array<GO> colList (5);
