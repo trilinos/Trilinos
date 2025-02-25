@@ -36,4 +36,5 @@ mesh surface all
 
 set exodus netcdf4 on
 
-export mesh "{ctype}-combined-centers.exo" dimension 2 overwrite
+#export mesh "{ctype}-combined-centers.exo" dimension 2 overwrite
+export mesh "energy-ss-tp-multiblock-ic-bc-issue.gen" dimension 2 overwrite
