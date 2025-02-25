@@ -74,8 +74,8 @@ BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(co
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(Teuchos::RCP<const MapExtractor>& rangeMapExtractor,
-                                                                              Teuchos::RCP<const MapExtractor>& domainMapExtractor,
+BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedCrsMatrix(Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& rangeMapExtractor,
+                                                                              Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& domainMapExtractor,
                                                                               size_t numEntriesPerRow)
   : is_diagonal_(true)
   , domainmaps_(domainMapExtractor)
