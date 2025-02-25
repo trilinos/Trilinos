@@ -136,7 +136,7 @@ class test_readBuildStatsTimingFileIntoDict(unittest.TestCase):
     buildStatsTimingDict_expected = None
     errMsg_expected = buildStatsTimingFile+": ERROR: Error, for CSV file"+\
      " '"+buildStatsTimingFile+"' the data row 0 ['for this garbage'] has 1 entries"+\
-     " which does not macth the number of column headers 3!"
+     " which does not match the number of column headers 3!"
     readBuildStatsTimingFileIntoDictTest(self, buildStatsTimingFile,
       numKeys_expected, buildStatsTimingDict_expected, errMsg_expected)
     # NOTE: The above test is very much tied to the implementation of
