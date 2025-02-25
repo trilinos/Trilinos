@@ -663,8 +663,8 @@ class Normalization_Constraint : public Constraint<Real> {
             (*ahuvp)[i] = 2.0*dx_*(*vp)[i]*(*up)[0];        
         }  
     }
-     
-    /** Solve the system \f[ \begin{\pmatrix} K & c'^\ast(\psi)\\ c'(\psi) & 0 \end{pmatrix}
+
+    /** Solve the system \f[ \begin{pmatrix} K & c'^\ast(\psi)\\ c'(\psi) & 0 \end{pmatrix}
       * \begin{pmatrix} v_1\\v_2 \end{pmatrix}=\begin{pmatrix} b_1\\b_2\end{pmatrix}\f]
       *  In this example, \f$K\f$ is the finite difference Laplacian the constraint is a 
       * scalar and the Jacobian is a vector and the exact inverse can be computed using the

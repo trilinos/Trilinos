@@ -72,7 +72,7 @@ namespace Stokhos {
    * applies the Lanczos procedure to compute an orthogonal basis for the
    * Krylov subspace 
    * \f[
-   *   \mathcal{K}(A, u_0, k) = \{ u_0, A_u_0, A^2 u_0, \dots, A^k u_0 \}.
+   *   \mathcal{K}(A, u_0, k) = \{ u_0, A u_0, A^2 u_0, \dots, A^k u_0 \}.
    * \f]
    * The basis vectors are given by 
    * \f[

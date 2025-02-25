@@ -26,7 +26,7 @@
 
     where 
     \f[
-    \hat u = x + \sign(\langle x,u\rangle)\frac{||x||}{||y||}y,\quad u = \frac{\hat u}{||\hat u||}
+    \hat u = x + \operatorname{sign}(\langle x,u\rangle)\frac{||x||}{||y||}y,\quad u = \frac{\hat u}{||\hat u||}
     \f]
 
     If y is not specified, it is taken to be the first canonical vector
