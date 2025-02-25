@@ -116,7 +116,7 @@ jobs:
           NODE_TLS_REJECT_UNAUTHORIZED: 0
         with:
           name: ${{ github.job }}-artifacts
-          path: $AT2_ARTIFACTS_DIR
+          path: /home/runner/artifacts/*
           retention-days: 90
       - name: Summary
         if: ${{ !cancelled() }}
@@ -217,7 +217,7 @@ jobs:
           NODE_TLS_REJECT_UNAUTHORIZED: 0
         with:
           name: ${{ github.job }}-artifacts
-          path: $AT2_ARTIFACTS_DIR
+          path: /home/runner/artifacts/*
           retention-days: 90
       - name: Summary
         if: ${{ !cancelled() }}
@@ -318,7 +318,7 @@ jobs:
           NODE_TLS_REJECT_UNAUTHORIZED: 0
         with:
           name: ${{ github.job }}-artifacts
-          path: $AT2_ARTIFACTS_DIR
+          path: /home/runner/artifacts/*
           retention-days: 90
       - name: Summary
         if: ${{ !cancelled() }}
@@ -416,7 +416,7 @@ jobs:
           NODE_TLS_REJECT_UNAUTHORIZED: 0
         with:
           name: ${{ github.job }}-artifacts
-          path: $AT2_ARTIFACTS_DIR
+          path: /home/runner/artifacts/*
           retention-days: 90
       - name: Summary
         if: ${{ !cancelled() }}
