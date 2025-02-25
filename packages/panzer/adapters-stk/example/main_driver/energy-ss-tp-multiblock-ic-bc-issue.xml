@@ -5,7 +5,7 @@
         <Parameter name="Source" type="string" value="Exodus File" />
 
         <ParameterList name="Exodus File">
-            <Parameter name="File Name" type="string" value="tri3-combined-centers.exo" />
+            <Parameter name="File Name" type="string" value="energy-ss-tp-multiblock-ic-bc-issue.gen" />
         </ParameterList>
 
     </ParameterList>
@@ -128,7 +128,7 @@
             <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
             <Parameter name="Strategy" type="string" value="Constant"/>
             <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="1.0"/>
+                <Parameter name="Value" type="double" value="0.0"/>
             </ParameterList>
         </ParameterList>
     
@@ -139,7 +139,7 @@
             <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
             <Parameter name="Strategy" type="string" value="Constant"/>
             <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="0.0"/>
+                <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
         </ParameterList>
 
@@ -157,7 +157,7 @@
     </ParameterList>
 
     <ParameterList name="Output">
-        <Parameter name="File Name" type="string" value="energy-ss-tp.exo"/>
+        <Parameter name="File Name" type="string" value="energy-ss-tp-multiblock-ic-bc-issue.exo"/>
 <!-- This is inefficient: writes to file every residual evaluation: Used for debug, added to exercise capability -->
         <ParameterList name="Cell Average Vectors">
           <Parameter name="left" type="string" value="GRAD_TEMPERATURE"/>
@@ -167,7 +167,7 @@
 
     <ParameterList name="Options">
         <Parameter name="Write Volume Assembly Graphs" type="bool" value="true"/>
-        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss-tp"/> 
+        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss-tp-multiblock-ic-bc-issue"/> 
     </ParameterList>
 
     <ParameterList name="Active Parameters">
