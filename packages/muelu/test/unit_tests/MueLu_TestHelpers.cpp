@@ -8,7 +8,7 @@
 // @HEADER
 
 #include <Teuchos_UnitTestRepository.hpp>
-
+#include <filesystem>
 #include "MueLu_TestHelpers.hpp"
 
 namespace MueLuTests {
@@ -18,28 +18,32 @@ Xpetra::Parameters TestHelpers::Parameters::xpetraParameters = Xpetra::Parameter
 
 }  // namespace MueLuTests
 
-namespace MueLuTests {
-namespace TestHelpers {
+namespace MueLuTests::TestHelpers {
 
 ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string& filter) {
-  RCP<std::vector<std::string> > files = rcp(new std::vector<std::string>());
+  namespace fs                        = std::filesystem;
+  RCP<std::vector<std::string>> files = rcp(new std::vector<std::string>());
 
-  DIR* dir = opendir(dirPath.c_str());
-  TEUCHOS_TEST_FOR_EXCEPTION(dir == NULL, MueLu::Exceptions::RuntimeError, "GetFileList(\"" + dirPath + "\") : " + strerror(errno));
+  try {
+    if (!fs::exists(dirPath) || !fs::is_directory(dirPath)) {
+      throw MueLu::Exceptions::RuntimeError("GetFileList(\"" + dirPath + "\") : Directory does not exist or is not a directory.");
+    }
 
-  struct dirent* dirEntry;
-  while ((dirEntry = readdir(dir)) != NULL) {
-    std::string dirEntryS(dirEntry->d_name);
-
-    size_t pos = dirEntryS.rfind(filter);
-    if (pos != std::string::npos && pos + filter.size() == dirEntryS.size())
-      files->push_back(std::string(dirEntryS));
+    for (const auto& entry : fs::directory_iterator(dirPath)) {
+      const auto& path = entry.path();
+      if (path.has_filename()) {
+        std::string filename = path.filename().string();
+        size_t pos           = filename.rfind(filter);
+        if (pos != std::string::npos && pos + filter.size() == filename.size()) {
+          files->push_back(filename);
+        }
+      }
+    }
+  } catch (const fs::filesystem_error& e) {
+    throw MueLu::Exceptions::RuntimeError("GetFileList(\"" + dirPath + "\") : " + e.what());
   }
-
-  closedir(dir);
 
   return arcp(files);
 }
 
-}  // namespace TestHelpers
-}  // namespace MueLuTests
+}  // namespace MueLuTests::TestHelpers
