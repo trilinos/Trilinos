@@ -3273,14 +3273,14 @@ namespace Ifpack2 {
         using default_algo_type = typename default_mode_and_algo_type::algo_type;
         // When fused block Jacobi can be used, the mapping between local rows and parts is trivial (i <-> i)
         // We can simply pull the diagonal entry from A into d_inv
-        btdm_scalar_scratch_type_3d_view WW1(member.team_scratch(ScratchLevel), vector_length / 2, blocksize, blocksize);
-        btdm_scalar_scratch_type_3d_view WW2(member.team_scratch(ScratchLevel), vector_length / 2, blocksize, blocksize);
+        btdm_scalar_scratch_type_3d_view WW1(member.team_scratch(ScratchLevel), half_vector_length, blocksize, blocksize);
+        btdm_scalar_scratch_type_3d_view WW2(member.team_scratch(ScratchLevel), half_vector_length, blocksize, blocksize);
         const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
         const local_ordinal_type nrows = lclrow.extent(0);
         Kokkos::parallel_for
-          (Kokkos::ThreadVectorRange(member, vector_length / 2),
+          (Kokkos::ThreadVectorRange(member, half_vector_length),
 	   [&](const local_ordinal_type &v) {
-            local_ordinal_type row = member.league_rank() * vector_length / 2 + v;
+            local_ordinal_type row = member.league_rank() * half_vector_length + v;
             // diagEntry has index of diagonal within row
             auto W1 = Kokkos::subview(WW1, v, Kokkos::ALL(), Kokkos::ALL());
             auto W2 = Kokkos::subview(WW2, v, Kokkos::ALL(), Kokkos::ALL());
