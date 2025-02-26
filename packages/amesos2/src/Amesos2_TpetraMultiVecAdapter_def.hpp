@@ -607,7 +607,9 @@ namespace Amesos2 {
     }
     {
       auto nRows_l = this->mv_->getLocalLength();
-      auto lclMV = this->mv_->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto lclMV_d = this->mv_->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto lclMV = Kokkos::create_mirror_view(lclMV_d);
+      Kokkos::deep_copy(lclMV, lclMV_d);
       for (size_t j=0; j<nCols; j++) {
         // lclMV with ReadOnly = const sendbuf
         const Scalar * sendbuf = reinterpret_cast<const Scalar*> (nRows_l > 0 ? &lclMV(0,j) : lclMV.data());
@@ -642,7 +644,8 @@ namespace Amesos2 {
     auto comm = this->mv_->getMap()->getComm();
     auto myRank = comm->getRank();
     {
-      auto lclMV = this->mv_->getLocalViewHost(Tpetra::Access::OverwriteAll);
+      auto lclMV_d = this->mv_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+      auto lclMV = Kokkos::create_mirror_view(lclMV_d);
       for (size_t j=0; j<nCols; j++) {
         if (myRank == 0 && this->buf_.extent(0) > 0) {
           for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
@@ -654,6 +657,7 @@ namespace Amesos2 {
                                         recvbuf, nRows_l,
                                         0, *comm);
       }
+      Kokkos::deep_copy(lclMV_d, lclMV);
     }
     return 0;
   }
