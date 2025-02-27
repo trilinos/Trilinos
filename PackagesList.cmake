@@ -82,7 +82,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Panzer                packages/panzer                   PT
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
   PyTrilinos            packages/PyTrilinos               ST
-  PyTrilinos2           packages/PyTrilinos2              EX
+  PyTrilinos2           packages/PyTrilinos2              PT
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
   NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
