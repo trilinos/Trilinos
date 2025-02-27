@@ -668,7 +668,7 @@ void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeF
     fout << indent;
     for (size_t i = 0; i < uniqueFine.size(); i++) {
       for (size_t k = 0; k < dim; k++) {
-        fout << material[k][vertex2AggIds[uniqueFine[i]]] << " ";
+        fout << material[k][uniqueFine[i]] << " ";
       }
       fout << endl
            << indent;
