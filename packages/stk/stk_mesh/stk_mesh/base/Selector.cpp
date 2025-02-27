@@ -41,7 +41,9 @@
 #include "stk_mesh/base/FieldRestriction.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/MetaData.hpp"       // for Part
+#include "stk_mesh/baseImpl/Partition.hpp"
 #include "stk_util/util/SortedIntersect.hpp"
+#include "stk_util/util/SortedContains.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 
 
@@ -189,7 +191,7 @@ void gather_parts_impl(PARTVECTOR& parts, const MetaData* meta, SelectorNode con
     }
     else {
       for(Ordinal ord : root->m_partOrds) {
-        if (meta->is_valid_part_ordinal(ord) && meta->get_part(ord).primary_entity_rank() != stk::topology::INVALID_RANK) {
+        if (ord != InvalidPartOrdinal && meta->get_part(ord).primary_entity_rank() != stk::topology::INVALID_RANK) {
           parts.push_back(&meta->get_part(ord));
         }
       }
@@ -251,17 +253,15 @@ bool select_part_vector_impl(PartVector const& parts, SelectorNode const* root)
   case SelectorNodeType::PART_INTERSECTION:
   {
     for(Ordinal ord : root->m_partOrds) {
-      if (ord != InvalidPartOrdinal) {
-        bool found = false;
-        for(const Part* part : parts) {
-          if (ord == part->mesh_meta_data_ordinal()) {
-            found = true;
-            break;
-          }
+      bool found = false;
+      for(const Part* part : parts) {
+        if (ord == part->mesh_meta_data_ordinal()) {
+          found = true;
+          break;
         }
-        if (!found) {
-          return false;
-        }
+      }
+      if (!found) {
+        return false;
       }
     }
     return true;
@@ -272,10 +272,12 @@ bool select_part_vector_impl(PartVector const& parts, SelectorNode const* root)
 }
 
 inline
-bool bucket_ranked_member_any_impl(Bucket const& bucket, const PartVector & parts )
+bool bucket_ranked_member_any_impl(Bucket const& bucket, PartOrdinal partOrd )
 {
-  const PartVector::const_iterator ip_end = parts.end();
-        PartVector::const_iterator ip     = parts.begin() ;
+  const MetaData& meta = bucket.mesh().mesh_meta_data();
+  const PartVector& subsets = meta.get_part(partOrd).subsets();
+  const PartVector::const_iterator ip_end = subsets.end();
+        PartVector::const_iterator ip     = subsets.begin() ;
   bool result_none = true ;
 
   for ( ; result_none && ip_end != ip ; ++ip ) {
@@ -297,7 +299,7 @@ bool bucket_ranked_member_any_subsets_impl(Bucket const& bucket, const OrdinalVe
       continue;
     }
     if (meta.get_part(ord).primary_entity_rank() == stk::topology::INVALID_RANK &&
-        bucket_ranked_member_any_impl(bucket, meta.get_part(ord).subsets())) {
+        bucket_ranked_member_any_impl(bucket, ord)) {
       return true;
     }
   }
@@ -318,7 +320,7 @@ bool bucket_ranked_member_all_impl(Bucket const& bucket, const OrdinalVector & p
       continue;
     }
     bool partNotRankedAndBucketNotInSubsets = (meta.get_part(ord).primary_entity_rank() == stk::topology::INVALID_RANK &&
-                                               !bucket_ranked_member_any_impl(bucket, meta.get_part(ord).subsets()));
+                                               !bucket_ranked_member_any_impl(bucket, ord));
     if (partNotRankedAndBucketNotInSubsets) {
       return false;
     }
@@ -394,8 +396,8 @@ bool Selector::select_bucket_impl(Bucket const& bucket, SelectorNode const* root
   case SelectorNodeType::PART: {
     const bool isMember = bucket.member(root->part());
     return (isMember || root->part_is_ranked()) ?
-            isMember : (!root->part_is_ranked() && m_meta->is_valid_part_ordinal(root->part())
-                        && bucket_ranked_member_any_impl(bucket, m_meta->get_part(root->part()).subsets()));
+            isMember : (!root->part_is_ranked() && root->part() != InvalidPartOrdinal
+                        && bucket_ranked_member_any_impl(bucket, root->part()));
   } break;
   case SelectorNodeType::PART_UNION: {
     const auto bucketOrds = bucket.superset_part_ordinals();
@@ -403,7 +405,9 @@ bool Selector::select_bucket_impl(Bucket const& bucket, SelectorNode const* root
     return (isMember ? isMember : bucket_ranked_member_any_subsets_impl(bucket, root->m_partOrds));
   } break;
   case SelectorNodeType::PART_INTERSECTION: {
-    const bool isMember = bucket.member_all(root->m_partOrds);
+    auto bktOrds = bucket.superset_part_ordinals();
+    const bool isMember = stk::util::sorted_contains_all(bktOrds.first, bktOrds.second,
+                                        root->m_partOrds.begin(), root->m_partOrds.end());
     return (isMember ? isMember : bucket_ranked_member_all_impl(bucket, root->m_partOrds));
   } break;
   case SelectorNodeType::UNION:
@@ -485,7 +489,9 @@ bool SelectorNode::operator==(SelectorNode const& arg_rhs) const
 Selector::Selector(const FieldBase & field)
  : m_expr(1, impl::SelectorNode(&field))
  , m_meta(&field.mesh_meta_data())
-{}
+{
+  STK_ThrowAssertMsg(m_meta!=nullptr,"constructed Selector with field "<<field.name()<<" but m_meta==nullptr.");
+}
 
 Selector::Selector(SelectorNodeType::node_type selectorNodeType, const MetaData* metaPtr,
                    const OrdinalVector& partOrdinals, const OrdinalVector& subsetPartOrdinals)
@@ -493,7 +499,9 @@ Selector::Selector(SelectorNodeType::node_type selectorNodeType, const MetaData*
                                     impl::SelectorNode(&metaPtr->get_part(partOrdinals[0]))
                                    :impl::SelectorNode(selectorNodeType, partOrdinals, subsetPartOrdinals))),
    m_meta(metaPtr)
-{}
+{
+  STK_ThrowAssertMsg(m_meta!=nullptr,"constructed Selector with metaPtr but m_meta==nullptr.");
+}
 
 bool Selector::operator()( const Part & part ) const
 {
@@ -506,26 +514,21 @@ bool Selector::operator()( const Part & part ) const
 
 bool Selector::operator()( const Part * part ) const
 {
-  STK_ThrowAssert(m_meta == nullptr || m_meta == &part->mesh_meta_data());
-  if (m_meta == nullptr) {
-    m_meta = &part->mesh_meta_data();
-  }
   return select_part_impl(*part, &m_expr.back());
 }
 
 bool Selector::operator()( const Bucket & bucket ) const
 {
-  if (m_meta == nullptr) {
-    m_meta = &bucket.mesh().mesh_meta_data();
-  }
   return select_bucket_impl(bucket, &m_expr.back());
+}
+
+bool Selector::operator()( const impl::Partition & partition ) const
+{
+  return operator()(*partition.begin());
 }
 
 bool Selector::operator()( const Bucket * bucket ) const
 {
-  if (m_meta == nullptr && bucket != nullptr) {
-    m_meta = &bucket->mesh().mesh_meta_data();
-  }
   return select_bucket_impl(*bucket, &m_expr.back());
 }
 
@@ -533,7 +536,6 @@ bool Selector::operator()(const PartVector& parts) const
 {
   return select_part_vector_impl(parts, &m_expr.back());
 }
-
 
 bool Selector::operator<(const Selector& rhs) const
 {
@@ -631,7 +633,7 @@ const BulkData* Selector::find_mesh() const
 BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
 {
     static BucketVector emptyBucketVector;
-    if (m_expr.empty()) {
+    if (is_empty(entity_rank)) {
         return emptyBucketVector;
     }
 
@@ -644,15 +646,18 @@ BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
 
 bool Selector::is_empty(EntityRank entity_rank) const
 {
-    if (m_expr.empty()) {
+    const bool wasDefaultConstructed = (m_expr.size()==1 &&
+                                        m_expr[0].node_type()==SelectorNodeType::PART &&
+                                        m_expr[0].part() == InvalidPartOrdinal);
+    if (m_expr.empty() || wasDefaultConstructed) {
         return true;
     }
 
     const BulkData * mesh = this->find_mesh();
-    STK_ThrowRequireMsg(mesh != NULL,
-                    "ERROR, Selector::empty not available if selector expression does not involve any mesh Parts.");
+    STK_ThrowRequireMsg(mesh != nullptr,
+                    "ERROR, Selector::is_empty: this selector is not default-constructed, but no mesh is available to conduct check on whether this selector would select anything.");
+    const BucketVector& buckets = mesh->get_buckets(entity_rank, *this);
     if (mesh->in_modifiable_state()) {
-      BucketVector const& buckets = this->get_buckets(entity_rank);
       for(size_t i=0; i<buckets.size(); ++i) {
           if (buckets[i]->size() >0) {
               return false;
@@ -660,7 +665,7 @@ bool Selector::is_empty(EntityRank entity_rank) const
       }
       return true;
     }
-    return get_buckets(entity_rank).empty();
+    return buckets.empty();
 }
 
 

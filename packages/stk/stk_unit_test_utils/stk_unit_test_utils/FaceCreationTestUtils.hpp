@@ -203,46 +203,6 @@ protected:
     MPI_Comm communicator;
 };
 
-namespace simple_fields {
-
-class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
-SideCreationTester
-{
-public:
-    SideCreationTester(MPI_Comm comm) : communicator(comm) {}
-    virtual ~SideCreationTester() {}
-
-    void run_all_test_cases(const SideTestUtil::TestCaseData &testCases, stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        for(const SideTestUtil::TestCase& testCase : testCases)
-            if(stk::parallel_machine_size(communicator) <= testCase.maxNumProcs)
-                test_one_case(testCase, auraOption);
-    }
-protected:
-    virtual void test_one_case(const SideTestUtil::TestCase &testCase,
-                       stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        std::shared_ptr<stk::mesh::BulkData> bulkData = build_mesh(communicator, auraOption);
-        SideTestUtil::read_and_decompose_mesh(testCase.filename, *bulkData);
-        stk::balance::make_mesh_consistent_with_parallel_mesh_rule1(*bulkData);
-
-        stk::mesh::SplitCoincidentInfo splitCoincidentElementsAfter = stk::mesh::get_split_coincident_elements(*bulkData);
-        bool allOkAfterThisProc = splitCoincidentElementsAfter.size()==0;
-        ASSERT_TRUE(allOkAfterThisProc);
-        bool allOkEverywhereAfter = stk::is_true_on_all_procs(bulkData->parallel(), allOkAfterThisProc);
-        EXPECT_TRUE(allOkEverywhereAfter);
-
-        test_side_creation(*bulkData, testCase);
-    }
-
-    virtual void test_side_creation(stk::mesh::BulkData& bulkData,
-                                    const SideTestUtil::TestCase& testCase) = 0;
-
-    MPI_Comm communicator;
-};
-
-} // namespace simple_fields
-
 }
 
 #endif

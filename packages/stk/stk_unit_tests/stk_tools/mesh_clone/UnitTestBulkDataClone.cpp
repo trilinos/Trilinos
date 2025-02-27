@@ -254,9 +254,9 @@ protected:
     size_t numConstraintsPerProc = 10;
     size_t localConstraintId = 1;
     get_bulk().modification_begin();
-    stk::mesh::Entity constraint = get_bulk().declare_constraint(get_bulk().parallel_rank() * numConstraintsPerProc + localConstraintId);
     stk::mesh::Part *submesh = get_meta().get_part("submesh");
-    get_bulk().change_entity_parts(constraint, stk::mesh::ConstPartVector{submesh}, {});
+    STK_ThrowRequire(submesh != nullptr);
+    stk::mesh::Entity constraint = get_bulk().declare_entity(stk::topology::CONSTRAINT_RANK, get_bulk().parallel_rank() * numConstraintsPerProc + localConstraintId, *submesh);
     declare_constraint_relations_to_block1_elements(constraint);
     get_bulk().modification_end();
   }

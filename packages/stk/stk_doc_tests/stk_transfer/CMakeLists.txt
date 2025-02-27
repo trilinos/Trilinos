@@ -32,7 +32,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 IF(NOT ${PROJECT_NAME}_ENABLE_STKTransferUtil)
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/howToUseLeastSquaresInterpolation.cpp")
@@ -58,6 +58,17 @@ else()
   target_link_libraries(stk_transfer_doc_tests stk_util_parallel)
   target_link_libraries(stk_transfer_doc_tests stk_unit_main)
 
-  add_test("stk_transfer_doc_tests" sh -c "mpiexec --np 2 ${CMAKE_CURRENT_BINARY_DIR}/stk_transfer_doc_tests --gtest_filter=StkTransferHowTo.useCopyTransfer")
+
+  INSTALL(TARGETS stk_transfer_doc_tests DESTINATION ${STK_INSTALL_BINDIR})
+
+  FOREACH(NUMPROCS 1 2)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_transfer_doc_tests_np${NUMPROCS}"
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS} 
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_transfer_doc_tests 
+             --gtest_filter=StkTransferHowTo.useCopyTransfer)
+    set_property(TEST "stk_transfer_doc_tests_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
 endif()
 

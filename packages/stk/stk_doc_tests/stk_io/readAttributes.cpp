@@ -94,7 +94,7 @@ std::vector<double> get_attributes_of_first_element(const stk::mesh::BulkData &b
   return attributes;
 }
 
-TEST_F(ExodusFileWithAttributes, readAttributes_haveFieldsWithAttributes)
+TEST_F(ExodusFileWithAttributes, readAttributes_haveFieldsWithAttributes_externalFile)
 {
   setup_mesh("hex_spider.exo", stk::mesh::BulkData::AUTO_AURA);
 
@@ -110,7 +110,7 @@ void mark_field_as_attribute(stk::mesh::FieldBase &field)
   stk::io::set_field_role(field, Ioss::Field::ATTRIBUTE);
 }
 
-TEST_F(ExodusFileWithAttributes, addAttribute_haveFieldsWithAttribute)
+TEST_F(ExodusFileWithAttributes, addAttribute_haveFieldsWithAttribute_externalFile)
 {
   allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
 

@@ -50,16 +50,6 @@ void heterogeneous_mesh_meta_data(stk::mesh::MetaData & meta_data, const VectorF
 
 void heterogeneous_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord);
 
-namespace simple_fields {
-typedef mesh::Field<double> VectorFieldType;
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-void heterogeneous_mesh_meta_data(stk::mesh::MetaData & meta_data, const VectorFieldType & node_coord);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-void heterogeneous_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorFieldType & node_coord);
-} // namespace simple_fields
-
 }
 }
 }

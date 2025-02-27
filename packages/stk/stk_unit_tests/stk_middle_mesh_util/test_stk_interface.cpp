@@ -126,7 +126,8 @@ TEST(StkInterface, twoToThree)
     EXPECT_EQ(gidCountR.count(entry), 1u);
 }
 
+}
+}
+}
+
 #endif
-}
-}
-}

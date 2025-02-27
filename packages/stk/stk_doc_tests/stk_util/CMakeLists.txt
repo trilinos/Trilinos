@@ -1,5 +1,5 @@
 
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 IF(NOT STK_HAS_MPI)
    LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/CommSparseHowTo.cpp")
@@ -24,6 +24,16 @@ else()
   target_link_libraries(stk_util_doc_test stk_util_parallel)
   target_link_libraries(stk_util_doc_test stk_util_command_line)
   target_link_libraries(stk_util_doc_test stk_unit_main)
-  add_test(NAME "stk_util_doc_test" COMMAND stk_util_doc_test)
+  
+  INSTALL(TARGETS stk_util_doc_test DESTINATION ${STK_INSTALL_BINDIR})
+
+  FOREACH(NUMPROCS 1 2)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_util_doc_test_np${NUMPROCS}"
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS} 
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_util_doc_test)
+    set_property(TEST "stk_util_doc_test_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
 endif()
 

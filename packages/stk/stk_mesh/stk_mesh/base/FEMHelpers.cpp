@@ -132,6 +132,23 @@ Entity connect_side_to_element_with_ordinal( BulkData & mesh ,
     return impl::connect_element_to_entity(mesh, elem, side, local_side_id, parts, side_top);
 }
 
+Entity connect_side_to_element_with_ordinal( BulkData & mesh ,
+                               Entity elem ,
+                               Entity side ,
+                               const unsigned local_side_id ,
+                               const std::vector<Entity> & side_nodes,
+                               stk::mesh::Part* part)
+{
+    stk::mesh::PartVector parts;
+    if(part!=NULL)
+    {
+        parts.push_back(part);
+    }
+    stk::topology elem_top = mesh.bucket(elem).topology();
+    stk::topology side_top = elem_top.side_topology(local_side_id);
+    return impl::connect_element_to_entity(mesh, elem, side, local_side_id, parts, side_top, side_nodes);
+}
+
 Entity declare_element_edge(
         BulkData & mesh,
         const stk::mesh::EntityId global_edge_id,
@@ -491,10 +508,11 @@ stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
         // subcell_ordinal must be less than the subcell count
         bool bad_id = subcell_ordinal >= celltopology.num_sub_topology(subcell_rank);
 
-        // FIXME SHELL_SIDE_TOPO
-        if (celltopology.is_shell_with_face_sides() && subcell_rank == stk::topology::FACE_RANK) {
+        // FIXME SHELL_SIDE_TOPOLOGY
+        if (celltopology.is_shell() && celltopology.dimension() == 3 && subcell_rank == stk::topology::FACE_RANK) {
           bad_id = (subcell_ordinal >= celltopology.num_sides());
         }
+
         STK_ThrowInvalidArgMsgIf( bad_id, "subcell_id is >= subcell_count\n");
     }
 

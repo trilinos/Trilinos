@@ -116,8 +116,7 @@ struct MeshIndex
   Bucket* bucket;
   unsigned bucket_ordinal;
 
-  STK_FUNCTION
-  MeshIndex(Bucket *bucketIn, size_t ordinal) : bucket(bucketIn), bucket_ordinal(ordinal) {}
+  constexpr MeshIndex(Bucket* bucketIn, size_t ordinal) : bucket(bucketIn), bucket_ordinal(ordinal) {}
 };
 
 // Smaller than MeshIndex and replaces bucket pointer with bucket_id to
@@ -128,12 +127,12 @@ struct FastMeshIndex
   unsigned bucket_ord;
 };
 
-inline bool operator<(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
+constexpr bool operator<(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
 {
   return lhs.bucket_id == rhs.bucket_id ? lhs.bucket_ord < rhs.bucket_ord : lhs.bucket_id < rhs.bucket_id;
 }
 
-inline bool operator==(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
+constexpr bool operator==(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
 {
   return lhs.bucket_id == rhs.bucket_id && lhs.bucket_ord == rhs.bucket_ord;
 }
@@ -163,19 +162,20 @@ typedef Ordinal RelationIdentifier;
 typedef Ordinal FieldArrayRank;
 
 typedef uint64_t EntityId ;
-static const EntityId InvalidEntityId = std::numeric_limits<stk::mesh::EntityId>::max();
+static constexpr EntityId InvalidEntityId = std::numeric_limits<stk::mesh::EntityId>::max();
 
 typedef std::vector<EntityId> EntityIdVector;
 
-static const EntityRank InvalidEntityRank = stk::topology::INVALID_RANK;
-static const PartOrdinal InvalidPartOrdinal = InvalidOrdinal;
-static const RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
-static const int InvalidProcessRank = -1;
+static constexpr EntityRank InvalidEntityRank = stk::topology::INVALID_RANK;
+static constexpr PartOrdinal InvalidPartOrdinal = InvalidOrdinal;
+static constexpr RelationIdentifier InvalidRelationIdentifier = InvalidOrdinal;
+static constexpr int InvalidProcessRank = -1;
 
-  inline unsigned GetInvalidLocalId() {
-    static unsigned InvalidLocalId = std::numeric_limits<unsigned int>::max();
-    return InvalidLocalId;
-  }
+constexpr unsigned GetInvalidLocalId()
+{
+  unsigned InvalidLocalId = std::numeric_limits<unsigned int>::max();
+  return InvalidLocalId;
+}
 
 /**
 * Predefined identifiers for mesh object relationship types.
@@ -189,9 +189,9 @@ struct RelationType
     INVALID   = 10
   };
 
-  RelationType(relation_type_t value = INVALID) : m_value(value) {}
+  constexpr RelationType(relation_type_t value = INVALID) : m_value(value) {}
 
-  operator relation_type_t() const { return m_value; }
+  constexpr operator relation_type_t() const { return m_value; }
 
   relation_type_t m_value;
 };

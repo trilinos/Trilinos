@@ -143,7 +143,6 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::coarse_search(
     m_parallel_machine = m_mesha->comm();
     m_has_parallel_machine = true;
   }
-  m_global_range_to_domain.clear();
 
   impl::coarse_search_impl<INTERPOLATE>(m_global_range_to_domain,
                 m_parallel_machine,

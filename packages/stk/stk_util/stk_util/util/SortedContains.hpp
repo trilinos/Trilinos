@@ -1,4 +1,4 @@
-// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+ // Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
 // Solutions of Sandia, LLC (NTESS). Under the terms of Contract
 // DE-NA0003525 with NTESS, the U.S. Government retains certain rights
 // in this software.
@@ -6,15 +6,15 @@
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
- //
+ // 
  //     * Redistributions of source code must retain the above copyright
  //       notice, this list of conditions and the following disclaimer.
- //
+ // 
  //     * Redistributions in binary form must reproduce the above
  //       copyright notice, this list of conditions and the following
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
- //
+ // 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -31,40 +31,31 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <stk_unit_test_utils/GetMeshSpec.hpp>
+#ifndef stk_util_util_SortedContains_hpp
+#define stk_util_util_SortedContains_hpp
+
+#include <algorithm>
 
 namespace stk
 {
-namespace unit_test_util
+namespace util
 {
 
-namespace simple_fields {
-
-std::string get_mesh_spec(unsigned dim) {
-  return stk::unit_test_util::get_mesh_spec(dim);
-}
-
-std::string get_mesh_spec(const std::string &optionName)
+//true if [beg1,end1] is a superset of [beg2,end2]
+template<typename Iter1, typename Iter2>
+bool sorted_contains_all(Iter1 beg1, Iter1 end1, Iter2 beg2, Iter2 end2)
 {
-  return stk::unit_test_util::get_mesh_spec(optionName);
+  for(; beg2!=end2; ++beg2) {
+    beg1 = std::find(beg1,end1, *beg2);
+    if (beg1 == end1) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
-std::vector<double> get_many_block_coordinates(unsigned numBlocks)
-{
-  return stk::unit_test_util::get_many_block_coordinates(numBlocks);
-}
+} //namespace util
+} //namespace stk
 
-void get_block_proc_distribution(unsigned numBlocks, unsigned numProc, std::vector<unsigned>& procs)
-{
-  stk::unit_test_util::get_block_proc_distribution(numBlocks, numProc, procs);
-}
-
-std::string get_many_block_mesh_desc(unsigned numBlocks, unsigned numProc)
-{
-  return stk::unit_test_util::get_many_block_mesh_desc(numBlocks, numProc);
-}
-
-} // namespace simple_fields
-
-}
-}
+#endif

@@ -156,7 +156,8 @@ private:
   stk::mesh::Entity create_family_tree(stk::mesh::Entity entity) const
   {
     stk::mesh::EntityId id = m_stkMeshBulkData.identifier(entity);
-    stk::mesh::Entity familyTree = m_stkMeshBulkData.declare_constraint(id);
+    stk::mesh::Entity familyTree =
+        m_stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, id, stk::mesh::ConstPartVector{});
     m_stkMeshBulkData.declare_relation(familyTree, entity, 0);
     return familyTree;
   }

@@ -165,7 +165,8 @@ struct topology::topology_type
     return INVALID_TOPOLOGY;
   }
 
-  STK_FUNCTION
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 2025
+  STK_FUNCTION STK_DEPRECATED
   static topology shell_side_topology(unsigned shell_side_ordinal = 0)
   {
     switch (shell_side_ordinal)
@@ -181,6 +182,7 @@ struct topology::topology_type
 
     return INVALID_TOPOLOGY;
   }
+#endif
 
   /// node ordinals that make up the given edge
   template <typename OrdinalOutputIterator>

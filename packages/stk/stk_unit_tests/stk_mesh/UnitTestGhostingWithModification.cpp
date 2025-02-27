@@ -232,7 +232,7 @@ TEST(UnitTestGhosting, WithDeclareConstraintRelatedToRecvGhostNode)
     if(stkMeshBulkData.parallel_rank() == 2)
     {
       stk::mesh::EntityId constraintId = 1;
-      stk::mesh::Entity constraint = stkMeshBulkData.declare_constraint(constraintId);
+      stk::mesh::Entity constraint = stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, constraintId, stk::mesh::ConstPartVector{});
       stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
       EXPECT_TRUE(stkMeshBulkData.bucket(node1).member(stkMeshBulkData.ghosting_part(ghostElemFrom0To2)));
       stkMeshBulkData.declare_relation(constraint, node1, 0);
