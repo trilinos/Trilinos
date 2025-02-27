@@ -26,15 +26,15 @@
 
 namespace Belos {
 
-template <class ScalarType, class MV, class OP>
-class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class StatusTestResNorm: public StatusTest<ScalarType,MV,OP,DM> {
 
  public:
 
   // Convenience typedefs
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
-  typedef MultiVecTraits<ScalarType,MV>  MVT;
+  typedef MultiVecTraits<ScalarType,MV,DM>  MVT;
 
   //! @name Form and parameter definition methods.
   //@{ 

@@ -27,6 +27,7 @@
 #include "BelosMVOPTester.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosOutputManager.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "Teuchos_StandardCatchMacros.hpp"
 
@@ -121,7 +122,7 @@ int main(int argc, char *argv[])
 
     // Issue several useful typedefs;
     typedef Belos::MultiVec<double> EMV;
-    //typedef Belos::Operator<double> EOP; // unused
+    typedef Teuchos::SerialDenseMatrix<int, double> TDM;
 
     // Create an Epetra_MultiVector for an initial std::vector to start the solver.
     // Note that this needs to have the same number of columns as the blocksize.
@@ -135,7 +136,7 @@ int main(int argc, char *argv[])
     }
 
     // test the Epetra adapter multivector
-    ierr = Belos::TestMultiVecTraits<double,EMV>(MyOM,ivec);
+    ierr = Belos::TestMultiVecTraits<double,EMV,TDM>(MyOM,ivec);
     gerr &= ierr;
     if (ierr) {
       MyOM->print(Belos::Warnings,"*** EpetraAdapter PASSED TestMultiVecTraits()\n");
