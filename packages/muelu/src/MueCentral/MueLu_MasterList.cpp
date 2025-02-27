@@ -194,7 +194,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: greedy Dirichlet\" type=\"bool\" value=\"false\"/>"
-  "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: coloring algorithm\" type=\"string\" value=\"serial\"/>"
   "<Parameter name=\"aggregation: coloring: use color graph\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: coloring: localize color graph\" type=\"bool\" value=\"true\"/>"
