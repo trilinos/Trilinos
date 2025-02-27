@@ -195,7 +195,7 @@ RCP<Tpetra::Vector<GO, LO, GO, NT> > getSubBlockColumnGIDs(
 RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
     const std::vector<MapPair>& subMaps,
-    const Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > & plocal2ContigGIDs) {
+    const Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> >& plocal2ContigGIDs) {
   // get the number of variables families
   int numVarFamily = subMaps.size();
 
@@ -237,7 +237,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     A->getLocalRowCopy(lid, indices, values, numEntries);
 
     LO numOwnedCols = 0;
-    auto data = local2ContigGIDs.getData();
+    auto data       = local2ContigGIDs.getData();
     for (size_t localCol = 0; localCol < numEntries; localCol++) {
       TEUCHOS_ASSERT(indices(localCol) > -1);
 
@@ -265,7 +265,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     A->getLocalRowCopy(lid, indices, values, numEntries);
 
     LO numOwnedCols = 0;
-    auto data = local2ContigGIDs.getData();
+    auto data       = local2ContigGIDs.getData();
     for (size_t localCol = 0; localCol < numEntries; localCol++) {
       TEUCHOS_ASSERT(indices(localCol) > -1);
 
@@ -293,8 +293,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
 // build a single subblock Epetra_CrsMatrix
 void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
                      const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
-                     const Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > & plocal2ContigGIDs) {
-
+                     const Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> >& plocal2ContigGIDs) {
   // get the number of variables families
   int numVarFamily = subMaps.size();
 
@@ -339,7 +338,7 @@ void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO,
     A->getLocalRowCopy(lid, indices, values, numEntries);
 
     LO numOwnedCols = 0;
-    auto data = local2ContigGIDs.getData();
+    auto data       = local2ContigGIDs.getData();
     for (size_t localCol = 0; localCol < numEntries; localCol++) {
       TEUCHOS_ASSERT(indices(localCol) > -1);
 
