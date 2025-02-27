@@ -56,19 +56,6 @@ bool approximatelyEqualAsNumbers(const std::string &expectedWord, const std::str
 
 bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, const std::string &actualString, double tol);
 
-namespace simple_fields {
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-bool isNear(double a, double b, double tolerance);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-bool approximatelyEqualAsNumbers(const std::string &expectedWord, const std::string &actualWord, double tol);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, const std::string &actualString, double tol);
-
-} // namespace simple_fields
-
 }
 }
 #endif

@@ -44,14 +44,14 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 2),
                        KOKKOS_LAMBDA(const unsigned& i)
                        {
-                         result.d_view(i) = fields(i).get_ordinal();
+                         result.view_device()(i) = fields(i).get_ordinal();
                        });
 
   result.modify<UnsignedDualViewType::execution_space>();
   result.sync<UnsignedDualViewType::host_mirror_space>();
 
-  EXPECT_EQ(hostFields(0).get_ordinal(), result.h_view(0));
-  EXPECT_EQ(hostFields(1).get_ordinal(), result.h_view(1));
+  EXPECT_EQ(hostFields(0).get_ordinal(), result.view_host()(0));
+  EXPECT_EQ(hostFields(1).get_ordinal(), result.view_host()(1));
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   for (unsigned i = 0; i < 2; ++i) {

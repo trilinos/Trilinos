@@ -84,6 +84,7 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
   stk_util_utest
+  stk_util_integration_tester
   stk_util_doc_test
   ;
 
@@ -210,6 +211,17 @@ lib stk_util_parallel
         # builds only and will not be present for user builds.
         <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
+  ;
+
+
+exe stk_util_integration_tester
+  :
+    [ glob
+      $(stk_search-root)/../stk_integration_tests/stk_util/*.cpp
+    ]
+    stk_util_parallel
+    /sierra/stk_unit_test_utils//stk_unit_main
+  : <tag>@sierra-exec-tag
   ;
 
 

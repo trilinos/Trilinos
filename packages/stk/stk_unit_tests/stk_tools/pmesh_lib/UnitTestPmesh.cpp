@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <mpi.h>                          // for MPI_Comm_rank, MPI_Comm_size
 #include <stddef.h>                       // for size_t
-#include <makeparfiles.H>                 // for MakeParFile
+#include <stk_tools/pmesh_lib/makeparfiles.H>                 // for MakeParFile
 #include <string>                         // for string
 #include "stk_io/FillMesh.hpp"            // for fill_mesh
 #include "stk_mesh/base/BulkData.hpp"     // for BulkData

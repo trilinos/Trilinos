@@ -48,7 +48,7 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace
 {
 //-BEGIN    
-TEST(StkMeshHowTo, UseStkIO)
+TEST(StkMeshHowTo, UseStkIO_externalFile)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   if(stk::parallel_machine_size(communicator) == 1)

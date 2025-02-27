@@ -36,14 +36,14 @@ if(HAVE_STK_Trilinos)
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 endif()
 
-FILE(GLOB SOURCES *.cpp
-                  command_line/*.cpp
-                  diag/*.cpp
-                  environment/*.cpp
-                  ngp/*.cpp
-                  parallel/*.cpp
-                  registry/*.cpp
-                  util/*.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp
+                                    command_line/*.cpp
+                                    diag/*.cpp
+                                    environment/*.cpp
+                                    ngp/*.cpp
+                                    parallel/*.cpp
+                                    registry/*.cpp
+                                    util/*.cpp)
 
 IF (NOT STK_HAS_MPI)
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/parallel/UnitTestDistributedIndex.cpp")
@@ -69,14 +69,43 @@ if(HAVE_STK_Trilinos)
     NOEXEPREFIX
   )
 else()
-  add_executable(stk_util_unit_tests ${SOURCES})
-  target_link_libraries(stk_util_unit_tests stk_unit_test_utils)
-  target_link_libraries(stk_util_unit_tests stk_util_registry)
-  target_link_libraries(stk_util_unit_tests stk_util_diag)
-  target_link_libraries(stk_util_unit_tests stk_util_env)
-  target_link_libraries(stk_util_unit_tests stk_util_parallel)
-  target_link_libraries(stk_util_unit_tests stk_util_command_line)
-  target_link_libraries(stk_util_unit_tests stk_unit_main)
-  add_test(NAME "stk_util_unit_tests" COMMAND stk_util_unit_tests)
+  add_executable(stk_util_utest ${SOURCES})
+  target_link_libraries(stk_util_utest stk_unit_test_utils)
+  target_link_libraries(stk_util_utest stk_util_registry)
+  target_link_libraries(stk_util_utest stk_util_diag)
+  target_link_libraries(stk_util_utest stk_util_env)
+  target_link_libraries(stk_util_utest stk_util_parallel)
+  target_link_libraries(stk_util_utest stk_util_command_line)
+  target_link_libraries(stk_util_utest stk_unit_main)
+
+  INSTALL(TARGETS stk_util_utest DESTINATION ${STK_INSTALL_BINDIR})
+
+  FOREACH(NUMPROCS 1 2 3 4 6 8)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_util_utest_np${NUMPROCS}"
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS}
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_util_utest 
+             --gtest_filter=*-UnitTestDemangle.UnitTest:FPExceptions.*)
+    set_property(TEST "stk_util_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fp_np${NUMPROCS})
+    add_test(NAME "stk_util_utest_floating_point_np${NUMPROCS}"
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fp_np${NUMPROCS}
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_util_utest 
+             --gtest_filter=FPExceptions.*)
+    set_property(TEST "stk_util_utest_floating_point_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+
+  ENDFOREACH()
+
+  FOREACH(NUMPROCS 1)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demangle_np${NUMPROCS})
+    add_test(NAME "stk_util_demangle_utest_np${NUMPROCS}"
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demangle_np${NUMPROCS} 
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_util_utest 
+             --gtest_filter=UnitTestDemangle.UnitTest)
+    set_property(TEST "stk_util_demangle_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+
+  ENDFOREACH()
+
 endif()
 

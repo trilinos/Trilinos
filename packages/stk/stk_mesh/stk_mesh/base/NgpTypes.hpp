@@ -71,7 +71,6 @@ using FastSharedCommMapViewType   = DeviceCommMapIndices;
 using MeshIndexType               = Kokkos::View<const FastMeshIndex*, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
 using HostMeshIndexType           = MeshIndexType::HostMirror;
 
-
 using BucketEntityOffsetsViewType = Kokkos::View<int*, stk::ngp::MemSpace>;
 template <typename NgpMemSpace> using BucketEntityOffsetsViewTypeT = Kokkos::View<int*, NgpMemSpace>;
 

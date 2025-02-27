@@ -11,6 +11,7 @@
 
 
 #include <array>
+#include <limits>
 #include <memory>
 #include <utility>
 
@@ -21,6 +22,7 @@
 #include <stk_transfer/ReducedDependencyGeometricTransfer.hpp>
 #include <stk_transfer/TransferBase.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include "stk_transfer/ReducedDependencyCommData.hpp"
 
 
 namespace stk {
@@ -876,6 +878,52 @@ TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
   test.run(stk::search::SearchMethod::KDTREE);
+}
+
+TEST(GetRemainingDomainPoints, all_domain_points_found_multiple_passes)
+{
+  using interp_t = MockInterpolate_Common<MockMeshA_Common, MockMeshB_Common>;
+  using domain_id_t = MockMeshB_Common::EntityProc;
+  using range_id_t = MockMeshA_Common::EntityProc;
+  using domain_bounding_box_t = interp_t::MeshB::BoundingBox;
+  using domain_to_range_t = interp_t::EntityProcRelationVec;
+  using sphere_t = stk::search::Sphere<double>;
+
+  const int num_domain_pts = 10;
+  const int domain_point_found_on_first_pass = 7;
+  const int num_domain_pts_found_pass_one = 1;
+
+  std::vector<domain_bounding_box_t> domain_boxes;
+  domain_to_range_t domain_to_range_pass_one;  // 1st pass of coarse search
+  domain_to_range_t domain_to_range_pass_two;  // 2nd pass after expansion we found the rest
+
+  for (int i = 0; i < num_domain_pts; ++i) {
+    const domain_id_t domain_id(i, 0);
+
+    domain_boxes.emplace_back(sphere_t({0, 0, 0}, 1), domain_id);
+
+    const range_id_t range_id_one(0, 0);
+    const range_id_t range_id_two(1, 4);
+
+    if (i == domain_point_found_on_first_pass) {
+      domain_to_range_pass_one.emplace_back(domain_id, range_id_one);
+      domain_to_range_pass_one.emplace_back(domain_id, range_id_two);
+    } else {
+      domain_to_range_pass_two.emplace_back(domain_id, range_id_one);
+      domain_to_range_pass_two.emplace_back(domain_id, range_id_two);
+    }
+  }
+
+  impl::get_remaining_domain_points<interp_t>(domain_boxes, domain_to_range_pass_one);
+
+  EXPECT_TRUE(domain_boxes.size() == num_domain_pts - num_domain_pts_found_pass_one);
+
+  EXPECT_TRUE(impl::local_is_sorted(
+      domain_boxes.begin(), domain_boxes.end(), impl::BoundingBoxCompare<domain_bounding_box_t>()));
+
+  impl::get_remaining_domain_points<interp_t>(domain_boxes, domain_to_range_pass_two);
+
+  EXPECT_TRUE(domain_boxes.empty());
 }
 
 }
