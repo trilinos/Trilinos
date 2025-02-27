@@ -220,6 +220,54 @@ scatterImpl (const T sendBuf[],
 #endif // HAVE_TEUCHOS_MPI
 }
 
+template<class T>
+void
+scattervImpl (const T sendBuf[],
+              const int sendCounts[],
+              const int displs[],
+              T recvBuf[],
+              const int recvCount,
+              const int root,
+              const Comm<int>& comm)
+{
+#ifdef HAVE_TEUCHOS_MPI
+  using Teuchos::Details::MpiTypeTraits;
+
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) {
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      scatterv<int, T> (sendBuf, sendCounts, displs, recvBuf, recvCount, root, comm);
+    }
+    else { // It's a SerialComm; there is only 1 process, so just copy.
+      std::copy (sendBuf, sendBuf + sendCounts[0], recvBuf);
+    }
+  } else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    T t;
+    MPI_Datatype rawMpiType = MpiTypeTraits<T>::getType (t);
+    const int err =
+      MPI_Scatterv (const_cast<T*> (sendBuf), sendCounts, displs, rawMpiType,
+                    recvBuf, recvCount, rawMpiType,
+                    root, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Scatter failed with the following error: "
+      << ::Teuchos::Details::getMpiErrorString (err));
+  }
+#else
+  // We've built without MPI, so just assume it's a SerialComm and
+  // copy the data.
+  std::copy (sendBuf, sendBuf + sendCounts[0], recvBuf);
+#endif // HAVE_TEUCHOS_MPI
+}
+
 
 /// \brief Generic implementation of reduce().
 /// \tparam T The type of data on which to reduce.  The requirements
@@ -1515,6 +1563,32 @@ scatter<int, int> (const int sendBuf[],
                    const Comm<int>& comm)
 {
   scatterImpl<int> (sendBuf, sendCount, recvBuf, recvCount, root, comm);
+}
+
+template<>
+void
+scatterv<int, double> (const double sendBuf[],
+                       const int sendCount[],
+                       const int displs[],
+                       double recvBuf[],
+                       const int recvCount,
+                       const int root,
+                       const Comm<int>& comm)
+{
+  scattervImpl<double> (sendBuf, sendCount, displs, recvBuf, recvCount, root, comm);
+}
+
+template<>
+void
+scatterv<int, float> (const float sendBuf[],
+                      const int sendCounts[],
+                      const int displs[],
+                      float recvBuf[],
+                      const int recvCount,
+                      const int root,
+                      const Comm<int>& comm)
+{
+  scattervImpl<float> (sendBuf, sendCounts, displs, recvBuf, recvCount, root, comm);
 }
 
 template<>

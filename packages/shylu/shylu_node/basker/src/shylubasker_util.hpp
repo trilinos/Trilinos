@@ -249,8 +249,6 @@ namespace BaskerNS
     BASKER_ASSERT(0==1, "init_int_thread");
 
     #ifdef BASKER_KOKKOS
-    typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
-    typedef typename TeamPolicy::member_type  TeamMember;
     Kokkos::parallel_for(
                          TeamPolicy(Exe_Space::thread_pool_size(),1),
                          KOKKOS_LAMBDA(const TeamMember& thread)
@@ -289,8 +287,6 @@ namespace BaskerNS
     BASKER_ASSERT(0==1, "INIT_VALUE_ENTRY_THREADS");
 
     #ifdef BASKER_KOKKOS
-    typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
-    typedef typename TeamPolicy::member_type  TeamMember;
     Kokkos::parallel_for(TeamPolicy(Exe_Space::thread_pool_size(),1),
                          KOKKOS_LAMBDA(const TeamMember& thread)
     #else

@@ -37,6 +37,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::ShyLUBasker,Matrix,Vector>(A, X, B)
   , is_contiguous_(true)
+  , use_gather_(true)
 {
 
   //Nothing
@@ -48,8 +49,6 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   "Kokkos node type not supported by experimental ShyLUBasker Amesos2");
   */
-  typedef Kokkos::OpenMP Exe_Space;
-
   ShyLUbasker = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space>();
   ShyLUbasker->Options.no_pivot      = BASKER_FALSE;
   ShyLUbasker->Options.static_delayed_pivot = 0;
@@ -199,7 +198,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 #endif
 
-
       // NDE: Special case 
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
@@ -292,10 +290,6 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
  const Teuchos::Ptr<MultiVecAdapter<Vector> >  X,
  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
-#endif
-
   int ierr = 0; // returned error code
 
   using Teuchos::as;
@@ -306,10 +300,12 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   const bool ShyluBaskerTransposeRequest = this->control_.useTranspose_;
   const bool initialize_data = true;
   const bool do_not_initialize_data = false;
+  bool use_gather = use_gather_; // user param
+  use_gather = (use_gather && this->matrixA_->getComm()->getSize() > 1); // only with multiple MPIs
+  use_gather = (use_gather && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value)); // only for double or float
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
     if ( single_proc_optimization() && nrhs == 1 ) {
 
@@ -322,22 +318,38 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
 
     } // end if ( single_proc_optimization() && nrhs == 1 )
     else {
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(initialize_data, B, bValues_,
-          as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
+      if (use_gather) {
+        int rval = B->gather(bValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
+                             (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+        if (rval == 0) {
+          X->gather(xValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
+                    (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+        } else {
+          use_gather = false;
+        }
+      }
+      if (!use_gather) {
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(initialize_data, B, bValues_,
+            as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
 
-      // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
-      Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
-        host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
-          as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
+        // See Amesos2_Tacho_def.hpp for notes on why we 'get' x here.
+        Util::get_1d_copy_helper_kokkos_view<MultiVecAdapter<Vector>,
+          host_solve_array_t>::do_get(do_not_initialize_data, X, xValues_,
+            as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+      }
     }
   }
 
   if ( this->root_ ) { // do solve
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+#endif
+
     shylubasker_dtype * pxValues = function_map::convert_scalar(xValues_.data());
     shylubasker_dtype * pbValues = function_map::convert_scalar(bValues_.data());
     if (!ShyluBaskerTransposeRequest)
@@ -356,13 +368,19 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
       "Could not alloc needed working memory for solve" );
   {
 #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
-        as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+    if (use_gather) {
+      int rval = X->scatter(xValues_, this->perm_g2l, this->recvCountRows, this->recvDisplRows,
+                            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+      if (rval != 0) use_gather = false;
+    }
+    if (!use_gather) {
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, xValues_,
+          as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+    }
   }
   return(ierr);
 }
@@ -390,6 +408,11 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
   if(parameterList->isParameter("IsContiguous"))
     {
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
+    }
+
+  if(parameterList->isParameter("UseCustomGather"))
+    {
+      use_gather_ = parameterList->get<bool>("UseCustomGather");
     }
 
   if(parameterList->isParameter("num_threads"))
@@ -507,6 +530,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
       pl->set("IsContiguous", true, 
               "Are GIDs contiguous");
+      pl->set("UseCustomGather", true, 
+              "Use Matrix-gather routine");
       pl->set("num_threads", 1, 
               "Number of threads");
       pl->set("pivot", false,
@@ -588,26 +613,28 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
 
     local_ordinal_type nnz_ret = -1;
-    bool gather_supported = (this->matrixA_->getComm()->getSize() > 1 && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value));
+    bool use_gather = use_gather_; // user param
+    use_gather = (use_gather && this->matrixA_->getComm()->getSize() > 1); // only with multiple MPIs
+    use_gather = (use_gather && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value)); // only for double or float
     {
     #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
     #endif
-      if (gather_supported) {
+      if (use_gather) {
         bool column_major = true;
         if (!is_contiguous_) {
           auto contig_mat = this->matrixA_->reindex(this->contig_rowmap_, this->contig_colmap_, current_phase);
-          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
-                                       column_major, current_phase);
+          nnz_ret = contig_mat->gather(nzvals_view_, rowind_view_, colptr_view_, this->perm_g2l, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+                                       this->transpose_map, this->nzvals_t, column_major, current_phase);
         } else {
-          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, this->recvCounts, this->recvDispls, this->transpose_map, this->nzvals_t,
-                                           column_major, current_phase);
+          nnz_ret = this->matrixA_->gather(nzvals_view_, rowind_view_, colptr_view_, this->perm_g2l, this->recvCountRows, this->recvDisplRows, this->recvCounts, this->recvDispls,
+                                           this->transpose_map, this->nzvals_t, column_major, current_phase);
         }
         // gather failed (e.g., not implemened for KokkosCrsMatrix)
         // in case of the failure, it falls back to the original "do_get"
-        if (nnz_ret < 0) gather_supported = false;
+        if (nnz_ret < 0) use_gather = false;
       } 
-      if (!gather_supported) {
+      if (!use_gather) {
         Util::get_ccs_helper_kokkos_view<
           MatrixAdapter<Matrix>, host_value_type_array, host_ordinal_type_array, host_ordinal_type_array>
           ::do_get(this->matrixA_.ptr(), nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
@@ -618,7 +645,7 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
 
     // gather return the total nnz_ret on every MPI process
-    if (gather_supported || this->root_) {
+    if (use_gather || this->root_) {
       TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
           std::runtime_error,
           "Amesos2_ShyLUBasker loadA_impl: Did not get the expected number of non-zero vals("
