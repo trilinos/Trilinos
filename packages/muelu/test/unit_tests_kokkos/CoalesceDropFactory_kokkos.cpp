@@ -2323,6 +2323,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, 2x2, Scalar, Local
     // test case 7
     Teuchos::ParameterList params7 = Teuchos::ParameterList(params0);
     params7.set("aggregation: drop scheme", "distance laplacian");
+    params0.set("aggregation: dropping may create Dirichlet", true);
     params.push_back(params7);
     expectedFilteredMatrices.push_back(TF::buildLocal2x2Host(2.0, -1.0,
                                                              -1.5, 2.0, reuseGraph));
