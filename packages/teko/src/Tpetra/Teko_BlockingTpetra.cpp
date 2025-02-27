@@ -237,13 +237,13 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     A->getLocalRowCopy(lid, indices, values, numEntries);
 
     LO numOwnedCols = 0;
-    auto data       = local2ContigGIDs.getData();
+    auto data = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t localCol = 0; localCol < numEntries; localCol++) {
       TEUCHOS_ASSERT(indices(localCol) > -1);
 
       // if global id is not owned by this column
 
-      GO gid = data[indices[localCol]];
+      GO gid = data(indices[localCol], 0);
       if (gid == -1) continue;  // in contiguous row
       numOwnedCols++;
     }
@@ -265,13 +265,13 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     A->getLocalRowCopy(lid, indices, values, numEntries);
 
     LO numOwnedCols = 0;
-    auto data       = local2ContigGIDs.getData();
+    auto data = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t localCol = 0; localCol < numEntries; localCol++) {
       TEUCHOS_ASSERT(indices(localCol) > -1);
 
       // if global id is not owned by this column
 
-      GO gid = data[indices(localCol)];
+      GO gid = data(indices(localCol), 0);
       if (gid == -1) continue;  // in contiguous row
 
       colIndices[numOwnedCols] = gid;
@@ -338,12 +338,12 @@ void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO,
     A->getLocalRowCopy(lid, indices, values, numEntries);
 
     LO numOwnedCols = 0;
-    auto data       = local2ContigGIDs.getData();
+    auto data = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t localCol = 0; localCol < numEntries; localCol++) {
       TEUCHOS_ASSERT(indices(localCol) > -1);
 
       // if global id is not owned by this column
-      GO gid = data[indices(localCol)];
+      GO gid = data(indices(localCol), 0);
       if (gid == -1) continue;  // in contiguous row
 
       colIndices[numOwnedCols] = gid;
