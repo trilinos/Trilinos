@@ -205,7 +205,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
   const RCP<const Tpetra::Map<LO, GO, NT> > rowMap  = subMaps[i].second;  // contiguous GIDs
   const RCP<const Tpetra::Map<LO, GO, NT> > colMap  = subMaps[j].second;
 
-  if(!plocal2ContigGIDs){
+  if (!plocal2ContigGIDs) {
     plocal2ContigGIDs = Blocking::getSubBlockColumnGIDs(*A, subMaps[j]);
   }
   Tpetra::Vector<GO, LO, GO, NT>& local2ContigGIDs = *plocal2ContigGIDs;
@@ -240,7 +240,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     A->getLocalRowCopy(lid, indices, values, numEntries);
 
     LO numOwnedCols = 0;
-    auto data = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto data       = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t localCol = 0; localCol < numEntries; localCol++) {
       TEUCHOS_ASSERT(indices(localCol) > -1);
 
@@ -268,7 +268,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     A->getLocalRowCopy(lid, indices, values, numEntries);
 
     LO numOwnedCols = 0;
-    auto data = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto data       = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t localCol = 0; localCol < numEntries; localCol++) {
       TEUCHOS_ASSERT(indices(localCol) > -1);
 
@@ -307,7 +307,7 @@ void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO,
   const Tpetra::Map<LO, GO, NT>& rowMap  = *subMaps[i].second;  // contiguous GIDs
   const Tpetra::Map<LO, GO, NT>& colMap  = *subMaps[j].second;
 
-  if(!plocal2ContigGIDs){
+  if (!plocal2ContigGIDs) {
     plocal2ContigGIDs = Blocking::getSubBlockColumnGIDs(*A, subMaps[j]);
   }
   Tpetra::Vector<GO, LO, GO, NT>& local2ContigGIDs = *plocal2ContigGIDs;
@@ -344,7 +344,7 @@ void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO,
     A->getLocalRowCopy(lid, indices, values, numEntries);
 
     LO numOwnedCols = 0;
-    auto data = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto data       = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t localCol = 0; localCol < numEntries; localCol++) {
       TEUCHOS_ASSERT(indices(localCol) > -1);
 
