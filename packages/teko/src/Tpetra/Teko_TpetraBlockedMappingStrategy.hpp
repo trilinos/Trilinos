@@ -184,6 +184,8 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
   std::vector<Teuchos::RCP<Tpetra::Import<LO, GO, NT> > > blockImport_;
   std::vector<Teuchos::RCP<Tpetra::Export<LO, GO, NT> > > blockExport_;
   //@}
+
+  mutable std::vector<RCP<Tpetra::Vector<GO, LO, GO, NT> >> plocal2ContigGIDs;
 };
 
 }  // end namespace TpetraHelpers
