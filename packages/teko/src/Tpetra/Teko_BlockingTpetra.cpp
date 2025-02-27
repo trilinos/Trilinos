@@ -195,7 +195,7 @@ RCP<Tpetra::Vector<GO, LO, GO, NT> > getSubBlockColumnGIDs(
 RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
     const std::vector<MapPair>& subMaps,
-    const Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> >& plocal2ContigGIDs) {
+    Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs) {
   // get the number of variables families
   int numVarFamily = subMaps.size();
 
@@ -205,6 +205,9 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
   const RCP<const Tpetra::Map<LO, GO, NT> > rowMap  = subMaps[i].second;  // contiguous GIDs
   const RCP<const Tpetra::Map<LO, GO, NT> > colMap  = subMaps[j].second;
 
+  if(!plocal2ContigGIDs){
+    plocal2ContigGIDs = Blocking::getSubBlockColumnGIDs(*A, subMaps[j]);
+  }
   Tpetra::Vector<GO, LO, GO, NT>& local2ContigGIDs = *plocal2ContigGIDs;
 
   // get entry information
@@ -293,7 +296,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
 // build a single subblock Epetra_CrsMatrix
 void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
                      const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
-                     const Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> >& plocal2ContigGIDs) {
+                     Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs) {
   // get the number of variables families
   int numVarFamily = subMaps.size();
 
@@ -304,6 +307,9 @@ void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO,
   const Tpetra::Map<LO, GO, NT>& rowMap  = *subMaps[i].second;  // contiguous GIDs
   const Tpetra::Map<LO, GO, NT>& colMap  = *subMaps[j].second;
 
+  if(!plocal2ContigGIDs){
+    plocal2ContigGIDs = Blocking::getSubBlockColumnGIDs(*A, subMaps[j]);
+  }
   Tpetra::Vector<GO, LO, GO, NT>& local2ContigGIDs = *plocal2ContigGIDs;
 
   mat.resumeFill();
