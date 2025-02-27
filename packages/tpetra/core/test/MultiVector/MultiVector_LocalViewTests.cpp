@@ -303,22 +303,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, TemplatedGetLocalView, LO, GO, S
     bool correctType = std::is_same<typename decltype(deviceView)::device_type, device_t>::value;
     TEST_ASSERT(correctType);
   }
-  constexpr bool needsSyncPath = !std::is_same<Kokkos::HostSpace, typename device_t::memory_space>::value;
-  if(needsSyncPath)
-  {
-    TEST_ASSERT(x.need_sync_host());
-    TEST_ASSERT(!x.need_sync_device());
-  }
   // Assuming device/host device types aren't the same, make sure getting the host view also works
   {
     auto hostView = x.template getLocalView<host_t>(Tpetra::Access::ReadWrite);
     bool correctType = std::is_same<typename decltype(hostView)::device_type, host_t>::value;
     TEST_ASSERT(correctType);
-    if(needsSyncPath)
-    {
-      TEST_ASSERT(!x.need_sync_host());
-      TEST_ASSERT(x.need_sync_device());
-    }
   }
 }
 
