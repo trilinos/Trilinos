@@ -18,6 +18,9 @@ PROJECT(${PROJECT_NAME} NONE)
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/UseCCache.cmake")
 
 set(DEPRECATED_PACKAGES Amesos AztecOO Epetra EpetraExt Ifpack Intrepid Isorropia ML NewPackage Pliris PyTrilinos ShyLU_DDCore ThyraEpetraAdapters ThyraEpetraExtAdapters Triutils)
+FOREACH(package ${DEPRECATED_PACKAGES})
+  set(${package}_DISABLE_STRONG_WARNINGS ON CACHE BOOL "Disable strong compile warnings for ${package}" FORCE)
+ENDFOREACH()
 
 # Set an env so we know we are in configure
 set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
