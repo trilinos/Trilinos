@@ -2006,7 +2006,7 @@ namespace BaskerNS
 
     if(err == BASKER_ERROR)
     {
-      printf("ShyLUBasker factor_notoken/inc_lvl error returned (err=%d)\n",err);
+      printf("ShyLUBasker %s error returned (err=%d)\n",(Options.incomplete == BASKER_FALSE ? "factor_notoken" : "factor_inc_lvl"),err);
       return BASKER_ERROR; 
     }
 
