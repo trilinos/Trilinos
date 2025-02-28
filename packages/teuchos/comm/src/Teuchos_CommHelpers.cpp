@@ -1141,13 +1141,13 @@ isend (const ArrayRCP<const float>& sendBuffer,
 
 template<>
 void
-gatherv<int,float > (const float sendBuf[],
-                     const int sendCount,
-                     float recvBuf[],
-                     const int recvCounts[],
-                     const int displs[],
-                     const int root,
-                     const Comm<int>& comm)
+gatherv<int,float> (const float sendBuf[],
+                    const int sendCount,
+                    float recvBuf[],
+                    const int recvCounts[],
+                    const int displs[],
+                    const int root,
+                    const Comm<int>& comm)
 {
   gathervImpl<float> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
 }
