@@ -233,10 +233,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   if (((algo == "classical") && (classicalAlgoStr.find("scaled") != std::string::npos)) || ((algo == "distance laplacian") && (distanceLaplacianAlgoStr.find("scaled") != std::string::npos)))
     TEUCHOS_TEST_FOR_EXCEPTION(threshold > 1.0, Exceptions::RuntimeError, "For cut-drop algorithms, \"aggregation: drop tol\" = " << threshold << ", needs to be <= 1.0");
 
-  // FIXME: Non-Kokkos implementation does this, but this seems unnecessary.
-  if (algo == "distance laplacian")
-    aggregationMayCreateDirichlet = true;
-
   //////////////////////////////////////////////////////////////////////
   // We perform four sweeps over the rows of A:
   // Pass 1: detection of boundary nodes
@@ -1000,10 +996,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     GetOStream(Runtime0) << "algorithm = \"" << algo << "\" distance laplacian algorithm = \"" << distanceLaplacianAlgoStr << "\" distance laplacian metric = \"" << distanceLaplacianMetric << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
   } else
     GetOStream(Runtime0) << "algorithm = \"" << algo << "\": threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
-
-  // FIXME: Non-Kokkos implementation does this, but this seems unnecessary.
-  if (algo == "distance laplacian")
-    aggregationMayCreateDirichlet = true;
 
   //////////////////////////////////////////////////////////////////////
   // We perform four sweeps over the rows of A:
