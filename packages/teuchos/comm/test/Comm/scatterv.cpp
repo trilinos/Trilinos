@@ -40,12 +40,8 @@ testScatterv (bool& success, std::ostream& out,
 #ifdef HAVE_TEUCHOS_MPI
   using Teuchos::MpiComm;
   int errCode = MPI_SUCCESS;
-
-  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (mpiComm == NULL, std::logic_error, "Building with MPI, but default "
-     "communicator is not a Teuchos::MpiComm!");
-  MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+  const MpiComm<int>& mpiComm = Teuchos::dyn_cast<const MpiComm<int>> (comm);
+  MPI_Comm rawMpiComm = * (mpiComm.getRawMpiComm());
 #endif // HAVE_TEUCHOS_MPI
 
   const packet_type ZERO = Teuchos::ScalarTraits<packet_type>::zero ();
@@ -183,8 +179,5 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Comm, Scatterv, PacketType )
 }
 
 //
-// mfh 14 Jul 2015: We only need to test int for now.  See Bug 6375.
-//
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Comm, Scatterv, int )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Comm, Scatterv, double )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Comm, Scatterv, float )
