@@ -1,8 +1,6 @@
 // @HEADER
 // ****************************************************************************
-//                Tempus: Copyright (2017) Sandia Corporation
-//
-// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// TODO
 // ****************************************************************************
 // @HEADER
 
@@ -47,8 +45,8 @@ public:
   {
     switch(actLoc) {
       case StepperExponentialEulerAppAction<Scalar>::BEGIN_STEP:
-      case StepperExponentialEulerAppAction<Scalar>::BEFORE_SOLVE:
-      case StepperExponentialEulerAppAction<Scalar>::AFTER_SOLVE:
+      case StepperExponentialEulerAppAction<Scalar>::BEFORE_EXP:
+      case StepperExponentialEulerAppAction<Scalar>::AFTER_EXP:
       case StepperExponentialEulerAppAction<Scalar>::END_STEP:
       {
         // No-op.
