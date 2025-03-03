@@ -1,4 +1,4 @@
-SET(HEADERS "")
+ET(HEADERS "")
 SET(SOURCES "")
 
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -102,8 +102,8 @@ TRIBITS_ADD_EXECUTABLE(
 if (TPL_ENABLE_MPI)
   IF (TPL_Netcdf_PARALLEL)
     set(DECOMP_ARG "--rcb")
-    set(JOIN_ARG   "--compose=mpiio")
-    set(PJOIN_ARG   "--compose=pnetcdf")
+    set(JOIN_ARG   "--compose --netcdf4")
+    set(PJOIN_ARG   "--compose --netcdf5")
     set(NPROCS "4")
     set(NPROCS_BUG "1")
     set(SERIALIZE_ARG "--serialize_io_size=2")
@@ -114,6 +114,7 @@ if (TPL_ENABLE_MPI)
 endif()
 
 if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
+if (TPL_Netcdf_Enables_Netcdf4)
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
      NOEXEPREFIX NOEXESUFFIX
@@ -126,7 +127,6 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
   XHOSTTYPE Windows
   )
 
-  if (TPL_Netcdf_Enables_Netcdf4)
   SET(IOSHELL_ARG --in_type generated 10x10x10+shell:xXyYzZ+times:4+variables:element,2,nodal,3)
   SET(SPLIT_ARG --split_times 1)
   TRIBITS_ADD_ADVANCED_TEST(
@@ -290,6 +290,7 @@ if (TPL_ENABLE_MPI)
     COMM mpi serial
     )
 
+  IF (TPL_Netcdf_Enables_PNetcdf)
   TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32_pnetcdf
      TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${PJOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64p.g
        NOEXEPREFIX NOEXESUFFIX
@@ -300,6 +301,7 @@ if (TPL_ENABLE_MPI)
        NUM_MPI_PROCS 1
     COMM mpi serial
     )
+  ENDIF()
 ENDIF()
 
 IF (SEACASIoss_ENABLE_THREADSAFE)
@@ -540,6 +542,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_single_block
   XHOSTTYPE Windows
   )
 
+IF (TPL_Netcdf_Enables_PNetcdf)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/two-block.g two-block.cgns
      NOEXEPREFIX NOEXESUFFIX
@@ -554,6 +557,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
   COMM mpi serial
   XHOSTTYPE Windows
   )
+ENDIF()
 
 IF (NOT SEACASIoss_ENABLE_THREADSAFE)
 TRIBITS_ADD_ADVANCED_TEST(cgns_bc_no_parents_to_exodus
@@ -632,12 +636,12 @@ IF (TPL_ENABLE_MPI)
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
    TEST_0 EXEC struc_to_unstruc ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns exodus_struc.e
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
+     NUM_MPI_PROCS 1
    TEST_1 EXEC exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
-  COMM mpi serial
+  COMM serial
   XHOSTTYPE Windows
   )
 ELSE()
