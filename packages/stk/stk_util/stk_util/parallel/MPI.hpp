@@ -735,27 +735,27 @@ struct Reduce : public ReduceInterface
   virtual ~Reduce()
   {}
 
-  virtual void size(void *&inbuf) const {
+  virtual void size(void *&inbuf) const override {
     value_type *t = align_cast<value_type>(inbuf);
     t += m_length;
     inbuf = t;
   }
 
-  virtual void copyin(void *&inbuf) const {
+  virtual void copyin(void *&inbuf) const override {
     value_type *t = align_cast<value_type>(inbuf);
     for (LocalIt it = m_localBegin; it != m_localEnd; ++it)
       *t++ = (*it);
     inbuf = t;
   }
 
-  virtual void copyout(void *&outbuf) const {
+  virtual void copyout(void *&outbuf) const override {
     value_type *t = align_cast<value_type>(outbuf);
     for (GlobalIt it = m_globalBegin; it != m_globalEnd; ++it)
       (*it) = *t++;
     outbuf = t;
   }
 
-  virtual void op(void *&inbuf, void *&outbuf) const {
+  virtual void op(void *&inbuf, void *&outbuf) const override {
     value_type *tin = align_cast<value_type>(inbuf);
     value_type *tout = align_cast<value_type>(outbuf);
 

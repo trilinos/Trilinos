@@ -97,7 +97,7 @@ void activate_entities(stk::io::StkMeshIoBroker &fixture,
 
 }
 
-TEST( StkMeshIoBroker, iofixture )
+TEST( StkMeshIoBroker, iofixture_externalFile )
 {
   // A simple test for reading and writing an exodus file using the StkMeshIoBroker
 
@@ -186,7 +186,7 @@ TEST( StkMeshIoBroker, testModifyTopology )
     }
 }
 
-TEST( StkMeshIoBroker, active_only )
+TEST( StkMeshIoBroker, active_only_externalFile )
 {
   // A simple test for reading and writing an exodus file using the StkMeshIoBroker.
 
@@ -236,7 +236,7 @@ TEST( StkMeshIoBroker, active_only )
   // checking is left to the test XML.
 }
 
-TEST( StkMeshIoBroker, active_and_all )
+TEST( StkMeshIoBroker, active_and_all_externalFile )
 {
   // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -300,7 +300,7 @@ TEST( StkMeshIoBroker, active_and_all )
   // checking is left to the test XML.
 }
 
-TEST( StkMeshIoBroker, large_mesh_test )
+TEST( StkMeshIoBroker, large_mesh_test_externalFile )
 {
   // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;

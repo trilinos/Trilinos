@@ -234,7 +234,7 @@ public:
 
   NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
   {
-    return bulk->volatile_fast_shared_comm_map<NgpMemSpace>(rank, proc);
+    return bulk->template volatile_fast_shared_comm_map<NgpMemSpace>(rank, proc);
   }
 
   stk::mesh::BulkData &get_bulk_on_host()
@@ -308,6 +308,18 @@ public:
                                  const Kokkos::View<stk::mesh::PartOrdinal*, RemovePartParams...>& removePartOrdinals)
   {
     batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
+  }
+
+  UnsignedViewType::HostMirror get_ngp_parallel_sum_host_buffer_offsets() const {
+    return UnsignedViewType::HostMirror("", 1);
+  }
+
+  Unsigned2dViewType::HostMirror get_ngp_parallel_sum_host_mesh_indices_offsets() const {
+    return Unsigned2dViewType::HostMirror("", 1);
+  }
+
+  Unsigned2dViewType get_ngp_parallel_sum_device_mesh_indices_offsets() const {
+    return Unsigned2dViewType("", 1);
   }
 
 private:

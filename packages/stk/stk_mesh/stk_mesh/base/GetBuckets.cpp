@@ -32,7 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for sort, unique
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
@@ -49,6 +48,7 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 15 2025
 void copy_ids( std::vector<unsigned> & v , const PartVector & p )
 {
   {
@@ -67,7 +67,7 @@ void copy_ids( std::vector<unsigned> & v , const PartVector & p )
   }
 }
 
-void get_involved_parts(
+STK_DEPRECATED void get_involved_parts(
     const PartVector & union_parts,
     const Bucket & candidate,
     PartVector & involved_parts
@@ -109,6 +109,7 @@ void get_involved_parts(
   }
 
 }
+#endif
 
 //----------------------------------------------------------------------
 

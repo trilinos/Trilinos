@@ -305,7 +305,7 @@ void create_mesh_from_mesh_read(stk::mesh::BulkData& bulk,
   unlink(dbIo->decoded_filename().c_str());
 }
 
-TEST(CleanupOrphans, deleteOnlyNodes_withBlockOmit)
+TEST(CleanupOrphans, deleteOnlyNodes_withBlockOmit_externalFile)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   size_t nProc = stk::parallel_machine_size(communicator);

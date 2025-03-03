@@ -56,6 +56,9 @@ struct NgpMeshHostData : NgpMeshHostDataBase {
   typename UnsignedViewTypeT<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
   typename NgpCommMapIndicesT<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
   unsigned volatileFastSharedCommMapSyncCount = 0;
+
+  UnsignedViewType::HostMirror m_hostBufferOffsets;
+  Unsigned2dViewType::HostMirror m_hostMeshIndicesOffsets;
 };
 
 }  // namespace impl

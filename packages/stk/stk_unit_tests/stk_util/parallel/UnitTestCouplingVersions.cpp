@@ -25,14 +25,14 @@ class CouplingVersionsTester : public ::testing::Test
 
 TEST_F(CouplingVersionsTester, CompatibileRangeGetter)
 {
-  EXPECT_EQ(stk::util::get_local_max_coupling_version(), stk::util::impl::SHORT_TERM_STK_MAX_COUPLING_VERSION /*STK_MAX_COUPLING_VERSION*/);
+  EXPECT_EQ(stk::util::get_local_max_coupling_version(), STK_MAX_COUPLING_VERSION);
   EXPECT_EQ(stk::util::get_local_min_coupling_version(), STK_MIN_COUPLING_VERSION);
 }
 
 TEST_F(CouplingVersionsTester, DefaultVersion)
 {
   EXPECT_EQ(stk::util::get_common_coupling_version(), STK_MAX_COUPLING_VERSION);
-  EXPECT_EQ(stk::util::get_global_max_coupling_version(), stk::util::impl::SHORT_TERM_STK_MAX_COUPLING_VERSION /*STK_MAX_COUPLING_VERSION*/);
+  EXPECT_EQ(stk::util::get_global_max_coupling_version(), STK_MAX_COUPLING_VERSION);
 }
 
 TEST_F(CouplingVersionsTester, NewVersion)
@@ -48,7 +48,7 @@ TEST_F(CouplingVersionsTester, OldVersion)
 {
   stk::util::impl::set_coupling_version(MPI_COMM_WORLD, STK_MIN_COUPLING_VERSION);
   EXPECT_EQ(stk::util::get_common_coupling_version(), STK_MIN_COUPLING_VERSION);
-  EXPECT_EQ(stk::util::get_global_max_coupling_version(), stk::util::impl::SHORT_TERM_STK_MAX_COUPLING_VERSION /*STK_MAX_COUPLING_VERSION*/);
+  EXPECT_EQ(stk::util::get_global_max_coupling_version(), STK_MAX_COUPLING_VERSION);
 }
 
 TEST_F(CouplingVersionsTester, MixedVersion)
@@ -81,8 +81,8 @@ TEST_F(CouplingVersionsTester, DeprecatedVersionCheck)
 TEST_F(CouplingVersionsTester, NewVersionComm)
 {
   stk::util::set_coupling_version(MPI_COMM_WORLD);
-  EXPECT_EQ(stk::util::get_common_coupling_version(), stk::util::impl::SHORT_TERM_STK_MAX_COUPLING_VERSION /*STK_MAX_COUPLING_VERSION*/);
-  EXPECT_EQ(stk::util::get_global_max_coupling_version(), stk::util::impl::SHORT_TERM_STK_MAX_COUPLING_VERSION /*STK_MAX_COUPLING_VERSION*/);
+  EXPECT_EQ(stk::util::get_common_coupling_version(), STK_MAX_COUPLING_VERSION);
+  EXPECT_EQ(stk::util::get_global_max_coupling_version(), STK_MAX_COUPLING_VERSION);
 
 }
 
@@ -90,12 +90,12 @@ TEST_F(CouplingVersionsTester, NonincreasingVersion)
 {
   stk::util::impl::set_coupling_version(MPI_COMM_WORLD, STK_MIN_COUPLING_VERSION);
   EXPECT_EQ(stk::util::get_common_coupling_version(), STK_MIN_COUPLING_VERSION);
-  EXPECT_EQ(stk::util::get_global_max_coupling_version(), stk::util::impl::SHORT_TERM_STK_MAX_COUPLING_VERSION /*STK_MAX_COUPLING_VERSION*/);
+  EXPECT_EQ(stk::util::get_global_max_coupling_version(), STK_MAX_COUPLING_VERSION);
 
 
   stk::util::set_coupling_version(MPI_COMM_WORLD);
   EXPECT_EQ(stk::util::get_common_coupling_version(), STK_MIN_COUPLING_VERSION);
-  EXPECT_EQ(stk::util::get_global_max_coupling_version(), stk::util::impl::SHORT_TERM_STK_MAX_COUPLING_VERSION /*STK_MAX_COUPLING_VERSION*/);
+  EXPECT_EQ(stk::util::get_global_max_coupling_version(), STK_MAX_COUPLING_VERSION);
 }
 
 

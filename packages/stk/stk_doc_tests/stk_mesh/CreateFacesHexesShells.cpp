@@ -50,7 +50,7 @@ namespace
 
 
 //BEGIN2hex
-TEST(StkMeshHowTo, CreateFacesTwoHexes)
+TEST(StkMeshHowTo, CreateFacesTwoHexes_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  -----------
@@ -92,7 +92,7 @@ TEST(StkMeshHowTo, CreateFacesTwoHexes)
 //END2hex
 
 //BEGINshell
-TEST(StkMeshHowTo, CreateFacesSingleShell)
+TEST(StkMeshHowTo, CreateFacesSingleShell_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  S
@@ -137,7 +137,7 @@ TEST(StkMeshHowTo, CreateFacesSingleShell)
 //ENDshell
 
 //BEGINhexshellhex
-TEST(StkMeshHowTo, CreateFacesTwoHexesInternalShell)
+TEST(StkMeshHowTo, CreateFacesTwoHexesInternalShell_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  ------S------

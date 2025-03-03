@@ -42,6 +42,7 @@
 #include <cassert>
 #include <iostream>
 #include <set>
+#include <cstring>
 
 #include "stk_util/parallel/Parallel.hpp"   // for MPI
 
@@ -58,12 +59,14 @@ class DataExchangeUnknownPatternNonBlocking
 {
   public:
     static constexpr int Unknown = -1;
+    static constexpr size_t MAX_MESSAGE_SIZE = std::numeric_limits<int>::max();
 
     DataExchangeUnknownPatternNonBlocking(MPI_Comm comm, int tag_hint=11173) :
       m_comm(comm),
       m_tagHint(tag_hint),
       m_tag(stk::get_mpi_tag_manager().get_tag(comm, tag_hint)),
       m_recvCounter(comm),
+      m_rankExtraRecvBufs(stk::parallel_machine_size(comm)),
       m_recvcount(0),
       m_numRecvsExpected(Unknown)
     {
@@ -115,7 +118,7 @@ class DataExchangeUnknownPatternNonBlocking
       if (!m_areSendsInProgress) {
         return;
       }
-
+      
       MPI_Waitall(m_sendReqs.size(), m_sendReqs.data(), MPI_STATUSES_IGNORE);
       m_areSendsInProgress = false;
     }
@@ -125,11 +128,6 @@ class DataExchangeUnknownPatternNonBlocking
     bool are_recvs_in_progress() const { return m_areRecvsInProgress; }
 
   private:
-    // maps an index in m_recvReqs to MPI rank
-    int get_receive_request_rank(const int idx) { return m_recvRankMap.at(idx); }
-
-    // maps an index in m_sendReqs to MPI rank
-    int get_sends_request_rank(const int idx) { return m_sendRankMap.at(idx); }
 
     void reset();
 
@@ -141,19 +139,25 @@ class DataExchangeUnknownPatternNonBlocking
     // By default, the first criteria is disabled, and the probe loop continues untill all messages have bee
     // received
     template <typename T>
-    void post_nonblocking_receives_impl(std::vector< std::vector<T> > &recvLists, int nmisses=-1);
+    void post_nonblocking_receives_impl(std::vector< std::vector<T> > &recvLists, size_t nmisses=std::numeric_limits<size_t>::max());
 
     void yield();
+    
+    template <typename T>
+    void appendExtraRecvBufsToOriginal(int rank, std::vector<T>& recvBuf);
+    
+    size_t getNumRecvsPosted(int rank) const { return m_rankExtraRecvBufs[rank].size() + 1; }
 
     MPI_Comm m_comm;
     int m_tagHint;
     MPITag m_tag;
 
     ReceiveCounter m_recvCounter;
-    std::vector<int> m_recvRankMap;
-    std::vector<int> m_sendRankMap;
+    std::vector<int> m_recvReqRanks;
     std::vector<MPI_Request> m_recvReqs;
     std::vector<MPI_Request> m_sendReqs;
+    std::vector<std::vector<unsigned char>> m_extraRecvBufs;
+    std::vector<std::vector<int>> m_rankExtraRecvBufs;
     bool m_areSendsInProgress = false;
     bool m_areRecvsInProgress = false;
     int m_recvcount;
@@ -169,11 +173,15 @@ void DataExchangeUnknownPatternNonBlocking::start_sends(std::vector< std::vector
     STK_ThrowRequireMsg(sendLists.size() == static_cast<size_t>(commSize), "send list must have length equal to the number of procs");
 
     for (unsigned int i=0; i < sendLists.size(); ++i) {
-      if (sendLists[i].size() > 0) {
-          m_sendReqs.emplace_back();
-          MPI_Isend(sendLists[i].data(), sendLists[i].size()*sizeof(T), MPI_BYTE, i, m_tag, m_comm, &(m_sendReqs.back()));
-          m_sendRankMap.push_back(i);
-      }
+      size_t numElementsToSend = sendLists[i].size();
+      size_t numElementsSent = 0;
+      while (numElementsSent < numElementsToSend)
+      {
+        size_t thisMsgSize = std::min(max_elements_per_message<T>(MAX_MESSAGE_SIZE), numElementsToSend - numElementsSent);
+        m_sendReqs.emplace_back();        
+        MPI_Isend(sendLists[i].data() + numElementsSent, thisMsgSize*sizeof(T), MPI_BYTE, i, m_tag, m_comm, &(m_sendReqs.back()));
+        numElementsSent += thisMsgSize;        
+      }      
     }
 
     m_areSendsInProgress = true;
@@ -187,11 +195,17 @@ void DataExchangeUnknownPatternNonBlocking::start_nonblocking(std::vector< std::
 {
   STK_ThrowRequireMsg(sendLists.size() == recvLists.size(), "send and receive lists must be same size");
   STK_ThrowRequireMsg(numRecvsExpected >= -1, "num_recvs_expected must be a positive value or -1");
+
   reset();
+  
+  for (std::vector<T>& recvBuf : recvLists)
+  {
+    recvBuf.clear();
+  }
 
   m_numRecvsExpected = numRecvsExpected;
   if (m_numRecvsExpected == Unknown) {
-    m_recvCounter.start_receive_count(get_send_counts(sendLists));
+    m_recvCounter.start_receive_count(get_send_counts(sendLists, MAX_MESSAGE_SIZE));
   }
   start_sends(sendLists);
 
@@ -201,10 +215,9 @@ void DataExchangeUnknownPatternNonBlocking::start_nonblocking(std::vector< std::
 
 
 template <typename T>
-void DataExchangeUnknownPatternNonBlocking::post_nonblocking_receives_impl(std::vector< std::vector<T> > &recvLists, int nmisses)
+void DataExchangeUnknownPatternNonBlocking::post_nonblocking_receives_impl(std::vector< std::vector<T> > &recvLists, size_t nmisses)
 {
-  int nItersSinceReceive = 0;
-
+  size_t nItersSinceReceive = 0;  
   while (true)
   {
     int flag = false;
@@ -220,15 +233,27 @@ void DataExchangeUnknownPatternNonBlocking::post_nonblocking_receives_impl(std::
       int count = 0;
       int src = status.MPI_SOURCE;
       MPI_Get_count(&status, MPI_BYTE, &count);
+      assert(count % sizeof(T) == 0);
+
+      unsigned char* recvBuf = nullptr;
+      if (recvLists[src].size() == 0)
+      {
+        recvLists[src].resize(count / sizeof(T));
+        recvBuf = reinterpret_cast<unsigned char*>(recvLists[src].data());           
+      } else
+      {        
+        m_extraRecvBufs.emplace_back(count);   
+        m_rankExtraRecvBufs[src].push_back(m_extraRecvBufs.size() - 1);
+        recvBuf = m_extraRecvBufs.back().data();
+      }
+      
 
       m_recvReqs.emplace_back();
-      m_recvRankMap.push_back(src);
-      assert(count % sizeof(T) == 0);
-      recvLists[src].resize(count / sizeof(T));
+      m_recvReqRanks.push_back(src);      
 #ifdef STK_IMPROBE_WORKING
-      MPI_Imrecv(recvLists[src].data(), count, MPI_BYTE, &message, &(m_recvReqs.back()));
+      MPI_Imrecv(recvBuf, count, MPI_BYTE, &message, &(m_recvReqs.back()));
 #else
-      MPI_Irecv(recvLists[src].data(), count, MPI_BYTE, src, m_tag, m_comm, &(m_recvReqs.back()));
+      MPI_Irecv(recvBuf, count, MPI_BYTE, src, m_tag, m_comm, &(m_recvReqs.back()));
 #endif
 
       m_recvcount++;
@@ -260,17 +285,54 @@ void DataExchangeUnknownPatternNonBlocking::complete_receives(std::vector< std::
   if (!m_areRecvsInProgress) {
     return;
   }
+  
+  std::vector<unsigned int> numReceivesCompleted(stk::parallel_machine_size(m_comm), 0);
 
   for (size_t i=0; i < m_recvReqs.size(); ++i)
   {
     int idx;
     MPI_Waitany(m_recvReqs.size(), m_recvReqs.data(), &idx, MPI_STATUS_IGNORE);
-    int rank = get_receive_request_rank(idx);
-    func(rank, recvLists[rank]);
+    int rank = m_recvReqRanks[idx];
+    numReceivesCompleted[rank]++;
+    if (numReceivesCompleted[rank] == getNumRecvsPosted(rank))
+    {
+      appendExtraRecvBufsToOriginal(rank, recvLists[rank]);
+      func(rank, recvLists[rank]);
+    }
   }
 
   m_areRecvsInProgress = false;
 }
+
+template <typename T>
+void DataExchangeUnknownPatternNonBlocking::appendExtraRecvBufsToOriginal(int rank, std::vector<T>& recvBuf)
+{
+  if (m_rankExtraRecvBufs[rank].size() == 0)
+  {
+    return;
+  }
+  
+  size_t initialSize = recvBuf.size();
+  size_t additionalSizeInBytes = 0;
+  for (int idx : m_rankExtraRecvBufs[rank])
+  {
+    additionalSizeInBytes += m_extraRecvBufs[idx].size();    
+  }  
+  assert(additionalSizeInBytes % sizeof(T) == 0);
+  
+  recvBuf.resize(initialSize + (additionalSizeInBytes / sizeof(T)));
+  size_t segmentBegin = initialSize;
+  for (int idx : m_rankExtraRecvBufs[rank])
+  {
+    std::vector<unsigned char>& extraBuf = m_extraRecvBufs[idx];
+    std::memcpy(reinterpret_cast<unsigned char*>(recvBuf.data() + segmentBegin), extraBuf.data(), extraBuf.size());
+    segmentBegin += extraBuf.size() / sizeof(T); 
+    
+    extraBuf.clear();
+    extraBuf.shrink_to_fit();   
+  }  
+}
+
 
 } // namespace
 #endif

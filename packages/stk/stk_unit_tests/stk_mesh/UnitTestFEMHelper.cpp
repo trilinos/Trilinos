@@ -202,7 +202,7 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
   for(uint i = 0; i < num_sides; ++i)
   {
     // FIXME SHELL_SIDE_TOPO
-    if (topo.is_shell_side_ordinal(i)) { continue; }
+    if (topo.is_shell() && topo.side_rank() == stk::topology::FACE_RANK && i >= topo.num_faces()) { continue; }
 
     stk::topology sub_topo = topo.side_topology(i);
     bulk.declare_element_side(elem, i, stk::mesh::ConstPartVector{&meta.get_topology_root_part(sub_topo)});

@@ -319,7 +319,7 @@ protected:
 class SkinAAWithModification : public SkinFileWithModification
 {
 protected:
-  virtual const std::string get_filename() { return "AA.e"; }
+  virtual const std::string get_filename() override { return "AA.e"; }
   const SideTestUtil::TestCase AAExterior =   {"AA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
   const SideTestUtil::TestCase AeAExterior =  {"AeA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
   const SideTestUtil::TestCase AefAExterior = {"AefA.e",   2, 10, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {2, 0}, {2, 1}, {2, 2}, {2, 3}, {2, 5}}};
@@ -380,7 +380,7 @@ TEST_F(SkinAAWithModification, TestPartialCoincident2d)
 class SkinAWithModification : public SkinFileWithModification
 {
 protected:
-  virtual const std::string get_filename() { return "A.e"; }
+  virtual const std::string get_filename() override { return "A.e"; }
   const SideTestUtil::TestCase AExterior =   {"A.e",   1,  6, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}}};
   const SideTestUtil::TestCase AeExterior =  {"Ae.e",  2,  6, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {shellId1, 0}}};
   const SideTestUtil::TestCase AefExterior = {"Aef.e", 3,  6, {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {shellId1, 0}, {shellId2, 0}}};

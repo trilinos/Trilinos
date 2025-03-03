@@ -151,7 +151,7 @@ private:
   ucharp m_beg ;
   ucharp m_ptr ;
   ucharp m_end ;
-  unsigned m_offset;
+  size_t m_offset;
 };
 
 //----------------------------------------------------------------------
@@ -178,7 +178,6 @@ CommBuffer &CommBuffer::pack( const T & value )
   static constexpr auto Size = sizeof(T);
   if ( m_beg ) {
     size_t nalign = CommBufferAlign<Size>::align( m_ptr - m_beg );
-//std::cout<<"m_beg: "<<(void*)m_beg<<", m_ptr: "<<(void*)m_ptr<<"m_ptr-m_beg: "<<std::distance(m_beg,m_ptr)<<", nalign: "<<nalign<<", Size: "<<Size<<", m_end: "<<(void*)m_end<<std::endl;
     if ( m_end < m_ptr + nalign + Size ) { pack_overflow(); }
     while ( nalign ) { --nalign ; *m_ptr = 0 ; ++m_ptr ; }
     T *tmp = reinterpret_cast<T *>(m_ptr);
@@ -429,7 +428,7 @@ size_t CommBuffer::capacity() const
 
 inline
 size_t CommBuffer::size() const
-{ return m_beg ? static_cast<size_t>(m_ptr - m_beg) : static_cast<size_t>(m_offset) ; }
+{ return m_beg ? static_cast<size_t>(m_ptr - m_beg) : m_offset ; }
 
 inline
 void CommBuffer::set_size(size_t newsize_bytes)

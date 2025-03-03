@@ -124,5 +124,68 @@ TEST(StkIoResultsOutputMeshMod, writeResultsElemDelete)
   test_results_output(comm, resultsFile2Name, nSteps_after_meshMod);
 }
 
+void test_DTIO_results_output(MPI_Comm comm,
+                              const std::string& fileName,
+                              const std::vector<std::pair<int, int>> &goldGroupAndNumSteps)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(comm)
+                                               .set_spatial_dimension(3).create();
+  stk::io::StkMeshIoBroker stkIo;
+  stk::io::fill_mesh_preexisting(stkIo, fileName, *bulkPtr);
+
+  int goldNumGroups = goldGroupAndNumSteps.size();
+  EXPECT_EQ(goldNumGroups, stkIo.num_mesh_groups());
+
+  for(const auto& entry : goldGroupAndNumSteps) {
+    int meshGroup = entry.first;
+    int numSteps = entry.second;
+
+    EXPECT_TRUE(stkIo.load_mesh_group(meshGroup));
+    EXPECT_EQ(numSteps, stkIo.get_num_time_steps());
+  }
+  unlink(fileName.c_str());
+}
+
+TEST(StkIoResultsOutputMeshMod, writeResultsElemDeleteWithDTIO)
+{
+  MPI_Comm comm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(comm) > 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(comm)
+                                               .set_spatial_dimension(3).create();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+
+  stk::mesh::Field<double>& elemField = meta.declare_field<double>(stk::topology::ELEM_RANK, "myElementField");
+  stk::mesh::put_field_on_mesh(elemField, meta.universal_part(), 1, nullptr);
+
+  const std::string meshDesc("generated:1x1x2|sideset:x");
+  stk::io::fill_mesh(meshDesc, *bulkPtr);
+
+  const std::string resultsFileName("results.e");
+
+  stk::io::StkMeshIoBroker stkIo(comm);
+  stkIo.enable_dynamic_topology(stk::io::FileOption::USE_DYNAMIC_TOPOLOGY_GROUP_FILE);
+  size_t resultsFileIndex = open_results_file(resultsFileName, stkIo, bulkPtr, elemField);
+
+  constexpr int nSteps = 5;
+  for(int i = 1; i <= nSteps; ++i) {
+    if (i == 3) {
+      stk::mesh::EntityId elemId = 2;
+      remove_entity_from_mesh(*bulkPtr, stk::topology::ELEM_RANK, elemId);
+      stkIo.set_topology_modification(resultsFileIndex, Ioss::TOPOLOGY_CREATEELEM);
+    }
+
+    stkIo.process_output_request(resultsFileIndex, (double)(i-1));
+  }
+
+  stkIo.close_output_mesh(resultsFileIndex);
+
+  constexpr int nSteps_before_meshMod = 2;
+  constexpr int nSteps_after_meshMod = 3;
+
+  std::vector<std::pair<int,int>> goldGroupAndNumSteps{ {0, nSteps_before_meshMod}, {1, nSteps_after_meshMod} };
+  test_DTIO_results_output(comm, resultsFileName, goldGroupAndNumSteps);
+}
+
 }
 

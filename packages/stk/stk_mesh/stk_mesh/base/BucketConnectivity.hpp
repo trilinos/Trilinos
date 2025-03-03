@@ -69,6 +69,12 @@ size_t capacity_in_bytes(const VecType& v)
   return sizeof(typename VecType::value_type)*v.capacity();
 }
 
+template<EntityRank TargetRank>
+constexpr bool has_permutation()
+{
+  return TargetRank != stk::topology::NODE_RANK;
+}
+
 template<EntityRank TargetRank >
 class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 {
@@ -83,17 +89,19 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   typedef std::vector<Permutation> PermutationVector;
 
   BucketConnectivity() //default constructed BucketConnectivity implies connectivity is not used
-    : m_num_connectivity(0u)
-    , m_targets()
-    , m_ordinals()
-    , m_permutations()
+    : m_num_connectivity(0),
+      m_num_entities(0),
+      m_targets(),
+      m_ordinals(),
+      m_permutations()
   {}
 
   BucketConnectivity(unsigned arg_num_connectivity)
-    : m_num_connectivity(0)
-    , m_targets()
-    , m_ordinals()
-    , m_permutations()
+    : m_num_connectivity(0),
+      m_num_entities(0),
+      m_targets(),
+      m_ordinals(),
+      m_permutations()
   {
     set_num_connectivity(arg_num_connectivity);
   }
@@ -160,28 +168,28 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   Permutation const* begin_permutations(unsigned bucket_ordinal) const
   {
     impl::check_bucket_ordinal(bucket_ordinal, this);
-    if (!has_permutation()) return NULL;
+    if constexpr (!has_permutation<TargetRank>()) return NULL;
     return &m_permutations[bucket_ordinal * m_num_connectivity];
   }
 
   Permutation      * begin_permutations(unsigned bucket_ordinal)
   {
     impl::check_bucket_ordinal(bucket_ordinal, this);
-    if (!has_permutation()) return NULL;
+    if constexpr (!has_permutation<TargetRank>()) return NULL;
     return &m_permutations[bucket_ordinal * m_num_connectivity];
   }
 
   Permutation const* end_permutations(unsigned bucket_ordinal) const
   {
     impl::check_bucket_ordinal(bucket_ordinal, this);
-    if (!has_permutation()) return NULL;
+    if constexpr (!has_permutation<TargetRank>()) return NULL;
     return &m_permutations[(bucket_ordinal + 1) * m_num_connectivity];
   }
 
   Permutation      * end_permutations(unsigned bucket_ordinal)
   {
     impl::check_bucket_ordinal(bucket_ordinal, this);
-    if (!has_permutation()) return NULL;
+    if constexpr (!has_permutation<TargetRank>()) return NULL;
     return &m_permutations[(bucket_ordinal + 1) * m_num_connectivity];
   }
 
@@ -191,8 +199,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   { return m_num_connectivity; }
 
   // return number of entities
-  unsigned size() const
-  { return m_targets.size() / m_num_connectivity; }
+  unsigned size() const { return m_num_entities; }
 
   // Modification API
 
@@ -201,21 +208,18 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
     STK_ThrowAssertMsg(ordinal < m_num_connectivity,
                    "Ordinal " <<  (uint32_t)ordinal << " exceeds topological limit: " << m_num_connectivity);
     impl::check_bucket_ordinal(bucket_ordinal, this);
-#ifndef NDEBUG
-    // TODO - Add topology invariant; target entity should match a sub topology
-#endif
 
     unsigned index = m_num_connectivity*bucket_ordinal + ordinal;
 
     if (m_targets[index] == to) {
-      STK_ThrowAssert(!has_permutation() || m_permutations[index] == permutation);
+      STK_ThrowAssert(!has_permutation<TargetRank>() || m_permutations[index] == permutation);
       // Already exists
       return false;
     }
 
     m_targets[index] = to;
 
-    if (has_permutation()) {
+    if constexpr (has_permutation<TargetRank>()) {
       m_permutations[index] = permutation;
     }
 
@@ -235,9 +239,16 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
     // Clear
     m_targets[index] = Entity();
-    if (has_permutation()) {
+    if constexpr (has_permutation<TargetRank>()) {
       m_permutations[index] = INVALID_PERMUTATION;
     }
+
+    return true;
+  }
+
+  bool replace_connectivity(unsigned destOrdinal, unsigned srcOrdinal)
+  {
+    copy_connectivity(srcOrdinal, *this, destOrdinal);
 
     return true;
   }
@@ -247,33 +258,41 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
                             const ConnectivityOrdinal* ordinals,
                             const Permutation* perms)
   {
-    if (bucket_ordinal == size()) {
-      add_entity();
-    }
+     if (bucket_ordinal == size()) {
+       add_entity();
+     }
+ 
+     impl::check_bucket_ordinal(bucket_ordinal, this);
+     const unsigned index = m_num_connectivity*bucket_ordinal;
+     Entity* dest = m_targets.data()+index;
 
-    impl::check_bucket_ordinal(bucket_ordinal, this);
-    const unsigned index = m_num_connectivity*bucket_ordinal;
-    for(unsigned i=0; i<numConnectivity; ++i) {
-      m_targets[index+ordinals[i]] = connectivity[i];
-      if (has_permutation()) {
-        m_permutations[index+ordinals[i]] = perms[i];
-      }
-    }
-    return true;
-  }
+     for(unsigned i=0; i<numConnectivity; ++i) {
+       STK_ThrowAssertMsg(ordinals[i] == i, "What craziness is this? Non-compact ordinals in fixed connectivity??");
+       dest[i] = connectivity[i];
+       if constexpr (has_permutation<TargetRank>()) {
+         m_permutations[index+i] = perms[i];
+       }
+     }
+
+     return true;
+   }
 
   void begin_modification()
   {}
 
-  template <typename BULKDATA> // hack to get around dependency
-  void end_modification(BULKDATA* mesh = NULL);
+  void end_modification()
+  {
+    m_targets.shrink_to_fit();
+    m_permutations.shrink_to_fit();
+  }
 
   void add_entity()
   {
     const unsigned new_conn_size = m_targets.size() + m_num_connectivity;
     Entity invalid;
     m_targets.resize(new_conn_size, invalid); // Not a perf issue: vectors are smart when resizing
-    if (has_permutation()) {
+    ++m_num_entities;
+    if constexpr (has_permutation<TargetRank>()) {
       m_permutations.resize(new_conn_size, INVALID_PERMUTATION);
     }
   }
@@ -285,7 +304,8 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
     const unsigned new_conn_size = m_targets.size() - m_num_connectivity;
     m_targets.resize(new_conn_size);
-    if (has_permutation()) {
+    --m_num_entities;
+    if constexpr (has_permutation<TargetRank>()) {
       m_permutations.resize(new_conn_size);
     }
   }
@@ -301,12 +321,6 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
     // Copy connectivity to other BucketConnectivity
     copy_connectivity(from_ordinal, to, to_ordinal);
-  }
-
-  bool has_permutation() const
-  {
-    const static bool rv = TargetRank != stk::topology::NODE_RANK;
-    return rv;
   }
 
   size_t heap_memory_in_bytes() const
@@ -345,7 +359,7 @@ private:
               m_targets.begin() + from_offset + m_num_connectivity,
               to.m_targets.begin() + to_offset);
 
-    if (has_permutation()) {
+    if constexpr (has_permutation<TargetRank>()) {
       std::copy(m_permutations.begin() + from_offset,
                 m_permutations.begin() + from_offset + m_num_connectivity,
                 to.m_permutations.begin() + to_offset);
@@ -359,6 +373,7 @@ private:
   // MEMBERS
 
   unsigned m_num_connectivity;
+  unsigned m_num_entities;
 
   // connectivity data
   EntityVector              m_targets;
@@ -366,34 +381,6 @@ private:
   PermutationVector         m_permutations;
 };
 
-}
-
-//
-// BucketConnectivity
-//
-
-template <EntityRank TargetRank>
-template <typename BULKDATA> // hack to get around dependency
-inline
-void impl::BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>::end_modification(BULKDATA* mesh)
-{
-  //TODO: If bucket is blocked, no longer need to shrink to fit!
-
-  if (m_targets.size() < m_targets.capacity()) {
-
-    {
-      EntityVector temp(m_targets.begin(), m_targets.end());
-      m_targets.swap(temp);
-    }
-
-    {
-      PermutationVector temp(m_permutations.begin(), m_permutations.end());
-      m_permutations.swap(temp);
-    }
-  }
-
-}
-
-}} //namespace stk::mesh::impl
+}}} //namespace stk::mesh::impl
 
 #endif

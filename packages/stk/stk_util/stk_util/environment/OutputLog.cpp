@@ -465,7 +465,7 @@ struct OpenLog : public Command
   virtual ~OpenLog()
   {}
 
-  virtual void execute() {
+  virtual void execute() override {
     create_log_file(m_name, m_path);
   }
 
@@ -484,7 +484,7 @@ struct CloseLog : public Command
   virtual ~CloseLog()
   {}
 
-  virtual void execute() {
+  virtual void execute() override {
     close_log_file(m_name);
   }
 
@@ -502,7 +502,7 @@ struct ClearTeeOStream : public Command
   virtual ~ClearTeeOStream()
   {}
 
-  virtual void execute() {
+  virtual void execute() override {
     parse_tee_streambuf(m_teeOStreamName).clear();
   }
 
@@ -522,7 +522,7 @@ struct AddTeeOStream : public Command
   virtual ~AddTeeOStream()
   {}
 
-  virtual void execute() {
+  virtual void execute() override {
     if (m_ostreamName != "null")
       parse_tee_streambuf(m_teeOStreamName).add(parse_ostream(m_ostreamName));
   }
@@ -544,7 +544,7 @@ struct RemoveTeeOStream : public Command
   virtual ~RemoveTeeOStream()
   {}
 
-  virtual void execute() {
+  virtual void execute() override {
     parse_tee_streambuf(m_teeOStreamName).remove(parse_ostream(m_ostreamName));
   }
 

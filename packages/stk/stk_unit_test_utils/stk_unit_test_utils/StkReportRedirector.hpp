@@ -26,13 +26,6 @@ class StkReportRedirector {
   stk::REH orig_report_handler;
 };
 
-namespace simple_fields {
-
-class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
-StkReportRedirector : public stk::unit_test_util::StkReportRedirector {};
-
-} // namespace simple_fields
-
 }
 }
 

@@ -32,7 +32,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -65,6 +65,22 @@ else()
   target_link_libraries(stk_balance_unit_tester stk_balance_lib)
   target_link_libraries(stk_balance_unit_tester stk_unit_main)
   
-  add_test("stk_balance" sh -c "mpiexec --np 2 ${CMAKE_CURRENT_BINARY_DIR}/stk_balance_unit_tester --gtest_filter=BasicLoadBalance.*")
+  INSTALL(TARGETS stk_balance_unit_tester EXPORT stkTargets DESTINATION ${STK_INSTALL_BINDIR})
+
+  FOREACH(NUMPROCS 1 2 3 4)
+    #add_test(NAME "stk_balance_unit_tester_np${NUMPROCS}"
+    #         COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} stk_balance_unit_tester
+    #         --gtest_filter=-*M2N)
+    #set_property(TEST "stk_balance_unit_tester_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/m2n_np${NUMPROCS})
+    add_test(NAME "stk_balance_unit_tester_m2n_np${NUMPROCS}" 
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/m2n_np${NUMPROCS}
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_balance_unit_tester
+             --gtest_filter=*M2N)
+    set_property(TEST "stk_balance_unit_tester_m2n_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+    
+  ENDFOREACH()
+  
 endif()
 

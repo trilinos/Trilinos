@@ -1310,77 +1310,75 @@ TEST(ElementGraph, compare_performance_create_faces)
 
 TEST(ElementGraph, make_items_inactive)
 {
-  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  const int nProc = stk::parallel_machine_size(comm);
 
-  unsigned nProc = stk::parallel_machine_size(comm);
+  if(nProc > 2) { GTEST_SKIP(); }
 
-  if(nProc <= 2)
+  unsigned spatialDim = 3;
+
+  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
+  stk::mesh::PartVector boundary_mesh_parts { &faces_part };
+  stk::io::put_io_part_attribute(faces_part);
+  ElemGraphTestUtils::ElementDeathBulkDataTester bulkData(meta, comm, stk::mesh::BulkData::AUTO_AURA);
+
+  stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
+
+  ASSERT_TRUE(active.primary_entity_rank() == stk::topology::INVALID_RANK);
+
+  stk::io::fill_mesh("generated:1x1x4", bulkData);
+
+  stk::unit_test_util::put_mesh_into_part(bulkData, active);
+
+  ElemElemGraphTester graph(bulkData);
+
+  size_t num_gold_edges =  6/bulkData.parallel_size();
+  ASSERT_EQ(num_gold_edges, graph.num_edges());
+  ASSERT_EQ(static_cast<unsigned>(nProc-1), graph.num_parallel_edges());
+
+  stk::mesh::EntityVector deactivated_elems;
+
+  stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
+  if (bulkData.is_valid(elem1) && bulkData.bucket(elem1).owned() )
   {
-    unsigned spatialDim = 3;
+    deactivated_elems.push_back(elem1);
+  }
+  stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
+  if (bulkData.is_valid(elem3) && bulkData.bucket(elem3).owned())
+  {
+    deactivated_elems.push_back(elem3);
+  }
 
-    stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
-    stk::mesh::PartVector boundary_mesh_parts { &faces_part };
-    stk::io::put_io_part_attribute(faces_part);
-    ElemGraphTestUtils::ElementDeathBulkDataTester bulkData(meta, comm, stk::mesh::BulkData::AUTO_AURA);
+  ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData, active);
+  bulkData.modification_begin();
+  bulkData.my_de_induce_unranked_part_from_nodes(deactivated_elems, active);
 
-    stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
+  for(size_t i=0; i<deactivated_elems.size(); ++i)
+  {
+    EXPECT_FALSE(bulkData.bucket(deactivated_elems[i]).member(active));
+  }
 
-    ASSERT_TRUE(active.primary_entity_rank() == stk::topology::INVALID_RANK);
-
-    stk::io::fill_mesh("generated:1x1x4", bulkData);
-
-    stk::unit_test_util::put_mesh_into_part(bulkData, active);
-
-    ElemElemGraphTester graph(bulkData);
-
-    size_t num_gold_edges =  6/bulkData.parallel_size();
-    ASSERT_EQ(num_gold_edges, graph.num_edges());
-    ASSERT_EQ((nProc-1), graph.num_parallel_edges());
-
-    stk::mesh::EntityVector deactivated_elems;
-
-    stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
-    if (bulkData.is_valid(elem1) && bulkData.bucket(elem1).owned() )
+  const stk::mesh::BucketVector& all_node_buckets = bulkData.buckets(stk::topology::NODE_RANK);
+  for(size_t i=0; i<all_node_buckets.size(); ++i)
+  {
+    const stk::mesh::Bucket& bucket = *all_node_buckets[i];
+    for(size_t node_index=0; node_index<bucket.size(); ++node_index)
     {
-      deactivated_elems.push_back(elem1);
-    }
-    stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
-    if (bulkData.is_valid(elem3) && bulkData.bucket(elem3).owned())
-    {
-      deactivated_elems.push_back(elem3);
-    }
-
-    ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData, active);
-    bulkData.modification_begin();
-    bulkData.my_de_induce_unranked_part_from_nodes(deactivated_elems, active);
-
-    for(size_t i=0; i<deactivated_elems.size(); ++i)
-    {
-      EXPECT_FALSE(bulkData.bucket(deactivated_elems[i]).member(active));
-    }
-
-    const stk::mesh::BucketVector& all_node_buckets = bulkData.buckets(stk::topology::NODE_RANK);
-    for(size_t i=0; i<all_node_buckets.size(); ++i)
-    {
-      const stk::mesh::Bucket& bucket = *all_node_buckets[i];
-      for(size_t node_index=0; node_index<bucket.size(); ++node_index)
+      stk::mesh::EntityId id = bulkData.identifier(bucket[node_index]);
+      if (id >=1 && id <= 4)
       {
-        stk::mesh::EntityId id = bulkData.identifier(bucket[node_index]);
-        if (id >=1 && id <= 4)
-        {
-          EXPECT_FALSE(bucket.member(active));
-        }
-        else
-        {
-          EXPECT_TRUE(bucket.member(active)) << "for node id " << id << std::endl;
-        }
+        EXPECT_FALSE(bucket.member(active));
+      }
+      else
+      {
+        EXPECT_TRUE(bucket.member(active)) << "for node id " << id << std::endl;
       }
     }
-
-    bulkData.modification_end();
-    ASSERT_EQ((nProc-1), graph.num_parallel_edges());
   }
+
+  bulkData.modification_end();
+  ASSERT_EQ(static_cast<unsigned>(nProc-1), graph.num_parallel_edges());
 }
 
 TEST(ElementGraph, test_element_death)

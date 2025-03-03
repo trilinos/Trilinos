@@ -4,9 +4,7 @@ IF (${PROJECT_NAME}_ENABLE_STKIO AND ${PROJECT_NAME}_ENABLE_STKMesh)
   STK_ADD_TEST_DIRECTORIES(stk_io)
   STK_ADD_TEST_DIRECTORIES(stk_mesh)
   STK_ADD_TEST_DIRECTORIES(stk_search)
-#temporarily disable the doc-tests for stk-transfer due to a puzzling
-#issue with trilinos PR testing
-#  STK_ADD_TEST_DIRECTORIES(stk_transfer)
+  STK_ADD_TEST_DIRECTORIES(stk_transfer)
 ENDIF()
 
 IF (${PROJECT_NAME}_ENABLE_STKBalance)

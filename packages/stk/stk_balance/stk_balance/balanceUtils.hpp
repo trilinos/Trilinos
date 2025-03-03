@@ -238,7 +238,7 @@ private:
 class BasicGeometricSettings : public BalanceSettings
 {
 public:
-  virtual std::string getDecompMethod() const { return "rcb"; }
+  virtual std::string getDecompMethod() const override { return "rcb"; }
 };
 
 class GraphCreationSettings : public BalanceSettings
@@ -328,8 +328,8 @@ public:
     m_ToleranceForParticleSearch = 1.0;
   }
 
-  virtual bool getEdgesForParticlesUsingSearch() const { return true; }
-  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return true; }
+  virtual bool getEdgesForParticlesUsingSearch() const override { return true; }
+  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const override { return true; }
 };
 
 class StkBalanceSettings : public GraphCreationSettings
@@ -354,13 +354,13 @@ public:
   {
     m_includeSearchResultInGraph = false;
   }
-  virtual bool getEdgesForParticlesUsingSearch() const { return true; }
+  virtual bool getEdgesForParticlesUsingSearch() const override { return true; }
 };
 
 class GraphCreationSettingsForZoltan2 : public GraphCreationSettingsWithCustomTolerances
 {
 public:
-  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return false; }
+  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const override { return false; }
 };
 
 class FieldVertexWeightSettings : public GraphCreationSettings
@@ -379,11 +379,11 @@ public:
   }
   virtual ~FieldVertexWeightSettings() = default;
 
-  virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-  virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-  virtual double getImbalanceTolerance() const { return 1.05; }
-  virtual void setDecompMethod(const std::string& input_method) { m_method = input_method;}
-  virtual std::string getDecompMethod() const { return m_method; }
+  virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override { return 1.0; }
+  virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+  virtual double getImbalanceTolerance() const override { return 1.05; }
+  virtual void setDecompMethod(const std::string& input_method) override { m_method = input_method;}
+  virtual std::string getDecompMethod() const override { return m_method; }
 
 protected:
   FieldVertexWeightSettings() = delete;
@@ -481,8 +481,8 @@ public:
 
   ~M2NBalanceSettings() = default;
 
-  void set_num_output_processors(unsigned numOutputProcs) { m_numOutputProcs = numOutputProcs; }
-  unsigned get_num_output_processors() const { return m_numOutputProcs; }
+  void set_num_output_processors(unsigned numOutputProcs) override { m_numOutputProcs = numOutputProcs; }
+  unsigned get_num_output_processors() const override { return m_numOutputProcs; }
 
   void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
   bool get_use_nested_decomp() const { return m_useNestedDecomp; }

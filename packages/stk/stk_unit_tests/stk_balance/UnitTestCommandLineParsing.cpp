@@ -46,11 +46,21 @@ protected:
     m_settings.setIncludeSearchResultsInGraph(false);
   }
 
+  std::string get_exec_name() const
+  {
+    return m_execName;
+  }
+
+  const stk::balance::BalanceSettings& parse_args(std::vector<const char*>& args)
+  {
+    m_parser.parse_command_line_options(args.size(), args.data(), m_settings);
+    return m_settings;
+  }
+
   const stk::balance::BalanceSettings& get_stk_balance_settings(const std::vector<std::string>& options)
   {
     std::vector<const char*> args = assemble_args(options);
-    m_parser.parse_command_line_options(args.size(), args.data(), m_settings);
-    return m_settings;
+    return parse_args(args);
   }
 
   std::vector<const char*> assemble_args(const std::vector<std::string>& options) const
@@ -171,6 +181,38 @@ TEST_F(BalanceCommandLine, createBalanceSettings_outputDirectory)
   EXPECT_DOUBLE_EQ(balanceSettings.getVertexWeightMultiplierForVertexInSearch(), DefaultSettings::faceSearchVertexMultiplier);
   check_relative_tolerance_for_face_search(balanceSettings,                      DefaultSettings::faceSearchRelTol);
   check_vertex_weight_block_multiplier(balanceSettings, {});
+}
+
+TEST_F(BalanceCommandLine, createBalanceSettings_flagInputFile_positionalOutputDir)
+{
+  std::string outputDir("outputDir");
+
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({outputDir.c_str()});
+
+  EXPECT_EQ(balanceSettings.get_input_filename(), infile);
+  EXPECT_EQ(balanceSettings.get_output_filename(), outputDir+"/"+infile);
+}
+
+TEST_F(BalanceCommandLine, createBalanceSettings_flagOutputDir_positionalInputFile)
+{
+  std::string outputDir("outputDir");
+  std::vector<const char*> args = {get_exec_name().c_str(), "-o", outputDir.c_str(), infile.c_str()};
+
+  const stk::balance::BalanceSettings& balanceSettings = parse_args(args);
+
+  EXPECT_EQ(balanceSettings.get_input_filename(), infile);
+  EXPECT_EQ(balanceSettings.get_output_filename(), outputDir+"/"+infile);
+}
+
+TEST_F(BalanceCommandLine, createBalanceSettings_positionalInputFile_flagOutputDir)
+{
+  std::string outputDir("outputDir");
+  std::vector<const char*> args = {get_exec_name().c_str(), infile.c_str(), "-o", outputDir.c_str()};
+
+  const stk::balance::BalanceSettings& balanceSettings = parse_args(args);
+
+  EXPECT_EQ(balanceSettings.get_input_filename(), infile);
+  EXPECT_EQ(balanceSettings.get_output_filename(), outputDir+"/"+infile);
 }
 
 TEST_F(BalanceCommandLine, createBalanceSettings_outputDirectory_fullOptions)

@@ -47,6 +47,7 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
+#include "stk_mesh/base/DestroyRelations.hpp"
 #include "stk_mesh/base/ForEachEntity.hpp"
 #include "stk_mesh/baseImpl/AuraGhosting.hpp"
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
@@ -689,10 +690,12 @@ Entity BulkData::declare_edge(EntityId id)
     STK_ThrowRequireMsg(mesh_meta_data().side_rank() != stk::topology::EDGE_RANK, "Program Error!");
     return declare_entity(stk::topology::EDGE_RANK, id);
 }
-Entity BulkData::declare_constraint(EntityId id)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2025
+STK_DEPRECATED Entity BulkData::declare_constraint(EntityId id)
 {
     return declare_entity(stk::topology::CONSTRAINT_RANK, id);
 }
+#endif
 
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id)
 {
@@ -734,8 +737,9 @@ Entity BulkData::declare_element(EntityId id, const PartVector& parts);
 template
 Entity BulkData::declare_element(EntityId id, const ConstPartVector& parts);
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2025
 template<typename PARTVECTOR>
-Entity BulkData::declare_constraint(EntityId id, const PARTVECTOR& parts)
+STK_DEPRECATED Entity BulkData::declare_constraint(EntityId id, const PARTVECTOR& parts)
 {
     return declare_entity(stk::topology::CONSTRAINT_RANK, id, parts);
 }
@@ -744,6 +748,7 @@ template
 Entity BulkData::declare_constraint(EntityId id, const PartVector& parts);
 template
 Entity BulkData::declare_constraint(EntityId id, const ConstPartVector& parts);
+#endif
 
 Entity BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part)
 {
@@ -859,7 +864,8 @@ Entity BulkData::declare_element_side_with_id(const stk::mesh::EntityId globalSi
         }
     }
     else {
-        stk::topology sideTop = bucket(elem).topology().side_topology(sideOrd);
+        stk::topology elemTop = bucket(elem).topology();
+        stk::topology sideTop = elemTop.side_topology(sideOrd);
         EntityKey sideKey(sideTop.rank(), globalSideId);
 
         std::pair<Entity,bool> result = internal_get_or_create_entity_with_notification(sideKey);
@@ -876,11 +882,16 @@ Entity BulkData::declare_element_side_with_id(const stk::mesh::EntityId globalSi
           internal_set_owner(side, parallel_rank());
         }
 
-        if (has_face_adjacent_element_graph()) {
+        bool isShellEdgeSide = elemTop.is_shell() &&
+                               elemTop.has_mixed_rank_sides() &&
+                               (elemTop.side_topology(0) != elemTop.side_topology(sideOrd));
+        if (has_face_adjacent_element_graph() && !isShellEdgeSide) {
           use_graph_to_connect_side(get_face_adjacent_element_graph(), side, elem, sideOrd);
         }
         else {
           impl::connect_element_to_entity(*this, elem, side, sideOrd, parts, sideTop);
+
+          impl::connect_side_to_other_elements(*this, side, elem, sideOrd);
         }
 
         if(this->num_edges(elem) != 0) {
@@ -1173,7 +1184,6 @@ bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
   const bool ghost = wasGhost || in_receive_ghost(entity);
   const stk::mesh::EntityRank erank = entity_rank(entity);
 
-  const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(mesh_meta_data().entity_rank_count());
   if(impl::has_upward_connectivity(*this, entity)) {
     m_check_invalid_rels = true;
     return false;
@@ -1194,22 +1204,10 @@ bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
   // It is important that relations be destroyed from highest to lowest rank so
   // that the back relations are destroyed first.
 
-  for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
-  {
+  const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(mesh_meta_data().entity_rank_count());
+  for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; ) {
     --irank;
-
-    int num_conn     = num_connectivity(entity, irank);
-    Entity const* rel_entities = begin(entity, irank);
-    stk::mesh::ConnectivityOrdinal const* rel_ordinals = begin_ordinals(entity, irank);
-
-    for (int j = num_conn; j > 0; )
-    {
-      --j;
-      if (is_valid(rel_entities[j])) {
-        internal_destroy_relation(entity, rel_entities[j], rel_ordinals[j]);
-        m_check_invalid_rels = false;
-      }
-    }
+    destroy_relations(*this, entity, irank);
   }
 
   // Need to invalidate Entity handles in comm-list
@@ -2140,31 +2138,39 @@ BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selec
     return rv;
   }
   else {
-    BucketVector const& all_buckets_for_rank = buckets(rank); // lots of potential side effects! Need to happen before map insertion
+    const BucketVector& allBuckets = buckets(rank); // lots of potential side effects! Need to happen before map insertion
     std::pair<SelectorBucketMap::iterator, bool> insert_rv =
       selectorBucketMap.emplace(selector, BucketVector() );
     STK_ThrowAssertMsg(insert_rv.second, "Should not have already been in map");
+
     BucketVector& map_buckets = insert_rv.first->second;
-    for (size_t i = 0, e = all_buckets_for_rank.size(); i < e; ++i) {
-      if (selector(*all_buckets_for_rank[i])) {
-        map_buckets.push_back(all_buckets_for_rank[i]);
+    for(Bucket* bucketPtr : allBuckets) {
+      if (selector(*bucketPtr)) {
+        map_buckets.push_back(bucketPtr);
       }
     }
-
+    if (this->should_sort_buckets_by_first_entity_identifier()) {
+      std::sort(map_buckets.begin(), map_buckets.end(), BucketIdComparator());
+    }
     return map_buckets;
   }
 }
 
 void BulkData::get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const {
-  confirm_host_mesh_is_synchronized_from_device();
-  output_entities.clear();
-  const stk::mesh::BucketVector &bucket_ptrs = get_buckets(rank, selector);
-  for(size_t ib=0, ib_end=bucket_ptrs.size(); ib<ib_end; ++ib) {
-     const stk::mesh::Bucket *bucket = bucket_ptrs[ib];
-     for(size_t iobj=0, iobj_end=bucket->size(); iobj<iobj_end; ++iobj) {
-       output_entities.push_back((*bucket)[iobj]);
-     }
-  }
+    confirm_host_mesh_is_synchronized_from_device();
+    output_entities.clear();
+    const stk::mesh::BucketVector &bucket_ptrs = get_buckets(rank, selector);
+
+    // Reserve enough space in the output_entities vector to avoid multiple reallocations
+    size_t total_size = 0;
+    for (const auto* bucket : bucket_ptrs) {
+        total_size += bucket->size();
+    }
+    output_entities.reserve(total_size);
+
+    for (const auto* bucket : bucket_ptrs) {
+        output_entities.insert(output_entities.end(), bucket->begin(), bucket->end());
+    }
 }
 
 //----------------------------------------------------------------------
@@ -5182,7 +5188,9 @@ void BulkData::internal_insert_all_parts_induced_from_higher_rank_entities_to_ve
         {
             if (entity != upward_rel_entities[k])  // Already did this entity
             {
+              STK_ThrowAssertMsg(is_valid(upward_rel_entities[k]), "invalid entity "<<entity_key(upward_rel_entities[k])<<", connected to "<<entity_key(e_to));
               const Bucket* curBucketPtr = bucket_ptr(upward_rel_entities[k]);
+              STK_ThrowAssertMsg(curBucketPtr != nullptr, "found null bucket for entity "<<entity_key(upward_rel_entities[k]));
               if (prevBucketPtr != curBucketPtr) {
                 prevBucketPtr = curBucketPtr;
                 impl::get_part_ordinals_to_induce_on_lower_ranks(*this, *curBucketPtr, e_to_rank, to_add );

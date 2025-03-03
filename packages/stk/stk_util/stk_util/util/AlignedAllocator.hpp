@@ -84,7 +84,9 @@ struct HostAlignedAllocator
   HostAlignedAllocator() noexcept { }
 
   HostAlignedAllocator(const HostAlignedAllocator& other) noexcept
-    : std::allocator<T>(other) { }
+      : std::allocator<T>(other), BaseAlignedAllocator<T, Alignment>(other)
+  {
+  }
 
   template <class U>
   HostAlignedAllocator(const HostAlignedAllocator<U,Alignment>&) noexcept { }

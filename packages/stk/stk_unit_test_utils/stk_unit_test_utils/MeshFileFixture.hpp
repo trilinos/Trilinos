@@ -67,31 +67,6 @@ protected:
     stk::io::StkMeshIoBroker stkIo;
 };
 
-namespace simple_fields {
-
-class STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this class instead")
-MeshFileFixture : public MeshFixture
-{
-protected:
-    MeshFileFixture()
-    : stkIo(get_comm())
-    {
-        allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
-    }
-    void read_mesh(const std::string &fileToRead)
-    {
-        stk::io::fill_mesh_preexisting(stkIo, fileToRead, get_bulk());
-    }
-    void NGPTearDown()
-    {
-        unlink(filename.c_str());
-    }
-    const std::string filename = "filename.exo";
-    stk::io::StkMeshIoBroker stkIo;
-};
-
-} // namespace simple_fields
-
 }}
 
 #endif

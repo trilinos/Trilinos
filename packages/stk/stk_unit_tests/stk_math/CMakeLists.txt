@@ -32,7 +32,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -46,18 +46,27 @@ if(HAVE_STK_Trilinos)
     NOEXEPREFIX
     )
 else()
-  add_executable(stk_math_unit_tests ${SOURCES})
-  target_link_libraries(stk_math_unit_tests stk_math)
-  target_link_libraries(stk_math_unit_tests stk_util_util)
-  target_link_libraries(stk_math_unit_tests Kokkos::kokkos)
-  target_link_libraries(stk_math_unit_tests stk_unit_test_utils)
-  target_link_libraries(stk_math_unit_tests stk_unit_main)
+  add_executable(stk_math_utest ${SOURCES})
+  target_link_libraries(stk_math_utest stk_math)
+  target_link_libraries(stk_math_utest stk_util_util)
+  target_link_libraries(stk_math_utest Kokkos::kokkos)
+  target_link_libraries(stk_math_utest stk_unit_test_utils)
+  target_link_libraries(stk_math_utest stk_unit_main)
 
-  target_include_directories(stk_math_unit_tests PRIVATE
+  target_include_directories(stk_math_utest PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
   )
 
-  add_test(NAME "stk_math_unit_tests" COMMAND stk_math_unit_tests)
+  INSTALL(TARGETS stk_math_utest DESTINATION ${STK_INSTALL_BINDIR})
+
+  FOREACH(NUMPROCS 1)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_math_utest_np${NUMPROCS}" 
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS} 
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_math_utest)
+    set_property(TEST "stk_math_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
 endif()
 

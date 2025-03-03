@@ -422,7 +422,7 @@ void add_constraint_on_nodes_1_thru_4(stk::mesh::BulkData& bulk,
                                       stk::mesh::EntityId constraintId)
 {
   bulk.modification_begin();
-  stk::mesh::Entity constraintEntity = bulk.declare_constraint(constraintId);
+  stk::mesh::Entity constraintEntity = bulk.declare_entity(stk::topology::CONSTRAINT_RANK, constraintId, bulk.mesh_meta_data().universal_part());
   for(stk::mesh::EntityId nodeId = 1; nodeId <= 4; ++nodeId) {
     stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
     stk::mesh::ConnectivityOrdinal ord = static_cast<stk::mesh::ConnectivityOrdinal>(nodeId-1);

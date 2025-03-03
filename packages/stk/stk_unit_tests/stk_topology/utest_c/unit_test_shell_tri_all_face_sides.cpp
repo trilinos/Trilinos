@@ -78,7 +78,6 @@ TEST(stk_topology, shell_tri_3_all_face_sides)
   EXPECT_TRUE(t.is_valid());
   EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
-  EXPECT_TRUE(t.is_shell_with_face_sides());
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
   EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -136,7 +135,6 @@ void check_shell_tri_3_all_face_sides_on_device()
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_TRUE(t.is_shell());
-    NGP_EXPECT_TRUE(t.is_shell_with_face_sides());
 
     NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
     NGP_EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -223,7 +221,6 @@ TEST(stk_topology, shell_tri_4_all_face_sides)
   EXPECT_TRUE(t.is_valid());
   EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
-  EXPECT_TRUE(t.is_shell_with_face_sides());
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
   EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -281,7 +278,6 @@ void check_shell_tri_4_all_face_sides_on_device()
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_TRUE(t.is_shell());
-    NGP_EXPECT_TRUE(t.is_shell_with_face_sides());
 
     NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
     NGP_EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -368,7 +364,6 @@ TEST(stk_topology, shell_tri_6_all_face_sides)
   EXPECT_TRUE(t.is_valid());
   EXPECT_FALSE(t.has_homogeneous_faces());
   EXPECT_TRUE(t.is_shell());
-  EXPECT_TRUE(t.is_shell_with_face_sides());
 
   EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
   EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);
@@ -426,7 +421,6 @@ void check_shell_tri_6_all_face_sides_on_device()
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
     NGP_EXPECT_TRUE(t.is_shell());
-    NGP_EXPECT_TRUE(t.is_shell_with_face_sides());
 
     NGP_EXPECT_EQ(t.rank(),stk::topology::ELEMENT_RANK);
     NGP_EXPECT_EQ(t.side_rank(),stk::topology::FACE_RANK);

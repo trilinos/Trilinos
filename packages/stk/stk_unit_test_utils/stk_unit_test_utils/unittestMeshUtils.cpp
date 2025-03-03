@@ -24,23 +24,13 @@ namespace unit_test_util
 
 void put_mesh_into_part(stk::mesh::BulkData& bulkData, stk::mesh::Part& part)
 {
-    stk::mesh::EntityVector entitiesToMakeActive;
-    std::vector<stk::mesh::PartVector> add_parts;
-    std::vector<stk::mesh::PartVector> rm_parts;
-    for(stk::topology::rank_t rank=stk::topology::BEGIN_RANK; rank < bulkData.mesh_meta_data().entity_rank_count(); rank++)
-    {
-        const stk::mesh::BucketVector &buckets = bulkData.get_buckets(rank, bulkData.mesh_meta_data().locally_owned_part());
-        for(const stk::mesh::Bucket *bucket : buckets)
-        {
-            for(stk::mesh::Entity entity : *bucket)
-            {
-                entitiesToMakeActive.push_back(entity);
-                add_parts.push_back(stk::mesh::PartVector(1, &part));
-                rm_parts.push_back(stk::mesh::PartVector());
-            }
-        }
-    }
-    bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
+  stk::mesh::Selector all = bulkData.mesh_meta_data().universal_part();
+  stk::mesh::PartVector addParts = {&part};
+  stk::mesh::PartVector emptyRemoveParts;
+  for(stk::topology::rank_t rank=stk::topology::BEGIN_RANK; rank < bulkData.mesh_meta_data().entity_rank_count(); rank++)
+  {
+    bulkData.batch_change_entity_parts(all, rank, addParts, emptyRemoveParts);
+  }
 }
 
 
@@ -56,15 +46,9 @@ void move_killed_elements_out_of_parts(stk::mesh::BulkData& bulkData,
                                   const stk::mesh::EntityVector& killedElements,
                                   const stk::mesh::PartVector& removeParts)
 {
-    std::vector<stk::mesh::PartVector> add_parts(killedElements.size());
-    std::vector<stk::mesh::PartVector> rm_parts(killedElements.size());
+    stk::mesh::PartVector emptyAddParts;
 
-    for (size_t j=0;j<killedElements.size();++j)
-    {
-        rm_parts[j] = removeParts;
-    }
-
-    bulkData.batch_change_entity_parts(killedElements, add_parts, rm_parts);
+    bulkData.batch_change_entity_parts(killedElements, emptyAddParts, removeParts);
 }
 
 void put_elements_into_part(stk::mesh::BulkData& bulk, const std::vector<ElementAndPart> & entries)
@@ -88,32 +72,6 @@ void put_elements_into_part(stk::mesh::BulkData& bulk, const std::vector<Element
   }
   bulk.modification_end();
 }
-
-namespace simple_fields {
-
-void put_mesh_into_part(stk::mesh::BulkData& bulkData, stk::mesh::Part& part)
-{
-  stk::unit_test_util::put_mesh_into_part(bulkData, part);
-}
-
-std::string get_name_of_generated_mesh(int xdim, int ydim, int zdim, const std::string &options)
-{
-  return stk::unit_test_util::get_name_of_generated_mesh(xdim, ydim, zdim, options);
-}
-
-void move_killed_elements_out_of_parts(stk::mesh::BulkData& bulkData,
-                                       const stk::mesh::EntityVector& killedElements,
-                                       const stk::mesh::PartVector& removeParts)
-{
-  stk::unit_test_util::move_killed_elements_out_of_parts(bulkData, killedElements, removeParts);
-}
-
-void put_elements_into_part(stk::mesh::BulkData& bulk, const std::vector<ElementAndPart> & entries)
-{
-  stk::unit_test_util::put_elements_into_part(bulk, entries);
-}
-
-} // namespace simple_fields
 
 } // namespace unit_test_util
 } // namespace stk

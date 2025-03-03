@@ -22,7 +22,7 @@ public:
     : m_method(decompMethod) { }
   virtual ~GeometricBalanceSettingsTester() = default;
 
-  virtual std::string getDecompMethod() const { return m_method; }
+  virtual std::string getDecompMethod() const override { return m_method; }
 
 private:
   const std::string& m_method;

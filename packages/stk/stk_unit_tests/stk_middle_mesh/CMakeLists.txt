@@ -1,4 +1,4 @@
-FILE(GLOB SOURCES *.cpp util/*.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp util/*.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_EXECUTABLE(stk_middle_mesh_utest
@@ -21,7 +21,14 @@ else()
   target_link_libraries(stk_middle_mesh_utest stk_util_parallel)
   target_link_libraries(stk_middle_mesh_utest stk_unit_main)
 
-  add_test(NAME "stk_middle_mesh_utest" COMMAND stk_middle_mesh_utest)
+  FOREACH(NUMPROCS 1 2 3 4 6 8)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_middle_mesh_utest_np${NUMPROCS}" 
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS}  
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_middle_mesh_utest)
+    set_property(TEST "stk_middle_mesh_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
 endif()
 
 if(TARGET stk_middle_mesh_utest)
@@ -29,4 +36,6 @@ if(TARGET stk_middle_mesh_utest)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
   )
+
+  INSTALL(TARGETS stk_middle_mesh_utest DESTINATION ${STK_INSTALL_BINDIR})
 endif()

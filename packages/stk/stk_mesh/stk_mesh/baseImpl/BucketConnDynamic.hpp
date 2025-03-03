@@ -303,7 +303,7 @@ public:
   {
     m_bucketCapacity = std::max(bktOrdinal+1, m_bucketCapacity);
     if (bktOrdinal >= m_offsets.size()) {
-      const unsigned candidate = m_offsets.empty() ? bktOrdinal+1 : 2*m_offsets.size();
+      const unsigned candidate = std::max(static_cast<unsigned>(bktOrdinal+1u), static_cast<unsigned>(2u*m_offsets.size()));
       const unsigned newSize = std::min(m_bucketCapacity, candidate);
       m_offsets.resize(newSize, IndexRange(0u, 0u));
 

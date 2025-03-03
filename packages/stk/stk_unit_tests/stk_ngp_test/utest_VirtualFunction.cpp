@@ -55,7 +55,7 @@ class NgpDerived : public NgpBase
   KOKKOS_FUNCTION
   ~NgpDerived() {}
 
-  virtual void host_function() {}
+  virtual void host_function() override {}
 };
 
 struct SimpleStruct {
@@ -84,9 +84,9 @@ struct BaseStruct {
 
 struct ChildStruct : public BaseStruct {
   int i;
-  virtual void set_i(const int _i) { i = _i; }
+  virtual void set_i(const int _i) override { i = _i; }
   KOKKOS_FUNCTION
-  virtual void print() {
+  virtual void print() override {
 #if KOKKOS_VERSION < 40200
     printf("Printing from child located at %p with i %i\n", static_cast<void*>(this), i); }
 #else

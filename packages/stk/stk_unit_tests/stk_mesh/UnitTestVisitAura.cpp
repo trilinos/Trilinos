@@ -81,7 +81,7 @@ public:
                                              const stk::mesh::EntityVector& connectedEntities)
   {
     get_bulk().modification_begin();
-    stk::mesh::Entity constraintEntity = get_bulk().declare_constraint(constraintId, stk::mesh::ConstPartVector{});
+    stk::mesh::Entity constraintEntity = get_bulk().declare_entity(stk::topology::CONSTRAINT_RANK, constraintId, stk::mesh::ConstPartVector{});
     for(unsigned i=0; i<connectedEntities.size(); ++i) {
       get_bulk().declare_relation(constraintEntity, connectedEntities[i], i);
     }

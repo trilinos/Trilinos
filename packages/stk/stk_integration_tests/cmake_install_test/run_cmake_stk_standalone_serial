@@ -2,7 +2,7 @@
 
 build_dir=${BUILD_DIR:-${PWD}}
 build_type=${CMAKE_BUILD_TYPE:-release}
-stk_src_dir=${STK_SRC_DIR:-/fgs/$USER/code_votd/stk}
+stk_src_dir=${STK_SRC_DIR:-${PWD}/../stk}
 stk_install_dir=${STK_INSTALL_DIR:-${PWD}/../stk_install_dir}
 cmake_cxx_flags=${CMAKE_CXX_FLAGS}
 clear_cache=${CLEAR_CACHE:-ON}
@@ -10,8 +10,9 @@ clear_cache=${CLEAR_CACHE:-ON}
 printf "BUILD_DIR=${build_dir}\n";
 printf "CMAKE_BUILD_TYPE=${build_type}\n";
 printf "CMAKE_CXX_FLAGS=${cmake_cxx_flags}\n";
+printf "STK_SRC_DIR=${stk_src_dir}\n";
 printf "STK_INSTALL_DIR=${stk_install_dir}\n";
-printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_pure_cmake_stk'\n\n";
+printf "\nTo change these vars, set as env vars or pass to this script like this: 'VAR=value run_cmake'\n\n";
 
 # before running this script, load these modules:
 # module load aue/cmake/3.27.7
@@ -34,7 +35,7 @@ cmake \
 -DCMAKE_CXX_COMPILER=${OMPI_CXX} \
 -DCMAKE_CXX_FLAGS:STRING="${cmake_cxx_flags}" \
 -DSTK_ENABLE_ALL=ON \
--DSTK_ENABLE_ARBORX=ON \
+-DSTK_ENABLE_ARBORX=OFF \
 -DSTK_ENABLE_MPI:BOOL=OFF \
 -DSTK_ENABLE_STKMiddle_mesh=OFF \
 -DSTK_ENABLE_STKMiddle_mesh_util=OFF \

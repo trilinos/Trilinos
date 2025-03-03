@@ -38,7 +38,6 @@
 
 #include "stk_util/stk_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_DualView.hpp"
 #include "stk_mesh/base/Ngp.hpp"
 #include "stk_mesh/base/NgpFieldBase.hpp"
 #include "stk_mesh/base/BulkData.hpp"

@@ -340,7 +340,7 @@ TEST_F(StkIoSideset, field_TriAndQuadSides_restart)
   test_write_then_read(isRestart);
 }
 
-TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
+TEST(StkIo, read_write_and_compare_exo_files_with_sidesets_externalFile)
 {
     std::vector<std::string> filesToTest = {
                                             "AA.e", "ADeDB.e", "ADeLB.e", "ADReA.e", "AefA.e",  "AL.e",
@@ -359,7 +359,7 @@ TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
     }
 }
 
-TEST(StkIo, read_write_and_compare_exo_files_with_sidesets_because_PMR_for_coincident_not_implemented_yet)
+TEST(StkIo, read_write_and_compare_exo_files_with_sidesets_because_PMR_for_coincident_not_implemented_yet_externalFile)
 {
     std::vector<std::string> filesToTest = { "ALefRA.e" };
 
@@ -496,7 +496,7 @@ void test_create_and_write_new_sideset(stk::ParallelMachine pm,
   test_create_and_write_new_sideset(bulk, parts, newSideSet, outputFileName);
 }
 
-TEST(StkIo, create_and_write_new_sideset)
+TEST(StkIo, create_and_write_new_sideset_externalFile)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -559,7 +559,7 @@ void test_read_and_modify_sideset(stk::ParallelMachine pm,
     test_output_sideset(bulk, outputFileName, stk::unit_test_util::sideset::READ_SERIAL_AND_DECOMPOSE);
 }
 
-TEST(StkIo, modify_sideset)
+TEST(StkIo, modify_sideset_externalFile)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -572,7 +572,6 @@ TEST(StkIo, modify_sideset)
       test_read_and_modify_sideset(pm, "ADe.e", "new_Ae.e",  {{1, 5}, {2, 1}}, {{1, 5}, {2, 1}}, {      });
   }
 }
-
 
 TEST(StkIo, skinned_sideset_from_badly_named_element_block)
 {
@@ -599,7 +598,7 @@ TEST(StkIo, skinned_sideset_from_badly_named_element_block)
   unlink(fileName.c_str());
 }
 
-TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA)
+TEST(StkIo, parallel_transform_AA_to_ADA_to_ARA_externalFile)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
