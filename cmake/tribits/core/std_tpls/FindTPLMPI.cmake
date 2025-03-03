@@ -20,6 +20,12 @@ if(WIN32 AND TPL_ENABLE_MPI)
   global_set(TPL_MPI_LIBRARIES ${MPI_LIBRARIES})
 endif()
 
+# Don't allow calling find_package(MPI) by default.  Force the user to set
+# MPI_ALLOW_PACKAGE_PREFIND=TRUE or even MPI_FORCE_PRE_FIND_PACKAGE if then
+# want to force the finding of MPI using find_package(MPI).
+set(MPI_ALLOW_PACKAGE_PREFIND  FALSE  CACHE  BOOL
+  "Allow calling find_package(MPI) by default (default is FALSE)")
+
 tribits_tpl_allow_pre_find_package(MPI MPI_ALLOW_PREFIND)
 if(MPI_ALLOW_PREFIND)
 
