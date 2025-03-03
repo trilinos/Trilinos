@@ -36,10 +36,10 @@
 SET(HEADERS "")
 SET(SOURCES "")
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES *.cpp)
-FILE(GLOB PRED_HEADERS predicates/*.hpp)
-FILE(GLOB PRED_SOURCES predicates/*.cpp)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+FILE(GLOB PRED_HEADERS CONFIGURE_DEPENDS predicates/*.hpp)
+FILE(GLOB PRED_SOURCES CONFIGURE_DEPENDS predicates/*.cpp)
 
 message("STKMiddle_mesh requires CDT. (use -DSTK_ENABLE_STKMiddle_mesh=OFF if you don't need it and you don't have CDT.)")
 find_package(CDT REQUIRED)
@@ -61,6 +61,13 @@ else()
   find_package(CBLAS REQUIRED)
   find_package(Lapack REQUIRED)
   target_link_libraries(stk_middle_mesh PUBLIC lapack)
+
+  FILE(GLOB TEST_UTIL_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../stk_unit_tests/stk_middle_mesh/util/*.cpp)
+  add_library(stk_middle_mesh_test_util ${TEST_UTIL_SOURCES})
+  target_link_libraries(stk_middle_mesh_test_util stk_middle_mesh)
+  target_include_directories(stk_middle_mesh_test_util PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../stk_unit_tests/stk_middle_mesh)
+  target_include_directories(stk_middle_mesh_test_util PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 endif()
 
 target_include_directories(stk_middle_mesh PUBLIC

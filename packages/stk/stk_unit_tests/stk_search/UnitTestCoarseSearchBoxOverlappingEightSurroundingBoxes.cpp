@@ -91,7 +91,7 @@ void device_runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod sea
                                                          const unsigned numExpectedResults)
 {
 
-  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm comm = stk::parallel_machine_world();
   int numProc = stk::parallel_machine_size(comm);
   int procId = stk::parallel_machine_rank(comm);
 
@@ -319,6 +319,7 @@ TEST(CoarseSearchCorrectness, SphereOverlappingEightSurroundingSpheres_ARBORX)
   const double radius = 0.708;
   const unsigned numExpectedResults = 8;
   runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -330,6 +331,7 @@ TEST(CoarseSearchCorrectness, SphereOverlappingNoSurroundingPoints_ARBORX)
   const double radius = 0.99;
   const unsigned numExpectedResults = 0;
   runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -341,6 +343,7 @@ TEST(CoarseSearchCorrectness, SphereOverlappingFourSurroundingPoints_ARBORX)
   const double radius = 1.41;
   const unsigned numExpectedResults = 4;
   runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -352,6 +355,7 @@ TEST(CoarseSearchCorrectness, SphereOverlappingEightSurroundingPoints_ARBORX)
   const double radius = 1.42;
   const unsigned numExpectedResults = 8;
   runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<Sphere,Point>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -363,6 +367,7 @@ TEST(CoarseSearchCorrectness, SphereOverlappingFourOfEightSurroundingSpheres_ARB
   const double radius = 0.706;
   const unsigned numExpectedResults = 4;
   runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<Sphere,Sphere>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -374,6 +379,7 @@ TEST(CoarseSearchCorrectness, BoxOverlappingNoSurroundingPoints_ARBORX)
   const double radius = 0.99;
   const unsigned numExpectedResults = 0;
   runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -385,6 +391,7 @@ TEST(CoarseSearchCorrectness, BoxOverlappingEightSurroundingPoints_ARBORX)
   const double radius = 1.01;
   const unsigned numExpectedResults = 8;
   runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<StkBox,Point>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -396,6 +403,7 @@ TEST(CoarseSearchCorrectness, PointOverlappingNoSurroundingBoxes_ARBORX)
   const double radius = 0.99;
   const unsigned numExpectedResults = 0;
   runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -407,6 +415,7 @@ TEST(CoarseSearchCorrectness, PointOverlappingEightSurroundingBoxes_ARBORX)
   const double radius = 1.01;
   const unsigned numExpectedResults = 8;
   runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<Point,StkBox>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -418,6 +427,7 @@ TEST(CoarseSearchCorrectness, BoxOverlappingNoSurroundingBoxes_ARBORX)
   const double radius = 0.49;
   const unsigned numExpectedResults = 0;
   runBoxOverlappingEightSurroundingBoxes<StkBox,StkBox>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<StkBox,StkBox>(stk::search::ARBORX, radius, numExpectedResults);
 }
 
@@ -429,6 +439,7 @@ TEST(CoarseSearchCorrectness, BoxOverlappingEightSurroundingBoxes_ARBORX)
   const double radius = 0.51;
   const unsigned numExpectedResults = 8;
   runBoxOverlappingEightSurroundingBoxes<StkBox,StkBox>(stk::search::ARBORX, radius, numExpectedResults);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runBoxOverlappingEightSurroundingBoxes<StkBox,StkBox>(stk::search::ARBORX, radius, numExpectedResults);
 }
 

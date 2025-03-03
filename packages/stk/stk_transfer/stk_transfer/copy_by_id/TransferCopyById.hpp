@@ -74,17 +74,14 @@ public :
   }
 
   virtual ~TransferCopyById() {}
-  virtual void coarse_search()
+  virtual void coarse_search() override
   {
     m_search.do_search(m_mesha,m_meshb,m_key_to_target_processor);
     initialize_commsparse_buffers();
   }
-  virtual void communication() {}
-  virtual void local_search() {}
-  virtual void apply()
-  {
-    do_transfer();
-  }
+  virtual void communication() override {}
+  virtual void local_search() override {}
+  virtual void apply() override { do_transfer(); }
 
   void setup_translators();
 

@@ -48,9 +48,11 @@ namespace mesh {
 /* \brief  Get the parts from the union part vector that the bucket is
  *         contained in.
  */
-void get_involved_parts( const PartVector & union_parts,
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 15 2025
+STK_DEPRECATED void get_involved_parts( const PartVector & union_parts,
                          const Bucket & candidate,
                          PartVector & involved_parts);
+#endif
 
 /** \} */
 

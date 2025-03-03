@@ -288,19 +288,19 @@ struct ReduceCheck : public ReduceInterface
     m_size = size;
   }
 
-  virtual void size(void *&inbuf) const {
+  virtual void size(void *&inbuf) const override {
     unsigned *t = align_cast<unsigned>(inbuf);
     t += sizeof(unsigned);
     inbuf = t;
   }
 
-  virtual void copyin(void *&inbuf) const {
+  virtual void copyin(void *&inbuf) const override {
     unsigned *t = align_cast<unsigned>(inbuf);
     *t++ = m_size;
     inbuf = t;
   }
 
-  virtual void copyout(void *&outbuf) const {
+  virtual void copyout(void *&outbuf) const override {
     unsigned *t = align_cast<unsigned>(outbuf);
 
     unsigned size = *t++;
@@ -310,7 +310,7 @@ struct ReduceCheck : public ReduceInterface
     outbuf = t;
   }
 
-  virtual void op(void *&inbuf, void *&outbuf) const {
+  virtual void op(void *&inbuf, void *&outbuf) const override {
     unsigned *tin = align_cast<unsigned>(inbuf);
     unsigned *tout = align_cast<unsigned>(outbuf);
 

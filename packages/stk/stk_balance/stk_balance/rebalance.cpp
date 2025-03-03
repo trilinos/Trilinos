@@ -34,6 +34,8 @@
 #include "rebalance.hpp"
 #include "stk_balance/internal/InputMesh.hpp"
 #include "stk_balance/internal/OutputMesh.hpp"
+#include "stk_balance/internal/privateDeclarations.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"
 #include <vector>
 
 namespace stk {
@@ -49,6 +51,8 @@ void rebalance(stk::io::StkMeshIoBroker & ioBroker, const stk::balance::BalanceS
     stk::balance::OutputMesh outputMesh(inputMesh, targetSubdomains);
     outputMesh.transfer_and_write();
   }
+
+  internal::logMessage(ioBroker.bulk_data().parallel(), "Finished writing output mesh");
 }
 
 }

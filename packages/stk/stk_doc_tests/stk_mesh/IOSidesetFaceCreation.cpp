@@ -53,7 +53,7 @@ namespace
 {
 
 //BEGIN2hex1sideset
-TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
+TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  -------  |S  -------             -------  |F  -------
@@ -116,7 +116,7 @@ TEST(StkMeshHowTo, StkIO2Hex1SidesetFaceCreation)
 //END2hex1sideset
 
 //BEGIN2hex2shell3sideset
-TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation)
+TEST(StkMeshHowTo, StkIO2Hex2Shell3SidesetFaceCreation_externalFile)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
     //  -------  |S |S| |S|  |S |S  -------

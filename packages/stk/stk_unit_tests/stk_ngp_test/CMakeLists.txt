@@ -32,7 +32,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_ngp_test_unit_tests
@@ -44,12 +44,21 @@ if(HAVE_STK_Trilinos)
     NOEXEPREFIX
     )
 else()
-  add_executable(stk_ngp_test_unit_tests ${SOURCES})
-  target_link_libraries(stk_ngp_test_unit_tests stk_unit_test_utils)
-  target_link_libraries(stk_ngp_test_unit_tests stk_util_parallel)
-  target_link_libraries(stk_ngp_test_unit_tests stk_util_ngp)
-  target_link_libraries(stk_ngp_test_unit_tests stk_unit_main)
+  add_executable(stk_ngp_test_utest ${SOURCES})
+  target_link_libraries(stk_ngp_test_utest stk_unit_test_utils)
+  target_link_libraries(stk_ngp_test_utest stk_util_parallel)
+  target_link_libraries(stk_ngp_test_utest stk_util_ngp)
+  target_link_libraries(stk_ngp_test_utest stk_unit_main)
 
-  add_test(NAME "stk_ngp_test_unit_tests" COMMAND stk_ngp_test_unit_tests)
+  INSTALL(TARGETS stk_ngp_test_utest DESTINATION ${STK_INSTALL_BINDIR})
+
+  FOREACH(NUMPROCS 1)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_ngp_test_utest_np${NUMPROCS}" 
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS}
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_ngp_test_utest)
+    set_property(TEST "stk_ngp_test_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
 endif()
 

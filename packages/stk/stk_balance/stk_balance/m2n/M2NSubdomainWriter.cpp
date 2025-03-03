@@ -61,13 +61,18 @@ void
 SubdomainWriter::setup_output_file(const std::string& fileName, unsigned subdomain, unsigned numSubdomains,
                                    int globalNumNodes, int globalNumElems)
 {
-  Ioss::DatabaseIO *dbo = stk::io::create_database_for_subdomain(fileName, subdomain, numSubdomains);
+  bool use64Bit = false;
+  int dbIntSize = m_inputBroker.check_integer_size_requirements_serial();
+  if (dbIntSize > 4) {
+    use64Bit = true;
+  }
+
+  Ioss::DatabaseIO *dbo = stk::io::create_database_for_subdomain(fileName, subdomain, numSubdomains, use64Bit);
   m_outRegion = new Ioss::Region(dbo, fileName);
   stk::io::OutputParams params(*m_outRegion, *m_bulk);
   stk::io::add_properties_for_subdomain(params, subdomain, numSubdomains, globalNumNodes, globalNumElems);
 
-  int dbIntSize = m_inputBroker.check_integer_size_requirements_serial();
-  if (dbIntSize > 4) {
+  if (use64Bit) {
     m_outRegion->property_add(Ioss::Property("INTEGER_SIZE_API", dbIntSize));
     m_outRegion->property_add(Ioss::Property("INTEGER_SIZE_DB", dbIntSize));
   }

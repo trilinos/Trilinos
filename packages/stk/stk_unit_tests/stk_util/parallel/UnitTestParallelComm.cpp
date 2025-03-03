@@ -43,6 +43,7 @@
 #include "stk_util/parallel/DataExchangeUnknownPatternBlockingBuffer.hpp"
 #include "stk_util/parallel/DataExchangeKnownPatternNonBlocking.hpp"
 #include "stk_util/parallel/DataExchangeKnownPatternNonBlockingBuffer.hpp"
+#include "stk_util/parallel/DataExchangeKnownPatternUserDataNonBlocking.hpp"
 
 
 #include <vector>
@@ -65,7 +66,7 @@ using DataExchangeNonBlockingKnown = stk::DataExchangeKnownPatternNonBlocking;
 template <typename T>
 using DataExchangeNonBlockingBufferKnown = stk::DataExchangeKnownPatternNonBlockingBuffer<T>;
 using DataExchangeNonBlockingCommBufferKnown = stk::DataExchangeKnownPatternNonBlockingCommBuffer;
-
+using DataExchangeNonBlockingPtr = stk::DataExchangeKnownPatternUserDataNonBlocking;
 
 
 template <typename T>
@@ -359,6 +360,33 @@ class NeighborParallelCommTesterBase : public ParallelCommTester<T>
     virtual int get_num_sends() override { return std::min(2, commSize); }
 
     virtual int get_num_recvs() override { return std::min(2, commSize); }
+    
+    std::vector<int> get_dest_ranks()
+    {
+      int dest1 = (myrank + 1) % commSize;
+      int dest2 = (myrank + 2) % commSize;
+      if (dest1 == dest2)
+      {
+        return {dest1};
+      } else
+      {
+        return {dest1, dest2};
+      }
+    }
+  
+  std::vector<int> get_src_ranks()
+  {
+    int src1 = (myrank - 1 + commSize) % commSize;
+    int src2 = (myrank - 2 + commSize) % commSize;
+    
+    if (src1 == src2)
+    {
+      return {src1};
+    } else
+    {
+      return {src1, src2};
+    }
+  }
 
     void test_results(std::vector< std::vector<T> >& rcvLists)
     {
@@ -927,6 +955,86 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlockingKnownPattern)
   }
 }
 
+TEST_F(DenseParallelCommTesterInt, ClassNonBlockingUserDataKnownPattern)
+{
+  DataExchangeNonBlockingPtr exchanger(comm);
+  
+  for (int i=0; i < 1; ++i)
+  {
+    set_offset(i);
+    std::vector<int> allSendBufs, allRecvBufs;
+    std::vector<stk::PointerAndSize> sendBufPointers, recvBufPointers;
+    std::vector<int> sendRanks, recvRanks;
+    
+    size_t totalSendSize = 0;
+    size_t totalRecvSize = 0;
+    for (int rank=0; rank < commSize; ++rank)
+    {
+      totalSendSize += get_size(myrank, rank);
+      totalRecvSize += get_size(rank, myrank);      
+    }
+    
+    allSendBufs.reserve(totalSendSize);
+    allRecvBufs.resize(totalRecvSize);
+    
+    size_t valuesSent = 0;
+    size_t valuesReceived = 0;
+    for (int rank=0; rank < commSize; ++rank)
+    {
+      int sendCount = get_size(myrank, rank);
+      int recvCount = get_size(rank, myrank);
+      
+      for (int i=0; i < sendCount; ++i)
+      {
+        allSendBufs.push_back(get_value(myrank, rank, i));
+      }
+      auto sendBufBegin = reinterpret_cast<unsigned char*>(allSendBufs.data() + valuesSent);
+      sendBufPointers.emplace_back(sendBufBegin, sendCount * sizeof(int));
+      sendRanks.push_back(rank);
+      valuesSent += sendCount;
+      
+      auto recvBufBegin = reinterpret_cast<unsigned char*>(allRecvBufs.data() + valuesReceived);
+      recvRanks.push_back(rank);
+      recvBufPointers.emplace_back(recvBufBegin, recvCount * sizeof (int));
+      valuesReceived += recvCount;
+    }
+    
+    exchanger.start_nonblocking(sendBufPointers, sendRanks,
+                                recvBufPointers, recvRanks);
+    
+    std::vector<bool> senderRankSeen(commSize, false);
+    auto unpacker = [&](int senderRank, const stk::PointerAndSize& buf)
+    {
+      size_t offset = 0;
+      for (int rank=0; rank < senderRank; ++rank)
+      {
+        offset += get_size(rank, myrank);
+      }
+      
+      int recvCount  = get_size(senderRank, myrank);
+      const int* ptr = reinterpret_cast<const int*>(buf.ptr);      
+      EXPECT_EQ(buf.size, recvCount * sizeof(int));
+      EXPECT_EQ(ptr, allRecvBufs.data() + offset);
+      
+      for (int i=0; i < recvCount; ++i)
+      {
+        int expectedValue = get_value(senderRank, myrank, i);
+        EXPECT_EQ(ptr[i],                  expectedValue);
+        EXPECT_EQ(allRecvBufs[i + offset], expectedValue);
+      }
+      senderRankSeen[senderRank] = true;    
+    };
+    
+    exchanger.complete_receives(recvBufPointers, recvRanks, unpacker);
+    for (bool val : senderRankSeen)
+    {
+      EXPECT_TRUE(val);
+    }
+    
+    exchanger.complete_sends();    
+  }
+}
+
 TEST_F(DenseParallelCommTesterInt, ClassNonBlockingBufferKnownPattern)
 {
   DataExchangeNonBlockingBufferKnown<int> exchanger1(comm);
@@ -1198,6 +1306,86 @@ TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingKnownPattern)
   }
 }
 
+TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingUserDataKnownPattern)
+{
+  DataExchangeNonBlockingPtr exchanger(comm);
+  
+  for (int i=0; i < 1; ++i)
+  {
+    set_offset(i);
+    std::vector<double> allSendBufs, allRecvBufs;
+    std::vector<stk::PointerAndSize> sendBufPointers, recvBufPointers;
+    std::vector<int> sendRanks, recvRanks;
+    
+    size_t totalSendSize = 0;
+    size_t totalRecvSize = 0;
+    for (int rank=0; rank < commSize; ++rank)
+    {
+      totalSendSize += get_size(myrank, rank);
+      totalRecvSize += get_size(rank, myrank);      
+    }
+    
+    allSendBufs.reserve(totalSendSize);
+    allRecvBufs.resize(totalRecvSize);
+    
+    size_t valuesSent = 0;
+    size_t valuesReceived = 0;
+    for (int rank=0; rank < commSize; ++rank)
+    {
+      int sendCount = get_size(myrank, rank);
+      int recvCount = get_size(rank, myrank);
+      
+      for (int i=0; i < sendCount; ++i)
+      {
+        allSendBufs.push_back(get_value(myrank, rank, i));
+      }
+      auto sendBufBegin = reinterpret_cast<unsigned char*>(allSendBufs.data() + valuesSent);
+      sendBufPointers.emplace_back(sendBufBegin, sendCount * sizeof(double));
+      sendRanks.push_back(rank);
+      valuesSent += sendCount;
+      
+      auto recvBufBegin = reinterpret_cast<unsigned char*>(allRecvBufs.data() + valuesReceived);
+      recvRanks.push_back(rank);
+      recvBufPointers.emplace_back(recvBufBegin, recvCount * sizeof(double));
+      valuesReceived += recvCount;
+    }
+    
+    exchanger.start_nonblocking(sendBufPointers, sendRanks,
+                                recvBufPointers, recvRanks);
+    
+    std::vector<bool> senderRankSeen(commSize, false);
+    auto unpacker = [&](int senderRank, const stk::PointerAndSize& buf)
+    {
+      size_t offset = 0;
+      for (int rank=0; rank < senderRank; ++rank)
+      {
+        offset += get_size(rank, myrank);
+      }
+      
+      int recvCount  = get_size(senderRank, myrank);
+      const double* ptr = reinterpret_cast<const double*>(buf.ptr);      
+      EXPECT_EQ(buf.size, recvCount * sizeof(double));
+      EXPECT_EQ(ptr, allRecvBufs.data() + offset);
+      
+      for (int i=0; i < recvCount; ++i)
+      {
+        int expectedValue = get_value(senderRank, myrank, i);
+        EXPECT_EQ(ptr[i],                  expectedValue);
+        EXPECT_EQ(allRecvBufs[i + offset], expectedValue);
+      }
+      senderRankSeen[senderRank] = true;    
+    };
+    
+    exchanger.complete_receives(recvBufPointers, recvRanks, unpacker);
+    for (bool val : senderRankSeen)
+    {
+      EXPECT_TRUE(val);
+    }
+    
+    exchanger.complete_sends();    
+  }
+}
+
 
 TEST_F(DenseParallelCommTesterDouble, ClassNonBlockingBufferKnownPattern)
 {
@@ -1363,6 +1551,86 @@ TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingKnownPattern)
 
     exchanger1.complete_sends();
     exchanger2.complete_sends();
+  }
+}
+
+TEST_F(NeighborParallelCommTesterInt, ClassNonBlockingUserDataKnownPattern)
+{
+  DataExchangeNonBlockingPtr exchanger(comm);
+  
+  for (int i=0; i < 1; ++i)
+  {
+    set_offset(i);
+    std::vector<int> allSendBufs, allRecvBufs;
+    std::vector<stk::PointerAndSize> sendBufPointers, recvBufPointers;
+    std::vector<int> sendRanks = get_dest_ranks();
+    std::vector<int> recvRanks = get_src_ranks();
+    
+    size_t totalSendSize = 0;
+    size_t totalRecvSize = 0;
+    for (int rank : sendRanks)
+    {
+      totalSendSize += get_size(myrank, rank);
+    }
+    
+    for (int rank : recvRanks)
+    {
+      totalRecvSize += get_size(rank, myrank);
+    }
+    
+    allSendBufs.reserve(totalSendSize);
+    allRecvBufs.resize(totalRecvSize);
+    
+    size_t valuesSent = 0;
+    size_t valuesReceived = 0;
+    for (int rank : sendRanks)
+    {
+      int sendCount = get_size(myrank, rank);
+      for (int i=0; i < sendCount; ++i)
+      {
+        allSendBufs.push_back(get_value(myrank, rank, i));
+      }
+      auto sendBufBegin = reinterpret_cast<unsigned char*>(allSendBufs.data() + valuesSent);
+      sendBufPointers.emplace_back(sendBufBegin, sendCount * sizeof(int));
+      valuesSent += sendCount;      
+    }
+    
+    for (int rank : recvRanks)
+    {
+      int recvCount = get_size(rank, myrank);      
+      auto recvBufBegin = reinterpret_cast<unsigned char*>(allRecvBufs.data() + valuesReceived);
+      recvBufPointers.emplace_back(recvBufBegin, recvCount * sizeof (int));
+      valuesReceived += recvCount;
+    }
+    
+    exchanger.start_nonblocking(sendBufPointers, sendRanks,
+                                recvBufPointers, recvRanks);
+    
+    auto unpacker = [&](int senderRank, const stk::PointerAndSize& buf)
+    {
+      size_t offset = 0;
+      auto senderRankIt = std::find(recvRanks.begin(), recvRanks.end(), senderRank);
+      EXPECT_NE(senderRankIt, recvRanks.end());
+      for (auto it = recvRanks.begin(); it != senderRankIt; ++it)
+      {
+        offset += get_size(*it, myrank);
+      }
+      
+      int recvCount  = get_size(senderRank, myrank);
+      const int* ptr = reinterpret_cast<const int*>(buf.ptr);      
+      EXPECT_EQ(buf.size, recvCount * sizeof(int));
+      EXPECT_EQ(ptr, allRecvBufs.data() + offset);
+      
+      for (int i=0; i < recvCount; ++i)
+      {
+        int expectedValue = get_value(senderRank, myrank, i);
+        EXPECT_EQ(ptr[i],                  expectedValue);
+        EXPECT_EQ(allRecvBufs[i + offset], expectedValue);
+      }
+    };
+    
+    exchanger.complete_receives(recvBufPointers, recvRanks, unpacker);
+    exchanger.complete_sends();
   }
 }
 

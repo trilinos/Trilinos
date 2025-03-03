@@ -653,20 +653,5 @@ void setup_text_mesh(stk::mesh::BulkData& bulk, const std::string& meshDesc)
   mesh.setup_mesh();
 }
 
-namespace simple_fields {
-
-std::string get_full_text_mesh_desc(const std::string& textMeshConnectivityDesc,
-                                    const std::vector<double>& coordVec)
-{
-  return stk::unit_test_util::get_full_text_mesh_desc(textMeshConnectivityDesc, coordVec);
-}
-
-void setup_text_mesh(stk::mesh::BulkData& bulkData, const std::string& meshDesc)
-{
-  return stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
-}
-
-}
-
 } // namespace unit_test_util
 } // namespace stk

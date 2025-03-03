@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,9 +30,67 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-//add a dummy symbol to keep certain linkers from warning about
-//this file having no symbols.
-int dummy_parallelindex_symbol(){return 0;}
+#ifndef STK_STK_IO_STK_IO_DYNAMICTOPOLOGY_HPP_
+#define STK_STK_IO_STK_IO_DYNAMICTOPOLOGY_HPP_
 
+#include <Ioss_DynamicTopology.h>
+#include <Ioss_DynamicTopologyObserver.h>
+#include <Ioss_DynamicTopologyBroker.h>
+#include <stk_mesh/base/Types.hpp>
+
+namespace stk {
+  namespace io {
+
+    enum class FileOption {
+      NO_DYNAMIC_TOPOLOGY_FILE_CONTROL = 0,
+      USE_DYNAMIC_TOPOLOGY_MULTI_FILE  = 1,
+      USE_DYNAMIC_TOPOLOGY_GROUP_FILE  = 2,
+    };
+
+    Ioss::FileControlOption get_ioss_file_control_option(FileOption fileOption);
+
+    class StkMeshIoBroker;
+
+    class DynamicTopologyObserver : public Ioss::DynamicTopologyObserver
+    {
+    public:
+      DynamicTopologyObserver(StkMeshIoBroker& stkIoBroker, size_t index,
+                              const Ioss::FileControlOption fileControlOption_);
+
+      virtual ~DynamicTopologyObserver() {}
+
+      void define_model() override;
+
+      void write_model() override;
+
+      void define_transient() override;
+
+      Ioss::FileControlOption get_control_option() const override;
+
+      bool needs_new_output_file() const override;
+
+      bool get_output_refined_mesh() const { return m_outputRefinedMesh; }
+
+      void set_output_refined_mesh(bool flag) { m_outputRefinedMesh = flag; }
+
+      void initialize_region() override;
+
+    private:
+      DynamicTopologyObserver();
+
+      StkMeshIoBroker& m_stkIoBroker;
+      size_t m_outputFileIndex;
+      Ioss::FileControlOption m_fileControlOption;
+
+      bool m_outputRefinedMesh{true};
+
+      unsigned count_output_field_variables(stk::mesh::EntityRank rank) const;
+    };
+
+  }
+}
+
+
+#endif /* STK_STK_IO_STK_IO_DYNAMICTOPOLOGY_HPP_ */

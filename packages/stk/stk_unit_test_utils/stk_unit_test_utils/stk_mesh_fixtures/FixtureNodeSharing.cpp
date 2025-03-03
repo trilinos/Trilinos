@@ -80,16 +80,4 @@ void DoAddNodeSharings(BulkData &bulk_data, NodeToProcsMMap &nodes_to_procs, Ent
   }
 }
 
-namespace simple_fields {
-
-void AddToNodeProcsMMap(NodeToProcsMMap &nodes_to_procs, EntityId node_id, int proc_rank) {
-  stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, node_id, proc_rank);
-}
-
-void DoAddNodeSharings(BulkData &bulk_data, NodeToProcsMMap &nodes_to_procs, EntityId node_id, Entity node) {
-  stk::mesh::fixtures::DoAddNodeSharings(bulk_data, nodes_to_procs, node_id, node);
-}
-
-} // namespace simple_fields
-
 }}}

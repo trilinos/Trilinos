@@ -32,7 +32,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 if(NOT STK_ENABLE_STKMiddle_mesh)
   LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/UnitTestConservativeTransfer.cpp")
@@ -68,6 +68,14 @@ else()
     ${STK_TOPLEVEL_SOURCE_DIR}/stk_unit_test_utils
   )
 
-  add_test("stk_transfer_utest" sh -c "mpiexec --np 2 ${CMAKE_CURRENT_BINARY_DIR}/stk_transfer_utest --gtest_filter=GeomXferImpl.coarseSearchImpl_emptyDomain")
+  FOREACH(NUMPROCS 1 2 3 4)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_transfer_utest_np${NUMPROCS}" 
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS}
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_transfer_utest)
+    set_property(TEST "stk_transfer_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+
+  INSTALL(TARGETS stk_transfer_utest DESTINATION ${STK_INSTALL_BINDIR})
 endif()
 

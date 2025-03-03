@@ -32,9 +32,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB SOURCES
+FILE(GLOB SOURCES CONFIGURE_DEPENDS 
    *.cpp
    change_parts/*.cpp
+   custom_ghosting/*.cpp
    entitySorting/*.cpp
    edge_creation/*.cpp
    face_creation/*.cpp
@@ -156,7 +157,7 @@ ENDIF()
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_mesh_unit_tests
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_mesh_utest
     SOURCES ${SOURCES}
     TESTONLYLIBS stk_unit_main
     ARGS ""
@@ -165,21 +166,31 @@ if(HAVE_STK_Trilinos)
     NOEXEPREFIX
   )
 else()
-  add_executable(stk_mesh_unit_tests ${SOURCES})
-  target_link_libraries(stk_mesh_unit_tests stk_unit_test_utils)
+  add_executable(stk_mesh_utest ${SOURCES})
+  target_link_libraries(stk_mesh_utest stk_unit_test_utils)
 
-  target_include_directories(stk_mesh_unit_tests PUBLIC
+  target_include_directories(stk_mesh_utest PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
   )
 
   if(${PROJECT_NAME}_ENABLE_STKIO)
-    target_link_libraries(stk_mesh_unit_tests stk_io)
+    target_link_libraries(stk_mesh_utest stk_io)
   endif()
-  target_link_libraries(stk_mesh_unit_tests stk_mesh_fixtures)
-  target_link_libraries(stk_mesh_unit_tests stk_mesh_base)
-  target_link_libraries(stk_mesh_unit_tests stk_unit_main)
+  target_link_libraries(stk_mesh_utest stk_mesh_fixtures)
+  target_link_libraries(stk_mesh_utest stk_mesh_base)
+  target_link_libraries(stk_mesh_utest stk_unit_main)
 
-  add_test(NAME "stk_mesh_unit_tests" COMMAND stk_mesh_unit_tests)
+  INSTALL(TARGETS stk_mesh_utest DESTINATION ${STK_INSTALL_BINDIR})
+
+  FOREACH(NUMPROCS 1 2 3 4)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
+    add_test(NAME "stk_mesh_utest_np${NUMPROCS}"
+             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS}
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_mesh_utest 
+             --gtest_filter=-*externalFile)
+    set_property(TEST "stk_mesh_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
+  ENDFOREACH()
+  
 endif()
 

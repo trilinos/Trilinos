@@ -155,7 +155,6 @@ private:
   void fill_coincident_sideset_entries_for_side_using_connectivity(const Entity side, std::vector<SideSetEntry>& entries);
   void fill_coincident_sideset_entries_for_side_using_elem_elem_graph(const Entity side, std::vector<SideSetEntry>& entries);
 
-  bool element_side_can_be_distinguished(const Entity side, const Entity element, const ConnectivityOrdinal ordinal, const SideSetSelector& selector);
   bool element_side_can_be_distinguished_using_connectivity(const Entity side, const Entity element, const ConnectivityOrdinal ordinal, const SideSetSelector& selector);
   bool element_side_can_be_distinguished_using_elem_elem_graph(const Entity side, const Entity element, const ConnectivityOrdinal ordinal, const SideSetSelector& selector);
 

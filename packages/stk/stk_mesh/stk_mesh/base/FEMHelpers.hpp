@@ -78,13 +78,22 @@ Entity declare_element_edge( BulkData & mesh ,
  *
  *  The element must be a member of a Part with a topology.
  */
+// Used to connect side with unassigned nodes
 Entity connect_side_to_element_with_ordinal( BulkData & mesh ,
                                Entity elem ,
                                Entity side ,
                                const unsigned local_side_id ,
                                stk::mesh::Part* part = NULL);
 
-/** \brief finds oridinal and permutation of an entity relative to a parent entity
+// Used to connect side with assigned nodes
+Entity connect_side_to_element_with_ordinal( BulkData & mesh ,
+                               Entity elem ,
+                               Entity side ,
+                               const unsigned local_side_id ,
+                               const std::vector<Entity> & side_nodes,
+                               stk::mesh::Part* part = NULL);
+
+/** \brief finds original and permutation of an entity relative to a parent entity
  *
  * This assumes parent is no higher rank than element and no less than edge and
  * that child is of less rank than parent.

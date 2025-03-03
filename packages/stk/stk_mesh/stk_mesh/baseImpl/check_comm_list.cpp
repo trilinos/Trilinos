@@ -159,21 +159,6 @@ void unpack_and_check_recvd_data(stk::CommSparse& comm, int local_proc, int num_
 
 bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
                                       const EntityCommDatabase& commDB,
-                                      const EntityCommListInfoVector& comm_list)
-{
-    std::ostringstream os;
-    bool result = is_comm_list_globally_consistent(mesh, commDB, comm_list, os);
-
-    std::string str = os.str();
-    if (!str.empty()) {
-        std::cerr<<"P"<<mesh.parallel_rank()<<" check_comm_list_global_consistency:\n"<<str;
-    }
-
-    return result;
-}
-
-bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
-                                      const EntityCommDatabase& commDB,
                                       const EntityCommListInfoVector& comm_list,
                                       std::ostream& error_msg)
 {

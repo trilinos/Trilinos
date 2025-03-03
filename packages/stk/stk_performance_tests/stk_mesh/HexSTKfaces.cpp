@@ -46,7 +46,6 @@
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
 #include <stk_mesh/base/Comm.hpp>
 

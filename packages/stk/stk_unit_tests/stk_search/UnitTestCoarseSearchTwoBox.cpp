@@ -188,6 +188,7 @@ TEST(CoarseSearchCorrectness, OverlappingBoxes_ARBORX)
   const double distanceBetweenBoxCenters = 0.5;
   const unsigned expectedNumOverlap = 1;
   runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
 }
 
@@ -199,6 +200,7 @@ TEST(CoarseSearchCorrectness, NonOverlappingBoxes_ARBORX)
   const double distanceBetweenBoxCenters = 2.0;
   const unsigned expectedNumOverlap = 0;
   runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
 }
 
@@ -210,6 +212,7 @@ TEST(CoarseSearchCorrectness, JustEdgeOverlappingBoxes_ARBORX)
   double distanceBetweenBoxCenters = 0.999999999;
   const unsigned expectedNumOverlap = 1;
   runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
 }
 
@@ -221,6 +224,7 @@ TEST(CoarseSearchCorrectness, NotQuiteEdgeOverlappingBoxes_ARBORX)
   double distanceBetweenBoxCenters = 1.00001;
   const unsigned expectedNumOverlap = 0;
   runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
 }
 
@@ -232,6 +236,7 @@ TEST(CoarseSearchCorrectness, NotQuiteEdgeOverlappingBoxes_FloatTruncation_ARBOR
   double distanceBetweenBoxCenters = 1.0000000001;
   const unsigned expectedNumOverlap = 1;
   runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
 }
 
@@ -365,6 +370,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_OverlappingBoxes_ARBORX)
   const double distanceBetweenBoxCenters = 0.5;
   const unsigned expectedNumOverlap = 1;
   host_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
 }
 
@@ -376,6 +382,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_NonOverlappingBoxes_ARBORX)
   const double distanceBetweenBoxCenters = 2.0;
   const unsigned expectedNumOverlap = 0;
   host_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
 }
 
@@ -387,6 +394,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_JustEdgeOverlappingBoxes_ARBORX)
   double distanceBetweenBoxCenters = 0.999999999;
   const unsigned expectedNumOverlap = 1;
   host_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
 }
 
@@ -398,6 +406,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_NotQuiteEdgeOverlappingBoxes_ARBORX)
   double distanceBetweenBoxCenters = 1.0000000001;
   const unsigned expectedNumOverlap = 1;
   host_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   device_local_runTwoBoxTest(stk::search::ARBORX, distanceBetweenBoxCenters, boxSize, expectedNumOverlap);
 }
 

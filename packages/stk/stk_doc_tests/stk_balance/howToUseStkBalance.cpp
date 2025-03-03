@@ -17,10 +17,10 @@ public:
     RcbSettings() {}
     virtual ~RcbSettings() {}
 
-    virtual bool isIncrementalRebalance() const { return false; }
-    virtual std::string getDecompMethod() const { return std::string("rcb"); }
-    virtual std::string getCoordinateFieldName() const { return std::string("coordinates"); }
-    virtual bool shouldPrintMetrics() const { return true; }
+    virtual bool isIncrementalRebalance() const override { return false; }
+    virtual std::string getDecompMethod() const override { return std::string("rcb"); }
+    virtual std::string getCoordinateFieldName() const override { return std::string("coordinates"); }
+    virtual bool shouldPrintMetrics() const override { return true; }
 };
 //ENDRcbSettings
 
@@ -82,9 +82,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithGeometricMethods)
 class ParmetisSettings : public stk::balance::GraphCreationSettings
 {
 public:
-    virtual std::string getDecompMethod() const { return "parmetis"; }
+    virtual std::string getDecompMethod() const override { return "parmetis"; }
 
-    size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
+    size_t getNumNodesRequiredForConnection(
+        stk::topology element1Topology, stk::topology element2Topology) const override
     {
         const int noConnection = 1000;
         const int s = noConnection;
@@ -104,7 +105,7 @@ public:
         return connectionTable[element1Index][element2Index];
     }
 
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
+    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override
     {
         const double noConnection = 0;
         const double s = noConnection;
@@ -132,7 +133,7 @@ public:
 
     using BalanceSettings::getGraphVertexWeight;
 
-    virtual int getGraphVertexWeight(stk::topology type) const
+    virtual int getGraphVertexWeight(stk::topology type) const override
     {
         switch(type)
         {
@@ -190,10 +191,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithParmetis)
 class ParmetisWithSearchSettings : public ParmetisSettings
 {
     using ParmetisSettings::getToleranceForFaceSearch;
-    virtual bool includeSearchResultsInGraph() const { return true; }
+    virtual bool includeSearchResultsInGraph() const override { return true; }
     virtual double getToleranceForFaceSearch() const { return 0.0001; }
-    virtual double getVertexWeightMultiplierForVertexInSearch() const { return 6.0; }
-    virtual double getGraphEdgeWeightForSearch() const { return 1000; }
+    virtual double getVertexWeightMultiplierForVertexInSearch() const override { return 6.0; }
+    virtual double getGraphEdgeWeightForSearch() const override { return 1000; }
 };
 //ENDParmeticSearchSettings
 
@@ -227,11 +228,11 @@ public:
 
     virtual ~FieldVertexWeightSettings() = default;
 
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
+    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override { return 1.0; }
 
-    virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-    virtual double getImbalanceTolerance() const { return 1.0001; }
-    virtual std::string getDecompMethod() const { return "rcb"; }
+    virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+    virtual double getImbalanceTolerance() const override { return 1.0001; }
+    virtual std::string getDecompMethod() const override { return "rcb"; }
 
 protected:
     FieldVertexWeightSettings() = delete;
@@ -299,7 +300,7 @@ public:
     MultipleCriteriaSelectorSettings() { }
     virtual ~MultipleCriteriaSelectorSettings() = default;
 
-    virtual bool isMultiCriteriaRebalance() const { return true;}
+    virtual bool isMultiCriteriaRebalance() const override { return true;}
 
 protected:
     MultipleCriteriaSelectorSettings(const MultipleCriteriaSelectorSettings&) = delete;

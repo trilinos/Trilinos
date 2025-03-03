@@ -8,17 +8,12 @@
 
 #include <string>
 
-#define STK_MAX_COUPLING_VERSION 14
+#define STK_MAX_COUPLING_VERSION 15
 #define STK_MIN_COUPLING_VERSION 0                                                                               
  
 namespace stk {
 
 namespace util {
-
-namespace impl {
-constexpr int SHORT_TERM_STK_MAX_COUPLING_VERSION=1;
-}
-
 
 int get_common_coupling_version();
 

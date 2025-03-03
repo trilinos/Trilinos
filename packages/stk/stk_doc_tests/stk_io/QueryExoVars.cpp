@@ -35,7 +35,7 @@ protected:
   }
 };
 
-TEST_F(QueryExoVars, nodeVars_getNames)
+TEST_F(QueryExoVars, nodeVars_getNames_externalFile)
 {
   if(stk::parallel_machine_size(get_comm()) == 1)
   {
@@ -50,7 +50,7 @@ TEST_F(QueryExoVars, nodeVars_getNames)
   }
 }
 
-TEST_F(QueryExoVars, elemVars_getNames)
+TEST_F(QueryExoVars, elemVars_getNames_externalFile)
 {
   if(stk::parallel_machine_size(get_comm()) == 1)
   {
@@ -61,7 +61,7 @@ TEST_F(QueryExoVars, elemVars_getNames)
   }
 }
 
-TEST_F(QueryExoVars, nodesetVars_getNames)
+TEST_F(QueryExoVars, nodesetVars_getNames_externalFile)
 {
   if(stk::parallel_machine_size(get_comm()) == 1)
   {
@@ -74,7 +74,7 @@ TEST_F(QueryExoVars, nodesetVars_getNames)
   }
 }
 
-TEST_F(QueryExoVars, sidesetVars_getNames)
+TEST_F(QueryExoVars, sidesetVars_getNames_externalFile)
 {
   if(stk::parallel_machine_size(get_comm()) == 1)
   {

@@ -141,12 +141,12 @@ class Hex8SourceMesh : public stk::search::SourceMeshInterface<Hex8SourceMesh>
     }
   }
 
-  stk::ParallelMachine comm() const { return m_comm; }
+  stk::ParallelMachine comm() const override { return m_comm; }
 
-  std::string name() const { return "Hex8SourceMesh"; }
+  std::string name() const override { return "Hex8SourceMesh"; }
 
   //BEGINSource_bounding_boxes
-  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  void bounding_boxes(std::vector<BoundingBox>& boxes) const override
   {
     Point min_corner, max_corner;
 
@@ -174,7 +174,7 @@ class Hex8SourceMesh : public stk::search::SourceMeshInterface<Hex8SourceMesh>
       const double* toCoords,
       std::vector<double>& parametricCoords,
       double& parametricDistance,
-      bool& isWithinParametricTolerance) const
+      bool& isWithinParametricTolerance) const override
   {
     stk::mesh::Entity elem = m_bulk.get_entity(k);
     stk::topology topology = m_bulk.bucket(elem).topology();
@@ -208,13 +208,13 @@ class Hex8SourceMesh : public stk::search::SourceMeshInterface<Hex8SourceMesh>
       const double* toCoords,
       std::vector<double>& parametricCoords,
       double& geometricDistanceSquared,
-      bool& isWithinGeometricTolerance) const
+      bool& isWithinGeometricTolerance) const override
   {
     return false;
   }
 
   //BEGINSource_get_distance_from_nearest_node
-  double get_distance_from_nearest_node(const EntityKey k, const double* point) const
+  double get_distance_from_nearest_node(const EntityKey k, const double* point) const override
   {
     const stk::mesh::Entity e = m_bulk.get_entity(k);
 
@@ -243,19 +243,19 @@ class Hex8SourceMesh : public stk::search::SourceMeshInterface<Hex8SourceMesh>
   }
   //ENDSource_get_distance_from_nearest_node
 
-  double get_closest_geometric_distance_squared(const EntityKey k, const double* toCoords) const
+  double get_closest_geometric_distance_squared(const EntityKey k, const double* toCoords) const override
   {
     double distance = get_distance_from_nearest_node(k, toCoords);
     return distance * distance;
   }
 
-  double get_distance_from_centroid(const EntityKey k, const double* toCoords) const
+  double get_distance_from_centroid(const EntityKey k, const double* toCoords) const override
   {
     double distanceSquared = get_distance_squared_from_centroid(k, toCoords);
     return std::sqrt(distanceSquared);
   }
 
-  double get_distance_squared_from_centroid(const EntityKey k, const double* toCoords) const
+  double get_distance_squared_from_centroid(const EntityKey k, const double* toCoords) const override
   {
     std::vector<double> centroidVec;
     centroid(k, centroidVec);
@@ -264,13 +264,13 @@ class Hex8SourceMesh : public stk::search::SourceMeshInterface<Hex8SourceMesh>
     return stk::search::distance_sq(nDim, centroidVec.data(), toCoords);
   }
 
-  void centroid(const EntityKey k, std::vector<double>& centroidVec) const
+  void centroid(const EntityKey k, std::vector<double>& centroidVec) const override
   {
     const stk::mesh::Entity e = m_bulk.get_entity(k);
     stk::search::compute_entity_centroid(e, *m_coordinateField, centroidVec);
   }
 
-  const double* coord(const EntityKey k) const
+  const double* coord(const EntityKey k) const override
   {
     centroid(k, m_coordVector);
     return m_coordVector.data();
@@ -330,12 +330,12 @@ class SinglePointMesh : public stk::search::DestinationMeshInterface<SinglePoint
     m_coords[2] = z;
   }
 
-  stk::ParallelMachine comm() const { return m_comm; };
+  stk::ParallelMachine comm() const override { return m_comm; };
 
-  std::string name() const { return "SinglePointMesh"; }
+  std::string name() const override { return "SinglePointMesh"; }
 
   //BEGINDestination_bounding_boxes
-  void bounding_boxes(std::vector<BoundingBox>& v) const
+  void bounding_boxes(std::vector<BoundingBox>& v) const override
   {
     Point center(m_coords[0], m_coords[1], m_coords[2]);
 
@@ -346,15 +346,15 @@ class SinglePointMesh : public stk::search::DestinationMeshInterface<SinglePoint
   }
   //ENDDestination_bounding_boxes
 
-  const double* coord(const EntityKey k) const { return m_coords; }
-  double get_search_tolerance() const { return m_geometricTolerance; }
-  double get_parametric_tolerance() const { return m_parametricTolerance; }
+  const double* coord(const EntityKey k) const override { return m_coords; }
+  double get_search_tolerance() const override { return m_geometricTolerance; }
+  double get_parametric_tolerance() const override { return m_parametricTolerance; }
 
-  void centroid(const EntityKey k, std::vector<double>& centroidVec) const
+  void centroid(const EntityKey k, std::vector<double>& centroidVec) const override
   {
     centroidVec.assign(m_coords, m_coords + 3);
   }
-  double get_distance_from_nearest_node(const EntityKey k, const double* toCoords) const
+  double get_distance_from_nearest_node(const EntityKey k, const double* toCoords) const override
   {
     return stk::search::distance(3, m_coords, toCoords);
   }

@@ -97,14 +97,6 @@ public:
 
   Bucket *get_bucket(EntityRank entity_rank, int bucket_id) const;
 
-  template <class RankType>
-  inline
-  Bucket *get_bucket(RankType rank_id) const;
-
-  ////
-  //// Partitions are now the primary location of buckets.
-  ////
-
   friend class Partition;
 
   void add_entity_with_part_memberships(const Entity entity,
