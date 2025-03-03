@@ -53,6 +53,9 @@ if (COMMAND set_up_hermetic_build)
   set_up_hermetic_build()
 endif()
 
+# Patch, no idea why this isn't needed in the "normal" gtest build.  Best guess is that `set_up_hermetic_build()` is missing
+set(gtest_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 # These commands only run if this is the main project.
 if(CMAKE_PROJECT_NAME STREQUAL "gtest" OR CMAKE_PROJECT_NAME STREQUAL "googletest-distribution")
 
@@ -120,11 +123,11 @@ include_directories(${gtest_build_include_dirs})
 # Google Test libraries. We build them using more strict warnings than what
 # are used for other targets, to ensure that gtest can be compiled by a user
 # aggressive about warnings.
-cxx_library(gtest "${cxx_strict}" src/gtest-all.cc)
-set_target_properties(gtest PROPERTIES VERSION ${GOOGLETEST_VERSION})
+cxx_library(sacado-gtest "${cxx_strict}" src/gtest-all.cc)
+set_target_properties(sacado-gtest PROPERTIES VERSION ${GOOGLETEST_VERSION})
 if(GTEST_HAS_ABSL)
-  target_compile_definitions(gtest PUBLIC GTEST_HAS_ABSL=1)
-  target_link_libraries(gtest PUBLIC
+  target_compile_definitions(sacado-gtest PUBLIC GTEST_HAS_ABSL=1)
+  target_link_libraries(sacado-gtest PUBLIC
     absl::failure_signal_handler
     absl::stacktrace
     absl::symbolize
@@ -141,21 +144,21 @@ endif()
 cxx_library(gtest_main "${cxx_strict}" src/gtest_main.cc)
 set_target_properties(gtest_main PROPERTIES VERSION ${GOOGLETEST_VERSION})
 string(REPLACE ";" "$<SEMICOLON>" dirs "${gtest_build_include_dirs}")
-target_include_directories(gtest SYSTEM INTERFACE
+target_include_directories(sacado-gtest SYSTEM INTERFACE
   "$<BUILD_INTERFACE:${dirs}>"
   "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 target_include_directories(gtest_main SYSTEM INTERFACE
   "$<BUILD_INTERFACE:${dirs}>"
   "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
 if(CMAKE_SYSTEM_NAME MATCHES "QNX" AND CMAKE_SYSTEM_VERSION VERSION_GREATER_EQUAL 7.1)
-  target_link_libraries(gtest PUBLIC regex)
+  target_link_libraries(sacado-gtest PUBLIC regex)
 endif()
-target_link_libraries(gtest_main PUBLIC gtest)
+target_link_libraries(gtest_main PUBLIC sacado-gtest)
 
 ########################################################################
 #
 # Install rules.
-install_project(gtest gtest_main)
+install_project(sacado-gtest gtest_main)
 
 ########################################################################
 #
@@ -174,8 +177,8 @@ if (gtest_build_samples)
   cxx_executable(sample6_unittest samples gtest_main)
   cxx_executable(sample7_unittest samples gtest_main)
   cxx_executable(sample8_unittest samples gtest_main)
-  cxx_executable(sample9_unittest samples gtest)
-  cxx_executable(sample10_unittest samples gtest)
+  cxx_executable(sample9_unittest samples sacado-gtest)
+  cxx_executable(sample10_unittest samples sacado-gtest)
 endif()
 
 ########################################################################
@@ -198,12 +201,12 @@ if (gtest_build_tests)
   # C++ tests built with standard compiler flags.
 
   cxx_test(googletest-death-test-test gtest_main)
-  cxx_test(gtest_environment_test gtest)
+  cxx_test(gtest_environment_test sacado-gtest)
   cxx_test(googletest-filepath-test gtest_main)
   cxx_test(googletest-listener-test gtest_main)
   cxx_test(gtest_main_unittest gtest_main)
   cxx_test(googletest-message-test gtest_main)
-  cxx_test(gtest_no_test_unittest gtest)
+  cxx_test(gtest_no_test_unittest sacado-gtest)
   cxx_test(googletest-options-test gtest_main)
   cxx_test(googletest-param-test-test gtest
     test/googletest-param-test2-test.cc)
@@ -214,15 +217,15 @@ if (gtest_build_tests)
   cxx_test(googletest-printers-test gtest_main)
   cxx_test(gtest_prod_test gtest_main
     test/production.cc)
-  cxx_test(gtest_repeat_test gtest)
+  cxx_test(gtest_repeat_test sacado-gtest)
   cxx_test(gtest_sole_header_test gtest_main)
-  cxx_test(gtest_stress_test gtest)
+  cxx_test(gtest_stress_test sacado-gtest)
   cxx_test(googletest-test-part-test gtest_main)
-  cxx_test(gtest_throw_on_failure_ex_test gtest)
+  cxx_test(gtest_throw_on_failure_ex_test sacado-gtest)
   cxx_test(gtest-typed-test_test gtest_main
     test/gtest-typed-test2_test.cc)
   cxx_test(gtest_unittest gtest_main)
-  cxx_test(gtest-unittest-api_test gtest)
+  cxx_test(gtest-unittest-api_test sacado-gtest)
   cxx_test(gtest_skip_in_environment_setup_test gtest_main)
   cxx_test(gtest_skip_test gtest_main)
 
@@ -261,7 +264,7 @@ if (gtest_build_tests)
   ############################################################
   # Python tests.
 
-  cxx_executable(googletest-break-on-failure-unittest_ test gtest)
+  cxx_executable(googletest-break-on-failure-unittest_ test sacado-gtest)
   py_test(googletest-break-on-failure-unittest)
 
   py_test(gtest_skip_check_output_test)
@@ -283,25 +286,25 @@ if (gtest_build_tests)
     test/googletest-catch-exceptions-test_.cc)
   py_test(googletest-catch-exceptions-test)
 
-  cxx_executable(googletest-color-test_ test gtest)
+  cxx_executable(googletest-color-test_ test sacado-gtest)
   py_test(googletest-color-test)
 
-  cxx_executable(googletest-env-var-test_ test gtest)
+  cxx_executable(googletest-env-var-test_ test sacado-gtest)
   py_test(googletest-env-var-test)
 
-  cxx_executable(googletest-filter-unittest_ test gtest)
+  cxx_executable(googletest-filter-unittest_ test sacado-gtest)
   py_test(googletest-filter-unittest)
 
   cxx_executable(gtest_help_test_ test gtest_main)
   py_test(gtest_help_test)
 
-  cxx_executable(googletest-list-tests-unittest_ test gtest)
+  cxx_executable(googletest-list-tests-unittest_ test sacado-gtest)
   py_test(googletest-list-tests-unittest)
 
-  cxx_executable(googletest-output-test_ test gtest)
+  cxx_executable(googletest-output-test_ test sacado-gtest)
   py_test(googletest-output-test --no_stacktrace_support)
 
-  cxx_executable(googletest-shuffle-test_ test gtest)
+  cxx_executable(googletest-shuffle-test_ test sacado-gtest)
   py_test(googletest-shuffle-test)
 
   # MSVC 7.1 does not support STL with exceptions disabled.
@@ -313,10 +316,10 @@ if (gtest_build_tests)
     py_test(googletest-throw-on-failure-test)
   endif()
 
-  cxx_executable(googletest-uninitialized-test_ test gtest)
+  cxx_executable(googletest-uninitialized-test_ test sacado-gtest)
   py_test(googletest-uninitialized-test)
 
-  cxx_executable(gtest_list_output_unittest_ test gtest)
+  cxx_executable(gtest_list_output_unittest_ test sacado-gtest)
   py_test(gtest_list_output_unittest)
 
   cxx_executable(gtest_xml_outfile1_test_ test gtest_main)
@@ -324,7 +327,7 @@ if (gtest_build_tests)
   py_test(gtest_xml_outfiles_test)
   py_test(googletest-json-outfiles-test)
 
-  cxx_executable(gtest_xml_output_unittest_ test gtest)
+  cxx_executable(gtest_xml_output_unittest_ test sacado-gtest)
   py_test(gtest_xml_output_unittest --no_stacktrace_support)
   py_test(googletest-json-output-unittest --no_stacktrace_support)
 endif()
