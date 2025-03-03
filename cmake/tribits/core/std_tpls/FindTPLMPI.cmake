@@ -28,9 +28,7 @@ set(MPI_ALLOW_PACKAGE_PREFIND  FALSE  CACHE  BOOL
 
 tribits_tpl_allow_pre_find_package(MPI MPI_ALLOW_PREFIND)
 if(MPI_ALLOW_PREFIND)
-
   find_package(MPI)
-
   if(MPI_C_FOUND AND MPI_CXX_FOUND)
     tribits_extpkg_create_imported_all_libs_target_and_config_file(
       MPI
@@ -41,7 +39,6 @@ endif()
 
 if(NOT TARGET MPI::all_libs)
   tribits_tpl_find_include_dirs_and_libraries(MPI)
+  # NOTE: Above, we need to generate the MPI::all_libs target and the
+  # MPIConfig.cmake file that will also provide the MPI::all_libs target.
 endif()
-
-# NOTE: Above, we need to generate the MPI::all_libs target and the
-# MPIConfig.cmake file that will also provide the MPI::all_libs target.
