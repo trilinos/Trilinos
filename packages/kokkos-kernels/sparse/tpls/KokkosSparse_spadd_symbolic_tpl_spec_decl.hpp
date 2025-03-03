@@ -73,26 +73,26 @@ namespace Impl {
       OFFSET_TYPE nnzB = colidxB.extent(0);                                                                            \
       OFFSET_TYPE nnzC = 0;                                                                                            \
                                                                                                                        \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(cuspHandle, exec.cuda_stream()));                                    \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(cuspHandle, exec.cuda_stream()));                         \
                                                                                                                        \
       /* https://docs.nvidia.com/cuda/cusparse/index.html#cusparsecreatematdescr                                       \
        It sets the fields MatrixType and IndexBase to the default values                                               \
        CUSPARSE_MATRIX_TYPE_GENERAL and CUSPARSE_INDEX_BASE_ZERO,                                                      \
        respectively, while leaving other fields uninitialized. */                                                      \
                                                                                                                        \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&cuspData.descrA));                                             \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&cuspData.descrB));                                             \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&cuspData.descrC));                                             \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparse##TOKEN##csrgeam2_bufferSizeExt(                                               \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&cuspData.descrA));                                  \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&cuspData.descrB));                                  \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&cuspData.descrC));                                  \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparse##TOKEN##csrgeam2_bufferSizeExt(                                    \
           cuspHandle, m, n, &one, cuspData.descrA, nnzA, NULL, rowmapA.data(), colidxA.data(), &one, cuspData.descrB,  \
           nnzB, NULL, rowmapB.data(), colidxB.data(), cuspData.descrC, NULL, rowmapC.data(), NULL, &nbytes));          \
       cuspData.nbytes    = nbytes;                                                                                     \
       cuspData.workspace = Kokkos::kokkos_malloc<MEM_SPACE_TYPE>(nbytes);                                              \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgeam2Nnz(                                                                  \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseXcsrgeam2Nnz(                                                       \
           cuspHandle, m, n, cuspData.descrA, nnzA, rowmapA.data(), colidxA.data(), cuspData.descrB, nnzB,              \
           rowmapB.data(), colidxB.data(), cuspData.descrC, rowmapC.data(), &nnzC, cuspData.workspace));                \
       addHandle->set_c_nnz(nnzC);                                                                                      \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(cuspHandle, NULL));                                                  \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(cuspHandle, NULL));                                       \
                                                                                                                        \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \

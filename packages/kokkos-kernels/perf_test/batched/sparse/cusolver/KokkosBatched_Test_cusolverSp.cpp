@@ -91,9 +91,9 @@ struct Functor_Test_SparseCuSolveQR {
     const size_t m   = _r.extent(0) - 1;
 
     cusparseMatDescr_t descrA = 0;
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     double tol  = 1e-18;
     int reorder = 0;
@@ -146,9 +146,9 @@ struct Functor_Test_Block_SparseCuSolveQR {
     const size_t block_m   = N * m;
 
     cusparseMatDescr_t descrA = 0;
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     double tol  = 1e-18;
     int reorder = 0;
@@ -229,9 +229,9 @@ struct Functor_Test_SparseCuSolveChol {
     const size_t m   = _r.extent(0) - 1;
 
     cusparseMatDescr_t descrA = 0;
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     double tol  = 1e-18;
     int reorder = 0;
@@ -284,9 +284,9 @@ struct Functor_Test_Block_SparseCuSolveChol {
     const size_t block_m   = N * m;
 
     cusparseMatDescr_t descrA = 0;
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&descrA));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO));
 
     double tol  = 1e-18;
     int reorder = 0;

@@ -67,13 +67,13 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno
     return;
   }
 
-  KOKKOS_CUSPARSE_SAFE_CALL(
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
       cusparseCsrSetPointers(h->descr_A, (void *)row_mapA.data(), (void *)entriesA.data(), (void *)valuesA.data()));
 
-  KOKKOS_CUSPARSE_SAFE_CALL(
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
       cusparseCsrSetPointers(h->descr_B, (void *)row_mapB.data(), (void *)entriesB.data(), (void *)valuesB.data()));
 
-  KOKKOS_CUSPARSE_SAFE_CALL(
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
       cusparseCsrSetPointers(h->descr_C, (void *)row_mapC.data(), (void *)entriesC.data(), (void *)valuesC.data()));
 
   if (!handle->are_entries_computed()) {
@@ -81,13 +81,14 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno
       // If symbolic was previously called with computeRowptrs=true, then
       // buffer5 will have already been allocated to the correct size. Otherwise
       // size and allocate it here.
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B,
-                                                         h->descr_C, h->alg, h->spgemmDescr, &h->bufferSize5, nullptr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
+                                                                    h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
+                                                                    &h->bufferSize5, nullptr));
       KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer5, h->bufferSize5));
     }
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B,
-                                                       h->descr_C, h->alg, h->spgemmDescr, &h->bufferSize5,
-                                                       h->buffer5));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
+                                                                  h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
+                                                                  &h->bufferSize5, h->buffer5));
     handle->set_computed_rowptrs();
     handle->set_computed_entries();
   }
@@ -100,12 +101,12 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno
   // handle, we save/restore the pointer mode to not interference with
   // others' use
   cusparsePointerMode_t oldPtrMode;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseGetPointerMode(h->cusparseHandle, &oldPtrMode));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(h->cusparseHandle, CUSPARSE_POINTER_MODE_HOST));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
-                                                        h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
-                                                        h->spgemmDescr));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(h->cusparseHandle, oldPtrMode));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseGetPointerMode(h->cusparseHandle, &oldPtrMode));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(h->cusparseHandle, CUSPARSE_POINTER_MODE_HOST));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_compute(h->cusparseHandle, h->opA, h->opB, &alpha,
+                                                                   h->descr_A, h->descr_B, &beta, h->descr_C,
+                                                                   h->scalarType, h->alg, h->spgemmDescr));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(h->cusparseHandle, oldPtrMode));
   handle->set_call_numeric();
 }
 
@@ -120,20 +121,20 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t /*m*/, lno_t /*n*/, lno
                              const ConstRowMapType &row_mapC, const EntriesType &entriesC, const ValuesType &valuesC) {
   using scalar_type = typename KernelHandle::nnz_scalar_t;
   auto h            = handle->get_cusparse_spgemm_handle();
-  KOKKOS_CUSPARSE_SAFE_CALL(
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
       cusparseCsrSetPointers(h->descr_A, (void *)row_mapA.data(), (void *)entriesA.data(), (void *)valuesA.data()));
-  KOKKOS_CUSPARSE_SAFE_CALL(
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
       cusparseCsrSetPointers(h->descr_B, (void *)row_mapB.data(), (void *)entriesB.data(), (void *)valuesB.data()));
-  KOKKOS_CUSPARSE_SAFE_CALL(
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
       cusparseCsrSetPointers(h->descr_C, (void *)row_mapC.data(), (void *)entriesC.data(), (void *)valuesC.data()));
   const auto alpha = Kokkos::ArithTraits<scalar_type>::one();
   const auto beta  = Kokkos::ArithTraits<scalar_type>::zero();
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
-                                                   &beta, h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT,
-                                                   h->spgemmDescr, &h->bufferSize4, h->buffer4));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_copy(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
-                                                &beta, h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT,
-                                                h->spgemmDescr));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+      cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta, h->descr_C,
+                             h->scalarType, CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr, &h->bufferSize4, h->buffer4));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_copy(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
+                                                           h->descr_B, &beta, h->descr_C, h->scalarType,
+                                                           CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr));
   handle->set_computed_entries();
   handle->set_call_numeric();
 }
@@ -180,7 +181,7 @@ void spgemm_numeric_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, co
 
   // Only call numeric if C actually has entries
   if (handle->get_c_nnz()) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgemm(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseXcsrgemm(
         h->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, m, k, n, h->generalDescr,
         nnzA, valuesA.data(), row_mapA.data(), entriesA.data(), h->generalDescr, nnzB, valuesB.data(), row_mapB.data(),
         entriesB.data(), h->generalDescr, valuesC.data(), row_mapC.data(), entriesC.data()));

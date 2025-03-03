@@ -34,7 +34,6 @@
 #include "KokkosSparse_sptrsv_cuSPARSE_impl.hpp"
 
 namespace KokkosSparse {
-namespace Experimental {
 
 #define KOKKOSKERNELS_SPTRSV_SAME_TYPE(A, B) \
   std::is_same<typename std::remove_const<A>::type, typename std::remove_const<B>::type>::value
@@ -211,16 +210,16 @@ void sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t
                                                                    false);
     } else {
       (void)values;
-      KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
+      KokkosSparse::sptrsv_symbolic(space, handle, rowmap, entries);
     }
 
 #else  // We better go to the native implementation
     (void)values;
-    KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
+    KokkosSparse::sptrsv_symbolic(space, handle, rowmap, entries);
 #endif
   } else {
     (void)values;
-    KokkosSparse::Experimental::sptrsv_symbolic(space, handle, rowmap, entries);
+    KokkosSparse::sptrsv_symbolic(space, handle, rowmap, entries);
   }
 #ifdef KK_TRISOLVE_TIMERS
   std::cout << "     + sptrsv_symbolic time = " << timer_sptrsv.seconds() << std::endl;
@@ -412,6 +411,8 @@ void sptrsv_solve(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ 
   sptrsv_solve(my_exec_space, handle, rowmap, entries, values, b, x);
 }
 
+namespace Experimental {
+
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) || defined(DOXY)
 /**
  * @brief Supernodal sptrsv solve phase of x for linear system Ax=b
@@ -445,10 +446,10 @@ void sptrsv_solve(ExecutionSpace &space, KernelHandle *handle, XType x, XType b)
     Kokkos::deep_copy(space, x, b);
 
     // the fifth argument (i.e., first x) is not used
-    sptrsv_solve(space, handle, row_map, entries, values, x, x);
+    KokkosSparse::sptrsv_solve(space, handle, row_map, entries, values, x, x);
   } else {
     // the fifth argument (i.e., first x) is not used
-    sptrsv_solve(space, handle, row_map, entries, values, b, b);
+    KokkosSparse::sptrsv_solve(space, handle, row_map, entries, values, b, b);
 
     // apply backward pivoting
     Kokkos::deep_copy(space, x, b);
@@ -700,6 +701,54 @@ void sptrsv_solve_streams(const std::vector<ExecutionSpace> &execspace_v, const 
   }
 
 }  // sptrsv_solve_streams
+
+#if !defined(DOXY)
+template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
+[[deprecated(
+    "sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_symbolic(const ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries) {
+  KokkosSparse::sptrsv_symbolic(space, handle, rowmap, entries);
+}
+
+template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
+[[deprecated(
+    "sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_symbolic(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries) {
+  KokkosSparse::sptrsv_symbolic(handle, rowmap, entries);
+}
+
+template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_,
+          typename scalar_nnz_view_t_>
+[[deprecated(
+    "sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_symbolic(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries,
+                scalar_nnz_view_t_ values) {
+  KokkosSparse::sptrsv_symbolic(space, handle, rowmap, entries, values);
+}
+
+template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+[[deprecated(
+    "sptrsv_symbolic was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_symbolic(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values) {
+  KokkosSparse::sptrsv_symbolic(handle, rowmap, entries, values);
+}
+
+template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_,
+          typename scalar_nnz_view_t_, class BType, class XType>
+[[deprecated("sptrsv_solve was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_solve(ExecutionSpace &space, KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries,
+             scalar_nnz_view_t_ values, BType b, XType x) {
+  KokkosSparse::sptrsv_solve(space, handle, rowmap, entries, values, b, x);
+}
+
+template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+          class BType, class XType>
+[[deprecated("sptrsv_solve was promoted out of Experimental, please use KokkosSparse::sptrsv_symbolic instead.")]] void
+sptrsv_solve(KernelHandle *handle, lno_row_view_t_ rowmap, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, BType b,
+             XType x) {
+  KokkosSparse::sptrsv_solve(handle, rowmap, entries, values, b, x);
+}
+#endif
 
 }  // namespace Experimental
 }  // namespace KokkosSparse

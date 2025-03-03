@@ -7,7 +7,9 @@ include(CMakeFindDependencyMacro)
 
 @KOKKOSKERNELS_TPL_EXPORTS@
 
-find_dependency(Kokkos HINTS @Kokkos_DIR@)
+IF(NOT Kokkos_FOUND)
+  find_dependency(Kokkos HINTS @Kokkos_DIR@)
+ENDIF()
 
 INCLUDE("${KokkosKernels_CMAKE_DIR}/KokkosKernelsTargets.cmake")
 

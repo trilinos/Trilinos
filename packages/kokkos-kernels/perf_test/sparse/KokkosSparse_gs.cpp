@@ -243,8 +243,8 @@ void runGS(const GS_Parameters& params) {
   for (int i = 0; i < params.nstreams; i++) {
     auto blk_A     = DiagBlks[i];
     auto blk_nrows = blk_A.numRows();
-    KokkosSparse::Experimental::gauss_seidel_symbolic(instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
-                                                      blk_A.graph.entries, params.graph_symmetric);
+    KokkosSparse::gauss_seidel_symbolic(instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+                                        blk_A.graph.entries, params.graph_symmetric);
   }
   symbolicLaunchTimeTotal = timer.seconds();
   timer.reset();
@@ -256,8 +256,8 @@ void runGS(const GS_Parameters& params) {
   for (int i = 0; i < params.nstreams; i++) {
     auto blk_A     = DiagBlks[i];
     auto blk_nrows = blk_A.numRows();
-    KokkosSparse::Experimental::gauss_seidel_numeric(instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
-                                                     blk_A.graph.entries, blk_A.values, params.graph_symmetric);
+    KokkosSparse::gauss_seidel_numeric(instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+                                       blk_A.graph.entries, blk_A.values, params.graph_symmetric);
   }
   numericLaunchTimeTotal = timer.seconds();
   timer.reset();
@@ -272,19 +272,19 @@ void runGS(const GS_Parameters& params) {
     // Last two parameters are damping factor (should be 1) and sweeps
     switch (params.direction) {
       case GS_SYMMETRIC:
-        KokkosSparse::Experimental::symmetric_gauss_seidel_apply(instances[i], &kh[i], blk_nrows, blk_nrows,
-                                                                 blk_A.graph.row_map, blk_A.graph.entries, blk_A.values,
-                                                                 x[i], b[i], true, true, 1.0, params.sweeps);
+        KokkosSparse::symmetric_gauss_seidel_apply(instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+                                                   blk_A.graph.entries, blk_A.values, x[i], b[i], true, true, 1.0,
+                                                   params.sweeps);
         break;
       case GS_FORWARD:
-        KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply(
-            instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map, blk_A.graph.entries, blk_A.values, x[i],
-            b[i], true, true, 1.0, params.sweeps);
+        KokkosSparse::forward_sweep_gauss_seidel_apply(instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+                                                       blk_A.graph.entries, blk_A.values, x[i], b[i], true, true, 1.0,
+                                                       params.sweeps);
         break;
       case GS_BACKWARD:
-        KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply(
-            instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map, blk_A.graph.entries, blk_A.values, x[i],
-            b[i], true, true, 1.0, params.sweeps);
+        KokkosSparse::backward_sweep_gauss_seidel_apply(instances[i], &kh[i], blk_nrows, blk_nrows, blk_A.graph.row_map,
+                                                        blk_A.graph.entries, blk_A.values, x[i], b[i], true, true, 1.0,
+                                                        params.sweeps);
         break;
     }
   }

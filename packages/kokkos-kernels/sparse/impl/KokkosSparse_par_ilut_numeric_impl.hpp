@@ -80,16 +80,15 @@ struct IlutWrap {
 
     const size_type nrows = ih.get_nrows();
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, nrows, nrows, nrows, L_row_map, L_entries, false, U_row_map,
-                                                U_entries, false, LU_row_map);
+    KokkosSparse::spgemm_symbolic(&kh, nrows, nrows, nrows, L_row_map, L_entries, false, U_row_map, U_entries, false,
+                                  LU_row_map);
 
     const size_type lu_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     Kokkos::resize(LU_entries, lu_nnz_size);
     Kokkos::resize(LU_values, lu_nnz_size);
 
-    KokkosSparse::Experimental::spgemm_numeric(&kh, nrows, nrows, nrows, L_row_map, L_entries, L_values, false,
-                                               U_row_map, U_entries, U_values, false, LU_row_map, LU_entries,
-                                               LU_values);
+    KokkosSparse::spgemm_numeric(&kh, nrows, nrows, nrows, L_row_map, L_entries, L_values, false, U_row_map, U_entries,
+                                 U_values, false, LU_row_map, LU_entries, LU_values);
 
     // Need to sort LU CRS if on CUDA!
     sort_crs_matrix<execution_space>(LU_row_map, LU_entries, LU_values);
@@ -621,15 +620,14 @@ struct IlutWrap {
     // TODO: let compute_residual_norm also take an execution space argument and
     // use that for exec!
     typename KHandle::HandleExecSpace exec{};
-    KokkosSparse::Experimental::spadd_symbolic(exec, &kh, m, n, A_row_map, A_entries, LU_row_map, LU_entries,
-                                               R_row_map);
+    KokkosSparse::spadd_symbolic(exec, &kh, m, n, A_row_map, A_entries, LU_row_map, LU_entries, R_row_map);
 
     const size_type r_nnz = addHandle->get_c_nnz();
     Kokkos::resize(exec, R_entries, r_nnz);
     Kokkos::resize(exec, R_values, r_nnz);
 
-    KokkosSparse::Experimental::spadd_numeric(exec, &kh, m, n, A_row_map, A_entries, A_values, 1., LU_row_map,
-                                              LU_entries, LU_values, -1., R_row_map, R_entries, R_values);
+    KokkosSparse::spadd_numeric(exec, &kh, m, n, A_row_map, A_entries, A_values, 1., LU_row_map, LU_entries, LU_values,
+                                -1., R_row_map, R_entries, R_values);
     // TODO: how to make this policy use exec?
     auto policy = ih.get_default_team_policy();
 

@@ -19,6 +19,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas1_rotm_spec.hpp>
+#include <KokkosKernels_helpers.hpp>
 
 namespace KokkosBlas {
 
@@ -30,10 +31,10 @@ namespace KokkosBlas {
 /// \tparam ParamView a rank1 view of static extent [5] type that
 ///         holds const data
 ///
-/// \param space [in]  execution space used for parallel loops in this kernel
-/// \param X [in/out] vector to be rotated with param coefficients
-/// \param Y [in/out] vector to be rotated with param coefficients
-/// \param param [in]  output of rotmg contains rotation coefficients
+/// \param space [in] execution space used for parallel loops in this kernel
+/// \param X [in/out] First vector to be rotated with param coefficients
+/// \param Y [in/out] Second vector to be rotated with param coefficients
+/// \param param [in] rotation parameters produced by rotmg
 ///
 template <class execution_space, class VectorView, class ParamView>
 void rotm(execution_space const& space, VectorView const& X, VectorView const& Y, ParamView const& param) {
