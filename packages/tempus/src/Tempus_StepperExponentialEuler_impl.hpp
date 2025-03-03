@@ -1,8 +1,6 @@
 // @HEADER
 // ****************************************************************************
-//                Tempus: Copyright (2017) Sandia Corporation
-//
-// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// TODO
 // ****************************************************************************
 // @HEADER
 
@@ -13,6 +11,8 @@
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"
 #include "Tempus_StepperFactory.hpp"
 
+// TODO: have to include this header to get LSP to work.
+#include "Tempus_StepperExponentialEuler.hpp"
 
 namespace Tempus {
 
@@ -20,16 +20,15 @@ namespace Tempus {
 template<class Scalar>
 StepperExponentialEuler<Scalar>::StepperExponentialEuler()
 {
-  this->setStepperName(        "Exponential Euler");
-  this->setStepperType(        "Exponential Euler");
-  this->setUseFSAL(            false);
-  this->setICConsistency(      "None");
-  this->setICConsistencyCheck( false);
-  this->setZeroInitialGuess(   false);
+  this->setStepperName("Exponential Euler");
+  this->setStepperType("Exponential Euler");
+  this->setUseFSAL(false);
+  this->setICConsistency("None");
+  this->setICConsistencyCheck(false);
+  this->setZeroInitialGuess(false);
 
   this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
-  this->setPredictor();
 }
 
 
@@ -37,23 +36,21 @@ template<class Scalar>
 StepperExponentialEuler<Scalar>::StepperExponentialEuler(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-  const Teuchos::RCP<Stepper<Scalar> >& predictorStepper,
   bool useFSAL,
   std::string ICConsistency,
   bool ICConsistencyCheck,
   bool zeroInitialGuess,
-  const Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> >& stepperBEAppAction)
+  const Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> >& stepperEEAppAction)
 {
-  this->setStepperName(        "Exponential Euler");
-  this->setStepperType(        "Exponential Euler");
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
-  this->setZeroInitialGuess(   zeroInitialGuess);
+  this->setStepperName("Exponential Euler");
+  this->setStepperType("Exponential Euler");
+  this->setUseFSAL(useFSAL);
+  this->setICConsistency(ICConsistency);
+  this->setICConsistencyCheck(ICConsistencyCheck);
+  this->setZeroInitialGuess(zeroInitialGuess);
 
-  this->setAppAction(stepperBEAppAction);
+  this->setAppAction(stepperEEAppAction);
   this->setSolver(solver);
-  this->setPredictor(predictorStepper);
 
   if (appModel != Teuchos::null) {
     this->setModel(appModel);
@@ -63,58 +60,15 @@ StepperExponentialEuler<Scalar>::StepperExponentialEuler(
 
 
 template<class Scalar>
-void StepperExponentialEuler<Scalar>::setPredictor(std::string predictorType)
-{
-  if (predictorType == "None") {
-    predictorStepper_ = Teuchos::null;
-    return;
-  }
-
-  auto sf = Teuchos::rcp(new StepperFactory<Scalar>());
-  if (this->wrapperModel_ != Teuchos::null &&
-      this->wrapperModel_->getAppModel() != Teuchos::null) {
-    predictorStepper_ = sf->createStepper(predictorType,
-                                          this->wrapperModel_->getAppModel());
-  } else {
-    predictorStepper_ = sf->createStepper(predictorType);
-  }
-
-  this->isInitialized_ = false;
-}
-
-
-/// Set the predictor.
-template<class Scalar>
-void StepperExponentialEuler<Scalar>::setPredictor(
-  Teuchos::RCP<Stepper<Scalar> > predictorStepper)
-{
-  predictorStepper_ = predictorStepper;
-  if (predictorStepper_ == Teuchos::null) return;
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    predictorStepper_->getModel() == Teuchos::null &&
-    this->wrapperModel_->getAppModel() == Teuchos::null, std::logic_error,
-    "Error - Need to set the model, setModel(), before calling "
-    "StepperExponentialEuler::setPredictor()\n");
-
-  if (predictorStepper_->getModel() == Teuchos::null)
-    predictorStepper_->setModel(this->wrapperModel_->getAppModel());
-  predictorStepper_->initialize();
-
-  this->isInitialized_ = false;
-}
-
-
-template<class Scalar>
 void StepperExponentialEuler<Scalar>::setAppAction(
   Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > appAction)
 {
   if (appAction == Teuchos::null) {
     // Create default appAction
-    stepperBEAppAction_ =
+    stepperEEAppAction_ =
       Teuchos::rcp(new StepperExponentialEulerModifierDefault<Scalar>());
   } else {
-    stepperBEAppAction_ = appAction;
+    stepperEEAppAction_ = appAction;
   }
   this->isInitialized_ = false;
 }
@@ -125,14 +79,6 @@ void StepperExponentialEuler<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
   StepperImplicit<Scalar>::setModel(appModel);
-
-  if (predictorStepper_ != Teuchos::null) {
-    // If predictor's model is not set, set it to the stepper model.
-    if (predictorStepper_->getModel() == Teuchos::null) {
-      predictorStepper_->setModel(appModel);
-      predictorStepper_->initialize();
-    }
-  }
 
   this->isInitialized_ = false;
 }
@@ -166,6 +112,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExponentialEuler::takeStep()");
   {
+    // TODO: figure out why two states
     TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
       std::logic_error,
       "Error - StepperExponentialEuler<Scalar>::takeStep(...)\n"
@@ -175,24 +122,20 @@ void StepperExponentialEuler<Scalar>::takeStep(
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
     RCP<StepperExponentialEuler<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
-    stepperBEAppAction_->execute(solutionHistory, thisStepper,
+    stepperEEAppAction_->execute(solutionHistory, thisStepper,
       StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
     RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
-    RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
+    RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
     if (workingState->getXDot() != Teuchos::null)
       this->setStepperXDot(workingState->getXDot());
     RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
 
-    computePredictor(solutionHistory);
-    if (workingState->getSolutionStatus() == Status::FAILED)
-      return;
-
     const Scalar time = workingState->getTime();
-    const Scalar dt   = workingState->getTimeStep();
+    const Scalar dt = workingState->getTimeStep();
 
     // Setup TimeDerivative
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
@@ -204,14 +147,15 @@ void StepperExponentialEuler<Scalar>::takeStep(
     auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
       timeDer, dt, alpha, beta));
 
-    stepperBEAppAction_->execute(solutionHistory, thisStepper,
-      StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+    stepperEEAppAction_->execute(solutionHistory, thisStepper,
+      StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
 
+    // TODO compute matrix exponential
     const Thyra::SolveStatus<Scalar> sStatus =
       this->solveImplicitODE(x, xDot, time, p);
 
-    stepperBEAppAction_->execute(solutionHistory, thisStepper,
-      StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+    stepperEEAppAction_->execute(solutionHistory, thisStepper,
+      StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
 
     if (workingState->getXDot() != Teuchos::null)
       timeDer->compute(x, xDot);
@@ -219,28 +163,12 @@ void StepperExponentialEuler<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    stepperBEAppAction_->execute(solutionHistory, thisStepper,
+    stepperEEAppAction_->execute(solutionHistory, thisStepper,
       StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }
 
-template<class Scalar>
-void StepperExponentialEuler<Scalar>::computePredictor(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
-{
-  if (predictorStepper_ == Teuchos::null) return;
-  predictorStepper_->takeStep(solutionHistory);
-
-  if (solutionHistory->getWorkingState()->getSolutionStatus()==Status::FAILED) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"StepperExponentialEuler::computePredictor");
-    *out << "Warning - predictorStepper has failed." << std::endl;
-  } else {
-    // Reset status to WORKING since this is the predictor
-    solutionHistory->getWorkingState()->setSolutionStatus(Status::WORKING);
-  }
-}
 
 
 /** \brief Provide a StepperState to the SolutionState.
@@ -271,16 +199,8 @@ void StepperExponentialEuler<Scalar>::describe(
   StepperImplicit<Scalar>::describe(out, verbLevel);
 
   out << "--- StepperExponentialEuler ---\n";
-  out << "  predictorStepper_                  = "
-      << predictorStepper_ << std::endl;
-  if (predictorStepper_ != Teuchos::null) {
-    out << "  predictorStepper_->isInitialized() = "
-        << Teuchos::toString(predictorStepper_->isInitialized()) << std::endl;
-    out << "  predictor stepper type             = "
-        << predictorStepper_->description() << std::endl;
-  }
-  out << "  stepperBEAppAction_                = "
-      << stepperBEAppAction_ << std::endl;
+  out << "  stepperEEAppAction_                = "
+      << stepperEEAppAction_ << std::endl;
   out << "----------------------------" << std::endl;
 }
 
@@ -294,14 +214,7 @@ bool StepperExponentialEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
   if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
 
-  if (predictorStepper_ != Teuchos::null) {
-    if ( !predictorStepper_->isInitialized() ) {
-      isValidSetup = false;
-      out << "The predictor stepper is not initialized!\n";
-    }
-  }
-
-  if (stepperBEAppAction_ == Teuchos::null) {
+  if (stepperEEAppAction_ == Teuchos::null) {
     isValidSetup = false;
     out << "The Backward Euler AppAction is not set!\n";
   }
@@ -315,10 +228,6 @@ Teuchos::RCP<const Teuchos::ParameterList>
 StepperExponentialEuler<Scalar>::getValidParameters() const
 {
   auto pl = this->getValidParametersBasicImplicit();
-  if (predictorStepper_ == Teuchos::null)
-    pl->set("Predictor Stepper Type", "None");
-  else
-    pl->set("Predictor Stepper Type", predictorStepper_->getStepperType());
   return pl;
 }
 
@@ -333,12 +242,6 @@ createStepperExponentialEuler(
   auto stepper = Teuchos::rcp(new StepperExponentialEuler<Scalar>());
 
   stepper->setStepperImplicitValues(pl);
-
-  if (pl != Teuchos::null) {
-    std::string predictorName =
-      pl->get<std::string>("Predictor Stepper Type", "None");
-    stepper->setPredictor(predictorName);
-  }
 
   if (model != Teuchos::null) {
     stepper->setModel(model);

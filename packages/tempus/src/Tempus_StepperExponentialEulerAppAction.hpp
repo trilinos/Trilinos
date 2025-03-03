@@ -1,8 +1,6 @@
 // @HEADER
 // ****************************************************************************
-//                Tempus: Copyright (2017) Sandia Corporation
-//
-// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// TODO
 // ****************************************************************************
 // @HEADER
 
@@ -38,16 +36,16 @@ public:
   /// Indicates the location of application action (see algorithm).
   enum ACTION_LOCATION {
     BEGIN_STEP,     ///< At the beginning of the step.
-    BEFORE_SOLVE,   ///< Before the implicit solve.
-    AFTER_SOLVE,    ///< After the implicit solve.
+    BEFORE_EXP,     ///< Before the exponential solve.
+    AFTER_EXP,      ///< After the exponential solve.
     END_STEP        ///< At the end of the step.
   };
 
   /// Constructor
-  StepperExponentialEulerAppAction(){}
+  StepperExponentialEulerAppAction() {}
 
   /// Destructor
-  virtual ~StepperExponentialEulerAppAction(){}
+  virtual ~StepperExponentialEulerAppAction() {}
 
   /// Execute application action for ExponentialEuler Stepper.
   virtual void execute(
