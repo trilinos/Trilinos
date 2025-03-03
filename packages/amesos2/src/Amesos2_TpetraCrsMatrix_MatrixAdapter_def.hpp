@@ -178,6 +178,8 @@ namespace Amesos2 {
   ConcreteMatrixAdapter<
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     >::gather_impl(KV_S& nzvals, KV_GO& indices, KV_GS& pointers,
+                   host_ordinal_type_array &perm_g2l,
+                   host_ordinal_type_array &recvCountRows, host_ordinal_type_array &recvDisplRows,
                    host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
                    host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
                    bool column_major, EPhase current_phase) const
@@ -211,8 +213,10 @@ namespace Amesos2 {
           global_ordinal_t rowIndexBase = rowMap->getIndexBase();
           global_ordinal_t colIndexBase = colMap->getIndexBase();
           // map from global to local
-          host_ordinal_type_array  perm_g2l;
-          host_ordinal_type_array  perm_l2g;
+          host_ordinal_type_array  perm_l2g; // map from GIDs
+          // true uses 'original' contiguous row inds 0:(n-1) (no need to perm sol or rhs), 
+          // false uses GIDs given by map (need to swap sol & rhs, but use matrix perm, e.g., fill-reducing)
+          bool swap_cols = false; //true;
           // workspace to transpose
           KV_GS pointers_t;
           KV_GO indices_t;
@@ -223,8 +227,8 @@ namespace Amesos2 {
           bool need_to_perm = false;
           {
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(rowptr)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(rowptr)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             Teuchos::gather<int, LocalOrdinal> (&myNRows, 1, recvCounts.data(), 1, 0, *comm);
             if (myRank == 0) {
@@ -261,8 +265,8 @@ namespace Amesos2 {
                                                    0, *comm);
               if (myRank == 0) {
                 for (int i=0; i < nRows; i++) {
-                  perm_g2l(i) -= rowIndexBase;
-                  perm_l2g(perm_g2l(i)) = i;
+                  perm_g2l(i) -= rowIndexBase; // map to GIDs
+                  perm_l2g(perm_g2l(i)) = i;   // map from GIDs
                   if (i != perm_g2l(i)) need_to_perm = true;
                 }
               }
@@ -281,6 +285,12 @@ namespace Amesos2 {
             Teuchos::gatherv<int, LocalOrdinal> (&lclRowptr_(sendIdx), myNRows, &pointers_[1],
                                                  recvCounts.data(), recvDispls.data(),
                                                  0, *comm);
+
+            // save row counts/displs
+            Kokkos::resize(recvCountRows, nRanks);
+            Kokkos::resize(recvDisplRows, nRanks+1);
+            Kokkos::deep_copy(recvCountRows, recvCounts);
+            Kokkos::deep_copy(recvDisplRows, recvDispls);
             if (myRank == 0) {
               // shift to global pointers
               pointers_[0] = 0;
@@ -304,8 +314,8 @@ namespace Amesos2 {
           }
           {
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(colind)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(colind)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             // gather colinds
             if (myRank == 0) {
@@ -332,9 +342,19 @@ namespace Amesos2 {
           }
           if (myRank == 0) {
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose index)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose index)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
+            if (swap_cols && need_to_perm) {
+              // convert col GIDs to 0:(n-1)
+              for (int i=0; i<ret; i++) {
+                if (column_major || need_to_perm) {
+                  indices_t(i) = perm_l2g(indices_t(i));
+                } else {
+                  indices(i) = perm_l2g(indices(i));
+                }
+              }
+            }
             // (note: column idexes are now in base-0)
             if (column_major) {
               // Map to transpose
@@ -354,7 +374,8 @@ namespace Amesos2 {
               }
               // nonzeroes in each column are sorted in ascending row
               for (int row=0; row<nRows; row++) {
-                int i = perm_l2g(row);
+                // if swap cols, then just use the original 0:(n-1), otherwise GIDs
+                int i = (swap_cols ? row : perm_l2g(row));
                 for (int k=pointers_t(i); k<pointers_t(i+1); k++) {
                   int col = indices_t(k);
                   if (col < nRows) {
@@ -394,13 +415,17 @@ namespace Amesos2 {
               Kokkos::resize(transpose_map, 0);
             }
           }
+          if (!need_to_perm || swap_cols) {
+            // no need to perm rhs or sol
+            Kokkos::resize(perm_g2l, 0);
+          }
         }
         //if(current_phase == NUMFACT) // Numerical values may be used in symbolic (e.g, MWM)
         {
           {
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(nzvals)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             // grab numerical values on host
             auto lclNzvals_d = lclMatrix.values;
@@ -423,8 +448,8 @@ namespace Amesos2 {
             // Insert Numerical values to transopose matrix
             ret = pointers(nRows);
 #ifdef HAVE_AMESOS2_TIMERS
-            Teuchos::RCP< Teuchos::Time > gatherTime = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose values)");
-            Teuchos::TimeMonitor GatherTimer(*gatherTime);
+            Teuchos::RCP< Teuchos::Time > gatherTime_ = Teuchos::TimeMonitor::getNewCounter ("Amesos2::gather(transpose values)");
+            Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             if (transpose_map.extent(0) > 0) {
               for (int k=0; k<ret; k++) {

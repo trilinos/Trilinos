@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::oblackholestream blackhole;
 
+  size_t numVectors = 1;
   bool multi_solve     = false;
   bool printMatrix     = false;
   bool printSolution   = false;
@@ -83,6 +84,7 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("filename",&mat_filename,"Filename for Matrix-Market test matrix.");
+  cmdp.setOption("nrhs",&numVectors,"Number of right-hand-side vectors.");
   cmdp.setOption("rhs_filename",&rhs_filename,"Filename for Matrix-Market right-hand-side.");
   cmdp.setOption("solvername",&solvername,"Name of solver.");
   cmdp.setOption("xml_filename",&xml_filename,"XML Filename for Solver parameters.");
@@ -104,8 +106,6 @@ int main(int argc, char *argv[]) {
 
   // Say hello
   out << myRank << " : " << Amesos2::version() << " on " << comm->getSize() << " MPIs" << std::endl << std::endl;
-
-  const size_t numVectors = 1;
 
   // Read matrix
   RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(mat_filename, comm);
@@ -132,10 +132,19 @@ int main(int argc, char *argv[]) {
      *   [10]
      *   [10]]
      */
-    B->putScalar(10);
+    if (true) {
+      X->putScalar(1);
+      A->apply(*X, *B);
+    } else {
+      B->putScalar(10);
+    }
   } else {
     B = Tpetra::MatrixMarket::Reader<MAT>::readDenseFile (rhs_filename, comm, rngmap);
+    numVectors = B->getNumVectors();
   }
+
+  // Randomize X
+  X->randomize();
 
   if (useZoltan2 || useParMETIS) {
 #if defined(HAVE_AMESOS2_XPETRA) && defined(HAVE_AMESOS2_ZOLTAN2)
@@ -196,7 +205,7 @@ int main(int argc, char *argv[]) {
   if( printMatrix ){
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
-  else if( verbose ){
+  else if( verbose && myRank == 0){
     std::cout << std::endl << A->description() << std::endl << std::endl;
   }
 

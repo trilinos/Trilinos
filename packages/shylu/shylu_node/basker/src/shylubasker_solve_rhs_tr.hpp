@@ -405,7 +405,7 @@ namespace BaskerNS
     //  Input : X
     //  Output: Y
     int offset = 0;
-if (Options.verbose) std::cout << "BTF_D^T begin: from 0 to " << btf_top_tabs_offset << std::endl;
+    if (Options.verbose) std::cout << "BTF_D^T begin: from 0 to " << btf_top_tabs_offset << std::endl;
     if(btf_top_tabs_offset >  0)
     {
       for(Int b = 0; b < btf_top_tabs_offset; b++)
@@ -460,7 +460,7 @@ if (Options.verbose) std::cout << "BTF_D^T begin: from 0 to " << btf_top_tabs_of
     Int nblks_c = btf_nblks-btf_tabs_offset;
 
     if (nblks_c > 0) {
-      Int offset = 0;
+      offset = 0;
       for(Int b = 0;  b < nblks_c; b++) {
         BASKER_MATRIX &UC = UBTF(b);
 

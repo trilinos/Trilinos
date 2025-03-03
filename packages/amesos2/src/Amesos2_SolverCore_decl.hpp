@@ -485,8 +485,9 @@ namespace Amesos2 {
     typedef Kokkos::DefaultHostExecutionSpace                 HostExecSpaceType;
     typedef Kokkos::View<local_ordinal_type*, HostExecSpaceType> host_ordinal_type_array;
     typedef Kokkos::View<       scalar_type*, HostExecSpaceType> host_scalar_type_array;
-    host_ordinal_type_array recvCounts;
-    host_ordinal_type_array recvDispls;
+    host_ordinal_type_array perm_g2l;
+    host_ordinal_type_array recvCountRows, recvDisplRows;
+    host_ordinal_type_array recvCounts, recvDispls;
     host_ordinal_type_array transpose_map;
     host_scalar_type_array  nzvals_t;
   };				// End class Amesos2::SolverCore

@@ -98,7 +98,6 @@ namespace BaskerNS
 #ifdef BASKER_KOKKOS
     Kokkos::Timer timer;
 
-    typedef Kokkos::TeamPolicy<Exe_Space>        TeamPolicy;
     // --------------------------------------------------------------- //
     // ----------------------- Big A block --------------------------- //
     if(btf_tabs_offset != 0)
