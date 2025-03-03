@@ -1,8 +1,6 @@
 // @HEADER
 // ****************************************************************************
-//                Tempus: Copyright (2017) Sandia Corporation
-//
-// Distributed under BSD 3-clause license (See accompanying file Copyright.txt)
+// TODO
 // ****************************************************************************
 // @HEADER
 
@@ -35,7 +33,7 @@ namespace Tempus {
  *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
  *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
  *      \item {\bf Compute the explicit evaluation}  $f_{n-1} = \mathcal{F}(x_{n-1}, t_{n-1})$.
- *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_EXP)}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXP)}
  *      \item {\bf Compute $d_{n-1} = \exp(\Delta{t_{n-1}} W_{n-1}) f_{n-1}$.}
  *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_EXP)}
  *      \item $\dot{x}_n \leftarrow x_{n-1} + \Delta{t_n}d_n$
@@ -76,12 +74,11 @@ public:
   StepperExponentialEuler(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    const Teuchos::RCP<Stepper<Scalar> >& predictorStepper,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
     bool zeroInitialGuess,
-    const Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> >& stepperBEAppAction);
+    const Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> >& stepperEEAppAction);
 
   /// \name Basic stepper methods
   //@{
@@ -89,11 +86,7 @@ public:
       Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > appAction);
 
     virtual Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > getAppAction() const
-    { return stepperBEAppAction_; }
-
-    /// Set the predictor
-    void setPredictor(std::string predictorType = "None");
-    void setPredictor(Teuchos::RCP<Stepper<Scalar> > predictorStepper);
+    { return stepperEEAppAction_; }
 
     /// Set the model
     virtual void setModel(
@@ -111,25 +104,21 @@ public:
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() override;
     virtual Scalar getOrder() const override {return 1.0;}
     virtual Scalar getOrderMin() const override {return 1.0;}
-    virtual Scalar getOrderMax() const override {return 2.0;}
-≈
-    virtual bool isExplicit()         const override {return false;}
-    virtual bool isImplicit()         const override {return true;}
+    virtual Scalar getOrderMax() const override {return 2.0;} //order is 2 for autonomous problems
+
+    virtual bool isExplicit() const override {return false;}
+    virtual bool isImplicit() const override {return true;}
     virtual bool isExplicitImplicit() const override
       {return isExplicit() && isImplicit();}
-    virtual bool isOneStepMethod()   const override {return true;}
+    virtual bool isOneStepMethod() const override {return true;}
     virtual bool isMultiStepMethod() const override {return !isOneStepMethod();}
-    virtual OrderODE getOrderODE()   const override {return FIRST_ORDER_ODE;}
+    virtual OrderODE getOrderODE() const override {return FIRST_ORDER_ODE;}
   //@}
 
     /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const override { return Scalar(1.0)/dt; }
   /// Return beta  = d(x)/dx.
-  virtual Scalar getBeta (const Scalar   ) const override { return Scalar(1.0); }
-
-  /// Compute predictor given the supplied stepper
-  virtual void computePredictor(
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+  virtual Scalar getBeta (const Scalar) const override { return Scalar(1.0); }
 
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
@@ -155,8 +144,7 @@ private:
 
 private:
 
-  Teuchos::RCP<Stepper<Scalar> >                       predictorStepper_;
-  Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > stepperBEAppAction_;
+  Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > stepperEEAppAction_;
 
 };
 
