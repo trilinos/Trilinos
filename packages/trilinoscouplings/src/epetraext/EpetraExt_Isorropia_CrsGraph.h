@@ -28,7 +28,7 @@ class Isorropia_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
   // Parameter list to specify partitioning algorithm for Isorropia.
   Teuchos::ParameterList partitionList_;
 
-  // New graph for the repartitioned matrix.
+  // New graph for the repartitioned matrix. "String added by EEP, for testing"
   Teuchos::RCP<Epetra_CrsGraph> NewGraph_;
 
  public:
