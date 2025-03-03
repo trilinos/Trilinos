@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -379,10 +379,7 @@ int          main(int argc, char *argv[])
       exit(EXIT_FAILURE);
     }
 
-    int int_byte_size = 4;
-    if (interFace.ints_64_bit()) {
-      int_byte_size = 8;
-    }
+    int int_byte_size = Excn::ExodusFile::ints_64_bit() ? 8 : 4;
 
     if (Excn::ExodusFile::io_word_size() == 4) {
       if (int_byte_size == 4) {
@@ -418,7 +415,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   SMART_ASSERT(sizeof(T) == Excn::ExodusFile::io_word_size());
 
   const T alive      = interFace.alive_value();
-  size_t  part_count = interFace.inputFiles_.size();
+  size_t  part_count = Excn::ExodusFile::part_count();
 
   std::array<char, MAX_LINE_LENGTH + 1> mytitle{};
 
@@ -1733,7 +1730,7 @@ namespace {
         fmt::print(
             stderr,
             "WARNING: Duplicate node ids were found. Their ids have been renumbered to remove "
-            "duplicates. If the part meshes should be identical, maybe use the "
+            "duplicates.\n\tIf the part meshes should be identical, maybe use the "
             "--ignore_coordinate option.\n");
       }
     }
@@ -2097,7 +2094,9 @@ namespace {
 
         // Get the ids for these
         ids.resize(ns_count);
-        ex_get_ids(id, EX_NODE_SET, Data(ids));
+        if (ns_count > 0) {
+          ex_get_ids(id, EX_NODE_SET, Data(ids));
+        }
 
         for (int iset = 0; iset < ns_count; iset++) {
           if (ids[iset] != 0) {
@@ -2142,8 +2141,10 @@ namespace {
         nodesets[p].resize(set_ids.size());
 
         // Get the ids again so we can map current order back to file order...
-        ex_get_ids(id, EX_NODE_SET, Data(ids));
         int ns_count = ex_inquire_int(id, EX_INQ_NODE_SETS);
+        if (ns_count > 0) {
+          ex_get_ids(id, EX_NODE_SET, Data(ids));
+        }
 
         for (int i = 0; i < ns_count; i++) {
           nodesets[p][i].id = ids[i];
@@ -2315,7 +2316,9 @@ namespace {
 
         // Get the ids for these
         ids.resize(ss_count);
-        ex_get_ids(id, EX_SIDE_SET, Data(ids));
+        if (ss_count > 0) {
+          ex_get_ids(id, EX_SIDE_SET, Data(ids));
+        }
 
         for (int i = 0; i < ss_count; i++) {
           if (ids[i] != 0) {
@@ -2361,9 +2364,11 @@ namespace {
         sets[p].resize(set_ids.size());
 
         // Get the ids again so we can map current order back to file order...
-        ex_get_ids(id, EX_SIDE_SET, Data(ids));
-
         int ss_count = ex_inquire_int(id, EX_INQ_SIDE_SETS);
+        if (ss_count > 0) {
+          ex_get_ids(id, EX_SIDE_SET, Data(ids));
+        }
+
         for (int i = 0; i < ss_count; i++) {
           sets[p][i].id = ids[i];
 

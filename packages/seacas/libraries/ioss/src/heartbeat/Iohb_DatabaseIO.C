@@ -166,9 +166,7 @@ namespace Iohb {
         new_this->logStream = open_stream(get_filename(), &(new_this->streamNeedsDelete), append);
 
         if (new_this->logStream == nullptr) {
-          std::ostringstream errmsg;
-          fmt::print(errmsg, "ERROR: Could not create heartbeat file '{}'\n", get_filename());
-          IOSS_ERROR(errmsg);
+          IOSS_ERROR(fmt::format("ERROR: Could not create heartbeat file '{}'\n", get_filename()));
         }
       }
 
@@ -392,9 +390,7 @@ namespace Iohb {
       }
       else {
         if (layout_ == nullptr) {
-          std::ostringstream errmsg;
-          fmt::print(errmsg, "INTERNAL ERROR: Unexpected nullptr layout.\n");
-          IOSS_ERROR(errmsg);
+          IOSS_ERROR("INTERNAL ERROR: Unexpected nullptr layout.\n");
         }
         if (field.get_type() == Ioss::Field::INTEGER) {
           assert(field.transformed_count() == 1);
@@ -417,10 +413,7 @@ namespace Iohb {
       }
     }
     else {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n");
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR("ERROR: Can not handle non-TRANSIENT or non-REDUCTION fields on regions.\n");
     }
     return num_to_get;
   }

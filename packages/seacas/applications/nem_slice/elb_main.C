@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,6 +38,7 @@ namespace {
   void print_input(Machine_Description * /*machine*/, LB_Description<INT> * /*lb*/,
                    Problem_Description * /*prob*/, Solver_Description * /*solver*/,
                    Weight_Description * /*weight*/);
+
 } // namespace
 
 /*****************************************************************************/
