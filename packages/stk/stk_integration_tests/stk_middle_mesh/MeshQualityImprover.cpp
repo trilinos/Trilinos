@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include <stk_util/stk_config.h>
 #include "stk_middle_mesh/mesh.hpp"
 #include "stk_middle_mesh/boundary_fixture.hpp"
 #include "stk_middle_mesh/create_mesh.hpp"

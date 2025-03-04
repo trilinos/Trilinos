@@ -87,6 +87,7 @@ namespace stk {
     stk::register_ostream(sierra::tout(), "tout");
 
     static_cast<stk::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(sierra::dout().rdbuf());
+    stk::bind_output_streams("dout>null");
   }
 
   void EnvData::initialize(MPI_Comm worldComm)

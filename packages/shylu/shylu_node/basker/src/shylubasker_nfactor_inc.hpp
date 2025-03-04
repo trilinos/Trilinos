@@ -67,8 +67,6 @@ namespace BaskerNS
     //Kokkos::Timer       timer;
     #endif
     //===TIMER===
-
-    typedef Kokkos::TeamPolicy<Exe_Space>        TeamPolicy;
     if(btf_tabs_offset != 0)
       {
 	//printf("domain\n");

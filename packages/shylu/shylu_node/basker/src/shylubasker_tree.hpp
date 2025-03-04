@@ -1422,7 +1422,6 @@ namespace BaskerNS
     // reset all the time (factor may have failed, and some variables may not be cleared)
     //if(factor_flag == BASKER_TRUE)
     {
-      typedef Kokkos::TeamPolicy<Exe_Space> TeamPolicy;
       kokkos_reset_factor<Int,Entry,Exe_Space> reset_factors(this); //t_reset_ND_factor, BTF; reset LL and LU for factorization factor_notoken step
       Kokkos::parallel_for(TeamPolicy(num_threads,1), reset_factors);
       Kokkos::fence();

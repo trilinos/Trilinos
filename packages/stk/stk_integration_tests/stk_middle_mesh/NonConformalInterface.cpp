@@ -1,3 +1,4 @@
+#include <stk_util/stk_config.h>
 #include "stk_middle_mesh/create_mesh.hpp"
 #include "stk_middle_mesh/incremental_mesh_boundary_snapper.hpp"
 #include "stk_middle_mesh/mesh_io.hpp"

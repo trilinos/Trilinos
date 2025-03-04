@@ -314,16 +314,6 @@ bool SideSetHelper::element_side_can_be_distinguished_using_connectivity(const E
   return false;
 }
 
-bool SideSetHelper::element_side_can_be_distinguished(const Entity side, const Entity element,
-                                                      const ConnectivityOrdinal ordinal, const SideSetSelector& sideset)
-{
-  if(mesh.bucket(element).owned() && mesh.has_face_adjacent_element_graph()) {
-    return element_side_can_be_distinguished_using_elem_elem_graph(side, element, ordinal, sideset);
-  }
-
-  return element_side_can_be_distinguished_using_connectivity(side, element, ordinal, sideset);
-}
-
 bool SideSetHelper::element_side_has_local_coincidence_using_elem_elem_graph(Entity element,  ConnectivityOrdinal ordinal)
 {
   bool hasLocalCoincidence = false;

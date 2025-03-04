@@ -68,7 +68,7 @@ public:
         m_bulkData(bulkData),
         m_diagnosticFlag(diagnosticFlag) {}
 
-    virtual void finished_modification_end_notification();
+    virtual void finished_modification_end_notification() override;
     void enable_rule(stk::mesh::MeshDiagnosticFlag flag);
     unsigned get_number_of_errors() const {return m_errorDatabase.size();}
     void throw_if_errors_exist() {m_throwOnError = true;}

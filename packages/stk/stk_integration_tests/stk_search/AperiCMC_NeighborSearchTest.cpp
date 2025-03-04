@@ -437,9 +437,9 @@ TEST_F(NeighborSearchTestFixture, VariableBallSearchUnitCubes) {
     // Check the neighbor stats
     std::map<std::string, double> node_neighbor_stats = m_search_processor->GetNumNeighborStats();
     // Expected results are hard-coded to CPU results
-    EXPECT_EQ(node_neighbor_stats["min_num_neighbors"], 7);
-    EXPECT_EQ(node_neighbor_stats["max_num_neighbors"], 10);
-    EXPECT_NEAR(node_neighbor_stats["avg_num_neighbors"], 9.0, 0.001);
+    EXPECT_EQ(node_neighbor_stats["min_num_neighbors"], 8); //neighbors include "self"
+    EXPECT_EQ(node_neighbor_stats["max_num_neighbors"], 12);
+    EXPECT_NEAR(node_neighbor_stats["avg_num_neighbors"], 10.66667, 0.001);
     size_t expected_num_nodes = (num_elements_x + 1) * (num_elements_y + 1) * (num_elements_z + 1);
     EXPECT_EQ(node_neighbor_stats["num_entities"], expected_num_nodes);
 }
@@ -468,9 +468,9 @@ TEST_F(NeighborSearchTestFixture, VariableBallSearchScaledCubes) {
     // Check the neighbor stats
     std::map<std::string, double> node_neighbor_stats = m_search_processor->GetNumNeighborStats();
     // Expected results are hard-coded to CPU results
-    EXPECT_EQ(node_neighbor_stats["min_num_neighbors"], 7);
-    EXPECT_EQ(node_neighbor_stats["max_num_neighbors"], 11);
-    EXPECT_NEAR(node_neighbor_stats["avg_num_neighbors"], 9.166667, 0.001);
+    EXPECT_EQ(node_neighbor_stats["min_num_neighbors"], 8);
+    EXPECT_EQ(node_neighbor_stats["max_num_neighbors"], 12);
+    EXPECT_NEAR(node_neighbor_stats["avg_num_neighbors"], 10.66667, 0.001);
     size_t expected_num_nodes = (num_elements_x + 1) * (num_elements_y + 1) * (num_elements_z + 1);
     EXPECT_EQ(node_neighbor_stats["num_entities"], expected_num_nodes);
 }

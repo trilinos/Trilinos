@@ -32,8 +32,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+FILE(GLOB MAIN_SOURCES CONFIGURE_DEPENDS main/*.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_LIBRARY(stk_ngp_test
@@ -45,6 +46,11 @@ else()
   add_library(stk_ngp_test ${SOURCES})
   target_link_libraries(stk_ngp_test PUBLIC stk_util_ngp)
   target_link_libraries(stk_ngp_test PUBLIC Kokkos::kokkos)
+
+  add_library(stk_ngp_test_main ${MAIN_SOURCES})
+  target_link_libraries(stk_ngp_test_main PUBLIC stk_ngp_test)
+  target_link_libraries(stk_ngp_test_main PUBLIC stk_util_ngp)
+  target_link_libraries(stk_ngp_test_main PUBLIC Kokkos::kokkos)
 endif()
 
 target_include_directories(stk_ngp_test PUBLIC

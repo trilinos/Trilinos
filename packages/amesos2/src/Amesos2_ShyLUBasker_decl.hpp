@@ -170,6 +170,7 @@ private:
 
 
   bool is_contiguous_;
+  bool use_gather_;
 
   typedef typename Kokkos::View<shylubasker_type**, Kokkos::LayoutLeft, 
                                 typename HostExecSpaceType::memory_space> host_solve_array_t;

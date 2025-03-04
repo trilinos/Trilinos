@@ -788,7 +788,7 @@ public:
    * @return			a <b>Mask</b> value of the bitmask corresponding to the
    *				mask string.
    */
-  Mask parse(const char *mask_string) const;
+  Mask parse(const char *mask_string) const override;
 
   /**
    * Member function <b>parseArg</b> parses the argument and its argument values.
@@ -799,7 +799,7 @@ public:
    * @param arg			a <b>std::string</b> const reference to the argument
    *				values.
    */
-  virtual void parseArg(const std::string &name, const std::string &arg) const;
+  virtual void parseArg(const std::string &name, const std::string &arg) const override;
 
   mutable stk::diag::MetricsMask        m_metricsSetMask;
   mutable stk::diag::MetricsMask        m_metricsMask;

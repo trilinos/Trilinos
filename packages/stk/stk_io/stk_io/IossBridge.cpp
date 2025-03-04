@@ -2211,7 +2211,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       if (params.get_subset_selector(    )) ownSelector &= *params.get_subset_selector();
       if (params.get_output_selector(rank)) ownSelector &= *params.get_output_selector(rank);
 
-      int64_t allNodes = count_selected_nodes(params, allSelector);
       int64_t ownNodes = count_selected_nodes(params, ownSelector);
 
       const std::string name("nodeblock_1");
@@ -2219,6 +2218,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       Ioss::NodeBlock * nb = params.io_region().get_node_block(name);
       if(nb == nullptr)
       {
+          int64_t allNodes = count_selected_nodes(params, allSelector);
           nb = new Ioss::NodeBlock(params.io_region().get_database(),
                                    name, allNodes, spatialDim);
           params.io_region().add( nb );
@@ -2252,12 +2252,12 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       if (params.get_subset_selector(    )) ownSelector &= *params.get_subset_selector();
       if (params.get_output_selector(rank)) ownSelector &= *params.get_output_selector(rank);
 
-      int64_t allNodes = count_selected_nodes(params, allSelector);
       int64_t ownNodes = count_selected_nodes(params, ownSelector);
 
       Ioss::NodeSet *ns = ioRegion.get_nodeset(name);
       if(ns == nullptr)
       {
+          int64_t allNodes = count_selected_nodes(params, allSelector);
           ns = new Ioss::NodeSet( ioRegion.get_database(), name, allNodes);
           ioRegion.add(ns);
 
@@ -4117,12 +4117,19 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     Ioss::DatabaseIO *create_database_for_subdomain(const std::string &baseFilename,
                                                     int indexSubdomain,
-                                                    int numSubdomains)
+                                                    int numSubdomains,
+                                                    bool use64Bit)
     {
         std::string parallelFilename{construct_filename_for_serial_or_parallel(baseFilename, numSubdomains, indexSubdomain)};
+        Ioss::PropertyManager properties;
+
+        if (use64Bit) {
+            properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
+            properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
+        }
 
         std::string dbtype("exodusII");
-        Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, parallelFilename, Ioss::WRITE_RESULTS, MPI_COMM_SELF);
+        Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, parallelFilename, Ioss::WRITE_RESULTS, MPI_COMM_SELF, properties);
 
         return dbo;
     }

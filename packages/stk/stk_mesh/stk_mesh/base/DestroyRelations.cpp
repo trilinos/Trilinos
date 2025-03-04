@@ -32,8 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/DestroyRelations.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk { namespace mesh {
 
@@ -41,52 +43,21 @@ void destroy_relations(stk::mesh::BulkData &bulk,
                        stk::mesh::Entity entity,
                        stk::mesh::EntityRank connectedRank)
 {
+  const bool downward = bulk.entity_rank(entity) > connectedRank;
   const int numConn = bulk.num_connectivity(entity, connectedRank);
-  const Entity* conn = bulk.begin(entity, connectedRank);
-  const ConnectivityOrdinal* ords = bulk.begin_ordinals(entity, connectedRank);
-
-  switch(numConn) {
-  case 0:
-    return; break;
-  case 1:
-    if (bulk.entity_rank(entity) > connectedRank) {
-      bulk.destroy_relation(entity, conn[0], ords[0]);
-    }
-    else {
-      bulk.destroy_relation(conn[0], entity, ords[0]);
-    }
-    break;
-  case 2:
-    {
-      Entity tmpEntity = conn[1];
-      ConnectivityOrdinal tmpOrd = ords[1];
-      if (bulk.entity_rank(entity) > connectedRank) {
-        bulk.destroy_relation(entity, conn[0], ords[0]);
-        bulk.destroy_relation(entity, tmpEntity, tmpOrd);
+  for(int j = numConn - 1; j>= 0; --j) {
+    const MeshIndex& meshIdx = bulk.mesh_index(entity);
+    const Entity* conn = meshIdx.bucket->begin(meshIdx.bucket_ordinal, connectedRank);
+    const ConnectivityOrdinal* ords = meshIdx.bucket->begin_ordinals(meshIdx.bucket_ordinal, connectedRank);
+    if (bulk.is_valid(conn[j])) {
+      if (downward) {
+        STK_ThrowRequireMsg(bulk.destroy_relation(entity, conn[j], ords[j]), "Failed to destroy relation "<<bulk.entity_key(entity)<<" -> "<<bulk.entity_key(conn[j]));
       }
       else {
-        bulk.destroy_relation(conn[0],   entity, ords[0]);
-        bulk.destroy_relation(tmpEntity, entity, tmpOrd);
+        STK_ThrowRequireMsg(bulk.destroy_relation(conn[j], entity, ords[j]), "Failed to destroy relation "<<bulk.entity_key(conn[j])<<" -> "<<bulk.entity_key(entity));
       }
-      break;
     }
-  default:
-    {
-      stk::mesh::EntityVector connv(conn, bulk.end(entity, connectedRank));
-      std::vector<ConnectivityOrdinal> ordv(ords, bulk.end_ordinals(entity, connectedRank));
-      if (bulk.entity_rank(entity) > connectedRank) {
-        for(int i=0; i<numConn; ++i) {
-          bulk.destroy_relation(entity, connv[i], ordv[i]);
-        }
-      }
-      else {
-        for(int i=0; i<numConn; ++i) {
-          bulk.destroy_relation(connv[i], entity, ordv[i]);
-        }
-      }
-      break;
-    }
-  };
+  }
 }
 
 }} // namespace stk::mesh

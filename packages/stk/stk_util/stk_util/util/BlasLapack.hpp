@@ -35,6 +35,7 @@
 #ifndef STK_UTIL_UTIL_BlasLapack_hpp
 #define STK_UTIL_UTIL_BlasLapack_hpp
 
+#include <stk_util/stk_config.h>
 #include "stk_util/util/Fortran.hpp"
 
 #ifdef STK_BUILT_FOR_SIERRA

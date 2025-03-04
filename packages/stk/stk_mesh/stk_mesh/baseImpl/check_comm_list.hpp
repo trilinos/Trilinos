@@ -45,9 +45,6 @@ namespace impl {
 
 bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
                                       const EntityCommDatabase& commDB,
-                                      const EntityCommListInfoVector& comm_list);
-bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh,
-                                      const EntityCommDatabase& commDB,
                                       const EntityCommListInfoVector& comm_list,
                                       std::ostream& error_msg);
 

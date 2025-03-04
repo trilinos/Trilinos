@@ -2,8 +2,8 @@
 # help its headers will not be installed correctly. All this file does is define
 # the installation of the headers
 
-FILE(GLOB HEADERS *.hpp)
-FILE(GLOB SOURCES *.cpp)
+FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
 
 if(NOT STK_ENABLE_STKMiddle_mesh)
   message(STATUS "STKTransfer: STKMiddle_mesh not enabled")
@@ -14,8 +14,8 @@ else()
   message(STATUS "STKTransfer: STKMiddle_mesh is enabled, ConservativeTransfer is available")
 endif()
 
-FILE(GLOB HEADERS_IMPL ${CMAKE_CURRENT_SOURCE_DIR}/copy_by_id/*.hpp)
-FILE(GLOB SOURCES_IMPL  ${CMAKE_CURRENT_SOURCE_DIR}/copy_by_id/*.cpp)
+FILE(GLOB HEADERS_IMPL CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/copy_by_id/*.hpp)
+FILE(GLOB SOURCES_IMPL CONFIGURE_DEPENDS  ${CMAKE_CURRENT_SOURCE_DIR}/copy_by_id/*.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_LIBRARY(stk_transfer

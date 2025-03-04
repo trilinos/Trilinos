@@ -58,7 +58,7 @@ class bad_any_data_cast : public std::bad_cast {
  public:
   bad_any_data_cast(const std::string& message) noexcept : m_message(message) {}
 
-  virtual const char* what() const noexcept { return m_message.c_str(); }
+  virtual const char* what() const noexcept override { return m_message.c_str(); }
 
  private:
   std::string m_message;
@@ -152,9 +152,9 @@ class Data : public AnyData {
    *
    * @return a <b>std::type_info</b> const reference to the type.
    */
-  virtual const std::type_info& type() const { return typeid(T); }
+  virtual const std::type_info& type() const override { return typeid(T); }
 
-  virtual std::ostream& dump(std::ostream& os) const
+  virtual std::ostream& dump(std::ostream& os) const override
   {
     T v = value();
     return os << v;
@@ -198,9 +198,9 @@ class Value : public Data<T> {
 
   virtual ~Value() {}
 
-  virtual const T& value() const { return m_t; }
+  virtual const T& value() const override { return m_t; }
 
-  virtual T& value() { return m_t; }
+  virtual T& value() override { return m_t; }
 
   Value& operator=(const T& t)
   {
@@ -226,9 +226,9 @@ class Reference : public Data<T> {
 
   virtual ~Reference() {}
 
-  virtual const T& value() const { return m_t; }
+  virtual const T& value() const override { return m_t; }
 
-  virtual T& value() { return m_t; }
+  virtual T& value() override { return m_t; }
 
   Reference& operator=(const T& t)
   {

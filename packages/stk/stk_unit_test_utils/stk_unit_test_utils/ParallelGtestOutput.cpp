@@ -5,6 +5,7 @@
 #include <gtest/gtest-message.h>
 #include <stdarg.h>                 // for va_end, va_list, va_start
 #include <stdio.h>                  // for printf, vprintf, fflush, NULL, etc
+#include <stk_util/stk_config.h>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
@@ -246,18 +247,6 @@ void create_parallel_output(int procId)
 {
     create_parallel_output_with_comm(procId, MPI_COMM_WORLD);
 }
-
-namespace simple_fields {
-
-void create_parallel_output(int procId) {
-  stk::unit_test_util::create_parallel_output(procId);
-}
-
-void create_parallel_output_with_comm(int procId, MPI_Comm comm) {
-  stk::unit_test_util::create_parallel_output_with_comm(procId, comm);
-}
-
-} // namespace simple_fields
 
 }
 }

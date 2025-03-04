@@ -101,7 +101,7 @@ struct LogControlRuleAlways : public LogControlRule
    *
    * @return			a <code>LogControlRule</code> pointer to the new duplicated always object.
    */
-  virtual LogControlRule *clone() const {
+  virtual LogControlRule *clone() const override {
     return new LogControlRuleAlways(*this);
   }
 
@@ -112,7 +112,7 @@ struct LogControlRuleAlways : public LogControlRule
    * @return			a <code>bool</code> returns true to indicate that the log stream
    *                            should write to the log file.
    */
-  virtual bool next() {
+  virtual bool next() override {
     return true;
   }
 };
@@ -140,7 +140,7 @@ struct LogControlRuleInterval : public LogControlRule
    *
    * @return			a <code>LogControlRule</code> pointer to the new duplicated always object.
    */
-  virtual LogControlRule *clone() const {
+  virtual LogControlRule *clone() const override {
     return new LogControlRuleInterval(*this);
   }
 
@@ -152,7 +152,7 @@ struct LogControlRuleInterval : public LogControlRule
    *                            interval is zero.  whichs indicate that the log stream should write
    *                            to the log file.
    */
-  virtual bool next();
+  virtual bool next() override;
 
 private:
   int           m_interval;

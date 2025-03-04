@@ -54,10 +54,10 @@ public:
 protected:
 
   //: Called when output buffer is filled
-  virtual int overflow( int c = EOF );
+  virtual int overflow( int c = EOF ) override;
 
   //: Sync is a no-op
-  virtual int sync();
+  virtual int sync() override;
 
 private:
 

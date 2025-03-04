@@ -78,7 +78,7 @@ public:
    * @return      a <b>Mask</b> value of the result from parsing the mask
    *        string.
    */
-  Mask parse(const char *mask_string) const;
+  Mask parse(const char *mask_string) const override;
 
   /**
    * @brief Member function <b>parseArg</b> parses the argument and its argument
@@ -90,7 +90,7 @@ public:
    * @param arg      a <b>std::string</b> const reference to the argument
    *        values.
    */
-  virtual void parseArg(const std::string &name, const std::string &arg) const;
+  virtual void parseArg(const std::string &name, const std::string &arg) const override;
 };
 
 ///
