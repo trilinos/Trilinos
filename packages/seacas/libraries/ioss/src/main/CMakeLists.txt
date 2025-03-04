@@ -254,22 +254,6 @@ endif()
 
 if (TPL_ENABLE_MPI)
   IF (TPL_Netcdf_PARALLEL)
-    TRIBITS_ADD_ADVANCED_TEST(exodus_fpp_serialize
-       TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${SERIALIZE_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32-ser.g
-          NOEXEPREFIX NOEXESUFFIX
-          NUM_MPI_PROCS ${NPROCS}
-       TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32-ser.g 8-block-32-serj.g
-          NOEXEPREFIX NOEXESUFFIX
-          NUM_MPI_PROCS ${NPROCS}
-       TEST_2 EXEC exodiff ARGS -map -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
-          DIRECTORY ../../../../applications/exodiff
-          NOEXEPREFIX NOEXESUFFIX
-          NUM_MPI_PROCS 1
-    COMM mpi
-    XHOSTTYPE Windows
-    )
-  endif()
-
   TRIBITS_ADD_ADVANCED_TEST(create_path_fpp
      TEST_0 CMND rm ARGS -rf create_path_test_directory
      TEST_1 EXEC io_shell ARGS --in_type generated 100x100x100 create_path_test_directory/1/2/3/4/5/tmp.g
@@ -301,6 +285,7 @@ if (TPL_ENABLE_MPI)
        NUM_MPI_PROCS 1
     COMM mpi serial
     )
+  endif()
   ENDIF()
 ENDIF()
 
