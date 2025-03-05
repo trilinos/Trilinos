@@ -236,7 +236,8 @@ namespace BaskerNS
         // id of the first leaf node (BF order, post_order maps from BF to ND)
         Int leaves_id = pow(2.0, (double)(num_levels)) - 1;
         if (Options.verbose == BASKER_TRUE) {
-          printf( " num_domains = %d: num_levels = %d, num_doms = %d, leves_id = %d\n",num_domains,num_levels,num_doms,leaves_id );
+          printf( " num_domains = %d: num_levels = %d, num_doms = %d, leves_id = %d\n",
+                  int(num_domains),int(num_levels),int(num_doms),int(leaves_id) );
         }
 
         // > insert root
