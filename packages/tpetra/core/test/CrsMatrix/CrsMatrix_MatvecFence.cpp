@@ -186,7 +186,11 @@ namespace {
         if (Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
           expectedGlobalCount = iter_num;
         } else {
+#if KOKKOS_VERSION >= 40599
+          expectedGlobalCount = iter_num;
+#else
           expectedGlobalCount = 0;
+#endif
         }
         if (Tpetra::Details::Behavior::debug()) {
           expectedInstanceCount = 3*iter_num;
