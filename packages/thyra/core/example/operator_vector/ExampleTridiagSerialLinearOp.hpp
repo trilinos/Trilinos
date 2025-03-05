@@ -22,7 +22,6 @@
  * of the form:
  *
  \f[
-
  M=
  \left[\begin{array}{ccccc}
  d_{(1)} & u_{(1)}  \\

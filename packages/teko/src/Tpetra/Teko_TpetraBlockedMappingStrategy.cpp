@@ -149,6 +149,11 @@ TpetraBlockedMappingStrategy::buildBlockedThyraOp(
     const std::string& label) const {
   int dim = blockMaps_.size();
 
+  plocal2ContigGIDs.resize(dim);
+  for (int j = 0; j < dim; j++) {
+    plocal2ContigGIDs[j] = Blocking::getSubBlockColumnGIDs(*crsContent, blockMaps_[j]);
+  }
+
   RCP<Thyra::DefaultBlockedLinearOp<ST> > A = Thyra::defaultBlockedLinearOp<ST>();
 
   A->beginBlockFill(dim, dim);
@@ -160,7 +165,7 @@ TpetraBlockedMappingStrategy::buildBlockedThyraOp(
 
       // build the blocks and place it the right location
       RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > blk =
-          Blocking::buildSubBlock(i, j, crsContent, blockMaps_);
+          Blocking::buildSubBlock(i, j, crsContent, blockMaps_, plocal2ContigGIDs[j]);
       A->setNonconstBlock(i, j,
                           Thyra::tpetraLinearOp<ST, LO, GO, NT>(
                               Thyra::tpetraVectorSpace<ST, LO, GO, NT>(blk->getRangeMap()),
@@ -186,7 +191,6 @@ void TpetraBlockedMappingStrategy::rebuildBlockedThyraOp(
     const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& crsContent,
     const RCP<Thyra::BlockedLinearOpBase<ST> >& A) const {
   int dim = blockMaps_.size();
-
   for (int i = 0; i < dim; i++) {
     for (int j = 0; j < dim; j++) {
       // get Tpetra version of desired block
@@ -197,7 +201,7 @@ void TpetraBlockedMappingStrategy::rebuildBlockedThyraOp(
           rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT> >(tAij->getTpetraOperator(), true);
 
       // rebuild the blocks and place it the right location
-      Blocking::rebuildSubBlock(i, j, crsContent, blockMaps_, *eAij);
+      Blocking::rebuildSubBlock(i, j, crsContent, blockMaps_, *eAij, plocal2ContigGIDs[j]);
     }
   }  // end for i
 }

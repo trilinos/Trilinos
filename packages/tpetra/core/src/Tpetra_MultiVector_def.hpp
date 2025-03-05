@@ -3708,22 +3708,20 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     {
       const size_t newSize = X.imports_.extent (0) / numCols;
       const size_t offset = jj*newSize;
-      auto newImports = X.imports_;
-      newImports.view_device() = subview (X.imports_.view_device(),
+      auto device_view = subview (X.imports_.view_device(),
                                    range_type (offset, offset+newSize));
-      newImports.view_host() = subview (X.imports_.view_host(),
+      auto host_view = subview (X.imports_.view_host(),
                                    range_type (offset, offset+newSize));
-      this->imports_ = newImports;
+      this->imports_ = decltype(X.imports_)(device_view, host_view);
     }
     {
       const size_t newSize = X.exports_.extent (0) / numCols;
       const size_t offset = jj*newSize;
-      auto newExports = X.exports_;
-      newExports.view_device() = subview (X.exports_.view_device(),
+      auto device_view = subview (X.exports_.view_device(),
                                    range_type (offset, offset+newSize));
-      newExports.view_host() = subview (X.exports_.view_host(),
+      auto host_view = subview (X.exports_.view_host(),
                                    range_type (offset, offset+newSize));
-      this->exports_ = newExports;
+      this->exports_ = decltype(X.exports_)(device_view, host_view);
     }
     // These two DualViews already either have the right number of
     // entries, or zero entries.  This means that we don't need to

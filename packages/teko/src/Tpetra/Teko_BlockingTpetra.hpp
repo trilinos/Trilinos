@@ -119,7 +119,8 @@ Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > getSubBlockColumnGIDs(
  */
 Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     int i, int j, const Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
-    const std::vector<MapPair>& subMaps);
+    const std::vector<MapPair>& subMaps,
+    Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs = {});
 
 /** Extract the (i,j) sub block described by a vector of map pair objects from
  * a CRS matrix. The first of map in the ith pair describes the rows to be extracted,
@@ -135,7 +136,8 @@ Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
  *                    this operator would come from the <code>buildSubBlock</code> routine.
  */
 void rebuildSubBlock(int i, int j, const Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
-                     const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat);
+                     const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
+                     Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs = {});
 
 }  // namespace Blocking
 }  // namespace TpetraHelpers

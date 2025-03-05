@@ -319,6 +319,7 @@ namespace Ifpack2 {
       ///
       typedef Kokkos::View<size_type*,device_type> size_type_1d_view;
       typedef Kokkos::View<size_type**,device_type> size_type_2d_view;
+      typedef Kokkos::View<int64_t***,Kokkos::LayoutRight,device_type> i64_3d_view;
       typedef Kokkos::View<local_ordinal_type*,device_type> local_ordinal_type_1d_view;
       typedef Kokkos::View<local_ordinal_type**,device_type> local_ordinal_type_2d_view;
       // tpetra block crs values

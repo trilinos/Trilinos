@@ -19,7 +19,7 @@ namespace Stokhos {
    * Jacobi polynomials are defined by the recurrence relationship
    * \f[
    *   A_k \psi_{k+1}(x) = \left(B_k-x C_k\right)
-   * \psi_k(x) - D_k \psi_{k-1}(x)\right)
+   * \psi_k(x) - D_k \psi_{k-1}(x)
    * \f]
    * with \f$\psi_{-1}(x) = 0\f$ and \f$\psi_{0}(x) = 1\f$
    * where
@@ -37,9 +37,9 @@ namespace Stokhos {
    * \f]
    * In Stokhos notation we have
    * \f[ \gamma_{k+1}=1/A_{k} \f]
-   * \f[ \alpha_k = B_k \]
-   * \f[ \delta_k = C_k \]
-   * \f[ \beta_k = D_k. \]
+   * \f[ \alpha_k = B_k \f]
+   * \f[ \delta_k = C_k \f]
+   * \f[ \beta_k = D_k. \f]
    *
    * The corresponding 
    * density function is 

@@ -147,7 +147,7 @@ iteration $k+1$ of whatever relaxation method we are using.  Here,
 
 The Richardson method computes
 \f[
-x^{(k+1)}_i = x_^{(k)}_i + alpha ( b_i - \sum_{j} A_{ij} x^{(k)}_j ).
+x^{(k+1)}_i = x^{(k)}_i + alpha ( b_i - \sum_{j} A_{ij} x^{(k)}_j ).
 \f]
 
 The Jacobi method computes

@@ -66,7 +66,7 @@ endif()
 # Execute the rest of the script now that everything has been asserted or found
 #
 
-# Get the TRIBITS_DIR (we can always find this easy since this scrit is in TriBITS)
+# Get the TRIBITS_DIR (we can always find this easy since this script is in TriBITS)
 get_filename_component( ${PROJECT_NAME}_TRIBITS_DIR  "${CMAKE_CURRENT_LIST_DIR}/.."  ABSOLUTE )
 message("-- Setting ${PROJECT_NAME}_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}")
 

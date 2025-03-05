@@ -40,7 +40,7 @@ projects)
 TriBITS Packages
 ================
 
-The first thing to do when converting a projec to tribits is to think
+The first thing to do when converting a project to tribits is to think
 about the structure of the project and to figure out the best way to
 break it into packages.  In this section, I hope to give you a better
 idea of what exactly constitutes a tribits package and give you some
@@ -101,7 +101,7 @@ You will also need to define any dependencies this package may have on
 other packages in the project.  This is done in a File called
 Dependencies.camke in a cmake directory.  All that is required in this
 file is a call to tribits_package_define_dependencies().  Even if the
-package does not depand on another you still need to have this.
+package does not depend on another you still need to have this.
 
 
 Example of simple package CMakeLists.txt files
@@ -228,7 +228,7 @@ have the following files:
    will initialize your Tribits project, define which packages will be
    built by default, and define some setting for your project
 #. *PackagesList.cmake* - Tells tribits which packages are part of
-   this projec t and where to find them
+   this project and where to find them
 #. *TPLsList.cmke* - Tells tribits which TPLs that packages my depend
    on and how to find them
 #. *ProjectName.cmake* - defines the project name and possibly some
@@ -305,7 +305,7 @@ Testing category (Required)
 - *ST (Secondary Tested)* - This code is very important to the project
   but will not necessarily halt development if it breaks.  Consider
   making a package as ST if it depends on difficult to install TPLs or
-  TPLs that are not available no all deveopment platforms.
+  TPLs that are not available no all development platforms.
 - *EX (Experimental)* - This code is unstable and difficult to
   maintain.  It is not portible or not important enough to be tested
   at the same level as other code
@@ -361,7 +361,7 @@ Testing category (Required)
   productivity and would adversly effect customers if broken.
 - *ST (Secondary Tested)* - This tpl is important to the project but
   mat be difficult to install or the TPL is not available no all
-  deveopment platforms.
+  development platforms.
 - *EX (Experimental)* - TPL is experimental, unstable and/or difficult to
   maintain.
 
@@ -441,7 +441,7 @@ where each line is one repo and
 
 - **REPO_NAME** is the name of the repo
 
-- **REPO_DIR** is the relative path to the repo (asssumed to be
+- **REPO_DIR** is the relative path to the repo (assumed to be
   ./REPO_NAME/ if it is blank)
 
 - **REPO_VCTYPE** the type of version control used for this repo (must

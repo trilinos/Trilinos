@@ -26,7 +26,7 @@ namespace MueLu {
   @brief Factory for building blocked, segregated prolongation operators.
 
   Factory for building blocked, segregated prolongation operators of the form
-  \f$ P=\diag(P_{11},P_{22},\ldots)\f$, where \f$ P_{ii}\f$ are prolongation operators
+  \f$ P=\\operatorname{diag}(P_{11},P_{22},\ldots)\f$, where \f$ P_{ii}\f$ are prolongation operators
   for the corresponding subblocks \f$A_{ii}\f$ in the blocked operator \f$ A \f$.
 
   @param RCP<FactoryBase> AFact = Teuchos::null: factory for generating blocked operator \f$ A\f$.

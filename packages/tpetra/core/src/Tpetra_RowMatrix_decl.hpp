@@ -84,7 +84,7 @@ namespace Tpetra {
     /// certain <tt>Scalar</tt> types.
     using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
 
-    typedef typename 
+    typedef typename
         Kokkos::View<impl_scalar_type*, typename Node::device_type>::const_type
         values_device_view_type;
     typedef typename values_device_view_type::HostMirror::const_type
@@ -391,7 +391,7 @@ namespace Tpetra {
     /// This method computes and returns the Frobenius norm of the
     /// matrix.  The Frobenius norm \f$\|A\|_F\f$ for the matrix
     /// \f$A\f$ is defined as
-    /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |\a_{ij}|^2 }\f$.
+    /// \f$\|A\|_F = \sqrt{ \sum_{i,j} |a_{ij}|^2 }\f$.
     /// It has the same value as the Euclidean norm of a vector made
     /// by stacking the columns of \f$A\f$.
     virtual mag_type getFrobeniusNorm() const = 0;
@@ -502,4 +502,3 @@ namespace Tpetra {
 } // namespace Tpetra
 
 #endif // TPETRA_ROWMATRIX_DECL_HPP
-

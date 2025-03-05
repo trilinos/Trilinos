@@ -411,7 +411,7 @@ to a diecroyr called "Install" in the current source tree::
 
   set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/Install)
 
-now clear the contents of the build directory and reconfigure, biuld,
+now clear the contents of the build directory and reconfigure, build,
 and install the project with::
 
   cmake ../

@@ -50,8 +50,8 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
    * \param[in]      baseMap    original Tpetra::Map<LO,GO,NT>  to be broken up
    * \param[in]      comm   Teuchos::RCP<Teuchos::Comm<int> > object related to the map
    */
-  TpetraBlockedMappingStrategy(const std::vector<std::vector<GO> >& vars,
-                               const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& baseMap,
+  TpetraBlockedMappingStrategy(const std::vector<std::vector<GO>>& vars,
+                               const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& baseMap,
                                const Teuchos::Comm<int>& comm);
   //@}
 
@@ -66,7 +66,7 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
    * \param[in,out]     thyra_X   destination Thyra::MultiVectorBase
    */
   virtual void copyTpetraIntoThyra(const Tpetra::MultiVector<ST, LO, GO, NT>& tpetra_X,
-                                   const Teuchos::Ptr<Thyra::MultiVectorBase<ST> >& thyra_X) const;
+                                   const Teuchos::Ptr<Thyra::MultiVectorBase<ST>>& thyra_X) const;
 
   /** Virtual function defined in MappingStrategy.  This copies
    * an Tpetra::MultiVector<ST,LO,GO,NT> into a Thyra::MultiVectorBase with
@@ -75,7 +75,7 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
    * \param[in]     thyra_Y  source Thyra::MultiVectorBase
    * \param[in,out]     tpetra_Y destination Tpetra::MultiVector<ST,LO,GO,NT>
    */
-  virtual void copyThyraIntoTpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<ST> >& thyra_Y,
+  virtual void copyThyraIntoTpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<ST>>& thyra_Y,
                                    Tpetra::MultiVector<ST, LO, GO, NT>& tpetra_Y) const;
 
   /** Returns the domain and range maps used by this class.
@@ -85,9 +85,7 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
    *
    * \returns Range map corresponding to this class
    */
-  virtual const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> > domainMap() const {
-    return domainMap_;
-  }
+  virtual const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>> domainMap() const { return domainMap_; }
 
   /** Returns the domain and range maps used by this class.
    * This faciliates building an Tpetra_Operator around this
@@ -96,7 +94,7 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
    *
    * \returns Range map corresponding to this class
    */
-  virtual const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> > rangeMap() const { return rangeMap_; }
+  virtual const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>> rangeMap() const { return rangeMap_; }
 
   /** A function for my sanity
    *
@@ -123,8 +121,8 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
    * \param[in]      baseMap   basic map to use in the transfers
    * \param[in]      comm      Teuchos::RCP<Teuchos::Comm<int> > object
    */
-  void buildBlockTransferData(const std::vector<std::vector<GO> >& vars,
-                              const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& baseMap,
+  void buildBlockTransferData(const std::vector<std::vector<GO>>& vars,
+                              const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& baseMap,
                               const Teuchos::Comm<int>& comm);
 
   /** \brief  Get the individual block maps underlying that
@@ -151,8 +149,8 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
    * \returns Blocked Thyra linear operator with sub blocks
    *          defined by this mapping strategy
    */
-  const Teuchos::RCP<Thyra::BlockedLinearOpBase<ST> > buildBlockedThyraOp(
-      const Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& mat,
+  const Teuchos::RCP<Thyra::BlockedLinearOpBase<ST>> buildBlockedThyraOp(
+      const Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& mat,
       const std::string& label = "<ANYM>") const;
 
   /** Rebuilds a block Thyra operator using the strided mapping
@@ -164,8 +162,8 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
    * \param[in] A Destination block linear op composed of blocks of
    *            Tpetra::CrsMatrix<ST,LO,GO,NT>  at all relevant locations
    */
-  void rebuildBlockedThyraOp(const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& mat,
-                             const RCP<Thyra::BlockedLinearOpBase<ST> >& A) const;
+  void rebuildBlockedThyraOp(const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& mat,
+                             const RCP<Thyra::BlockedLinearOpBase<ST>>& A) const;
 
   //@}
 
@@ -174,16 +172,18 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
 
   //! \name storage for sanity
   //@{
-  Teuchos::RCP<const Tpetra::Map<LO, GO, NT> > domainMap_;
-  Teuchos::RCP<const Tpetra::Map<LO, GO, NT> > rangeMap_;
+  Teuchos::RCP<const Tpetra::Map<LO, GO, NT>> domainMap_;
+  Teuchos::RCP<const Tpetra::Map<LO, GO, NT>> rangeMap_;
   //@}
 
   //! \name block transfer data
   //@{
   std::vector<Blocking::MapPair> blockMaps_;
-  std::vector<Teuchos::RCP<Tpetra::Import<LO, GO, NT> > > blockImport_;
-  std::vector<Teuchos::RCP<Tpetra::Export<LO, GO, NT> > > blockExport_;
+  std::vector<Teuchos::RCP<Tpetra::Import<LO, GO, NT>>> blockImport_;
+  std::vector<Teuchos::RCP<Tpetra::Export<LO, GO, NT>>> blockExport_;
   //@}
+
+  mutable std::vector<RCP<Tpetra::Vector<GO, LO, GO, NT>>> plocal2ContigGIDs;
 };
 
 }  // end namespace TpetraHelpers

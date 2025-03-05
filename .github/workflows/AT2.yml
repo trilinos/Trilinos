@@ -110,6 +110,15 @@ jobs:
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
             --num-concurrent-tests=16
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        env:
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        with:
+          name: ${{ github.job }}-artifacts
+          path: /home/runner/artifacts/*
+          retention-days: 90
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
@@ -204,6 +213,15 @@ jobs:
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
             --num-concurrent-tests=16
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        env:
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        with:
+          name: ${{ github.job }}-artifacts
+          path: /home/runner/artifacts/*
+          retention-days: 90
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
@@ -297,6 +315,15 @@ jobs:
             --max-cores-allowed=56 \
             --num-concurrent-tests=112 \
             --slots-per-gpu=8
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        env:
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        with:
+          name: ${{ github.job }}-artifacts
+          path: /home/runner/artifacts/*
+          retention-days: 90
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}
@@ -387,6 +414,15 @@ jobs:
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
             --skip-create-packageenables \
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+        env:
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        with:
+          name: ${{ github.job }}-artifacts
+          path: /home/runner/artifacts/*
+          retention-days: 90
       - name: Summary
         if: ${{ !cancelled() }}
         shell: bash -l {0}

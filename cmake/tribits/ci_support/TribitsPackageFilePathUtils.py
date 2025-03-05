@@ -25,7 +25,7 @@ import time
 #
 # In general, any file at the top level <projectDir>/ or under the
 # <projectDir>/cmake/ directory with the extension *.cmake is considered a
-# file that requires a global rebuild of all packaes.  However, there are a
+# file that requires a global rebuild of all packages.  However, there are a
 # few special files that we don't want to have to do a global rebuild for by
 # default.
 #

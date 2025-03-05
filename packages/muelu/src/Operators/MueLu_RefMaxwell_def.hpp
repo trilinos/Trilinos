@@ -1384,10 +1384,19 @@ Teuchos::RCP<Teuchos::TimeMonitor> RefMaxwell<Scalar, LocalOrdinal, GlobalOrdina
     if (!syncTimers_)
       return Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu " + solverName_ + ": " + name)));
     else {
-      if (comm.is_null())
-        return Teuchos::rcp(new Teuchos::SyncTimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu " + solverName_ + ": " + name), SM_Matrix_->getRowMap()->getComm().ptr()));
-      else
-        return Teuchos::rcp(new Teuchos::SyncTimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu " + solverName_ + ": " + name), comm.ptr()));
+      if (comm.is_null()) {
+        {
+          Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu " + solverName_ + ": " + name + "_barrier")));
+          SM_Matrix_->getRowMap()->getComm()->barrier();
+        }
+        return Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu " + solverName_ + ": " + name)));
+      } else {
+        {
+          Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu " + solverName_ + ": " + name + "_barrier")));
+          comm->barrier();
+        }
+        return Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu " + solverName_ + ": " + name)));
+      }
     }
   } else
     return Teuchos::null;

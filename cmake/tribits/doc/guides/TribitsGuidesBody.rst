@@ -2006,7 +2006,9 @@ FindTPL<tplName>.cmake modules`_).
 
 The form of a simple ``FindTPL<tplName>.cmake`` file that uses an internal
 call to ``find_package(<externalPkg>)`` which provides modern IMPORTED CMake
-targets looks like::
+targets can use the
+`tribits_extpkg_create_imported_all_libs_target_and_config_file()`_ function
+and looks like::
 
   find_package(<externalPkg> REQUIRED)
   tribits_extpkg_create_imported_all_libs_target_and_config_file(
@@ -2014,7 +2016,7 @@ targets looks like::
     INNER_FIND_PACKAGE_NAME <externalPkg>
     IMPORTED_TARGETS_FOR_ALL_LIBS <importedTarget0> <importedTarget1> ... )
 
-In this case, the purpose for the ``FindTPL<tplName>.cmake`` file (as apposed
+In this case, the purpose for the ``FindTPL<tplName>.cmake`` file (as opposed
 to a direct call to ``find_package(<externalPkg>)``) is to ensure the
 definition of the complete target ``<tplName>::all_libs`` which contains all
 usage requirements for the external package/TPL (i.e. all of the libraries,
@@ -2023,7 +2025,8 @@ file ``<tplName>Config.cmake``.
 
 The form of a simple ``FindTPL<tplName>.cmake`` file that just provides a list
 of required header files and libraries that does **not** use an internal call
-to ``find_package()`` looks like::
+to ``find_package()`` and instead uses the function
+`tribits_tpl_find_include_dirs_and_libraries()`_ looks like::
 
   tribits_tpl_find_include_dirs_and_libraries( <tplName>
     REQUIRED_HEADERS <header0> <header1> ...
@@ -5939,6 +5942,22 @@ header files and libraries that must be found.  A simple
     MUST_FIND_ALL_LIBS
     )
 
+Note that a set of alternate names for each library can be specified using
+quotes around the set of alternative library names using the syntax::
+
+  tribits_tpl_find_include_dirs_and_libraries( <tplName>
+    ...
+    REQUIRED_LIBS_NAMES "<libname0> <libname0alt0> <libname0alt1> ..." ...
+    ...
+    )
+
+This is most commonly used for simple single-library TPLs like BLAS that has
+different potential implementations like::
+
+  tribits_tpl_find_include_dirs_and_libraries( BLAS
+    REQUIRED_LIBS_NAMES "blas openblas atlas"
+    ...
+    )
 
 Requirements for FindTPL<tplName>.cmake modules
 +++++++++++++++++++++++++++++++++++++++++++++++

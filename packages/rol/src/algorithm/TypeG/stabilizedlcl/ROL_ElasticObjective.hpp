@@ -25,7 +25,7 @@
        L_A(x,\lambda,\mu) = f(x) +
            \langle \lambda, c(x)\rangle_{\mathcal{C}^*,\mathcal{C}} +
            \frac{\mu}{2} \langle \mathfrak{R}c(x),c(x)\rangle_{\mathcal{C}^*,\mathcal{C}}
-           + \sigma\langle \mathfrak{R} e, u-v\ranlge_{\mathcal{C}^*,\mathcal{C}}
+           + \sigma\langle \mathfrak{R} e, u-v\rangle_{\mathcal{C}^*,\mathcal{C}}
     \f]
     where \f$\lambda\in\mathcal{C}^*\f$ denotes the Lagrange multiplier estimate,
     \f$\mu > 0\f$ and \f$\sigma>0\f$ are penalty parameters,

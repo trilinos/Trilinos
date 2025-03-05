@@ -32,7 +32,7 @@ include(Split)
 #
 # This macro sets up a 2D array of ``NumTPLS`` by ``NumColumns`` listing out
 # the `TriBITS TPLs`_ for a `TriBITS Repository`_.  Each row (with 3 entries)
-# specifies a different TriBITS exernal package/TPL which contains the columns
+# specifies a different TriBITS external package/TPL which contains the columns
 # (ordered 0-2):
 #
 # 0. **TPL** (``<tpli_name>``): The name of the TriBITS external package/TPL

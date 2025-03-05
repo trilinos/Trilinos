@@ -12,11 +12,11 @@
 
     Compose the objective \f$f(y)\f$ where \f$y = g(x)\f$ with 
 
-    \f[
+    \f{align*}{
        y_1 &= g_1(x) &= x_1^2 + x_2^2 + x_3^2 + x_4^2 + x_5^2 - 10 \\
        y_2 &= g_2(x) &= x_2*x_3 - 5*x_4*x_5                        \\
        y_3 &= g_3(x) &= x_1^3 + x_2^3 + 1
-    \f]
+    \f}
 
     and
 

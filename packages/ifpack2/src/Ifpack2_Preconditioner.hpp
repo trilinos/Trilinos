@@ -100,7 +100,7 @@ public:
   /// @brief Apply the preconditioner to X, putting the result in Y.
   ///
   /// If the result of applying this preconditioner to a vector X is
-  /// \f$F \cdot X$\f$, then this method computes \f$\beta Y + \alpha F \cdot X\f$.
+  /// \f$F \cdot X\f$, then this method computes \f$\beta Y + \alpha F \cdot X\f$.
   /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   virtual void
   apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
