@@ -5,8 +5,7 @@
         <Parameter name="Source" type="string" value="Exodus File" />
 
         <ParameterList name="Exodus File">
-            <!--<Parameter name="File Name" type="string" value="energy-ss-tp-multiblock-ic-bc-issue.gen" />-->
-            <Parameter name="File Name" type="string" value="roger-test.gen" />
+            <Parameter name="File Name" type="string" value="energy-ss-tp-multiblock-ic-bc-issue.gen" />
         </ParameterList>
 
     </ParameterList>
@@ -14,12 +13,14 @@
     <ParameterList name="Initial Conditions">
         <ParameterList name="left">
             <ParameterList name="TEMPERATURE">
-                <Parameter name="Value" type="double" value="0.0"/>
+                <Parameter name="Type" type="string" value="Initial Condition Evaluator"/>
+                <Parameter name="DOF Name" type="string" value="TEMPERATURE"/>
             </ParameterList>
         </ParameterList>
         <ParameterList name="right">
             <ParameterList name="TEMPERATURE">
-                <Parameter name="Value" type="double" value="1.0"/>
+                <Parameter name="Type" type="string" value="Initial Condition Evaluator"/>
+                <Parameter name="DOF Name" type="string" value="TEMPERATURE"/>
             </ParameterList>
         </ParameterList>
     </ParameterList>
@@ -88,10 +89,6 @@
             <ParameterList name="HEAT_CAPACITY">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
-            <ParameterList name="Global Statistics">
-                <Parameter name="Value" type="string" value="TEMPERATURE,DENSITY"/>
-            </ParameterList>
-
         </ParameterList>
 
     </ParameterList>
