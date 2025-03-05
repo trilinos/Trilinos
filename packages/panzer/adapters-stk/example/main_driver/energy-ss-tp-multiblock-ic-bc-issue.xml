@@ -5,7 +5,8 @@
         <Parameter name="Source" type="string" value="Exodus File" />
 
         <ParameterList name="Exodus File">
-            <Parameter name="File Name" type="string" value="energy-ss-tp-multiblock-ic-bc-issue.gen" />
+            <!--<Parameter name="File Name" type="string" value="energy-ss-tp-multiblock-ic-bc-issue.gen" />-->
+            <Parameter name="File Name" type="string" value="roger-test.gen" />
         </ParameterList>
 
     </ParameterList>
@@ -109,6 +110,28 @@
     </ParameterList>
 
     <ParameterList name="Boundary Conditions">
+
+        <ParameterList>
+            <Parameter name="Type" type="string" value="Dirichlet"/> 
+            <Parameter name="Sideset ID" type="string" value="center"/> 
+            <Parameter name="Element Block ID" type="string" value="left"/> 
+            <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
+            <Parameter name="Strategy" type="string" value="Constant"/>
+            <ParameterList name="Data">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+        </ParameterList>
+
+        <ParameterList>
+            <Parameter name="Type" type="string" value="Dirichlet"/> 
+            <Parameter name="Sideset ID" type="string" value="center"/> 
+            <Parameter name="Element Block ID" type="string" value="right"/> 
+            <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
+            <Parameter name="Strategy" type="string" value="Constant"/>
+            <ParameterList name="Data">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+        </ParameterList>
 
         <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
