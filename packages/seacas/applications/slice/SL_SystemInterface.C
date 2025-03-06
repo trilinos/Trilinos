@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -166,7 +166,7 @@ void SystemInterface::enroll_options()
                   "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
   options_.enroll("zstd", GetLongOption::NoValue,
                   "Use Zstd compression. [exodus only, enables netcdf-4, experimental]", nullptr);
-  options_.enroll("bz2", GetLongOption::NoValue,
+  options_.enroll("bzip2", GetLongOption::NoValue,
                   "Use Bzip2 compression. [exodus only, enables netcdf-4, experimental]", nullptr);
 
   options_.enroll("shuffle", GetLongOption::NoValue,
@@ -452,6 +452,13 @@ bool SystemInterface::parse_options(int argc, char **argv)
   disableFieldRecognition_ = options_.retrieve("disable_field_recognition") != nullptr;
 #endif
 
+  if (processorCount_ <= 1) {
+    fmt::print(stderr,
+               "\nERROR: The `-processors` argument must be greater than 1.\n       The entered "
+               "value of {} is not valid.\n",
+               processorCount_);
+    return false;
+  }
   return true;
 }
 

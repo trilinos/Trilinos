@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,7 +15,7 @@
 #include "rf_io_const.h"
 
 #define UTIL_NAME "nem_spread"
-#define VER_STR   "7.04 (2024/02/28)"
+#define VER_STR   "7.05 (2025/02/04)"
 
 extern void   check_exodus_error(int, const char *);
 extern double second();
@@ -95,6 +95,7 @@ public:
   int  int64api{0};
   bool force64db{false}; /* Store all ints as 64-bit on output databases. */
 
+  int                    selected_change_set{0};
   int                    io_ws{0};
   Restart_Description<T> Restart_Info;
   Globals<T, INT>        globals;

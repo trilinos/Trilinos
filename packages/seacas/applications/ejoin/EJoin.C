@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -144,7 +144,7 @@ namespace {
                                     const std::string &field_name);
 
   // Used when combining two or more input set into a single output set (WIP)
-  // May reequire other operations to completly combine the entities...
+  // May reequire other operations to completely combine the entities...
   // This only handles the entity count.
   void add_to_entity_count(Ioss::GroupingEntity *ge, int64_t entity_count_increment)
   {

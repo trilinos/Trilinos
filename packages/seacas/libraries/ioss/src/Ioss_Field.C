@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -407,8 +407,8 @@ std::string Ioss::Field::type_string(Ioss::Field::BasicType type)
   case Ioss::Field::STRING: return {"string"};
   case Ioss::Field::CHARACTER: return {"char"};
   case Ioss::Field::INVALID: return {"invalid"};
-  default: return {"internal error"};
   }
+  return {"internal error"};
 }
 
 std::string Ioss::Field::role_string() const { return role_string(get_role()); }
@@ -417,14 +417,15 @@ std::string Ioss::Field::role_string(Ioss::Field::RoleType role)
 {
   switch (role) {
   case Ioss::Field::INTERNAL: return {"Internal"};
+  case Ioss::Field::MAP: return {"Map"};
   case Ioss::Field::MESH: return {"Mesh"};
   case Ioss::Field::ATTRIBUTE: return {"Attribute"};
   case Ioss::Field::COMMUNICATION: return {"Communication"};
   case Ioss::Field::MESH_REDUCTION: return {"Mesh Reduction"};
   case Ioss::Field::REDUCTION: return {"Reduction"};
   case Ioss::Field::TRANSIENT: return {"Transient"};
-  default: return {"internal error"};
   }
+  return {"internal error"};
 }
 
 namespace {

@@ -87,6 +87,7 @@ public:
   std::string file2{};
   std::string diff_file{};
   std::string command_file{};
+  std::string change_sets{};
 
   bool quiet_flag{false};     // By default, warnings and other info is produced
   bool show_all_diffs{false}; // Be default, show only maximum diff for each variable;
@@ -136,6 +137,8 @@ public:
   bool ss_var_do_all_flag{false};
   bool eb_var_do_all_flag{false};
   bool fb_var_do_all_flag{false};
+
+  bool has_change_sets{false};
 
 private:
   void          enroll_options();

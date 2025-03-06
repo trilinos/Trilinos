@@ -530,12 +530,9 @@ Ioss::MeshType Iocgns::Utils::check_mesh_type(int cgns_file_ptr)
       common_zone_type = CGNS_ENUMV(ZoneTypeUserDefined); // This is how we represent hybrid...
       break;
 #else
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: CGNS: Zone {} is not the same zone type as previous zones."
-                 " This is currently not allowed or supported (hybrid mesh).",
-                 zone);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: CGNS: Zone {} is not the same zone type as previous zones."
+                             " This is currently not allowed or supported (hybrid mesh).",
+                             zone));
 #endif
     }
   }
@@ -581,12 +578,10 @@ void Iocgns::Utils::update_db_zone_property(int cgns_file_ptr, const Ioss::Regio
         block->property_update("db_zone", db_zone);
       }
       else {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: CGNS: Structured Block '{}' was not found on the CGNS database on "
-                   "processor {}.",
-                   name, myProcessor);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(
+            fmt::format("ERROR: CGNS: Structured Block '{}' was not found on the CGNS database on "
+                        "processor {}.",
+                        name, myProcessor));
       }
     }
   }
@@ -600,12 +595,9 @@ void Iocgns::Utils::update_db_zone_property(int cgns_file_ptr, const Ioss::Regio
       block->property_update("db_zone", db_zone);
     }
     else {
-      std::ostringstream errmsg;
-      fmt::print(
-          errmsg,
+      IOSS_ERROR(fmt::format(
           "ERROR: CGNS: Element Block '{}' was not found on the CGNS database on processor {}.",
-          name, myProcessor);
-      IOSS_ERROR(errmsg);
+          name, myProcessor));
     }
   }
 }
@@ -621,11 +613,9 @@ int Iocgns::Utils::get_db_zone(const Ioss::GroupingEntity *entity)
   if (entity->property_exists("zone")) {
     return entity->get_property("zone").get_int();
   }
-  std::ostringstream errmsg;
-  fmt::print(errmsg,
-             "ERROR: CGNS: Entity '{}' of type '{}' does not have the 'zone' property assigned.",
-             entity->name(), entity->type_string());
-  IOSS_ERROR(errmsg);
+  IOSS_ERROR(fmt::format(
+      "ERROR: CGNS: Entity '{}' of type '{}' does not have the 'zone' property assigned.",
+      entity->name(), entity->type_string()));
 }
 
 namespace {
@@ -843,12 +833,10 @@ namespace {
               }
               else {
                 // We have a bad zgc -- name and owner_zone match, but not donor_zone.
-                std::ostringstream errmsg;
-                fmt::print(errmsg,
-                           "ERROR: CGNS: Found zgc named '{}' on zone {} which has two different "
-                           "donor zones: {} and {}\n",
-                           zgc[i].m_connectionName, owner_zone, donor_zone, zgc[j].m_donorZone);
-                IOSS_ERROR(errmsg);
+                IOSS_ERROR(fmt::format(
+                    "ERROR: CGNS: Found zgc named '{}' on zone {} which has two different "
+                    "donor zones: {} and {}\n",
+                    zgc[i].m_connectionName, owner_zone, donor_zone, zgc[j].m_donorZone));
               }
             }
           }
@@ -1014,12 +1002,9 @@ void Iocgns::Utils::write_state_meta_data(int file_ptr, const Ioss::Region &regi
     CGERR(cg_zone_write(file_ptr, base, name.c_str(), size, CGNS_ENUMV(Unstructured), &db_zone));
     int prev_db_zone = get_db_zone(eb);
     if (db_zone != prev_db_zone) {
-      std::ostringstream errmsg;
-      fmt::print(
-          errmsg,
+      IOSS_ERROR(fmt::format(
           "ERROR: CGNS: The 'db_zone' does not match in the state file {} and the base file {}.",
-          db_zone, prev_db_zone);
-      IOSS_ERROR(errmsg);
+          db_zone, prev_db_zone));
     }
   }
 
@@ -1054,12 +1039,9 @@ void Iocgns::Utils::write_state_meta_data(int file_ptr, const Ioss::Region &regi
       int db_zone = 0;
       CGERR(cg_zone_write(file_ptr, base, name.c_str(), size, CGNS_ENUMV(Structured), &db_zone));
       if (db_zone != sb->get_property("db_zone").get_int()) {
-        std::ostringstream errmsg;
-        fmt::print(
-            errmsg,
+        IOSS_ERROR(fmt::format(
             "ERROR: CGNS: The 'db_zone' does not match in the state file {} and the base file {}.",
-            db_zone, sb->get_property("db_zone").get_int());
-        IOSS_ERROR(errmsg);
+            db_zone, sb->get_property("db_zone").get_int()));
       }
     }
   }
@@ -1071,12 +1053,9 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
 #if !IOSS_ENABLE_HYBRID
   // Make sure mesh is not hybrid...
   if (region.mesh_type() == Ioss::MeshType::HYBRID) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "ERROR: CGNS: The mesh on region '{}' is of type 'hybrid'."
-               " This is currently not allowed or supported.",
-               region.name());
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format("ERROR: CGNS: The mesh on region '{}' is of type 'hybrid'."
+                           " This is currently not allowed or supported.",
+                           region.name()));
   }
 #endif
 
@@ -1379,11 +1358,9 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
                   }
                 }
                 if (connect_name == zgc.m_connectionName) {
-                  std::ostringstream errmsg;
-                  fmt::print(errmsg,
-                             "ERROR: CGNS: Duplicate ZGC Name '{}' on zone '{}', processor {}\n",
-                             zgc.m_connectionName, sb->name(), zgc.m_ownerProcessor);
-                  IOSS_ERROR(errmsg);
+                  IOSS_ERROR(fmt::format(
+                      "ERROR: CGNS: Duplicate ZGC Name '{}' on zone '{}', processor {}\n",
+                      zgc.m_connectionName, sb->name(), zgc.m_ownerProcessor));
                 }
               }
             }
@@ -2327,11 +2304,9 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
                 : region->get_node_blocks()[0];
         auto *nb = const_cast<Ioss::NodeBlock *>(cnb);
         if (nb == nullptr) {
-          std::ostringstream errmsg;
-          fmt::print(errmsg,
-                     "ERROR: CGNS: Null entity accessing nodeblock for structured block {}.",
-                     block->name());
-          IOSS_ERROR(errmsg);
+          IOSS_ERROR(
+              fmt::format("ERROR: CGNS: Null entity accessing nodeblock for structured block {}.",
+                          block->name()));
         }
         size_t entity_count = nb->entity_count();
         Ioss::Utils::get_fields(entity_count, field_names, Ioss::Field::TRANSIENT,
@@ -2543,10 +2518,8 @@ void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &z
   }
 
   if (avg_work < 1.0) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg, "ERROR: Model size too small to distribute over {} processors.\n",
-               proc_count);
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(
+        fmt::format("ERROR: Model size too small to distribute over {} processors.\n", proc_count));
   }
 
   if (verbose) {
@@ -2672,11 +2645,9 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
   // searching, assign the first `nproc` zones to the `nproc` entries
   // in `work_vector`.  Avoids searching...
   if (zones.size() < work_vector.size()) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "IOCGNS error: Could not decompose mesh across {} processors based on constraints.",
-               work_vector.size());
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format(
+        "IOCGNS error: Could not decompose mesh across {} processors based on constraints.",
+        work_vector.size()));
   }
   assert(zones.size() >= work_vector.size());
   size_t i = 0;
@@ -2717,15 +2688,12 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
         work_vector[proc] += zone->work();
       }
       else {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "IOCGNS error: Could not assign zones to processors in {}", __func__);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(
+            fmt::format("IOCGNS error: Could not assign zones to processors in {}", __func__));
       }
     }
     else {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "IOCGNS error: Could not assign zones to processors in {}", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("IOCGNS error: Could not assign zones to processors in {}", __func__));
     }
   }
 }
@@ -2981,13 +2949,10 @@ std::vector<Iocgns::ZoneBC> Iocgns::Utils::parse_zonebc_sideblocks(int cgns_file
                          &num_pnts, nullptr, &normal_list_size, &normal_data_type, &num_dataset));
 
     if (num_pnts != 2 || ptset_type != CGNS_ENUMV(PointRange)) {
-      std::ostringstream errmsg;
-      fmt::print(
-          errmsg,
+      IOSS_ERROR(fmt::format(
           "CGNS: In Zone {}, boundary condition '{}' has a PointSetType of '{}' and {} points.\n"
           "      The type must be 'PointRange' and there must be 2 points.",
-          zone, boco_name, cg_PointSetTypeName(ptset_type), num_pnts);
-      IOSS_ERROR(errmsg);
+          zone, boco_name, cg_PointSetTypeName(ptset_type), num_pnts));
     }
 
     std::array<cgsize_t, 2> point_range;

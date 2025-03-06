@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#define ELB_VERSION "5.04 (2024-10-02)"
+#define ELB_VERSION "5.05 (2025-02-04)"
 #define UTIL_NAME   "nem_slice"
 #define ELB_FALSE   0
 #define ELB_TRUE    1
@@ -133,6 +133,7 @@ struct Problem_Description
   int        face_adj{-1};    /* true if using face definition of adjacencies      */
   int        partial_adj{0};  /* true if allowing partial (3/4) of nodes to */
                               /* determine adjacencies */
+  int   selected_change_set{0};
   int   global_mech{-1};      /* true if looking for mechanisms in original mesh   */
   int   local_mech{-1};       /* true if looking for mechanisms in subdivided mesh */
   int   find_cnt_domains{-1}; /* true if finding number of connected domains in a graph */

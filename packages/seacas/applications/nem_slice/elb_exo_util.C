@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -142,6 +142,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description *weight, INT 
 
 /*****************************************************************************/
 /*****************************************************************************/
+
 /*****************************************************************************/
 /* Function read_mesh_params() begins:
  *----------------------------------------------------------------------------
@@ -169,6 +170,8 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     Gen_Error(0, "fatal: unable to open ExodusII file for mesh params");
     return 0;
   }
+
+  exoid += problem->selected_change_set;
 
   /* Get the init info */
   ex_init_params exo{};
@@ -300,6 +303,8 @@ int read_mesh(const std::string &exo_file, Problem_Description *problem,
     Gen_Error(0, "fatal: unable to open ExodusII mesh file");
     return 0;
   }
+
+  exoid += problem->selected_change_set;
 
   /* Read the coordinates, if desired */
   xptr = yptr = zptr = nullptr;

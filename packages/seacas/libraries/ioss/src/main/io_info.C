@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -412,10 +412,11 @@ namespace {
 
       if (interFace.adjacencies()) {
         Ioss::NameList blocks = eb->get_block_adjacencies();
-        fmt::print("\n\tAdjacent to  {} element block(s):\t", blocks.size());
+        fmt::print("\tAdjacent to  {} element block(s):\t", blocks.size());
         for (const auto &block : blocks) {
           fmt::print("{}  ", block);
         }
+        fmt::print("\n");
       }
       Ioss::Utils::info_fields(eb, Ioss::Field::TRANSIENT, "\n\tTransient:  ", "\n\t",
                                interFace.field_details());

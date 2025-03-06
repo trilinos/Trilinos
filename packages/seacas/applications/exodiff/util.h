@@ -21,5 +21,6 @@ void   free_name_array(char **names, int size);
 [[noreturn]] void Error(std::ostringstream &buf);
 void              Warning(const std::string &x);
 void              ERR_OUT(std::ostringstream &buf);
+void              WARN_OUT(std::ostringstream &buf);
 void DIFF_OUT(std::ostringstream &buf, fmt::detail::color_type color = fmt::color::red);
 void DIFF_OUT(const std::string &buf, fmt::detail::color_type color = fmt::color::red);
