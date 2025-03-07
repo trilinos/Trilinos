@@ -225,10 +225,14 @@ class Transform
 
  private:
   Transform(const Transform<T,U>& src)
-    :origObj_(src.origObj_), newObj_(src.newObj_) {}
+    :origObj_(src.origObj_), newObj_(src.newObj_)
+  {
+    std::cout << "Passing through epetraext/src/transform/EpetraExt_Transform.h Transform::copy_constructor()..." << std::endl;
+  }
 
   Transform<T,U>& operator=(const Transform<T,U>& src)
     {
+      std::cout << "Passing through epetraext/src/transform/EpetraExt_Transform.h Transform::assingment_opeeator()..." << std::endl;
       //not currently supported
       abort();
       return(*this);

@@ -44,7 +44,9 @@ class Isorropia_CrsGraph : public StructuralSameTypeTransform<Epetra_CrsGraph> {
    */
   Isorropia_CrsGraph( Teuchos::ParameterList& partitionList )
   : partitionList_(partitionList)
-  {}
+  {
+    std::cout << "EEP Passing through trilinoscouplings/src/epetraext/EpetraExt_Isorropia_CrsGraph.h Isorropia_CrsGraph::constructor()..." << std::endl;
+  }
 
   ///
   /* Generates the Isorropia partitioned Epetra_CrsGraph from the input object.

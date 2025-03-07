@@ -63,6 +63,8 @@ int main(int argc, char** argv) {
 
   Teuchos::ParameterList paramlist;
 
+  std::cout << "In main(), pos 000" << std::endl;
+
 #ifdef HAVE_ISORROPIA_ZOLTAN
 
   // If Zoltan is available, we'll specify that the Zoltan package use
@@ -71,21 +73,32 @@ int main(int argc, char** argv) {
   // "Zoltan" and setting the appropriate values.
   // (See Zoltan documentation for other valid parameters...)
 
+  //std::string partitioning_method_str("PARTITIONING METHOD"); // Aqui
+  //std::string partitioning_method =
+  //paramlist_.get(partitioning_method_str, "UNSPECIFIED");
+
+  std::cout << "In main(), pos 001" << std::endl;
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "HYPERGRAPH");
+  sublist.set("LB_METHOD", "HYPERGRAPH"); // AquiAqui
 
 #else
   //If Zoltan is not available, we don't need to set any parameters.
 #endif
 
+  std::cout << "In main(), pos 002" << std::endl;
+
   // Create the object to generate the balanced graph.
   Teuchos::RCP<EpetraExt::Isorropia_CrsGraph> Trans = 
     Teuchos::rcp( new EpetraExt::Isorropia_CrsGraph( paramlist ) );
 
+  std::cout << "In main(), pos 003" << std::endl;
+  
   // Create a linear problem transform interface.
   Teuchos::RCP<EpetraExt::LinearProblem_GraphTrans> LPTrans =
     Teuchos::rcp( new EpetraExt::LinearProblem_GraphTrans(
     *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(Trans.get())) ) );
+
+  std::cout << "In main(), pos 004" << std::endl;
 
   // Create an Epetra_CrsMatrix object.
   Teuchos::RCP<Epetra_CrsMatrix> crsmatrix;
@@ -99,24 +112,34 @@ int main(int argc, char** argv) {
     return(-1);
   }
 
+  std::cout << "In main(), pos 005" << std::endl;
+
   // Create Epetra_MultiVectors for the lhs and rhs of the linear problem.
   Epetra_MultiVector lhs(crsmatrix->Map(), 1);
   Epetra_MultiVector rhs(crsmatrix->Map(), 1);
   rhs.PutScalar( 1.0 );
 
+  std::cout << "In main(), pos 006" << std::endl;
+
   // Create the linear problem with the original partitioning.
   Epetra_LinearProblem problem( &*crsmatrix, &lhs, &rhs );
+
+  std::cout << "In main(), pos 007" << std::endl;
 
   // Create the new linear problem and perform the balanced partitioning.
   // NOTE:  The balanced linear system will be in tProblem after fwd() is called.
   //        It is not necessary for the RCP to manage the transformed problem.
   Teuchos::RCP<Epetra_LinearProblem> tProblem = Teuchos::rcp( &((*LPTrans)( problem )), false );
+  std::cout << "In main(), pos 008" << std::endl;
   LPTrans->fwd();
+  std::cout << "In main(), pos 009" << std::endl;
 
   int graphrows1 = crsmatrix->NumMyRows();
   int bal_graph_rows = tProblem->GetMatrix()->NumMyRows();
   int graphnnz1 = crsmatrix->NumMyNonzeros();
   int bal_graph_nnz = tProblem->GetMatrix()->NumMyNonzeros();
+
+  std::cout << "In main(), pos 010" << std::endl;
 
   for(p=0; p<numProcs; ++p) {
     MPI_Barrier(MPI_COMM_WORLD);
