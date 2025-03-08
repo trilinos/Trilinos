@@ -539,6 +539,46 @@ void testSpecialCases() {
   }
 }
 
+template <class Matrix, class Vector>
+struct testSymEigen2x2 {
+  using Scalar = typename Matrix::non_const_value_type;
+
+  Matrix A;
+  Vector evs;
+  Scalar e1, e2;
+
+  testSymEigen2x2(Matrix A_, Vector evs_) : A(A_), evs(evs_) {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(int) const {
+    KokkosBatched::SerialSVDInternal::symEigen2x2(A(0, 0), A(1, 0), A(1, 1), evs(0), evs(1));
+  }
+};
+
+template <typename Scalar, typename Layout, typename Device>
+void testTwoByTwoInternal() {
+  using Matrix    = Kokkos::View<Scalar**, Layout, Device>;
+  using Vector    = Kokkos::View<Scalar*, Device>;
+  using ExecSpace = typename Device::execution_space;
+
+  // Test 2x2 with numerical instability
+  int n = 2;
+  Matrix A("A", n, n);
+  Vector evs("eigen values", n);
+  typename Matrix::HostMirror Ahost = Kokkos::create_mirror_view(A);
+  Ahost(0, 0)                       = 0.00062500000000000012;
+  Ahost(0, 1)                       = 6.7220534694101152e-19;
+  Ahost(1, 0)                       = Ahost(0, 1);
+  Ahost(1, 1)                       = 0.00062499999999999763;
+  Kokkos::deep_copy(A, Ahost);
+
+  testSymEigen2x2<Matrix, Vector> tester(A, evs);
+  Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1), tester);
+  typename Vector::HostMirror evs_host = Kokkos::create_mirror_view(evs);
+  Kokkos::deep_copy(evs_host, evs);
+  Test::EXPECT_NEAR_KK(evs_host(0), 0.000625, Test::svdEpsilon<Scalar>());
+  Test::EXPECT_NEAR_KK(evs_host(1), 0.000625, Test::svdEpsilon<Scalar>());
+}
+
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
 TEST_F(TestCategory, batched_scalar_serial_svd_double) {
   // Test general SVD on a few different input sizes (full rank randomized)
@@ -548,6 +588,8 @@ TEST_F(TestCategory, batched_scalar_serial_svd_double) {
   testIssue1786<double, Kokkos::LayoutRight, TestDevice>();
   testSpecialCases<double, Kokkos::LayoutLeft, TestDevice>();
   testSpecialCases<double, Kokkos::LayoutRight, TestDevice>();
+  testTwoByTwoInternal<double, Kokkos::LayoutLeft, TestDevice>();
+  testTwoByTwoInternal<double, Kokkos::LayoutRight, TestDevice>();
 }
 #endif
 
@@ -560,5 +602,7 @@ TEST_F(TestCategory, batched_scalar_serial_svd_float) {
   testIssue1786<float, Kokkos::LayoutRight, TestDevice>();
   testSpecialCases<float, Kokkos::LayoutLeft, TestDevice>();
   testSpecialCases<float, Kokkos::LayoutRight, TestDevice>();
+  testTwoByTwoInternal<float, Kokkos::LayoutLeft, TestDevice>();
+  testTwoByTwoInternal<float, Kokkos::LayoutRight, TestDevice>();
 }
 #endif

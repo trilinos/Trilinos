@@ -20,6 +20,30 @@
 #include "Kokkos_ArithTraits.hpp"
 
 namespace KokkosBlas {
+namespace Impl {
+struct OpID {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
+    return v;
+  }
+};
+
+struct OpConj {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
+    using KAT = Kokkos::ArithTraits<ValueType>;
+    return KAT::conj(v);
+  }
+};
+
+struct OpReal {
+  template <typename ValueType>
+  KOKKOS_INLINE_FUNCTION typename Kokkos::ArithTraits<ValueType>::mag_type operator()(ValueType v) const {
+    using KAT = Kokkos::ArithTraits<ValueType>;
+    return KAT::real(v);
+  }
+};
+}  // namespace Impl
 
 //////// Tags for BLAS ////////
 
@@ -87,6 +111,8 @@ struct Algo {
   using UTV       = Level3;
   using Pttrf     = Level3;
   using Pttrs     = Level3;
+  using Getrf     = Level3;
+  using Getrs     = Level3;
 
   struct Level2 {
     struct Unblocked {};

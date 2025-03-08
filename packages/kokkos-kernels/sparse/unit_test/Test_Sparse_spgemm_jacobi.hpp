@@ -80,8 +80,9 @@ int run_spgemm_jacobi(crsMat_t input_mat, crsMat_t input_mat2, scalar_type omega
   lno_nnz_view_t entriesC;
   scalar_view_t valuesC;
 
-  spgemm_symbolic(&kh, num_rows_1, num_rows_2, num_cols_2, input_mat.graph.row_map, input_mat.graph.entries, false,
-                  input_mat2.graph.row_map, input_mat2.graph.entries, false, row_mapC);
+  KokkosSparse::spgemm_symbolic(&kh, num_rows_1, num_rows_2, num_cols_2, input_mat.graph.row_map,
+                                input_mat.graph.entries, false, input_mat2.graph.row_map, input_mat2.graph.entries,
+                                false, row_mapC);
 
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
   if (c_nnz_size) {

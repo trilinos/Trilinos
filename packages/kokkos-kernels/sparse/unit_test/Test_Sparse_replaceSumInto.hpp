@@ -19,11 +19,6 @@
 #include <gtest/gtest.h>
 #include "KokkosSparse_CrsMatrix.hpp"
 
-// #ifndef kokkos_complex_double
-// #define kokkos_complex_double Kokkos::complex<double>
-// #define kokkos_complex_float Kokkos::complex<float>
-// #endif
-
 typedef Kokkos::complex<double> kokkos_complex_double;
 typedef Kokkos::complex<float> kokkos_complex_float;
 
@@ -40,8 +35,8 @@ class ModifyEvenNumberedRows {
   typedef typename CrsMatrixType::ordinal_type ordinal_type;
   typedef typename CrsMatrixType::value_type value_type;
 
-  ModifyEvenNumberedRows(const CrsMatrixType& A, const bool replace, const bool sorted, const bool /*atomic*/)
-      : A_(A), replace_(replace), sorted_(sorted) {}
+  ModifyEvenNumberedRows(const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic)
+      : A_(A), replace_(replace), sorted_(sorted), atomic_(atomic) {}
 
   KOKKOS_FUNCTION void operator()(const ordinal_type& lclRow) const {
     if (lclRow % static_cast<ordinal_type>(2) == 0) {

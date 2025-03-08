@@ -94,6 +94,14 @@ struct SerialLaswpVectorBackwardInternal {
   template <typename IntType, typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int plen, const IntType *KOKKOS_RESTRICT p, const int ps0,
                                            /* */ ValueType *KOKKOS_RESTRICT A, const int as0) {
+// On H100 with Cuda 12.0.0, the compiler seems to apply
+// an aggressive optimization which crashes this function
+// Disabling loop unrolling fixes the issue
+#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOS_ARCH_HOPPER90)
+#if CUDA_VERSION >= 12000 && CUDA_VERSION < 12100
+#pragma unroll 1
+#endif
+#endif
     for (int i = (plen - 1); i >= 0; --i) {
       const int piv = p[i * ps0];
       if (piv != i) {

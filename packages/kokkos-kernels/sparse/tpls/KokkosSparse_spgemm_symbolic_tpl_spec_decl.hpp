@@ -72,61 +72,62 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
     // which however is not available in this function. So we fake it with the
     // entries instead. Fortunately, it seems cupsarse does not access that in
     // the symbolic phase.
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_A, m, n, entriesA.extent(0), (void *)row_mapA.data(),
-                                                (void *)entriesA.data(), (void *)entriesA.data() /*fake*/,
-                                                CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
-                                                h->scalarType));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseCreateCsr(&h->descr_A, m, n, entriesA.extent(0), (void *)row_mapA.data(), (void *)entriesA.data(),
+                          (void *)entriesA.data() /*fake*/, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                          CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_B, n, k, entriesB.extent(0), (void *)row_mapB.data(),
-                                                (void *)entriesB.data(), (void *)entriesB.data() /*fake*/,
-                                                CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
-                                                h->scalarType));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseCreateCsr(&h->descr_B, n, k, entriesB.extent(0), (void *)row_mapB.data(), (void *)entriesB.data(),
+                          (void *)entriesB.data() /*fake*/, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                          CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
 #if CUDA_VERSION >= 12020
     // at some point cusparseCreateCsr started to need a non-null row-pointer
     // array, even if the operation that consumed the handle doesn't need to
     // read it. This was observed on a system with CUDA 12.2, but it may have
     // started earlier.
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_C, m, k, 0, (void *)row_mapC.data(), nullptr, nullptr,
-                                                CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
-                                                h->scalarType));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_C, m, k, 0, (void *)row_mapC.data(), nullptr,
+                                                           nullptr, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                                                           CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 #else
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_C, m, k, 0, nullptr, nullptr, nullptr, CUSPARSE_INDEX_32I,
-                                                CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_C, m, k, 0, nullptr, nullptr, nullptr,
+                                                           CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                                                           CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 #endif
 
     //----------------------------------------------------------------------
     // ask bufferSize1 bytes for external memory
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_workEstimation(h->cusparseHandle, h->opA, h->opB, h->descr_A,
-                                                                 h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
-                                                                 &bufferSize1, nullptr));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_workEstimation(h->cusparseHandle, h->opA, h->opB,
+                                                                            h->descr_A, h->descr_B, h->descr_C, h->alg,
+                                                                            h->spgemmDescr, &bufferSize1, nullptr));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer1, bufferSize1));
     // inspect matrices A and B to understand the memory requirement for the
     // next step
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_workEstimation(h->cusparseHandle, h->opA, h->opB, h->descr_A,
-                                                                 h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
-                                                                 &bufferSize1, buffer1));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_workEstimation(h->cusparseHandle, h->opA, h->opB,
+                                                                            h->descr_A, h->descr_B, h->descr_C, h->alg,
+                                                                            h->spgemmDescr, &bufferSize1, buffer1));
 
     //----------------------------------------------------------------------
     // Compute nnz of C
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_nnz(h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B,
-                                                      h->descr_C, h->alg, h->spgemmDescr, &bufferSize2, nullptr,
-                                                      &h->bufferSize3, nullptr, &h->bufferSize4, nullptr));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_nnz(
+        h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C, h->alg, h->spgemmDescr, &bufferSize2,
+        nullptr, &h->bufferSize3, nullptr, &h->bufferSize4, nullptr));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer2, bufferSize2));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer3, h->bufferSize3));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer4, h->bufferSize4));
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_nnz(h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B,
-                                                      h->descr_C, h->alg, h->spgemmDescr, &bufferSize2, buffer2,
-                                                      &h->bufferSize3, h->buffer3, &h->bufferSize4, h->buffer4));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_nnz(
+        h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C, h->alg, h->spgemmDescr, &bufferSize2,
+        buffer2, &h->bufferSize3, h->buffer3, &h->bufferSize4, h->buffer4));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer2));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer1));
 
     int64_t C_nrow, C_ncol, C_nnz;
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMatGetSize(h->descr_C, &C_nrow, &C_ncol, &C_nnz));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMatGetSize(h->descr_C, &C_nrow, &C_ncol, &C_nnz));
     if (C_nnz > std::numeric_limits<int>::max()) {
       throw std::runtime_error("nnz of C overflowed over 32-bit int\n");
     }
@@ -145,15 +146,16 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
     // we must use dummy versions and then discard them.
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&dummyEntries, C_nnz * sizeof(Ordinal)));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&dummyValues, C_nnz * sizeof(Scalar)));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCsrSetPointers(h->descr_C, row_mapC.data(), dummyEntries, dummyValues));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseCsrSetPointers(h->descr_C, row_mapC.data(), dummyEntries, dummyValues));
     //--------------------------------------------------------------------------
 
     cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B, h->descr_C, h->alg,
                              h->spgemmDescr, &h->bufferSize5, nullptr);
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer5, h->bufferSize5));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A, h->descr_B,
-                                                       h->descr_C, h->alg, h->spgemmDescr, &h->bufferSize5,
-                                                       h->buffer5));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMMreuse_copy(h->cusparseHandle, h->opA, h->opB, h->descr_A,
+                                                                  h->descr_B, h->descr_C, h->alg, h->spgemmDescr,
+                                                                  &h->bufferSize5, h->buffer5));
     if (!handle->get_c_nnz()) {
       // cuSPARSE does not populate C rowptrs if C has no entries
       Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC, Offset(0));
@@ -194,40 +196,40 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
     KOKKOS_IMPL_CUDA_SAFE_CALL(
         cudaMalloc(&dummyValues_AB, sizeof(scalar_type) * std::max(entriesA.extent(0), entriesB.extent(0))));
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_A, m, n, entriesA.extent(0), (void *)row_mapA.data(),
-                                                (void *)entriesA.data(), dummyValues_AB, CUSPARSE_INDEX_32I,
-                                                CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+        &h->descr_A, m, n, entriesA.extent(0), (void *)row_mapA.data(), (void *)entriesA.data(), dummyValues_AB,
+        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_B, n, k, entriesB.extent(0), (void *)row_mapB.data(),
-                                                (void *)entriesB.data(), dummyValues_AB, CUSPARSE_INDEX_32I,
-                                                CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+        &h->descr_B, n, k, entriesB.extent(0), (void *)row_mapB.data(), (void *)entriesB.data(), dummyValues_AB,
+        CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_C, m, k, 0, row_mapC.data(), nullptr, nullptr,
-                                                CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
-                                                h->scalarType));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&h->descr_C, m, k, 0, row_mapC.data(), nullptr, nullptr,
+                                                           CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                                                           CUSPARSE_INDEX_BASE_ZERO, h->scalarType));
 
     //----------------------------------------------------------------------
     // query workEstimation buffer size, allocate, then call again with buffer.
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
-                                                            h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
-                                                            h->spgemmDescr, &h->bufferSize3, nullptr));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseSpGEMM_workEstimation(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
+                                      h->descr_C, h->scalarType, h->alg, h->spgemmDescr, &h->bufferSize3, nullptr));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer3, h->bufferSize3));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
-                                                            h->descr_B, &beta, h->descr_C, h->scalarType, h->alg,
-                                                            h->spgemmDescr, &h->bufferSize3, h->buffer3));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseSpGEMM_workEstimation(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta,
+                                      h->descr_C, h->scalarType, h->alg, h->spgemmDescr, &h->bufferSize3, h->buffer3));
 
     //----------------------------------------------------------------------
     // query compute buffer size, allocate, then call again with buffer.
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
-                                                     &beta, h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT,
-                                                     h->spgemmDescr, &h->bufferSize4, nullptr));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta, h->descr_C,
+                               h->scalarType, CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr, &h->bufferSize4, nullptr));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&h->buffer4, h->bufferSize4));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
-                                                     &beta, h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT,
-                                                     h->spgemmDescr, &h->bufferSize4, h->buffer4));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseSpGEMM_compute(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B, &beta, h->descr_C,
+                               h->scalarType, CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr, &h->bufferSize4, h->buffer4));
     int64_t C_nrow, C_ncol, C_nnz;
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMatGetSize(h->descr_C, &C_nrow, &C_ncol, &C_nnz));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMatGetSize(h->descr_C, &C_nrow, &C_ncol, &C_nnz));
     if (C_nnz > std::numeric_limits<int>::max()) {
       throw std::runtime_error("nnz of C overflowed over 32-bit int\n");
     }
@@ -245,20 +247,20 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
       // handle, so we can reuse those.
       KOKKOS_IMPL_CUDA_SAFE_CALL(
           cudaMalloc(&dummyValues_AB, sizeof(scalar_type) * std::max(entriesA.extent(0), entriesB.extent(0))));
-      KOKKOS_CUSPARSE_SAFE_CALL(
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
           cusparseCsrSetPointers(h->descr_A, (void *)row_mapA.data(), (void *)entriesA.data(), dummyValues_AB));
-      KOKKOS_CUSPARSE_SAFE_CALL(
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
           cusparseCsrSetPointers(h->descr_B, (void *)row_mapB.data(), (void *)entriesB.data(), dummyValues_AB));
     }
     void *dummyEntries_C, *dummyValues_C;
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&dummyEntries_C, sizeof(ordinal_type) * C_nnz));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&dummyValues_C, sizeof(scalar_type) * C_nnz));
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseCsrSetPointers(h->descr_C, (void *)row_mapC.data(), dummyEntries_C, dummyValues_C));
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_copy(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A, h->descr_B,
-                                                  &beta, h->descr_C, h->scalarType, CUSPARSE_SPGEMM_DEFAULT,
-                                                  h->spgemmDescr));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_copy(h->cusparseHandle, h->opA, h->opB, &alpha, h->descr_A,
+                                                             h->descr_B, &beta, h->descr_C, h->scalarType,
+                                                             CUSPARSE_SPGEMM_DEFAULT, h->spgemmDescr));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyValues_C));
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dummyEntries_C));
@@ -292,7 +294,7 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
     Kokkos::deep_copy(typename KernelHandle::HandleExecSpace(), row_mapC, size_type(0));
     nnzC = 0;
   } else {
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseXcsrgemmNnz(h->cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_NON_TRANSPOSE, m, k,
                             n, h->generalDescr, nnzA, row_mapA.data(), entriesA.data(), h->generalDescr, nnzB,
                             row_mapB.data(), entriesB.data(), h->generalDescr, row_mapC.data(), nnzTotalDevHostPtr));

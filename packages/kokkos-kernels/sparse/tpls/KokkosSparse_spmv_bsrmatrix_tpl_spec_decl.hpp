@@ -309,9 +309,9 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode
     /* create and set the subhandle and matrix descriptor */
     subhandle         = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
     handle->tpl_rank1 = subhandle;
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
   }
 
   cusparseDirection_t dirA = CUSPARSE_DIRECTION_ROW;
@@ -321,25 +321,25 @@ void spmv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode
                 "With cuSPARSE non-generic API, offset and entry types must both be int. "
                 "Something wrong with TPL avail logic.");
   if constexpr (std::is_same_v<value_type, float>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSbsrmv(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSbsrmv(
         cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(),
         reinterpret_cast<float const*>(&alpha), subhandle->mat, reinterpret_cast<float const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(), reinterpret_cast<float const*>(x.data()),
         reinterpret_cast<float const*>(&beta), reinterpret_cast<float*>(y.data())));
   } else if constexpr (std::is_same_v<value_type, double>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDbsrmv(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDbsrmv(
         cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(),
         reinterpret_cast<double const*>(&alpha), subhandle->mat, reinterpret_cast<double const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(), reinterpret_cast<double const*>(x.data()),
         reinterpret_cast<double const*>(&beta), reinterpret_cast<double*>(y.data())));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCbsrmv(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCbsrmv(
         cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(),
         reinterpret_cast<cuComplex const*>(&alpha), subhandle->mat, reinterpret_cast<cuComplex const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), A.blockDim(), reinterpret_cast<cuComplex const*>(x.data()),
         reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(y.data())));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseZbsrmv(cusparseHandle, dirA, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(),
                        reinterpret_cast<cuDoubleComplex const*>(&alpha), subhandle->mat,
                        reinterpret_cast<cuDoubleComplex const*>(A.values.data()), A.graph.row_map.data(),
@@ -413,9 +413,9 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char m
     /* create and set the subhandle and matrix descriptor */
     subhandle         = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
     handle->tpl_rank2 = subhandle;
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
   }
   cusparseDirection_t dirA = CUSPARSE_DIRECTION_ROW;
 
@@ -424,28 +424,28 @@ void spmv_mv_bsr_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char m
                 "With cuSPARSE non-generic API, offset and entry types must both be int. "
                 "Something wrong with TPL avail logic.");
   if constexpr (std::is_same_v<value_type, float>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseSbsrmm(cusparseHandle, dirA, myCusparseOperation, CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx,
                        A.numCols(), A.nnz(), reinterpret_cast<float const*>(&alpha), subhandle->mat,
                        reinterpret_cast<float const*>(A.values.data()), A.graph.row_map.data(), A.graph.entries.data(),
                        A.blockDim(), reinterpret_cast<float const*>(x.data()), ldx,
                        reinterpret_cast<float const*>(&beta), reinterpret_cast<float*>(y.data()), ldy));
   } else if constexpr (std::is_same_v<value_type, double>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseDbsrmm(cusparseHandle, dirA, myCusparseOperation, CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx,
                        A.numCols(), A.nnz(), reinterpret_cast<double const*>(&alpha), subhandle->mat,
                        reinterpret_cast<double const*>(A.values.data()), A.graph.row_map.data(), A.graph.entries.data(),
                        A.blockDim(), reinterpret_cast<double const*>(x.data()), ldx,
                        reinterpret_cast<double const*>(&beta), reinterpret_cast<double*>(y.data()), ldy));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseCbsrmm(cusparseHandle, dirA, myCusparseOperation, CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx,
                        A.numCols(), A.nnz(), reinterpret_cast<cuComplex const*>(&alpha), subhandle->mat,
                        reinterpret_cast<cuComplex const*>(A.values.data()), A.graph.row_map.data(),
                        A.graph.entries.data(), A.blockDim(), reinterpret_cast<cuComplex const*>(x.data()), ldx,
                        reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(y.data()), ldy));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseZbsrmm(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseZbsrmm(
         cusparseHandle, dirA, myCusparseOperation, CUSPARSE_OPERATION_NON_TRANSPOSE, A.numRows(), colx, A.numCols(),
         A.nnz(), reinterpret_cast<cuDoubleComplex const*>(&alpha), subhandle->mat,
         reinterpret_cast<cuDoubleComplex const*>(A.values.data()), A.graph.row_map.data(), A.graph.entries.data(),

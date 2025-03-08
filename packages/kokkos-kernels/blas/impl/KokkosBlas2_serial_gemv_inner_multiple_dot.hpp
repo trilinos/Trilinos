@@ -16,25 +16,12 @@
 #ifndef KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP
 #define KOKKOSBLAS_INNER_MULTIPLE_DOT_PRODUCT_SERIAL_IMPL_HPP
 
+#include "KokkosBlas_util.hpp"
+
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace KokkosBlas {
 namespace Impl {
-
-struct OpID {
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
-    return v;
-  }
-};
-
-struct OpConj {
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
-    using KAT = Kokkos::ArithTraits<ValueType>;
-    return KAT::conj(v);
-  }
-};
 
 template <int mb>
 struct InnerMultipleDotProduct {

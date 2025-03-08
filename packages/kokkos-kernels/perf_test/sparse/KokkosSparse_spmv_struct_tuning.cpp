@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
 
     if (check_errors) {
       h_y_compare                                                  = Kokkos::create_mirror(y);
-      typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
+      typename matrix_type::StaticCrsGraphType::HostMirror h_graph = KokkosSparse::create_mirror(A.graph);
       typename matrix_type::values_type::HostMirror h_values       = Kokkos::create_mirror_view(A.values);
 
       // Error Check Gold Values
@@ -509,14 +509,16 @@ int main(int argc, char** argv) {
 
       /* create matrix */
       cusparseSpMatDescr_t A_cusparse;
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
           &A_cusparse, A.numRows(), A.numCols(), A.nnz(), (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
           (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType, CUSPARSE_INDEX_BASE_ZERO, myCudaDataType));
 
       /* create lhs and rhs */
       cusparseDnVecDescr_t vecX, vecY;
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x1.extent_int(0), (void*)x1.data(), myCudaDataType));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y1.extent_int(0), (void*)y1.data(), myCudaDataType));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+          cusparseCreateDnVec(&vecX, x1.extent_int(0), (void*)x1.data(), myCudaDataType));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+          cusparseCreateDnVec(&vecY, y1.extent_int(0), (void*)y1.data(), myCudaDataType));
 
       const double alpha = 1.0, beta = 1.0;
       size_t bufferSize = 0;
@@ -528,9 +530,9 @@ int main(int argc, char** argv) {
 #else
       cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
 #endif
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(controls.getCusparseHandle(), CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                                        &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType, alg,
-                                                        &bufferSize));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+          cusparseSpMV_bufferSize(controls.getCusparseHandle(), CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
+                                  vecX, &beta, vecY, myCudaDataType, alg, &bufferSize));
       KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
 
       /* perform SpMV */
@@ -540,8 +542,9 @@ int main(int argc, char** argv) {
       double ave_time = 0.0;
       for (int i = 0; i < loop; i++) {
         Kokkos::Timer timer;
-        KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV(controls.getCusparseHandle(), CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha,
-                                               A_cusparse, vecX, &beta, vecY, myCudaDataType, alg, dBuffer));
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMV(controls.getCusparseHandle(),
+                                                          CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse, vecX,
+                                                          &beta, vecY, myCudaDataType, alg, dBuffer));
         Kokkos::fence();
         double time = timer.seconds();
         ave_time += time;
@@ -565,9 +568,9 @@ int main(int argc, char** argv) {
       Kokkos::Profiling::popRegion();
 
       KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dBuffer));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
 #else
       // The data needs to be reformatted for cusparse before launching the
       // kernel. Step one, extract raw data
