@@ -60,6 +60,50 @@ struct EntityGhostData;
 //stk-mesh capabilities.
 //----------------------------------------------------------------------
 
+enum class ShellConnectionConfiguration {
+  INVALID = 0,
+  PAVED = 1,
+  STACKED = 2
+};
+
+struct SideCreationElementPair {
+  stk::topology                  creationElementTopology;
+  stk::mesh::ConnectivityOrdinal creationElementOrdinal;
+  stk::topology                  connectionElementTopology;
+  stk::mesh::ConnectivityOrdinal connectionElementOrdinal;
+
+  SideCreationElementPair(stk::topology                  creationElementTopology_,
+                          stk::mesh::ConnectivityOrdinal creationElementOrdinal_,
+                          stk::topology                  connectionElementTopology_,
+                          stk::mesh::ConnectivityOrdinal connectionElementOrdinal_)
+  : creationElementTopology(creationElementTopology_)
+  , creationElementOrdinal(creationElementOrdinal_)
+  , connectionElementTopology(connectionElementTopology_)
+  , connectionElementOrdinal(connectionElementOrdinal_)
+  { }
+
+  SideCreationElementPair()
+  : creationElementTopology(stk::topology::INVALID_TOPOLOGY)
+  , creationElementOrdinal(stk::mesh::INVALID_CONNECTIVITY_ORDINAL)
+  , connectionElementTopology(stk::topology::INVALID_TOPOLOGY)
+  , connectionElementOrdinal(stk::mesh::INVALID_CONNECTIVITY_ORDINAL)
+  { }
+};
+
+bool is_shell_side(stk::topology elem_topo, unsigned ordinal);
+
+ShellConnectionConfiguration get_shell_configuration(stk::topology elemTopo1, unsigned ordinal1,
+                                                     stk::topology elemTopo2, unsigned ordinal2);
+
+ShellConnectionConfiguration get_shell_configuration(const SideCreationElementPair& shellPair);
+
+bool is_shell_configuration_valid_for_side_connection(stk::topology creationElementTopology,
+                                                      stk::mesh::ConnectivityOrdinal creationElementOrdinal,
+                                                      stk::topology connectionElementTopology,
+                                                      stk::mesh::ConnectivityOrdinal connectionElementOrdinal);
+
+bool is_shell_configuration_valid_for_side_connection(const SideCreationElementPair& shellPair);
+
 inline
 bool is_in_list(Entity entity, const Entity* begin, const Entity* end) 
 {
@@ -147,8 +191,6 @@ void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh
 
 bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned numEdgeNodes, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes);
 
-bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMachine comm);
-
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
 
 void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity upward_entity,
@@ -205,11 +247,19 @@ template<typename PARTVECTOR>
 stk::mesh::Entity connect_element_to_entity(stk::mesh::BulkData & mesh, stk::mesh::Entity elem, stk::mesh::Entity entity,
         const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entity_top);
 
+template<typename PARTVECTOR>
+stk::mesh::Entity connect_element_to_entity(stk::mesh::BulkData & mesh, stk::mesh::Entity elem, stk::mesh::Entity entity,
+        const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entity_top, const std::vector<Entity> & entity_nodes);
+
 void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
                                     stk::mesh::Entity face,
                                     stk::mesh::Entity elem_with_face,
                                     int elem_with_face_side_ordinal);
 
+void connect_side_to_other_elements(stk::mesh::BulkData & bulk,
+                                    stk::mesh::Entity side,
+                                    stk::mesh::Entity elem_with_side,
+                                    int ordinal_for_elem_with_side);
 
 enum ShellStatus {
     NO_SHELLS = 25,
@@ -226,6 +276,37 @@ bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_node
                                               ShellStatus  shell_status)
 {
     bool should_connect = false;
+    if(face_nodes.size() == element_side_nodes.size())
+    {
+        const stk::EquivalentPermutation equiv_result = element_side_topology.is_equivalent(face_nodes.data(), element_side_nodes.data());
+        const bool nodes_match = equiv_result.is_equivalent;
+        if (nodes_match) {
+           if (NO_SHELLS == shell_status) {
+               should_connect = true;
+           }
+           else {
+               const unsigned permutation_of_element_side = equiv_result.permutation_number;
+               const bool element_side_polarity_matches_face_nodes = permutation_of_element_side < element_side_topology.num_positive_permutations();
+               if (YES_SHELLS_ONE_SHELL_ONE_SOLID == shell_status) {
+                   should_connect = !element_side_polarity_matches_face_nodes;
+               }
+               else { // YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS
+                   should_connect = element_side_polarity_matches_face_nodes;
+               }
+           }
+        }
+    }
+    return should_connect;
+}
+
+template<typename ENTITY_ID>
+bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_nodes,
+                                              std::vector<ENTITY_ID> & element_side_nodes,
+                                              const SideCreationElementPair& shellPair,
+                                              ShellStatus  shell_status)
+{
+    stk::topology element_side_topology = shellPair.connectionElementTopology.face_topology(shellPair.connectionElementOrdinal);
+    bool should_connect = false;
     if(face_nodes.size() == element_side_nodes.size()) 
     {
         const stk::EquivalentPermutation equiv_result = element_side_topology.is_equivalent(face_nodes.data(), element_side_nodes.data());
@@ -240,8 +321,17 @@ bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_node
                if (YES_SHELLS_ONE_SHELL_ONE_SOLID == shell_status) {
                    should_connect = !element_side_polarity_matches_face_nodes;
                }
-               else { // YES_SHELLS_BOTH_SHELS_OR_BOTH_SOLIDS
+               else { // YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS
                    should_connect = element_side_polarity_matches_face_nodes;
+
+                   if(shellPair.connectionElementTopology.is_shell() &&
+                      shellPair.creationElementTopology.is_shell()) {
+                     ShellConnectionConfiguration status = get_shell_configuration(shellPair);
+
+                     if(status == ShellConnectionConfiguration::PAVED) {
+                       should_connect = is_shell_configuration_valid_for_side_connection(shellPair);
+                     }
+                   }
                }
            }
         }
@@ -262,12 +352,6 @@ void comm_sync_send_recv(const BulkData & mesh ,
                          const std::vector<Entity>& removeRecvGhosts,
                          EntityProcVec& newSendGhosts,
                          std::set< EntityKeyProc> & removeSendGhosts);
-
-void comm_sync_aura_send_recv(
-  BulkData & mesh ,
-  std::vector<EntityProc> & sendGhosts,
-  EntityProcMapping& entityProcMapping,
-  std::vector<bool>& ghostStatus );
 
 void comm_sync_nonowned_sends(
   const BulkData & mesh ,
@@ -375,6 +459,7 @@ void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk,
 void print_upward_connected_entities(stk::mesh::BulkData& bulk,
                                      stk::mesh::Entity entity,
                                      std::ostream& os);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

@@ -85,7 +85,7 @@ public:
   {                                                                                                         \
     do {                                                                                                    \
       if (m_fpErrorBehavior == stk::expreval::Eval::FPErrorBehavior::Warn && !std::isfinite(val)) {         \
-        printf("error in expression evaluator function " name ": " __FILE__ ": " LINE_STRING);              \
+        printf("error in expression evaluator function " name ": " __FILE__ ": " LINE_STRING "\n");         \
       } else if (m_fpErrorBehavior == stk::expreval::Eval::FPErrorBehavior::Error && !std::isfinite(val)) { \
         STK_NGP_ThrowErrorMsg("error in expression evaluator function " name);                              \
       }                                                                                                     \

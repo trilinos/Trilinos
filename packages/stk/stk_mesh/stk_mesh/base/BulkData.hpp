@@ -364,8 +364,12 @@ public:
   Entity declare_edge(EntityId id, const PARTVECTOR& parts);
   template<typename PARTVECTOR>
   Entity declare_element(EntityId id, const PARTVECTOR& parts);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2025
   template<typename PARTVECTOR>
-  Entity declare_constraint(EntityId id, const PARTVECTOR& parts);
+  STK_DEPRECATED_MSG("Prefer BulkData::declare_entity(stk::topology::CONSTRAINT_RANK, ...)") Entity declare_constraint(EntityId id, const PARTVECTOR& parts);
+#endif
+
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part); // Mod Mark
 
   template<typename IDVECTOR>
@@ -386,7 +390,10 @@ public:
   Entity declare_node(EntityId ent_id);
   Entity declare_element(EntityId ent_id);
   Entity declare_edge(EntityId ent_id);
-  Entity declare_constraint(EntityId ent_id);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2025
+  STK_DEPRECATED_MSG("Prefer BulkData::declare_entity(stk::topology::CONSTRAINT_RANK, ...)") Entity declare_constraint(EntityId ent_id);
+#endif
 
   EntityId get_solo_side_id();
 
@@ -729,7 +736,7 @@ public:
 
   //
   // Connectivity getter methods. For each entity, you can get connected entities
-  // of any rank (i.e. node, edge, face, element, constraint).
+  // of any rank (i.e. node, edge, face, element, etc.).
   // (Some of those connectivities are empty, for example an element may not
   // have any connected edges, depending whether edges exist in the mesh or not.)
   //
@@ -795,8 +802,11 @@ public:
   inline Entity const* end_edges(Entity entity) const;
   inline Entity const* end_faces(Entity entity) const;
   inline Entity const* end_elements(Entity entity) const;
-  Entity const* end_constraints(Entity entity) const
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2025
+  STK_DEPRECATED_MSG("Prefer BulkData::end(entity, stk::topology::CONSTRAINT_RANK)") Entity const* end_constraints(Entity entity) const
   { return end(entity, stk::topology::CONSTRAINT_RANK); }
+#endif
   inline ConnectivityOrdinal const* end_ordinals(Entity entity, EntityRank rank) const;
   inline ConnectivityOrdinal const* end_node_ordinals(Entity entity) const;
   inline ConnectivityOrdinal const* end_edge_ordinals(Entity entity) const;
@@ -2296,9 +2306,8 @@ BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal )
   if (in_bucket != NULL) {
     STK_ThrowAssertMsg(in_bucket->size() >= ordinal, "Detected bad bucket/ordinal.");
   }
-  MeshIndex &mesh_idx = mesh_index(entity);
-  mesh_idx.bucket = in_bucket;
-  mesh_idx.bucket_ordinal = ordinal;
+
+  m_mesh_indexes[entity.local_offset()] = {in_bucket, ordinal};
 }
 
 inline void

@@ -220,7 +220,7 @@ public:
    *
    * @return			an <b>int</b> value of the character written.
    */
-  virtual typename std::basic_streambuf<Ch, Tr>::int_type overflow(typename std::basic_streambuf<Ch, Tr>::int_type c) {
+  virtual typename std::basic_streambuf<Ch, Tr>::int_type overflow(typename std::basic_streambuf<Ch, Tr>::int_type c) override {
     if (c == Tr::to_int_type('\n'))
       next_line();
     else if (c == Tr::to_int_type(POP)) {
@@ -258,7 +258,7 @@ public:
    * @return			a <b>std::streamsize</b> value of the number of characters os the
    *                            string which were interpreted or written.
    */
-  virtual std::streamsize xsputn(const Ch *p,  std::streamsize n) {
+  virtual std::streamsize xsputn(const Ch *p,  std::streamsize n) override {
     const Ch *p_end = p + n;
     for (const Ch *q = p; q != p_end; ++q) {
 
@@ -332,7 +332,7 @@ public:
    *
    * @return			an <b>int</b> value result of the pub sync operation.
    */
-  virtual int sync() {
+  virtual int sync() override {
     return m_streamBuffer->pubsync();
   }
 

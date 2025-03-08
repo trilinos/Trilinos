@@ -225,6 +225,7 @@ TEST(CoarseSearchCorrectness, LineOfSpheres_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   runLineOfBoundingBoxes<Sphere>(stk::search::ARBORX, xDim);
   device_runLineOfBoundingBoxes<Sphere>(stk::search::ARBORX, xDim);
 }
@@ -234,6 +235,7 @@ TEST(CoarseSearchCorrectness, LineOfBoxes_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   runLineOfBoundingBoxes<StkBox>(stk::search::ARBORX, yDim);
   device_runLineOfBoundingBoxes<StkBox>(stk::search::ARBORX, yDim);
 }
@@ -243,6 +245,7 @@ TEST(CoarseSearchCorrectness, LineOfSpheresZDimension_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   runLineOfBoundingBoxes<Sphere>(stk::search::ARBORX, zDim);
   device_runLineOfBoundingBoxes<Sphere>(stk::search::ARBORX, zDim);
 }

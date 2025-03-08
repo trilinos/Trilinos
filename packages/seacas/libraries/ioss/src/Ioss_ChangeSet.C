@@ -181,10 +181,8 @@ namespace Ioss {
   void ChangeSet::verify_change_set_index(unsigned index) const
   {
     if (index >= m_changeSetNames.size()) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "Invalid change set index {} with a max value of {}\n", index,
-                 m_changeSetNames.size() - 1);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("Invalid change set index {} with a max value of {}\n", index,
+                             m_changeSetNames.size() - 1));
     }
   }
 

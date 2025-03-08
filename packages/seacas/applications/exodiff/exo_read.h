@@ -33,17 +33,23 @@ template <typename INT> class Assembly;
 template <typename INT> class Exo_Read
 {
 public:
-  Exo_Read();
+  Exo_Read() = delete;
   explicit Exo_Read(std::string fname);
-  virtual ~Exo_Read();
+  ~Exo_Read();
   const Exo_Read &operator=(const Exo_Read &) = delete;
   Exo_Read(const Exo_Read &)                  = delete;
 
   // File operations:
 
-  std::string File_Name(const char * /*fname*/);
-  virtual std::string
-              Open_File(const char             */*fname*/ = nullptr); // Default opens current file name.
+  std::string        Open_Change_Set(const std::string &name);
+  std::string        Open_Change_Set(int index);
+  void               Get_Meta_Data(); // Reads metadata
+  int                Get_Change_Set_Index() const { return current_change_set_index; }
+  const std::string &Get_Change_Set_Name() const
+  {
+    return change_set_names[current_change_set_index];
+  }
+
   std::string Close_File();
   std::string File_Name() const { return file_name; }
   int         Open() const { return (file_id >= 0); }
@@ -54,8 +60,8 @@ public:
     time_scale  = scale;
     time_offset = offset;
   }
-  // Global data:
 
+  // Global data:
   const std::string &Title() const { return title; }
   int                Dimension() const { return dimension; }
   size_t             Num_Nodes() const { return num_nodes; }
@@ -71,6 +77,11 @@ public:
   // Times:
   int    Num_Times() const { return (int)times.size(); }
   double Time(int time_num) const;
+
+  // Change Sets:
+  int                     Num_Change_Sets() const { return num_change_sets; }
+  const NameList         &Change_Set_Names() const { return change_set_names; }
+  const std::vector<int> &Change_Set_Ids() const { return change_set_ids; }
 
   // Variables:
 
@@ -187,11 +198,11 @@ public:
 
   // Misc functions:
 
-  virtual int            Check_State() const;                // Checks state of obj (not the file).
+  int                    Check_State() const;                // Checks state of obj (not the file).
   int                    File_ID() const { return file_id; } // This is temporary.
   std::pair<int, size_t> Global_to_Block_Local(size_t global_elmt_num) const;
 
-protected:
+private:
   std::string file_name{};
   int         file_id{-1}; // Exodus file id; also used to determine if file is open.
 
@@ -210,8 +221,8 @@ protected:
   size_t      num_edge_blocks{0};
   size_t      num_face_blocks{0};
   size_t      num_assemblies{0};
-  float       db_version{0.0};
-  float       api_version{0.0};
+  int         num_change_sets{0};
+  int         current_change_set_index{-2};
   int         io_word_size{0}; // Note: The "compute word size" is always 8.
 
   Exo_Block<INT>  *eblocks{nullptr};     // Array.
@@ -253,8 +264,7 @@ protected:
   double *global_vals2{nullptr}; // Array of global variables used if interpolating.
 
   // Internal methods:
-
-  void Get_Init_Data(); // Gets bunch of initial data.
+  void Reset_Meta_Data();
 };
 
 template <typename INT> inline INT Exo_Read<INT>::Node_Map(size_t node_num) const

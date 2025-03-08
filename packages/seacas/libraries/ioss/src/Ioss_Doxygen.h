@@ -13,7 +13,6 @@ For bug reports, documentation errors, and enhancement suggestions, contact:
 - WEB:   https://github.com/sandialabs/seacas
 - EMAIL: gdsjaar@sandia.gov
 - EMAIL: gsjaardema@gmail.com
-- PHONE: (505) 844-2701 (office)
 
 \section db_types Database Types
 

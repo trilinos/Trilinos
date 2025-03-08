@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,6 +49,49 @@ namespace {
       return filename.substr(0, ind);
     }
     return filename;
+  }
+
+  int check_change_sets(int exoid, int &selected_change_set)
+  {
+    // First, see if the file contains change sets...
+    int num_change_sets = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
+
+    if (num_change_sets == 0) {
+      if (selected_change_set > 0) {
+        fmt::print(stderr,
+                   "ERROR: Reading from change set {} was specified, but the file contains no "
+                   "change sets.\n",
+                   selected_change_set);
+
+        Gen_Error(0, "fatal: no change sets in mesh database");
+        return 0;
+      }
+      return exoid;
+    }
+
+    // File contains change sets...
+    if (selected_change_set == 0) {
+      fmt::print(
+          stderr,
+          "\nWARNING: Exodus database contains {} change sets.\n         Setting to read from "
+          "first change set since `-change_set #` option not specified.\n\n",
+          num_change_sets);
+      selected_change_set = 1;
+      return exoid + selected_change_set;
+    }
+
+    if (selected_change_set > num_change_sets) {
+      fmt::print(stderr,
+                 "ERROR: Change set {} was specified for reading, but mesh only contains {} change "
+                 "sets.\n",
+                 selected_change_set, num_change_sets);
+      Gen_Error(0, "fatal: selected change set does not exist in mesh database");
+      return 0;
+    }
+    // Contains change sets and selected change set is in range...
+    fmt::print(stderr, "NOTE: Mesh data will be read from change set {} of {}\n",
+               selected_change_set, num_change_sets);
+    return exoid + selected_change_set;
   }
 } // namespace
 /*****************************************************************************/
@@ -115,7 +158,7 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
   }
 
   /* Loop over each command line option */
-  while ((opt_let = getopt(argc, argv, "3264a:hm:l:nes:x:w:vyo:cg:fpS")) != EOF) {
+  while ((opt_let = getopt(argc, argv, "3264a:hm:l:nes:x:w:vyo:cg:fpSIC:")) != EOF) {
 
     /* case over the option letter */
     switch (opt_let) {
@@ -151,6 +194,19 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
       prob->skip_checks = 1;
       break;
 
+    case 'C':
+      /* Specifiy (1-based) index of change set in mesh file */
+      if (optarg == nullptr) {
+        prob->selected_change_set = 0;
+      }
+      else {
+        iret = sscanf(optarg, "%d", &prob->selected_change_set);
+        if (iret != 1) {
+          prob->selected_change_set = 0;
+        }
+      }
+      break;
+
     case 'f':
       /*
        * use the face method to calculate adjacencies for
@@ -159,7 +215,7 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
       prob->face_adj = 1;
       break;
 
-    case 'C':
+    case 'I':
       /*
        * detect vertical columns of elements and ensure that
        * elements of a columns are all in one partition
@@ -1299,18 +1355,18 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
  *---------------------------------------------------------------------------*/
 template int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                              Machine_Description *machine, LB_Description<int> *lb,
-                             Problem_Description *prob, Solver_Description *solver,
+                             Problem_Description *problem, Solver_Description *solver,
                              Weight_Description *weight);
 
 template int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                              Machine_Description *machine, LB_Description<int64_t> *lb,
-                             Problem_Description *prob, Solver_Description *solver,
+                             Problem_Description *problem, Solver_Description *solver,
                              Weight_Description *weight);
 
 template <typename INT>
 int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                     Machine_Description *machine, LB_Description<INT> *lb,
-                    Problem_Description *prob, Solver_Description *solver,
+                    Problem_Description *problem, Solver_Description *solver,
                     Weight_Description *weight)
 {
   /* Check that an input ExodusII file name was specified */
@@ -1330,8 +1386,17 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     return 0;
   }
 
+  // Determine whether there are any change sets in file.
+  // If there are, check whether user specified a specific
+  // change set index and set to that one (if valid), or
+  // if not specified, set to the first.
+  exid_inp = check_change_sets(exid_inp, problem->selected_change_set);
+  if (exid_inp == 0) {
+    return 0;
+  }
+
   /* Get the integer size stored on the database */
-  prob->int64db = ex_int64_status(exid_inp) & EX_ALL_INT64_DB;
+  problem->int64db = ex_int64_status(exid_inp) & EX_ALL_INT64_DB;
 
   ex_close(exid_inp);
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -1374,7 +1439,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
    * currently, do not allow groups and clusters since the
    * loops to chaco get a bit too confusing
    */
-  if (machine->num_boxes > 1 && prob->groups != nullptr) {
+  if (machine->num_boxes > 1 && problem->groups != nullptr) {
     Gen_Error(0, "FATAL: groups cannot be designated for a cluster machine");
     return 0;
   }
@@ -1382,39 +1447,39 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                      Check the problem specifications                     */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-  if (prob->type != DecompType::ELEMENTAL && prob->type != DecompType::NODAL) {
+  if (problem->type != DecompType::ELEMENTAL && problem->type != DecompType::NODAL) {
     Gen_Error(0, "FATAL: unknown problem type specified");
     return 0;
   }
 
-  if (prob->skip_checks < 0) {
-    prob->skip_checks = 0;
+  if (problem->skip_checks < 0) {
+    problem->skip_checks = 0;
   }
 
-  if (prob->face_adj < 0) {
-    prob->face_adj = 0;
+  if (problem->face_adj < 0) {
+    problem->face_adj = 0;
   }
 
   /*
    * using face definition of adjacencies only makes sense
    * with an elemental decomposition
    */
-  if (prob->type != DecompType::ELEMENTAL && prob->face_adj) {
+  if (problem->type != DecompType::ELEMENTAL && problem->face_adj) {
     Gen_Error(1, "WARNING: can only use face definition of");
     Gen_Error(1, "WARNING: adjacency with elemental decomposition");
     Gen_Error(1, "WARNING: face definition turned off");
-    prob->face_adj = 0;
+    problem->face_adj = 0;
   }
 
   /*
    * Detecting columns and fixing their partitioning only makes sense
    * with an elemental decomposition
    */
-  if (prob->type != DecompType::ELEMENTAL && prob->fix_columns) {
+  if (problem->type != DecompType::ELEMENTAL && problem->fix_columns) {
     Gen_Error(1, "WARNING: can only use fix columns options");
     Gen_Error(1, "WARNING: with elemental decomposition");
     Gen_Error(1, "WARNING: fix columns option turned off");
-    prob->fix_columns = 0;
+    problem->fix_columns = 0;
   }
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -1452,7 +1517,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   if (lb->cnctd_dom < 0) {
     lb->cnctd_dom = 0;
   }
-  else if (!prob->face_adj) {
+  else if (!problem->face_adj) {
     Gen_Error(1, "WARNING: can only set connected domain");
     Gen_Error(1, "WARNING: when using face definition of adjacency");
     Gen_Error(1, "WARNING: connected domain turned off");
@@ -1593,7 +1658,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     }
 
     ex_entity_type type;
-    if (prob->type == DecompType::NODAL) {
+    if (problem->type == DecompType::NODAL) {
       type = EX_NODAL;
     }
     else {
@@ -1796,7 +1861,8 @@ namespace {
                " -m <machine description>\n"
                "\t -l <load bal description> -s <eigen solver specs>\n"
                "\t -w <weighting options> -g <group list> -f]\n"
-               "\t [-a <ascii file>] exoII_file\n\n"
+               "\t [-a <ascii file>] [-c change_set_#] exoII_file\n\n"
+               " -C index\tSpecify which change set to read from (1-based index)\n"
                " -32\t\tforce use of 32-bit integers\n"
                " -64\t\tforce use of 64-bit integers\n"
                " -n\t\tperform a nodal based load balance\n"
@@ -1810,7 +1876,7 @@ namespace {
                " -f\t\tuse face definition of adjacency\n"
                " -p\t\tuse partial definition of adjacency: \n"
                "   \t\trequire only 3 matching quad face nodes\n"
-               " -C\tavoid splitting vertical element columns\n"
+               " -I\t\tavoid splitting vertical element columns\n"
                "   \t\tacross partitions\n"
                " -h\t\tusage information\n"
                " -a ascii file\tget info from ascii input file name\n",

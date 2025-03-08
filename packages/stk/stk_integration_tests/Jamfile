@@ -135,6 +135,8 @@ exe stk_integration_tests
         $(stk_integration_tests-root)/stk_mesh/face_creation/skin_mesh/*.cpp  
         $(stk_integration_tests-root)/stk_mesh/face_creation/user_created/*.cpp
         $(stk_integration_tests-root)/stk_mesh/face_creation/user_support/*.cpp
+        $(stk_integration_tests-root)/stk_search/AperiCMC_NeighborSearchTest.cpp
+        $(stk_integration_tests-root)/stk_search/SearchMeshTest.cpp
     ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_unit_test_utils//stk_mesh_fixtures

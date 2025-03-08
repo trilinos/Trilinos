@@ -1662,7 +1662,7 @@ TEST(BulkData, testFamilyTreeGhosting)
   }
 
   // Create family tree
-  Entity family_tree = mesh.declare_constraint(my_family_tree_id, empty_parts);
+  Entity family_tree = mesh.declare_entity(stk::topology::CONSTRAINT_RANK, my_family_tree_id, empty_parts);
   // Add relation to element
   unsigned downward_ordinal = 0; // we only have 1 down relation, it has ordinal 0
   mesh.declare_relation(family_tree, elem, downward_ordinal);

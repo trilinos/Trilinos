@@ -109,7 +109,7 @@ public:
    * object.
    *
    */
-  virtual void operator()() const {
+  virtual void operator()() const override {
     (m_t->*m_f)();
   }
 

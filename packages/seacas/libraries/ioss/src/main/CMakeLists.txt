@@ -100,20 +100,26 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 if (TPL_ENABLE_MPI)
+  set(COMPOSE_ARG --compose)
   IF (TPL_Netcdf_PARALLEL)
-    set(DECOMP_ARG "--rcb")
-    set(JOIN_ARG   "--compose=mpiio")
-    set(PJOIN_ARG   "--compose=pnetcdf")
-    set(NPROCS "1")
-    set(NPROCS_BUG "1")
-    set(SERIALIZE_ARG "--serialize_io_size=2")
+    set(DECOMP_ARG --rcb)
+    set(JOIN_ARG   --compose --netcdf4)
+    set(PJOIN_ARG   --compose --netcdf5)
+    set(NPROCS 4)
+    set(NPROCS_BUG 1)
   else()
-    set(NPROCS "1")
-    set(NPROCS_BUG "1")
+    set(COMPOSE_ARG )
+    set(NPROCS 1)
+    set(NPROCS_BUG 1)
   endif()
+else()
+    set(COMPOSE_ARG )
+    set(JOIN_ARG )
+    set(PJOIN_ARG )
 endif()
 
 if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodiff)
+if (TPL_Netcdf_Enables_Netcdf4)
 TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.g
      NOEXEPREFIX NOEXESUFFIX
@@ -126,11 +132,11 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
   XHOSTTYPE Windows
   )
 
-  if (TPL_Netcdf_Enables_Netcdf4)
-  SET(IOSHELL_ARG --split_times 1 --in_type generated 10x10x10+shell:xXyYzZ+times:4+variables:element,2,nodal,3)
+  SET(IOSHELL_ARG --in_type generated 10x10x10+shell:xXyYzZ+times:4+variables:element,2,nodal,3)
+  SET(SPLIT_ARG --split_times 1)
   TRIBITS_ADD_ADVANCED_TEST(
     io_shell_group_ungroup
-    TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS ${IOSHELL_ARG} splits.g
+    TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS ${SPLIT_ARG} ${IOSHELL_ARG} splits.g
     TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS splits.g_1 splits.g_2 splits.g_3 splits.g_4  grouped.g
     TEST_2 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --extract_group splits.g_1 grouped.g split-extract.g_1
     TEST_3 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --extract_group splits.g_2 grouped.g split-extract.g_2
@@ -155,26 +161,104 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32
     COMM serial
     FINAL_PASS_REGULAR_EXPRESSION
   )
-  endif()
+
+  IF (TPL_Netcdf_PARALLEL)
+  TRIBITS_ADD_ADVANCED_TEST(
+    io_shell_cs_decompose_compose
+    TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS ${SPLIT_ARG} ${IOSHELL_ARG} splits_cs.g
+       NUM_MPI_PROCS 1
+    TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS splits_cs.g_1 splits_cs.g_2 splits_cs.g_3 splits_cs.g_4  grouped_cs.g
+       NUM_MPI_PROCS 1
+    TEST_3 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} grouped_cs.g joined_cs.g
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS ${NPROCS}
+    TEST_4 EXEC exodiff ARGS -pedantic grouped_cs.g joined_cs.g
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    COMM mpi serial
+    XHOSTTYPE Windows
+    FINAL_PASS_REGULAR_EXPRESSION
+  )
+
+  TRIBITS_ADD_ADVANCED_TEST(
+    io_shell_cs_decompose_epu
+    TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS ${SPLIT_ARG} ${IOSHELL_ARG} splits_epu.g
+       NUM_MPI_PROCS 1
+    TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS splits_epu.g_1 splits_epu.g_2 splits_epu.g_3 splits_epu.g_4  grouped1_epu.g
+       NUM_MPI_PROCS 1
+    TEST_3 EXEC io_shell ARGS ${DECOMP_ARG} grouped1_epu.g decomped_epu.g
+     NOEXEPREFIX NOEXESUFFIX
+     NUM_MPI_PROCS ${NPROCS}
+    TEST_4 EXEC epu ARGS -auto decomped_epu.g
+       DIRECTORY ../../../../applications/epu
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_5 EXEC exodiff ARGS -pedantic grouped1_epu.g decomped_epu.g
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    COMM mpi serial
+    XHOSTTYPE Windows
+    FINAL_PASS_REGULAR_EXPRESSION
+  )
+endif()
+
+if (${CMAKE_PROJECT_NAME}_ENABLE_SEACASConjoin)
+  # Use io_shell to generate several files with each timestep in a separate file
+  # Then join those separate files into a single file with each in a separate changeset
+  # Then use conjoin to "squash" the changesets into a single "normal" file
+  # Compare this file with the same file generated without using changesets...
+  TRIBITS_ADD_ADVANCED_TEST(
+    io_shell_cs_time_conjoin
+    TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS ${SPLIT_ARG} ${IOSHELL_ARG} csplits.g
+    TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS csplits.g_1 csplits.g_2 csplits.g_3 csplits.g_4  changesets.g
+    TEST_2 EXEC conjoin  ARGS --output conjoined.g --element_status_variable=NONE --nodal_status_variable=NONE changesets.g 
+       DIRECTORY ../../../../applications/conjoin
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_3 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS ${IOSHELL_ARG} generated.g
+    TEST_4 EXEC exodiff ARGS -pedantic conjoined.g generated.g
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    COMM serial
+    FINAL_PASS_REGULAR_EXPRESSION
+  )
+
+  # Use io_shell to generate multiple files with different geometry, but similar variable names
+  # Then join those separate files into a single file with each in a separate changeset
+  # Then use conjoin to "squash" the changesets into a single "normal" file
+  # Then use conjoin to "squash" the individual files into a single "normal" file
+  # Compare the two conjoin outputs...
+  SET(GENARG tdelta:0.1+variables:global,1,nodal,2,element,3+bbox:0,0,0,1,1,1)
+  TRIBITS_ADD_ADVANCED_TEST(
+    io_shell_cs_geometry_conjoin
+    TEST_0 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --in_type generated 1x1x1+times:2+tinit:0.0+${GENARG} single.g
+    TEST_1 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --in_type generated 2x2x2+times:2+tinit:0.3+${GENARG} double.g
+    TEST_2 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --in_type generated 3x3x3+times:2+tinit:0.5+${GENARG} triple.g
+    TEST_3 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS --in_type generated 4x4x4+times:2+tinit:0.7+${GENARG} quad.g
+    TEST_4 NOEXEPREFIX NOEXESUFFIX EXEC io_shell ARGS single.g double.g triple.g quad.g  geometry.g
+    TEST_5 EXEC conjoin  ARGS --output cs_conjoined.g geometry.g 
+       DIRECTORY ../../../../applications/conjoin
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_6 EXEC conjoin  ARGS --output raw_conjoined.g single.g double.g triple.g quad.g
+       DIRECTORY ../../../../applications/conjoin
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    TEST_7 EXEC exodiff ARGS -pedantic cs_conjoined.g raw_conjoined.g
+       DIRECTORY ../../../../applications/exodiff
+       NOEXEPREFIX NOEXESUFFIX
+       NUM_MPI_PROCS 1
+    COMM serial
+    FINAL_PASS_REGULAR_EXPRESSION
+  )
+endif()
+endif()
 
 if (TPL_ENABLE_MPI)
   IF (TPL_Netcdf_PARALLEL)
-    TRIBITS_ADD_ADVANCED_TEST(exodus_fpp_serialize
-       TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${SERIALIZE_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32-ser.g
-          NOEXEPREFIX NOEXESUFFIX
-          NUM_MPI_PROCS ${NPROCS}
-       TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32-ser.g 8-block-32-serj.g
-          NOEXEPREFIX NOEXESUFFIX
-          NUM_MPI_PROCS ${NPROCS}
-       TEST_2 EXEC exodiff ARGS -map -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
-          DIRECTORY ../../../../applications/exodiff
-          NOEXEPREFIX NOEXESUFFIX
-          NUM_MPI_PROCS 1
-    COMM mpi
-    XHOSTTYPE Windows
-    )
-  endif()
-
   TRIBITS_ADD_ADVANCED_TEST(create_path_fpp
      TEST_0 CMND rm ARGS -rf create_path_test_directory
      TEST_1 EXEC io_shell ARGS --in_type generated 100x100x100 create_path_test_directory/1/2/3/4/5/tmp.g
@@ -195,6 +279,7 @@ if (TPL_ENABLE_MPI)
     COMM mpi serial
     )
 
+  IF (TPL_Netcdf_Enables_PNetcdf)
   TRIBITS_ADD_ADVANCED_TEST(exodus32_to_exodus32_pnetcdf
      TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${PJOIN_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64p.g
        NOEXEPREFIX NOEXESUFFIX
@@ -205,6 +290,8 @@ if (TPL_ENABLE_MPI)
        NUM_MPI_PROCS 1
     COMM mpi serial
     )
+  endif()
+  ENDIF()
 ENDIF()
 
 IF (SEACASIoss_ENABLE_THREADSAFE)
@@ -346,9 +433,10 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
   )
 endif()
 
-IF (TPL_Netcdf_Enables_PNetcdf OR NOT TPL_ENABLE_MPI)
+IF (TPL_Netcdf_Enables_PNetcdf)
 TRIBITS_ADD_TEST(
-  io_shell ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g"
+  io_shell 
+  ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g"
   NAME io_shell_compare_same_database
   NOEXEPREFIX NOEXESUFFIX
   NUM_MPI_PROCS ${NPROCS}
@@ -357,14 +445,16 @@ TRIBITS_ADD_TEST(
 ENDIF()
 
 TRIBITS_ADD_TEST(
-  io_shell ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns"
+  io_shell 
+  ARGS "${DECOMP_ARG} --compare ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns"
   NAME io_shell_compare_same_database_cgns
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
  )
 
 TRIBITS_ADD_TEST(
-  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  io_shell 
+  ARGS "${DECOMP_ARG}  --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
   NAME generated_to_null
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
@@ -372,7 +462,8 @@ TRIBITS_ADD_TEST(
 
 IF (ENABLE_ExoNull)
 TRIBITS_ADD_TEST(
-  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  io_shell
+  ARGS "${DECOMP_ARG} ${COMPOSE} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
   NAME generated_to_exonull
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
@@ -380,11 +471,12 @@ TRIBITS_ADD_TEST(
 ENDIF()
 
 if (TPL_ENABLE_MPI)
-  set(EXTERNAL "--compose=external")
+  set(EXTERNAL --compose=external)
 endif()
 
 TRIBITS_ADD_TEST(
-  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  io_shell 
+  ARGS "${DECOMP_ARG} ${COMPOSE_ARG} ${EXTERNAL} --out_type=null --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
   NAME generated_to_null_fpp
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
@@ -392,7 +484,8 @@ TRIBITS_ADD_TEST(
 
 IF (ENABLE_ExoNull)
 TRIBITS_ADD_TEST(
-  io_shell ARGS "${DECOMP_ARG} ${JOIN_ARG} ${EXTERNAL} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
+  io_shell 
+  ARGS "${DECOMP_ARG} ${COMPOSE_ARG} ${EXTERNAL} --out_type=exonull --in_type=generated 10x10x10+shell:xXyYzZ+sideset:xXyY+times:2+variables:element,2,nodal,3,sideset,4 null_file"
   NAME generated_to_exonull_fpp
   NOEXEPREFIX NOEXESUFFIX
   COMM mpi serial
@@ -445,6 +538,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_single_block
   XHOSTTYPE Windows
   )
 
+IF (TPL_Netcdf_Enables_PNetcdf)
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/two-block.g two-block.cgns
      NOEXEPREFIX NOEXESUFFIX
@@ -459,6 +553,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus_double_block
   COMM mpi serial
   XHOSTTYPE Windows
   )
+ENDIF()
 
 IF (NOT SEACASIoss_ENABLE_THREADSAFE)
 TRIBITS_ADD_ADVANCED_TEST(cgns_bc_no_parents_to_exodus
@@ -537,12 +632,12 @@ IF (TPL_ENABLE_MPI)
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
    TEST_0 EXEC struc_to_unstruc ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns exodus_struc.e
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
+     NUM_MPI_PROCS 1
    TEST_1 EXEC exodiff ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_struc.gold exodus_struc.e
      DIRECTORY ../../../../applications/exodiff
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
-  COMM mpi serial
+  COMM serial
   XHOSTTYPE Windows
   )
 ELSE()
@@ -760,7 +855,8 @@ ENDIF()
 
 IF (TPL_ENABLE_MPI AND ${PROJECT_NAME}_ENABLE_Zoltan)
 TRIBITS_ADD_TEST(
-   io_info ARGS --config
+   io_info 
+   ARGS "--config"
    NAME io_info_config_has_zoltan
    NOEXEPREFIX NOEXESUFFIX
    PASS_REGULAR_EXPRESSION "Zoltan Library is Available"
@@ -771,7 +867,8 @@ ENDIF()
 
 IF (TPL_ENABLE_MPI AND TPL_ENABLE_ParMETIS)
 TRIBITS_ADD_TEST(
-   io_info ARGS --config
+   io_info 
+   ARGS "--config"
    NAME io_info_config_has_parmetis
    NOEXEPREFIX NOEXESUFFIX
    PASS_REGULAR_EXPRESSION "ParMetis Library Version"

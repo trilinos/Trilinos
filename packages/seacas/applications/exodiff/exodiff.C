@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-, 20242024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,9 +12,12 @@
 #include <ctime>
 #include <fmt/chrono.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <fstream>
 #include <iostream>
 #include <numeric>
+
+#include <SL_tokenize.h>
 
 #include "ED_SystemInterface.h"
 #include "ED_Version.h"
@@ -228,6 +231,180 @@ void floating_point_exception_handler(int signo)
 }
 
 namespace {
+  int get_number(const std::string &str)
+  {
+    int  N       = -1;
+    bool all_dig = str.find_first_not_of("0123456789") == std::string::npos;
+    if (all_dig) {
+      N = std::stoi(str);
+    }
+    return N;
+  }
+
+  int get_change_set_index(const std::string &cs_name, const NameList &cs_names)
+  {
+    auto N = get_number(cs_name);
+    if (N < 0) {
+      if (no_case_equals(cs_name, "root") || no_case_equals(cs_name, "/")) {
+        return 0;
+      }
+      for (size_t i = 0; i < cs_names.size(); i++) {
+        if (no_case_equals(cs_name, cs_names[i])) {
+          return (int)i + 1;
+        }
+      }
+      Error(fmt::format(
+          "Could not find a match for the change set named {}.\nValid change set names are: {}\n",
+          cs_name, fmt::join(cs_names, ", ")));
+    }
+    return N;
+  }
+
+  template <typename INT>
+  std::pair<std::vector<int>, std::vector<int>>
+  create_change_set_list(Exo_Read<INT> &file1, Exo_Read<INT> &file2,
+                         const std::string &change_set_spec)
+  {
+    // Change Sets:
+    // * User can specify diffing of specific change sets
+    // * - same change set in both files
+    // * - specified change set in one file with different specified change set in other file
+    // * - specified change set in file with change sets vs "root" in file with no change sets
+    // * If user does not specify, then do diff on all change sets in the files.
+    // * - If different count of change sets, then warn and iterate over 0..min_count
+    //
+    // User specification:
+    // * by 1-based index
+    // * by case sensitive name.
+    // * index `0` indicates root of file with no change sets
+    // * name `root` or `/` indicates root of file with no change sets
+    //
+    // User specifies:  `cs1,cs2,...,csn:csa,csb,csc,...,csx`
+    // * Length of lists must be the same
+    // * `:` separates file 1 from file 2 change sets
+    // * ',' separates change sets within a file
+    // * If no ':', then the list is the change set(s) to be compared in both files.
+
+    std::vector<int> cs1;
+    std::vector<int> cs2;
+
+    // Check change_set count...
+    auto cs_cnt_1 = file1.Num_Change_Sets();
+    auto cs_cnt_2 = file2.Num_Change_Sets();
+    auto cs_cnt   = interFace.summary_flag ? cs_cnt_1 : std::min(cs_cnt_1, cs_cnt_2);
+
+    if (cs_cnt_1 == 0 && cs_cnt_2 == 0) {
+      if (!change_set_spec.empty()) {
+        Warning("WARNING: Neither file contains change sets, but user specified a list of change "
+                "sets to compare.  It will be ignored.\n");
+      }
+      return std::make_pair(cs1, cs2);
+    }
+
+    // At least one file has change sets...
+    if (change_set_spec.empty()) {
+      if (cs_cnt_1 != cs_cnt_2) {
+        if (!interFace.summary_flag) {
+          if (cs_cnt_1 == 0 || cs_cnt_2 == 0) {
+            if (cs_cnt_1 == 0) {
+              Warning(fmt::format(
+                  "Change set count mismatch file1 does not have change sets, file2 has {}.\n"
+                  "         Will compare file1 with the first change set in file2.\n",
+                  cs_cnt_2));
+              cs1.push_back(0);
+              cs2.push_back(1);
+              return std::make_pair(cs1, cs2);
+            }
+            else {
+              Warning(fmt::format(
+                  "Change set count mismatch file2 does not have change sets, file1 has {}.\n"
+                  "         Will compare file2 with the first change set in file1.\n",
+                  cs_cnt_1));
+              cs1.push_back(1);
+              cs2.push_back(0);
+              return std::make_pair(cs1, cs2);
+            }
+          }
+          else {
+            Warning(fmt::format("Change set count mismatch file1 has {}, file2 has {}.\n"
+                                "         Will compare the first {} change sets only.\n",
+                                cs_cnt_1, cs_cnt_2, cs_cnt));
+          }
+        }
+      }
+      for (int i = 0; i < cs_cnt; i++) {
+        cs1.push_back(i + 1);
+        cs2.push_back(i + 1);
+      }
+      return std::make_pair(cs1, cs2);
+    }
+    else {
+      // change_set_spec is not empty -- contains list of one or more names or indices for one or
+      // both databases.
+      auto tokens = SLIB::tokenize(change_set_spec, ":");
+      if (tokens.size() == 1) {
+        // User did not specify specific change sets for both files.  Parse list and apply to
+        // both...
+        auto cs_list = SLIB::tokenize(tokens[0], ",");
+        if (cs_list.size() == 1 && (cs_cnt_1 == 0 || cs_cnt_2 == 0)) {
+          // Specifies the cs to compare to a file with no change_sets...
+          auto &cs_names = cs_cnt_2 == 0 ? file1.Change_Set_Names() : file2.Change_Set_Names();
+          auto  N        = get_change_set_index(cs_list[0], cs_names);
+          if (N < 0) {
+            return std::make_pair(cs1, cs2);
+          }
+
+          if (cs_cnt_1 == 0) {
+            cs1.push_back(0);
+            cs2.push_back(N);
+          }
+          else {
+            cs1.push_back(N);
+            cs2.push_back(0);
+          }
+          return std::make_pair(cs1, cs2);
+        }
+        for (const auto &cs : cs_list) {
+          auto N = get_change_set_index(cs, file1.Change_Set_Names());
+          if (N >= 0 && N <= cs_cnt) {
+            cs1.push_back(N);
+          }
+          else {
+            Error(fmt::format("Change set index is invalid: {}, file1 has {}, "
+                              "file2 has {}. Ignoring this entry.\n",
+                              N, cs_cnt_1, cs_cnt_2));
+          }
+        }
+        cs2 = cs1;
+      }
+      else {
+        auto cs1_list = SLIB::tokenize(tokens[0], ",");
+        auto cs2_list = SLIB::tokenize(tokens[1], ",");
+        if (cs1_list.size() != cs2_list.size()) {
+          Error(fmt::format("There were {} changes sets specified for file1 and {} specified for "
+                            "file2.  The count must be the same.\n",
+                            cs1_list.size(), cs2_list.size()));
+          return std::make_pair(cs1, cs2);
+        }
+        for (size_t i = 0; i < cs1_list.size(); i++) {
+          auto N1 = get_change_set_index(cs1_list[i], file1.Change_Set_Names());
+          auto N2 = get_change_set_index(cs2_list[i], file2.Change_Set_Names());
+
+          if (N1 >= 0 && N1 <= cs_cnt_1 && N2 >= 0 && N2 <= cs_cnt_2) {
+            cs1.push_back(N1);
+            cs2.push_back(N2);
+          }
+          else {
+            Error(fmt::format("At least one change set index is invalid: ({} {}), file1 has {}, "
+                              "file2 has {}. Ignoring this entry.\n",
+                              N1, N2, cs_cnt_1, cs_cnt_2));
+          }
+        }
+      }
+    }
+    return std::make_pair(cs1, cs2);
+  }
+
   int get_int_size(const std::string &file_name)
   {
     if (file_name.empty()) {
@@ -294,9 +471,14 @@ namespace {
 
   template <typename INT> void output_init(Exo_Read<INT> &file, int count, const char *prefix)
   {
+    std::string cs_info{};
+    if (file.Num_Change_Sets() > 0) {
+      cs_info = fmt::format(" [Change Set {}: {}]", file.Get_Change_Set_Index() + 1,
+                            file.Get_Change_Set_Name());
+    }
     FileInfo fi(file.File_Name());
     fmt::print(
-        "{0}  FILE {19}: {1}\n"
+        "{0}  FILE {19}: {1}{23}\n"
         "{0}   Title: {2}\n"
         "{0}          Dim = {3}, Nodes = {5}, Elements = {6}, Faces = {20}, Edges = {21}\n"
         "{0}          Element Blocks = {4}, Face Blocks = {10}, Edge Blocks = {9}, Nodesets = {7}, "
@@ -308,7 +490,7 @@ namespace {
         file.Num_Edge_Blocks(), file.Num_Face_Blocks(), file.Num_Global_Vars(),
         file.Num_Nodal_Vars(), file.Num_Element_Vars(), file.Num_NS_Vars(), file.Num_SS_Vars(),
         file.Num_Times(), file.Num_FB_Vars(), file.Num_EB_Vars(), count, file.Num_Faces(),
-        file.Num_Edges(), file.Num_Assembly());
+        file.Num_Edges(), file.Num_Assembly(), cs_info);
   }
 
   void initialize(std::vector<MinMaxData> &mm_entity, size_t size, const ToleranceType &ttype)
@@ -320,6 +502,47 @@ namespace {
   }
 
   template <typename INT> bool exodiff(Exo_Read<INT> &file1, Exo_Read<INT> &file2);
+
+  template <typename INT>
+  std::pair<bool, bool> exodiff_setup(const std::string &file1_name, const std::string &file2_name,
+                                      INT /* dummy */)
+  {
+    // Open input files.
+    Exo_Read<INT> file1(file1_name);
+    file1.modify_time_values(interFace.time_value_scale, interFace.time_value_offset);
+
+    Exo_Read<INT> file2(file2_name);
+
+    auto [cs1, cs2] = create_change_set_list(file1, file2, interFace.change_sets);
+    SMART_ASSERT(cs1.size() == cs2.size());
+
+    bool has_change_sets      = !cs1.empty() && (interFace.summary_flag || !cs2.empty());
+    interFace.has_change_sets = has_change_sets;
+    bool diff_flag            = false;
+
+    if (has_change_sets) {
+      for (size_t i = 0; i < cs1.size(); i++) {
+        file1.Open_Change_Set(cs1[i] - 1);
+        if (!interFace.summary_flag) {
+          file2.Open_Change_Set(cs2[i] - 1);
+        }
+        diff_flag |= exodiff(file1, file2);
+        fmt::print("{:-<80}\n", "");
+      }
+    }
+    else {
+      file1.Get_Meta_Data();
+      if (!interFace.summary_flag) {
+        file2.Get_Meta_Data();
+      }
+      diff_flag |= exodiff(file1, file2);
+    }
+    file1.Close_File();
+    if (!interFace.summary_flag) {
+      file2.Close_File();
+    }
+    return std::make_pair(diff_flag, has_change_sets);
+  }
 } // namespace
 
 int main(int argc, char *argv[])
@@ -385,20 +608,26 @@ int main(int argc, char *argv[])
     int_size = 8;
   }
 
-  bool diff_flag = true;
+  bool diff_flag       = false;
+  bool has_change_sets = false;
   if (int_size == 4) {
-    // Open input files.
-    Exo_Read<int> file1(file1_name);
-    file1.modify_time_values(interFace.time_value_scale, interFace.time_value_offset);
-
-    Exo_Read<int> file2(file2_name);
-    diff_flag = exodiff(file1, file2);
+    auto diff_change = exodiff_setup(file1_name, file2_name, int(0));
+    diff_flag        = diff_change.first;
+    has_change_sets  = diff_change.second;
   }
   else {
-    // Open input files.
-    Exo_Read<int64_t> file1(file1_name);
-    Exo_Read<int64_t> file2(file2_name);
-    diff_flag = exodiff(file1, file2);
+    auto diff_change = exodiff_setup(file1_name, file2_name, int64_t(0));
+    diff_flag        = diff_change.first;
+    has_change_sets  = diff_change.second;
+  }
+
+  if (has_change_sets) {
+    if (diff_flag) {
+      DIFF_OUT("exodiff: At least one change set is different\n");
+    }
+    else {
+      DIFF_OUT("exodiff: All change sets are the same\n", fmt::color::green);
+    }
   }
 #if 0
     add_to_log(argv[0], 0);
@@ -421,18 +650,12 @@ namespace {
     if (!interFace.quiet_flag && !interFace.summary_flag) {
       fmt::print("Reading first file ... \n");
     }
-    std::string serr = file1.Open_File();
-    if (!serr.empty()) {
-      Error(fmt::format("{}\n", serr));
-    }
+    //    file1.Get_Meta_Data();
     if (!interFace.summary_flag) {
       if (!interFace.quiet_flag) {
         fmt::print("Reading second file ... \n");
       }
-      serr = file2.Open_File();
-      if (!serr.empty()) {
-        Error(fmt::format("{}\n", serr));
-      }
+      //      file2.Get_Meta_Data();
     }
 
     if (interFace.summary_flag) {
@@ -563,8 +786,7 @@ namespace {
     SMART_ASSERT(!(interFace.summary_flag && out_file_id >= 0));
 
     if (!interFace.quiet_flag || interFace.summary_flag) {
-      fmt::print("\n{0} ==============================================================\n"
-                 "{0}  NOTE: All node and element ids are reported as {1} ids.\n\n",
+      fmt::print("\n{0}  NOTE: All node and element ids are reported as {1} ids.\n\n",
                  interFace.summary_flag ? "#" : " ", interFace.ignore_maps ? "local" : "global");
       if (interFace.interpolating) {
         fmt::print("{}  NOTE: Interpolation mode is enabled.\n\n",
@@ -950,11 +1172,6 @@ namespace {
     }
 
     delete[] blocks2;
-
-    file1.Close_File();
-    if (!interFace.summary_flag) {
-      file2.Close_File();
-    }
 
     return diff_flag;
   }

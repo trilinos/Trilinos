@@ -61,11 +61,11 @@ public:
   AllocatorAdaptor(){}
   virtual ~AllocatorAdaptor(){}
 
-  pointer allocate(size_t num, const void* = 0) {
+  pointer allocate(size_t num, const void* = 0) override {
     return AllocatorType().allocate(num);
   }
 
-  void deallocate(pointer p, size_t num) {
+  void deallocate(pointer p, size_t num) override {
     AllocatorType().deallocate(p, num);
   }
 };

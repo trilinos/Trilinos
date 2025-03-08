@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2022 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -234,16 +234,20 @@ int main(int argc, char **argv)
     }
 
     /* Read per-block id map and compare to overall id map... */
+#ifndef NDEBUG
     int offset = 0;
+#endif
     for (int i = 0; i < num_elem_blk; i++) {
       int *block_map = (int *)calloc(num_elem_in_block[i], sizeof(int));
       error          = ex_get_block_id_map(exoid, EX_ELEM_BLOCK, ids[i], block_map);
 
+#ifndef NDEBUG
       /* Compare values with overall id map */
       for (int j = 0; j < num_elem_in_block[i]; j++) {
         assert(block_map[j] == elem_map[offset + j]);
       }
       offset += num_elem_in_block[i];
+#endif
       free(block_map);
     }
 

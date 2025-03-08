@@ -245,8 +245,10 @@ namespace SEAMS {
 
   bool is_directory(const std::string &filepath)
   {
-    struct stat s{};
-    int         ok = stat(filepath.c_str(), &s);
+    struct stat s
+    {
+    };
+    int ok = stat(filepath.c_str(), &s);
     if (ok == 0) {
       return S_ISDIR(s.st_mode);
     }

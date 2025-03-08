@@ -1539,7 +1539,7 @@ namespace {
           /* get the node on this element side (should only be one)*/
           std::array<INT, MAX_SIDE_NODES> side_nodes;
 #ifndef NDEBUG
-          int                             side_cnt =
+          int side_cnt =
 #endif
               ss_to_node_list(etype, mesh->connect[ecnt], (nscnt + 1), side_nodes.data());
           assert(side_cnt == 1);

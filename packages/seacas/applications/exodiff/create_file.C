@@ -400,21 +400,33 @@ namespace {
           if (!interFace.quiet_flag) {
             std::ostringstream diff;
             fmt::print(diff,
-                       "exodiff: DIFFERENCE .. The {} variable \"{}\" is not in the second file.\n",
+                       "exodiff: DIFFERENCE .. The {} variable \"{}\" is in the first file, but "
+                       "not the second file.\n",
                        type, name);
             DIFF_OUT(diff);
           }
         }
       }
       else {
-        *diff_found = true;
-        if (!interFace.quiet_flag) {
-          std::ostringstream diff;
-          fmt::print(
-              diff,
-              "exodiff: DIFFERENCE .. Specified {} variable \"{}\" is not in the first file.\n",
-              type, name);
-          DIFF_OUT(diff);
+        // Variable is in `names`, but not in `var_names1`.  This is a difference unless the file
+        // has changesets in which case the variable might exist in a different change set.  In this
+        // case, we check that if the variable does not exist in in either `var_names1` or
+        // `var_names2` and there are change sets, there is no diff.
+        if (interFace.has_change_sets &&
+            (interFace.summary_flag ||
+             find_string(var_names2, name, interFace.nocase_var_names) < 0)) {
+          // OK that variable not found in file1 and file2
+        }
+        else {
+          *diff_found = true;
+          if (!interFace.quiet_flag) {
+            std::ostringstream diff;
+            fmt::print(
+                diff,
+                "exodiff: DIFFERENCE .. Specified {} variable \"{}\" is not in the first file.\n",
+                type, name);
+            DIFF_OUT(diff);
+          }
         }
       }
     }

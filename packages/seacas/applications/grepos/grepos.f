@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2022 National Technology & Engineering Solutions
+C Copyright(C) 1999-2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -57,7 +57,7 @@ C     --   none
       include 'gp_attrot.blk'
       INCLUDE 'argparse.inc'
 
-      CHARACTER*2048 FILIN, FILOUT, SCRATCH, SYNTAX, HELP
+      CHARACTER*2048 FILIN, FILOUT, SCRATCH, SYNTAX, HELP, VALUE
       CHARACTER*80 SCRSTR
 
 C... String containing name of common element topology in model
@@ -99,7 +99,8 @@ C     --A - the dynamic numeric memory base array
 
 C .. Get filename from command line.  If not specified, emit error message
       SYNTAX =
-     *  'Syntax is: "grepos [-name_length len] [-64] file_in file_out"'
+     *  'Syntax is: "grepos [-name_length len] [-64] ' //
+     $     '[-change_set #] file_in file_out"'
       HELP = 'Documentation: https://sandialabs.github.io' //
      $     '/seacas-docs/sphinx/html/index.html#grepos'
       NARG = argument_count()
@@ -108,30 +109,6 @@ C .. Get filename from command line.  If not specified, emit error message
         CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
         CALL PRTERR ('CMDSPEC', HELP(:LENSTR(HELP)))
         GOTO 60
-      end if
-
-C ... Parse options...
-      name_len = 0
-      l64bit = .false.
-      if (narg .gt. 2) then
-        iarg = 1
-        do
-          CALL get_argument(iarg,FILIN, LNAM)
-          if (filin(:lnam) .eq. '-name_length') then
-            CALL get_argument(iarg+1,FILIN, LNAM)
-            read (filin(:lnam), '(i10)') name_len
-            iarg = iarg + 2
-          else if (filin(:lnam) .eq. '-64') then
-            l64bit = .true.
-            iarg = iarg + 1
-          else
-            SCRATCH = 'Unrecognized command option "'//FILIN(:LNAM)//'"'
-            CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
-            CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
-            CALL PRTERR ('CMDSPEC', HELP(:LENSTR(HELP)))
-          end if
-          if (iarg .gt. narg-2) exit
-        end do
       end if
 
 C     --Open the input database and read the initial variables
@@ -159,6 +136,53 @@ C     --Open the input database and read the initial variables
          CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
          GOTO 60
       END IF
+
+C ... Parse options...
+      name_len = 0
+      l64bit = .false.
+      if (narg .gt. 2) then
+        iarg = 1
+        do
+          CALL get_argument(iarg,FILIN, LNAM)
+          if (filin(:lnam) .eq. '-name_length') then
+            CALL get_argument(iarg+1,FILIN, LNAM)
+            read (filin(:lnam), '(i10)') name_len
+            iarg = iarg + 2
+          else if (filin(:lnam) .eq. '-64') then
+            l64bit = .true.
+            iarg = iarg + 1
+          else if (filin(:lnam) .eq. '-change_set' .or.
+     *      filin(:lnam) .eq. '--change_set') then
+C ... Convert `value` to an integer.
+            CALL get_argument(iarg+1,value,  lv)
+            iarg = iarg + 2
+            read (value(:lv), '(i10)') nchange
+C ... Check that file contains at least that many change sets...
+            ndbr = iand(ndbin, EX_FILE_ID_MASK)
+            call exinq(ndbr, EX_INQ_NUM_CHILD_GROUPS,
+     $           idum, rdum, cdum, ierr)
+            if (nchange .gt. idum) then
+               write (SCRATCH,*) 'Selected change set', nchange,
+     $              'but there are only ', idum, ' change sets in file.'
+               call sqzstr(scratch, lscratch)
+               call PRTERR('CMDERR', SCRATCH(:LSCRATCH))
+               goto 60
+            else
+               write (scratch,99) nchange
+ 99            format(1x,'NOTE: Selecting change set ', i3)
+               call sqzstr(scratch, lscratch)
+               call PRTERR('CMDSPEC', scratch(:lscratch))
+               ndbin = ndbr + nchange
+            end if
+          else
+            SCRATCH = 'Unrecognized command option "'//FILIN(:LNAM)//'"'
+            CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
+            CALL PRTERR ('CMDSPEC', SYNTAX(:LENSTR(SYNTAX)))
+            CALL PRTERR ('CMDSPEC', HELP(:LENSTR(HELP)))
+          end if
+          if (iarg .gt. narg-2) exit
+        end do
+      end if
 
       call exgini(ndbin, title, ndim, numnp, numel, nelblk,
      *     numnps, numess, ierr)

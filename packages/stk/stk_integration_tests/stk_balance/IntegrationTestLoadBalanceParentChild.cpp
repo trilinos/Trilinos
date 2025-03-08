@@ -156,7 +156,8 @@ private:
   stk::mesh::Entity create_family_tree(stk::mesh::Entity entity) const
   {
     stk::mesh::EntityId id = m_stkMeshBulkData.identifier(entity);
-    stk::mesh::Entity familyTree = m_stkMeshBulkData.declare_constraint(id);
+    stk::mesh::Entity familyTree =
+        m_stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, id, stk::mesh::ConstPartVector{});
     m_stkMeshBulkData.declare_relation(familyTree, entity, 0);
     return familyTree;
   }
@@ -202,11 +203,11 @@ public:
   {
   }
 
-  virtual bool allowModificationOfVertexWeightsForSmallMeshes() const { return false; }
+  virtual bool allowModificationOfVertexWeightsForSmallMeshes() const override { return false; }
 
   virtual ~StkFieldWeightRebalance() = default;
 
-  virtual std::string getCoordinateFieldName() const { return "model_coordinates"; }
+  virtual std::string getCoordinateFieldName() const override { return "model_coordinates"; }
 
 protected:
   StkFieldWeightRebalance() = delete;
@@ -229,15 +230,15 @@ public:
 
   virtual ~StkParentRebalance() = default;
 
-  virtual std::string getCoordinateFieldName() const { return "model_coordinates"; }
+  virtual std::string getCoordinateFieldName() const override { return "model_coordinates"; }
 
-  virtual void modifyDecomposition(stk::balance::DecompositionChangeList & decomp) const
+  virtual void modifyDecomposition(stk::balance::DecompositionChangeList& decomp) const override
   {
     delete_child_elements_from_decomposition(decomp);
     move_related_entities_with_parent_element(decomp);
   };
 
-  virtual bool shouldFixMechanisms() const { return false; }
+  virtual bool shouldFixMechanisms() const override { return false; }
 
 private:
 

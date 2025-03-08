@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -662,7 +662,6 @@ void viinit(float *aspect, int *justif)
   XGetVisualInfo(display, VisualDepthMask | VisualClassMask, &visual_template, &matching_visuals);
   i = XMatchVisualInfo(display, DefaultScreen(display), 24, TrueColor, &visual_template);
   if (matching_visuals > 0 && i > 0) {
-    fprintf(stderr, "SVDI: Found a TRUECOLOR visual, trying it.....\n");
     depth  = 24;
     visual = visual_template.visual;
     valuemask |= CWBackPixel | CWColormap | CWBorderPixel;
@@ -680,7 +679,6 @@ void viinit(float *aspect, int *justif)
     XGetVisualInfo(display, VisualDepthMask | VisualClassMask, &visual_template, &matching_visuals);
     i = XMatchVisualInfo(display, DefaultScreen(display), 16, TrueColor, &visual_template);
     if (matching_visuals > 0 && i > 0) {
-      fprintf(stderr, "SVDI: Found a TRUECOLOR visual, trying it.....\n");
       depth  = 16;
       visual = visual_template.visual;
       valuemask |= CWBackPixel | CWColormap | CWBorderPixel;
@@ -693,7 +691,6 @@ void viinit(float *aspect, int *justif)
                                 1, depth, InputOutput, visual, valuemask, &setwinattr);
     }
     else {
-      /* fprintf(stderr,"SVDI: Using default visual.....\n"); */
       cmap                     = DefaultColormap(display, screen);
       visual                   = DefaultVisual(display, screen);
       visualid                 = XVisualIDFromVisual(visual);
@@ -752,7 +749,6 @@ void viinit(float *aspect, int *justif)
     /* setup color */
     if (visual->class == TrueColor || visual->class == DirectColor) {
       color_type = FULL;
-      fprintf(stderr, "SVDI: Using full color visual with %d colors\n", ncolors);
     }
     else {
       color_type = PSEUDO;

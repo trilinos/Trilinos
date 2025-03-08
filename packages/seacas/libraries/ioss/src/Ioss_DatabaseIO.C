@@ -202,12 +202,10 @@ namespace {
   int64_t zero_copy_not_enabled(const ENTITY *entity, const Ioss::Field &field,
                                 const Ioss::DatabaseIO *db)
   {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "On {} {}, the field {} is specified as zero-copy enabled, but the database {} does "
-               "not support zero-copy for this field and/or entity type.\n",
-               entity->type_string(), entity->name(), field.get_name(), db->get_filename());
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format(
+        "On {} {}, the field {} is specified as zero-copy enabled, but the database {} does "
+        "not support zero-copy for this field and/or entity type.\n",
+        entity->type_string(), entity->name(), field.get_name(), db->get_filename()));
   }
 } // namespace
 
@@ -268,12 +266,9 @@ namespace Ioss {
         duplicateFieldBehavior = DuplicateFieldBehavior::ERROR_;
       }
       else {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "Invalid value ({}) for property `DUPLICATE_FIELD_NAME_BEHAVIOR`.\n"
-                   "\tValid values are `IGNORE`, `WARNING`, or `ERROR`\n",
-                   prop);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("Invalid value ({}) for property `DUPLICATE_FIELD_NAME_BEHAVIOR`.\n"
+                               "\tValid values are `IGNORE`, `WARNING`, or `ERROR`\n",
+                               prop));
       }
     }
     else {
@@ -494,10 +489,8 @@ namespace Ioss {
 #endif
         int dwret = dw_wait_file_stage(bb_file.filename().c_str());
         if (dwret < 0) {
-          std::ostringstream errmsg;
-          fmt::print(errmsg, "ERROR: failed waiting for file stage `{}`: {}\n", bb_file.filename(),
-                     std::strerror(-dwret));
-          IOSS_ERROR(errmsg);
+          IOSS_ERROR(fmt::format("ERROR: failed waiting for file stage `{}`: {}\n",
+                                 bb_file.filename(), std::strerror(-dwret)));
         }
 #else
         // Used to debug DataWarp logic on systems without DataWarp...
@@ -529,10 +522,8 @@ namespace Ioss {
         if (pending > 0) {
           int dwret = dw_wait_file_stage(get_dw_name().c_str());
           if (dwret < 0) {
-            std::ostringstream errmsg;
-            fmt::print(errmsg, "ERROR: failed waiting for file stage `{}`: {}\n", get_dw_name(),
-                       std::strerror(-dwret));
-            IOSS_ERROR(errmsg);
+            IOSS_ERROR(fmt::format("ERROR: failed waiting for file stage `{}`: {}\n", get_dw_name(),
+                                   std::strerror(-dwret)));
           }
 #if IOSS_DEBUG_OUTPUT
           dw_query_file_stage(get_dw_name().c_str(), &complete, &pending, &deferred, &failed);
@@ -554,10 +545,8 @@ namespace Ioss {
         fmt::print(Ioss::DebugOut(), "\nDW: END dw_stage_file_out({})\n", diff.count());
 #endif
         if (ret < 0) {
-          std::ostringstream errmsg;
-          fmt::print(errmsg, "ERROR: file staging of `{}` to `{}` failed at close: {}\n",
-                     get_dw_name(), get_pfs_name(), std::strerror(-ret));
-          IOSS_ERROR(errmsg);
+          IOSS_ERROR(fmt::format("ERROR: file staging of `{}` to `{}` failed at close: {}\n",
+                                 get_dw_name(), get_pfs_name(), std::strerror(-ret)));
         }
 #else
         fmt::print(Ioss::DebugOut(),
@@ -728,13 +717,11 @@ namespace Ioss {
       // the first location and the members of the group as subsequent
       // locations.  OK to have a single member
       if (group_spec.size() < 2) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: Invalid {} group specification '{}'\n"
-                   "       Correct syntax is 'new_group,member1,...,memberN' and there must "
-                   "       be at least 1 member of the group",
-                   type_name, group);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(
+            fmt::format("ERROR: Invalid {} group specification '{}'\n"
+                        "       Correct syntax is 'new_group,member1,...,memberN' and there must "
+                        "       be at least 1 member of the group",
+                        type_name, group));
       }
 
       create_group(type, type_name, group_spec, set_type);
@@ -880,30 +867,24 @@ namespace Ioss {
   {
     if (!omissions.empty() && !inclusions.empty()) {
       // Only one can be non-empty
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Only one of element block omission or inclusion can be non-empty"
-                 "       [{}]\n",
-                 get_filename());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(
+          fmt::format("ERROR: Only one of element block omission or inclusion can be non-empty"
+                      "       [{}]\n",
+                      get_filename()));
     }
 
     if (!assemblyOmissions.empty() && !inclusions.empty()) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Only one of element block inclusion or assembly omission can be non-empty"
-                 "       [{}]\n",
-                 get_filename());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: Only one of element block inclusion or assembly omission can be non-empty"
+          "       [{}]\n",
+          get_filename()));
     }
 
     if (!assemblyInclusions.empty() && !omissions.empty()) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Only one of element block omission or assembly inclusion can be non-empty"
-                 "       [{}]\n",
-                 get_filename());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: Only one of element block omission or assembly inclusion can be non-empty"
+          "       [{}]\n",
+          get_filename()));
     }
 
     if (!omissions.empty()) {
@@ -921,30 +902,23 @@ namespace Ioss {
   {
     if (!omissions.empty() && !inclusions.empty()) {
       // Only one can be non-empty
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Only one of assembly omission or inclusion can be non-empty"
-                 "       [{}]\n",
-                 get_filename());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("ERROR: Only one of assembly omission or inclusion can be non-empty"
+                             "       [{}]\n",
+                             get_filename()));
     }
 
     if (!blockOmissions.empty() && !inclusions.empty()) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Only one of element block omission or assembly inclusion can be non-empty"
-                 "       [{}]\n",
-                 get_filename());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: Only one of element block omission or assembly inclusion can be non-empty"
+          "       [{}]\n",
+          get_filename()));
     }
 
     if (!blockInclusions.empty() && !omissions.empty()) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Only one of element block inclusion or assembly omission can be non-empty"
-                 "       [{}]\n",
-                 get_filename());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: Only one of element block inclusion or assembly omission can be non-empty"
+          "       [{}]\n",
+          get_filename()));
     }
 
     if (!omissions.empty()) {
@@ -1192,19 +1166,15 @@ namespace Ioss {
       assert(result != MPI_SUCCESS || non_zero == req_cnt);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: MPI_Irecv error on processor {} in {}", util().parallel_rank(),
-                   __func__);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: MPI_Irecv error on processor {} in {}",
+                               util().parallel_rank(), __func__));
       }
 
       int local_error  = (MPI_SUCCESS == result) ? 0 : 1;
       int global_error = util().global_minmax(local_error, Ioss::ParallelUtils::DO_MAX);
 
       if (global_error != 0) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: MPI_Irecv error on some processor in {}", __func__);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: MPI_Irecv error on some processor in {}", __func__));
       }
 
       result  = MPI_SUCCESS;
@@ -1222,28 +1192,22 @@ namespace Ioss {
       assert(result != MPI_SUCCESS || non_zero == req_cnt);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: MPI_Rsend error on processor {} in {}", util().parallel_rank(),
-                   __func__);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: MPI_Rsend error on processor {} in {}",
+                               util().parallel_rank(), __func__));
       }
 
       local_error  = (MPI_SUCCESS == result) ? 0 : 1;
       global_error = util().global_minmax(local_error, Ioss::ParallelUtils::DO_MAX);
 
       if (global_error != 0) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: MPI_Rsend error on some processor in {}", __func__);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: MPI_Rsend error on some processor in {}", __func__));
       }
 
       result = MPI_Waitall(req_cnt, Data(request), Data(status));
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: MPI_Waitall error on processor {} in {}", util().parallel_rank(),
-                   __func__);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: MPI_Waitall error on processor {} in {}",
+                               util().parallel_rank(), __func__));
       }
 
       // Unpack the data and update the inv_con arrays for boundary
@@ -1455,23 +1419,17 @@ namespace Ioss {
         size_t      block_data_size      = num_to_get_for_block * field_byte_size;
 
         if (block_data_size != field.get_size()) {
-          std::ostringstream errmsg;
-          fmt::print(
-              errmsg,
+          IOSS_ERROR(fmt::format(
               "ERROR: Field '{}' data size {} on entity {} does not match computed size {}\n\n",
-              field_name, field.get_size(), entity->name(), block_data_size);
-          IOSS_ERROR(errmsg);
+              field_name, field.get_size(), entity->name(), block_data_size));
         }
 
         size_t expected_data_size = offset[i + 1] * field_byte_size;
 
         if (data_size < expected_data_size) {
-          std::ostringstream errmsg;
-          fmt::print(
-              errmsg,
+          IOSS_ERROR(fmt::format(
               "ERROR: Field '{}' data size {} on entity {} is less than expected size {}\n\n",
-              field_name, data_size, entity->name(), expected_data_size);
-          IOSS_ERROR(errmsg);
+              field_name, data_size, entity->name(), expected_data_size));
         }
 
         size_t block_data_offset = offset[i] * field_byte_size;
@@ -1481,12 +1439,9 @@ namespace Ioss {
 
         size_t block_component_count = field.raw_storage()->component_count();
         if (num_to_get_for_block != retval * block_component_count) {
-          std::ostringstream errmsg;
-          fmt::print(errmsg,
-                     "ERROR: Data length {} for field {} on block {} is not expected length {}\n\n",
-                     retval * block_component_count, field_name, entity->name(),
-                     num_to_get_for_block);
-          IOSS_ERROR(errmsg);
+          IOSS_ERROR(fmt::format(
+              "ERROR: Data length {} for field {} on block {} is not expected length {}\n\n",
+              retval * block_component_count, field_name, entity->name(), num_to_get_for_block));
         }
 
         if (retval >= 0) {

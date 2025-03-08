@@ -275,6 +275,14 @@ void SystemInterface::enroll_options()
                   "Produce a summary in exodiff input format.\n"
                   "\t\tThis will create output with max/min statistics on the data in the format\n"
                   "\t\tof an exodiff input file.",
+                  nullptr);
+  options_.enroll("change_sets", GetLongOption::MandatoryValue,
+                  "Specify the change_set(s) to be compared in the two files.\n"
+                  "\t\tSeparate change set names/indices with a comma ',';\n"
+                  "\t\tSeparate file1 cs from file2 cs with colon ':' if they are different.\n"
+                  "\t\tCan use 1-based index or names.  Use index 0 or name 'root' if file doesn't "
+                  "have change sets.\n"
+                  "\t\tIf not specified, diff all change sets (if any) in files.",
                   nullptr, nullptr, true);
 
   // Tolerance options...
@@ -642,6 +650,13 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("TM") != nullptr) {
     time_step_offset = -2; // Signifies automatic offset calculation -- closest match
+  }
+
+  {
+    const char *temp = options_.retrieve("change_sets");
+    if (temp != nullptr) {
+      change_sets = temp;
+    }
   }
 
   {

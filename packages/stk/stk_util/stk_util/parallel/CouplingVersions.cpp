@@ -69,7 +69,7 @@ class StkCompatibleVersion
 
     void set_version(MPI_Comm comm)
     {
-      set_version_impl(comm, std::min(impl::SHORT_TERM_STK_MAX_COUPLING_VERSION, m_version) /*m_version*/);
+      set_version_impl(comm, m_version);
     }
 
     void set_error_on_reset(bool val)
@@ -79,7 +79,7 @@ class StkCompatibleVersion
 
     void reset_global_max_coupling_version()
     {
-      m_globalMaxVersion = impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; // STK_MAX_COUPLING_VERSION;
+      m_globalMaxVersion = STK_MAX_COUPLING_VERSION;
     }
 
   private:
@@ -151,7 +151,7 @@ class StkCompatibleVersion
     }
 
     int m_version = STK_MAX_COUPLING_VERSION;
-    int m_globalMaxVersion = impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; // STK_MAX_COUPLING_VERSION;
+    int m_globalMaxVersion = STK_MAX_COUPLING_VERSION;
     bool m_isVersionSet = false;
     bool m_errorOnResetVersion = true;
 };
@@ -171,13 +171,13 @@ int get_common_coupling_version()
 #ifdef STK_HAS_MPI
   return get_stk_coupling_version().get_version();
 #else
-  return STK_impl::SHORT_TERM_MAX_COUPLING_VERSION; //STK_MAX_COUPLING_VERSION;
+  return STK_MAX_COUPLING_VERSION;
 #endif
 }
 
 int get_local_max_coupling_version()
 {
-  return impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; //STK_MAX_COUPLING_VERSION;
+  return STK_MAX_COUPLING_VERSION;
 }
 
 int get_local_min_coupling_version()
@@ -191,7 +191,7 @@ int get_global_max_coupling_version()
 #ifdef STK_HAS_MPI
   return get_stk_coupling_version().get_global_max_version();
 #else
-  return impl::SHORT_TERM_STK_MAX_COUPLING_VERSION; // STK_MAX_COUPLING_VERSION
+  return STK_MAX_COUPLING_VERSION
 #endif
 }
 
@@ -212,7 +212,8 @@ std::string get_deprecation_date(int version)
                                                       std::make_pair(11, "4/19/2023"),
                                                       std::make_pair(12, "3/11/2024"),
                                                       std::make_pair(13, "3/28/2024"),
-                                                      std::make_pair(14, "")
+                                                      std::make_pair(14, "4/3/2025"),
+                                                      std::make_pair(15, "")
                                                     };
 
   return deprecationDates.at(version);

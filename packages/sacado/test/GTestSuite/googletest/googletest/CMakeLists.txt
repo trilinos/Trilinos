@@ -5,7 +5,7 @@
 # CMake build script for Google Test.
 #
 # To run the tests for Google Test itself on Linux, use 'make test' or
-# ctest.  You can select which tests to run using 'ctest -R regex'.
+# ctest. You can select which tests to run using 'ctest -R regex'.
 # For more options, run 'ctest --help'.
 
 # When other libraries are using a shared version of runtime libraries,
@@ -35,7 +35,7 @@ endif()
 
 ########################################################################
 #
-# Project-wide settings
+# Project-wide settings.
 
 # Name of the project.
 #
@@ -44,26 +44,19 @@ endif()
 # ${gtest_BINARY_DIR}.
 # Language "C" is required for find_package(Threads).
 
-# Project version:
+# Project version.
 
-if (CMAKE_VERSION VERSION_LESS 3.0)
-  project(gtest CXX C)
-  set(PROJECT_VERSION ${GOOGLETEST_VERSION})
-else()
-  cmake_policy(SET CMP0048 NEW)
-  project(gtest VERSION ${GOOGLETEST_VERSION} LANGUAGES CXX C)
-endif()
-cmake_minimum_required(VERSION 2.6.4)
-
-if (POLICY CMP0063) # Visibility
-  cmake_policy(SET CMP0063 NEW)
-endif (POLICY CMP0063)
+cmake_minimum_required(VERSION 3.13)
+project(gtest VERSION ${GOOGLETEST_VERSION} LANGUAGES CXX C)
 
 if (COMMAND set_up_hermetic_build)
   set_up_hermetic_build()
 endif()
 
-# These commands only run if this is the main project
+# Patch, no idea why this isn't needed in the "normal" gtest build.  Best guess is that `set_up_hermetic_build()` is missing
+set(gtest_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+# These commands only run if this is the main project.
 if(CMAKE_PROJECT_NAME STREQUAL "gtest" OR CMAKE_PROJECT_NAME STREQUAL "googletest-distribution")
 
   # BUILD_SHARED_LIBS is a standard CMake variable, but we declare it here to
@@ -92,22 +85,27 @@ include(cmake/internal_utils.cmake)
 
 config_compiler_and_linker()  # Defined in internal_utils.cmake.
 
+# Needed to set the namespace for both the export targets and the
+# alias libraries.
+set(cmake_package_name GTest CACHE INTERNAL "")
+
 # Create the CMake package file descriptors.
 if (INSTALL_GTEST)
   include(CMakePackageConfigHelpers)
-  set(cmake_package_name GTest)
   set(targets_export_name ${cmake_package_name}Targets CACHE INTERNAL "")
   set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated" CACHE INTERNAL "")
   set(cmake_files_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${cmake_package_name}")
   set(version_file "${generated_dir}/${cmake_package_name}ConfigVersion.cmake")
   write_basic_package_version_file(${version_file} VERSION ${GOOGLETEST_VERSION} COMPATIBILITY AnyNewerVersion)
   install(EXPORT ${targets_export_name}
+    COMPONENT "${PROJECT_NAME}"
     NAMESPACE ${cmake_package_name}::
     DESTINATION ${cmake_files_install_dir})
   set(config_file "${generated_dir}/${cmake_package_name}Config.cmake")
   configure_package_config_file("${gtest_SOURCE_DIR}/cmake/Config.cmake.in"
     "${config_file}" INSTALL_DESTINATION ${cmake_files_install_dir})
   install(FILES ${version_file} ${config_file}
+    COMPONENT "${PROJECT_NAME}"
     DESTINATION ${cmake_files_install_dir})
 endif()
 
@@ -119,40 +117,55 @@ include_directories(${gtest_build_include_dirs})
 
 ########################################################################
 #
-# Defines the gtest & gtest_main libraries.  User tests should link
+# Defines the gtest & gtest_main libraries. User tests should link
 # with one of them.
 
-# Google Test libraries.  We build them using more strict warnings than what
+# Google Test libraries. We build them using more strict warnings than what
 # are used for other targets, to ensure that gtest can be compiled by a user
 # aggressive about warnings.
 cxx_library(sacado-gtest "${cxx_strict}" src/gtest-all.cc)
 set_target_properties(sacado-gtest PROPERTIES VERSION ${GOOGLETEST_VERSION})
+if(GTEST_HAS_ABSL)
+  target_compile_definitions(sacado-gtest PUBLIC GTEST_HAS_ABSL=1)
+  target_link_libraries(sacado-gtest PUBLIC
+    absl::failure_signal_handler
+    absl::stacktrace
+    absl::symbolize
+    absl::flags_parse
+    absl::flags_reflection
+    absl::flags_usage
+    absl::strings
+    absl::any
+    absl::optional
+    absl::variant
+    re2::re2
+  )
+endif()
 cxx_library(gtest_main "${cxx_strict}" src/gtest_main.cc)
 set_target_properties(gtest_main PROPERTIES VERSION ${GOOGLETEST_VERSION})
-# If the CMake version supports it, attach header directory information
-# to the targets for when we are part of a parent build (ie being pulled
-# in via add_subdirectory() rather than being a standalone build).
-if (DEFINED CMAKE_VERSION AND NOT "${CMAKE_VERSION}" VERSION_LESS "2.8.11")
-  target_include_directories(sacado-gtest SYSTEM INTERFACE
-    "$<BUILD_INTERFACE:${gtest_build_include_dirs}>"
-    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
-  target_include_directories(gtest_main SYSTEM INTERFACE
-    "$<BUILD_INTERFACE:${gtest_build_include_dirs}>"
-    "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
+string(REPLACE ";" "$<SEMICOLON>" dirs "${gtest_build_include_dirs}")
+target_include_directories(sacado-gtest SYSTEM INTERFACE
+  "$<BUILD_INTERFACE:${dirs}>"
+  "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
+target_include_directories(gtest_main SYSTEM INTERFACE
+  "$<BUILD_INTERFACE:${dirs}>"
+  "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>")
+if(CMAKE_SYSTEM_NAME MATCHES "QNX" AND CMAKE_SYSTEM_VERSION VERSION_GREATER_EQUAL 7.1)
+  target_link_libraries(sacado-gtest PUBLIC regex)
 endif()
 target_link_libraries(gtest_main PUBLIC sacado-gtest)
 
 ########################################################################
 #
-# Install rules
+# Install rules.
 install_project(sacado-gtest gtest_main)
 
 ########################################################################
 #
 # Samples on how to link user tests with gtest or gtest_main.
 #
-# They are not built by default.  To build them, set the
-# gtest_build_samples option to ON.  You can do it by running ccmake
+# They are not built by default. To build them, set the
+# gtest_build_samples option to ON. You can do it by running ccmake
 # or specifying the -Dgtest_build_samples=ON flag when running cmake.
 
 if (gtest_build_samples)
@@ -164,8 +177,8 @@ if (gtest_build_samples)
   cxx_executable(sample6_unittest samples gtest_main)
   cxx_executable(sample7_unittest samples gtest_main)
   cxx_executable(sample8_unittest samples gtest_main)
-  cxx_executable(sample9_unittest samples gtest)
-  cxx_executable(sample10_unittest samples gtest)
+  cxx_executable(sample9_unittest samples sacado-gtest)
+  cxx_executable(sample10_unittest samples sacado-gtest)
 endif()
 
 ########################################################################
@@ -175,8 +188,8 @@ endif()
 # You can skip this section if you aren't interested in testing
 # Google Test itself.
 #
-# The tests are not built by default.  To build them, set the
-# gtest_build_tests option to ON.  You can do it by running ccmake
+# The tests are not built by default. To build them, set the
+# gtest_build_tests option to ON. You can do it by running ccmake
 # or specifying the -Dgtest_build_tests=ON flag when running cmake.
 
 if (gtest_build_tests)
@@ -184,30 +197,16 @@ if (gtest_build_tests)
   # 'make test' or ctest.
   enable_testing()
 
-  if (WIN32)
-    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/RunTest.ps1"
-         CONTENT
-"$project_bin = \"${CMAKE_BINARY_DIR}/bin/$<CONFIG>\"
-$env:Path = \"$project_bin;$env:Path\"
-& $args")
-  elseif (MINGW OR CYGWIN)
-    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/RunTest.ps1"
-         CONTENT
-"$project_bin = (cygpath --windows ${CMAKE_BINARY_DIR}/bin)
-$env:Path = \"$project_bin;$env:Path\"
-& $args")
-  endif()
-
   ############################################################
   # C++ tests built with standard compiler flags.
 
   cxx_test(googletest-death-test-test gtest_main)
-  cxx_test(gtest_environment_test gtest)
+  cxx_test(gtest_environment_test sacado-gtest)
   cxx_test(googletest-filepath-test gtest_main)
   cxx_test(googletest-listener-test gtest_main)
   cxx_test(gtest_main_unittest gtest_main)
   cxx_test(googletest-message-test gtest_main)
-  cxx_test(gtest_no_test_unittest gtest)
+  cxx_test(gtest_no_test_unittest sacado-gtest)
   cxx_test(googletest-options-test gtest_main)
   cxx_test(googletest-param-test-test gtest
     test/googletest-param-test2-test.cc)
@@ -218,15 +217,15 @@ $env:Path = \"$project_bin;$env:Path\"
   cxx_test(googletest-printers-test gtest_main)
   cxx_test(gtest_prod_test gtest_main
     test/production.cc)
-  cxx_test(gtest_repeat_test gtest)
+  cxx_test(gtest_repeat_test sacado-gtest)
   cxx_test(gtest_sole_header_test gtest_main)
-  cxx_test(gtest_stress_test gtest)
+  cxx_test(gtest_stress_test sacado-gtest)
   cxx_test(googletest-test-part-test gtest_main)
-  cxx_test(gtest_throw_on_failure_ex_test gtest)
+  cxx_test(gtest_throw_on_failure_ex_test sacado-gtest)
   cxx_test(gtest-typed-test_test gtest_main
     test/gtest-typed-test2_test.cc)
   cxx_test(gtest_unittest gtest_main)
-  cxx_test(gtest-unittest-api_test gtest)
+  cxx_test(gtest-unittest-api_test sacado-gtest)
   cxx_test(gtest_skip_in_environment_setup_test gtest_main)
   cxx_test(gtest_skip_test gtest_main)
 
@@ -265,14 +264,14 @@ $env:Path = \"$project_bin;$env:Path\"
   ############################################################
   # Python tests.
 
-  cxx_executable(googletest-break-on-failure-unittest_ test gtest)
+  cxx_executable(googletest-break-on-failure-unittest_ test sacado-gtest)
   py_test(googletest-break-on-failure-unittest)
 
   py_test(gtest_skip_check_output_test)
   py_test(gtest_skip_environment_check_output_test)
 
   # Visual Studio .NET 2003 does not support STL with exceptions disabled.
-  if (NOT MSVC OR MSVC_VERSION GREATER 1310)  # 1310 is Visual Studio .NET 2003
+  if (NOT MSVC OR MSVC_VERSION GREATER 1310) # 1310 is Visual Studio .NET 2003
     cxx_executable_with_flags(
       googletest-catch-exceptions-no-ex-test_
       "${cxx_no_exception}"
@@ -287,25 +286,25 @@ $env:Path = \"$project_bin;$env:Path\"
     test/googletest-catch-exceptions-test_.cc)
   py_test(googletest-catch-exceptions-test)
 
-  cxx_executable(googletest-color-test_ test gtest)
+  cxx_executable(googletest-color-test_ test sacado-gtest)
   py_test(googletest-color-test)
 
-  cxx_executable(googletest-env-var-test_ test gtest)
+  cxx_executable(googletest-env-var-test_ test sacado-gtest)
   py_test(googletest-env-var-test)
 
-  cxx_executable(googletest-filter-unittest_ test gtest)
+  cxx_executable(googletest-filter-unittest_ test sacado-gtest)
   py_test(googletest-filter-unittest)
 
   cxx_executable(gtest_help_test_ test gtest_main)
   py_test(gtest_help_test)
 
-  cxx_executable(googletest-list-tests-unittest_ test gtest)
+  cxx_executable(googletest-list-tests-unittest_ test sacado-gtest)
   py_test(googletest-list-tests-unittest)
 
-  cxx_executable(googletest-output-test_ test gtest)
+  cxx_executable(googletest-output-test_ test sacado-gtest)
   py_test(googletest-output-test --no_stacktrace_support)
 
-  cxx_executable(googletest-shuffle-test_ test gtest)
+  cxx_executable(googletest-shuffle-test_ test sacado-gtest)
   py_test(googletest-shuffle-test)
 
   # MSVC 7.1 does not support STL with exceptions disabled.
@@ -317,10 +316,10 @@ $env:Path = \"$project_bin;$env:Path\"
     py_test(googletest-throw-on-failure-test)
   endif()
 
-  cxx_executable(googletest-uninitialized-test_ test gtest)
+  cxx_executable(googletest-uninitialized-test_ test sacado-gtest)
   py_test(googletest-uninitialized-test)
 
-  cxx_executable(gtest_list_output_unittest_ test gtest)
+  cxx_executable(gtest_list_output_unittest_ test sacado-gtest)
   py_test(gtest_list_output_unittest)
 
   cxx_executable(gtest_xml_outfile1_test_ test gtest_main)
@@ -328,7 +327,7 @@ $env:Path = \"$project_bin;$env:Path\"
   py_test(gtest_xml_outfiles_test)
   py_test(googletest-json-outfiles-test)
 
-  cxx_executable(gtest_xml_output_unittest_ test gtest)
+  cxx_executable(gtest_xml_output_unittest_ test sacado-gtest)
   py_test(gtest_xml_output_unittest --no_stacktrace_support)
   py_test(googletest-json-output-unittest --no_stacktrace_support)
 endif()

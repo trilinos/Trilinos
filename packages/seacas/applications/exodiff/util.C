@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -91,14 +91,24 @@ void Error(const std::string &x)
 void Warning(const std::string &x)
 {
   std::ostringstream out;
-  fmt::print(out, "exodiff: ERROR: {}", x);
-  ERR_OUT(out);
+  fmt::print(out, "exodiff: WARNING: {}", x);
+  WARN_OUT(out);
 }
 
 void ERR_OUT(std::ostringstream &buf)
 {
   if (cerr_out()) {
     fmt::print(stderr, fmt::fg(fmt::color::red), "{}", buf.str());
+  }
+  else {
+    fmt::print(stderr, "{}", buf.str());
+  }
+}
+
+void WARN_OUT(std::ostringstream &buf)
+{
+  if (cerr_out()) {
+    fmt::print(stderr, fmt::fg(fmt::color::yellow), "{}", buf.str());
   }
   else {
     fmt::print(stderr, "{}", buf.str());

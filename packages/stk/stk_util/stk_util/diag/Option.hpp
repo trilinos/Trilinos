@@ -205,7 +205,7 @@ struct OptionMaskName : public OptionDescription
     return m_name < o.m_name;
   }
 
-  virtual std::ostream &describe(std::ostream &os) const;
+  virtual std::ostream &describe(std::ostream &os) const override;
 
   std::string    m_name;
   OptionMask    m_mask;
@@ -311,7 +311,7 @@ public:
     m_optionMaskNameMap.mask(name, l_mask, description);
   }
 
-  std::ostream &describe(std::ostream &os) const;
+  std::ostream &describe(std::ostream &os) const override;
 
 protected:
   OptionMaskNameMap    m_optionMaskNameMap;  ///< Mask name vector

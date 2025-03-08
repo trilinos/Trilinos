@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -229,10 +229,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   int timedim   = 0;
   int status    = 0;
   int title_len = 0;
-#if 0
-  /* used for header size calculations which are turned off for now */
-  int header_size, fixed_var_size, iows;
-#endif
+
   EX_FUNC_ENTER();
   if (exi_check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
@@ -325,7 +322,21 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
    * non-zero node count.
    */
 
+  int    int_size = ex_int64_status(exoid) & EX_IDS_INT64_DB ? 8 : 4;
+  size_t twoGiB   = 1ul << 31;
+
   if (model->num_nodes > 0) {
+    // If file is using 32-bit integers, check what node count is in range...
+    if (int_size == 4 && model->num_nodes >= twoGiB) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: File is using 32-bit integers, but the node count exceeds the integer "
+               "capacity (%" PRId64 ") in file id %d",
+               model->num_nodes, exoid);
+      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+      goto error_ret;
+    }
+
     if ((status = nc_def_dim(exoid, DIM_NUM_NODES, model->num_nodes, &numnoddim)) != NC_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of nodes in file id %d",
@@ -344,6 +355,16 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
                exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
       goto error_ret; /* exit define mode and return */
+    }
+
+    if (int_size == 4 && model->num_elem >= twoGiB) {
+      char errmsg[MAX_ERR_LENGTH];
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: File is using 32-bit integers, but the element count exceeds the integer "
+               "capacity (%" PRId64 ") in file id %d",
+               model->num_elem, exoid);
+      ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+      goto error_ret;
     }
 
     if ((status = nc_def_dim(exoid, DIM_NUM_ELEM, model->num_elem, &temp)) != NC_NOERR) {

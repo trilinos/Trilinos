@@ -200,28 +200,28 @@ public:
                         IsSameType<T,long double>::value;
   }
 
-  void construct( void * v , std::size_t n ) const
+  void construct(void *v, std::size_t n) const override
   {
     T * x = reinterpret_cast<T*>( v );
     T * const x_end = x + n ;
     while ( x_end != x ) { *x++ = 0 ; }
   }
 
-  void destroy( void *, std::size_t ) const {}
+  void destroy( void *, std::size_t ) const override {}
 
-  void pack( CommBuffer & buf , const void * v , std::size_t n ) const
+  void pack(CommBuffer &buf, const void *v, std::size_t n) const override
   {
     const T * x = reinterpret_cast<const T*>( v );
     buf.pack<T>( x , n );
   }
 
-  void unpack( CommBuffer & buf , void * v , std::size_t n ) const
+  void unpack(CommBuffer &buf, void *v, std::size_t n) const override
   {
     T * x = reinterpret_cast<T*>( v );
     buf.unpack<T>( x , n );
   }
 
-  void copy( void * vx , const void * vy , std::size_t n ) const
+  void copy(void *vx, const void *vy, std::size_t n) const override
   {
     const T * y = reinterpret_cast<const T*>( vy );
     T * x = reinterpret_cast<T*>( vx );
@@ -229,7 +229,7 @@ public:
     while ( x_end != x ) { *x++ = *y++ ; };
   }
 
-  void sum( void * vx , const void * vy , std::size_t n ) const
+  void sum(void *vx, const void *vy, std::size_t n) const override
   {
     const T * y = reinterpret_cast<const T*>( vy );
     T * x = reinterpret_cast<T*>( vx );
@@ -237,7 +237,7 @@ public:
     while ( x_end != x ) { *x++ += *y++ ; };
   }
 
-  virtual void print( std::ostream & s , const void * v , std::size_t n ) const
+  virtual void print(std::ostream &s, const void *v, std::size_t n) const override
   {
     if ( n ) {
       const T * x = reinterpret_cast<const T*>( v );
@@ -247,20 +247,15 @@ public:
     }
   }
 
-  virtual void max( void * , const void * , std::size_t ) const
-  { STK_ThrowErrorMsg( "not supported" ); }
+  virtual void max(void *, const void *, std::size_t) const override { STK_ThrowErrorMsg("not supported"); }
 
-  virtual void min( void * , const void * , std::size_t ) const
-  { STK_ThrowErrorMsg( "not supported" ); }
+  virtual void min(void *, const void *, std::size_t) const override { STK_ThrowErrorMsg("not supported"); }
 
-  virtual void bit_and( void * , const void * , std::size_t ) const
-  { STK_ThrowErrorMsg( "not supported" ); }
+  virtual void bit_and(void *, const void *, std::size_t) const override { STK_ThrowErrorMsg("not supported"); }
 
-  virtual void bit_or( void * , const void * , std::size_t ) const
-  { STK_ThrowErrorMsg( "not supported" ); }
+  virtual void bit_or(void *, const void *, std::size_t) const override { STK_ThrowErrorMsg("not supported"); }
 
-  virtual void bit_xor( void * , const void * , std::size_t ) const
-  { STK_ThrowErrorMsg( "not supported" ); }
+  virtual void bit_xor(void *, const void *, std::size_t) const override { STK_ThrowErrorMsg("not supported"); }
 };
 
 template< typename T >

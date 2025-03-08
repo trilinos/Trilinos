@@ -376,14 +376,14 @@ public:
 
     void change_entity_key_and_nodes(const std::vector<stk::mesh::shared_entity_type> & potentially_shared_sides);
 
-    virtual void change_entity_key_and_update_sharing_info(std::vector<stk::mesh::shared_entity_type> & potentially_shared_sides);
+    virtual void change_entity_key_and_update_sharing_info(std::vector<stk::mesh::shared_entity_type> & potentially_shared_sides) override;
 
     void update_shared_entity_this_proc2(stk::mesh::EntityKey global_key_other_proc, stk::mesh::shared_entity_type& shared_entity, int proc_id, const std::vector<stk::mesh::EntityKey>& nodes);
 
     virtual void check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc,
-            int proc_id, const stk::mesh::shared_entity_type &shared_entity_other_proc);
+            int proc_id, const stk::mesh::shared_entity_type &shared_entity_other_proc) override;
 
-    virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes) {}
+    virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes) override {}
 
     stk::mesh::EntityRank side_rank() const { return mesh_meta_data().side_rank(); }
     stk::mesh::Part &get_topology_root_part(stk::topology topology) const

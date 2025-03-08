@@ -1,3 +1,5 @@
+#include <stk_util/stk_config.h>
+
 #ifdef STK_BUILT_FOR_SIERRA
 
 #include "stk_middle_mesh_util/constants.hpp"
@@ -126,7 +128,8 @@ TEST(StkInterface, twoToThree)
     EXPECT_EQ(gidCountR.count(entry), 1u);
 }
 
+}
+}
+}
+
 #endif
-}
-}
-}

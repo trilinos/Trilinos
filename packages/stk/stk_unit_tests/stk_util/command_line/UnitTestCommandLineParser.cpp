@@ -230,6 +230,66 @@ TEST(CommandLineParser, oneRequiredPositional_optionAndValueProvided_getValueRet
   EXPECT_EQ(parser.get_option_value<std::string>("positionalOpt"), "positionalValue");
 }
 
+TEST(CommandLineParser, twoPositionals_flaggedFirstValueAndPositionalSecondValue)
+{
+  stk::CommandLineParser parser;
+  parser.add_required_positional<std::string>({"firstOption", "f", "First (required) positional description"});
+  parser.add_optional_positional<std::string>({"secondOption", "s", "Second (optional) positional description"}, "defaultValue");
+
+  Args args({"exe", "--firstOption", "valueFirst", "valueSecond"});
+  EXPECT_TRUE(parse_command_line_without_error(parser, args));
+
+  EXPECT_FALSE(parser.is_empty());
+  EXPECT_TRUE(parser.is_option_parsed("firstOption"));
+  EXPECT_TRUE(parser.is_option_provided("secondOption"));
+
+  EXPECT_EQ(parser.get_option_value<std::string>("firstOption"), "valueFirst");
+  EXPECT_EQ(parser.get_option_value<std::string>("secondOption"), "valueSecond");
+}
+
+TEST(CommandLineParser, twoPositionals_flaggedSecondValueThenPositionalFirstValue)
+{
+  stk::CommandLineParser parser;
+  parser.add_required_positional<std::string>({"firstOption", "f", "First (required) positional description"});
+  parser.add_optional_positional<std::string>({"secondOption", "s", "Second (optional) positional description"}, "defaultValue");
+
+  Args args({"exe", "--secondOption", "valueSecond", "valueFirst"});
+  EXPECT_TRUE(parse_command_line_without_error(parser, args));
+
+  EXPECT_FALSE(parser.is_empty());
+  EXPECT_TRUE(parser.is_option_provided("firstOption"));
+  EXPECT_TRUE(parser.is_option_parsed("secondOption"));
+
+  EXPECT_EQ(parser.get_option_value<std::string>("firstOption"), "valueFirst");
+  EXPECT_EQ(parser.get_option_value<std::string>("secondOption"), "valueSecond");
+}
+
+TEST(CommandLineParser, twoPositionals_positionalFirstValueAndFlaggedSecondValue)
+{
+  stk::CommandLineParser parser;
+  parser.add_required_positional<std::string>({"firstOption", "f", "First (required) positional description"});
+  parser.add_optional_positional<std::string>({"secondOption", "s", "Second (optional) positional description"}, "defaultValue");
+
+  Args args({"exe", "valueFirst", "--secondOption", "valueSecond"});
+  EXPECT_TRUE(parse_command_line_without_error(parser, args));
+
+  EXPECT_FALSE(parser.is_empty());
+  EXPECT_TRUE(parser.is_option_provided("firstOption"));
+  EXPECT_TRUE(parser.is_option_parsed("secondOption"));
+
+  EXPECT_EQ(parser.get_option_value<std::string>("firstOption"), "valueFirst");
+  EXPECT_EQ(parser.get_option_value<std::string>("secondOption"), "valueSecond");
+}
+
+TEST(CommandLineParser, twoPositionals_flaggedFirstValueAndFlaggedSecondValueAndPositionalFirstValue_throws)
+{
+  stk::CommandLineParser parser;
+  parser.add_required_positional<std::string>({"firstOption", "f", "First (required) positional description"});
+  parser.add_optional_positional<std::string>({"secondOption", "s", "Second (optional) positional description"}, "defaultValue");
+
+  Args args({"exe", "--firstOption", "valueFirst", "--secondOption", "valueSecond", "differentValueFirst"});
+  EXPECT_TRUE(parse_command_line_with_error(parser, args, "Detected that 1 or more arguments was redundantly specified"));
+}
 
 //==============================================================================
 TEST(CommandLineParser, oneOptionalPositional_notProvided_getValueReturnsDefault)

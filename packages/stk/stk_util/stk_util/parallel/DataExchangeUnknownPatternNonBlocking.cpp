@@ -12,8 +12,12 @@ void DataExchangeUnknownPatternNonBlocking::reset()
     STK_ThrowRequireMsg(!m_areSendsInProgress, "Previous send must have completed before starting a new one");
 
     // setup for new iteration
-    m_sendRankMap.resize(0);
-    m_recvRankMap.resize(0);
+    m_recvReqRanks.resize(0);
+    m_extraRecvBufs.resize(0);
+    for (std::vector<int> recvBufsIdxs : m_rankExtraRecvBufs)
+    {
+      recvBufsIdxs.clear();
+    }
     m_sendReqs.resize(0);
     m_recvReqs.resize(0);
     m_recvcount = 0;
