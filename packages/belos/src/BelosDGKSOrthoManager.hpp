@@ -27,6 +27,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosMatOrthoManager.hpp"
 
 #include "Teuchos_as.hpp"
@@ -37,22 +38,23 @@
 namespace Belos {
 
   /// \brief "Default" parameters for robustness and accuracy.
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
   Teuchos::RCP<Teuchos::ParameterList> getDGKSDefaultParameters ();
 
   /// \brief "Fast" but possibly unsafe or less accurate parameters.
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
   Teuchos::RCP<Teuchos::ParameterList> getDGKSFastParameters();
 
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
   class DGKSOrthoManager :
-    public MatOrthoManager<ScalarType,MV,OP>
+    public MatOrthoManager<ScalarType,MV,OP,DM>
   {
   private:
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
     typedef Teuchos::ScalarTraits<ScalarType>  SCT;
-    typedef MultiVecTraits<ScalarType,MV>      MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM>      MVT;
+    typedef DenseMatTraits<ScalarType,DM> DMT;
     typedef OperatorTraits<ScalarType,MV,OP>   OPT;
 
   public:
@@ -66,7 +68,7 @@ namespace Belos {
                       const MagnitudeType blk_tol = blk_tol_default_,
                       const MagnitudeType dep_tol = dep_tol_default_,
                       const MagnitudeType sing_tol = sing_tol_default_ )
-      : MatOrthoManager<ScalarType,MV,OP>(Op),
+      : MatOrthoManager<ScalarType,MV,OP,DM>(Op),
         max_blk_ortho_( max_blk_ortho ),
         blk_tol_( blk_tol ),
         dep_tol_( dep_tol ),
@@ -95,7 +97,7 @@ namespace Belos {
     DGKSOrthoManager (const Teuchos::RCP<Teuchos::ParameterList>& plist,
                       const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null)
-      : MatOrthoManager<ScalarType,MV,OP>(Op),
+      : MatOrthoManager<ScalarType,MV,OP,DM>(Op),
         max_blk_ortho_ ( max_blk_ortho_default_ ),
         blk_tol_ ( blk_tol_default_ ),
         dep_tol_ ( dep_tol_default_ ),
@@ -168,7 +170,7 @@ namespace Belos {
     getValidParameters () const
     {
       if (defaultParams_.is_null()) {
-        defaultParams_ = Belos::getDGKSDefaultParameters<ScalarType, MV, OP>();
+        defaultParams_ = Belos::getDGKSDefaultParameters<ScalarType, MV, OP, DM>();
       }
 
       return defaultParams_;
@@ -256,18 +258,17 @@ namespace Belos {
      orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
     */
     void project ( MV &X, Teuchos::RCP<MV> MX,
-                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
+                   Teuchos::Array<Teuchos::RCP<DM>> C,
+                   Teuchos::ArrayView<Teuchos::RCP<const MV>> Q) const;
 
 
     /*! \brief This method calls project(X,Teuchos::null,C,Q); see documentation for that function.
     */
     void project ( MV &X,
-                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
+                   Teuchos::Array<Teuchos::RCP<DM>> C,
+                   Teuchos::ArrayView<Teuchos::RCP<const MV>> Q) const {
       project(X,Teuchos::null,C,Q);
     }
-
 
 
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
@@ -295,12 +296,12 @@ namespace Belos {
      @return Rank of the basis computed by this method.
     */
     int normalize ( MV &X, Teuchos::RCP<MV> MX,
-                    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B) const;
+                    Teuchos::RCP<DM> B) const;
 
 
     /*! \brief This method calls normalize(X,Teuchos::null,B); see documentation for that function.
     */
-    int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
+    int normalize ( MV &X, Teuchos::RCP<DM> B ) const {
       return normalize(X,Teuchos::null,B);
     }
 
@@ -364,8 +365,8 @@ namespace Belos {
     virtual int
     projectAndNormalizeWithMxImpl (MV &X,
                                    Teuchos::RCP<MV> MX,
-                                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                                   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                                   Teuchos::Array<Teuchos::RCP<DM> > C,
+                                   Teuchos::RCP<DM> B,
                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
   public:
@@ -467,17 +468,17 @@ namespace Belos {
 
     //! Routine to find an orthonormal basis for X
     int findBasis(MV &X, Teuchos::RCP<MV> MX,
-                  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > C,
+                  Teuchos::RCP<DM> C,
                   bool completeBasis, int howMany = -1 ) const;
 
     //! Routine to compute the block orthogonalization
     bool blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX,
-                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
+                     Teuchos::Array<Teuchos::RCP<DM>> C,
+                     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     //! Routine to compute the block orthogonalization
     bool blkOrtho ( MV &X, Teuchos::RCP<MV> MX,
-                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                    Teuchos::Array<Teuchos::RCP<DM>> C,
                     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     /// Project X against QQ and normalize X, one vector at a time
@@ -494,55 +495,55 @@ namespace Belos {
     ///   it likes to the Q array without changing it from the
     ///   caller's perspective.
     int blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX,
-                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                       Teuchos::Array<Teuchos::RCP<DM> > C,
+                       Teuchos::RCP<DM> B,
                        Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const;
   };
 
   // Set static variables.
-  template<class ScalarType, class MV, class OP>
-  const int DGKSOrthoManager<ScalarType,MV,OP>::max_blk_ortho_default_ = 2;
+  template<class ScalarType, class MV, class OP, class DM>
+  const int DGKSOrthoManager<ScalarType,MV,OP,DM>::max_blk_ortho_default_ = 2;
 
-  template<class ScalarType, class MV, class OP>
-  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::blk_tol_default_
-    = 10*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::squareroot(
-      Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::eps() );
+  template<class ScalarType, class MV, class OP, class DM>
+  const typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP,DM>::blk_tol_default_
+    = 10*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType>::squareroot(
+      Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType>::eps() );
 
-  template<class ScalarType, class MV, class OP>
-  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::dep_tol_default_ 
-    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::one()
-      / Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::squareroot( 
-      2*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::one() );
+  template<class ScalarType, class MV, class OP, class DM>
+  const typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP,DM>::dep_tol_default_ 
+    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType>::one()
+      / Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType>::squareroot( 
+      2*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType>::one() );
 
-  template<class ScalarType, class MV, class OP>
-  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::sing_tol_default_ 
-    = 10*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::eps();
+  template<class ScalarType, class MV, class OP, class DM>
+  const typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP,DM>::sing_tol_default_ 
+    = 10*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType>::eps();
 
-  template<class ScalarType, class MV, class OP>
-  const int DGKSOrthoManager<ScalarType,MV,OP>::max_blk_ortho_fast_ = 1;
+  template<class ScalarType, class MV, class OP, class DM>
+  const int DGKSOrthoManager<ScalarType,MV,OP,DM>::max_blk_ortho_fast_ = 1;
 
-  template<class ScalarType, class MV, class OP>
-  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::blk_tol_fast_
-    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
+  template<class ScalarType, class MV, class OP, class DM>
+  const typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP,DM>::blk_tol_fast_
+    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType>::zero();
 
-  template<class ScalarType, class MV, class OP>
-  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::dep_tol_fast_
-    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
+  template<class ScalarType, class MV, class OP, class DM>
+  const typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP,DM>::dep_tol_fast_
+    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType>::zero();
 
-  template<class ScalarType, class MV, class OP>
-  const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::sing_tol_fast_
-    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::zero();
+  template<class ScalarType, class MV, class OP, class DM>
+  const typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType
+  DGKSOrthoManager<ScalarType,MV,OP,DM>::sing_tol_fast_
+    = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP,DM>::MagnitudeType>::zero();
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the label for this orthogonalization manager and create new timers if it's changed
-  template<class ScalarType, class MV, class OP>
-  void DGKSOrthoManager<ScalarType,MV,OP>::setLabel(const std::string& label)
+  template<class ScalarType, class MV, class OP, class DM>
+  void DGKSOrthoManager<ScalarType,MV,OP,DM>::setLabel(const std::string& label)
   {
     if (label != label_) {
       label_ = label;
@@ -567,50 +568,52 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute the distance from orthonormality
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const {
+  DGKSOrthoManager<ScalarType,MV,OP,DM>::orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
-    Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
+    Teuchos::RCP<DM> xTx = DMT::Create(rank,rank);
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-    MatOrthoManager<ScalarType,MV,OP>::innerProd(X,X,MX,xTx);
+    MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(X,X,MX,*xTx);
     }
+    DMT::SyncDeviceToHost(*xTx);
     for (int i=0; i<rank; i++) {
-      xTx(i,i) -= ONE;
+      DMT::Value(*xTx,i,i) -= ONE;
     }
-    return xTx.normFrobenius();
+    DMT::SyncHostToDevice(*xTx);
+    return DMT::NormFrobenius(*xTx);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute the distance from orthogonality
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::orthogError(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const {
+  DGKSOrthoManager<ScalarType,MV,OP,DM>::orthogError(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const {
     int r1 = MVT::GetNumberVecs(X1);
     int r2  = MVT::GetNumberVecs(X2);
-    Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r2,r1);
+    Teuchos::RCP<DM> xTx = DMT::Create(r2,r1);
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-    MatOrthoManager<ScalarType,MV,OP>::innerProd(X2,X1,MX1,xTx);
+    MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(X2,X1,MX1,*xTx);
     }
-    return xTx.normFrobenius();
+    return DMT::NormFrobenius(*xTx);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Find an Op-orthonormal basis for span(X) - span(W)
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   int
-  DGKSOrthoManager<ScalarType, MV, OP>::
+  DGKSOrthoManager<ScalarType, MV, OP, DM>::
   projectAndNormalizeWithMxImpl (MV &X,
                                  Teuchos::RCP<MV> MX,
-                                 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                                 Teuchos::Array<Teuchos::RCP<DM> > C,
+                                 Teuchos::RCP<DM> B,
                                  Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
     using Teuchos::Array;
@@ -618,8 +621,6 @@ namespace Belos {
     using Teuchos::is_null;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    using Teuchos::SerialDenseMatrix;
-    typedef SerialDenseMatrix< int, ScalarType > serial_dense_matrix_type;
     typedef typename Array< RCP< const MV > >::size_type size_type;
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -638,7 +639,7 @@ namespace Belos {
     // coefficients, allocate some local memory for them.  This will
     // go away at the end of this method.
     if (is_null (B)) {
-      B = rcp (new serial_dense_matrix_type (xc, xc));
+      B = DMT::Create(xc,xc);
     }
     // Likewise, if the user doesn't want to store the projection
     // coefficients, allocate some local memory for them.  Also make
@@ -653,17 +654,12 @@ namespace Belos {
         const int numRows = MVT::GetNumberVecs (*Q[k]);
         const int numCols = xc; // Number of vectors in X
 
-        if (is_null (C[k]))
-          C[k] = rcp (new serial_dense_matrix_type (numRows, numCols));
-        else if (C[k]->numRows() != numRows || C[k]->numCols() != numCols)
-          {
-            int err = C[k]->reshape (numRows, numCols);
-            TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error,
-                               "DGKS orthogonalization: failed to reshape "
-                               "C[" << k << "] (the array of block "
-                               "coefficients resulting from projecting X "
-                               "against Q[1:" << nq << "]).");
-          }
+        if (is_null (C[k])){
+          C[k] = DMT::Create(numRows,numCols);
+        }
+        else if (DMT::GetNumRows(*C[k]) != numRows || DMT::GetNumCols(*C[k]) != numCols) {
+          DMT::Reshape(*C[k],numRows,numCols);
+        }
       }
 
     /******   DO NO MODIFY *MX IF _hasOp == false   ******/
@@ -691,7 +687,7 @@ namespace Belos {
     }
 
     // check size of B
-    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( DMT::GetNumRows(*B) != xc || DMT::GetNumCols(*B) != xc, std::invalid_argument,
                         "Belos::DGKSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of B" );
     // check size of X and MX
     TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument,
@@ -714,23 +710,26 @@ namespace Belos {
 
       // Normalize the new block X
       if ( B == Teuchos::null ) {
-        B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
+        B = DMT::Create(xc,xc);
       }
-      std::vector<ScalarType> diag(1);
+      std::vector<ScalarType> dot(1);
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor normTimer( *timerNorm_ );
 #endif
-        MVT::MvDot( X, *MX, diag );
+        MVT::MvDot( X, *MX, dot );
       }
-      (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
 
-      if (SCT::magnitude((*B)(0,0)) > ZERO) {
+      ScalarType diag = SCT::squareroot(SCT::magnitude(dot[0])); 
+      Teuchos::RCP<DM> B00 = DMT::Subview(*B,1,1);
+      DMT::PutScalar( *B00, diag );
+
+      if (SCT::magnitude(diag) > ZERO) {
         rank = 1;
-        MVT::MvScale( X, ONE/(*B)(0,0) );
+        MVT::MvScale( X, ONE/diag );
         if (this->_hasOp) {
           // Update MXj.
-          MVT::MvScale( *MX, ONE/(*B)(0,0) );
+          MVT::MvScale( *MX, ONE/diag );
         }
       }
     }
@@ -786,10 +785,10 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Find an Op-orthonormal basis for span(X), with rank numvectors(X)
-  template<class ScalarType, class MV, class OP>
-  int DGKSOrthoManager<ScalarType, MV, OP>::normalize(
+  template<class ScalarType, class MV, class OP, class DM>
+  int DGKSOrthoManager<ScalarType, MV, OP, DM>::normalize(
                                 MV &X, Teuchos::RCP<MV> MX,
-                                Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
+                                Teuchos::RCP<DM> B ) const {
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
@@ -803,10 +802,10 @@ namespace Belos {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class ScalarType, class MV, class OP>
-  void DGKSOrthoManager<ScalarType, MV, OP>::project(
+  template<class ScalarType, class MV, class OP, class DM>
+  void DGKSOrthoManager<ScalarType, MV, OP, DM>::project(
                           MV &X, Teuchos::RCP<MV> MX,
-                          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                          Teuchos::Array<Teuchos::RCP<DM> > C,
                           Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
     // For the inner product defined by the operator Op or the identity (Op == 0)
     //   -> Orthogonalize X against each Q[i]
@@ -874,10 +873,10 @@ namespace Belos {
 
       // check size of C[i]
       if ( C[i] == Teuchos::null ) {
-        C[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qcs[i],xc) );
+        C[i] = DMT::Create(qcs[i],xc);
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument,
+        TEUCHOS_TEST_FOR_EXCEPTION( DMT::GetNumRows(*C[i]) != qcs[i] || DMT::GetNumCols(*C[i]) != xc , std::invalid_argument,
                            "Belos::DGKSOrthoManager::project(): Size of Q not consistant with size of C" );
       }
     }
@@ -890,10 +889,9 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Find an Op-orthonormal basis for span(X), with the option of extending the subspace so that
   // the rank is numvectors(X)
-  template<class ScalarType, class MV, class OP>
-  int DGKSOrthoManager<ScalarType, MV, OP>::findBasis(
-                                                      MV &X, Teuchos::RCP<MV> MX,
-                                                      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+  template<class ScalarType, class MV, class OP, class DM>
+  int DGKSOrthoManager<ScalarType, MV, OP, DM>::findBasis( MV &X, Teuchos::RCP<MV> MX,
+                                                      Teuchos::RCP<DM> B,
                                                       bool completeBasis, int howMany ) const {
     // For the inner product defined by the operator Op or the identity (Op == 0)
     //   -> Orthonormalize X
@@ -939,7 +937,7 @@ namespace Belos {
      * allocate some local memory for them
      */
     if ( B == Teuchos::null ) {
-      B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
+      B = DMT::Create(xc,xc);
     }
 
     int mxc = (this->_hasOp) ? MVT::GetNumberVecs( *MX ) : xc;
@@ -948,7 +946,7 @@ namespace Belos {
     // check size of C, B
     TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument,
                         "Belos::DGKSOrthoManager::findBasis(): X must be non-empty" );
-    TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION( DMT::GetNumRows(*B) != xc || DMT::GetNumCols(*B) != xc, std::invalid_argument,
                         "Belos::DGKSOrthoManager::findBasis(): Size of X not consistant with size of B" );
     TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument,
                         "Belos::DGKSOrthoManager::findBasis(): Size of X not consistant with size of MX" );
@@ -1002,7 +1000,7 @@ namespace Belos {
       }
 
       // Make storage for these Gram-Schmidt iterations.
-      Teuchos::SerialDenseMatrix<int,ScalarType> product(numX, 1);
+      Teuchos::RCP<DM> product = DMT::Create(numX,1);
       std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
       //
       // Save old MXj vector and compute Op-norm
@@ -1025,7 +1023,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-        MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*Xj,MXj,product);
+        MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*prevX,*Xj,MXj,*product);
         }
         // Xj <- Xj - prevX prevX^T MXj
         //     = Xj - prevX product
@@ -1033,7 +1031,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-        MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *Xj );
+        MVT::MvTimesMatAddMv( -ONE, *prevX, *product, ONE, *Xj );
         }
 
         // Update MXj
@@ -1044,7 +1042,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-          MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *MXj );
+          MVT::MvTimesMatAddMv( -ONE, *prevMX, *product, ONE, *MXj );
         }
 
         // Compute new Op-norm
@@ -1059,26 +1057,26 @@ namespace Belos {
         if ( MGT::squareroot(SCT::magnitude(newDot[0])) < dep_tol_*MGT::squareroot(SCT::magnitude(oldDot[0])) ) {
           // Apply the second step of Gram-Schmidt
           // This is the same as above
-          Teuchos::SerialDenseMatrix<int,ScalarType> P2(numX,1);
+          Teuchos::RCP<DM> P2 = DMT::Create(numX,1);
           {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-          MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*Xj,MXj,P2);
+          MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*prevX,*Xj,MXj,*P2);
           }
-          product += P2;
+          DMT::Add(*product,*P2);
  
           {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-          MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *Xj );
+          MVT::MvTimesMatAddMv( -ONE, *prevX, *P2, ONE, *Xj );
           }
           if ((this->_hasOp)) {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-            MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *MXj );
+            MVT::MvTimesMatAddMv( -ONE, *prevMX, *P2, ONE, *MXj );
           }
         } // if (newDot[0] < dep_tol_*oldDot[0])
 
@@ -1130,19 +1128,19 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-            MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*tempXj,tempMXj,product);
+            MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*prevX,*tempXj,tempMXj,*product);
             }
             {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-            MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *tempXj );
+            MVT::MvTimesMatAddMv( -ONE, *prevX, *product, ONE, *tempXj );
             }
             if (this->_hasOp) {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-              MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *tempMXj );
+              MVT::MvTimesMatAddMv( -ONE, *prevMX, *product, ONE, *tempMXj );
             }
           }
           // Compute new Op-norm
@@ -1188,20 +1186,19 @@ namespace Belos {
       }
 
       // If we've added a random vector, enter a zero in the j'th diagonal element.
+      Teuchos::RCP<DM> Bjj = DMT::Subview(*B,1,1,j,j);
       if (addVec) {
-        (*B)(j,j) = ZERO;
+        DMT::PutScalar(*Bjj, ZERO);
       }
       else {
-        (*B)(j,j) = diag;
+        DMT::PutScalar(*Bjj, diag);
       }
 
       // Save the coefficients, if we are working on the original vector and not a randomly generated one
       if (!addVec) {
-        for (int i=0; i<numX; i++) {
-          (*B)(i,j) = product(i,0);
-        }
+        Teuchos::RCP<DM> Bcolj = DMT::Subview(*B,numX,1,0,j); 
+        DMT::Assign(*Bcolj,*product);
       }
-
     } // for (j = 0; j < xc; ++j)
 
     return xc;
@@ -1209,10 +1206,10 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Routine to compute the block orthogonalization
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   bool
-  DGKSOrthoManager<ScalarType, MV, OP>::blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX,
-                                                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+  DGKSOrthoManager<ScalarType, MV, OP, DM>::blkOrtho1 ( MV &X, Teuchos::RCP<MV> MX,
+                                                   Teuchos::Array<Teuchos::RCP<DM> > C,
                                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
     int nq = Q.size();
@@ -1241,7 +1238,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-      MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,*C[i]);
+      MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],X,MX,*C[i]);
       }
       // Multiply by Q and subtract the result in X
       {
@@ -1292,22 +1289,22 @@ namespace Belos {
     // Apply the second step of Gram-Schmidt
 
       for (int i=0; i<nq; i++) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> C2(C[i]->numRows(), C[i]->numCols());
+        Teuchos::RCP<DM> C2 = DMT::Create(DMT::GetNumRows(*C[i]),DMT::GetNumCols(*C[i]));
 
         // Apply another step of classical Gram-Schmidt
         {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-        MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,C2);
+        MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],X,MX,*C2);
         }
-        *C[i] += C2;
+        DMT::Add(*C[i],*C2);
 
         {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-        MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+        MVT::MvTimesMatAddMv( -ONE, *Q[i], *C2, ONE, X );
         }
 
         // Update MX, with the least number of applications of Op as possible
@@ -1317,7 +1314,7 @@ namespace Belos {
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
             // MQ was allocated and computed above; use it
-            MVT::MvTimesMatAddMv( -ONE, *MQ[i], C2, ONE, *MX );
+            MVT::MvTimesMatAddMv( -ONE, *MQ[i], *C2, ONE, *MX );
           }
           else if (xc <= qcs[i]) {
             // MQ was not allocated and computed above; it was cheaper to use X before and it still is
@@ -1332,10 +1329,10 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Routine to compute the block orthogonalization
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   bool
-  DGKSOrthoManager<ScalarType, MV, OP>::blkOrtho ( MV &X, Teuchos::RCP<MV> MX,
-                                                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+  DGKSOrthoManager<ScalarType, MV, OP, DM>::blkOrtho ( MV &X, Teuchos::RCP<MV> MX,
+                                                   Teuchos::Array<Teuchos::RCP<DM> > C,
                                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
     int nq = Q.size();
@@ -1367,7 +1364,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-      MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,*C[i]);
+      MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],X,MX,*C[i]);
       }
       // Multiply by Q and subtract the result in X
       {
@@ -1400,22 +1397,22 @@ namespace Belos {
     for (int j = 1; j < max_blk_ortho_; ++j) {
 
       for (int i=0; i<nq; i++) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> C2(C[i]->numRows(), C[i]->numCols());
+        Teuchos::RCP<DM> C2 = DMT::Create(DMT::GetNumRows(*C[i]),DMT::GetNumCols(*C[i]));
 
         // Apply another step of classical Gram-Schmidt
         {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-        MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],X,MX,C2);
+        MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],X,MX,*C2);
         }
-        *C[i] += C2;
+        DMT::Add(*C[i],*C2);
 
         {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-        MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+        MVT::MvTimesMatAddMv( -ONE, *Q[i], *C2, ONE, X );
         }
 
         // Update MX, with the least number of applications of Op as possible
@@ -1425,7 +1422,7 @@ namespace Belos {
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
             // MQ was allocated and computed above; use it
-            MVT::MvTimesMatAddMv( -ONE, *MQ[i], C2, ONE, *MX );
+            MVT::MvTimesMatAddMv( -ONE, *MQ[i], *C2, ONE, *MX );
           }
           else if (xc <= qcs[i]) {
             // MQ was not allocated and computed above; it was cheaper to use X before and it still is
@@ -1456,11 +1453,11 @@ namespace Belos {
   }
 
 
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   int
-  DGKSOrthoManager<ScalarType, MV, OP>::blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX,
-                                                       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                                                       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+  DGKSOrthoManager<ScalarType, MV, OP, DM>::blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX,
+                                                       Teuchos::Array<Teuchos::RCP<DM> > C,
+                                                       Teuchos::RCP<DM> B,
                                                        Teuchos::ArrayView<Teuchos::RCP<const MV> > QQ) const
   {
     Teuchos::Array<Teuchos::RCP<const MV> > Q (QQ);
@@ -1481,7 +1478,7 @@ namespace Belos {
     // Create pointers for the previous vectors of X that have already been orthonormalized.
     Teuchos::RCP<const MV> lastQ;
     Teuchos::RCP<MV> Xj, MXj;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lastC;
+    Teuchos::RCP<DM> lastC = DMT::Create();
 
     // Perform the Gram-Schmidt transformation for each vector in the block of vectors.
     for (int j=0; j<xc; j++) {
@@ -1525,21 +1522,21 @@ namespace Belos {
       for (int i=0; i<Q.size(); i++) {
 
         // Get a view of the current serial dense matrix
-        Teuchos::SerialDenseMatrix<int,ScalarType> tempC( Teuchos::View, *C[i], qcs[i], 1, 0, j );
+        Teuchos::RCP<DM> tempC = DMT::Subview(*C[i], qcs[i], 1, 0, j);
 
         // Multiply Q' with MX
         {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-        MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*Xj,MXj,tempC);
+        MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],*Xj,MXj,*tempC);
         }
         // Multiply by Q and subtract the result in Xj
         {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-        MVT::MvTimesMatAddMv( -ONE, *Q[i], tempC, ONE, *Xj );
+        MVT::MvTimesMatAddMv( -ONE, *Q[i], *tempC, ONE, *Xj );
         }
 
         // Update MXj, with the least number of applications of Op as possible
@@ -1555,7 +1552,7 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-            MVT::MvTimesMatAddMv( -ONE, *MQ[i], tempC, ONE, *MXj );
+            MVT::MvTimesMatAddMv( -ONE, *MQ[i], *tempC, ONE, *MXj );
             }
           }
         }
@@ -1575,22 +1572,22 @@ namespace Belos {
       if ( SCT::magnitude(newDot[0]) < SCT::magnitude(oldDot[0]*dep_tol_) ) {
 
         for (int i=0; i<Q.size(); i++) {
-          Teuchos::SerialDenseMatrix<int,ScalarType> tempC( Teuchos::View, *C[i], qcs[i], 1, 0, j );
-          Teuchos::SerialDenseMatrix<int,ScalarType> C2( qcs[i], 1 );
+          Teuchos::RCP<DM> tempC = DMT::Subview(*C[i], qcs[i], 1, 0, j);
+          Teuchos::RCP<DM> C2 = DMT::Create(qcs[i],1);
 
           // Apply another step of classical Gram-Schmidt
           {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-          MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*Xj,MXj,C2);
+          MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],*Xj,MXj,*C2);
           }
-          tempC += C2;
+          DMT::Add(*tempC,*C2);
           {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-          MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, *Xj );
+          MVT::MvTimesMatAddMv( -ONE, *Q[i], *C2, ONE, *Xj );
           }
 
           // Update MXj, with the least number of applications of Op as possible
@@ -1600,7 +1597,7 @@ namespace Belos {
               Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
               // MQ was allocated and computed above; use it
-              MVT::MvTimesMatAddMv( -ONE, *MQ[i], C2, ONE, *MXj );
+              MVT::MvTimesMatAddMv( -ONE, *MQ[i], *C2, ONE, *MXj );
             }
             else if (xc <= qcs[i]) {
               // MQ was not allocated and computed above; it was cheaper to use X before and it still is
@@ -1634,7 +1631,8 @@ namespace Belos {
         }
 
         // Enter value on diagonal of B.
-        (*B)(j,j) = diag;
+        Teuchos::RCP<DM> Bjj = DMT::Subview(*B,1,1,j,j);
+        DMT::PutScalar(*Bjj, diag);
       }
       else {
         // Create a random vector and orthogonalize it against all previous columns of Q.
@@ -1658,20 +1656,20 @@ namespace Belos {
         for (int num_orth=0; num_orth<max_blk_ortho_; num_orth++) {
 
           for (int i=0; i<Q.size(); i++) {
-            Teuchos::SerialDenseMatrix<int,ScalarType> product( qcs[i], 1 );
+            Teuchos::RCP<DM> product = DMT::Create( qcs[i], 1 );
 
             // Apply another step of classical Gram-Schmidt
             {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
 #endif
-            MatOrthoManager<ScalarType,MV,OP>::innerProd(*Q[i],*tempXj,tempMXj,product);
+            MatOrthoManager<ScalarType,MV,OP,DM>::innerProd(*Q[i],*tempXj,tempMXj,*product);
             }
             {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
-            MVT::MvTimesMatAddMv( -ONE, *Q[i], product, ONE, *tempXj );
+            MVT::MvTimesMatAddMv( -ONE, *Q[i], *product, ONE, *tempXj );
             }
 
             // Update MXj, with the least number of applications of Op as possible
@@ -1681,7 +1679,7 @@ namespace Belos {
                 Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 #endif
                 // MQ was allocated and computed above; use it
-                MVT::MvTimesMatAddMv( -ONE, *MQ[i], product, ONE, *tempMXj );
+                MVT::MvTimesMatAddMv( -ONE, *MQ[i], *product, ONE, *tempMXj );
               }
               else if (xc <= qcs[i]) {
                 // MQ was not allocated and computed above; it was cheaper to use X before and it still is
@@ -1705,7 +1703,8 @@ namespace Belos {
           ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 
           // Enter value on diagonal of B.
-          (*B)(j,j) = ZERO;
+          Teuchos::RCP<DM> Bjj = DMT::Subview(*B,1,1,j,j);
+          DMT::PutScalar(*Bjj, ZERO);
 
           // Copy vector into current column of _basisvecs
           MVT::MvAddMv( ONE/diag, *tempXj, ZERO, *tempXj, *Xj );
@@ -1730,7 +1729,7 @@ namespace Belos {
     return xc;
   }
 
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<Teuchos::ParameterList> getDGKSDefaultParameters ()
   {
     using Teuchos::ParameterList;
@@ -1741,36 +1740,36 @@ namespace Belos {
 
     // Default parameter values for DGKS orthogonalization.
     // Documentation will be embedded in the parameter list.
-    params->set ("maxNumOrthogPasses", DGKSOrthoManager<ScalarType, MV, OP>::max_blk_ortho_default_,
+    params->set ("maxNumOrthogPasses", DGKSOrthoManager<ScalarType, MV, OP, DM>::max_blk_ortho_default_,
                  "Maximum number of orthogonalization passes (includes the "
                  "first).  Default is 2, since \"twice is enough\" for Krylov "
                  "methods.");
-    params->set ("blkTol", DGKSOrthoManager<ScalarType, MV, OP>::blk_tol_default_, 
+    params->set ("blkTol", DGKSOrthoManager<ScalarType, MV, OP, DM>::blk_tol_default_, 
                  "Block reorthogonalization threshold.");
-    params->set ("depTol", DGKSOrthoManager<ScalarType, MV, OP>::dep_tol_default_,
+    params->set ("depTol", DGKSOrthoManager<ScalarType, MV, OP, DM>::dep_tol_default_,
                  "(Non-block) reorthogonalization threshold.");
-    params->set ("singTol", DGKSOrthoManager<ScalarType, MV, OP>::sing_tol_default_, 
+    params->set ("singTol", DGKSOrthoManager<ScalarType, MV, OP, DM>::sing_tol_default_, 
                  "Singular block detection threshold.");
 
     return params;
   }
 
-  template<class ScalarType, class MV, class OP>
+  template<class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<Teuchos::ParameterList> getDGKSFastParameters ()
   {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
 
-    RCP<ParameterList> params = getDGKSDefaultParameters<ScalarType, MV, OP>();
+    RCP<ParameterList> params = getDGKSDefaultParameters<ScalarType, MV, OP, DM>();
 
     params->set ("maxNumOrthogPasses", 
-                 DGKSOrthoManager<ScalarType, MV, OP>::max_blk_ortho_fast_);
+                 DGKSOrthoManager<ScalarType, MV, OP, DM>::max_blk_ortho_fast_);
     params->set ("blkTol", 
-                 DGKSOrthoManager<ScalarType, MV, OP>::blk_tol_fast_);
+                 DGKSOrthoManager<ScalarType, MV, OP, DM>::blk_tol_fast_);
     params->set ("depTol", 
-                 DGKSOrthoManager<ScalarType, MV, OP>::dep_tol_fast_);
+                 DGKSOrthoManager<ScalarType, MV, OP, DM>::dep_tol_fast_);
     params->set ("singTol", 
-                 DGKSOrthoManager<ScalarType, MV, OP>::sing_tol_fast_);
+                 DGKSOrthoManager<ScalarType, MV, OP, DM>::sing_tol_fast_);
 
     return params;
   }
