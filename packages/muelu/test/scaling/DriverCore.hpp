@@ -283,7 +283,7 @@ bool cg_solve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, N
       comm->barrier();
     }
     TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
-    rtrans = r->dot(*r);
+    rtrans = STS::magnitude(r->dot(*r));
   }
 
   normr = std::sqrt(rtrans);
@@ -306,7 +306,7 @@ bool cg_solve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, N
           comm->barrier();
         }
         TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
-        rtrans = r->dot(*r);
+        rtrans = STS::magnitude(r->dot(*r));
       }
       {
         TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
@@ -335,7 +335,7 @@ bool cg_solve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, N
         comm->barrier();
       }
       TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
-      p_ap_dot = Ap->dot(*p);
+      p_ap_dot = STS::magnitude(Ap->dot(*p));
     }
     {
       TimeMonitor t(*TimeMonitor::getNewTimer(addTimerName));
@@ -357,7 +357,7 @@ bool cg_solve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, N
       comm->barrier();
     }
     TimeMonitor t(*TimeMonitor::getNewTimer(dotTimerName));
-    rtrans = r->dot(*r);
+    rtrans = STS::magnitude(r->dot(*r));
   }
 
   normr = std::sqrt(rtrans);
