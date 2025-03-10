@@ -322,19 +322,19 @@ namespace mwm_order
   }//end mwm_heap_del_root
 
 
-  template <class Int, class Entry>
+  template <class Int, class Mag>
   void mwm_heap_extract_reheap2
   (
    Int pos0,
    Int &qlen,
    Int n,
    Int *Q,
-   Entry *d,
+   Mag *d,
    Int *L
   )
   {
     Int i, idum,pos, posk, qk;
-    Entry dk, dr, di;
+    Mag dk, dr, di;
     
     const Int k = 2;
     
@@ -417,14 +417,14 @@ namespace mwm_order
   }//end mwm_heap_extract_reheap2
 
 
-  template <class Int, class Entry>
+  template <class Int, class Mag>
   void mwm_heap_extract_reheap
   (
    Int pos0,
    Int &qlen,
    Int n,
    Int *Q,
-   Entry *D,
+   Mag *D,
    Int *L
   )
   {
@@ -437,8 +437,8 @@ namespace mwm_order
     }
     
     //? qlen-1?
-    Int i    = Q[qlen];
-    Entry di = D[i];
+    Int i  = Q[qlen];
+    Mag di = D[i];
     qlen--;
     Int   pos = pos0;
 
@@ -483,11 +483,11 @@ namespace mwm_order
           break;
         }
 
-        Entry dk = D[Q[posk]];
+        Mag dk = D[Q[posk]];
 
         if(posk < qlen)
         {
-          Entry dr = D[Q[posk+1]];
+          Mag dr = D[Q[posk+1]];
           if(dk > dr) 
           {
             posk++;
@@ -1122,6 +1122,7 @@ L160:
   }//end mwm()
 
 
+#if 0
   //Main calling driver function
   template <class Int, class Entry>
   int mwm_prod
@@ -1952,6 +1953,7 @@ L160:
     delete [] out;
     return 0;
   }//end mwm_diag_prod()
+#endif
 
 }//end namespace mwm_order
 #endif
