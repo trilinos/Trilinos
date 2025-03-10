@@ -30,6 +30,15 @@ or are missing a particular feature, please open an issue or a discussion
 on Github.
 
 
+Belos
+
+  - Improve caching of state vectors between subsequent solves.
+    https://github.com/trilinos/Trilinos/pull/13751
+
+  - Use a pooling strategy for Tpetra MultiVectors.
+    https://github.com/trilinos/Trilinos/pull/13469
+
+
 Framework
 
   - Added option `Trilinos_WARNINGS_MODE` that can control warnings useful
@@ -45,7 +54,53 @@ Framework
     if either of these modes are enabled, all warnings are disabled for any
     deprecated packages, in the interest of not spending effort cleaning them.
     By default, no warnings or errors are added.
+    https://github.com/trilinos/Trilinos/pull/13427
+
   - Set all currently-clean GCC 10 warnings as 'promoted'.
+
+  - MKL+SYCL support
+    https://github.com/trilinos/Trilinos/pull/13520
+
+
+Kokkos, Kokkos Kernels
+
+  - Inclusion of version 4.5.1 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/13679
+
+
+MueLu:
+
+  - Refactor CoalesceDropFactory into smaller composable functors,
+    making it easier to extend.
+    https://github.com/trilinos/Trilinos/pull/13361
+
+  - Add a material-aware distance Laplacian aggregation strategy.
+    https://github.com/trilinos/Trilinos/pull/13662
+
+
+Panzer:
+
+  - Add capability for transient optimization with ROL and Tempus
+    https://github.com/trilinos/Trilinos/pull/13581
+
+
+PyTrilinos2:
+
+  - Thyra and Stratimikos are now exposed. This allows to use solvers
+    from Amesos2, Belos, Ifpack2 and MueLu from Python.
+    https://github.com/trilinos/Trilinos/pull/13690
+
+
+ShyLU:
+
+  - New solver features in Tacho
+    https://github.com/trilinos/Trilinos/pull/13585
+
+
+Stokhos:
+
+  - Deprecate the PCE scalar type
+    https://github.com/trilinos/Trilinos/pull/13459
 
 
 ###############################################################################
