@@ -31,11 +31,6 @@
 //Queue structure based on Robert Sedgewick Algorith in C++ outline,
 //Modified to to use top faster (Derigs and Metz (1986))
 
-//Comeback and change
-#include <float.h>
-//#define INF      2000
-#define INF      DBL_MAX
-
 namespace mwm_order
 {
 
@@ -530,28 +525,31 @@ namespace mwm_order
   // int mwm_diag_prod     ... Duff and Koster (1999) - mc64 Product of diag
 
    
-  template<class Int, class Entry>
+  template<class Int, class Entry, class Mag>
   int mwm_bn_init
   (
    Int n,
    Int nnz,
    Int *col_ptr,
    Int *row_idx,
-   Entry  *val,
+   Entry *val,
    Int *pr,
    Int *L,
-   Entry *d,
+   Mag *d,
    Int *iperm,
    Int *jperm,
    Int &num,
-   Entry &bv
+   Mag &bv
   )
   {
+    using MTS = Teuchos::ScalarTraits<Mag>;
+    const Mag ZERO = MTS::zero();
+    const Mag ONE  = MTS::one();
+
     Int i,ii,i0,j,jj, k;
     Int kk, kk1, kk2;
-//    Entry a0, ai;
-    Entry a0, ai;
-    bv = (Entry) INF;
+    Mag a0, ai;
+    bv = MTS::rmax();
 
     //Init used values
     i0 = -1;
@@ -561,13 +559,13 @@ namespace mwm_order
       iperm[k] = -1;
       jperm[k] = -1;
       pr[k]    = col_ptr[k];
-      d[k]     = (Entry) 0;
+      d[k]     = ZERO;
     }
     
     //Scan over column nodes
     for(j=0; j<n; j++)
     {
-      a0 = (Entry) -1.0;
+      a0 = -ONE;
       //For each column node, 
       for(k=col_ptr[j]; k<col_ptr[j+1]; k++)
       {
@@ -603,7 +601,7 @@ namespace mwm_order
           i0 = i;
         }
       }//for-k, row nodes
-      if((a0 != ((Entry)(-1.0))) && (a0 < bv))
+      if((a0 != -ONE) && (a0 < bv))
       {
         bv = a0;
         if(iperm[i0] != -1)
@@ -701,7 +699,7 @@ namespace mwm_order
   }//end mwm_bn_init
 
 
-  template<class Int, class Entry>
+  template<class Int, class Entry, class Mag>
   int mwm_bn
   (
    Int n,
@@ -711,28 +709,31 @@ namespace mwm_order
    Entry  *val,
    Int *pr,
    Int *L,
-   Entry *d,
+   Mag *d,
    Int *iperm,
    Int *jperm,
    Int &num,
-   Entry &bv
+   Mag &bv
   )
   {
+    using MTS = Teuchos::ScalarTraits<Mag>;
+    const Mag ONE = MTS::one();
+
     Int i, i0;
     Int j, jj;
     Int k, kk;;
     Int jord, jdum, idum;
     Int qlen, low, up;
     Int q0;
-    Entry dq0;
+    Mag dq0;
 
-    Entry dnew, di;
-    Entry csp;
+    Mag dnew, di;
+    Mag csp;
     Int isp, jsp;
     
     Int lpos;
 
-    Entry MINONE = (Entry) -1.0;
+    Mag MINONE = -ONE;
 
     Int *Q = new Int[n+1];
    
@@ -1035,13 +1036,16 @@ L160:
    Int &num
   )
   {
-    Entry *d     = new Entry[n];
+    using STS = Teuchos::ScalarTraits<Entry>;
+    using Mag = typename STS::magnitudeType;
+
+    Mag   *d     = new Mag[n];
     Int   *jperm = new Int[n];
     Int   *iperm = new Int[n];
     Int   *L     = new Int[n];
     Int   *pr    = new Int[n];
 
-    Entry bv = 0;
+    Mag bv = 0;
 
     mwm_bn_init(n,nnz, 
 		col_ptr, row_idx, val,
@@ -1309,7 +1313,7 @@ L160:
    Entry  *val,
    Int *pr, 
    Int *L,
-   Entry   *U, 
+   Entry *U, 
    Entry *d, 
    Int *iperm, 
    Int *jperm, 
@@ -1317,12 +1321,16 @@ L160:
   )
   {
     //printf("-----MWM  Row called -----\n");
+    using STS = Teuchos::ScalarTraits<Entry>;
+    const Entry ZERO = STS::zero();
+    const Entry INF  = STS::rmax();
+
     //Init values
     num = 0;
     for(Int k = 0; k < n; k++)
     {
-      U[k]     = (Entry) INF;
-      d[k]     = (Entry) 0;
+      U[k]     = INF;
+      d[k]     = ZERO;
       iperm[k] = -1;
       jperm[k] = -1;
       pr[k]    = col_ptr[k];
@@ -1392,6 +1400,8 @@ L160:
   )
   {
     //printf("-------MWM col: %d -----------\n", num); 
+    using STS = Teuchos::ScalarTraits<Entry>;
+    const Entry INF = STS::rmax();
 
     Int k, i,ii,j,jj;
     Int k0,k1, k2;
@@ -1432,7 +1442,7 @@ L160:
           }
 
           //if min than already
-          if((di <= vj)||(di==INF))
+          if((di <= vj) || (di==INF))
           {
             if(di == vj)
             {
@@ -1570,6 +1580,10 @@ L160:
    Int &num
   )
   {
+    using STS = Teuchos::ScalarTraits<Entry>;
+    const Entry ONE = STS::one();
+    const Entry INF = STS::rmax();
+
     Int i, k;
     Int isp, jsp;
     Int jord;
@@ -1582,8 +1596,8 @@ L160:
     //reinit varaibles
     for(k = 0; k < n; k++)
     {
-      d[k] = INF;
-      L[k] = -1;
+      d[k] =  INF;
+      L[k] = -ONE;
     }//end for over all rows
 
     //Each loop is similar to Dijkstra's alg
@@ -1865,15 +1879,15 @@ L160:
       for(Int kk = low; kk <n; kk++)
       {
         i    = Q[kk];
-        d[i] = INF;
-        L[i] = -1;
+        d[i] =  INF;
+        L[i] = -ONE;
       }
       //wipe clean lower heap
       for( k = 0; k < qlen; k++)
       {
         i    = Q[k];
-        d[i] = INF;
-        L[i] = -1;
+        d[i] =  INF;
+        L[i] = -ONE;
 
       }
     }//for--outer most loop over column matches
