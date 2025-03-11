@@ -338,6 +338,7 @@ namespace MueLu {
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
+  "<ParameterList name=\"kokkos tuning: muelu parameter mapping\"/>"
   "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-2\"/>"
   "<Parameter name=\"maxwell1: mode\" type=\"string\" value=\"standard\"/>"
   "<ParameterList name=\"maxwell1: 11list\"/>"
@@ -945,6 +946,8 @@ namespace MueLu {
          ("use external multigrid package","use external multigrid package")
       
          ("amgx:params","amgx:params")
+      
+         ("kokkos tuning: muelu parameter mapping","kokkos tuning: muelu parameter mapping")
       
          ("debug: graph level","debug: graph level")
       
