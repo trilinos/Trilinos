@@ -473,14 +473,14 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         for (size_t i = 0; i < dim; ++i)
           for (size_t j = 0; j < dim; ++j) {
             if (i == j)
-              material->getVectorNonConst(k)->putScalar(2 * Teuchos::ScalarTraits<SC>::one());
+              material->getVectorNonConst(k)->putScalar(2.0 * Teuchos::ScalarTraits<SC>::one());
             else
               material->getVectorNonConst(k)->putScalar(Teuchos::ScalarTraits<SC>::zero());
             ++k;
           }
       } else {
         material = MultiVectorFactory::Build(map, 1);
-        material->putScalar(2 * Teuchos::ScalarTraits<SC>::one());
+        material->putScalar(2.0 * Teuchos::ScalarTraits<SC>::one());
       }
     }
 
