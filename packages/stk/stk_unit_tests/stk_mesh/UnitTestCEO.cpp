@@ -186,7 +186,7 @@ TEST(CEO, change_entity_owner_2ElemWithSideset) {
   }
 }
 
-void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
+void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::AutomaticAuraOption /*autoAuraOption*/)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
   int psize = stk::parallel_machine_size(communicator);

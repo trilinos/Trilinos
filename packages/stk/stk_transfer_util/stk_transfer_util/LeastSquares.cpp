@@ -184,7 +184,7 @@ void LeastSquares::resize_data(const unsigned ncomp, const unsigned nsamp, const
 }
 
 GeometricMovingLeastSquares::GeometricMovingLeastSquares(const unsigned ncomp, const unsigned nsamp,
-                                                         const unsigned nbasis, const stk::mesh::BulkData& bulk,
+                                                         const unsigned nbasis, const stk::mesh::BulkData& /*bulk*/,
                                                          const std::vector<stk::mesh::Entity>& patch,
                                                          const stk::mesh::FieldBase* coordField,
                                                          const std::vector<double>& evalPoint)

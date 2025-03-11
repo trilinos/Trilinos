@@ -103,7 +103,7 @@ void test_device_class()
   int constructionFinished = 0;
   Kokkos::parallel_reduce(
       stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
+      KOKKOS_LAMBDA(const unsigned& /*i*/, int& localFinished) {
         ngp::NgpDerived<int> derivedClass;
         localFinished = 1;
       },

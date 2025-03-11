@@ -44,15 +44,15 @@ namespace transfer {
   {
   }
 
-  const void* TransferCopyByIdMpmdMeshAdapter::field_data(const Mesh_ID & id, const unsigned field_index) const
+  const void* TransferCopyByIdMpmdMeshAdapter::field_data(const Mesh_ID & /*id*/, const unsigned /*field_index*/) const
   {
     return nullptr;
   }
-  void* TransferCopyByIdMpmdMeshAdapter::field_data(const Mesh_ID & id, const unsigned field_index)
+  void* TransferCopyByIdMpmdMeshAdapter::field_data(const Mesh_ID & /*id*/, const unsigned /*field_index*/)
   {
     return nullptr;
   }
-  unsigned TransferCopyByIdMpmdMeshAdapter::field_data_size(const Mesh_ID & id, const unsigned field_index) const
+  unsigned TransferCopyByIdMpmdMeshAdapter::field_data_size(const Mesh_ID & /*id*/, const unsigned /*field_index*/) const
   {
     return 0;
   }
@@ -70,23 +70,23 @@ namespace transfer {
   {
     return m_empty_ids;
   }
-  bool TransferCopyByIdMpmdMeshAdapter::is_locally_owned(const Mesh_ID & id) const
+  bool TransferCopyByIdMpmdMeshAdapter::is_locally_owned(const Mesh_ID & /*id*/) const
   {
     return false;
   }
-  void TransferCopyByIdMpmdMeshAdapter::centroid(const Mesh_ID & id, double coords[3]) const
+  void TransferCopyByIdMpmdMeshAdapter::centroid(const Mesh_ID & /*id*/, [[maybe_unused]] double coords[3]) const
   {
   }
-  std::string TransferCopyByIdMpmdMeshAdapter::print_mesh_id(const Mesh_ID& id) const
+  std::string TransferCopyByIdMpmdMeshAdapter::print_mesh_id(const Mesh_ID& /*id*/) const
   {
     return "";
   }
-  std::string TransferCopyByIdMpmdMeshAdapter::field_name(const unsigned index) const
+  std::string TransferCopyByIdMpmdMeshAdapter::field_name(const unsigned /*index*/) const
   {
     return "";
   }
 
-  DataTypeKey::data_t TransferCopyByIdMpmdMeshAdapter::get_field_type(const unsigned fieldIndex) const
+  DataTypeKey::data_t TransferCopyByIdMpmdMeshAdapter::get_field_type(const unsigned /*fieldIndex*/) const
   { 
     return DataTypeKey::data_t::INVALID_TYPE;
   }

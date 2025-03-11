@@ -154,10 +154,10 @@ public:
 
   void add_search_filter_info(const EntityKey key,
                               const std::vector<double>& paramCoords,
-                              const double parametricDistance,
-                              const bool isWithinParametricTolerance,
-                              const double geometricDistanceSquared,
-                              const bool isWithinGeometricTolerance) override
+                              const double /*parametricDistance*/,
+                              const bool /*isWithinParametricTolerance*/,
+                              const double /*geometricDistanceSquared*/,
+                              const bool /*isWithinGeometricTolerance*/) override
   {
     m_searchFilterInfo[key] = paramCoords;
   }
@@ -196,10 +196,10 @@ public:
 
   void add_search_filter_info(const EntityKey key,
                               const std::vector<double>& paramCoords,
-                              const double parametricDistance,
-                              const bool isWithinParametricTolerance,
-                              const double geometricDistanceSquared,
-                              const bool isWithinGeometricTolerance) override
+                              const double /*parametricDistance*/,
+                              const bool /*isWithinParametricTolerance*/,
+                              const double /*geometricDistanceSquared*/,
+                              const bool /*isWithinGeometricTolerance*/) override
   {
     m_searchFilterInfo.push_back(std::make_pair(key, paramCoords));
     m_isSorted = false;

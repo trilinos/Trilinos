@@ -204,11 +204,11 @@ class Hex8SourceMesh : public stk::search::SourceMeshInterface<Hex8SourceMesh>
   }
   //ENDSource_find_parametric_coords
 
-  bool modify_search_outside_parametric_tolerance(const EntityKey k,
-      const double* toCoords,
-      std::vector<double>& parametricCoords,
-      double& geometricDistanceSquared,
-      bool& isWithinGeometricTolerance) const override
+  bool modify_search_outside_parametric_tolerance(const EntityKey /*k*/,
+      const double* /*toCoords*/,
+      std::vector<double>& /*parametricCoords*/,
+      double& /*geometricDistanceSquared*/,
+      bool& /*isWithinGeometricTolerance*/) const override
   {
     return false;
   }
@@ -346,15 +346,15 @@ class SinglePointMesh : public stk::search::DestinationMeshInterface<SinglePoint
   }
   //ENDDestination_bounding_boxes
 
-  const double* coord(const EntityKey k) const override { return m_coords; }
+  const double* coord(const EntityKey /*k*/) const override { return m_coords; }
   double get_search_tolerance() const override { return m_geometricTolerance; }
   double get_parametric_tolerance() const override { return m_parametricTolerance; }
 
-  void centroid(const EntityKey k, std::vector<double>& centroidVec) const override
+  void centroid(const EntityKey /*k*/, std::vector<double>& centroidVec) const override
   {
     centroidVec.assign(m_coords, m_coords + 3);
   }
-  double get_distance_from_nearest_node(const EntityKey k, const double* toCoords) const override
+  double get_distance_from_nearest_node(const EntityKey /*k*/, const double* toCoords) const override
   {
     return stk::search::distance(3, m_coords, toCoords);
   }

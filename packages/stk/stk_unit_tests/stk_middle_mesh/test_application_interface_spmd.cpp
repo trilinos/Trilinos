@@ -22,7 +22,7 @@ class XiCoordinatesForTest : public XiCoordinates
         throw std::runtime_error("only triangles and quads supported");
     }
 
-    std::pair<double, double> get_xi_coord_range(mesh::MeshEntityType type) override { return std::make_pair(0, 2); }
+    std::pair<double, double> get_xi_coord_range(mesh::MeshEntityType /*type*/) override { return std::make_pair(0, 2); }
 
   private:
     std::vector<utils::Point> m_triangleXiCoords = {utils::Point(0.1, 0.2), utils::Point(1.5, 0.3)};
@@ -192,7 +192,7 @@ class ApplicationInterfaceSPMDTester : public ::testing::Test
       }
     }
 
-    void test_xi_points(std::shared_ptr<mesh::Mesh> inputMesh, std::shared_ptr<mesh::Mesh> middleGrid,
+    void test_xi_points(std::shared_ptr<mesh::Mesh> /*inputMesh*/, std::shared_ptr<mesh::Mesh> middleGrid,
                         mesh::FieldPtr<utils::Point> xiCoordsOnInputMeshPtr,
                         mesh::FieldPtr<mesh::MeshEntityPtr> meshInToInputMeshPtr,
                         std::shared_ptr<XiCoordinates> xiCoords)

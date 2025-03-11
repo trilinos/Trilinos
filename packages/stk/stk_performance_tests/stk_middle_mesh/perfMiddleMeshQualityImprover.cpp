@@ -83,7 +83,7 @@ std::shared_ptr<stk::middle_mesh::mesh::Mesh> make_annulus_mesh(const int nelemR
 std::shared_ptr<stk::middle_mesh::mesh::Mesh> make_annulus_mesh(const int nelemR, const int nelemTheta, const double rIn,
                                                                 const double rOut, double dtheta, MPI_Comm comm = MPI_COMM_WORLD)
 {
-  auto f2 = [](const double x, const double y) { return 0.0; };
+  auto f2 = [](const double /*x*/, const double /*y*/) { return 0.0; };
   return make_annulus_mesh(nelemR, nelemTheta, rIn, rOut, dtheta, comm, f2);
 }
 

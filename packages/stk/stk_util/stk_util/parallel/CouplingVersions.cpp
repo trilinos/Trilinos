@@ -15,7 +15,7 @@ namespace util {
 
 #ifdef STK_HAS_MPI
 
-void MPI_Op_MaxMinReduction(void* invec, void* inoutvec, int* len, MPI_Datatype* datatype)
+void MPI_Op_MaxMinReduction(void* invec, void* inoutvec, int* /*len*/, MPI_Datatype* /*datatype*/)
 {
   int* invec_int    = reinterpret_cast<int*>(invec);
   int* inoutvec_int = reinterpret_cast<int*>(inoutvec);

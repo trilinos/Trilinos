@@ -256,13 +256,10 @@ local_coarse_search_morton_lbvh(
 {
   Kokkos::Profiling::pushRegion("local_coarse_search_morton_lbvh");
   check_coarse_search_types_local<DomainView, RangeView, ResultView, ExecutionSpace>();
-  using DomainIdentType = typename DomainView::value_type::ident_type;
-  using RangeIdentType = typename RangeView::value_type::ident_type;
   using DomainBoxType = typename DomainView::value_type::box_type;
   using RangeBoxType  = typename RangeView::value_type::box_type;
   STK_ThrowRequireMsg((std::is_same_v<typename DomainBoxType::value_type, typename RangeBoxType::value_type>),
                       "The domain and range boxes must have the same floating-point precision");
-  using ValueType = typename DomainBoxType::value_type;
   using Callback = impl::LocalMortonCoarseSearchViewCallback<DomainView, RangeView, ResultView, ExecutionSpace>;
 
   Kokkos::Profiling::pushRegion("STK Fill domain and range trees");

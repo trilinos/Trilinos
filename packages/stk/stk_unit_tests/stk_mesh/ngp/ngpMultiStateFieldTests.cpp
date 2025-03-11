@@ -79,7 +79,7 @@ ClassWithNgpField* create_class_on_device(const stk::mesh::NgpField<double>& ngp
   ClassWithNgpField* devicePtr = static_cast<ClassWithNgpField*>(
         Kokkos::kokkos_malloc<stk::ngp::MemSpace>("device class memory", sizeof(ClassWithNgpField)));
   Kokkos::parallel_for("construct class on device", stk::ngp::DeviceRangePolicy(0, 1),
-                       MY_LAMBDA(const int i) { new (devicePtr) ClassWithNgpField(ngpField); }
+                       MY_LAMBDA(const int /*i*/) { new (devicePtr) ClassWithNgpField(ngpField); }
                        );
   Kokkos::fence();
   return devicePtr;
@@ -88,7 +88,7 @@ ClassWithNgpField* create_class_on_device(const stk::mesh::NgpField<double>& ngp
 void delete_class_on_device(ClassWithNgpField* devicePtr)
 {
   Kokkos::parallel_for("device_destruct", stk::ngp::DeviceRangePolicy(0, 1),
-                       KOKKOS_LAMBDA(const int i) { devicePtr->~ClassWithNgpField(); }
+                       KOKKOS_LAMBDA(const int /*i*/) { devicePtr->~ClassWithNgpField(); }
                        );
   Kokkos::fence();
   Kokkos::kokkos_free<stk::ngp::MemSpace>(static_cast<void*>(devicePtr));

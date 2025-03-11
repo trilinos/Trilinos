@@ -49,7 +49,7 @@ struct Entity;
 namespace stk {
 namespace transfer {
 
-constexpr unsigned col_major_index(unsigned i, unsigned j, unsigned nx, unsigned ny) { return (i + j * nx); }
+constexpr unsigned col_major_index(unsigned i, unsigned j, unsigned nx, unsigned /*ny*/) { return (i + j * nx); }
 
 static constexpr int INT_ONE = 1;
 static constexpr double REAL_ONE = 1.0;

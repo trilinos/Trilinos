@@ -48,7 +48,7 @@ VariableSizeFieldPtr<RemoteSharedEntity> MeshScatterFromRoot::get_entity_destina
 }
 
 
-void MeshScatterFromRoot::verify_only_one_root_debug_only(MPI_Comm unionComm, bool amIRoot)
+void MeshScatterFromRoot::verify_only_one_root_debug_only([[maybe_unused]] MPI_Comm unionComm, [[maybe_unused]] bool amIRoot)
 {
 #ifndef NDEBUG
   int numLocalRoots  = amIRoot ? 1 : 0;
@@ -112,7 +112,7 @@ void MeshScatterFromRoot::pack_data(Exchanger& exchanger, const T& sendData)
 }
 
 template <typename T>
-void MeshScatterFromRoot::unpack_data(int rank, stk::CommBuffer& buf)
+void MeshScatterFromRoot::unpack_data(int /*rank*/, stk::CommBuffer& buf)
 {
   typename T::InfoType info;
   while (buf.remaining() > 0)
@@ -308,7 +308,7 @@ void MeshScatterFromRoot::get_send_data(MeshEntityPtr el, ElementSendData& sendD
   m_entityDestinations->insert(el, 0, {destRankOnInputComm, elLocalId});
 }
 
-void MeshScatterFromRoot::get_send_data_for_destination(const ElementSendData& sendData, int rankIdx, ElementInfo& info)
+void MeshScatterFromRoot::get_send_data_for_destination(const ElementSendData& sendData, [[maybe_unused]] int rankIdx, ElementInfo& info)
 {
   assert(rankIdx == 0);
   info.edge1LocalId     = sendData.edge1LocalId;

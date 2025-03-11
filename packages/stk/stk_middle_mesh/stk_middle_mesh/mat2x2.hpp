@@ -74,7 +74,7 @@ class Mat2x2
 #endif
     }
 
-    static int extent(const int dim) { return 2; }
+    static int extent(const int /*dim*/) { return 2; }
 
     template <typename T2>
     FORCE_NOINLINE_GCC Mat2x2<T>& operator+=(const T2& val)

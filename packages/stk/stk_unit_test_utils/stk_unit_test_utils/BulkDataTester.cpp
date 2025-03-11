@@ -209,7 +209,7 @@ stk::mesh::Entity create_side_and_add_to_shared_entity_list(stk::mesh::Entity el
 }
 
 void BulkDataFaceSharingTester::connect_side_from_other_proc_to_local_elements(const stk::mesh::EntityVector& elements, const stk::mesh::EntityVector& nodes, const stk::mesh::shared_entity_type &shared_entity_other_proc,
-        stk::mesh::BulkData& bulkData, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id)
+        stk::mesh::BulkData& /*bulkData*/, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id)
 {
     for(stk::mesh::Entity element : elements)
     {

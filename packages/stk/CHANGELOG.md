@@ -1,5 +1,9 @@
 # CHANGELOG
 
+5.23.8 (STK_VERSION 5230800) 3/10/2025
+  stk_mesh: Contains reversion of bucketized NGP fields.
+  stk_topology: Fix incorrect deprecation macro.
+
 5.23.5 (STK_VERSION 5230500) 2/11/2025
   stk_mesh: fix calls to member template 'volatile_fast_shared_comm_map' to use '.template ...' syntax
   stk_util: make CommSparse work with messages > 2 GB with newer coupling versions

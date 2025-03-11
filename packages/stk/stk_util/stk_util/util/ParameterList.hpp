@@ -65,42 +65,42 @@ enum Type {
 };
 
 template <typename T>
-inline ParameterType::Type get_type(const T &value)
+inline ParameterType::Type get_type(const T & /*value*/)
 { return ParameterType::INVALID; }
 
-template <> inline ParameterType::Type get_type(const double &value)
+template <> inline ParameterType::Type get_type(const double & /*value*/)
 { return ParameterType::DOUBLE; }
 
-template <> inline ParameterType::Type get_type(const float &value)
+template <> inline ParameterType::Type get_type(const float & /*value*/)
 { return ParameterType::FLOAT; }
 
-template <> inline ParameterType::Type get_type(const int &value)
+template <> inline ParameterType::Type get_type(const int & /*value*/)
 { return ParameterType::INTEGER; }
 
-template <> inline ParameterType::Type get_type(const int64_t &value)
+template <> inline ParameterType::Type get_type(const int64_t & /*value*/)
 { return ParameterType::INT64; }
 
-template <> inline ParameterType::Type get_type(const std::string &value)
+template <> inline ParameterType::Type get_type(const std::string & /*value*/)
 { return ParameterType::STRING; }
 
 template <>
-inline ParameterType::Type get_type(const std::vector<float> &value)
+inline ParameterType::Type get_type(const std::vector<float> & /*value*/)
 { return ParameterType::FLOATVECTOR; }
 
 template <>
-inline ParameterType::Type get_type(const std::vector<double> &value)
+inline ParameterType::Type get_type(const std::vector<double> & /*value*/)
 { return ParameterType::DOUBLEVECTOR; }
 
 template <>
-inline ParameterType::Type get_type(const std::vector<int> &value)
+inline ParameterType::Type get_type(const std::vector<int> & /*value*/)
 {return ParameterType::INTEGERVECTOR; }
 
 template <>
-inline ParameterType::Type get_type(const std::vector<int64_t> &value)
+inline ParameterType::Type get_type(const std::vector<int64_t> & /*value*/)
 { return ParameterType::INT64VECTOR; }
 
 template <>
-inline ParameterType::Type get_type(const std::vector<std::string> &value)
+inline ParameterType::Type get_type(const std::vector<std::string> & /*value*/)
 { return ParameterType::STRINGVECTOR; }
 
 }

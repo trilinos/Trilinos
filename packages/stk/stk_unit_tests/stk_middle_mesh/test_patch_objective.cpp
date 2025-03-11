@@ -68,7 +68,7 @@ void test_gradient(opt::impl::PatchObjective& obj, opt::impl::ActiveVertData& ac
   EXPECT_NEAR(dqDx2, grad.y, tol);
 }
 
-void test_hessian(opt::impl::PatchObjective& obj, opt::impl::ActiveVertData& active, utils::Point& pt, const double tol)
+void test_hessian(opt::impl::PatchObjective& obj, opt::impl::ActiveVertData& active, utils::Point& pt, const double /*tol*/)
 
 {
   obj.set_active_patch(active);

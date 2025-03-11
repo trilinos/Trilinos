@@ -196,7 +196,7 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
 template <typename T>
 void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta)
 {
-  TopologyErrorHandler handler = [](stk::mesh::Part &part) { };
+  TopologyErrorHandler handler = [](stk::mesh::Part & /*part*/) { };
 
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];

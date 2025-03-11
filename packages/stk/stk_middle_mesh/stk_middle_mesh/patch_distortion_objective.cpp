@@ -29,7 +29,7 @@ utils::impl::Mat2x2<double> PatchDistortionObjective::compute_hessian(const util
 
 
 template <typename T>
-T PatchDistortionObjective::compute_qualityT(std::shared_ptr<DistortionMetric<T>> metric, const utils::PointT<T>& ptIn)
+T PatchDistortionObjective::compute_qualityT(std::shared_ptr<DistortionMetric<T>> /*metric*/, const utils::PointT<T>& ptIn)
 {
   utils::impl::Matrix<utils::PointT<T>> triPts;
   std::vector<utils::impl::Mat2x2<double>> wMats;

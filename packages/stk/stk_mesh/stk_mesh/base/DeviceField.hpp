@@ -153,7 +153,7 @@ class DeviceField : public NgpFieldBase
     set_modify_on_host();
   }
 
-  void modify_on_host(const Selector& selector) override
+  void modify_on_host(const Selector& /*selector*/) override
   {
     modify_on_host();
   }
@@ -163,7 +163,7 @@ class DeviceField : public NgpFieldBase
     set_modify_on_device();
   }
 
-  void modify_on_device(const Selector& selector) override
+  void modify_on_device(const Selector& /*selector*/) override
   {
     modify_on_device();
   }
@@ -704,7 +704,7 @@ private:
     }
   }
 
-  void copy_new_and_modified_buckets_from_host(const BucketVector& buckets, unsigned numPerEntity)
+  void copy_new_and_modified_buckets_from_host(const BucketVector& buckets, unsigned /*numPerEntity*/)
   {
     construct_bucket_views(buckets, "_bucketSizes", hostBucketScratchMemory, deviceFieldBucketsMarkedModified);
 

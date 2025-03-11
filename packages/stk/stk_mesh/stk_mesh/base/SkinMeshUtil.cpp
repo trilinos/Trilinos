@@ -91,7 +91,7 @@ void SkinMeshUtil::add_exposed_sides_due_to_air_selector(impl::LocalId local_id,
             exposedSides.push_back(exposedSide);
 }
 
-bool SkinMeshUtil::is_remote_element_air(const ParallelInfoForGraphEdges &parallelInfoForGraphEdges, const stk::mesh::GraphEdge &graphEdge)
+bool SkinMeshUtil::is_remote_element_air(const ParallelInfoForGraphEdges & /*parallelInfoForGraphEdges*/, const stk::mesh::GraphEdge &graphEdge)
 {
     return remoteAirSelector[graphEdge.elem2()];
 }
@@ -163,7 +163,7 @@ void SkinMeshUtil::get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId loc
 
 
 void SkinMeshUtil::get_sides_for_skinning(const stk::mesh::Bucket& bucket,
-                                          stk::mesh::Entity element,
+                                          stk::mesh::Entity /*element*/,
                                           stk::mesh::impl::LocalId localId,
                                           std::vector<int>& exposedSides)
 {

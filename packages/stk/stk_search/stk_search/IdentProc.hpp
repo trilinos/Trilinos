@@ -89,7 +89,7 @@ template <typename T>
 struct get_proc
 {
   KOKKOS_FORCEINLINE_FUNCTION 
-  int operator()(T const& id) const
+  int operator()(T const& /*id*/) const
   {
     std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
     std::abort();
@@ -100,7 +100,7 @@ template <typename T>
 struct get_proc<std::pair<T, int> >
 {
   KOKKOS_FORCEINLINE_FUNCTION 
-  int operator()(std::pair<T, int> const& id) const
+  int operator()(std::pair<T, int> const& /*id*/) const
   {
     std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
     std::abort();

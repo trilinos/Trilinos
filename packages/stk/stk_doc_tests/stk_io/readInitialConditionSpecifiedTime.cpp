@@ -147,7 +147,7 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionSpecifiedTime)
     // ============================================================
     //+ VERIFICATION
     stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
-      [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+      [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
       //+ The value of the "temperature" field at all nodes should be 2.0
       double *fieldDataForNode = stk::mesh::field_data(temperature, node);
       EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);

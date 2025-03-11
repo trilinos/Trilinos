@@ -78,7 +78,7 @@
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
-void set_output_streams(MPI_Comm comm)
+void set_output_streams(MPI_Comm /*comm*/)
 {
   Ioss::Utils::set_output_stream(stk::outputP0());
 }
@@ -89,6 +89,7 @@ public:
   IoMeshDriver(MPI_Comm comm)
   : m_comm(comm), m_curAvg_baseline(0), m_baselineBuffer()
   {
+    log_msg("stk_io_mesh: STK Version: "+stk::version_string());
     equilibrate_memory_baseline();
   }
 
@@ -136,7 +137,7 @@ public:
           <<std::setw(12)<<auraGlobalCounts[rank]
           <<std::endl;
       }
-      stk::log_with_time_and_memory(m_comm, os.str());
+      log_msg(os.str());
     }
 
     size_t totalEntities = 0;
@@ -146,8 +147,8 @@ public:
 
     size_t bytesPerEntity = totalEntities>0 ? totalBytes/totalEntities : 0;
     std::string bytesPerEntityStr = totalEntities>0 ? std::to_string(bytesPerEntity) : std::string("N/A");
-    stk::log_with_time_and_memory(m_comm, "Total HWM Mesh Memory: "+stk::human_bytes(totalBytes));
-    stk::log_with_time_and_memory(m_comm, "Total Mesh Entities: "+std::to_string(totalEntities)
+    log_msg("Total HWM Mesh Memory: "+stk::human_bytes(totalBytes));
+    log_msg("Total Mesh Entities: "+std::to_string(totalEntities)
                                          + ", bytes-per-entity: " + bytesPerEntityStr);
 
     for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; ++rank) {
@@ -168,7 +169,7 @@ public:
         double proportion = totalSz / globalBucketCapacity;
         os<<"; "<<(100*proportion)<<"%";
       }
-      stk::log_with_time_and_memory(m_comm, os.str());
+      log_msg(os.str());
     }
     
 #ifdef STK_MEMORY_TRACKING
@@ -176,21 +177,26 @@ public:
     size_t globalBytes = stk::get_global_sum(m_comm, localBytes);
     size_t localPtrs = stk::get_current_num_ptrs();
     size_t globalPtrs = stk::get_global_sum(m_comm, localPtrs);
-    stk::log_with_time_and_memory(m_comm, "Total tracked bytes: "+stk::human_bytes(globalBytes)+", num ptrs: "+std::to_string(globalPtrs));
+    log_msg("Total tracked bytes: "+stk::human_bytes(globalBytes)+", num ptrs: "+std::to_string(globalPtrs));
     size_t localHWMBytes = stk::get_high_water_mark_in_bytes();
     size_t globalHWMBytes = stk::get_global_sum(m_comm, localHWMBytes);
     size_t localHWMPtrs = stk::get_high_water_mark_in_ptrs();
     size_t globalHWMPtrs = stk::get_global_sum(m_comm, localHWMPtrs);
-    stk::log_with_time_and_memory(m_comm, "Total HWM tracked bytes: "+std::to_string(globalHWMBytes)+", HWM num ptrs: "+std::to_string(globalHWMPtrs));
+    log_msg("Total HWM tracked bytes: "+std::to_string(globalHWMBytes)+", HWM num ptrs: "+std::to_string(globalHWMPtrs));
 #endif
+  }
+
+  void log_msg(const std::string& msg)
+  {
+    stk::log_with_time_and_memory(m_comm, msg, stk::outputP0());
   }
 
   void mesh_read(const std::string &type,
                  const std::string &working_directory,
                  const std::string &filename,
                  stk::io::StkMeshIoBroker &ioBroker,
-                 int integer_size,
-                 stk::io::HeartbeatType hb_type,
+                 int /*integer_size*/,
+                 stk::io::HeartbeatType /*hb_type*/,
                  int interpolation_intervals)
   {
 #ifdef STK_MEMORY_TRACKING
@@ -231,39 +237,48 @@ public:
 
   void mesh_write(const std::string &type,
 		       const std::string &working_directory,
-		       const std::string &filename,
 		       stk::io::StkMeshIoBroker &ioBroker,
-		       int integer_size,
+		       int /*integer_size*/,
 		       stk::io::HeartbeatType hb_type,
 		       int interpolation_intervals)
   {
-    if (interpolation_intervals == 0)
+    if (interpolation_intervals == 0) {
       interpolation_intervals = 1;
+    }
     
-    std::string file = working_directory;
-    file += filename;
-
+    size_t results_index = 0;
+    const bool writingResultsOutput = !m_resultsOutputFileName.empty();
     // ========================================================================
-    // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
-    std::string output_filename = working_directory + type + "_mesh.out";
+    if (writingResultsOutput) {
+      std::string output_filename = working_directory + m_resultsOutputFileName;
 
-    // This call adds an output database for results data to ioBroker.
-    // No data is written at this time other than verifying that the
-    // file can be created on the disk.
-    size_t results_index = ioBroker.create_output_mesh(output_filename, stk::io::WRITE_RESULTS);
+      // This call adds an output database for results data to ioBroker.
+      // No data is written at this time other than verifying that the
+      // file can be created on the disk.
+      log_msg("Creating output mesh: "+output_filename);
+      results_index = ioBroker.create_output_mesh(output_filename, stk::io::WRITE_RESULTS);
+    }
 
-    // Create restart output ...  ("generated_mesh.restart") ("exodus_mesh.restart")
-    std::string restart_filename = working_directory + type + "_mesh.restart";
+    size_t restart_index = 0;
+    const bool writingRestartOutput = !m_restartOutputFileName.empty();
+    if (writingRestartOutput) {
+      // Create restart output ...
+      std::string restart_filename = working_directory + m_restartOutputFileName;
 
-    size_t restart_index = ioBroker.create_output_mesh(restart_filename, stk::io::WRITE_RESTART);
+      restart_index = ioBroker.create_output_mesh(restart_filename, stk::io::WRITE_RESTART);
+    }
+
+    if (!writingResultsOutput && !writingRestartOutput) {
+      return;
+    }
 
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = ioBroker.meta_data().get_fields();
     for (size_t i=0; i < fields.size(); i++) {
       const Ioss::Field::RoleType* role = stk::io::get_field_role(*fields[i]);
       if ( role && *role == Ioss::Field::TRANSIENT ) {
-	ioBroker.add_field(restart_index, *fields[i]); // restart output
-	ioBroker.add_field(results_index, *fields[i]); // results output
+        if (writingResultsOutput) ioBroker.add_field(results_index, *fields[i]); // results output
+        if (writingRestartOutput) ioBroker.add_field(restart_index, *fields[i]); // restart output
       }
     }
 
@@ -304,10 +319,14 @@ public:
       }
 
       // Define the global fields that will be written on each timestep.
-      ioBroker.add_global(restart_index, input_field.get_name(),
-			   input_field.raw_storage()->name(), input_field.get_type());
-      ioBroker.add_global(results_index, input_field.get_name(),
-			   input_field.raw_storage()->name(), input_field.get_type());
+      if (writingRestartOutput) {
+        ioBroker.add_global(restart_index, input_field.get_name(),
+                            input_field.raw_storage()->name(), input_field.get_type());
+      }
+      if (writingResultsOutput) {
+        ioBroker.add_global(results_index, input_field.get_name(),
+                            input_field.raw_storage()->name(), input_field.get_type());
+      }
       if (hb_type != stk::io::NONE) {
           stk::util::Parameter &param = parameters.get_param(input_field.get_name());
           ioBroker.add_heartbeat_global(heart, input_field.get_name(), param);
@@ -322,7 +341,7 @@ public:
     int timestep_count = io_region->get_property("state_count").get_int();
 
     if (timestep_count == 0 ) {
-      ioBroker.write_output_mesh(results_index);
+      if (writingResultsOutput) ioBroker.write_output_mesh(results_index);
     }
     else {
       for (int step=1; step <= timestep_count; step++) {
@@ -343,11 +362,11 @@ public:
 	  time = tbeg + delta * static_cast<double>(interval);
 
 	  ioBroker.read_defined_input_fields(time);
-	  ioBroker.begin_output_step(restart_index, time);
-	  ioBroker.begin_output_step(results_index, time);
+	  if (writingRestartOutput) ioBroker.begin_output_step(restart_index, time);
+	  if (writingResultsOutput) ioBroker.begin_output_step(results_index, time);
 
-	  ioBroker.write_defined_output_fields(restart_index);
-	  ioBroker.write_defined_output_fields(results_index);
+	  if (writingRestartOutput) ioBroker.write_defined_output_fields(restart_index);
+	  if (writingResultsOutput) ioBroker.write_defined_output_fields(results_index);
 
 	  // Transfer all global variables from the input mesh to the
 	  // restart and results databases
@@ -362,26 +381,26 @@ public:
 	  for (i=parameters.begin(); i != iend; ++i) {
 	    const std::string parameterName = (*i).first;
 	    stk::util::Parameter parameter = (*i).second;
-	    ioBroker.write_global(restart_index, parameterName, parameter.value, parameter.type);
-	    ioBroker.write_global(results_index, parameterName, parameter.value, parameter.type);
+	    if (writingRestartOutput) ioBroker.write_global(restart_index, parameterName, parameter.value, parameter.type);
+	    if (writingResultsOutput) ioBroker.write_global(results_index, parameterName, parameter.value, parameter.type);
 	  }
 
-	  ioBroker.end_output_step(restart_index);
-	  ioBroker.end_output_step(results_index);
+	  if (writingRestartOutput) ioBroker.end_output_step(restart_index);
+	  if (writingResultsOutput) ioBroker.end_output_step(results_index);
 
 	}
 	if (hb_type != stk::io::NONE && !global_fields.empty()) {
 	  ioBroker.process_heartbeat_output(heart, step, time);
 	}
 
-	// Flush the data.  This is not necessary in a normal
-	// application, Just being done here to verify that the
-	// function exists and does not core dump.  
-	ioBroker.flush_output();
+        // Flush the data.  This is not necessary in a normal
+        // application, Just being done here to verify that the
+        // function exists and does not core dump.  
+        ioBroker.flush_output();
       }
     }
 
-    stk::log_with_time_and_memory(m_comm, "Finished writing output mesh.");
+    log_msg("Finished writing output.");
   }
 
   void driver(const std::string &parallel_io,
@@ -403,28 +422,31 @@ public:
     builder.set_upward_connectivity(m_upwardConnectivity);
     builder.set_initial_bucket_capacity(m_initialBucketCapacity);
     builder.set_maximum_bucket_capacity(m_maximumBucketCapacity);
-    stk::log_with_time_and_memory(m_comm, "Creating MetaData/BulkData objects");
+    log_msg("Creating MetaData/BulkData objects");
     std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
 
-    stk::log_with_time_and_memory(m_comm, "Creating StkMeshIoBroker object");
+    log_msg("Creating StkMeshIoBroker object");
 
     stk::io::StkMeshIoBroker ioBroker(MPI_COMM_WORLD);
     set_io_properties(ioBroker, lower_case_variable_names, decomp_method, compose_output, parallel_io, compression_level, compression_shuffle, integer_size);
 
-    stk::log_with_time_and_memory(m_comm, "Setting memory baseline");
+    log_msg("Setting memory baseline");
     equilibrate_memory_baseline();
-    stk::log_with_time_and_memory(m_comm, "Finished setting memory baseline");
+    log_msg("Finished setting memory baseline");
 
-    stk::log_with_time_and_memory(m_comm, "Reading input mesh: "+filename);
+    log_msg("Reading input mesh: "+filename);
 
+    if (type == "exodusii" && decomp_method.empty()) {
+      stk::outputP0()<<"  Note: Decomposition not specified, defaulting to file-per-processor mode for mesh-read."<<std::endl;
+    }
     ioBroker.set_bulk_data(bulk);
     mesh_read(type, working_directory, filename, ioBroker, integer_size, hb_type, interpolation_intervals);
 
-    stk::log_with_time_and_memory(m_comm, "Finished reading input mesh");
+    log_msg("Finished reading input mesh");
 
     log_mesh_counts(*bulk);
 
-    mesh_write(type, working_directory, filename, ioBroker, integer_size, hb_type, interpolation_intervals);
+    mesh_write(type, working_directory, ioBroker, integer_size, hb_type, interpolation_intervals);
   }
 
   void set_io_properties(stk::io::StkMeshIoBroker& ioBroker,
@@ -440,9 +462,6 @@ public:
 
     if (!decomp_method.empty()) {
       ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", decomp_method));
-    }
-    else {
-      stk::outputP0()<<"decomposition not specified, defaulting to file-per-processor mode for mesh-read."<<std::endl;
     }
 
     if (compose_output) {
@@ -473,6 +492,9 @@ public:
     }
   }
 
+  void set_results_output(const std::string& resultsOutputFileName) { m_resultsOutputFileName = resultsOutputFileName; }
+  void set_restart_output(const std::string& restartOutputFileName) { m_restartOutputFileName = restartOutputFileName; }
+
   void set_add_edges(bool trueOrFalse) { m_addEdges = trueOrFalse; }
   void set_add_faces(bool trueOrFalse) { m_addFaces = trueOrFalse; }
   void set_upward_connectivity(bool trueOrFalse) { m_upwardConnectivity = trueOrFalse; }
@@ -490,6 +512,8 @@ private:
   int m_initialBucketCapacity;
   int m_maximumBucketCapacity;
   std::vector<double> m_baselineBuffer;
+  std::string m_resultsOutputFileName;
+  std::string m_restartOutputFileName;
 };
 
 int main(int argc, const char** argv)
@@ -512,6 +536,8 @@ int main(int argc, const char** argv)
   std::string heartbeat_format = "none";
   int initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity();
   int maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity();
+  std::string resultsOutputFileName = "";
+  std::string restartOutputFileName = "";
 
   MPI_Comm comm = stk::parallel_machine_init(&argc, const_cast<char***>(&argv));
 
@@ -521,7 +547,9 @@ int main(int argc, const char** argv)
   // Process the command line arguments
   stk::CommandLineParserParallel cmdLine(comm);
 
-  cmdLine.add_required<std::string>({"mesh", "m", "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'"});
+  cmdLine.add_optional<std::string>({"mesh", "m", "mesh file. Can be exodus database name or generated-mesh specification of the form 'gen:NxMxL' (See GeneratedMesh documentation for more options.)"}, "");
+  cmdLine.add_optional<std::string>({"output", "o", "results-output file."}, "");
+  cmdLine.add_optional<std::string>({"restart", "r", "restart-output file."}, "");
   cmdLine.add_optional<std::string>({"add_edges", "e", "create all internal edges in the mesh: true|false"}, "false");
   cmdLine.add_optional<std::string>({"add_faces", "f", "create all internal faces in the mesh: true|false"}, "false");
   cmdLine.add_optional<std::string>({"upward_connectivity", "u", "create upward connectivity/adjacency in the mesh (default is true): true|false"}, "true");
@@ -549,6 +577,14 @@ int main(int argc, const char** argv)
       break;
     case stk::CommandLineParser::ParseHelpOnly:
       stk::outputP0() << cmdLine.get_usage() << std::endl;
+      stk::outputP0() << "Examples:\n\n"
+                      << "Generate a 8x8x8 mesh of hex-8 elements:\n"
+                      << "$ mpiexec --np 4 stk_io_mesh --mesh gen:8x8x8 -o hex8x8x8.g\n\n"
+                      << "Use file-per-rank mode to read pre-decomposed files mesh.exo.4.0 .. mesh.exo.4.3:\n"
+                      << "$ mpiexec --np 4 stk_io_mesh --mesh mesh.exo\n\n"
+                      << "Use IOSS auto-decomp to read serial file mesh.exo:\n"
+                      << "$ mpiexec --np 4 stk_io_mesh --decomposition rib --mesh mesh.exo\n"
+                      << std::endl;
       break;
     case stk::CommandLineParser::ParseVersionOnly:
       stk::outputP0() << "STK Version: " << stk::version_string() << std::endl;
@@ -623,61 +659,86 @@ int main(int argc, const char** argv)
     maximumBucketCapacity = cmdLine.get_option_value<int>("maximum_bucket_capacity");
   }
 
-  mesh = cmdLine.get_option_value<std::string>("mesh");
-
-  type = "exodusii";
-  if (strncasecmp("gen:", mesh.c_str(), 4) == 0) {
-    mesh = mesh.substr(4, mesh.size());
-    type = "generated";
+  if (cmdLine.is_option_provided("mesh")) {
+    mesh = cmdLine.get_option_value<std::string>("mesh");
   }
-  if (strncasecmp("generated:", mesh.c_str(), 10) == 0) {
-    mesh = mesh.substr(10, mesh.size());
-    type = "generated";
-  }
-  else if (strncasecmp("dof:", mesh.c_str(), 4) == 0) {
-    mesh = mesh.substr(4, mesh.size());
-    type = "dof";
-  }
-  else if (strncasecmp("cgns:", mesh.c_str(), 5) == 0) {
-    mesh = mesh.substr(5, mesh.size());
-    type = "cgns";
-  }
-  else if (strncasecmp("pamgen:", mesh.c_str(), 7) == 0) {
-    mesh = mesh.substr(7, mesh.size());
-    type = "pamgen";
-  }
-
-  stk::io::HeartbeatType hb_type = stk::io::NONE; // Default is no heartbeat output
-  if (heartbeat_format == "none")
-    hb_type = stk::io::NONE;
-  else if (heartbeat_format == "binary")
-    hb_type = stk::io::BINARY;
-  else if (heartbeat_format == "csv")
-    hb_type = stk::io::CSV;
-  else if (heartbeat_format == "ts_csv")
-    hb_type = stk::io::TS_CSV;
-  else if (heartbeat_format == "text")
-    hb_type = stk::io::TEXT;
-  else if (heartbeat_format == "ts_text")
-    hb_type = stk::io::TS_TEXT;
-  else if (heartbeat_format == "spyhis")
-    hb_type = stk::io::SPYHIS;
 
   IoMeshDriver ioMeshDriver(comm);
 
-  ioMeshDriver.set_add_edges(addEdges);
-  ioMeshDriver.set_add_faces(addFaces);
-  ioMeshDriver.set_upward_connectivity(upwardConnectivity);
-  ioMeshDriver.set_aura_option(auraOption);
-  ioMeshDriver.set_initial_bucket_capacity(initialBucketCapacity);
-  ioMeshDriver.set_maximum_bucket_capacity(maximumBucketCapacity);
-
-  ioMeshDriver.driver(parallel_io,
-	 working_directory, mesh, type, decomp_method, compose_output, 
-	 compression_level, compression_shuffle, lc_names, integer_size, hb_type,
-	 interpolation_intervals);
+  int returnValue = 0;
+  
+  if (mesh.empty()) {
+    ioMeshDriver.log_msg("No args, doing nothing. Use --help if this was an accident.");
+  }
+  else {
+    type = "exodusii";
+    if (strncasecmp("gen:", mesh.c_str(), 4) == 0) {
+      mesh = mesh.substr(4, mesh.size());
+      type = "generated";
+    }
+    if (strncasecmp("generated:", mesh.c_str(), 10) == 0) {
+      mesh = mesh.substr(10, mesh.size());
+      type = "generated";
+    }
+    else if (strncasecmp("dof:", mesh.c_str(), 4) == 0) {
+      mesh = mesh.substr(4, mesh.size());
+      type = "dof";
+    }
+    else if (strncasecmp("cgns:", mesh.c_str(), 5) == 0) {
+      mesh = mesh.substr(5, mesh.size());
+      type = "cgns";
+    }
+    else if (strncasecmp("pamgen:", mesh.c_str(), 7) == 0) {
+      mesh = mesh.substr(7, mesh.size());
+      type = "pamgen";
+    }
+  
+    if (cmdLine.is_option_provided("output")) {
+      resultsOutputFileName = cmdLine.get_option_value<std::string>("output");
+    }
+    if (cmdLine.is_option_provided("restart")) {
+      restartOutputFileName = cmdLine.get_option_value<std::string>("restart");
+    }
+  
+    stk::io::HeartbeatType hb_type = stk::io::NONE; // Default is no heartbeat output
+    if (heartbeat_format == "none")
+      hb_type = stk::io::NONE;
+    else if (heartbeat_format == "binary")
+      hb_type = stk::io::BINARY;
+    else if (heartbeat_format == "csv")
+      hb_type = stk::io::CSV;
+    else if (heartbeat_format == "ts_csv")
+      hb_type = stk::io::TS_CSV;
+    else if (heartbeat_format == "text")
+      hb_type = stk::io::TEXT;
+    else if (heartbeat_format == "ts_text")
+      hb_type = stk::io::TS_TEXT;
+    else if (heartbeat_format == "spyhis")
+      hb_type = stk::io::SPYHIS;
+  
+    ioMeshDriver.set_results_output(resultsOutputFileName);
+    ioMeshDriver.set_restart_output(restartOutputFileName);
+  
+    ioMeshDriver.set_add_edges(addEdges);
+    ioMeshDriver.set_add_faces(addFaces);
+    ioMeshDriver.set_upward_connectivity(upwardConnectivity);
+    ioMeshDriver.set_aura_option(auraOption);
+    ioMeshDriver.set_initial_bucket_capacity(initialBucketCapacity);
+    ioMeshDriver.set_maximum_bucket_capacity(maximumBucketCapacity);
+  
+    try {
+      ioMeshDriver.driver(parallel_io,
+      working_directory, mesh, type, decomp_method, compose_output, 
+      compression_level, compression_shuffle, lc_names, integer_size, hb_type,
+      interpolation_intervals);
+    }
+    catch(std::exception& e) {
+      ioMeshDriver.log_msg(std::string(e.what()));
+      returnValue = 1;
+    }
+  }
 
   stk::parallel_machine_finalize();
-  return 0;
+  return returnValue;
 }
 

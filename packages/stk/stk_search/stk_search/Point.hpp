@@ -53,6 +53,8 @@ public:
   {
   }
 
+  Point(const Point&) = default;
+
   KOKKOS_FORCEINLINE_FUNCTION value_type const& operator[](size_t index) const
   {
     STK_NGP_ThrowAssert(index < Dim);

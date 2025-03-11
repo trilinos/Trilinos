@@ -149,7 +149,7 @@ class MeshLayersParallelNoFilterTester : public ::testing::Test
 
       MeshLayers layers(mesh);
 
-      int myRank = utils::impl::comm_rank(MPI_COMM_WORLD);
+      myRank = utils::impl::comm_rank(MPI_COMM_WORLD);
       if (myRank == 0)
         for (auto& v : mesh->get_vertices())
           if (v)
@@ -188,7 +188,7 @@ class MeshLayersParallelFilterTester : public ::testing::Test
 
       MeshLayers layers(mesh);
 
-      int myRank = utils::impl::comm_rank(MPI_COMM_WORLD);
+      myRank = utils::impl::comm_rank(MPI_COMM_WORLD);
       if (myRank == 0)
         for (auto& v : mesh->get_vertices())
           if (v)

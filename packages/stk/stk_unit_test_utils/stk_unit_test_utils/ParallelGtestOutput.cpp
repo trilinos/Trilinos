@@ -158,7 +158,7 @@ private:
         }
     }
 
-    void OnTestIterationEnd(const ::testing::UnitTest& unit_test, int iteration)
+    void OnTestIterationEnd(const ::testing::UnitTest& unit_test, int /*iteration*/)
     {
         std::vector<std::string> failedTestNames = get_failed_test_names(unit_test);
         collect_failed_test_names_from_all_procs(failedTestNames);

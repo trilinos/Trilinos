@@ -263,7 +263,9 @@ enum PackTags {
   PACK_TAG_ENTITY_GHOST
 };
 
-static bool check_tag(const BulkData& mesh, CommBuffer& buf, PackTags expected_tag, PackTags expected_tag2 = PACK_TAG_INVALID)
+static bool check_tag([[maybe_unused]] const BulkData& mesh, [[maybe_unused]] CommBuffer& buf,
+                      [[maybe_unused]] PackTags expected_tag,
+                      [[maybe_unused]] PackTags expected_tag2 = PACK_TAG_INVALID)
 {
   bool badTag = false;
 #if USE_PACK_TAGS
@@ -287,7 +289,7 @@ static bool check_tag(const BulkData& mesh, CommBuffer& buf, PackTags expected_t
   return badTag;
 }
 
-static void put_tag(CommBuffer& buf, PackTags tag)
+static void put_tag([[maybe_unused]] CommBuffer& buf, [[maybe_unused]] PackTags tag)
 {
 #if USE_PACK_TAGS
   buf.pack<int>(tag);
@@ -854,7 +856,7 @@ void check_matching_parts_across_procs(const PartVector& parts, MPI_Comm comm)
 
 void check_matching_selectors_and_parts_across_procs(const Selector& selector,
                                                      const PartVector& add_parts,
-                                                     const PartVector& remove_parts,
+                                                     const PartVector& /*remove_parts*/,
                                                      MPI_Comm comm)
 {
   PartVector selectorParts;

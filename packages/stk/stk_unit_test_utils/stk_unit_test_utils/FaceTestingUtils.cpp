@@ -263,7 +263,7 @@ namespace unit_test_util
 stk::mesh::Entity declare_element_side_with_nodes(stk::mesh::BulkData &mesh,
                                                   stk::mesh::Entity elem,
                                                   const stk::mesh::EntityVector &nodes,
-                                                  stk::mesh::EntityId globalId,
+                                                  stk::mesh::EntityId /*globalId*/,
                                                   stk::mesh::Part &part)
 {
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, mesh.mesh_meta_data().side_rank(), nodes);
