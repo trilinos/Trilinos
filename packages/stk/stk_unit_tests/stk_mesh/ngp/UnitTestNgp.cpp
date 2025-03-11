@@ -18,7 +18,7 @@ namespace {
 
 using UnsignedDualViewType = Kokkos::DualView<unsigned*, stk::ngp::ExecSpace>;
 
-void test_view_of_fields(const stk::mesh::BulkData& bulk,
+void test_view_of_fields(const stk::mesh::BulkData& /*bulk*/,
                          stk::mesh::Field<double>& field1,
                          stk::mesh::Field<double>& field2)
 {

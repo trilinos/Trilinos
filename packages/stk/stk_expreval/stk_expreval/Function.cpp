@@ -63,7 +63,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv)
+  virtual double operator()([[maybe_unused]] int argc, const double * /*argv*/)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 0 arguments"); }
@@ -90,7 +90,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv)
+  virtual double operator()([[maybe_unused]] int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 1 argument"); }
@@ -117,7 +117,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv)
+  virtual double operator()([[maybe_unused]] int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 2 arguments"); }
@@ -143,7 +143,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv)
+  virtual double operator()([[maybe_unused]] int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 3 arguments"); }
@@ -169,7 +169,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv)
+  virtual double operator()([[maybe_unused]] int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 4 arguments"); }
@@ -195,7 +195,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv)
+  virtual double operator()([[maybe_unused]] int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 5 arguments"); }
@@ -221,7 +221,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv)
+  virtual double operator()([[maybe_unused]] int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 8 arguments"); }

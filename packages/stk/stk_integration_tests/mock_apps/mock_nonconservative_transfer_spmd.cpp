@@ -338,7 +338,7 @@ std::function<double(const utils::Point&)> function_factory(const std::string& f
 {
   if (functionName == "constant")
   {
-    return [](const utils::Point& pt) { return 1; };  
+    return [](const utils::Point& /*pt*/) { return 1; };  
   } else if (functionName == "linear")
   {
     return [](const utils::Point& pt) { return pt.x + 2*pt.y + 3*pt.z; };

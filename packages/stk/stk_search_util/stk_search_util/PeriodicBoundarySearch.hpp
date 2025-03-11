@@ -616,7 +616,7 @@ private:
 
   void rotate_coordinates(
       SphereIdVector & side_1_vector,
-      SphereIdVector & side_2_vector,
+      SphereIdVector & /*side_2_vector*/,
       const matrix3x3 & rotation) const
   {
     for (auto && side_1 : side_1_vector)
@@ -629,7 +629,7 @@ private:
 
   void apply_affine_to_coordinates(
       SphereIdVector & side_1_vector,
-      SphereIdVector & side_2_vector,
+      SphereIdVector & /*side_2_vector*/,
       const matrix3x3 & rotation,
       const std::vector<double> & translation) const
   {

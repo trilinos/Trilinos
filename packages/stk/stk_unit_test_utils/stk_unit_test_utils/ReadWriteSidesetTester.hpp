@@ -115,7 +115,7 @@ class BulkDataTester : public stk::mesh::BulkData
 {
 public:
   BulkDataTester(stk::mesh::MetaData & mesh_meta_data, stk::ParallelMachine parallel)
-    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), parallel, stk::mesh::BulkData::AUTO_AURA)
+    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}), parallel, stk::mesh::BulkData::AUTO_AURA)
   {
   }
 };

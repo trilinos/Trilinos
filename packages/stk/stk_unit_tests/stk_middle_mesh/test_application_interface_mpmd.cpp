@@ -22,7 +22,7 @@ class XiCoordinatesForTest : public stk::middle_mesh::XiCoordinates
         throw std::runtime_error("only triangles and quads supported");
     }
 
-    std::pair<double, double> get_xi_coord_range(stk::middle_mesh::mesh::MeshEntityType type) override { return std::make_pair(0, 2); }
+    std::pair<double, double> get_xi_coord_range(stk::middle_mesh::mesh::MeshEntityType /*type*/) override { return std::make_pair(0, 2); }
 
   private:
     std::vector<stk::middle_mesh::utils::Point> m_triangleXiCoords = {Point(0.1, 0.2), Point(1.5, 0.3)};
@@ -163,15 +163,15 @@ class ApplicationInterfaceMPMDTester : public ::testing::Test
       }
     }
 
-    void test_xi_points(std::shared_ptr<stk::middle_mesh::mesh::Mesh> inputMesh, 
-                        std::shared_ptr<stk::middle_mesh::mesh::Mesh> middleGrid,
+    void test_xi_points(std::shared_ptr<stk::middle_mesh::mesh::Mesh> /*inputMeshArg*/, 
+                        std::shared_ptr<stk::middle_mesh::mesh::Mesh> middleGridArg,
                         stk::middle_mesh::mesh::FieldPtr<stk::middle_mesh::utils::Point> xiCoordsOnInputMeshPtr,
                         stk::middle_mesh::mesh::FieldPtr<stk::middle_mesh::mesh::MeshEntityPtr> meshInToInputMeshPtr,
                         std::shared_ptr<stk::middle_mesh::XiCoordinates> xiCoords)
     {
       auto& xiCoordsOnInputMesh = *xiCoordsOnInputMeshPtr;
       auto& meshInToInputMesh   = *meshInToInputMeshPtr;
-      for (auto& elMiddle : middleGrid->get_elements())
+      for (auto& elMiddle : middleGridArg->get_elements())
         if (elMiddle)
         {
           stk::middle_mesh::mesh::MeshEntityPtr elInput = meshInToInputMesh(elMiddle, 0, 0);

@@ -119,7 +119,7 @@ TEST(StkMeshIoBrokerHowTo, replaceBulkData)
     stk::mesh::MetaData &md = stkIo.meta_data();
     md.set_mesh_bulk_data(nullptr);
 
-    auto bd = stk::mesh::MeshBuilder(parallel).create(std::shared_ptr<stk::mesh::MetaData>(&md, [](auto pointerWeWontDelete){}));
+    auto bd = stk::mesh::MeshBuilder(parallel).create(std::shared_ptr<stk::mesh::MetaData>(&md, [](auto /*pointerWeWontDelete*/){}));
     stkIo.replace_bulk_data(*bd);
 
     // ============================================================

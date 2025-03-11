@@ -36,14 +36,13 @@
 #include "stk_util/environment/memory_util.hpp"  // for get_gpu_memory_info
 #include <Kokkos_Core.hpp>
 #include <cstddef>                               // for size_t
+#include "stk_util/ngp/NgpSpaces.hpp"
 
-#ifdef __CUDACC__
+#if defined (KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP)
 TEST(GPUMemoryInfo, singleAllocationOnGPU)
 {
   size_t initialUsed, initialFree, initialTotal;
   size_t finalUsed, finalFree, finalTotal;
-
-  cudaSetDevice(0);
 
   stk::get_gpu_memory_info(initialUsed, initialFree);
   initialTotal = initialUsed + initialFree;
@@ -52,9 +51,9 @@ TEST(GPUMemoryInfo, singleAllocationOnGPU)
   void* allocatedMemory = nullptr;
 
   do {
-    Kokkos::kokkos_free<Kokkos::CudaSpace>(allocatedMemory);
+    Kokkos::kokkos_free<stk::ngp::MemSpace>(allocatedMemory);
     allocationSize *= 10;
-    allocatedMemory = Kokkos::kokkos_malloc<Kokkos::CudaSpace>(allocationSize);
+    allocatedMemory = Kokkos::kokkos_malloc<stk::ngp::MemSpace>(allocationSize);
 
     stk::get_gpu_memory_info(finalUsed, finalFree);
     finalTotal = finalUsed + finalFree;
@@ -68,7 +67,7 @@ TEST(GPUMemoryInfo, singleAllocationOnGPU)
   EXPECT_EQ(initialTotal, finalTotal);
   EXPECT_EQ(finalUsed - initialUsed, initialFree - finalFree);
 
-  Kokkos::kokkos_free<Kokkos::CudaSpace>(allocatedMemory);
+  Kokkos::kokkos_free<stk::ngp::MemSpace>(allocatedMemory);
 }
 #else
 TEST(GPUMemoryInfo, alwaysZeroOnCPU)

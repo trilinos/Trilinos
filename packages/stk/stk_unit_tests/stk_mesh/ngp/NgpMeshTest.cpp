@@ -71,7 +71,7 @@ public:
 
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-                         KOKKOS_LAMBDA(const int i)
+                         KOKKOS_LAMBDA(const int /*i*/)
                          {
                            stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, stk::mesh::FastMeshIndex{0,0});
                            numNodesVec.device_get(0) = nodes.size();
@@ -90,7 +90,7 @@ public:
 
     stk::mesh::NgpMeshT<NgpMemSpace> & ngpMesh = stk::mesh::get_updated_ngp_mesh<NgpMemSpace>(get_bulk());
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-                         KOKKOS_LAMBDA(const int i)
+                         KOKKOS_LAMBDA(const int /*i*/)
                          {
                            stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, stk::mesh::FastMeshIndex{0,0});
                            numNodesVec.device_get(0) = nodes.size();
@@ -261,7 +261,7 @@ TEST(StkVectorGpuTest, gpu_runs)
 
 void check_volatile_fast_shared_comm_map_values_on_device(const stk::mesh::NgpMesh & ngpMesh, int proc, const stk::mesh::DeviceCommMapIndices & deviceCommMapIndicesGold)
 {
-  auto test = KOKKOS_LAMBDA(size_t i)
+  auto test = KOKKOS_LAMBDA(size_t /*i*/)
               {
                 stk::mesh::DeviceCommMapIndices deviceCommMapIndices = ngpMesh.volatile_fast_shared_comm_map(stk::topology::NODE_RANK, proc);
 
@@ -381,7 +381,7 @@ double reduce_on_host(stk::mesh::BulkData& bulk)
     stk::topology::NODE_RANK,
     !stk::mesh::Selector(),
     max_reduction,
-    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex i, double& thread_value) {
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex /*i*/, double& thread_value) {
       max_reduction.join(thread_value, 1.0);
     });
 

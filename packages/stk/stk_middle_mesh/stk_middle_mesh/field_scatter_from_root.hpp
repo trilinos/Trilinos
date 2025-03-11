@@ -102,7 +102,7 @@ class FieldScatterFromRoot
 
       exchanger.start_nonblocking();
 
-      auto f = [&](int rank, stk::CommBuffer& buf)
+      auto f = [&](int /*rank*/, stk::CommBuffer& buf)
       { 
         unpack_data(buf);
       };

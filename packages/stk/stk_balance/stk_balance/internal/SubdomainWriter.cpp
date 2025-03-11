@@ -106,7 +106,7 @@ SubdomainWriter::add_global_variables()
   std::vector<std::string> globalVariableNames;
   m_inputBroker.get_global_variable_names(globalVariableNames);
   
-  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto pointerWeWontDelete){});
+  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto /*pointerWeWontDelete*/){});
 
   for (const std::string& globalVariableName : globalVariableNames) {
     size_t length = m_inputBroker.get_global_variable_length(globalVariableName);
@@ -134,7 +134,7 @@ SubdomainWriter::write_global_variables(int step)
   std::vector<std::string> globalVariableNames;
   m_inputBroker.get_global_variable_names(globalVariableNames);
 
-  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto pointerWeWontDelete){});
+  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto /*pointerWeWontDelete*/){});
 
   std::vector<double> globalVariable;
   for (const std::string& globalVariableName : globalVariableNames) {

@@ -9,7 +9,7 @@
 namespace stk {
 namespace mesh {
 
-void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk, stk::mesh::Entity connectedEntity, stk::mesh::EntityRank conRank)
+void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk, stk::mesh::Entity connectedEntity, stk::mesh::EntityRank /*conRank*/)
 {
   EntityVector scratchSpace;
   impl::destroy_upward_connected_aura_entities(bulk, connectedEntity, scratchSpace);

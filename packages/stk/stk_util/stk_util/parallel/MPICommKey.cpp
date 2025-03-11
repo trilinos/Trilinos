@@ -26,7 +26,7 @@ bool CommCompare::operator()(MPI_Comm comm1, MPI_Comm comm2) const
 
 namespace impl {
 
-int delete_mpi_comm_key(MPI_Comm comm, int comm_keyval, void* attribute_val, void* extra_state)
+int delete_mpi_comm_key(MPI_Comm comm, int /*comm_keyval*/, void* /*attribute_val*/, void* extra_state)
 {
   MPIKeyManager* key_manager = reinterpret_cast<MPIKeyManager*>(extra_state);
   key_manager->free_comm(comm);

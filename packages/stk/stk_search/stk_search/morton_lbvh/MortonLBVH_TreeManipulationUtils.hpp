@@ -409,7 +409,7 @@ SortByCodeIdPair<TreeType, ExecutionSpace>::SortByCodeIdPair(const TreeType &tre
 
 template <typename TreeType, typename ExecutionSpace>
 void SortByCodeIdPair<TreeType, ExecutionSpace>::apply(const TreeType &tree,
-                                                       bool reallyEncode)
+                                                       bool /*reallyEncode*/)
 {
   SortByCodeIdPair tmp(tree);
   std::sort(tmp.m_buffer.begin(), tmp.m_buffer.end());

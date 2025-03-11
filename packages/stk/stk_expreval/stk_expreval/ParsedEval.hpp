@@ -83,12 +83,6 @@ public:
 
   virtual int get_result_buffer_size() override { return RESULT_BUFFER_SIZE; }
 
-  STK_DEPRECATED_MSG("check_for_errors is now called by the constructor.  No need to call it yourself")
-  void check_for_errors(bool /*will_run_on_device*/) const override
-  {
-    check_for_errors();
-  }
-
 
   KOKKOS_INLINE_FUNCTION
   int get_num_variables() const { return m_numVariables; }

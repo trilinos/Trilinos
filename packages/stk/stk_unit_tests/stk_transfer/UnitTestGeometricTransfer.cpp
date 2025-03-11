@@ -44,7 +44,7 @@ public:
   typedef TrivialTestKey Key;
   typedef stk::search::IdentProc<Key, int> EntityProc;
   typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
-  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  void bounding_boxes(std::vector<BoundingBox>& /*boxes*/) const
   { /* empty to test coarse_search_impl with empty domain */ }
 };
 
@@ -257,7 +257,7 @@ public:
     }
   }
 
-  void get_to_points_coordinates(const EntityProcVec &to_entity_keys, ToPointsContainer &to_points)
+  void get_to_points_coordinates(const EntityProcVec & /*to_entity_keys*/, ToPointsContainer &to_points)
   {
     to_points.push_back(get_point());
   }
@@ -271,7 +271,7 @@ public:
   using MeshB = SinglePointMockMeshB;
   static unsigned filterSize;
   static int fromCount;
-  static void filter_to_nearest(EntityKeyMap & local_range_to_domain, const MeshA & mesha, const MeshB & meshb)
+  static void filter_to_nearest(EntityKeyMap & /*local_range_to_domain*/, const MeshA & /*mesha*/, const MeshB & /*meshb*/)
   {
     //no filtering needed since map is one-to-one
   }
@@ -284,8 +284,8 @@ public:
 
   //Specific to single point case right now
   void obtain_parametric_coords(typename MeshA::EntityProcVec entities_to_copy_from,
-      MeshA &FromElem,
-      const typename MeshB::ToPointsContainer & to_points_on_from_mesh,
+      MeshA & /*FromElem*/,
+      const typename MeshB::ToPointsContainer & /*to_points_on_from_mesh*/,
       typename MeshB::ToPointsDistanceContainer & to_points_distance_on_from_mesh)
   {
     for (unsigned i = 0; i < entities_to_copy_from.size(); ++i)
@@ -302,7 +302,7 @@ public:
     fromCount = from_count;
   }
 
-  static void apply(const MeshB & meshb, const MeshA & mesha, EntityKeyMap & local_range_to_domain)
+  static void apply(const MeshB & meshb, const MeshA & /*mesha*/, EntityKeyMap & local_range_to_domain)
   {
     if (stk::parallel_machine_rank(meshb.m_comm) == meshb.owning_rank())
     {
@@ -567,14 +567,14 @@ public:
   using MeshA = TwoElemMockMeshA;
   using MeshB = TwoPointMockMeshB;
 
-  static void filter_to_nearest(EntityKeyMap & local_range_to_domain, const MeshA & mesha, const MeshB & meshb)
+  static void filter_to_nearest(EntityKeyMap & /*local_range_to_domain*/, const MeshA & /*mesha*/, const MeshB & /*meshb*/)
   {
     //don't need to filter in this case
   }
 
   void obtain_parametric_coords(typename MeshA::EntityProcVec entities_to_copy_from,
-      MeshA &FromElem,
-      const typename MeshB::ToPointsContainer & to_points_on_from_mesh,
+      MeshA & /*FromElem*/,
+      const typename MeshB::ToPointsContainer & /*to_points_on_from_mesh*/,
       typename MeshB::ToPointsDistanceContainer & to_points_distance_on_from_mesh)
   {
     for (unsigned i = 0; i < entities_to_copy_from.size(); ++i)
@@ -583,11 +583,11 @@ public:
     }
   }
 
-  void mask_parametric_coords(const std::vector<int> & filter_mask_from, int from_count)
+  void mask_parametric_coords(const std::vector<int> & /*filter_mask_from*/, int /*from_count*/)
   {
   }
 
-  static void apply(const MeshB & meshb, const MeshA & mesha, EntityKeyMap & local_range_to_domain)
+  static void apply(const MeshB & meshb, const MeshA & /*mesha*/, EntityKeyMap & local_range_to_domain)
   {
     const int localRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
     const unsigned numLocallyOwned = count_locally_owned(localRank, meshb.owning_ranks());
@@ -608,7 +608,7 @@ public:
       MeshA * FromElem,
       const typename MeshB::EntityProcVec & to_entity_keys_masked,
       const typename MeshA::EntityProcVec & from_entity_keys_masked,
-      const ReducedDependencyCommData & comm_data)
+      const ReducedDependencyCommData & /*comm_data*/)
   {
     if (FromElem)
     {
@@ -678,7 +678,7 @@ public:
   //Specific to single point case right now
   void obtain_parametric_coords(typename MeshA::EntityProcVec entities_to_copy_from,
       MeshA &FromElem,
-      const typename MeshB::ToPointsContainer & to_points_on_from_mesh,
+      const typename MeshB::ToPointsContainer & /*to_points_on_from_mesh*/,
       typename MeshB::ToPointsDistanceContainer & to_points_distance_on_from_mesh)
   {
     for (unsigned i = 0; i < entities_to_copy_from.size(); ++i)
@@ -691,7 +691,7 @@ public:
     }
   }
 
-  void mask_parametric_coords(const std::vector<int> & filter_mask_from, int from_count)
+  void mask_parametric_coords(const std::vector<int> & /*filter_mask_from*/, int /*from_count*/)
   {
   }
 
@@ -722,7 +722,7 @@ public:
       MeshA * FromElem,
       const typename MeshB::EntityProcVec & to_entity_keys_masked,
       const typename MeshA::EntityProcVec & from_entity_keys_masked,
-      const ReducedDependencyCommData & comm_data)
+      const ReducedDependencyCommData & /*comm_data*/)
   {
     if (FromElem)
     {

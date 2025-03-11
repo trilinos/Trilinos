@@ -228,9 +228,9 @@ public:
 
     virtual ~FieldVertexWeightSettings() = default;
 
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override { return 1.0; }
+    virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const override { return 1.0; }
 
-    virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+    virtual int getGraphVertexWeight(stk::topology /*type*/) const override { return 1; }
     virtual double getImbalanceTolerance() const override { return 1.0001; }
     virtual std::string getDecompMethod() const override { return "rcb"; }
 

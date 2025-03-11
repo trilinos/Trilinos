@@ -109,7 +109,7 @@ class FieldSharedReduction
     void unpack_buffers(int dim, Exchanger<int>& indexExchanger, Exchanger<T>& exchanger)
     {
 
-      auto f = [&](int rank, const std::vector<int>& buf) {};
+      auto f = [&](int /*rank*/, const std::vector<int>& /*buf*/) {};
       indexExchanger.complete_receives(f);
 
       auto unpackData = [&](int rank, const std::vector<T>& buf)
@@ -120,7 +120,7 @@ class FieldSharedReduction
       exchanger.complete_receives(unpackData);
     }
 
-    void unpack_buffer(int dim, int rank, const std::vector<T>& buf, const std::vector<int>& indices)
+    void unpack_buffer(int dim, int /*rank*/, const std::vector<T>& buf, const std::vector<int>& indices)
     {
       FieldShape fshape = m_field->get_field_shape();
       assert(buf.size() == fshape.count[dim] * m_field->get_num_comp() * indices.size());

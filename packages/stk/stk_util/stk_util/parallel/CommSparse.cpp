@@ -348,7 +348,7 @@ bool CommSparse::communicate(bool deallocateSendBuffers)
     if (m_exchanger) 
     {
         auto noExtraWork = [](){};
-        auto noUnpacker = [](int rank, stk::CommBuffer& buf) {};
+        auto noUnpacker = [](int /*rank*/, stk::CommBuffer& /*buf*/) {};
         communicate_with_extra_work_and_unpacker(noExtraWork, noUnpacker, false);
     }
   } else {

@@ -427,7 +427,7 @@ std::pair<int, int> get_comm_sizes_on_root(MPI_Comm comm1, MPI_Comm comm2, MPI_C
 }
 
 int ApplicationInterfaceFakeParallelImpl::decide_root_rank(MPI_Comm unionComm, std::shared_ptr<mesh::Mesh> mesh1,
-                                                           std::shared_ptr<mesh::Mesh> mesh2)
+                                                           std::shared_ptr<mesh::Mesh> /*mesh2*/)
 {
   int val = -1;
   if (mesh1 && utils::impl::comm_rank(mesh1->get_comm()) == 0)

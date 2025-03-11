@@ -465,7 +465,7 @@ public:
     EXPECT_EQ(expectedBucketCount, bucketCount);
   }
 
-  void test_partitions_equality(stk::mesh::EntityRank rank, stk::mesh::Bucket const* bucket1, stk::mesh::Bucket const* bucket2)
+  void test_partitions_equality(stk::mesh::EntityRank /*rank*/, stk::mesh::Bucket const* bucket1, stk::mesh::Bucket const* bucket2)
   {
     stk::mesh::impl::Partition* partition1 = bucket1->getPartition();
     stk::mesh::impl::Partition* partition2 = bucket2->getPartition();

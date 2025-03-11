@@ -19,7 +19,7 @@ namespace stk
 namespace unit_test_util
 {
 
-size_t write_mesh_data__field_1__field_2__field_3(const std::string & filename, MPI_Comm communicator, stk::mesh::BulkData & bulk, stk::io::StkMeshIoBroker & stkIo)
+size_t write_mesh_data__field_1__field_2__field_3(const std::string & filename, MPI_Comm /*communicator*/, stk::mesh::BulkData & bulk, stk::io::StkMeshIoBroker & stkIo)
 {
     stkIo.set_bulk_data(bulk);
     size_t index = stkIo.add_mesh_database("generated:1x1x4", stk::io::READ_MESH);

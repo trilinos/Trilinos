@@ -108,7 +108,7 @@ class FieldRepository {
         const char     * arg_method,
         FieldBase      & arg_field ,
         const Part     & arg_part ,
-        const PartVector & arg_all_parts,
+        const PartVector & /*arg_all_parts*/,
         const unsigned   arg_num_scalars_per_entity ,
         const unsigned   arg_first_dimension ,
         const void     * arg_init_value = NULL)
@@ -120,7 +120,7 @@ class FieldRepository {
         const char     * arg_method,
         FieldBase      & arg_field ,
         const Selector & arg_selector ,
-        const PartVector & arg_all_parts,
+        const PartVector & /*arg_all_parts*/,
         const unsigned   arg_num_scalars_per_entity ,
         const unsigned   arg_first_dimension ,
         const void     * arg_init_value = NULL)

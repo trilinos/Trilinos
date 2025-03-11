@@ -63,7 +63,7 @@ class DistortionMetric
 
     // forward mode differentiation of computeW
     template <typename T1, typename T2>
-    static utils::impl::Mat2x2<DotVec<std::common_type_t<T1, T2>>> compute_w_dot(const TriPts<T1>& pts, const PtsDot<T2>& ptsDot)
+    static utils::impl::Mat2x2<DotVec<std::common_type_t<T1, T2>>> compute_w_dot(const TriPts<T1>& /*pts*/, const PtsDot<T2>& ptsDot)
     {
       // return utils::impl::Mat2x2<double>{pts[1].x - pts[0].x, pts[2].x - pts[0].x,
       //                       pts[1].y - pts[0].y, pts[2].y - pts[0].y};
@@ -92,7 +92,7 @@ class DistortionMetric
     // reverse-mode algorithmic differentiation version of computeW
     // pts_bar gets overwritten with the result
     template<typename T1, typename T2>
-    static void compute_w_rev(const TriPts<T1>& pts, TriPts<std::common_type_t<T1, T2>>& ptsBar,
+    static void compute_w_rev(const TriPts<T1>& /*pts*/, TriPts<std::common_type_t<T1, T2>>& ptsBar,
                               const utils::impl::Mat2x2<T2>& wBar)
     {
       // return utils::impl::Mat2x2<double>{pts[1].x - pts[0].x, pts[2].x - pts[0].x,
@@ -109,7 +109,7 @@ class DistortionMetric
 
     // forward over reverse mode algorithmic differentiation
     template <typename T1, typename T2>
-    static void compute_w_rev_dot(const TriPts<T1>& pts, const utils::impl::Mat2x2<DotVec<T2>> wBarDot,
+    static void compute_w_rev_dot(const TriPts<T1>& /*pts*/, const utils::impl::Mat2x2<DotVec<T2>> wBarDot,
                                   PtsDot<std::common_type_t<T1, T1>>& ptsBarDot)
     {
       // return utils::impl::Mat2x2<double>{pts[1].x - pts[0].x, pts[2].x - pts[0].x,

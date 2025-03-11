@@ -264,7 +264,7 @@ public:
     }
 
 protected:
-    virtual bool do_printing_for_part(stk::mesh::Part &part) const
+    virtual bool do_printing_for_part(stk::mesh::Part & /*part*/) const
     {
         return true;
     }

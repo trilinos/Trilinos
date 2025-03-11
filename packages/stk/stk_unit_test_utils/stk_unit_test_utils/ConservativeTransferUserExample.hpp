@@ -26,7 +26,7 @@ class XiCoordinatesFE : public XiCoordinates
         return m_quadIntegrationPoints;
     }
 
-    std::pair<double, double> get_xi_coord_range(mesh::MeshEntityType type) override { return std::make_pair(0.0, 1.0); }
+    std::pair<double, double> get_xi_coord_range(mesh::MeshEntityType /*type*/) override { return std::make_pair(0.0, 1.0); }
 
   private:
     std::vector<utils::Point> m_triangleIntegrationPoints;
@@ -53,13 +53,13 @@ class FiniteElement
         throw std::runtime_error("unsupported element type");
     };
 
-    const std::vector<utils::Point>& get_quad_points(mesh::MeshEntityType type) const
+    const std::vector<utils::Point>& get_quad_points([[maybe_unused]] mesh::MeshEntityType type) const
     {
       assert(type == mesh::MeshEntityType::Triangle);
       return m_quadPts;
     }
 
-    const std::vector<double>& get_quad_weights(mesh::MeshEntityType type) const
+    const std::vector<double>& get_quad_weights([[maybe_unused]] mesh::MeshEntityType type) const
     {
       assert(type == mesh::MeshEntityType::Triangle);
       return m_quadWeights;

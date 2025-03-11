@@ -23,7 +23,7 @@ class MiddleGridConstraintGeneratorParallelTester : public ::testing::Test
 
     using BoundingBoxSearch = search::ElementToElementBoundingBoxSearch;
 
-    void setup_spmd(const mesh::impl::MeshSpec& spec1, const mesh::impl::MeshSpec& spec2)
+    void setup_spmd(const mesh::impl::MeshSpec& spec1, const mesh::impl::MeshSpec& /*spec2*/)
     {
       auto f = [](const utils::Point& pt) { return pt; };
 
