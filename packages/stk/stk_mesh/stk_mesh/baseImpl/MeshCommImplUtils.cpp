@@ -358,7 +358,7 @@ void communicate_shared_entity_info(const BulkData &mesh,
   });
 }
 
-void communicateSharingInfoToProcsThatShareEntity(const int numProcs, const int myProcId, stk::CommSparse& commStage2, stk::mesh::EntityToDependentProcessorsMap &entityKeySharing)
+void communicateSharingInfoToProcsThatShareEntity(const int /*numProcs*/, const int myProcId, stk::CommSparse& commStage2, stk::mesh::EntityToDependentProcessorsMap &entityKeySharing)
 {
     for(int phase = 0; phase < 2; ++phase)
     {    

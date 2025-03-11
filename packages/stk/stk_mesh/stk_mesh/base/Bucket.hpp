@@ -91,11 +91,6 @@ std::ostream & operator << ( std::ostream & , const Bucket & );
 std::ostream &
 print( std::ostream & , const std::string & indent , const Bucket & );
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Jan 1, 2025
-// The part count and parts are equal
-STK_DEPRECATED bool raw_part_equal( const unsigned * lhs , const unsigned * rhs );
-#endif
-
 #define CONNECTIVITY_TYPE_SWITCH(entity_kind, fixed_func_sig, dynamic_func_sig, check_invalid) \
   switch(entity_kind) {                                                 \
   case FIXED_CONNECTIVITY:                                              \
@@ -360,13 +355,6 @@ public:
     return get_connected_entities(offsetIntoBucket, stk::topology::ELEM_RANK);
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2024/06/26
-  STK_DEPRECATED
-  stk::mesh::Entity host_get_entity(unsigned offsetIntoBucket) const {
-    return (*this)[offsetIntoBucket];
-  }
-#endif
-
   void set_ngp_field_bucket_id(unsigned fieldOrdinal, unsigned ngpFieldBucketId);
   unsigned get_ngp_field_bucket_id(unsigned fieldOrdinal) const;
   unsigned get_ngp_field_bucket_is_modified(unsigned fieldOrdinal) const;
@@ -469,25 +457,16 @@ private:
   void remove_entity();
 
   // Copy an existing entity to the end of this bucket
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 15 2025
-  STK_DEPRECATED void copy_entity(Entity entity);
-#endif
   void copy_entity(const Bucket* fromBucket, unsigned fromOrdinal);
 
   // overwrites existing entity at ordinal with entity
   // bucket[to_ordinal] = entity;
   // whatever was there before is lost
   //  With optional fields argument only copy listed fields
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 15 2025
-  STK_DEPRECATED void overwrite_entity(unsigned to_ordinal, Entity entity, const std::vector<FieldBase*>* fields = nullptr);
-#endif
   void overwrite_entity(unsigned to_ordinal, const Bucket* fromBucket, unsigned fromOrdinal, const std::vector<FieldBase*>* fields = nullptr);
 
   void initialize_slot(unsigned ordinal, Entity entity);
   //  Optional fields argument, only copy listed fields
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 15 2025
-  STK_DEPRECATED void reset_entity_location(Entity entity, unsigned to_ordinal, const std::vector<FieldBase*>* fields = nullptr);
-#endif
   void reset_entity_location(unsigned to_ordinal, const Bucket* fromBucket, unsigned fromOrdinal, const std::vector<FieldBase*>* fields = nullptr);
 
   unsigned get_others_begin_index(unsigned bucket_ordinal, EntityRank rank) const;
@@ -500,7 +479,7 @@ private:
   template <typename T>
   void process_all_connectivity(T& callable, Bucket* other_bucket = nullptr);
 
-  void check_for_invalid_connectivity_request(ConnectivityType const* type) const
+  void check_for_invalid_connectivity_request([[maybe_unused]] ConnectivityType const* type) const
   {
 #ifndef NDEBUG
     debug_check_for_invalid_connectivity_request(type);
@@ -606,17 +585,6 @@ bool has_superset( const Bucket & bucket ,  const Part & p )
  *          \ref stk::mesh::Part "parts"
  */
 bool has_superset( const Bucket & bucket , const PartVector & parts );
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Jan 1 2025
-struct STK_DEPRECATED BucketLess {
-  bool operator()( const Bucket * lhs_bucket , const OrdinalVector& rhs ) const ;
-  bool operator()( const OrdinalVector& lhs , const Bucket * rhs_bucket ) const ;
-};
-
-STK_DEPRECATED inline BucketVector::iterator
-lower_bound( BucketVector & v , const OrdinalVector& key )
-{ return std::lower_bound( v.begin() , v.end() , key , BucketLess() ); }
-#endif
 
 struct BucketIdComparator
 {

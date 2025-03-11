@@ -50,7 +50,7 @@ template <typename DomainIdentifier, typename RangeIdentifier, typename DomainOb
 inline void local_coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
                                  std::vector< std::pair<RangeObjType,  RangeIdentifier > > const & local_range,
                                  std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
-                                 bool enforceSearchResultSymmetry = true,
+                                 [[maybe_unused]] bool enforceSearchResultSymmetry = true,
                                  bool sortSearchResults = false)
 {
 
@@ -132,7 +132,7 @@ template <typename DomainIdentifier, typename RangeIdentifier, typename DomainOb
 inline void local_coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
                                  std::vector< std::pair<stk::search::Box<RBoxNumType>,  RangeIdentifier > > const & local_range,
                                  std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
-                                 bool enforceSearchResultSymmetry = true,
+                                 [[maybe_unused]] bool enforceSearchResultSymmetry = true,
                                  bool sortSearchResults = false)
 {
   searchResults.clear();

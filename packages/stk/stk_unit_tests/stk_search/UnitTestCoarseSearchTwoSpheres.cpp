@@ -87,7 +87,7 @@ void device_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const doub
 
   if (procId == 0) {
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(const unsigned & i) {
+      KOKKOS_LAMBDA(const unsigned & /*i*/) {
         domain[0] =
             stk::unit_test_util::device_generateBoxIdentProc<Sphere, IdentProc>(0, 0, 0, radius, 1, procId);
     });
@@ -95,7 +95,7 @@ void device_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const doub
 
   if (procId == numProcs - 1) {
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(const unsigned & i) {
+      KOKKOS_LAMBDA(const unsigned & /*i*/) {
         const double axisOffset = distanceBetweenSphereCenters / sqrt(2.0);
         range[0] =
             stk::unit_test_util::device_generateBoxIdentProc<Sphere, IdentProc>(axisOffset, axisOffset, 0,
@@ -277,7 +277,7 @@ void device_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod, cons
   auto range = Kokkos::View<SphereIdent*, stk::ngp::ExecSpace>("range box-ident", 1);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA(const unsigned & i) {
+    KOKKOS_LAMBDA(const unsigned & /*i*/) {
       domain[0] =
           stk::unit_test_util::device_generateBoxIdent<Sphere, Ident>(0, 0, 0, radius, 1);
 

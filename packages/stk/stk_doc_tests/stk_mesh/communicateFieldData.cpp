@@ -66,14 +66,14 @@ TEST_F(ParallelHowTo, communicateFieldDataForSharedAndAura)
 
   stk::mesh::Selector notOwned = !get_meta().locally_owned_part();
   stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK, notOwned,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
       *stk::mesh::field_data(field, node) = -1.2345;
     });
 
   stk::mesh::communicate_field_data(get_bulk(), {&field});
 
   stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK, notOwned,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
       EXPECT_EQ(initialValue, *stk::mesh::field_data(field, node));
     });
 }
@@ -85,7 +85,7 @@ void expect_nodal_field_has_value(const stk::mesh::Selector& selector,
                                   const double value)
 {
   stk::mesh::for_each_entity_run(field.get_mesh(), stk::topology::NODE_RANK, selector,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
       EXPECT_EQ(value, *stk::mesh::field_data(field, node));
     });
 }

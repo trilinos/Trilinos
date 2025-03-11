@@ -863,18 +863,18 @@ void testOwningProcHasOneNodeGhosted(stk::unit_test_util::BulkDataTester &stkMes
 }
 
 void testReceivingProcHasNoGhosts(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
-                                  stk::mesh::Ghosting &ghosting1,
-                                  stk::mesh::Ghosting &ghosting2,
-                                  int nodeIdToGhost, int owningProc)
+                                  stk::mesh::Ghosting & /*ghosting1*/,
+                                  stk::mesh::Ghosting & /*ghosting2*/,
+                                  int nodeIdToGhost, int /*owningProc*/)
 {
   stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
   EXPECT_FALSE(stkMeshBulkData.is_valid(ghostedNode));
 }
 
 void testOwningProcHasNoGhosts(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
-                               stk::mesh::Ghosting &ghosting1,
-                               stk::mesh::Ghosting &ghosting2,
-                               int nodeIdToGhost, int ghostReceivingProc)
+                               stk::mesh::Ghosting & /*ghosting1*/,
+                               stk::mesh::Ghosting & /*ghosting2*/,
+                               int nodeIdToGhost, int /*ghostReceivingProc*/)
 {
   stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
   stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.my_internal_entity_comm_map(stkMeshBulkData.entity_key(ghostedNode));
@@ -883,7 +883,7 @@ void testOwningProcHasNoGhosts(stk::unit_test_util::BulkDataTester &stkMeshBulkD
 }
 
 void testReceivingProcAfterOneGhostingDestroyed(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
-                                                stk::mesh::Ghosting &ghosting1,
+                                                stk::mesh::Ghosting & /*ghosting1*/,
                                                 stk::mesh::Ghosting &ghosting2,
                                                 int nodeIdToGhost, int owningProc)
 {
@@ -900,7 +900,7 @@ void testReceivingProcAfterOneGhostingDestroyed(stk::unit_test_util::BulkDataTes
 }
 
 void testOwningProcAfterOneGhostingDestroyed(stk::unit_test_util::BulkDataTester &stkMeshBulkData,
-                                             stk::mesh::Ghosting &ghosting1,
+                                             stk::mesh::Ghosting & /*ghosting1*/,
                                              stk::mesh::Ghosting &ghosting2,
                                              int nodeIdToGhost, int ghostReceivingProc)
 {

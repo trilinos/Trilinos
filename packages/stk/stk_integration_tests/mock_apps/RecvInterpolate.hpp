@@ -35,7 +35,7 @@ public:
   using EntityKeyMap = std::multimap<EntityKeyB, EntityKeyA>;
   using EntityProcRelation = std::pair<EntityProcB, EntityProcA>;
   using EntityProcRelationVec = std::vector<EntityProcRelation>;
-  static void filter_to_nearest(EntityKeyMap & local_range_to_domain, const MeshA & mesha, const MeshB & meshb)
+  static void filter_to_nearest(EntityKeyMap & /*local_range_to_domain*/, const MeshA & /*mesha*/, const MeshB & /*meshb*/)
   {
     //no filtering needed since map is one-to-one
   }
@@ -46,8 +46,8 @@ public:
 
   //Specific to single point case right now
   void obtain_parametric_coords(typename MeshA::EntityProcVec entities_to_copy_from,
-      MeshA &sendAdapter,
-      const typename MeshB::ToPointsContainer & to_points_on_from_mesh,
+      MeshA &/*sendAdapter*/,
+      const typename MeshB::ToPointsContainer & /*to_points_on_from_mesh*/,
       typename MeshB::ToPointsDistanceContainer & to_points_distance_on_from_mesh)
   {
     for (unsigned i = 0; i < entities_to_copy_from.size(); ++i)
@@ -56,13 +56,13 @@ public:
     }
   }
 
-  void mask_parametric_coords(const std::vector<int> & filter_mask_from, int from_count)
+  void mask_parametric_coords(const std::vector<int> & /*filter_mask_from*/, int /*from_count*/)
   {
   }
 
   void
   apply(MeshB * recvAdapter,
-      MeshA * sendAdapter,
+      MeshA * /*sendAdapter*/,
       const typename MeshB::EntityProcVec & to_entity_keys_masked,
       const typename MeshA::EntityProcVec & from_entity_keys_masked,
       const stk::transfer::ReducedDependencyCommData & comm_data)

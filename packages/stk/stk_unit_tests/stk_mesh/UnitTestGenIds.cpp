@@ -311,7 +311,9 @@ void checkUniqueIds(stk::mesh::BulkData &stkMeshBulkData, const std::vector<uint
 
 ////////////////////////////////////////////////////////////////////
 
-void writeIdsToFile(const std::string &filename, const INTMPI myProcId, const std::vector<uint64_t> &uniqueIds)
+void writeIdsToFile(const std::string & /*filename*/,
+                    [[maybe_unused]] const INTMPI myProcId,
+                    [[maybe_unused]] const std::vector<uint64_t> &uniqueIds)
 {
 #ifdef DEBUG_THIS_
   std::ostringstream os;
@@ -393,7 +395,7 @@ void receiveIdAndCheck(const int root, stk::mesh::BulkData &stkMeshBulkData, MPI
 
 ////////////////////////////////////////////////////////////////////
 
-void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t maxId, const std::vector<uint64_t> &idsInUse, MPI_Comm comm)
+void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t /*maxId*/, const std::vector<uint64_t> &idsInUse, MPI_Comm comm)
 {
   uint64_t id=0;
 
@@ -419,7 +421,7 @@ void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_
 
 ////////////////////////////////////////////////////////////////////
 
-void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t maxId, stk::mesh::BulkData& stkMeshBulkData, MPI_Comm comm)
+void respondToRootProcessorAboutIdsOwnedOnThisProc(const int root, const uint64_t /*maxId*/, stk::mesh::BulkData& stkMeshBulkData, MPI_Comm comm)
 {
   uint64_t id=0;
 

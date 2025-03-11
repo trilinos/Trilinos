@@ -184,7 +184,7 @@ void testReorderBucketFieldData(stk::mesh::BulkData& bulkData, stk::mesh::FieldD
   }
 }
 
-void testTwoEntitiesTwoBuckets(stk::mesh::BulkData &bulkData, stk::mesh::FieldDataManager * fieldDataManager)
+void testTwoEntitiesTwoBuckets(stk::mesh::BulkData &bulkData, stk::mesh::FieldDataManager * /*fieldDataManager*/)
 {
   bulkData.deactivate_field_updating();
 

@@ -149,7 +149,7 @@ RangeViewType create_node_points(const stk::mesh::BulkData& mesh)
 }
 
 template<class EXEC_SPACE>
-void ghost_node_neighbors_to_elements(stk::mesh::BulkData& mesh, const ResultViewType& searchResults, EXEC_SPACE& execSpace)
+void ghost_node_neighbors_to_elements(stk::mesh::BulkData& mesh, const ResultViewType& searchResults, EXEC_SPACE& /*execSpace*/)
 {
   auto hostSpace = HostSpace{};
   auto hostSearchResults = Kokkos::create_mirror_view_and_copy(hostSpace, searchResults);
@@ -176,7 +176,7 @@ template<class EXEC_SPACE>
 void unpack_search_results_into_field(stk::mesh::BulkData& mesh,
                                       stk::mesh::Field<unsigned>& neighborField,
                                       const ResultViewType& searchResults,
-                                      EXEC_SPACE& execSpace)
+                                      EXEC_SPACE& /*execSpace*/)
 {
   auto hostSpace = HostSpace{};
   auto hostSearchResults = Kokkos::create_mirror_view_and_copy(hostSpace, searchResults);
@@ -202,7 +202,7 @@ void verify_8_neighbors_per_element(const stk::mesh::BulkData& mesh,
                                     const stk::mesh::Field<unsigned>& neighborField)
 {
   stk::mesh::for_each_entity_run(mesh, stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part(),
-  [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity elem) {
+  [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity elem) {
     const unsigned* neighborData = stk::mesh::field_data(neighborField, elem);
     EXPECT_EQ(8u, neighborData[0]);
   });

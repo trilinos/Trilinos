@@ -102,7 +102,7 @@ void check_spring2_on_device()
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SPRING_2>::num_nodes;
   EXPECT_EQ(2u, numNodes);
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -132,7 +132,7 @@ void check_spring2_on_device()
     check_side_nodes_ngp<numNodes>(t, goldSideNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
@@ -209,7 +209,7 @@ void check_spring3_on_device()
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SPRING_3>::num_nodes;
   EXPECT_EQ(3u, numNodes);
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -239,7 +239,7 @@ void check_spring3_on_device()
     check_side_nodes_ngp<numNodes>(t, goldSideNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);

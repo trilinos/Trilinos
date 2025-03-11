@@ -110,37 +110,37 @@ public:
         bulkData.initialize_face_adjacent_element_graph();
     }
 
-    void create_element(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId> nodeIds[2], stk::mesh::Part& activePartArg, stk::mesh::EntityId id)
+    void create_element(stk::mesh::BulkData& bulkDataArg, const std::vector<stk::mesh::EntityId> nodeIds[2], stk::mesh::Part& activePartArg, stk::mesh::EntityId id)
     {
-        stk::mesh::Entity elem = stk::mesh::declare_element(bulkData, block1, id, nodeIds[id-1]);
-        bulkData.change_entity_parts(elem, stk::mesh::ConstPartVector{&activePartArg});
+        stk::mesh::Entity elem = stk::mesh::declare_element(bulkDataArg, block1, id, nodeIds[id-1]);
+        bulkDataArg.change_entity_parts(elem, stk::mesh::ConstPartVector{&activePartArg});
     }
 
-    bool i_should_create_elem_1(stk::mesh::BulkData& bulkData)
+    bool i_should_create_elem_1(stk::mesh::BulkData& bulkDataArg)
     {
-        return bulkData.parallel_size() == 1 || bulkData.parallel_rank() == 0;
+        return bulkDataArg.parallel_size() == 1 || bulkDataArg.parallel_rank() == 0;
     }
 
-    bool i_should_create_elem_2(stk::mesh::BulkData& bulkData)
+    bool i_should_create_elem_2(stk::mesh::BulkData& bulkDataArg)
     {
-        return bulkData.parallel_size() == 1 || bulkData.parallel_rank() == 1;
+        return bulkDataArg.parallel_size() == 1 || bulkDataArg.parallel_rank() == 1;
     }
 
-    void create_elements(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId> nodeIds[2], stk::mesh::Part& activePartArg)
+    void create_elements(stk::mesh::BulkData& bulkDataArg, const std::vector<stk::mesh::EntityId> nodeIds[2], stk::mesh::Part& activePartArg)
     {
-        if(i_should_create_elem_1(bulkData))
-            create_element(bulkData, nodeIds, activePartArg, 1);
-        if(i_should_create_elem_2(bulkData))
-            create_element(bulkData, nodeIds, activePartArg, 2);
+        if(i_should_create_elem_1(bulkDataArg))
+            create_element(bulkDataArg, nodeIds, activePartArg, 1);
+        if(i_should_create_elem_2(bulkDataArg))
+            create_element(bulkDataArg, nodeIds, activePartArg, 2);
     }
 
-    void add_shared_nodes(stk::mesh::BulkData& bulkData, const std::vector<stk::mesh::EntityId>& sharedNodeIds)
+    void add_shared_nodes(stk::mesh::BulkData& bulkDataArg, const std::vector<stk::mesh::EntityId>& sharedNodeIds)
     {
-        if (bulkData.parallel_size() > 1) {
-          const int otherProc = 1 - bulkData.parallel_rank();
+        if (bulkDataArg.parallel_size() > 1) {
+          const int otherProc = 1 - bulkDataArg.parallel_rank();
           for(stk::mesh::EntityId nodeID : sharedNodeIds) {
-              stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, nodeID);
-              bulkData.add_node_sharing(node, otherProc);
+              stk::mesh::Entity node = bulkDataArg.get_entity(stk::topology::NODE_RANK, nodeID);
+              bulkDataArg.add_node_sharing(node, otherProc);
           }
         }
     }
@@ -190,12 +190,12 @@ public:
             set_node_coords(*coordField, i+1, twoElemTwoSharedSideCoordinates[i]);
     }
 
-    void set_node_coords(stk::mesh::Field<double>& coordField, stk::mesh::EntityId id, const std::vector<double> &coords)
+    void set_node_coords(stk::mesh::Field<double>& coordFieldArg, stk::mesh::EntityId id, const std::vector<double> &coords)
     {
         stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, id);
         if(bulkData.is_valid(node) && bulkData.bucket(node).owned())
         {
-            double* nodeCoords = stk::mesh::field_data(coordField, node);
+            double* nodeCoords = stk::mesh::field_data(coordFieldArg, node);
             for(int i = 0; i < 3; i++)
                 nodeCoords[i] = coords[i];
         }
@@ -297,7 +297,7 @@ inline void test_elements_connected_n_times(stk::mesh::BulkData &bulkData, stk::
     }
 }
 
-inline void test_elems_kissing_n_times(stk::mesh::BulkData& bulkData, stk::mesh::Part& activePartArg, size_t numKisses)
+inline void test_elems_kissing_n_times(stk::mesh::BulkData& bulkData, stk::mesh::Part& /*activePartArg*/, size_t numKisses)
 {
     stk::mesh::ElemElemGraph elem_elem_graph(bulkData);
     stk::mesh::EntityId id = 1 + bulkData.parallel_rank();

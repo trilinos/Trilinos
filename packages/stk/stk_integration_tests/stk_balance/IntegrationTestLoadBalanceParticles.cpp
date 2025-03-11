@@ -237,7 +237,7 @@ protected:
     return totalWeightTheseElements;
   }
 
-  double get_total_element_weight_for_this_proc(const int numLocalElements)
+  double get_total_element_weight_for_this_proc(const int /*numLocalElements*/)
   {
     stk::mesh::EntityVector solidElements;
     stk::mesh::Selector solidSelector = (!(*m_particlePart)) & get_meta().locally_owned_part();

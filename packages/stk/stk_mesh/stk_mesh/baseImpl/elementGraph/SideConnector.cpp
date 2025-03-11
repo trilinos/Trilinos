@@ -122,7 +122,13 @@ void SideConnector::connect_side_to_elem(stk::mesh::Entity sideEntity,
                                          int sideOrd)
 {
     stk::mesh::Permutation perm = get_permutation_for_side(sideEntity, element, sideOrd);
-    m_bulk_data.declare_relation(element, sideEntity, sideOrd, perm, m_scratchOrdinals1, m_scratchOrdinals2, m_scratchOrdinals3);
+
+    unsigned rankedOrdinal;
+    stk::topology::rank_t sideRank;
+    auto elemTopo = m_bulk_data.bucket(element).topology();
+    elemTopo.ranked_side_ordinal(sideOrd, rankedOrdinal, sideRank);
+
+    m_bulk_data.declare_relation(element, sideEntity, rankedOrdinal, perm, m_scratchOrdinals1, m_scratchOrdinals2, m_scratchOrdinals3);
 }
 
 void SideConnector::connect_side_to_adjacent_elements(stk::mesh::Entity sideEntity,

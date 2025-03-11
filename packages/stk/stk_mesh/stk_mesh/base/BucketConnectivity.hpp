@@ -54,7 +54,8 @@ namespace impl {
 
 
 template <typename Connectivity>
-inline void check_bucket_ordinal(unsigned bucket_ordinal, Connectivity const* connectivity)
+inline void check_bucket_ordinal([[maybe_unused]] unsigned bucket_ordinal,
+                                 [[maybe_unused]] Connectivity const* connectivity)
 {
   STK_ThrowAssertMsg(bucket_ordinal < connectivity->size(),
                  "bucket_ordinal " << bucket_ordinal << " is out of range, bucket size is " << connectivity->size());
@@ -255,7 +256,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
   bool replace_connectivity(unsigned bucket_ordinal, unsigned numConnectivity,
                             const Entity* connectivity,
-                            const ConnectivityOrdinal* ordinals,
+                            [[maybe_unused]] const ConnectivityOrdinal* ordinals,
                             const Permutation* perms)
   {
      if (bucket_ordinal == size()) {

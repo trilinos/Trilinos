@@ -223,7 +223,7 @@ extern "C" {
     void *		invec,
     void *		inoutvec,
     int *		len,
-    MPI_Datatype *	datatype)
+    MPI_Datatype *	/*datatype*/)
   {
     std::complex<double> *complex_in = static_cast<std::complex<double> *>(invec);
     std::complex<double> *complex_inout = static_cast<std::complex<double> *>(inoutvec);

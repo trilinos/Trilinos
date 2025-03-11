@@ -298,18 +298,18 @@ protected:
     get_bulk().modification_end();
   }
 
-  void put_entity_into_part(stk::mesh::BulkData &bulkData, stk::mesh::EntityId id, stk::mesh::Part& part)
+  void put_entity_into_part(stk::mesh::BulkData &bulkDataArg, stk::mesh::EntityId id, stk::mesh::Part& part)
   {
-    stk::mesh::Entity entity = bulkData.get_entity(stk::topology::ELEM_RANK, id);
-    if(bulkData.is_valid(entity) && bulkData.bucket(entity).owned())
+    stk::mesh::Entity entity = bulkDataArg.get_entity(stk::topology::ELEM_RANK, id);
+    if(bulkDataArg.is_valid(entity) && bulkDataArg.bucket(entity).owned())
     {
-      bulkData.change_entity_parts(entity, stk::mesh::ConstPartVector{&part});
+      bulkDataArg.change_entity_parts(entity, stk::mesh::ConstPartVector{&part});
     }
   }
-  stk::mesh::Part& create_part_with_id(stk::mesh::MetaData &metaData, int id, stk::topology topology)
+  stk::mesh::Part& create_part_with_id(stk::mesh::MetaData &metaDataArg, int id, stk::topology topology)
   {
-    stk::mesh::Part& part = metaData.declare_part_with_topology("block_"+std::to_string(id), topology);
-    metaData.set_part_id(part, id);
+    stk::mesh::Part& part = metaDataArg.declare_part_with_topology("block_"+std::to_string(id), topology);
+    metaDataArg.set_part_id(part, id);
     return part;
   }
 
