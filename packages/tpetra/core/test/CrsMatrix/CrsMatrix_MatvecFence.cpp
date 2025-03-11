@@ -184,7 +184,11 @@ namespace {
 #endif
       {
         if (Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
+#if KOKKOS_VERSION >= 40599
+          expectedGlobalCount = 2*iter_num;
+#else
           expectedGlobalCount = iter_num;
+#endif
         } else {
 #if KOKKOS_VERSION >= 40599
           expectedGlobalCount = iter_num;
@@ -221,8 +225,16 @@ namespace {
       else {
         if (Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
           expectedGlobalCount = iter_num;
+#if defined(HAVE_TPETRA_INST_CUDA) && defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+          if constexpr (std::is_same_v<typename Node::memory_space, Kokkos::CudaUVMSpace>)
+            expectedGlobalCount = 12*iter_num;
+#endif
         } else {
           expectedGlobalCount = 6 * iter_num;
+#if defined(HAVE_TPETRA_INST_CUDA) && defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
+          if constexpr (std::is_same_v<typename Node::memory_space, Kokkos::CudaUVMSpace>)
+            expectedGlobalCount = 13*iter_num;
+#endif
         }
 #ifdef HAVE_TPETRA_INST_HIP
         if constexpr (std::is_same_v<typename Node::execution_space, Kokkos::HIP>) {
