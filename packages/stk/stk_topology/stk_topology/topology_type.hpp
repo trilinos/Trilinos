@@ -166,7 +166,7 @@ struct topology::topology_type
   }
 
 #ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 2025
-  STK_FUNCTION STK_DEPRECATED
+  STK_DEPRECATED STK_FUNCTION
   static topology shell_side_topology(unsigned shell_side_ordinal = 0)
   {
     switch (shell_side_ordinal)
