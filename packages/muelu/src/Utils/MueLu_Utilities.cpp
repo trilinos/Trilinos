@@ -11,6 +11,10 @@
 
 #include <string>
 #include <locale>
+#ifdef _WIN32
+#define NOMINMAX
+#endif
+#include <algorithm>
 
 #ifdef HAVE_MUELU_EPETRAEXT
 #include "EpetraExt_Transpose_RowMatrix.h"
