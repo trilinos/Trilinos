@@ -44,15 +44,15 @@ class KokkosTuningInterface : public BaseClass {
   // parameters to tell KokkosTuning what to do.
   void SetParameterList(Teuchos::ParameterList& inParams) { params_ = inParams; }
 
-  // Sets up Kokkos Tuning
-  void Setup();
-
   // Calls Kokkos Tuning to set MueLu Parameters
   void SetMueLuParameters(size_t kokkos_context_id, Teuchos::ParameterList& mueluParams, bool overwrite = true) const;
 
  private:
   // Utility functions
   void UnpackMueLuMapping();
+
+  // Sets up Kokkos Tuning - This gets called from SetParameterList
+  void Setup();
 
   // Cached data
   Teuchos::RCP<const Teuchos::Comm<int> > comm_;
