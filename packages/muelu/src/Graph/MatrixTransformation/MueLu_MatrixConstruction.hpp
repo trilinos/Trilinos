@@ -64,7 +64,7 @@ class PointwiseCountingFunctor {
     std::string mangledFunctorName = typeid(decltype(functor)).name();
     int status                     = 0;
     char* demangledFunctorName     = 0;
-    demangledFunctorName           = abi::__cxa_demangle(functorName.c_str(), 0, 0, &status);
+    demangledFunctorName           = abi::__cxa_demangle(mangledFunctorName.c_str(), 0, 0, &status);
     functorName                    = demangledFunctorName;
 #endif
   }
@@ -80,7 +80,7 @@ class PointwiseCountingFunctor {
     std::string mangledFunctorName = typeid(decltype(functor)).name();
     int status                     = 0;
     char* demangledFunctorName     = 0;
-    demangledFunctorName           = abi::__cxa_demangle(functorName.c_str(), 0, 0, &status);
+    demangledFunctorName           = abi::__cxa_demangle(mangledFunctorName.c_str(), 0, 0, &status);
     functorName                    = demangledFunctorName;
 #endif
   }
@@ -161,7 +161,7 @@ class PointwiseCountingFunctor<local_matrix_type, functor_type> {
     std::string mangledFunctorName = typeid(decltype(functor)).name();
     int status                     = 0;
     char* demangledFunctorName     = 0;
-    demangledFunctorName           = abi::__cxa_demangle(functorName.c_str(), 0, 0, &status);
+    demangledFunctorName           = abi::__cxa_demangle(mangledFunctorName.c_str(), 0, 0, &status);
     functorName                    = demangledFunctorName;
 #endif
   }
@@ -176,7 +176,7 @@ class PointwiseCountingFunctor<local_matrix_type, functor_type> {
     std::string mangledFunctorName = typeid(decltype(functor)).name();
     int status                     = 0;
     char* demangledFunctorName     = 0;
-    demangledFunctorName           = abi::__cxa_demangle(functorName.c_str(), 0, 0, &status);
+    demangledFunctorName           = abi::__cxa_demangle(mangledFunctorName.c_str(), 0, 0, &status);
     functorName                    = demangledFunctorName;
 #endif
   }
@@ -460,7 +460,9 @@ class VectorCountingFunctor {
 
   VectorCountingFunctor<local_matrix_type, remaining_functor_types...> remainingFunctors;
 
-  std::vector<std::string> functorNames;
+#ifdef MUELU_COALESCE_DROP_DEBUG
+  std::string functorName;
+#endif
 
  public:
   VectorCountingFunctor(local_matrix_type& A_, local_ordinal_type blockSize_, block_indices_view_type ghosted_point_to_block_, results_view& results_, rowptr_type& filtered_rowptr_, rowptr_type& graph_rowptr_, functor_type& functor_, remaining_functor_types&... remainingFunctors_)
@@ -631,7 +633,9 @@ class VectorCountingFunctor<local_matrix_type, functor_type> {
   bool firstFunctor;
   functor_type functor;
 
-  std::vector<std::string> functorNames;
+#ifdef MUELU_COALESCE_DROP_DEBUG
+  std::string functorName;
+#endif
 
   BlockRowComparison<local_matrix_type> comparison;
   permutation_type permutation;
