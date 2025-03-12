@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2022 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -82,6 +82,7 @@ C      INTEGER CPUWS, IOWS, IERR, NERR, CERR, MERR
       REAL VERS
       LOGICAL MEMBUG
       CHARACTER*2048 FILNAM, SCRATCH
+      character*256  option, value
 
       CHARACTER*8 STR8
 
@@ -137,15 +138,7 @@ C .. Get filename from command line.  If not specified, emit error message
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filenames not specified.')
         CALL PRTERR ('CMDSPEC',
-     *    'Syntax is: "algebra file_in file_out"')
-        CALL PRTERR ('CMDSPEC',
-     *    'Documentation: https://sandialabs.github.io' //
-     $       '/seacas-docs/sphinx/html/index.html#algebra')
-        GOTO 150
-      else if (narg .gt. 2) then
-        CALL PRTERR ('FATAL', 'Too many arguments specified.')
-        CALL PRTERR ('CMDSPEC',
-     *    'Syntax is: "algebra file_in file_out"')
+     *    'Syntax is: "algebra [-change_set #] file_in file_out"')
         CALL PRTERR ('CMDSPEC',
      *    'Documentation: https://sandialabs.github.io' //
      $       '/seacas-docs/sphinx/html/index.html#algebra')
@@ -153,7 +146,7 @@ C .. Get filename from command line.  If not specified, emit error message
       end if
 
 C     Open the input database; Exit on error
-      CALL get_argument(1,FILNAM, LFIL)
+      CALL get_argument(narg - 1,FILNAM, LFIL)
       ndbin = exopen(filnam(:lfil), EXREAD, cpuws, iows,
      &       vers, ierr)
       IF (IERR .NE. 0) THEN
@@ -161,6 +154,35 @@ C     Open the input database; Exit on error
         CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
         GOTO 150
       END IF
+
+      if (narg .gt. 2) then
+        do i=1, narg-2, 2
+          CALL get_argument(i+0,option, lo)
+          CALL get_argument(i+1,value,  lv)
+          if (option(:lo) .eq. '-change_set' .or.
+     *         option(:lo) .eq. '--change_set') then
+C ... Convert `value` to an integer.
+             read (value(:lv), '(i10)') nchange
+C ... Check that file contains at least that many change sets...
+             ndbr = iand(ndbin, EX_FILE_ID_MASK)
+            call exinq(ndbr, EX_INQ_NUM_CHILD_GROUPS,
+     $           idum, rdum, cdum, ierr)
+            if (nchange .gt. idum) then
+               write (SCRATCH,*) 'Selected change set', nchange,
+     $              'but there are only ', idum, ' change sets in file.'
+               call sqzstr(scratch, lscratch)
+               call PRTERR('CMDERR', SCRATCH(:LSCRATCH))
+               goto 150
+            else
+               ndbin = ndbr + nchange
+               write (scratch,99) nchange
+ 99            format(1x,'NOTE: Selecting change set ', i3)
+               call sqzstr(scratch, lscratch)
+               call PRTERR('CMDSPEC', scratch(:lscratch))
+            end if
+          end if
+        end do
+      end if
 
       call exinq(ndbin, EXDBMXUSNM, namlen, rdum, cdum, ierr)
       call exmxnm(ndbin, namlen, ierr)
@@ -504,7 +526,7 @@ C     name.
 C *************************************************************
 C                   Open the Output Database
 C *************************************************************
-      CALL get_argument(2,FILNAM, LFIL)
+      CALL get_argument(narg,FILNAM, LFIL)
       ndbout = excre(filnam(:lfil), EXCLOB, CPUWS, IOWS, IERR)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Problems creating database "'//FILNAM(:LFIL)//'".'

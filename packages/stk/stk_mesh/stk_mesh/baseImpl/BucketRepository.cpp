@@ -242,7 +242,7 @@ void BucketRepository::internal_modification_end()
                 switch(to_rank)
                 {
                     case stk::topology::NODE_RANK:
-                        bucket.m_fixed_node_connectivity.end_modification(&bucket.m_mesh);
+                        bucket.m_fixed_node_connectivity.end_modification();
                         break;
                     case stk::topology::EDGE_RANK:
                         bucket.m_dynamic_edge_connectivity.compress_connectivity();
@@ -339,7 +339,10 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
 
   if(m_mesh.should_sort_buckets_by_first_entity_identifier())
   {
-      std::sort(m_buckets[rank].begin(), m_buckets[rank].end(), bucket_less_by_first_entity_identifier());
+    std::sort(m_buckets[rank].begin(), m_buckets[rank].end(), bucket_less_by_first_entity_identifier());
+    for(Partition* partition : m_partitions[rank]) {
+      std::sort(partition->begin(), partition->end(), bucket_less_by_first_entity_identifier());
+    }
   }
 
   if (m_need_sync_from_partitions[rank] == true || m_mesh.should_sort_buckets_by_first_entity_identifier())
@@ -402,7 +405,11 @@ void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
 
 const std::vector<Partition *>& BucketRepository::get_partitions(EntityRank rank) const
 {
-  return m_partitions[rank];
+  if (static_cast<unsigned>(rank) < m_partitions.size()) {
+    return m_partitions[rank];
+  }
+  static const std::vector<Partition*> emptyPartitionVector;
+  return emptyPartitionVector;
 }
 
 void BucketRepository::delete_bucket(Bucket * bucket)

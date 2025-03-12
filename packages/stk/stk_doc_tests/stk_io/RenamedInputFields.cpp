@@ -90,7 +90,7 @@ protected:
   stk::mesh::FieldBase *nsDisp = nullptr;
 };
 
-TEST_F(InputNodesetDataCalledDispX, writingDispDataToFile_nodalDataDispXAndNodesetDataDispX)
+TEST_F(InputNodesetDataCalledDispX, writingDispDataToFile_nodalDataDispXAndNodesetDataDispX_externalFile)
 {
   if(stk::parallel_machine_size(get_comm()) == 1)
   {

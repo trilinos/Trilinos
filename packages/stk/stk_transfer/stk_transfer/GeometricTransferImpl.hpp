@@ -15,6 +15,8 @@
 #include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
+#include "stk_search/CoarseSearch.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace transfer {
@@ -30,20 +32,6 @@ struct BoundingBoxCompare{
   }
 };
 
-
-template <class BoundingBoxB, class EntityProcB>
-  struct compare {
-    bool operator()(const BoundingBoxB &a, const EntityProcB  &b) const
-    {
-      return a.second < b;
-    }
-
-    bool operator()(const EntityProcB  &a, const BoundingBoxB &b) const
-    {
-      return a < b.second;
-    }
-  };
-
 template <class ForwardIterator, class Compare>
 bool local_is_sorted(ForwardIterator first, ForwardIterator last, Compare compare)
 {
@@ -56,34 +44,38 @@ bool local_is_sorted(ForwardIterator first, ForwardIterator last, Compare compar
   return true;
 }
 
-
+// requires domain boxes and domain to range to be sorted
 template <class INTERPOLATE>
-void delete_range_points_found(
-                               std::vector<typename INTERPOLATE::MeshB::BoundingBox>            &range_vector,
-                               const typename INTERPOLATE::EntityProcRelationVec          &del)
+void get_remaining_domain_points(std::vector<typename INTERPOLATE::MeshB::BoundingBox> &domain_boxes,
+    const typename INTERPOLATE::EntityProcRelationVec &this_pass_domain_to_range)
 {
+  std::vector<typename INTERPOLATE::MeshB::BoundingBox> domain_boxes_missing_a_range_candidate;
 
-  std::vector<typename INTERPOLATE::EntityProcB> range_entities_found;
-  range_entities_found.reserve(del.size());
-  for (auto && i : del) {
-    range_entities_found.push_back(i.first);
-  }
-  {
-    std::sort(range_entities_found.begin(), range_entities_found.end());
-    const typename std::vector<typename INTERPOLATE::EntityProcB>::iterator it = std::unique(range_entities_found.begin(), range_entities_found.end());
-    range_entities_found.resize(it-range_entities_found.begin());
+  auto domain_it = domain_boxes.begin();
+  auto range_it = this_pass_domain_to_range.begin();
+
+  while (domain_it != domain_boxes.end() && range_it != this_pass_domain_to_range.end()) {
+    const auto domain_id_a = domain_it->second;
+    const auto domain_id_b = range_it->first;
+
+    if (domain_id_a < domain_id_b) {
+      domain_boxes_missing_a_range_candidate.push_back(*domain_it);
+      ++domain_it;
+    } else if (domain_id_a > domain_id_b) {
+      ++range_it;
+    } else {
+      ++domain_it;
+      ++range_it;
+    }
   }
 
-  std::vector<typename INTERPOLATE::MeshB::BoundingBox> difference(range_vector.size());
-  {
-    const auto it =
-      std::set_difference(
-        range_vector.        begin(), range_vector.        end(),
-        range_entities_found.begin(), range_entities_found.end(),
-        difference.begin(), compare<typename INTERPOLATE::MeshB::BoundingBox, typename INTERPOLATE::EntityProcB>());
-    difference.resize(it-difference.begin());
+  // remaining domain were all missed
+  while (domain_it != domain_boxes.end()) {
+      domain_boxes_missing_a_range_candidate.push_back(*domain_it);
+      ++domain_it;
   }
-  swap(difference, range_vector);
+
+  domain_boxes.swap(domain_boxes_missing_a_range_candidate);
 }
 
 template <typename T, typename=int>
@@ -124,93 +116,95 @@ void call_copy_entities(T & ... t)
 }
 
 template <class INTERPOLATE>
-void print_expansion_warnings(stk::ParallelMachine comm, int not_empty_count, size_t range_vector_size) {
+void print_expansion_warnings(stk::ParallelMachine comm, int number_coarse_search_passes, size_t domain_size)
+{
   // sum and provide message to user
-  size_t g_range_vector_size = 0;
-  stk::all_reduce_max( comm, &range_vector_size, &g_range_vector_size, 1);
-  stk::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: " << g_range_vector_size
-      << " after expanding bounding boxes: " << not_empty_count << " time(s)" << std::endl;
-  stk::outputP0() << "...will now expand the set of candidate bounding boxes and re-attempt the coarse search" << std::endl;
+  size_t global_domain_size = 0;
+  stk::all_reduce_max(comm, &domain_size, &global_domain_size, 1);
+  stk::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: "
+                  << global_domain_size << " after expanding bounding boxes: " << number_coarse_search_passes
+                  << " time(s)" << std::endl;
+  stk::outputP0() << "...will now expand the set of candidate bounding boxes and re-attempt the coarse search"
+                  << std::endl;
 }
 
 template <class INTERPOLATE>
-void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec   &range_to_domain,
+void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec &domain_to_range,
     stk::ParallelMachine comm,
-    const typename INTERPOLATE::MeshA             * mesha,
-    const typename INTERPOLATE::MeshB             * meshb,
+    const typename INTERPOLATE::MeshA *mesha,
+    const typename INTERPOLATE::MeshB *meshb,
     const stk::search::SearchMethod search_method,
     const double expansion_factor)
 {
   using BoundingBoxA = typename INTERPOLATE::MeshA::BoundingBox;
   using BoundingBoxB = typename INTERPOLATE::MeshB::BoundingBox;
-  std::vector<BoundingBoxB> range_vector;
-  std::vector<BoundingBoxA> domain_vector;
 
-  if (mesha)
-    mesha->bounding_boxes(domain_vector);
+  using domain_range_pairs_t = typename INTERPOLATE::EntityProcRelationVec;
 
-  const bool domainVectorEmpty = stk::is_true_on_all_procs(comm, domain_vector.empty());
-  if (domainVectorEmpty) {
+  domain_to_range.clear();
+
+  std::vector<BoundingBoxB> domain;
+  std::vector<BoundingBoxA> range;
+
+  if (mesha) mesha->bounding_boxes(range);
+
+  if (stk::is_true_on_all_procs(comm, range.empty())) {
     return;
   }
 
-  if (meshb)
-    meshb->bounding_boxes(range_vector);
+  if (meshb) meshb->bounding_boxes(domain);
 
-  if( !local_is_sorted( domain_vector.begin(), domain_vector.end(), BoundingBoxCompare<BoundingBoxA>() ) )
-    std::sort(domain_vector.begin(),domain_vector.end(),BoundingBoxCompare<BoundingBoxA>());
-  if( !local_is_sorted( range_vector.begin(), range_vector.end(), BoundingBoxCompare<BoundingBoxB>() ) )
-    std::sort(range_vector.begin(),range_vector.end(),BoundingBoxCompare<BoundingBoxB>());
+  if (!local_is_sorted(range.begin(), range.end(), BoundingBoxCompare<BoundingBoxA>())) {
+    std::sort(range.begin(), range.end(), BoundingBoxCompare<BoundingBoxA>());
+  }
 
-  // check track of how many times the coarse search needs to exercise the expanstion_factor
-  int not_empty_count = 0;
+  if (!local_is_sorted(domain.begin(), domain.end(), BoundingBoxCompare<BoundingBoxB>())) {
+    std::sort(domain.begin(), domain.end(), BoundingBoxCompare<BoundingBoxB>());
+  }
 
-  bool range_vector_empty = stk::is_true_on_all_procs(comm, range_vector.empty());
-  while (!range_vector_empty) { // Keep going until all range points are processed.
-    // Slightly confusing: coarse_search documentation has domain->range
-    // relations sorted by domain key.  We want range->domain type relations
-    // sorted on range key. It might appear we have the arguments revered
-    // in coarse_search call, but really, this is what we want.
-    typename INTERPOLATE::EntityProcRelationVec rng_to_dom;
-    search::coarse_search(range_vector, domain_vector, search_method, comm, rng_to_dom);
+  // coarse search continues until all domain points are mapped to range candidates
+  // TODO where is the safety termination condition preventing infinite loop?
+  int num_coarse_search_passes = 0;
+  bool domain_empty = stk::is_true_on_all_procs(comm, domain.empty());
+  while (!domain_empty) {
+    domain_range_pairs_t this_pass_domain_to_range;
 
-    // increment how many times we are within the while loop
-    not_empty_count++;
+    search::coarse_search(domain, range, search_method, comm, this_pass_domain_to_range, true, true, true);
 
-    CallOptionalPostCoarseSearchFilter<INTERPOLATE>::call(rng_to_dom, mesha, meshb);
-    range_to_domain.insert(range_to_domain.end(), rng_to_dom.begin(), rng_to_dom.end());
+    num_coarse_search_passes++;
+    CallOptionalPostCoarseSearchFilter<INTERPOLATE>::call(this_pass_domain_to_range, mesha, meshb);
+    impl::get_remaining_domain_points<INTERPOLATE>(domain, this_pass_domain_to_range);
 
-    impl::delete_range_points_found<INTERPOLATE>(range_vector, rng_to_dom);
+    domain_empty = stk::is_true_on_all_procs(comm, domain.empty());
+    const bool terminate_on_first_pass = (domain_empty || expansion_factor <= 1.0) && num_coarse_search_passes == 1;
 
-    range_vector_empty = stk::is_true_on_all_procs(comm, range_vector.empty());
+    if (terminate_on_first_pass) {
+      domain_to_range.swap(this_pass_domain_to_range);
 
-    if (expansion_factor <= 1.0) {
-        if (!range_vector_empty) {
-            size_t range_vector_size = range_vector.size();
-            size_t g_range_vector_size = 0;
-            stk::all_reduce_max( comm, &range_vector_size, &g_range_vector_size, 1);
-            stk::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: "
-                                    << g_range_vector_size
-                                    << " in initial coarse search" << std::endl;
-        }
-
-        break;
+      if (!domain_empty){
+        size_t domain_size = domain.size();
+        size_t global_domain_size = 0;
+        stk::all_reduce_max(comm, &domain_size, &global_domain_size, 1);
+        stk::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: "
+                        << global_domain_size << " in initial coarse search" << std::endl;
+      }
+      break;
     }
 
-    if (!range_vector_empty) {
-      for (BoundingBoxB& rangeBox : range_vector) {
-        // If points were missed, increase search radius.
-        search::scale_by(rangeBox.first, expansion_factor);
-      }
-      // If points were missed, increase search radius; extract the number of these points and tell the user
-      for (BoundingBoxA& domainBox : domain_vector) {
-        search::scale_by(domainBox.first, expansion_factor);
-      }
+    // otherwise extend current domain to range, expand domain / range boxes, print warnings and repeat coarse search
+    domain_to_range.insert(domain_to_range.end(), this_pass_domain_to_range.begin(), this_pass_domain_to_range.end());
 
-      print_expansion_warnings<INTERPOLATE>(comm, not_empty_count, range_vector.size());
+    if (!domain_empty) {
+      for (BoundingBoxB &box : domain) {
+        search::scale_by(box.first, expansion_factor);
+      }
+      for (BoundingBoxA &box : range) {
+        search::scale_by(box.first, expansion_factor);
+      }
+      print_expansion_warnings<INTERPOLATE>(comm, num_coarse_search_passes, domain.size());
     }
   }
-  sort (range_to_domain.begin(), range_to_domain.end());
+  sort(domain_to_range.begin(), domain_to_range.end());
 }
 
 template <class T>

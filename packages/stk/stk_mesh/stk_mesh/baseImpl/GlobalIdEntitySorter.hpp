@@ -52,7 +52,7 @@ public:
      : m_mustSortFacesByNodeIds(mustSortFacesByNodeIds)
     {}  
 
-    virtual void sort(stk::mesh::BulkData &bulk, EntityVector& entityVector) const;
+    virtual void sort(stk::mesh::BulkData &bulk, EntityVector& entityVector) const override;
 
 private:
   bool m_mustSortFacesByNodeIds;

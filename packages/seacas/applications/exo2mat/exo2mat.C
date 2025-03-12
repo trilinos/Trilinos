@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -59,7 +59,7 @@ namespace {
   mat_t *mat_file = nullptr; /* file for binary .mat output */
   bool   debug    = false;
 
-  const std::array<std::string, 3> qainfo{"exo2mat", "2021/09/27", "4.08"};
+  const std::array<std::string, 3> qainfo{"exo2mat", "2025/02/03", "4.09"};
 
   void logger(const char *message)
   {
@@ -80,6 +80,7 @@ namespace {
                "   -v5   output version 5 mat file {}\n"
                "   -v73  output version 7.3 mat file (hdf5-based) {}\n"
                "   -v7.3 output version 7.3 mat file (hdf5-based)\n"
+               "   -change_set cs_#  Read from change set #.\n"
                " ** note **\n"
                "Binary files are written by default on all platforms.\n",
                v5default, v7default);
@@ -941,6 +942,8 @@ int main(int argc, char *argv[])
   enum mat_ft mat_version     = MAT_FT_DEFAULT;
   bool        use_cell_arrays = false;
 
+  int cs_index = 0;
+
   /* process arguments */
   for (int j = 1; j < argc && argv[j][0] == '-'; j++) {
     if (strcmp(argv[j], "-t") == 0) { /* write text file (*.m) */
@@ -991,6 +994,19 @@ int main(int argc, char *argv[])
         oname = argv[j];
         del_arg(&argc, argv, j);
         fmt::print("output file: {}\n", oname);
+      }
+      else {
+        fmt::print(stderr, "ERROR: Invalid output file specification.\n");
+        return 2;
+      }
+      j--;
+      continue;
+    }
+    if (strcmp(argv[j], "-change_set") == 0) {
+      del_arg(&argc, argv, j);
+      if (argv[j] != nullptr) {
+        cs_index = std::stoi(argv[j]);
+        del_arg(&argc, argv, j);
       }
       else {
         fmt::print(stderr, "ERROR: Invalid output file specification.\n");
@@ -1058,14 +1074,45 @@ int main(int argc, char *argv[])
     fmt::print(stderr, "ERROR: Cannot open '{}'\n", argv[1]);
     exit(1);
   }
+  // See if file has change sets...
+  int num_change_sets = ex_inquire_int(exo_file, EX_INQ_NUM_CHILD_GROUPS);
+  if (num_change_sets > 0) {
+    if (cs_index == 0) {
+      fmt::print(stderr,
+                 "WARNING: Exodus database contains {} change sets.\n         Setting to read from "
+                 "first change set since `-change_set #` option not specified.\n\n",
+                 num_change_sets);
+      exo_file++;
+    }
+    else if (cs_index > num_change_sets) {
+      fmt::print(stderr,
+                 "ERROR: The selected change set ({}) exceeds the number of change sets ({}) on "
+                 "the exodus database.\n",
+                 cs_index, num_change_sets);
+      exit(1);
+    }
+    else {
+      // Set to selected change set
+      fmt::print(stderr, "NOTE: Exodus data will be read from change set {}.\n\n", cs_index);
+      exo_file += cs_index;
+    }
+  }
+  else if (cs_index > 0) {
+    // Error, selected change set, but there are none.
+    fmt::print(stderr,
+               "ERROR: Change set {} was selected, but the exodus database does not contain change "
+               "sets.\n",
+               cs_index, num_change_sets);
+    exit(1);
+  }
 
   /* print */
   fmt::print("\ttranslating {} to {}...\n", argv[1], filename);
 
   /* read database parameters */
-  char *line = reinterpret_cast<char *>(calloc((MAX_LINE_LENGTH + 1), sizeof(char)));
-  ex_get_init(exo_file, line, &num_axes, &num_nodes, &num_elements, &num_blocks, &num_node_sets,
-              &num_side_sets);
+  std::array<char, MAX_LINE_LENGTH + 1> line;
+  ex_get_init(exo_file, line.data(), &num_axes, &num_nodes, &num_elements, &num_blocks,
+              &num_node_sets, &num_side_sets);
   num_info_lines = ex_inquire_int(exo_file, EX_INQ_INFO);
   num_time_steps = ex_inquire_int(exo_file, EX_INQ_TIME);
   ex_get_variable_param(exo_file, EX_GLOBAL, &num_global_vars);
@@ -1096,7 +1143,7 @@ int main(int argc, char *argv[])
   char **str2 = get_exodus_names(nstr2, 512);
 
   /* title */
-  PutStr("Title", line);
+  PutStr("Title", line.data());
 
   /* information records */
   if (num_info_lines > 0) {
@@ -1319,7 +1366,6 @@ int main(int argc, char *argv[])
   else {
     Mat_Close(mat_file);
   }
-  free(line);
 
   delete_exodus_names(str2, nstr2);
 

@@ -49,6 +49,7 @@
 
 #include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/NgpUtils.hpp>
+#include <stk_mesh/baseImpl/NgpMeshImpl.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
@@ -136,6 +137,15 @@ struct DeviceBucketT {
     return false;
   }
 
+  KOKKOS_FUNCTION
+  const Kokkos::pair<const stk::mesh::PartOrdinal*,const stk::mesh::PartOrdinal*> superset_part_ordinals() const
+  {
+    STK_NGP_ThrowAssert(m_partOrdinals.size() > 0);
+    return Kokkos::pair<const stk::mesh::PartOrdinal*,const stk::mesh::PartOrdinal*>(
+             m_partOrdinals.data(), m_partOrdinals.data()+m_partOrdinals.size()
+           );
+  }
+
   void initialize_bucket_attributes(const stk::mesh::Bucket &bucket);
   void initialize_fixed_data_from_host(const stk::mesh::Bucket &bucket);
   void update_entity_data_from_host(const stk::mesh::Bucket &bucket);
@@ -201,11 +211,16 @@ public:
       synchronizedCount(0),
       m_needSyncToHost(false),
       endRank(static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count())),
-      deviceMeshHostData(nullptr)
+      deviceMeshHostData(nullptr),
+      m_deviceBufferOffsets(UnsignedViewType("a", 1)),
+      m_deviceMeshIndicesOffsets(Unsigned2dViewType("b", 1))
   {
     bulk->register_device_mesh();
     deviceMeshHostData = impl::get_ngp_mesh_host_data<NgpMemSpace>(*bulk);
     update_mesh();
+
+    deviceMeshHostData->m_hostBufferOffsets = Kokkos::create_mirror_view(m_deviceBufferOffsets);;
+    deviceMeshHostData->m_hostMeshIndicesOffsets = Kokkos::create_mirror_view(m_deviceMeshIndicesOffsets);
   }
 
   KOKKOS_DEFAULTED_FUNCTION DeviceMeshT(const DeviceMeshT &) = default;
@@ -502,9 +517,25 @@ public:
     static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, RemovePartOrdinalsMemorySpace>::accessible,
                   "The memory space of the 'removePartOrdinals' View is inaccessible from the DeviceMesh execution space");
 
-    using HostEntitiesType = typename std::remove_reference<decltype(entities)>::type::HostMirror;
-    using HostAddPartOrdinalsType = typename std::remove_reference<decltype(addPartOrdinals)>::type::HostMirror;
-    using HostRemovePartOrdinalsType = typename std::remove_reference<decltype(removePartOrdinals)>::type::HostMirror;
+    using PartOrdinalsViewType = typename std::remove_reference<decltype(addPartOrdinals)>::type;
+    const unsigned maxCurrentNumPartsPerEntity = impl::get_max_num_parts_per_entity(*this,entities);
+    const unsigned maxNewNumPartsPerEntity = maxCurrentNumPartsPerEntity + addPartOrdinals.size();
+    PartOrdinalsViewType newPartOrdinalsPerEntity("newPartOrdinals", entities.size()*(1+maxNewNumPartsPerEntity));
+    PartOrdinalsViewType sortedAddPartOrdinals = impl::get_sorted_view(addPartOrdinals);
+    impl::set_new_part_list_per_entity(*this, entities, sortedAddPartOrdinals, removePartOrdinals,
+                                       maxNewNumPartsPerEntity, newPartOrdinalsPerEntity);
+  }
+
+  auto get_ngp_parallel_sum_host_buffer_offsets() const {
+    return deviceMeshHostData->m_hostBufferOffsets;
+  }
+
+  auto get_ngp_parallel_sum_host_mesh_indices_offsets() const {
+    return deviceMeshHostData->m_hostMeshIndicesOffsets;
+  }
+
+  auto get_ngp_parallel_sum_device_mesh_indices_offsets() const {
+    return m_deviceMeshIndicesOffsets;
   }
 
 private:
@@ -559,6 +590,9 @@ private:
 
   UnsignedViewType volatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
   FastSharedCommMapViewType volatileFastSharedCommMap[stk::topology::NUM_RANKS];
+
+  UnsignedViewType m_deviceBufferOffsets;
+  Unsigned2dViewType m_deviceMeshIndicesOffsets;
 };
 
 using DeviceMesh = DeviceMeshT<stk::ngp::MemSpace>;

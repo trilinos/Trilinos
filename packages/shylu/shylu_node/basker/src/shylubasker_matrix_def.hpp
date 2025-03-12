@@ -520,9 +520,6 @@ namespace BaskerNS
    bool keep_zeros
   )
   {
-    using STS = Teuchos::ScalarTraits<Entry>;
-    using Mag = typename STS::magnitudeType;
-
     if(nnz == 0)
     {
       for(Int i = 0; i < ncol+1; i++)

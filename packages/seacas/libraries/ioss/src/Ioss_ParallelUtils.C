@@ -61,13 +61,10 @@ void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &prop
     for (auto &elem : prop_val) {
       Ioss::NameList property = tokenize(elem, "=");
       if (property.size() != 2) {
-        std::ostringstream errmsg;
-        fmt::print(
-            errmsg,
+        IOSS_ERROR(fmt::format(
             "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
             "       Found '{}' which is not of the correct PROPERTY=VALUE form",
-            elem);
-        IOSS_ERROR(errmsg);
+            elem));
       }
       std::string prop      = Utils::uppercase(property[0]);
       std::string value     = property[1];
@@ -290,9 +287,7 @@ void Ioss::ParallelUtils::attribute_reduction(IOSS_MAYBE_UNUSED const int length
     const int         success =
         MPI_Allreduce(buffer, Data(recv_buf), length, MPI_BYTE, MPI_BOR, communicator_);
     if (MPI_SUCCESS != success) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Allreduce failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Allreduce failed", __func__));
     }
 
     std::memcpy(buffer, Data(recv_buf), length);
@@ -318,18 +313,14 @@ void Ioss::ParallelUtils::global_count(const IntVector &local_counts,
 #ifdef SEACAS_HAVE_MPI
   if (!local_counts.empty() && parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - Attempting mpi while in barrier owned by {}", __func__,
-                 Ioss::SerializeIO::getOwner());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - Attempting mpi while in barrier owned by {}", __func__,
+                             Ioss::SerializeIO::getOwner()));
     }
     const int success =
         MPI_Allreduce((void *)Data(local_counts), Data(global_counts),
                       static_cast<int>(local_counts.size()), MPI_INT, MPI_SUM, communicator_);
     if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Allreduce failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Allreduce failed", __func__));
     }
   }
   else {
@@ -352,18 +343,14 @@ void Ioss::ParallelUtils::global_count(const Int64Vector &local_counts,
 #ifdef SEACAS_HAVE_MPI
   if (!local_counts.empty() && parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - Attempting mpi while in barrier owned by {}", __func__,
-                 Ioss::SerializeIO::getOwner());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - Attempting mpi while in barrier owned by {}", __func__,
+                             Ioss::SerializeIO::getOwner()));
     }
     const int success = MPI_Allreduce((void *)Data(local_counts), Data(global_counts),
                                       static_cast<int>(local_counts.size()), MPI_LONG_LONG_INT,
                                       MPI_SUM, communicator_);
     if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Allreduce failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Allreduce failed", __func__));
     }
   }
   else {
@@ -394,10 +381,8 @@ T Ioss::ParallelUtils::global_minmax(T                 local_minmax,
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - Attempting mpi while in barrier owned by {}", __func__,
-                 Ioss::SerializeIO::getOwner());
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - Attempting mpi while in barrier owned by {}", __func__,
+                             Ioss::SerializeIO::getOwner()));
     }
     static T inbuf[1], outbuf[1];
     inbuf[0] = local_minmax;
@@ -407,9 +392,7 @@ T Ioss::ParallelUtils::global_minmax(T                 local_minmax,
     const int success =
         MPI_Allreduce((void *)&inbuf[0], &outbuf[0], 1, mpi_type(T()), oper, communicator_);
     if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Allreduce failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Allreduce failed", __func__));
     }
     minmax = outbuf[0];
   }
@@ -436,9 +419,7 @@ namespace Ioss {
       const int success = MPI_Bcast(const_cast<char *>(my_str.data()), (int)my_str.size() + 1,
                                     MPI_CHAR, root, communicator_);
       if (success != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("{} - MPI_Broadcast failed", __func__));
       }
     }
 #endif
@@ -454,9 +435,7 @@ void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED T &my_value, IOSS_MAYBE_UN
   if (parallel_size() > 1) {
     const int success = MPI_Bcast((void *)&my_value, 1, mpi_type(T()), root, communicator_);
     if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Broadcast failed", __func__));
     }
   }
 #endif
@@ -486,9 +465,7 @@ namespace Ioss {
       const int success = MPI_Bcast(Data(my_value), (int)my_value.size() * 2, mpi_type(int(0)),
                                     root, communicator_);
       if (success != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("{} - MPI_Broadcast failed", __func__));
       }
     }
 #endif
@@ -506,9 +483,7 @@ void Ioss::ParallelUtils::broadcast(IOSS_MAYBE_UNUSED std::vector<T> &my_value,
     const int success =
         MPI_Bcast(Data(my_value), (int)my_value.size(), mpi_type(T()), root, communicator_);
     if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Broadcast failed", __func__));
     }
   }
 #endif
@@ -541,9 +516,7 @@ template <typename T> void Ioss::ParallelUtils::gather(T my_value, std::vector<T
     const int success = MPI_Gather((void *)&my_value, 1, mpi_type(T()), (void *)Data(result), 1,
                                    mpi_type(T()), 0, communicator_);
     if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Gather failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Gather failed", __func__));
     }
   }
   else {
@@ -562,9 +535,7 @@ template <typename T> void Ioss::ParallelUtils::all_gather(T my_value, std::vect
     const int success = MPI_Allgather((void *)&my_value, 1, mpi_type(T()), (void *)Data(result), 1,
                                       mpi_type(T()), communicator_);
     if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Allgather failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Allgather failed", __func__));
     }
   }
   else {
@@ -585,9 +556,7 @@ void Ioss::ParallelUtils::all_gather(std::vector<T> &my_values, std::vector<T> &
         MPI_Allgather(Data(my_values), my_values.size(), mpi_type(T()), (void *)Data(result),
                       my_values.size(), mpi_type(T()), communicator_);
     if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Allgather failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Allgather failed", __func__));
     }
   }
   else {
@@ -631,9 +600,7 @@ void Ioss::ParallelUtils::gather(std::vector<T> &my_values, std::vector<T> &resu
     const int success = MPI_Gather((void *)Data(my_values), count, mpi_type(T()),
                                    (void *)Data(result), count, mpi_type(T()), 0, communicator_);
     if (success != MPI_SUCCESS) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "{} - MPI_Gather failed", __func__);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format("{} - MPI_Gather failed", __func__));
     }
   }
   else {

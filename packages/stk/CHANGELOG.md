@@ -1,5 +1,9 @@
 # CHANGELOG
 
+5.23.5 (STK_VERSION 5230500) 2/11/2025
+  stk_mesh: fix calls to member template 'volatile_fast_shared_comm_map' to use '.template ...' syntax
+  stk_util: make CommSparse work with messages > 2 GB with newer coupling versions
+
 5.23.2 (STK_VERSION 5230200) 12/11/2024
   misc fixes for AMD/ROCm (ATS-4)
   stk_mesh: speedup for device-field multi-state rotation

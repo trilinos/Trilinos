@@ -49,7 +49,7 @@ using namespace stk::mesh::impl;
 using namespace stk::mesh;
 using stk::unit_test_util::build_mesh;
 
-TEST(ElementGraph, degenerate_mesh)
+TEST(ElementGraph, degenerate_mesh_externalFile)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
 

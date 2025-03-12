@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -379,6 +379,12 @@ sexp:     QSTRING               { $$ = $1;                              }
         | SFNCT LPAR exp COMMA sexp RPAR {
           if (arg_check($1, $1->value.strfnct_dc == NULL))
             $$ = (char*)(*($1->value.strfnct_dc))($3, $5);
+          else
+            $$ = (char*)"";
+        }
+        | SFNCT LPAR sexp COMMA exp RPAR {
+          if (arg_check($1, $1->value.strfnct_cd == NULL))
+            $$ = (char*)(*($1->value.strfnct_cd))($3, $5);
           else
             $$ = (char*)"";
         }

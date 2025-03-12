@@ -42,10 +42,10 @@ namespace stk { namespace mesh { class Ghosting; } }
 
 namespace STKperf {
 
-static const int X_DIM = 500; //num_elems_x
-static const int Y_DIM = 500; //num_elems_y
+static const int X_DIM = 800; //num_elems_x
+static const int Y_DIM = 800; //num_elems_y
 
-static const int NUM_FIELDS = 40;
+static const int NUM_FIELDS = 120;
 
 static const int NUM_ITERS = 40;
 
@@ -72,11 +72,11 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
       return;
   }
 
-  const int xdim = device_mpi ? 21 : X_DIM;
-  const int ydim = device_mpi ? 21 : Y_DIM;
+  const int xdim = X_DIM;
+  const int ydim = Y_DIM;
   const int zdim = parallel_size*2;
-  const int numFields = device_mpi ? 5 : NUM_FIELDS;
-  const int numIters = device_mpi ? 5 : NUM_ITERS;
+  const int numFields = NUM_FIELDS;
+  const int numIters = NUM_ITERS;
 
   std::ostringstream oss;
   oss << "generated:" << xdim << "x" << ydim << "x" << zdim;
@@ -191,18 +191,22 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
   }
 
   for (int t = 0; t < numIters; ++t) {
-      if (with_ghosts) {
-          STK_ThrowRequireMsg(!device_mpi, "NGP parallel_sum_including_ghosts not implemented yet.");
-          stk::mesh::parallel_sum_including_ghosts(bulk, fields);
+    if (with_ghosts) {
+      STK_ThrowRequireMsg(!device_mpi, "NGP parallel_sum_including_ghosts not implemented yet.");
+      stk::mesh::parallel_sum_including_ghosts(bulk, fields);
+    }
+    else {
+      if (device_mpi) {
+        stk::mesh::parallel_sum(*ngpMesh, ngpFields);
       }
       else {
-          if (device_mpi) {
-            stk::mesh::parallel_sum_device_mpi(*ngpMesh, ngpFields);
-          }
-          else {
-            stk::mesh::parallel_sum(bulk, fields);
-          }
+        stk::mesh::parallel_sum(bulk, fields);
+
+        for (int i = 0; i < numFields; ++i) {
+          ngpFields[i] = &stk::mesh::get_updated_ngp_field<double>(*fields[i]);
+        }
       }
+    }
   }
 
   double stk_sum_time = stk::cpu_time() - start_time;

@@ -198,66 +198,60 @@ TEST(BucketConnectivity, fixed_simple_add)
 {
   const unsigned num_to_add   = 8;
   const unsigned num_entities = 100;
-  BulkData * bulk = NULL;
   fixed_conn conn(num_to_add);
 
   test_simple_add(conn, num_entities, num_to_add);
-  conn.end_modification(bulk);
+  conn.end_modification();
 }
 
 TEST(BucketConnectivity, fixed_complex_add)
 {
   const unsigned num_to_add   = 8;
   const unsigned num_entities = 100;
-  BulkData * bulk = NULL;
   fixed_conn conn(num_to_add);
 
   test_complex_add(conn, num_entities, num_to_add);
-  conn.end_modification(bulk);
+  conn.end_modification();
 }
 
 TEST(BucketConnectivity, fixed_remove)
 {
   const unsigned num_to_add   = 8;
   const unsigned num_entities = 100;
-  BulkData * bulk = NULL;
   fixed_conn conn(num_to_add);
 
   test_remove(conn, num_entities, num_to_add);
-  conn.end_modification(bulk);
+  conn.end_modification();
 }
 
 TEST(BucketConnectivity, fixed_intra_conn_copy)
 {
   const unsigned num_to_add   = 8;
   const unsigned num_entities = 100;
-  BulkData * bulk = NULL;
   fixed_conn conn(num_to_add);
 
   test_intra_conn_copy(conn, num_entities, num_to_add);
-  conn.end_modification(bulk);
+  conn.end_modification();
 }
 
 TEST(BucketConnectivity, fixed_inter_conn_copy)
 {
   const unsigned num_to_add   = 8;
   const unsigned num_entities = 100;
-  BulkData * bulk = NULL;
   fixed_conn conn(num_to_add);
 
   test_inter_conn_copy(conn, num_entities, num_to_add);
-  conn.end_modification(bulk);
+  conn.end_modification();
 }
 
 TEST(BucketConnectivity, fixed_mod_end)
 {
   const unsigned num_to_add   = 8;
   const unsigned num_entities = 100;
-  BulkData * bulk = NULL;
   fixed_conn conn(num_to_add);
 
   test_mod_end(conn, num_entities, num_to_add);
-  conn.end_modification(bulk);
+  conn.end_modification();
 }
 
 TEST(BucketConnDynamic, basic)

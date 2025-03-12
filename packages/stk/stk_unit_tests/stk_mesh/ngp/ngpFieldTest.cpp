@@ -2651,11 +2651,10 @@ TEST_F(NgpFieldExecSpaceTestFixture, CheckValidMemSpace)
   EXPECT_NO_THROW((stk::mesh::get_updated_ngp_field<int, stk::mesh::NgpMeshDefaultMemSpace>(*field)));
 
 #ifdef STK_ENABLE_GPU
-  EXPECT_ANY_THROW(
+  EXPECT_ANY_THROW((stk::mesh::get_updated_ngp_field<int, stk::ngp::HostPinnedSpace>(*field)));
 #else
-  EXPECT_NO_THROW(
+  EXPECT_NO_THROW((stk::mesh::get_updated_ngp_field<int, stk::ngp::HostPinnedSpace>(*field)));
 #endif
-    (stk::mesh::get_updated_ngp_field<int, stk::ngp::HostPinnedSpace>(*field)));
 }
 
 TEST_F(NgpFieldExecSpaceTestFixture, CheckSameMemSpace)

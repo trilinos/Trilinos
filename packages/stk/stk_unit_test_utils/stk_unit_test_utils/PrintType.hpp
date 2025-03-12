@@ -59,15 +59,4 @@ void print_type(T& t)
 #endif
 }
 
-namespace simple_fields {
-
-template <typename T>
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-void print_type(T& t)
-{
-  stk::unit_test_util::print_type(t);
-}
-
-} // namespace simple_fields
-
 } }

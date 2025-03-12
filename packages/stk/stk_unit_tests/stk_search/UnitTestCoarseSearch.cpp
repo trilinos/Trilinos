@@ -316,9 +316,10 @@ TEST(CoarseSearchCorrectness, coarseSearchDoubleBoxes_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_algorithm<double>(stk::search::ARBORX, MPI_COMM_WORLD);
-  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultExecutionSpace>(stk::search::ARBORX, MPI_COMM_WORLD);
   test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultHostExecutionSpace>(stk::search::ARBORX, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_with_views<double, Kokkos::DefaultExecutionSpace>(stk::search::ARBORX, MPI_COMM_WORLD);
 
 }
 
@@ -327,6 +328,7 @@ TEST(CoarseSearchCorrectness, coarseSearchFloatBoxes_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_algorithm<float>(stk::search::ARBORX, MPI_COMM_WORLD);
   test_coarse_search_for_algorithm_with_views<float>(stk::search::ARBORX, MPI_COMM_WORLD);
 }
@@ -427,6 +429,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_CoarseSearchDoubleBoxes_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   host_local_test_coarse_search_for_algorithm<double>(stk::search::ARBORX);
   device_local_test_coarse_search_for_algorithm<double>(stk::search::ARBORX);
 }
@@ -436,6 +439,7 @@ TEST(CoarseSearchCorrectness, Ngp_Local_CoarseSearchFloatBoxes_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   host_local_test_coarse_search_for_algorithm<float>(stk::search::ARBORX);
   device_local_test_coarse_search_for_algorithm<float>(stk::search::ARBORX);
 }
@@ -673,6 +677,7 @@ TEST(stk_search, coarse_search_two_pass_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_two_pass(stk::search::ARBORX, MPI_COMM_WORLD, 2);
 }
 
@@ -815,6 +820,7 @@ TEST(stk_search, coarse_search_ident_proc_switch_ARBORX)
   GTEST_SKIP();
 #endif
   test_ident_proc_with_search(stk::search::ARBORX);
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_ident_proc_with_search_with_views(stk::search::ARBORX);
 }
 
@@ -879,6 +885,7 @@ TEST(stk_search, coarse_search_one_point_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_one_point(stk::search::ARBORX);
 }
 
@@ -946,6 +953,7 @@ TEST(CoarseSearch, forDeterminingSharingAllAllCase_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_determining_sharing_all_all_case(stk::search::ARBORX);
 }
 
@@ -1071,6 +1079,7 @@ TEST(CoarseSearch, forDeterminingSharingLinearAdjacentCase_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_determining_sharing_linear_adjacent_case(stk::search::ARBORX);
 }
 
@@ -1079,6 +1088,7 @@ TEST(CoarseSearchScaling, forDeterminingSharingLinearAdjacentCase_ARBORX)
 #ifndef STK_HAS_ARBORX
   GTEST_SKIP();
 #endif
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_for_determining_sharing_linear_adjacent_case(stk::search::ARBORX, 1000);
 }
 
@@ -1090,6 +1100,7 @@ TEST(CoarseSearch, nonDefaultView_MORTON_LBVH)
 
 TEST(CoarseSearch, nonDefaultView_ARBORX)
 {
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_coarse_search_with_non_default_view(stk::search::ARBORX, stk::parallel_machine_world());
 }
 
@@ -1100,6 +1111,7 @@ TEST(LocalCoarseSearch, nonDefaultView_MORTON_LBVH)
 
 TEST(LocalCoarseSearch, nonDefaultView_ARBORX)
 {
+  if (!stk::unit_test_util::can_run_device_tests(stk::parallel_machine_world())) GTEST_SKIP();
   test_local_coarse_search_with_non_default_view(stk::search::ARBORX);
 }
 #endif

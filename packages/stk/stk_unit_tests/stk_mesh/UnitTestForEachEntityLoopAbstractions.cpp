@@ -23,78 +23,112 @@ namespace
 {
 using stk::unit_test_util::build_mesh;
 
-TEST(ForEntityFunctionInMeshImplUtils, test_counting_nodes_using_raw_bucket_loops)
+TEST(ForEachEntityRunNoThreads, test_counting_nodes)
 {
   MPI_Comm communicator = MPI_COMM_WORLD;
-  if(stk::parallel_machine_size(communicator) == 2)
-  {
-    const int spatialDim = 3;
-    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
-    stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
-    stk::mesh::BulkData& bulkData = *bulkPtr;
+  if(stk::parallel_machine_size(communicator) != 2) { GTEST_SKIP(); }
 
-    std::string generatedMeshSpec = "generated:1x1x4";
-    stk::io::fill_mesh(generatedMeshSpec, bulkData);
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
 
-    {
-      unsigned numNodes = 0;
-      stk::mesh::impl::for_each_selected_entity_run_no_threads(bulkData, stk::topology::NODE_RANK, metaData.universal_part(),
-        [&numNodes](const stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
-        {
-          stk::mesh::Entity entity = stk::mesh::impl::get_entity(meshIndex);
-          if(mesh.is_valid(entity))
-          {
-            numNodes++;
-          }
-        }
-      );
-      EXPECT_EQ(16u, numNodes);
-    }
-    {
-      unsigned numNodes = 0;
-      stk::mesh::impl::for_each_entity_run_no_threads(bulkData, stk::topology::NODE_RANK,
-        [&numNodes](const stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
-        {
-          stk::mesh::Entity entity = stk::mesh::impl::get_entity(meshIndex);
-          if(mesh.is_valid(entity))
-          {
-            numNodes++;
-          }
-        }
-      );
-      EXPECT_EQ(16u, numNodes);
-    }
-    {
-      const unsigned numNodes = stk::mesh::count_selected_entities(metaData.universal_part(),
-                                                                   bulkData.buckets(stk::topology::NODE_RANK));
-      ASSERT_EQ(16u, numNodes);
-      std::vector<unsigned> localIds(numNodes);
-      unsigned index = 0;
-      const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::NODE_RANK, metaData.universal_part());
-      for(const stk::mesh::Bucket* bptr : buckets) {
-        for(stk::mesh::Entity node : *bptr) {
-          if (bulkData.is_valid(node)) {
-            bulkData.set_local_id(node, index);
-            ++index;
-          }
-        }
-      }
-      stk::mesh::for_each_entity_run(bulkData, stk::topology::NODE_RANK,
-        [&localIds](const stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
-        {
-          stk::mesh::Entity node = stk::mesh::impl::get_entity(meshIndex);
-          if(mesh.is_valid(node))
-          {
-            unsigned localId = mesh.local_id(node);
-            localIds[localId] = localId;
-          }
-        }
-      );
-      for(size_t i=0; i<numNodes; i++)
+  std::string generatedMeshSpec = "generated:1x1x4";
+  stk::io::fill_mesh(generatedMeshSpec, bulkData);
+
+  {//version that uses selector and functor that takes MeshIndex
+    unsigned numNodes = 0;
+    stk::mesh::for_each_entity_run_no_threads(bulkData, stk::topology::NODE_RANK, metaData.universal_part(),
+      [&numNodes](const stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
       {
-        EXPECT_EQ(i, localIds[i]);
+        stk::mesh::Entity entity = stk::mesh::impl::get_entity(meshIndex);
+        if(mesh.is_valid(entity)) {
+          numNodes++;
+        }
+      }
+    );
+    EXPECT_EQ(16u, numNodes);
+  }
+  {//version that uses selector and functor that takes Entity
+    unsigned numNodes = 0;
+    stk::mesh::for_each_entity_run_no_threads(bulkData, stk::topology::NODE_RANK, metaData.universal_part(),
+      [&numNodes](const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity)
+      {
+        if(mesh.is_valid(entity)) {
+          numNodes++;
+        }
+      }
+    );
+    EXPECT_EQ(16u, numNodes);
+  }
+  {//version with no selector and functor that takes MeshIndex
+    unsigned numNodes = 0;
+    stk::mesh::for_each_entity_run_no_threads(bulkData, stk::topology::NODE_RANK,
+      [&numNodes](const stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
+      {
+        stk::mesh::Entity entity = stk::mesh::impl::get_entity(meshIndex);
+        if(mesh.is_valid(entity)) {
+          numNodes++;
+        }
+      }
+    );
+    EXPECT_EQ(16u, numNodes);
+  }
+  {//version with no selector and functor that takes Entity
+    unsigned numNodes = 0;
+    stk::mesh::for_each_entity_run_no_threads(bulkData, stk::topology::NODE_RANK,
+      [&numNodes](const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity)
+      {
+        if(mesh.is_valid(entity)) {
+          numNodes++;
+        }
+      }
+    );
+    EXPECT_EQ(16u, numNodes);
+  }
+}
+
+TEST(SettingLocalIds, bucket_loop_iterates_in_same_order_as_for_each_entity_run)
+{
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if(stk::parallel_machine_size(communicator) != 2) { GTEST_SKIP(); }
+
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
+
+  std::string generatedMeshSpec = "generated:1x1x4";
+  stk::io::fill_mesh(generatedMeshSpec, bulkData);
+
+  const unsigned numNodes = stk::mesh::count_selected_entities(metaData.universal_part(),
+                                                               bulkData.buckets(stk::topology::NODE_RANK));
+  ASSERT_EQ(16u, numNodes);
+  std::vector<unsigned> localIds(numNodes);
+  unsigned index = 0;
+  const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::NODE_RANK, metaData.universal_part());
+  for(const stk::mesh::Bucket* bptr : buckets) {
+    for(stk::mesh::Entity node : *bptr) {
+      if (bulkData.is_valid(node)) {
+        bulkData.set_local_id(node, index);
+        ++index;
       }
     }
+  }
+  stk::mesh::for_each_entity_run(bulkData, stk::topology::NODE_RANK,
+    [&localIds](const stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
+    {
+      stk::mesh::Entity node = stk::mesh::impl::get_entity(meshIndex);
+      if(mesh.is_valid(node))
+      {
+        unsigned localId = mesh.local_id(node);
+        localIds[localId] = localId;
+      }
+    }
+  );
+  for(size_t i=0; i<numNodes; i++)
+  {
+    EXPECT_EQ(i, localIds[i]);
   }
 }
 

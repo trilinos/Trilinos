@@ -40,7 +40,7 @@
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
 #include "stk_balance/internal/SubdomainWriter.hpp"
-#include "Ioss_Region.h"
+#include "stk_balance/internal/privateDeclarations.hpp"
 
 namespace stk {
 namespace balance {
@@ -129,6 +129,7 @@ RebalanceTransientFieldTransferById::transfer_and_write_transient_data(unsigned 
 
   std::vector<double> inputTimeSteps = m_inputBroker.get_time_steps();
 
+  internal::logMessage(m_inputBroker.bulk_data().parallel(), "Writing "+std::to_string(inputTimeSteps.size())+" time steps");
   for (double time : inputTimeSteps) {
     m_inputBroker.read_defined_input_fields(time);
     transfer_transient_data(subdomain);

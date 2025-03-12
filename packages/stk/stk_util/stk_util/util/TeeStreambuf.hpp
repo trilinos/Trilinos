@@ -126,7 +126,7 @@ private:
    *
    * @return			an <b>int</b> value of 1 if successful.
    */
-  virtual int sync() {
+  virtual int sync() override {
     if (m_destinations.empty())
       return 1;
 
@@ -158,7 +158,7 @@ private:
    *
    * @return			an <b>int</b> value of the character written.
    */
-  virtual typename std::basic_streambuf<Ch, Tr>::int_type overflow(const int c) {
+  virtual typename std::basic_streambuf<Ch, Tr>::int_type overflow(const int c) override {
     if (m_destinations.empty())
       return 1;
 
@@ -189,7 +189,7 @@ private:
    *
    * @return			a <b>std::streamsize</b> value of the number of characters written.
    */
-  virtual std::streamsize xsputn(char const *buffer, std::streamsize n) {
+  virtual std::streamsize xsputn(char const *buffer, std::streamsize n) override {
     if (m_destinations.empty())
       return n;
 

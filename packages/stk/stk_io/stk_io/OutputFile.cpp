@@ -147,38 +147,51 @@ void OutputFile::set_input_region(const Ioss::Region *input_region)
     m_inputRegion = input_region;
 }
 
+void OutputFile::define_output_mesh(const stk::mesh::BulkData& bulk_data,
+                                   const std::vector<std::vector<int>> &attributeOrdering)
+{
+  if ( m_meshDefined == false )
+  {
+    // If using hdf5 as the underlying file type for exodus/netcdf,
+    // it is more picky about overwriting an existing file -- if the
+    // file is open, then it will abort; it will only overwrite an existing
+    // file if it is not open.  Since overwriting restart files (input/output)
+    // is a common usecase, we need to check at this point whether there are
+    // any existing input files with the same name as the file we are attempting
+    // to create here. However, due to symbolic links and other junk, it is often
+    // difficult to determine that the files are the same, so..., If m_input_region
+    // refers to a file, just close it since we should be done with it at this time...
+    if (m_inputRegion) {
+      m_inputRegion->get_database()->closeDatabase();
+    }
+
+    // used in stk_adapt/stk_percept
+    stk::io::OutputParams params(*m_region, bulk_data);
+    setup_output_params(params);
+
+    stk::io::define_output_db(params, attributeOrdering, m_inputRegion);
+    m_meshDefined = true;
+  }
+}
+
 void OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data,
                                    const std::vector<std::vector<int>> &attributeOrdering)
 {
-    if ( m_meshDefined == false )
-    {
-        m_meshDefined = true;
+  define_output_mesh(bulk_data, attributeOrdering);
 
-        // If using hdf5 as the underlying file type for exodus/netcdf,
-        // it is more picky about overwriting an existing file -- if the
-        // file is open, then it will abort; it will only overwrite an existing
-        // file if it is not open.  Since overwriting restart files (input/output)
-        // is a common usecase, we need to check at this point whether there are
-        // any existing input files with the same name as the file we are attempting
-        // to create here. However, due to symbolic links and other junk, it is often
-        // difficult to determine that the files are the same, so..., If m_input_region
-        // refers to a file, just close it since we should be done with it at this time...
-        if (m_inputRegion) {
-            m_inputRegion->get_database()->closeDatabase();
-        }
+  if ( m_meshWritten == false )
+  {
+    m_meshWritten = true;
 
-        // used in stk_adapt/stk_percept
-        stk::io::OutputParams params(*m_region, bulk_data);
-        setup_output_params(params);
-
-        stk::io::define_output_db(params, attributeOrdering, m_inputRegion);
-
-        if(!m_appendingToMesh)
-            stk::io::write_output_db(params);
-
-        //Attempt to avoid putting state change into the interface.  We'll see . . .
-        m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+    if(!m_appendingToMesh) {
+      stk::io::OutputParams params(*m_region, bulk_data);
+      setup_output_params(params);
+      stk::io::write_output_db(params);
     }
+
+    //Attempt to avoid putting state change into the interface.  We'll see . . .
+    m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+  }
 }
 
 template<typename INT>
@@ -482,6 +495,13 @@ void OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_
         m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
     }
 
+    auto topologyObserver = m_region->get_mesh_modification_observer();
+    if (topologyObserver->needs_new_output_file() &&
+        topologyObserver->get_control_option() != Ioss::FileControlOption::CONTROL_NONE &&
+        m_region->get_state() == Ioss::STATE_TRANSIENT) {
+      m_region->end_mode(Ioss::STATE_TRANSIENT);
+    }
+
     if(m_region->get_state() != Ioss::STATE_TRANSIENT)
     {
         m_region->begin_mode(Ioss::STATE_TRANSIENT);
@@ -499,13 +519,17 @@ void OutputFile::begin_output_step(double time, const stk::mesh::BulkData& bulk_
 // To export the data to the database, call
 // process_output_request().
 void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data,
-                                            const std::vector<std::vector<int>> &attributeOrdering)
+                                      const std::vector<std::vector<int>> &attributeOrdering)
 {
     if(m_fieldsDefined) {
         return;
     }
 
     write_output_mesh(bulk_data, attributeOrdering);
+
+    if(m_region->get_state() != Ioss::STATE_DEFINE_TRANSIENT) {
+        m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
+    }
 
     Ioss::Region *region = m_region.get();
 
@@ -573,6 +597,8 @@ void OutputFile::define_output_fields(const stk::mesh::BulkData& bulk_data,
         }
     }
     m_fieldsDefined = true;
+
+    m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
 }
 
 int OutputFile::process_output_request(double time, const stk::mesh::BulkData& bulk_data,

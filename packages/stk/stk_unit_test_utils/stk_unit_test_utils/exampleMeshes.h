@@ -104,19 +104,6 @@ Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes)
             blockTopologicalData, globalNumberOfNodes, globalIdsOfLocalElements, globalIdsOfLocalNodes);
 }
 
-namespace simple_fields {
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-void fillDataForUnitCube(std::vector<double> &coordinates);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-void fillDataForRectangloid(std::vector<double> &coordinates);
-
-STK_DEPRECATED_MSG("Please use the non-simple_fields-namespaced version of this function instead")
-Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes);
-
-} // namespace simple_fields
-
 }
 }
 #endif

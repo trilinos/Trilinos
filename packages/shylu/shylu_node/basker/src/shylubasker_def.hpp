@@ -939,11 +939,11 @@ namespace BaskerNS
         // reset the small D blocks
         if (btf_top_tabs_offset  > 0) {
           Int d_last = btf_top_tabs_offset;
-          Int ncol = btf_tabs(d_last);
+          Int ncol_d = btf_tabs(d_last);
 
           // revert BLK_AMD ordering
           auto order_blk_amd_d = Kokkos::subview(order_blk_amd_inv,
-                                                 range_type(0, ncol));
+                                                 range_type(0, ncol_d));
           permute_row(BTF_D, order_blk_amd_d);
           permute_col(BTF_D, order_blk_amd_d);
           if (BTF_E.ncol > 0) {
@@ -954,7 +954,7 @@ namespace BaskerNS
           if (Options.blk_matching != 0) {
             // revert BLK_MWM ordering
             auto order_blk_mwm_d = Kokkos::subview(order_blk_mwm_inv, 
-                                                   range_type (0, ncol));
+                                                   range_type (0, ncol_d));
             permute_row(BTF_D, order_blk_mwm_d);
             if (BTF_E.ncol > 0) {
               // Apply MWM perm to cols
@@ -1103,15 +1103,15 @@ namespace BaskerNS
       if (btf_top_tabs_offset > 0) {
         Kokkos::Timer mwm_amd_perm_timer;
         Int d_last = btf_top_tabs_offset;
-        Int ncol = btf_tabs(d_last);
+        Int ncol_d = btf_tabs(d_last);
 
         auto order_blk_mwm_d = Kokkos::subview(order_blk_mwm_array,
-                                               range_type(0, ncol));
+                                               range_type(0, ncol_d));
         auto order_blk_amd_d = Kokkos::subview(order_blk_amd_array,
-                                               range_type(0, ncol));
+                                               range_type(0, ncol_d));
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " calling MWM on D" << std::endl;
-          std::cout << " btf_blk_mwm: btf_top_tabs(" << btf_top_tabs_offset << ")=" << ncol << std::endl;
+          std::cout << " btf_blk_mwm: btf_top_tabs(" << btf_top_tabs_offset << ")=" << ncol_d << std::endl;
         }
 
         // ----------------------------------------------------------------------------------------------
@@ -2006,7 +2006,7 @@ namespace BaskerNS
 
     if(err == BASKER_ERROR)
     {
-      printf("ShyLUBasker factor_notoken/inc_lvl error returned (err=%d)\n",err);
+      printf("ShyLUBasker %s error returned (err=%d)\n",(Options.incomplete == BASKER_FALSE ? "factor_notoken" : "factor_inc_lvl"),err);
       return BASKER_ERROR; 
     }
 

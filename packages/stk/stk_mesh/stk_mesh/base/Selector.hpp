@@ -188,6 +188,7 @@ struct SelectorNode
   unsigned left_offset; // for binary op
 };
 
+class Partition;
 } // namespace impl
 
 /**
@@ -308,6 +309,11 @@ public:
    *          set defined by the selector expression.
    */
   bool operator()( const Bucket & bucket ) const;
+
+  /** \brief  Is this Partition a subset of the
+   *          set defined by the selector expression.
+   */
+  bool operator()( const impl::Partition & bucket ) const;
 
   /** \brief  Is this bucket a subset of the
    *          set defined by the selector expression.

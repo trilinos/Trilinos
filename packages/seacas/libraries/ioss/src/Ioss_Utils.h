@@ -40,6 +40,8 @@ namespace Ioss {
   throw std::runtime_error((errmsg).str());
 }
 
+[[noreturn]] inline void IOSS_ERROR(const std::string &errmsg) { throw std::runtime_error(errmsg); }
+
 #ifdef NDEBUG
 #define IOSS_ASSERT_USED(x) (void)x
 #else

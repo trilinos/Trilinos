@@ -469,17 +469,26 @@ private:
   void remove_entity();
 
   // Copy an existing entity to the end of this bucket
-  void copy_entity(Entity entity);
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 15 2025
+  STK_DEPRECATED void copy_entity(Entity entity);
+#endif
+  void copy_entity(const Bucket* fromBucket, unsigned fromOrdinal);
 
   // overwrites existing entity at ordinal with entity
   // bucket[to_ordinal] = entity;
   // whatever was there before is lost
   //  With optional fields argument only copy listed fields
-  void overwrite_entity(unsigned to_ordinal, Entity entity, const std::vector<FieldBase*>* fields = nullptr);
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 15 2025
+  STK_DEPRECATED void overwrite_entity(unsigned to_ordinal, Entity entity, const std::vector<FieldBase*>* fields = nullptr);
+#endif
+  void overwrite_entity(unsigned to_ordinal, const Bucket* fromBucket, unsigned fromOrdinal, const std::vector<FieldBase*>* fields = nullptr);
 
   void initialize_slot(unsigned ordinal, Entity entity);
   //  Optional fields argument, only copy listed fields
-  void reset_entity_location(Entity entity, unsigned to_ordinal, const std::vector<FieldBase*>* fields = nullptr);
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 15 2025
+  STK_DEPRECATED void reset_entity_location(Entity entity, unsigned to_ordinal, const std::vector<FieldBase*>* fields = nullptr);
+#endif
+  void reset_entity_location(unsigned to_ordinal, const Bucket* fromBucket, unsigned fromOrdinal, const std::vector<FieldBase*>* fields = nullptr);
 
   unsigned get_others_begin_index(unsigned bucket_ordinal, EntityRank rank) const;
   unsigned get_others_end_index(unsigned bucket_ordinal, EntityRank rank) const;
@@ -659,19 +668,7 @@ unsigned Bucket::num_connectivity(unsigned bucket_ordinal, EntityRank rank) cons
 inline
 bool Bucket::has_permutation(EntityRank rank) const
 {
-  switch(rank) {
-  case stk::topology::NODE_RANK:
-    return m_node_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
-  case stk::topology::EDGE_RANK:
-    return m_edge_kind == FIXED_CONNECTIVITY ? m_fixed_edge_connectivity.has_permutation() : m_dynamic_edge_connectivity.has_permutation();
-  case stk::topology::FACE_RANK:
-    return m_face_kind == FIXED_CONNECTIVITY ? m_fixed_face_connectivity.has_permutation() : m_dynamic_face_connectivity.has_permutation();
-  case stk::topology::ELEMENT_RANK:
-    return m_element_kind == FIXED_CONNECTIVITY ? m_fixed_element_connectivity.has_permutation() : m_dynamic_element_connectivity.has_permutation();
-  case stk::topology::CONSTRAINT_RANK:
-  default:
-    return false;
-  }
+  return should_store_permutations(entity_rank(), rank);
 }
 
 inline

@@ -163,7 +163,7 @@ if (NOT DEFINED STK_ENABLE_UnitMain)
 endif()
 
 if (STK_ENABLE_UnitMain)
-  FILE(GLOB UNIT_MAIN_SOURCES unit_main_lib/*.cpp)
+  FILE(GLOB UNIT_MAIN_SOURCES CONFIGURE_DEPENDS unit_main_lib/*.cpp)
 
   if(HAVE_STK_Trilinos)
     TRIBITS_ADD_LIBRARY(stk_unit_main

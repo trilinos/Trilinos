@@ -40,11 +40,13 @@
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/SelectorFixture.hpp"
 #include <stdexcept>
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Types.hpp>
+#include <stk_io/FillMesh.hpp>
 #include <stk_unit_test_utils/timer.hpp>
 
 namespace {
@@ -93,6 +95,82 @@ TEST(selector_timings, selector_timings)
 
     batchTimer.stop_batch_timer();
   }
+  const int numIterations = 1;
+  batchTimer.print_batch_timing(numIterations);
+}
+
+void create_elem_block_parts(int numParts, stk::mesh::MetaData& meta)
+{
+  const int firstBlockAfterBlock1 = 2;
+  for(int i=0; i<numParts; ++i) {
+    stk::mesh::Part& part = meta.declare_part(std::string("elemBlock")+std::to_string(i+firstBlockAfterBlock1), stk::topology::ELEM_RANK);
+    meta.set_part_id(part, i+firstBlockAfterBlock1);
+  }
+}
+
+void move_elems_to_each_part(stk::mesh::BulkData& bulk, int elemsPerPart)
+{
+  stk::mesh::PartVector blocks = stk::mesh::ExodusTranslator(bulk).get_element_block_parts();
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  stk::mesh::Part* block1 = meta.get_part("block_1");
+  STK_ThrowRequire(block1 != nullptr);
+  stk::mesh::EntityVector elems;
+  stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, meta.locally_owned_part(), elems);
+
+  bulk.modification_begin();
+  
+  unsigned elemCounter = 0;
+  unsigned blockCounter = 0;
+  stk::mesh::PartVector addParts = {blocks[blockCounter++]};
+  stk::mesh::PartVector rmParts = {block1};
+
+  while(elemCounter < elems.size()) {
+    if (addParts[0] != block1) {
+      for(int e=0; e<elemsPerPart; ++e) {
+        if (elemCounter >= elems.size()) {
+          break;
+        }
+        bulk.change_entity_parts(elems[elemCounter++], addParts, rmParts);
+      }
+    }
+    if (blockCounter >= blocks.size()) {
+      break;
+    }
+    addParts[0] = blocks[blockCounter++];
+  }
+
+  bulk.modification_end();
+}
+
+TEST(selector_timings, get_buckets)
+{
+  MPI_Comm comm = stk::parallel_machine_world();
+  if (stk::parallel_machine_size(comm) > 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(comm).set_spatial_dimension(3).create();
+
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  const int numParts = 5000;
+  create_elem_block_parts(numParts, meta);
+
+  stk::io::fill_mesh("generated:100x100x100", *bulkPtr);
+  const int numElems = 100*100*100;
+  const int elemsPerPart = numElems/numParts;
+  move_elems_to_each_part(*bulkPtr, elemsPerPart);
+
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+
+  batchTimer.start_batch_timer();
+
+  stk::mesh::PartVector blocks = stk::mesh::ExodusTranslator(*bulkPtr).get_element_block_parts();
+  for(stk::mesh::Part* partPtr : blocks) {
+    stk::mesh::Selector selector(*partPtr);
+    selector.get_buckets(stk::topology::NODE_RANK);
+  }
+
+  batchTimer.stop_batch_timer();
+
   const int numIterations = 1;
   batchTimer.print_batch_timing(numIterations);
 }

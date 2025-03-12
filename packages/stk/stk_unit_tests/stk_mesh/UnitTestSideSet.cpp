@@ -6,6 +6,7 @@
 #include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_mesh/base/SidesetUpdater.hpp>
 #include <stk_mesh/base/DestroyElements.hpp>
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_io/IossBridge.hpp>
@@ -19,6 +20,19 @@
 
 namespace {
 using stk::unit_test_util::build_mesh;
+
+void check_ordinal_and_permutation(const stk::mesh::BulkData& bulk,
+                                   stk::mesh::Entity elem,
+                                   stk::mesh::EntityRank rank,
+                                   const stk::mesh::EntityVector& sideNodes,
+                                   stk::mesh::ConnectivityOrdinal expectedSideOrdinal,
+                                   stk::mesh::Permutation expectedPerm)
+{
+   stk::mesh::OrdinalAndPermutation ordPerm =
+     stk::mesh::get_ordinal_and_permutation(bulk, elem, rank, sideNodes);
+   EXPECT_EQ(expectedSideOrdinal, ordPerm.first);
+   EXPECT_EQ(expectedPerm, ordPerm.second);
+}
 
 void move_elems_from_block_to_block(stk::mesh::BulkData& bulk,
                                     const std::vector<stk::mesh::EntityId>& elemIDs,
@@ -1177,137 +1191,252 @@ TEST(DeclareElementSide, DISABLED_textmesh_shell_tri_3_all_face_sides)
   EXPECT_EQ(stk::topology::SHELL_SIDE_BEAM_2, bulk->bucket(side).topology());
 }
 
-void check_ordinal_and_permutation(const stk::mesh::BulkData& bulk,
-                                   stk::mesh::Entity elem,
-                                   stk::mesh::EntityRank rank,
-                                   const stk::mesh::EntityVector& sideNodes,
-                                   stk::mesh::ConnectivityOrdinal expectedSideOrdinal,
-                                   stk::mesh::Permutation expectedPerm)
+void test_shell_quad_4(stk::topology shell_topo, stk::mesh::EntityRank side_rank,
+                       stk::topology gold_shell_side_topo, bool use_graph)
 {
-  stk::mesh::OrdinalAndPermutation ordPerm =
-    stk::mesh::get_ordinal_and_permutation(bulk, elem, rank, sideNodes);
-  EXPECT_EQ(expectedSideOrdinal, ordPerm.first);
-  EXPECT_EQ(expectedPerm, ordPerm.second);
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+/* shell-quad-4 mesh: */
+/*                    */
+/*                    */
+/*  4*-----*3----*6   */
+/*   |     |     |    */
+/*   |     |     |    */
+/*  1*-----*2----*5   */
+/*                    */
+
+  EXPECT_EQ(4u, shell_topo.num_nodes());
+
+  bulk->modification_begin();
+
+  stk::mesh::Part& shellPart = bulk->mesh_meta_data().declare_part_with_topology("shell_part", shell_topo);
+
+  stk::mesh::EntityId elemId = 1;
+  stk::mesh::EntityIdVector nodeIds = {1, 2, 3, 4};
+  stk::mesh::declare_element(*bulk, shellPart, elemId, nodeIds);
+
+  elemId = 2;
+  nodeIds = {2, 5, 6, 3};
+  stk::mesh::declare_element(*bulk, shellPart, elemId, nodeIds);
+
+  bulk->modification_end();
+
+  if(use_graph) {
+    bulk->initialize_face_adjacent_element_graph();
+  }
+
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().universal_part(), bulk->buckets(side_rank)));
+
+  bulk->modification_begin();
+
+  stk::mesh::Entity elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  const unsigned sideOrdinal = 3;
+  stk::mesh::PartVector emptySideParts;
+
+  stk::mesh::Entity side = bulk->declare_element_side(elem1, sideOrdinal, emptySideParts);
+  bulk->modification_end();
+
+  EXPECT_EQ(gold_shell_side_topo, bulk->bucket(side).topology());
+
+  EXPECT_EQ(2u, bulk->num_connectivity(side, stk::topology::ELEM_RANK));
+}
+
+TEST(DeclareElementSide, shell_quad_4_all_face_sides_no_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_quad_4(stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES, stk::topology::FACE_RANK, stk::topology::SHELL_SIDE_BEAM_2, false);
+}
+
+TEST(DeclareElementSide, shell_quad_4_all_face_sides_with_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_quad_4(stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES, stk::topology::FACE_RANK, stk::topology::SHELL_SIDE_BEAM_2, true);
+}
+
+TEST(DeclareElementSide, shell_quad_4_no_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_quad_4(stk::topology::SHELL_QUAD_4, stk::topology::EDGE_RANK, stk::topology::LINE_2, false);
+}
+
+TEST(DeclareElementSide, shell_quad_4_with_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_quad_4(stk::topology::SHELL_QUAD_4, stk::topology::EDGE_RANK, stk::topology::LINE_2, true);
+}
+
+void test_shell_tri_3(stk::topology shell_topo, stk::mesh::EntityRank side_rank,
+                      stk::topology gold_shell_side_topo, bool use_graph)
+{
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+/* shell-tri-3 mesh: */
+/*      3            */
+/*      *            */
+/*     /|\           */
+/*    / | \          */
+/*  1*  |  *4        */
+/*    \ | /          */
+/*     \|/           */
+/*      *            */
+/*      2            */
+/*                   */
+
+  EXPECT_EQ(3u, shell_topo.num_nodes());
+
+  bulk->modification_begin();
+
+  stk::mesh::Part& shellPart = bulk->mesh_meta_data().declare_part_with_topology("shell_part", shell_topo);
+
+  stk::mesh::EntityId elemId = 1;
+  stk::mesh::EntityIdVector nodeIds = {1, 2, 3};
+  stk::mesh::declare_element(*bulk, shellPart, elemId, nodeIds);
+
+  elemId = 2;
+  nodeIds = {2, 4, 3};
+  stk::mesh::declare_element(*bulk, shellPart, elemId, nodeIds);
+
+  bulk->modification_end();
+
+  if(use_graph) {
+    bulk->initialize_face_adjacent_element_graph();
+  }
+
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().universal_part(), bulk->buckets(side_rank)));
+
+  bulk->modification_begin();
+
+  stk::mesh::Entity elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  const unsigned sideOrdinal = 3;
+  stk::mesh::PartVector emptySideParts;
+
+  stk::mesh::Entity side = bulk->declare_element_side(elem1, sideOrdinal, emptySideParts);
+  bulk->modification_end();
+
+  EXPECT_EQ(gold_shell_side_topo, bulk->bucket(side).topology());
+
+  EXPECT_EQ(2u, bulk->num_connectivity(side, stk::topology::ELEM_RANK));
 }
 
 TEST(DeclareElementSide, shell_tri_3_all_face_sides_no_elem_graph)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
 
-  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
-/* shell-tri-3 mesh: */
-/*      3            */
-/*      *            */
-/*     /|\           */
-/*    / | \          */
-/*  1*  |  *4        */
-/*    \ | /          */
-/*     \|/           */
-/*      *            */
-/*      2            */
-/*                   */
-  bulk->modification_begin();
-
-  stk::mesh::Part& shellPart = bulk->mesh_meta_data().declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3_ALL_FACE_SIDES);
-
-  stk::mesh::EntityId elemId = 1;
-  stk::mesh::EntityIdVector nodeIds = {1, 2, 3};
-  stk::mesh::declare_element(*bulk, shellPart, elemId, nodeIds);
-
-  elemId = 2;
-  nodeIds = {2, 4, 3};
-  stk::mesh::declare_element(*bulk, shellPart, elemId, nodeIds);
-
-  bulk->modification_end();
-
-  EXPECT_EQ(0u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().universal_part(), bulk->buckets(stk::topology::FACE_RANK)));
-
-  bulk->modification_begin();
-
-  stk::mesh::Entity elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
-  const unsigned sideOrdinal = 3;
-  stk::mesh::PartVector emptySideParts;
-
-  stk::mesh::EntityVector sideNodes = {
-    bulk->get_entity(stk::topology::NODE_RANK, 2),
-    bulk->get_entity(stk::topology::NODE_RANK, 3)
-  };
-  stk::mesh::ConnectivityOrdinal expectedSideOrdinal = sideOrdinal;
-  stk::mesh::Permutation expectedPerm = static_cast<stk::mesh::Permutation>(0);
-  std::cout<<"checking elem1/sideNodes"<<std::endl;
-  check_ordinal_and_permutation(*bulk, elem1, stk::topology::FACE_RANK, sideNodes, expectedSideOrdinal, expectedPerm);
-
-  stk::mesh::Entity elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
-  expectedSideOrdinal = 4;
-  stk::mesh::EntityVector reversedSideNodes = {
-    bulk->get_entity(stk::topology::NODE_RANK, 3),
-    bulk->get_entity(stk::topology::NODE_RANK, 2)
-  };
-  expectedPerm = static_cast<stk::mesh::Permutation>(0);
-  std::cout<<"checking elem2/reversedSideNodes"<<std::endl;
-  check_ordinal_and_permutation(*bulk, elem2, stk::topology::FACE_RANK, reversedSideNodes, expectedSideOrdinal, expectedPerm);
-
-  expectedPerm = static_cast<stk::mesh::Permutation>(1);
-  std::cout<<"checking elem2/sideNodes"<<std::endl;
-  check_ordinal_and_permutation(*bulk, elem2, stk::topology::FACE_RANK, sideNodes, expectedSideOrdinal, expectedPerm);
-
-
-  stk::mesh::Entity side = bulk->declare_element_side(elem1, sideOrdinal, emptySideParts);
-  bulk->modification_end();
-
-  EXPECT_EQ(stk::topology::SHELL_SIDE_BEAM_2, bulk->bucket(side).topology());
-
-//FIXME!
-//The following expect should be '2u' but that fails because the side is only
-//onnected to 1 element. (Note that this is the 'no-graph' version of this
-//test, so the issue is not related to the face-adjacent-elem-graph.)
-  EXPECT_EQ(1u, bulk->num_connectivity(side, stk::topology::ELEM_RANK));
+  test_shell_tri_3(stk::topology::SHELL_TRI_3_ALL_FACE_SIDES, stk::topology::FACE_RANK, stk::topology::SHELL_SIDE_BEAM_2, false);
 }
 
 TEST(DeclareElementSide, shell_tri_3_all_face_sides_with_elem_graph)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
 
+  test_shell_tri_3(stk::topology::SHELL_TRI_3_ALL_FACE_SIDES, stk::topology::FACE_RANK, stk::topology::SHELL_SIDE_BEAM_2, true);
+}
+
+TEST(DeclareElementSide, shell_tri_3_no_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_tri_3(stk::topology::SHELL_TRI_3, stk::topology::EDGE_RANK, stk::topology::LINE_2, false);
+}
+
+TEST(DeclareElementSide, shell_tri_3_with_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_tri_3(stk::topology::SHELL_TRI_3, stk::topology::EDGE_RANK, stk::topology::LINE_2, true);
+}
+
+void test_shell_tri_3_and_quad_4(stk::topology tri_shell_topo, stk::topology quad_shell_topo,
+                                 stk::mesh::EntityRank side_rank,
+                                 stk::topology gold_shell_side_topo, bool use_graph)
+{
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
-/* shell-tri-3 mesh: */
-/*      3            */
-/*      *            */
-/*     /|\           */
-/*    / | \          */
-/*  1*  |  *4        */
-/*    \ | /          */
-/*     \|/           */
-/*      *            */
-/*      2            */
-/*                   */
+/* shell-tri-3-quad-4 mesh: */
+/*      3           5    */
+/*      *-----------*    */
+/*     /|           |    */
+/*    / |           |    */
+/*  1*  |           |    */
+/*    \ |           |    */
+/*     \|           |    */
+/*      *-----------*    */
+/*      2           4    */
+/*                       */
+
+  EXPECT_EQ(3u, tri_shell_topo.num_nodes());
+  EXPECT_EQ(4u, quad_shell_topo.num_nodes());
+
   bulk->modification_begin();
 
-  stk::mesh::Part& shellPart = bulk->mesh_meta_data().declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3_ALL_FACE_SIDES);
+  stk::mesh::Part& triShellPart = bulk->mesh_meta_data().declare_part_with_topology("tri_shell_part", tri_shell_topo);
+  stk::mesh::Part& quadShellPart = bulk->mesh_meta_data().declare_part_with_topology("quad_shell_part", quad_shell_topo);
 
   stk::mesh::EntityId elemId = 1;
   stk::mesh::EntityIdVector nodeIds = {1, 2, 3};
-  stk::mesh::declare_element(*bulk, shellPart, elemId, nodeIds);
+  stk::mesh::declare_element(*bulk, triShellPart, elemId, nodeIds);
 
   elemId = 2;
-  nodeIds = {2, 4, 3};
-  stk::mesh::declare_element(*bulk, shellPart, elemId, nodeIds);
+  nodeIds = {2, 4, 5, 3};
+  stk::mesh::declare_element(*bulk, quadShellPart, elemId, nodeIds);
 
   bulk->modification_end();
 
-  bulk->initialize_face_adjacent_element_graph();
+  if(use_graph) {
+    bulk->initialize_face_adjacent_element_graph();
+  }
 
-  EXPECT_EQ(0u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().universal_part(), bulk->buckets(stk::topology::FACE_RANK)));
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().universal_part(), bulk->buckets(side_rank)));
 
   bulk->modification_begin();
 
   stk::mesh::Entity elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
   const unsigned sideOrdinal = 3;
   stk::mesh::PartVector emptySideParts;
+
   stk::mesh::Entity side = bulk->declare_element_side(elem1, sideOrdinal, emptySideParts);
   bulk->modification_end();
 
-  EXPECT_EQ(stk::topology::SHELL_SIDE_BEAM_2, bulk->bucket(side).topology());
+  EXPECT_EQ(gold_shell_side_topo, bulk->bucket(side).topology());
+
   EXPECT_EQ(2u, bulk->num_connectivity(side, stk::topology::ELEM_RANK));
+}
+
+TEST(DeclareElementSide, shell_tri_3_and_quad_4_all_face_sides_no_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_tri_3_and_quad_4(stk::topology::SHELL_TRI_3_ALL_FACE_SIDES,
+                              stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES,
+                              stk::topology::FACE_RANK, stk::topology::SHELL_SIDE_BEAM_2, false);
+}
+
+TEST(DeclareElementSide, shell_tri_3_and_quad_4_all_face_sides_with_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_tri_3_and_quad_4(stk::topology::SHELL_TRI_3_ALL_FACE_SIDES,
+                              stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES,
+                              stk::topology::FACE_RANK, stk::topology::SHELL_SIDE_BEAM_2, true);
+}
+
+TEST(DeclareElementSide, shell_tri_3_and_quad_4_no_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_tri_3_and_quad_4(stk::topology::SHELL_TRI_3,
+                              stk::topology::SHELL_QUAD_4,
+                              stk::topology::EDGE_RANK, stk::topology::LINE_2, false);
+}
+
+TEST(DeclareElementSide, shell_tri_3_and_quad_4_with_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  test_shell_tri_3_and_quad_4(stk::topology::SHELL_TRI_3,
+                              stk::topology::SHELL_QUAD_4,
+                              stk::topology::EDGE_RANK, stk::topology::LINE_2, true);
 }
 
 TEST(GetSides, hex8)
@@ -1979,7 +2108,7 @@ TEST(CreateAndConvert, read_write_shell_4_all_face_sides)
   EXPECT_EQ(0u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().locally_owned_part(), bulk->buckets(stk::topology::EDGE_RANK)));
   EXPECT_EQ(6u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().locally_owned_part(), bulk->buckets(stk::topology::FACE_RANK)));
 
-  std::string fileName("shell_quad4_all_face_sides_test.g");
+  std::string fileName("shell_quad_4_all_face_sides_test.g");
   stk::io::write_mesh(fileName, ioBroker);
 
   std::shared_ptr<stk::mesh::BulkData> newBulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
@@ -2010,7 +2139,7 @@ TEST(CreateAndConvert, read_write_shell_4_all_face_sides)
 class CreateReadAndWrite : public stk::unit_test_util::MeshFixture
 {
  protected:
-  std::string get_meshspec_single_shell_quad4_with_all_sides() {
+  std::string get_meshspec_single_shell_quad_4_with_all_sides() {
     //shell-quad-4 mesh:
     //
     // 4*---3*
@@ -2028,7 +2157,7 @@ class CreateReadAndWrite : public stk::unit_test_util::MeshFixture
     return stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords);
   }
 
-  std::string get_meshspec_four_shell_quad4_with_sideset() {
+  std::string get_meshspec_four_shell_quad_4_with_sideset() {
     //shell-quad-4 mesh:
     //       6
     // 3*----*----*9
@@ -2055,15 +2184,15 @@ class CreateReadAndWrite : public stk::unit_test_util::MeshFixture
   }
 
   void create_1_shell_using_ioss_text_mesh(stk::mesh::BulkData& bulk) {
-    stk::io::fill_mesh("textmesh:" + get_meshspec_single_shell_quad4_with_all_sides(), bulk);
+    stk::io::fill_mesh("textmesh:" + get_meshspec_single_shell_quad_4_with_all_sides(), bulk);
   }
 
   void create_4_shells_using_stk_text_mesh(stk::mesh::BulkData& bulk) {
-    stk::unit_test_util::setup_text_mesh(bulk, get_meshspec_four_shell_quad4_with_sideset());
+    stk::unit_test_util::setup_text_mesh(bulk, get_meshspec_four_shell_quad_4_with_sideset());
   }
 
   void create_4_shells_using_ioss_text_mesh(stk::mesh::BulkData& bulk) {
-    stk::io::fill_mesh("textmesh:" + get_meshspec_four_shell_quad4_with_sideset(), bulk);
+    stk::io::fill_mesh("textmesh:" + get_meshspec_four_shell_quad_4_with_sideset(), bulk);
   }
 
   void check_mesh_properties(stk::mesh::BulkData& bulk, std::vector<unsigned> val) {
@@ -2089,7 +2218,7 @@ TEST_F(CreateReadAndWrite, DISABLED_stk_textmesh_shell_quad_4_EdgeSides)
   std::shared_ptr<stk::mesh::BulkData> bulk1 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
   std::shared_ptr<stk::mesh::BulkData> bulk2 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
 
-  std::string fileName("shell_quad4_edge_sides_test.g");
+  std::string fileName("shell_quad_4_edge_sides_test.g");
   create_4_shells_using_stk_text_mesh(*bulk1);
   stk::io::write_mesh(fileName, *bulk1);
   check_mesh_properties(*bulk1, {4, 2, 0, 2, 8, 0});
@@ -2107,7 +2236,7 @@ TEST_F(CreateReadAndWrite, ioss_textmesh_shell_quad_4_EdgeSides)
   std::shared_ptr<stk::mesh::BulkData> bulk1 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
   std::shared_ptr<stk::mesh::BulkData> bulk2 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
 
-  std::string fileName("shell_quad4_edge_sides_test.g");
+  std::string fileName("shell_quad_4_edge_sides_test.g");
   create_4_shells_using_ioss_text_mesh(*bulk1);
   stk::io::write_mesh(fileName, *bulk1);
   check_mesh_properties(*bulk1, {4, 2, 0, 2, 8, 0});
@@ -2125,7 +2254,7 @@ TEST_F(CreateReadAndWrite, ioss_textmesh_shell_quad_4_FaceAndEdgeSides)
   std::shared_ptr<stk::mesh::BulkData> bulk1 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
   std::shared_ptr<stk::mesh::BulkData> bulk2 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
 
-  std::string fileName("shell_quad4_face_and_edge_sides_test.g");
+  std::string fileName("shell_quad_4_face_and_edge_sides_test.g");
   create_1_shell_using_ioss_text_mesh(*bulk1);
   stk::io::write_mesh(fileName, *bulk1);
   check_mesh_properties(*bulk1, {4, 4, 2, 6, 4, 2});
@@ -2134,4 +2263,308 @@ TEST_F(CreateReadAndWrite, ioss_textmesh_shell_quad_4_FaceAndEdgeSides)
   check_mesh_properties(*bulk2, {4, 4, 2, 6, 4, 2});
 
   unlink(fileName.c_str());
+}
+
+TEST_F(CreateReadAndWrite, ioss_textmesh_shell_quad_4_write_all_face_sides_read_mixed_sides)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulk1 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+  std::shared_ptr<stk::mesh::BulkData> bulk2 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+
+  std::string fileName("shell_quad_4_test.g");
+  std::string meshDesc = get_meshspec_single_shell_quad_4_with_all_sides();
+
+  stk::io::StkMeshIoBroker ioBroker1;
+  ioBroker1.set_bulk_data(*bulk1);
+  ioBroker1.set_enable_all_face_sides_shell_topo(true);
+  stk::io::fill_mesh("textmesh:" + meshDesc, *bulk1, ioBroker1);
+
+  check_mesh_properties(*bulk1, {4, 0, 6, 6, 0, 6});
+  stk::io::write_mesh(fileName, ioBroker1);
+
+  stk::io::StkMeshIoBroker ioBroker2;
+  ioBroker2.set_bulk_data(*bulk2);
+  ioBroker2.set_enable_all_face_sides_shell_topo(false);
+
+  stk::io::fill_mesh(fileName, *bulk2);
+  check_mesh_properties(*bulk2, {4, 4, 2, 6, 4, 2});
+
+  unlink(fileName.c_str());
+}
+
+TEST_F(CreateReadAndWrite, ioss_textmesh_shell_quad_4_write_mixed_sides_read_all_face_sides_read)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulk1 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+  std::shared_ptr<stk::mesh::BulkData> bulk2 = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+
+  std::string fileName("shell_quad_4_test.g");
+  std::string meshDesc = get_meshspec_single_shell_quad_4_with_all_sides();
+
+  stk::io::StkMeshIoBroker ioBroker1;
+  ioBroker1.set_bulk_data(*bulk1);
+  ioBroker1.set_enable_all_face_sides_shell_topo(false);
+  stk::io::fill_mesh("textmesh:" + meshDesc, *bulk1, ioBroker1);
+
+  check_mesh_properties(*bulk1, {4, 4, 2, 6, 4, 2});
+  stk::io::write_mesh(fileName, ioBroker1);
+
+  stk::io::StkMeshIoBroker ioBroker2;
+  ioBroker2.set_bulk_data(*bulk2);
+  ioBroker2.set_enable_all_face_sides_shell_topo(true);
+
+  auto index = ioBroker2.add_mesh_database(fileName, stk::io::READ_MESH);
+  ioBroker2.set_active_mesh(index);
+  ioBroker2.set_enable_all_face_sides_shell_topo(true);
+  ioBroker2.create_input_mesh();
+  ioBroker2.populate_bulk_data();
+  check_mesh_properties(*bulk2, {4, 0, 6, 6, 0, 6});
+
+  unlink(fileName.c_str());
+}
+
+TEST(DeclareElementSide, hex8_no_elem_graph)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_spatial_dimension(3).create();
+
+  bulk->modification_begin();
+
+  stk::mesh::Part& hex8Part = bulk->mesh_meta_data().declare_part_with_topology("hex8_part", stk::topology::HEX_8);
+
+  stk::mesh::EntityId elemId = 1;
+  stk::mesh::EntityIdVector nodeIds = {1, 2, 3, 4, 5, 6, 7, 8};
+  stk::mesh::declare_element(*bulk, hex8Part, elemId, nodeIds);
+
+  elemId = 2;
+  nodeIds = {5, 6, 7, 8, 9, 10, 11, 12};
+  stk::mesh::declare_element(*bulk, hex8Part, elemId, nodeIds);
+
+  bulk->modification_end();
+
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(bulk->mesh_meta_data().universal_part(), bulk->buckets(stk::topology::FACE_RANK)));
+
+  bulk->modification_begin();
+
+  stk::mesh::Entity elem1 = bulk->get_entity(stk::topology::ELEM_RANK, 1);
+  const unsigned sideOrdinal = 5;
+  stk::mesh::PartVector emptySideParts;
+
+  stk::mesh::EntityVector sideNodes = {
+    bulk->get_entity(stk::topology::NODE_RANK, 5),
+    bulk->get_entity(stk::topology::NODE_RANK, 6),
+    bulk->get_entity(stk::topology::NODE_RANK, 7),
+    bulk->get_entity(stk::topology::NODE_RANK, 8)
+  };
+  stk::mesh::ConnectivityOrdinal expectedSideOrdinal = sideOrdinal;
+  stk::mesh::Permutation expectedPerm = static_cast<stk::mesh::Permutation>(0);
+  std::cout<<"checking elem1/sideNodes"<<std::endl;
+  check_ordinal_and_permutation(*bulk, elem1, stk::topology::FACE_RANK, sideNodes, expectedSideOrdinal, expectedPerm);
+
+  stk::mesh::Entity elem2 = bulk->get_entity(stk::topology::ELEM_RANK, 2);
+  expectedSideOrdinal = 4;
+  stk::mesh::EntityVector reversedSideNodes = {
+      bulk->get_entity(stk::topology::NODE_RANK, 5),
+      bulk->get_entity(stk::topology::NODE_RANK, 8),
+      bulk->get_entity(stk::topology::NODE_RANK, 7),
+      bulk->get_entity(stk::topology::NODE_RANK, 6)
+  };
+  expectedPerm = static_cast<stk::mesh::Permutation>(0);
+  std::cout<<"checking elem2/reversedSideNodes"<<std::endl;
+  check_ordinal_and_permutation(*bulk, elem2, stk::topology::FACE_RANK, reversedSideNodes, expectedSideOrdinal, expectedPerm);
+
+  expectedPerm = static_cast<stk::mesh::Permutation>(4);
+  std::cout<<"checking elem2/sideNodes"<<std::endl;
+  check_ordinal_and_permutation(*bulk, elem2, stk::topology::FACE_RANK, sideNodes, expectedSideOrdinal, expectedPerm);
+
+
+  stk::mesh::Entity side = bulk->declare_element_side(elem1, sideOrdinal, emptySideParts);
+  bulk->modification_end();
+
+  EXPECT_EQ(stk::topology::QUAD_4, bulk->bucket(side).topology());
+
+  EXPECT_EQ(2u, bulk->num_connectivity(side, stk::topology::ELEM_RANK));
+}
+
+
+TEST(ShellConnection, test_is_shell_side)
+{
+  stk::topology shellTri3AllFaceSides = stk::topology::SHELL_TRI_3_ALL_FACE_SIDES;
+
+  EXPECT_FALSE(stk::mesh::impl::is_shell_side(shellTri3AllFaceSides, 0));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_side(shellTri3AllFaceSides, 1));
+
+  EXPECT_TRUE(stk::mesh::impl::is_shell_side(shellTri3AllFaceSides, 2));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_side(shellTri3AllFaceSides, 3));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_side(shellTri3AllFaceSides, 4));
+
+  stk::topology shellTri3 = stk::topology::SHELL_TRI_3;
+
+  EXPECT_FALSE(stk::mesh::impl::is_shell_side(shellTri3, 0));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_side(shellTri3, 1));
+
+  EXPECT_TRUE(stk::mesh::impl::is_shell_side(shellTri3, 2));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_side(shellTri3, 3));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_side(shellTri3, 4));
+
+  stk::topology hex8 = stk::topology::HEX_8;
+
+  for(unsigned ordinal = 0; ordinal < hex8.num_sides(); ordinal++) {
+    EXPECT_FALSE(stk::mesh::impl::is_shell_side(hex8, ordinal));
+  }
+}
+
+TEST(ShellConnection, test_get_shell_configuration)
+{
+  stk::topology shellTri3AllFaceSides = stk::topology::SHELL_TRI_3_ALL_FACE_SIDES;
+  stk::topology shellTri3 = stk::topology::SHELL_TRI_3;
+  stk::topology hex8 = stk::topology::HEX_8;
+
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::INVALID, stk::mesh::impl::get_shell_configuration(hex8, 0, hex8, 0));
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::INVALID, stk::mesh::impl::get_shell_configuration(hex8, 0, shellTri3, 0));
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::INVALID, stk::mesh::impl::get_shell_configuration(hex8, 0, shellTri3AllFaceSides, 0));
+
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::STACKED, stk::mesh::impl::get_shell_configuration(shellTri3AllFaceSides, 0, shellTri3AllFaceSides, 0));
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::STACKED, stk::mesh::impl::get_shell_configuration(shellTri3AllFaceSides, 0, shellTri3AllFaceSides, 1));
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::STACKED, stk::mesh::impl::get_shell_configuration(shellTri3AllFaceSides, 1, shellTri3AllFaceSides, 0));
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::STACKED, stk::mesh::impl::get_shell_configuration(shellTri3AllFaceSides, 1, shellTri3AllFaceSides, 1));
+
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::STACKED, stk::mesh::impl::get_shell_configuration(shellTri3, 0, shellTri3AllFaceSides, 0));
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::STACKED, stk::mesh::impl::get_shell_configuration(shellTri3, 0, shellTri3AllFaceSides, 1));
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::STACKED, stk::mesh::impl::get_shell_configuration(shellTri3, 1, shellTri3AllFaceSides, 0));
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::STACKED, stk::mesh::impl::get_shell_configuration(shellTri3, 1, shellTri3AllFaceSides, 1));
+
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::INVALID, stk::mesh::impl::get_shell_configuration(shellTri3AllFaceSides, 0, shellTri3AllFaceSides, 2));
+  EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::INVALID, stk::mesh::impl::get_shell_configuration(shellTri3AllFaceSides, 1, shellTri3AllFaceSides, 3));
+
+  for(unsigned ordinal1 = 2; ordinal1 < 5; ordinal1++) {
+    for(unsigned ordinal2 = 2; ordinal2 < 5; ordinal2++) {
+      EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::PAVED,
+                stk::mesh::impl::get_shell_configuration(shellTri3AllFaceSides, ordinal1, shellTri3AllFaceSides, ordinal2));
+
+      EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::PAVED,
+                stk::mesh::impl::get_shell_configuration(shellTri3, ordinal1, shellTri3, ordinal2));
+
+      EXPECT_EQ(stk::mesh::impl::ShellConnectionConfiguration::PAVED,
+                stk::mesh::impl::get_shell_configuration(shellTri3, ordinal1, shellTri3AllFaceSides, ordinal2));
+    }
+  }
+}
+
+TEST(ShellConnection, test_is_shell_configuration_valid_for_side_connection)
+{
+  stk::topology shellTri3 = stk::topology::SHELL_TRI_3;
+  stk::topology shellTri3AllFaceSides = stk::topology::SHELL_TRI_3_ALL_FACE_SIDES;
+  stk::topology shellQuad4 = stk::topology::SHELL_QUAD_4;
+  stk::topology shellQuad4AllFaceSides = stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES;
+  stk::topology hex8 = stk::topology::HEX_8;
+
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(hex8, 0, hex8, 0));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(hex8, 0, shellTri3, 0));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(hex8, 0, shellTri3AllFaceSides, 0));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(hex8, 0, shellQuad4AllFaceSides, 0));
+
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 0, shellTri3, 0));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 0, shellTri3, 1));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 1, shellTri3, 0));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 1, shellTri3, 1));
+
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 0, shellTri3AllFaceSides, 0));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 0, shellTri3AllFaceSides, 1));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 1, shellTri3AllFaceSides, 0));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 1, shellTri3AllFaceSides, 1));
+
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, 0, shellQuad4AllFaceSides, 0));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, 0, shellQuad4AllFaceSides, 1));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, 1, shellQuad4AllFaceSides, 0));
+  EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, 1, shellQuad4AllFaceSides, 1));
+
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 0, shellTri3AllFaceSides, 0), std::logic_error);
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 0, shellTri3AllFaceSides, 1), std::logic_error);
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 1, shellTri3AllFaceSides, 0), std::logic_error);
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 1, shellTri3AllFaceSides, 1), std::logic_error);
+
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 0, shellQuad4, 0));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 0, shellQuad4, 1));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 1, shellQuad4, 0));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 1, shellQuad4, 1));
+
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 0, shellQuad4AllFaceSides, 0), std::logic_error);
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 0, shellQuad4AllFaceSides, 1), std::logic_error);
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 1, shellQuad4AllFaceSides, 0), std::logic_error);
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 1, shellQuad4AllFaceSides, 1), std::logic_error);
+
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 0, shellQuad4, 0), std::logic_error);
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 0, shellQuad4, 1), std::logic_error);
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 1, shellQuad4, 0), std::logic_error);
+  EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 1, shellQuad4, 1), std::logic_error);
+
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 0, shellQuad4AllFaceSides, 0));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 0, shellQuad4AllFaceSides, 1));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 1, shellQuad4AllFaceSides, 0));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 1, shellQuad4AllFaceSides, 1));
+
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 0, shellTri3, 2));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, 1, shellTri3, 3));
+
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 0, shellTri3AllFaceSides, 2));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, 1, shellTri3AllFaceSides, 3));
+
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, 0, shellQuad4AllFaceSides, 2));
+  EXPECT_FALSE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, 1, shellQuad4AllFaceSides, 3));
+
+  // tri/tri testing
+  for(unsigned ordinal1 = 2; ordinal1 < 5; ordinal1++) {
+    for(unsigned ordinal2 = 2; ordinal2 < 5; ordinal2++) {
+      EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, ordinal1, shellTri3AllFaceSides, ordinal2));
+
+      EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, ordinal1, shellTri3, ordinal2));
+
+      EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, ordinal1, shellTri3AllFaceSides, ordinal2), std::logic_error);
+
+      EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, ordinal1, shellTri3, ordinal2), std::logic_error);
+    }
+  }
+
+  // tri/quad testing
+  for(unsigned ordinal1 = 2; ordinal1 < 5; ordinal1++) {
+    for(unsigned ordinal2 = 2; ordinal2 < 6; ordinal2++) {
+      EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, ordinal1, shellQuad4AllFaceSides, ordinal2));
+
+      EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, ordinal1, shellQuad4, ordinal2));
+
+      EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3, ordinal1, shellQuad4AllFaceSides, ordinal2), std::logic_error);
+
+      EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellTri3AllFaceSides, ordinal1, shellQuad4, ordinal2), std::logic_error);
+    }
+  }
+
+  // quad/tri testing
+  for(unsigned ordinal1 = 2; ordinal1 < 6; ordinal1++) {
+    for(unsigned ordinal2 = 2; ordinal2 < 5; ordinal2++) {
+      EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, ordinal1, shellTri3AllFaceSides, ordinal2));
+
+      EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4, ordinal1, shellTri3, ordinal2));
+
+      EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4, ordinal1, shellTri3AllFaceSides, ordinal2), std::logic_error);
+
+      EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, ordinal1, shellTri3, ordinal2), std::logic_error);
+    }
+  }
+
+  // quad/quad testing
+  for(unsigned ordinal1 = 2; ordinal1 < 6; ordinal1++) {
+    for(unsigned ordinal2 = 2; ordinal2 < 6; ordinal2++) {
+      EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, ordinal1, shellQuad4AllFaceSides, ordinal2));
+
+      EXPECT_TRUE(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4, ordinal1, shellQuad4, ordinal2));
+
+      EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4, ordinal1, shellQuad4AllFaceSides, ordinal2), std::logic_error);
+
+      EXPECT_THROW(stk::mesh::impl::is_shell_configuration_valid_for_side_connection(shellQuad4AllFaceSides, ordinal1, shellQuad4, ordinal2), std::logic_error);
+    }
+  }
 }

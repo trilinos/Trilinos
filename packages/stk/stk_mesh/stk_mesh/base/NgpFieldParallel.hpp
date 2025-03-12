@@ -38,6 +38,7 @@
 #include "stk_mesh/base/Ngp.hpp"
 #include "stk_mesh/base/NgpField.hpp"
 #include "stk_mesh/base/NgpParallelComm.hpp"
+#include "stk_mesh/base/NgpParallelDataExchange.hpp"
 #include <vector>
 
 namespace stk {
@@ -136,107 +137,6 @@ void communicate_field_data(const stk::mesh::BulkData & bulk,
 }
 
 template <typename T>
-struct NgpFieldInfo
-{
-  NgpFieldInfo(stk::mesh::NgpField<T>& fld)
-    : m_field(fld) {}
-
-  KOKKOS_DEFAULTED_FUNCTION
-  NgpFieldInfo() = default;
-
-  KOKKOS_DEFAULTED_FUNCTION
-  NgpFieldInfo(const NgpFieldInfo&) = default;
-
-  KOKKOS_DEFAULTED_FUNCTION
-  ~NgpFieldInfo() = default;
-
-  KOKKOS_FUNCTION
-  operator const stk::mesh::NgpField<T>&() const { return m_field; }
-
-  stk::mesh::NgpField<T> m_field;
-};
-
-template <typename T>
-using FieldDataViewType = Kokkos::View<T*, stk::ngp::MemSpace>;
-
-template <typename T>
-using FieldView = Kokkos::View<NgpFieldInfo<T>*, stk::ngp::MemSpace>;
-
-template <typename T>
-class ParallelSumDataExchangeSymPackUnpackHandler
-{
-public:
-  ParallelSumDataExchangeSymPackUnpackHandler(const stk::mesh::NgpMesh& mesh, const std::vector<stk::mesh::NgpField<T> *> & ngpFields)
-    : m_ngpMesh(mesh),
-      m_ngpFields(ngpFields),
-      m_ngpFieldsOnDevice(FieldView<T>("ngpFieldsOnDevice", ngpFields.size()))
-  {
-    typename FieldView<T>::HostMirror ngpFieldsHostMirror = Kokkos::create_mirror_view(m_ngpFieldsOnDevice);
-    for (size_t fieldIdx = 0; fieldIdx < m_ngpFields.size(); fieldIdx++)
-    {
-      ngpFieldsHostMirror(fieldIdx) = NgpFieldInfo<T>(*m_ngpFields[fieldIdx]);
-    }
-    Kokkos::deep_copy(m_ngpFieldsOnDevice, ngpFieldsHostMirror);
-  }
-
-  ParallelSumDataExchangeSymPackUnpackHandler(const ParallelSumDataExchangeSymPackUnpackHandler & rhs) = default;
-
-  void hostSizeMessages(int proc, size_t & numValues) const
-  {
-    numValues = 0;
-    for (stk::mesh::NgpField<T>* field : m_ngpFields)
-    {
-      stk::mesh::FieldBase* stkField = m_ngpMesh.get_bulk_on_host().mesh_meta_data().get_fields()[field->get_ordinal()];
-      stk::mesh::HostCommMapIndices  commMapIndices = m_ngpMesh.get_bulk_on_host().volatile_fast_shared_comm_map<stk::ngp::MemSpace>(field->get_rank(), proc);
-      for (size_t i = 0; i < commMapIndices.extent(0); ++i) {
-        const unsigned bucketId = commMapIndices(i).bucket_id;
-        const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(*stkField, bucketId);
-        numValues += numScalarsPerEntity;
-      }
-    }
-  }
-
-  KOKKOS_FUNCTION
-  void devicePackMessage(int /*myProc*/, int proc, FieldDataViewType<T> & sendData) const
-  {
-    size_t fieldCount = 0;
-    for (size_t fieldIdx = 0; fieldIdx < m_ngpFieldsOnDevice.size(); ++fieldIdx)
-    {
-      const stk::mesh::NgpField<T> & field = m_ngpFieldsOnDevice(fieldIdx);
-      stk::mesh::DeviceCommMapIndices deviceCommMapIndices = m_ngpMesh.volatile_fast_shared_comm_map(field.get_rank(), proc);
-      for (size_t entry = 0; entry < deviceCommMapIndices.size(); ++entry) {
-        size_t numComponents = field.get_num_components_per_entity(deviceCommMapIndices[entry]);
-        for (size_t comp = 0; comp < numComponents; ++comp) {
-          sendData(fieldCount++) = field.get(deviceCommMapIndices[entry], comp);
-        }
-      }
-    }
-  }
-
-  KOKKOS_FUNCTION
-  void deviceUnpackMessage(int /*myProc*/, int proc, FieldDataViewType<T> & recvData) const
-  {
-    size_t fieldCount = 0;
-    for (size_t fieldIdx = 0; fieldIdx < m_ngpFieldsOnDevice.size(); ++fieldIdx)
-    {
-      const stk::mesh::NgpField<T> & field = m_ngpFieldsOnDevice(fieldIdx);
-      stk::mesh::DeviceCommMapIndices deviceCommMapIndices = m_ngpMesh.volatile_fast_shared_comm_map(field.get_rank(), proc);
-      for (size_t entry = 0; entry < deviceCommMapIndices.size(); ++entry) {
-        size_t numComponents = field.get_num_components_per_entity(deviceCommMapIndices[entry]);
-        for (size_t comp = 0; comp < numComponents; ++comp) {
-          field.get(deviceCommMapIndices[entry], comp) += recvData(fieldCount++);
-        }
-      }
-    }
-  }
-
-private:
-  const stk::mesh::NgpMesh m_ngpMesh;
-  const std::vector<stk::mesh::NgpField<T> *>& m_ngpFields;
-  FieldView<T> m_ngpFieldsOnDevice;
-};
-
-template <typename T>
 void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vector<stk::mesh::NgpField<T> *> & ngpFields)
 {
   const stk::mesh::BulkData& bulk = ngpMesh.get_bulk_on_host();
@@ -251,12 +151,7 @@ void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vecto
   std::vector<int> comm_procs = bulk.all_sharing_procs(first_field_rank);
   for (size_t i = 1; i < ngpFields.size(); ++i) {
     const stk::mesh::NgpField<T> * f = ngpFields[i];
-    if (f->get_rank() != first_field_rank) {
-      const std::vector<int>& sharing_procs = bulk.all_sharing_procs(f->get_rank());
-      for(int p : sharing_procs) {
-        stk::util::insert_keep_sorted_and_unique(p, comm_procs);
-      }
-    }
+    STK_ThrowRequireMsg(f->get_rank() == first_field_rank, "parallel_sum_device_mpi requires all fields to have the same rank.");
   }
 
   const bool deterministic = false;
@@ -267,6 +162,17 @@ void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vecto
 
   for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
     ngpField->modify_on_device();
+  }
+}
+
+template <typename NgpMesh, typename NgpField, typename MemSpace = stk::ngp::MemSpace>
+void parallel_sum(NgpMesh const& ngpMesh, std::vector<NgpField*> const& ngpFields, bool doFinalSyncBackToDevice = true)
+{
+  if constexpr (!std::is_same_v<Kokkos::DefaultHostExecutionSpace, Kokkos::DefaultExecutionSpace> &&
+                Kokkos::SpaceAccessibility<Kokkos::DefaultExecutionSpace, MemSpace>::accessible) {
+    parallel_sum_device_mpi(ngpMesh, ngpFields);
+  } else {
+    parallel_sum(ngpMesh.get_bulk_on_host(), ngpFields, doFinalSyncBackToDevice);
   }
 }
 

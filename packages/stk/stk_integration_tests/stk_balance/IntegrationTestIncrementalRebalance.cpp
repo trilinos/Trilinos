@@ -48,16 +48,16 @@ public:
 
   using stk::balance::GraphCreationSettings::getToleranceForFaceSearch;
 
-  virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-  virtual bool includeSearchResultsInGraph() const { return true; }
-  virtual bool getEdgesForParticlesUsingSearch() const { return true; }
-  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const { return false; }
-  virtual double getToleranceForParticleSearch() const { return 1.5; }
+  virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override { return 1.0; }
+  virtual bool includeSearchResultsInGraph() const override { return true; }
+  virtual bool getEdgesForParticlesUsingSearch() const override { return true; }
+  virtual bool setVertexWeightsBasedOnNumberAdjacencies() const override { return false; }
+  virtual double getToleranceForParticleSearch() const override { return 1.5; }
   virtual double getToleranceForFaceSearch() const { return 0.005; }
-  virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-  virtual double getImbalanceTolerance() const { return 1.05; }
-  virtual void setDecompMethod(const std::string& input_method) { m_method = input_method;}
-  virtual std::string getDecompMethod() const { return m_method; }
+  virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+  virtual double getImbalanceTolerance() const override { return 1.05; }
+  virtual void setDecompMethod(const std::string& input_method) override { m_method = input_method;}
+  virtual std::string getDecompMethod() const override { return m_method; }
   virtual bool incrementalRebalance() const { return m_incrementalRebalance; }
 
 protected:
