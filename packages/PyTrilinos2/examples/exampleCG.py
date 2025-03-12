@@ -14,7 +14,7 @@ import numpy as np
 from PyTrilinos2.PyTrilinos2 import Teuchos
 from PyTrilinos2.PyTrilinos2 import Tpetra
 from PyTrilinos2.PyTrilinos2 import MueLu
-from PyTrilinos2.getTpetraTypeName import *
+from PyTrilinos2.getTpetraTypeName import getDefaultNodeType
 from math import sqrt
 
 try:
@@ -66,9 +66,9 @@ def CG(A, x, b, max_iter=20, tol=1e-8, prec=None):
     return max_iter
 
 def assemble1DLaplacian(n, comm):
-    mapType = getTypeName('Map')
-    graphType = getTypeName('CrsGraph')
-    matrixType = getTypeName('CrsMatrix')
+    mapType = Tpetra.Map()
+    graphType = Tpetra.CrsGraph()
+    matrixType = Tpetra.CrsMatrix()
 
     mapT=mapType(n, 0, comm)
     graph = graphType(mapT, 3)
@@ -103,7 +103,7 @@ def main():
     comm = Teuchos.getTeuchosComm(MPI.COMM_WORLD)
     rank = comm.getRank()
 
-    vectorType = getTypeName('Vector')
+    vectorType = Tpetra.Vector()
 
     n = 300000
 
@@ -140,7 +140,7 @@ def main():
         print('Norm of residual after {} iterations of CG = {} '.format(its, resNorm))
 
     x0 = vectorType(mapT0, True)
-    export = getTypeName('Export')(mapT0, mapT)
+    export = Tpetra.Export()(mapT0, mapT)
     x0.doImport(source=x, exporter=export, CM=Tpetra.CombineMode.REPLACE)
 
     if rank == 0 and display:

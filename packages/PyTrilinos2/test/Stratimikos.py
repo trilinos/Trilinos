@@ -1,4 +1,4 @@
-#!/usr/env python
+#!/usr/bin/env python
 # @HEADER
 # *****************************************************************************
 #          PyTrilinos2: Automatic Python Interfaces to Trilinos Packages
@@ -19,7 +19,7 @@ try:
     from PyTrilinos2 import Thyra
     # Unified solver & preconditioner interface
     from PyTrilinos2 import Stratimikos
-    from PyTrilinos2.getTpetraTypeName import getTypeName, getDefaultNodeType
+    from PyTrilinos2.getTpetraTypeName import getDefaultNodeType
 except ImportError:
     print("\nFailed to import PyTrilinos2. Consider setting the Python load path in your environment with\n export PYTHONPATH=${TRILINOS_BUILD_DIR}/packages/PyTrilinos2:${PYTHONPATH}\nwhere TRILINOS_BUILD_DIR is the build directory of your Trilinos build.\n")
     raise
@@ -35,9 +35,9 @@ except:
 
 
 def assemble1DLaplacian(globalNumRows, comm):
-    Tpetra_Map = getTypeName('Map')
-    Tpetra_CrsGraph = getTypeName('CrsGraph')
-    Tpetra_CrsMatrix = getTypeName('CrsMatrix')
+    Tpetra_Map = Tpetra.Map()
+    Tpetra_CrsGraph = Tpetra.CrsGraph()
+    Tpetra_CrsMatrix = Tpetra.CrsMatrix()
 
     rowmap = Tpetra_Map(globalNumRows, 0, comm)
 
@@ -87,10 +87,11 @@ def main():
     out = Teuchos.fancyOStream(cout)
 
     # Set up Tpetra matrices and vectors
-    Tpetra_Map = getTypeName('Map')
-    Tpetra_Vector = getTypeName('Vector')
-    Tpetra_Export = getTypeName('Export')
+    Tpetra_Map = Tpetra.Map()
+    Tpetra_Vector = Tpetra.Vector()
+    Tpetra_Export = Tpetra.Export()
 
+    timer.start("Build matrix and vectors")
     tpetra_A = assemble1DLaplacian(args.problemSize, comm)
     tpetra_map = tpetra_A.getRowMap()
 
@@ -104,6 +105,7 @@ def main():
     tpetra_b.putScalar(1.)
 
     tpetra_A.describe(out)
+    timer.stop("Build matrix and vectors")
 
     # Wrap Tpetra objects as Thyra objects
     thyra_map = Thyra.tpetraVectorSpace(tpetra_map)
