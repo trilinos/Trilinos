@@ -14,36 +14,36 @@
 // NOTE:  This is a modified version of the matrix_1.cpp example in Isorropia.
 //--------------------------------------------------------------------
 
-//#include <Isorropia_ConfigDefs.hpp>
+#include <Isorropia_ConfigDefs.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
-#include <Teuchos_DefaultMpiComm.hpp>
+#include <Epetra_MpiComm.h>
 #else
-#include <Teuchos_DefaultSerialComm.hpp>
+#include <Epetra_SerialComm.h>
 #endif
 
-#include <Tpetra_Map_decl.hpp>
-#include <Tpetra_CrsMatrix_decl.hpp>
-#include <Tpetra_MultiVector_decl.hpp>
-//#include <Epetra_LinearProblem.h>
-//#include <EpetraExt_Isorropia_CrsGraph.h>
-//#include <EpetraExt_LPTrans_From_GraphTrans.h>
-//#include <Isorropia_Exception.hpp>
+#include <Epetra_Map.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_MultiVector.h>
+#include <Epetra_LinearProblem.h>
+#include <EpetraExt_Isorropia_CrsGraph.h>
+#include <EpetraExt_LPTrans_From_GraphTrans.h>
+#include <Isorropia_Exception.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 
-//Declaration for helper-function that creates tpetra objects. These
+//Declaration for helper-function that creates epetra objects. These
 //functions are implemented at the bottom of this file.
-Teuchos::RCP< Tpetra::CrsMatrix<double, size_t, size_t, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >
-  create_tpetra_matrix(int numProcs, int localProc);
+Teuchos::RCP<Epetra_CrsMatrix>
+  create_epetra_matrix(int numProcs, int localProc);
+
 
 int main(int argc, char** argv) {
-#ifdef HAVE_MPI
-  //#if defined(HAVE_MPI) && defined(HAVE_TPETRA)
+#if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-  int /*p,*/ numProcs = 1;
+  int p, numProcs = 1;
   int localProc = 0;
 
   //first, set up our MPI environment...
@@ -65,8 +65,6 @@ int main(int argc, char** argv) {
 
   std::cout << "In main(), pos 000" << std::endl;
 
-#if 0 // EEP
-  
 #ifdef HAVE_ISORROPIA_ZOLTAN
 
   // If Zoltan is available, we'll specify that the Zoltan package use
@@ -105,10 +103,10 @@ int main(int argc, char** argv) {
   // Create an Epetra_CrsMatrix object.
   Teuchos::RCP<Epetra_CrsMatrix> crsmatrix;
   try {
-    crsmatrix = create_tpetra_matrix(numProcs, localProc);
+    crsmatrix = create_epetra_matrix(numProcs, localProc);
   }
   catch(std::exception& e) {
-    std::cout << "ERROR: create_tpetra_matrix threw exception '"
+    std::cout << "ERROR: create_epetra_matrix threw exception '"
           << e.what() << "' on proc " << localProc << std::endl;
     MPI_Finalize();
     return(-1);
@@ -153,11 +151,11 @@ int main(int argc, char** argv) {
     std::cout << "proc " << p << ": balanced matrix local rows: "
        << bal_graph_rows << ", local NNZ: " << bal_graph_nnz << std::endl;
   }
-#endif // EEP
+
   MPI_Finalize();
 
 #else
-  std::cout << "ERROR:  This MUST be and MPI build with Tpetra enabled!" << std::endl;
+  std::cout << "ERROR:  This MUST be and MPI build with Epetra enabled!" << std::endl;
 #endif
 
   return(0);
@@ -168,14 +166,14 @@ int main(int argc, char** argv) {
 
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-Teuchos::RCP< Tpetra::CrsMatrix<double, size_t, size_t, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >
-  create_tpetra_matrix(int numProcs, int localProc)
+Teuchos::RCP<Epetra_CrsMatrix>
+  create_epetra_matrix(int numProcs, int localProc)
 {
   if (localProc == 0) {
     std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
             << std::endl;
   }
-#if 0 // EEP
+
   //create an Epetra_CrsMatrix with rows spread un-evenly over
   //processors.
   Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -238,17 +236,17 @@ Teuchos::RCP< Tpetra::CrsMatrix<double, size_t, size_t, Tpetra::KokkosCompat::Ko
       err = matrix->ReplaceGlobalValues(global_row, nnz_per_row,
                                         &coefs[0], &indices[0]);
       if (err < 0) {
-        throw Isorropia::Exception("create_tpetra_matrix: error inserting matrix values.");
+        throw Isorropia::Exception("create_epetra_matrix: error inserting matrix values.");
       }
     }
   }
 
   err = matrix->FillComplete();
   if (err != 0) {
-    throw Isorropia::Exception("create_tpetra_matrix: error in matrix.FillComplete()");
+    throw Isorropia::Exception("create_epetra_matrix: error in matrix.FillComplete()");
   }
-#endif // EEP
-  return(nullptr); //matrix);
+
+  return(matrix);
 }
 
 #endif //HAVE_MPI && HAVE_EPETRA
