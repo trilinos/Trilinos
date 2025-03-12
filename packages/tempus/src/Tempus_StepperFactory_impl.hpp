@@ -189,6 +189,7 @@ Teuchos::RCP<Stepper<Scalar> > StepperFactory<Scalar>::createStepper(
          << "  One-Step Methods:\n"
          << "    'Forward Euler'\n"
          << "    'Backward Euler'\n"
+         << "    'Exponential Euler'\n"
          << "    'Trapezoidal Method'\n"
          << "  Multi-Step Methods:\n"
          << "    'BDF2'\n"

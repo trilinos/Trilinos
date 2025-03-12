@@ -115,7 +115,9 @@ public:
     virtual OrderODE getOrderODE() const override {return FIRST_ORDER_ODE;}
   //@}
 
-    /// Return alpha = d(xDot)/dx.
+  // TODO: not sure what alpha should be for an exponential method
+  // figure out where this is needed exterally (public) 
+  /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const override { return Scalar(1.0)/dt; }
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar) const override { return Scalar(1.0); }
@@ -161,7 +163,7 @@ class StepperExponentialEulerTimeDerivative
   : virtual public Tempus::TimeDerivative<Scalar>
 {
 public:
-
+  // TODO: remove this, not needed for exponential.
   /// Constructor
   StepperExponentialEulerTimeDerivative(
     Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld)
