@@ -1,6 +1,5 @@
 LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/ode/src)
 LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/ode/impl)
-LIST(APPEND KK_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/ode/unit_test)
 
 IF (NOT KokkosKernels_ENABLE_COMPONENT_BATCHED)
   MESSAGE("blas enabled and batched not enabled, we need to include some headers manually!")

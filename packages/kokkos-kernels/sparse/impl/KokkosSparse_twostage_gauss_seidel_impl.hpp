@@ -116,9 +116,9 @@ class TwostageGaussSeidel {
   struct TwostageGaussSeidel_functor {
    public:
     // input
-    bool two_stage;
-    bool compact_form;
-    bool diagos_given;
+    bool two_stage    = false;
+    bool compact_form = false;
+    bool diagos_given = false;
     const_ordinal_t num_rows;
     input_row_map_view_t rowmap_view;
     input_entries_view_t column_view;
@@ -143,7 +143,7 @@ class TwostageGaussSeidel {
     output_entries_view_t entries_a2;
     output_values_view_t values_a2;
     // for computing residual norm with
-    bool forward_sweep;
+    bool forward_sweep = true;
     internal_vector_view_t localX;
     internal_vector_view_t localB;
 
@@ -688,8 +688,8 @@ class TwostageGaussSeidel {
       auto sptrsv_algo = handle->get_gs_sptrsvL_handle()->get_sptrsv_handle()->get_algorithm();
       if (sptrsv_algo != SPTRSVAlgorithm::SPTRSV_CUSPARSE) {  // symbolic with CuSparse needs
                                                               // values
-        sptrsv_symbolic(handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries);
-        sptrsv_symbolic(handle->get_gs_sptrsvU_handle(), rowmap_viewU, crsmatU.graph.entries);
+        KokkosSparse::sptrsv_symbolic(handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries);
+        KokkosSparse::sptrsv_symbolic(handle->get_gs_sptrsvU_handle(), rowmap_viewU, crsmatU.graph.entries);
       }
     }
   }
@@ -763,8 +763,10 @@ class TwostageGaussSeidel {
             rowmap_viewU, column_viewU, values_viewU);
 
         // now do symbolic
-        sptrsv_symbolic(handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries, values_viewL);
-        sptrsv_symbolic(handle->get_gs_sptrsvU_handle(), rowmap_viewU, crsmatU.graph.entries, values_viewU);
+        KokkosSparse::sptrsv_symbolic(handle->get_gs_sptrsvL_handle(), rowmap_viewL, crsmatL.graph.entries,
+                                      values_viewL);
+        KokkosSparse::sptrsv_symbolic(handle->get_gs_sptrsvU_handle(), rowmap_viewU, crsmatU.graph.entries,
+                                      values_viewU);
       }
     }
   }
@@ -895,8 +897,8 @@ class TwostageGaussSeidel {
             auto localZj = Kokkos::subview(localZ, Kokkos::ALL(), range_type(j, j + 1));
             single_vector_view_t Rj(localRj.data(), num_rows);
             single_vector_view_t Zj(localZj.data(), num_rows);
-            sptrsv_solve(handle->get_gs_sptrsvL_handle(), crsmatL.graph.row_map, crsmatL.graph.entries, crsmatL.values,
-                         Rj, Zj);
+            KokkosSparse::sptrsv_solve(handle->get_gs_sptrsvL_handle(), crsmatL.graph.row_map, crsmatL.graph.entries,
+                                       crsmatL.values, Rj, Zj);
           }
         } else {
           using namespace KokkosSparse::Experimental;
@@ -907,8 +909,8 @@ class TwostageGaussSeidel {
             auto localZj = Kokkos::subview(localZ, Kokkos::ALL(), range_type(j, j + 1));
             single_vector_view_t Rj(localRj.data(), num_rows);
             single_vector_view_t Zj(localZj.data(), num_rows);
-            sptrsv_solve(handle->get_gs_sptrsvU_handle(), crsmatU.graph.row_map, crsmatU.graph.entries, crsmatU.values,
-                         Rj, Zj);
+            KokkosSparse::sptrsv_solve(handle->get_gs_sptrsvU_handle(), crsmatU.graph.row_map, crsmatU.graph.entries,
+                                       crsmatU.values, Rj, Zj);
           }
         }
 

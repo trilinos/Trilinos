@@ -366,7 +366,7 @@ void view_iota_empty_empty() {
 
   AView a("view-iota-empty-empty-a", 0);
   BView b(0);
-  EXPECT_EQ(MMD(a, b, 0).size(), 0);
+  EXPECT_EQ(MMD(a, b, 0).size(), size_t(0));
 }
 
 /*! \brief merge-matrix of a full view and empty iota
@@ -385,7 +385,7 @@ void view_iota_full_empty() {
   BView b(0);
 
   for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
-    EXPECT_EQ(MMD(a, b, diagonal).size(), 0);
+    EXPECT_EQ(MMD(a, b, diagonal).size(), size_t(0));
   }
 }
 
@@ -404,7 +404,7 @@ void view_iota_empty_full() {
   BView b(4);
 
   for (size_t diagonal = 0; diagonal < a.size() + b.size() - 1; ++diagonal) {
-    EXPECT_EQ(MMD(a, b, diagonal).size(), 0);
+    EXPECT_EQ(MMD(a, b, diagonal).size(), size_t(0));
   }
 }
 

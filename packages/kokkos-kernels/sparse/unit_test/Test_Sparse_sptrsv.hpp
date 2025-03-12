@@ -158,6 +158,20 @@ struct SptrsvTest {
     return std::make_tuple(triMtx, lhs, rhs);
   }
 
+  template <bool BlockEnabled, typename std::enable_if<!BlockEnabled>::type * = nullptr>
+  static std::tuple<Crs, ValuesType, ValuesType> create_crs_lhs_rhs_flex(
+      const std::vector<std::vector<scalar_t>> &fixture, const size_type) {
+    return create_crs_lhs_rhs(fixture);
+  }
+
+  template <bool BlockEnabled, typename std::enable_if<BlockEnabled>::type * = nullptr>
+  static std::tuple<Bsr, ValuesType, ValuesType> create_crs_lhs_rhs_flex(
+      const std::vector<std::vector<scalar_t>> &fixture, const size_type block_size) {
+    const auto [triMtx_crs, lhs, rhs] = create_crs_lhs_rhs(fixture);
+    Bsr triMtx(triMtx_crs, block_size);
+    return std::make_tuple(triMtx, lhs, rhs);
+  }
+
   template <typename SpMatrix>
   static void basic_check(const SpMatrix &triMtx, const ValuesType &lhs, const ValuesType &rhs, const bool is_lower,
                           const size_type block_size = 0) {
@@ -195,10 +209,10 @@ struct SptrsvTest {
         kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
       }
 
-      sptrsv_symbolic(&kh, row_map, entries, values);
+      KokkosSparse::sptrsv_symbolic(&kh, row_map, entries, values);
       Kokkos::fence();
 
-      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+      KokkosSparse::sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       scalar_t sum = 0.0;
@@ -496,10 +510,9 @@ struct SptrsvTest {
   }
 
   static void run_test_sptrsv_blocks_impl(const bool is_lower, const size_type block_size) {
-    auto fixture                      = is_lower ? get_6x6_lt_ones_fixture() : get_6x6_ut_ones_fixture();
-    const auto [triMtx_crs, lhs, rhs] = create_crs_lhs_rhs(fixture);
+    auto fixture                  = is_lower ? get_6x6_lt_ones_fixture() : get_6x6_ut_ones_fixture();
+    const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs_flex<true>(fixture, block_size);
 
-    Bsr triMtx(triMtx_crs, block_size);
     basic_check(triMtx, lhs, rhs, is_lower, block_size);
   }
 
@@ -510,6 +523,7 @@ struct SptrsvTest {
     }
   }
 
+  template <bool BlockEnabled>
   static void run_test_sptrsv_streams(SPTRSVAlgorithm test_algo, int nstreams, const bool is_lower) {
     // Workaround for OpenMP: skip tests if concurrency < nstreams because of
     // not enough resource to partition
@@ -525,9 +539,6 @@ struct SptrsvTest {
 #endif
     if (!run_streams_test) return;
 
-    const size_type nrows = 5;
-    const size_type nnz   = 10;
-
     auto instances = Kokkos::Experimental::partition_space(execution_space(), std::vector<int>(nstreams, 1));
 
     std::vector<KernelHandle> kh_v(nstreams);
@@ -538,46 +549,46 @@ struct SptrsvTest {
     std::vector<ValuesType> rhs_v(nstreams);
     std::vector<ValuesType> lhs_v(nstreams);
 
-    auto fixture                  = is_lower ? get_5x5_lt_ones_fixture() : get_5x5_ut_ones_fixture();
-    const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs(fixture);
+    const size_type block_size = BlockEnabled ? 2 : 0;
+
+    auto fixture                  = is_lower ? get_6x6_lt_ones_fixture() : get_6x6_ut_ones_fixture();
+    const auto [triMtx, lhs, rhs] = create_crs_lhs_rhs_flex<BlockEnabled>(fixture, block_size);
+
+    const size_type nrows       = triMtx.numRows();
+    const size_type nrows_point = triMtx.numPointRows();
+    const size_type nnz         = triMtx.nnz();
 
     auto row_map = triMtx.graph.row_map;
     auto entries = triMtx.graph.entries;
     auto values  = triMtx.values;
 
+    const size_type nvals = values.size();
+
     for (int i = 0; i < nstreams; i++) {
       // Allocate
       row_map_v[i] = RowMapType("row_map", nrows + 1);
       entries_v[i] = EntriesType("entries", nnz);
-      values_v[i]  = ValuesType("values", nnz);
+      values_v[i]  = ValuesType("values", nvals);
 
       // Copy
       Kokkos::deep_copy(row_map_v[i], row_map);
       Kokkos::deep_copy(entries_v[i], entries);
       Kokkos::deep_copy(values_v[i], values);
 
-      // Create known_lhs, generate rhs, then solve for lhs to compare to
-      // known_lhs
-      ValuesType known_lhs("known_lhs", nrows);
-      // Create known solution lhs set to all 1's
-      Kokkos::deep_copy(known_lhs, scalar_t(1));
-
       // Solution to find
-      lhs_v[i] = ValuesType("lhs", nrows);
+      lhs_v[i] = ValuesType("lhs", nrows_point);
 
       // A*known_lhs generates rhs: rhs is dense, use spmv
-      rhs_v[i] = ValuesType("rhs", nrows);
-
-      KokkosSparse::spmv("N", scalar_t(1), triMtx, known_lhs, scalar_t(0), rhs_v[i]);
-      Kokkos::fence();
+      rhs_v[i] = ValuesType("rhs", nrows_point);
+      Kokkos::deep_copy(rhs_v[i], rhs);
 
       // Create handle
       kh_v[i] = KernelHandle();
-      kh_v[i].create_sptrsv_handle(test_algo, nrows, is_lower);
+      kh_v[i].create_sptrsv_handle(test_algo, nrows, is_lower, block_size);
       kh_ptr_v[i] = &kh_v[i];
 
       // Symbolic phase
-      sptrsv_symbolic(kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i]);
+      KokkosSparse::sptrsv_symbolic(kh_ptr_v[i], row_map_v[i], entries_v[i], values_v[i]);
       Kokkos::fence();
     }  // Done handle creation and sptrsv_symbolic on all streams
 
@@ -609,14 +620,13 @@ template <typename scalar_t, typename lno_t, typename size_type, typename device
 void test_sptrsv_streams() {
   using TestStruct                  = Test::SptrsvTest<scalar_t, lno_t, size_type, device>;
   std::vector<SPTRSVAlgorithm> algs = {SPTRSVAlgorithm::SEQLVLSCHD_RP, SPTRSVAlgorithm::SEQLVLSCHD_TP1};
-  if (TestStruct::do_cusparse()) {
-    algs.push_back(SPTRSVAlgorithm::SPTRSV_CUSPARSE);
-  }
 
   for (auto alg : algs) {
     for (int nstreams = 1; nstreams <= 4; ++nstreams) {
-      TestStruct::run_test_sptrsv_streams(alg, nstreams, true);
-      TestStruct::run_test_sptrsv_streams(alg, nstreams, false);
+      TestStruct::template run_test_sptrsv_streams<false>(alg, nstreams, true);
+      TestStruct::template run_test_sptrsv_streams<false>(alg, nstreams, false);
+      TestStruct::template run_test_sptrsv_streams<true>(alg, nstreams, true);
+      TestStruct::template run_test_sptrsv_streams<true>(alg, nstreams, false);
     }
   }
 }

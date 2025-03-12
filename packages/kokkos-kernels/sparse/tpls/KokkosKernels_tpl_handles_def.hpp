@@ -25,14 +25,14 @@
 namespace KokkosKernels {
 namespace Impl {
 
-CusparseSingleton::CusparseSingleton() { KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle)); }
+CusparseSingleton::CusparseSingleton() { KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle)); }
 
 CusparseSingleton& CusparseSingleton::singleton() {
   std::unique_ptr<CusparseSingleton>& instance = get_instance();
   if (!instance) {
     instance = std::make_unique<CusparseSingleton>();
     Kokkos::push_finalize_hook([&]() {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroy(instance->cusparseHandle));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroy(instance->cusparseHandle));
       instance.reset();
     });
   }

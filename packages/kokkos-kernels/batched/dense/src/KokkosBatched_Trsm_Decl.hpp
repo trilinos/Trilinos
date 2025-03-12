@@ -17,6 +17,7 @@
 #define KOKKOSBATCHED_TRSM_DECL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+/// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Vector.hpp"

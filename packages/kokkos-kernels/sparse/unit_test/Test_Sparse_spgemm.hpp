@@ -164,18 +164,16 @@ int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgor
     EXPECT_FALSE(sh->are_rowptrs_computed());
     EXPECT_FALSE(sh->are_entries_computed());
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
-                                                A.graph.entries, false, B.graph.row_map, B.graph.entries, false,
-                                                row_mapC);
+    KokkosSparse::spgemm_symbolic(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map, A.graph.entries, false,
+                                  B.graph.row_map, B.graph.entries, false, row_mapC);
 
     EXPECT_TRUE(sh->is_symbolic_called());
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     entriesC          = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
     valuesC           = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
-    KokkosSparse::Experimental::spgemm_numeric(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
-                                               A.graph.entries, A.values, false, B.graph.row_map, B.graph.entries,
-                                               B.values, false, row_mapC, entriesC, valuesC);
+    KokkosSparse::spgemm_numeric(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map, A.graph.entries, A.values,
+                                 false, B.graph.row_map, B.graph.entries, B.values, false, row_mapC, entriesC, valuesC);
 
     EXPECT_TRUE(sh->are_entries_computed());
     EXPECT_TRUE(sh->is_numeric_called());
@@ -187,9 +185,9 @@ int run_spgemm_old_interface(crsMat_t &A, crsMat_t &B, KokkosSparse::SPGEMMAlgor
       B.values = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new B values"), B.nnz());
       randomize_matrix_values(A.values);
       randomize_matrix_values(B.values);
-      KokkosSparse::Experimental::spgemm_numeric(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map,
-                                                 A.graph.entries, A.values, false, B.graph.row_map, B.graph.entries,
-                                                 B.values, false, row_mapC, entriesC, valuesC);
+      KokkosSparse::spgemm_numeric(&kh, num_rows_A, num_rows_B, num_cols_B, A.graph.row_map, A.graph.entries, A.values,
+                                   false, B.graph.row_map, B.graph.entries, B.values, false, row_mapC, entriesC,
+                                   valuesC);
       EXPECT_TRUE(sh->are_entries_computed());
       EXPECT_TRUE(sh->is_numeric_called());
     }
@@ -358,11 +356,11 @@ void test_spgemm_symbolic(bool callSymbolicFirst, bool testEmpty) {
   KernelHandle kh;
   kh.create_spgemm_handle();
   if (callSymbolicFirst) {
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
-                                                B.graph.entries, false, C_rowmap);
+    KokkosSparse::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
+                                  B.graph.entries, false, C_rowmap);
   }
-  KokkosSparse::Experimental::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map,
-                                              B.graph.entries, false, C_rowmap, true);
+  KokkosSparse::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, false, B.graph.row_map, B.graph.entries,
+                                false, C_rowmap, true);
   kh.destroy_spgemm_handle();
   bool isCorrect = KokkosKernels::Impl::kk_is_identical_view<const_rowmap_t, const_rowmap_t, size_type,
                                                              typename device::execution_space>(

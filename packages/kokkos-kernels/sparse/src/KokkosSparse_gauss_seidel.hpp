@@ -23,8 +23,6 @@
 
 namespace KokkosSparse {
 
-namespace Experimental {
-
 ///
 /// @brief Gauss-Seidel preconditioner setup (first phase, based on sparsity
 /// pattern only)
@@ -1160,6 +1158,256 @@ void backward_sweep_block_gauss_seidel_apply(KernelHandle *handle, typename Kern
   backward_sweep_gauss_seidel_apply<format>(handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
                                             y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
 }
+
+#if !defined(DOXY)
+namespace Experimental {
+
+template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
+[[deprecated(
+    "gauss_seidel_symbolic was promoted out of Experimental, please use KokkosSparse::gauss_seidel_symbolic "
+    "instead.")]] void
+gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle,
+                      typename KernelHandle::const_nnz_lno_t num_rows, typename KernelHandle::const_nnz_lno_t num_cols,
+                      lno_row_view_t_ row_map, lno_nnz_view_t_ entries, bool is_graph_symmetric = true) {
+  KokkosSparse::gauss_seidel_symbolic(space, handle, num_rows, num_cols, row_map, entries, is_graph_symmetric);
+}
+
+template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
+[[deprecated(
+    "gauss_seidel_symbolic was promoted out of Experimental, please use KokkosSparse::gauss_seidel_symbolic "
+    "instead.")]] void
+gauss_seidel_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                      typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
+                      bool is_graph_symmetric = true) {
+  KokkosSparse::gauss_seidel_symbolic(handle, num_rows, num_cols, row_map, entries, is_graph_symmetric);
+}
+
+template <typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
+[[deprecated(
+    "block_gauss_seidel_symbolic was promoted out of Experimental, please use "
+    "KokkosSparse::block_gauss_seidel_symbolic instead.")]] void
+block_gauss_seidel_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                            typename KernelHandle::const_nnz_lno_t num_cols,
+                            typename KernelHandle::const_nnz_lno_t block_size, lno_row_view_t_ row_map,
+                            lno_nnz_view_t_ entries, bool is_graph_symmetric = true) {
+  KokkosSparse::block_gauss_seidel_symbolic(handle, num_rows, num_cols, block_size, row_map, entries,
+                                            is_graph_symmetric);
+}
+
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+[[deprecated(
+    "gauss_seidel_numeric was promoted out of Experimental, please use KokkosSparse::gauss_seidel_numeric "
+    "instead.")]] void
+gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
+                     scalar_nnz_view_t_ values, bool is_graph_symmetric = true) {
+  KokkosSparse::gauss_seidel_numeric(space, handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
+}
+
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+[[deprecated(
+    "gauss_seidel_numeric was promoted out of Experimental, please use KokkosSparse::gauss_seidel_numeric "
+    "instead.")]] void
+gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
+                     scalar_nnz_view_t_ values, bool is_graph_symmetric = true) {
+  KokkosSparse::gauss_seidel_numeric(handle, num_rows, num_cols, row_map, entries, values, is_graph_symmetric);
+}
+
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+[[deprecated(
+    "gauss_seidel_numeric was promoted out of Experimental, please use KokkosSparse::gauss_seidel_numeric "
+    "instead.")]] void
+gauss_seidel_numeric(const ExecutionSpace &space, KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
+                     scalar_nnz_view_t_ values, scalar_nnz_view_t_ given_inverse_diagonal,
+                     bool is_graph_symmetric = true) {
+  KokkosSparse::gauss_seidel_numeric(space, handle, num_rows, num_cols, row_map, entries, values,
+                                     given_inverse_diagonal, is_graph_symmetric);
+}
+
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+[[deprecated(
+    "gauss_seidel_numeric was promoted out of Experimental, please use KokkosSparse::gauss_seidel_numeric "
+    "instead.")]] void
+gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                     typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
+                     scalar_nnz_view_t_ values, scalar_nnz_view_t_ given_inverse_diagonal,
+                     bool is_graph_symmetric = true) {
+  KokkosSparse::gauss_seidel_numeric(handle, num_rows, num_cols, row_map, entries, values, given_inverse_diagonal,
+                                     is_graph_symmetric);
+}
+
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::BSR, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_>
+[[deprecated(
+    "block_gauss_seidel_numeric was promoted out of Experimental, please use KokkosSparse::block_gauss_seidel_numeric "
+    "instead.")]] void
+block_gauss_seidel_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                           typename KernelHandle::const_nnz_lno_t num_cols,
+                           typename KernelHandle::const_nnz_lno_t block_size, lno_row_view_t_ row_map,
+                           lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, bool is_graph_symmetric = true) {
+  KokkosSparse::block_gauss_seidel_numeric(handle, num_rows, num_cols, block_size, row_map, entries, values,
+                                           is_graph_symmetric);
+}
+
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+          typename x_scalar_view_t, typename y_scalar_view_t>
+[[deprecated(
+    "symmetric_gauss_seidel_apply was promoted out of Experimental, please use "
+    "KokkosSparse::symmetric_gauss_seidel_apply instead.")]] void
+symmetric_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *handle,
+                             typename KernelHandle::const_nnz_lno_t num_rows,
+                             typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                             lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec,
+                             y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector,
+                             typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  KokkosSparse::symmetric_gauss_seidel_apply(space, handle, num_rows, num_cols, row_map, entries, values,
+                                             x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, update_y_vector,
+                                             omega, numIter);
+}
+
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+[[deprecated(
+    "symmetric_gauss_seidel_apply was promoted out of Experimental, please use "
+    "KokkosSparse::symmetric_gauss_seidel_apply instead.")]] void
+symmetric_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                             typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                             lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec,
+                             y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector,
+                             typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  KokkosSparse::symmetric_gauss_seidel_apply(handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
+                                             y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
+}
+
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::BSR, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+[[deprecated(
+    "symmetric_block_gauss_seidel_apply was promoted out of Experimental, please use "
+    "KokkosSparse::symmetric_block_gauss_seidel_apply instead.")]] void
+symmetric_block_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                   typename KernelHandle::const_nnz_lno_t num_cols,
+                                   typename KernelHandle::const_nnz_lno_t block_size,
+
+                                   lno_row_view_t_ row_map, lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+                                   x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+                                   bool init_zero_x_vector, bool update_y_vector,
+                                   typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  KokkosSparse::symmetric_block_gauss_seidel_apply(handle, num_rows, num_cols, block_size, row_map, entries, values,
+                                                   x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector,
+                                                   update_y_vector, omega, numIter);
+}
+
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+          typename x_scalar_view_t, typename y_scalar_view_t>
+[[deprecated(
+    "forward_sweep_gauss_seidel_apply was promoted out of Experimental, please use "
+    "KokkosSparse::forward_sweep_gauss_seidel_apply instead.")]] void
+forward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *handle,
+                                 typename KernelHandle::const_nnz_lno_t num_rows,
+                                 typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                 lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec,
+                                 y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector,
+                                 typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  KokkosSparse::forward_sweep_gauss_seidel_apply(space, handle, num_rows, num_cols, row_map, entries, values,
+                                                 x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector, update_y_vector,
+                                                 omega, numIter);
+}
+
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, class KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+[[deprecated(
+    "forward_sweep_gauss_seidel_apply was promoted out of Experimental, please use "
+    "KokkosSparse::forward_sweep_gauss_seidel_apply instead.")]] void
+forward_sweep_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                 typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                 lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec,
+                                 y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector,
+                                 typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  KokkosSparse::forward_sweep_gauss_seidel_apply(handle, num_rows, num_cols, row_map, entries, values, x_lhs_output_vec,
+                                                 y_rhs_input_vec, init_zero_x_vector, update_y_vector, omega, numIter);
+}
+
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::BSR, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+[[deprecated(
+    "forward_sweep_block_gauss_seidel_apply was promoted out of Experimental, please use "
+    "KokkosSparse::forward_sweep_block_gauss_seidel_apply instead.")]] void
+forward_sweep_block_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                       typename KernelHandle::const_nnz_lno_t num_cols,
+                                       typename KernelHandle::const_nnz_lno_t block_size, lno_row_view_t_ row_map,
+                                       lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+                                       x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+                                       bool init_zero_x_vector, bool update_y_vector,
+                                       typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  KokkosSparse::forward_sweep_block_gauss_seidel_apply(handle, num_rows, num_cols, block_size, row_map, entries, values,
+                                                       x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector,
+                                                       update_y_vector, omega, numIter);
+}
+
+template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
+          class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_,
+          typename x_scalar_view_t, typename y_scalar_view_t>
+[[deprecated(
+    "backward_sweep_gauss_seidel_apply was promoted out of Experimental, please use "
+    "KokkosSparse::backward_sweep_gauss_seidel_apply instead.")]] void
+backward_sweep_gauss_seidel_apply(const ExecutionSpace &space, KernelHandle *handle,
+                                  typename KernelHandle::const_nnz_lno_t num_rows,
+                                  typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                  lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec,
+                                  y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector,
+                                  typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  KokkosSparse::backward_sweep_gauss_seidel_apply(space, handle, num_rows, num_cols, row_map, entries, values,
+                                                  x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector,
+                                                  update_y_vector, omega, numIter);
+}
+
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS, class KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+[[deprecated(
+    "backward_sweep_gauss_seidel_apply was promoted out of Experimental, please use "
+    "KokkosSparse::backward_sweep_gauss_seidel_apply instead.")]] void
+backward_sweep_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                  typename KernelHandle::const_nnz_lno_t num_cols, lno_row_view_t_ row_map,
+                                  lno_nnz_view_t_ entries, scalar_nnz_view_t_ values, x_scalar_view_t x_lhs_output_vec,
+                                  y_scalar_view_t y_rhs_input_vec, bool init_zero_x_vector, bool update_y_vector,
+                                  typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  KokkosSparse::backward_sweep_gauss_seidel_apply(handle, num_rows, num_cols, row_map, entries, values,
+                                                  x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector,
+                                                  update_y_vector, omega, numIter);
+}
+
+template <KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::BSR, typename KernelHandle,
+          typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_, typename x_scalar_view_t,
+          typename y_scalar_view_t>
+[[deprecated(
+    "backward_sweep_block_gauss_seidel_apply was promoted out of Experimental, please use "
+    "KokkosSparse::backward_sweep_block_gauss_seidel_apply instead.")]] void
+backward_sweep_block_gauss_seidel_apply(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t num_rows,
+                                        typename KernelHandle::const_nnz_lno_t num_cols,
+                                        typename KernelHandle::const_nnz_lno_t block_size, lno_row_view_t_ row_map,
+                                        lno_nnz_view_t_ entries, scalar_nnz_view_t_ values,
+                                        x_scalar_view_t x_lhs_output_vec, y_scalar_view_t y_rhs_input_vec,
+                                        bool init_zero_x_vector, bool update_y_vector,
+                                        typename KernelHandle::nnz_scalar_t omega, int numIter) {
+  KokkosSparse::backward_sweep_block_gauss_seidel_apply(handle, num_rows, num_cols, block_size, row_map, entries,
+                                                        values, x_lhs_output_vec, y_rhs_input_vec, init_zero_x_vector,
+                                                        update_y_vector, omega, numIter);
+}
+
 }  // namespace Experimental
+#endif
 }  // namespace KokkosSparse
 #endif

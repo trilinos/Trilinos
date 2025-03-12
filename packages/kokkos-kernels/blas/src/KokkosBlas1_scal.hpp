@@ -58,8 +58,6 @@ void scal(const execution_space& space, const RMV& R, const AV& a, const XMV& X)
                 "X is not a Kokkos::View.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename XMV::memory_space>::accessible,
                 "KokkosBlas::scal: XMV must be accessible from execution_space");
-  static_assert(Kokkos::SpaceAccessibility<typename RMV::memory_space, typename XMV::memory_space>::assignable,
-                "KokkosBlas::scal: XMV must be assignable to RMV");
   static_assert(std::is_same<typename RMV::value_type, typename RMV::non_const_value_type>::value,
                 "KokkosBlas::scal: R is const.  "
                 "It must be nonconst, because it is an output argument "
