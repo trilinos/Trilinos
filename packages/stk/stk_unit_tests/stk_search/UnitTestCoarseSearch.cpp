@@ -389,7 +389,7 @@ void device_local_test_coarse_search_for_algorithm(stk::search::SearchMethod alg
   auto range = Kokkos::View<BoxIdentType*, stk::ngp::ExecSpace>("range box-ident", 2);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA(const unsigned & i) {
+    KOKKOS_LAMBDA(const unsigned & /*i*/) {
       domain[0] = {BoxType(PointType(0.1, 0.0, 0.0), PointType(0.9, 1.0, 1.0)), 0};
       domain[1] = {BoxType(PointType(0.1, 2.0, 0.0), PointType(0.9, 3.0, 1.0)), 1};
       range[0]  = {BoxType(PointType(0.6, 0.5, 0.0), PointType(1.4, 1.5, 1.0)), 2};

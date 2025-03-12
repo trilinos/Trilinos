@@ -887,7 +887,7 @@ void evaluate_scalar_assignment_on_device(xType & x, yType & y, const std::strin
 
   double result = 0.0;
   Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA (const int & i, double & localResult) {
+    KOKKOS_LAMBDA (const int & /*i*/, double & localResult) {
       stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
       deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]));
       deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]));
@@ -992,7 +992,7 @@ void evaluate_array_inputs_on_device(xType x[3], yType y[3], const std::string &
 
   double result = 0.0;
   Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA (const int & i, double & localResult) {
+    KOKKOS_LAMBDA (const int & /*i*/, double & localResult) {
       stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
       deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]), 3);
       deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]), 3);
@@ -1108,7 +1108,7 @@ void evaluate_array_assignment_on_device(xType x[3], yType y[3], const std::stri
 
   double result = 0.0;
   Kokkos::parallel_reduce(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA (const int & i, double & localResult) {
+    KOKKOS_LAMBDA (const int & /*i*/, double & localResult) {
       stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
       deviceVariableMap.bind(xIndex, const_cast<xType&>(xDeviceValues[0]), 3);
       deviceVariableMap.bind(yIndex, const_cast<yType&>(yDeviceValues[0]), 3);
@@ -1254,7 +1254,7 @@ TEST(UnitTestEvaluator, deviceVariableMap_too_small)
   eval.parse();
 
   auto & parsedEval = eval.get_parsed_eval();
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA (const int& i) {
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA (const int& /*i*/) {
     EXPECT_ANY_THROW(stk::expreval::DeviceVariableMap<2> deviceVariableMap(parsedEval));
   });
 }

@@ -81,7 +81,7 @@ constexpr bool operate_on_ngp_mesh()
 
 template<class EXEC_SPACE>
 bool mark_modified_on_device(
-    const EXEC_SPACE& execSpace,
+    const EXEC_SPACE& /*execSpace*/,
     bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
   return operate_on_ngp_mesh<EXEC_SPACE>() || isDeviceExecSpaceUserOverride;
@@ -368,7 +368,7 @@ class FieldAMax
 
 template <class Scalar, class EXEC_SPACE>
 Scalar field_amax_no_mark_t(
-    const stk::mesh::FieldBase& xField, const stk::mesh::Selector& selector, const EXEC_SPACE& execSpace)
+    const stk::mesh::FieldBase& xField, const stk::mesh::Selector& selector, const EXEC_SPACE& /*execSpace*/)
 {
   Scalar amaxOut = 0;
 
@@ -418,7 +418,7 @@ void field_amax_impl(Scalar& amaxOut,
     const stk::mesh::FieldBase& xField,
     const stk::mesh::Selector* selectorPtr,
     const EXEC_SPACE& execSpace,
-    bool isDeviceExecSpaceUserOverride)
+    bool /*isDeviceExecSpaceUserOverride*/)
 {
   std::unique_ptr<stk::mesh::Selector> fieldSelector;
   if (selectorPtr == nullptr) {
@@ -454,7 +454,7 @@ template<class Scalar, class EXEC_SPACE>
 void field_copy_no_mark_t(const stk::mesh::FieldBase& xField,
                           const stk::mesh::FieldBase& yField,
                           const stk::mesh::Selector& selector,
-                          const EXEC_SPACE& execSpace)
+                          const EXEC_SPACE& /*execSpace*/)
 {
   if constexpr (operate_on_ngp_mesh<EXEC_SPACE>()) {
     xField.sync_to_device();
@@ -582,8 +582,8 @@ struct FieldProductFunctor
       stk::mesh::NgpField<Scalar> & output_field,
       stk::mesh::NgpField<Scalar> & input_x,
       stk::mesh::NgpField<Scalar> & input_y,
-      const Scalar a,
-      const Scalar b)
+      const Scalar /*a*/,
+      const Scalar /*b*/)
       : my_mesh(my_ngp_mesh),
         output(output_field),
         x(input_x), y(input_y)

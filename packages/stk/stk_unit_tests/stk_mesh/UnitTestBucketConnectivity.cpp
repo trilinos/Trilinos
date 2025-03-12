@@ -175,19 +175,19 @@ void test_remove(Connectivity& connectivity, unsigned num_entities, unsigned num
 }
 
 template <typename Connectivity>
-void test_inter_conn_copy(Connectivity& connectivity, unsigned num_entities, unsigned num_to_add)
+void test_inter_conn_copy(Connectivity& /*connectivity*/, unsigned /*num_entities*/, unsigned /*num_to_add*/)
 {
   // TODO
 }
 
 template <typename Connectivity>
-void test_intra_conn_copy(Connectivity& connectivity, unsigned num_entities, unsigned num_to_add)
+void test_intra_conn_copy(Connectivity& /*connectivity*/, unsigned /*num_entities*/, unsigned /*num_to_add*/)
 {
   // TODO
 }
 
 template <typename Connectivity>
-void test_mod_end(Connectivity& connectivity, unsigned num_entities, unsigned num_to_add)
+void test_mod_end(Connectivity& /*connectivity*/, unsigned /*num_entities*/, unsigned /*num_to_add*/)
 {
   // TODO
 }

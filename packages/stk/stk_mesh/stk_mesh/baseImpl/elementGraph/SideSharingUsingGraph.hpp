@@ -56,7 +56,7 @@ struct SideSharingData
     : elementAndSide(sidePair), side(sideIn), sharingProc(sharing_proc), allSharingProcs(all_sharing_procs), owningProc(owning_proc), chosenSideId(chosen_id) {}
 };
 
-stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::BulkData& bulkData);
+stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::BulkData& bulkData, stk::mesh::EntityRank rank);
 
 void fill_sharing_data(stk::mesh::BulkData& bulkData, stk::mesh::ElemElemGraph &graph, const stk::mesh::EntityVector& sidesThatNeedFixing, std::vector<SideSharingData>& sideSharingDataThisProc, std::vector<stk::mesh::impl::IdViaSidePair>& idAndSides);
 

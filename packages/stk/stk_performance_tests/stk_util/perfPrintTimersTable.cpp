@@ -73,23 +73,23 @@ TEST(PrintTimersTable, performance)
       std::this_thread::sleep_for(20ms);
 
       {
-        stk::diag::TimeBlock timeBlock(child1, comm);
+        stk::diag::TimeBlock timeBlock1(child1, comm);
         std::this_thread::sleep_for(100ms);
 
         {
-          stk::diag::TimeBlock timeBlock(child2, comm);
+          stk::diag::TimeBlock timeBlock2(child2, comm);
           std::this_thread::sleep_for(100ms);
 
           {
-            stk::diag::TimeBlock timeBlock(child3, comm);
+            stk::diag::TimeBlock timeBlock3(child3, comm);
             std::this_thread::sleep_for(100ms);
     
             {
-              stk::diag::TimeBlock timeBlock(child4, comm);
+              stk::diag::TimeBlock timeBlock4(child4, comm);
               std::this_thread::sleep_for(100ms);
     
               {
-                stk::diag::TimeBlock timeBlock(child5, comm);
+                stk::diag::TimeBlock timeBlock5(child5, comm);
                 std::this_thread::sleep_for(100ms);
               }
             }

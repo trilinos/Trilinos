@@ -306,7 +306,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 void separate_and_skin_mesh(
     stk::mesh::MetaData & fem_meta,
     stk::mesh::BulkData & mesh,
-    stk::mesh::Part     & skin_part,
+    stk::mesh::Part     & /*skin_part*/,
     stk::mesh::EntityVector & entities_to_separate
     )
 {

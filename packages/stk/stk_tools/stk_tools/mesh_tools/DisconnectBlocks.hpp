@@ -46,36 +46,6 @@ enum SnipOption {
   SNIP_ALL_HINGES
 };
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sep 2024
-enum STK_DEPRECATED
-DisconnectOption
-{
-  DISCONNECT_GLOBAL,
-  DISCONNECT_LOCAL
-};
-
-struct STK_DEPRECATED
-DisconnectBlocksOption
-{
-  DisconnectBlocksOption()
-    : disconnectOption(DISCONNECT_GLOBAL),
-      snipOption(PRESERVE_INITIAL_HINGES)
-  {}
-
-  DisconnectBlocksOption(DisconnectOption disconnectOption_, SnipOption snipOption_)
-    : disconnectOption(disconnectOption_),
-      snipOption(snipOption_)
-  {}
-
-  DisconnectOption disconnectOption;
-  SnipOption snipOption;
-};
-
-STK_DEPRECATED
-void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect,
-                            DisconnectBlocksOption options = DisconnectBlocksOption());
-#endif
-
 void disconnect_all_blocks(stk::mesh::BulkData& bulk, bool preserveOrphans = false);
 void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, bool preserveOrphans = false);
 void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect,

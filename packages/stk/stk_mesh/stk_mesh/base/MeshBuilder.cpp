@@ -97,14 +97,6 @@ MeshBuilder& MeshBuilder::set_add_fmwk_data(bool addFmwkData)
   return *this;
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2023-09-27
-STK_DEPRECATED MeshBuilder& MeshBuilder::set_field_data_manager(FieldDataManager* fieldDataManager)
-{
-  m_fieldDataManager = std::unique_ptr<FieldDataManager>(fieldDataManager);
-  return *this;
-}
-#endif
-
 MeshBuilder& MeshBuilder::set_field_data_manager(std::unique_ptr<FieldDataManager> fieldDataManager)
 {
   m_fieldDataManager = std::move(fieldDataManager);

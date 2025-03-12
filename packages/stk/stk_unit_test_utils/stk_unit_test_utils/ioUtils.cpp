@@ -283,7 +283,7 @@ void read_from_serial_file_and_decompose(const std::string& fileName, stk::mesh:
     broker.populate_bulk_data();
 }
 
-void IdAndTimeFieldValueSetter::populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step, const double time) const
+void IdAndTimeFieldValueSetter::populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned /*step*/, const double time) const
 {
     stk::mesh::EntityRank fieldRank = field->entity_rank();
 

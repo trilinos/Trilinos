@@ -401,8 +401,6 @@ TEST(CoarseSearch, PeriodicBC)
   bulk_data.modification_end();
 
   //do periodic search
-  typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
-  typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
   PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
 
   const stk::mesh::Selector side_0_selector = side_0 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
@@ -430,7 +428,7 @@ TEST(CoarseSearch, PeriodicBC)
 }
 
 
-void assign_to_parts_for_two_way(const unsigned x, const unsigned y, const unsigned z,
+void assign_to_parts_for_two_way(const unsigned /*x*/, const unsigned y, const unsigned z,
                                  stk::mesh::fixtures::HexFixture &fixture,
                                  stk::mesh::BulkData &bulk_data,
                                  stk::mesh::PartVector &side_0_parts,
@@ -504,8 +502,6 @@ TEST(CoarseSearch, TwoWayMultiPeriodicBC)
                                 side_0_parts, side_1_parts, side_2_parts, side_3_parts);
 
   //do periodic search
-  typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
-  typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
   PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
 
   const stk::mesh::Selector side_0_selector = side_0 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
@@ -629,8 +625,6 @@ TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
                                   side_4_parts, side_5_parts);
 
   //do periodic search
-  typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
-  typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
   PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
 
   const stk::mesh::Selector side_0_selector = side_0 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
@@ -715,9 +709,6 @@ TEST(CoarseSearch, MultiPeriodicBCDisallowRotational)
   const double rotationAxis[3] = {0.0, 0.0, 1.0};
   const double axisLocation[3] = {0.0, 0.0, 0.0};
 
-  typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
-  typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
-
   PeriodicSearch pbc_search_caseA(bulk_data, CoordinateFunctor(bulk_data, coords_field));
   pbc_search_caseA.add_rotational_periodic_pair(side_0 & meta_data.locally_owned_part(),
                                                 side_2 & meta_data.locally_owned_part(),
@@ -772,8 +763,6 @@ TEST(CoarseSearch, RotationalPeriodicBC)
   bulk_data.modification_end();
 
   //do periodic search
-  typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
-  typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
   PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
 
   const stk::mesh::Selector side_0_selector = side_0 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
@@ -850,8 +839,6 @@ TEST(CoarseSearch, OffsetRotationalPeriodicBC)
   bulk_data.modification_end();
 
   //do periodic search
-  typedef stk::mesh::GetCoordinates<CoordFieldType> CoordinateFunctor;
-  typedef stk::mesh::PeriodicBoundarySearch<CoordinateFunctor> PeriodicSearch;
   PeriodicSearch pbc_search(bulk_data, CoordinateFunctor(bulk_data, coords_field));
 
   const stk::mesh::Selector side_0_selector = side_0 & (meta_data.locally_owned_part() | meta_data.globally_shared_part());

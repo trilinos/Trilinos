@@ -348,7 +348,7 @@ double EdgeTracer::compute_deviation(double val, double valMin, double valMax)
 }
 
 // TODO: this takes a lot of arguments: refactor somehow?
-int EdgeTracer::choose_intersection_with_minimum_angle(const std::vector<double>& alphas,
+int EdgeTracer::choose_intersection_with_minimum_angle(const std::vector<double>& /*alphas*/,
                                                        const std::vector<double>& betas,
                                                        const std::vector<int>& intersectionsInRange,
                                                        const std::vector<mesh::MeshEntityPtr>& edges,

@@ -69,7 +69,7 @@ class Boolf {
     return (reinterpret_cast<const float*>(&tmp))[i];
   }
 #elif defined(__CUDACC__) || defined(__HIPCC__) || defined(USE_STK_SIMD_NONE)
-  STK_MATH_FORCE_INLINE float operator[](int i) const {
+  STK_MATH_FORCE_INLINE float operator[](int /*i*/) const {
     return _data.get() ? 1.0f : 0.0f;
   }
 #else

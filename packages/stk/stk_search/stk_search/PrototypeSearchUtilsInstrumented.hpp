@@ -289,7 +289,7 @@ void findGhostingRegionResidentsDDEfficient(const SuperTile3D &tilingPattern, MP
 }
 
 
-inline int getGhostingRegionRank(const TilingIndices &tileId, const SuperTile3D &tilingPattern, int mpiSize) {
+inline int getGhostingRegionRank(const TilingIndices &tileId, const SuperTile3D &tilingPattern, int /*mpiSize*/) {
   int xIdx = tileId.xIdx % tilingPattern.numXTiles;
   int yIdx = tileId.yIdx % tilingPattern.numYTiles;
   int zIdx = tileId.zIdx % tilingPattern.numZTiles;
@@ -453,7 +453,7 @@ void witnessAndComputeNeighborRanks(MPI_Comm mpiComm, int pSize,
                                     std::vector<int> &neighborDomainRanks, std::vector<int> &neighborRangeRanks);
 
 template <typename T>
-void witnessAndComputeNeighborRanksDDEfficient(MPI_Comm mpiComm, int pSize,
+void witnessAndComputeNeighborRanksDDEfficient(MPI_Comm mpiComm, int /*pSize*/,
                                                const typename GS_Types<T>::ResidencyBoxMapT &myDomainResidents,
                                                const typename GS_Types<T>::ResidencyBoxMapT &myRangeResidents,
                                                std::vector<std::pair<typename GS_Types<T>::OwnedBox3D, typename GS_Types<T>::OwnedBox3D> > &neighborPairs)
@@ -678,7 +678,7 @@ void findGhostingNeighborsFromScratch(MPI_Comm comm, int mpiRank, int mpiSize,
 template<typename DomainBox, typename RangeBox>
 void findGhostingNeighborsFromScratchDDEfficient(MPI_Comm comm, int mpiRank, int mpiSize,
                                                  const stk::search::ObjectBoundingBox_T<DomainBox> boxA_proc,
-                                                 const stk::search::ObjectBoundingBox_T<RangeBox> boxB_proc,
+                                                 const stk::search::ObjectBoundingBox_T<RangeBox> /*boxB_proc*/,
                                                  const std::vector<DomainBox> &localDomain,
                                                  const std::vector<RangeBox>  &localRange,
                                                  std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
@@ -856,11 +856,11 @@ class GhostingSearcher {
 
 template<typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeBoxType>
 GhostingSearcher<DomainIdentifier, RangeIdentifier, DomainObjType, RangeBoxType>::GhostingSearcher(
-      const std::vector<std::pair<DomainObjType, DomainIdentifier> >& local_domain,
-      const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& local_range,
-      std::vector<RangeBoxType >& rangeBoxes,
-      std::vector<RangeIdentifier>& rangeGhostIdentifiers, MPI_Comm comm,
-      experimental::GhostingSearchTimeBreakdown &timeBreakdown)
+      const std::vector<std::pair<DomainObjType, DomainIdentifier> >& /*local_domain*/,
+      const std::vector<std::pair<RangeBoxType, RangeIdentifier> >& /*local_range*/,
+      std::vector<RangeBoxType >& /*rangeBoxes*/,
+      std::vector<RangeIdentifier>& /*rangeGhostIdentifiers*/, MPI_Comm comm,
+      experimental::GhostingSearchTimeBreakdown & /*timeBreakdown*/)
       : mpiComm(comm), pSize(-1), pRank(-1)
 {
   MPI_Comm_rank(mpiComm, &pRank);

@@ -91,7 +91,7 @@ struct create_single_edge_impl
 
   template <typename Topology>
 //  enable if?  check intel
-  void operator()(Topology t)
+  void operator()(Topology /*t*/)
   {
     Topology     elem_topo;
     auto edge_topo = Topology::edge_topology(m_edge_ordinal);
@@ -195,7 +195,7 @@ struct create_edge_impl
   {}
 
   template <typename Topology>
-  void operator()(Topology t)
+  void operator()(Topology /*t*/)
   {
     stk::topology elem_topo = m_bucket.topology();
 

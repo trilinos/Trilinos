@@ -754,7 +754,7 @@ private:
     }
   }
 
-  void add_all_sharing_for_this_node(int myRank, const NodeSharingData & nodeSharing)
+  void add_all_sharing_for_this_node(int /*myRank*/, const NodeSharingData & nodeSharing)
   {
     stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, nodeSharing.nodeId);
     for (const int proc : nodeSharing.sharingProcs) {

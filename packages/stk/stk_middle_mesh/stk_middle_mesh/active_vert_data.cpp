@@ -88,7 +88,7 @@ void ActiveVertData::set_current_indices(mesh::MeshEntityPtr vert)
   }
 }
 
-int ActiveVertData::count_num_triangles(mesh::MeshEntityPtr vert, mesh::MeshEntityPtr el)
+int ActiveVertData::count_num_triangles(mesh::MeshEntityPtr /*vert*/, mesh::MeshEntityPtr el)
 {
   if (el->get_type() == mesh::MeshEntityType::Triangle)
     return 1;
