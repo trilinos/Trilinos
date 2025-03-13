@@ -68,8 +68,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
   
-  const GO numGlobalDofsPrimal = 3072;
-  const GO numGlobalDofsDual = 192;
+  const GO numGlobalDofsPrimal = 480;
+  const GO numGlobalDofsDual = 48;
   const GO numGlobalDofsTotal = numGlobalDofsPrimal + numGlobalDofsDual;
   const int numPrimalDofsPerNode = 3;
   const int numDualDofsPerNode = 3;
