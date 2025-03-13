@@ -222,6 +222,17 @@ void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos
     // Start the tuning
     KTE::request_output_values(kokkos_context_id, out_variables.size(), out_variables.data());
 
+    // Diagnostic output
+    if (IsPrint(Runtime1)) {
+      GetOStream(Runtime1) << "Tuned Parameters: "<<std::endl;
+      for(int i=0; i<(int)out_variables.size(); i++) {
+        if (out_typenames[i] == "int")
+          GetOStream(Runtime1) << "- " << out_names[i] << ": " <<  out_variables[i].value.int_value<<std::endl;
+        else if (out_typenames[i] == "double")
+          GetOStream(Runtime1) << "- " << out_names[i] << ": " <<  out_variables[i].value.double_value<<std::endl;
+      }
+    }
+
     // Unpack the tuned values
     for(int i=0; i<(int)out_names.size(); i++) {
 
@@ -231,7 +242,6 @@ void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos
       std::vector<std::string> treeWalk = SplitString(out_names[i],"||");
 
       for(int j=0; j<(int) treeWalk.size(); j++)
-        std::cout<<"["<<j<<"] "<<treeWalk[j]<<std::endl;
 
       // Walk down all but the last guy
       for(int j=0;j<(int) treeWalk.size()-1; j++) {
