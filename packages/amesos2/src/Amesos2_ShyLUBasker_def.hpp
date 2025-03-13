@@ -66,6 +66,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
   ShyLUbasker->Options.run_amd_on_leaves = BASKER_FALSE; // run AMD on the final leaf-nodes
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
+  ShyLUbasker->Options.replace_zero_pivot = BASKER_TRUE;
   ShyLUbasker->Options.replace_tiny_pivot = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
 
@@ -490,6 +491,10 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       ShyLUbasker->Options.prune = parameterList->get<bool>("prune");
     }
+  if(parameterList->isParameter("replace_zero_pivot"))
+    {
+      ShyLUbasker->Options.replace_zero_pivot = parameterList->get<bool>("replace_zero_pivot");
+    }
   if(parameterList->isParameter("replace_tiny_pivot"))
     {
       ShyLUbasker->Options.replace_tiny_pivot = parameterList->get<bool>("replace_tiny_pivot");
@@ -560,6 +565,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Use matrix scaling to biig A BTF block: 0 = no-scaling, 1 = symmetric diagonal scaling, 2 = row-max, and then col-max scaling");
       pl->set("min_block_size",  0, 
               "Size of the minimum diagonal blocks");
+      pl->set("replace_zero_pivot",  true, 
+              "Replace zero pivots during the numerical factorization");
       pl->set("replace_tiny_pivot",  false, 
               "Replace tiny pivots during the numerical factorization");
       pl->set("use_metis", true,
