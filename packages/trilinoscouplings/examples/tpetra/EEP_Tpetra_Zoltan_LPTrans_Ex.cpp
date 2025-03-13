@@ -114,15 +114,81 @@ int main(int argc, char** argv) {
 
   // Create an Epetra_CrsMatrix object.
   Teuchos::RCP< Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> > crsmatrix;
+#if 0
   try {
     crsmatrix = create_tpetra_matrix(numProcs, localProc);
   }
   catch(std::exception& e) {
     std::cout << "ERROR: create_tpetra_matrix threw exception '"
-          << e.what() << "' on proc " << localProc << std::endl;
+              << e.what() << "' on proc " << localProc << std::endl;
     MPI_Finalize();
     return(-1);
   }
+#else
+  if (localProc == 0) {
+    std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
+              << std::endl;
+  }
+  //create an Epetra_CrsMatrix with rows spread un-evenly over
+  //processors.
+  Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
+  Tpetra::CrsMatrix<double>::local_ordinal_type local_num_rows = 200;
+  Tpetra::CrsMatrix<double>::local_ordinal_type nnz_per_row = local_num_rows/4+1;
+  Tpetra::CrsMatrix<double>::global_ordinal_type global_num_rows = numProcs*local_num_rows;
+
+  int mid_proc = numProcs/2;
+  bool num_procs_even = numProcs%2==0 ? true : false;
+
+  Tpetra::CrsMatrix<double>::local_ordinal_type adjustment = local_num_rows/2;
+
+  //adjust local_num_rows so that it's not equal on all procs.
+  if (localProc < mid_proc) {
+    local_num_rows -= adjustment;
+  }
+  else {
+    local_num_rows += adjustment;
+  }
+
+  //if numProcs is not an even number, undo the local_num_rows adjustment
+  //on one proc so that the total will still be correct.
+  if (localProc == numProcs-1) {
+    if (num_procs_even == false) {
+      local_num_rows -= adjustment;
+    }
+  }
+
+  //now we're ready to create a row-map.
+  Tpetra::Map</*int, int*//*std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> rowmap(global_num_rows, local_num_rows, 0, Teuchos::rcp(&comm));
+  crsmatrix =
+    Teuchos::RCP( new Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/>(Teuchos::RCP(&rowmap), nnz_per_row) );
+
+  std::vector<Tpetra::CrsMatrix<double>::global_ordinal_type> indices(nnz_per_row);
+  std::vector<double> coefs(nnz_per_row);
+
+  //int err = 0;
+
+  for (Tpetra::CrsMatrix<double>::local_ordinal_type i(0); i < local_num_rows; ++i) {
+    Tpetra::CrsMatrix<double>::global_ordinal_type global_row = rowmap.getGlobalElement(i);
+    Tpetra::CrsMatrix<double>::global_ordinal_type first_col = global_row - nnz_per_row/2;
+
+    if (first_col < 0) {
+      first_col = 0;
+    }
+    else if (first_col > (global_num_rows - nnz_per_row)) {
+      first_col = global_num_rows - nnz_per_row;
+    }
+
+    for (Tpetra::CrsMatrix<double>::local_ordinal_type j(0); j < nnz_per_row; ++j) {
+      indices[j] = first_col + j;
+      coefs[j] = 1.0;
+    }
+
+    crsmatrix->insertGlobalValues(global_row, nnz_per_row,
+                               &coefs[0], &indices[0]);
+  }
+
+  /*err = */crsmatrix->fillComplete();
+#endif
 
   std::cout << "In main(), pos 005" << std::endl;
 
@@ -188,19 +254,19 @@ Teuchos::RCP< Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64
 {
   if (localProc == 0) {
     std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
-            << std::endl;
+              << std::endl;
   }
   //create an Epetra_CrsMatrix with rows spread un-evenly over
   //processors.
   Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
-  int local_num_rows = 200;
-  int nnz_per_row = local_num_rows/4+1;
-  int global_num_rows = numProcs*local_num_rows;
+  Tpetra::CrsMatrix<double>::local_ordinal_type local_num_rows = 200;
+  Tpetra::CrsMatrix<double>::local_ordinal_type nnz_per_row = local_num_rows/4+1;
+  Tpetra::CrsMatrix<double>::global_ordinal_type global_num_rows = numProcs*local_num_rows;
 
   int mid_proc = numProcs/2;
   bool num_procs_even = numProcs%2==0 ? true : false;
 
-  int adjustment = local_num_rows/2;
+  Tpetra::CrsMatrix<double>::local_ordinal_type adjustment = local_num_rows/2;
 
   //adjust local_num_rows so that it's not equal on all procs.
   if (localProc < mid_proc) {
@@ -222,17 +288,16 @@ Teuchos::RCP< Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64
   Tpetra::Map</*int, int*//*std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> rowmap(global_num_rows, local_num_rows, 0, Teuchos::rcp(&comm));
   //create a matrix
   Teuchos::RCP< Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> > matrix =
-    Teuchos::rcp( new Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/>(Teuchos::rcp(&rowmap), nnz_per_row) );
+    Teuchos::RCP( new Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/>(Teuchos::RCP(&rowmap), nnz_per_row) );
 
-#if 0 // EEP
-  std::vector<int> indices(nnz_per_row);
+  std::vector<Tpetra::CrsMatrix<double>::global_ordinal_type> indices(nnz_per_row);
   std::vector<double> coefs(nnz_per_row);
 
-  int err = 0;
+  //int err = 0;
 
-  for(int i=0; i<local_num_rows; ++i) {
-    int global_row = rowmap.GID(i);
-    int first_col = global_row - nnz_per_row/2;
+  for (Tpetra::CrsMatrix<double>::local_ordinal_type i(0); i < local_num_rows; ++i) {
+    Tpetra::CrsMatrix<double>::global_ordinal_type global_row = rowmap.getGlobalElement(i);
+    Tpetra::CrsMatrix<double>::global_ordinal_type first_col = global_row - nnz_per_row/2;
 
     if (first_col < 0) {
       first_col = 0;
@@ -241,27 +306,29 @@ Teuchos::RCP< Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64
       first_col = global_num_rows - nnz_per_row;
     }
 
-    for(int j=0; j<nnz_per_row; ++j) {
+    for (Tpetra::CrsMatrix<double>::local_ordinal_type j(0); j < nnz_per_row; ++j) {
       indices[j] = first_col + j;
       coefs[j] = 1.0;
     }
 
-    int err = matrix->InsertGlobalValues(global_row, nnz_per_row,
-                                         &coefs[0], &indices[0]);
+    /*int err = */matrix->insertGlobalValues(global_row, nnz_per_row,
+                                             &coefs[0], &indices[0]);
+#if 0
     if (err < 0) {
       err = matrix->ReplaceGlobalValues(global_row, nnz_per_row,
                                         &coefs[0], &indices[0]);
       if (err < 0) {
-        throw Isorropia::Exception("create_tpetra_matrix: error inserting matrix values.");
+        throw std::runtime_error("create_tpetra_matrix: error inserting matrix values.");
       }
     }
+#endif // EEP
   }
 
-  err = matrix->FillComplete();
-  if (err != 0) {
-    throw Isorropia::Exception("create_tpetra_matrix: error in matrix.FillComplete()");
-  }
-#endif // EEP
+  /*err = */matrix->fillComplete();
+  //if (err != 0) {
+  //  throw std::runtime_error("create_tpetra_matrix: error in matrix.FillComplete()");
+  //}
+  std::cout << "Leaving create_tpetra_matrix()" << std::endl;
   return matrix;
 }
 
