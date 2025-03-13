@@ -551,6 +551,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         if(kokkosTuning) {
           // FIXME: Ideally we'd have the context bracket the solve only, not the setup,
           // but we need to know if that will work with Kokkos or not first.
+          out2<< "Enabling MueLu::KokkosTuning"<<std::endl;
           Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
           KokkosTuner.SetMueLuParameters(kokkos_context_id,mueluList);
         }
