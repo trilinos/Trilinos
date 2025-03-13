@@ -124,8 +124,9 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "## Configuration Details" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "GenConfig build ID: ${GENCONFIG_BUILD_NAME}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -227,8 +228,9 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "## Configuration Details" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "GenConfig build ID: ${GENCONFIG_BUILD_NAME}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -329,8 +331,9 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "## Configuration Details" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "GenConfig build ID: ${GENCONFIG_BUILD_NAME}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -431,8 +434,9 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "## Configuration Details" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "GenConfig build ID: ${GENCONFIG_BUILD_NAME}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -530,8 +534,9 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "## Configuration Details" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "GenConfig build ID: ${GENCONFIG_BUILD_NAME}" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
