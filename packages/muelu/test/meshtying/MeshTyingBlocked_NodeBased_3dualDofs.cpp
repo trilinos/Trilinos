@@ -67,19 +67,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   using GST = Teuchos::ScalarTraits<GO>;
 
   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
-  
-  const GO numGlobalDofsPrimal = 480;
-  const GO numGlobalDofsDual = 48;
-  const GO numGlobalDofsTotal = numGlobalDofsPrimal + numGlobalDofsDual;
-  const int numPrimalDofsPerNode = 3;
-  const int numDualDofsPerNode = 3;
-  const GO numGlobalNodesPrimal = numGlobalDofsPrimal / numPrimalDofsPerNode;
 
-  const std::string xmlFile                  = "simple_3dof.xml";
-  const std::string matrixFileName           = "MeshTyingBlocked_NodeBased_3dualDofs_matrix.mm";
-  const std::string rhsFileName              = "MeshTyingBlocked_NodeBased_3dualDofs_rhs.mm";
-  const std::string nullspace1FileName       = "MeshTyingBlocked_NodeBased_3dualDofs_nullspace1.mm";
-  const std::string lagr2DofFileName         = "Lagr2Dof_3dof.txt";
+  const GO numGlobalDofsPrimal   = 480;
+  const GO numGlobalDofsDual     = 48;
+  const GO numGlobalDofsTotal    = numGlobalDofsPrimal + numGlobalDofsDual;
+  const int numPrimalDofsPerNode = 3;
+  const int numDualDofsPerNode   = 3;
+  const GO numGlobalNodesPrimal  = numGlobalDofsPrimal / numPrimalDofsPerNode;
+
+  const std::string xmlFile            = "simple_3dof.xml";
+  const std::string matrixFileName     = "MeshTyingBlocked_NodeBased_3dualDofs_matrix.mm";
+  const std::string rhsFileName        = "MeshTyingBlocked_NodeBased_3dualDofs_rhs.mm";
+  const std::string nullspace1FileName = "MeshTyingBlocked_NodeBased_3dualDofs_nullspace1.mm";
+  const std::string lagr2DofFileName   = "Lagr2Dof_3dof.txt";
 
   std::map<GO, GO> lagr2Dof;
   std::map<LO, LO> myLagr2Dof;
@@ -143,7 +143,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<const Map> primalXMap = rcp(new TpetraMap(primalMap));
   RCP<const Map> dualXMap   = rcp(new TpetraMap(dualMap));
 
-
   // Transform the primal and dual maps into strided maps
   std::vector<size_t> stridingInfoPrimal;
   stridingInfoPrimal.push_back(numPrimalDofsPerNode);
@@ -193,7 +192,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   hierarchy->GetLevel(0)->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(blockedMatrix));
   hierarchy->GetLevel(0)->Set("Nullspace1", nullspace1);
   hierarchy->GetLevel(0)->Set("DualNodeID2PrimalNodeID",
-    Teuchos::rcp_dynamic_cast<std::map<int, int>>(Teuchos::rcpFromRef(myLagr2Dof), true));
+                              Teuchos::rcp_dynamic_cast<std::map<int, int>>(Teuchos::rcpFromRef(myLagr2Dof), true));
 
   mueLuFactory.SetupHierarchy(*hierarchy);
 
@@ -237,7 +236,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
   blinsolver->setUserConvStatusTest(statusTestCombo);
 
-  Belos::ReturnType ret   = blinsolver->solve();
+  Belos::ReturnType ret = blinsolver->solve();
 
   if (ret == Belos::Converged)
     return EXIT_SUCCESS;
