@@ -38,20 +38,13 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
 
-//Declaration for helper-function that creates tpetra objects. These
-//functions are implemented at the bottom of this file.
-Teuchos::RCP< Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> >
-  create_tpetra_matrix(int numProcs, int localProc);
-
-int main(int argc, char** argv) {
 #ifdef HAVE_MPI
-  //#if defined(HAVE_MPI) && defined(HAVE_TPETRA)
+void runExample() {
+  std::cout << "Entering runExample()" << std::endl;
 
   int numProcs = 1;
   int localProc = 0;
 
-  //first, set up our MPI environment...
-  MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
@@ -113,25 +106,14 @@ int main(int argc, char** argv) {
   std::cout << "In main(), pos 004" << std::endl;
 
   // Create an Epetra_CrsMatrix object.
-  Teuchos::RCP< Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> > crsmatrix;
-#if 0
-  try {
-    crsmatrix = create_tpetra_matrix(numProcs, localProc);
-  }
-  catch(std::exception& e) {
-    std::cout << "ERROR: create_tpetra_matrix threw exception '"
-              << e.what() << "' on proc " << localProc << std::endl;
-    MPI_Finalize();
-    return(-1);
-  }
-#else
+  Teuchos::RCP< Tpetra::CrsMatrix<double> > crsmatrix;
   if (localProc == 0) {
     std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
               << std::endl;
   }
-  //create an Epetra_CrsMatrix with rows spread un-evenly over
-  //processors.
-  Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
+  //create an Epetra_CrsMatrix with rows spread un-evenly over processors.
+
+  Teuchos::RCP< Teuchos::MpiComm<int> > comm = Teuchos::rcp( new Teuchos::MpiComm<int>(MPI_COMM_WORLD) );
   Tpetra::CrsMatrix<double>::local_ordinal_type local_num_rows = 200;
   Tpetra::CrsMatrix<double>::local_ordinal_type nnz_per_row = local_num_rows/4+1;
   Tpetra::CrsMatrix<double>::global_ordinal_type global_num_rows = numProcs*local_num_rows;
@@ -158,17 +140,16 @@ int main(int argc, char** argv) {
   }
 
   //now we're ready to create a row-map.
-  Tpetra::Map</*int, int*//*std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> rowmap(global_num_rows, local_num_rows, 0, Teuchos::rcp(&comm));
-  crsmatrix =
-    Teuchos::RCP( new Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/>(Teuchos::RCP(&rowmap), nnz_per_row) );
+  Teuchos::RCP< Tpetra::Map<> > rowmap = Teuchos::rcp( new Tpetra::Map<>(global_num_rows, local_num_rows, 0, comm) );
+  crsmatrix = Teuchos::rcp( new Tpetra::CrsMatrix<double>(rowmap, nnz_per_row) );
+
+  std::cout << "crsmatrix = " << crsmatrix << std::endl;
 
   std::vector<Tpetra::CrsMatrix<double>::global_ordinal_type> indices(nnz_per_row);
   std::vector<double> coefs(nnz_per_row);
 
-  //int err = 0;
-
   for (Tpetra::CrsMatrix<double>::local_ordinal_type i(0); i < local_num_rows; ++i) {
-    Tpetra::CrsMatrix<double>::global_ordinal_type global_row = rowmap.getGlobalElement(i);
+    Tpetra::CrsMatrix<double>::global_ordinal_type global_row = rowmap->getGlobalElement(i);
     Tpetra::CrsMatrix<double>::global_ordinal_type first_col = global_row - nnz_per_row/2;
 
     if (first_col < 0) {
@@ -187,14 +168,13 @@ int main(int argc, char** argv) {
                                &coefs[0], &indices[0]);
   }
 
-  /*err = */crsmatrix->fillComplete();
-#endif
+  crsmatrix->fillComplete();
 
   std::cout << "In main(), pos 005" << std::endl;
 
   // Create Epetra_MultiVectors for the lhs and rhs of the linear problem.
-  Tpetra::MultiVector<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> lhs(crsmatrix->getMap(), 1);
-  Tpetra::MultiVector<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> rhs(crsmatrix->getMap(), 1);
+  //Tpetra::MultiVector<double> lhs(crsmatrix->getMap(), 1);
+  Tpetra::MultiVector<double> rhs(crsmatrix->getMap(), 1);
   rhs.putScalar( 1.0 );
 
   std::cout << "In main(), pos 006" << std::endl;
@@ -223,7 +203,7 @@ int main(int argc, char** argv) {
 
   std::cout << "In main(), pos 010" << std::endl;
 
-  for(int p(0); p < numProcs; ++p) {
+  for (int p(0); p < numProcs; ++p) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (p != localProc) continue;
@@ -234,103 +214,20 @@ int main(int argc, char** argv) {
     //   << bal_graph_rows << ", local NNZ: " << bal_graph_nnz << std::endl;
   }
 
-  MPI_Finalize();
+  std::cout << "Leaving runExample()" << std::endl;
+}
+#endif
 
+int main(int argc, char** argv) {
+
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+  runExample();
+  MPI_Finalize();
 #else
   std::cout << "ERROR:  This MUST be and MPI build with Tpetra enabled!" << std::endl;
 #endif
 
   return(0);
 }
-
-//Below are implementations of the helper-functions that create the
-//poorly-balanced epetra objects for use in the above example program.
-
-#ifdef HAVE_MPI
-//#if defined(HAVE_MPI) && defined(HAVE_EPETRA)
-
-Teuchos::RCP< Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> >
-  create_tpetra_matrix(int numProcs, int localProc)
-{
-  if (localProc == 0) {
-    std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
-              << std::endl;
-  }
-  //create an Epetra_CrsMatrix with rows spread un-evenly over
-  //processors.
-  Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);
-  Tpetra::CrsMatrix<double>::local_ordinal_type local_num_rows = 200;
-  Tpetra::CrsMatrix<double>::local_ordinal_type nnz_per_row = local_num_rows/4+1;
-  Tpetra::CrsMatrix<double>::global_ordinal_type global_num_rows = numProcs*local_num_rows;
-
-  int mid_proc = numProcs/2;
-  bool num_procs_even = numProcs%2==0 ? true : false;
-
-  Tpetra::CrsMatrix<double>::local_ordinal_type adjustment = local_num_rows/2;
-
-  //adjust local_num_rows so that it's not equal on all procs.
-  if (localProc < mid_proc) {
-    local_num_rows -= adjustment;
-  }
-  else {
-    local_num_rows += adjustment;
-  }
-
-  //if numProcs is not an even number, undo the local_num_rows adjustment
-  //on one proc so that the total will still be correct.
-  if (localProc == numProcs-1) {
-    if (num_procs_even == false) {
-      local_num_rows -= adjustment;
-    }
-  }
-
-  //now we're ready to create a row-map.
-  Tpetra::Map</*int, int*//*std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> rowmap(global_num_rows, local_num_rows, 0, Teuchos::rcp(&comm));
-  //create a matrix
-  Teuchos::RCP< Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/> > matrix =
-    Teuchos::RCP( new Tpetra::CrsMatrix<double/*, int, int*//*, std::int64_t, std::int64_t*//*, Tpetra::KokkosCompat::KokkosSerialWrapperNode*/>(Teuchos::RCP(&rowmap), nnz_per_row) );
-
-  std::vector<Tpetra::CrsMatrix<double>::global_ordinal_type> indices(nnz_per_row);
-  std::vector<double> coefs(nnz_per_row);
-
-  //int err = 0;
-
-  for (Tpetra::CrsMatrix<double>::local_ordinal_type i(0); i < local_num_rows; ++i) {
-    Tpetra::CrsMatrix<double>::global_ordinal_type global_row = rowmap.getGlobalElement(i);
-    Tpetra::CrsMatrix<double>::global_ordinal_type first_col = global_row - nnz_per_row/2;
-
-    if (first_col < 0) {
-      first_col = 0;
-    }
-    else if (first_col > (global_num_rows - nnz_per_row)) {
-      first_col = global_num_rows - nnz_per_row;
-    }
-
-    for (Tpetra::CrsMatrix<double>::local_ordinal_type j(0); j < nnz_per_row; ++j) {
-      indices[j] = first_col + j;
-      coefs[j] = 1.0;
-    }
-
-    /*int err = */matrix->insertGlobalValues(global_row, nnz_per_row,
-                                             &coefs[0], &indices[0]);
-#if 0
-    if (err < 0) {
-      err = matrix->ReplaceGlobalValues(global_row, nnz_per_row,
-                                        &coefs[0], &indices[0]);
-      if (err < 0) {
-        throw std::runtime_error("create_tpetra_matrix: error inserting matrix values.");
-      }
-    }
-#endif // EEP
-  }
-
-  /*err = */matrix->fillComplete();
-  //if (err != 0) {
-  //  throw std::runtime_error("create_tpetra_matrix: error in matrix.FillComplete()");
-  //}
-  std::cout << "Leaving create_tpetra_matrix()" << std::endl;
-  return matrix;
-}
-
-#endif //HAVE_MPI && HAVE_EPETRA
 
