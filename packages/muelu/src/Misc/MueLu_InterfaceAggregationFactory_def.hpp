@@ -53,7 +53,6 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Dec
   const ParameterList &pL = GetParameterList();
 
   if (pL.get<std::string>("Dual/primal mapping strategy") == "node-based") {
-
     if (currentLevel.GetLevelID() == 0) {
       TEUCHOS_TEST_FOR_EXCEPTION(!currentLevel.IsAvailable("DualNodeID2PrimalNodeID", NoFactory::get()),
                                  Exceptions::RuntimeError, "DualNodeID2PrimalNodeID was not provided by the user on level 0!");
@@ -97,7 +96,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   const ParameterList &pL = GetParameterList();
 
-  RCP<const Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
+  RCP<const Matrix> A                   = Get<RCP<Matrix>>(currentLevel, "A");
   const LocalOrdinal numDofsPerDualNode = pL.get<LocalOrdinal>("number of DOFs per dual node");
   TEUCHOS_TEST_FOR_EXCEPTION(numDofsPerDualNode < Teuchos::ScalarTraits<LocalOrdinal>::one(), Exceptions::InvalidArgument,
                              "Number of dual DOFs per node < 0 (default value). Specify a valid \"number of DOFs per dual node\" in the parameter list for the InterfaceAggregationFactory.");
@@ -131,12 +130,12 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     auto comm                              = operatorRangeMap->getComm();
     std::vector<GlobalOrdinal> myDualNodes = {};
 
-    for (size_t i = 0; i < operatorRangeMap->getLocalNumElements(); i++){
+    for (size_t i = 0; i < operatorRangeMap->getLocalNumElements(); i++) {
       GlobalOrdinal gDualDofId  = operatorRangeMap->getGlobalElement(i);
       GlobalOrdinal gDualNodeId = AmalgamationFactory::DOFGid2NodeId(gDualDofId, numDofsPerDualNode, dualDofOffset, 0);
       myDualNodes.push_back(gDualNodeId);
     }
-    
+
     // remove all duplicates
     myDualNodes.erase(std::unique(myDualNodes.begin(), myDualNodes.end()), myDualNodes.end());
 
@@ -188,8 +187,8 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   }
 
   // Set the amalgamation info for dual aggregates
-  const LocalOrdinal blockid          = -1;
-  const LocalOrdinal nStridedOffset   = 0;
+  const LocalOrdinal blockid        = -1;
+  const LocalOrdinal nStridedOffset = 0;
 
   RCP<Array<LO>> rowTranslation = rcp(new Array<LO>());
   RCP<Array<LO>> colTranslation = rcp(new Array<LO>());
@@ -204,7 +203,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   RCP<AmalgamationInfo> dualAmalgamationInfo = rcp(new AmalgamationInfo(rowTranslation, colTranslation,
                                                                         operatorRangeMap, operatorRangeMap, operatorRangeMap,
                                                                         numDofsPerDualNode, dualDofOffset, blockid, nStridedOffset, numDofsPerDualNode));
-                                                                        
+
   // Store dual aggregate data, coarsening information, and dual amalgamation info
   dualAggregates->SetNumAggregates(numLocalDualAggregates);
   Set(currentLevel, "Aggregates", dualAggregates);
