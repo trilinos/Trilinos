@@ -17,7 +17,6 @@
 
     <ParameterList name="myCoarseMap1">
       <Parameter name="factory" type="string" value="CoarseMapFactory"/>
-      <Parameter name="Striding info" type="string" value="{ 3 }"/>
     </ParameterList>
 
     <ParameterList name="myAggFact1">
@@ -31,6 +30,8 @@
       <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+      <Parameter name="tentative: calculate qr" type="bool" value="true"/>
+      <Parameter name="tentative: build coarse coordinates" type="bool" value="false"/>
     </ParameterList>
 
     <ParameterList name="mySAPFact1">
@@ -75,7 +76,6 @@
 
     <ParameterList name="myInterfaceAggs2">
       <Parameter name="factory" type="string" value="InterfaceAggregationFactory"/>
-      <Parameter name="A" type="string" value="mySubBlockAFactoryOffDiagonal"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/> <!-- use aggregates from primal block! -->
       <Parameter name="number of DOFs per dual node" type="int" value="3"/>
       <Parameter name="Dual/primal mapping strategy" type="string" value="node-based"/>
@@ -89,10 +89,11 @@
 
     <ParameterList name="myTentativePFact2">
       <Parameter name="factory" type="string" value="TentativePFactory"/>
-      <Parameter name="A: factory" type="string" value="mySubBlockAFactory2"/>
-      <Parameter name="A: name" type="string" value="A"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
       <Parameter name="Aggregates" type="string" value="myInterfaceAggs2"/>
       <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+      <Parameter name="tentative: calculate qr" type="bool" value="true"/>
+      <Parameter name="tentative: build coarse coordinates" type="bool" value="false"/>
       <Parameter name="UnAmalgamationInfo" type="string" value="myInterfaceAggs2"/>
     </ParameterList>
 
@@ -118,7 +119,7 @@
     <!-- Multigrid setup for dual block (A_{11}) -->
     <ParameterList name="mySecondGroup">
       <Parameter name="group" type="string" value="FactoryManager"/>
-      <Parameter name="use kokkos refactor" type="bool" value="false"/>
+      <Parameter name="use kokkos refactor" type="bool"     value="false"/>
       <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
       <Parameter name="P" type="string" value="myTentativePFact2"/>
       <Parameter name="Aggregates" type="string" value="myInterfaceAggs2"/>
@@ -162,7 +163,7 @@
       <Parameter name="type" type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
         <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps" type="int" value="5"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
         <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
@@ -181,8 +182,8 @@
       <Parameter name="type" type="string" value="RELAXATION"/>
       <ParameterList name="ParameterList">
         <Parameter name="relaxation: type" type="string" value="Gauss-Seidel"/>
-        <Parameter name="relaxation: sweeps" type="int" value="5"/>
-        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
 
@@ -215,7 +216,7 @@
   <ParameterList name="Hierarchy">
 
     <Parameter name="max levels" type="int" value="3"/>
-    <Parameter name="coarse: max size" type="int" value="150"/>
+    <Parameter name="coarse: max size" type="int" value="25"/>
     <Parameter name="verbosity" type="string" value="Extreme"/>
     <Parameter name="use kokkos refactor" type="bool" value="false"/>
 
