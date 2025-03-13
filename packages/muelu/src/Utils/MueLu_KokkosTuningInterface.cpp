@@ -89,6 +89,8 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
   const Teuchos::ParameterList& pL = params_.get<Teuchos::ParameterList>("kokkos tuning: muelu parameter mapping");
   namespace KTE = Kokkos::Tools::Experimental;
 
+  // FIXME: Remove
+  std::cout<<"*** Params for Kokkos Tuning ***"<<pL<<"********************************"<<std::endl;
 
   /********************************/
   /* Process the output variables */
@@ -180,7 +182,7 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
   /********************************/
   in_variables.clear();
 
-  const Teuchos::Array<std::string> & inputs = pL.get<Teuchos::Array<std::string> >("input_variables");
+  const Teuchos::Array<std::string> & inputs = pL.get<Teuchos::Array<std::string> >("input variables");
   for (int i=0; i< (int)inputs.size(); i++) {
     in_variables.push_back(KTE::make_variable_value(i,inputs[i].c_str()));
   }

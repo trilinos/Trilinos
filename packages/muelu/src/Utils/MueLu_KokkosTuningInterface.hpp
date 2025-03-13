@@ -42,7 +42,7 @@ class KokkosTuningInterface : public BaseClass {
   // Sets the input parameters for the KokkosTuneInterface
   // NOTE: These are *not* the parameters which KokkosTuning is going to overwrite, rather the
   // parameters to tell KokkosTuning what to do.
-  void SetParameterList(Teuchos::ParameterList& inParams) { params_ = inParams; }
+  void SetParameterList(Teuchos::ParameterList& inParams) { params_ = inParams; Setup();}
 
   // Calls Kokkos Tuning to set MueLu Parameters
   void SetMueLuParameters(size_t kokkos_context_id, Teuchos::ParameterList& mueluParams, bool overwrite = true) const;
