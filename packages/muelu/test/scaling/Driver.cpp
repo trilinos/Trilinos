@@ -293,7 +293,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   bool kokkosTuning = false;
 #ifdef KOKKOS_ENABLE_TUNING
   clp.setOption("kokkos-tuning", "no-kokkos-tuning", &kokkosTuning, "enable Kokkos tuning inferface");
+#else
+  #error "KokkosTuning not enabled"
 #endif
+
 
   clp.recogniseAllOptions(true);
 

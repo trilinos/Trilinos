@@ -48,8 +48,11 @@ class KokkosTuningInterface : public BaseClass {
   void SetMueLuParameters(size_t kokkos_context_id, Teuchos::ParameterList& mueluParams, bool overwrite = true) const;
 
  private:
-  // Utility functions
+  // Mapping unpacker
   void UnpackMueLuMapping();
+
+  // String splitter
+  std::vector<std::string> SplitString(const std::string& base_string, const std::string& delimiter) const;
 
   // Sets up Kokkos Tuning - This gets called from SetParameterList
   void Setup();
