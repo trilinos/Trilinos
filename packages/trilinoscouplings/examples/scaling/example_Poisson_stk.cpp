@@ -1473,7 +1473,8 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   Teuchos::ParameterList mueluParams;
   if (MLList.isSublist("MueLu"))
     mueluParams = MLList.sublist("MueLu");
-  mueluParams.sublist("user data").set("Coordinates",Teuchos::rcpFromRef(coords));
+  // Xpetrify coordinates
+  mueluParams.sublist("user data").set("Coordinates",Xpetra::toXpetra(coords));
   if(A->getMap()->getComm()->getRank()==0)
     std::cout<<"*** MueLu Params ***" <<std::endl<<mueluParams<<std::endl;
 
