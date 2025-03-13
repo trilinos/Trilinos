@@ -190,9 +190,28 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
 
 }
 
+// ***********************************************************************
+std::vector<std::string> KokkosTuningInterface::SplitString(const std::string& base_string, const std::string& delimiter) const {
+  // Props to Sandia AI Chat for this routine
+  std::vector<std::string> tokens;
+  size_t start = 0;
+
+  size_t end = base_string.find(delimiter);
+
+  while (end != std::string::npos) {
+    tokens.push_back(base_string.substr(start, end - start));
+    start = end + delimiter.length();
+    end = base_string.find(delimiter, start);
+  }
+
+  // And the final token...
+  tokens.push_back(base_string.substr(start, end));
+
+  return tokens;
+}
 
 // ***********************************************************************
-  void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos::ParameterList& mueluParams, bool overwrite) const {
+void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos::ParameterList& mueluParams, bool overwrite) const {
   namespace KTE = Kokkos::Tools::Experimental;
   Teuchos::ParameterList tunedParams;
 
@@ -205,18 +224,39 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
 
     // Unpack the tuned values
     for(int i=0; i<(int)out_names.size(); i++) {
-      // FIXME: Allow for '/' separated sublisted params
+
+      // Because we'll want to set parameters inside sublists we'll allow the "muelu parameter" option to specify sublists with '||' as a nesting delimiter
+      // That's really, really unlikely to be part of a parameter list item name, so we'll go with it.
+      Teuchos::ParameterList *activeList = &tunedParams;
+      std::vector<std::string> treeWalk = SplitString(out_names[i],"||");
+
+      for(int j=0; j<(int) treeWalk.size(); j++)
+        std::cout<<"["<<j<<"] "<<treeWalk[j]<<std::endl;
+
+      // Walk down all but the last guy
+      for(int j=0;j<(int) treeWalk.size()-1; j++) {
+        activeList = &(activeList->sublist(treeWalk[j]));
+      }
+
+      std::string activeName=treeWalk[treeWalk.size()-1];
+
       if (out_typenames[i] == "int")
-        tunedParams.set(out_names[i], (int) out_variables[i].value.int_value);
+        activeList->set(activeName, (int) out_variables[i].value.int_value);
       else if (out_typenames[i] == "double")
-        tunedParams.set(out_names[i], out_variables[i].value.double_value);
+        activeList->set(activeName, out_variables[i].value.double_value);
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::KokkosTuningInterface: Unknown variable output type");
       }
     }
   }
+#if 0
+  std::cout<<"*** FINAL TUNED PARAMS ***"<<std::endl;
+  std::cout<<tunedParams<<std::endl;
+  std::cout<<"*************************"<<std::endl;
+#endif
 
   Teuchos::updateParametersAndBroadcast(outArg(tunedParams), outArg(mueluParams), *comm_, 0, overwrite);
+
 }
 
 
