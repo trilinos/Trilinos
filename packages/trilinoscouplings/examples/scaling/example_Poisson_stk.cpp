@@ -1101,8 +1101,7 @@ int main(int argc, char *argv[]) {
 
             Teuchos::Array<GO> col(1); col[0] = globalCol;
             Teuchos::Array<SC> val(1); val[0] = operatorMatrixContribution;
-            printf("Inserting (%d,%d)\n",globalRow,globalCol);
-            StiffMatrix->insertGlobalValues(globalRow, col(), val());
+            StiffMatrix->sumIntoGlobalValues(globalRow, col(), val());
 
           }// end cell col loop
 
