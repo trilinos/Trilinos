@@ -41,7 +41,7 @@ namespace Amesos2 {
    * \brief Pass function calls to ShyLUBasker based on data type.
 
    */
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_TEUCHOS_INST_COMPLEX_DOUBLE
   template <>
   struct FunctionMap<ShyLUBasker,Kokkos::complex<double>>
   {
@@ -49,8 +49,17 @@ namespace Amesos2 {
       return reinterpret_cast<std::complex<double> *>(pData);
     }
   };
+#endif // HAVE_TEUCHOS_COMPLEX_DOUBLE
 
-#endif // HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_TEUCHOS_INST_COMPLEX_FLOAT
+  template <>
+  struct FunctionMap<ShyLUBasker,Kokkos::complex<float>>
+  {
+    static std::complex<float> * convert_scalar(Kokkos::complex<float> * pData) {
+      return reinterpret_cast<std::complex<float> *>(pData);
+    }
+  };
+#endif // HAVE_TEUCHOS_INST_COMPLEX_FLOAT
 
   // if not specialized, then assume generic conversion is fine
   template <typename scalar_t>

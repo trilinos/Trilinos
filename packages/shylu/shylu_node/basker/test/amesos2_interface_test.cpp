@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
         x[i] = (Entry) 0.0;
       }
 
-      ttime = myTime();
+      double ttime = myTime();
       std::cout << "\n\n** Begin Transpose Copy Solve **\n" << std::endl;
       // transpose
       mybaskertr.Solve(yt,x);
