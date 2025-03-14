@@ -91,14 +91,13 @@ struct SPGEMM_NOREUSE<CMatrix, AMatrix, BMatrix, false, KOKKOSKERNELS_IMPL_COMPI
     ordinal_t n = B.numRows();
     ordinal_t k = B.numCols();
     c_rowmap_t row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C rowmap"), m + 1);
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, transA, B.graph.row_map,
-                                                B.graph.entries, transB, row_mapC);
+    KokkosSparse::spgemm_symbolic(&kh, m, n, k, A.graph.row_map, A.graph.entries, transA, B.graph.row_map,
+                                  B.graph.entries, transB, row_mapC);
     size_type c_nnz = kh.get_spgemm_handle()->get_c_nnz();
     c_entries_t entriesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C entries"), c_nnz);
     c_values_t valuesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C values"), c_nnz);
-    KokkosSparse::Experimental::spgemm_numeric(&kh, m, n, k, A.graph.row_map, A.graph.entries, A.values, transA,
-                                               B.graph.row_map, B.graph.entries, B.values, transB, row_mapC, entriesC,
-                                               valuesC);
+    KokkosSparse::spgemm_numeric(&kh, m, n, k, A.graph.row_map, A.graph.entries, A.values, transA, B.graph.row_map,
+                                 B.graph.entries, B.values, transB, row_mapC, entriesC, valuesC);
     kh.destroy_spgemm_handle();
     return CMatrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);
   }

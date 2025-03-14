@@ -139,14 +139,15 @@ void testCrsMatrixRawConstructor() {
   int nrows = 5;
   // note: last 2 columns will be empty.
   // This makes sure the ncols provided to constructor is preserved.
-  int ncols = 7;
-  int nnz   = 9;
+  int ncols     = 7;
+  size_type nnz = 9;
   // NOTE: this is not a mistake, the raw ptr constructor takes rowmap as
   // ordinal.
   std::vector<lno_t> rowmap  = {0, 0, 2, 5, 6, 9};
   std::vector<lno_t> entries = {3, 4, 0, 1, 2, 2, 0, 3, 4};
   std::vector<scalar_t> values;
-  for (int i = 0; i < nnz; i++) values.push_back(Kokkos::ArithTraits<scalar_t>::one() * (1.0 * rand() / RAND_MAX));
+  for (size_type i = 0; i < nnz; i++)
+    values.push_back(Kokkos::ArithTraits<scalar_t>::one() * (1.0 * rand() / RAND_MAX));
   KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> A("A", nrows, ncols, nnz, values.data(),
                                                                       rowmap.data(), entries.data());
   EXPECT_EQ(A.numRows(), nrows);
@@ -158,7 +159,7 @@ void testCrsMatrixRawConstructor() {
   auto checkEntries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
   auto checkValues  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
   for (int i = 0; i < nrows + 1; i++) EXPECT_EQ(checkRowmap(i), (size_type)rowmap[i]);
-  for (int i = 0; i < nnz; i++) {
+  for (size_type i = 0; i < nnz; i++) {
     EXPECT_EQ(checkEntries(i), entries[i]);
     EXPECT_EQ(checkValues(i), values[i]);
   }
@@ -192,8 +193,8 @@ void testCrsMatrixHostMirror() {
   crs_matrix_host zeroHost("zero1Host", zero);
   EXPECT_EQ(zeroHost.numRows(), 0);
   EXPECT_EQ(zeroHost.numCols(), 0);
-  EXPECT_EQ(zeroHost.nnz(), 0);
-  EXPECT_EQ(zeroHost.graph.row_map.extent(0), 0);
+  EXPECT_EQ(zeroHost.nnz(), size_type(0));
+  EXPECT_EQ(zeroHost.graph.row_map.extent(0), size_t(0));
 }
 
 #define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                                     \

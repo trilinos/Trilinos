@@ -1049,7 +1049,7 @@ void sptrsv_supernodal_symbolic(int nsuper, int *supercols, int *etree, host_gra
   tic.reset();
   std::cout << std::endl;
 #endif
-  sptrsv_symbolic(kernelHandleL, row_mapL, entriesL);
+  KokkosSparse::sptrsv_symbolic(kernelHandleL, row_mapL, entriesL);
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   time_seconds = tic.seconds();
   std::cout << " > Lower-TRI: " << std::endl;
@@ -1061,7 +1061,7 @@ void sptrsv_supernodal_symbolic(int nsuper, int *supercols, int *etree, host_gra
   // do symbolic for U solve on the host
   auto row_mapU = graphU.row_map;
   auto entriesU = graphU.entries;
-  sptrsv_symbolic(kernelHandleU, row_mapU, entriesU);
+  KokkosSparse::sptrsv_symbolic(kernelHandleU, row_mapU, entriesU);
 #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   time_seconds = tic.seconds();
   std::cout << " > Upper-TRI: " << std::endl;

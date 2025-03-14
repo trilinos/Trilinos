@@ -270,16 +270,16 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename, const
         timer.reset();
         if (test == CUSPARSE_K) {
           printf("cusparsek symbolic\n");
-          sptrsv_symbolic(&kh, row_map, entries, values);
+          KokkosSparse::sptrsv_symbolic(&kh, row_map, entries, values);
           printf("  finished cusparsek symbolic\n");
         } else {
-          sptrsv_symbolic(&kh, row_map, entries);
+          KokkosSparse::sptrsv_symbolic(&kh, row_map, entries);
         }
         std::cout << "LTRI Symbolic Time: " << timer.seconds() << std::endl;
 
         // std::cout << "TriSolve Solve" << std::endl;
         timer.reset();
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+        KokkosSparse::sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
         Kokkos::fence();
         std::cout << "LTRI Solve Time: " << timer.seconds() << std::endl;
 
@@ -377,7 +377,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename, const
 #ifdef CHECKALLRUNRESULTS
           Kokkos::deep_copy(lhs, 0, 0);
 #endif
-          sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+          KokkosSparse::sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
 #ifdef CHECKALLRUNRESULTS
           {
             scalar_t sum = 0.0;
@@ -633,12 +633,12 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename, const
       Kokkos::Timer timer;
       if (test != CUSPARSE) {
         timer.reset();
-        sptrsv_symbolic(&kh, row_map, entries);
+        KokkosSparse::sptrsv_symbolic(&kh, row_map, entries);
         std::cout << "UTRI Symbolic Time: " << timer.seconds() << std::endl;
 
         // std::cout << "TriSolve Solve" << std::endl;
         timer.reset();
-        sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+        KokkosSparse::sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
         Kokkos::fence();
         std::cout << "UTRI Solve Time: " << timer.seconds() << std::endl;
 
@@ -735,7 +735,7 @@ int test_sptrsv_perf(std::vector<int> tests, const std::string &lfilename, const
 #ifdef CHECKALLRUNRESULTS
           Kokkos::deep_copy(lhs, 0, 0);
 #endif
-          sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
+          KokkosSparse::sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
 #ifdef CHECKALLRUNRESULTS
           {
             scalar_t sum = 0.0;
