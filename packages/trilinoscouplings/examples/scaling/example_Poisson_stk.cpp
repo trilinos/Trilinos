@@ -88,6 +88,7 @@
 #include "Tpetra_FEMultiVector.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Assembly_Helpers.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
@@ -317,13 +318,15 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
   int N=(int)BCNodes.size();
   Teuchos::ArrayRCP<SC> xdata = x.getDataNonConst(0);
   Teuchos::ArrayRCP<SC> bdata = b.getDataNonConst(0);
+  if (b.getMap()->getComm()->getRank() == 0)
+    std::cout<<"Apply in Dirichlet BCs to "<<BCNodes.size() << " nodes"<<std::endl;
 
-  A.beginModify();
+  Tpetra::beginModify(A,b);
 
   for(int i=0; i<N; i++) {
     LO lrid = BCNodes[i];
 
-    xdata[lrid]=bdata[lrid] = solution_values[lrid];
+    xdata[lrid]=bdata[lrid] = solution_values[i];
 
     size_t numEntriesInRow = A.getNumEntriesInLocalRow(lrid);
     typename crs_matrix_type::nonconst_local_inds_host_view_type cols("cols", numEntriesInRow);
@@ -336,7 +339,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     A.replaceLocalValues(lrid, cols, vals);
   }
 
-  A.endModify();
+  Tpetra::endModify(A,b);
 
 }
 
@@ -359,7 +362,7 @@ int main(int argc, char *argv[]) {
   using SC = Tpetra_Vector::scalar_type;
   using LO = Tpetra_Vector::local_ordinal_type;
   using GO = Tpetra_Vector::global_ordinal_type;
-  using NO = Tpetra_Vector::node_type;
+  //using NO = Tpetra_Vector::node_type;
 
 
   const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
@@ -368,8 +371,8 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
   RCP<const Teuchos::MpiComm<int> > MpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
-  int numRanks = Comm->getRank();
-  int MyPID = Comm->getSize();
+  int numRanks = Comm->getSize();
+  int MyPID = Comm->getRank();
 
 
   Teuchos::CommandLineProcessor clp(false);
@@ -647,7 +650,7 @@ int main(int argc, char *argv[]) {
     std::cout<<"Cell Topology: "<<cellType.getName() << " ("<<cellType.getBaseName()<<")"<<std::endl;
   }
 
-  MachineLearningStatistics_Hex3D<SC,LO,GO,NO> MLStatistics(numGlobalElements);
+  //MachineLearningStatistics_Hex3D<SC,LO,GO,NO> MLStatistics(numGlobalElements);
   bool do_statistics = !strcmp(cellType.getName(),"Hexahedron_8") && (numRanks == 1);
   if(MyPID==0) std::cout<<"do_statistics = "<<do_statistics<<std::endl;
 
@@ -655,18 +658,18 @@ int main(int argc, char *argv[]) {
   int numLocalBCs = bcNodes.size();
   int numGlobalBCs = 0;
   Teuchos::reduceAll(*Comm, Teuchos::REDUCE_SUM, numLocalBCs, Teuchos::outArg(numGlobalBCs));
-  if (numGlobalBCs == 0) {
-    if (MyPID == 0) {
+
+  if (MyPID == 0) {
+    std::cout << "       Number of Dirichlet Nodes: " << numGlobalBCs << std::endl;
+    if (numGlobalBCs == 0) {
       std::cout << std::endl
                 << "     Warning! - No boundary node set found." << std::endl
-                << "  Boundary conditions will not be applied correctly.\n"
+                << "     Boundary conditions will not be applied correctly.\n"
                 << std::endl;
     }
   }
 
   if (optPrintLocalStats) {
-    if (MyPID == 0)
-      std::cout << "       Number of global b.c. nodes: " << numGlobalBCs << std::endl;
     for (int i=0; i<numRanks; ++i) {
       if (MyPID == i) {
         std::cout << "(" << MyPID << ")    Number of local b.c. nodes: " << bcNodes.size() << std::endl;
@@ -747,29 +750,6 @@ int main(int argc, char *argv[]) {
     }
   } // end loop over elements
 
-  if(coordsFilename != "") {
-    // WARNING: This does *NOT* output the coordinates in an ordering that corresponds
-    // to the matrix unless the matrix is (a) in serial and (b) has identical global and ordering
-    // The ifdef'd code below will do processor-by-processor output with global IDs for matching
-    // in all other cases
-    // EpetraExt::MultiVectorToMatrixMarketFile(coordsFilename.c_str(),nCoord,0,0,false);
-
-#if 0
-    // Processor-by-processor output
-    char fn[80];
-    sprintf(fn,"test-%d-%s",MyPID,coordsFilename.c_str());
-    FILE *f = fopen(fn,"w");
-    for(int i=0;i<nCoord.MyLength(); i++) {
-      fprintf(f,"%d ",nCoord.Map().GID(i));
-      for(int j=0; j<nCoord.NumVectors(); j++)
-        fprintf(f,"%22.16e ",nCoord[j][i]);
-      fprintf(f,"\n");
-    }
-    fclose(f);
-#endif
-
-  }
-
 
   /**********************************************************************************/
   /****************************** STATISTICS (Part I) *******************************/
@@ -839,7 +819,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
+    //MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
 
   }
   tm = Teuchos::null;
@@ -862,8 +842,8 @@ int main(int argc, char *argv[]) {
   if(numWorksets*desiredWorksetSize < numLocalElems) numWorksets += 1;
 
   if (MyPID == 0) {
-    std::cout << "\tDesired workset size:                 " << desiredWorksetSize << std::endl;
-    std::cout << "\tNumber of worksets (per processor):   " << numWorksets << std::endl << std::endl;
+    std::cout << "       Desired workset size:                 " << desiredWorksetSize << std::endl;
+    std::cout << "       Number of worksets (per processor):   " << numWorksets << std::endl << std::endl;
   }
 
 
@@ -1009,8 +989,10 @@ int main(int argc, char *argv[]) {
     /**********************************************************************************/
     /***************************** STATISTICS (Part II) ******************************/
     /**********************************************************************************/
-    if(do_statistics)
+    /*
+      if(do_statistics)
       MLStatistics.Phase2a(worksetJacobDet,worksetCubWeights);
+    */
 
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
@@ -1064,18 +1046,21 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 /***************************** STATISTICS (Part IIb) ******************************/
 /**********************************************************************************/
+  /*
   if(do_statistics){
-    // FIXME: CMS
-    //    MLStatistics.Phase2b(Xpetra::toXpetra(StiffMatrix->getGraph()),Teuchos::rcp(&nCoord,false));
+        MLStatistics.Phase2b(Xpetra::toXpetra(StiffMatrix->getGraph()),Teuchos::rcp(&nCoord,false));
   }
+  */
 /**********************************************************************************/
 /***************************** STATISTICS (Part III) ******************************/
 /**********************************************************************************/
+  /*
   if(do_statistics){
     MLStatistics.Phase3();
     Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
     if(MyPID==0) std::cout<<"*** Problem Statistics ***"<<std::endl<<problemStatistics<<std::endl;
   }
+  */
   tm = Teuchos::null;
 
 /**********************************************************************************/
@@ -1084,8 +1069,7 @@ int main(int argc, char *argv[]) {
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("6) Matrix/RHS Dirichlet BCs")));
   RCP<Tpetra_MultiVector> lhsVector = rcp(new Tpetra_MultiVector(globalMapG,1));
 
-  std::vector<SC> solution_values(globalMapG->getLocalNumElements());
-
+  std::vector<SC> solution_values; solution_values.reserve(bcNodes.size());
   std::vector<int> ownedBoundaryNodes; ownedBoundaryNodes.reserve(bcNodes.size());
   // Loop over boundary nodes
   for (unsigned i = 0; i < bcNodes.size(); i++) {
@@ -1102,7 +1086,7 @@ int main(int argc, char *argv[]) {
       double x  = coord[0];
       double y  = coord[1];
       double z  = (spaceDim==3) ? coord[2] : 0;
-      solution_values[i]=exactSolution(x, y, z);
+      solution_values.push_back(exactSolution(x, y, z));
     }
   } // end loop over boundary nodes
 
@@ -1112,14 +1096,20 @@ int main(int argc, char *argv[]) {
   tm = Teuchos::null;
 
 
-  /*
-  if(matrixFilename != "")
-    EpetraExt::RowMatrixToMatlabFile(matrixFilename.c_str(),StiffMatrix);
-  if(rhsFilename != "")
-    EpetraExt::MultiVectorToMatrixMarketFile(rhsFilename.c_str(),rhsVector,0,0,false);
-  if(initialGuessFilename != "")
-    EpetraExt::MultiVectorToMatrixMarketFile(initialGuessFilename.c_str(),lhsVector,0,0,false);
-  */
+
+   // Optionally dump the matrix and/or its coords to files.
+  {
+    typedef Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix> writer_type;
+    if (matrixFilename != "") {
+      writer_type::writeSparseFile (matrixFilename, StiffMatrix);
+    }
+    if (rhsFilename != "") {
+      writer_type::writeDenseFile (rhsFilename, rhsVector);
+    }
+    if (coordsFilename != "") {
+      writer_type::writeDenseFile (coordsFilename, nCoord);
+    }
+  }
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
