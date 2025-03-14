@@ -1987,6 +1987,18 @@ optimized neighbor discovery for Importer construction.</description>
     </parameter>
   </amgx>
 
+  <tuning>
+    <parameter>
+      <name>kokkos tuning: muelu parameter mapping</name>
+      <type>\parameterlist</type>
+      <description>Sublist for Kokkos Tuning of MueLu Parameters</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+  </tuning>
+
+
+
   <debug>
 
     <parameter>

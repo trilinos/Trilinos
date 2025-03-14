@@ -39,6 +39,7 @@ APPEND_SET(SOURCES
   Level.cpp
   LowPrecision.cpp
   LWGraph.cpp
+  KokkosTuning.cpp
   MapTransferFactory.cpp
   Memory.cpp
   MueLu_UnitTests.cpp
