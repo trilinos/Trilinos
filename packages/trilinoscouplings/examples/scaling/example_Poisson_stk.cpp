@@ -1154,8 +1154,8 @@ int main(int argc, char *argv[]) {
 
   Teuchos::RCP<Tpetra_CrsMatrix> Acrs = Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(StiffMatrix);
   Teuchos::RCP<Tpetra_MultiVector> rhsMV = Teuchos::rcp_dynamic_cast<Tpetra_MultiVector>(rhsVector);
-
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("8) Analytic Solution Generation")));
+  tm = Teuchos::null;
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("8) Linear solve")));
   TestMultiLevelPreconditioner(probType,             MLList,
                                Acrs,                 exactNodalVals,
                                rhsMV,                lhsVector, nCoord,
