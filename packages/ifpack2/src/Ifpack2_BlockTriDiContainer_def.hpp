@@ -165,10 +165,18 @@ namespace Ifpack2 {
                        bool pointIndexed)
     : Container<MatrixType>(matrix, partitions, pointIndexed), partitions_(partitions)
   {
+    using Helpers = BlockHelperDetails::ImplType<MatrixType>;
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer", BlockTriDiContainer);
     const bool useSeqMethod = false;
     const bool overlapCommAndComp = false;
     initInternal(matrix, importer, overlapCommAndComp, useSeqMethod);
+    auto matrixBCRS = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
+    bool hasBlockCrs = !matrixBCRS.is_null();
+    bool onePartitionPerRow = hasBlockCrs && size_t(partitions.size()) == matrixBCRS->getLocalNumRows();
+    // Decide upfront whether the fused block Jacobi path can be used.
+    impl_->use_fused_jacobi = 
+      BlockHelperDetails::is_device<typename Helpers::execution_space>::value \
+      && hasBlockCrs && (!partitions.size() || onePartitionPerRow);
     n_subparts_per_part_ = -1;
     block_size_ = -1;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -185,8 +193,18 @@ namespace Ifpack2 {
                        const bool explicitConversion)
     : Container<MatrixType>(matrix, partitions, false), partitions_(partitions)
   {
+    using Helpers = BlockHelperDetails::ImplType<MatrixType>;
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer", BlockTriDiContainer);
     initInternal(matrix, Teuchos::null, overlapCommAndComp, useSeqMethod, block_size, explicitConversion);
+    auto matrixBCRS = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
+    bool hasBlockCrs = !matrixBCRS.is_null();
+    bool onePartitionPerRow = hasBlockCrs && size_t(partitions.size()) == matrixBCRS->getLocalNumRows();
+    // Jacobi case can be represented in two ways:
+    // - partitions is empty
+    // - partitions has length equal to local number of rows (meaning all line lengths must be 1)
+    impl_->use_fused_jacobi = 
+      BlockHelperDetails::is_device<typename Helpers::execution_space>::value \
+      && !useSeqMethod && hasBlockCrs && (!partitions.size() || onePartitionPerRow);
     n_subparts_per_part_ = n_subparts_per_part;
     block_size_ = block_size;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -254,7 +272,7 @@ namespace Ifpack2 {
          impl_->block_tridiags,
          impl_->a_minus_d,
          impl_->overlap_communication_and_computation,
-         impl_->async_importer, useSeqMethod);
+         impl_->async_importer, useSeqMethod, impl_->use_fused_jacobi);
     }
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
   }
@@ -273,7 +291,8 @@ namespace Ifpack2 {
         (impl_->A,
          impl_->blockGraph, 
          impl_->part_interface, impl_->block_tridiags, 
-         Kokkos::ArithTraits<magnitude_type>::zero());
+         Kokkos::ArithTraits<magnitude_type>::zero(),
+         impl_->use_fused_jacobi);
     }
     this->IsComputed_ = true;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -302,21 +321,38 @@ namespace Ifpack2 {
     const magnitude_type tol = Kokkos::ArithTraits<magnitude_type>::zero();
     const int check_tol_every = 1;
 
-    BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
-      (impl_->A,
-       impl_->blockGraph,
-       impl_->tpetra_importer, 
-       impl_->async_importer, 
-       impl_->overlap_communication_and_computation,
-       X, Y, impl_->Z, impl_->W,
-       impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
-       impl_->work,
-       impl_->norm_manager,
-       dampingFactor,
-       zeroStartingSolution,
-       numSweeps,
-       tol,
-       check_tol_every);
+    if(!impl_->use_fused_jacobi) {
+      BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
+        (impl_->A,
+         impl_->blockGraph,
+         impl_->tpetra_importer, 
+         impl_->async_importer, 
+         impl_->overlap_communication_and_computation,
+         X, Y, impl_->Z, impl_->W,
+         impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
+         impl_->work,
+         impl_->norm_manager,
+         dampingFactor,
+         zeroStartingSolution,
+         numSweeps,
+         tol,
+         check_tol_every);
+    }
+    else {
+      BlockTriDiContainerDetails::applyFusedBlockJacobi<MatrixType>
+        (impl_->tpetra_importer, 
+         impl_->async_importer,
+         impl_->overlap_communication_and_computation,
+         X, Y, impl_->W,
+         impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
+         impl_->work_flat,
+         impl_->norm_manager,
+         dampingFactor,
+         zeroStartingSolution,
+         numSweeps,
+         tol,
+         check_tol_every);
+    }
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
   }
 
@@ -342,7 +378,8 @@ namespace Ifpack2 {
         (impl_->A,
          impl_->blockGraph, 
          impl_->part_interface, impl_->block_tridiags, 
-         in.addRadiallyToDiagonal);
+         in.addRadiallyToDiagonal,
+         impl_->use_fused_jacobi);
     }
     this->IsComputed_ = true;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -367,21 +404,38 @@ namespace Ifpack2 {
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::applyInverseJacobi", applyInverseJacobi);
     int r_val = 0;
     {
-      r_val = BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
-        (impl_->A,
-         impl_->blockGraph,
-         impl_->tpetra_importer, 
-         impl_->async_importer,
-         impl_->overlap_communication_and_computation,
-         X, Y, impl_->Z, impl_->W,
-         impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
-         impl_->work,
-         impl_->norm_manager,
-         in.dampingFactor,
-         in.zeroStartingSolution,
-         in.maxNumSweeps,
-         in.tolerance,
-         in.checkToleranceEvery);
+      if(!impl_->use_fused_jacobi) {
+        r_val = BlockTriDiContainerDetails::applyInverseJacobi<MatrixType>
+          (impl_->A,
+           impl_->blockGraph,
+           impl_->tpetra_importer, 
+           impl_->async_importer,
+           impl_->overlap_communication_and_computation,
+           X, Y, impl_->Z, impl_->W,
+           impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
+           impl_->work,
+           impl_->norm_manager,
+           in.dampingFactor,
+           in.zeroStartingSolution,
+           in.maxNumSweeps,
+           in.tolerance,
+           in.checkToleranceEvery);
+      }
+      else {
+        r_val = BlockTriDiContainerDetails::applyFusedBlockJacobi<MatrixType>
+          (impl_->tpetra_importer, 
+           impl_->async_importer,
+           impl_->overlap_communication_and_computation,
+           X, Y, impl_->W,
+           impl_->part_interface, impl_->block_tridiags, impl_->a_minus_d,
+           impl_->work_flat,
+           impl_->norm_manager,
+           in.dampingFactor,
+           in.zeroStartingSolution,
+           in.maxNumSweeps,
+           in.tolerance,
+           in.checkToleranceEvery);
+      }
     }
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
     return r_val;
