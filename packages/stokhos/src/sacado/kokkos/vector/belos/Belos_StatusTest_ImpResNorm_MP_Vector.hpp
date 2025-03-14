@@ -482,7 +482,6 @@ checkStatus (Iteration<ScalarType,MV,OP>* iSolver)
   using Teuchos::RCP;
 
   const MagnitudeType zero = STM::zero ();
-  const MagnitudeType one  = STM::one ();
   const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem ();
 
   // Compute scaling term (done once for each block that's being solved)
