@@ -230,9 +230,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
             sp_rowptr.data(),
             sp_colind.data(),
             sp_values);
-
-        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
-            std::runtime_error, "Error ShyLUBasker Factor");
       }
       else 
       {
@@ -244,9 +241,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
             colptr_view_.data(),
             rowind_view_.data(),
             sp_values);
-
-        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
-            std::runtime_error, "Error ShyLUBasker Factor");
       }
 
       //ShyLUbasker->DEBUG_PRINT();
@@ -267,19 +261,8 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
   //global_size_type info_st = as<global_size_type>(info);
-  /* TODO : Proper error messages*/
-  TEUCHOS_TEST_FOR_EXCEPTION(info == -1,
-    std::runtime_error,
-    "ShyLUBasker: Could not alloc space for L and U");
-  TEUCHOS_TEST_FOR_EXCEPTION(info == -2,
-    std::runtime_error,
-    "ShyLUBasker: Could not alloc needed work space");
-  TEUCHOS_TEST_FOR_EXCEPTION(info == -3,
-    std::runtime_error,
-    "ShyLUBasker: Could not alloc additional memory needed for L and U");
-  TEUCHOS_TEST_FOR_EXCEPTION(info > 0,
-    std::runtime_error,
-    "ShyLUBasker: Zero pivot found at: " << info );
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
+    std::runtime_error, " ShyLUBasker::numericFactorization failed.");
 
   return(info);
 }
