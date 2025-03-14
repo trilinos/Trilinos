@@ -65,8 +65,8 @@
 
 // Teuchos includes
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_Time.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -148,6 +148,7 @@ typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
 typedef Intrepid::CellTools<double>      IntrepidCTools;
 typedef Intrepid::FieldContainer<double> IntrepidFieldContainer;
 
+using Teuchos::TimeMonitor;
 
 // Number of dimensions
 int spaceDim;
@@ -364,8 +365,6 @@ int main(int argc, char *argv[]) {
   const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
   const stk::mesh::EntityRank ELEMENT_RANK = stk::topology::ELEMENT_RANK;
 
-  Teuchos::Time Time("global timer");
-
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
   RCP<const Teuchos::MpiComm<int> > MpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
@@ -457,6 +456,8 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /*********************************** READ MESH ************************************/
   /**********************************************************************************/
+  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) Read Mesh")));
+
   stk::io::StkMeshIoBroker broker(*MpiComm->getRawMpiComm());
   broker.property_add(Ioss::Property("MAXIMUM_NAME_LENGTH", 180));
   broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "rcb"));
@@ -529,10 +530,13 @@ int main(int argc, char *argv[]) {
     std::cout << "       Number of global Nodes   : " << numGlobalNodes << std::endl;
     std::cout << "       Number of global Elements: " << numGlobalElements << std::endl;
   }
+  tm = Teuchos::null;
+
 
   /**********************************************************************************/
   /********************* BUILD MAPS/GRAPHS FOR GLOBAL SOLUTION **********************/
   /**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) Build Maps/Graph")));
 
   RCP<Tpetra_Map> globalMapG = Teuchos::rcp(new Tpetra_Map( (Tpetra::global_size_t)numGlobalNodes,ownedGIDs(), (GO)0, Comm));
   RCP<Tpetra_Map> ownedPlusSharedMapG = Teuchos::rcp(new Tpetra_Map( (Tpetra::global_size_t)numGlobalNodes,ownedPlusSharedGIDs(), (GO)0, Comm));
@@ -585,12 +589,13 @@ int main(int argc, char *argv[]) {
   }//end bucket
 
   Tpetra::endAssembly(*StiffGraph);
-
-
+  tm = Teuchos::null;
 
   /**********************************************************************************/
   /******************** COMPUTE COORDINATES AND STATISTICS **************************/
   /**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) Compute Coordinates and Stats")));
+
   typedef stk::mesh::Field<double>  CoordFieldType;
   // get coordinates field
   CoordFieldType *coords = metaData.get_field<double>(NODE_RANK,"coordinates");
@@ -671,17 +676,12 @@ int main(int argc, char *argv[]) {
     if(MyPID==0) std::cout << std::endl;
   }
 
-  if(MyPID==0) {
-    std::cout << "Read mesh" << "                                   "
-              << Time.totalElapsedTime() << " seconds" << std::endl;
-    Time.start(true);
-
-  }
+  tm = Teuchos::null;
 
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
   /**********************************************************************************/
-
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("4) Assembly Prep")));
   // Define cubature of the specified degree for the cellType
   Intrepid::DefaultCubatureFactory<double>  cubFactory;
   int cubDegree = 2;
@@ -696,12 +696,6 @@ int main(int argc, char *argv[]) {
   IntrepidFieldContainer cubWeights(numCubPoints);
 
   cellCubature -> getCubature(cubPoints, cubWeights);
-
-  if(MyPID==0) {
-    std::cout << "Getting cubature                            "
-              << Time.totalElapsedTime() << " seconds" << std::endl;
-    Time.start(true);
-  }
 
   /**********************************************************************************/
   /*********************************** GET BASIS ************************************/
@@ -722,25 +716,6 @@ int main(int argc, char *argv[]) {
   // Evaluate basis values and gradients at cubature points
   HGradBasis->getValues(basisValues, cubPoints, Intrepid::OPERATOR_VALUE);
   HGradBasis->getValues(basisGrads, cubPoints, Intrepid::OPERATOR_GRAD);
-
-  if(MyPID==0) {
-    std::cout << "Getting basis                               "
-              << Time.totalElapsedTime() << " seconds" << std::endl;
-    Time.start(true);
-  }
-
-
-  /**********************************************************************************/
-  /***************************** GRAPH ASSEMBLY *************************************/
-  /**********************************************************************************/
-
-  RCP<Tpetra_FECrsMatrix> StiffMatrix = rcp(new Tpetra_FECrsMatrix(StiffGraph));
-
-  if(MyPID==0) {
-    std::cout <<  "Build global maps                           "
-              << Time.totalElapsedTime() << " seconds" << std::endl;
-    Time.start(true);
-  }
 
 
   /**********************************************************************************/
@@ -793,7 +768,6 @@ int main(int argc, char *argv[]) {
     fclose(f);
 #endif
 
-    if(MyPID==0) {Time.start(true);}
   }
 
 
@@ -868,10 +842,13 @@ int main(int argc, char *argv[]) {
     MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
 
   }
+  tm = Teuchos::null;
 
   /**********************************************************************************/
   /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
   /**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("5) Matrix/RHS Assembly")));
+  RCP<Tpetra_FECrsMatrix> StiffMatrix = rcp(new Tpetra_FECrsMatrix(StiffGraph));
 
   // Define desired workset size and count how many worksets there are on this processor's mesh block
   //int desiredWorksetSize = numElems;                   // change to desired workset size!
@@ -887,7 +864,6 @@ int main(int argc, char *argv[]) {
   if (MyPID == 0) {
     std::cout << "\tDesired workset size:                 " << desiredWorksetSize << std::endl;
     std::cout << "\tNumber of worksets (per processor):   " << numWorksets << std::endl << std::endl;
-    Time.start(true);
   }
 
 
@@ -963,11 +939,6 @@ int main(int argc, char *argv[]) {
     IntrepidFieldContainer worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
     IntrepidFieldContainer worksetRHS         (worksetSize, numFieldsG);
 
-    if(MyPID==0) {
-      std::cout << "Allocate arrays                             "
-                << Time.totalElapsedTime() << " seconds" << std::endl;
-      Time.start(true);
-    }
 
     /**********************************************************************************/
     /*                                Calculate Jacobians                             */
@@ -976,12 +947,6 @@ int main(int argc, char *argv[]) {
     IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, cellType);
     IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
     IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
-
-    if(MyPID==0) {
-      std::cout << "Calculate Jacobians                         "
-                << Time.totalElapsedTime() << " seconds" << std::endl;
-      Time.start(true);
-    }
 
     /**********************************************************************************/
     /*          Cubature Points to Physical Frame and Compute Data                    */
@@ -995,13 +960,6 @@ int main(int argc, char *argv[]) {
 
     // get source term at cubature points
     evaluateSourceTerm (worksetSourceTerm, worksetCubPoints);
-
-    if(MyPID==0) {
-      std::cout << "Map to physical frame and get source term   "
-                << Time.totalElapsedTime() << " seconds" << std::endl;
-      Time.start(true);
-    }
-
 
     /**********************************************************************************/
     /*                         Compute Stiffness Matrix                               */
@@ -1031,12 +989,6 @@ int main(int argc, char *argv[]) {
                                        worksetBasisGradsWeighted,
                                        worksetDiffusiveFlux, Intrepid::COMP_BLAS);
 
-    if(MyPID==0) {
-      std::cout << "Compute stiffness matrix                    "
-                << Time.totalElapsedTime() << " seconds" << std::endl;
-      Time.start(true);
-    }
-
     /**********************************************************************************/
     /*                                   Compute RHS                                  */
     /**********************************************************************************/
@@ -1053,15 +1005,6 @@ int main(int argc, char *argv[]) {
     IntrepidFSTools::integrate<double>(worksetRHS,
                                        worksetSourceTerm,
                                        worksetBasisValuesWeighted, Intrepid::COMP_BLAS);
-
-    if(MyPID==0) {
-      std::cout << "Compute right-hand side                     "
-                << Time.totalElapsedTime() << " seconds" << std::endl;
-      Time.start(true);
-    }
-
-
-
 
     /**********************************************************************************/
     /***************************** STATISTICS (Part II) ******************************/
@@ -1118,12 +1061,6 @@ int main(int argc, char *argv[]) {
 
   Tpetra::endAssembly(*StiffMatrix,*rhsVector);
 
-
-  if (MyPID==0) {
-    std::cout << "Global assembly                             "
-              << Time.totalElapsedTime() << " seconds" << std::endl;
-    Time.start(true);
-  }
 /**********************************************************************************/
 /***************************** STATISTICS (Part IIb) ******************************/
 /**********************************************************************************/
@@ -1139,10 +1076,12 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
     if(MyPID==0) std::cout<<"*** Problem Statistics ***"<<std::endl<<problemStatistics<<std::endl;
   }
+  tm = Teuchos::null;
 
-  /**********************************************************************************/
-  /************************** DIRICHLET BC SETUP ************************************/
-  /**********************************************************************************/
+/**********************************************************************************/
+/************************** DIRICHLET BC SETUP ************************************/
+/**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("6) Matrix/RHS Dirichlet BCs")));
   RCP<Tpetra_MultiVector> lhsVector = rcp(new Tpetra_MultiVector(globalMapG,1));
 
   std::vector<SC> solution_values(globalMapG->getLocalNumElements());
@@ -1170,13 +1109,8 @@ int main(int argc, char *argv[]) {
   // Apply the Dirichlet conditions to matrix, lhs and rhs
   Apply_Dirichlet_BCs(ownedBoundaryNodes,*StiffMatrix,*lhsVector,*rhsVector,solution_values);
 
+  tm = Teuchos::null;
 
-  if(MyPID==0) {
-    std::cout << "Adjust global matrix and rhs due to BCs     "
-              << Time.totalElapsedTime()
-              << " seconds" << std::endl;
-    Time.start(true);
-  }
 
   /*
   if(matrixFilename != "")
@@ -1190,6 +1124,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("7) Analytic Solution Generation")));
 
   // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
@@ -1219,14 +1154,26 @@ int main(int argc, char *argv[]) {
 
   Teuchos::RCP<Tpetra_CrsMatrix> Acrs = Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(StiffMatrix);
   Teuchos::RCP<Tpetra_MultiVector> rhsMV = Teuchos::rcp_dynamic_cast<Tpetra_MultiVector>(rhsVector);
+
+  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("8) Analytic Solution Generation")));
   TestMultiLevelPreconditioner(probType,             MLList,
                                Acrs,                 exactNodalVals,
                                rhsMV,                lhsVector, nCoord,
                                TotalErrorResidual,   TotalErrorExactSol);
 
+   // Timer Output
+   tm = Teuchos::null;
+   const bool alwaysWriteLocal = false;
+   const bool writeGlobalStats = true;
+   const bool writeZeroTimers  = false;
+   const bool ignoreZeroTimers = true;
+   const std::string filter    = "";
+   TimeMonitor::summarize(Comm.ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                          writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+
    return 0;
 
-  }
+}
 /**********************************************************************************/
 /********************************* END MAIN ***************************************/
 /**********************************************************************************/
