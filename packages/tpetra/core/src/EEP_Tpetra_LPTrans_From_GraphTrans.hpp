@@ -44,38 +44,15 @@
 
 #include <EEP_Tpetra_Transform.hpp>
 
+#include <Tpetra_Export_decl.hpp>
+#include <Tpetra_Import_decl.hpp>
+#include <Tpetra_LinearProblem_decl.hpp>
+#include <Tpetra_CrsGraph_decl.hpp>
+#include <Tpetra_CrsMatrix_decl.hpp>
+#include <Tpetra_MultiVector_decl.hpp>
+#include <Tpetra_Map_decl.hpp>
+
 namespace Tpetra {
-
-template <class Scalar,
-          class LocalOrdinal,
-          class GlobalOrdinal,
-          class Node>
-class LinearProblem;
-
-template <class LocalOrdinal,
-          class GlobalOrdinal,
-          class Node>
-class Map;
-
-template <class Scalar,
-          class LocalOrdinal,
-          class GlobalOrdinal,
-          class Node>
-class MultiVector;
-
-template <class LocalOrdinal,
-          class GlobalOrdinal,
-          class Node>
-class CrsGraph;
-
-template <class Scalar,
-          class LocalOrdinal,
-          class GlobalOrdinal,
-          class Node>
-class CrsMatrix;
-
-//class Epetra_Export;
-//class Epetra_Import;
 
 //! Tpetra::LinearProblem_GraphTrans: Adaptation of a Tpetra::CrsGraph Transform to a Tpetra::LinearProblem Transform
 template <class Scalar,
@@ -86,23 +63,55 @@ class LinearProblem_GraphTrans : public SameTypeTransform< Tpetra::LinearProblem
 {
   StructuralSameTypeTransform< Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > & graphTrans_;
 
-  //Epetra_Import * Importer_;
-  //Epetra_Export * MatExporter_;
-  //Epetra_Export * VecExporter_;
+  Tpetra::Import<LocalOrdinal,
+                 GlobalOrdinal,
+                 Node> * Importer_;
+  Tpetra::Export<LocalOrdinal,
+                 GlobalOrdinal,
+                 Node> * MatExporter_;
+  Tpetra::Export<LocalOrdinal,
+                 GlobalOrdinal,
+                 Node> * VecExporter_;
 
-#if 0 // AquiToDo
-  Epetra_LinearProblem * OldProblem_;
-  Epetra_CrsGraph * OldGraph_;
-  Epetra_CrsMatrix * OldMatrix_;
-  Epetra_MultiVector * OldLHS_;
-  Epetra_MultiVector * OldRHS_;
-  Epetra_Map * OldRowMap_;
+  Tpetra::LinearProblem<Scalar,
+                        LocalOrdinal,
+                        GlobalOrdinal,
+                        Node> * OldProblem_;
+  const Tpetra::CrsGraph<LocalOrdinal,
+                         GlobalOrdinal,
+                         Node> * OldGraph_;
+  Tpetra::CrsMatrix<Scalar,
+                    LocalOrdinal,
+                    GlobalOrdinal,
+                    Node> * OldMatrix_;
+  Tpetra::MultiVector<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node> * OldLHS_;
+  Tpetra::MultiVector<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node> * OldRHS_;
+  const Tpetra::Map<LocalOrdinal,
+                    GlobalOrdinal,
+                    Node> * OldRowMap_;
 
-  Epetra_LinearProblem * NewProblem_;
-  Epetra_CrsMatrix * NewMatrix_;
-  Epetra_MultiVector * NewLHS_;
-  Epetra_MultiVector * NewRHS_;
-#endif // AquiToDo
+  Tpetra::LinearProblem<Scalar,
+                        LocalOrdinal,
+                        GlobalOrdinal,
+                        Node> * NewProblem_;
+  Tpetra::CrsMatrix<Scalar,
+                    LocalOrdinal,
+                    GlobalOrdinal,
+                    Node> * NewMatrix_;
+  Tpetra::MultiVector<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node> * NewLHS_;
+  Tpetra::MultiVector<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node> * NewRHS_;
 
  public:
 
@@ -112,10 +121,9 @@ class LinearProblem_GraphTrans : public SameTypeTransform< Tpetra::LinearProblem
   //! EpetraExt::LinearProblem_GraphTrans Constructor
   /*! Constructs a LinearProblem Transform based on the input CrsGraph Transform
       \param In
-      graph_trans - Base Epetra_CrsGraph Transform from which a consistent Epetra_LinearProblem  Transform is generated
+      graph_trans - Base Tpetra::CrsGraph Transform from which a consistent Tpetra::LinearProblem  Transform is generated
  */
-#if 0 // AquiToDo
-  LinearProblem_GraphTrans( StructuralSameTypeTransform<Epetra_CrsGraph> & graph_trans )
+  LinearProblem_GraphTrans( StructuralSameTypeTransform< Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > & graph_trans )
   : graphTrans_(graph_trans),
     Importer_(0),
     MatExporter_(0),
@@ -133,13 +141,12 @@ class LinearProblem_GraphTrans : public SameTypeTransform< Tpetra::LinearProblem
   {
     std::cout << "EEP Passing through LinearProblem_GraphTrans::constructor()..." << std::endl;
   }
-#endif // AquiToDo
 
-  //! Constructs an Epetra_LinearProblem from the original using the same row transformation given by the Epetra_CrsGraph Transform
+  //! Constructs an Tpetra::LinearProblem from the original using the same row transformation given by the Tpetra::CrsGraph Transform
   /*! 
       \param In
-      orig - Original Epetra_LinearProblem to be transformed.
-      \return Epetra_LinearProblem generated by transformation operation
+      orig - Original Tpetra::LinearProblem to be transformed.
+      \return Tpetra::LinearProblem generated by transformation operation
   */
   typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewTypeRef operator()( typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalTypeRef orig );
 
@@ -150,6 +157,93 @@ class LinearProblem_GraphTrans : public SameTypeTransform< Tpetra::LinearProblem
   bool rvs();
 
 };
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+LinearProblem_GraphTrans<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+~LinearProblem_GraphTrans()
+{
+  if( MatExporter_ ) delete MatExporter_;
+  if( VecExporter_ ) delete VecExporter_;
+  if( Importer_ ) delete Importer_;
+
+  if( NewProblem_ ) delete NewProblem_;
+  if( NewRHS_ ) delete NewRHS_;
+  if( NewLHS_ ) delete NewLHS_;
+  if( NewMatrix_ ) delete NewMatrix_;
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewTypeRef
+LinearProblem_GraphTrans<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+operator()( typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalTypeRef orig )
+{
+  std::cout << "EEP Entering tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator()..." << std::endl;
+  
+  OldProblem_ = &orig;
+  OldMatrix_ = dynamic_cast<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>*>( orig.getMatrix().get() );
+  OldGraph_ = dynamic_cast<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>*>( OldMatrix_->getGraph().get() );
+  OldRHS_ = orig.getRHS().get();
+  OldLHS_ = orig.getLHS().get();
+  OldRowMap_ = dynamic_cast<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>*>( OldMatrix_->getRowMap().get() );
+
+  std::cout << "EEP In tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 001" << std::endl;
+  Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & NewGraph = graphTrans_( *(const_cast<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>*>(OldGraph_)) );
+  std::cout << "EEP In tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 002" << std::endl;
+  NewMatrix_ = new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>(&NewGraph) );
+#if 0 // AquiToDo
+  Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & NewRowMap = const_cast<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>&>(NewGraph.getRowMap());
+
+  NewRHS_ = new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>( NewRowMap, 1 );
+  NewLHS_ = new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>( NewRowMap, 1 );
+
+  MatExporter_ = new Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>( *OldRowMap_, NewRowMap );
+  VecExporter_ = new Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>( *OldRowMap_, NewRowMap );
+  Importer_ = new Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>( *OldRowMap_, NewRowMap );
+
+  std::cout << "EEP In tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 003" << std::endl;
+  NewProblem_ = new Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>( NewMatrix_, NewLHS_, NewRHS_ );
+#endif
+  std::cout << "EEP In tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 003" << std::endl;
+
+  std::cout << "EEP Leaving tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator()" << std::endl;
+  return *NewProblem_;
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+bool
+LinearProblem_GraphTrans<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+fwd()
+{
+  NewLHS_->doExport( *OldLHS_, *VecExporter_, INSERT );
+  NewRHS_->doExport( *OldRHS_, *VecExporter_, INSERT );
+  NewMatrix_->doExport( *OldMatrix_, *MatExporter_, INSERT );
+
+  return true;
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+bool
+LinearProblem_GraphTrans<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+rvs()
+{
+  OldLHS_->doImport( *NewLHS_, *Importer_, INSERT );
+//  OldRHS_->Import( *NewRHS_, *Importer_, Insert ); // As in the original epetraext/src/transform/ file
+//  OldMatrix_->Import( *NewMatrix_, *Importer_, Insert ); // As in the original epetraext/src/transform/ file
+
+  return true;
+}
 
 } // namespace Tpetra
 

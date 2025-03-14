@@ -40,7 +40,7 @@ class Isorropia_CrsGraph : public StructuralSameTypeTransform< Tpetra::CrsGraph<
   // Parameter list to specify partitioning algorithm for Isorropia.
   Teuchos::ParameterList partitionList_;
 
-  // New graph for the repartitioned matrix. "String added by EEP, for testing"
+  // New graph for the repartitioned matrix.
   Teuchos::RCP< tCrsGraph > NewGraph_;
 
  public:
@@ -106,7 +106,7 @@ operator()( typename Isorropia_CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::Orig
       //NewGraph_ = Teuchos::rcp( Isorropia::Tpetra::createBalancedCopy( orig, partitionList_) ); // AquiToDo
     }
     catch(std::exception& e) {
-      std::cout << "Isorropia::create_balanced_copy threw exception '" << e.what() << "' on proc " << orig.getComm()->getRank() << std::endl;
+      std::cout << "Isorropia::Tpetra::createBalancedCopy threw exception '" << e.what() << "' on proc " << orig.getComm()->getRank() << std::endl;
     }
   }
 

@@ -14,7 +14,7 @@
 // NOTE:  This is a modified version of the matrix_1.cpp example in Isorropia.
 //--------------------------------------------------------------------
 
-//#include <Isorropia_ConfigDefs.hpp>
+//#include <Isorropia_ConfigDefs.hpp> // AquiToDo
 
 #ifdef HAVE_MPI
 
@@ -69,13 +69,13 @@ void runExample() {
   // "Zoltan" and setting the appropriate values.
   // (See Zoltan documentation for other valid parameters...)
 
-  //std::string partitioning_method_str("PARTITIONING METHOD"); // Aqui
+  //std::string partitioning_method_str("PARTITIONING METHOD"); // AquiToDo
   //std::string partitioning_method =
   //paramlist_.get(partitioning_method_str, "UNSPECIFIED");
 
   std::cout << "In main(), pos 001" << std::endl;
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "HYPERGRAPH"); // AquiAqui
+  sublist.set("LB_METHOD", "HYPERGRAPH"); // AquiAquiToDo
 
 #else
   //If Zoltan is not available, we don't need to set any parameters.
@@ -103,9 +103,16 @@ void runExample() {
 
   std::cout << "In main(), pos 004" << std::endl;
 
-#if 0 // EEP
-  LPTrans = Teuchos::rcp( new Tpetra::LinearProblem_GraphTrans( *(dynamic_cast<Tpetra::StructuralSameTypeTransform<Tpetra_CrsGraph>*>(Trans.get())) ) );
-#endif // EEP
+  LPTrans = Teuchos::rcp( new Tpetra::LinearProblem_GraphTrans< double
+                                                              , Tpetra::CrsMatrix<double>::local_ordinal_type
+                                                              , Tpetra::CrsMatrix<double>::global_ordinal_type
+                                                              , Tpetra::CrsMatrix<double>::node_type
+                                                              >
+                              ( *( dynamic_cast< Tpetra::StructuralSameTypeTransform< Tpetra::CrsGraph< Tpetra::CrsMatrix<double>::local_ordinal_type
+                                                                                                      , Tpetra::CrsMatrix<double>::global_ordinal_type
+                                                                                                      , Tpetra::CrsMatrix<double>::node_type
+                                                                                                      > >*>(Trans.get()) )
+                              ) );
 
   // Create a Tpetra::CrsMatrix with rows spread un-evenly over processors.
   if (localProc == 0) {
@@ -191,17 +198,21 @@ void runExample() {
   // Create the new linear problem and perform the balanced partitioning.
   // NOTE:  The balanced linear system will be in transformedProblem after fwd() is called.
   //        It is not necessary for the RCP to manage the transformed problem.
-#if 0 // EEP
-  Teuchos::RCP<Epetra_LinearProblem> transformedProblem = Teuchos::rcp( &((*LPTrans)( problem )), false );
+  Teuchos::RCP< Tpetra::LinearProblem< double
+                                     , Tpetra::CrsMatrix<double>::local_ordinal_type
+                                     , Tpetra::CrsMatrix<double>::global_ordinal_type
+                                     , Tpetra::CrsMatrix<double>::node_type
+                                     > > transformedProblem = Teuchos::rcp( &((*LPTrans)( problem )), false );
   std::cout << "In main(), pos 008" << std::endl;
+#if 0 // EEP
   LPTrans->fwd();
   std::cout << "In main(), pos 009" << std::endl;
 #endif // EEP
   
   Tpetra::CrsMatrix<double>::local_ordinal_type graphrows1 = crsmatrix->getLocalNumRows();
-  Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_rows = 9999; // transformedProblem->GetMatrix()->getLocalNumRows();
+  Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_rows = 9999; // transformedProblem->getMatrix()->getLocalNumRows();
   Tpetra::CrsMatrix<double>::local_ordinal_type graphnnz1 = crsmatrix->getLocalNumEntries();
-  Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_nnz = 9999; // transformedProblem->GetMatrix()->getLocalNumEntries();
+  Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_nnz = 9999; // transformedProblem->getMatrix()->getLocalNumEntries();
 
   std::cout << "In main(), pos 010" << std::endl;
 
