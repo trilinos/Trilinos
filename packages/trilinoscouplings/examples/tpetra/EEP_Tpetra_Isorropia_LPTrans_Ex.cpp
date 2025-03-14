@@ -32,7 +32,7 @@
 #include <Tpetra_MultiVector_decl.hpp>
 #include <Tpetra_LinearProblem_decl.hpp>
 #include <EEP_Tpetra_Isorropia_CrsGraph.hpp> // In 'packages/trilinoscouplings/src/tpetra/'
-//#include <EpetraExt_LPTrans_From_GraphTrans.h>
+#include <EEP_Tpetra_LPTrans_From_GraphTrans.hpp> // In 'packages/tpetra/core/src/'
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
@@ -47,7 +47,7 @@ void runExample() {
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-  //Now create a balanced copy of the matrix using the EpetraExt
+  //Now create a balanced copy of the matrix using the Tpetra
   //transform interface to Isorropia.
   //NOTE: By default, Isorropia will use Zoltan for the
   //repartitioning, if Isorropia was configured with Zoltan support.
@@ -61,7 +61,7 @@ void runExample() {
 
   std::cout << "In main(), pos 000" << std::endl;
 
-#ifdef HAVE_ISORROPIA_ZOLTAN
+#if 1 // def HAVE_ISORROPIA_ZOLTAN // AquiToDo
 
   // If Zoltan is available, we'll specify that the Zoltan package use
   // graph-partitioning for the partitioning operation and specifically
@@ -94,16 +94,18 @@ void runExample() {
 
   std::cout << "In main(), pos 003" << std::endl;
   
-#if 0 // EEP
-
   // Create a linear problem transform interface.
-  Teuchos::RCP<EpetraExt::LinearProblem_GraphTrans> LPTrans =
-    Teuchos::rcp( new EpetraExt::LinearProblem_GraphTrans(
-    *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(Trans.get())) ) );
-
-#endif // EEP
+  Teuchos::RCP< Tpetra::LinearProblem_GraphTrans< double
+                                                , Tpetra::CrsMatrix<double>::local_ordinal_type
+                                                , Tpetra::CrsMatrix<double>::global_ordinal_type
+                                                , Tpetra::CrsMatrix<double>::node_type
+                                                > > LPTrans;
 
   std::cout << "In main(), pos 004" << std::endl;
+
+#if 0 // EEP
+  LPTrans = Teuchos::rcp( new Tpetra::LinearProblem_GraphTrans( *(dynamic_cast<Tpetra::StructuralSameTypeTransform<Tpetra_CrsGraph>*>(Trans.get())) ) );
+#endif // EEP
 
   // Create a Tpetra::CrsMatrix with rows spread un-evenly over processors.
   if (localProc == 0) {
@@ -177,7 +179,6 @@ void runExample() {
 
   std::cout << "In main(), pos 006" << std::endl;
 
-  
   // Create the linear problem with the original partitioning.
   Tpetra::LinearProblem< double
                        , Tpetra::CrsMatrix<double>::local_ordinal_type
@@ -187,20 +188,20 @@ void runExample() {
 
   std::cout << "In main(), pos 007" << std::endl;
 
-#if 0 // EEP
   // Create the new linear problem and perform the balanced partitioning.
-  // NOTE:  The balanced linear system will be in tProblem after fwd() is called.
+  // NOTE:  The balanced linear system will be in transformedProblem after fwd() is called.
   //        It is not necessary for the RCP to manage the transformed problem.
-  Teuchos::RCP<Epetra_LinearProblem> tProblem = Teuchos::rcp( &((*LPTrans)( problem )), false );
+#if 0 // EEP
+  Teuchos::RCP<Epetra_LinearProblem> transformedProblem = Teuchos::rcp( &((*LPTrans)( problem )), false );
   std::cout << "In main(), pos 008" << std::endl;
   LPTrans->fwd();
   std::cout << "In main(), pos 009" << std::endl;
 #endif // EEP
   
   Tpetra::CrsMatrix<double>::local_ordinal_type graphrows1 = crsmatrix->getLocalNumRows();
-  //Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_rows = tProblem->GetMatrix()->getLocalNumRows();
+  Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_rows = 9999; // transformedProblem->GetMatrix()->getLocalNumRows();
   Tpetra::CrsMatrix<double>::local_ordinal_type graphnnz1 = crsmatrix->getLocalNumEntries();
-  //Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_nnz = tProblem->GetMatrix()->getLocalNumEntries();
+  Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_nnz = 9999; // transformedProblem->GetMatrix()->getLocalNumEntries();
 
   std::cout << "In main(), pos 010" << std::endl;
 
@@ -209,10 +210,14 @@ void runExample() {
 
     if (p != localProc) continue;
 
-    std::cout << "proc " << p << ": input matrix local rows: " << graphrows1
-       << ", local NNZ: " << graphnnz1 << std::endl;
-    //std::cout << "proc " << p << ": balanced matrix local rows: "
-    //   << bal_graph_rows << ", local NNZ: " << bal_graph_nnz << std::endl;
+    std::cout << "proc " << p
+              << ": input matrix local rows = " << graphrows1
+              << ", local NNZ = " << graphnnz1
+              << std::endl;
+    std::cout << "proc " << p
+              << ": balanced matrix local rows = " << bal_graph_rows
+              << ", local NNZ = " << bal_graph_nnz
+              << std::endl;
   }
 
   std::cout << "Leaving runExample()" << std::endl;

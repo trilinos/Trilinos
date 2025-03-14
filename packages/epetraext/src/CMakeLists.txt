@@ -59,7 +59,6 @@ IF (${PACKAGE_NAME}_BUILD_TRANSFORM)
     transform/EpetraExt_Permutation.h
     transform/EpetraExt_Permutation_impl.h
     transform/EpetraExt_LPTrans_From_GraphTrans.h
-    transform/EEP_Tpetra_LPTrans_From_GraphTrans.h
     transform/EpetraExt_LPTrans_From_MatrixTrans.h
     transform/EpetraExt_View_CrsGraph.h
     transform/EpetraExt_View_CrsMatrix.h
@@ -82,7 +81,6 @@ IF (${PACKAGE_NAME}_BUILD_TRANSFORM)
     transform/EpetraExt_SubCopy_CrsMatrix.cpp
     transform/EpetraExt_Permutation.cpp
     transform/EpetraExt_LPTrans_From_GraphTrans.cpp
-    transform/EEP_Tpetra_LPTrans_From_GraphTrans.cpp
     transform/EpetraExt_LPTrans_From_MatrixTrans.cpp
     transform/EpetraExt_View_CrsGraph.cpp
     transform/EpetraExt_View_CrsMatrix.cpp

@@ -38,7 +38,7 @@
 //
 // ***********************************************************************
 //@HEADER
-
+#if 0 // AquiToDo
 #include <EpetraExt_LPTrans_From_GraphTrans.h>
 
 #include <Epetra_Export.h>
@@ -132,4 +132,6 @@ rvs()
 }
 
 } //namespace EpetraExt
+
+#endif // AquiToDo
 

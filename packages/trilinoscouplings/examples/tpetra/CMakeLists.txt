@@ -1,15 +1,15 @@
 
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zoltan)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Isorropia)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
-IF (${PACKAGE_NAME}_ENABLE_Zoltan)
+IF (${PACKAGE_NAME}_ENABLE_Isorropia)
 
   TRIBITS_ADD_EXECUTABLE(
-    EEP_Tpetra_Zoltan_LPTrans_Ex
-    SOURCES EEP_Tpetra_Zoltan_LPTrans_Ex.cpp
+    EEP_Tpetra_Isorropia_LPTrans_Ex
+    SOURCES EEP_Tpetra_Isorropia_LPTrans_Ex.cpp
     COMM mpi
   )
 
