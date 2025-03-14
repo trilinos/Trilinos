@@ -161,12 +161,12 @@ IF(HAVE_TRILINOSCOUPLINGS_TPETRA)
   IF(HAVE_TRILINOSCOUPLINGS_ZOLTAN)
     TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
     APPEND_SET(HEADERS
-      tpetra/EEP_Tpetra_Isorropia_CrsGraph.h
+      tpetra/EEP_Tpetra_Isorropia_CrsGraph.hpp
       )
 
-    APPEND_SET(SOURCES
-      tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp
-      )
+#    APPEND_SET(SOURCES
+#      tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp
+#      )
   ENDIF()
 ENDIF()
 

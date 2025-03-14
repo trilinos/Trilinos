@@ -31,7 +31,7 @@
 #include <Tpetra_CrsMatrix_decl.hpp>
 #include <Tpetra_MultiVector_decl.hpp>
 #include <Tpetra_LinearProblem_decl.hpp>
-//#include <Tpetra_Isorropia_CrsGraph.h> // In 'packages/trilinoscouplings/src/tpetra/'
+#include <EEP_Tpetra_Isorropia_CrsGraph.hpp> // In 'packages/trilinoscouplings/src/tpetra/'
 //#include <EpetraExt_LPTrans_From_GraphTrans.h>
 
 #include <Teuchos_ParameterList.hpp>
@@ -81,11 +81,7 @@ void runExample() {
   //If Zoltan is not available, we don't need to set any parameters.
 #endif
 
-#endif // EEP
-
   std::cout << "In main(), pos 002" << std::endl;
-
-#if 0 // EEP
 
   // Create the object to generate the balanced graph.
   Teuchos::RCP< Tpetra::Isorropia_CrsGraph< Tpetra::CrsMatrix<double>::local_ordinal_type
@@ -98,6 +94,8 @@ void runExample() {
 
   std::cout << "In main(), pos 003" << std::endl;
   
+#if 0 // EEP
+
   // Create a linear problem transform interface.
   Teuchos::RCP<EpetraExt::LinearProblem_GraphTrans> LPTrans =
     Teuchos::rcp( new EpetraExt::LinearProblem_GraphTrans(
