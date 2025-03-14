@@ -89,9 +89,6 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
   const Teuchos::ParameterList& pL = params_.get<Teuchos::ParameterList>("kokkos tuning: muelu parameter mapping");
   namespace KTE = Kokkos::Tools::Experimental;
 
-  // FIXME: Remove
-  std::cout<<"*** Params for Kokkos Tuning ***"<<pL<<"********************************"<<std::endl;
-
   /********************************/
   /* Process the output variables */
   /********************************/
@@ -114,20 +111,16 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
         const Teuchos::Array<int> & range = sublist.get<Teuchos::Array<int> >("discrete range");
         TEUCHOS_TEST_FOR_EXCEPTION(range.size() !=3, Exceptions::RuntimeError, "MueLu::KokkosTuningInterface: 'discrete range' needs to be (low, high, step)");
 
-        // Copy the range to int64_t because Kokkos
-        std::vector<int64_t> range64(range.size());
-        for(int j=0;j<(int)range.size(); j++)
-          range64[j] = range[j];
-        int64_ranges.push_back(range64);
-
-
         // Set the VariableInfo
         KTE::VariableInfo out_info;
-        out_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_int64;
-        out_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_ordinal;
-        out_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_set;
-        out_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(3,int64_ranges[int64_ranges.size()-1].data());
-        size_t var_id = Kokkos::Tools::Experimental::declare_output_type(muelu_param,out_info);
+        out_info.type = KTE::ValueType::kokkos_value_int64;
+        out_info.category = KTE::StatisticalCategory::kokkos_value_interval;
+        out_info.valueQuantity = KTE::CandidateValueType::kokkos_value_range;
+
+        // Unlike the ordinal lists, the ranges get copied into Kokkos
+        // TODO: Add support for open/closed ranges
+        out_info.candidates = KTE::make_candidate_range((int64_t)range[0],(int64_t)range[1],(int64_t)range[2],false,false);
+        size_t var_id = KTE::declare_output_type(muelu_param,out_info);
         out_variables.push_back(KTE::make_variable_value(var_id,int64_t(guess)));
 
         out_typenames.push_back("int");
@@ -138,32 +131,23 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
         const Teuchos::Array<double> & range = sublist.get<Teuchos::Array<double> >("continuous range");
         TEUCHOS_TEST_FOR_EXCEPTION(range.size() !=3, Exceptions::RuntimeError, "MueLu::KokkosTuningInterface: 'continuous range' needs to be (low, high, step)");
 
-
-        // Copy the range because Kokkos
-        std::vector<double> rangeD(range.size());
-        for(int j=0;j<(int)range.size(); j++)
-          rangeD[j] = range[j];
-        double_ranges.push_back(rangeD);
-
-
         // Set the VariableInfo
         KTE::VariableInfo out_info;
-        out_info.type = Kokkos::Tools::Experimental::ValueType::kokkos_value_double;
-        out_info.category = Kokkos::Tools::Experimental::StatisticalCategory::kokkos_value_ordinal;
-        out_info.valueQuantity = Kokkos::Tools::Experimental::CandidateValueType::kokkos_value_set;
-        // FIXME: This is a memory error waiting to happen
-        out_info.candidates = Kokkos::Tools::Experimental::make_candidate_set(3,double_ranges[double_ranges.size()-1].data());
-        size_t var_id = Kokkos::Tools::Experimental::declare_output_type(muelu_param,out_info);
+        out_info.type = KTE::ValueType::kokkos_value_double;
+        out_info.category = KTE::StatisticalCategory::kokkos_value_interval;
+        out_info.valueQuantity = KTE::CandidateValueType::kokkos_value_range;
+
+        // Unlike the ordinal lists, the ranges get copied into Kokkos
+        // TODO: Add support for open/closed ranges
+        out_info.candidates = KTE::make_candidate_range(range[0],range[1],range[2],false,false);
+        size_t var_id = KTE::declare_output_type(muelu_param,out_info);
         out_variables.push_back(KTE::make_variable_value(var_id,guess));
 
         out_typenames.push_back("double");
       }
-      /*else if(sublist.isType<std::string>("initial guess")) {
-        // Categorical
-
-        }*/
+      // TODO: Add support for categorical and set parameters
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::KokkosTuningInterface: Only handles int and double parameters");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::KokkosTuningInterface: We currently only handle int and double ranges.");
       }
 
       // Stash the parameter name
@@ -183,8 +167,13 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
   in_variables.clear();
 
   const Teuchos::Array<std::string> & inputs = pL.get<Teuchos::Array<std::string> >("input variables");
+
   for (int i=0; i< (int)inputs.size(); i++) {
-    in_variables.push_back(KTE::make_variable_value(i,inputs[i].c_str()));
+    // NOTE: The string name is copied in here (unlike double/int) so we don't need to cache.
+    KTE::VariableInfo in_info;
+    in_info.type = KTE::ValueType::kokkos_value_string;
+    size_t var_id = KTE::declare_input_type(inputs[i].c_str(),in_info);
+    in_variables.push_back(KTE::make_variable_value(var_id,inputs[i].c_str()));
   }
 
 
@@ -219,6 +208,12 @@ void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos
     // Only Rank 0 calls KokkosTuning
     GetOStream(Runtime0) << "MueLu::KokkosTuningInterface: Tuning " << out_variables.size() << " parameters" <<std::endl;
 
+    // Set input variable
+    if (IsPrint(Runtime1))
+      GetOStream(Runtime1) <<"Adding "<<in_variables.size()<<" input variables"<<std::endl;
+
+    KTE::set_input_values(kokkos_context_id, in_variables.size(), in_variables.data());
+
     // Start the tuning
     KTE::request_output_values(kokkos_context_id, out_variables.size(), out_variables.data());
 
@@ -241,8 +236,6 @@ void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos
       Teuchos::ParameterList *activeList = &tunedParams;
       std::vector<std::string> treeWalk = SplitString(out_names[i],"||");
 
-      for(int j=0; j<(int) treeWalk.size(); j++)
-
       // Walk down all but the last guy
       for(int j=0;j<(int) treeWalk.size()-1; j++) {
         activeList = &(activeList->sublist(treeWalk[j]));
@@ -259,14 +252,8 @@ void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos
       }
     }
   }
-#if 0
-  std::cout<<"*** FINAL TUNED PARAMS ***"<<std::endl;
-  std::cout<<tunedParams<<std::endl;
-  std::cout<<"*************************"<<std::endl;
-#endif
 
   Teuchos::updateParametersAndBroadcast(outArg(tunedParams), outArg(mueluParams), *comm_, 0, overwrite);
-
 }
 
 
