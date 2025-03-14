@@ -30,6 +30,9 @@
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_IO.hpp>
 
+// Tpetra
+#include <Tpetra_Details_Profiling.hpp>
+
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
@@ -292,7 +295,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
   bool kokkosTuning = false;
 #ifdef KOKKOS_ENABLE_TUNING
-  clp.setOption("kokkos-tuning", "no-kokkos-tuning", &kokkosTuning, "enable Kokkos tuning inferface");
+  clp.setOption("tuning-with-kokkos", "no-tuning-with-kokkos", &kokkosTuning, "enable Kokkos tuning inferface");
 #else
   #error "KokkosTuning not enabled"
 #endif
@@ -541,7 +544,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       // Get a Kokkos context for tuning and setup the tuner
       size_t kokkos_context_id = 0;
       if(kokkosTuning) {
-        kokkos_context_id = Kokkos::Tools::Experimental::get_new_context_id();
         KokkosTuner.SetParameterList(mueluList);
       }
 
@@ -549,6 +551,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       // Loop over the setup/solve pairs
       // =========================================================================
       for(int l=0; l<numLoops; l++) {
+#ifdef HAVE_MUELU_TPETRA
+        Tpetra::Details::ProfilingRegion("MueLu Setup/Solve");
+#endif
 
         // Use Kokkos tuning, if requested
         if(kokkosTuning) {

@@ -63,14 +63,10 @@ class KokkosTuningInterface : public BaseClass {
 
 
   // Tuning information
-  std::vector<Kokkos::Tools::Experimental::VariableValue> in_variables;
+  mutable std::vector<Kokkos::Tools::Experimental::VariableValue> in_variables;
   mutable std::vector<Kokkos::Tools::Experimental::VariableValue> out_variables;
   std::vector<std::string> out_names;
   std::vector<std::string> out_typenames;
-
-  // FIXME: Dealing with Kokkos grabbing the pointer
-  std::vector<std::vector<int64_t> > int64_ranges;
-  std::vector<std::vector<double> > double_ranges;
 
 
 };
