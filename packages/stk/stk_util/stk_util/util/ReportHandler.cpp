@@ -109,7 +109,7 @@ void default_handler_exc(const char* expr,
 }
 
 void clean_error_handler(const char* expr,
-                         const std::string& location,
+                         const std::string& /*location*/,
                          std::ostringstream& message)
 {
   std::string error_msg = "";

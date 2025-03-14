@@ -49,16 +49,16 @@ TEST(ParallelConsistencyUtils, ProcBoundingBoxView1ProcSphere)
     GTEST_SKIP();
   }
 
-  using BoxType = stk::search::Sphere<double>;
-  using BoxIdentProcType = stk::search::BoxIdentProc<BoxType, IdentProcType>;
+  using SphereType = stk::search::Sphere<double>;
+  using SphereIdentProcType = stk::search::BoxIdentProc<SphereType, IdentProcType>;
 
   ExecutionSpace execSpace{};
 
   int myrank = stk::parallel_machine_rank(stk::parallel_machine_world());
-  Kokkos::View<BoxIdentProcType*, ExecutionSpace> boxIdentProcs("box_ident_procs", 2);
+  Kokkos::View<SphereIdentProcType*, ExecutionSpace> boxIdentProcs("box_ident_procs", 2);
   auto boxIdentProcsHost = Kokkos::create_mirror_view(boxIdentProcs);
-  boxIdentProcsHost(0) = BoxIdentProcType{BoxType({0, 0, 0}, 1), IdentProcType(0, myrank)};
-  boxIdentProcsHost(1) = BoxIdentProcType{BoxType({1, 0, 0}, 1), IdentProcType(1, myrank)};
+  boxIdentProcsHost(0) = SphereIdentProcType{SphereType({0, 0, 0}, 1), IdentProcType(0, myrank)};
+  boxIdentProcsHost(1) = SphereIdentProcType{SphereType({1, 0, 0}, 1), IdentProcType(1, myrank)};
   Kokkos::deep_copy(boxIdentProcs, boxIdentProcsHost);
 
   Kokkos::View<stk::search::Box<double>*, ExecutionSpace> procBoxes = stk::search::gather_all_processor_superset_domain_boxes(boxIdentProcs, execSpace, stk::parallel_machine_world());

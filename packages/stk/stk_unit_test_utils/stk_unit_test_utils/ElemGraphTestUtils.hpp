@@ -51,7 +51,7 @@ public:
     ElementDeathBulkDataTester(stk::mesh::MetaData &mesh_meta_data,
                                MPI_Comm comm,
                                enum stk::mesh::BulkData::AutomaticAuraOption auraOption) :
-      stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auraOption)
+      stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}), comm, auraOption)
     {
     }
 

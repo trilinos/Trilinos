@@ -56,7 +56,7 @@ public:
 
 private:
   /** Do not try to pack a pointer for global communication */
-  template<typename T> CommBuffer &pack( const T* value ) {
+  template<typename T> CommBuffer &pack( const T* /*value*/ ) {
     STK_ThrowAssertMsg(false,"CommBuffer::pack(const T* value) not allowed. Don't pack a pointer for communication!");
     return *this;
   }
@@ -401,7 +401,7 @@ CommBuffer &CommBuffer::peek( std::string& value )
 
 template<typename K, typename V>
 inline
-CommBuffer &CommBuffer::peek( std::map<K,V> & value )
+CommBuffer &CommBuffer::peek( std::map<K,V> & /*value*/ )
 {
   throw std::runtime_error("Peek not implemented for std::map");
 }

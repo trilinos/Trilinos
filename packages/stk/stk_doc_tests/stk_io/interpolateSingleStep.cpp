@@ -127,7 +127,7 @@ TEST(StkMeshIoBrokerHowTo, interpolateSingleStep)
       //+ VERIFICATION
       // The value of the "temperature" field at all nodes should be 1.0
       stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
-        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+        [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
           double *fieldData = stk::mesh::field_data(temperature, node);
           EXPECT_DOUBLE_EQ(1.0, *fieldData);
         });

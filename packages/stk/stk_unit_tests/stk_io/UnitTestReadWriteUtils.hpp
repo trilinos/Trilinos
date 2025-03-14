@@ -63,7 +63,7 @@ struct ExpectedValues
       globalElemCount(0)
   {}
 
-  ExpectedValues(std::vector<unsigned> numLocalEdgesPerProc_, unsigned numFaces_,
+  ExpectedValues(std::vector<unsigned> numLocalEdgesPerProc_, unsigned /*numFaces_*/,
                  unsigned numConnectedEdges_, unsigned globalEdgeCount_, unsigned globalElemCount_)
     : numLocalEdgesPerProc(numLocalEdgesPerProc_),
       numConnectedEdges(numConnectedEdges_),

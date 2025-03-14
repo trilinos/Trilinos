@@ -81,7 +81,7 @@ TEST(stkMeshHowTo, useSimpleFields)
   stk::mesh::BulkData& mesh = *bulkPtr;
   create_two_tet_element_mesh(mesh);
 
-  auto expectEqualZero = [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+  auto expectEqualZero = [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
     const double* displacementDataForNode = stk::mesh::field_data(displacementsField, node);
     for(unsigned i=0; i<vectorFieldLengthPerEntity; ++i) {
       EXPECT_EQ(0.0, displacementDataForNode[i]);
@@ -92,7 +92,7 @@ TEST(stkMeshHowTo, useSimpleFields)
 
   stk::mesh::field_fill(99.0, displacementsField);
 
-  auto expectEqual99 = [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+  auto expectEqual99 = [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
     const double* displacementDataForNode = stk::mesh::field_data(displacementsField, node);
     for(unsigned i=0; i<vectorFieldLengthPerEntity; ++i) {
       EXPECT_EQ(99.0, displacementDataForNode[i]);

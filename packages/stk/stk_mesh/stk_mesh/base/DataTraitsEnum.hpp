@@ -76,7 +76,7 @@ public:
     while ( x_end != x ) { *x++ = init ; }
   }
 
-  void destroy( void * v , std::size_t n ) const override {}
+  void destroy( void * /*v*/ , std::size_t /*n*/ ) const override {}
 
   void copy(void* vx, const void* vy, std::size_t n) const override
   {

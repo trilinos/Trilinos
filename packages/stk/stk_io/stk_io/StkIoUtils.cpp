@@ -290,7 +290,7 @@ bool storage_type_is_integer(const std::string &storage)
 }
 
 std::pair<size_t, stk::util::ParameterType::Type> parse_square_bracket_case(const std::string &storage,
-                                                                            stk::util::ParameterType::Type scalar,
+                                                                            stk::util::ParameterType::Type /*scalar*/,
                                                                             stk::util::ParameterType::Type vector)
 {
     std::pair<size_t, stk::util::ParameterType::Type> type = std::make_pair(0, stk::util::ParameterType::INVALID);

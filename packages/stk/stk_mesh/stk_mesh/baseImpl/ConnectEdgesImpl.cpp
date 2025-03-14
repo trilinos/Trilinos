@@ -53,7 +53,7 @@ struct connect_face_impl
   {}
 
   template <typename Topology>
-  void operator()(Topology t)
+  void operator()(Topology /*t*/)
   {
     stk::topology face_topo = m_bucket.topology();
 
@@ -131,7 +131,7 @@ struct connect_face_entity_impl
   {}
 
   template<typename Topology>
-  void operator()(Topology t)
+  void operator()(Topology /*t*/)
   {
     stk::topology face_topo = m_bulk.bucket(m_face).topology();
 

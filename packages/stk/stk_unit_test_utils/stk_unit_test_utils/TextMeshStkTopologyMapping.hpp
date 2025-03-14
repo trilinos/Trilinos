@@ -41,6 +41,8 @@ struct StkTopologyMapEntry {
 
   int num_nodes() const { return topology.num_nodes(); }
 
+  void operator=(const StkTopologyMapEntry &entry) { topology = entry.topology; }
+
   bool operator==(const StkTopologyMapEntry &rhs) const { return topology == rhs.topology; }
 
   bool operator!=(const StkTopologyMapEntry &rhs) const { return !(*this == rhs); }

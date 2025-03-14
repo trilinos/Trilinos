@@ -192,7 +192,7 @@ void add_interior_face_connectivity_info(const ElemElemGraph& eeGraph, const Gra
   insert_face_connectivity_info(sset, localElement2, localOrdinal2, localPermutation2, cache);
 }
 
-void add_non_local_face_connectivity_info(const Entity face, const SideSet& sset,
+void add_non_local_face_connectivity_info(const Entity /*face*/, const SideSet& sset,
                                           const unsigned numSideElements, const Entity* sideElements,
                                           const ConnectivityOrdinal * sideOrdinals,
                                           const Permutation * sidePermutations,

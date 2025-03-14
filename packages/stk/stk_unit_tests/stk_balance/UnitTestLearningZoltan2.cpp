@@ -154,7 +154,7 @@ public:
     return numWeightsPerVertex;
   }
 
-  virtual void getWeightsViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&weights, int &stride, int idx = 0) const
+  virtual void getWeightsViewOf(Zoltan2::MeshEntityType etype, const scalar_t *&weights, int &stride, [[maybe_unused]] int idx = 0) const
   {
     STK_ThrowRequireMsg(get_mapped_topology(etype)== m_primary_rank, "Error!");
     weights = NULL;
@@ -170,7 +170,7 @@ public:
 
   // Fill in 2nd adjs if needed
 
-  virtual bool avail2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const
+  virtual bool avail2ndAdjs(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/) const
   {
     bool avail2ndAdj = false;
     //if(get_mapped_topology(source)==m_primary_rank && get_mapped_topology(target)==m_secondary_rank)
@@ -178,26 +178,26 @@ public:
     return avail2ndAdj;
   }
 
-  virtual size_t getLocalNum2ndAdjs(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const
+  virtual size_t getLocalNum2ndAdjs(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/) const
   {
     // size of the adjacency list (for 2nd adjacency)
     return 0;
   }
 
-  virtual void get2ndAdjsView(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through, const BalanceLocalNumber *&offsets, const BalanceGlobalNumber *&adjacencyIds) const
+  virtual void get2ndAdjsView(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/, const BalanceLocalNumber *& /*offsets*/, const BalanceGlobalNumber *& /*adjacencyIds*/) const
   {
     //ThrowRequireMsg(get_mapped_topology(sourcetarget)==m_primary_rank && get_mapped_topology(through)==m_secondary_rank, "Error!");
     STK_ThrowRequireMsg(false, "Error!");
   }
 
-  virtual int getNumWeightsPer2ndAdj(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through) const
+  virtual int getNumWeightsPer2ndAdj(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/) const
   {
     //ThrowRequireMsg(get_mapped_topology(sourcetarget)==m_primary_rank && get_mapped_topology(through)==m_secondary_rank, "Error!");
     STK_ThrowRequireMsg(false, "Error!");
     return 1;
   }
 
-  virtual void get2ndAdjWeightsView(Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through, const scalar_t *&weights, int &stride, int idx) const
+  virtual void get2ndAdjWeightsView(Zoltan2::MeshEntityType /*sourcetarget*/, Zoltan2::MeshEntityType /*through*/, const scalar_t *& /*weights*/, int & /*stride*/, int /*idx*/) const
   {
     STK_ThrowRequireMsg(false, "Error!");
     // return edge weights (one per edge)
@@ -244,7 +244,7 @@ public:
     }
   }
 
-  virtual bool useDegreeAsWeightOf(Zoltan2::MeshEntityType etype, int idx) const
+  virtual bool useDegreeAsWeightOf(Zoltan2::MeshEntityType /*etype*/, int /*idx*/) const
   {
     return false;
   }

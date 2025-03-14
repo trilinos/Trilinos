@@ -146,7 +146,7 @@ void setup_buffers(const std::vector<int>& procs,
                    const std::vector<CommBufferV>& data,
                    std::vector<int>& counts,
                    std::vector<int>& displs,
-                   std::vector<unsigned char>& buf, int m_rank)
+                   std::vector<unsigned char>& buf, int /*m_rank*/)
 {
   counts.resize(procs.size());
   displs.resize(procs.size());

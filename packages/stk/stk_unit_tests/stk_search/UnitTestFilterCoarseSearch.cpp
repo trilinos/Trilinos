@@ -70,7 +70,7 @@ class SearchFilterTester : public ::testing::Test {
       return stk::search::ObjectOutsideDomainPolicy::EXTRAPOLATE;
     }
 
-    void find_parametric_coords(const EntityKey k, const double* coords, std::vector<double>& parametricCoords,
+    void find_parametric_coords(const EntityKey k, const double* /*coords*/, std::vector<double>& /*parametricCoords*/,
                                 double& parametricDistance, bool& isWithinParametricTolerance) const
     {
       // parametric tolerance applied here
@@ -78,19 +78,19 @@ class SearchFilterTester : public ::testing::Test {
       isWithinParametricTolerance = (parametricDistance <= 1.0 + m_owner.parametricTolerance);
     }
 
-    bool modify_search_outside_parametric_tolerance(const EntityKey k, const double* toCoords,
-                                                    std::vector<double>& parametricCoords,
-                                                    double& geometricDistanceSquared,
-                                                    bool& isWithinGeometricTolerance) const
+    bool modify_search_outside_parametric_tolerance(const EntityKey /*k*/, const double* /*toCoords*/,
+                                                    std::vector<double>& /*parametricCoords*/,
+                                                    double& /*geometricDistanceSquared*/,
+                                                    bool& /*isWithinGeometricTolerance*/) const
     {
       return false;
     }
 
-    const double* coord(const EntityKey k) const { return nullptr; }
+    const double* coord(const EntityKey /*k*/) const { return nullptr; }
 
-    double get_closest_geometric_distance_squared(const EntityKey k, const double* coords) const { return m_owner.geometric_dist.at(k); }
+    double get_closest_geometric_distance_squared(const EntityKey k, const double* /*coords*/) const { return m_owner.geometric_dist.at(k); }
 
-    double get_distance_squared_from_centroid(const EntityKey k, const double* coords) const { return m_owner.geometric_dist.at(k); }
+    double get_distance_squared_from_centroid(const EntityKey k, const double* /*coords*/) const { return m_owner.geometric_dist.at(k); }
 
     SearchFilterTester& m_owner;
   };
@@ -109,9 +109,9 @@ class SearchFilterTester : public ::testing::Test {
 
     double get_search_tolerance() const { return m_owner.geometricTolerance; }
 
-    const double* coord(int id) const { return nullptr; }
+    const double* coord(int /*id*/) const { return nullptr; }
 
-    double get_distance_from_nearest_node(int nodeId, const double* coords) { return 0.0; }
+    double get_distance_from_nearest_node(int /*nodeId*/, const double* /*coords*/) { return 0.0; }
 
     SearchFilterTester& m_owner;
   };

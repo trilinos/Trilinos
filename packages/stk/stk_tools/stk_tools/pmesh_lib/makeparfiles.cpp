@@ -458,7 +458,7 @@ void MakeParFile(const int& my_proc_id, const int& num_procs, const int& ncuts_x
   return; // Exit function
 }
 
-void getCubeCoord(int id, int &x_c, int &y_c, int &z_c, const int& n_x, const int& n_y, const int& n_z)
+void getCubeCoord(int id, int &x_c, int &y_c, int &z_c, const int& n_x, const int& n_y, const int& /*n_z*/)
 {
   z_c = id / (n_x * n_y);
   id -= z_c * n_x * n_y;
@@ -468,7 +468,7 @@ void getCubeCoord(int id, int &x_c, int &y_c, int &z_c, const int& n_x, const in
   return;
 }
 
-int getCubeId(int &x_c, int &y_c, int &z_c, const int& n_x, const int& n_y, const int& n_z)
+int getCubeId(int &x_c, int &y_c, int &z_c, const int& n_x, const int& n_y, const int& /*n_z*/)
 {
   int id = -1;
   // id = z_c * n_z * n_y + y_c * n_x + x_c;
@@ -622,7 +622,7 @@ int & num_node_cmaps)
 void GenerateMapIds(const int my_node_neighbor[26], int ctype[],
 int node_map_node_cnts[], const int num_nodes_neighbors[26],
 int node_cmap_ids[],
-int num_node_cmaps, int num_elem_cmaps,
+int num_node_cmaps, [[maybe_unused]] int num_elem_cmaps,
 int exoid, const int my_proc_id)
 {
   int counter = 0;
@@ -809,7 +809,7 @@ int CreateConnectivity(int conn[], int nelem_per_edge, int numnodes_per_edge)
 
 
 
-void CreateNodeLists( int numnodes_per_edge, int *nodelist1, int *nodelist2, int num_nodes_in_set)
+void CreateNodeLists( int numnodes_per_edge, int *nodelist1, int *nodelist2, [[maybe_unused]] int num_nodes_in_set)
 {
   int counter = 0;
   int lface = 0;
@@ -851,7 +851,7 @@ void CreateCoordTemplate(int numnodes_per_edge, double * x_coord, double dx,
 
 
 
-void FindNodalIdsOfFaceNeighbors(int q, int face_node_ids[], int z, int num_nodes_in_set)
+void FindNodalIdsOfFaceNeighbors(int q, int face_node_ids[], int z, [[maybe_unused]] int num_nodes_in_set)
 {
   int counter = 0;
   int qq = q - 1;

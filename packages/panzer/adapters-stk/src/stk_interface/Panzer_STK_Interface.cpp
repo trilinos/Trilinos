@@ -650,6 +650,22 @@ setupExodusFile(const std::string& filename,
                 const bool append_after_restart_time,
                 const double restart_time)
 {
+  std::vector<Ioss::Property> ioss_properties;
+  setupExodusFile(filename,
+                  ioss_properties,
+                  append,
+                  append_after_restart_time,
+                  restart_time);
+}
+
+void
+STK_Interface::
+setupExodusFile(const std::string& filename,
+                const std::vector<Ioss::Property>& ioss_properties,
+                const bool append,
+                const bool append_after_restart_time,
+                const double restart_time)
+{
   using std::runtime_error;
   using stk::io::StkMeshIoBroker;
   using stk::mesh::FieldVector;
@@ -664,6 +680,9 @@ setupExodusFile(const std::string& filename,
   meshData_->set_bulk_data(Teuchos::get_shared_ptr(bulkData_));
   Ioss::PropertyManager props;
   props.add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", "FALSE"));
+  for ( const auto& p : ioss_properties ) {
+    props.add(p);
+  }
   if (append) {
     if (append_after_restart_time) {
       meshIndex_ = meshData_->create_output_mesh(filename, stk::io::APPEND_RESULTS,

@@ -196,7 +196,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_flagInputFile_positionalOutputD
 TEST_F(BalanceCommandLine, createBalanceSettings_flagOutputDir_positionalInputFile)
 {
   std::string outputDir("outputDir");
-  std::vector<const char*> args = {get_exec_name().c_str(), "-o", outputDir.c_str(), infile.c_str()};
+  std::string execName = get_exec_name();
+  std::vector<const char*> args = {execName.c_str(), "-o", outputDir.c_str(), infile.c_str()};
 
   const stk::balance::BalanceSettings& balanceSettings = parse_args(args);
 
@@ -207,7 +208,8 @@ TEST_F(BalanceCommandLine, createBalanceSettings_flagOutputDir_positionalInputFi
 TEST_F(BalanceCommandLine, createBalanceSettings_positionalInputFile_flagOutputDir)
 {
   std::string outputDir("outputDir");
-  std::vector<const char*> args = {get_exec_name().c_str(), infile.c_str(), "-o", outputDir.c_str()};
+  std::string execName = get_exec_name();
+  std::vector<const char*> args = {execName.c_str(), infile.c_str(), "-o", outputDir.c_str()};
 
   const stk::balance::BalanceSettings& balanceSettings = parse_args(args);
 

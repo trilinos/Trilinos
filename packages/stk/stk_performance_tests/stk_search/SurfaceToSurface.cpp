@@ -673,7 +673,7 @@ using MemSpace = stk::ngp::ExecSpace::memory_space;
 template<typename BoxIdentType>
 void run_imported_surface_to_surface_test_local_with_views_rawArborX(const std::string& boxFileBaseName,
                                                            const int numIterations,
-                                                           stk::search::SearchMethod searchMethod)
+                                                           stk::search::SearchMethod /*searchMethod*/)
 {
   using BoxType = typename BoxIdentType::box_type;
   using IdentType = typename BoxIdentType::second_type;
@@ -717,7 +717,7 @@ void run_imported_surface_to_surface_test_local_with_views_rawArborX(const std::
   for (unsigned run = 0; run < NUM_RUNS; ++run) {
     batchTimer.start_batch_timer();
     ExecSpace execSpace{};
-    for (int i = 0; i < numIterations; ++i) {
+    for (int iter = 0; iter < numIterations; ++iter) {
       Kokkos::Profiling::pushRegion("Raw ArborX");
       Kokkos::View<int *, MemSpace> indices("ArborX::indices", 0);
       Kokkos::View<int *, MemSpace> offsets("ArborX::offsets", 0);

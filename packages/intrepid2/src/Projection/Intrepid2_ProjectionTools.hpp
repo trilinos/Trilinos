@@ -524,9 +524,14 @@ public:
         auto w0_host = Kokkos::create_mirror_view(Kokkos::subview(work, 0, Kokkos::ALL()));
 
         //computing QR of A0. QR is saved in A0 and tau0
-        KokkosBatched::SerialQR_Internal::invoke(A0_host.extent(0), A0_host.extent(1),
-            A0_host.data(), A0_host.stride_0(), A0_host.stride_1(),
-            tau0_host.data(), tau0_host.stride_0(), w0_host.data());
+#if KOKKOS_VERSION >= 40599
+        KokkosBatched::Impl::SerialQR_Internal::invoke
+#else
+        KokkosBatched::SerialQR_Internal::invoke
+#endif
+            (A0_host.extent(0), A0_host.extent(1),
+             A0_host.data(), A0_host.stride_0(), A0_host.stride_1(),
+             tau0_host.data(), tau0_host.stride_0(), w0_host.data());
 
         Kokkos::deep_copy(A0_device, A0_host);
         Kokkos::deep_copy(A0, A0_device);
@@ -580,8 +585,13 @@ public:
               A(i,j) = A(j,i);
 
           //computing QR of A. QR is saved in A and tau
-          KokkosBatched::SerialQR_Internal::invoke(A.extent(0), A.extent(1),
-              A.data(), A.stride_0(), A.stride_1(), tau.data(), tau.stride_0(), w.data());
+#if KOKKOS_VERSION >= 40599
+          KokkosBatched::Impl::SerialQR_Internal::invoke
+#else
+          KokkosBatched::SerialQR_Internal::invoke
+#endif
+              (A.extent(0), A.extent(1),
+               A.data(), A.stride_0(), A.stride_1(), tau.data(), tau.stride_0(), w.data());
 
           auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
 

@@ -167,7 +167,7 @@ public:
   bool remove_connectivity(unsigned bktOrdinal,
                            Entity entity,
                            ConnectivityOrdinal ordinal,
-                           Permutation perm = INVALID_PERMUTATION)
+                           [[maybe_unused]] Permutation perm = INVALID_PERMUTATION)
   {
     IndexRange& indices = m_offsets[bktOrdinal];
     UpwardConnIndexType idx = indices.second;

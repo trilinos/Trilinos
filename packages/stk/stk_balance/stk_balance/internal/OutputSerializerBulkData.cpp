@@ -47,7 +47,7 @@ OutputSerializerBulkData::OutputSerializerBulkData(ParallelMachine parallel)
 {
 }
 
-OutputSerializerBulkData::OutputSerializerBulkData(unsigned spatialDim, ParallelMachine parallel)
+OutputSerializerBulkData::OutputSerializerBulkData(unsigned /*spatialDim*/, ParallelMachine parallel)
   : BulkData(std::make_shared<stk::mesh::MetaData>(), parallel, stk::mesh::BulkData::NO_AUTO_AURA
 #ifdef SIERRA_MIGRATION
         , true

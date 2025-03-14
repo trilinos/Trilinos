@@ -574,7 +574,7 @@ void insert_into_group(const PairwiseSideInfoVector& infoVec, HingeGroupVector& 
   }
 }
 
-void insert_into_group(const PairwiseSideInfoVector& node1InfoVec, const PairwiseSideInfoVector& node2InfoVec,
+void insert_into_group(const PairwiseSideInfoVector& node1InfoVec, const PairwiseSideInfoVector& /*node2InfoVec*/,
                        const stk::mesh::EntityVector& commonElem, HingeGroupVector& groupVec)
 {
   for(const PairwiseSideInfo& info : node1InfoVec) {
@@ -785,7 +785,7 @@ HingeNodeVector get_cyclic_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNod
   return cyclicHingeNodes;
 }
 
-void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, const HingeNodeVector& prunedHingeNodes)
+void prune_hinge_nodes(const stk::mesh::BulkData& /*bulk*/, HingeNodeVector& hingeNodes, const HingeNodeVector& prunedHingeNodes)
 {
   for(auto node : prunedHingeNodes) {
     auto it = std::find(hingeNodes.begin(), hingeNodes.end(), node);

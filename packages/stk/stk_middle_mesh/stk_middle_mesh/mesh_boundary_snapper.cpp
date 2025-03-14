@@ -209,8 +209,8 @@ void MeshBoundarySnapper::check_zero_length_edges(VertEdgePair p)
   }
 }
 
-utils::Point MeshBoundarySnapper::get_next_point(VertEdgePair p1Start, VertEdgePair p1Current, VertEdgePair p2Start,
-                                                 VertEdgePair p2Current)
+utils::Point MeshBoundarySnapper::get_next_point(VertEdgePair p1Start, VertEdgePair p1Current, VertEdgePair /*p2Start*/,
+                                                 VertEdgePair /*p2Current*/)
 {
   utils::Point p1Beginning = p1Start.first->get_point_orig(0);
   utils::Point p1End       = get_other_vert(p1Current.first, p1Current.second)->get_point_orig(0);

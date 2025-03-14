@@ -46,7 +46,7 @@ void verify_no_graph_edges(const stk::mesh::BulkData& bulk)
 {
   const stk::mesh::ElemElemGraph& eeGraph = bulk.get_face_adjacent_element_graph();
   stk::mesh::for_each_entity_run(bulk, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(),
-  [&eeGraph](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem) {
+  [&eeGraph](const stk::mesh::BulkData& /*mesh*/, stk::mesh::Entity elem) {
     stk::mesh::impl::LocalId elemLocalId = eeGraph.get_local_element_id(elem);
     stk::mesh::GraphEdgesForElement graphEdges = eeGraph.get_edges_for_element(elemLocalId);
     EXPECT_EQ(0u, graphEdges.size());

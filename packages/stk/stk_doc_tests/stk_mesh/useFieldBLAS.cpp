@@ -90,7 +90,7 @@ TEST(stkMeshHowTo, useFieldBLAS)
 
   const double expectedVal = 10.0 + alpha*99.0;
 
-  auto expectEqualVal = [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+  auto expectEqualVal = [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
     const double* velocityDataForNode = stk::mesh::field_data(velocityField, node);
     for(unsigned i=0; i<numValuesPerNode; ++i) {
       EXPECT_NEAR(expectedVal, velocityDataForNode[i], 1.e-8);

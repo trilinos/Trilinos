@@ -177,8 +177,8 @@ inline bool is_correct_sub_topology(const stk::mesh::BulkData &mesh,
 template<typename INT>
 void fill_element_and_side_ids_from_connectivity(stk::io::OutputParams &params,
                                                  const stk::mesh::Part * part,
-                                                 const stk::mesh::Part *parentElementBlock,
-                                                 stk::topology stk_element_topology,
+                                                 const stk::mesh::Part * /*parentElementBlock*/,
+                                                 stk::topology /*stk_element_topology*/,
                                                  stk::mesh::EntityVector &sides,
                                                  std::vector<INT>& elem_side_ids,
                                                  INT sideOrdOffset = 0)

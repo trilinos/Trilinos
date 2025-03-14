@@ -221,7 +221,7 @@ inline std::ostream & operator<<(std::ostream & os, const TempLoc & loc)
 
 template<class T, class CompareOp, class IdType>
 inline
-void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * datatype)
+void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * /*datatype*/)
 {
   CompareOp op;
   Loc<T, IdType> *Loc_in = static_cast<Loc<T, IdType> *>(invec);

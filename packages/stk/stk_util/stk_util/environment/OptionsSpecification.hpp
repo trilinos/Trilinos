@@ -74,7 +74,7 @@ struct Option
   bool isImplicit;
   int position;
 
-  virtual void store(const std::string& val) const {}
+  virtual void store(const std::string& /* val */) const {}
 };
 
 template<typename T>
@@ -178,7 +178,7 @@ public:
   template<typename T>
   OptionsSpecification& operator()(const std::string& spec,
                                    const std::string& description,
-                                   ValueType<T> valueType)
+                                   ValueType<T> /*valueType*/)
   {
     std::string defaultValue("");
     const bool isFlag = false;
@@ -300,8 +300,8 @@ private:
                                  const std::string& description,
                                  const T& defaultValue,
                                  T* targetToStoreResult,
-                                 bool isFlag,
-                                 bool isRequired,
+                                 bool /*isFlag*/,
+                                 bool /*isRequired*/,
                                  int position)
   {
     std::string optionName = get_substring_before_comma(spec);

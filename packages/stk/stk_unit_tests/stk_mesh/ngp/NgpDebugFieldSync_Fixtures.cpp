@@ -55,7 +55,7 @@ std::vector<std::string> split_lines(const std::string &s) {
   return elems;
 }
 
-void extract_warning(std::string & stdoutString, int numExpectedOccurrences, const std::string & warningString)
+void extract_warning(std::string & stdoutString, [[maybe_unused]] int numExpectedOccurrences, const std::string & warningString)
 {
   std::vector<std::string> warningLines = split_lines(stdoutString);
   std::string newStdoutString;
@@ -98,7 +98,7 @@ void check_no_warnings(const std::string & stdoutString)
   }
 }
 
-void check_contains_file_name(const std::string & stdoutString, const std::string & fileName)
+void check_contains_file_name([[maybe_unused]] const std::string & stdoutString, [[maybe_unused]] const std::string & fileName)
 {
 #if defined(STK_USE_DEVICE_MESH) && defined(HOST_USE_LOCATION_BUILTINS)
   const size_t fileNameLoc = stdoutString.find(fileName);
@@ -107,7 +107,7 @@ void check_contains_file_name(const std::string & stdoutString, const std::strin
 #endif
 }
 
-void check_contains_a_line_number(const std::string & stdoutString)
+void check_contains_a_line_number([[maybe_unused]] const std::string & stdoutString)
 {
 #if defined(STK_USE_DEVICE_MESH) && defined(HOST_USE_LOCATION_BUILTINS)
   const size_t colonLoc = stdoutString.find(":");

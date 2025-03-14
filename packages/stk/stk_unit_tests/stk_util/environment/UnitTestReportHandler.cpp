@@ -95,7 +95,7 @@ TEST(UnitTestReportHandler, UnitTest)
 namespace
 {
 template <typename T>
-bool condition_test(const T& val)
+bool condition_test(const T& /*val*/)
 {
   return stk::impl::is_valid_throw_condition<T>::value;
 }

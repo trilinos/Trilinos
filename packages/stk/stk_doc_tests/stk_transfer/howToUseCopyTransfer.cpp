@@ -74,14 +74,14 @@ void change_mesh_decomposition(stk::mesh::BulkData& mesh)
 
   stk::mesh::for_each_entity_run_no_threads(mesh, stk::topology::ELEM_RANK,
                                             mesh.mesh_meta_data().locally_owned_part(),
-                                            [&entityProcPairs, &otherProc](const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& elem)
+                                            [&entityProcPairs, &otherProc](const stk::mesh::BulkData& /*bulkData*/, const stk::mesh::Entity& elem)
   {
     entityProcPairs.emplace_back(elem, otherProc);
   });
 
   stk::mesh::for_each_entity_run_no_threads(mesh, stk::topology::NODE_RANK,
                                  mesh.mesh_meta_data().locally_owned_part(),
-                                 [&entityProcPairs, &otherProc](const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& node)
+                                 [&entityProcPairs, &otherProc](const stk::mesh::BulkData& /*bulkData*/, const stk::mesh::Entity& node)
   {
     entityProcPairs.emplace_back(node, otherProc);
   });

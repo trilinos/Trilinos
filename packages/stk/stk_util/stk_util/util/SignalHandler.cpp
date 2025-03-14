@@ -44,7 +44,7 @@
 #include <vector>                      // for vector, vector<>::const_iterator
 
 extern "C" {
-  static void signal_handler(int signal, siginfo_t *sip, void *ucp)
+  static void signal_handler(int signal, siginfo_t * /*sip*/, void * /*ucp*/)
   {
     // This routine is called for all signals...
     // Just a C-callable wrapper around a call to the true signal handler...

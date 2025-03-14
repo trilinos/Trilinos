@@ -69,7 +69,7 @@ class Bool {
     return (reinterpret_cast<const double*>(&tmp))[i];
   }
 #elif defined(__CUDACC__) || defined(__HIPCC__) || defined(USE_STK_SIMD_NONE)
-  STK_MATH_FORCE_INLINE double operator[](int i) const {
+  STK_MATH_FORCE_INLINE double operator[](int /*i*/) const {
     return _data.get() ? 1.0 : 0.0;
   }
 #else

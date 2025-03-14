@@ -135,7 +135,7 @@ void ActiveVertContainer::create_local_verts_used_by_remote_patches(int patchIdx
 
 }
 
-void ActiveVertContainer::merge_patches(int patchIdx, int senderRank, RemoteActiveVertData& remoteData)
+void ActiveVertContainer::merge_patches(int patchIdx, int /*senderRank*/, RemoteActiveVertData& remoteData)
 {    
   // add vertices
   opt::impl::ActiveVertData& patch = m_activeVerts[patchIdx];

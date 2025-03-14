@@ -53,6 +53,8 @@
 #include <BelosTpetraAdapter.hpp>
 #endif
 
+#include "Kokkos_Core.hpp"
+
 namespace MueLu {
 
 /*!
@@ -95,7 +97,7 @@ class ShiftedLaplacian : public BaseClass {
     , Nullspace_("constant")
     , numLevels_(5)
     , coarseGridSize_(100)
-    , omega_(2.0 * M_PI)
+    , omega_(2.0 * Kokkos::numbers::pi_v<double>)
     , iters_(500)
     , blksize_(1)
     , tol_(1.0e-4)

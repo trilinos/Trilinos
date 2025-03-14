@@ -362,7 +362,7 @@ get_param(
 void
 set_param(
   const char *          option,
-  const std::string &   value) {
+  const std::string &   /*value*/) {
 
   int argc = 1;
   const char *s = std::strcpy(new char[std::strlen(option) + 1], option);

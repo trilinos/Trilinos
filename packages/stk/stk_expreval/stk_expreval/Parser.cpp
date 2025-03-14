@@ -509,7 +509,7 @@ parseTernary(Eval & eval,
 
 Node *
 parseUnary(Eval & eval,
-           LexemVector::const_iterator from,
+           LexemVector::const_iterator /*from*/,
            LexemVector::const_iterator unary_it,
            LexemVector::const_iterator to)
 {
@@ -538,7 +538,7 @@ parseFunction(Eval & eval,
               LexemVector::const_iterator from,
               LexemVector::const_iterator lparen,
               LexemVector::const_iterator rparen,
-              LexemVector::const_iterator to)
+              LexemVector::const_iterator /*to*/)
 {
   using CFunctionIterPair = std::pair<CFunctionMap::iterator, CFunctionMap::iterator>;
 
@@ -592,7 +592,7 @@ parseIndex(Eval & eval,
            LexemVector::const_iterator from,
            LexemVector::const_iterator lbrack,
            LexemVector::const_iterator rbrack,
-           LexemVector::const_iterator to)
+           LexemVector::const_iterator /*to*/)
 {
   if ((*from).getToken() != TOKEN_IDENTIFIER) {
     throw std::runtime_error("syntax error parsing array");

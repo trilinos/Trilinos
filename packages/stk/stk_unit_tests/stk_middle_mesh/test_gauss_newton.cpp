@@ -12,7 +12,7 @@ TEST(GaussNewton, Quadratic)
       residuals[i] = x[i]*x[i];
   };
 
-  auto jac = [](const std::vector<double>& x, Matrix<double>& jac)
+  auto jacTest = [](const std::vector<double>& x, Matrix<double>& jac)
   {
     jac.fill(0);
     for (int i=0; i < 2; ++i)
@@ -22,7 +22,7 @@ TEST(GaussNewton, Quadratic)
   GaussNewton gaussNewton(2, 2, 1e-40, 100);
 
   std::vector<double> x0 = {1, 2};
-  gaussNewton.solve(f, jac, x0);
+  gaussNewton.solve(f, jacTest, x0);
 
   EXPECT_NEAR(x0[0], 0, 1e-12);
   EXPECT_NEAR(x0[1], 0, 1e-12);
@@ -38,7 +38,7 @@ TEST(GaussNewton, RectangularDegenerate)
     residuals[2] = 1.5 - x[0] - x[1];
   };
 
-  auto jac = [](const std::vector<double>& x, Matrix<double>& jac)
+  auto jacTest = [](const std::vector<double>& /*x*/, Matrix<double>& jac)
   {
     jac.fill(0);
     jac(0, 0) = 1;
@@ -49,7 +49,7 @@ TEST(GaussNewton, RectangularDegenerate)
   GaussNewton gaussNewton(3, 2, 1e-40, 100);
 
   std::vector<double> x0 = {1, 2};
-  gaussNewton.solve(f, jac, x0);
+  gaussNewton.solve(f, jacTest, x0);
 
   EXPECT_NEAR(x0[0], 0.5, 1e-12);
   EXPECT_NEAR(x0[1], 1.0, 1e-12);

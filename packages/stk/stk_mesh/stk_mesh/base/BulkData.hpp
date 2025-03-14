@@ -517,16 +517,6 @@ public:
   virtual void generate_new_entities(const std::vector<size_t>& requests, // Mod Mark
       std::vector<Entity>& requested_entities);
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after July 31 2024
-  STK_DEPRECATED_MSG("Use function in FindPermutation.hpp") Permutation find_permutation( const stk::topology &hr_entity_topo,
-                                Entity const *higher_rank_entity_nodes,
-                                const stk::topology &side_topo,
-                                Entity const *side_nodes,
-                                unsigned side_ordinal) const;
-
-  STK_DEPRECATED_MSG("Use function in FindPermutation.hpp") bool check_permutation(Entity entity, Entity rel_entity, unsigned rel_ordinal, Permutation expected) const;
-#endif
-
   //------------------------------------
   /** \brief  Declare a relation and its converse between
    *          entities in the same mesh.
@@ -583,15 +573,6 @@ public:
   bool destroy_relation( Entity e_from , // Mod Mark
                          Entity e_to,
                          const RelationIdentifier local_id );
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Oct 2024
-  // Check if entity has a specific relation to an entity of subcell_rank
-  STK_DEPRECATED bool relation_exist( const Entity entity, EntityRank subcell_rank, RelationIdentifier subcell_id );
-#endif
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2024
-  STK_DEPRECATED inline VolatileFastSharedCommMapOneRank const& volatile_fast_shared_comm_map(EntityRank rank) const;
-#endif
 
   template <typename NgpMemSpace>
   inline NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(EntityRank rank, int proc) const;
@@ -1240,7 +1221,7 @@ protected: //functions
   //reserves space for a new entity, or reclaims space from a previously-deleted entity
   virtual Entity generate_new_entity(unsigned preferred_offset = 0);
 
-  void entity_getter_debug_check(Entity entity) const
+  void entity_getter_debug_check([[maybe_unused]] Entity entity) const
   {
     STK_ThrowAssertMsg(in_index_range(entity) , "Entity has out-of-bounds offset: " << entity.local_offset() << ", maximum offset is: " << m_entity_keys.size() - 1);
   }
@@ -1295,10 +1276,11 @@ protected: //functions
 
   virtual void notify_finished_mod_end();
 
-  void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities);
+  void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities, stk::mesh::EntityRank rank);
   void use_nodes_to_resolve_sharing(stk::mesh::EntityRank rank, std::vector<Entity>& shared_new, bool onlyConsiderSoloSides = false);
   void change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys);
-  void resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
+  void resolve_parallel_side_connections(stk::mesh::EntityRank rank,
+                                         std::vector<SideSharingData>& sideSharingDataToSend,
                                          std::vector<SideSharingData>& sideSharingDataReceived);
   void add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities);
 
@@ -2088,19 +2070,6 @@ void BulkData::internal_update_ngp_fast_comm_maps() const
     }
     ngpHostData->volatileFastSharedCommMapSyncCount = synchronized_count();
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2024
-STK_DEPRECATED inline VolatileFastSharedCommMapOneRank const&
-BulkData::volatile_fast_shared_comm_map(EntityRank rank) const
-{
-  STK_ThrowAssert(this->in_synchronized_state());
-  STK_ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot share entities of rank: " << rank);
-  if (m_volatile_fast_shared_comm_map_sync_count < synchronized_count()) {
-    internal_update_fast_comm_maps();
-  }
-  return m_volatile_fast_shared_comm_map[rank];
-}
-#endif
 
 template <typename NgpMemSpace>
 inline NgpCommMapIndicesHostMirrorT<NgpMemSpace>

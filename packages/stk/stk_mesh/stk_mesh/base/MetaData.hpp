@@ -786,8 +786,8 @@ template <typename T>
 inline
 Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
                                const std::string & name,
-                               const char * fileName,
-                               int lineNumber) const
+                               const char * /*fileName*/,
+                               int /*lineNumber*/) const
 {
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to MetaData::get_field(), "
@@ -812,8 +812,8 @@ Field<T> &
 MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
                         const std::string & name,
                         unsigned number_of_states,
-                        const char * fileName,
-                        int lineNumber)
+                        const char * /*fileName*/,
+                        int /*lineNumber*/)
 {
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to MetaData::declare_field(), "
@@ -1091,8 +1091,8 @@ is_auto_declared_part(const Part &part)
 template <typename T>
 Field<T> * get_field_by_name(const std::string & name,
                              const MetaData & metaData,
-                             const char * fileName = HOST_DEBUG_FILE_NAME,
-                             int lineNumber = HOST_DEBUG_LINE_NUMBER)
+                             [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
+                             [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to get_field_by_name(), "

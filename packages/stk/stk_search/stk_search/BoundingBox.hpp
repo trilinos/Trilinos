@@ -312,7 +312,7 @@ inline bool intersects(Box<T1> const& b, Plane<T2> const& p)
 }
 
 template <typename T, typename U>
-inline void scale_by(Point<T> &p, U const& mult_fact, U const& add_fact = 0)
+inline void scale_by(Point<T> & /*p*/, U const& /*mult_fact*/, [[maybe_unused]] U const& add_fact = 0)
 {
 }
 

@@ -169,7 +169,7 @@ int StkMeshZoltanAdapter::getNumWeightsPer2ndAdj(Zoltan2::MeshEntityType sourcet
 void StkMeshZoltanAdapter::get2ndAdjWeightsView(Zoltan2::MeshEntityType sourcetarget,
                                                 Zoltan2::MeshEntityType through,
                                                 const scalar_t *&weights,
-                                                int &stride, int idx) const
+                                                int &stride, int /*idx*/) const
 {
   weights = NULL;
   stride = 1;

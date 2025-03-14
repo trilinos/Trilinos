@@ -110,7 +110,7 @@ namespace io {
     stk::util::filename_substitution(mesh_filename);
     m_database = std::shared_ptr<Ioss::DatabaseIO>(Ioss::IOFactory::create(mesh_type, mesh_filename,
  	    				                                                             db_usage, communicator,
-      	    				                                                       properties), [](auto pointerWeWontDelete){});
+      	    				                                                       properties), [](auto /*pointerWeWontDelete*/){});
 
     if (m_database.get() == nullptr || !m_database->ok(true)) {
       delete m_database.get();
@@ -120,7 +120,7 @@ namespace io {
   }
 
   InputFile::InputFile(std::shared_ptr<Ioss::Region> ioss_input_region)
-    : m_database(ioss_input_region->get_database(), [](auto pointerWeWontDelete){}), m_region(ioss_input_region),
+    : m_database(ioss_input_region->get_database(), [](auto /*pointerWeWontDelete*/){}), m_region(ioss_input_region),
 	    m_startupTime(0.0),
 	    m_periodLength(0.0),
 	    m_scaleTime(1.0),

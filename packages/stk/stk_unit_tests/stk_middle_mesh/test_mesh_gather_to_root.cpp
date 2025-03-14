@@ -145,9 +145,9 @@ TEST_F(MeshGatherToRootTester, SplitCommRootProc0)
   mesh::impl::MeshSpec spec = {.numelX = 4, .numelY = 4, .xmin = 0, .xmax = 1, .ymin = 0, .ymax = 1};
 
   int color = utils::impl::comm_rank(MPI_COMM_WORLD) == utils::impl::comm_size(MPI_COMM_WORLD) - 1 ? MPI_UNDEFINED : 0;
-  MPI_Comm meshComm;
-  MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshComm);
-  setup(MPI_COMM_WORLD, meshComm, rootRank, spec);
+  MPI_Comm meshCommTest;
+  MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshCommTest);
+  setup(MPI_COMM_WORLD, meshCommTest, rootRank, spec);
   runtest(1e-13);
 }
 
@@ -160,9 +160,9 @@ TEST_F(MeshGatherToRootTester, SplitCommRootProc1)
   mesh::impl::MeshSpec spec = {.numelX = 4, .numelY = 4, .xmin = 0, .xmax = 1, .ymin = 0, .ymax = 1};
 
   int color = utils::impl::comm_rank(MPI_COMM_WORLD) == utils::impl::comm_size(MPI_COMM_WORLD) - 1 ? MPI_UNDEFINED : 0;
-  MPI_Comm meshComm;
-  MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshComm);
-  setup(MPI_COMM_WORLD, meshComm, rootRank, spec);
+  MPI_Comm meshCommTest;
+  MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshCommTest);
+  setup(MPI_COMM_WORLD, meshCommTest, rootRank, spec);
   runtest(1e-13);
 }
 
@@ -176,9 +176,9 @@ TEST_F(MeshGatherToRootTester, SplitCommRootProc0ReversedRanks)
 
   int color = utils::impl::comm_rank(MPI_COMM_WORLD) == utils::impl::comm_size(MPI_COMM_WORLD) - 1 ? MPI_UNDEFINED : 0;
   int key   = utils::impl::comm_size(MPI_COMM_WORLD) - utils::impl::comm_rank(MPI_COMM_WORLD);
-  MPI_Comm meshComm;
-  MPI_Comm_split(MPI_COMM_WORLD, color, key, &meshComm);
-  setup(MPI_COMM_WORLD, meshComm, rootRank, spec);
+  MPI_Comm meshCommTest;
+  MPI_Comm_split(MPI_COMM_WORLD, color, key, &meshCommTest);
+  setup(MPI_COMM_WORLD, meshCommTest, rootRank, spec);
   runtest(1e-13);
 }
 
@@ -191,9 +191,9 @@ TEST_F(MeshGatherToRootTester, SplitCommNotIncludingRootProc0)
   mesh::impl::MeshSpec spec = {.numelX = 4, .numelY = 4, .xmin = 0, .xmax = 1, .ymin = 0, .ymax = 1};
 
   int color = utils::impl::comm_rank(MPI_COMM_WORLD) == rootRank ? MPI_UNDEFINED : 0;
-  MPI_Comm meshComm;
-  MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshComm);
-  setup(MPI_COMM_WORLD, meshComm, rootRank, spec);
+  MPI_Comm meshCommTest;
+  MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshCommTest);
+  setup(MPI_COMM_WORLD, meshCommTest, rootRank, spec);
   runtest(1e-13);
 }
 
@@ -206,9 +206,9 @@ TEST_F(MeshGatherToRootTester, SplitCommNotIncludingRootProc1)
   mesh::impl::MeshSpec spec = {.numelX = 4, .numelY = 4, .xmin = 0, .xmax = 1, .ymin = 0, .ymax = 1};
 
   int color = utils::impl::comm_rank(MPI_COMM_WORLD) == rootRank ? MPI_UNDEFINED : 0;
-  MPI_Comm meshComm;
-  MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshComm);
-  setup(MPI_COMM_WORLD, meshComm, rootRank, spec);
+  MPI_Comm meshCommTest;
+  MPI_Comm_split(MPI_COMM_WORLD, color, 0, &meshCommTest);
+  setup(MPI_COMM_WORLD, meshCommTest, rootRank, spec);
   runtest(1e-13);
 }
 

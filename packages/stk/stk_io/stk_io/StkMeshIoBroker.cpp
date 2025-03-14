@@ -294,7 +294,7 @@ void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bul
     m_bulkData = arg_bulk_data;
 
     if (m_metaData == nullptr) {
-        m_metaData = std::shared_ptr<stk::mesh::MetaData>(&(bulk_data().mesh_meta_data()), [](auto pointerWeWontDelete){});
+        m_metaData = std::shared_ptr<stk::mesh::MetaData>(&(bulk_data().mesh_meta_data()), [](auto /*pointerWeWontDelete*/){});
     }
 
     m_communicator = m_bulkData->parallel();
@@ -306,7 +306,7 @@ void StkMeshIoBroker::replace_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg
     STK_ThrowRequireMsg(m_bulkData, "There is  no BulkData to replace.");
     STK_ThrowRequireMsg(m_metaData, "MetaData must be non-null when calling StkMeshIoBroker::replace_bulk_data.");
 
-    std::shared_ptr<stk::mesh::MetaData> new_meta_data(&(arg_bulk_data->mesh_meta_data()), [](auto pointerWeWontDelete){});
+    std::shared_ptr<stk::mesh::MetaData> new_meta_data(&(arg_bulk_data->mesh_meta_data()), [](auto /*pointerWeWontDelete*/){});
     STK_ThrowErrorMsgIf(m_metaData.get() != new_meta_data.get(),
                         "MetaData for both new and old BulkData must be the same.");
 
@@ -522,7 +522,7 @@ void StkMeshIoBroker::create_input_mesh()
         throw std::runtime_error( msg.str() );
       };
     } else {
-      handler = [](stk::mesh::Part &part) { };
+      handler = [](stk::mesh::Part & /*part*/) { };
     }
 
     process_nodeblocks(*region,    meta_data());

@@ -18,7 +18,7 @@ ModificationSummary::~ModificationSummary()
 {
 }
 
-void ModificationSummary::track_induced_parts(stk::mesh::Entity e_from, stk::mesh::Entity e_to, const stk::mesh::OrdinalVector& add_parts, const stk::mesh::OrdinalVector& emptyParts)
+void ModificationSummary::track_induced_parts(stk::mesh::Entity e_from, stk::mesh::Entity e_to, const stk::mesh::OrdinalVector& /*add_parts*/, const stk::mesh::OrdinalVector& /*emptyParts*/)
 {
     if ( isValid(e_from) && isValid(e_to) )
     {

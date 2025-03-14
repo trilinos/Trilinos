@@ -33,7 +33,7 @@ void read_stk_mesh(const std::string& fname, stk::mesh::BulkData& bulkData)
   reader.populate_field_data();
 }
 
-TEST(StkInterface, twoToThree)
+TEST(StkInterface, twoToThree_externalFile)
 {
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();

@@ -327,7 +327,7 @@ void copy_all_field_data(const stk::mesh::BulkData &inputBulk, stk::mesh::Select
   }
 }
 
-void copy_bucket_entities(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector inputSelector, const stk::mesh::Bucket *bucket, stk::mesh::BulkData &outputBulk)
+void copy_bucket_entities(const stk::mesh::BulkData &inputBulk, stk::mesh::Selector /*inputSelector*/, const stk::mesh::Bucket *bucket, stk::mesh::BulkData &outputBulk)
 {
   stk::mesh::EntityRank rank = bucket->entity_rank();
   stk::mesh::PartVector newParts = get_new_parts(bucket, outputBulk);

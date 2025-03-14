@@ -112,7 +112,7 @@ namespace stk {
                           const stk::mesh::Part &part);
 
     stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
-                                          const stk::mesh::MetaData &meta)
+                                          const stk::mesh::MetaData & /*meta*/)
     {
       switch (entity->type()) {
       case Ioss::NODEBLOCK:
@@ -1408,7 +1408,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
     }
 
-    void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
+    void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta, TopologyErrorHandler /*handler*/)
     {
       if (include_entity(entity)) {
         stk::mesh::Part & part = declare_stk_part(entity, meta);
@@ -1513,7 +1513,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         }
     }
 
-    bool is_valid_nodeset_field(const stk::mesh::Part &part,
+    bool is_valid_nodeset_field(const stk::mesh::Part & /*part*/,
                                        const stk::mesh::EntityRank partType,
                                        Ioss::GroupingEntity *entity,
                                        FieldAndName &namedField,
@@ -1667,7 +1667,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     }
 
     void getNamedFields(const stk::mesh::MetaData &meta,
-                        Ioss::GroupingEntity *ioEntity,
+                        Ioss::GroupingEntity * /*ioEntity*/,
                         const Ioss::Field::RoleType filterRole,
                         std::vector<FieldAndName> &namedFields)
     {
@@ -1879,7 +1879,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return field_name_with_suffix;
     }
 
-    bool field_state_exists_on_io_entity(const std::string& dbName, const stk::mesh::FieldBase* field, stk::mesh::FieldState stateIdentifier,
+    bool field_state_exists_on_io_entity(const std::string& dbName, const stk::mesh::FieldBase* /*field*/, stk::mesh::FieldState stateIdentifier,
                                          Ioss::GroupingEntity *ioEntity, const std::vector<std::string>* multiStateSuffixes)
     {
         std::string fieldNameWithSuffix = get_stated_field_name(dbName, stateIdentifier, multiStateSuffixes);
@@ -2356,7 +2356,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                              stk::mesh::Selector selector,
                              stk::mesh::Part &part,
                              Ioss::SideSet *sset,
-                             int spatialDimension,
+                             int /*spatialDimension*/,
                              bool createNodeset)
       {
         stk::mesh::EntityRank type = part.primary_entity_rank();
@@ -4027,7 +4027,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     struct DefineOutputFunctor
     {
-      void operator()(stk::io::OutputParams& params, stk::mesh::Part &part, stk::mesh::EntityRank rank, Ioss::GroupingEntity *ge, Ioss::Field::RoleType role)
+      void operator()(stk::io::OutputParams& /*params*/, stk::mesh::Part &part, stk::mesh::EntityRank rank, Ioss::GroupingEntity *ge, Ioss::Field::RoleType role)
       {  stk::io::ioss_add_fields(part, rank, ge, role); }
     };
 

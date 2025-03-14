@@ -26,7 +26,7 @@ void set_field_on_host(const stk::mesh::BulkData& stkMesh,
   stkField.sync_to_host();
 
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), select,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity entity) {
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity entity) {
       *stk::mesh::field_data(stkField, entity) = fieldVal;
     });
 
@@ -55,7 +55,7 @@ void check_field_on_host(const stk::mesh::BulkData & bulk,
 {
   stk::mesh::Selector select(stkField);
   stk::mesh::for_each_entity_run(bulk, stkField.entity_rank(), select,
-    [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity entity) {
+    [&](const stk::mesh::BulkData& /*mesh*/, stk::mesh::Entity entity) {
       EXPECT_NEAR(*stk::mesh::field_data(stkField, entity), expectedFieldValue, 1.e-9);
     });
 }

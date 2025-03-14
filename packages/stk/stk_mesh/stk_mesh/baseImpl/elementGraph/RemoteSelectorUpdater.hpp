@@ -100,7 +100,7 @@ public:
         numModifiedElems = reducedValues[0];
     }
 
-    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec & /*elemProcPairsToMove*/)
     {
         stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData,
                                                                      bulkData.get_face_adjacent_element_graph(),

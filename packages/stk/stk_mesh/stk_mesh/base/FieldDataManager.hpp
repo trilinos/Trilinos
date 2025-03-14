@@ -146,7 +146,7 @@ public:
     void add_field_data_for_entity(const std::vector<FieldBase *> &allFields,EntityRank dst_rank,unsigned dst_bucket_id, unsigned dst_bucket_ord ) override;
     void remove_field_data_for_entity(EntityRank rank, unsigned bucket_id, unsigned bucket_ord, const std::vector<FieldBase *> &allFields) override;
     void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, unsigned bucket_ord, const std::vector<FieldBase *> &fields) override;
-    void swap_fields(const int field1, const int field2) override { }
+    void swap_fields(const int /*field1*/, const int /*field2*/) override { }
     unsigned get_bucket_capacity(EntityRank rank, unsigned bucketId) const override { return m_bucketCapacity[rank][bucketId]; }
     void grow_bucket_capacity(const FieldVector & allFields, EntityRank rank, unsigned bucketId,
                               unsigned bucketSize, unsigned bucketCapacity) override;
@@ -226,8 +226,8 @@ public:
     const std::vector<size_t> &get_num_bytes_used_per_field_array() const {return m_num_bytes_used_per_field;}
     size_t get_extra_capacity() const { return m_extra_capacity; }
     unsigned get_bucket_capacity(EntityRank /*rank*/, unsigned /*bucketId*/) const override { return 0; }
-    void grow_bucket_capacity(const FieldVector & allFields, EntityRank rank, unsigned bucketId,
-                              unsigned bucketSize, unsigned bucketCapacity) override {}
+    void grow_bucket_capacity(const FieldVector & /*allFields*/, EntityRank /*rank*/, unsigned /*bucketId*/,
+                              unsigned /*bucketSize*/, unsigned /*bucketCapacity*/) override {}
 
 private:
     void clear_bucket_field_data(const EntityRank rm_rank, const unsigned rm_bucket_id, const std::vector<FieldBase*>  &all_fields);

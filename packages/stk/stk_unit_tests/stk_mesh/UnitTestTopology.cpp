@@ -913,7 +913,7 @@ protected:
     create_sides(superSide, sideParts, s);
   }
 
-  void create_sides(stk::topology superSide, const stk::mesh::PartVector& parts, const SuperTopologySideData &s)
+  void create_sides(stk::topology /*superSide*/, const stk::mesh::PartVector& parts, const SuperTopologySideData &s)
   {
     get_bulk().modification_begin();
     stk::mesh::Entity side = get_bulk().declare_solo_side(s.sharedFaceId, parts);

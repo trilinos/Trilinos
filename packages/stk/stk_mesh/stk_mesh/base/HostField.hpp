@@ -70,7 +70,7 @@ class HostField : public NgpFieldBase
   {
   }
 
-  HostField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f, bool isFromGetUpdatedNgpField = false)
+  HostField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f, [[maybe_unused]] bool isFromGetUpdatedNgpField = false)
     : NgpFieldBase(),
       hostBulk(&b),
       field(&f),
@@ -124,8 +124,9 @@ class HostField : public NgpFieldBase
     return bucketOrdinal;
   }
 
-  T& get(const HostMesh& ngpMesh, stk::mesh::Entity entity, int component,
-         const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
+  T& get(const HostMesh& /*ngpMesh*/, stk::mesh::Entity entity, int component,
+         [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
+         [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
     STK_ThrowAssert(data);
@@ -133,7 +134,8 @@ class HostField : public NgpFieldBase
   }
 
   T& get(stk::mesh::FastMeshIndex entity, int component,
-         const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
+         [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
+         [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
     STK_ThrowAssert(data);
@@ -141,7 +143,8 @@ class HostField : public NgpFieldBase
   }
 
   T& operator()(const stk::mesh::FastMeshIndex& index, int component,
-                const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
+                [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
+                [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
     STK_ThrowAssert(data);
@@ -149,7 +152,8 @@ class HostField : public NgpFieldBase
   }
 
   EntityFieldData<T> operator()(const stk::mesh::FastMeshIndex& index,
-                                const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER) const
+                                [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
+                                [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER) const
   {
     T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
     unsigned numScalars = stk::mesh::field_scalars_per_entity(*field, index.bucket_id);
@@ -199,7 +203,7 @@ class HostField : public NgpFieldBase
     }
   }
 
-  void sync_to_host(const ExecSpace& execSpace) override
+  void sync_to_host(const ExecSpace& /*execSpace*/) override
   {
     if (need_sync_to_host()) {
       copy_device_to_host();
@@ -207,7 +211,7 @@ class HostField : public NgpFieldBase
     }
   }
 
-  void sync_to_host(ExecSpace&& execSpace) override
+  void sync_to_host(ExecSpace&& /*execSpace*/) override
   {
     if (need_sync_to_host()) {
       copy_device_to_host();
@@ -221,7 +225,7 @@ class HostField : public NgpFieldBase
     Kokkos::fence();
   }
 
-  void sync_to_device(const ExecSpace& execSpace) override
+  void sync_to_device(const ExecSpace& /*execSpace*/) override
   {
     if (need_sync_to_device()) {
       if (hostBulk->synchronized_count() != synchronizedCount) {
@@ -232,7 +236,7 @@ class HostField : public NgpFieldBase
     }
   }
 
-  void sync_to_device(ExecSpace&& execSpace) override
+  void sync_to_device(ExecSpace&& /*execSpace*/) override
   {
     if (need_sync_to_device()) {
       if (hostBulk->synchronized_count() != synchronizedCount) {
@@ -249,7 +253,7 @@ class HostField : public NgpFieldBase
 
   void update_bucket_pointer_view() override { }
 
-  void swap_field_views(NgpFieldBase *other) override { }
+  void swap_field_views(NgpFieldBase * /*other*/) override { }
   void swap(HostField<T> &other) { }
 
   stk::mesh::EntityRank get_rank() const { return field ? field->entity_rank() : stk::topology::INVALID_RANK; }

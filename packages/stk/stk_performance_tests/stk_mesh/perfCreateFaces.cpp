@@ -57,7 +57,7 @@ public:
 protected:
   virtual void run_algorithm_to_time()
   {
-    stk::mesh::experimental::create_faces(bulkData, locallyOwnedElements);
+    stk::mesh::create_all_sides(bulkData, locallyOwnedElements);
   }
 
   virtual size_t get_value_to_output_as_iteration_count()

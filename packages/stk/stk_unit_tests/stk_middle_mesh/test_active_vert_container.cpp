@@ -283,7 +283,7 @@ TEST(ActiveVertContainer, VertNotConnectedByLocalElement)
     }
   };
 
-  auto isValid = [](mesh::MeshEntityPtr vert) { return true; };
+  auto isValid = [](mesh::MeshEntityPtr /*vert*/) { return true; };
   mesh::impl::ActiveVertContainer activeVerts(mesh, filter, isValid);
 
   if (myrank == 0)

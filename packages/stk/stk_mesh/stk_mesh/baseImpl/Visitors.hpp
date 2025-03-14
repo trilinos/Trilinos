@@ -177,7 +177,7 @@ struct StoreInSet {
 };
 
 struct AlwaysVisit {
-    bool operator()(Entity entity) { return true; }
+    bool operator()(Entity /*entity*/) { return true; }
 };
 
 struct OnlyVisitOnce {

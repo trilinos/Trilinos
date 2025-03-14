@@ -129,7 +129,7 @@ void DataExchangeKnownPatternNonBlocking::complete_receives(std::vector< std::ve
 {
   STK_ThrowRequireMsg(recvLists.size() == size_t(stk::parallel_machine_size(get_comm())), "recvLists must have length comm_size()");
   
-  auto funcWrapper = [&](int rank, const PointerAndSize& buf)
+  auto funcWrapper = [&](int rank, const PointerAndSize& /*buf*/)
   {
     func(rank, recvLists[rank]);
   };

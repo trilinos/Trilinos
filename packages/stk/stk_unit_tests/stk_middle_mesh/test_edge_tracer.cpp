@@ -117,17 +117,17 @@ class EdgeTracerTesterQuad : public ::testing::Test,
       spec.numelX = 3;
       spec.numelY = 3;
 
-      auto mesh = create_mesh(
+      auto meshTest = create_mesh(
           spec, [](const utils::Point& pt) { return pt; }, MPI_COMM_SELF, createTris);
-      interiorVert = mesh->get_vertices()[5];
+      interiorVert = meshTest->get_vertices()[5];
       assert(interiorVert->count_up() == 4);
 
-      interiorEdge = mesh->get_edges()[6];
+      interiorEdge = meshTest->get_edges()[6];
       assert(interiorEdge->count_up() == 2);
 
-      interiorEl = mesh->get_elements()[4];
+      interiorEl = meshTest->get_elements()[4];
 
-      return mesh;
+      return meshTest;
     }
 
     std::shared_ptr<mesh::Mesh> mesh;
@@ -158,10 +158,10 @@ class EdgeTracerTesterTri : public ::testing::Test,
       spec.numelX = 3;
       spec.numelY = 3;
 
-      auto mesh = create_mesh(
+      auto meshTest = create_mesh(
           spec, [](const utils::Point& pt) { return pt; }, MPI_COMM_SELF, createTris);
 
-      return mesh;
+      return meshTest;
     }
 
     std::shared_ptr<mesh::Mesh> mesh;
@@ -482,12 +482,12 @@ TEST_F(EdgeTracerTesterQuad, getBestIntersectionWhenMultipleInRange)
   if (utils::impl::comm_size(MPI_COMM_WORLD) > 1)
     GTEST_SKIP();
 
-  auto mesh                 = mesh::make_empty_mesh();
-  mesh::MeshEntityPtr v1    = mesh->create_vertex(0, 0, 0);
-  mesh::MeshEntityPtr v2    = mesh->create_vertex(1, 0, 0);
-  mesh::MeshEntityPtr v3    = mesh->create_vertex(1, 1, 0);
-  mesh::MeshEntityPtr edge1 = mesh->create_edge(v1, v2);
-  mesh::MeshEntityPtr edge2 = mesh->create_edge(v2, v3);
+  auto meshTest                 = mesh::make_empty_mesh();
+  mesh::MeshEntityPtr v1        = meshTest->create_vertex(0, 0, 0);
+  mesh::MeshEntityPtr v2        = meshTest->create_vertex(1, 0, 0);
+  mesh::MeshEntityPtr v3        = meshTest->create_vertex(1, 1, 0);
+  mesh::MeshEntityPtr edge1     = meshTest->create_edge(v1, v2);
+  mesh::MeshEntityPtr edge2     = meshTest->create_edge(v2, v3);
 
   utils::Point inputEdgeStart = utils::Point(0.5, 0.5);
   utils::Point inputEdgeEnd   = utils::Point(0.5, -0.5);

@@ -183,10 +183,10 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
     auto hostSharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, iProc);
     auto dataBegin = hostBufferOffsets[idx];
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, hostSharedCommMap.extent(0)),
-      KOKKOS_LAMBDA(size_t idx) {
+      KOKKOS_LAMBDA(size_t index) {
         auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc);
-        auto fastMeshIndex = deviceSharedCommMap(idx);
-        int recvBufferStartIdx = deviceMeshIndicesOffsets(idx, proc);
+        auto fastMeshIndex = deviceSharedCommMap(index);
+        int recvBufferStartIdx = deviceMeshIndicesOffsets(index, proc);
 
         for (size_t fieldIdx = 0; fieldIdx < exchangeHandler.get_ngp_fields_on_device().extent(0); ++fieldIdx) {
           stk::mesh::NgpField<T> const& field = exchangeHandler.get_ngp_fields_on_device()(fieldIdx);

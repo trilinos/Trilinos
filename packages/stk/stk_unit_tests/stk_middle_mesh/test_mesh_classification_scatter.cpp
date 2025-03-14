@@ -16,7 +16,7 @@ class MeshClassificationScatterTester : public ::testing::Test
 {
   protected:
     void setup(MPI_Comm inputCommArg, MPI_Comm meshComm, int rootRankOnInputCommArg,
-               const mesh::impl::MeshSpec& meshspec, int meshCommSize)
+               const mesh::impl::MeshSpec& meshspec, int /*meshCommSize*/)
     {
       inputGridSerial               = nullptr;
       inputGridParallel             = nullptr;
@@ -71,16 +71,16 @@ class MeshClassificationScatterTester : public ::testing::Test
         check_parallel_classification(middleGridClassificationParallel, tol);
     }
 
-    mesh::FieldPtr<int> get_element_destinations(std::shared_ptr<mesh::Mesh> middleGridSerial,
-                                                 std::shared_ptr<mesh::Mesh> inputGridSerial,
-                                                 mesh::FieldPtr<mesh::RemoteSharedEntity> inputGridSerialElementOrigins)
+    mesh::FieldPtr<int> get_element_destinations(std::shared_ptr<mesh::Mesh> middleGridSerialArg,
+                                                 std::shared_ptr<mesh::Mesh> inputGridSerialArg,
+                                                 mesh::FieldPtr<mesh::RemoteSharedEntity> inputGridSerialElementOriginsArg)
     {
-      auto classification       = create_classification(inputGridSerial, middleGridSerial);
+      auto classification       = create_classification(inputGridSerialArg, middleGridSerialArg);
       auto& classificationField = *classification;
 
-      auto destRanks       = mesh::create_field<int>(middleGridSerial, mesh::impl::FieldShape(0, 0, 1), 1);
-      auto& elementOrigins = *inputGridSerialElementOrigins;
-      for (auto& middleGridEl : middleGridSerial->get_elements())
+      auto destRanks       = mesh::create_field<int>(middleGridSerialArg, mesh::impl::FieldShape(0, 0, 1), 1);
+      auto& elementOrigins = *inputGridSerialElementOriginsArg;
+      for (auto& middleGridEl : middleGridSerialArg->get_elements())
         if (middleGridEl)
         {
           mesh::MeshEntityPtr inputGridEl  = classificationField(middleGridEl, 0, 0);
@@ -90,21 +90,21 @@ class MeshClassificationScatterTester : public ::testing::Test
       return destRanks;
     }
 
-    mesh::FieldPtr<mesh::MeshEntityPtr> create_classification(std::shared_ptr<mesh::Mesh> inputGridSerial,
-                                                              std::shared_ptr<mesh::Mesh> middleGridSerial)
+    mesh::FieldPtr<mesh::MeshEntityPtr> create_classification(std::shared_ptr<mesh::Mesh> inputGridSerialArg,
+                                                              std::shared_ptr<mesh::Mesh> middleGridSerialArg)
     {
       auto classificationPtr =
-          mesh::create_field<mesh::MeshEntityPtr>(middleGridSerial, mesh::impl::FieldShape(0, 0, 1), 1);
+          mesh::create_field<mesh::MeshEntityPtr>(middleGridSerialArg, mesh::impl::FieldShape(0, 0, 1), 1);
       auto& classificationField = *classificationPtr;
 
-      for (auto& middleGridEl : middleGridSerial->get_elements())
+      for (auto& middleGridEl : middleGridSerialArg->get_elements())
       {
         if (middleGridEl)
         {
           utils::Point middleGridElCentroid  = mesh::compute_centroid(middleGridEl);
           double minDist                     = std::numeric_limits<double>::max();
           mesh::MeshEntityPtr minInputGridEl = nullptr;
-          for (auto& inputGridEl : inputGridSerial->get_elements())
+          for (auto& inputGridEl : inputGridSerialArg->get_elements())
             if (inputGridEl)
             {
               utils::Point inputGridElCentroid = mesh::compute_centroid(inputGridEl);

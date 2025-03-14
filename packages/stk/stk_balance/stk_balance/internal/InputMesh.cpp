@@ -231,7 +231,7 @@ struct SubdomainNodeSharing {
 };
 
 stk::io::EntitySharingInfo
-InputMesh::get_node_sharing_info(unsigned mySubdomain, const std::vector<unsigned>& subdomainsInBatch) const
+InputMesh::get_node_sharing_info(unsigned /*mySubdomain*/, const std::vector<unsigned>& subdomainsInBatch) const
 {
   stk::CommSparse commSparse(m_bulk.parallel());
 

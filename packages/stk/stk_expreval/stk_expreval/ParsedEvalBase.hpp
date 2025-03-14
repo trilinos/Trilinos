@@ -52,9 +52,6 @@ public:
 
   virtual int get_result_buffer_size() = 0;
 
-  // remove on 10/29/2024
-  STK_DEPRECATED_MSG("check_for_errors is now called by the constructor.  No need to call it yourself")
-  virtual void check_for_errors(bool will_run_on_device) const = 0;
 };
 
 }

@@ -865,12 +865,12 @@ namespace stk {
 
     inline void StkMeshIoBroker::set_bulk_data(stk::mesh::BulkData &arg_bulk_data)
     {
-      set_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto pointerWeWontDelete){}));
+      set_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto /*pointerWeWontDelete*/){}));
     }
 
     inline void StkMeshIoBroker::replace_bulk_data(stk::mesh::BulkData &arg_bulk_data)
     {
-      replace_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto pointerWeWontDelete){}));
+      replace_bulk_data(std::shared_ptr<stk::mesh::BulkData>(&arg_bulk_data, [](auto /*pointerWeWontDelete*/){}));
     }
 
     inline void StkMeshIoBroker::define_heartbeat_global(size_t index,

@@ -203,11 +203,11 @@ public:
   virtual void set_log_filename(const std::string& filename);
   virtual std::string get_log_filename() const;
 
-  virtual void setShouldFixMechanisms(bool fixMechanisms) { }
-  virtual void setShouldFixSpiders(bool fixSpiders) { }
-  virtual void setEdgeWeightForSearch(double w) { }
-  virtual void setVertexWeightMultiplierForVertexInSearch(double w) { }
-  virtual void setToleranceForFaceSearch(double tol) { }
+  virtual void setShouldFixMechanisms(bool /*fixMechanisms*/) { }
+  virtual void setShouldFixSpiders(bool /*fixSpiders*/) { }
+  virtual void setEdgeWeightForSearch(double /*w*/) { }
+  virtual void setVertexWeightMultiplierForVertexInSearch(double /*w*/) { }
+  virtual void setToleranceForFaceSearch(double /*tol*/) { }
   virtual void setGraphEdgeWeightMultiplier(double multiplier);
 
   void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
@@ -379,8 +379,8 @@ public:
   }
   virtual ~FieldVertexWeightSettings() = default;
 
-  virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override { return 1.0; }
-  virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+  virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const override { return 1.0; }
+  virtual int getGraphVertexWeight(stk::topology /*type*/) const override { return 1; }
   virtual double getImbalanceTolerance() const override { return 1.05; }
   virtual void setDecompMethod(const std::string& input_method) override { m_method = input_method;}
   virtual std::string getDecompMethod() const override { return m_method; }
@@ -425,9 +425,9 @@ public:
 
   virtual ~MultipleCriteriaSettings() override = default;
 
-  virtual double getGraphEdgeWeight(stk::topology element1Topology,
-                                    stk::topology element2Topology) const override { return 1.0; }
-  virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+  virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/,
+                                    stk::topology /*element2Topology*/) const override { return 1.0; }
+  virtual int getGraphVertexWeight(stk::topology /*type*/) const override { return 1; }
   virtual double getImbalanceTolerance() const override { return 1.05; }
   virtual bool isMultiCriteriaRebalance() const override { return true;}
   virtual bool isIncrementalRebalance() const override { return true; }
@@ -458,38 +458,6 @@ public:
   {
     return BalanceSettings::COLOR_MESH_BY_TOPOLOGY;
   }
-};
-
-class M2NBalanceSettings : public GraphCreationSettings
-{
-public:
-  M2NBalanceSettings()
-    : GraphCreationSettings(),
-      m_numOutputProcs(0),
-      m_useNestedDecomp(false)
-  {}
-
-  M2NBalanceSettings(const std::string & inputFileName,
-                     unsigned numOutputProcs,
-                     bool useNestedDecomp = false)
-    : GraphCreationSettings(),
-      m_numOutputProcs(numOutputProcs),
-      m_useNestedDecomp(useNestedDecomp)
-  {
-    set_input_filename(inputFileName);
-  }
-
-  ~M2NBalanceSettings() = default;
-
-  void set_num_output_processors(unsigned numOutputProcs) override { m_numOutputProcs = numOutputProcs; }
-  unsigned get_num_output_processors() const override { return m_numOutputProcs; }
-
-  void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
-  bool get_use_nested_decomp() const { return m_useNestedDecomp; }
-
-protected:
-  unsigned m_numOutputProcs;
-  bool m_useNestedDecomp;
 };
 
 class GraphEdge

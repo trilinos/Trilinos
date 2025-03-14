@@ -86,7 +86,7 @@ std::pair<bool,bool> check_for_existing_subsets_or_supersets(FieldRestriction& t
                                                              FieldRestrictionVector::iterator i,
                                                              PARTVECTOR& selectorI_parts,
                                                              OrdinalVector& selectorI_parts_and_subsets,
-                                                             PARTVECTOR& arg_selector_parts,
+                                                             PARTVECTOR& /*arg_selector_parts*/,
                                                              OrdinalVector& arg_selector_parts_and_subsets,
                                                              bool arg_selector_is_all_unions
                                                             )
@@ -563,13 +563,13 @@ FieldBase::modify_on_device() const
 }
 
 void
-FieldBase::modify_on_host(const Selector& s) const
+FieldBase::modify_on_host(const Selector& /*s*/) const
 {
   modify_on_host();
 }
 
 void
-FieldBase::modify_on_device(const Selector& s) const
+FieldBase::modify_on_device(const Selector& /*s*/) const
 { 
   modify_on_device();
 }

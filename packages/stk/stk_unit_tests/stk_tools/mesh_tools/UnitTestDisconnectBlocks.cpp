@@ -964,7 +964,7 @@ TEST_F(TestReconnectBlocks2D, reconnect_2block_4quad_checkerboard_decomp3)
   test_two_block_reconnect(get_bulk(), blocks, 5u);
 }
 
-void test_reconnect_block_pairs(stk::mesh::BulkData& bulk, stk::mesh::PartVector& blocks,
+void test_reconnect_block_pairs(stk::mesh::BulkData& bulk, stk::mesh::PartVector& /*blocks*/,
                                 const std::vector<BlockConnection>& reconnectPairs,
                                 unsigned expectedGlobalInitialCommonNodes,
                                 unsigned expectedGlobalConnectCommonNodes)
@@ -1713,7 +1713,7 @@ void test_user_block_disconnect(stk::mesh::BulkData& bulk,
   test_connection_pairs(bulk, allBlocksInMesh, blockPairConnectionsToDisconnect, expectedFinalCommonNodeCount);
 }
 
-stk::tools::BlockNamePairVector convert_connection_vector_to_name_pair_vector(const stk::mesh::BulkData& bulk, const BlockConnectionVector& blockNamePairConnections)
+stk::tools::BlockNamePairVector convert_connection_vector_to_name_pair_vector(const stk::mesh::BulkData& /*bulk*/, const BlockConnectionVector& blockNamePairConnections)
 {
   stk::tools::BlockNamePairVector namePairVector;
 

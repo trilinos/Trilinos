@@ -35,7 +35,7 @@ public:
   stk::unit_test_util::BulkDataTester* getBulkData() { return m_stkMeshBulkData; }
 
 private:
-  void readExodusFileIntoStkMesh(const std::string& generatedMeshSpecification, stk::mesh::BulkData &stkMeshBulkData, MPI_Comm communicator)
+  void readExodusFileIntoStkMesh(const std::string& generatedMeshSpecification, stk::mesh::BulkData &stkMeshBulkData, MPI_Comm /*communicator*/)
   {
     stk::io::fill_mesh(generatedMeshSpecification, stkMeshBulkData);
   }

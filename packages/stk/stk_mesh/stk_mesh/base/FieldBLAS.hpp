@@ -420,7 +420,7 @@ inline int fix_omp_threads()
     return orig_thread_count;
 }
 
-inline void unfix_omp_threads(int orig_thread_count)
+inline void unfix_omp_threads([[maybe_unused]] int orig_thread_count)
 {
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
     omp_set_num_threads(orig_thread_count);

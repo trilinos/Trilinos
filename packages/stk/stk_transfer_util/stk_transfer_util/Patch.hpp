@@ -131,7 +131,7 @@ inline void entity_patch_if(const stk::mesh::BulkData& bulkData, stk::mesh::Enti
 template <typename FILTER>
 class Patch {
  public:
-  Patch(const stk::mesh::BulkData& bulk, stk::mesh::Entity seed, const FILTER& predicate, const stk::mesh::Selector& selector)
+  Patch(const stk::mesh::BulkData& bulk, stk::mesh::Entity /*seed*/, const FILTER& predicate, const stk::mesh::Selector& selector)
     : m_bulk(bulk)
     , m_filter(predicate)
     , m_selector(selector)

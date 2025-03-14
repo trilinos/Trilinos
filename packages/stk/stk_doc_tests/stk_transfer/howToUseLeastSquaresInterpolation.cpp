@@ -136,12 +136,12 @@ void set_element_field_vals_from_polynomial_coefficients(const stk::mesh::BulkDa
 
   stk::mesh::for_each_entity_run(mesh, stk::topology::ELEM_RANK,
                                  mesh.mesh_meta_data().locally_owned_part(),
-                                 [&field, &nodalCoordField, &coeffs](const stk::mesh::BulkData& mesh, const stk::mesh::Entity& elem)
+                                 [&field, &nodalCoordField, &coeffs](const stk::mesh::BulkData& meshArg, const stk::mesh::Entity& elem)
   {
-    std::vector<double> centroid = compute_centroid(mesh, elem, *nodalCoordField);
+    std::vector<double> centroid = compute_centroid(meshArg, elem, *nodalCoordField);
     double x = centroid[0];
     double y = centroid[1];
-    double z = (mesh.mesh_meta_data().spatial_dimension() == 2 ? 0.0 : centroid[2]);
+    double z = (meshArg.mesh_meta_data().spatial_dimension() == 2 ? 0.0 : centroid[2]);
 
     double * scalar = stk::mesh::field_data(field, elem);
     *scalar = evaluate_tripolynomial_function(coeffs, x, y, z);
@@ -157,12 +157,12 @@ void set_node_field_vals_from_polynomial_coefficients(const stk::mesh::BulkData&
 
   stk::mesh::for_each_entity_run(mesh, stk::topology::NODE_RANK,
                                  mesh.mesh_meta_data().locally_owned_part(),
-                                 [&field, &nodalCoordField, &coeffs](const stk::mesh::BulkData& mesh, const stk::mesh::Entity& node)
+                                 [&field, &nodalCoordField, &coeffs](const stk::mesh::BulkData& meshArg, const stk::mesh::Entity& node)
   {
     double * coords = (double*)stk::mesh::field_data(*nodalCoordField, node);
     double x = coords[0];
     double y = coords[1];
-    double z = (mesh.mesh_meta_data().spatial_dimension() == 2 ? 0.0 : coords[2]);
+    double z = (meshArg.mesh_meta_data().spatial_dimension() == 2 ? 0.0 : coords[2]);
 
     double * scalar = stk::mesh::field_data(field, node);
     *scalar = evaluate_tripolynomial_function(coeffs, x, y, z);

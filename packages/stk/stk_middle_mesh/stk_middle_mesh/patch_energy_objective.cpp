@@ -46,7 +46,7 @@ utils::Point PatchEnergyObjective::compute_quality_rev(const utils::Point& ptIn,
   return ptInBar;
 }
 
-utils::impl::Mat2x2<double> PatchEnergyObjective::compute_hessian(const utils::Point& ptIn)
+utils::impl::Mat2x2<double> PatchEnergyObjective::compute_hessian(const utils::Point& /*ptIn*/)
 {
   auto npts = m_data->get_num_verts() - 1;
   utils::impl::Mat2x2<double> hess;

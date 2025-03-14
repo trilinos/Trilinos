@@ -84,11 +84,11 @@ public:
     {
         if(bulkData.entity_rank(entity) == stk::topology::ELEM_RANK && bulkData.bucket(entity).owned())
         {
-            elementsDeleted.push_back({entity, bulkData.identifier(entity), bulkData.bucket(entity).topology().is_shell()});
+            elementsDeleted.push_back({entity, bulkData.identifier(entity), bulkData.bucket(entity).topology()});
         }
     }
 
-    virtual void relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    virtual void relation_destroyed(Entity from, Entity to, ConnectivityOrdinal /*ordinal*/)
     {
       if (bulkData.entity_rank(from) == stk::topology::ELEM_RANK &&
           bulkData.entity_rank(to) == stk::topology::NODE_RANK &&
@@ -97,7 +97,7 @@ public:
       }
     }
 
-    virtual void relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    virtual void relation_declared(Entity from, Entity to, ConnectivityOrdinal /*ordinal*/)
     {
       if (bulkData.entity_rank(from) == stk::topology::ELEM_RANK &&
           bulkData.entity_rank(to) == stk::topology::NODE_RANK &&
@@ -169,7 +169,7 @@ public:
         maxNumChanged = reducedValues[1];
     }
 
-    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec & /*elemProcPairsToMove*/)
     {
         changeEntityOwnerInProgress = true;
     }

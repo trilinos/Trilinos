@@ -187,7 +187,7 @@ public:
     }
   }
 
-  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const { return out; }
+  virtual std::ostream& print_data(std::ostream& out, void* /*data*/, unsigned /*size_per_entity*/) const { return out; }
 
   stk::mesh::BulkData& get_mesh() const
   { return *m_mesh; }
@@ -652,7 +652,7 @@ template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
 typename FieldType::value_type*
 field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord, const int knownSize,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+           [[maybe_unused]] DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   STK_ThrowAssertMsg(f.get_meta_data_for_field()[bucket_id].m_bytesPerEntity >= knownSize,
                  "field name= " << f.name() << "knownSize= " << knownSize << ", m_bytesPerEntity= "
@@ -669,7 +669,7 @@ template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
 typename FieldType::value_type*
 field_data(const FieldType & f, const unsigned bucket_id,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+           [[maybe_unused]] DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   debug_stale_access_bucket_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, fileName, lineNumber);
 
@@ -680,7 +680,7 @@ template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
 typename FieldType::value_type*
 field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+           [[maybe_unused]] DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, bucket_ord, fileName, lineNumber);
 
@@ -693,7 +693,7 @@ template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
 typename FieldType::value_type*
 field_data(const FieldType & f, const Bucket& b, unsigned bucket_ord,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+           [[maybe_unused]] DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   STK_ThrowAssert(f.entity_rank() == b.entity_rank());
   STK_ThrowAssert(&f.get_mesh() == &b.mesh());
@@ -709,7 +709,8 @@ template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
 typename FieldType::value_type*
 field_data(const FieldType & f, const Bucket& b,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+           [[maybe_unused]] DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME,
+           [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   STK_ThrowAssert(f.entity_rank() == b.entity_rank());
   STK_ThrowAssert(&b.mesh() == &f.get_mesh());
@@ -724,7 +725,7 @@ template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
 typename FieldType::value_type*
 field_data(const FieldType & f, Entity e,
-           DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
+           [[maybe_unused]] DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   const MeshIndex& mi = f.get_mesh().mesh_index(e);
   STK_ThrowAssertMsg(f.entity_rank() == mi.bucket->entity_rank(),

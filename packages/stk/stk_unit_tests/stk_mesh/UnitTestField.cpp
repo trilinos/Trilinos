@@ -1900,7 +1900,7 @@ public:
     return buckets.size() * bulk.get_maximum_bucket_capacity() * stkField.max_size() * dataSize;
   }
 
-  void check_expected_bytes_allocated(const stk::mesh::BulkData & bulk,
+  void check_expected_bytes_allocated([[maybe_unused]] const stk::mesh::BulkData & bulk,
                                       const stk::mesh::FieldBase & stkField)
   {
     const int dataSize = sizeof(FieldDataType);

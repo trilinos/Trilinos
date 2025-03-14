@@ -104,7 +104,7 @@ void device_runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod sea
   if (procId == 0) {
     Kokkos::resize(Kokkos::WithoutInitializing, domain, 8);
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(const unsigned & i) {
+      KOKKOS_LAMBDA(const unsigned & /*i*/) {
         domain[0] = stk::unit_test_util::device_generateBoxIdentProc<OuterBoxType, IdentProc>(0, 0, 0, radius, 1, procId);
         domain[1] = stk::unit_test_util::device_generateBoxIdentProc<OuterBoxType, IdentProc>(1, 0, 0, radius, 2, procId);
         domain[2] = stk::unit_test_util::device_generateBoxIdentProc<OuterBoxType, IdentProc>(2, 0, 0, radius, 3, procId);
@@ -121,7 +121,7 @@ void device_runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod sea
   if (procId == numProc-1) {
     Kokkos::resize(Kokkos::WithoutInitializing, range, 1);
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(const unsigned & i) {
+      KOKKOS_LAMBDA(const unsigned & /*i*/) {
         range[0] = stk::unit_test_util::device_generateBoxIdentProc<InnerBoxType, IdentProc>(1, 1, 0, radius, 5, procId);
       });
   }
@@ -492,7 +492,7 @@ void device_local_runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMeth
   auto range = Kokkos::View<InnerBoxIdentType*, stk::ngp::ExecSpace>("range box-ident", 1);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-    KOKKOS_LAMBDA(const unsigned & i) {
+    KOKKOS_LAMBDA(const unsigned & /*i*/) {
       domain[0] = stk::unit_test_util::device_generateBoxIdent<OuterBoxType, Ident>(0, 0, 0, radius, 1);
       domain[1] = stk::unit_test_util::device_generateBoxIdent<OuterBoxType, Ident>(1, 0, 0, radius, 2);
       domain[2] = stk::unit_test_util::device_generateBoxIdent<OuterBoxType, Ident>(2, 0, 0, radius, 3);

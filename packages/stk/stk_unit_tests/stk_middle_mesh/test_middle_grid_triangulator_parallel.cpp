@@ -30,7 +30,7 @@ class MiddleGridTriangulatorParallelTester : public ::testing::Test
 
     using BoundingBoxSearch = search::ElementToElementBoundingBoxSearch;
 
-    void setup_spmd(const mesh::impl::MeshSpec& spec1, const mesh::impl::MeshSpec& spec2, bool createTriangles=false)
+    void setup_spmd(const mesh::impl::MeshSpec& spec1, const mesh::impl::MeshSpec& /*spec2*/, bool createTriangles=false)
     {
       auto f = [](const utils::Point& pt) { return pt; };
 
@@ -289,7 +289,7 @@ class MiddleGridTriangulatorParallelTester : public ::testing::Test
         elAreasPtr = mesh::create_field<double>(m_mesh2, mesh::FieldShape(0, 0, 1), 1, 0);
       }
 
-      auto unpacker = [&](int rank, stk::CommBuffer& buf)
+      auto unpacker = [&](int /*rank*/, stk::CommBuffer& buf)
       {
         auto& elAreas = *elAreasPtr;
         while (buf.remaining() > 0)

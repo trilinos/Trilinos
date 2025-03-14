@@ -150,9 +150,9 @@ TEST_F(DistributionFactor, load_mesh_then_check_DF)
   stkIo.add_all_mesh_fields_as_input_fields();
   stkIo.populate_bulk_data();
 
-  stk::mesh::BulkData& bulkData = stkIo.bulk_data();
+  stk::mesh::BulkData& bulkDataExtracted = stkIo.bulk_data();
 
-  test_df_values(bulkData, dfFieldMapping);
+  test_df_values(bulkDataExtracted, dfFieldMapping);
 }
 
 TEST_F(DistributionFactor, load_mesh_then_check_DF_4elem)
@@ -172,8 +172,8 @@ TEST_F(DistributionFactor, load_mesh_then_check_DF_4elem)
   stkIo.add_all_mesh_fields_as_input_fields();
   stkIo.populate_bulk_data();
 
-  stk::mesh::BulkData& bulkData = stkIo.bulk_data();
-  test_df_values(bulkData, dfFieldMapping);
+  stk::mesh::BulkData& bulkDataExtracted = stkIo.bulk_data();
+  test_df_values(bulkDataExtracted, dfFieldMapping);
 }
 
 TEST_F(DistributionFactor, change_entity_owner_then_check_DF)
@@ -197,24 +197,24 @@ TEST_F(DistributionFactor, change_entity_owner_then_check_DF)
   stkIo.add_all_mesh_fields_as_input_fields();
   stkIo.populate_bulk_data();
 
-  stk::mesh::BulkData& bulkData = stkIo.bulk_data();
-  test_df_values(bulkData, dfFieldMapping);
+  stk::mesh::BulkData& bulkDataExtracted = stkIo.bulk_data();
+  test_df_values(bulkDataExtracted, dfFieldMapping);
 
   stk::mesh::EntityProcVec entitiesToChange;
   if (stk::parallel_machine_rank(stk::parallel_machine_world()) == 1)
   {
-    stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEMENT_RANK, 2);
+    stk::mesh::Entity element = bulkDataExtracted.get_entity(stk::topology::ELEMENT_RANK, 2);
     int newOwnerProc = 2;
     entitiesToChange.push_back(std::make_pair(element, newOwnerProc));
     for (int i=9; i <= 12; ++i)
     {
-      stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, i);
+      stk::mesh::Entity node = bulkDataExtracted.get_entity(stk::topology::NODE_RANK, i);
       entitiesToChange.push_back(std::make_pair(node, newOwnerProc));
     }
   }
 
-  bulkData.change_entity_owner(entitiesToChange);
-  test_df_values(bulkData, dfFieldMapping);
+  bulkDataExtracted.change_entity_owner(entitiesToChange);
+  test_df_values(bulkDataExtracted, dfFieldMapping);
 }
 
 }

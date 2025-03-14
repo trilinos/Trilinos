@@ -49,7 +49,7 @@ namespace {
 class IdAndTimeFieldValueSetter : public stk::unit_test_util::FieldValueSetter
 {
 public:
-    virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step,
+    virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned /*step*/,
                                 const double time) const override
 {
     stk::mesh::EntityRank fieldRank = field->entity_rank();

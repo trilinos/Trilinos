@@ -174,7 +174,7 @@ public:
   }
 
   template <typename NgpField>
-  void clear_host_sync_state(NgpField* ngpField)
+  void clear_host_sync_state(NgpField* /*ngpField*/)
   {
     set_last_modification_state_bit(LastModLocation::DEVICE);
   }
@@ -394,7 +394,7 @@ private:
   }
 
   template <typename NgpField>
-  void reset_last_modification_state(NgpField* ngpField, LastModLocation value) {
+  void reset_last_modification_state(NgpField* /*ngpField*/, LastModLocation value) {
     Kokkos::deep_copy(lastFieldModLocation, value);
   }
 
@@ -460,7 +460,7 @@ private:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void print_stale_data_warning_without_field_values(unsigned bucketId, unsigned bucketOrdinal, int component,
+  void print_stale_data_warning_without_field_values(unsigned /*bucketId*/, unsigned /*bucketOrdinal*/, int component,
                                                      const char * fileName, int lineNumber) const
   {
     if (lineNumber == -1) {

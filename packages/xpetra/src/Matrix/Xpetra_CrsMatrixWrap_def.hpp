@@ -408,7 +408,7 @@ void CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setObjectLabel(co
 
 #ifdef HAVE_XPETRA_TPETRA
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror
+typename Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror
 CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalMatrixHost() const {
   return matrixData_->getLocalMatrixHost();
 }

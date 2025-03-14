@@ -43,7 +43,7 @@ TYPED_TEST(SimdBoolFixture, selectByLane_allTrue)
 {
   this->fill_constant(true);
   this->use_simd_value_as_result();
-  this->set_expected_result([](int i){ return true; });
+  this->set_expected_result([](int /*i*/){ return true; });
   this->verify();
 }
 
@@ -51,7 +51,7 @@ TYPED_TEST(SimdBoolFixture, selectByLane_allFalse)
 {
   this->fill_constant(false);
   this->use_simd_value_as_result();
-  this->set_expected_result([](int i){ return false; });
+  this->set_expected_result([](int /*i*/){ return false; });
   this->verify();
 }
 

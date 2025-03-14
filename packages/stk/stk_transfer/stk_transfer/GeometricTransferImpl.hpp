@@ -81,9 +81,9 @@ void get_remaining_domain_points(std::vector<typename INTERPOLATE::MeshB::Boundi
 template <typename T, typename=int>
 struct CallOptionalPostCoarseSearchFilter
 {
-  static void call(typename T::EntityProcRelationVec &BtoA,
-      const typename T::MeshA * mesha,
-      const typename T::MeshB * meshb)
+  static void call(typename T::EntityProcRelationVec & /*BtoA*/,
+      const typename T::MeshA * /*mesha*/,
+      const typename T::MeshB * /*meshb*/)
   {
     //Doesn't exist, so don't call
   }
@@ -110,7 +110,7 @@ auto call_copy_entities(T & mesh, typename T::EntityProcVec & entities_to_copy, 
 }
 
 template <typename... T>
-void call_copy_entities(T & ... t)
+void call_copy_entities(T & ... /*t*/)
 {
   //copy entities doesn't exist, so NO-OP
 }

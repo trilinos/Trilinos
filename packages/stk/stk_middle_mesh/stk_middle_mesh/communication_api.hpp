@@ -150,7 +150,7 @@ void MiddleMeshFieldCommunication<T>::check_field_shapes_same_locally(mesh::Fiel
 }
 
 template <typename T>
-void MiddleMeshFieldCommunication<T>::check_all_procs_on_field_provided_argument_debug_only(mesh::FieldPtr<T> field)
+void MiddleMeshFieldCommunication<T>::check_all_procs_on_field_provided_argument_debug_only([[maybe_unused]] mesh::FieldPtr<T> field)
 {
 #ifndef NDEBUG
   if (field)
@@ -165,7 +165,7 @@ void MiddleMeshFieldCommunication<T>::check_all_procs_on_field_provided_argument
 
 
 template <typename T>
-void MiddleMeshFieldCommunication<T>::check_field_shapes_same_globally_debug_only(mesh::FieldPtr<T> fieldSend, mesh::FieldPtr<T> fieldRecv)
+void MiddleMeshFieldCommunication<T>::check_field_shapes_same_globally_debug_only([[maybe_unused]] mesh::FieldPtr<T> fieldSend, [[maybe_unused]] mesh::FieldPtr<T> fieldRecv)
 {
 #ifndef NDEBUG
   MPI_Comm comm = m_unionComm;
@@ -299,7 +299,7 @@ void MiddleMeshFieldCommunication<T>::pack_send_buffers(mesh::FieldPtr<T> fieldS
 template <typename T>
 void MiddleMeshFieldCommunication<T>::complete_receives(mesh::FieldPtr<T> fieldRecvPtr)
 {
-  auto f = [&](int rank, stk::CommBuffer& buf)
+  auto f = [&](int /*rank*/, stk::CommBuffer& buf)
   {
     unpack_buffer(buf, fieldRecvPtr);
   };

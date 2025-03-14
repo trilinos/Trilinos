@@ -64,6 +64,7 @@ using stk::unit_test_util::build_mesh;
 typedef stk::mesh::Field<int>    ScalarIntField;
 typedef stk::mesh::Field<double> ScalarDoubleField;
 typedef stk::mesh::Field<double> VectorDoubleField;
+typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
 
 void build_mesh(stk::mesh::MetaData & meta,
                 stk::mesh::BulkData & mesh,
@@ -353,7 +354,6 @@ template <class SearchById>
 class CopyTransferFixture : public ::testing::Test
 {
 public:
-  typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
   void init(stk::ParallelMachine global_pm, int color, std::vector<int> mesh_color_ownership = {0, 0})
   {
     pm = global_pm;
@@ -1039,7 +1039,6 @@ TYPED_TEST(CopyTransferFixture, copy001T011Face)
   auto & mesh_b = *this->meshB;
   this->run_test([&, p_rank](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
       {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor gold;
       if (0 == p_rank) {
         stk::mesh::Entity elem1 = mesh_a.get_entity(stk::topology::ELEM_RANK, 1);
@@ -1244,7 +1243,6 @@ TEST(Transfer, copy001T011Shell)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
       stk::util::sort_and_unique(key_to_target_processor);
@@ -1460,7 +1458,6 @@ TYPED_TEST(CopyTransferFixture, copy000T012)
   const int p_rank = stk::parallel_machine_rank( this->pm );
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor gold;
       if (0 == p_rank) {
         gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 0);
@@ -1544,7 +1541,6 @@ TYPED_TEST(CopyTransferFixture, copy000T012_multipleTargets)
 
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor gold;
       if (0 == p_rank) {
         gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 0);
@@ -1659,7 +1655,6 @@ TYPED_TEST(CopyTransferFixture, copy0011T1010)
   const int p_rank = stk::parallel_machine_rank( this->pm );
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor gold;
       if (0 == p_rank) {
         gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 1);
@@ -1825,7 +1820,6 @@ TEST(Transfer, copy0T_)
     //  > transfer(transferSource, transferTarget, "copy0T_ unit test");
 
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -1942,7 +1936,6 @@ TEST(Transfer, copy_T0)
     stk::transfer::TransferCopyByIdStkMeshAdapter transferTarget(meshB, targetNodes, targetFields);
 
     {
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -2070,7 +2063,6 @@ TEST(Transfer, copy00_T_11)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
@@ -2230,7 +2222,6 @@ TEST(Transfer, copy00___T___11)
 
     {
       const int p_rank = stk::parallel_machine_rank( pm );
-      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 

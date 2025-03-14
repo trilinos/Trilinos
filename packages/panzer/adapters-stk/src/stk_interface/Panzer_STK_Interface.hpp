@@ -459,6 +459,13 @@ public:
                   const bool append_after_restart_time = false,
                   const double restart_time = 0.0);
 
+  void
+  setupExodusFile(const std::string& filename,
+                  const std::vector<Ioss::Property>& ioss_properties,
+                  const bool append = false,
+                  const bool append_after_restart_time = false,
+                  const double restart_time = 0.0);
+
   /**
    *  \brief Write this mesh and associated fields at the given `timestep`.
    *

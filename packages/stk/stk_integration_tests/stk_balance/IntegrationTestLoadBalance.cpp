@@ -74,15 +74,15 @@ class ColoringSettings : public stk::balance::BalanceSettings
 public:
   ColoringSettings() {}
 
-  virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
+  virtual size_t getNumNodesRequiredForConnection(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const
   {
     return 1;
   }
-  virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
+  virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const
   {
     return 1.0;
   }
-  virtual int getGraphVertexWeight(stk::topology type) const
+  virtual int getGraphVertexWeight(stk::topology /*type*/) const
   {
     return 1;
   }
@@ -1452,7 +1452,7 @@ void writeParFiles(stk::io::StkMeshIoBroker &ioBroker, const std::string &output
   ioBroker.end_output_step(index);
 }
 
-void fillIoBroker(MPI_Comm communicator, const std::string &generatedMeshSpec, stk::io::StkMeshIoBroker &ioBroker)
+void fillIoBroker(MPI_Comm /*communicator*/, const std::string &generatedMeshSpec, stk::io::StkMeshIoBroker &ioBroker)
 {
   std::string doDecomp = stk::unit_test_util::get_option("-decomp", "no");
 

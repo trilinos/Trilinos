@@ -1740,8 +1740,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildNodalProlongato
     std::string distLaplAlgo = parameterList_.get<std::string>("aggregation: distance laplacian algo");
     dropFact->SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(dropTol));
     dropFact->SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(dropScheme));
-    if (!useKokkos_)
-      dropFact->SetParameter("aggregation: distance laplacian algo", Teuchos::ParameterEntry(distLaplAlgo));
+    dropFact->SetParameter("aggregation: distance laplacian algo", Teuchos::ParameterEntry(distLaplAlgo));
 
     UncoupledAggFact->SetFactory("Graph", dropFact);
     int minAggSize = parameterList_.get<int>("aggregation: min agg size");

@@ -366,32 +366,32 @@ STK_MATH_FORCE_INLINE int count_true(const Boolf& a, const int sumNum=nfloats) {
   return static_cast<int>(reduce_sum(oneornone, sumNum));
 }
 
-STK_MATH_FORCE_INLINE const double& get_data(const double& z, int index) {
+STK_MATH_FORCE_INLINE const double& get_data(const double& z, [[maybe_unused]] int index) {
   assert(index==0);
   return z;
 }
 
-STK_MATH_FORCE_INLINE double& get_data(double& z, int index) {
+STK_MATH_FORCE_INLINE double& get_data(double& z, [[maybe_unused]] int index) {
   assert(index==0);
   return z;
 }
 
-STK_MATH_FORCE_INLINE void set_data(double& z, int index, const double val) {
+STK_MATH_FORCE_INLINE void set_data(double& z, [[maybe_unused]] int index, const double val) {
   assert(index==0);
   z = val;
 }
 
-STK_MATH_FORCE_INLINE const float& get_data(const float& z, int index) {
+STK_MATH_FORCE_INLINE const float& get_data(const float& z, [[maybe_unused]] int index) {
   assert(index==0);
   return z;
 }
 
-STK_MATH_FORCE_INLINE float& get_data(float& z, int index) {
+STK_MATH_FORCE_INLINE float& get_data(float& z, [[maybe_unused]] int index) {
   assert(index==0);
   return z;
 }
 
-STK_MATH_FORCE_INLINE void set_data(float& z, int index, const float val) {
+STK_MATH_FORCE_INLINE void set_data(float& z, [[maybe_unused]] int index, const float val) {
   assert(index==0);
   z = val;
 }
@@ -407,7 +407,7 @@ STK_MATH_FORCE_INLINE double reduce_sum(const double& x, const int) {
 }
 
 
-STK_MATH_FORCE_INLINE void plus_equal_part(double& value, const double& increment, const int numValid) {
+STK_MATH_FORCE_INLINE void plus_equal_part(double& value, const double& increment, const int /*numValid*/) {
   value += increment;
 }
 
@@ -419,16 +419,16 @@ STK_MATH_FORCE_INLINE float reduce_sum(const float& x, const int) {
   return x;
 }
 
-STK_MATH_FORCE_INLINE int count_true(const bool& x, const int sumNum=1) {
+STK_MATH_FORCE_INLINE int count_true(const bool& x, [[maybe_unused]] const int sumNum=1) {
   return x ? 1 : 0;
 }
 
-STK_MATH_FORCE_INLINE bool are_all(bool a, const int sumNum=1) {
+STK_MATH_FORCE_INLINE bool are_all(bool a, [[maybe_unused]] const int sumNum=1) {
   assert(sumNum==1);
   return a;
 }
 
-STK_MATH_FORCE_INLINE bool are_any(bool a, const int sumNum=1) {
+STK_MATH_FORCE_INLINE bool are_any(bool a, [[maybe_unused]] const int sumNum=1) {
   assert(sumNum==1);
   return a;
 }

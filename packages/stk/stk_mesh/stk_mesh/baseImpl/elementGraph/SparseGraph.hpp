@@ -56,7 +56,7 @@ public:
 
     size_t get_num_elements_in_graph() const { return m_graphEdges.size(); }
     const std::vector<GraphEdge> & get_edges_for_element(impl::LocalId elem) const;
-    void reserve_edges(impl::LocalId localElemId, size_t numEdges) {}
+    void reserve_edges(impl::LocalId /*localElemId*/, size_t /*numEdges*/) {}
     void add_edge(const GraphEdge &graphEdge);
     void delete_edge(const GraphEdge &graphEdge);
     void delete_all_edges(impl::LocalId elem);
