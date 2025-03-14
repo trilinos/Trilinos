@@ -30,10 +30,9 @@
 #include <Tpetra_Map_decl.hpp>
 #include <Tpetra_CrsMatrix_decl.hpp>
 #include <Tpetra_MultiVector_decl.hpp>
-//#include <Epetra_LinearProblem.h>
-//#include <EpetraExt_Isorropia_CrsGraph.h>
+#include <Tpetra_LinearProblem_decl.hpp>
+//#include <Tpetra_Isorropia_CrsGraph.h> // In 'packages/trilinoscouplings/src/tpetra/'
 //#include <EpetraExt_LPTrans_From_GraphTrans.h>
-//#include <Isorropia_Exception.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
@@ -62,8 +61,6 @@ void runExample() {
 
   std::cout << "In main(), pos 000" << std::endl;
 
-#if 0 // EEP
-  
 #ifdef HAVE_ISORROPIA_ZOLTAN
 
   // If Zoltan is available, we'll specify that the Zoltan package use
@@ -91,8 +88,13 @@ void runExample() {
 #if 0 // EEP
 
   // Create the object to generate the balanced graph.
-  Teuchos::RCP<EpetraExt::Isorropia_CrsGraph> Trans = 
-    Teuchos::rcp( new EpetraExt::Isorropia_CrsGraph( paramlist ) );
+  Teuchos::RCP< Tpetra::Isorropia_CrsGraph< Tpetra::CrsMatrix<double>::local_ordinal_type
+                                          , Tpetra::CrsMatrix<double>::global_ordinal_type
+                                          , Tpetra::CrsMatrix<double>::node_type
+                                          > > Trans = Teuchos::rcp( new Tpetra::Isorropia_CrsGraph< Tpetra::CrsMatrix<double>::local_ordinal_type
+                                                                                                  , Tpetra::CrsMatrix<double>::global_ordinal_type
+                                                                                                  , Tpetra::CrsMatrix<double>::node_type
+                                                                                                  >( paramlist ) );
 
   std::cout << "In main(), pos 003" << std::endl;
   
@@ -105,13 +107,11 @@ void runExample() {
 
   std::cout << "In main(), pos 004" << std::endl;
 
-  // Create an Epetra_CrsMatrix object.
-  Teuchos::RCP< Tpetra::CrsMatrix<double> > crsmatrix;
+  // Create a Tpetra::CrsMatrix with rows spread un-evenly over processors.
   if (localProc == 0) {
-    std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
+    std::cout << "Creating Tpetra::CrsMatrix with un-even distribution..."
               << std::endl;
   }
-  //create an Epetra_CrsMatrix with rows spread un-evenly over processors.
 
   Teuchos::RCP< Teuchos::MpiComm<int> > comm = Teuchos::rcp( new Teuchos::MpiComm<int>(MPI_COMM_WORLD) );
   Tpetra::CrsMatrix<double>::local_ordinal_type local_num_rows = 200;
@@ -123,7 +123,7 @@ void runExample() {
 
   Tpetra::CrsMatrix<double>::local_ordinal_type adjustment = local_num_rows/2;
 
-  //adjust local_num_rows so that it's not equal on all procs.
+  // Adjust local_num_rows so that it's not equal on all procs.
   if (localProc < mid_proc) {
     local_num_rows -= adjustment;
   }
@@ -131,17 +131,17 @@ void runExample() {
     local_num_rows += adjustment;
   }
 
-  //if numProcs is not an even number, undo the local_num_rows adjustment
-  //on one proc so that the total will still be correct.
+  // If numProcs is not an even number, undo the local_num_rows adjustment
+  // on one proc so that the total will still be correct.
   if (localProc == numProcs-1) {
     if (num_procs_even == false) {
       local_num_rows -= adjustment;
     }
   }
 
-  //now we're ready to create a row-map.
+  // Now we're ready to create a row-map.
   Teuchos::RCP< Tpetra::Map<> > rowmap = Teuchos::rcp( new Tpetra::Map<>(global_num_rows, local_num_rows, 0, comm) );
-  crsmatrix = Teuchos::rcp( new Tpetra::CrsMatrix<double>(rowmap, nnz_per_row) );
+  Teuchos::RCP< Tpetra::CrsMatrix<double> > crsmatrix = Teuchos::rcp( new Tpetra::CrsMatrix<double>(rowmap, nnz_per_row) );
 
   std::cout << "crsmatrix = " << crsmatrix << std::endl;
 
@@ -165,27 +165,31 @@ void runExample() {
     }
 
     crsmatrix->insertGlobalValues(global_row, nnz_per_row,
-                               &coefs[0], &indices[0]);
+                                  &coefs[0], &indices[0]);
   }
 
   crsmatrix->fillComplete();
 
   std::cout << "In main(), pos 005" << std::endl;
 
-  // Create Epetra_MultiVectors for the lhs and rhs of the linear problem.
-  //Tpetra::MultiVector<double> lhs(crsmatrix->getMap(), 1);
-  Tpetra::MultiVector<double> rhs(crsmatrix->getMap(), 1);
-  rhs.putScalar( 1.0 );
+  // Create Tpetra::MultiVectors for the lhs and rhs of the linear problem.
+  Teuchos::RCP< Tpetra::MultiVector<double> > lhs = Teuchos::rcp( new Tpetra::MultiVector<double>(crsmatrix->getMap(), 1) );
+  Teuchos::RCP< Tpetra::MultiVector<double> > rhs = Teuchos::rcp( new Tpetra::MultiVector<double>(crsmatrix->getMap(), 1) );
+  rhs->putScalar( 1.0 );
 
   std::cout << "In main(), pos 006" << std::endl;
 
-#if 0 // EEP
   
   // Create the linear problem with the original partitioning.
-  Epetra_LinearProblem problem( &*crsmatrix, &lhs, &rhs );
+  Tpetra::LinearProblem< double
+                       , Tpetra::CrsMatrix<double>::local_ordinal_type
+                       , Tpetra::CrsMatrix<double>::global_ordinal_type
+                       , Tpetra::CrsMatrix<double>::node_type
+                       > problem( crsmatrix, lhs, rhs );
 
   std::cout << "In main(), pos 007" << std::endl;
 
+#if 0 // EEP
   // Create the new linear problem and perform the balanced partitioning.
   // NOTE:  The balanced linear system will be in tProblem after fwd() is called.
   //        It is not necessary for the RCP to manage the transformed problem.
@@ -193,13 +197,12 @@ void runExample() {
   std::cout << "In main(), pos 008" << std::endl;
   LPTrans->fwd();
   std::cout << "In main(), pos 009" << std::endl;
-
 #endif // EEP
   
-  int graphrows1 = crsmatrix->getLocalNumRows();
-  //int bal_graph_rows = tProblem->GetMatrix()->getLocalNumRows();
-  int graphnnz1 = crsmatrix->getLocalNumEntries();
-  //int bal_graph_nnz = tProblem->GetMatrix()->getLocalNumEntries();
+  Tpetra::CrsMatrix<double>::local_ordinal_type graphrows1 = crsmatrix->getLocalNumRows();
+  //Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_rows = tProblem->GetMatrix()->getLocalNumRows();
+  Tpetra::CrsMatrix<double>::local_ordinal_type graphnnz1 = crsmatrix->getLocalNumEntries();
+  //Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_nnz = tProblem->GetMatrix()->getLocalNumEntries();
 
   std::cout << "In main(), pos 010" << std::endl;
 

@@ -7,6 +7,7 @@
 SET(HAVE_EPETRA ON)
 SET(HAVE_ISORROPIA_ZOLTAN ON)
 SET(HAVE_EPETRAEXT ON)
+SET(HAVE_TPETRA ON)
 SET(ISORROPIA_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
@@ -118,7 +119,21 @@ IF (${PACKAGE_NAME}_ENABLE_2DPARTITION)
 
 ENDIF()
 
+#
+# src/tpetra
+#
 
+TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
+
+SET(HEADERS ${HEADERS}
+  tpetra/EEP_Isorropia_TpetraPartitioner.hpp
+  tpetra/EEP_Isorropia_Tpetra.hpp
+  )
+
+SET(SOURCES ${SOURCES}
+  tpetra/EEP_Isorropia_TpetraPartitioner.cpp
+  tpetra/EEP_Isorropia_Tpetra.cpp
+  )
 
 #
 # C) Define the targets for package's library(s)
