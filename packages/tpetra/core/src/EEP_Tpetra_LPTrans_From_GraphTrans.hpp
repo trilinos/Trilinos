@@ -183,7 +183,7 @@ typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOr
 LinearProblem_GraphTrans<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 operator()( typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalTypeRef orig )
 {
-  std::cout << "EEP Entering tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator()..." << std::endl;
+  std::cout << "EEP Entering tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator()..." << std::endl;
   
   OldProblem_ = &orig;
   OldMatrix_ = dynamic_cast<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>*>( orig.getMatrix().get() );
@@ -192,9 +192,9 @@ operator()( typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdin
   OldLHS_ = orig.getLHS().get();
   OldRowMap_ = dynamic_cast<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>*>( OldMatrix_->getRowMap().get() );
 
-  std::cout << "EEP In tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 001" << std::endl;
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 001" << std::endl;
   Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & NewGraph = graphTrans_( *(const_cast<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>*>(OldGraph_)) );
-  std::cout << "EEP In tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 002" << std::endl;
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 002" << std::endl;
   NewMatrix_ = new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>(&NewGraph) );
 #if 0 // AquiToDo // EEP__
   Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & NewRowMap = const_cast<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>&>(NewGraph.getRowMap());
@@ -206,12 +206,12 @@ operator()( typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdin
   VecExporter_ = new Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>( *OldRowMap_, NewRowMap );
   Importer_ = new Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>( *OldRowMap_, NewRowMap );
 
-  std::cout << "EEP In tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 003" << std::endl;
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 003" << std::endl;
   NewProblem_ = new Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>( NewMatrix_, NewLHS_, NewRHS_ );
 #endif
-  std::cout << "EEP In tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 003" << std::endl;
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 004" << std::endl;
 
-  std::cout << "EEP Leaving tpetra/core/src/transform/Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator()" << std::endl;
+  std::cout << "EEP Leaving tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator()" << std::endl;
   return *NewProblem_;
 }
 

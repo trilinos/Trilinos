@@ -37,8 +37,8 @@
 //************************************************************************
 //@HEADER
 
-#ifndef _Isorropia_EpetraRedistributor_hpp_
-#define _Isorropia_EpetraRedistributor_hpp_
+#ifndef _Isorropia_TpetraRedistributor_hpp_
+#define _Isorropia_TpetraRedistributor_hpp_
 
 #include <Isorropia_Redistributor.hpp>
 #include <Isorropia_ConfigDefs.hpp>

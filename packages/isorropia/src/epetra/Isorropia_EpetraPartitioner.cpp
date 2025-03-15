@@ -490,6 +490,7 @@ partition(bool force_repartitioning)
 
   if (input_graph_.get() != 0 && input_coords_.get() != 0)
   {
+    std::cout << "EEP In Partitioner::partition(): pos 001.1" << std::endl;
     if (weights_.get())
     {
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_,costs_,input_coords_, weights_));
@@ -501,6 +502,7 @@ partition(bool force_repartitioning)
   }
   else if (input_matrix_.get() != 0 && input_coords_.get() != 0)
   {
+    std::cout << "EEP In Partitioner::partition(): pos 001.2" << std::endl;
     if (weights_.get())
     {
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_,costs_,input_coords_, weights_));
@@ -510,12 +512,17 @@ partition(bool force_repartitioning)
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_,input_coords_));
     }
   }
-  else if (input_graph_.get() != 0)
+  else if (input_graph_.get() != 0) {
+    std::cout << "EEP In Partitioner::partition(): pos 001.3" << std::endl;
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
-  else if (input_matrix_.get() != 0)
+  }
+  else if (input_matrix_.get() != 0) {
+    std::cout << "EEP In Partitioner::partition(): pos 001.4" << std::endl;
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
+  }
   else if (input_coords_.get() != 0)
   {
+    std::cout << "EEP In Partitioner::partition(): pos 001.5" << std::endl;
     if (weights_.get())
     {
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_, weights_));
@@ -527,6 +534,7 @@ partition(bool force_repartitioning)
   }
   else if (input_map_.get() != 0)
   {
+    std::cout << "EEP In Partitioner::partition(): pos 001.6" << std::endl;
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_map_));
   }
   else
@@ -545,7 +553,7 @@ partition(bool force_repartitioning)
 
   if (partitioning_method == "UNSPECIFIED" && sublist.isParameter("LB_METHOD")) // AquiExceptioThrown
   {
-    std::cout << "EEP In Partitioner::partition(): pos 002 temporarylly comenting out an exception" << std::endl;
+    std::cout << "EEP In Partitioner::partition(): pos 003 temporarylly comenting out an exception" << std::endl;
     //throw Isorropia::Exception("Isorropia \"PARTITIONING METHOD\" as to be set\n"
     //                           "ZOLTAN/LB_METHOD is no longer supported.\n"
     //                           "See readme and release notes for details.");
@@ -553,6 +561,7 @@ partition(bool force_repartitioning)
 
   if (input_coords_.get() != 0)
   {
+    std::cout << "EEP In Partitioner::partition(): pos 004.1" << std::endl;
     if (partitioning_method == "UNSPECIFIED")
     {
       sublist.set("LB_METHOD", "RCB");
@@ -596,6 +605,7 @@ partition(bool force_repartitioning)
   }
   else if (input_graph_.get() != 0 || input_matrix_.get() != 0) // graph or matrix input
   {
+    std::cout << "EEP In Partitioner::partition(): pos 004.2" << std::endl;
     if (partitioning_method == "GRAPH")
     {
       input_type = Library::graph_input_;
@@ -626,15 +636,16 @@ partition(bool force_repartitioning)
       sublist.set("LB_METHOD", "HIER");
       input_type = Library::hgraph_graph_input_;
     }
-    
     else //Hypergraph by default
     {
+      std::cout << "EEP In Partitioner::partition(): pos 004.3" << std::endl;
       input_type = Library::hgraph_input_;
       sublist.set("LB_METHOD", "HYPERGRAPH");
     }
   }
   else  // BlockMap input
   {
+    std::cout << "EEP In Partitioner::partition(): pos 004.4" << std::endl;
     if (partitioning_method == "CYCLIC")
     {
       input_type = Library::simple_input_;
@@ -651,6 +662,8 @@ partition(bool force_repartitioning)
       sublist.set("LB_METHOD", "BLOCK");
     }
   }
+
+  std::cout << "EEP In Partitioner::partition(): pos 005" << std::endl;
 
   if (paramlist_.isParameter("NUM PARTS")) {
     sublist.set("NUM_GLOBAL_PARTS", paramlist_.get<std::string>("NUM PARTS"));
@@ -682,6 +695,7 @@ partition(bool force_repartitioning)
 
   lib_->input_type_ = input_type;
   lib_->repartition(sublist, properties_, exportsSize_, imports_);
+  std::cout << "EEP In Partitioner::partition(): pos 006" << std::endl;
   computeNumberOfProperties();
   operation_already_computed_ = true;
   std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::partition()" << std::endl;

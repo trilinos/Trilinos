@@ -37,8 +37,8 @@
 //************************************************************************
 //@HEADER
 
-#ifndef _Isorropia_EpetraCostDescriber_hpp_
-#define _Isorropia_EpetraCostDescriber_hpp_
+#ifndef _Isorropia_TpetraCostDescriber_hpp_
+#define _Isorropia_TpetraCostDescriber_hpp_
 
 #include <Isorropia_ConfigDefs.hpp>
 #include <Isorropia_CostDescriber.hpp>

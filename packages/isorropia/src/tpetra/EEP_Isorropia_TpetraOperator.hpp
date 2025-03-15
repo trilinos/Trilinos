@@ -37,8 +37,8 @@
 //************************************************************************
 //@HEADER
 
-#ifndef _Isorropia_EpetraOperator_hpp_
-#define _Isorropia_EpetraOperator_hpp_
+#ifndef _Isorropia_TpetraOperator_hpp_
+#define _Isorropia_TpetraOperator_hpp_
 
 //#include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RCP.hpp>
@@ -60,7 +60,7 @@
 //#include <Epetra_Import.h>
 //#include <Epetra_Vector.h>
 //#include <Epetra_MultiVector.h>
-#include <Epetra_CrsGraph.h>
+#include <Tpetra_CrsGraph_decl.hpp>
 //#include <Epetra_CrsMatrix.h>
 //#include <Epetra_LinearProblem.h>
 
@@ -70,22 +70,24 @@
 #include <string>
 #include <ctype.h>
 
-#ifdef MIN
-#undef MIN
-#endif
+//#ifdef MIN
+//#undef MIN
+//#endif
 
-#define MIN(a,b) ((a)<(b)?(a):(b))
+//#define MIN(a,b) ((a)<(b)?(a):(b))
 
 namespace Isorropia {
 
 namespace Tpetra {
-  class CostDescriber;
+  //class CostDescriber;
 
 /** An implementation of the Partitioner interface that operates on
     Epetra matrices and linear systems.
 
 */
-
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class Operator : virtual public Isorropia::Operator {
 public:
 
@@ -119,10 +121,22 @@ public:
   parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
   */
 
-  Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-              const Teuchos::ParameterList& paramlist, int base);
+  Operator(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, // EEP__
+           const Teuchos::ParameterList& paramlist, int base)
+  : input_graph_(input_graph), /*input_matrix_(0),
+    input_coords_(0),
+    costs_(0), weights_(0),*/
+    operation_already_computed_(false),
+    /*lib_(0),*/ base_(base) // EEP__
+  {
+    input_map_ = Teuchos::rcp(&(input_graph->getRowMap()), false);
 
+    if (paramlist.name() != "EmptyParameterList") {
+      setParameters(paramlist);
+    }
+  }
 
+#if 0 // EEP
   /** Constructor that accepts an Epetra_BlockMap object
 
      \param[in] input_map  BlockMap object for which a new operation
@@ -378,13 +392,13 @@ public:
   Teuchos::RCP<Isorropia::Epetra::CostDescriber> & getCosts() { return costs_; }
 
   virtual void compute(bool force_compute) = 0 ;
-
+#endif // EEP
   /** Query whether compute_operation() has already been called.
    */
-  bool alreadyComputed() const {
+  bool alreadyComputed() const { // EEP__
     return operation_already_computed_;
   }
-
+#if 0 // EEP
   int numProperties() const {
     return (numberOfProperties_);
   }
@@ -415,22 +429,22 @@ public:
 
   virtual int extractPropertiesView(int& size,
 				    const int*& array) const;
-
+#endif // EEP
 private:
 
-  void paramsToUpper(Teuchos::ParameterList &, int &changed, bool rmUnderscore=true);
-  void stringToUpper(std::string &s, int &changed, bool rmUnderscore=false);
+  //void paramsToUpper(Teuchos::ParameterList &, int &changed, bool rmUnderscore=true);
+  //void stringToUpper(std::string &s, int &changed, bool rmUnderscore=false);
   int numberOfProperties_;
   int localNumberOfProperties_;
   std::vector<int> numberElemsByProperties_;
 
 protected:
-  Teuchos::RCP<const Epetra_BlockMap> input_map_;
-  Teuchos::RCP<const Epetra_CrsGraph> input_graph_;
-  Teuchos::RCP<const Epetra_RowMatrix> input_matrix_;
-  Teuchos::RCP<const Epetra_MultiVector> input_coords_;
-  Teuchos::RCP<Isorropia::Epetra::CostDescriber> costs_;
-  Teuchos::RCP<const Epetra_MultiVector> weights_;
+  Teuchos::RCP< const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > input_map_;
+  Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph_;
+  //Teuchos::RCP< const Tpetra::RowMatrix<> > input_matrix_;
+  //Teuchos::RCP< const Tpetra::MultiVector<> > input_coords_;
+  //Teuchos::RCP<Isorropia::Epetra::CostDescriber> costs_;
+  //Teuchos::RCP<const Tpetra::MultiVector> weights_;
 
   Teuchos::ParameterList paramlist_;
 
@@ -444,31 +458,14 @@ protected:
   int global_num_graph_edge_weights_;
   int global_num_hg_edge_weights_;
 
-  Teuchos::RCP<Library> lib_;
+  //Teuchos::RCP<Library> lib_; // EEP__
 
   int base_;
 
   void computeNumberOfProperties();
 };//class Operator
 
-Operator::
-Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-	 const Teuchos::ParameterList& paramlist, int base)
-  : input_graph_(input_graph), input_matrix_(0),
-    input_coords_(0),
-    costs_(0), weights_(0),
-    operation_already_computed_(false),
-    lib_(0), base_(base)
-{
-  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-
-  if(paramlist.name() != "EmptyParameterList")
-  {
-    setParameters(paramlist);
-  }
-
-}
-
+#if 0 // EEP
 Operator::
 Operator(Teuchos::RCP<const Epetra_BlockMap> input_map,
 	 const Teuchos::ParameterList& paramlist, int base)
@@ -754,14 +751,16 @@ Operator::elemsWithProperty(int property, int* elementList, int len) const
       elementList[length++] = elemsIter - properties_.begin();
   }
 }
+#endif // EEP
 
-
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 void
-Operator::computeNumberOfProperties()
+Operator<LocalOrdinal, GlobalOrdinal, Node>::computeNumberOfProperties()
 {
   std::vector<int>::const_iterator elemsIter;
   std::vector<int>::iterator numberIter;
-  const Epetra_Comm& input_comm = input_map_->Comm();
 
   int max = 0;
   numberElemsByProperties_.assign(properties_.size(), 0);
@@ -781,13 +780,14 @@ Operator::computeNumberOfProperties()
     (*(numberIter + property)) ++;
   }
 
-  input_comm.MaxAll(&max, &numberOfProperties_, 1);
+  input_map_->Comm().MaxAll(&max, &numberOfProperties_, 1);
 
   numberOfProperties_ = numberOfProperties_ - base_ + 1;
 
   localNumberOfProperties_ = max - base_ + 1;
 }
 
+#if 0 // EEP
 void Operator::stringToUpper(std::string &s, int &changed, bool rmUnderscore)
 {
   std::string::iterator siter;
@@ -900,11 +900,10 @@ int Operator::extractPropertiesView(int& size,
     array = NULL;
   return (0);
 }
+#endif // EEP
 
 }//namespace Epetra
 }//namespace Isorropia
-
-#endif //HAVE_EPETRA
 
 #endif
 
