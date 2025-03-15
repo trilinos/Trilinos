@@ -25,6 +25,7 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
+#include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_HashUtils.hpp" // for pair_hash
