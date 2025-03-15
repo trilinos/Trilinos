@@ -126,13 +126,15 @@ ENDIF()
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
 
 SET(HEADERS ${HEADERS}
+  tpetra/EEP_Isorropia_TpetraCostDescriber.hpp
+  tpetra/EEP_Isorropia_TpetraOperator.hpp
   tpetra/EEP_Isorropia_TpetraPartitioner.hpp
+  tpetra/EEP_Isorropia_TpetraRedistributor.hpp
   tpetra/EEP_Isorropia_Tpetra.hpp
   )
 
 SET(SOURCES ${SOURCES}
-  tpetra/EEP_Isorropia_TpetraPartitioner.cpp
-  tpetra/EEP_Isorropia_Tpetra.cpp
+  tpetra/EEP_Isorropia_TpetraRedistributor.cpp
   )
 
 #

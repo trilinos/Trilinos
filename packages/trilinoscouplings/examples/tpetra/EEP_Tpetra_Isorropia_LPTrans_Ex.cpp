@@ -41,6 +41,31 @@
 void runExample() {
   std::cout << "Entering runExample()" << std::endl;
 
+#ifdef HAVE_EPETRA
+  std::cout << "In runExample(): HAVE_EPETRA = ON" << std::endl;
+#else
+  std::cout << "In runExample(): HAVE_EPETRA = OFF" << std::endl;
+#endif
+
+#ifdef HAVE_TPETRA
+  std::cout << "In runExample(): HAVE_TPETRA = ON" << std::endl;
+#else
+  std::cout << "In runExample(): HAVE_TPETRA = OFF" << std::endl;
+#endif
+
+#ifdef HAVE_ZOLTAN
+  std::cout << "In runExample(): HAVE_ZOLTAN = ON" << std::endl;
+#else
+  std::cout << "In runExample(): HAVE_ZOLTAN = OFF" << std::endl;
+#endif
+
+#ifdef HAVE_ISORROPIA_ZOLTAN
+  std::cout << "In runExample(): HAVE_ISORROPIA_ZOLTAN = ON" << std::endl;
+#else
+  std::cout << "In runExample(): HAVE_ISORROPIA_ZOLTAN = OFF" << std::endl;
+#endif
+
+
   int numProcs = 1;
   int localProc = 0;
 
@@ -61,7 +86,7 @@ void runExample() {
 
   std::cout << "In main(), pos 000" << std::endl;
 
-#if 1 // def HAVE_ISORROPIA_ZOLTAN // AquiToDo
+#ifdef HAVE_ISORROPIA_ZOLTAN
 
   // If Zoltan is available, we'll specify that the Zoltan package use
   // graph-partitioning for the partitioning operation and specifically

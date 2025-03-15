@@ -28,16 +28,17 @@ operator()( OriginalTypeRef orig )
   std::cout << "EEP Entering trilinoscouplings/src/epetraext/EpetraExt_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator()..." << std::endl;
   origObj_ = &orig;
 
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+#ifdef EPETRA_NO_64BIT_GLOBAL_INDICES
+#else
   std::cout << "EEP In trilinoscouplings/src/epetraext/EpetraExt_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 001" << std::endl;
   const Epetra_BlockMap & OldMap = orig.RowMap();
   if(OldMap.GlobalIndicesLongLong()) {
+    std::cout << "EEP In trilinoscouplings/src/epetraext/EpetraExt_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 002" << std::endl;
     // There is nothing we can do since Isorropia does not support Epetra 64-bit integers, just create a copy of the original graph.
     NewGraph_ = Teuchos::rcp( new Epetra_CrsGraph( orig ) );
   } 
   else
 #endif
-  std::cout << "EEP In trilinoscouplings/src/epetraext/EpetraExt_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 002" << std::endl;
   if (orig.NumGlobalRows() == 0)
   {
     std::cout << "EEP In trilinoscouplings/src/epetraext/EpetraExt_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 003" << std::endl;

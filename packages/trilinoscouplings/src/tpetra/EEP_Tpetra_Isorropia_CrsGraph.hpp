@@ -11,6 +11,7 @@
 #define TPETRA_ISORROPIA_CRSGRAPH_H
 
 #include <EEP_Tpetra_Transform.hpp>
+#include <EEP_Isorropia_Tpetra.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -89,28 +90,29 @@ operator()( typename Isorropia_CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::Orig
 #ifdef EPETRA_NO_64BIT_GLOBAL_INDICES // AquiToDo
 #else
   std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 001" << std::endl;
-  if  (sizeof(GlobalOrdinal) == 8) {
+  if  (false) { // sizeof(GlobalOrdinal) == 8) { // AquiToDo EEP__
+    std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 002" << std::endl;
     // There is nothing we can do since Isorropia does not support 64-bit integers, just create a copy of the original graph.
     NewGraph_ = Teuchos::rcp( new tCrsGraph( orig ) );
   } 
   else
 #endif
   if (orig.getGlobalNumRows() == 0) {
-    std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 002" << std::endl;
+    std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 003" << std::endl;
     // If there is nothing to do, just create a copy of the original empty graph.
     NewGraph_ = Teuchos::rcp( new tCrsGraph( orig ) );
   }
   else {
-    std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 003" << std::endl; // Aqui
+    std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 004" << std::endl; // Aqui
     try {
-      //NewGraph_ = Teuchos::rcp( Isorropia::Tpetra::createBalancedCopy( orig, partitionList_) ); // AquiToDo
+      NewGraph_ = Teuchos::rcp( Isorropia::Tpetra::createBalancedCopy( orig, partitionList_) ); // AquiToDo // EEP__
     }
     catch(std::exception& e) {
       std::cout << "Isorropia::Tpetra::createBalancedCopy threw exception '" << e.what() << "' on proc " << orig.getComm()->getRank() << std::endl;
     }
   }
 
-  std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 004" << std::endl;
+  std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 005" << std::endl;
   // Set the raw pointer to the new graph.
   // This should be OK, since the destructor does not attempt to destroy the raw pointer.
   this->newObj_ = NewGraph_.get();
