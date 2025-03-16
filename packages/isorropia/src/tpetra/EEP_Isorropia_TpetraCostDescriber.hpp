@@ -40,7 +40,7 @@
 #ifndef _Isorropia_TpetraCostDescriber_hpp_
 #define _Isorropia_TpetraCostDescriber_hpp_
 
-#include <Isorropia_ConfigDefs.hpp>
+//#include <Isorropia_ConfigDefs.hpp>
 #include <Isorropia_CostDescriber.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>

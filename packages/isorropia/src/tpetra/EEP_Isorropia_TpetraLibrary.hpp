@@ -40,7 +40,7 @@
 #ifndef _Isorropia_TpetraLibrary_hpp_
 #define _Isorropia_TpetraLibrary_hpp_
 
-#include <Isorropia_ConfigDefs.hpp>
+//#include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 

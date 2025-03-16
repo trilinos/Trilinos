@@ -223,12 +223,12 @@ void runExample() {
   // Create the new linear problem and perform the balanced partitioning.
   // NOTE:  The balanced linear system will be in transformedProblem after fwd() is called.
   //        It is not necessary for the RCP to manage the transformed problem.
-#if 0 // EEP___
   Teuchos::RCP< Tpetra::LinearProblem< double
                                      , Tpetra::CrsMatrix<double>::local_ordinal_type
                                      , Tpetra::CrsMatrix<double>::global_ordinal_type
                                      , Tpetra::CrsMatrix<double>::node_type
                                      > > transformedProblem = Teuchos::rcp( &((*LPTrans)( problem )), false );
+#if 0 // EEP___
   std::cout << "In main(), pos 008" << std::endl;
   LPTrans->fwd();
   std::cout << "In main(), pos 009" << std::endl;

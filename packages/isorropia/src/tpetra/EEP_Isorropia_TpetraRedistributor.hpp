@@ -69,7 +69,7 @@ using namespace ispatest;
 namespace Isorropia {
 
 namespace Tpetra {
-  class Partitioner;
+  //class Partitioner;
 
 /** @ingroup partitioning_grp partitioning_rcp_grp partitioning_ptr_grp
      Class which is constructed with a Partitioner instance, and
@@ -77,6 +77,9 @@ namespace Tpetra {
      given the partitioning computed by the Partitioner object.
 */
 
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class Redistributor : public Isorropia::Redistributor {
 public:
 
@@ -87,8 +90,8 @@ public:
       \param partitioner (in) this input partitioner determines the new partitioning
             to be created when Isorropia::Epetra::Redistributor::redistribute is called
    */
-  Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner);
-
+  Redistributor(Teuchos::RCP< Isorropia::Tpetra::Partitioner<LocalOrdinal, GlobalOrdinal, Node> > partitioner);
+#if 0 // EEP
   /** @ingroup partitioning_rcp_grp
       This constructor sets the target map for the redistribution.
 
@@ -105,7 +108,7 @@ public:
       \param partitioner (in) this input partitioner determines the new partitioning
             to be created when Isorropia::Epetra::Redistributor::redistribute is called
    */
-  Redistributor(Isorropia::Epetra::Partitioner *partitioner);
+  Redistributor(Isorropia::Tpetra::Partitioner<LocalOrdinal, GlobalOrdinal, Node> *partitioner);
 
   /** @ingroup partitioning_ptr_grp
       This constructor sets the target map for the redistribution.
@@ -323,20 +326,21 @@ public:
      redistribute_reverse(const Epetra_MultiVector& input_vector, Epetra_MultiVector& output_vector);
 
   Epetra_Import &get_importer() { return *importer_;}
-
+#endif // EEP
 private:
   /** @ingroup partitioning_grp
       Create an importer object to be used in the redistribution
       \param src_map (in) the map describing the pattern of the import operation
    */
-  void create_importer(const Epetra_BlockMap& src_map);
+  //void create_importer(const Epetra_BlockMap& src_map); // EEP
 
-  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner_;
-  Teuchos::RCP<Epetra_Import> importer_;
-  Teuchos::RCP<Epetra_Map> target_map_;
+  Teuchos::RCP< Isorropia::Tpetra::Partitioner<LocalOrdinal, GlobalOrdinal, Node> > partitioner_;
+  Teuchos::RCP< ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > importer_;
+  Teuchos::RCP< ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > target_map_;
 
 }; //class Redistributor
 
+#if 0 // EEP
 Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner)
   : partitioner_(partitioner),
   importer_(),
@@ -766,9 +770,9 @@ void Redistributor::create_importer(const Epetra_BlockMap& src_map)
   importer_ = Teuchos::rcp(new Epetra_Import(*target_map_, src_map));
 
 }
-
+#endif // EEP
+  
 }//namespace Tpetra
-
 }//namespace Isorropia
 
 #endif

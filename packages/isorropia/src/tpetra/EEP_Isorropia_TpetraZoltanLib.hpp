@@ -93,7 +93,7 @@ public:
 		 Teuchos::RCP<const Epetra_MultiVector> input_coords, int inputType=unspecified_input_);
 #endif
   ZoltanLibClass(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, // EEP__
-	         Teuchos::RCP< CostDescriber<LocalOrdinal, GlobalOrdinal, Node> > costs, int inputType=unspecified_input_);
+	         Teuchos::RCP< CostDescriber<LocalOrdinal, GlobalOrdinal, Node> > costs, int inputType=ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::unspecified_input_);
 #if 0 // EEP
   ZoltanLibClass(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, Teuchos::RCP<CostDescriber> costs, 
                  Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights, 
@@ -272,7 +272,11 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_BlockMap> input_map,
 }
 #endif // EEP
 
-int ZoltanLibClass::precompute()
+#if 0 // EEPEEP
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
 {
   std::string str1("Isorropia::ZoltanLibClass::precompute ");
   MPI_Comm mpicomm = zoltan_get_global_comm();
@@ -311,10 +315,10 @@ int ZoltanLibClass::precompute()
   else
     itype = ZoltanLib::QueryObject::unspecified_input_;
 
-
+#if 0 // EEP
   if (input_graph_.get() !=0 && input_coords_.get()!=0) //geometric and graph inputs
   {
-    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, input_coords_, weights_, itype));
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>(input_graph_, costs_, input_coords_, weights_, itype));
 #ifdef HAVE_MPI
     const  Epetra_Comm &ecomm = input_graph_->RowMap().Comm();
     try
@@ -331,7 +335,7 @@ int ZoltanLibClass::precompute()
   }
   else if (input_matrix_.get() !=0 && input_coords_.get()!=0) //geometric and matrix inputs
   {
-    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, input_coords_, weights_, itype));
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>(input_matrix_, costs_, input_coords_, weights_, itype));
 #ifdef HAVE_MPI
     const Epetra_Comm &ecomm = input_matrix_->RowMatrixRowMap().Comm();
     try
@@ -346,7 +350,9 @@ int ZoltanLibClass::precompute()
     }
 #endif
   }
-  else if (input_graph_.get() != 0) //graph inputs
+  else
+#endif // EEP
+  if (input_graph_.get() != 0) //graph inputs
   {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, itype));
 #ifdef HAVE_MPI
@@ -363,6 +369,7 @@ int ZoltanLibClass::precompute()
     }
 #endif
   }
+#if 0 // EEP
   else if (input_matrix_.get() != 0) //matrix inputs
   {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, itype));
@@ -414,8 +421,7 @@ int ZoltanLibClass::precompute()
     }
 #endif
   }
-
-
+#endif // EEP
 
   float version;
   int argcTmp=0;
@@ -959,8 +965,6 @@ order(Teuchos::ParameterList& zoltanParamList,
   return (0);
 }
 
-
-
 int ZoltanLibClass::postcompute()
 {
   if (zz_)
@@ -969,6 +973,7 @@ int ZoltanLibClass::postcompute()
 
   return (0);
 }
+#endif // EEPEEP
 
 }//namespace Tpetra
 }//namespace Isorropia
