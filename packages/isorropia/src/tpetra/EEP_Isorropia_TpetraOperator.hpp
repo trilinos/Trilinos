@@ -46,7 +46,7 @@
 
 //#include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_Operator.hpp>
-//#include <Isorropia_EpetraLibrary.hpp>
+#include <EEP_Isorropia_TpetraLibrary.hpp>
 
 //#include <Isorropia_EpetraOperator.hpp>
 //#include <Isorropia_Exception.hpp>
@@ -124,10 +124,10 @@ public:
   Operator(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, // EEP__
            const Teuchos::ParameterList& paramlist, int base)
   : input_graph_(input_graph), /*input_matrix_(0),
-    input_coords_(0),
-    costs_(0), weights_(0),*/
+    input_coords_(0),*/
+    costs_(0), /*weights_(0),*/
     operation_already_computed_(false),
-    /*lib_(0),*/ base_(base) // EEP__
+    lib_(0), base_(base) // EEP__
   {
     input_map_ = Teuchos::rcp(&(input_graph->getRowMap()), false);
 
@@ -377,6 +377,7 @@ public:
   Operator(Teuchos::RCP<const Epetra_MultiVector> coords,
            Teuchos::RCP<const Epetra_MultiVector> weights,
 	   const Teuchos::ParameterList& paramlist, int base);
+#endif // EEP
 
   /** Destructor */
   virtual ~Operator();
@@ -389,16 +390,16 @@ public:
   /** Get the cost object
    */
 
-  Teuchos::RCP<Isorropia::Epetra::CostDescriber> & getCosts() { return costs_; }
+  Teuchos::RCP< Isorropia::Tpetra::CostDescriber< LocalOrdinal, GlobalOrdinal, Node> > & getCosts() { return costs_; }
 
   virtual void compute(bool force_compute) = 0 ;
-#endif // EEP
+
   /** Query whether compute_operation() has already been called.
    */
   bool alreadyComputed() const { // EEP__
     return operation_already_computed_;
   }
-#if 0 // EEP
+
   int numProperties() const {
     return (numberOfProperties_);
   }
@@ -407,10 +408,12 @@ public:
     return (localNumberOfProperties_);
   }
 
+#if 0 // EEP
   /** Return the new partition ID for a given element that
      resided locally in the old operation.
   */
   virtual const int& operator[](int myElem) const;
+#endif // EEP
 
   /** Return the number of elements in a given partition.
   */
@@ -429,7 +432,6 @@ public:
 
   virtual int extractPropertiesView(int& size,
 				    const int*& array) const;
-#endif // EEP
 private:
 
   //void paramsToUpper(Teuchos::ParameterList &, int &changed, bool rmUnderscore=true);
@@ -443,7 +445,7 @@ protected:
   Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph_;
   //Teuchos::RCP< const Tpetra::RowMatrix<> > input_matrix_;
   //Teuchos::RCP< const Tpetra::MultiVector<> > input_coords_;
-  //Teuchos::RCP<Isorropia::Epetra::CostDescriber> costs_;
+  Teuchos::RCP< Isorropia::Tpetra::CostDescriber<LocalOrdinal, GlobalOrdinal, Node> > costs_;
   //Teuchos::RCP<const Tpetra::MultiVector> weights_;
 
   Teuchos::ParameterList paramlist_;
@@ -458,7 +460,7 @@ protected:
   int global_num_graph_edge_weights_;
   int global_num_hg_edge_weights_;
 
-  //Teuchos::RCP<Library> lib_; // EEP__
+  Teuchos::RCP< Library<LocalOrdinal, GlobalOrdinal, Node> > lib_; // EEP__
 
   int base_;
 
@@ -706,11 +708,16 @@ Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
      setParameters(paramlist);
   }
 }
+#endif // EEP
 
-Operator::~Operator()
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+Operator<LocalOrdinal, GlobalOrdinal, Node>::~Operator()
 {
 }
 
+#if 0 // EEP
 void Operator::setParameters(const Teuchos::ParameterList& paramlist)
 {
   int changed;

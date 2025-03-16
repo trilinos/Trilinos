@@ -56,7 +56,7 @@
 #include <Isorropia_Partitioner.hpp>
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
-#include <Isorropia_EpetraZoltanLib.hpp>
+#include <EEP_Isorropia_TpetraZoltanLib.hpp>
 #endif
 #include <EEP_Isorropia_Tpetra.hpp>
 
@@ -766,7 +766,7 @@ void
 Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartitioning) // EEP__
 {
   std::cout << "EEP Entering isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::partition()..." << std::endl;
-  //int input_type = Library::unspecified_input_; // EEP__
+  int input_type = Library::unspecified_input_; // EEP__
 
   std::string partitioning_method_str("PARTITIONING METHOD"); // Aqui
   std::string partitioning_method =
@@ -811,7 +811,7 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartition
   else if (input_graph_.get() != 0) {
 #endif // EEP
     std::cout << "EEP In Partitioner::partition(): pos 001.3" << std::endl;
-    //lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_)); // EEP__
+    lib_ = Teuchos::rcp(new ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>(input_graph_, costs_)); // EEP__
 #if 0 // EEP
   }
   else if (input_matrix_.get() != 0) {
@@ -840,9 +840,9 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartition
     throw Isorropia::Exception("Partitioner::partition - no input object.");
   }
 #endif // EEP
-  //lib_->numPartSizes = numPartSizes; // EEP__
-  //lib_->partGIDs = partGIDs;
-  //lib_->partSizes = partSizes;
+  lib_->numPartSizes = numPartSizes; // EEP__
+  lib_->partGIDs = partGIDs;
+  lib_->partSizes = partSizes;
 
 #endif /* HAVE_ISORROPIA_ZOLTAN */
   std::cout << "EEP In Partitioner::partition(): pos 002" << std::endl;
@@ -939,7 +939,7 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartition
     {
 #endif // EEP
       std::cout << "EEP In Partitioner::partition(): pos 004.3" << std::endl;
-      //input_type = Library::hgraph_input_; // EEP_
+      input_type = Library::hgraph_input_; // EEP__
       sublist.set("LB_METHOD", "HYPERGRAPH");
 #if 0 // EEP
     }
@@ -994,8 +994,8 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartition
     printMetrics = 1;
   }
 
-  //lib_->input_type_ = input_type; // EEP__
-  //lib_->repartition(sublist, properties_, exportsSize_, imports_);
+  lib_->input_type_ = input_type; // EEP__
+  lib_->repartition(sublist, properties_, exportsSize_, imports_);
   std::cout << "EEP In Partitioner::partition(): pos 006" << std::endl;
   this->computeNumberOfProperties();
   this->operation_already_computed_ = true;
