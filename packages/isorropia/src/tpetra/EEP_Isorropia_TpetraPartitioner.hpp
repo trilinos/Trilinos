@@ -68,7 +68,7 @@
 //#include <Epetra_Import.h>
 //#include <Epetra_Vector.h>
 //#include <Epetra_MultiVector.h>
-#include <Epetra_CrsGraph.h>
+#include <Tpetra_CrsGraph_decl.hpp>
 //#include <Epetra_CrsMatrix.h>
 //#include <Epetra_LinearProblem.h>
 

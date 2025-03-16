@@ -41,7 +41,7 @@
 #define _Isorropia_TpetraRedistributor_hpp_
 
 #include <Isorropia_Redistributor.hpp>
-#include <Isorropia_ConfigDefs.hpp>
+//#include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
@@ -57,18 +57,18 @@ using namespace ispatest;
 
 #include <Teuchos_RCP.hpp>
 
-#include <Epetra_Map.h>
-#include <Epetra_Import.h>
-#include <Epetra_Vector.h>
-#include <Epetra_MultiVector.h>
-#include <Epetra_CrsGraph.h>
-#include <Epetra_CrsMatrix.h>
-#include <Epetra_LinearProblem.h>
-#include <Epetra_Comm.h>
+#include <Tpetra_Map_decl.hpp>
+#include <Tpetra_Import_decl.hpp>
+#include <Tpetra_Vector_decl.hpp>
+#include <Tpetra_MultiVector_decl.hpp>
+#include <Tpetra_CrsGraph_decl.hpp>
+#include <Tpetra_CrsMatrix_decl.hpp>
+#include <Tpetra_LinearProblem_decl.hpp>
+//#include <Tpetra_Comm_decl.hpp>
 
 namespace Isorropia {
 
-namespace Epetra {
+namespace Tpetra {
   class Partitioner;
 
 /** @ingroup partitioning_grp partitioning_rcp_grp partitioning_ptr_grp
@@ -767,7 +767,7 @@ void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 
 }
 
-}//namespace Epetra
+}//namespace Tpetra
 
 }//namespace Isorropia
 

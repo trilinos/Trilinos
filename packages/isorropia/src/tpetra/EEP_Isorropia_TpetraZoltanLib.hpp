@@ -47,7 +47,7 @@
 #include <EEP_Isorropia_TpetraLibrary.hpp>
 #include <EEP_Isorropia_TpetraCostDescriber.hpp>
 
-#include <QueryObject.hpp>
+#include <EEP_QueryObject.hpp>
 #include <zoltan_cpp.h>
 
 //#include <Isorropia_Exception.hpp>
@@ -93,7 +93,7 @@ public:
 		 Teuchos::RCP<const Epetra_MultiVector> input_coords, int inputType=unspecified_input_);
 #endif
   ZoltanLibClass(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, // EEP__
-	         Teuchos::RCP<CostDescriber> costs, int inputType=unspecified_input_);
+	         Teuchos::RCP< CostDescriber<LocalOrdinal, GlobalOrdinal, Node> > costs, int inputType=unspecified_input_);
 #if 0 // EEP
   ZoltanLibClass(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, Teuchos::RCP<CostDescriber> costs, 
                  Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights, 
@@ -170,7 +170,7 @@ private:
   Teuchos::ParameterList zoltanParamList_;
   std::string partMethod_; // stores partitioning method used, perhaps should be in EpetraLibrary?
   Zoltan *zz_;
-  Teuchos::RCP<ZoltanLib::QueryObject> queryObject_;
+  Teuchos::RCP< ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node> > queryObject_;
   int num_obj_;
 
 };//class ZoltanLibClass
