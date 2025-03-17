@@ -632,9 +632,7 @@ void STK_ExodusReaderFactory::addEdgeBlocks(STK_Interface & mesh) const
          std::string edge_block_name = mkBlockName(panzer_stk::STK_Interface::edgeBlockString, topo.name());
          stk::mesh::Part * edge_block = mesh.getEdgeBlock(edge_block_name);
 
-         std::vector<stk::mesh::Entity> all_edges_for_topo;
-         bulkData->get_entities(mesh.getEdgeRank(),owned_block,all_edges_for_topo);
-         mesh.addEntitiesToEdgeBlock(all_edges_for_topo, edge_block);
+         bulkData->change_entity_parts(owned_block, mesh.getEdgeRank(), stk::mesh::PartVector{edge_block});
       }
    }
 }
@@ -666,9 +664,7 @@ void STK_ExodusReaderFactory::addFaceBlocks(STK_Interface & mesh) const
          std::string face_block_name = mkBlockName(panzer_stk::STK_Interface::faceBlockString, topo.name());
          stk::mesh::Part * face_block = mesh.getFaceBlock(face_block_name);
 
-         std::vector<stk::mesh::Entity> all_faces_for_topo;
-         bulkData->get_entities(mesh.getFaceRank(),owned_block,all_faces_for_topo);
-         mesh.addEntitiesToFaceBlock(all_faces_for_topo, face_block);
+         bulkData->change_entity_parts(owned_block, mesh.getFaceRank(), stk::mesh::PartVector{face_block});
       }
    }
 }
