@@ -32,13 +32,13 @@ Driver<VT, DT>::Driver()
       #else
       _variant(-1), // sequential by default
       #endif
-      _nstreams(16),
+      _nstreams(16), _pivot_tol(0.0),
 #if defined(KOKKOS_ENABLE_HIP)
       _store_transpose(true),
 #else
       _store_transpose(false),
 #endif
-      _pivot_tol(0.0), _max_num_superblocks(-1) {}
+      _max_num_superblocks(-1) {}
 
 ///
 /// duplicate the object
