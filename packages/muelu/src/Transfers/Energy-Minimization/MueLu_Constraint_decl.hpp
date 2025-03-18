@@ -79,11 +79,10 @@ class Constraint : public BaseClass {
   //@{
 
   /*! Setup constraint.
-      \param B -- Fine nullspace vectors
       \param Bc -- Coarse nullspace vectors
       \param Ppattern -- Nonzero sparsity pattern for the prolongator
    */
-  void Setup(const MultiVector& B, const MultiVector& Bc, RCP<const CrsGraph> Ppattern);
+  void Setup(const MultiVector& Bc, RCP<const CrsGraph> Ppattern);
 
   //@}
 
