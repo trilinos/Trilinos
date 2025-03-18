@@ -524,6 +524,15 @@ if (
     )
 endif()
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_getLocalDiagCopy
+  SOURCES
+    CrsMatrix_getLocalDiagCopy.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 SET(TIMING_INSTALLS "")
 
 INSTALL(TARGETS ${TIMING_INSTALLS}
