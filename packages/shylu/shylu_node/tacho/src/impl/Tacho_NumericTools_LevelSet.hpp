@@ -2297,10 +2297,10 @@ public:
       printf("=====================================================\n");
       printf( "\n  ** Team = %f s, Device = %f s, Update = %f s **\n",time_parallel,time_device,time_update );
       if (variant == 3) {
-        printf( " extractCRS with total nnzL = %ld and nnzU = %ld\n\n",colindL.extent(0),colindU.extent(0) );
-      } else {
-        printf( "\n" );
+        printf( "  extractCRS with total nnzL = %ld and nnzU = %ld\n",colindL.extent(0),colindU.extent(0) );
+	if (store_transpose) printf( "  > explicitly storing transpose\n" );
       }
+      printf( "\n" );
       print_stat_factor();
       fflush(stdout);
     }
