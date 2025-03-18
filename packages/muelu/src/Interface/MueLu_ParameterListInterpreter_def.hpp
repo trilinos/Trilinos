@@ -2060,16 +2060,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: pattern order", int, patternParams);
   patternFactory->SetParameterList(patternParams);
   patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
-  manager.SetFactory("Ppattern", patternFactory);
 
-  // Constraint
-  auto constraintFactory = rcp(new ConstraintFactory());
-  constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
-  constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
-  manager.SetFactory("Constraint", constraintFactory);
-
-  // Emin Factory
-  auto P = rcp(new EminPFactory());
   // Filtering
   MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: use filtered matrix", bool, useFiltering);
   if (useFiltering) {
@@ -2095,12 +2086,20 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
       filterFactory->SetFactory("Filtering", manager.GetFactory("Graph"));
 
-      P->SetFactory("A", filterFactory);
+      patternFactory->SetFactory("A", filterFactory);
 
     } else {
-      P->SetFactory("A", manager.GetFactory("Graph"));
+      patternFactory->SetFactory("A", manager.GetFactory("Graph"));
     }
   }
+
+  manager.SetFactory("Ppattern", patternFactory);
+
+  // Constraint
+  auto constraintFactory = rcp(new ConstraintFactory());
+  constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
+  constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
+  manager.SetFactory("Constraint", constraintFactory);
 
   // Energy minimization
   ParameterList Pparams;
@@ -2111,6 +2110,9 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Pparams.set("Keep P0", true);
     Pparams.set("Keep Constraint0", true);
   }
+
+  // Emin Factory
+  auto P = rcp(new EminPFactory());
   P->SetParameterList(Pparams);
   P->SetFactory("P", manager.GetFactory("Ptent"));
   P->SetFactory("Constraint", manager.GetFactory("Constraint"));
