@@ -4,9 +4,6 @@ on:
     types:
       - opened
       - synchronize
-    branches:
-      - master
-      - develop
   workflow_dispatch:
 
 # Cancels any in progress 'workflow' associated with this PR
