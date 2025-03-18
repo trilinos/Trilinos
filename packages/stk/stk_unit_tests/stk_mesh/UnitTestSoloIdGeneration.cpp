@@ -42,8 +42,8 @@
 class SoloSideIdGeneratorTester : public stk::mesh::impl::SoloSideIdGenerator
 {
 public:
-  SoloSideIdGeneratorTester(int numProcs, int proc, uint64_t maxSideId)
-    : SoloSideIdGenerator(numProcs, proc, maxSideId)
+  SoloSideIdGeneratorTester(int numProcsArg, int proc, uint64_t maxSideId)
+    : SoloSideIdGenerator(numProcsArg, proc, maxSideId)
   {}
 
   stk::mesh::EntityId test_get_solo_side_id_using_formula(unsigned elementId, unsigned sideOrdinal)

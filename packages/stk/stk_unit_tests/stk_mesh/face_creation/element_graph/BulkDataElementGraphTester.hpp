@@ -80,12 +80,12 @@ class BulkDataElementGraphTester : public stk::mesh::BulkData
 {
 public:
   BulkDataElementGraphTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm)
-    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm)
+    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}), comm)
   {
   }
 
   BulkDataElementGraphTester(stk::mesh::MetaData &meta, MPI_Comm comm, enum AutomaticAuraOption autoAuraOption)
-    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&meta, [](auto pointerWeWontDelete){}), comm, autoAuraOption)
+    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&meta, [](auto /*pointerWeWontDelete*/){}), comm, autoAuraOption)
   {
   }
 

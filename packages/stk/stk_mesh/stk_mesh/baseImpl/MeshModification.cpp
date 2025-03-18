@@ -17,7 +17,7 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-bool MeshModification::modification_begin(const std::string description)
+bool MeshModification::modification_begin(const std::string /*description*/)
 {
     if (m_bulkData.m_runConsistencyCheck) {
       parallel_machine_barrier( m_bulkData.parallel() );
@@ -239,7 +239,7 @@ bool MeshModification::change_entity_owner( const EntityProcVec & arg_change)
 }
 
 void MeshModification::internal_change_entity_owner( const std::vector<EntityProc> & local_change,
-                                             modification_optimization mod_optimization )
+                                             modification_optimization /*mod_optimization*/ )
 {
   m_bulkData.require_ok_to_modify();
   m_bulkData.m_modSummary.track_change_entity_owner(local_change);

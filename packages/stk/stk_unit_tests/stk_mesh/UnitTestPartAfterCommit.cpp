@@ -103,7 +103,7 @@ void testRemovingNodesFromPart(stk::mesh::BulkData &stkMeshBulkData,
                                const stk::mesh::EntityVector &nodes,
                                stk::mesh::Part &nodePart,
                                stk::mesh::Selector partSelector,
-                               stk::mesh::Field<double> &nodeField1)
+                               stk::mesh::Field<double> & /*nodeField1*/)
 {
   stkMeshBulkData.modification_begin();
   stk::mesh::PartVector emptyAddParts;

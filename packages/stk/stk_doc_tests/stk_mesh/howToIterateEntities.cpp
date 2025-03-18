@@ -113,7 +113,7 @@ TEST(StkMeshHowTo, iterateSidesetNodes_ForEachEntity_FieldDataAccess)
   constexpr double prescribedTemperatureValue = 2.0;
 
   stk::mesh::for_each_entity_run(*stkMesh, stk::topology::NODE_RANK, boundaryNodesSelector,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
       double *temperatureValues = stk::mesh::field_data(temperatureField, node);
       *temperatureValues = prescribedTemperatureValue;
     });

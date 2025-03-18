@@ -23,7 +23,7 @@ struct PointClassifierNormalInterpolationTolerances
 
 struct PointClassifierNormalWrapperTolerances
 {
-    explicit PointClassifierNormalWrapperTolerances(double eps = 1e-13, double smallSlopeTol = 1e-13)
+    explicit PointClassifierNormalWrapperTolerances(double eps = 1e-13, [[maybe_unused]] double smallSlopeTol = 1e-13)
       : quadBreakupTolerance(eps)
       , normalInterpolationTolerances(eps)
     {}

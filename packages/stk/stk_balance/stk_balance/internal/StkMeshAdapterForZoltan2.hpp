@@ -83,24 +83,27 @@ private:
   const Zoltan2ParallelGraph &mGraph;
 
 public: // defaultish
- virtual bool availAdjs(Zoltan2::MeshEntityType source, Zoltan2::MeshEntityType target) const override { return false; }
-
- virtual size_t getLocalNumAdjs(Zoltan2::MeshEntityType source, Zoltan2::MeshEntityType target) const override
- {
-   return 0;
+  virtual bool availAdjs(Zoltan2::MeshEntityType /*source*/, Zoltan2::MeshEntityType /*target*/) const
+  {
+    return false;
   }
 
-  virtual void getAdjsView(Zoltan2::MeshEntityType source,
-      Zoltan2::MeshEntityType target,
-      const BalanceLocalNumber *&offsets,
-      const BalanceGlobalNumber *&adjacencyIds) const override
+  virtual size_t getLocalNumAdjs(Zoltan2::MeshEntityType /*source*/, Zoltan2::MeshEntityType /*target*/) const override
+  {
+    return 0;
+  }
+
+  virtual void getAdjsView(Zoltan2::MeshEntityType /*source*/, Zoltan2::MeshEntityType /*target*/, const BalanceLocalNumber *&offsets, const BalanceGlobalNumber *& adjacencyIds) const override
   {
     offsets = NULL;
     adjacencyIds = NULL;
     Z2_THROW_NOT_IMPLEMENTED
   }
 
-  virtual bool useDegreeAsWeightOf(Zoltan2::MeshEntityType etype, int idx) const override { return false; }
+  virtual bool useDegreeAsWeightOf(Zoltan2::MeshEntityType /*etype*/, int /*idx*/) const override
+  {
+    return false;
+  }
 };
 
 #endif

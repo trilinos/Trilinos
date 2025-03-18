@@ -382,7 +382,7 @@ getTimeFormat()
 
 void
 setTimerNameMaxWidth(
-  size_t        width)
+  size_t        /*width*/)
 {
 }
 

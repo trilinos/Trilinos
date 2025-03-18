@@ -46,9 +46,9 @@ protected:
     return faces;
   }
 
-  stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkData)
+  stk::mesh::Selector get_things_to_skin(const stk::mesh::BulkData& bulkDataArg)
   {
-    return bulkData.mesh_meta_data().universal_part();
+    return bulkDataArg.mesh_meta_data().universal_part();
   }
 };
 

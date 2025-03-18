@@ -531,7 +531,7 @@ template<typename ViewType>
 void init_sorted(ViewType& view)
 {
   auto devicePolicy = stk::ngp::DeviceRangePolicy(0,1);
-  Kokkos::parallel_for("init", devicePolicy, KOKKOS_LAMBDA(const int& idx) {
+  Kokkos::parallel_for("init", devicePolicy, KOKKOS_LAMBDA(const int& /*idx*/) {
     view(0) = 0;
     view(1) = 2;
     view(2) = 2;
@@ -544,7 +544,7 @@ template<typename ViewType>
 void init_unsorted(ViewType& view)
 {
   auto devicePolicy = stk::ngp::DeviceRangePolicy(0,1);
-  Kokkos::parallel_for("init", devicePolicy, KOKKOS_LAMBDA(const int& idx) {
+  Kokkos::parallel_for("init", devicePolicy, KOKKOS_LAMBDA(const int& /*idx*/) {
     view(0) = 0;
     view(1) = 2;
     view(2) = 1;

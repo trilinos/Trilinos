@@ -55,7 +55,7 @@ using stk::unit_test_util::build_mesh;
 using stk::unit_test_util::build_mesh_no_simple_fields;
 using stk::mesh::MeshBuilder;
 
-QuadFixture::QuadFixture( MetaData& meta, BulkData& bulk, size_t nx, size_t ny, size_t nz, size_t nid_start, size_t eid_start)
+QuadFixture::QuadFixture( MetaData& meta, BulkData& bulk, size_t nx, size_t ny, size_t /*nz*/, size_t nid_start, size_t eid_start)
   : m_spatial_dimension(2),
     m_meta(meta),
     m_bulk_data(bulk),
@@ -276,7 +276,7 @@ void QuadFixture::fill_node_map(int p_rank)
   }
 }
 
-Quad9Fixture::Quad9Fixture( MetaData& meta, BulkData& bulk, size_t nx, size_t ny, size_t nz, size_t nid_start, size_t eid_start)
+Quad9Fixture::Quad9Fixture( MetaData& meta, BulkData& bulk, size_t nx, size_t ny, size_t /*nz*/, size_t nid_start, size_t eid_start)
   : m_spatial_dimension(2),
     m_meta(meta),
     m_bulk_data(bulk),

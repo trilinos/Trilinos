@@ -129,9 +129,9 @@ int main(int argc, char* argv[])
     std::cout << "Done with Factor, Time: "
               << totalTime(ftime, myTime()) << std::endl;
     //mybasker.DEBUG_PRINT();
-    double ttime = myTime();
     
     if (nontranspose) {
+      double ttime = myTime();
       std::cout << "\n\n** Begin Solve **\n" << std::endl;
       mybasker.Solve(y,x);
       std::cout << "Done with Solve, Time: "
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
         x[i] = (Entry) 0.0;
       }
 
-      ttime = myTime();
+      double ttime = myTime();
       std::cout << "\n\n** Begin Transpose Solve **\n" << std::endl;
       // transpose
       mybasker.Solve(yt,x,true);
@@ -216,17 +216,15 @@ int main(int argc, char* argv[])
                                                            //---Options
       mybaskertr.SetThreads(nthreads);
       std::cout << "Setting Threads:" << nthreads << std::endl;
-      double stime = myTime();
+      stime = myTime();
       mybaskertr.Symbolic(m,n,nnz,col_ptr,row_idx,val);
       std::cout << "Done with Symbolic, Time: " 
         << totalTime(stime, myTime()) << std::endl;
-      double ftime = myTime();
+      ftime = myTime();
       mybaskertr.Factor(m,n,nnz,col_ptr,row_idx,val);
       std::cout << "Done with Factor, Time: "
         << totalTime(ftime, myTime()) << std::endl;
       //mybaskertr.DEBUG_PRINT();
-      double ttime = myTime();
-
 
       // Transpose solve:
       // This solve only works with square matrices
@@ -247,7 +245,7 @@ int main(int argc, char* argv[])
         x[i] = (Entry) 0.0;
       }
 
-      ttime = myTime();
+      double ttime = myTime();
       std::cout << "\n\n** Begin Transpose Copy Solve **\n" << std::endl;
       // transpose
       mybaskertr.Solve(yt,x);

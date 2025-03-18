@@ -62,7 +62,7 @@ namespace {
 using stk::unit_test_util::build_mesh;
 using stk::unit_test_util::build_mesh_no_simple_fields;
 
-void create_one_element_mesh_with_nodeset(stk::mesh::BulkData& bulk, const std::string & filename)
+void create_one_element_mesh_with_nodeset(stk::mesh::BulkData& bulk, const std::string & /*filename*/)
 {
   if(bulk.parallel_size() == 1) {
     stk::mesh::MetaData& meta = bulk.mesh_meta_data();

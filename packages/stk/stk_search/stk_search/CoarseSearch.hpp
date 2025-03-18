@@ -122,7 +122,7 @@ void coarse_search(DomainView const & domain,
                    ResultView& intersections,
                    ExecutionSpace const& execSpace = ExecutionSpace{},
                    bool enforceSearchResultSymmetry = true,
-                   bool autoSwapDomainAndRange = true,
+                   [[maybe_unused]] bool autoSwapDomainAndRange = true,
                    bool sortSearchResults = false)
 {
   check_coarse_search_types_parallel<DomainView, RangeView, ResultView, ExecutionSpace>();

@@ -148,7 +148,7 @@ public:
     const auto& teamPolicy = stk::ngp::DeviceTeamPolicy(space, 10, Kokkos::AUTO);
 
     Kokkos::parallel_for("run_with_team_policy", teamPolicy,
-                        KOKKOS_LAMBDA(const TeamHandleType & team) {
+                        KOKKOS_LAMBDA(const TeamHandleType & /*team*/) {
                           for(unsigned j = 0; j < iterationSpent; ++j) {
                             clock_t start = clock();
                             clock_t now;

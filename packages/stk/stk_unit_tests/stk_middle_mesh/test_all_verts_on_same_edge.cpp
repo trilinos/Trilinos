@@ -27,7 +27,7 @@ class AllVertsOnSameEdgeTester : public ::testing::Test
       spec.ymax   = 1;
 
       auto func                         = [&](const utils::Point& pt) { return utils::Point(pt.x, pt.y); };
-      std::shared_ptr<mesh::Mesh> mesh2 = mesh::impl::create_mesh(spec, func);
+      mesh2 = mesh::impl::create_mesh(spec, func);
 
       mesh1 = mesh::make_empty_mesh();
       for (auto& pt : pts)

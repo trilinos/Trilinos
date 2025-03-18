@@ -65,7 +65,7 @@ class RemoteChecker
         pack_buffers(exchanger, mesh, dim);
 
         exchanger.start_nonblocking();
-        auto f = [](int rank, const std::vector<RemoteData>& buf) {};
+        auto f = [](int /*rank*/, const std::vector<RemoteData>& /*buf*/) {};
         exchanger.complete_receives(f);
 
         check_remotes(exchanger, mesh, dim);

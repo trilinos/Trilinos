@@ -10,6 +10,8 @@
 #ifndef XPETRA_MAPFACTORY_DEF_HPP
 #define XPETRA_MAPFACTORY_DEF_HPP
 
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
+#include "Teuchos_ENull.hpp"
 #include "Xpetra_MapFactory_decl.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
@@ -113,6 +115,7 @@ MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
 
   XPETRA_FACTORY_ERROR_IF_EPETRA(nodeMap->lib());
   XPETRA_FACTORY_END;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 #ifdef HAVE_XPETRA_TPETRA

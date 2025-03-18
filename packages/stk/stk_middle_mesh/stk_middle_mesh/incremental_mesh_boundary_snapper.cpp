@@ -59,7 +59,7 @@ void IncrementalMeshBoundarySnapper::record_final_position_and_restore_initial_p
 
 void IncrementalMeshBoundarySnapper::apply_displacement(MeshPtr mesh, FieldPtr field,
                                                         std::shared_ptr<MeshQualityImprover> improver,
-                                                        const std::string& prefix)
+                                                        const std::string& /*prefix*/)
 {
   bool amIRoot = utils::impl::comm_rank(mesh->get_comm()) == 0;
   auto& data = *field;

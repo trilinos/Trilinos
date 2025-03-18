@@ -64,7 +64,7 @@ void createNamedFieldOnMesh(stk::mesh::MetaData &stkMeshMetaData, const std::str
   stk::mesh::put_field_on_mesh(field0, stkMeshMetaData.universal_part(), nullptr);
 }
 
-void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm communicator, std::vector<std::string> goldFieldNames)
+void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm /*communicator*/, std::vector<std::string> goldFieldNames)
 {
   Ioss::NodeBlock *nodeBlockAssociatedWithField0 = ioRegion.get_node_blocks()[0];
   Ioss::NameList fieldNames;

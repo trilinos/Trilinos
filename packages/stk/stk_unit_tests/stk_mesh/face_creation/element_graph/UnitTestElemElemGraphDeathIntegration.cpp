@@ -281,7 +281,7 @@ public:
 
   }
 
-  virtual void entity_added(stk::mesh::Entity entity)
+  virtual void entity_added(stk::mesh::Entity /*entity*/)
   {
     numAdded++;
   }

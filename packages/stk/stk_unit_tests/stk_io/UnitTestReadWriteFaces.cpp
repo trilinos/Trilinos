@@ -202,17 +202,17 @@ TEST_F(StkFaceIoTest, SerialSetupFaceMesh)
 TEST_F(StkFaceIoTest, SerialWriteMesh)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
-  io_test_utils::ExpectedValues expectedValues;
-  expectedValues.numEdgesPerProc = std::vector<unsigned>{0};
-  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{0};
-  expectedValues.numFacesPerProc = std::vector<unsigned>{1};
-  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{1};
-  expectedValues.numConnectedEdges = 0;
-  expectedValues.globalEdgeCount = 0;
-  expectedValues.globalElemCount = 2;
+  io_test_utils::ExpectedValues expectedTestValues;
+  expectedTestValues.numEdgesPerProc = std::vector<unsigned>{0};
+  expectedTestValues.numLocalEdgesPerProc = std::vector<unsigned>{0};
+  expectedTestValues.numFacesPerProc = std::vector<unsigned>{1};
+  expectedTestValues.numLocalFacesPerProc = std::vector<unsigned>{1};
+  expectedTestValues.numConnectedEdges = 0;
+  expectedTestValues.globalEdgeCount = 0;
+  expectedTestValues.globalElemCount = 2;
 
   setup_mesh_with_faces(2);
-  set_expected_values(expectedValues);
+  set_expected_values(expectedTestValues);
   test_faces(get_bulk());
   output_mesh();
 
@@ -222,17 +222,17 @@ TEST_F(StkFaceIoTest, SerialWriteMesh)
 TEST_F(StkFaceIoTest, ParallelWriteMesh)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-  io_test_utils::ExpectedValues expectedValues;
-  expectedValues.numEdgesPerProc = std::vector<unsigned>{0, 0};
-  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{0, 0};
-  expectedValues.numFacesPerProc = std::vector<unsigned>{1, 1};
-  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{1, 0};
-  expectedValues.numConnectedEdges = 0;
-  expectedValues.globalEdgeCount = 0;
-  expectedValues.globalElemCount = 2;
+  io_test_utils::ExpectedValues expectedTestValues;
+  expectedTestValues.numEdgesPerProc = std::vector<unsigned>{0, 0};
+  expectedTestValues.numLocalEdgesPerProc = std::vector<unsigned>{0, 0};
+  expectedTestValues.numFacesPerProc = std::vector<unsigned>{1, 1};
+  expectedTestValues.numLocalFacesPerProc = std::vector<unsigned>{1, 0};
+  expectedTestValues.numConnectedEdges = 0;
+  expectedTestValues.globalEdgeCount = 0;
+  expectedTestValues.globalElemCount = 2;
 
   setup_mesh_with_faces(2);
-  set_expected_values(expectedValues);
+  set_expected_values(expectedTestValues);
   test_faces(get_bulk());
   output_mesh();
 
@@ -242,17 +242,17 @@ TEST_F(StkFaceIoTest, ParallelWriteMesh)
 TEST_F(StkFaceIoTest, SerialWriteMeshWithEdge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
-  io_test_utils::ExpectedValues expectedValues;
-  expectedValues.numEdgesPerProc = std::vector<unsigned>{20};
-  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{20};
-  expectedValues.numFacesPerProc = std::vector<unsigned>{1};
-  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{1};
-  expectedValues.numConnectedEdges = 4;
-  expectedValues.globalEdgeCount = 20;
-  expectedValues.globalElemCount = 2;
+  io_test_utils::ExpectedValues expectedTestValues;
+  expectedTestValues.numEdgesPerProc = std::vector<unsigned>{20};
+  expectedTestValues.numLocalEdgesPerProc = std::vector<unsigned>{20};
+  expectedTestValues.numFacesPerProc = std::vector<unsigned>{1};
+  expectedTestValues.numLocalFacesPerProc = std::vector<unsigned>{1};
+  expectedTestValues.numConnectedEdges = 4;
+  expectedTestValues.globalEdgeCount = 20;
+  expectedTestValues.globalElemCount = 2;
 
   setup_mesh_with_edges_and_faces(2);
-  set_expected_values(expectedValues);
+  set_expected_values(expectedTestValues);
   test_edges(get_bulk());
   test_faces(get_bulk());
   output_mesh();
@@ -263,17 +263,17 @@ TEST_F(StkFaceIoTest, SerialWriteMeshWithEdge)
 TEST_F(StkFaceIoTest, ParallelWriteMeshWithEdge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-  io_test_utils::ExpectedValues expectedValues;
-  expectedValues.numEdgesPerProc = std::vector<unsigned>{12, 12};
-  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{12, 8};
-  expectedValues.numFacesPerProc = std::vector<unsigned>{1, 1};
-  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{1, 0};
-  expectedValues.numConnectedEdges = 4;
-  expectedValues.globalEdgeCount = 20;
-  expectedValues.globalElemCount = 2;
+  io_test_utils::ExpectedValues expectedTestValues;
+  expectedTestValues.numEdgesPerProc = std::vector<unsigned>{12, 12};
+  expectedTestValues.numLocalEdgesPerProc = std::vector<unsigned>{12, 8};
+  expectedTestValues.numFacesPerProc = std::vector<unsigned>{1, 1};
+  expectedTestValues.numLocalFacesPerProc = std::vector<unsigned>{1, 0};
+  expectedTestValues.numConnectedEdges = 4;
+  expectedTestValues.globalEdgeCount = 20;
+  expectedTestValues.globalElemCount = 2;
 
   setup_mesh_with_edges_and_faces(2);
-  set_expected_values(expectedValues);
+  set_expected_values(expectedTestValues);
   test_edges(get_bulk());
   test_faces(get_bulk());
   output_mesh();

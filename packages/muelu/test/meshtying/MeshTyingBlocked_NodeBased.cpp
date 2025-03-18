@@ -158,7 +158,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   H->IsPreconditioner(true);
 
   // Create the preconditioned GMRES solver
-  typedef typename tpetra_mvector_type::dot_type belos_scalar;
+  using belos_scalar = Scalar;
   typedef Belos::OperatorT<MultiVector> OP;
 
   typedef Belos::StatusTestGenResSubNorm<belos_scalar, MultiVector, OP> blockStatusTestClass;

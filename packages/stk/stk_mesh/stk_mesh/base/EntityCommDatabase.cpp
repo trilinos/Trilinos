@@ -302,7 +302,7 @@ void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
 }
 
 bool unpack_field_values(const BulkData& mesh,
-                         CommBuffer & buf , Entity entity , std::ostream & error_msg )
+                         CommBuffer & buf , Entity entity , [[maybe_unused]] std::ostream & error_msg )
 {
     if (!mesh.is_field_updating_active()) {
         return true;
