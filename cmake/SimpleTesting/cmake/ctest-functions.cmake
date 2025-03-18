@@ -32,7 +32,8 @@ macro(submit_by_parts arg_parts_value)
                      RETRY_COUNT ${ctest_submit_retry_count}
                      RETRY_DELAY ${ctest_submit_retry_delay}
                      BUILD_ID    cdash_build_id
-                     RETURN_VALUE ctest_submit_error)
+                     RETURN_VALUE ctest_submit_error
+                     CAPTURE_CMAKE_ERROR ctest_submit_error)
 
         if(ctest_submit_error EQUAL 0)
             message(">>> ${arg_parts_value} submit: OK")
@@ -88,7 +89,8 @@ macro(submit_upload_config_files)
             ctest_upload(FILES ${configure_command_file}
                                ${configure_file}
                                ${package_enables_file}
-                               ${genconfig_build_name_file})
+                               ${genconfig_build_name_file}
+                         CAPTURE_CMAKE_ERROR file_upload_error)
 
             message(">>> ctest_submit(PARTS upload")
             message("                 RETRY_COUNT  ${ctest_submit_retry_count}")
@@ -98,7 +100,8 @@ macro(submit_upload_config_files)
             ctest_submit(PARTS Upload
                          RETRY_COUNT ${ctest_submit_retry_count}
                          RETRY_DELAY ${ctest_submit_retry_delay}
-                         RETURN_VALUE file_upload_error)
+                         RETURN_VALUE file_upload_error
+                         CAPTURE_CMAKE_ERROR file_upload_error)
 
             if(file_upload_error EQUAL 0)
                 message(">>> Config Files Upload: OK")
