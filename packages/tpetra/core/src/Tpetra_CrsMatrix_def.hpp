@@ -47,6 +47,7 @@
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosSparse_getDiagCopy.hpp"
 #include "KokkosSparse_spmv.hpp"
+#include "Kokkos_StdAlgorithms.hpp"
 
 #include <memory>
 #include <cstring>
@@ -8578,7 +8579,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                << std::endl;
             std::cerr << os.str ();
           }
-          Distor.doPostsAndWaits(destMat->numExportPacketsPerLID_.view_host(), 1,
+          Distor.doPostsAndWaitsKokkos(destMat->numExportPacketsPerLID_.view_host(), 1,
                                       destMat->numImportPacketsPerLID_.view_host());
           if (verbose) {
             std::ostringstream os;
