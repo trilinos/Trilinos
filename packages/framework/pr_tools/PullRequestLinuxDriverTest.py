@@ -66,30 +66,11 @@ def parse_args():
     default_filename_packageenables = os.path.join("..", "packageEnables.cmake")
     default_filename_subprojects = os.path.join("..", "package_subproject_list.cmake")
 
-
-    required.add_argument('--source-repo-url',
-                          dest="source_repo_url",
-                          action='store',
-                          help='Repo with the new changes',
-                          required=False)
-
-    required.add_argument('--target-repo-url',
-                          dest="target_repo_url",
-                          action='store',
-                          help='Repo to merge into',
-                          required=False)
-
     required.add_argument('--target-branch-name',
                           dest="target_branch_name",
                           action='store',
                           help='Branch to merge into',
                           required=True)
-
-    required.add_argument('--pullrequest-build-name',
-                          dest="pullrequest_build_name",
-                          action='store',
-                          help='The Jenkins job base name',
-                          required=False)
 
     required.add_argument('--genconfig-build-name',
                           dest="genconfig_build_name",
@@ -103,7 +84,13 @@ def parse_args():
                           help='The github PR number',
                           required=True)
 
-    required.add_argument('--jenkins-job-number',
+    optional.add_argument('--pullrequest-build-name',
+                          dest="pullrequest_build_name",
+                          action='store',
+                          help='The Jenkins job base name',
+                          required=False)
+
+    optional.add_argument('--jenkins-job-number',
                           dest="jenkins_job_number",
                           action='store',
                           help='The Jenkins build number',
@@ -285,8 +272,6 @@ def parse_args():
     print("+" + "="*78 + "+")
     print("| PullRequestLinuxDriverTest Parameters")
     print("+" + "="*78 + "+")
-    print("| - [R] source-repo-url             : {source_repo_url}".format(**vars(arguments)))
-    print("| - [R] target_repo_url             : {target_repo_url}".format(**vars(arguments)))
     print("| - [R] target_branch_name          : {target_branch_name}".format(**vars(arguments)))
     print("| - [R] pullrequest-build-name      : {pullrequest_build_name}".format(**vars(arguments)))
     print("| - [R] genconfig-build-name        : {genconfig_build_name}".format(**vars(arguments)))
