@@ -272,6 +272,9 @@ def parse_args():
 
     arguments = parser.parse_args()
 
+    if not arguments.ctest_driver:
+        arguments.ctest_driver = os.path.join(arguments.source_dir, 'cmake', 'SimpleTesting', 'cmake', 'ctest-driver.cmake')
+
     # Type conversions
     arguments.max_cores_allowed    = int(arguments.max_cores_allowed)
     arguments.num_concurrent_tests = int(arguments.num_concurrent_tests)
