@@ -84,6 +84,18 @@ def parse_args():
                           help='The github PR number',
                           required=True)
 
+    required.add_argument('--source-dir',
+                          dest="source_dir",
+                          action='store',
+                          help="Directory containing the source code to compile/test.",
+                          required=True)
+
+    required.add_argument('--build-dir',
+                          dest="build_dir",
+                          action='store',
+                          help="Path to the build directory.",
+                          required=True)
+
     optional.add_argument('--pullrequest-build-name',
                           dest="pullrequest_build_name",
                           action='store',
@@ -100,18 +112,6 @@ def parse_args():
                           dest="dashboard_build_name",
                           action='store',
                           help='The build name posted by ctest to a dashboard',
-                          required=False)
-
-    optional.add_argument('--source-dir',
-                          dest="source_dir",
-                          action='store',
-                          help="Directory containing the source code to compile/test.",
-                          required=False)
-
-    optional.add_argument('--build-dir',
-                          dest="build_dir",
-                          action='store',
-                          help="Path to the build directory.",
                           required=False)
 
     optional.add_argument('--use-explicit-cachefile',
