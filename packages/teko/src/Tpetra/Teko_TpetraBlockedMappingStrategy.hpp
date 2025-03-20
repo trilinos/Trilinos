@@ -12,6 +12,7 @@
 
 // stl includes
 #include <vector>
+#include <map>
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
@@ -184,6 +185,8 @@ class TpetraBlockedMappingStrategy : public MappingStrategy {
   //@}
 
   mutable std::vector<RCP<Tpetra::Vector<GO, LO, GO, NT>>> plocal2ContigGIDs;
+  mutable std::map<std::pair<int, int>, RCP<Blocking::SubblockAssemblyData>>
+      subblockAssemblyDataMap;
 };
 
 }  // end namespace TpetraHelpers

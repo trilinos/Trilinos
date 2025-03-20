@@ -170,6 +170,8 @@ TpetraBlockedMappingStrategy::buildBlockedThyraOp(
                           Thyra::tpetraLinearOp<ST, LO, GO, NT>(
                               Thyra::tpetraVectorSpace<ST, LO, GO, NT>(blk->getRangeMap()),
                               Thyra::tpetraVectorSpace<ST, LO, GO, NT>(blk->getDomainMap()), blk));
+      subblockAssemblyDataMap[std::make_pair(i, j)] = Blocking::constructSubblockAssemblyData(
+          i, j, crsContent, blockMaps_, *blk, plocal2ContigGIDs[j]);
     }
   }  // end for i
   A->endBlockFill();
@@ -200,8 +202,10 @@ void TpetraBlockedMappingStrategy::rebuildBlockedThyraOp(
       RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > eAij =
           rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT> >(tAij->getTpetraOperator(), true);
 
+      auto subblockAssemblyData = subblockAssemblyDataMap[std::make_pair(i, j)];
       // rebuild the blocks and place it the right location
-      Blocking::rebuildSubBlock(i, j, crsContent, blockMaps_, *eAij, plocal2ContigGIDs[j]);
+      Blocking::rebuildSubBlock(i, j, crsContent, blockMaps_, *eAij, plocal2ContigGIDs[j],
+                                subblockAssemblyData);
     }
   }  // end for i
 }

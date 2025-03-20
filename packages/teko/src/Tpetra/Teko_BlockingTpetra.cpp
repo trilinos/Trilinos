@@ -191,6 +191,102 @@ RCP<Tpetra::Vector<GO, LO, GO, NT> > getSubBlockColumnGIDs(
   return cIndex;
 }
 
+Teuchos::RCP<SubblockAssemblyData> constructSubblockAssemblyData(
+    int i, int j, const Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
+    const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
+    Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs) {
+  Teuchos::RCP<SubblockAssemblyData> subblockData   = Teuchos::make_rcp<SubblockAssemblyData>();
+  const RCP<const Tpetra::Map<LO, GO, NT> > gRowMap = subMaps[i].first;   // new GIDs
+  const RCP<const Tpetra::Map<LO, GO, NT> > rowMap  = subMaps[i].second;  // contiguous GIDs
+  const RCP<const Tpetra::Map<LO, GO, NT> > colMap  = subMaps[j].second;
+
+  Tpetra::Vector<GO, LO, GO, NT>& local2ContigGIDs = *plocal2ContigGIDs;
+
+  // get entry information
+  LO numMyRows     = rowMap->getLocalNumElements();
+  LO maxNumEntries = A->getLocalMaxNumRowEntries();
+
+  // for extraction
+  auto indices = typename Tpetra::CrsMatrix<ST, LO, GO, NT>::nonconst_local_inds_host_view_type(
+      Kokkos::ViewAllocateWithoutInitializing("rowIndices"), maxNumEntries);
+  auto values = typename Tpetra::CrsMatrix<ST, LO, GO, NT>::nonconst_values_host_view_type(
+      Kokkos::ViewAllocateWithoutInitializing("rowIndices"), maxNumEntries);
+
+  auto numLocalColsViewDev =
+      Kokkos::View<LO*>(Kokkos::ViewAllocateWithoutInitializing("numLocalCols"), numMyRows);
+  auto scanNumLocalColsViewDev =
+      Kokkos::View<LO*>(Kokkos::ViewAllocateWithoutInitializing("scanNumLocalColsView"), numMyRows);
+  auto numNonLocalColsViewDev =
+      Kokkos::View<LO*>(Kokkos::ViewAllocateWithoutInitializing("numNonLocalCols"), numMyRows);
+  auto scanNumNonLocalColsViewDev = Kokkos::View<LO*>(
+      Kokkos::ViewAllocateWithoutInitializing("scanNumNonLocalColsView"), numMyRows);
+
+  auto numLocalColsView        = Kokkos::create_mirror_view(numLocalColsViewDev);
+  auto scanNumLocalColsView    = Kokkos::create_mirror_view(scanNumLocalColsViewDev);
+  auto numNonLocalColsView     = Kokkos::create_mirror_view(numNonLocalColsViewDev);
+  auto scanNumNonLocalColsView = Kokkos::create_mirror_view(scanNumNonLocalColsViewDev);
+
+  auto A_rowmap    = A->getRowMap();
+  auto A_ij_colmap = mat.getColMap();
+  auto data        = local2ContigGIDs.getLocalViewHost(Tpetra::Access::ReadOnly);
+
+  for (LO localRow = 0; localRow < numMyRows; localRow++) {
+    size_t numEntries = -1;
+    GO globalRow      = gRowMap->getGlobalElement(localRow);
+    LO lid            = A_rowmap->getLocalElement(globalRow);
+    A->getLocalRowCopy(lid, indices, values, numEntries);
+
+    LO numLocalCols    = 0;
+    LO numNonLocalCols = 0;
+    for (size_t localCol = 0; localCol < numEntries; localCol++) {
+      GO gid = data(indices(localCol), 0);
+      if (gid == -1) continue;
+      auto lidCol = A_ij_colmap->getLocalElement(gid);
+      if (lidCol > -1) {
+        numLocalCols++;
+      } else {
+        numNonLocalCols++;
+      }
+    }
+
+    numLocalColsView[localRow]    = numLocalCols;
+    numNonLocalColsView[localRow] = numNonLocalCols;
+  }
+
+  scanNumLocalColsView[0]    = 0;
+  scanNumNonLocalColsView[0] = 0;
+  for (LO localRow = 1; localRow < numMyRows; localRow++) {
+    const auto numLocalCols           = numLocalColsView[localRow - 1];
+    const auto numNonLocalCols        = numNonLocalColsView[localRow - 1];
+    scanNumLocalColsView[localRow]    = scanNumLocalColsView[localRow - 1] + numLocalCols;
+    scanNumNonLocalColsView[localRow] = scanNumNonLocalColsView[localRow - 1] + numNonLocalCols;
+  }
+
+  LO totalNumLocalCols    = 0;
+  LO totalNumNonLocalCols = 0;
+  for (LO localRow = 0; localRow < numMyRows; localRow++) {
+    const auto numLocalCols    = numLocalColsView[localRow];
+    const auto numNonLocalCols = numNonLocalColsView[localRow];
+    totalNumLocalCols += numLocalCols;
+    totalNumNonLocalCols += numNonLocalCols;
+  }
+
+  Kokkos::deep_copy(numLocalColsViewDev, numLocalColsView);
+  Kokkos::deep_copy(scanNumLocalColsViewDev, scanNumLocalColsView);
+  Kokkos::deep_copy(numNonLocalColsViewDev, numNonLocalColsView);
+  Kokkos::deep_copy(scanNumNonLocalColsViewDev, scanNumNonLocalColsView);
+
+  subblockData->numLocalColsView     = numLocalColsViewDev;
+  subblockData->scanNumLocalColsView = scanNumLocalColsViewDev;
+  subblockData->totalNumLocalCols    = totalNumLocalCols;
+
+  subblockData->numNonLocalColsView     = numNonLocalColsViewDev;
+  subblockData->scanNumNonLocalColsView = scanNumNonLocalColsViewDev;
+  subblockData->totalNumNonLocalCols    = totalNumNonLocalCols;
+
+  return subblockData;
+}
+
 // build a single subblock Epetra_CrsMatrix
 RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
     int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
@@ -293,10 +389,11 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
   return mat;
 }
 
-// build a single subblock Epetra_CrsMatrix
-void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
-                     const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
-                     Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs) {
+namespace {
+void rebuildSubBlockHostOnly(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
+                             const std::vector<MapPair>& subMaps,
+                             Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
+                             Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs) {
   // get the number of variables families
   int numVarFamily = subMaps.size();
 
@@ -359,6 +456,127 @@ void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO,
 
     mat.sumIntoGlobalValues(contigRow, Teuchos::ArrayView<GO>(colIndices.data(), numOwnedCols),
                             Teuchos::ArrayView<ST>(colValues.data(), numOwnedCols));
+  }
+
+  mat.fillComplete(rcpFromRef(colMap), rcpFromRef(rowMap));
+}
+}  // namespace
+
+// build a single subblock Epetra_CrsMatrix
+void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
+                     const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
+                     Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs,
+                     Teuchos::RCP<SubblockAssemblyData> subblockData) {
+  // fall back on relatively slow host-only assembly
+  if (!subblockData) {
+    rebuildSubBlockHostOnly(i, j, A, subMaps, mat, plocal2ContigGIDs);
+    return;
+  }
+
+  // get the number of variables families
+  int numVarFamily = subMaps.size();
+
+  TEUCHOS_ASSERT(i >= 0 && i < numVarFamily);
+  TEUCHOS_ASSERT(j >= 0 && j < numVarFamily);
+
+  const Tpetra::Map<LO, GO, NT>& gRowMap = *subMaps[i].first;   // new GIDs
+  const Tpetra::Map<LO, GO, NT>& rowMap  = *subMaps[i].second;  // contiguous GIDs
+  const Tpetra::Map<LO, GO, NT>& colMap  = *subMaps[j].second;
+
+  if (!plocal2ContigGIDs) {
+    plocal2ContigGIDs = Blocking::getSubBlockColumnGIDs(*A, subMaps[j]);
+  }
+  Tpetra::Vector<GO, LO, GO, NT>& local2ContigGIDs = *plocal2ContigGIDs;
+
+  mat.resumeFill();
+  mat.setAllToScalar(0.0);
+
+  // get entry information
+  LO numMyRows     = rowMap.getLocalNumElements();
+  LO maxNumEntries = A->getLocalMaxNumRowEntries();
+
+  const size_t invalid = Teuchos::OrdinalTraits<size_t>::invalid();
+
+  auto A_rowmap    = A->getRowMap();
+  auto A_ij_colmap = mat.getColMap();
+  auto data        = local2ContigGIDs.getLocalViewDevice(Tpetra::Access::ReadOnly);
+
+  auto numLocalColsView        = subblockData->numLocalColsView;
+  auto scanNumLocalColsView    = subblockData->scanNumLocalColsView;
+  auto numNonLocalColsView     = subblockData->numNonLocalColsView;
+  auto scanNumNonLocalColsView = subblockData->scanNumNonLocalColsView;
+
+  Kokkos::View<LO*> localColIndices(Kokkos::ViewAllocateWithoutInitializing("localColIndices"),
+                                    subblockData->totalNumLocalCols);
+  Kokkos::View<GO*> nonLocalColIndices(
+      Kokkos::ViewAllocateWithoutInitializing("nonLocalColIndices"),
+      subblockData->totalNumNonLocalCols);
+  Kokkos::View<ST*> localColValues(Kokkos::ViewAllocateWithoutInitializing("localColIndices"),
+                                   subblockData->totalNumLocalCols);
+  Kokkos::View<ST*> nonLocalColValues(Kokkos::ViewAllocateWithoutInitializing("nonLocalColIndices"),
+                                      subblockData->totalNumNonLocalCols);
+
+  using matrix_execution_space =
+      typename Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type::execution_space;
+  auto A_dev           = A->getLocalMatrixDevice();
+  auto mat_dev         = mat.getLocalMatrixDevice();
+  auto gRowMap_dev     = gRowMap.getLocalMap();
+  auto A_rowmap_dev    = A_rowmap->getLocalMap();
+  auto A_ij_colmap_dev = A_ij_colmap->getLocalMap();
+  Kokkos::parallel_for(
+      Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, matrix_execution_space>(0, numMyRows),
+      KOKKOS_LAMBDA(const int localRow) {
+        GO globalRow             = gRowMap_dev.getGlobalElement(localRow);
+        LO lid                   = A_rowmap_dev.getLocalElement(globalRow);
+        const auto sparseRowView = A_dev.row(lid);
+
+        LO localColId       = 0;
+        LO localColStart    = scanNumLocalColsView[localRow];
+        LO nonLocalColId    = 0;
+        LO nonLocalColStart = scanNumNonLocalColsView[localRow];
+        for (size_t localCol = 0; localCol < sparseRowView.length; localCol++) {
+          GO gid = data(sparseRowView.colidx(localCol), 0);
+          if (gid < 0) continue;
+          auto lidCol = A_ij_colmap_dev.getLocalElement(gid);
+          auto value  = sparseRowView.value(localCol);
+          if (lidCol < 0) {
+            nonLocalColIndices(nonLocalColId + nonLocalColStart) = gid;
+            nonLocalColValues(nonLocalColId + nonLocalColStart)  = value;
+            nonLocalColId++;
+          } else {
+            localColIndices(localColId + localColStart) = lidCol;
+            localColValues(localColId + localColStart)  = value;
+            localColId++;
+          }
+        }
+
+        auto numLocalCols = numLocalColsView[localRow];
+        mat_dev.sumIntoValues(localRow, localColIndices.data() + localColStart, numLocalCols,
+                              localColValues.data() + localColStart, numLocalCols);
+      });
+
+  auto numNonLocalColsViewHost = Kokkos::create_mirror_view(numNonLocalColsView);
+  Kokkos::deep_copy(numNonLocalColsViewHost, numNonLocalColsView);
+
+  auto scanNumNonLocalColsViewHost = Kokkos::create_mirror_view(scanNumNonLocalColsView);
+  Kokkos::deep_copy(scanNumNonLocalColsViewHost, scanNumNonLocalColsView);
+
+  auto nonLocalColIndicesHost = Kokkos::create_mirror_view(nonLocalColIndices);
+  Kokkos::deep_copy(nonLocalColIndicesHost, nonLocalColIndices);
+
+  auto nonLocalColValuesHost = Kokkos::create_mirror_view(nonLocalColValues);
+  Kokkos::deep_copy(nonLocalColValuesHost, nonLocalColValues);
+
+  // finish remaining entries that require a communication
+  for (LO localRow = 0; localRow < numMyRows; localRow++) {
+    const auto numNonlocal = numNonLocalColsViewHost[localRow];
+    if (numNonlocal == 0) continue;
+
+    GO contigRow     = rowMap.getGlobalElement(localRow);
+    const auto start = scanNumNonLocalColsViewHost[localRow];
+    mat.sumIntoGlobalValues(
+        contigRow, Teuchos::ArrayView<GO>(nonLocalColIndicesHost.data() + start, numNonlocal),
+        Teuchos::ArrayView<ST>(nonLocalColValuesHost.data() + start, numNonlocal));
   }
 
   mat.fillComplete(rcpFromRef(colMap), rcpFromRef(rowMap));

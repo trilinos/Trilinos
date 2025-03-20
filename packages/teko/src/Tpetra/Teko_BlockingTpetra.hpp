@@ -104,6 +104,40 @@ void buildSubVectors(const std::vector<MapPair>& maps,
 Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > getSubBlockColumnGIDs(
     const Tpetra::CrsMatrix<ST, LO, GO, NT>& A, const MapPair& mapPair);
 
+struct SubblockAssemblyData {
+  // These entries can be done on the GPU via local sumIntoValues calls
+  Kokkos::View<LO*> numLocalColsView;
+  Kokkos::View<LO*> scanNumLocalColsView;
+  LO totalNumLocalCols;
+
+  // These entries must be done in serial through global sumIntoValues calls
+  Kokkos::View<LO*> numNonLocalColsView;
+  Kokkos::View<LO*> scanNumNonLocalColsView;
+  LO totalNumNonLocalCols;
+};
+
+/** Construct useful information for the (i,j) sub block described by a vector of map pair objects
+ * from a CRS matrix. The first of map in the ith pair describes the rows to be extracted, while the
+ * second pair defines GID numbering of the new block. Similarly with the jth pair (except for
+ * columns).
+ *
+ * \param[in] i Index of the map to use to define the row space
+ * \param[in] j Index of the map to use to define the columns space
+ * \param[in] A Source CRS matrix
+ * \param[in] subMaps Vector of maps created by the <code>buildSubMap</code> routine.
+ * \param[in] mat Destination matrix with a fixed nonzero pattern. Most likely
+ *                    this operator would come from the <code>buildSubBlock</code> routine.
+ * \param[in] plocal2ContigGIDs Mapping between local and contiguous global ids. Can be constructed
+ * by calling getSubBlockColumnGIDs.
+ *
+ * \returns SubblockAssemblyData useful for subsequent construction of individual CRS matrices in
+ * the buildSubBlock and rebuildSubBlock.
+ */
+Teuchos::RCP<SubblockAssemblyData> constructSubblockAssemblyData(
+    int i, int j, const Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
+    const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
+    Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs);
+
 /** Extract the (i,j) sub block described by a vector of map pair objects from
  * a CRS matrix. The first of map in the ith pair describes the rows to be extracted,
  * while the second pair defines GID numbering of the new block. Similarly with the
@@ -137,7 +171,8 @@ Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildSubBlock(
  */
 void rebuildSubBlock(int i, int j, const Teuchos::RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> >& A,
                      const std::vector<MapPair>& subMaps, Tpetra::CrsMatrix<ST, LO, GO, NT>& mat,
-                     Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs = {});
+                     Teuchos::RCP<Tpetra::Vector<GO, LO, GO, NT> > plocal2ContigGIDs = {},
+                     Teuchos::RCP<SubblockAssemblyData> subblockData                 = {});
 
 }  // namespace Blocking
 }  // namespace TpetraHelpers
