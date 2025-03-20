@@ -20,6 +20,15 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND
       simple_1dof.xml
     )
 
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(MeshTying_cpThreeDof
+    SOURCE_FILES
+      MeshTyingBlocked_NodeBased_3dualDofs_matrix.mm
+      MeshTyingBlocked_NodeBased_3dualDofs_rhs.mm
+      MeshTyingBlocked_NodeBased_3dualDofs_nullspace1.mm
+      Lagr2Dof_3dof.txt
+      simple_3dof.xml
+    )
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MeshTying2D_cp_small
     SOURCE_FILES
       meshtying2D_small_matrix.mm
@@ -44,6 +53,12 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND
   TRIBITS_ADD_EXECUTABLE(
     MeshTyingBlocked_NodeBased
     SOURCES MeshTyingBlocked_NodeBased.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    MeshTyingBlocked_NodeBased_3dualDofs
+    SOURCES MeshTyingBlocked_NodeBased_3dualDofs.cpp
     COMM serial mpi
     )
 
@@ -83,7 +98,7 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND
     ARGS "--linAlgebra=Tpetra --xml=meshtying2D_medium_simple_spai.xml --nPrimalDofs=530 --nDualDofs=54 --numPrimalDofsPerNode=2 --numDualDofsPerNode=2 --probName=meshtying2D_medium --expectedNumIts=7"
     COMM serial mpi
     NUM_MPI_PROCS 1
-  )
+    )
 
   TRIBITS_ADD_TEST(
     MeshTyingBlocked_NodeBased
@@ -91,6 +106,22 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND
     ARGS "-linAlgebra=Tpetra"
     COMM serial mpi
     NUM_MPI_PROCS 1
-  )
+    )
+
+  TRIBITS_ADD_TEST(
+    MeshTyingBlocked_NodeBased_3dualDofs
+    NAME "MeshTyingBlocked_NodeBased_simpleSmoother_3dualDofs"
+    ARGS "-linAlgebra=Tpetra"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_TEST(
+    MeshTyingBlocked_NodeBased_3dualDofs
+    NAME "MeshTyingBlocked_NodeBased_simpleSmoother_3dualDofs"
+    ARGS "-linAlgebra=Tpetra"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
 
 ENDIF()
