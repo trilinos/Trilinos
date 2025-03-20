@@ -4,7 +4,7 @@
     <Parameter name="left end" type="double" value="0.0"/>
     <Parameter name="right end" type="double" value="1.0"/>
     <Parameter name="a (convection)" type="double" value="0.1"/>
-    <Parameter name="k (source)" type="double" value="1.0"/>
+    <Parameter name="k (source)" type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
@@ -20,7 +20,7 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value="1.0"/>
+        <Parameter name="Final Time"             type="double" value=".1"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
@@ -42,6 +42,11 @@
       <Parameter name="Stepper Type"   type="string" value="Exponential Euler"/>
       <Parameter name="Use FSAL"       type="bool" value="false"/>
       <Parameter name="Initial Condition Consistency" type="string" value="None"/>
+      <!--
+	  <Parameter name="Stepper Type"   type="string" value="Trapezoidal Method"/>
+	  <Parameter name="Use FSAL"       type="bool" value="true"/>
+	  <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
+      -->
       <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
 
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>
