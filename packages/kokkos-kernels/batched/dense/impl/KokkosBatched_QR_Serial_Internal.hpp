@@ -53,7 +53,7 @@ struct SerialQR_Internal {
     A_part2x2.partWithATL(A, m, n, 0, 0);
     t_part2x1.partWithAT(t, m, 0);
 
-    for (int m_atl = 0; m_atl < m; ++m_atl) {
+    for (int m_atl = 0; m_atl < Kokkos::min(m, n); ++m_atl) {
       // part 2x2 into 3x3
       A_part3x3.partWithABR(A_part2x2, 1, 1);
       const int m_A22 = m - m_atl - 1;
