@@ -34,6 +34,19 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::Internal> {
       LapackTeam<value_type>::potrf(member, ArgUplo::param, m, A.data(), A.stride_1(), &r_val);
     return r_val;
   }
+
+  template <typename MemberType, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double tol, const ViewTypeA &A) {
+    typedef typename ViewTypeA::non_const_value_type value_type;
+
+    static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
+
+    int r_val = 0;
+    const ordinal_type m = A.extent(0);
+    if (m > 0)
+      LapackTeam<value_type>::potrf(member, tol, ArgUplo::param, m, A.data(), A.stride_1(), &r_val);
+    return r_val;
+  }
 };
 } // namespace Tacho
 

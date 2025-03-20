@@ -34,6 +34,9 @@ public:
   typedef typename supernode_info_type::value_type_array value_type_array;
   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
+  using arith_traits = ArithTraits<value_type>;
+  using mag_type = typename arith_traits::mag_type;
+
 private:
   supernode_info_type _info;
   ordinal_type_array _compute_mode, _level_sids;
@@ -43,6 +46,7 @@ private:
   size_type_array _buf_ptr;
   value_type_array _buf;
 
+  mag_type _tol;
   int *_rval;
 
 public:
@@ -52,7 +56,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   TeamFunctor_FactorizeChol(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                             const ordinal_type_array &level_sids, const value_type_array buf, int *rval)
-      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _buf(buf), _rval(rval) {}
+      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _buf(buf), _tol(0.0), _rval(rval) {}
 
   inline void setGlobalSize(const ordinal_type m) {
     _m = m;
@@ -64,6 +68,7 @@ public:
   }
 
   inline void setBufferPtr(const size_type_array &buf_ptr) { _buf_ptr = buf_ptr; }
+  inline void setDiagPertubationTol(const mag_type tol) { _tol = tol; }
 
   ///
   /// Main functions
@@ -81,7 +86,10 @@ public:
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      if (_tol > 0.0)
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
+      else
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
       member.team_barrier();
       if (err != 0) {
         Kokkos::atomic_add(_rval, 1);
