@@ -68,6 +68,10 @@ public:
 
   void doWaits(const DistributorPlan& plan);
 
+  void doWaitsRecv(const DistributorPlan& plan);
+
+  void doWaitsSend(const DistributorPlan& plan);
+
   bool isReady() const;
 
 private:
@@ -100,12 +104,14 @@ private:
   // clang-format off
   int mpiTag_;
 
-  Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
+  Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requestsRecv_;
+  Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requestsSend_;
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_;
   Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_;
-  Teuchos::RCP<Teuchos::Time> timer_doWaits_;
+  Teuchos::RCP<Teuchos::Time> timer_doWaitsRecv_;
+  Teuchos::RCP<Teuchos::Time> timer_doWaitsSend_;
   Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_recvs_;
   Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_recvs_;
   Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_barrier_;
@@ -425,7 +431,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   }
 #endif // defined(HAVE_TPETRACORE_MPI_ADVANCE)
 // clang-format off
-  
+
 #else // HAVE_TPETRA_MPI
     if (plan.hasSelfMessage()) {
       // This is how we "send a message to ourself": we copy from
@@ -448,15 +454,20 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION
-    (requests_.size () != 0,
+    (requestsRecv_.size () != 0,
      std::logic_error,
      "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
-     << myRank << ": requests_.size() = " << requests_.size () << " != 0.");
+     << myRank << ": requestsRecv_.size() = " << requestsRecv_.size () << " != 0.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (requestsSend_.size () != 0,
+     std::logic_error,
+     "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
+     << myRank << ": requestsSend_.size() = " << requestsSend_.size () << " != 0.");
 #endif // HAVE_TPETRA_DEBUG
 
-  // Distributor uses requests_.size() as the number of outstanding
-  // nonblocking message requests, so we resize to zero to maintain
-  // this invariant.
+  // Distributor uses requestsRecv_.size() and requestsSend_.size()
+  // as the number of outstanding nonblocking message requests, so
+  // we resize to zero to maintain this invariant.
   //
   // getNumReceives() does _not_ include the self message, if there is
   // one.  Here, we do actually send a message to ourselves, so we
@@ -469,7 +480,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // demand), or Resize_().
   const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
     as<size_type> (plan.hasSelfMessage() ? 1 : 0);
-  requests_.resize (0);
+  requestsRecv_.resize (0);
+  requestsSend_.resize (0);
 
   // Post the nonblocking receives.  It's common MPI wisdom to post
   // receives before sends.  In MPI terms, this means favoring
@@ -501,7 +513,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
             curBufLen << ").");
         imports_view_type recvBuf =
           subview_offset (imports, curBufferOffset, curBufLen);
-        requests_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
+        requestsRecv_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
               mpiTag_, *plan.getComm()));
       }
       else { // Receiving from myself
@@ -557,7 +569,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           exports_view_type tmpSendBuf =
             subview_offset (exports, plan.getStartsTo()[p] * numPackets,
                 plan.getLengthsTo()[p] * numPackets);
-          requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
+          requestsSend_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
                 mpiTag_, *plan.getComm()));
         }
         else {  // DISTRIBUTOR_SEND
@@ -598,16 +610,16 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
     // This buffer is long enough for only one message at a time.
     // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
-    // of sendType requested by user. 
+    // of sendType requested by user.
     // This code path formerly errored out with message:
-    //     Tpetra::Distributor::doPosts(3 args, Kokkos): 
+    //     Tpetra::Distributor::doPosts(3 args, Kokkos):
     //     The "send buffer" code path
     //     doesn't currently work with nonblocking sends.
     // Now, we opt to just do the communication in a way that works.
 #ifdef HAVE_TPETRA_DEBUG
     if (sendType != Details::DISTRIBUTOR_SEND) {
       if (plan.getComm()->getRank() == 0)
-        std::cout << "The requested Tpetra send type " 
+        std::cout << "The requested Tpetra send type "
                   << DistributorSendTypeEnumToString(sendType)
                   << " requires Distributor data to be ordered by"
                   << " the receiving processor rank.  Since these"
@@ -950,13 +962,17 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       "imports.extent(0) = " << imports.extent (0) << " < "
       "totalNumImportPackets = " << totalNumImportPackets << ".");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
-     "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
-     << requests_.size () << " != 0.");
+    (requestsRecv_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+     "doPosts(4 args, Kokkos): Process " << myProcID << ": requestsRecv_.size () = "
+     << requestsRecv_.size () << " != 0.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (requestsSend_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+     "doPosts(4 args, Kokkos): Process " << myProcID << ": requestsSend_.size () = "
+     << requestsSend_.size () << " != 0.");
 #endif // HAVE_TPETRA_DEBUG
-  // Distributor uses requests_.size() as the number of outstanding
-  // nonblocking message requests, so we resize to zero to maintain
-  // this invariant.
+  // Distributor uses requestsRecv_.size() and requestsSend_.size()
+  // as the number of outstanding nonblocking message requests, so
+  // we resize to zero to maintain this invariant.
   //
   // getNumReceives() does _not_ include the self message, if there is
   // one.  Here, we do actually send a message to ourselves, so we
@@ -969,7 +985,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // demand), or Resize_().
   const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
     as<size_type> (plan.hasSelfMessage() ? 1 : 0);
-  requests_.resize (0);
+  requestsRecv_.resize (0);
+  requestsSend_.resize (0);
 
   // Post the nonblocking receives.  It's common MPI wisdom to post
   // receives before sends.  In MPI terms, this means favoring
@@ -1005,7 +1022,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         // 2. Start the Irecv and save the resulting request.
         imports_view_type recvBuf =
           subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
-        requests_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
+        requestsRecv_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
               mpiTag_, *plan.getComm()));
       }
       else { // Receiving these packet(s) from myself
@@ -1074,7 +1091,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         if (sendType == Details::DISTRIBUTOR_ISEND) {
           exports_view_type tmpSendBuf =
             subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
-          requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
+          requestsSend_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
                 mpiTag_, *plan.getComm()));
         }
         else { // DISTRIBUTOR_SEND
@@ -1107,16 +1124,16 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
     // This buffer is long enough for only one message at a time.
     // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
-    // of sendType requested by user. 
+    // of sendType requested by user.
     // This code path formerly errored out with message:
-    //     Tpetra::Distributor::doPosts(4-arg, Kokkos): 
+    //     Tpetra::Distributor::doPosts(4-arg, Kokkos):
     //     The "send buffer" code path
     //     doesn't currently work with nonblocking sends.
     // Now, we opt to just do the communication in a way that works.
 #ifdef HAVE_TPETRA_DEBUG
     if (sendType != Details::DISTRIBUTOR_SEND) {
       if (plan.getComm()->getRank() == 0)
-        std::cout << "The requested Tpetra send type " 
+        std::cout << "The requested Tpetra send type "
                   << DistributorSendTypeEnumToString(sendType)
                   << " requires Distributor data to be ordered by"
                   << " the receiving processor rank.  Since these"
@@ -1125,7 +1142,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     }
 #endif
 
-    Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", 
+    Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
                                                         maxNumPackets);
 
     Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);

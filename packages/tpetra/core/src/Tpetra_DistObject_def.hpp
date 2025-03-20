@@ -830,7 +830,7 @@ namespace Tpetra {
            "target Map must be locally fitted (in the sense of "
            "Tpetra::Map::isLocallyFitted) to target DistObject's Map.");
       }
-      else { // if (restrictedMode && revOp == DoReverse) 
+      else { // if (restrictedMode && revOp == DoReverse)
         const bool myMapLocallyFittedTransferSrcMap =
           this->getMap ()->isLocallyFitted (* (transfer.getSourceMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -1188,7 +1188,7 @@ namespace Tpetra {
            "target Map must be locally fitted (in the sense of "
            "Tpetra::Map::isLocallyFitted) to target DistObject's Map.");
       }
-      else { // if (restrictedMode && revOp == DoReverse) 
+      else { // if (restrictedMode && revOp == DoReverse)
         const bool myMapLocallyFittedTransferSrcMap =
           this->getMap ()->isLocallyFitted (* (transfer.getSourceMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -1304,7 +1304,7 @@ namespace Tpetra {
         }
       }
       else {
-        distributorActor_.doWaits(distributorPlan);
+        distributorActor_.doWaitsRecv(distributorPlan);
 
         if (verbose) {
           std::ostringstream os;
@@ -1312,6 +1312,8 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         doUnpackAndCombine(remoteLIDs, constantNumPackets, CM, execution_space());
+
+        distributorActor_.doWaitsSend(distributorPlan);
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1403,7 +1405,7 @@ namespace Tpetra {
 
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "Count totalImportPackets" << std::endl; 
+          os << *prefix << "Count totalImportPackets" << std::endl;
           std::cerr << os.str ();
         }
         using the_dev_type = typename decltype (numImp_d)::device_type;
