@@ -120,17 +120,18 @@ void block_pcgsolve(KernelHandle_t &kh, const crsMatrix_t &point_crsMat, const c
     // timer.reset();
 
     // block_kh.set_verbose(true);
-    block_gauss_seidel_numeric(&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size,
-                               _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values);
+    KokkosSparse::block_gauss_seidel_numeric(&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size,
+                                             _block_crsMat.graph.row_map, _block_crsMat.graph.entries,
+                                             _block_crsMat.values);
 
     precond_init_time += timer.seconds();
 
     z = y_vector_t("pcg::z", count_total);
     Space().fence();
     timer.reset();
-    symmetric_block_gauss_seidel_apply(&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size,
-                                       _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values,
-                                       z, r, true, true, 1.0, apply_count);
+    KokkosSparse::symmetric_block_gauss_seidel_apply(
+        &block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size, _block_crsMat.graph.row_map,
+        _block_crsMat.graph.entries, _block_crsMat.values, z, r, true, true, 1.0, apply_count);
 
     // symmetric_gauss_seidel_apply
     //    (&kh, count_total, count_total, point_crsMat.graph.row_map,
@@ -185,9 +186,9 @@ void block_pcgsolve(KernelHandle_t &kh, const crsMatrix_t &point_crsMat, const c
     if (use_sgs) {
       Space().fence();
       timer.reset();
-      symmetric_block_gauss_seidel_apply(&block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size,
-                                         _block_crsMat.graph.row_map, _block_crsMat.graph.entries, _block_crsMat.values,
-                                         z, r, true, true, 1.0, apply_count);
+      KokkosSparse::symmetric_block_gauss_seidel_apply(
+          &block_kh, _block_crsMat.numRows(), _block_crsMat.numCols(), block_size, _block_crsMat.graph.row_map,
+          _block_crsMat.graph.entries, _block_crsMat.values, z, r, true, true, 1.0, apply_count);
 
       // symmetric_gauss_seidel_apply(
       //    &kh,
@@ -318,7 +319,8 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat, const y_vector_t &y
     timer.reset();
     z = y_vector_t("pcg::z", count_total);
     if (use_par_sgs) {
-      gauss_seidel_numeric(&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries, crsMat.values);
+      KokkosSparse::gauss_seidel_numeric(&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries,
+                                         crsMat.values);
 
       Space().fence();
 
@@ -326,8 +328,9 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat, const y_vector_t &y
       Space().fence();
       timer.reset();
 
-      symmetric_gauss_seidel_apply(&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries,
-                                   crsMat.values, z, r, true, true, 1.0, apply_count);
+      KokkosSparse::symmetric_gauss_seidel_apply(&kh, count_total, count_total, crsMat.graph.row_map,
+                                                 crsMat.graph.entries, crsMat.values, z, r, true, true, 1.0,
+                                                 apply_count);
 
       Space().fence();
     } else if (use_sequential_sgs) {
@@ -402,8 +405,9 @@ void pcgsolve(KernelHandle_t &kh, const crsMatrix_t &crsMat, const y_vector_t &y
       Space().fence();
       timer.reset();
       if (use_par_sgs) {
-        symmetric_gauss_seidel_apply(&kh, count_total, count_total, crsMat.graph.row_map, crsMat.graph.entries,
-                                     crsMat.values, z, r, true, true, 1.0, apply_count);
+        KokkosSparse::symmetric_gauss_seidel_apply(&kh, count_total, count_total, crsMat.graph.row_map,
+                                                   crsMat.graph.entries, crsMat.values, z, r, true, true, 1.0,
+                                                   apply_count);
       } else if (use_sequential_sgs) {
         // z = LHS (aka x), r RHS (aka y or b)
         Kokkos::deep_copy(z, 0.0);

@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSKERNELS_UPPERBOUND_HPP
-#define _KOKKOSKERNELS_UPPERBOUND_HPP
+#ifndef KOKKOSKERNELS_UPPERBOUND_HPP
+#define KOKKOSKERNELS_UPPERBOUND_HPP
 
 /*! \file KokkosKernels_UpperBound.hpp
    Define thread and team-collaborative upper-bound search
@@ -95,4 +95,4 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type upper_bound_team(
 
 }  // namespace KokkosKernels
 
-#endif  // _KOKKOSKERNELS_UPPERBOUND_HPP
+#endif  // KOKKOSKERNELS_UPPERBOUND_HPP
