@@ -420,7 +420,7 @@ void testSortAndMerge(bool justGraph, int howExecSpecified, bool doStructInterfa
   EXPECT_EQ(goldEntries.size(), outEntries.extent(0));
   if (!justGraph) {
     EXPECT_EQ(goldValues.size(), outValues.extent(0));
-    EXPECT_EQ(goldValues.size(), output.nnz());
+    EXPECT_EQ(goldValues.size(), size_t(output.nnz()));
   }
   for (size_t i = 0; i < goldRowmap.size(); i++) EXPECT_EQ(goldRowmap[i], outRowmap(i));
   for (size_t i = 0; i < goldEntries.size(); i++) {

@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
 
     if (check_errors) {
       h_y_compare                                                  = Kokkos::create_mirror(y);
-      typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
+      typename matrix_type::StaticCrsGraphType::HostMirror h_graph = KokkosSparse::create_mirror(A.graph);
       typename matrix_type::values_type::HostMirror h_values       = Kokkos::create_mirror_view(A.values);
 
       // Error Check Gold Values

@@ -91,11 +91,11 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
                      ScalarType beta = karith::zero()) const {
     KK_REQUIRE_MSG(transM[0] == NoTranspose[0], "LUPrec::apply only supports 'N' for transM");
 
-    sptrsv_symbolic(&_khL, _L.graph.row_map, _L.graph.entries);
-    sptrsv_solve(&_khL, _L.graph.row_map, _L.graph.entries, _L.values, X, _tmp);
+    KokkosSparse::sptrsv_symbolic(&_khL, _L.graph.row_map, _L.graph.entries);
+    KokkosSparse::sptrsv_solve(&_khL, _L.graph.row_map, _L.graph.entries, _L.values, X, _tmp);
 
-    sptrsv_symbolic(&_khU, _U.graph.row_map, _U.graph.entries);
-    sptrsv_solve(&_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp, _tmp2);
+    KokkosSparse::sptrsv_symbolic(&_khU, _U.graph.row_map, _U.graph.entries);
+    KokkosSparse::sptrsv_solve(&_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp, _tmp2);
 
     KokkosBlas::axpby(alpha, _tmp2, beta, Y);
   }

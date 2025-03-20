@@ -64,10 +64,10 @@ void bspgemm_debug_numeric(KernelHandle* /* handle */, typename KernelHandle::nn
   typename cscalar_nnz_view_t_::HostMirror h_valc = Kokkos::create_mirror_view(valuesC);
   Kokkos::fence();
 
-  typedef typename KernelHandle::nnz_lno_t lno_t;
-  typedef typename KernelHandle::size_type size_type;
-  typedef typename KernelHandle::nnz_scalar_t scalar_t;
-  typedef KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Unblocked> GEMM;
+  using lno_t     = typename KernelHandle::nnz_lno_t;
+  using size_type = typename KernelHandle::size_type;
+  using scalar_t  = typename KernelHandle::nnz_scalar_t;
+  using GEMM      = KokkosBatched::Impl::SerialGemmInternal<KokkosBatched::Algo::Gemm::Unblocked>;
 
   const auto block_size = block_dim * block_dim;
   const auto ZERO       = static_cast<scalar_t>(0);
@@ -106,8 +106,8 @@ void bspgemm_debug_numeric(KernelHandle* /* handle */, typename KernelHandle::nn
         }
         // accumulator(b_col) += a_val * b_val
         auto acc = get_block(accumulator, b_col, block_size);
-        GEMM::invoke(block_dim, block_dim, block_dim, ONE, a_val, block_dim, 1, b_val, block_dim, 1, ONE, acc.data(),
-                     block_dim, 1);
+        GEMM::invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), block_dim, block_dim, block_dim, ONE, a_val,
+                     block_dim, 1, b_val, block_dim, 1, ONE, acc.data(), block_dim, 1);
       }
     }
 

@@ -216,12 +216,12 @@ std::string getCuSparseErrorString(cusparseStatus_t status) {
 /* =========================================================================================
  */
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-#if CUSPARSE_VERSION >= 12500
+#if CUSPARSE_VERSION >= 12000
 template <typename crsmat_t, typename host_crsmat_t>
 bool check_cusparse(host_crsmat_t &, bool, crsmat_t &, bool, crsmat_t &, int *, int *, double, int) {
   // TODO: call KokkosSparse::sptrsv (if hardcoded problem settings below are
   // compatible), or add wrappers for modern interface (cusparseSpSV*)
-  throw std::logic_error("Legacy cuSPARSE csrsv interface not available.");
+  throw std::logic_error("Legacy cuSPARSE csrsv interface not available with CUDA 12.0.0 or higher.");
   return false;
 }
 

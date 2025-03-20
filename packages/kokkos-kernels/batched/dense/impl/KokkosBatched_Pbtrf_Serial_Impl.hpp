@@ -22,7 +22,7 @@
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 namespace KokkosBatched {
-
+namespace Impl {
 template <typename ABViewType>
 KOKKOS_INLINE_FUNCTION static int checkPbtrfInput([[maybe_unused]] const ABViewType &Ab) {
   static_assert(Kokkos::is_view_v<ABViewType>, "KokkosBatched::pbtrf: ABViewType is not a Kokkos::View.");
@@ -41,6 +41,7 @@ KOKKOS_INLINE_FUNCTION static int checkPbtrfInput([[maybe_unused]] const ABViewT
 #endif
   return 0;
 }
+}  // namespace Impl
 
 //// Lower ////
 template <>
@@ -51,11 +52,12 @@ struct SerialPbtrf<Uplo::Lower, Algo::Pbtrf::Unblocked> {
     const int n = Ab.extent(1);
     if (n == 0) return 0;
 
-    auto info = checkPbtrfInput(Ab);
+    auto info = Impl::checkPbtrfInput(Ab);
     if (info) return info;
 
     const int kd = Ab.extent(0) - 1;
-    return SerialPbtrfInternalLower<Algo::Pbtrf::Unblocked>::invoke(n, Ab.data(), Ab.stride_0(), Ab.stride_1(), kd);
+    return Impl::SerialPbtrfInternalLower<Algo::Pbtrf::Unblocked>::invoke(n, Ab.data(), Ab.stride_0(), Ab.stride_1(),
+                                                                          kd);
   }
 };
 
@@ -68,11 +70,12 @@ struct SerialPbtrf<Uplo::Upper, Algo::Pbtrf::Unblocked> {
     const int n = Ab.extent(1);
     if (n == 0) return 0;
 
-    auto info = checkPbtrfInput(Ab);
+    auto info = Impl::checkPbtrfInput(Ab);
     if (info) return info;
 
     const int kd = Ab.extent(0) - 1;
-    return SerialPbtrfInternalUpper<Algo::Pbtrf::Unblocked>::invoke(n, Ab.data(), Ab.stride_0(), Ab.stride_1(), kd);
+    return Impl::SerialPbtrfInternalUpper<Algo::Pbtrf::Unblocked>::invoke(n, Ab.data(), Ab.stride_0(), Ab.stride_1(),
+                                                                          kd);
   }
 };
 

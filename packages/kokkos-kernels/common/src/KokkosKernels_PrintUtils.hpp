@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSKERNELS_PRINTUTILS_HPP
-#define _KOKKOSKERNELS_PRINTUTILS_HPP
+#ifndef KOKKOSKERNELS_PRINTUTILS_HPP
+#define KOKKOSKERNELS_PRINTUTILS_HPP
 #include "Kokkos_Core.hpp"
 #include <ostream>
 

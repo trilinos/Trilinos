@@ -30,7 +30,6 @@
 #include <type_traits>
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_Error.hpp"
@@ -332,11 +331,9 @@ class BsrMatrix {
   //! Type of a host-memory mirror of the sparse matrix.
   typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, size_type> HostMirror;
   //! Type of the graph structure of the sparse matrix.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type>
-      StaticCrsGraphType;
+  typedef StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type>
-      staticcrsgraph_type;
+  typedef StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> staticcrsgraph_type;
   //! Type of column indices in the sparse matrix.
   typedef typename staticcrsgraph_type::entries_type index_type;
   //! Const version of the type of column indices in the sparse matrix.
@@ -700,7 +697,7 @@ class BsrMatrix {
     // create_staticcrsgraph takes the frequency of blocks per row
     // and returns the cum sum pointer row_map with nbrows+1 size, and total
     // numBlocks in the final entry
-    graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type>("blockgraph", block_rows);
+    graph                                       = create_staticcrsgraph<staticcrsgraph_type>("blockgraph", block_rows);
     typename row_map_type::HostMirror h_row_map = Kokkos::create_mirror_view(graph.row_map);
     Kokkos::deep_copy(h_row_map, graph.row_map);
 

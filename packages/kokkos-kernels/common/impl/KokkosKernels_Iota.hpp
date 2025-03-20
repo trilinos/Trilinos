@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSKERNELS_IOTA_HPP
-#define _KOKKOSKERNELS_IOTA_HPP
+#ifndef KOKKOSKERNELS_IOTA_HPP
+#define KOKKOSKERNELS_IOTA_HPP
 
 #include <type_traits>
 
@@ -137,4 +137,4 @@ inline constexpr bool is_iota_v = is_iota<P...>::value;
 }  // namespace Impl
 }  // namespace KokkosKernels
 
-#endif  // _KOKKOSKERNELS_IOTA_HPP
+#endif  // KOKKOSKERNELS_IOTA_HPP
