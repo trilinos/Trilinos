@@ -113,6 +113,8 @@ void StepperExponentialEuler<Scalar>::takeStep(
   this->checkInitialized();
 
   using Teuchos::RCP;
+  
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExponentialEuler::takeStep()");
   {
@@ -174,28 +176,14 @@ void StepperExponentialEuler<Scalar>::takeStep(
       auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
           timeDer, dt, Scalar(0.0), Scalar(1.0)));
 
+      //std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
+
       RCP<Thyra::VectorBase<Scalar> > f = x->clone_v();
       this->evaluateImplicitODE(f, x, xDot, time, p);
 
-      /*
-       * Using the Wrapper Model:
-      RCP<const WrapperModelEvaluator<Scalar>> const_wrapperModel = this->getWrapperModel();
-      RCP<WrapperModelEvaluator<Scalar>> wrapperModel = Teuchos::rcp_const_cast<WrapperModelEvaluator<Scalar>>(const_wrapperModel);
-      wrapperModel->setForSolve(x, xDot, time, p);
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = wrapperModel->createInArgs();
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = wrapperModel->createOutArgs();
-
-      // this will fill the linear operator
-      wrapperModel->evalModel(inArgs, outArgs);
-
-      RCP<const Thyra::ModelEvaluator<Scalar>> appModel = wrapperModel->getAppModel();
-
-      RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = appModel->create_W();
-      outArgs.set_W(LOWSB);
-
-      // leads to divide by zero
-      sStatus = LOWSB->solve(Thyra::NOTRANS, *f, x.ptr());
-      */
+      std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
+      //std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
+      //std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
 
       /*
        * Using the appModel
@@ -204,8 +192,8 @@ void StepperExponentialEuler<Scalar>::takeStep(
 
       // first allocate space for the jacobian
       RCP<Thyra::LinearOpBase<Scalar>> jac = appModel->create_W_op();
+      RCP<Thyra::PreconditionerBase<Scalar>> jac_p = appModel->create_W_prec();
 
-      // intialize a zero to get rid of the x-dot
       //if(zero_==Teuchos::null) {
       //  zero_ = Thyra::createMember(*me->get_x_space());
       //  Thyra::assign(zero_.ptr(),0.0);
@@ -215,15 +203,16 @@ void StepperExponentialEuler<Scalar>::takeStep(
       const Scalar beta  = Scalar(0.5);
       // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
       Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
-      //inArgs.setArgs(inArgs);
       inArgs.set_x(x);
-      inArgs.set_x_dot(xDot);
+      inArgs.set_t(time);
+      inArgs.set_x_dot(xDot); // for what? xDot is zero at this point, updating of it not decided
       inArgs.set_alpha(alpha);
       inArgs.set_beta(beta);
 
       // set only the jacobian matrix
       Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = appModel->createOutArgs();
       outArgs.set_W_op(jac);
+      outArgs.set_W_prec(jac_p);
 
       // this will fill the Jacobian operator
       appModel->evalModel(inArgs, outArgs);
@@ -233,18 +222,24 @@ void StepperExponentialEuler<Scalar>::takeStep(
       RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
 	Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
 
-      RCP<const Thyra::LinearOpBase<Scalar>> const_jac = Teuchos::rcpFromRef(*jac);
-      RCP<Thyra::LinearOpWithSolveBase<Scalar> > LOWSB = Thyra::linearOpWithSolve(*lowsFactory, const_jac);
+      // without preconditioner
+      //RCP<const Thyra::LinearOpBase<Scalar>> const_jac = Teuchos::rcpFromRef(*jac);
+      //RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB  = Thyra::linearOpWithSolve(*lowsFactory, const_jac);
+      
+      RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = lowsFactory->createOp();
+      Thyra::initializePreconditionedOp<Scalar>(*lowsFactory, jac, jac_p, LOWSB.ptr());
 
-      typedef Teuchos::ScalarTraits<Scalar> ST;
-      assign(x.ptr(), ST::zero()); // Must initialize to a guess before solve!
+      RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();      
+      assign(vphi.ptr(), ST::zero()); // Must initialize to a guess before solve!
 
       // compute an approximation to dt*phi_1(dt*J)*f and write it to x
-      sStatus = LOWSB->solve(Thyra::NOTRANS, *f, x.ptr());
+      sStatus = LOWSB->solve(Thyra::NOTRANS, *f, vphi.ptr());
+
+      //std::cout << "ph[0,1] = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       //assign(x.ptr(), ST::zero());
 
       // x = xOld - dt*phi_1(dt*J)*f
-      Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.), *x);
+      Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.), *vphi);
       
       /*
       using Teuchos::tab; using Teuchos::rcpFromPtr;
