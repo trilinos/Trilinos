@@ -19,6 +19,9 @@
 #include <Teuchos_YamlParameterListHelpers.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 
+// Kokkos
+#include <Kokkos_Core.hpp>
+
 // Xpetra
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
@@ -26,6 +29,9 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_IO.hpp>
+
+// Tpetra
+#include <Tpetra_Details_Profiling.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -82,6 +88,8 @@
 #ifdef HAVE_MUELU_EPETRA
 #include "Xpetra_EpetraMultiVector.hpp"
 #endif
+
+#include "MueLu_KokkosTuningInterface.hpp"
 
 /*********************************************************************/
 
@@ -243,6 +251,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("rebuild", &numRebuilds, "#times to rebuild hierarchy");
   int numResolves = 0;
   clp.setOption("resolve", &numResolves, "#times to redo solve");
+  int numLoops = 1;
+  clp.setOption("loops", &numLoops, "#times to do setup/solve pairs.  This is multiplicative with numRebuilds and numSolves (defaults to 1).");
   int maxIts = 200;
   clp.setOption("its", &maxIts, "maximum number of solver iterations");
   int numVectors = 1;
@@ -258,15 +268,14 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
   std::string equilibrate = "no";
   clp.setOption("equilibrate", &equilibrate, "equilibrate the system (no | diag | 1-norm)");
-#ifdef HAVE_MUELU_CUDA
+
   bool profileSetup = false;
-  clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   bool profileSolve = false;
+#ifdef HAVE_MUELU_CUDA
+  clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
   clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
-#else
-  bool profileSetup            = false;
-  bool profileSolve            = false;
 #endif
+
   int cacheSize = 0;
   clp.setOption("cachesize", &cacheSize, "cache size (in KB)");
 #ifdef HAVE_MPI
@@ -283,6 +292,13 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("filesuffix", &rerunFileSuffix, "if doing reruns, optional suffix to append to output files");
   std::string levelPerformanceModel = "no";
   clp.setOption("performance-model", &levelPerformanceModel, "runs the level-by-level performance mode options- 'no', 'yes' or 'verbose'");
+
+  bool kokkosTuning = false;
+#ifdef KOKKOS_ENABLE_TUNING
+  clp.setOption("tuning-with-kokkos", "no-tuning-with-kokkos", &kokkosTuning, "enable Kokkos tuning inferface");
+#endif
+
+
   clp.recogniseAllOptions(true);
 
   switch (clp.parse(argc, argv)) {
@@ -390,6 +406,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<MultiVector> X;
   RCP<MultiVector> B;
 
+  // Create the Kokkos Tuning Interface
+  MueLu::KokkosTuningInterface KokkosTuner(comm);
+
   // Load the matrix off disk (or generate it via Galeri)
   MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
   comm->barrier();
@@ -472,6 +491,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     int runCount    = 1;
     int savedOut    = -1;
     FILE* openedOut = NULL;
+
+    // NOTE: This do loop is for handling multiple input decks in a single run
     do {
       solveType = dsolveType;
       tol       = dtol;
@@ -508,9 +529,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       out2.setOutputToRootOnly(0);
       out2 << galeriStream.str();
 
-      // =========================================================================
-      // Preconditioner construction
-      // =========================================================================
+
+      // Preconditioner control options
       bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
       bool useML   = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");
 #ifdef HAVE_MPI
@@ -519,64 +539,104 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         userParamList.set("Node Comm", nodeComm);
       }
 #endif
-      RCP<Hierarchy> H;
-      RCP<Operator> Prec;
-      // Build the preconditioner numRebuilds+1 times
-      if (solvePreconditioned) {
-        out2 << "*********** MueLu ParameterList ***********" << std::endl;
-        out2 << mueluList;
-        out2 << "*******************************************" << std::endl;
-
-        MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
-        PreconditionerSetup(A, coordinates, nullspace, material, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
+      // Get a Kokkos context for tuning and setup the tuner
+      size_t kokkos_context_id = 0;
+      if(kokkosTuning) {
+        KokkosTuner.SetParameterList(mueluList);
       }
-      comm->barrier();
-      tm = Teuchos::null;
-
-      size_t mem = get_current_memory_usage();
-      out2 << "Memory use after preconditioner setup (GB): " << (mem / 1024.0 / 1024.0) << std::endl;
 
       // =========================================================================
-      // System solution (Ax = b)
+      // Loop over the setup/solve pairs
       // =========================================================================
-      try {
-        comm->barrier();
-        if (writeMatricesOPT > -2) {
-          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
-          H->Write(writeMatricesOPT, writeMatricesOPT);
-          if (writeMatricesOPT == 0 || writeMatricesOPT == -1) {
-            Xpetra::IO<SC, LO, GO, NO>::Write("b_0.m", *B);
-          }
-          tm = Teuchos::null;
+      for(int l=0; l<numLoops; l++) {
+#ifdef HAVE_MUELU_TPETRA
+        Tpetra::Details::ProfilingRegion("MueLu Setup/Solve");
+#endif
+
+        // Use Kokkos tuning, if requested
+        if(kokkosTuning) {
+          // FIXME: Ideally we'd have the context bracket the solve only, not the setup,
+          // but we need to know if that will work with Kokkos or not first.
+          out2<< "Enabling MueLu::KokkosTuning"<<std::endl;
+          Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
+          KokkosTuner.SetMueLuParameters(kokkos_context_id,mueluList);
         }
 
+        // =========================================================================
+        // Preconditioner construction
+        // =========================================================================
+        RCP<Hierarchy> H;
+        RCP<Operator> Prec;
+        // Build the preconditioner numRebuilds+1 times
+        if (solvePreconditioned) {
+          out2 << "*********** MueLu ParameterList ***********" << std::endl;
+          out2 << mueluList;
+          out2 << "*******************************************" << std::endl;
+
+          MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
+
+          PreconditionerSetup(A, coordinates, nullspace, material, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
+
+        }
+        comm->barrier();
+        tm = Teuchos::null;
+
+        size_t mem = get_current_memory_usage();
+        out2 << "Memory use after preconditioner setup (GB): " << (mem / 1024.0 / 1024.0) << std::endl;
+
+
+        // Matrix output: first time only
+        comm->barrier();
+        if(l==0) {
+          if (writeMatricesOPT > -2) {
+            tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
+            H->Write(writeMatricesOPT, writeMatricesOPT);
+            if (writeMatricesOPT == 0 || writeMatricesOPT == -1) {
+              Xpetra::IO<SC, LO, GO, NO>::Write("b_0.m", *B);
+            }
+            tm = Teuchos::null;
+          }
+        }
+        // =========================================================================
+        // System solution (Ax = b)
+        // =========================================================================
         // Solve the system numResolves+1 times
-        SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess);
+        try {
+          SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess);
+
+          comm->barrier();
+        } catch (const std::exception& e) {
+          if (isDriver)
+            out2 << "MueLu_Driver: solver crashed w/ message:" << e.what() << std::endl;
+          else
+            throw;
+        }
 
         comm->barrier();
-      } catch (const std::exception& e) {
-        if (isDriver)
-          out2 << "MueLu_Driver: solver crashed w/ message:" << e.what() << std::endl;
-        else
-          throw;
-      }
+        tm = Teuchos::null;
 
-      tm = Teuchos::null;
-
-      // If we want Level-specific performance model diagnostics, now is the time!
-      if ((levelPerformanceModel == "yes" || levelPerformanceModel == "verbose") && !H.is_null()) {
-        for (int i = 0; i < H->GetNumLevels(); i++) {
-          RCP<Level> level = H->GetLevel(i);
-          try {
-            RCP<Matrix> A_level    = level->Get<RCP<Matrix> >("A");
-            std::string level_name = std::string("Level-") + std::to_string(i) + std::string(": ");
-            std::vector<const char*> timers;  // MueLu: Laplace2D: Hierarchy: Solve (level=0)
-            MueLu::report_spmv_performance_models<Matrix>(A_level, 100, timers, globalTimeMonitor, level_name, levelPerformanceModel == "verbose");
-          } catch (...) {
-            ;
-          }
+        if(kokkosTuning) {
+          Kokkos::Tools::Experimental::end_context(kokkos_context_id);
         }
-      }
+
+
+        // If we want Level-specific performance model diagnostics, now is the time!
+        if ((levelPerformanceModel == "yes" || levelPerformanceModel == "verbose") && !H.is_null()) {
+          for (int i = 0; i < H->GetNumLevels(); i++) {
+            RCP<Level> level = H->GetLevel(i);
+            try {
+              RCP<Matrix> A_level    = level->Get<RCP<Matrix> >("A");
+              std::string level_name = std::string("Level-") + std::to_string(i) + std::string(": ");
+              std::vector<const char*> timers;  // MueLu: Laplace2D: Hierarchy: Solve (level=0)
+              MueLu::report_spmv_performance_models<Matrix>(A_level, 100, timers, globalTimeMonitor, level_name, levelPerformanceModel == "verbose");
+            } catch (...) {
+              ;
+            }
+          }
+        }// end performance diagnostics
+
+      }//end loop over setup/solve pairs
+
 
       globalTimeMonitor = Teuchos::null;
       if (useStackedTimer)

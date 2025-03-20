@@ -134,6 +134,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
   // =========================================================================
   // Preconditioner construction
   // =========================================================================
+
 #ifdef HAVE_MUELU_CUDA
   if (profileSetup) cudaProfilerStart();
 #endif
