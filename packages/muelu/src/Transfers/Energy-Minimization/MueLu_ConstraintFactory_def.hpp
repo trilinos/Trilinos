@@ -21,8 +21,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  validParamList->set<RCP<const FactoryBase> >("FineNullspace", Teuchos::null, "Generating factory for the nullspace");
-  validParamList->set<RCP<const FactoryBase> >("CoarseNullspace", Teuchos::null, "Generating factory for the nullspace");
+  validParamList->set<RCP<const FactoryBase> >("Nullspace", Teuchos::null, "Generating factory for the nullspace");
   validParamList->set<RCP<const FactoryBase> >("Ppattern", Teuchos::null, "Generating factory for the nonzero pattern");
 
   return validParamList;
@@ -30,8 +29,7 @@ RCP<const ParameterList> ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
-  Input(fineLevel, "Nullspace", "FineNullspace");
-  Input(coarseLevel, "Nullspace", "CoarseNullspace");
+  Input(coarseLevel, "Nullspace");
   Input(coarseLevel, "Ppattern");
 }
 
@@ -39,12 +37,10 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
   FactoryMonitor m(*this, "Constraint", coarseLevel);
 
-  RCP<MultiVector> fineNullspace   = Get<RCP<MultiVector> >(fineLevel, "Nullspace", "FineNullspace");
-  RCP<MultiVector> coarseNullspace = Get<RCP<MultiVector> >(coarseLevel, "Nullspace", "CoarseNullspace");
+  RCP<MultiVector> nullspace = Get<RCP<MultiVector> >(coarseLevel, "Nullspace");
 
   RCP<Constraint> constraint(new Constraint);
-  constraint->Setup(*fineNullspace, *coarseNullspace,
-                    Get<RCP<const CrsGraph> >(coarseLevel, "Ppattern"));
+  constraint->Setup(*nullspace, Get<RCP<const CrsGraph> >(coarseLevel, "Ppattern"));
 
   Set(coarseLevel, "Constraint", constraint);
 }
