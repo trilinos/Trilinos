@@ -189,10 +189,15 @@ void StepperExponentialEuler<Scalar>::takeStep(
        * Using the appModel
        */
       RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = appModel->createOutArgs();
 
       // first allocate space for the jacobian
       RCP<Thyra::LinearOpBase<Scalar>> jac = appModel->create_W_op();
-      RCP<Thyra::PreconditionerBase<Scalar>> jac_p = appModel->create_W_prec();
+      RCP<Thyra::PreconditionerBase<Scalar>> jac_p = Teuchos::null;
+      if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
+        jac_p = appModel->create_W_prec();
+      }
 
       //if(zero_==Teuchos::null) {
       //  zero_ = Thyra::createMember(*me->get_x_space());
@@ -202,7 +207,6 @@ void StepperExponentialEuler<Scalar>::takeStep(
       const Scalar alpha = Scalar(1.0)/dt;
       const Scalar beta  = Scalar(0.5);
       // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
       inArgs.set_x(x);
       inArgs.set_t(time);
       inArgs.set_x_dot(xDot); // for what? xDot is zero at this point, updating of it not decided
@@ -210,9 +214,10 @@ void StepperExponentialEuler<Scalar>::takeStep(
       inArgs.set_beta(beta);
 
       // set only the jacobian matrix
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = appModel->createOutArgs();
       outArgs.set_W_op(jac);
-      outArgs.set_W_prec(jac_p);
+      if (jac_p != Teuchos::null){
+        outArgs.set_W_prec(jac_p);
+      }
 
       // this will fill the Jacobian operator
       appModel->evalModel(inArgs, outArgs);
@@ -220,14 +225,19 @@ void StepperExponentialEuler<Scalar>::takeStep(
       // TODO: const-cast why?
       RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel->get_W_factory();
       RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
-	Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
-
-      // without preconditioner
-      //RCP<const Thyra::LinearOpBase<Scalar>> const_jac = Teuchos::rcpFromRef(*jac);
-      //RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB  = Thyra::linearOpWithSolve(*lowsFactory, const_jac);
+          Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
       
-      RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = lowsFactory->createOp();
-      Thyra::initializePreconditionedOp<Scalar>(*lowsFactory, jac, jac_p, LOWSB.ptr());
+      RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = Teuchos::null;
+      if (jac_p == Teuchos::null){
+	// without preconditioner
+	RCP<const Thyra::LinearOpBase<Scalar>> const_jac = Teuchos::rcpFromRef(*jac);
+	LOWSB = Thyra::linearOpWithSolve(*lowsFactory, const_jac);
+      }
+      else {
+	// with preconditioner
+	LOWSB = lowsFactory->createOp();
+        Thyra::initializePreconditionedOp<Scalar>(*lowsFactory, jac, jac_p, LOWSB.ptr());
+      }
 
       RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();      
       assign(vphi.ptr(), ST::zero()); // Must initialize to a guess before solve!
