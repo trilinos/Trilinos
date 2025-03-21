@@ -17,9 +17,9 @@
 
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 
-#ifdef HAVE_MUELU_ML
-#include <ml_MultiLevelPreconditioner.h>
-#include <ml_RefMaxwell.h>
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
+#  include <ml_MultiLevelPreconditioner.h>
+#  include <ml_RefMaxwell.h>
 #endif
 
 namespace MueLuTests {
@@ -33,7 +33,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA) {
   Teuchos::ParameterList List, goldList;
   MueLu::ML2MueLuParameterTranslator::SetDefaults("SA", List);
 
-#ifdef HAVE_MUELU_ML
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
   Teuchos::ParameterList mlList;
   ML_Epetra::SetDefaults("SA", mlList);
   TEST_EQUALITY(compareLists(List, mlList), true);
@@ -66,7 +66,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
   Teuchos::ParameterList List, goldList;
   MueLu::ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(List);
 
-#ifdef HAVE_MUELU_ML
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
   Teuchos::ParameterList mlList;
   ML_Epetra::SetDefaultsRefMaxwell(mlList);
   TEST_EQUALITY(compareLists(List, mlList), true);
