@@ -44,7 +44,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-//#include <Isorropia_EpetraCostDescriber.hpp>
+#include <EEP_Isorropia_TpetraCostDescriber.hpp>
 #include <Isorropia_Operator.hpp>
 #include <EEP_Isorropia_TpetraLibrary.hpp>
 
@@ -70,11 +70,11 @@
 #include <string>
 #include <ctype.h>
 
-//#ifdef MIN
-//#undef MIN
-//#endif
+#ifdef MIN
+#undef MIN
+#endif
 
-//#define MIN(a,b) ((a)<(b)?(a):(b))
+#define MIN(a,b) ((a)<(b)?(a):(b))
 
 namespace Isorropia {
 
@@ -129,7 +129,7 @@ public:
     operation_already_computed_(false),
     lib_(0), base_(base) // EEP__
   {
-    input_map_ = Teuchos::rcp(&(input_graph->getRowMap()), false);
+    input_map_ = input_graph->getRowMap(); // Teuchos::rcp(&(input_graph->getRowMap()), false); // EEP___
 
     if (paramlist.name() != "EmptyParameterList") {
       setParameters(paramlist);
@@ -408,12 +408,10 @@ public:
     return (localNumberOfProperties_);
   }
 
-#if 0 // EEP
   /** Return the new partition ID for a given element that
      resided locally in the old operation.
   */
-  virtual const int& operator[](int myElem) const;
-#endif // EEP
+  virtual const int& operator[](int myElem) const; // EEP__ forced by virtual = 0 in Isorropia_Operator
 
   /** Return the number of elements in a given partition.
   */
@@ -434,8 +432,8 @@ public:
 				    const int*& array) const;
 private:
 
-  //void paramsToUpper(Teuchos::ParameterList &, int &changed, bool rmUnderscore=true);
-  //void stringToUpper(std::string &s, int &changed, bool rmUnderscore=false);
+  void paramsToUpper(Teuchos::ParameterList &, int &changed, bool rmUnderscore=true);
+  void stringToUpper(std::string &s, int &changed, bool rmUnderscore=false);
   int numberOfProperties_;
   int localNumberOfProperties_;
   std::vector<int> numberElemsByProperties_;
@@ -717,8 +715,11 @@ Operator<LocalOrdinal, GlobalOrdinal, Node>::~Operator()
 {
 }
 
-#if 0 // EEP
-void Operator::setParameters(const Teuchos::ParameterList& paramlist)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+Operator<LocalOrdinal, GlobalOrdinal, Node>::setParameters(const Teuchos::ParameterList& paramlist)
 {
   int changed;
   paramlist_ = paramlist;
@@ -734,20 +735,29 @@ void Operator::setParameters(const Teuchos::ParameterList& paramlist)
 
 }
 
-const int& Operator::operator[](int myElem) const
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+const int& Operator<LocalOrdinal, GlobalOrdinal, Node>::operator[](int myElem) const // EEP__ forced by virtual = 0 in Isorropia_Operator
 {
   return (properties_[myElem]);
 }
 
-int Operator::numElemsWithProperty(int property) const
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int Operator<LocalOrdinal, GlobalOrdinal, Node>::numElemsWithProperty(int property) const
 {
   if ((unsigned) property < numberElemsByProperties_.size())
     return numberElemsByProperties_[property];
   return (0);
 }
 
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 void
-Operator::elemsWithProperty(int property, int* elementList, int len) const
+Operator<LocalOrdinal, GlobalOrdinal, Node>::elemsWithProperty(int property, int* elementList, int len) const
 {
   int length = 0;
   std::vector<int>::const_iterator elemsIter;
@@ -758,7 +768,6 @@ Operator::elemsWithProperty(int property, int* elementList, int len) const
       elementList[length++] = elemsIter - properties_.begin();
   }
 }
-#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
@@ -787,15 +796,18 @@ Operator<LocalOrdinal, GlobalOrdinal, Node>::computeNumberOfProperties()
     (*(numberIter + property)) ++;
   }
 
-  input_map_->Comm().MaxAll(&max, &numberOfProperties_, 1);
+  max = numberOfProperties_; //input_map_->getComm()->maxAll(&max, &numberOfProperties_, 1); // EEP___
 
   numberOfProperties_ = numberOfProperties_ - base_ + 1;
 
   localNumberOfProperties_ = max - base_ + 1;
 }
 
-#if 0 // EEP
-void Operator::stringToUpper(std::string &s, int &changed, bool rmUnderscore)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+Operator<LocalOrdinal, GlobalOrdinal, Node>::stringToUpper(std::string &s, int &changed, bool rmUnderscore)
 {
   std::string::iterator siter;
   changed = 0;
@@ -813,7 +825,11 @@ void Operator::stringToUpper(std::string &s, int &changed, bool rmUnderscore)
   }
 }
 
-void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed, bool rmUnderscore)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+Operator<LocalOrdinal, GlobalOrdinal, Node>::paramsToUpper(Teuchos::ParameterList &plist, int &changed, bool rmUnderscore)
 {
   changed = 0;
 
@@ -880,7 +896,11 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed, bool r
   } // next parameter or sublist
 }
 
-int Operator::extractPropertiesCopy(int len,
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int
+Operator<LocalOrdinal, GlobalOrdinal, Node>::extractPropertiesCopy(int len,
 				    int& size,
 				    int* array) const
 {
@@ -897,7 +917,11 @@ int Operator::extractPropertiesCopy(int len,
   return (0);
 }
 
-int Operator::extractPropertiesView(int& size,
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int
+Operator<LocalOrdinal, GlobalOrdinal, Node>::extractPropertiesView(int& size,
 				    const int*& array) const
 {
   size = properties_.size();
@@ -907,7 +931,6 @@ int Operator::extractPropertiesView(int& size,
     array = NULL;
   return (0);
 }
-#endif // EEP
 
 }//namespace Epetra
 }//namespace Isorropia

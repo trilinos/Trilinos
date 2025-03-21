@@ -65,6 +65,7 @@
 #include <Tpetra_CrsGraph_decl.hpp>
 //#include <Epetra_CrsMatrix.h>
 //#include <Epetra_LinearProblem.h>
+#include <exception>
 
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultComm.hpp>
@@ -188,14 +189,19 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   Library(input_graph, input_coords, inputType)
 {
 }
+#endif // EEP
 
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph, // EEP__
-                          Teuchos::RCP<CostDescriber> costs,
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::ZoltanLibClass(Teuchos::RCP<const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, // EEP__
+                          Teuchos::RCP<CostDescriber<LocalOrdinal, GlobalOrdinal, Node>> costs,
                           int inputType):
-  Library(input_graph, costs, inputType)
+  Library<LocalOrdinal, GlobalOrdinal, Node>(input_graph, costs, inputType)
 {
 }
 
+#if 0 // EEP
 ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
                                Teuchos::RCP<CostDescriber> costs,
                                Teuchos::RCP<const Epetra_MultiVector> input_coords,
@@ -272,7 +278,6 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_BlockMap> input_map,
 }
 #endif // EEP
 
-#if 0 // EEPEEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
@@ -281,39 +286,39 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
   std::string str1("Isorropia::ZoltanLibClass::precompute ");
   MPI_Comm mpicomm = zoltan_get_global_comm();
 #ifdef HAVE_MPI
-  MPI_Comm default_mpicomm = zoltan_get_global_comm();
+  //MPI_Comm default_mpicomm = zoltan_get_global_comm(); // EEP__ unused by compiler
 #endif // HAVE_MPI
   int itype;
 
-  Library::precompute(); // assumes input_type_ is set
+  Library<LocalOrdinal, GlobalOrdinal, Node>::precompute(); // assumes input_type_ is set
 
-  if (input_graph_.get() || input_matrix_.get())
+  if (this->input_graph_.get()) //  || input_matrix_.get()) // EEP
   {
-    if (input_type_ != hgraph2d_finegrain_input_){
+    if (this->input_type_ != this->hgraph2d_finegrain_input_){
       computeCost();     // graph or hypergraph weights
     }
   }
 
-  if (input_type_ == graph_input_)
-    itype = ZoltanLib::QueryObject::graph_input_;
-  else if (input_type_ == hgraph_input_)
-    itype = ZoltanLib::QueryObject::hgraph_input_;
-  else if (input_type_ == hgraph2d_finegrain_input_)
-    itype = ZoltanLib::QueryObject::hgraph2d_finegrain_input_;
-  else if (input_type_ == geometric_input_)
-    itype = ZoltanLib::QueryObject::geometric_input_;
-  else if (input_type_ == simple_input_)
-    itype = ZoltanLib::QueryObject::simple_input_;
-  else if (input_type_ == hgraph_graph_input_)                 // hierarchical partitioning
-    itype = ZoltanLib::QueryObject::hgraph_graph_input_;
-  else if (input_type_ == hgraph_geometric_input_)             // hierarchical partitioning
-    itype = ZoltanLib::QueryObject::hgraph_geometric_input_;
-  else if (input_type_ == graph_geometric_input_)              // hierarchical partitioning
-    itype = ZoltanLib::QueryObject::graph_geometric_input_;
-  else if (input_type_ == hgraph_graph_geometric_input_)       // hierarchical partitioning
-    itype = ZoltanLib::QueryObject::hgraph_graph_geometric_input_;
+  if (this->input_type_ == this->graph_input_)
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::graph_input_;
+  else if (this->input_type_ == this->hgraph_input_)
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::hgraph_input_;
+  else if (this->input_type_ == this->hgraph2d_finegrain_input_)
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::hgraph2d_finegrain_input_;
+  else if (this->input_type_ == this->geometric_input_)
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::geometric_input_;
+  else if (this->input_type_ == this->simple_input_)
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::simple_input_;
+  else if (this->input_type_ == this->hgraph_graph_input_)                 // hierarchical partitioning
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::hgraph_graph_input_;
+  else if (this->input_type_ == this->hgraph_geometric_input_)             // hierarchical partitioning
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::hgraph_geometric_input_;
+  else if (this->input_type_ == this->graph_geometric_input_)              // hierarchical partitioning
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::graph_geometric_input_;
+  else if (this->input_type_ == this->hgraph_graph_geometric_input_)       // hierarchical partitioning
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::hgraph_graph_geometric_input_;
   else
-    itype = ZoltanLib::QueryObject::unspecified_input_;
+    itype = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::unspecified_input_;
 
 #if 0 // EEP
   if (input_graph_.get() !=0 && input_coords_.get()!=0) //geometric and graph inputs
@@ -352,10 +357,11 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
   }
   else
 #endif // EEP
-  if (input_graph_.get() != 0) //graph inputs
+  if (this->input_graph_.get() != 0) //graph inputs
   {
-    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, itype));
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>(this->input_graph_, this->costs_, itype));
 #ifdef HAVE_MPI
+#if 0 // EEP___
     const  Epetra_Comm &ecomm = input_graph_->RowMap().Comm();
     try
     {
@@ -367,6 +373,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
         // Serial Comm with MPI
         MPI_Comm_split(default_mpicomm, ecomm.MyPID(), 0, &mpicomm);
     }
+#endif
 #endif
   }
 #if 0 // EEP
@@ -436,7 +443,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
   zz_ = new Zoltan(mpicomm);
 
   if (zz_ == NULL){
-    throw Isorropia::Exception("Error creating Zoltan object");
+    throw std::runtime_error/*Isorropia::Exception*/("Error creating Zoltan object");
     return (-1);
   }
 
@@ -452,21 +459,21 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
 
   if (!zoltanParamList_.isParameter(lb_method_str)) //set default parameters
   {
-    if (input_type_ == graph_input_)
+    if (this->input_type_ == this->graph_input_)
     {
       zoltanParamList_.set(lb_method_str, "GRAPH");
     }
-    else if (input_type_ == geometric_input_)
+    else if (this->input_type_ == this->geometric_input_)
     {
       if (!zoltanParamList_.isParameter(lb_method_str))  //MMW: Don't think this if is needed
         zoltanParamList_.set(lb_method_str, "RCB");
     }
-    else if (input_type_ == simple_input_) //not sure this is needed
+    else if (this->input_type_ == this->simple_input_) //not sure this is needed
     {
       zoltanParamList_.set(lb_method_str, "BLOCK");
     }
-    else if (input_type_ == hgraph_graph_input_    || input_type_ == hgraph_geometric_input_ ||
-             input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_ )
+    else if (this->input_type_ == this->hgraph_graph_input_    || this->input_type_ == this->hgraph_geometric_input_ ||
+             this->input_type_ == this->graph_geometric_input_ || this->input_type_ == this->hgraph_graph_geometric_input_ )
     {
       zoltanParamList_.set(lb_method_str, "HIER");
     }
@@ -483,16 +490,16 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
   }
 
     // For fine-grain hypergraph, we don't want obj or (hyper)edge weights
-  if (input_type_ == hgraph2d_finegrain_input_)
+  if (this->input_type_ == this->hgraph2d_finegrain_input_)
   {
     zoltanParamList_.set("OBJ_WEIGHT_DIM", "0");
     zoltanParamList_.set("EDGE_WEIGHT_DIM", "0");
   }
-  else if (input_type_ == geometric_input_)
+  else if (this->input_type_ == this->geometric_input_)
   {
     // We always overwrite user choice.
     // if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) {
-      if (weights_.get())
+      if (false) // this->weights_.get()) // EEP
       {
         zoltanParamList_.set("OBJ_WEIGHT_DIM", "1");
       }
@@ -502,7 +509,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
       }
     //}
   }
-  else if(input_type_ != simple_input_) //graph or hypergraph
+  else if(this->input_type_ != this->simple_input_) //graph or hypergraph
   {
     if (queryObject_->haveVertexWeights())
     {
@@ -525,7 +532,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
   // For fine-grain hypergraph, we will use (row, col) of nz for
   // vertex GIDs.  Don't need LIDs.
 
-  if (input_type_ == hgraph2d_finegrain_input_)
+  if (this->input_type_ == this->hgraph2d_finegrain_input_)
   {
     zoltanParamList_.set("NUM_GID_ENTRIES", "2");
     zoltanParamList_.set("NUM_LID_ENTRIES", "1");
@@ -544,43 +551,44 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
 
   // Set the query functions
 
-  zz_->Set_Num_Obj_Fn(ZoltanLib::QueryObject::Number_Objects, (void *)queryObject_.get());
-  zz_->Set_Obj_List_Fn(ZoltanLib::QueryObject::Object_List, (void *)queryObject_.get());
+  zz_->Set_Num_Obj_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Number_Objects, (void *)queryObject_.get());
+  zz_->Set_Obj_List_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Object_List, (void *)queryObject_.get());
 
   int ierr;
-  num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
+  num_obj_ = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Number_Objects((void *)queryObject_.get(), &ierr);
 
 
-  if (input_type_ == hgraph2d_finegrain_input_)
+  if (this->input_type_ == this->hgraph2d_finegrain_input_)
   {
-    zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
-    zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
+    zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_CS, (void *)queryObject_.get());
+    zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_CS, (void *)queryObject_.get());
   }
-  if (input_type_ == hgraph_input_           || input_type_ == hgraph_graph_input_ ||
-      input_type_ == hgraph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_)
+  if (this->input_type_ == this->hgraph_input_           || this->input_type_ == this->hgraph_graph_input_ ||
+      this->input_type_ == this->hgraph_geometric_input_ || this->input_type_ == this->hgraph_graph_geometric_input_)
   {
-    zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
-    zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
-    zz_->Set_HG_Size_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Size_Edge_Weights,
+    zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_CS, (void *)queryObject_.get());
+    zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_CS, (void *)queryObject_.get());
+    zz_->Set_HG_Size_Edge_Wts_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_Edge_Weights,
                                  (void *)queryObject_.get());
-    zz_->Set_HG_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Edge_Weights, (void *)queryObject_.get());
+    zz_->Set_HG_Edge_Wts_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Edge_Weights, (void *)queryObject_.get());
   }
-  if (input_type_ == graph_input_ || input_type_ == hgraph_graph_input_ ||
-      input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_)
+  if (this->input_type_ == this->graph_input_ || this->input_type_ == this->hgraph_graph_input_ ||
+      this->input_type_ == this->graph_geometric_input_ || this->input_type_ == this->hgraph_graph_geometric_input_)
   {
-    zz_->Set_Num_Edges_Multi_Fn(ZoltanLib::QueryObject::Number_Edges_Multi, (void *)queryObject_.get());
-    zz_->Set_Edge_List_Multi_Fn(ZoltanLib::QueryObject::Edge_List_Multi, (void *)queryObject_.get());
+    zz_->Set_Num_Edges_Multi_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Number_Edges_Multi, (void *)queryObject_.get());
+    zz_->Set_Edge_List_Multi_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Edge_List_Multi, (void *)queryObject_.get());
   }
-  if (input_type_ == geometric_input_ || input_type_ == hgraph_geometric_input_ ||
-      input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_)
+  if (this->input_type_ == this->geometric_input_ || this->input_type_ == this->hgraph_geometric_input_ ||
+      this->input_type_ == this->graph_geometric_input_ || this->input_type_ == this->hgraph_graph_geometric_input_)
   {
-    zz_->Set_Num_Geom_Fn(ZoltanLib::QueryObject::Number_Geom, (void *)queryObject_.get());
-    zz_->Set_Geom_Multi_Fn(ZoltanLib::QueryObject::Geom_Multi, (void *)queryObject_.get());
+    zz_->Set_Num_Geom_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Number_Geom, (void *)queryObject_.get());
+    zz_->Set_Geom_Multi_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Geom_Multi, (void *)queryObject_.get());
   }
 
   return (ierr);
 }
 
+#if 0 // EEPEEP
 void ZoltanLibClass::computeCost()
 {
   std::string str1("Isorropia::ZoltanLibClass::computeCost ");

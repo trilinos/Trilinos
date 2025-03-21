@@ -307,23 +307,23 @@ public:
          true will force a new partitioning to be computed.
    */
   void partition(bool force_repartitioning=false); // EEP__
-#if 0 // EEP
-  /** @ingroup partitioning_grp
-   */
-  virtual void compute(bool forceRecomputing=false);
 
   /** @ingroup partitioning_grp
    */
-  int numElemsInPart(int part) const {
+  virtual void compute(bool forceRecomputing=false); // EEP__ forced by virtual = 0 in Isorropia_Operator
+
+  /** @ingroup partitioning_grp
+   */
+  int numElemsInPart(int part) const { // EEP__ forced by virtual = 0 in Isorropia_Partitioner
     return (numElemsWithProperty(part));
   }
 
   /** @ingroup partitioning_grp
    */
-  void elemsInPart(int part, int* elementList, int len) const {
+  void elemsInPart(int part, int* elementList, int len) const { // EEP__ forced by virtual = 0 in Isorropia_Partitioner
     elemsWithProperty(part, elementList, len);
   }
-
+#if 0 // EEP
   /** @ingroup partitioning_rcp_grp
       Create a new @c Epetra_Map corresponding to the new partition.
 
@@ -727,9 +727,14 @@ Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
   std::cout << "EEP Leaving isorropia/src/tpetra/EEP_Isorropia_TpetraPartitioner.hpp Partitioner::constructor(22)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
+#endif // EEP
 
-Partitioner::~Partitioner(){}
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+Partitioner<LocalOrdinal, GlobalOrdinal, Node>::~Partitioner(){}
 
+#if 0 // EEP
 void Partitioner::
 clearPartSizes()
 {
@@ -1004,16 +1009,20 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartition
   std::cout << "EEP Leaving isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::partition()" << std::endl;
 }
 
-#if 0 // EEP
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void Partitioner::
-compute(bool force_repartitioning)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+Partitioner<LocalOrdinal, GlobalOrdinal, Node>::
+compute(bool force_repartitioning) // EEP__ forced by virtual = 0 in Isorropia_Operator
 {
   partition(force_repartitioning);
 }
 ////////////////////////////////////////////////////////////////////////////////
 
+#if 0 // EEP
 ////////////////////////////////////////////////////////////////////////////////
 // Create a new RowMap 
 ////////////////////////////////////////////////////////////////////////////////

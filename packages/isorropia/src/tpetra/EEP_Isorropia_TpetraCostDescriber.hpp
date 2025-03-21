@@ -109,7 +109,7 @@ namespace Isorropia {
 
 class Operator;
 
-namespace Epetra {
+namespace Tpetra {
 
 /** The CostDescriber class describes the vertex, edge and/or hyperedge weights.
 

@@ -263,7 +263,7 @@ Library(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node
     costs_(costs)//,
     //weights_(0)
 {
-  input_map_ = Teuchos::rcp(&(input_graph->getRowMap()), false);
+  input_map_ = input_graph->getRowMap(); // Teuchos::rcp(&(input_graph->getRowMap()), false); // EEP___
 }
 
 #if 0 // EEP
@@ -445,13 +445,13 @@ int Library<LocalOrdinal, GlobalOrdinal, Node>::precompute()
     bool square = false;
     bool symmetric = true;  // no easy way to test for this ?? TODO
     if (input_graph_.get() != 0){
-      if (input_graph_->NumGlobalRows() == input_graph_->NumGlobalCols()){
+      if (input_graph_->getGlobalNumRows() == input_graph_->getGlobalNumCols()){
 	square = true;
       }
     }
 #if 0 // EEP
     else if (input_matrix_.get() != 0){
-      if (input_matrix_->NumGlobalRows() == input_matrix_->NumGlobalCols()){
+      if (input_matrix_->getGlobalNumRows() == input_matrix_->getGlobalNumCols()){
 	square = true;
       }
     }
