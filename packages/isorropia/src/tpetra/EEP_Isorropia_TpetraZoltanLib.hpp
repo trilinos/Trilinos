@@ -588,14 +588,17 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
   return (ierr);
 }
 
-#if 0 // EEPEEP
-void ZoltanLibClass::computeCost()
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::ZoltanLibClass::computeCost()
 {
   std::string str1("Isorropia::ZoltanLibClass::computeCost ");
   std::string str2;
 
 
-  const Epetra_Comm &comm = input_map_->Comm();
+  //const Epetra_Comm &comm = input_map_->Comm(); // EEP
 
   // If vertex/edge costs have been set, do a global operation to find
   // out how many weights were given.  Some processes may provide no
@@ -604,7 +607,7 @@ void ZoltanLibClass::computeCost()
 
   int err = 0;
   int gerr = 0;
-  int base = input_map_->IndexBase();
+  int base = this->input_map_->getIndexBase();
 
   int numMyVWeights = 0;
   int numMyGWeights = 0;
@@ -615,9 +618,10 @@ void ZoltanLibClass::computeCost()
   int mySelfEdges = 0;
   int globalSelfEdges = 0;
 
-  int myRows = input_map_->NumMyElements();
-  int globalNumRows = input_map_->NumGlobalElements();
+  int myRows = this->input_map_->getLocalNumElements();
+  int globalNumRows = this->input_map_->getGlobalNumElements();
 
+#if 0 // EEP
   if (input_graph_.get() == 0) //matrix
   {
     myNZ = input_matrix_->NumMyNonzeros();
@@ -627,28 +631,29 @@ void ZoltanLibClass::computeCost()
     globalNumCols = input_matrix_->NumGlobalCols();
   }
   else //graph
+#endif // EEP
   {
-    myNZ = input_graph_->NumMyNonzeros();
-    mySelfEdges = input_graph_->NumMyDiagonals();
-    globalNZ = input_graph_->NumGlobalNonzeros();
-    globalSelfEdges = input_graph_->NumGlobalDiagonals();
-    globalNumCols = input_graph_->NumGlobalCols();
+    myNZ = this->input_graph_->getLocalNumEntries();
+    mySelfEdges = this->input_graph_->getLocalNumRows(); // Diagonals(); // EEP___
+    globalNZ = this->input_graph_->getGlobalNumEntries();
+    globalSelfEdges = this->input_graph_->getGlobalNumRows(); // Diagonals(); EEP___
+    globalNumCols = this->input_graph_->getGlobalNumCols();
   }
 
-  if (costs_.get() != 0)
+  if (this->costs_.get() != 0)
   {
 
-    numMyVWeights = costs_->getNumVertices();
+    numMyVWeights = this->costs_->getNumVertices();
 
-    if (costs_->haveGraphEdgeWeights()){
+    if (this->costs_->haveGraphEdgeWeights()){
         for (int i=0; i<numMyVWeights; i++){
-        int gid = input_map_->GID(i);
+        int gid = this->input_map_->getGlobalElement(i); // EEP
         if (gid >= base){
-          numMyGWeights += costs_->getNumGraphEdges(gid);
+          numMyGWeights += this->costs_->getNumGraphEdges(gid);
         }
         }
     }
-    numMyHGWeights = costs_->getNumHypergraphEdgeWeights();
+    numMyHGWeights = this->costs_->getNumHypergraphEdgeWeights();
 
     if ((numMyVWeights > 0) && (numMyVWeights != myRows)){
         str2 = "Number of my vertex weights != number of my rows";
@@ -660,13 +665,13 @@ void ZoltanLibClass::computeCost()
     }
   }
   else{
-    costs_ = Teuchos::rcp(new CostDescriber());
+    this->costs_ = Teuchos::rcp(new CostDescriber<LocalOrdinal, GlobalOrdinal, Node>());
   }
 
-  comm.SumAll(&err, &gerr ,1);
+  //comm.SumAll(&err, &gerr ,1); // EEP___
 
   if (gerr > 0){
-    throw Isorropia::Exception(str1+str2);
+    throw std::runtime_error/*Isorropia::Exception*/(str1+str2);
   }
 
   int lval[4], gval[4];
@@ -674,7 +679,7 @@ void ZoltanLibClass::computeCost()
   lval[1] = numMyGWeights;
   lval[2] = numMyHGWeights;
 
-  comm.SumAll(lval, gval, 3);
+  //comm.SumAll(lval, gval, 3); // EEP___
 
   int numVWeights = gval[0];
   int numGWeights = gval[1];
@@ -682,31 +687,33 @@ void ZoltanLibClass::computeCost()
 
   if ((numVWeights > 0) && (numVWeights != globalNumRows)){
     str2 = "Number of vertex weights supplied by application != number of rows";
-    throw Isorropia::Exception(str1+str2);
+    throw std::runtime_error/*Isorropia::Exception*/(str1+str2);
   }
   if ((numGWeights > 0) && (numGWeights != (globalNZ - globalSelfEdges))){
     str2 = "Number of graph edge weights supplied by application != number of edges";
-    throw Isorropia::Exception(str1+str2);
+    throw std::runtime_error/*Isorropia::Exception*/(str1+str2);
   }
   if ((numHGWeights > 0) && (numHGWeights < globalNumCols)){
     str2 = "Number of hyperedge weights supplied by application < number of columns";
-    throw Isorropia::Exception(str1+str2);
+    throw std::runtime_error/*Isorropia::Exception*/(str1+str2);
   }
 
-  costs_->setNumGlobalVertexWeights(numVWeights);
-  costs_->setNumGlobalGraphEdgeWeights(numGWeights);
-  costs_->setNumGlobalHypergraphEdgeWeights(numHGWeights);
+  this->costs_->setNumGlobalVertexWeights(numVWeights);
+  this->costs_->setNumGlobalGraphEdgeWeights(numGWeights);
+  this->costs_->setNumGlobalHypergraphEdgeWeights(numHGWeights);
 }
 
-
-void ZoltanLibClass::preCheckPartition()
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::preCheckPartition()
 {
   std::string str1("Isorropia::ZoltanLibClass::precheckPartition ");
   std::string str2;
 
-  const Epetra_Comm &comm = input_map_->Comm();
-  int localProc = comm.MyPID();
-  int nprocs = comm.NumProc();
+  //const Epetra_Comm &comm = input_map_->Comm();
+  int localProc = this->input_map_->getComm()->getRank();
+  int nprocs = this->input_map_->getComm()->getSize();
 
   // Checks for Zoltan parameters NUM_GLOBAL_PARTS and NUM_LOCAL_PARTS.
 
@@ -723,16 +730,16 @@ void ZoltanLibClass::preCheckPartition()
   }
 
   int myGparts = atoi(gparts.c_str());
-  int myLparts = atoi(lparts.c_str());
+  //int myLparts = atoi(lparts.c_str()); // EEP
   int maxGparts, maxLparts, sumLparts;
   int fixGparts = -1;
   int fixLparts = -1;
-  int numrows = input_map_->NumGlobalElements();
+  int numrows = this->input_map_->getLocalNumElements(); // Elements(); // EEP___
 
-  int myParts[] = {myGparts, myLparts};
+  //int myParts[] = {myGparts, myLparts}; // EEP
   int maxParts[2];
 
-  comm.MaxAll(myParts, maxParts, 2);
+  //comm.MaxAll(myParts, maxParts, 2); // EEP___
 
   maxGparts = maxParts[0];
   maxLparts = maxParts[1];
@@ -748,8 +755,9 @@ void ZoltanLibClass::preCheckPartition()
     }
   }
 
-  if (maxLparts > 0)
-    comm.SumAll(&myLparts, &sumLparts, 1);
+  if (maxLparts > 0) {
+    //comm.SumAll(&myLparts, &sumLparts, 1); // EEP___
+  }
   else
     sumLparts = 0;
 
@@ -765,13 +773,13 @@ void ZoltanLibClass::preCheckPartition()
       if (maxGparts > numrows){
         // This is an error because we can't split rows among partitions
         str2 = "NUM_GLOBAL_PARTS exceeds number of rows (objects to be partitioned)";
-        throw Isorropia::Exception(str1+str2);
+        throw std::runtime_error/*Isorropia::Exception*/(str1+str2);
       }
 
       if ((sumLparts > 0) && (sumLparts != maxGparts)){
         // This is an error because local partitions must sum to number of global
         str2 = "NUM_GLOBAL_PARTS not equal to sum of NUM_LOCAL_PARTS";
-        throw Isorropia::Exception(str1+str2);
+        throw std::runtime_error/*Isorropia::Exception*/(str1+str2);
       }
 
       if ((sumLparts == 0) && (maxGparts < nprocs)){
@@ -806,7 +814,10 @@ void ZoltanLibClass::preCheckPartition()
   }
 }
 
-int ZoltanLibClass::
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::
 repartition(Teuchos::ParameterList& zoltanParamList,
             std::vector<int>& properties,
             int& exportsSize,
@@ -823,14 +834,14 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 
   // Set part sizes
 
-  if (numPartSizes > 0){
+  if (this->numPartSizes > 0){
     int err;
     int *wgtIdx = NULL;
 
-    err = zz_->LB_Set_Part_Sizes(1, numPartSizes, partGIDs, wgtIdx, partSizes);
+    err = zz_->LB_Set_Part_Sizes(1, this->numPartSizes, this->partGIDs, wgtIdx, this->partSizes);
 
     if (err != ZOLTAN_OK){
-      throw Isorropia::Exception("Error in LB_Set_Part_Sizes");
+      throw std::runtime_error/*Isorropia::Exception*/("Error in LB_Set_Part_Sizes");
       return -1;
     }
   }
@@ -847,7 +858,7 @@ repartition(Teuchos::ParameterList& zoltanParamList,
    num_export, export_global_ids, export_local_ids, export_procs, export_to_part );
 
   if (err != ZOLTAN_OK){
-    throw Isorropia::Exception("Error computing partitioning with Zoltan");
+    throw std::runtime_error/*Isorropia::Exception*/("Error computing partitioning with Zoltan");
     return -1;
   }
 
@@ -855,7 +866,7 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   imports.clear();
   imports.assign(import_global_ids, import_global_ids + num_import);
 
-  properties.assign(num_obj_, queryObject_->RowMap().Comm().MyPID());
+  properties.assign(num_obj_, queryObject_->RowMap().getComm()->getRank());
 
   for( int i = 0; i < num_export; ++i )
   {
@@ -873,7 +884,10 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   return (0);
 }
 
-int ZoltanLibClass::
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::
 color(Teuchos::ParameterList& zoltanParamList,
       std::vector<int>& properties)
 {
@@ -897,17 +911,17 @@ color(Teuchos::ParameterList& zoltanParamList,
   if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
     gids = new ZOLTAN_ID_TYPE [num_obj_];
     if (num_obj_ && ! gids){
-      throw Isorropia::Exception("Out of memory in ZoltanLibClass::color()");
+      throw std::runtime_error/*Isorropia::Exception*/("Out of memory in ZoltanLibClass::color()");
       return -1;
     }
 
-    int *intIds = queryObject_->RowMap().MyGlobalElements();
+    int *intIds = nullptr; // queryObject_->RowMap().getLocalElementList(); // MyGlobalElements(); // EEP___
     for (int i=0; i < num_obj_; i++){
       gids[i] = (ZOLTAN_ID_TYPE)intIds[i];
     }
   }
   else{
-    gids = (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements();
+    gids = nullptr; // (ZOLTAN_ID_PTR)queryObject_->RowMap().getLocalElementList(); // MyGlobalElements(); // EEP___
   }
 
   int err = zz_->Color(num_gid_entries, num_obj_, gids, &properties[0]);
@@ -917,7 +931,7 @@ color(Teuchos::ParameterList& zoltanParamList,
   }
 
   if (err != ZOLTAN_OK){
-    throw Isorropia::Exception("Error computing coloring with Zoltan");
+    throw std::runtime_error/*Isorropia::Exception*/("Error computing coloring with Zoltan");
     return -1;
   }
 
@@ -925,7 +939,10 @@ color(Teuchos::ParameterList& zoltanParamList,
   return (0);
 }
 
-int ZoltanLibClass::
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::
 order(Teuchos::ParameterList& zoltanParamList,
       std::vector<int>& properties)
 {
@@ -945,17 +962,17 @@ order(Teuchos::ParameterList& zoltanParamList,
   if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
     gids = new ZOLTAN_ID_TYPE [num_obj_];
     if (num_obj_ && ! gids){
-      throw Isorropia::Exception("Out of memory in ZoltanLibClass::order()");
+      throw std::runtime_error/*Isorropia::Exception*/("Out of memory in ZoltanLibClass::order()");
       return -1;
     }
 
-    int *intIds = queryObject_->RowMap().MyGlobalElements();
+    int *intIds = nullptr; // queryObject_->RowMap().MyGlobalElements(); // EEP___
     for (int i=0; i < num_obj_; i++){
       gids[i] = (ZOLTAN_ID_TYPE)intIds[i];
     }
   }
   else{
-    gids = (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements();
+    gids = nullptr; // (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements(); // EEP___
   }
 
   int err = zz_->Order(num_gid_entries, num_obj_, gids, &properties[0], NULL);
@@ -965,7 +982,7 @@ order(Teuchos::ParameterList& zoltanParamList,
   }
 
   if (err != ZOLTAN_OK){
-    throw Isorropia::Exception("Error computing ordering with Zoltan");
+    throw std::runtime_error/*Isorropia::Exception*/("Error computing ordering with Zoltan");
     return -1;
   }
 
@@ -973,7 +990,10 @@ order(Teuchos::ParameterList& zoltanParamList,
   return (0);
 }
 
-int ZoltanLibClass::postcompute()
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::postcompute()
 {
   if (zz_)
     delete zz_;
@@ -981,7 +1001,6 @@ int ZoltanLibClass::postcompute()
 
   return (0);
 }
-#endif // EEPEEP
 
 }//namespace Tpetra
 }//namespace Isorropia

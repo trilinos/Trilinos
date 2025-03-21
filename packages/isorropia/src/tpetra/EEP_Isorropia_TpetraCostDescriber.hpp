@@ -148,7 +148,7 @@ class CostDescriber : public Isorropia::CostDescriber {
 
   friend class Isorropia::Operator;
   //friend class Isorropia::Tpetra::ZoltanLib<LocalOrdinal, GlobalOrdinal, Node>::QueryObject; // EEP
-  //friend class Isorropia::Tpetra::ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>;
+  friend class Isorropia::Tpetra::ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
   /** Constructor */
@@ -417,11 +417,10 @@ private:
 
 };//class CostDescriber
 
-#if 0 // EEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-CostDescriber::CostDescriber()
+CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::CostDescriber()
   : vertex_weights_(),
     graph_edge_weights_(),
     graph_self_edges_(),
@@ -438,11 +437,12 @@ CostDescriber::CostDescriber()
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-CostDescriber::~CostDescriber()
+CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::~CostDescriber()
 {
   free_hg_edge_weights_();
 }
 
+#if 0 // EEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
@@ -698,15 +698,17 @@ int CostDescriber::compareBeforeAndAfterImbalance(const Epetra_MultiVector &mv, 
   return 0;
 }
 #endif
+#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void CostDescriber::setParameters(const Teuchos::ParameterList& paramlist)
+void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::setParameters(const Teuchos::ParameterList& paramlist)
 {
   paramlist_ = paramlist;
 }
 
+#if 0 // EEP
 /** Supply a vector of vertex (row) weights.  If rows are distributed, then
     each process must supply a weight for each of its rows.  (Alternatively
     the application can supply no vertex weights at all.)  The weights should
@@ -1122,15 +1124,17 @@ bool CostDescriber::haveGlobalVertexWeights() const
 {
   return (numGlobalVertexWeights_ > 0);
 }
+#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void CostDescriber::setNumGlobalVertexWeights(int num)
+void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::setNumGlobalVertexWeights(int num)
 {
-  numGlobalVertexWeights_ = num;
+  this->numGlobalVertexWeights_ = num;
 }
 
+#if 0 // EEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
@@ -1138,15 +1142,17 @@ bool CostDescriber::haveGlobalGraphEdgeWeights() const
 {
   return (numGlobalGraphEdgeWeights_ > 0);
 }
+#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void CostDescriber::setNumGlobalGraphEdgeWeights(int num)
+void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::setNumGlobalGraphEdgeWeights(int num)
 {
-  numGlobalGraphEdgeWeights_ = num;
+  this->numGlobalGraphEdgeWeights_ = num;
 }
 
+#if 0 // EEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
@@ -1154,15 +1160,17 @@ bool CostDescriber::haveGlobalHypergraphEdgeWeights() const
 {
   return (numGlobalHypergraphEdgeWeights_ > 0);
 }
+#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void CostDescriber::setNumGlobalHypergraphEdgeWeights(int num)
+void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::setNumGlobalHypergraphEdgeWeights(int num)
 {
-  numGlobalHypergraphEdgeWeights_ = num;
+  this->numGlobalHypergraphEdgeWeights_ = num;
 }
 
+#if 0 // EEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
@@ -1175,11 +1183,12 @@ void CostDescriber::allocate_hg_edge_weights_(int n)
     num_hg_edge_weights_ = n;
   }
 }
+#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void CostDescriber::free_hg_edge_weights_()
+void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::free_hg_edge_weights_()
 {
   if (hg_edge_gids_){
     delete [] hg_edge_gids_;
@@ -1190,6 +1199,7 @@ void CostDescriber::free_hg_edge_weights_()
   }
 }
 
+#if 0 // EEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
