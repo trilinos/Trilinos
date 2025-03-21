@@ -107,6 +107,7 @@ void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     using execution_space  = typename Node::execution_space;
     using ATS              = Kokkos::ArithTraits<Scalar>;
     using impl_scalar_type = typename ATS::val_type;
+    using array_type       = typename Map::global_indices_array_device_type;
 
     auto aggregates = fineLevel.Get<RCP<Aggregates>>(transferName, GetFactory("Transfer factory").get());
     TEUCHOS_ASSERT(!aggregates->AggregatesCrossProcessors());
@@ -115,7 +116,34 @@ void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     auto aggGraph = aggregates->GetGraph();
     auto numAggs  = aggGraph.numRows();
 
-    coarseVector = MultiVectorFactory::Build(coarseMap, fineVector->getNumVectors());
+    LO blkSize = 1;
+    if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+      blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
+
+    RCP<const Map> coarseVectorMap;
+    if (blkSize == 1) {
+      // Scalar system
+      // No amalgamation required, we can use the coarseMap
+      coarseVectorMap = coarseMap;
+    } else {
+      // Vector system
+      using range_policy      = Kokkos::RangePolicy<typename Node::execution_space>;
+      array_type elementAList = coarseMap->getMyGlobalIndicesDevice();
+      GO indexBase            = coarseMap->getIndexBase();
+      auto numElements        = elementAList.size() / blkSize;
+      typename array_type::non_const_type elementList_nc("elementList", numElements);
+
+      // Amalgamate the map
+      Kokkos::parallel_for(
+          "Amalgamate Element List", range_policy(0, numElements), KOKKOS_LAMBDA(LO i) {
+            elementList_nc[i] = (elementAList[i * blkSize] - indexBase) / blkSize + indexBase;
+          });
+      array_type elementList = elementList_nc;
+      coarseVectorMap        = MapFactory::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                 elementList, indexBase, coarseMap->getComm());
+    }
+
+    coarseVector = MultiVectorFactory::Build(coarseVectorMap, fineVector->getNumVectors());
 
     auto lcl_fineVector   = fineVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
     auto lcl_coarseVector = coarseVector->getDeviceLocalView(Xpetra::Access::OverwriteAll);
