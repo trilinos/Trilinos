@@ -940,14 +940,13 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
   //        initial value at the end but there is no way right now to get
   //        the current value of the "zero starting solution" in ifpack2.
   //        It's not really an issue, as prec_  can only be used by this method.
-  Teuchos::ParameterList paramList;
-  bool supportInitialGuess            = false;
-  const Teuchos::ParameterList params = this->GetParameterList();
+  bool supportInitialGuess = false;
 
   if (prec_->supportsZeroStartingSolution()) {
     prec_->setZeroStartingSolution(InitialGuessIsZero);
     supportInitialGuess = true;
   } else if (type_ == "SCHWARZ") {
+    Teuchos::ParameterList paramList;
     paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
     // Because additive Schwarz has "delta" semantics, it's sufficient to
     // toggle only the zero initial guess flag, and not pass in already
@@ -969,7 +968,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
     const Tpetra::MultiVector<SC, LO, GO, NO>& tpB = toTpetra(B);
     prec_->apply(tpB, tpX);
   } else {
-    typedef Teuchos::ScalarTraits<Scalar> TST;
+    using TST = Teuchos::ScalarTraits<Scalar>;
 
     RCP<MultiVector> Residual;
     {

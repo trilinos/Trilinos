@@ -66,6 +66,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
   ShyLUbasker->Options.run_amd_on_leaves = BASKER_FALSE; // run AMD on the final leaf-nodes
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
+  ShyLUbasker->Options.replace_zero_pivot = BASKER_TRUE;
   ShyLUbasker->Options.replace_tiny_pivot = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
 
@@ -229,9 +230,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
             sp_rowptr.data(),
             sp_colind.data(),
             sp_values);
-
-        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
-            std::runtime_error, "Error ShyLUBasker Factor");
       }
       else 
       {
@@ -243,9 +241,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
             colptr_view_.data(),
             rowind_view_.data(),
             sp_values);
-
-        TEUCHOS_TEST_FOR_EXCEPTION(info != 0, 
-            std::runtime_error, "Error ShyLUBasker Factor");
       }
 
       //ShyLUbasker->DEBUG_PRINT();
@@ -266,19 +261,8 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
   Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &info);
 
   //global_size_type info_st = as<global_size_type>(info);
-  /* TODO : Proper error messages*/
-  TEUCHOS_TEST_FOR_EXCEPTION(info == -1,
-    std::runtime_error,
-    "ShyLUBasker: Could not alloc space for L and U");
-  TEUCHOS_TEST_FOR_EXCEPTION(info == -2,
-    std::runtime_error,
-    "ShyLUBasker: Could not alloc needed work space");
-  TEUCHOS_TEST_FOR_EXCEPTION(info == -3,
-    std::runtime_error,
-    "ShyLUBasker: Could not alloc additional memory needed for L and U");
-  TEUCHOS_TEST_FOR_EXCEPTION(info > 0,
-    std::runtime_error,
-    "ShyLUBasker: Zero pivot found at: " << info );
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
+    std::runtime_error, " ShyLUBasker::numericFactorization failed.");
 
   return(info);
 }
@@ -490,6 +474,10 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       ShyLUbasker->Options.prune = parameterList->get<bool>("prune");
     }
+  if(parameterList->isParameter("replace_zero_pivot"))
+    {
+      ShyLUbasker->Options.replace_zero_pivot = parameterList->get<bool>("replace_zero_pivot");
+    }
   if(parameterList->isParameter("replace_tiny_pivot"))
     {
       ShyLUbasker->Options.replace_tiny_pivot = parameterList->get<bool>("replace_tiny_pivot");
@@ -560,6 +548,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Use matrix scaling to biig A BTF block: 0 = no-scaling, 1 = symmetric diagonal scaling, 2 = row-max, and then col-max scaling");
       pl->set("min_block_size",  0, 
               "Size of the minimum diagonal blocks");
+      pl->set("replace_zero_pivot",  true, 
+              "Replace zero pivots during the numerical factorization");
       pl->set("replace_tiny_pivot",  false, 
               "Replace tiny pivots during the numerical factorization");
       pl->set("use_metis", true,

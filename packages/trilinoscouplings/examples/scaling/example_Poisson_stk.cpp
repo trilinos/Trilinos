@@ -120,23 +120,15 @@
 #include "stk_io/StkMeshIoBroker.hpp"
 
 #include "stk_util/parallel/Parallel.hpp"
+#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/MetaData.hpp"
-#include "stk_mesh/base/CoordinateSystems.hpp"
 #include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/Comm.hpp"
-#include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/base/ForEachEntity.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
-#include "stk_mesh/base/GetBuckets.hpp"
-#include "stk_mesh/base/CreateAdjacentEntities.hpp"
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian3d, etc
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names, etc
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
-#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId
+#include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/base/Bucket.hpp"
+#include "stk_mesh/base/Entity.hpp"
+#include "stk_mesh/base/Field.hpp"
 
 #include "TrilinosCouplings_Statistics.hpp"
 
@@ -297,6 +289,9 @@ void mesh_read_write(const std::string &type,
   MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
 
   std::string absoluteFileName = working_directory + "/" + filename;
+  if (myrank == 0) {
+    std::cout<<"Reading mesh: "<<absoluteFileName<<std::endl;
+  }
   size_t input_index = broker.add_mesh_database(absoluteFileName, type, stk::io::READ_MESH);
   broker.set_active_mesh(input_index);
   // creates metadata
@@ -429,7 +424,7 @@ int main(int argc, char *argv[]) {
     << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
     << "|                                                                             |\n" \
     << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-    << "|  STK's website:      http://trilinos.sandia.gov/packages/stk                |\n" \
+    << "|  STK's website:      http://trilinos.github.io/stk.html                     |\n" \
     << "|  ML's website:       http://trilinos.sandia.gov/packages/ml                 |\n" \
     << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
     << "|                                                                             |\n" \
@@ -463,7 +458,7 @@ int main(int argc, char *argv[]) {
 
   stk::io::StkMeshIoBroker broker(*MpiComm->getRawMpiComm());
   broker.property_add(Ioss::Property("MAXIMUM_NAME_LENGTH", 180));
-  broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "rcb"));
+  broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "HSFC"));
   broker.property_add(Ioss::Property("COMPOSE_RESULTS", false));  //Note!  true results in an error in Seacas
 
   std::string type = "exodusii";
@@ -482,39 +477,29 @@ int main(int argc, char *argv[]) {
 
   // Count number of local nodes, record GIDs for Tpetra map.
   Teuchos::Array<GO> ownedGIDs, ownedPlusSharedGIDs;
-  int numLocalNodes=0;
-  stk::mesh::Selector locallyOwnedSelector = metaData.locally_owned_part(); //locally-owned
-  const stk::mesh::BucketVector &localNodeBuckets = bulkData.get_buckets(NODE_RANK, locallyOwnedSelector);
-  for (size_t bucketIndex = 0; bucketIndex < localNodeBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &nodeBucket = *localNodeBuckets[bucketIndex];
-    numLocalNodes += nodeBucket.size();
-    for (size_t nodeIndex = 0; nodeIndex < nodeBucket.size(); ++nodeIndex) {
-      stk::mesh::Entity node = nodeBucket[nodeIndex];
-      ownedGIDs.push_back(bulkData.identifier(node)-1);
-      ownedPlusSharedGIDs.push_back(bulkData.identifier(node)-1);
-    }
-  }
+  stk::mesh::Selector locallyOwnedSelector = metaData.locally_owned_part();
+  int numLocalNodes = stk::mesh::count_entities(bulkData, NODE_RANK, locallyOwnedSelector);
 
-  // Now record the shared nodal GIDs
+  stk::mesh::for_each_entity_run(bulkData, NODE_RANK, locallyOwnedSelector,
+    [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity node)
+    {
+        ownedGIDs.push_back(mesh.identifier(node)-1);
+        ownedPlusSharedGIDs.push_back(mesh.identifier(node)-1);
+    });
+
+  // Now record the shared-but-not-owned nodal GIDs
   {
     stk::mesh::Selector globallySharedSelector = metaData.globally_shared_part();
-    const stk::mesh::BucketVector &sharedNodeBuckets = bulkData.get_buckets(NODE_RANK, globallySharedSelector);
-    for (size_t bucketIndex = 0; bucketIndex < sharedNodeBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket &nodeBucket = *sharedNodeBuckets[bucketIndex];
-      for (size_t nodeIndex = 0; nodeIndex < nodeBucket.size(); ++nodeIndex) {
-        stk::mesh::Entity node = nodeBucket[nodeIndex];
-        ownedPlusSharedGIDs.push_back(bulkData.identifier(node)-1);
-      }
-    }
+    globallySharedSelector &= !locallyOwnedSelector; //not owned
+    stk::mesh::for_each_entity_run(bulkData, NODE_RANK, globallySharedSelector,
+      [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity node)
+      {
+        ownedPlusSharedGIDs.push_back(mesh.identifier(node)-1);
+      });
   }
 
   // Count # of local elements
-  int numLocalElems=0;
-  const stk::mesh::BucketVector &localElementBuckets = bulkData.get_buckets(ELEMENT_RANK, locallyOwnedSelector);
-  for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-    numLocalElems += elemBucket.size();
-  }
+  int numLocalElems = stk::mesh::count_entities(bulkData, ELEMENT_RANK, locallyOwnedSelector);
 
   if (optPrintLocalStats) {
     for (int i=0; i<numRanks; ++i) {
@@ -543,53 +528,51 @@ int main(int argc, char *argv[]) {
 
   RCP<Tpetra_Map> globalMapG = Teuchos::rcp(new Tpetra_Map( (Tpetra::global_size_t)numGlobalNodes,ownedGIDs(), (GO)0, Comm));
   RCP<Tpetra_Map> ownedPlusSharedMapG = Teuchos::rcp(new Tpetra_Map( (Tpetra::global_size_t)numGlobalNodes,ownedPlusSharedGIDs(), (GO)0, Comm));
-  Kokkos::DualView<size_t*> nnzPerRowUpperBound("nnzbound",ownedGIDs.size());
+  Kokkos::DualView<size_t*> nnzPerRowUpperBound("nnzbound",ownedPlusSharedGIDs.size());
   nnzPerRowUpperBound.template modify<typename Kokkos::DualView<size_t*>::host_mirror_space>();
   auto nnzPerRowUpperBound_h = nnzPerRowUpperBound.view_host();
 
   // Count the local elements and get node index upper bound
-  for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-    for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
-      stk::mesh::Entity elem = elemBucket[elemIndex];
-      //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
-      //TODO Therefore there's no need to do this everytime.
-      unsigned numNodes = bulkData.num_nodes(elem);
-      stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
+  stk::mesh::for_each_entity_run(bulkData, ELEMENT_RANK, locallyOwnedSelector,
+    [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
+    {
+      stk::mesh::ConnectedEntities nodes = mesh.get_connected_entities(elem,NODE_RANK);
 
       // NOTE: This will substantially overcount the NNZ needed.  You should use hash table to be smarter
-      for (unsigned inode = 0; inode < numNodes; ++inode) {
-        GO GID = bulkData.identifier(nodes[inode])-1;
-        LO LID = globalMapG->getLocalElement(GID);
+      for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+        GO GID = mesh.identifier(nodes[inode])-1;
+        LO LID = ownedPlusSharedMapG->getLocalElement(GID);
         if (LID != Teuchos::OrdinalTraits<LO>::invalid())
-          nnzPerRowUpperBound_h[LID]+=numNodes;
+          nnzPerRowUpperBound_h[LID]+=nodes.size();
       }
-    }//end node loop
-  }
+    });
 
   // Build the Graph
   RCP<Tpetra_FECrsGraph> StiffGraph = rcp(new Tpetra_FECrsGraph(globalMapG,ownedPlusSharedMapG,nnzPerRowUpperBound));
   Tpetra::beginAssembly(*StiffGraph);
-  for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-    for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
-      stk::mesh::Entity elem = elemBucket[elemIndex];
-      //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
-      //TODO Therefore there's no need to do this everytime.
-      unsigned numNodes = bulkData.num_nodes(elem);
-      stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
+  stk::mesh::for_each_entity_run(bulkData, ELEMENT_RANK, locallyOwnedSelector,
+    [&](const stk::mesh::BulkData& mesh, stk::mesh::Entity elem)
+    {
+      stk::mesh::ConnectedEntities nodes = mesh.get_connected_entities(elem,NODE_RANK);
 
-      Teuchos::Array<GO> global_ids(numNodes);
-      for (unsigned inode = 0; inode < numNodes; ++inode) {
-        GO GID = bulkData.identifier(nodes[inode])-1;
+      Teuchos::Array<GO> global_ids(nodes.size());
+      bool foundOwnedNode = false;
+      for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+        if (mesh.bucket(nodes[inode]).owned()) {
+          foundOwnedNode = true;
+        }
+        GO GID = mesh.identifier(nodes[inode])-1;
         global_ids[inode]=GID;
       }
 
-      for (unsigned inode = 0; inode < numNodes; ++inode) {
+      if (!foundOwnedNode) {
+        std::cout<<"Warning, element "<<mesh.identifier(elem)<<" on P"<<mesh.parallel_rank()<<" doesn't have any locally-owned nodes."<<std::endl;
+      }
+
+      for (unsigned inode = 0; inode < nodes.size(); ++inode) {
         StiffGraph->insertGlobalIndices(global_ids[inode],global_ids());
       }
-    }//end node loop
-  }//end bucket
+    });
 
   Tpetra::endAssembly(*StiffGraph);
   tm = Teuchos::null;
@@ -599,49 +582,35 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) Compute Coordinates and Stats")));
 
-  typedef stk::mesh::Field<double>  CoordFieldType;
-  // get coordinates field
-  CoordFieldType *coords = metaData.get_field<double>(NODE_RANK,"coordinates");
-
-  // get buckets containing entities of node rank
-  stk::mesh::Selector nothingSelector;
-  stk::mesh::Selector allSelector(!nothingSelector);
-  stk::mesh::BucketVector const & nodeBuckets = bulkData.get_buckets( NODE_RANK,allSelector );
   std::vector<entity_type> bcNodes;
 
-  // loop over all mesh parts
-  const stk::mesh::PartVector & all_parts = metaData.get_parts();
+  stk::mesh::ExodusTranslator exodusTranslator(bulkData);
+  stk::mesh::PartVector nodeSets = exodusTranslator.get_node_set_parts();
   ShardsCellTopology cellType;
-  for (stk::mesh::PartVector::const_iterator i  = all_parts.begin(); i != all_parts.end(); ++i) {
+  for (const stk::mesh::Part* nodeSet : nodeSets) {
 
-    stk::mesh::Part & part = **i ;
-    //printf("Loading mesh part %s isnode=%s\n",part.name().c_str(),part.primary_entity_rank() == NODE_RANK ? "YES" : "NO");
-    // if part only contains nodes and isn't the ROOT_CELL_TOPOLOGY guy, then it is a node set
-    if (part.primary_entity_rank() == NODE_RANK && part.name() != "{FEM_ROOT_CELL_TOPOLOGY_PART_NODE}") {
-      stk::mesh::Selector partSelector(part);
-      stk::mesh::Selector bcNodeSelector = partSelector & locallyOwnedSelector;
+      stk::mesh::Selector bcNodeSelector = *nodeSet & locallyOwnedSelector;
 
       if(bcNodes.size() == 0)
-        stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, bcNodes);
+        stk::mesh::get_entities(bulkData, NODE_RANK, bcNodeSelector, bcNodes);
       else {
         std::vector<entity_type> myBcNodes;
-        stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, myBcNodes);
+        stk::mesh::get_entities(bulkData, NODE_RANK, bcNodeSelector, myBcNodes);
         std::copy(myBcNodes.begin(),myBcNodes.end(),std::back_inserter(bcNodes));
       }
 
-      if(MyPID==0) printf("Adding nodeset %s\n",part.name().c_str());
+      if(MyPID==0) printf("Adding nodeset %s\n",nodeSet->name().c_str());
+  }
 
-    }
-    else if(part.primary_entity_rank() == ELEMENT_RANK) {
+  stk::mesh::PartVector elemBlocks = exodusTranslator.get_element_block_parts();
+  for(const stk::mesh::Part* elemBlock : elemBlocks) {
       // Here the topology is defined from the mesh. Note that it is assumed
       // that all parts with elements (aka ELEMENT_RANK) have the same topology type
-      auto myCell = stk::mesh::get_cell_topology(metaData.get_topology( part ));
+      auto myCell = stk::mesh::get_cell_topology(metaData.get_topology( *elemBlock ));
       if(myCell.getCellTopologyData()) {
-	cellType =  myCell;
+        cellType =  myCell;
       }
-    }
-
-  } // end loop over mesh parts
+  }
 
   int numNodesPerElem = cellType.getNodeCount();
   int numEdgesPerElem = cellType.getEdgeCount();
@@ -724,22 +693,22 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /******************************** STASH COORDINATES *******************************/
   /**********************************************************************************/
+  typedef stk::mesh::Field<double>  CoordFieldType;
+  // get coordinates field
+  CoordFieldType *coords = metaData.get_field<double>(NODE_RANK,"coordinates");
+
   // Put coordinates in multivector for output
   RCP<Tpetra_MultiVector> nCoord = rcp(new Tpetra_MultiVector(globalMapG,spaceDim));
   auto nCoord_h = nCoord->get2dViewNonConst();
   // Loop over elements
 
-  for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-    for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
-      stk::mesh::Entity elem = elemBucket[elemIndex];
-      //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
-      //TODO Therefore there's no need to do this everytime.
-      unsigned numNodes = bulkData.num_nodes(elem);
-      stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
-      for (unsigned inode = 0; inode < numNodes; ++inode) {
-	double *coord = stk::mesh::field_data(*coords, nodes[inode]);
-	LO lid = globalMapG->getLocalElement((int)bulkData.identifier(nodes[inode]) -1);
+  const stk::mesh::BucketVector &localElementBuckets = bulkData.get_buckets(ELEMENT_RANK, locallyOwnedSelector);
+  for (const stk::mesh::Bucket* elemBucketPtr : localElementBuckets) {
+    for (stk::mesh::Entity elem : *elemBucketPtr) {
+      stk::mesh::ConnectedEntities nodes = bulkData.get_connected_entities(elem,NODE_RANK);
+      for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+        double *coord = stk::mesh::field_data(*coords, nodes[inode]);
+        LO lid = globalMapG->getLocalElement((int)bulkData.identifier(nodes[inode]) -1);
         if(lid != Teuchos::OrdinalTraits<LO>::invalid()) {
           nCoord_h[0][lid] = coord[0];
           nCoord_h[1][lid] = coord[1];
@@ -764,16 +733,11 @@ int main(int argc, char *argv[]) {
     std::map<std::pair<int,int>,int> local_edge_hash;
     std::vector<std::pair<int,int> > edge_vector;
 
-    for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-      for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
-        stk::mesh::Entity elem = elemBucket[elemIndex];
-        //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
-        //TODO Therefore there's no need to do this everytime.
-        unsigned numNodes = bulkData.num_nodes(elem);
-        stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
-        for (unsigned inode = 0; inode < numNodes; ++inode) {
-          double *coord = stk::mesh::field_data(*coords, nodes[inode]);
+    for (const stk::mesh::Bucket* elemBucketPtr : localElementBuckets) {
+      for (stk::mesh::Entity elem : *elemBucketPtr) {
+        stk::mesh::ConnectedEntities nodes = bulkData.get_connected_entities(elem,NODE_RANK);
+        for (unsigned inode = 0; inode < nodes.size(); ++inode) {
+          const double *coord = stk::mesh::field_data(*coords, nodes[inode]);
           LO lid = globalMapG->getLocalElement((int)bulkData.identifier(nodes[inode]) -1);
           elemToNode(elem_ct,inode) = lid;
           if(lid != -1) {
@@ -873,15 +837,10 @@ int main(int argc, char *argv[]) {
 
     // copy coordinates into cell workset
     int cellCounter = 0;
-    for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-      for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
-        stk::mesh::Entity elem = elemBucket[elemIndex];
-        //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
-        //TODO Therefore there's no need to do this everytime.
-        unsigned numNodes = bulkData.num_nodes(elem);
-        stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
-        for (unsigned inode = 0; inode < numNodes; ++inode) {
+    for (const stk::mesh::Bucket* elemBucket : localElementBuckets) {
+      for (stk::mesh::Entity elem : *elemBucket) {
+        stk::mesh::ConnectedEntities nodes = bulkData.get_connected_entities(elem,NODE_RANK);
+        for (unsigned inode = 0; inode < nodes.size(); ++inode) {
           double *coord = stk::mesh::field_data(*coords, nodes[inode]);
           cellWorkset(cellCounter, inode, 0) = coord[0];
           cellWorkset(cellCounter, inode, 1) = coord[1];
@@ -1001,16 +960,12 @@ int main(int argc, char *argv[]) {
     //"WORKSET CELL" loop: local cell ordinal is relative to numLocalElems
     //JJH runs from 0 to (#local cells - 1)
     int worksetCellOrdinal = 0;
-    for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
-
-      stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
-      for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
+    for (const stk::mesh::Bucket* elemBucketPtr : localElementBuckets) {
+      for (stk::mesh::Entity elem : *elemBucketPtr) {
 
         // Compute cell ordinal relative to the current workset
 
-        // Get element entity from id of cell
-        entity_type elem = elemBucket[elemIndex];
-        entity_type const* worksetNodes = bulkData.begin_nodes(elem);
+        stk::mesh::ConnectedEntities worksetNodes = bulkData.get_connected_entities(elem,NODE_RANK);
 
         // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
         for (int cellRow = 0; cellRow < numFieldsG; cellRow++) {
@@ -1036,7 +991,7 @@ int main(int argc, char *argv[]) {
       }// end workset cell loop
 
 
-    } //for (size_t bucketIndex = 0; ...
+    } //for (localElementBuckets
 
   }// end workset loop
 
@@ -1124,10 +1079,9 @@ int main(int argc, char *argv[]) {
   double TotalErrorExactSol = 0.0;
 
   // Get exact solution at nodes
-  for (size_t bucketIndex = 0; bucketIndex < localNodeBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket &nodeBucket = *localNodeBuckets[bucketIndex];
-    for (size_t nodeIndex = 0; nodeIndex < nodeBucket.size(); ++nodeIndex) {
-      stk::mesh::Entity node = nodeBucket[nodeIndex];
+  const stk::mesh::BucketVector &localNodeBuckets = bulkData.get_buckets(NODE_RANK, locallyOwnedSelector);
+  for (const stk::mesh::Bucket* bucketPtr : localNodeBuckets) {
+    for (stk::mesh::Entity node : *bucketPtr) {
       double * coord = stk::mesh::field_data(*coords, node);
       // look up exact value of function on boundary
       double x  = coord[0];

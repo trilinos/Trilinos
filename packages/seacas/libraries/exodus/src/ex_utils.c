@@ -56,7 +56,7 @@ static char *cur_string = &ret_string[0];
 #endif
 
 #ifndef WINDOWS__
-#if NC_HAS_HDF5
+#if (NC_VERSION_MAJOR > 4 || (NC_VERSION_MAJOR == 4 && NC_VERSION_MINOR > 4)) && NC_HAS_HDF5
 extern int NC4_hdf5get_libversion(unsigned *, unsigned *, unsigned *);
 #endif
 #endif
@@ -104,10 +104,12 @@ const char *ex_config(void)
 #ifndef WINDOWS__
 #if NC_HAS_HDF5
   {
+#if NC_VERSION_MAJOR > 4 || (NC_VERSION_MAJOR == 4 && NC_VERSION_MINOR > 4)
     unsigned major, minor, release;
     NC4_hdf5get_libversion(&major, &minor, &release);
     j += snprintf(buffer + j, buffer_size - j, "\t\tHDF5 enabled (%u.%u.%u)\n", major, minor,
                   release);
+#endif
   }
   j += snprintf(buffer + j, buffer_size - j, "\t\tZlib Compression (read/write) enabled\n");
 #if NC_HAS_SZIP_WRITE == 1

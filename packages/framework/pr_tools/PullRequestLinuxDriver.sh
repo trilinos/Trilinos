@@ -255,7 +255,6 @@ test_cmd_options=(
     --filename-subprojects=${WORKSPACE:?}/package_subproject_list.cmake
     --source-dir=${WORKSPACE}/Trilinos
     --build-dir=${TRILINOS_BUILD_DIR:?}
-    --ctest-driver=${WORKSPACE:?}/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake
     --ctest-drop-site=${TRILINOS_CTEST_DROP_SITE:?}
 )
 

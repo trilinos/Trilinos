@@ -64,10 +64,6 @@ if( NOT DEFINED skip_clean_build_dir )
     set( skip_clean_build_dir ON )
 endif()
 
-if( NOT DEFINED skip_single_submit )
-    set( skip_single_submit ON )
-endif()
-
 if( NOT DEFINED skip_update_step )
     set( skip_update_step OFF )
 endif()

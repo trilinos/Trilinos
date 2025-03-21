@@ -42,9 +42,6 @@ else()
     banner("END test step - FAILURE")
 endif()
 
-# Single submit
-submit_single_submit()
-
 # Upload configure files
 submit_upload_config_files()
 
