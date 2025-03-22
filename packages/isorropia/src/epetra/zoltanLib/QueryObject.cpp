@@ -75,6 +75,7 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
     weights_(0),
     input_type_(inputType) 
 {
+  std::cout << "EEP ENtering QueryObject::constructor(1): input_type_ = " << input_type_ << std::endl;
   myProc_ = graph->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
@@ -122,6 +123,7 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
     weights_(0),
     input_type_(inputType) 
 {
+  std::cout << "EEP ENtering QueryObject::constructor(2): input_type_ = " << input_type_ << std::endl;
   myProc_ = matrix->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
@@ -167,6 +169,7 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_MultiVector> coords,
     costs_(0),
     weights_(weights)
 {
+  std::cout << "EEP ENtering QueryObject::constructor(3): input_type_ = " << input_type_ << std::endl;
   myProc_ = rowMap_->Comm().MyPID();
   base_ = rowMap_->IndexBase();
   input_type_ = geometric_input_;
@@ -186,6 +189,7 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_BlockMap> input_map,
     weights_(0),
     input_type_(inputType) 
 {
+  std::cout << "EEP ENtering QueryObject::constructor(4): input_type_ = " << input_type_ << std::endl;
   myProc_ = rowMap_->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 }
@@ -208,6 +212,7 @@ QueryObject::QueryObject(Teuchos::RCP<const Epetra_CrsGraph> graph,
   weights_(weights),
   input_type_(inputType) 
 {
+  std::cout << "EEP ENtering QueryObject::constructor(5): input_type_ = " << input_type_ << std::endl;
   myProc_ = graph->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
@@ -257,6 +262,7 @@ QueryObject::QueryObject(Teuchos::RCP<const Epetra_RowMatrix> matrix,
     colMap_((const Epetra_BlockMap*)&(matrix->RowMatrixColMap())),
     costs_(costs), weights_(weights), input_type_(inputType) 
 {
+  std::cout << "EEP ENtering QueryObject::constructor(6): input_type_ = " << input_type_ << std::endl;
   myProc_ = matrix->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
@@ -626,6 +632,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
     local_ids[i] = (ZOLTAN_ID_TYPE)i;
   }
 
+  std::cout << "EEP In QueryObject::My_Object_List(): weight_dim = " << weight_dim << std::endl;
   if (weight_dim >= 1) // Note we only supply 1-D weights
   {          
     float *to_wgts = object_weights;

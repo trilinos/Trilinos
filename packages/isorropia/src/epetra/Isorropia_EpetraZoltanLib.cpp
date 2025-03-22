@@ -178,6 +178,7 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_BlockMap> input_map,
 
 int ZoltanLibClass::precompute()
 {
+  std::cout << "EEP Entering ZontalLibClass::precompute(): input_type_ = " << input_type_ << std::endl;
   std::string str1("Isorropia::ZoltanLibClass::precompute ");
   MPI_Comm mpicomm = zoltan_get_global_comm();
 #ifdef HAVE_MPI
@@ -380,6 +381,13 @@ int ZoltanLibClass::precompute()
     zoltanParamList_.set(lb_approach_str, "PARTITION");
   }
 
+  std::cout << "EEP Entering ZontalLibClass::precompute()"
+            << ": input_type_ = " << input_type_
+            << ", queryObject_->haveVertexWeights() = " << queryObject_->haveVertexWeights()
+            << ", queryObject_->haveGraphEdgeWeights() = " << queryObject_->haveGraphEdgeWeights()
+            << ", queryObject_->haveHypergraphEdgeWeights() = " << queryObject_->haveHypergraphEdgeWeights()
+	    << std::endl;
+
     // For fine-grain hypergraph, we don't want obj or (hyper)edge weights
   if (input_type_ == hgraph2d_finegrain_input_)
   {
@@ -475,6 +483,8 @@ int ZoltanLibClass::precompute()
     zz_->Set_Num_Geom_Fn(ZoltanLib::QueryObject::Number_Geom, (void *)queryObject_.get());
     zz_->Set_Geom_Multi_Fn(ZoltanLib::QueryObject::Geom_Multi, (void *)queryObject_.get());
   }
+
+  std::cout << "EEP Leaving ZontalLibClass::precompute(): input_type_ = " << input_type_ << std::endl;
 
   return (ierr);
 }

@@ -483,7 +483,9 @@ partition(bool force_repartitioning)
     return;
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
-  std::cout << "EEP In Partitioner::partition(): pos 001" << std::endl;
+  std::cout << "EEP In Partitioner::partition(): pos 001"
+            << ", partitioning_method = " << partitioning_method
+	    << std::endl;
   if (partitioning_method == "SIMPLE_LINEAR") {
     throw Isorropia::Exception("Partitioner::partition - Only Zoltan Partitionner is now supported.");
   }
@@ -695,7 +697,9 @@ partition(bool force_repartitioning)
 
   lib_->input_type_ = input_type;
   lib_->repartition(sublist, properties_, exportsSize_, imports_);
-  std::cout << "EEP In Partitioner::partition(): pos 006" << std::endl;
+  std::cout << "EEP In Partitioner::partition(): pos 006"
+            << ", lib_->input_type_ = " << lib_->input_type_
+	    << std::endl;
   computeNumberOfProperties();
   operation_already_computed_ = true;
   std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::partition()" << std::endl;

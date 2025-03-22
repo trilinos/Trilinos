@@ -488,7 +488,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
   if (!zoltanParamList_.isParameter(lb_approach_str)) {
     zoltanParamList_.set(lb_approach_str, "PARTITION");
   }
-
+#if 0 // EEP
     // For fine-grain hypergraph, we don't want obj or (hyper)edge weights
   if (this->input_type_ == this->hgraph2d_finegrain_input_)
   {
@@ -509,7 +509,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
       }
     //}
   }
-  else if(this->input_type_ != this->simple_input_) //graph or hypergraph
+  else if(this->input_type_ != this->simple_input_) //graph or hypergraph // AquiAquiAqui
   {
     if (queryObject_->haveVertexWeights())
     {
@@ -537,7 +537,8 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
     zoltanParamList_.set("NUM_GID_ENTRIES", "2");
     zoltanParamList_.set("NUM_LID_ENTRIES", "1");
   }
-
+#endif // EEP
+  
   Teuchos::ParameterList::ConstIterator
     iter = zoltanParamList_.begin(),
     iter_end = zoltanParamList_.end();
@@ -557,12 +558,13 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
   int ierr;
   num_obj_ = ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Number_Objects((void *)queryObject_.get(), &ierr);
 
-
+#if 0 // EEP
   if (this->input_type_ == this->hgraph2d_finegrain_input_)
   {
     zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_CS, (void *)queryObject_.get());
     zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_CS, (void *)queryObject_.get());
   }
+#endif // EEP
   if (this->input_type_ == this->hgraph_input_           || this->input_type_ == this->hgraph_graph_input_ ||
       this->input_type_ == this->hgraph_geometric_input_ || this->input_type_ == this->hgraph_graph_geometric_input_)
   {
@@ -572,6 +574,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
                                  (void *)queryObject_.get());
     zz_->Set_HG_Edge_Wts_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Edge_Weights, (void *)queryObject_.get());
   }
+#if 0 // EEP
   if (this->input_type_ == this->graph_input_ || this->input_type_ == this->hgraph_graph_input_ ||
       this->input_type_ == this->graph_geometric_input_ || this->input_type_ == this->hgraph_graph_geometric_input_)
   {
@@ -584,7 +587,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
     zz_->Set_Num_Geom_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Number_Geom, (void *)queryObject_.get());
     zz_->Set_Geom_Multi_Fn(ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Geom_Multi, (void *)queryObject_.get());
   }
-
+#endif
   return (ierr);
 }
 

@@ -107,14 +107,14 @@ class QueryObject
       The QueryObject must be constructed with one of
       an Tpetra::CrsGraph, an Tpetra::RowMatrix or an Tpetra::MultiVector.
     */
-  Teuchos::RCP<const ::Tpetra::RowMatrix<LocalOrdinal, GlobalOrdinal, Node>> matrix_;
+  //Teuchos::RCP<const ::Tpetra::RowMatrix<LocalOrdinal, GlobalOrdinal, Node>> matrix_; // EEP
 
   /** The MultiVector containing 1, 2 or 3 dimensional coordinates.  If
       supplied, we will perform geometric partitioning.
       The QueryObject must be constructed with one of
       an Tpetra::CrsGraph, an Tpetra::RowMatrix or an Tpetra::MultiVector.
     */
-  Teuchos::RCP<const ::Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node>> coords_;
+  //Teuchos::RCP<const ::Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node>> coords_; // EEP
 
   /** The graph or matrix row map, or the MultiVector map
     */
@@ -135,7 +135,7 @@ class QueryObject
       weights in the first vector (1 dimensional point weights).
     */
 
-  Teuchos::RCP<const ::Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node>> weights_;
+  //Teuchos::RCP<const ::Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node>> weights_; // EEP
 
   std::map<int,int> procmap_;
   std::set<int> graph_self_edges_;
@@ -232,7 +232,7 @@ class QueryObject
 	       Teuchos::RCP<const ::Isorropia::Tpetra::CostDescriber<LocalOrdinal, GlobalOrdinal, Node>> costs,
 	       int inputType);
 
-
+#if 0 // EEP
   /** Constructor
    */
   QueryObject( Teuchos::RCP<const ::Tpetra::RowMatrix<LocalOrdinal, GlobalOrdinal, Node>> matrix,
@@ -267,7 +267,7 @@ class QueryObject
    */
   QueryObject( Teuchos::RCP<const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> inputMap,
 	       int inputType);
-
+#endif
 
 
 
@@ -433,22 +433,25 @@ class QueryObject
   //M.M.W. need to add hierarchical query functions
 
 };
-#if 0 // EEP
-QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
-	   Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
+
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::QueryObject( Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > graph,
+	   Teuchos::RCP< const Isorropia::Tpetra::CostDescriber<LocalOrdinal, GlobalOrdinal, Node> > costs,
                                      int inputType) 
   : haveGraph_(true) ,
     graph_(graph),
-    matrix_(0),
-    coords_(0),
-    rowMap_(&(graph->RowMap())),
-    colMap_(&(graph->ColMap())),
+    //matrix_(0),
+    //coords_(0),
+    rowMap_(/*&*/(graph->getRowMap().getRawPtr())), // EEP
+    colMap_(/*&*/(graph->getColMap().getRawPtr())), // EEP
     costs_(costs),
-    weights_(0),
+    //weights_(0),
     input_type_(inputType) 
 {
-  myProc_ = graph->Comm().MyPID();
-  base_ = rowMap_->IndexBase();
+  myProc_ = graph->getComm()->getRank();
+  base_ = rowMap_->getIndexBase();
 
   // If graph
   if (input_type_ == graph_input_)
@@ -457,22 +460,22 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
     // graph queries need to know processes owning my column entries
     fill_procmap();
 
-    if (graph->NumMyDiagonals() > 0){
+    if (graph->getLocalNumRows()/*MyDiagonals()*/ > 0){ // EEP
       // In graph partitioning, we need to omit graph diagonal entries
       // (self edges) from the query functions.
 
-      int nRows = rowMap_->NumMyElements();
-      int *rowGIDs = rowMap_->MyGlobalElements();
+      int nRows = rowMap_->getLocalNumElements(); // EEP
+      int *rowGIDs = nullptr; // rowMap_->MyGlobalElements(); EEP___
 
       for (int i=0; i < nRows; i++){
 
 	int numEntries;
 	int *idx;
 
-	graph->ExtractMyRowView(i, numEntries, idx);
+	//graph->ExtractMyRowView(i, numEntries, idx); // EEP___
 
 	for (int j=0; j<numEntries; j++){
-	  if (rowGIDs[i] == colMap_->GID(idx[j])){
+	  if (rowGIDs[i] == colMap_->getGlobalElement(idx[j])){ // EEP Epetra_Map::GID()
 	    graph_self_edges_.insert(rowGIDs[i]);
 	  }
 	}
@@ -481,6 +484,7 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
   }
 }
 
+#if 0 // EEP
 QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
 	     Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
                                  int inputType) 
@@ -658,27 +662,37 @@ QueryObject::QueryObject(Teuchos::RCP<const Epetra_RowMatrix> matrix,
     }
   }
 }
+#endif // EEP
 ////////////////////////////////////////////////////////////////////////////////
 
 
-QueryObject::~QueryObject()
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::~QueryObject()
 {
 }
 
 // Create a map required by graph queries
 
-void QueryObject::fill_procmap()
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::fill_procmap()
 {
-  int num_colmap_elems = colMap_->NumMyElements();
+  int num_colmap_elems = colMap_->getLocalNumElements();
 
   int *colIDs = new int [num_colmap_elems];
   int *procIDs = new int [num_colmap_elems];
   int *tmp = new int [num_colmap_elems];
 
+#if 0 // EEP___
   colMap_->MyGlobalElements(colIDs);
 
   rowMap_->RemoteIDList(num_colmap_elems, colIDs, procIDs, tmp);
-
+#endif
+  
   delete [] tmp;
 
   int i;
@@ -694,15 +708,29 @@ void QueryObject::fill_procmap()
   delete [] procIDs;
 }
 
-bool QueryObject::haveVertexWeights()
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+bool
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::haveVertexWeights()
 {
   return costs_->haveGlobalVertexWeights();
 }
-bool QueryObject::haveGraphEdgeWeights()
+
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+bool
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::haveGraphEdgeWeights()
 {
   return costs_->haveGlobalGraphEdgeWeights();
 }
-bool QueryObject::haveHypergraphEdgeWeights()
+
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+bool
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::haveHypergraphEdgeWeights()
 {
   return costs_->haveGlobalHypergraphEdgeWeights();
 }
@@ -710,7 +738,11 @@ bool QueryObject::haveHypergraphEdgeWeights()
 // Static query functions.  These will call the query function of the
 // appropriate QueryObject object.
 
-int QueryObject::Number_Objects(void *data, int *ierr)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Number_Objects(void *data, int *ierr)
 {
   int numObj = 0;
 
@@ -725,7 +757,12 @@ int QueryObject::Number_Objects(void *data, int *ierr)
 
   return numObj;
 }
-void QueryObject::Object_List  ( void * data,
+
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Object_List  ( void * data,
 		   int num_gid_entries, int num_lid_entries,
 		   ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
 		   int weight_dim, float * object_weights, int * ierr )
@@ -744,6 +781,8 @@ void QueryObject::Object_List  ( void * data,
 
   return;
 }
+
+#if 0 // EEP
 void QueryObject::Number_Edges_Multi  ( void * data,
 	     int num_gid_entries, int num_lid_entries,
 	     int num_obj,
@@ -782,7 +821,13 @@ void QueryObject::Edge_List_Multi( void * data,
 
   return;
 }
-void QueryObject::HG_Size_CS ( void * data,
+#endif // EEP
+
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_CS ( void * data,
 	 int* num_lists, int* num_pins, int* format, int * ierr )
 {
   QueryObject *zq = (QueryObject *)data;
@@ -797,7 +842,12 @@ void QueryObject::HG_Size_CS ( void * data,
   }
 
 }
-void QueryObject::HG_CS ( void * data,
+
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_CS ( void * data,
 	    int num_gid_entries, int num_row_or_col, int num_pins, int format,
 	    ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
 				     int * ierr )
@@ -812,7 +862,12 @@ void QueryObject::HG_CS ( void * data,
     *ierr = ZOLTAN_FATAL;
   }
 }
-void QueryObject::HG_Size_Edge_Weights(void * data,
+
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_Edge_Weights(void * data,
 			    int* num_edges, int* ierr)
 {
   QueryObject *zq = (QueryObject *)data;
@@ -824,7 +879,12 @@ void QueryObject::HG_Size_Edge_Weights(void * data,
     *ierr = ZOLTAN_FATAL;
   }
 }
-void QueryObject::HG_Edge_Weights(void * data,
+
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Edge_Weights(void * data,
       int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
       ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr)
 {
@@ -839,6 +899,7 @@ void QueryObject::HG_Edge_Weights(void * data,
   }
 }
 
+#if 0 // EEP
 int QueryObject::Number_Geom(void *data, int *ierr)
 {
   int dim=0;
@@ -867,13 +928,18 @@ void QueryObject::Geom_Multi(void *data, int num_gid_entries, int num_lid_entrie
     *ierr = ZOLTAN_FATAL;
   }
 }
+#endif // EEP
 
 // Member general query functions.
 
-int QueryObject::My_Number_Objects(int * ierr )
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+int
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_Number_Objects(int * ierr )
 {
   *ierr = ZOLTAN_OK;
-
+#if 0 // EEP
   if (input_type_ == geometric_input_) 
   {
     return coords_->MyLength(); // probably can use rowMap_ instead
@@ -890,12 +956,17 @@ int QueryObject::My_Number_Objects(int * ierr )
     }
   }
   else
+#endif // EEP
   {
-    return rowMap_->NumMyElements();  // graph or hypergraph or simple partitioning methods
+    return rowMap_->getLocalNumElements();  // graph or hypergraph or simple partitioning methods
   }
 }
 
-void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_Object_List(int num_gid_entries, int num_lid_entries,
 		  ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
 		  int weight_dim, float * object_weights, int * ierr )
 {
@@ -907,19 +978,20 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
 
   if ((input_type_ == geometric_input_) || (input_type_ == hgraph_input_) || (input_type_ == graph_input_) || (input_type_==simple_input_)) 
   {
-    ngids = rowMap_->NumMyElements();
+    ngids = rowMap_->getLocalNumElements();
 
     if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
-      ibuf = rowMap_->MyGlobalElements();
+      ibuf = nullptr; // rowMap_->MyGlobalElements(); // EEP___
 
       for (int i=0; i < ngids; i++){
         global_ids[i] = (ZOLTAN_ID_TYPE)ibuf[i];
       }
     }
     else{
-      rowMap_->MyGlobalElements( ((int *) global_ids) );
+      //rowMap_->MyGlobalElements( ((int *) global_ids) ); // EEP___
     }
   }
+#if 0 // EEP
   else if(input_type_ == hgraph2d_finegrain_input_)
   {
     // if statement for now, maybe set function pointer for different function instead
@@ -987,7 +1059,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
 
     return;
   } // fine-grain hypergraph case
-
+#endif // EEP
 
   if (ngids < 1)
   {
@@ -997,7 +1069,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
   for (int i=0; i<ngids; i++){
     local_ids[i] = (ZOLTAN_ID_TYPE)i;
   }
-
+#if 0 // EEP weight_dim is 0 here, during the epetra example run
   if (weight_dim >= 1) // Note we only supply 1-D weights
   {          
     float *to_wgts = object_weights;
@@ -1045,10 +1117,11 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
       }
     }
   }
-
+#endif // EEP
   return;
 }
 
+#if 0 // EEP
 // member graph query functions
 
 void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries,
@@ -1212,16 +1285,21 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
 
   return;
 }
+#endif // EEP
 
 // member hypergraph query functions
 
-void QueryObject::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int * ierr )
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int * ierr )
 {
   *ierr = ZOLTAN_OK;
 
   *format = ZOLTAN_COMPRESSED_VERTEX;   // We will return row (vertex) lists
 
-
+#if 0 // EEP
   if(input_type_ == hgraph2d_finegrain_input_) // 2D fine-grain hypergraph
   {
     if (haveGraph_) // graph
@@ -1236,24 +1314,33 @@ void QueryObject::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int 
   }
   else // 1D hypergraph
   {
+#endif // EEP
     if (haveGraph_)
     {
-      *num_lists = graph_->NumMyRows();       // Number of rows
-      *num_pins = graph_->NumMyNonzeros();    // Total nonzeros in these rows
+      *num_lists = graph_->getLocalNumRows();       // Number of rows
+      *num_pins = graph_->getLocalNumEntries();    // Total nonzeros in these rows // EEP
     }
     else
     {
+#if 0 // EEP
       *num_lists = matrix_->NumMyRows();       // Number of rows
       *num_pins = matrix_->NumMyNonzeros();    // Total nonzeros in these rows
+#else
+      throw std::runtime_error("Invalid situation in QueryObject<>::My_HG_Size_CS");
+#endif // EEP
     }
-  }
+    //}
 
 
 
   return;
 }
 
-void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pins, int format,
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pins, int format,
 	    ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
 				     int * ierr )
 {
@@ -1262,7 +1349,7 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
 
 
   *ierr = ZOLTAN_OK;
-
+#if 0 // EEP
   /////////////////////////////////////////////////////
   // if fine-grain hypergraph, call this other function
   /////////////////////////////////////////////////////
@@ -1273,14 +1360,16 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
     return;
   }
   /////////////////////////////////////////////////////
+#endif // EEP
 
   int maxrow = 0;
 
   if (haveGraph_)
   {
-    npins = graph_->NumMyNonzeros();
-    maxrow = graph_->MaxNumIndices();
+    npins = graph_->getLocalNumEntries(); // NumMyNonzeros(); // EEP
+    maxrow = graph_->getLocalMaxNumRowEntries(); // MaxNumIndices(); // EEP
   }
+#if 0 // EEP
   else
   {
     npins = matrix_->NumMyNonzeros();
@@ -1293,9 +1382,10 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
       }
     }
   }
+#endif // EEP
 
   if ((format != ZOLTAN_COMPRESSED_VERTEX) ||
-      (num_row_or_col != rowMap_->NumMyElements()) ||
+      (num_row_or_col != rowMap_->getLocalNumElements()) ||
       (num_pins != npins)){
     *ierr = ZOLTAN_FATAL;
     std::cout << "Proc:" << myProc_ << " Error: ";
@@ -1319,19 +1409,21 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   }
 
   for (int i=0; i<num_row_or_col; i++){ 
-    vtxedge_GID[i] = (ZOLTAN_ID_TYPE)rowMap_->GID(i);
+    vtxedge_GID[i] = (ZOLTAN_ID_TYPE)rowMap_->getGlobalElement(i);
     vtxedge_ptr[i] = pin_start_pos;
 
     if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
       if (haveGraph_){
-        rc = graph_->ExtractMyRowCopy(i, maxrow, num_indices, (int *)gids);
+        rc = 0; // graph_->ExtractMyRowCopy(i, maxrow, num_indices, (int *)gids); // EEP___
       }
+#if 0 // EEP
       else{
         rc = matrix_->ExtractMyRowCopy(i, maxrow, num_indices, tmp,  (int *)gids);
       }
+#endif // EEP
       if (rc == 0){
         for (int j=pin_start_pos, count=0; count < num_indices; j++, count++){
-          pin_GID[j] = (ZOLTAN_ID_TYPE)colMap_->GID(gids[count]);
+          pin_GID[j] = (ZOLTAN_ID_TYPE)colMap_->getGlobalElement(gids[count]);
           if (pin_GID[i] < base_){
      	    *ierr = ZOLTAN_FATAL;
     	    std::cout << "Proc:" << myProc_ << " Error: ";
@@ -1349,15 +1441,17 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
     }
     else{
       if (haveGraph_){
-        rc = graph_->ExtractMyRowCopy(i, npins, num_indices,(int *)gids + pin_start_pos);
+        rc = 0; // graph_->ExtractMyRowCopy(i, npins, num_indices,(int *)gids + pin_start_pos); // EEP___
       }
+#if 0 // EEP
       else{
         rc = matrix_->ExtractMyRowCopy(i, npins, num_indices, tmp, (int *)gids + pin_start_pos);
       }
+#endif // EEP
 
       if (rc == 0){
         for (int i=pin_start_pos; i<pin_start_pos+num_indices; i++){
-          gids[i] = (unsigned int)colMap_->GID(gids[i]); // convert to global IDs
+          gids[i] = (unsigned int)colMap_->getGlobalElement(gids[i]); // convert to global IDs
           if (gids[i] < base_){
      	    *ierr = ZOLTAN_FATAL;
     	    std::cout << "Proc:" << myProc_ << " Error: ";
@@ -1388,6 +1482,7 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   }
 }
 
+#if 0 // EEP
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void QueryObject::My_FGHG_CS (int num_gid_entries, int num_nonzeros, int num_pins, int format,
@@ -1522,16 +1617,24 @@ void QueryObject::My_FGHG_CS (int num_gid_entries, int num_nonzeros, int num_pin
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
+#endif // EEP
 
-
-void QueryObject::My_HG_Size_Edge_Weights( int* num_edges, int* ierr)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_Size_Edge_Weights( int* num_edges, int* ierr)
 {
   *num_edges = costs_->getNumHypergraphEdgeWeights();
 
   *ierr = ZOLTAN_OK;
 }
 
-void QueryObject::My_HG_Edge_Weights(
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_Edge_Weights(
       int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
       ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr)
 {
@@ -1570,6 +1673,7 @@ void QueryObject::My_HG_Edge_Weights(
   }
 }
 
+#if 0 // EEP
 // member geometric query functions
 
 int QueryObject::My_Number_Geom(int *ierr)

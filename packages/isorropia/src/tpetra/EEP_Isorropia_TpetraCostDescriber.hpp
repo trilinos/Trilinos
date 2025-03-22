@@ -147,7 +147,7 @@ class CostDescriber : public Isorropia::CostDescriber {
   // classes in isorropia
 
   friend class Isorropia::Operator;
-  //friend class Isorropia::Tpetra::ZoltanLib<LocalOrdinal, GlobalOrdinal, Node>::QueryObject; // EEP
+  friend class Isorropia::Tpetra::ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>; // EEP
   friend class Isorropia::Tpetra::ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
@@ -286,7 +286,8 @@ private:
   /** \copydoc Isorropia::CostDescriber::getVertexWeights
    */
   void getVertexWeights(int numVertices,
-                      int* global_ids, float* weights) const; 
+                      int* global_ids, float* weights) const;
+
   /** \copydoc Isorropia::CostDescriber::haveGraphEdgeWeights
    */
   bool haveGraphEdgeWeights() const;
@@ -812,11 +813,12 @@ CostDescriber::setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const
     }
   }
 }
+#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-bool CostDescriber::haveVertexWeights() const
+bool CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::haveVertexWeights() const
 {
   const int n = getNumVertices();
   return( n > 0);
@@ -825,11 +827,12 @@ bool CostDescriber::haveVertexWeights() const
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-int CostDescriber::getNumVertices() const
+int CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getNumVertices() const
 {
-  return( vertex_weights_.get()==0 ? 0 : vertex_weights_->MyLength() );
+  return( vertex_weights_.get()==0 ? 0 : vertex_weights_->getLocalLength() ); // EEP MyLength()
 }
 
+#if 0 // EEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
