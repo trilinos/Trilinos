@@ -307,6 +307,36 @@ class TestFactory {
     return A;
   }  // Build2DPoisson()
 
+  // Create a 2D Elasticity matrix with the specified number of rows, as well as the respective coordinate and nullspace vector
+  // nx: global number of rows
+  // ny: global number of rows
+  static std::tuple<RCP<Matrix>, RCP<MultiVector>, RCP<MultiVector>> Build2DElasticity(GO nx, GO ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) {  // global_size_t
+
+    if (lib == Xpetra::NotSpecified)
+      lib = TestHelpers::Parameters::getLib();
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+    if (ny == -1) ny = nx;
+
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+
+    RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
+    map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 2);  // expand map for 2 DOFs per node
+
+    RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
+
+    RCP<Matrix> A = Pr->BuildMatrix();
+    A->SetFixedBlockSize(2);
+    RCP<MultiVector> coords = Pr->BuildCoords();
+    RCP<MultiVector> nullspace = Pr->BuildNullspace();
+
+    return std::make_tuple(A, coords, nullspace);
+  }  // Build2DElasticity()
+
   static RCP<RealValuedMultiVector>
   BuildGeoCoordinates(const int numDimensions, const Array<GO> gNodesPerDir,
                       Array<LO>& lNodesPerDir, Array<GO>& meshData,
