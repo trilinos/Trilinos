@@ -151,7 +151,7 @@ public:
       \return a reference counted pointer to the new redistributed graph 
   */
   Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-     redistribute(const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& input_graph, bool callFillComplete= true);
+    redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, bool callFillComplete= true);
 
   /** @ingroup partitioning_ptr_grp
       Method to accept a Epetra_CrsGraph object, and
@@ -170,7 +170,7 @@ public:
       the original domain map is preserved.  By default callFillComplete is @c true.
 
   */
-  void redistribute(const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& input_graph, ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> * &outputGraphPtr, bool callFillComplete= true);
+  void redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> outputGraphPtr, bool callFillComplete= true);
 
 #if 0 // EEP
   /** @ingroup partitioning_rcp_grp
@@ -335,7 +335,7 @@ private:
       Create an importer object to be used in the redistribution
       \param src_map (in) the map describing the pattern of the import operation
    */
-  void create_importer(const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& src_map); // Epetra_BlockMap EEP
+  void create_importer(const Teuchos::RCP<const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> src_map); // Epetra_BlockMap EEP
 
   Teuchos::RCP< Isorropia::Tpetra::Partitioner<LocalOrdinal, GlobalOrdinal, Node> > partitioner_;
   Teuchos::RCP< ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > importer_;
@@ -409,9 +409,9 @@ template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
 Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& input_graph, bool callFillComplete)
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, bool callFillComplete)
 {
-  ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> *outputGraphPtr=0;
+  Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>outputGraphPtr(nullptr);
   redistribute(input_graph, outputGraphPtr, callFillComplete);
 
   return Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>(outputGraphPtr);
@@ -421,9 +421,9 @@ template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
 void
-Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& input_graph, ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> * &outputGraphPtr, bool callFillComplete)
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> outputGraphPtr, bool callFillComplete)
 {
-  //create_importer(input_graph.RowMap()); // EEP___
+  create_importer( input_graph->getRowMap() ); // EEP___
 #if 0 // EEP___
   // First obtain the length of each of my new rows
 
@@ -778,26 +778,26 @@ Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector, Epet
   output_vector.Export(input_vector, *importer_, Insert);
 
 }
+#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
 void
-Redistributor<LocalOrdinal, GlobalOrdinal, Node>::create_importer(const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& src_map)
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::create_importer(const Teuchos::RCP<const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> src_map)
 {
 
   if (!Teuchos::is_null(partitioner_) && partitioner_->numProperties() >
-                                src_map.Comm().NumProc()) {
-    throw Isorropia::Exception("Cannot redistribute: Too many parts for too few processors.");
+                                src_map->getComm()->getSize()) {
+    throw std::runtime_error/*Isorropia::Exception*/("Cannot redistribute: Too many parts for too few processors.");
   }
 
   if (Teuchos::is_null(target_map_) && !Teuchos::is_null(partitioner_))
       target_map_ = partitioner_->createNewMap();
 
-  importer_ = Teuchos::rcp(new ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>(*target_map_, src_map));
+  importer_ = Teuchos::rcp(new ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>(target_map_, src_map));
 
 }
-#endif // EEP
   
 }//namespace Tpetra
 }//namespace Isorropia

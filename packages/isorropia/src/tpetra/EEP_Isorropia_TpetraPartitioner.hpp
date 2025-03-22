@@ -323,7 +323,7 @@ public:
   void elemsInPart(int part, int* elementList, int len) const { // EEP__ forced by virtual = 0 in Isorropia_Partitioner
     elemsWithProperty(part, elementList, len);
   }
-#if 0 // EEP
+
   /** @ingroup partitioning_rcp_grp
       Create a new @c Epetra_Map corresponding to the new partition.
 
@@ -335,7 +335,7 @@ public:
       \pre The number of parts might be the same or lower than the
       number of processors.
   */
-  Teuchos::RCP<Epetra_Map> createNewMap();
+  Teuchos::RCP<::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> createNewMap();
 
   /** @ingroup partitioning_ptr_grp
       Create a new @c Epetra_Map corresponding to the new partition.
@@ -348,8 +348,9 @@ public:
       \pre The number of parts might be the same or lower than the
       number of processors.
   */
-  void createNewMap(Epetra_Map *&outputMap);
+  void createNewMap(::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> *&outputMap);
 
+#if 0 // EEP
   int printZoltanMetrics() { return printMetrics; }
 #endif // EEP
 
@@ -1022,41 +1023,46 @@ compute(bool force_repartitioning) // EEP__ forced by virtual = 0 in Isorropia_O
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-#if 0 // EEP
 ////////////////////////////////////////////////////////////////////////////////
 // Create a new RowMap 
 ////////////////////////////////////////////////////////////////////////////////
-Teuchos::RCP<Epetra_Map>
-Partitioner::createNewMap()
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+Teuchos::RCP<::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>
+Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap()
 {
-  Epetra_Map *outputMap;
+  ::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> *outputMap;
 
   createNewMap(outputMap);
 
-  return( Teuchos::RCP<Epetra_Map>(outputMap) );
+  return( Teuchos::RCP<::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>>(outputMap) );
 }
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 // Create a new RowMap 
 ////////////////////////////////////////////////////////////////////////////////
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 void
-Partitioner::createNewMap(Epetra_Map * &outputMap)
+Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> * &outputMap)
 {
   if (!alreadyComputed()) {
     partition();
   }
 
   //Generate New Element List
-  int myPID = input_map_->Comm().MyPID();
-  int numMyElements = input_map_->NumMyElements();
+  int myPID = this->input_map_->getComm()->getRank();
+  int numMyElements = this->input_map_->getLocalNumElements();
   std::vector<int> elementList( numMyElements );
-  if (numMyElements > 0)
-    input_map_->MyGlobalElements( &elementList[0] );
-  else
-    input_map_->MyGlobalElements((int*)NULL); // disambiguate int/long long
+  //if (numMyElements > 0)
+    //this->input_map_->getGlobalElements( &elementList[0] ); // EEP___
+    //else
+    //this->input_map_->getGlobalElements((int*)NULL); // disambiguate int/long long // EEP___
 
-  int newGIDSize = numMyElements - exportsSize_;
+  int newGIDSize = numMyElements - this->exportsSize_;
 
   std::vector<int> myNewGID;
 
@@ -1065,16 +1071,16 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
     std::vector<int>::iterator newElemsIter;
     std::vector<int>::const_iterator elemsIter;
 
-    for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
-         elemsIter != properties_.end() ; elemsIter ++) {
+    for (elemsIter = this->properties_.begin(), newElemsIter= myNewGID.begin() ;
+         elemsIter != this->properties_.end() ; elemsIter ++) {
       if ((*elemsIter) == myPID) {
-        (*newElemsIter) = elementList[elemsIter - properties_.begin()];
+        (*newElemsIter) = elementList[elemsIter - this->properties_.begin()];
         newElemsIter ++;
       }
     }
   }
   //Add imports to end of list
-  myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
+  myNewGID.insert(myNewGID.end(), this->imports_.begin(), this->imports_.end());
 
   int *gidptr;
   if (myNewGID.size() > 0)
@@ -1082,13 +1088,11 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
   else
     gidptr = NULL;
 
-  outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm());
+  outputMap = nullptr; // new ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), myNewGID.size(), gidptr, 0, this->input_map_->getComm()); // EEP___
 
   return;
 }
 ////////////////////////////////////////////////////////////////////////////////
-
-#endif // EEP
 
 }//namespace Tpetra
 }//namespace Isorropia

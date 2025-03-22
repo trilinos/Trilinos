@@ -228,7 +228,7 @@ void runExample() {
                                      , Tpetra::CrsMatrix<double>::global_ordinal_type
                                      , Tpetra::CrsMatrix<double>::node_type
                                      > > transformedProblem = Teuchos::rcp( &((*LPTrans)( problem )), false );
-#if 0 // EEP___
+#if 1 // EEP___
   std::cout << "In main(), pos 008" << std::endl;
   LPTrans->fwd();
   std::cout << "In main(), pos 009" << std::endl;
