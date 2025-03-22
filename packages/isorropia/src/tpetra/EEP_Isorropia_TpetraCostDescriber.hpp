@@ -858,11 +858,12 @@ int CostDescriber::getVertexWeights(std::map<int, float> &wgtMap) const
   }
   return length;
 }
+#endif //
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void CostDescriber::getVertexWeights(int numVertices,
+void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getVertexWeights(int numVertices,
                                      int* global_ids,
                                      float* weights) const
 {
@@ -870,15 +871,13 @@ void CostDescriber::getVertexWeights(int numVertices,
     return;
   }
 
-  const Epetra_BlockMap& map = vertex_weights_->Map();
-
-  if (numVertices != map.NumMyElements()) {
-    throw Isorropia::Exception("CostDescriber::getVertexWeights: wrong numVertices");
+  if (numVertices != vertex_weights_->getMap()->getLocalNumElements()) {
+    throw std::runtime_error/*Isorropia::Exception*/("CostDescriber::getVertexWeights: wrong numVertices");
   }
 
-  map.MyGlobalElements(global_ids);
+  //vertex_weights_->getMap()->getGlobalElements(global_ids); // EEP___
 
-  double* vals = vertex_weights_->Values();
+  double* vals = nullptr; // vertex_weights_->Values(); // EEP___
   for(int i=0; i<numVertices; ++i) {
     weights[i] = vals[i];
   }
@@ -887,11 +886,11 @@ void CostDescriber::getVertexWeights(int numVertices,
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-bool CostDescriber::haveGraphEdgeWeights() const
+bool CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::haveGraphEdgeWeights() const
 {
   int n = 0;
   if (graph_edge_weights_.get()){
-    n = graph_edge_weights_->NumMyNonzeros();
+    n = graph_edge_weights_->getLocalNumEntries(); // NumMyNonzeros(); // EEP
   }
   return( n > 0);
 }
@@ -899,13 +898,13 @@ bool CostDescriber::haveGraphEdgeWeights() const
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-int CostDescriber::getNumGraphEdges(int vertex_global_id) const
+int CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getNumGraphEdges(int vertex_global_id) const
 {
   int n = 0;
   if (graph_edge_weights_.get() != 0) {
-    int lrid = graph_edge_weights_->LRID(vertex_global_id);
+    int lrid = graph_edge_weights_->getRowMap()->getLocalElement(vertex_global_id); // LRID(vertex_global_id); // EEP
     if (lrid >= 0){   
-      n = graph_edge_weights_->NumMyEntries(lrid);
+      n = graph_edge_weights_->getNumEntriesInLocalRow(lrid); // NumMyEntries(lrid); // EEP
 
       if (graph_self_edges_.size() > 0){
         std::set<int>::const_iterator it = graph_self_edges_.find(vertex_global_id);
@@ -925,12 +924,9 @@ int CostDescriber::getNumGraphEdges(int vertex_global_id) const
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights) const
+int CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getEdges(int vertexGID, int len, int *nborGID, float *weights) const
 {
-  const Epetra_Map &colmap = graph_edge_weights_->ColMap();
-  const Epetra_Map &rowmap = graph_edge_weights_->RowMap();
-
-  int vertexLID = rowmap.LID(vertexGID);
+  //int vertexLID = 0; // graph_edge_weights_->getRowMap()->LID(vertexGID); // EEP___
   int numRealEdges = getNumGraphEdges(vertexGID);  //excluding self edges
 
   if (numRealEdges < 1){
@@ -938,7 +934,7 @@ int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights
   }
 
   if (len < numRealEdges ){
-    throw Isorropia::Exception("CostDescriber::getEdges: length of allocated arrays");
+    throw std::runtime_error/*Isorropia::Exception*/("CostDescriber::getEdges: length of allocated arrays");
   }
 
   int self_edge = 0;
@@ -947,25 +943,24 @@ int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights
     self_edge = 1;
   }
 
-  int *viewIds=NULL;
+  //int *viewIds=NULL;
   double *viewWgts=NULL;
   int numedges;         // including self edges
 
-  int rc = graph_edge_weights_->ExtractMyRowView(vertexLID, numedges,
-                                                 viewWgts, viewIds);
+  int rc = 0; // graph_edge_weights_->ExtractMyRowView(vertexLID, numedges, viewWgts, viewIds); // EEP___
 
   if (rc){
-    throw Isorropia::Exception("CostDescriber::getEdges: Extract matrix row view");
+    throw std::runtime_error/*Isorropia::Exception*/("CostDescriber::getEdges: Extract matrix row view");
   }
 
   if (numedges != (numRealEdges + self_edge)){
-    throw Isorropia::Exception("CostDescriber::getEdges: Extract matrix count");
+    throw std::runtime_error/*Isorropia::Exception*/("CostDescriber::getEdges: Extract matrix count");
   }
 
   int nextID = 0;
 
   for (int j=0; j < numedges; j++){
-    int gid = colmap.GID(viewIds[j]);
+    int gid = 0; // graph_edge_weights_->ColMap()->GID(viewIds[j]); // EEP___
     if (gid == vertexGID) continue;   // skip the self edges
 
     nborGID[nextID] = gid;
@@ -977,6 +972,7 @@ int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights
   return nextID;
 }
 
+#if 0 // EEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
@@ -1021,11 +1017,12 @@ int CostDescriber::getGraphEdgeWeights(int vertex_global_id, std::map<int, float
   }
   return numEdges;
 }
+#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void CostDescriber::getGraphEdgeWeights(int vertex_global_id,
+void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getGraphEdgeWeights(int vertex_global_id,
                                        int num_neighbors,
                                        int* neighbor_global_ids,
                                        float* weights) const
@@ -1037,7 +1034,7 @@ void CostDescriber::getGraphEdgeWeights(int vertex_global_id,
   }
 
   if (rowlen > num_neighbors) {
-    throw Isorropia::Exception("CostDescriber::getGraphEdgeWeights: wrong num_neighbors");
+    throw std::runtime_error/*Isorropia::Exception*/("CostDescriber::getGraphEdgeWeights: wrong num_neighbors");
   }
 
   getEdges(vertex_global_id, num_neighbors, neighbor_global_ids, weights);
@@ -1046,7 +1043,7 @@ void CostDescriber::getGraphEdgeWeights(int vertex_global_id,
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-bool CostDescriber::haveHypergraphEdgeWeights() const
+bool CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::haveHypergraphEdgeWeights() const
 {
   return(num_hg_edge_weights_ > 0);
 }
@@ -1054,7 +1051,7 @@ bool CostDescriber::haveHypergraphEdgeWeights() const
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-int CostDescriber::getNumHypergraphEdgeWeights() const
+int CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getNumHypergraphEdgeWeights() const
 {
   return num_hg_edge_weights_;
 }
@@ -1062,12 +1059,12 @@ int CostDescriber::getNumHypergraphEdgeWeights() const
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-void CostDescriber::getHypergraphEdgeWeights(int numEdges,
+void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getHypergraphEdgeWeights(int numEdges,
 					     int* global_ids,
 					     float* weights) const
 {
   if (numEdges != num_hg_edge_weights_) {
-    throw Isorropia::Exception("CostDescriber::getHypergraphEdgeWeights: wrong numEdges");
+    throw std::runtime_error/*Isorropia::Exception*/("CostDescriber::getHypergraphEdgeWeights: wrong numEdges");
   }
 
   for(int i=0; i<numEdges; ++i) {
@@ -1076,6 +1073,7 @@ void CostDescriber::getHypergraphEdgeWeights(int numEdges,
   }
 }
 
+#if 0 // EEP
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>

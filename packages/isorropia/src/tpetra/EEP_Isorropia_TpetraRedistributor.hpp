@@ -118,12 +118,13 @@ public:
       called
    */
   Redistributor(Epetra_Map *target_map);
-
+#endif // EEP
   /** 
        Destructor
    */
   virtual ~Redistributor();
 
+#if 0 // EEP
   /** @ingroup partitioning_grp
       Method to redistribute a Epetra_SrcDistObject into a
       Epetra_DistObject. The caller is required to have constructed
@@ -131,6 +132,7 @@ public:
   */
   void redistribute(const Epetra_SrcDistObject& src,
 		    Epetra_DistObject& target);
+#endif // EEP
 
   /** @ingroup partitioning_rcp_grp
       Method to accept a Epetra_CrsGraph object, and
@@ -148,8 +150,8 @@ public:
 
       \return a reference counted pointer to the new redistributed graph 
   */
-  Teuchos::RCP<Epetra_CrsGraph>
-     redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete= true);
+  Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+     redistribute(const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& input_graph, bool callFillComplete= true);
 
   /** @ingroup partitioning_ptr_grp
       Method to accept a Epetra_CrsGraph object, and
@@ -168,8 +170,9 @@ public:
       the original domain map is preserved.  By default callFillComplete is @c true.
 
   */
-  void redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph * &outputGraphPtr, bool callFillComplete= true);
+  void redistribute(const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& input_graph, ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> * &outputGraphPtr, bool callFillComplete= true);
 
+#if 0 // EEP
   /** @ingroup partitioning_rcp_grp
       Method to accept a Epetra_CrsMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
@@ -332,7 +335,7 @@ private:
       Create an importer object to be used in the redistribution
       \param src_map (in) the map describing the pattern of the import operation
    */
-  //void create_importer(const Epetra_BlockMap& src_map); // EEP
+  void create_importer(const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& src_map); // Epetra_BlockMap EEP
 
   Teuchos::RCP< Isorropia::Tpetra::Partitioner<LocalOrdinal, GlobalOrdinal, Node> > partitioner_;
   Teuchos::RCP< ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > importer_;
@@ -340,8 +343,10 @@ private:
 
 }; //class Redistributor
 
-#if 0 // EEP
-Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::Redistributor(Teuchos::RCP<Isorropia::Tpetra::Partitioner<LocalOrdinal, GlobalOrdinal, Node>> partitioner)
   : partitioner_(partitioner),
   importer_(),
   target_map_()
@@ -351,6 +356,7 @@ Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partit
   }
 }
 
+#if 0 // EEP
 Redistributor::Redistributor(Isorropia::Epetra::Partitioner *partitioner)
   : partitioner_(Teuchos::RCP<Isorropia::Epetra::Partitioner>(partitioner,false)),
   importer_(),
@@ -376,50 +382,65 @@ Redistributor::Redistributor(Epetra_Map *target_map)
 {
     // Do not partition, target map is given.
 }
+#endif // EEP
 
-Redistributor::~Redistributor()
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::~Redistributor()
 {
 }
 
+#if 0 // EEP
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 void
-Redistributor::redistribute(const Epetra_SrcDistObject& src,
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Epetra_SrcDistObject& src,
 				 Epetra_DistObject& target)
 {
   create_importer(src.Map());
 
   target.Import(src, *importer_, Insert);
 }
+#endif // EEP
 
-Teuchos::RCP<Epetra_CrsGraph>
-Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& input_graph, bool callFillComplete)
 {
-  Epetra_CrsGraph *outputGraphPtr=0;
+  ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> *outputGraphPtr=0;
   redistribute(input_graph, outputGraphPtr, callFillComplete);
 
-  return Teuchos::RCP<Epetra_CrsGraph>(outputGraphPtr);
+  return Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>(outputGraphPtr);
 }
 
-void 
-Redistributor::redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph * &outputGraphPtr, bool callFillComplete)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>& input_graph, ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> * &outputGraphPtr, bool callFillComplete)
 {
-  create_importer(input_graph.RowMap());
-
+  //create_importer(input_graph.RowMap()); // EEP___
+#if 0 // EEP___
   // First obtain the length of each of my new rows
 
-  int myOldRows = input_graph.NumMyRows();
-  int myNewRows = target_map_->NumMyElements();
+  int myOldRows = input_graph.getLocalNumRows(); // NumMyRows();
+  int myNewRows = target_map_->getLocalNumEntries(); // NumMyElements();
 
   double *nnz = new double [myOldRows];
   for (int i=0; i < myOldRows; i++){
-    nnz[i] = input_graph.NumMyIndices(i);
+    nnz[i] = 0; // input_graph.NumMyIndices(i); // EEP___
   }
 
-  Epetra_Vector oldRowSizes(Copy, input_graph.RowMap(), nnz);
+  ::Tpetra::Vector<LocalOrdinal, GlobalOrdinal, Node, double> oldRowSizes(Copy, input_graph.RowMap(), nnz);
 
   if (myOldRows)
     delete [] nnz;
 
-  Epetra_Vector newRowSizes(*target_map_);
+  ::Tpetra::Vector<LocalOrdinal, GlobalOrdinal, Node, double> newRowSizes(*target_map_);
 
   newRowSizes.Import(oldRowSizes, *importer_, Insert);
 
@@ -430,7 +451,7 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph 
 
   // Receive new rows, send old rows
 
-  outputGraphPtr = new Epetra_CrsGraph(Copy, *target_map_, rowSize, true);
+  outputGraphPtr = new ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(Copy, *target_map_, rowSize, true);
 
   if (myNewRows)
     delete [] rowSize;
@@ -448,10 +469,12 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph 
 
   if (callFillComplete && (!outputGraphPtr->Filled()))
     outputGraphPtr->FillComplete(*newDomainMap, *target_map_);
+#endif // EEP
 
   return;
 }
 
+#if 0 // EEP
 Teuchos::RCP<Epetra_CrsMatrix>
 Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, bool callFillComplete)
 {
@@ -756,7 +779,11 @@ Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector, Epet
 
 }
 
-void Redistributor::create_importer(const Epetra_BlockMap& src_map)
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+void
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::create_importer(const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& src_map)
 {
 
   if (!Teuchos::is_null(partitioner_) && partitioner_->numProperties() >
@@ -767,7 +794,7 @@ void Redistributor::create_importer(const Epetra_BlockMap& src_map)
   if (Teuchos::is_null(target_map_) && !Teuchos::is_null(partitioner_))
       target_map_ = partitioner_->createNewMap();
 
-  importer_ = Teuchos::rcp(new Epetra_Import(*target_map_, src_map));
+  importer_ = Teuchos::rcp(new ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>(*target_map_, src_map));
 
 }
 #endif // EEP
