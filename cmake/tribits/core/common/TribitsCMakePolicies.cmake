@@ -7,11 +7,17 @@
 # *****************************************************************************
 # @HEADER
 
+macro(tribits_set_cmake_policy_if_exists  policyName  oldOrNew)
+  if (POLICY ${policyName})
+    cmake_policy(SET ${policyName} ${oldOrNew})
+  endif()
+endmacro()
+
 # Define policies for CMake
-# It is assumed that the project has already called CMAKE_MINIMUM_REQUIRED.
-cmake_policy(SET CMP0003 NEW) # Don't split up full lib paths to linker args
-cmake_policy(SET CMP0007 NEW) # Don't ignore empty list items
-cmake_policy(SET CMP0053 NEW) # Make var references much faster
-cmake_policy(SET CMP0054 NEW) # Avoid quoted strings lookup variables
-cmake_policy(SET CMP0057 NEW) # Support if ( ... IN_LIST ... )
-cmake_policy(SET CMP0082 NEW) # Install rules follow order install() called in subdirs
+tribits_set_cmake_policy_if_exists(CMP0003 NEW) # Don't split up full lib paths to linker args
+tribits_set_cmake_policy_if_exists(CMP0007 NEW) # Don't ignore empty list items
+tribits_set_cmake_policy_if_exists(CMP0053 NEW) # Make var references much faster
+tribits_set_cmake_policy_if_exists(CMP0054 NEW) # Avoid quoted strings lookup variables
+tribits_set_cmake_policy_if_exists(CMP0057 NEW) # Support if ( ... IN_LIST ... )
+tribits_set_cmake_policy_if_exists(CMP0082 NEW) # Install rules follow order install() called in subdirs
+tribits_set_cmake_policy_if_exists(CMP0144 NEW) # find_package() use <PACKAGENAME>_ROOT env var
