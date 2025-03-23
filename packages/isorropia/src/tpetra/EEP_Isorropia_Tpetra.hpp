@@ -42,23 +42,10 @@
 
 //#include <Isorropia_ConfigDefs.hpp> // AquiToDo
 
-#if 1 // def HAVE_TPETRA // AquiToDo
-//#include <Isorropia_Exception.hpp>
-//#include <Isorropia_Utils.hpp>
-//#include <Isorropia_EpetraCostDescriber.hpp>
 #include <EEP_Isorropia_TpetraPartitioner.hpp>
 #include <EEP_Isorropia_TpetraRedistributor.hpp>
-#endif
 
-//#include <Tpetra_Map_decl.hpp>
-//#include <Tpetra_Import_decl.hpp>
-//#include <Tpetra_Vector_decl.hpp>
-//#include <Tpetra_Comm_decl.hpp>
-//#include <Tpetra_IntVector_decl.hpp>
 #include <Tpetra_CrsGraph_decl.hpp>
-//#include <Tpetra_CrsMatrix_decl.hpp>
-//#include <Tpetra_RowMatrix_decl.hpp>
-//#include <Tpetra_LinearProblem_decl.hpp>
 
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultComm.hpp>
@@ -72,11 +59,6 @@ namespace Isorropia {
 
 namespace Tpetra {
 
-  //class Partitioner;
-  //class CostDescriber;
-
-#if 1 // def HAVE_TPETRA // AquiToDo
-
 /** createBalancedCopy() creates a copy with a more balanced map.
     The caller should free the copy after use.
 */
@@ -84,13 +66,13 @@ template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
 ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> *
-createBalancedCopy(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, // EEP__
+createBalancedCopy(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> & input_graph, // EEP__
                    const Teuchos::ParameterList& paramlist)
 {
   std::cout << "EEP Entering isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4)..." << std::endl;
-  //Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > rcp_input_graph = Teuchos::rcp(&(input_graph), false);
+  //Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > rcp_input_graph = Teuchos::rcp(&(input_graph), false); // EEP
 
-  std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 001" << std::endl; // Aqui
+  std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 001" << std::endl;
 
   Teuchos::RCP< Partitioner<LocalOrdinal, GlobalOrdinal, Node> > partitioner = Teuchos::rcp(new Partitioner<LocalOrdinal, GlobalOrdinal, Node>(/*rcp_*/input_graph, paramlist));
 
@@ -104,18 +86,11 @@ createBalancedCopy(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrd
 
   std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 004" << std::endl; 
   
-#if 1 // AquiToDo // EEP___
   balanced_graph.release();
 
   std::cout << "EEP Leaving isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4)" << std::endl; 
   return balanced_graph.get();
-#else
-  std::cout << "EEP Leaving isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4)" << std::endl; 
-  return nullptr;
-#endif // AquiToDo
 }
-
-#endif // HAVE_TPETRA
 
 } // namespace Tpetra
 } // namespace Isorropia

@@ -44,26 +44,11 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-//#include <Isorropia_Exception.hpp>
 #include <EEP_Isorropia_Tpetra.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Tpetra_CrsGraph_decl.hpp>
-
-//#include <Epetra_Comm.h>
-//#include <Epetra_Map.h>
-//#include <Epetra_Import.h>
-//#include <Epetra_Vector.h>
-//#include <Epetra_MultiVector.h>
-//#include <Epetra_CrsMatrix.h>
-//#include <Epetra_LinearProblem.h>
-
-//#include <cstring>
-//#include <iostream>
-//#include <sstream>
-//#include <string>
-//#include <ctype.h>
 
 namespace Isorropia {
 
@@ -82,31 +67,8 @@ template <class LocalOrdinal,
           class Node>
 class Library {
 public:
-#if 0 // EEP
-  Library(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, int itype = unspecified_input_);
-  Library(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, Teuchos::RCP<const Epetra_MultiVector> input_coords,
-          int itype = unspecified_input_);
-#endif
-  //erroDeProposito
   Library(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, // EEP__
 	  Teuchos::RCP< CostDescriber<LocalOrdinal, GlobalOrdinal, Node> > costs, int itype = unspecified_input_);
-#if 0 // EEP
-  Library(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, Teuchos::RCP<CostDescriber> costs, 
-	  Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights,
-          int itype = unspecified_input_);
-  Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int itype = unspecified_input_);
-  Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, Teuchos::RCP<const Epetra_MultiVector> input_coords,
-          int itype = unspecified_input_);
-  Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
- 	  Teuchos::RCP<CostDescriber> costs, int itype = unspecified_input_);
-  Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, Teuchos::RCP<CostDescriber> costs, 
-	  Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights,
-          int itype = unspecified_input_);
-  Library(Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype = unspecified_input_);
-  Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
-          Teuchos::RCP<const Epetra_MultiVector> weights, int itype = unspecified_input_);
-  Library(Teuchos::RCP<const Epetra_BlockMap> input_map, int itype = unspecified_input_);
-#endif
   
   virtual ~Library();
 
@@ -204,48 +166,13 @@ protected:
 
   Teuchos::RCP< const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > input_map_;
   Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph_;
-  //Teuchos::RCP<const Epetra_RowMatrix> input_matrix_; // EEP__
-  //Teuchos::RCP<const Epetra_MultiVector> input_coords_;
   Teuchos::RCP< CostDescriber<LocalOrdinal, GlobalOrdinal, Node> > costs_;
-  //Teuchos::RCP<const Epetra_MultiVector> weights_;
 
   virtual int precompute();
 
   virtual int postcompute() = 0;
 
-};//class Library
-#if 0 // EEP
-Library::
-Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_graph_(input_graph),
-    input_matrix_(0),
-    input_coords_(),
-    costs_(0),
-    weights_(0)
-{
-  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-}
-
-Library::
-Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
-	Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_graph_(input_graph),
-    input_matrix_(0),
-    input_coords_(input_coords),
-    costs_(0),
-    weights_(0)
-{
-  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-}
-#endif // EEP
+}; // class Library
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
@@ -258,150 +185,10 @@ Library(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node
     partGIDs(NULL),
     partSizes(NULL),
     input_graph_(input_graph),
-    //input_matrix_(0),
-    //input_coords_(0),
-    costs_(costs)//,
-    //weights_(0)
+    costs_(costs)
 {
   input_map_ = input_graph->getRowMap(); // Teuchos::rcp(&(input_graph->getRowMap()), false); // EEP___
 }
-
-#if 0 // EEP
-Library::
-Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, Teuchos::RCP<CostDescriber> costs, 
-	Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights,
-        int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_graph_(input_graph),
-    input_matrix_(0),
-    input_coords_(input_coords),
-    costs_(costs),
-    weights_(weights)
-{
-  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-}
-
-Library::
-Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_graph_(0),
-    input_matrix_(input_matrix),
-    input_coords_(0),
-    costs_(0),
-    weights_(0)
-{
-  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-}
-
-Library::
-Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, 
-	Teuchos::RCP<const Epetra_MultiVector> input_coords,int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_graph_(0),
-    input_matrix_(input_matrix),
-    input_coords_(input_coords),
-    costs_(0),
-    weights_(0)
-{
-  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-}
-
-Library::
-Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-	Teuchos::RCP<CostDescriber> costs, int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_graph_(0),
-    input_matrix_(input_matrix),
-    input_coords_(0),
-    costs_(costs),
-    weights_(0)
-{
-  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-Library::
-Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, Teuchos::RCP<CostDescriber> costs, 
-        Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights,
-        int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_graph_(0),
-    input_matrix_(input_matrix),
-    input_coords_(input_coords),
-    costs_(costs),
-    weights_(weights)
-{
-  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-}
-
-Library::
-Library(Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_graph_(0),
-    input_matrix_(0),
-    input_coords_(input_coords),
-    costs_(0),
-    weights_(0)
-{
-  input_map_ = Teuchos::rcp(&(input_coords->Map()), false);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Library::
-Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
-        Teuchos::RCP<const Epetra_MultiVector> weights, int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_graph_(0),
-    input_matrix_(0),
-    input_coords_(input_coords),    
-    costs_(0) ,
-    weights_(weights)
-{
-  input_map_ = Teuchos::rcp(&(input_coords->Map()), false);
-}
-////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-Library::
-Library(Teuchos::RCP<const Epetra_BlockMap> input_map, int itype)
-  : input_type_(itype),
-    numPartSizes(0),
-    partGIDs(NULL),
-    partSizes(NULL),
-    input_map_(input_map),
-    input_graph_(0),
-    input_matrix_(0),
-    input_coords_(0),
-    costs_(0),
-    weights_(0)
-{
-
-}
-////////////////////////////////////////////////////////////////////////////////
-#endif // EEP
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -514,7 +301,6 @@ int Library<LocalOrdinal, GlobalOrdinal, Node>::precompute()
 }//namespace Isorropia
 
 #endif
-
 
 #if defined(Isorropia_SHOW_DEPRECATED_WARNINGS)
 #ifdef __GNUC__

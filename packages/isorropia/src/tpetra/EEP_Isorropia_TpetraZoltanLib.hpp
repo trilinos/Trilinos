@@ -50,33 +50,18 @@
 #include <EEP_QueryObject.hpp>
 #include <zoltan_cpp.h>
 
-//#include <Isorropia_Exception.hpp>
 #include <EEP_Isorropia_Tpetra.hpp>
 #include <EEP_Isorropia_TpetraCostDescriber.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-//#include <Epetra_Comm.h>
-//#include <Epetra_Map.h>
-//#include <Epetra_Import.h>
-//#include <Epetra_Vector.h>
-//#include <Epetra_MultiVector.h>
 #include <Tpetra_CrsGraph_decl.hpp>
-//#include <Epetra_CrsMatrix.h>
-//#include <Epetra_LinearProblem.h>
 #include <exception>
 
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultComm.hpp>
 #endif
-
-#include <cstring>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <ctype.h>
-#include <exception>
 
 namespace Isorropia {
 
@@ -88,30 +73,8 @@ template <class LocalOrdinal,
           class Node>
 class ZoltanLibClass : public Isorropia::Tpetra::Library<LocalOrdinal, GlobalOrdinal, Node> {
 public:
-#if 0 // EEP
-  ZoltanLibClass(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, int inputType=unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, 
-		 Teuchos::RCP<const Epetra_MultiVector> input_coords, int inputType=unspecified_input_);
-#endif
   ZoltanLibClass(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, // EEP__
 	         Teuchos::RCP< CostDescriber<LocalOrdinal, GlobalOrdinal, Node> > costs, int inputType=ZoltanLib::QueryObject<LocalOrdinal, GlobalOrdinal, Node>::unspecified_input_);
-#if 0 // EEP
-  ZoltanLibClass(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, Teuchos::RCP<CostDescriber> costs, 
-                 Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights, 
-                 int inputType=unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int inputType=unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, 
-                 Teuchos::RCP<const Epetra_MultiVector> input_coords, int inputType=unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-	         Teuchos::RCP<CostDescriber> costs, int inputType=unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, Teuchos::RCP<CostDescriber> costs, 
-		 Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights,
-                 int inputType=unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords, int inputType=unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords,
-            Teuchos::RCP<const Epetra_MultiVector> weights, int inputType=unspecified_input_);
-  ZoltanLibClass(Teuchos::RCP<const Epetra_BlockMap> input_map, int inputType=unspecified_input_);
-#endif
 
   /** Method to partition the object that the ZoltanLibClass was contructed with.
 
@@ -176,21 +139,6 @@ private:
 
 };//class ZoltanLibClass
 
-#if 0 // EEP
-
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-                               int inputType):
-  Library(input_graph, inputType)
-{
-}
-
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-                               Teuchos::RCP<const Epetra_MultiVector> input_coords, int inputType):
-  Library(input_graph, input_coords, inputType)
-{
-}
-#endif // EEP
-
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
@@ -200,83 +148,6 @@ ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::ZoltanLibClass(Teuchos::RCP<c
   Library<LocalOrdinal, GlobalOrdinal, Node>(input_graph, costs, inputType)
 {
 }
-
-#if 0 // EEP
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-                               Teuchos::RCP<CostDescriber> costs,
-                               Teuchos::RCP<const Epetra_MultiVector> input_coords,
-                               Teuchos::RCP<const Epetra_MultiVector> weights, int inputType):
-  Library(input_graph, costs, input_coords, weights, inputType)
-{
-  int weightDim = weights->NumVectors();
-
-  if (weightDim > 1){
-    if (input_coords->Comm().MyPID() == 0){
-      std::cout << "WARNING: Zoltan will only use the first weight of the "<< weightDim << " supplied for each object" << std::endl;
-    }
-  }
-}
-
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-                               int inputType):
-  Library(input_matrix, inputType)
-{
-}
-
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-                               Teuchos::RCP<const Epetra_MultiVector> input_coords,
-                               int inputType):
-  Library(input_matrix, input_coords, inputType)
-{
-}
-
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-                          Teuchos::RCP<CostDescriber> costs, int inputType):
-  Library(input_matrix, costs, inputType)
-{
-}
-
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-                               Teuchos::RCP<CostDescriber> costs,
-                               Teuchos::RCP<const Epetra_MultiVector> input_coords,
-                               Teuchos::RCP<const Epetra_MultiVector> weights, int inputType):
-  Library(input_matrix, costs, input_coords, weights, inputType)
-{
-  int weightDim = weights->NumVectors();
-
-  if (weightDim > 1){
-    if (input_coords->Comm().MyPID() == 0){
-      std::cout << "WARNING: Zoltan will only use the first weight of the "<< weightDim << " supplied for each object" << std::endl;
-    }
-  }
-}
-
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords,
-                               int inputType):
-  Library(input_coords, inputType)
-{
-}
-
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords,
-                               Teuchos::RCP<const Epetra_MultiVector> weights,
-                               int inputType):
-  Library(input_coords, weights, inputType)
-{
-  int weightDim = weights->NumVectors();
-
-  if (weightDim > 1){
-    if (input_coords->Comm().MyPID() == 0){
-      std::cout << "WARNING: Zoltan will only use the first weight of the "<< weightDim << " supplied for each object" << std::endl;
-    }
-  }
-}
-
-ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_BlockMap> input_map,
-                               int inputType):
-  Library(input_map, inputType)
-{
-}
-#endif // EEP
 
 template <class LocalOrdinal,
           class GlobalOrdinal,

@@ -65,6 +65,12 @@ void runExample() {
   std::cout << "In runExample(): HAVE_ISORROPIA_ZOLTAN = OFF" << std::endl;
 #endif
 
+#ifdef USE_UTILS
+  std::cout << "In runExample(): USE_UTILS = ON" << std::endl;
+#else
+  std::cout << "In runExample(): USE_UTILS = OFF" << std::endl;
+#endif
+
 
   int numProcs = 1;
   int localProc = 0;
