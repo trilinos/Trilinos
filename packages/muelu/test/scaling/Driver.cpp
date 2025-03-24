@@ -298,7 +298,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("tuning-with-kokkos", "no-tuning-with-kokkos", &kokkosTuning, "enable Kokkos tuning inferface");
 #endif
 
-
   clp.recogniseAllOptions(true);
 
   switch (clp.parse(argc, argv)) {
@@ -529,7 +528,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       out2.setOutputToRootOnly(0);
       out2 << galeriStream.str();
 
-
       // Preconditioner control options
       bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
       bool useML   = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");
@@ -541,25 +539,25 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
       // Get a Kokkos context for tuning and setup the tuner
       size_t kokkos_context_id = 0;
-      if(kokkosTuning) {
+      if (kokkosTuning) {
         KokkosTuner.SetParameterList(mueluList);
       }
 
       // =========================================================================
       // Loop over the setup/solve pairs
       // =========================================================================
-      for(int l=0; l<numLoops; l++) {
+      for (int l = 0; l < numLoops; l++) {
 #ifdef HAVE_MUELU_TPETRA
         Tpetra::Details::ProfilingRegion("MueLu Setup/Solve");
 #endif
 
         // Use Kokkos tuning, if requested
-        if(kokkosTuning) {
+        if (kokkosTuning) {
           // FIXME: Ideally we'd have the context bracket the solve only, not the setup,
           // but we need to know if that will work with Kokkos or not first.
-          out2<< "Enabling MueLu::KokkosTuning"<<std::endl;
+          out2 << "Enabling MueLu::KokkosTuning" << std::endl;
           Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
-          KokkosTuner.SetMueLuParameters(kokkos_context_id,mueluList);
+          KokkosTuner.SetMueLuParameters(kokkos_context_id, mueluList);
         }
 
         // =========================================================================
@@ -576,7 +574,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
 
           PreconditionerSetup(A, coordinates, nullspace, material, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
-
         }
         comm->barrier();
         tm = Teuchos::null;
@@ -584,10 +581,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         size_t mem = get_current_memory_usage();
         out2 << "Memory use after preconditioner setup (GB): " << (mem / 1024.0 / 1024.0) << std::endl;
 
-
         // Matrix output: first time only
         comm->barrier();
-        if(l==0) {
+        if (l == 0) {
           if (writeMatricesOPT > -2) {
             tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
             H->Write(writeMatricesOPT, writeMatricesOPT);
@@ -615,10 +611,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         comm->barrier();
         tm = Teuchos::null;
 
-        if(kokkosTuning) {
+        if (kokkosTuning) {
           Kokkos::Tools::Experimental::end_context(kokkos_context_id);
         }
-
 
         // If we want Level-specific performance model diagnostics, now is the time!
         if ((levelPerformanceModel == "yes" || levelPerformanceModel == "verbose") && !H.is_null()) {
@@ -633,10 +628,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
               ;
             }
           }
-        }// end performance diagnostics
+        }  // end performance diagnostics
 
-      }//end loop over setup/solve pairs
-
+      }  // end loop over setup/solve pairs
 
       globalTimeMonitor = Teuchos::null;
       if (useStackedTimer)
