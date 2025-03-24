@@ -22,6 +22,7 @@ namespace MueLuTests {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Basic, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
+  // This test just makes sure the KokkosTuning interface does *something* plausible
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
@@ -60,8 +61,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Basic, Scalar, LocalOrd
 }
 
 namespace TestUtilities {
-std::vector<Kokkos::Tools::Experimental::VariableInfo*> output_info;
-std::vector<Kokkos::Tools::Experimental::VariableInfo*> input_info;
+std::vector<Kokkos::Tools::Experimental::VariableInfo> output_info;
+std::vector<Kokkos::Tools::Experimental::VariableInfo> input_info;
 
 const char* str_type(Kokkos_Tools_VariableInfo_ValueType x) {
   if (x == Kokkos_Tools_VariableInfo_ValueType::kokkos_value_double)
@@ -96,44 +97,51 @@ const char* str_candidatevalue(const enum Kokkos_Tools_VariableInfo_CandidateVal
     return "unknown";
 }
 
+void print_variable_info(const Kokkos::Tools::Experimental::VariableInfo* info,const int index=0) {
+  std::cout << "[" << index << "] Variable information  = " << str_type(info->type) << "," << str_category(info->category) << "," << str_candidatevalue(info->valueQuantity) << std::endl;
+  std::cout << "[" << index << "] Actual values         = " << info->type  << "," << info->category << "," << info->valueQuantity << std::endl;
+  std::cout << "[" << index << "] Baseline enums        = " << Kokkos_Tools_VariableInfo_ValueType::kokkos_value_double  << "," << Kokkos_Tools_VariableInfo_StatisticalCategory::kokkos_value_categorical << "," << Kokkos_Tools_VariableInfo_CandidateValueType::kokkos_value_set << std::endl;
+}
+
 void declare_input_type(const char* name, const size_t id,
                         Kokkos::Tools::Experimental::VariableInfo* info) {
+  std::cout<<"DEBUG: calling declare_input_type"<<std::endl;
   // Yeah, we're aliasing the pointer.  This is a test.  Deal.
-  input_info.push_back(info);
+  print_variable_info(info,-1);
+  input_info.push_back(*info);
 }
 
 void declare_output_type(const char* name, const size_t id,
                          Kokkos::Tools::Experimental::VariableInfo* info) {
   // Yeah, we're aliasing the pointer.  This is a test.  Deal.
-  output_info.push_back(info);
+  std::cout<<"DEBUG: calling declare_output_type"<<std::endl;
+  print_variable_info(info,-1);
+  output_info.push_back(*info);
 }
 
 void request_output_values(const size_t context, const size_t num_inputs,
                            const Kokkos::Tools::Experimental::VariableValue* inputs_in,
                            const size_t num_outputs,
                            Kokkos::Tools::Experimental::VariableValue* outputs_in) {
-  // This dummy callback will set the output value to one step more than the bottom guy in the rang
+  // This dummy callback will set the output value to one step more than the bottom guy in the range
   std::cout << "\nDEBUG: request_ouput_values called with " << num_outputs << " outputs" << std::endl;
   for (int i = 0; i < (int)num_outputs; i++) {
-    Kokkos::Tools::Experimental::VariableInfo* info = output_info[i];
-
-    // We only suport ranges in this test
+    Kokkos::Tools::Experimental::VariableInfo& info = output_info[i];
+    print_variable_info(&info,i);
     if (info->category == Kokkos_Tools_VariableInfo_StatisticalCategory::kokkos_value_interval &&
         info->valueQuantity == Kokkos_Tools_VariableInfo_CandidateValueType::kokkos_value_range) {
       auto range = info->candidates.range;
 
+      // We only suport ranges in this test
       if (info->type == Kokkos_Tools_VariableInfo_ValueType::kokkos_value_int64) {
         outputs_in[i].value.int_value = (int)(range.lower.int_value + range.step.int_value);
         std::cout << "Setting parameter " << i << " to value = " << outputs_in[i].value.int_value << std::endl;
       } else if (info->type == Kokkos_Tools_VariableInfo_ValueType::kokkos_value_double) {
         outputs_in[i].value.double_value = range.lower.double_value + range.step.double_value;
         std::cout << "Setting parameter " << i << " to value = " << outputs_in[i].value.double_value << std::endl;
-      } else {
-        std::cout << "[" << i << "] Unknown info->type = " << str_type(info->type) << std::endl;
       }
-    } else {
-      std::cout << "[" << i << "] Not an interval/range = " << str_type(info->type) << "," << str_category(info->category) << "," << str_candidatevalue(info->valueQuantity) << std::endl;
     }
+
   }
 }
 
@@ -141,6 +149,7 @@ void request_output_values(const size_t context, const size_t num_inputs,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
+  // This test makes sure the KokkosTuning interface does something specific
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
@@ -200,9 +209,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced, Scalar, Local
 }
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Basic, Scalar, LO, GO, Node)
-
-// TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Advanced, Scalar, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Basic, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Advanced, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
