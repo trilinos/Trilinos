@@ -105,17 +105,17 @@ void print_variable_info(const Kokkos::Tools::Experimental::VariableInfo* info,c
 
 void declare_input_type(const char* name, const size_t id,
                         Kokkos::Tools::Experimental::VariableInfo* info) {
-  std::cout<<"DEBUG: calling declare_input_type"<<std::endl;
   // We copy this data in and assume the default constructor works
-  print_variable_info(info,-1);
+  //std::cout<<"DEBUG: calling declare_input_type"<<std::endl;
+  //print_variable_info(info,-1);
   input_info.push_back(*info);
 }
 
 void declare_output_type(const char* name, const size_t id,
                          Kokkos::Tools::Experimental::VariableInfo* info) {
   // We copy this data in and assume the default constructor works
-  std::cout<<"DEBUG: calling declare_output_type"<<std::endl;
-  print_variable_info(info,-1);
+  //std::cout<<"DEBUG: calling declare_output_type"<<std::endl;
+  //print_variable_info(info,-1);
   output_info.push_back(*info);
 }
 
@@ -124,10 +124,10 @@ void request_output_values(const size_t context, const size_t num_inputs,
                            const size_t num_outputs,
                            Kokkos::Tools::Experimental::VariableValue* outputs_in) {
   // This dummy callback will set the output value to one step more than the bottom guy in the range
-  std::cout << "\nDEBUG: request_ouput_values called with " << num_outputs << " outputs" << std::endl;
+  //std::cout << "\nDEBUG: request_ouput_values called with " << num_outputs << " outputs" << std::endl;
   for (int i = 0; i < (int)num_outputs; i++) {
     Kokkos::Tools::Experimental::VariableInfo& info = output_info[i];
-    print_variable_info(&info,i);
+    //print_variable_info(&info,i);
     if (info.category == Kokkos_Tools_VariableInfo_StatisticalCategory::kokkos_value_interval &&
         info.valueQuantity == Kokkos_Tools_VariableInfo_CandidateValueType::kokkos_value_range) {
       auto range = info.candidates.range;
