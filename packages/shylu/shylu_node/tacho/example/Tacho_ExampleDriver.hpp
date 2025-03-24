@@ -26,6 +26,11 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   std::string graph_file = "";
   std::string weight_file = "";
   int dofs_per_node = 1;
+#if defined(KOKKOS_ENABLE_HIP)
+  bool storeTranspose = true;
+#else
+  bool storeTranspose = false;
+#endif
   bool perturbPivot = false;
   int nrhs = 1;
   bool randomRHS = false;
@@ -51,6 +56,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
   opts.set_option<std::string>("weight", "Input condensed graph weight", &weight_file);
   opts.set_option<int>("dofs-per-node", "# DoFs per node", &dofs_per_node);
+  opts.set_option<bool>("store-trans", "Flag to store transpose", &storeTranspose);
   opts.set_option<bool>("perturb", "Flag to perturb tiny pivots", &perturbPivot);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
   opts.set_option<std::string>("method", "Solution method: chol, ldl, lu", &method_name);
@@ -187,6 +193,13 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     if (perturbPivot) {
       if (verbose) std::cout << " > perturb tiny pivots" << std::endl;
       solver.useDefaultPivotTolerance();
+    }
+    solver.storeExplicitTranspose(storeTranspose);
+    if (verbose) {
+      if (storeTranspose) {
+        std::cout << " > store transpose " << std::endl;
+      }
+      std::cout << std::endl;
     }
 
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());

@@ -58,6 +58,46 @@ template <typename T> struct LapackTeam {
     }
 
     template <typename MemberType>
+    static KOKKOS_INLINE_FUNCTION void potrf_upper(const MemberType &member, const int m, const double tol,
+                                                   T *KOKKOS_RESTRICT A,
+                                                   const int as0, const int as1, int *info) {
+      *info = 0;
+      if (m <= 0)
+        return;
+
+      typedef ArithTraits<T> arith_traits;
+      const typename arith_traits::mag_type zero(0);
+      for (int p = 0; p < m; ++p) {
+        const int jend = m - p - 1;
+
+        T *KOKKOS_RESTRICT alpha11 = A + (p)*as0 + (p)*as1, *KOKKOS_RESTRICT a12t = A + (p)*as0 + (p + 1) * as1,
+                        *KOKKOS_RESTRICT A22 = A + (p + 1) * as0 + (p + 1) * as1;
+
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+          if (*info == 0 && arith_traits::real(*alpha11) <= zero) {
+            *info = 1+p;
+          }
+          if (*info == 0 && arith_traits::abs(*alpha11) < tol) {
+            A[(p)*as0 + (p)*as1] = T(tol);
+          }
+          *alpha11 = sqrt(arith_traits::real(*alpha11));
+        });
+        member.team_barrier();
+        const auto alpha = arith_traits::real(*alpha11);
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { a12t[j * as1] /= alpha; });
+        member.team_barrier();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, jend), [&](const int &j) {
+          const T aa = arith_traits::conj(a12t[j * as1]);
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1), [&](const int &i) {
+            const T bb = a12t[i * as1];
+            A22[i * as0 + j * as1] -= aa * bb;
+          });
+        });
+        member.team_barrier();
+      }
+    }
+
+    template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void sytrf_lower(const MemberType &member, const int m, T *KOKKOS_RESTRICT A,
                                                    const int as0, const int as1, int *KOKKOS_RESTRICT ipiv, int *info) {
       *info = 0;
@@ -195,6 +235,25 @@ template <typename T> struct LapackTeam {
     case 'U':
     case 'u': {
       Impl::potrf_upper(member, m, A, 1, lda, info);
+      break;
+    }
+    case 'L':
+    case 'l': {
+      Kokkos::abort("not implemented");
+      break;
+    }
+    default:
+      Kokkos::abort("Invalid uplo character");
+    }
+  }
+
+  template <typename MemberType>
+  static KOKKOS_INLINE_FUNCTION void potrf(const MemberType &member, const double tol, const char uplo, const int m,
+                                           /* */ T *KOKKOS_RESTRICT A, const int lda, int *info) {
+    switch (uplo) {
+    case 'U':
+    case 'u': {
+      Impl::potrf_upper(member, tol, m, A, 1, lda, info);
       break;
     }
     case 'L':

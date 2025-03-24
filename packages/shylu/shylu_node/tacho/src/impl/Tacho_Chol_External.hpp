@@ -50,10 +50,25 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::External> {
 
     if constexpr(runOnHost) {
       int r_val = 0;
-      // Kokkos::single(Kokkos::PerTeam(member), [&]() {
       r_val = invoke(A);
       KOKKOS_IF_ON_HOST((TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LAPACK (potrf) returns non-zero error code.");))
-      //});
+      return r_val;
+    } else {
+      TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");
+      return 0;
+    }
+  }
+
+  template <typename MemberType, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const double /*tol*/, const ViewTypeA &A) {
+
+    // Same as no tol
+    static constexpr bool runOnHost = run_tacho_on_host_v<typename ViewTypeA::execution_space>;
+
+    if constexpr(runOnHost) {
+      int r_val = 0;
+      r_val = invoke(A);
+      KOKKOS_IF_ON_HOST((TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LAPACK (potrf) returns non-zero error code.");))
       return r_val;
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");
