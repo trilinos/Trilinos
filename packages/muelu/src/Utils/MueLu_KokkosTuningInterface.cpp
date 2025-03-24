@@ -22,17 +22,18 @@
    "kokkos tuning: muelu parameter mapping"
      - "input variables"            "{"Chebyshev","parallel_for"}
      - "param0"
-       - "muelu parameter"          "smoother: sweeps"
+       - "muelu parameter"          "smoother: params||chebyshev: degree"
        - "discrete range"           "{1,6,1}"    # (low, high, step')
        - "initial guess"            "2"
      - "param1"
-       - "muelu parameter"          "chebyshev: eigenvalue ratio"
+       - "muelu parameter"          "smoother: params||chebyshev: eigenvalue ratio"
        - "continuous range"         "{5.0,50.0,5.0}"    # (low, high, step')
        - "initial guess"            "10.0"
 
 
   The input variables should be handled by the tuning tool.
-  The output variable should be calculated automatically based on the types above
+  The output variable should be calculated automatically based on the types above.
+  Note: We use "||" to indicate sublists.
  */
 
 namespace MueLu {
