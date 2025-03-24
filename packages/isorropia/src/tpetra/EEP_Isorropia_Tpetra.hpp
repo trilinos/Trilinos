@@ -66,7 +66,7 @@ template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
 ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> *
-createBalancedCopy(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> & input_graph, // EEP__
+createBalancedCopy(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> & input_graph,
                    const Teuchos::ParameterList& paramlist)
 {
   std::cout << "EEP Entering isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4)..." << std::endl;
@@ -74,7 +74,7 @@ createBalancedCopy(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrd
 
   std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 001" << std::endl;
 
-  Teuchos::RCP< Partitioner<LocalOrdinal, GlobalOrdinal, Node> > partitioner = Teuchos::rcp(new Partitioner<LocalOrdinal, GlobalOrdinal, Node>(/*rcp_*/input_graph, paramlist));
+  Teuchos::RCP< Partitioner<LocalOrdinal, GlobalOrdinal, Node> > partitioner = Teuchos::rcp(new Partitioner<LocalOrdinal, GlobalOrdinal, Node>(input_graph, paramlist));
 
   std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 002" << std::endl; 
 

@@ -85,8 +85,8 @@ public:
   
   /** @ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > inputGraph, // EEP__
-              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),  
+  Partitioner(const Teuchos::RCP< ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > & inputGraph,
+              const Teuchos::ParameterList & paramlist=Teuchos::ParameterList("EmptyParameterList"),  
               bool compute_partitioning_now=true);
 
   /** @ingroup partitioning_grp
@@ -130,21 +130,21 @@ public:
          or other inputs have been changed), then setting this flag to
          true will force a new partitioning to be computed.
    */
-  void partition(bool force_repartitioning=false); // EEP__
+  void partition(bool force_repartitioning=false); // This is virtual = 0 in Isorropia_Operator
 
   /** @ingroup partitioning_grp
    */
-  virtual void compute(bool forceRecomputing=false); // EEP__ forced by virtual = 0 in Isorropia_Operator
+  virtual void compute(bool forceRecomputing=false); // EEP forced by virtual = 0 in Isorropia_Operator
 
   /** @ingroup partitioning_grp
    */
-  int numElemsInPart(int part) const { // EEP__ forced by virtual = 0 in Isorropia_Partitioner
+  int numElemsInPart(int part) const { // EEP forced by virtual = 0 in Isorropia_Partitioner
     return (numElemsWithProperty(part));
   }
 
   /** @ingroup partitioning_grp
    */
-  void elemsInPart(int part, int* elementList, int len) const { // EEP__ forced by virtual = 0 in Isorropia_Partitioner
+  void elemsInPart(int part, int* elementList, int len) const { // EEP forced by virtual = 0 in Isorropia_Partitioner
     elemsWithProperty(part, elementList, len);
   }
 
@@ -187,13 +187,15 @@ private:
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-Partitioner<LocalOrdinal, GlobalOrdinal, Node>::Partitioner(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > input_graph, // EEP__
+Partitioner<LocalOrdinal, GlobalOrdinal, Node>::Partitioner(const Teuchos::RCP< ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > & input_graph, // EEP__
                                                             const Teuchos::ParameterList& paramlist,
                                                             bool compute_partitioning_now):
   ::Isorropia::Tpetra::Operator<LocalOrdinal, GlobalOrdinal, Node> (input_graph, paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/tpetra/EEP_Isorropia_TpetraPartitioner.hpp Partitioner::constructor(1)..." << std::endl;
+  std::cout << "EEP Entering isorropia/src/tpetra/EEP_Isorropia_TpetraPartitioner.hpp Partitioner::constructor(1)..."
+            << ": compute_partitioning_now = " << compute_partitioning_now
+	    << std::endl;
   if (compute_partitioning_now)
     partition(true);
   std::cout << "EEP Leaving isorropia/src/tpetra/EEP_Isorropia_TpetraPartitioner.hpp Partitioner::constructor(1)" << std::endl;
@@ -262,64 +264,15 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartition
     throw std::runtime_error("Partitioner::partition - Only Zoltan Partitionner is now supported.");
   }
 
-#if 0 // EEP
-  if (input_graph_.get() != 0 && input_coords_.get() != 0)
-  {
-    std::cout << "EEP In Partitioner::partition(): pos 001.1" << std::endl;
-    if (weights_.get())
-    {
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_,costs_,input_coords_, weights_));
-    }
-    else
-    {
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_,input_coords_));
-    }
-  }
-  else if (input_matrix_.get() != 0 && input_coords_.get() != 0)
-  {
-    std::cout << "EEP In Partitioner::partition(): pos 001.2" << std::endl;
-    if (weights_.get())
-    {
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_,costs_,input_coords_, weights_));
-    }
-    else
-    {
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_,input_coords_));
-    }
-  }
-  else if (input_graph_.get() != 0) {
-#endif // EEP
+  if (this->input_graph_.get() != 0) {
     std::cout << "EEP In Partitioner::partition(): pos 001.3" << std::endl;
-    this->lib_ = Teuchos::rcp(new ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>(this->input_graph_, this->costs_)); // EEP__
-#if 0 // EEP
+    this->lib_ = Teuchos::rcp(new ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>(this->input_graph_, this->costs_));
   }
-  else if (input_matrix_.get() != 0) {
-    std::cout << "EEP In Partitioner::partition(): pos 001.4" << std::endl;
-    lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
+  else {
+    throw std::runtime_error("EEP Invalid 'a' input_graph_.get() = nullptr in Partitioner<>::partition()");
   }
-  else if (input_coords_.get() != 0)
-  {
-    std::cout << "EEP In Partitioner::partition(): pos 001.5" << std::endl;
-    if (weights_.get())
-    {
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_, weights_));
-    }
-    else
-    {
-      lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_));
-    }
-  }
-  else if (input_map_.get() != 0)
-  {
-    std::cout << "EEP In Partitioner::partition(): pos 001.6" << std::endl;
-    lib_ = Teuchos::rcp(new ZoltanLibClass(input_map_));
-  }
-  else
-  {
-    throw Isorropia::Exception("Partitioner::partition - no input object.");
-  }
-#endif // EEP
-  this->lib_->numPartSizes = numPartSizes; // EEP__
+
+  this->lib_->numPartSizes = numPartSizes;
   this->lib_->partGIDs = partGIDs;
   this->lib_->partSizes = partSizes;
 
@@ -336,113 +289,50 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartition
     //                           "See readme and release notes for details.");
   }
 
-#if 0 // EEP
-  if (input_coords_.get() != 0)
-  {
-    std::cout << "EEP In Partitioner::partition(): pos 004.1" << std::endl;
-    if (partitioning_method == "UNSPECIFIED")
-    {
-      sublist.set("LB_METHOD", "RCB");
-      input_type = Library::geometric_input_;
-    }
-    else if (partitioning_method == "BLOCK")
-    {
-      input_type = Library::simple_input_;
-      sublist.set("LB_METHOD", "BLOCK");
-    }
-    else if (partitioning_method == "CYCLIC")
-    {
-      input_type = Library::simple_input_;
-      sublist.set("LB_METHOD", "CYCLIC");
-    }
-    else if (partitioning_method == "RANDOM")
-    {
-      input_type = Library::simple_input_;
-      sublist.set("LB_METHOD", "RANDOM");
-    }
-    else if (partitioning_method == "HIER_GRAPH_GEOM") // Can perhaps simply this partitioning method name by using another parameter
-    {
-      sublist.set("LB_METHOD", "HIER");
-      input_type = Library::graph_geometric_input_;
-    }
-    else if (partitioning_method == "HIER_HGRAPH_GEOM") // Can perhaps simply this partitioning method name by using another parameter
-    {
-      sublist.set("LB_METHOD", "HIER");
-      input_type = Library::hgraph_geometric_input_;
-    }
-    else if (partitioning_method == "HIER_HGRAPH_GRAPH_GEOM") // Can perhaps simply this partitioning method name by using another parameter
-    {
-      sublist.set("LB_METHOD", "HIER");
-      input_type = Library::hgraph_graph_geometric_input_;
-    }
-    else // Default case: copy partitioning_method (e.g., RCB, RIB, HSFC)
-    {
-      sublist.set("LB_METHOD", partitioning_method);
-      input_type = Library::geometric_input_;
-    }
-  }
-  else if (input_graph_.get() != 0 || input_matrix_.get() != 0) // graph or matrix input
+  if (this->input_graph_.get() != 0) // graph or matrix input
   {
     std::cout << "EEP In Partitioner::partition(): pos 004.2" << std::endl;
     if (partitioning_method == "GRAPH")
     {
-      input_type = Library::graph_input_;
+      input_type = Library<LocalOrdinal, GlobalOrdinal, Node>::graph_input_;
       sublist.set("LB_METHOD", "GRAPH");
     }
     else if (partitioning_method == "BLOCK")
     {
-      input_type = Library::simple_input_;
+      input_type = Library<LocalOrdinal, GlobalOrdinal, Node>::simple_input_;
       sublist.set("LB_METHOD", "BLOCK");
     }
     else if (partitioning_method == "CYCLIC")
     {
-      input_type = Library::simple_input_;
+      input_type = Library<LocalOrdinal, GlobalOrdinal, Node>::simple_input_;
       sublist.set("LB_METHOD", "CYCLIC");
     }
     else if (partitioning_method == "RANDOM")
     {
-      input_type = Library::simple_input_;
+      input_type = Library<LocalOrdinal, GlobalOrdinal, Node>::simple_input_;
       sublist.set("LB_METHOD", "RANDOM");
     }
     else if (partitioning_method == "HIER_GRAPH")
     {
-      input_type = Library::graph_input_;
+      input_type = Library<LocalOrdinal, GlobalOrdinal, Node>::graph_input_;
       sublist.set("LB_METHOD", "HIER");
     }
     else if (partitioning_method == "HIER_HGRAPH_GRAPH") // Can perhaps simplify this partitioning method name by using another parameter
     {
       sublist.set("LB_METHOD", "HIER");
-      input_type = Library::hgraph_graph_input_;
+      input_type = Library<LocalOrdinal, GlobalOrdinal, Node>::hgraph_graph_input_;
     }
     else //Hypergraph by default
     {
-#endif // EEP
       std::cout << "EEP In Partitioner::partition(): pos 004.3" << std::endl;
       input_type = Library<LocalOrdinal, GlobalOrdinal, Node>::hgraph_input_; // EEP__
       sublist.set("LB_METHOD", "HYPERGRAPH");
-#if 0 // EEP
     }
   }
-  else  // BlockMap input
+  else // BlockMap input
   {
-    std::cout << "EEP In Partitioner::partition(): pos 004.4" << std::endl;
-    if (partitioning_method == "CYCLIC")
-    {
-      input_type = Library::simple_input_;
-      sublist.set("LB_METHOD", "CYCLIC");
-    }
-    else if (partitioning_method == "RANDOM")
-    {
-      input_type = Library::simple_input_;
-      sublist.set("LB_METHOD", "RANDOM");
-    }
-    else // BLOCK by default
-    {
-      input_type = Library::simple_input_;
-      sublist.set("LB_METHOD", "BLOCK");
-    }
+    throw std::runtime_error("EEP Invalid 'b' input_graph_.get() = nullptr in Partitioner<>::partition()");
   }
-#endif
   std::cout << "EEP In Partitioner::partition(): pos 005" << std::endl;
 
   if (this->paramlist_.isParameter("NUM PARTS")) {
@@ -457,8 +347,7 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartition
   }
 
   std::string print_metrics_str("PRINT ZOLTAN METRICS");
-  std::string print_metrics =
-    this->paramlist_.get(print_metrics_str, "UNSPECIFIED");
+  std::string print_metrics = this->paramlist_.get(print_metrics_str, "UNSPECIFIED");
 
   if (print_metrics == ("UNSPECIFIED")){
     printMetrics = 0;
@@ -473,10 +362,10 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::partition(bool force_repartition
     printMetrics = 1;
   }
 
-  this->lib_->input_type_ = input_type; // EEP__
-  this->lib_->repartition(sublist, this->properties_, this->exportsSize_, this->imports_);
+  this->lib_->input_type_ = input_type;
+  this->lib_->repartition(sublist, this->properties_, this->exportsSize_, this->imports_); // EEP__: check
   std::cout << "EEP In Partitioner::partition(): pos 006" << std::endl;
-  this->computeNumberOfProperties();
+  this->computeNumberOfProperties(); // EEP__: check
   this->operation_already_computed_ = true;
   std::cout << "EEP Leaving isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::partition()" << std::endl;
 }
@@ -488,7 +377,7 @@ template <class LocalOrdinal,
           class Node>
 void
 Partitioner<LocalOrdinal, GlobalOrdinal, Node>::
-compute(bool force_repartitioning) // EEP__ forced by virtual = 0 in Isorropia_Operator
+compute(bool force_repartitioning) // EEP forced by virtual = 0 in Isorropia_Operator
 {
   partition(force_repartitioning);
 }
@@ -520,6 +409,7 @@ template <class LocalOrdinal,
 void
 Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> * &outputMap)
 {
+  std::cout << "EEP Entering isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap()" << std::endl;
   if (!alreadyComputed()) {
     partition();
   }
@@ -527,11 +417,17 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<Local
   //Generate New Element List
   int myPID = this->input_map_->getComm()->getRank();
   int numMyElements = this->input_map_->getLocalNumElements();
-  std::vector<int> elementList( numMyElements );
-  //if (numMyElements > 0)
-    //this->input_map_->getGlobalElements( &elementList[0] ); // EEP___
-    //else
-    //this->input_map_->getGlobalElements((int*)NULL); // disambiguate int/long long // EEP___
+  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap()"
+            << ": numMyElements = " << numMyElements
+	    << std::endl;
+  if (numMyElements <= 0) {
+    throw std::runtime_error("EEP Invalid numMyElements = 0 in isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap()");
+  }
+  //std::vector<int> elementList( numMyElements ); // EEP__ check
+  auto elementList = this->input_map_->getMyGlobalIndices(); // Get list of global indices // ->MyGlobalElements(&elementList[0]) // EEP___
+  if (elementList.size() != numMyElements) {
+    throw std::runtime_error("EEP Invalid elementList.size() in isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap()");
+  }
 
   int newGIDSize = numMyElements - this->exportsSize_;
 
@@ -559,8 +455,10 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<Local
   else
     gidptr = NULL;
 
+  //outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm());
   outputMap = nullptr; // new ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), myNewGID.size(), gidptr, 0, this->input_map_->getComm()); // EEP___
 
+  std::cout << "EEP Leaving isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap()" << std::endl;
   return;
 }
 ////////////////////////////////////////////////////////////////////////////////

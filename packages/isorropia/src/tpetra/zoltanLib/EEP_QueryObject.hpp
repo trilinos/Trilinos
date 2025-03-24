@@ -408,6 +408,10 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::QueryObject( Teuchos::RCP< const
     //weights_(0),
     input_type_(inputType) 
 {
+  std::cout << "Entering QueryObject<>::constructor()"
+            << ": input_type_ = " << input_type_
+            << ", costs_ = " << costs_
+	    << std::endl;
   myProc_ = graph->getComm()->getRank();
   base_ = rowMap_->getIndexBase();
 
@@ -440,6 +444,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::QueryObject( Teuchos::RCP< const
       }
     }
   }
+  std::cout << "Leaving QueryObject<>::constructor()" << std::endl;
 }
 
 template <class LocalOrdinal,

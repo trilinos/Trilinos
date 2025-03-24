@@ -48,21 +48,12 @@
 #include <Isorropia_Operator.hpp>
 #include <EEP_Isorropia_TpetraLibrary.hpp>
 
-//#include <Isorropia_EpetraOperator.hpp>
-//#include <Isorropia_Exception.hpp>
 #include <EEP_Isorropia_Tpetra.hpp>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-//#include <Epetra_Comm.h>
-//#include <Epetra_Map.h>
-//#include <Epetra_Import.h>
-//#include <Epetra_Vector.h>
-//#include <Epetra_MultiVector.h>
 #include <Tpetra_CrsGraph_decl.hpp>
-//#include <Epetra_CrsMatrix.h>
-//#include <Epetra_LinearProblem.h>
 
 #include <cstring>
 #include <iostream>

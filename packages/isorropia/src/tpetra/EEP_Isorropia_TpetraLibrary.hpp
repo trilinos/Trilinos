@@ -187,7 +187,13 @@ Library(Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node
     input_graph_(input_graph),
     costs_(costs)
 {
+  std::cout << "EEP Entering Library<>::constructor()"
+            << ": input_type_ = " << input_type_
+            << ", input_graph_ = " << input_graph_
+            << ", costs_ = " << costs_
+            << std::endl;
   input_map_ = input_graph->getRowMap(); // Teuchos::rcp(&(input_graph->getRowMap()), false); // EEP___
+  std::cout << "EEP Leaving Library<>::constructor()" << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -722,6 +722,9 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   precompute();
 
   // Set part sizes
+  std::cout << "EEP In ZoltanLibClass::repartition(), pos 003"
+            << ": this->numPartSizes = " << this->numPartSizes
+            << std::endl;
 
   if (numPartSizes > 0){
     int err;
@@ -742,9 +745,15 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   int * import_procs=NULL, * export_procs=NULL;
   int *import_to_part=NULL, *export_to_part=NULL;
 
+  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::repartition(), pos 005" << std::endl;
+
   int err = zz_->LB_Partition(changes, num_gid_entries, num_lid_entries,
    num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
    num_export, export_global_ids, export_local_ids, export_procs, export_to_part );
+
+  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::repartition(), pos 006"
+            << ": err = " << err
+	    << std::endl;
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing partitioning with Zoltan");
@@ -877,10 +886,12 @@ order(Teuchos::ParameterList& zoltanParamList,
 
 int ZoltanLibClass::postcompute()
 {
+  std::cout << "EEP Entering ZoltanLibClass::postcompute()" << std::endl;
   if (zz_)
     delete zz_;
   zz_ = NULL;
 
+  std::cout << "EEP Leaving ZoltanLibClass::postcompute()" << std::endl;
   return (0);
 }
 
