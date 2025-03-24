@@ -89,8 +89,6 @@
 #include "Xpetra_EpetraMultiVector.hpp"
 #endif
 
-#include <MueLu_KokkosTuningInterface.hpp>
-
 /*********************************************************************/
 
 #include "KokkosBlas1_abs_impl.hpp"
@@ -536,8 +534,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
       // Get a Kokkos context for tuning and setup the tuner
       size_t kokkos_context_id = 0;
-      MueLu::KokkosTuningInterface KokkosTuner(comm);
-      KokkosTuner.SetParameterList(mueluList);
 
       // =========================================================================
       // Loop over the setup/solve pairs
@@ -554,7 +550,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           out2 << "Enabling MueLu::KokkosTuning" << std::endl;
           Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
           mueluList.sublist("kokkos tuning: muelu parameter mapping").set("kokkos context id", kokkos_context_id);
-          KokkosTuner.SetMueLuParameters(mueluList);
         }
 
         // =========================================================================
