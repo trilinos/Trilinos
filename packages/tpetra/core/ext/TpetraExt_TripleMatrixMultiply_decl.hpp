@@ -46,6 +46,10 @@ namespace Tpetra {
     /// have a domain or range Map unless fillComplete has been called on
     /// it at least once.
     ///
+    /// NOTE: This routine will only function correctly when the columnMap
+    /// of R is a subset of the rowMap of A.  If you're in this case, we
+    /// recommend calling Tpetra::MatrixMatrix::Multiply twice instead.
+    ///
     /// \param R [in] fill-complete sparse matrix.
     /// \param transposeR [in] Whether to use transpose of matrix R.
     /// \param A [in] fill-complete sparse matrix.
