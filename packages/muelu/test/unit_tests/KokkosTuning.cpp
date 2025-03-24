@@ -135,10 +135,10 @@ void request_output_values(const size_t context, const size_t num_inputs,
       // We only suport ranges in this test
       if (info.type == Kokkos_Tools_VariableInfo_ValueType::kokkos_value_int64) {
         outputs_in[i].value.int_value = (int)(range.lower.int_value + range.step.int_value);
-        std::cout << "Setting parameter " << i << " to value = " << outputs_in[i].value.int_value << std::endl;
+        // std::cout << "Setting parameter " << i << " to value = " << outputs_in[i].value.int_value << std::endl;
       } else if (info.type == Kokkos_Tools_VariableInfo_ValueType::kokkos_value_double) {
         outputs_in[i].value.double_value = range.lower.double_value + range.step.double_value;
-        std::cout << "Setting parameter " << i << " to value = " << outputs_in[i].value.double_value << std::endl;
+        // std::cout << "Setting parameter " << i << " to value = " << outputs_in[i].value.double_value << std::endl;
       }
     }
 
@@ -277,7 +277,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced_PLContext, Sca
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Basic, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Advanced, Scalar, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Advanced, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Advanced_PLContext, Scalar, LO, GO, Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 

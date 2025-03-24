@@ -183,8 +183,9 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
   /********************************/
   /* Kokkos context ID (optional) */
   /********************************/
-  if (pL.isParameter<size_t>("kokkos context id"))
+  if (pL.isParameter("kokkos context id")) {
     PL_kokkos_context_id = pL.get<size_t>("kokkos context id");
+  }
 
 }
 
@@ -267,9 +268,8 @@ void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos
 
 // ***********************************************************************
 void KokkosTuningInterface::SetMueLuParameters(Teuchos::ParameterList& mueluParams, bool overwrite) const {
-  TEUCHOS_TEST_FOR_EXCEPTION(PL_kokkos_context_id != Teuchos::OrdinalTraits<size_t>::invalid(), Exceptions::RuntimeError, "MueLu::KokkosTuningInterface::SetMueLuParameters: ParameterList did not contain 'kokkos context id'");
-  SetMueLuParameters(PL_kokkos_context_id, mueluParams, overwrite)
-
+  TEUCHOS_TEST_FOR_EXCEPTION(PL_kokkos_context_id == Teuchos::OrdinalTraits<size_t>::invalid(), Exceptions::RuntimeError, "MueLu::KokkosTuningInterface::SetMueLuParameters: ParameterList did not contain 'kokkos context id'");
+  SetMueLuParameters(PL_kokkos_context_id, mueluParams, overwrite);
 }
 
 }  // namespace MueLu
