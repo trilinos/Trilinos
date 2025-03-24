@@ -106,14 +106,14 @@ void print_variable_info(const Kokkos::Tools::Experimental::VariableInfo* info,c
 void declare_input_type(const char* name, const size_t id,
                         Kokkos::Tools::Experimental::VariableInfo* info) {
   std::cout<<"DEBUG: calling declare_input_type"<<std::endl;
-  // Yeah, we're aliasing the pointer.  This is a test.  Deal.
+  // We copy this data in and assume the default constructor works
   print_variable_info(info,-1);
   input_info.push_back(*info);
 }
 
 void declare_output_type(const char* name, const size_t id,
                          Kokkos::Tools::Experimental::VariableInfo* info) {
-  // Yeah, we're aliasing the pointer.  This is a test.  Deal.
+  // We copy this data in and assume the default constructor works
   std::cout<<"DEBUG: calling declare_output_type"<<std::endl;
   print_variable_info(info,-1);
   output_info.push_back(*info);
@@ -128,15 +128,15 @@ void request_output_values(const size_t context, const size_t num_inputs,
   for (int i = 0; i < (int)num_outputs; i++) {
     Kokkos::Tools::Experimental::VariableInfo& info = output_info[i];
     print_variable_info(&info,i);
-    if (info->category == Kokkos_Tools_VariableInfo_StatisticalCategory::kokkos_value_interval &&
-        info->valueQuantity == Kokkos_Tools_VariableInfo_CandidateValueType::kokkos_value_range) {
-      auto range = info->candidates.range;
+    if (info.category == Kokkos_Tools_VariableInfo_StatisticalCategory::kokkos_value_interval &&
+        info.valueQuantity == Kokkos_Tools_VariableInfo_CandidateValueType::kokkos_value_range) {
+      auto range = info.candidates.range;
 
       // We only suport ranges in this test
-      if (info->type == Kokkos_Tools_VariableInfo_ValueType::kokkos_value_int64) {
+      if (info.type == Kokkos_Tools_VariableInfo_ValueType::kokkos_value_int64) {
         outputs_in[i].value.int_value = (int)(range.lower.int_value + range.step.int_value);
         std::cout << "Setting parameter " << i << " to value = " << outputs_in[i].value.int_value << std::endl;
-      } else if (info->type == Kokkos_Tools_VariableInfo_ValueType::kokkos_value_double) {
+      } else if (info.type == Kokkos_Tools_VariableInfo_ValueType::kokkos_value_double) {
         outputs_in[i].value.double_value = range.lower.double_value + range.step.double_value;
         std::cout << "Setting parameter " << i << " to value = " << outputs_in[i].value.double_value << std::endl;
       }
