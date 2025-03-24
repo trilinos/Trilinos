@@ -208,6 +208,73 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced, Scalar, Local
   TEST_FLOATING_EQUALITY(outputList.sublist("smoother: params").get<double>("chebyshev: ratio eigenvalue"), ratio, 1e-10);
 }
 
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced_PLContext, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  // This test makes sure the KokkosTuning interface does something specific
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+  // Driver parameters (like you'd actually use)
+  Teuchos::ParameterList baseList;
+  Teuchos::ParameterList& pL = baseList.sublist("kokkos tuning: muelu parameter mapping");
+  Teuchos::Array<std::string> input_vars(1);
+  input_vars[0] = "Parameter List Item";
+  Teuchos::Array<int> i_range{1, 6, 1};
+  Teuchos::Array<double> d_range{5.0, 50.0, 5.0};
+  pL.set("input variables", input_vars);
+  pL.sublist("param0").set("muelu parameter", "smoother: params||chebyshev: degree");
+  pL.sublist("param0").set("discrete range", i_range);
+  pL.sublist("param0").set("initial guess", (int)1);
+  pL.sublist("param1").set("muelu parameter", "smoother: params||chebyshev: ratio eigenvalue");
+  pL.sublist("param1").set("continuous range", d_range);
+  pL.sublist("param1").set("initial guess", (double)5.0);
+
+  // Set the callbacks
+  Kokkos::Tools::Experimental::set_declare_input_type_callback(TestUtilities::declare_input_type);
+  Kokkos::Tools::Experimental::set_declare_output_type_callback(TestUtilities::declare_output_type);
+  Kokkos::Tools::Experimental::set_request_output_values_callback(TestUtilities::request_output_values);
+
+  // Actually make the interface
+  MueLu::KokkosTuningInterface interface(comm);
+
+  // Call the tuner, using a PL-based context ID
+  size_t kokkos_context_id;
+  Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
+  pL.set("kokkos context id",kokkos_context_id);
+  interface.SetParameterList(baseList);
+
+  Teuchos::ParameterList outputList;
+  interface.SetMueLuParameters(outputList);
+  Kokkos::Tools::Experimental::end_context(kokkos_context_id);
+
+  // Check that the output has the varables set to something
+  TEST_EQUALITY(outputList.isSublist("smoother: params"), true);
+  TEST_EQUALITY(outputList.sublist("smoother: params").isParameter("chebyshev: degree"), true);
+  TEST_EQUALITY(outputList.sublist("smoother: params").isParameter("chebyshev: ratio eigenvalue"), true);
+
+#ifdef KOKKOS_ENABLE_TUNING
+  // Check that the variables are set to one step off the bottom
+  int degree   = 2;
+  double ratio = 10.0;
+#else
+  // Expect the default values
+  int degree   = 1;
+  double ratio = 5.0;
+#endif
+  TEST_EQUALITY(outputList.sublist("smoother: params").get<int>("chebyshev: degree"), degree);
+  TEST_FLOATING_EQUALITY(outputList.sublist("smoother: params").get<double>("chebyshev: ratio eigenvalue"), ratio, 1e-10);
+}
+
+
+
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Basic, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Advanced, Scalar, LO, GO, Node)

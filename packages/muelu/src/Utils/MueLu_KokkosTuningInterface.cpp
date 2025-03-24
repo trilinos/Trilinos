@@ -12,6 +12,7 @@
 #include <string>
 #include <sstream>
 #include "Teuchos_Array.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_RawParameterListHelpers.hpp"
 #include "MueLu_BaseClass.hpp"
@@ -21,6 +22,7 @@
 /* Notional Parameterlist Structure
    "kokkos tuning: muelu parameter mapping"
      - "input variables"            "{"Chebyshev","parallel_for"}
+     - "kokkos context id"          "1"           # Context ID to use, assuming you inject it onto the list
      - "param0"
        - "muelu parameter"          "smoother: params||chebyshev: degree"
        - "discrete range"           "{1,6,1}"    # (low, high, step')
@@ -43,6 +45,13 @@ namespace KokkosTuningParams {
 const int MAX_VALID_PARAMS = 10;
 };
 
+
+// ***********************************************************************
+KokkosTuningInterface::KokkosTuningInterface(Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+    : comm_(comm), PL_kokkos_context_id(Teuchos::OrdinalTraits<size_t>::invalid())
+{
+}
+
 // ***********************************************************************
 RCP<const Teuchos::ParameterList> KokkosTuningInterface::GetValidParameterList() const {
   RCP<ParameterList> topValidParamList = rcp(new ParameterList());
@@ -54,6 +63,8 @@ RCP<const Teuchos::ParameterList> KokkosTuningInterface::GetValidParameterList()
 
   // Input variables for Kokkos tuning
   validParamList.set<Teuchos::Array<std::string>>("input variables", ar_dummy, "Names of the input variables for Kokkos tuning");
+
+  validParamList.set<size_t>("kokkos context id", Teuchos::OrdinalTraits<size_t>::invalid(), "Context ID for Kokkos tuning");
 
   for (int i = 0; i < KokkosTuningParams::MAX_VALID_PARAMS; i++) {
     std::ostringstream oss;
@@ -168,6 +179,13 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
     size_t var_id = KTE::declare_input_type(inputs[i].c_str(), in_info);
     in_variables.push_back(KTE::make_variable_value(var_id, inputs[i].c_str()));
   }
+
+  /********************************/
+  /* Kokkos context ID (optional) */
+  /********************************/
+  if (pL.isParameter<size_t>("kokkos context id"))
+    PL_kokkos_context_id = pL.get<size_t>("kokkos context id");
+
 }
 
 // ***********************************************************************
@@ -244,6 +262,14 @@ void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos
   }
 
   Teuchos::updateParametersAndBroadcast(outArg(tunedParams), outArg(mueluParams), *comm_, 0, overwrite);
+}
+
+
+// ***********************************************************************
+void KokkosTuningInterface::SetMueLuParameters(Teuchos::ParameterList& mueluParams, bool overwrite) const {
+  TEUCHOS_TEST_FOR_EXCEPTION(PL_kokkos_context_id != Teuchos::OrdinalTraits<size_t>::invalid(), Exceptions::RuntimeError, "MueLu::KokkosTuningInterface::SetMueLuParameters: ParameterList did not contain 'kokkos context id'");
+  SetMueLuParameters(PL_kokkos_context_id, mueluParams, overwrite)
+
 }
 
 }  // namespace MueLu

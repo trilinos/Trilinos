@@ -28,12 +28,7 @@ namespace MueLu {
 */
 class KokkosTuningInterface : public BaseClass {
  public:
-  KokkosTuningInterface(Teuchos::RCP<const Teuchos::Comm<int> >& comm)
-    : comm_(comm) {}
-
-  //  KokkosTuningInterface(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Teuchos::ParameterList& inParams)
-  //    : comm_(comm)
-  //    , params_(inParams){};
+  KokkosTuningInterface(Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   virtual ~KokkosTuningInterface() {}
 
@@ -47,8 +42,11 @@ class KokkosTuningInterface : public BaseClass {
     Setup();
   }
 
-  // Calls Kokkos Tuning to set MueLu Parameters
+  // Calls Kokkos Tuning to set MueLu Parameters, manually specifying the Kokkos context ID
   void SetMueLuParameters(size_t kokkos_context_id, Teuchos::ParameterList& mueluParams, bool overwrite = true) const;
+
+  // Calls Kokkos Tuning to set MueLu Parameters, using the Kokkos context ID on the list
+  void SetMueLuParameters(Teuchos::ParameterList& mueluParams, bool overwrite = true) const;
 
  private:
   // Mapping unpacker
@@ -69,6 +67,7 @@ class KokkosTuningInterface : public BaseClass {
   mutable std::vector<Kokkos::Tools::Experimental::VariableValue> out_variables;
   std::vector<std::string> out_names;
   std::vector<std::string> out_typenames;
+  size_t PL_kokkos_context_id;
 };
 
 }  // namespace MueLu
