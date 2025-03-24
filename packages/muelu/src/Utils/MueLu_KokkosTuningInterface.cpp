@@ -46,9 +46,8 @@ const int MAX_VALID_PARAMS = 10;
 };
 
 // ***********************************************************************
-KokkosTuningInterface::KokkosTuningInterface(Teuchos::RCP<const Teuchos::Comm<int>>& comm)
-  : comm_(comm)
-  , PL_kokkos_context_id(Teuchos::OrdinalTraits<size_t>::invalid()) {
+KokkosTuningInterface::KokkosTuningInterface(const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
+  : comm_(comm) {
 }
 
 // ***********************************************************************
@@ -178,18 +177,10 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
     size_t var_id = KTE::declare_input_type(inputs[i].c_str(), in_info);
     in_variables.push_back(KTE::make_variable_value(var_id, inputs[i].c_str()));
   }
-
-  /********************************/
-  /* Kokkos context ID (optional) */
-  /********************************/
-  if (pL.isParameter("kokkos context id")) {
-    PL_kokkos_context_id = pL.get<size_t>("kokkos context id");
-  }
 }
 
 // ***********************************************************************
 std::vector<std::string> KokkosTuningInterface::SplitString(const std::string& base_string, const std::string& delimiter) const {
-  // Props to Sandia AI Chat for this routine
   std::vector<std::string> tokens;
   size_t start = 0;
 
@@ -265,7 +256,8 @@ void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos
 
 // ***********************************************************************
 void KokkosTuningInterface::SetMueLuParameters(Teuchos::ParameterList& mueluParams, bool overwrite) const {
-  TEUCHOS_TEST_FOR_EXCEPTION(PL_kokkos_context_id == Teuchos::OrdinalTraits<size_t>::invalid(), Exceptions::RuntimeError, "MueLu::KokkosTuningInterface::SetMueLuParameters: ParameterList did not contain 'kokkos context id'");
+  size_t PL_kokkos_context_id = mueluParams.get<Teuchos::ParameterList>("kokkos tuning: muelu parameter mapping").get<size_t>("kokkos context id");
+
   SetMueLuParameters(PL_kokkos_context_id, mueluParams, overwrite);
 }
 

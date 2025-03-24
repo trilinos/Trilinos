@@ -28,7 +28,7 @@ namespace MueLu {
 */
 class KokkosTuningInterface : public BaseClass {
  public:
-  KokkosTuningInterface(Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+  KokkosTuningInterface(const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
   virtual ~KokkosTuningInterface() {}
 
@@ -67,7 +67,6 @@ class KokkosTuningInterface : public BaseClass {
   mutable std::vector<Kokkos::Tools::Experimental::VariableValue> out_variables;
   std::vector<std::string> out_names;
   std::vector<std::string> out_typenames;
-  size_t PL_kokkos_context_id;
 };
 
 }  // namespace MueLu
