@@ -418,31 +418,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::QueryObject( Teuchos::RCP< const
   // If graph
   if (input_type_ == graph_input_)
   {
-
-    // graph queries need to know processes owning my column entries
-    fill_procmap();
-
-    if (graph->getLocalNumRows()/*MyDiagonals()*/ > 0){ // EEP
-      // In graph partitioning, we need to omit graph diagonal entries
-      // (self edges) from the query functions.
-
-      int nRows = rowMap_->getLocalNumElements(); // EEP
-      int *rowGIDs = nullptr; // rowMap_->MyGlobalElements(); EEP___
-
-      for (int i=0; i < nRows; i++){
-
-	int numEntries;
-	int *idx;
-
-	//graph->ExtractMyRowView(i, numEntries, idx); // EEP___
-
-	for (int j=0; j<numEntries; j++){
-	  if (rowGIDs[i] == colMap_->getGlobalElement(idx[j])){ // EEP Epetra_Map::GID()
-	    graph_self_edges_.insert(rowGIDs[i]);
-	  }
-	}
-      }
-    }
+    throw std::runtime_error("EEP Invalid input_type_ = graph_input_ in QueryObject<>::constructor()");
   }
   std::cout << "Leaving QueryObject<>::constructor()" << std::endl;
 }
@@ -456,38 +432,15 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::~QueryObject()
 
 // Create a map required by graph queries
 
+#if 0 // EEP___
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
 void
 QueryObject<LocalOrdinal, GlobalOrdinal, Node>::fill_procmap()
 {
-  int num_colmap_elems = colMap_->getLocalNumElements();
-
-  int *colIDs = new int [num_colmap_elems];
-  int *procIDs = new int [num_colmap_elems];
-  int *tmp = new int [num_colmap_elems];
-
-#if 0 // EEP___
-  colMap_->MyGlobalElements(colIDs);
-
-  rowMap_->RemoteIDList(num_colmap_elems, colIDs, procIDs, tmp);
-#endif
-  
-  delete [] tmp;
-
-  int i;
-  for(i=0; i<num_colmap_elems; ++i) {
-
-    // map from global column ID to process owning the row
-    // with that global ID (this is a square matrix)
-
-    procmap_[colIDs[i]] = procIDs[i];
-  }
-
-  delete [] colIDs;
-  delete [] procIDs;
 }
+#endif // EEP___
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
@@ -525,6 +478,7 @@ template <class LocalOrdinal,
 int
 QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Number_Objects(void *data, int *ierr)
 {
+  std::cout << "EEP Entering QueryObject<>::Number_Objects()" << std::endl;
   int numObj = 0;
 
   QueryObject *zq = (QueryObject *)data;
@@ -536,6 +490,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Number_Objects(void *data, int *
     *ierr = ZOLTAN_FATAL;
   }
 
+  std::cout << "EEP Leaving QueryObject<>::Number_Objects(): numObj = " << numObj << std::endl;
   return numObj;
 }
 
@@ -548,6 +503,11 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Object_List  ( void * data,
 		   ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
 		   int weight_dim, float * object_weights, int * ierr )
 {
+  std::cout << "EEP Entering QueryObject<>::Object_List()"
+            << ": num_gid_entries = " << num_gid_entries
+            << ", num_lid_entries = " << num_lid_entries
+            << ", weight_dim = " << weight_dim
+            << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq)
@@ -560,6 +520,9 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::Object_List  ( void * data,
     *ierr = ZOLTAN_FATAL;
   }
 
+  std::cout << "EEP Leaving QueryObject<>::Object_List()"
+            << ": *ierr = " << *ierr
+            << std::endl;
   return;
 }
 
@@ -570,17 +533,6 @@ void QueryObject::Number_Edges_Multi  ( void * data,
 	     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
 	     int *num_edges, int * ierr )
 {
-  QueryObject *zq = (QueryObject *)data;
-
-  if (zq){
-    zq->My_Number_Edges_Multi(num_gid_entries, num_lid_entries, num_obj,
-	     global_ids, local_ids, num_edges, ierr );
-  }
-  else{
-    *ierr = ZOLTAN_FATAL;
-  }
-
-  return;
 }
 void QueryObject::Edge_List_Multi( void * data,
 	       int num_gid_entries, int num_lid_entries, int num_obj,
@@ -588,19 +540,6 @@ void QueryObject::Edge_List_Multi( void * data,
 	       ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
 	       int weight_dim, float * edge_weights, int * ierr )
 {
-  QueryObject *zq = (QueryObject *)data;
-
-  if (zq){
-    zq->My_Edge_List_Multi(num_gid_entries, num_lid_entries, num_obj,
-	       global_ids, local_ids, num_edges,
-	       neighbor_global_ids,  neighbor_procs,
-	       weight_dim, edge_weights, ierr );
-  }
-  else{
-    *ierr = ZOLTAN_FATAL;
-  }
-
-  return;
 }
 #endif // EEP
 
@@ -611,6 +550,7 @@ void
 QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_CS ( void * data,
 	 int* num_lists, int* num_pins, int* format, int * ierr )
 {
+  std::cout << "EEP Entering QueryObject<>::HG_Size_CS()" << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq)
@@ -621,7 +561,12 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_CS ( void * data,
   {
     *ierr = ZOLTAN_FATAL;
   }
-
+  std::cout << "EEP Leaving QueryObject<>::HG_Size_CS()"
+            << ": *num_lists = " << *num_lists
+            << ", *num_pins = " << *num_pins
+            << ", *format = " << *format
+            << ", *ierr = " << *ierr
+            << std::endl;
 }
 
 template <class LocalOrdinal,
@@ -633,6 +578,12 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_CS ( void * data,
 	    ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
 				     int * ierr )
 {
+  std::cout << "EEP Entering QueryObject<>::HG_CS()"
+            << ": num_gid_entries = " << num_gid_entries
+            << ", num_row_or_col = " << num_row_or_col
+            << ", num_pins = " << num_pins
+            << ", format = " << format
+            << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
@@ -642,6 +593,9 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_CS ( void * data,
   else{
     *ierr = ZOLTAN_FATAL;
   }
+  std::cout << "EEP Entering QueryObject<>::HG_CS()"
+            << ": *ierr = " << *ierr
+            << std::endl;
 }
 
 template <class LocalOrdinal,
@@ -651,6 +605,7 @@ void
 QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_Edge_Weights(void * data,
 			    int* num_edges, int* ierr)
 {
+  std::cout << "EEP Entering QueryObject<>::HG_Size_Edge_Weights()" << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
@@ -659,6 +614,10 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Size_Edge_Weights(void * data
   else{
     *ierr = ZOLTAN_FATAL;
   }
+  std::cout << "EEP Leaving QueryObject<>::HG_Size_Edge_Weights()"
+            << ": num_edges = " << num_edges
+            << ", *ierr = " << *ierr
+            << std::endl;
 }
 
 template <class LocalOrdinal,
@@ -669,6 +628,12 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Edge_Weights(void * data,
       int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
       ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr)
 {
+  std::cout << "EEP Entering QueryObject<>::HG_Edge_Weights()"
+            << ": num_gid_entries = " << num_gid_entries
+            << ", num_lid_entries = " << num_lid_entries
+            << ", num_edges = " << num_edges
+            << ", edge_weight_dim = " << edge_weight_dim
+            << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
@@ -678,36 +643,20 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::HG_Edge_Weights(void * data,
   else{
     *ierr = ZOLTAN_FATAL;
   }
+  std::cout << "EEP Entering QueryObject<>::HG_Edge_Weights()"
+            << ": *ierr = " << *ierr
+            << std::endl;
 }
 
 #if 0 // EEP
 int QueryObject::Number_Geom(void *data, int *ierr)
 {
-  int dim=0;
-  QueryObject *zq = (QueryObject *)data;
-
-  if (zq){
-    dim = zq->My_Number_Geom(ierr);
-  }
-  else{
-    *ierr = ZOLTAN_FATAL;
-  }
-  return dim;
 }
 
 void QueryObject::Geom_Multi(void *data, int num_gid_entries, int num_lid_entries,
         int num_obj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int num_dim,
         double *geom_vec, int *ierr)
 {
-  QueryObject *zq = (QueryObject *)data;
-
-  if (zq){
-    zq->My_Geom_Multi(num_gid_entries, num_lid_entries,
-        num_obj, gids, lids, num_dim, geom_vec, ierr);
-  }
-  else{
-    *ierr = ZOLTAN_FATAL;
-  }
 }
 #endif // EEP
 
@@ -720,24 +669,15 @@ int
 QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_Number_Objects(int * ierr )
 {
   *ierr = ZOLTAN_OK;
-#if 0 // EEP
   if (input_type_ == geometric_input_) 
   {
-    return coords_->MyLength(); // probably can use rowMap_ instead
+    throw std::runtime_error("EEP Invalid 'input_type_ == geometric_input_' at QueryObject<>::My_Number_Objects()");
   }
   else if (input_type_ == hgraph2d_finegrain_input_)
   {
-    if (!haveGraph_)
-    {
-      return matrix_->NumMyNonzeros();
-    }
-    else
-    {
-      return graph_->NumMyNonzeros();
-    }
+    throw std::runtime_error("EEP Invalid 'input_type_ == hgraph2d_finegrain_input_' at QueryObject<>::My_Number_Objects()");
   }
   else
-#endif // EEP
   {
     return rowMap_->getLocalNumElements();  // graph or hypergraph or simple partitioning methods
   }
@@ -772,75 +712,10 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_Object_List(int num_gid_entri
       //rowMap_->MyGlobalElements( ((int *) global_ids) ); // EEP___
     }
   }
-#if 0 // EEP
   else if(input_type_ == hgraph2d_finegrain_input_)
   {
-    // if statement for now, maybe set function pointer for different function instead
-
-    int numRows = rowMap_->NumMyElements();
-
-    object_weights = 0;
-
-    if (!haveGraph_) //matrix
-    {
-      ngids = 0;
-      for (int rowNum=0; rowNum<numRows; rowNum++)
-      {
-        int rowSize;
-        matrix_->NumMyRowEntries(rowNum,rowSize);
-
-        //MMW need to make this memory allocation more efficient
-        int *tmprowCols = new int[rowSize];
-        double *tmprowVals = new double[rowSize];
-        int numEntries;
-
-        matrix_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowVals, tmprowCols);
-
-        for(int colIndx=0; colIndx<rowSize; colIndx++)
-        {
-          global_ids[ngids] = (ZOLTAN_ID_TYPE)rowMap_->GID(rowNum);
-          ngids++;
-          global_ids[ngids]= (ZOLTAN_ID_TYPE)colMap_->GID(tmprowCols[colIndx]);
-          ngids++;
-        }
-
-	delete [] tmprowCols;
-	delete [] tmprowVals;
-      }
-    }
-    else // graph    
-    {
-      ngids = 0;
-      for (int rowNum=0; rowNum<numRows; rowNum++)
-      {
-        int rowSize;
-        rowSize = graph_->NumMyIndices(rowNum);
-
-        int *tmprowCols = new int[rowSize];
-        int numEntries;
-
-        graph_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowCols);
-
-        for(int colIndx=0;colIndx<rowSize;colIndx++)
-        {
-          global_ids[ngids] = (ZOLTAN_ID_TYPE)rowMap_->GID(rowNum);
-          ngids++;
-          global_ids[ngids]= (ZOLTAN_ID_TYPE)colMap_->GID(tmprowCols[colIndx]);
-          ngids++;
-        }
-
-        delete [] tmprowCols;
-      }
-    }
-
-    for (int indx=0; indx<ngids/2; indx++)
-    {
-      local_ids[indx] = indx;
-    }
-
-    return;
+    throw
   } // fine-grain hypergraph case
-#endif // EEP
 
   if (ngids < 1)
   {
@@ -850,55 +725,11 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_Object_List(int num_gid_entri
   for (int i=0; i<ngids; i++){
     local_ids[i] = (ZOLTAN_ID_TYPE)i;
   }
-#if 0 // EEP weight_dim is 0 here, during the epetra example run
   if (weight_dim >= 1) // Note we only supply 1-D weights
   {          
-    float *to_wgts = object_weights;
-    if (input_type_ == geometric_input_){
-      double *wgts=NULL;
-      int ld=0;
-      if (weights_.get()){
-        weights_->ExtractView(&wgts, &ld);
-        if (ld < ngids){
-          *ierr = ZOLTAN_FATAL;
-          std::cerr << "Proc:" << myProc_ << " Error: ";
-          std::cerr << "My_Object_List: not enough object weights" << std::endl;
-          return;
-        }
-        for (int i=0; i < ngids; i++){
-          *to_wgts= static_cast<float>(wgts[i]);
-          to_wgts += weight_dim;
-        }
-      }
-    }
-    else if (costs_->haveVertexWeights())
-    {
-      std::map<int, float> weightMap;
-      std::map<int, float>::iterator curr;
-      std::map<int, float>::iterator end = weightMap.end();
-  
-      int mapSize = costs_->getVertexWeights(weightMap);
-      if (mapSize != ngids)
-      {
-        *ierr = ZOLTAN_FATAL;
-        std::cout << "Proc:" << myProc_ << " Error: ";
-        std::cout << "QueryObject::My_Object_List, number of vertex weights" << std::endl;
-        return;
-      }
-      for (int i=0; i < ngids; i++){
-        curr = weightMap.find(global_ids[i]);
-        if (curr == end){
-          *ierr = ZOLTAN_FATAL;
-          std::cout << "Proc:" << myProc_ << " Error: ";
-          std::cout << "QueryObject::My_Object_List, missing vertex weight" << std::endl;
-          return;
-        }
-        *to_wgts = curr->second;
-        to_wgts += weight_dim;
-      }
-    }
+    // EEP weight_dim is 0 here, during the epetra example run
+    throw
   }
-#endif // EEP
   return;
 }
 
@@ -910,46 +741,6 @@ void QueryObject::My_Number_Edges_Multi(int num_gid_entries, int num_lid_entries
 	     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
 	     int *num_edges, int * ierr )
 {
-  *ierr = ZOLTAN_OK;
-
-  int num_indices, rc;
-
-  if (!haveGraph_){
-    for (int i=0; i<num_obj; i++){
-      rc = matrix_->NumMyRowEntries((int)local_ids[i], num_indices);
-      if (rc != 0){
-	*ierr = ZOLTAN_FATAL;
-	std::cout << "Proc:" << myProc_ << " Error: ";
-	std::cout << "QueryObject::My_Number_Edges_Multi, local id not in matrix" << std::endl;
-	return;
-      }
-      num_edges[i] = num_indices;
-      if (graph_self_edges_.size() > 0){
-	std::set<int>::iterator it = graph_self_edges_.find((int)global_ids[i]);
-	if (it != graph_self_edges_.end()){
-	  num_edges[i]--;
-	}
-      }
-    }
-  }
-  else{
-    for (int i=0; i<num_obj; i++){
-      num_edges[i] = graph_->NumMyIndices((int)local_ids[i]);
-      if (num_edges[i] < 0){
-	*ierr = ZOLTAN_FATAL;
-	std::cout << "Proc:" << myProc_ << " Error: ";
-	std::cout << "QueryObject::My_Number_Edges_Multi, local id not in graph" << std::endl;
-	return;
-      }
-      if (graph_self_edges_.size() > 0){
-	std::set<int>::iterator it = graph_self_edges_.find((int)global_ids[i]);
-	if (it != graph_self_edges_.end()){
-	  num_edges[i]--;
-	}
-      }
-    }
-  }
-  return;
 }
 
 void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, int num_obj,
@@ -957,114 +748,6 @@ void QueryObject::My_Edge_List_Multi(int num_gid_entries, int num_lid_entries, i
 	       ZOLTAN_ID_PTR neighbor_global_ids, int * neighbor_procs,
 	       int weight_dim, float * edge_weights, int * ierr )
 {
-  int *gids=NULL;
-  int num_indices, rc, tmpSize;
-  double *tmp = NULL;
-
-  *ierr = ZOLTAN_OK;
-
-  if (num_obj < 1) {
-    return;
-  }
-
-  int *nborProc = neighbor_procs;
-  float *wgt = edge_weights;
-  ZOLTAN_ID_PTR nborID = neighbor_global_ids;
-  bool use_weights = false;
-  std::map<int, float> wgtMap;
-  std::map<int, float>::iterator wgtIter;
-  std::map<int, int>::iterator procIter;
-
-  if ((weight_dim >= 1) && costs_->haveGraphEdgeWeights()){
-    use_weights = true;
-  }
-
-  if (!haveGraph_)
-    tmpSize = matrix_->MaxNumEntries();
-  else
-    tmpSize = graph_->MaxNumIndices();
-
-  if (tmpSize > 0){
-    if (!haveGraph_)
-      tmp = new double [tmpSize];
-
-    gids = new int [tmpSize];
-
-    if ((!haveGraph_ && !tmp) || !gids){
-      *ierr = ZOLTAN_MEMERR;
-      return;
-    }
-  }
-
-  for (int i=0; (i<num_obj) && (*ierr == ZOLTAN_OK); i++){
-
-    int self_edge = 0;
-    if (graph_self_edges_.size() > 0){
-      std::set<int>::iterator it = graph_self_edges_.find((int)global_ids[i]);
-      if (it != graph_self_edges_.end()){
-	self_edge = 1;
-      }
-    }
-
-    if (!haveGraph_){
-      rc = matrix_->ExtractMyRowCopy((int)local_ids[i], tmpSize, num_indices, tmp, gids);
-    }
-    else{
-      rc = graph_->ExtractMyRowCopy((int)local_ids[i], tmpSize,  num_indices, gids);
-    }
-
-    if ((rc < 0) || (num_indices != (num_edges[i] + self_edge))){
-      *ierr = ZOLTAN_FATAL;
-      std::cout << "Proc:" << myProc_ << " Error: ";
-      std::cout << "QueryObject::My_Edge_List_Multi, extracting row" << std::endl;
-      break;
-    }
-
-    for (int j=0; j<num_indices; j++){
-      gids[j] = colMap_->GID(gids[j]); // convert to global IDs
-    }
-
-    if (use_weights){
-      rc = costs_->getGraphEdgeWeights((int)global_ids[i], wgtMap);
-      if (rc != num_edges[i]){
-	*ierr = ZOLTAN_FATAL;
-	std::cout << "Proc:" << myProc_ << " Error: ";
-	std::cout << "QueryObject::My_Edge_List_Multi, getting weights" << std::endl;
-	break;
-      }
-    }
-    for (int j=0; j < num_indices; j++){
-
-      if (self_edge && (gids[j] == (int)global_ids[i])) continue;  // skip self edge
-
-      *nborID++ = (ZOLTAN_ID_TYPE)gids[j];                   // Global ID of neighbor
-
-      procIter = procmap_.find(gids[j]);
-      if (procIter == procmap_.end()){
-	*ierr = ZOLTAN_FATAL;
-	std::cout << "Proc:" << myProc_ << " Error: ";
-	std::cout << "QueryObject::My_Edge_List_Multi, process ID map" << std::endl;
-	break;
-      }
-
-      *nborProc++ = procIter->second;        // Process owning neighbor
-
-      if (use_weights){
-        wgtIter = wgtMap.find(gids[j]); 
-        if (wgtIter == wgtMap.end()){
-          *ierr = ZOLTAN_FATAL;
-          std::cout << "Proc:" << myProc_ << " Error: ";
-          std::cout << "QueryObject::My_Edge_List_Multi, weight map" << std::endl;
-          break;
-        }
-        *wgt++ = (float)wgtIter->second;    // edge weight
-      }
-    }
-  }
-  if (gids) delete [] gids;
-  if (tmp) delete [] tmp;
-
-  return;
 }
 #endif // EEP
 
@@ -1080,22 +763,12 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_Size_CS(int* num_lists, in
 
   *format = ZOLTAN_COMPRESSED_VERTEX;   // We will return row (vertex) lists
 
-#if 0 // EEP
   if(input_type_ == hgraph2d_finegrain_input_) // 2D fine-grain hypergraph
   {
-    if (haveGraph_) // graph
-    {
-       *num_lists = graph_->NumMyNonzeros(); 
-    }
-    else // matrix
-    {
-      *num_lists = matrix_->NumMyNonzeros(); 
-    }
-    *num_pins = 2 * (*num_lists);
+    throw
   }
   else // 1D hypergraph
   {
-#endif // EEP
     if (haveGraph_)
     {
       *num_lists = graph_->getLocalNumRows();       // Number of rows
@@ -1103,16 +776,9 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_Size_CS(int* num_lists, in
     }
     else
     {
-#if 0 // EEP
-      *num_lists = matrix_->NumMyRows();       // Number of rows
-      *num_pins = matrix_->NumMyNonzeros();    // Total nonzeros in these rows
-#else
       throw std::runtime_error("Invalid situation in QueryObject<>::My_HG_Size_CS");
-#endif // EEP
     }
-    //}
-
-
+  }
 
   return;
 }
@@ -1459,56 +1125,12 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_Edge_Weights(
 
 int QueryObject::My_Number_Geom(int *ierr)
 {
-  int dim = 0;
-  *ierr = ZOLTAN_FATAL;
-
-  if (coords_.get()){
-    dim = coords_->NumVectors();
-    *ierr = ZOLTAN_OK;
-  }
-  else{
-    std::cerr << "in My_Number_Geom, no MultiVector present" << std::endl;
-  }
-
-  return dim;
 }
 
 void QueryObject::My_Geom_Multi(int num_gid_entries, int num_lid_entries,
         int num_obj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int num_dim,
         double *geom_vec, int *ierr)
 {
-  if ((num_obj < 1) || (num_dim < 1)){
-    *ierr = ZOLTAN_OK;
-    return;
-  }
-
-  if (coords_.get() && 
-      (coords_->MyLength() >= num_obj) && 
-      (coords_->NumVectors() >= num_dim)){
-
-    double *coords;
-    int stride;
-
-    coords_->ExtractView(&coords, &stride);
-
-    double **v = new double * [num_dim];
-    for (int j=0; j < num_dim; j++){
-      v[j] = coords + (stride * j);
-    }
-
-    for (int i=0; i<num_obj; i++){
-      for (int j=0; j<num_dim; j++){
-        *geom_vec++ = v[j][i];
-      }
-    }
-
-    delete [] v;
-    *ierr = ZOLTAN_OK;
-  }
-  else{
-    std::cerr << "Error in My_Geom_Multi" << std::endl;
-    *ierr = ZOLTAN_FATAL;
-  }
 }
 #endif // EEP
 

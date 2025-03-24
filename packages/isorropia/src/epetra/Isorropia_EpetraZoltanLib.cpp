@@ -455,7 +455,9 @@ int ZoltanLibClass::precompute()
 
   int ierr;
   num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
-
+  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::precompute(), pos 002"
+            << ": num_obj_ = " << num_obj_
+	    << std::endl;
 
   if (input_type_ == hgraph2d_finegrain_input_)
   {
@@ -491,6 +493,7 @@ int ZoltanLibClass::precompute()
 
 void ZoltanLibClass::computeCost()
 {
+  std::cout << "EEP Entering isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::computeCost()" << std::endl;
   std::string str1("Isorropia::ZoltanLibClass::computeCost ");
   std::string str2;
 
@@ -533,6 +536,13 @@ void ZoltanLibClass::computeCost()
     globalNZ = input_graph_->NumGlobalNonzeros();
     globalSelfEdges = input_graph_->NumGlobalDiagonals();
     globalNumCols = input_graph_->NumGlobalCols();
+    std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::computeCost(), pos 000"
+              << ": myNZ = " << myNZ
+              << ", mySelfEdges = " << mySelfEdges
+              << ", globalNZ = " << globalNZ
+              << ", globalSelfEdges = " << globalSelfEdges
+              << ", globalNumCols = " << globalNumCols
+	      << std::endl;
   }
 
   if (costs_.get() != 0)
@@ -596,6 +606,7 @@ void ZoltanLibClass::computeCost()
   costs_->setNumGlobalVertexWeights(numVWeights);
   costs_->setNumGlobalGraphEdgeWeights(numGWeights);
   costs_->setNumGlobalHypergraphEdgeWeights(numHGWeights);
+  std::cout << "EEP Leaving isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::computeCost()" << std::endl;
 }
 
 

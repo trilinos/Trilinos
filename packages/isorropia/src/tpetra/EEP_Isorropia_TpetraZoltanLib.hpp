@@ -155,7 +155,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
 	    << std::endl;
 
   std::string str1("Isorropia::ZoltanLibClass::precompute ");
-  MPI_Comm mpicomm = zoltan_get_global_comm();
+  //MPI_Comm mpicomm = zoltan_get_global_comm(); // EEP___
 #ifdef HAVE_MPI
   //MPI_Comm default_mpicomm = zoltan_get_global_comm(); // EEP__ unused by compiler
 #endif // HAVE_MPI
@@ -229,7 +229,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::precompute()
   argvTmp[0] = NULL;
   Zoltan_Initialize(argcTmp, argvTmp, &version);
 
-  zz_ = new Zoltan(mpicomm);
+  zz_ = new Zoltan(); // mpicomm); // EEP___
 
   if (zz_ == NULL){
     throw std::runtime_error/*Isorropia::Exception*/("Error creating Zoltan object");
@@ -423,6 +423,13 @@ ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::ZoltanLibClass::computeCost()
     globalNZ = this->input_graph_->getGlobalNumEntries();
     globalSelfEdges = this->input_graph_->getGlobalNumRows(); // Diagonals(); EEP___
     globalNumCols = this->input_graph_->getGlobalNumCols();
+    std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::computeCost(), pos 000"
+              << ": myNZ = " << myNZ
+              << ", mySelfEdges = " << mySelfEdges
+              << ", globalNZ = " << globalNZ
+              << ", globalSelfEdges = " << globalSelfEdges
+              << ", globalNumCols = " << globalNumCols
+	      << std::endl;
   }
   if (this->costs_.get() != 0)
   {
