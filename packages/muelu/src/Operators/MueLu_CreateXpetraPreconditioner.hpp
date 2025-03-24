@@ -67,6 +67,13 @@ CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
   } else
     label = op->getObjectLabel();
 
+  // Do automatic ParameterList surgery if we're doing Kokkos Tuning
+  if (inParamList.isSublist("kokkos tuning: muelu parameter mapping") &&
+      inParamList.sublist("kokkos tuning: muelu parameter mapping").isParamter<size_t>("kokkos context id")) {
+    MueLu::KokkosTuningInterface KokkosTuner(Op->getMap()->getComm());
+    KokkosTuner.SetMueLuParameters(paramList);
+  }
+
   std::string timerName;
   if (label != "")
     timerName = "MueLu setup time (" + label + ")";

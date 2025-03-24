@@ -89,8 +89,6 @@
 #include "Xpetra_EpetraMultiVector.hpp"
 #endif
 
-#include "MueLu_KokkosTuningInterface.hpp"
-
 /*********************************************************************/
 
 #include "KokkosBlas1_abs_impl.hpp"
@@ -405,9 +403,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<MultiVector> X;
   RCP<MultiVector> B;
 
-  // Create the Kokkos Tuning Interface
-  MueLu::KokkosTuningInterface KokkosTuner(comm);
-
   // Load the matrix off disk (or generate it via Galeri)
   MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
   comm->barrier();
@@ -539,9 +534,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
       // Get a Kokkos context for tuning and setup the tuner
       size_t kokkos_context_id = 0;
-      if (kokkosTuning) {
-        KokkosTuner.SetParameterList(mueluList);
-      }
 
       // =========================================================================
       // Loop over the setup/solve pairs
@@ -551,13 +543,14 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         Tpetra::Details::ProfilingRegion("MueLu Setup/Solve");
 #endif
 
-        // Use Kokkos tuning, if requested
+        // Use Kokkos tuning, if requested.  We use the PL-based interface here
         if (kokkosTuning) {
           // FIXME: Ideally we'd have the context bracket the solve only, not the setup,
           // but we need to know if that will work with Kokkos or not first.
           out2 << "Enabling MueLu::KokkosTuning" << std::endl;
           Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
-          KokkosTuner.SetMueLuParameters(kokkos_context_id, mueluList);
+          if (mueluList.isSublist("kokkos tuning: muelu parameter mapping"))
+            mueluList.set("kokkos tuning: muelu parameter mapping").set("kokkos context id", kokkos_context_id);
         }
 
         // =========================================================================
