@@ -418,7 +418,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::QueryObject( Teuchos::RCP< const
   // If graph
   if (input_type_ == graph_input_)
   {
-    throw std::runtime_error("EEP Invalid input_type_ = graph_input_ in QueryObject<>::constructor()");
+    throw std::runtime_error("EEP Invalid 'input_type_ = graph_input_' in QueryObject<>::constructor()");
   }
   std::cout << "Leaving QueryObject<>::constructor()" << std::endl;
 }
@@ -671,11 +671,11 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_Number_Objects(int * ierr )
   *ierr = ZOLTAN_OK;
   if (input_type_ == geometric_input_) 
   {
-    throw std::runtime_error("EEP Invalid 'input_type_ == geometric_input_' at QueryObject<>::My_Number_Objects()");
+    throw std::runtime_error("EEP Invalid 'input_type_ = geometric_input_' at QueryObject<>::My_Number_Objects()");
   }
   else if (input_type_ == hgraph2d_finegrain_input_)
   {
-    throw std::runtime_error("EEP Invalid 'input_type_ == hgraph2d_finegrain_input_' at QueryObject<>::My_Number_Objects()");
+    throw std::runtime_error("EEP Invalid 'input_type_ = hgraph2d_finegrain_input_' at QueryObject<>::My_Number_Objects()");
   }
   else
   {
@@ -714,7 +714,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_Object_List(int num_gid_entri
   }
   else if(input_type_ == hgraph2d_finegrain_input_)
   {
-    throw
+    throw x
   } // fine-grain hypergraph case
 
   if (ngids < 1)
@@ -728,7 +728,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_Object_List(int num_gid_entri
   if (weight_dim >= 1) // Note we only supply 1-D weights
   {          
     // EEP weight_dim is 0 here, during the epetra example run
-    throw
+    throw x
   }
   return;
 }
@@ -765,7 +765,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_Size_CS(int* num_lists, in
 
   if(input_type_ == hgraph2d_finegrain_input_) // 2D fine-grain hypergraph
   {
-    throw
+    throw x
   }
   else // 1D hypergraph
   {
@@ -776,7 +776,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_Size_CS(int* num_lists, in
     }
     else
     {
-      throw std::runtime_error("Invalid situation in QueryObject<>::My_HG_Size_CS");
+      throw std::runtime_error("EEP Invalid 'haveGraph_ = false' in QueryObject<>::My_HG_Size_CS()");
     }
   }
 
