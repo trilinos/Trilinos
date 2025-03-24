@@ -567,10 +567,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         RCP<Operator> Prec;
         // Build the preconditioner numRebuilds+1 times
         if (solvePreconditioned) {
-          out2 << "*********** MueLu ParameterList ***********" << std::endl;
-          out2 << mueluList;
-          out2 << "*******************************************" << std::endl;
-
           MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
 
           PreconditionerSetup(A, coordinates, nullspace, material, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
