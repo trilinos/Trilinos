@@ -35,14 +35,17 @@ class KokkosTuningInterface : public BaseClass {
   //    : comm_(comm)
   //    , params_(inParams){};
 
-  virtual ~KokkosTuningInterface() { }
+  virtual ~KokkosTuningInterface() {}
 
   Teuchos::RCP<const Teuchos::ParameterList> GetValidParameterList() const;
 
   // Sets the input parameters for the KokkosTuneInterface
   // NOTE: These are *not* the parameters which KokkosTuning is going to overwrite, rather the
   // parameters to tell KokkosTuning what to do.
-  void SetParameterList(Teuchos::ParameterList& inParams) { params_ = inParams; Setup();}
+  void SetParameterList(Teuchos::ParameterList& inParams) {
+    params_ = inParams;
+    Setup();
+  }
 
   // Calls Kokkos Tuning to set MueLu Parameters
   void SetMueLuParameters(size_t kokkos_context_id, Teuchos::ParameterList& mueluParams, bool overwrite = true) const;
@@ -61,14 +64,11 @@ class KokkosTuningInterface : public BaseClass {
   Teuchos::RCP<const Teuchos::Comm<int> > comm_;
   mutable Teuchos::ParameterList params_;  // The mutable is a hack to deal with issues in Teuchos
 
-
   // Tuning information
   mutable std::vector<Kokkos::Tools::Experimental::VariableValue> in_variables;
   mutable std::vector<Kokkos::Tools::Experimental::VariableValue> out_variables;
   std::vector<std::string> out_names;
   std::vector<std::string> out_typenames;
-
-
 };
 
 }  // namespace MueLu
