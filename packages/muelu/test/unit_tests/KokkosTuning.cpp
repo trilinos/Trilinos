@@ -97,25 +97,25 @@ const char* str_candidatevalue(const enum Kokkos_Tools_VariableInfo_CandidateVal
     return "unknown";
 }
 
-void print_variable_info(const Kokkos::Tools::Experimental::VariableInfo* info,const int index=0) {
+void print_variable_info(const Kokkos::Tools::Experimental::VariableInfo* info, const int index = 0) {
   std::cout << "[" << index << "] Variable information  = " << str_type(info->type) << "," << str_category(info->category) << "," << str_candidatevalue(info->valueQuantity) << std::endl;
-  std::cout << "[" << index << "] Actual values         = " << info->type  << "," << info->category << "," << info->valueQuantity << std::endl;
-  std::cout << "[" << index << "] Baseline enums        = " << Kokkos_Tools_VariableInfo_ValueType::kokkos_value_double  << "," << Kokkos_Tools_VariableInfo_StatisticalCategory::kokkos_value_categorical << "," << Kokkos_Tools_VariableInfo_CandidateValueType::kokkos_value_set << std::endl;
+  std::cout << "[" << index << "] Actual values         = " << info->type << "," << info->category << "," << info->valueQuantity << std::endl;
+  std::cout << "[" << index << "] Baseline enums        = " << Kokkos_Tools_VariableInfo_ValueType::kokkos_value_double << "," << Kokkos_Tools_VariableInfo_StatisticalCategory::kokkos_value_categorical << "," << Kokkos_Tools_VariableInfo_CandidateValueType::kokkos_value_set << std::endl;
 }
 
 void declare_input_type(const char* name, const size_t id,
                         Kokkos::Tools::Experimental::VariableInfo* info) {
   // We copy this data in and assume the default constructor works
-  //std::cout<<"DEBUG: calling declare_input_type"<<std::endl;
-  //print_variable_info(info,-1);
+  // std::cout<<"DEBUG: calling declare_input_type"<<std::endl;
+  // print_variable_info(info,-1);
   input_info.push_back(*info);
 }
 
 void declare_output_type(const char* name, const size_t id,
                          Kokkos::Tools::Experimental::VariableInfo* info) {
   // We copy this data in and assume the default constructor works
-  //std::cout<<"DEBUG: calling declare_output_type"<<std::endl;
-  //print_variable_info(info,-1);
+  // std::cout<<"DEBUG: calling declare_output_type"<<std::endl;
+  // print_variable_info(info,-1);
   output_info.push_back(*info);
 }
 
@@ -124,10 +124,10 @@ void request_output_values(const size_t context, const size_t num_inputs,
                            const size_t num_outputs,
                            Kokkos::Tools::Experimental::VariableValue* outputs_in) {
   // This dummy callback will set the output value to one step more than the bottom guy in the range
-  //std::cout << "\nDEBUG: request_ouput_values called with " << num_outputs << " outputs" << std::endl;
+  // std::cout << "\nDEBUG: request_ouput_values called with " << num_outputs << " outputs" << std::endl;
   for (int i = 0; i < (int)num_outputs; i++) {
     Kokkos::Tools::Experimental::VariableInfo& info = output_info[i];
-    //print_variable_info(&info,i);
+    // print_variable_info(&info,i);
     if (info.category == Kokkos_Tools_VariableInfo_StatisticalCategory::kokkos_value_interval &&
         info.valueQuantity == Kokkos_Tools_VariableInfo_CandidateValueType::kokkos_value_range) {
       auto range = info.candidates.range;
@@ -141,7 +141,6 @@ void request_output_values(const size_t context, const size_t num_inputs,
         // std::cout << "Setting parameter " << i << " to value = " << outputs_in[i].value.double_value << std::endl;
       }
     }
-
   }
 }
 
@@ -208,8 +207,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced, Scalar, Local
   TEST_FLOATING_EQUALITY(outputList.sublist("smoother: params").get<double>("chebyshev: ratio eigenvalue"), ratio, 1e-10);
 }
 
-
-
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced_PLContext, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   // This test makes sure the KokkosTuning interface does something specific
@@ -248,7 +245,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced_PLContext, Sca
   // Call the tuner, using a PL-based context ID
   size_t kokkos_context_id;
   Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
-  pL.set("kokkos context id",kokkos_context_id);
+  pL.set("kokkos context id", kokkos_context_id);
   interface.SetParameterList(baseList);
 
   Teuchos::ParameterList outputList;
@@ -273,12 +270,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced_PLContext, Sca
   TEST_FLOATING_EQUALITY(outputList.sublist("smoother: params").get<double>("chebyshev: ratio eigenvalue"), ratio, 1e-10);
 }
 
-
-
-#define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Basic, Scalar, LO, GO, Node) \
+#define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                 \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Basic, Scalar, LO, GO, Node)    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Advanced, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Advanced_PLContext, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(KokkosTuningInterface, Advanced_PLContext, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

@@ -45,11 +45,10 @@ namespace KokkosTuningParams {
 const int MAX_VALID_PARAMS = 10;
 };
 
-
 // ***********************************************************************
-KokkosTuningInterface::KokkosTuningInterface(Teuchos::RCP<const Teuchos::Comm<int> >& comm)
-    : comm_(comm), PL_kokkos_context_id(Teuchos::OrdinalTraits<size_t>::invalid())
-{
+KokkosTuningInterface::KokkosTuningInterface(Teuchos::RCP<const Teuchos::Comm<int>>& comm)
+  : comm_(comm)
+  , PL_kokkos_context_id(Teuchos::OrdinalTraits<size_t>::invalid()) {
 }
 
 // ***********************************************************************
@@ -186,7 +185,6 @@ void KokkosTuningInterface::UnpackMueLuMapping() {
   if (pL.isParameter("kokkos context id")) {
     PL_kokkos_context_id = pL.get<size_t>("kokkos context id");
   }
-
 }
 
 // ***********************************************************************
@@ -264,7 +262,6 @@ void KokkosTuningInterface::SetMueLuParameters(size_t kokkos_context_id, Teuchos
 
   Teuchos::updateParametersAndBroadcast(outArg(tunedParams), outArg(mueluParams), *comm_, 0, overwrite);
 }
-
 
 // ***********************************************************************
 void KokkosTuningInterface::SetMueLuParameters(Teuchos::ParameterList& mueluParams, bool overwrite) const {
