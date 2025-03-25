@@ -37,11 +37,6 @@ endif()
 
 submit_by_parts("Configure")
 
-if((NOT ${configure_error} EQUAL 0) OR (NOT ${tmp_cmake_error} EQUAL 0))
-    submit_single_submit()
-    message(WARNING "Configure failed with error ${configure_error}")
-endif()
-
 message("+--------------------------------------+")
 message("| ctest-stage-configure.cmake FINISH   |")
 message("+--------------------------------------+")

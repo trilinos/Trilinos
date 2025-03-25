@@ -33,7 +33,6 @@ from being include more than once in an include chain.
 | `skip_clean_build_dir`     | BOOL   |    NO     | ON                                            | Skip cleaning the build directory (`ctest_empty_binary_directory`) |
 | `skip_update_step`         | BOOL   |    NO     | OFF                                           | Skip the update step (`ctest_update()`) of the repository.         |
 | `skip_by_parts_submit`     | BOOL   |    NO     | ON                                            | Skip submission to CDash after each phase.                         |
-| `skip_single_submit`       | BOOL   |    NO     | ON                                            | Skip single submission                                             |
 | `skip_upload_config_files` | BOOL   |    NO     | OFF                                           | Skip upload config files (???)                                     |
 | `build_root`               | STRING |    NO     | `${source_dir}/nightly_testing`               | Used to generate `build_dir` if `build_dir` is not defined.        |
 | `build_dir`                | STRING |    NO     | `${build_root}/${CTEST_BUILD_NAME}`           | Path to the build directory.                                       |
