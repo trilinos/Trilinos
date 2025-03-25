@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced_PLContext, Sca
   interface.SetParameterList(baseList);
 
   Teuchos::ParameterList outputList;
-  outputList.sublist("kokkos tuning: muelu parameter mapping").set("kokkos context id",kokkos_context_id);
+  outputList.sublist("kokkos tuning: muelu parameter mapping").set("kokkos context id", kokkos_context_id);
   interface.SetMueLuParameters(outputList);
 
   Kokkos::Tools::Experimental::end_context(kokkos_context_id);
