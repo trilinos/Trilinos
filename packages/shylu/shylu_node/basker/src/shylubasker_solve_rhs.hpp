@@ -35,7 +35,51 @@ using namespace std;
 
 namespace BaskerNS
 {
+  // ================================= //
+  //M\x = y
+  template<class Int, class Entry, class Exe_Space>
+  struct lower_tri_solve_functor
+  {
+      lower_tri_solve_functor (bool no_pivot_, INT_1DARRAY &gperm_, INT_1DARRAY &post2downtop_,
+                               MATRIX_2DARRAY &LL_, ENTRY_1DARRAY &x_, ENTRY_1DARRAY &y_, Int offset_) :
+      no_pivot(no_pivot_), gperm(gperm_), post2downtop(post2downtop_), LL(LL_), x(x_), y(y_), offset(offset_)
+      {}
 
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const int j) const {
+        Int b = post2downtop[j];
+        BASKER_MATRIX &L = LL(b)(0);
+
+        const Int bcol = L.scol + offset;
+        const Int brow = L.scol + offset;
+
+        for(Int k = 0; k < L.ncol; ++k)
+        {
+          const Int istart = L.col_ptr(k);
+          const Int iend = L.col_ptr(k+1);
+
+          y(k+brow) = x(k+bcol) / L.val(L.col_ptr(k));
+
+          const auto ykbcol = y(k+bcol);
+          for(Int i = istart+1; i < iend; ++i)
+          {
+            const Int j = (no_pivot == BASKER_FALSE) ?
+                            gperm(L.row_idx(i)+brow) :
+                                 (L.row_idx(i)+brow) ;
+            x(j) -= L.val(i)*ykbcol;
+          } //over all nnz in a column
+        } //over each column
+      }
+
+      bool no_pivot;
+      INT_1DARRAY gperm;
+      INT_1DARRAY post2downtop;
+      MATRIX_2DARRAY LL;
+      ENTRY_1DARRAY  x;
+      ENTRY_1DARRAY  y;
+      Int offset;
+  };
+  // ================================= //
 
   //Note: we will want to come back and make
   //a much better multivector solve interface
@@ -74,6 +118,10 @@ namespace BaskerNS
    Entry *_y  // rhs
   )
   {
+    #define BASKER_TIMER
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer;
+    #endif
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf( "\n -- solve_interface --\n" );
     //for (Int i = 0; i < gn; i++) printf( " input: x(%d) = %e\n",i,_y[i] );
@@ -104,9 +152,11 @@ namespace BaskerNS
       // apply matrix_ordering from symbolic
       permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
       if (Options.matrix_scaling != 0) {
-        for(Int i = 0; i < gn; i++) {
+        Kokkos::parallel_for(
+          " ShyLU::Basker:Solve::pre_scale", gn,
+          KOKKOS_LAMBDA(const int i) {
           x_view_ptr_copy(i) = x_view_ptr_copy(i) * scale_row_array(i);
-        }
+        });
       }
     }
     #ifdef BASKER_DEBUG_SOLVE_RHS
@@ -124,6 +174,11 @@ namespace BaskerNS
       //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
       //printf( "\n" );
     }
+    #ifdef BASKER_TIMER
+    double time_preperm = timer.seconds();
+    printf( " > pre-permute : %e seconds\n",time_preperm );
+    timer.reset();
+    #endif
 
     // solve
     #ifdef BASKER_DEBUG_SOLVE_RHS
@@ -138,6 +193,11 @@ namespace BaskerNS
     printf( " y = [\n" );
     for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x_view_ptr_copy(i),y_view_ptr_copy(i) );
     printf( "];\n\n" );
+    #endif
+    #ifdef BASKER_TIMER
+    double time_solve = timer.seconds();
+    printf( " > solve : %e seconds\n",time_solve );
+    timer.reset();
     #endif
 
     if (Options.blk_matching != 0 || Options.static_delayed_pivot != 0) {
@@ -183,6 +243,11 @@ namespace BaskerNS
         _x[i] = scale_col_array(col) * _x[i];
       }
     }
+    #ifdef BASKER_TIMER
+    double time_postperm = timer.seconds();
+    printf( " > post-permute : %e seconds\n",time_postperm );
+    timer.reset();
+    #endif
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf( " final\n" );
     for (Int i = 0; i < gn; i++) printf( " %d %e\n",i,_x[i]);
@@ -280,6 +345,9 @@ namespace BaskerNS
    ENTRY_1DARRAY & y  // 0 at input
   )
   {
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer;
+    #endif
     //Start in C and go backwards
     //In first level, only do U\L\x->y
     /*printf(" C = [\n" );
@@ -332,6 +400,11 @@ namespace BaskerNS
       printVec(x, gn);
       #endif
     }
+    #ifdef BASKER_TIMER
+    double solve_c = timer.seconds();
+    printf( "  ++ Solve(C) : %e seconds (%d .. %d)\n",solve_c,int(btf_tabs_offset)+1,int(btf_nblks) );
+    timer.reset();
+    #endif
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf( " t1 = [\n" );
     for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x(i),y(i) );
@@ -355,6 +428,11 @@ namespace BaskerNS
     for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x(i),y(i) );
     printf( "];\n\n" );
     #endif
+    #ifdef BASKER_TIMER
+    double spmv_b = timer.seconds();
+    printf( "  ++ Spmv(B) : %e seconds\n",spmv_b );
+    timer.reset();
+    #endif
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("Done, SPMV BTF_B UPDATE \n"); fflush(stdout);
@@ -375,6 +453,11 @@ namespace BaskerNS
     for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x(i),y(i) );
     printf( "];\n\n" );
     #endif
+    #ifdef BASKER_TIMER
+    double solve_l = timer.seconds();
+    printf( "  ++ Solve(L) : %e seconds\n",solve_l );
+    timer.reset();
+    #endif
 
     //U\y->x
     serial_backward_solve(y,x);
@@ -387,6 +470,11 @@ namespace BaskerNS
     printf( " t4 = [\n" );
     for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x(i),y(i) );
     printf( "];\n\n" );
+    #endif
+    #ifdef BASKER_TIMER
+    double solve_u = timer.seconds();
+    printf( "  ++ Solve(U) : %e seconds\n",solve_u );
+    timer.reset();
     #endif
 
     if(btf_top_tabs_offset >  0)
@@ -455,6 +543,11 @@ namespace BaskerNS
       printf("\n\n");
       #endif
     }
+    #ifdef BASKER_TIMER
+    double solve_d = timer.seconds();
+    printf( "  ++ Solve(D) : %e seconds (%d .. 0)\n",solve_d,btf_top_tabs_offset-1 );
+    timer.reset();
+    #endif
 
     return 0;
   }//end serial_btf_solve
@@ -468,56 +561,167 @@ namespace BaskerNS
    ENTRY_1DARRAY & y  // partial solution
   )
   {
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer;
+    #endif
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("Called serial forward solve \n");
     #endif
+    INT_1DARRAY post2downtop;
+    int Nprocs = (1+tree.nblks)/2;
+    int num_levels = 1+(log(Nprocs) / log(2));
+    {
+      #ifdef BASKER_TIMER
+      timer.reset();
+      #endif
+      bool verbose = false;
+      int num_queued = 0;
+      // id of the first leaf node (BF order, post2topdown maps from top-down BF to post-order ND that matrix is ordered into)
+      int leaves_id = pow(2.0, (double)(num_levels-1)) - 1;
+      int *post_queue = (int*)malloc((2*Nprocs) * sizeof(int));
+      int *post_check = (int*)malloc((2*Nprocs) * sizeof(int));
+      int *post2topdown = (int*)malloc((2*Nprocs) * sizeof(int));
+      for (int i = 0; i < (2*Nprocs); i++) post_check[i] = 0;
+      if (verbose) printf( " num levels = %d, leaves ID = %d\n",num_levels,leaves_id);
+
+      // push first leaf to queue
+      post_queue[num_queued] = 0;
+      num_queued ++;
+
+      int num_doms = 0;
+      while (num_queued > 0) {
+        // pop a node from queue
+        int dom_id = post_queue[num_queued-1];
+        if (verbose) printf( " > check (dom_id = %d) = %d\n",dom_id,post_check[dom_id] );
+        if (dom_id >= leaves_id ||     // leaf
+            post_check[dom_id] == 2)   // both children processed
+        {
+          post2topdown[num_doms] = dom_id;
+          if (verbose) printf( "  pop queue(%d) = %d -> post(%d) = %d\n\n",num_queued-1,dom_id, num_doms,dom_id );
+          num_doms ++;
+
+          if (dom_id != 0) {
+            // if not root, let the parent node know one of its children has been processed
+            int parent_id = (dom_id - 1)/2;
+            post_check[parent_id] ++;
+          }
+          num_queued --;
+        } else {
+          // LIFO (so push right before left)
+          // push right child
+          if (verbose) printf( "  push queue(%d) = %d\n",num_queued,2*dom_id+2 );
+          post_queue[num_queued] = 2*dom_id + 2;
+          num_queued ++;
+          // push left child
+          if (verbose) printf( "  push queue(%d) = %d\n\n",num_queued,2*dom_id+1 );
+          post_queue[num_queued] = 2*dom_id + 1;
+          num_queued ++;
+        }
+      }
+      int *topdown2post = (int*)malloc((2*Nprocs-1) * sizeof(int)); // Map post-order to top-down BF
+      for (int i = 0; i < (2*Nprocs-1); i++) topdown2post[post2topdown[i]] = i;
+      if (verbose) {
+        printf("\ntop-down bf to/from post-order\n" );
+        printf(" post=[\n");
+        for (int i = 0; i < (2*Nprocs)-1; i++) {
+          printf(" %d %d\n",post2topdown[i],topdown2post[i]);
+        }
+        printf(" ];\n");
+      }
+      // ---------------------------------
+      // Map Bottom-up BF to Top-down BF
+      int offset = 0; // row offset
+      int * bottomup2topdown = (int*)malloc((2*Nprocs) * sizeof(int));
+      for (int i = num_levels-1; i >= 0; i--) {
+        int first_id  = pow(2.0, i)-1;
+        int num_nodes = pow(2.0, i);
+        for (int k = 0; k < num_nodes; k++) {
+          bottomup2topdown[offset+k] = first_id+k;
+        }
+        offset += num_nodes;
+      }
+      int * topdown2bottomup = (int*)malloc((2*Nprocs) * sizeof(int));
+      for (int i = 0; i < (2*Nprocs-1); i++) topdown2bottomup[bottomup2topdown[i]] = i;
+
+      Kokkos::resize(post2downtop, 2*Nprocs);
+      for (int i=0; i < 2*Nprocs-1; i++ ) post2downtop(i) = topdown2post[bottomup2topdown[i]];
+      if (verbose) {
+        printf("\ntop-down to bottom-up bf:\n" );
+        printf( " bottomup2topdown=[\n" );
+        for (int i=0; i < 2*Nprocs-1; i++ ) printf( " %d %d\n",bottomup2topdown[i],topdown2bottomup[i] );
+        printf( " ];\n\n" ); fflush(stdout);
+        printf("\npost to bottom-up bf:\n" );
+        for (int i=0; i < 2*Nprocs-1; i++ ) printf( " %d \n",topdown2post[bottomup2topdown[i]] );
+        printf( " ];\n\n" ); fflush(stdout);
+      }
+      #ifdef BASKER_TIMER
+      double time_post = timer.seconds();
+      printf( "  * time post : %e\n",time_post );
+      timer.reset();
+      #endif
+    }
 
     Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
-    //Forward solve on A
-    for(Int b = 0; b < tree.nblks; ++b)
-    {
-      BASKER_MATRIX &L = LL(b)(0);
+    Int tot_nodes = 0;
+    for (int lvl = num_levels-1; lvl >= 0; lvl--) {
+      int num_nodes = pow(2.0, lvl);
+      //Forward solve on A
+#if 1
+      for(Int j = 0; j < num_nodes; ++j) {
+          Int b = post2downtop[tot_nodes+j];
+          BASKER_MATRIX &L = LL(b)(0);
 
+          //L\x -> y 
+          lower_tri_solve(L, x, y, scol_top);
+          #if 1//def BASKER_DEBUG_SOLVE_RHS
+          printf("Lower Solve blk (%d, 0): size=(%dx%d) srow=%d, scol=%d\n",b,(int)L.nrow,(int)L.ncol, (int)L.srow,(int)L.scol);
+          /*printf("[\n");
+          for (Int i = 0; i < gn; i++) printf( "%d %.16e %.16e\n",i,x(i),y(i));
+          printf( "];\n");
+          if (b == 3) {
+            const Int bcol = L.scol + scol_top;
+            const Int brow = L.scol + scol_top;
+            printf( " P = [\n" );
+            for (Int k = 0; k < L.ncol; k++) printf( "%d %d\n",brow+k,gperm(brow+k) );
+            printf("];\n");
+            char filename[200];
+            sprintf(filename,"LL_%d_%d.dat",b,0);
+            L.print_matrix(filename);
+          }*/
+          #endif
+      }
+#else
       //L\x -> y 
-      lower_tri_solve(L, x, y, scol_top);
-      #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("Lower Solve blk (%d, 0): size=(%dx%d) srow=%d, scol=%d\n",b,(int)L.nrow,(int)L.ncol, (int)L.srow,(int)L.scol);
-      printf("[\n");
-      for (Int i = 0; i < gn; i++) printf( "%d %.16e %.16e\n",i,x(i),y(i));
-      printf( "];\n");
-      if (b == 3) {
-        const Int bcol = L.scol + scol_top;
-        const Int brow = L.scol + scol_top;
-        printf( " P = [\n" );
-        for (Int k = 0; k < L.ncol; k++) printf( "%d %d\n",brow+k,gperm(brow+k) );
-        printf("];\n");
-        char filename[200];
-        sprintf(filename,"LL_%d_%d.dat",b,0);
-        L.print_matrix(filename);
-      }
-      #endif
-
+      lower_tri_solve_functor<Int, Entry, Exe_Space> lower_func(Options.no_pivot, gperm, post2downtop, LL, x, y, scol_top);
+      Kokkos::RangePolicy<Exe_Space> policy_lower (tot_nodes, tot_nodes+num_nodes);
+      Kokkos::parallel_for("shylubasker::lower_tri_solve", policy_lower, lower_func);
+#endif
       //Update offdiag
-      for(Int bb = 1; bb < LL_size(b); ++bb)
+      for(Int j = 0; j < num_nodes; ++j)
       {
-        BASKER_MATRIX &LD = LL(b)(bb);
-        //x = LD*y;
-        #ifdef BASKER_DEBUG_SOLVE_RHS
-        char filename[200];
-        sprintf(filename,"LL_%d_%d.dat",b,bb);
-        LD.print_matrix(filename);
-        //printf( "];\n" );
-        //std::cout << " ++ neg_spmv_perm ( LL(" << b << "," << bb << ") )" << std::endl;
-        #endif
-        neg_spmv_perm(LD, y, x, scol_top);
-        #ifdef BASKER_DEBUG_SOLVE_RHS
-        printf("Lower Solver Update blk = (%d %d): size=(%dx%d) srow=%d, scol=%d \n",
-               b, bb, (int)LD.nrow,(int)LD.ncol, (int)LD.srow,(int)LD.scol);
-        printf("[\n");
-        for (Int i = 0; i < gn; i++) printf( "%d  %e %e\n",i,x(i),y(i));
-        printf( "];\n");
-        #endif
+        Int b = post2downtop(tot_nodes+j);
+        for(Int bb = 1; bb < LL_size(b); ++bb)
+        {
+          BASKER_MATRIX &LD = LL(b)(bb);
+          //x = LD*y;
+          #ifdef BASKER_DEBUG_SOLVE_RHS
+          char filename[200];
+          sprintf(filename,"LL_%d_%d.dat",b,bb);
+          LD.print_matrix(filename);
+          //printf( "];\n" );
+          //std::cout << " ++ neg_spmv_perm ( LL(" << b << "," << bb << ") )" << std::endl;
+          #endif
+          neg_spmv_perm(LD, y, x, scol_top);
+          #ifdef BASKER_DEBUG_SOLVE_RHS
+          printf("Lower Solver Update blk = (%d %d): size=(%dx%d) srow=%d, scol=%d \n",
+                 b, bb, (int)LD.nrow,(int)LD.ncol, (int)LD.srow,(int)LD.scol);
+          printf("[\n");
+          for (Int i = 0; i < gn; i++) printf( "%d  %e %e\n",i,x(i),y(i));
+          printf( "];\n");
+          #endif
+        }
       }
+      tot_nodes += num_nodes;
       //printVec(y,gn);
     }
 
