@@ -47,8 +47,9 @@ namespace Tpetra {
     /// it at least once.
     ///
     /// NOTE: This routine will only function correctly when the columnMap
-    /// of R is a subset of the rowMap of A.  If you're in this case, we
-    /// recommend calling Tpetra::MatrixMatrix::Multiply twice instead.
+    /// of R is a subset of the rowMap of A.  If the column map of R isn't 
+    /// a subset of the row map of A, we recommend calling 
+    /// Tpetra::MatrixMatrixMultiply twice instead.
     ///
     /// \param R [in] fill-complete sparse matrix.
     /// \param transposeR [in] Whether to use transpose of matrix R.
