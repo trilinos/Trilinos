@@ -245,11 +245,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced_PLContext, Sca
   // Call the tuner, using a PL-based context ID
   size_t kokkos_context_id;
   Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
-  pL.set("kokkos context id", kokkos_context_id);
   interface.SetParameterList(baseList);
 
   Teuchos::ParameterList outputList;
+  outputList.sublist("kokkos tuning: muelu parameter mapping").set("kokkos context id",kokkos_context_id);
   interface.SetMueLuParameters(outputList);
+
   Kokkos::Tools::Experimental::end_context(kokkos_context_id);
 
   // Check that the output has the varables set to something
