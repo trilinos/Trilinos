@@ -22,7 +22,7 @@
 #include <KokkosBatched_Vector.hpp>
 #include "KokkosKernels_Macros.hpp"
 
-#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__)
 #undef __KOKKOSBATCHED_ENABLE_AVX__
 #else
 // compiler bug with AVX in some architectures

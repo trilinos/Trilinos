@@ -43,19 +43,22 @@ template <class ExecutionSpace, class XViewType, class YViewType, class AViewTyp
 void ger(const ExecutionSpace& space, const char trans[], const typename AViewType::const_value_type& alpha,
          const XViewType& x, const YViewType& y, const AViewType& A) {
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename AViewType::memory_space>::accessible,
-                "AViewType memory space must be accessible from ExecutionSpace");
+                "ger: AViewType memory space must be accessible from ExecutionSpace");
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename XViewType::memory_space>::accessible,
-                "XViewType memory space must be accessible from ExecutionSpace");
+                "ger: XViewType memory space must be accessible from ExecutionSpace");
   static_assert(Kokkos::SpaceAccessibility<ExecutionSpace, typename YViewType::memory_space>::accessible,
-                "YViewType memory space must be accessible from ExecutionSpace");
+                "ger: YViewType memory space must be accessible from ExecutionSpace");
 
-  static_assert(Kokkos::is_view<AViewType>::value, "AViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<XViewType>::value, "XViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<YViewType>::value, "YViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<AViewType>::value, "ger: AViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<XViewType>::value, "ger: XViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view<YViewType>::value, "ger: YViewType must be a Kokkos::View.");
 
-  static_assert(static_cast<int>(AViewType::rank) == 2, "AViewType must have rank 2.");
-  static_assert(static_cast<int>(XViewType::rank) == 1, "XViewType must have rank 1.");
-  static_assert(static_cast<int>(YViewType::rank) == 1, "YViewType must have rank 1.");
+  static_assert(static_cast<int>(AViewType::rank) == 2, "ger: AViewType must have rank 2.");
+  static_assert(static_cast<int>(XViewType::rank) == 1, "ger: XViewType must have rank 1.");
+  static_assert(static_cast<int>(YViewType::rank) == 1, "ger: YViewType must have rank 1.");
+
+  static_assert(std::is_same_v<typename AViewType::value_type, typename AViewType::non_const_value_type>,
+                "ger: AViewType must store non const values.");
 
   // Check compatibility of dimensions at run time.
   if ((A.extent(0) != x.extent(0)) || (A.extent(1) != y.extent(0))) {

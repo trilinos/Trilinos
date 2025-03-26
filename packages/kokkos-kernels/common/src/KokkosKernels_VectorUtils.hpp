@@ -15,8 +15,8 @@
 //@HEADER
 
 #include "Kokkos_Core.hpp"
-#ifndef _KOKKOSKERNELS_VECTORUTILS_HPP
-#define _KOKKOSKERNELS_VECTORUTILS_HPP
+#ifndef KOKKOSKERNELS_VECTORUTILS_HPP
+#define KOKKOSKERNELS_VECTORUTILS_HPP
 
 namespace KokkosKernels {
 

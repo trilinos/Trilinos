@@ -181,14 +181,14 @@ class SPGEMMHandle {
       buffer3 = buffer4 = buffer5 = nullptr;
 
       cusparseHandle = kkControls.getCusparseHandle();
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_createDescr(&spgemmDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_createDescr(&spgemmDescr));
     }
 
     ~cuSparseSpgemmHandleType() {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_A));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_B));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_C));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_destroyDescr(spgemmDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_A));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_B));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_C));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_destroyDescr(spgemmDescr));
       KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer3));
       KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer4));
       KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer5));
@@ -205,11 +205,11 @@ class SPGEMMHandle {
       // Get singleton cusparse handle from default controls
       cusparseHandle = kkControls.getCusparseHandle();
 
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&generalDescr));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(generalDescr, CUSPARSE_MATRIX_TYPE_GENERAL));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(generalDescr, CUSPARSE_INDEX_BASE_ZERO));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&generalDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(generalDescr, CUSPARSE_MATRIX_TYPE_GENERAL));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(generalDescr, CUSPARSE_INDEX_BASE_ZERO));
     }
-    ~cuSparseSpgemmHandleType() { KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(generalDescr)); }
+    ~cuSparseSpgemmHandleType() { KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(generalDescr)); }
   };
 #endif
 #endif

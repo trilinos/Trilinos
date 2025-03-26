@@ -29,7 +29,7 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template <class ExecutionSpace, class VectorView, class ScalarView>
+template <class ExecutionSpace, class VectorView, class MagnitudeView, class ScalarView>
 struct rot_eti_spec_avail {
   enum : bool { value = false };
 };
@@ -43,14 +43,15 @@ struct rot_eti_spec_avail {
 // We may spread out definitions (see _INST macro below) across one or
 // more .cpp files.
 //
-#define KOKKOSBLAS1_ROT_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                        \
-  template <>                                                                                                      \
-  struct rot_eti_spec_avail<                                                                                       \
-      EXECSPACE,                                                                                                   \
-      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                     \
-    enum : bool { value = true };                                                                                  \
+#define KOKKOSBLAS1_ROT_ETI_SPEC_AVAIL(SCALAR, LAYOUT, EXECSPACE, MEMSPACE)                                         \
+  template <>                                                                                                       \
+  struct rot_eti_spec_avail<                                                                                        \
+      EXECSPACE,                                                                                                    \
+      Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
+      Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,     \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                        \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>> { \
+    enum : bool { value = true };                                                                                   \
   };
 
 // Include the actual specialization declarations
@@ -61,19 +62,19 @@ namespace KokkosBlas {
 namespace Impl {
 
 // Unification layer
-template <class ExecutionSpace, class VectorView, class ScalarView,
-          bool tpl_spec_avail = rot_tpl_spec_avail<ExecutionSpace, VectorView, ScalarView>::value,
-          bool eti_spec_avail = rot_eti_spec_avail<ExecutionSpace, VectorView, ScalarView>::value>
+template <class ExecutionSpace, class VectorView, class MagnitudeView, class ScalarView,
+          bool tpl_spec_avail = rot_tpl_spec_avail<ExecutionSpace, VectorView, MagnitudeView, ScalarView>::value,
+          bool eti_spec_avail = rot_eti_spec_avail<ExecutionSpace, VectorView, MagnitudeView, ScalarView>::value>
 struct Rot {
-  static void rot(ExecutionSpace const& space, VectorView const& X, VectorView const& Y, ScalarView const& c,
+  static void rot(ExecutionSpace const& space, VectorView const& X, VectorView const& Y, MagnitudeView const& c,
                   ScalarView const& s);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 //! Full specialization of Rot.
-template <class ExecutionSpace, class VectorView, class ScalarView>
-struct Rot<ExecutionSpace, VectorView, ScalarView, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
-  static void rot(ExecutionSpace const& space, VectorView const& X, VectorView const& Y, ScalarView const& c,
+template <class ExecutionSpace, class VectorView, class MagnitudeView, class ScalarView>
+struct Rot<ExecutionSpace, VectorView, MagnitudeView, ScalarView, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
+  static void rot(ExecutionSpace const& space, VectorView const& X, VectorView const& Y, MagnitudeView const& c,
                   ScalarView const& s) {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::rot[ETI]"
                                                                      : "KokkosBlas::rot[noETI]");
@@ -86,7 +87,7 @@ struct Rot<ExecutionSpace, VectorView, ScalarView, false, KOKKOSKERNELS_IMPL_COM
              typeid(VectorView).name(), typeid(ScalarView).name());
     }
 #endif
-    Rot_Invoke<ExecutionSpace, VectorView, ScalarView>(space, X, Y, c, s);
+    Rot_Invoke<ExecutionSpace, VectorView, MagnitudeView, ScalarView>(space, X, Y, c, s);
     Kokkos::Profiling::popRegion();
   }
 };
@@ -108,6 +109,7 @@ struct Rot<ExecutionSpace, VectorView, ScalarView, false, KOKKOSKERNELS_IMPL_COM
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
       false, true>;
 
 //
@@ -121,6 +123,7 @@ struct Rot<ExecutionSpace, VectorView, ScalarView, false, KOKKOSKERNELS_IMPL_COM
       Kokkos::View<SCALAR*, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<typename Kokkos::ArithTraits<SCALAR>::mag_type, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>,    \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                       \
+      Kokkos::View<SCALAR, LAYOUT, Kokkos::Device<EXECSPACE, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,  \
       false, true>;
 
 #include <KokkosBlas1_rot_tpl_spec_decl.hpp>

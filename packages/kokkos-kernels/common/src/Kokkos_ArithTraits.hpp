@@ -1087,11 +1087,8 @@ class ArithTraits<std::complex<RealFloatType> > {
 #ifdef KOKKOS_ENABLE_SYCL
   template <typename Dummy = RealFloatType>
   static bool isInf(const std::complex<Dummy>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isinf;
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
-    using sycl::isinf;
-#endif
+    KOKKOS_IF_ON_HOST((using std::isinf;))
+    KOKKOS_IF_ON_DEVICE((using sycl::isinf;))
     return isinf(real(x)) || isinf(imag(x));
   }
   template <>
@@ -1101,20 +1098,16 @@ class ArithTraits<std::complex<RealFloatType> > {
   }
 #else
   static bool isInf(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isinf;
-#endif
+    KOKKOS_IF_ON_HOST((using std::isinf;))
     return isinf(real(x)) || isinf(imag(x));
   }
 #endif
+
 #ifdef KOKKOS_ENABLE_SYCL
   template <typename Dummy = RealFloatType>
   static bool isNan(const std::complex<Dummy>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isnan;
-#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
-    using sycl::isnan;
-#endif
+    KOKKOS_IF_ON_HOST((using std::isnan;))
+    KOKKOS_IF_ON_DEVICE((using sycl::isnan;))
     return isnan(real(x)) || isnan(imag(x));
   }
   template <>
@@ -1124,9 +1117,7 @@ class ArithTraits<std::complex<RealFloatType> > {
   }
 #else
   static bool isNan(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
-    using std::isnan;
-#endif
+    KOKKOS_IF_ON_HOST((using std::isnan;))
     return isnan(real(x)) || isnan(imag(x));
   }
 #endif
@@ -1168,8 +1159,9 @@ class ArithTraits<std::complex<RealFloatType> > {
   }
   static std::complex<RealFloatType> sqrt(const std::complex<RealFloatType>& x) { return std::sqrt(x); }
   static std::complex<RealFloatType> cbrt(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::cbrt(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::cbrt(x);))
+    KOKKOS_IF_ON_HOST((return ::cbrt(x);))
 #else
     return ::cbrt(x);
 #endif
@@ -1180,8 +1172,9 @@ class ArithTraits<std::complex<RealFloatType> > {
   static std::complex<RealFloatType> sin(const std::complex<RealFloatType>& x) { return std::sin(x); }
   static std::complex<RealFloatType> cos(const std::complex<RealFloatType>& x) { return std::cos(x); }
   static std::complex<RealFloatType> tan(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::tan(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::tan(x);))
+    KOKKOS_IF_ON_HOST((return std::tan(x);))
 #else
     return std::tan(x);
 #endif
@@ -1190,22 +1183,25 @@ class ArithTraits<std::complex<RealFloatType> > {
   static std::complex<RealFloatType> cosh(const std::complex<RealFloatType>& x) { return std::cosh(x); }
   static std::complex<RealFloatType> tanh(const std::complex<RealFloatType>& x) { return std::tanh(x); }
   static std::complex<RealFloatType> asin(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::asin(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::asin(x);))
+    KOKKOS_IF_ON_HOST((return ::asin(x);))
 #else
     return ::asin(x);
 #endif
   }
   static std::complex<RealFloatType> acos(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::acos(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::acos(x);))
+    KOKKOS_IF_ON_HOST((return ::acos(x);))
 #else
     return ::acos(x);
 #endif
   }
   static std::complex<RealFloatType> atan(const std::complex<RealFloatType>& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::atan;
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((using sycl::atan;))
+    KOKKOS_IF_ON_HOST((using ::atan;))
 #else
     using std::atan;
 #endif
@@ -1432,15 +1428,17 @@ struct [[deprecated]] ArithTraits<dd_real> {
   static inline val_type conj(const val_type& x) { return x; }
   static inline val_type pow(const val_type& x, const val_type& y) { return ::pow(x, y); }
   static inline val_type sqrt(const val_type& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::sqrt(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::sqrt(x);))
+    KOKKOS_IF_ON_HOST((return ::sqrt(x);))
 #else
     return ::sqrt(x);
 #endif
   }
   static inline val_type cbrt(const val_type& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::cbrt(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::cbrt(x);))
+    KOKKOS_IF_ON_HOST((return ::cbrt(x);))
 #else
     return ::cbrt(x);
 #endif
@@ -1454,8 +1452,9 @@ struct [[deprecated]] ArithTraits<dd_real> {
   static KOKKOS_FUNCTION val_type sin(const val_type x) { return ::sin(x); }
   static KOKKOS_FUNCTION val_type cos(const val_type x) { return ::cos(x); }
   static KOKKOS_FUNCTION val_type tan(const val_type x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::tan(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::tan(x);))
+    KOKKOS_IF_ON_HOST((return std::tan(x);))
 #else
     return std::tan(x);
 #endif
@@ -1464,22 +1463,25 @@ struct [[deprecated]] ArithTraits<dd_real> {
   static KOKKOS_FUNCTION val_type cosh(const val_type x) { return ::cosh(x); }
   static KOKKOS_FUNCTION val_type tanh(const val_type x) { return ::tanh(x); }
   static KOKKOS_FUNCTION val_type asin(const val_type x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::asin(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::asin(x);))
+    KOKKOS_IF_ON_HOST((return ::asin(x);))
 #else
     return ::asin(x);
 #endif
   }
   static KOKKOS_FUNCTION val_type acos(const val_type x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::acos(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::acos(x);))
+    KOKKOS_IF_ON_HOST((return ::acos(x);))
 #else
     return ::acos(x);
 #endif
   }
   static KOKKOS_FUNCTION val_type atan(const val_type x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::atan(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::atan(x);))
+    KOKKOS_IF_ON_HOST((return ::atan(x);))
 #else
     return ::atan(x);
 #endif
@@ -1511,8 +1513,9 @@ struct [[deprecated]] ArithTraits<dd_real> {
   static bool isnaninf(const val_type& x) { return isNan(x) || isInf(x); }
   static std::string name() { return "dd_real"; }
   static val_type squareroot(const val_type& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::sqrt(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::sqrt(x);))
+    KOKKOS_IF_ON_HOST((return ::sqrt(x);))
 #else
     return ::sqrt(x);
 #endif
@@ -1542,15 +1545,17 @@ struct [[deprecated]] ArithTraits<qd_real> {
   static inline val_type conj(const val_type& x) { return x; }
   static inline val_type pow(const val_type& x, const val_type& y) { return ::pow(x, y); }
   static inline val_type sqrt(const val_type& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::sqrt(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::sqrt(x);))
+    KOKKOS_IF_ON_HOST((return ::sqrt(x);))
 #else
     return ::sqrt(x);
 #endif
   }
   static inline val_type cbrt(const val_type& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::cbrt(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::cbrt(x);))
+    KOKKOS_IF_ON_HOST((return ::cbrt(x);))
 #else
     return ::cbrt(x);
 #endif
@@ -1564,8 +1569,9 @@ struct [[deprecated]] ArithTraits<qd_real> {
   static KOKKOS_FUNCTION val_type sin(const val_type x) { return ::sin(x); }
   static KOKKOS_FUNCTION val_type cos(const val_type x) { return ::cos(x); }
   static KOKKOS_FUNCTION val_type tan(const val_type x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::tan(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::tan(x);))
+    KOKKOS_IF_ON_HOST((return ::tan(x);))
 #else
     return std::tan(x);
 #endif
@@ -1574,22 +1580,25 @@ struct [[deprecated]] ArithTraits<qd_real> {
   static KOKKOS_FUNCTION val_type cosh(const val_type x) { return ::cosh(x); }
   static KOKKOS_FUNCTION val_type tanh(const val_type x) { return ::tanh(x); }
   static KOKKOS_FUNCTION val_type asin(const val_type x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::asin(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::asin(x);))
+    KOKKOS_IF_ON_HOST((return ::asin(x);))
 #else
     return ::asin(x);
 #endif
   }
   static KOKKOS_FUNCTION val_type acos(const val_type x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::acos(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::acos(x);))
+    KOKKOS_IF_ON_HOST((return ::acos(x);))
 #else
     return ::acos(x);
 #endif
   }
   static KOKKOS_FUNCTION val_type atan(const val_type x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::atan(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::atan(x);))
+    KOKKOS_IF_ON_HOST((return ::atan(x);))
 #else
     return ::atan(x);
 #endif
@@ -1625,8 +1634,9 @@ struct [[deprecated]] ArithTraits<qd_real> {
   static bool isnaninf(const val_type& x) { return isNan(x) || isInf(x); }
   static std::string name() { return "qd_real"; }
   static val_type squareroot(const val_type& x) {
-#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    return sycl::sqrt(x);
+#ifdef KOKKOS_ENABLE_SYCL
+    KOKKOS_IF_ON_DEVICE((return sycl::sqrt(x);))
+    KOKKOS_IF_ON_HOST((return ::sqrt(x);))
 #else
     return ::sqrt(x);
 #endif

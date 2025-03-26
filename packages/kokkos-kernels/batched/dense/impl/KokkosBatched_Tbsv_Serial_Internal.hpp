@@ -22,13 +22,13 @@
 #include "KokkosBatched_Util.hpp"
 
 namespace KokkosBatched {
-
+namespace Impl {
 ///
 /// Serial Internal Impl
 /// ====================
 
 ///
-/// Lower, Non-Transpose
+/// Lower
 ///
 
 template <typename AlgoType>
@@ -70,41 +70,29 @@ KOKKOS_INLINE_FUNCTION int SerialTbsvInternalLower<Algo::Tbsv::Unblocked>::invok
 
 template <typename AlgoType>
 struct SerialTbsvInternalLowerTranspose {
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const bool do_conj, const int an,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(Op op, const bool use_unit_diag, const int an,
                                            const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k);
 };
 
 template <>
-template <typename ValueType>
+template <typename Op, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialTbsvInternalLowerTranspose<Algo::Tbsv::Unblocked>::invoke(
-    const bool use_unit_diag, const bool do_conj, const int an, const ValueType *KOKKOS_RESTRICT A, const int as0,
-    const int as1,
+    Op op, const bool use_unit_diag, const int an, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
   for (int j = an - 1; j >= 0; --j) {
     auto temp = x[j * xs0];
-
-    if (do_conj) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-      for (int i = Kokkos::min(an - 1, j + k); i > j; --i) {
-        temp -= Kokkos::ArithTraits<ValueType>::conj(A[(i - j) * as0 + j * as1]) * x[i * xs0];
-      }
-      if (!use_unit_diag) temp = temp / Kokkos::ArithTraits<ValueType>::conj(A[0 + j * as1]);
-    } else {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-      for (int i = Kokkos::min(an - 1, j + k); i > j; --i) {
-        temp -= A[(i - j) * as0 + j * as1] * x[i * xs0];
-      }
-      if (!use_unit_diag) temp = temp / A[0 + j * as1];
+    for (int i = Kokkos::min(an - 1, j + k); i > j; --i) {
+      temp -= op(A[(i - j) * as0 + j * as1]) * x[i * xs0];
     }
+    if (!use_unit_diag) temp = temp / op(A[0 + j * as1]);
     x[j * xs0] = temp;
   }
 
@@ -112,7 +100,7 @@ KOKKOS_INLINE_FUNCTION int SerialTbsvInternalLowerTranspose<Algo::Tbsv::Unblocke
 }
 
 ///
-/// Upper, Non-Transpose
+/// Upper
 ///
 
 template <typename AlgoType>
@@ -154,46 +142,36 @@ KOKKOS_INLINE_FUNCTION int SerialTbsvInternalUpper<Algo::Tbsv::Unblocked>::invok
 
 template <typename AlgoType>
 struct SerialTbsvInternalUpperTranspose {
-  template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const bool use_unit_diag, const bool do_conj, const int an,
+  template <typename Op, typename ValueType>
+  KOKKOS_INLINE_FUNCTION static int invoke(Op op, const bool use_unit_diag, const int an,
                                            const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
                                            /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k);
 };
 
 template <>
-template <typename ValueType>
+template <typename Op, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialTbsvInternalUpperTranspose<Algo::Tbsv::Unblocked>::invoke(
-    const bool use_unit_diag, const bool do_conj, const int an, const ValueType *KOKKOS_RESTRICT A, const int as0,
-    const int as1,
+    Op op, const bool use_unit_diag, const int an, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT x, const int xs0, const int k) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
   for (int j = 0; j < an; j++) {
     auto temp = x[j * xs0];
-    if (do_conj) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-      for (int i = Kokkos::max(0, j - k); i < j; ++i) {
-        temp -= Kokkos::ArithTraits<ValueType>::conj(A[(i + k - j) * as0 + j * as1]) * x[i * xs0];
-      }
-      if (!use_unit_diag) temp = temp / Kokkos::ArithTraits<ValueType>::conj(A[k * as0 + j * as1]);
-    } else {
-#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-#pragma unroll
-#endif
-      for (int i = Kokkos::max(0, j - k); i < j; ++i) {
-        temp -= A[(i + k - j) * as0 + j * as1] * x[i * xs0];
-      }
-      if (!use_unit_diag) temp = temp / A[k * as0 + j * as1];
+    for (int i = Kokkos::max(0, j - k); i < j; ++i) {
+      temp -= op(A[(i + k - j) * as0 + j * as1]) * x[i * xs0];
     }
+    if (!use_unit_diag) temp = temp / op(A[k * as0 + j * as1]);
     x[j * xs0] = temp;
   }
 
   return 0;
 }
 
+}  // namespace Impl
 }  // namespace KokkosBatched
 
 #endif  // KOKKOSBATCHED_TBSV_SERIAL_INTERNAL_HPP_

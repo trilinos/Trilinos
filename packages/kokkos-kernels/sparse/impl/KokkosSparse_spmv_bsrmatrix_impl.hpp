@@ -19,6 +19,7 @@
 
 #include "KokkosKernels_Error.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
+#include "KokkosBlas_util.hpp"
 
 #if defined(KOKKOS_ENABLE_CUDA) && (defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_AMPERE))
 
@@ -1028,10 +1029,12 @@ struct BSR_GEMM_Functor {
       for (ordinal_type ic = 0; ic < count; ++ic) {
         const auto Aview  = row.block(ic);
         const auto xstart = row.block_colidx(ic) * block_dim;
-        KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::invoke<value_type, value_type>(
-            static_cast<ordinal_type>(block_dim), static_cast<ordinal_type>(num_rhs),
-            static_cast<ordinal_type>(block_dim), alpha, Aview.data(), Aview.stride_0(), Aview.stride_1(),
-            &m_x(xstart, 0), m_x.stride_0(), ldx, beta1, &m_y(ystart, 0), m_y.stride_0(), ldy);
+        KokkosBatched::Impl::SerialGemmInternal<KokkosBatched::Algo::Gemm::Blocked>::invoke<
+            KokkosBlas::Impl::OpID, KokkosBlas::Impl::OpID, value_type, value_type>(
+            KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), static_cast<ordinal_type>(block_dim),
+            static_cast<ordinal_type>(num_rhs), static_cast<ordinal_type>(block_dim), alpha, Aview.data(),
+            Aview.stride_0(), Aview.stride_1(), &m_x(xstart, 0), m_x.stride_0(), ldx, beta1, &m_y(ystart, 0),
+            m_y.stride_0(), ldy);
       }
     }
   }

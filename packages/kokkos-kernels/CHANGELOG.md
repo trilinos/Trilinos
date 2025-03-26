@@ -1,5 +1,95 @@
 # Change Log
 
+## [4.6.00](https://github.com/kokkos/kokkos-kernels/tree/4.6.00)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.5.01...4.6.00)
+
+### New Features
+
+#### Batched updates
+
+Improvement and refactoring of batched linear algebra and solvers:
+  - implement batched serial lacgv [\#2499](https://github.com/kokkos/kokkos-kernels/pull/2499)
+  - Implement batched serial syr [\#2497](https://github.com/kokkos/kokkos-kernels/pull/2497)
+  - implement batched serial ger [\#2491](https://github.com/kokkos/kokkos-kernels/pull/2491)
+  - Implement batched serial gbtrf [\#2489](https://github.com/kokkos/kokkos-kernels/pull/2489)
+  - implement batched serial getrs [\#2483](https://github.com/kokkos/kokkos-kernels/pull/2483)
+  - implement batched serial getrf [\#2331](https://github.com/kokkos/kokkos-kernels/pull/2331)
+Adding support for batched QR on rectangular matrices (only had square support) and testing associated features:
+  - batched - dense: Testing and fixing Serial QR [\#2342](https://github.com/kokkos/kokkos-kernels/pull/2342)
+
+#### Sparse updates
+- Adopt `Kokkos::StaticCrsGraph` from "Core" and move `Static{Ccs,Crs}Graph` to namespace `KokkosSparse::` [\#2419](https://github.com/kokkos/kokkos-kernels/pull/2419)
+- Enable block support for sptrsv streams [\#2429](https://github.com/kokkos/kokkos-kernels/pull/2429)
+
+### Enhancements:
+- Assume independent thread scheduling for NVIDIA Blackwell architecture [\#2558](https://github.com/kokkos/kokkos-kernels/pull/2558)
+
+#### Batched
+- Refactor batched serial pbtrs implementation details and tests [\#2504](https://github.com/kokkos/kokkos-kernels/pull/2504)
+- Refactor serial pbtrf implementation details and tests [\#2503](https://github.com/kokkos/kokkos-kernels/pull/2503)
+- Refactor serial tbsv implementation details and tests [\#2478](https://github.com/kokkos/kokkos-kernels/pull/2478)
+- Improve batched serial gemm [\#2469](https://github.com/kokkos/kokkos-kernels/pull/2469)
+- Improve batched serial trsv [\#2452](https://github.com/kokkos/kokkos-kernels/pull/2452)
+- Improve batched serial trsm implementation and testing [\#2432](https://github.com/kokkos/kokkos-kernels/pull/2432)
+
+#### Sparse
+Ahead of Kokkos Kernels 5.0.0 we are deprecating some functions and promoting some out of Experimental
+  - Sparse - SpTRSV: moving kernels out of Experimental [\#2496](https://github.com/kokkos/kokkos-kernels/pull/2496)
+  - Sparse - Iluk deprecate Experimental [\#2495](https://github.com/kokkos/kokkos-kernels/pull/2495)
+  - Sparse - Gauss Seidel: moving GS out of Experimental namespace [\#2494](https://github.com/kokkos/kokkos-kernels/pull/2494)
+  - Sparse - spgemm: moving symbolic and numeric phases out of the Experimental namespace [\#2493](https://github.com/kokkos/kokkos-kernels/pull/2493)
+  - Sparse - SpADD: moving spadd out of Experimental [\#2492](https://github.com/kokkos/kokkos-kernels/pull/2492)
+
+### Build System:
+
+### Documentation and Testing:
+Moving to new documentation on kokkos.org and updating associated workflow
+  - docs: modifying the workflow to add --require-hases for pip [\#2527](https://github.com/kokkos/kokkos-kernels/pull/2527)
+  - docs: pinning github actions by SHA [\#2523](https://github.com/kokkos/kokkos-kernels/pull/2523)
+  - docs: deploy documentation after PR merge [\#2513](https://github.com/kokkos/kokkos-kernels/pull/2513)
+  - docs: updating to the new documentation and refactoring workflow [\#2512](https://github.com/kokkos/kokkos-kernels/pull/2512)
+
+Adding cdash configuration and associated build at OLCF and ALCF
+  - Adding ctest config for cdash submissions [\#2500](https://github.com/kokkos/kokkos-kernels/pull/2500)
+  - Add nightly tests on Frontier [\#2536](https://github.com/kokkos/kokkos-kernels/pull/2536)
+
+- Workflow: refactoring SPR to standard cmake and suppress warnings [\#2502](https://github.com/kokkos/kokkos-kernels/pull/2502)
+- Use fused gtest v1.11.0 from Kokkos [\#2416](https://github.com/kokkos/kokkos-kernels/pull/2416)
+
+### Examples:
+- rotg/rot/rotmg/rotm docs and examples [\#2472](https://github.com/kokkos/kokkos-kernels/pull/2472)
+- Add dot, iamax, nrm1, nrm2 examples [\#2467](https://github.com/kokkos/kokkos-kernels/pull/2467)
+- nrm1: assert vector accessibility [\#2465](https://github.com/kokkos/kokkos-kernels/pull/2465)
+
+### Cleanup:
+- Remove more reserved identifiers [\#2534](https://github.com/kokkos/kokkos-kernels/pull/2534)
+- Remove some use of deprecated macros [\#2532](https://github.com/kokkos/kokkos-kernels/pull/2532)
+- Remove some use of deprecated macros [\#2531](https://github.com/kokkos/kokkos-kernels/pull/2531)
+- Deprecated remarks to trsv serial impl [\#2461](https://github.com/kokkos/kokkos-kernels/pull/2461)
+- Deprecate __KOKKOSBATCHED_ENABLE_LAPACKE__ [\#2450](https://github.com/kokkos/kokkos-kernels/pull/2450)
+- Deprecate KOKKOS_CUSPARSE_SAFE_CALL -> KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL [\#2426](https://github.com/kokkos/kokkos-kernels/pull/2426)
+- Remove unused KokkosBatched_InverseLU_Serial_Impl.hpp [\#2422](https://github.com/kokkos/kokkos-kernels/pull/2422)
+
+### Bug Fixes:
+- Sparse - sptrsv: Adjusting the perf test CUDA guard see issue #2428 [\#2535](https://github.com/kokkos/kokkos-kernels/pull/2535)
+- Fixing issue with pragma unroll in laswp [\#2525](https://github.com/kokkos/kokkos-kernels/pull/2525)
+- SYCL - SIMD: preventing AVX512 code to be compiled when targeting GPU [\#2510](https://github.com/kokkos/kokkos-kernels/pull/2510)
+- SYCL: Fix Test_Common_AlignPtrTo.hpp [\#2506](https://github.com/kokkos/kokkos-kernels/pull/2506)
+- Batched svd stability [\#2505](https://github.com/kokkos/kokkos-kernels/pull/2505)
+- Only search for kokkos if it is not already found [\#2511](https://github.com/kokkos/kokkos-kernels/pull/2511)
+- Fix: getrs serial internal implementations [\#2488](https://github.com/kokkos/kokkos-kernels/pull/2488)
+- Fix -Werror in a couple wiki examples [\#2476](https://github.com/kokkos/kokkos-kernels/pull/2476)
+- BLAS - ROT: calling appropriate cuBLAS function [\#2473](https://github.com/kokkos/kokkos-kernels/pull/2473)
+- ODE: fix potentially uninitialized warning from CodeQL [\#2477](https://github.com/kokkos/kokkos-kernels/pull/2477)
+- fix: alias for serial trsv [\#2458](https://github.com/kokkos/kokkos-kernels/pull/2458)
+- Sptrsv stream test fixes [\#2444](https://github.com/kokkos/kokkos-kernels/pull/2444)
+- Test_Sparse_TestUtils_RandCsMat.hpp: tighten up types [\#2443](https://github.com/kokkos/kokkos-kernels/pull/2443)
+- Ode sycl fix [\#2423](https://github.com/kokkos/kokkos-kernels/pull/2423)
+- Two-stage GS: initialize functor bool members [\#2420](https://github.com/kokkos/kokkos-kernels/pull/2420)
+- Fix remaining UB sanitizer errors [\#2417](https://github.com/kokkos/kokkos-kernels/pull/2417)
+- remove unused `FillSymmetricLowerEdgesHashMap::lower_only` [\#2415](https://github.com/kokkos/kokkos-kernels/pull/2415)
+- Fix unit test headers installation [\#2334](https://github.com/kokkos/kokkos-kernels/pull/2334)
+
 ## [4.5.01](https://github.com/kokkos/kokkos-kernels/tree/4.5.01)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.5.00...4.5.01)
 
@@ -63,7 +153,7 @@
   - Deprecate `__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__` [\#2406](https://github.com/kokkos/kokkos-kernels/pull/2406)
   - Deprecate `__KOKKOSBATCHED_ENABLE_INTEL_MKL__` [\#2403](https://github.com/kokkos/kokkos-kernels/pull/2403)
   - Deprecate `__KOKKOSBATCHED_PROMOTION__` [\#2392](https://github.com/kokkos/kokkos-kernels/pull/2392)
-- Update atomic function usage ahead of Kokkos deprecation and removal 
+- Update atomic function usage ahead of Kokkos deprecation and removal
   - Prefer `expected == atomic_compare_exchange(ptr, expected, desired)` [\#2387](https://github.com/kokkos/kokkos-kernels/pull/2387)
   - Prefer `atomic_assign(ptr, val) -> atomic_store(ptr, val)` [\#2383](https://github.com/kokkos/kokkos-kernels/pull/2383)
   - Replace atomic_{inc, dec}[rement] [\#2386](https://github.com/kokkos/kokkos-kernels/pull/2386)

@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSKERNELS_TPLS_VERSIONS_HPP
-#define _KOKKOSKERNELS_TPLS_VERSIONS_HPP
+#ifndef KOKKOSKERNELS_TPLS_VERSIONS_HPP
+#define KOKKOSKERNELS_TPLS_VERSIONS_HPP
 
 #include "KokkosKernels_config.h"
 #include <sstream>
@@ -67,4 +67,4 @@ inline std::string cusolver_version_string() {
 #endif
 
 }  // namespace KokkosKernels
-#endif  // _KOKKOSKERNELS_TPLS_VERSIONS_HPP
+#endif  // KOKKOSKERNELS_TPLS_VERSIONS_HPP
