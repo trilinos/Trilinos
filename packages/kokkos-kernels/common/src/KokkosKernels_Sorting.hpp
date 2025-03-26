@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSKERNELS_SORTING_HPP
-#define _KOKKOSKERNELS_SORTING_HPP
+#ifndef KOKKOSKERNELS_SORTING_HPP
+#define KOKKOSKERNELS_SORTING_HPP
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Sort.hpp"

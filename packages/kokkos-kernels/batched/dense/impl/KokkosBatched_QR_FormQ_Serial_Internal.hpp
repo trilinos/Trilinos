@@ -38,7 +38,7 @@ struct SerialQR_FormQ_Internal {
                                            /* */ ValueType* t, const int ts,
                                            /* */ ValueType* Q, const int qs0, const int qs1,
                                            /* */ ValueType* w, const bool is_Q_zero = false) {
-    typedef ValueType value_type;
+    using value_type = ValueType;
 
     /// Given a matrix A that includes QR factorization
     /// it forms a unitary matrix Q
@@ -49,12 +49,16 @@ struct SerialQR_FormQ_Internal {
     ///   B is m x m
 
     // set identity
-    if (is_Q_zero)
-      SerialSetInternal::invoke(m, value_type(1), Q, qs0 + qs1);
-    else
-      SerialSetIdentityInternal::invoke(m, Q, qs0, qs1);
+    if (is_Q_zero) {
+      for (int idx = 0; idx < m; ++idx) {
+        Q[(qs0 + qs1) * idx] = value_type(1);
+        // SerialSetInternal::invoke(m, value_type(1), Q, qs0 + qs1);
+      }
+    } else {
+      SerialSetIdentityInternal::invoke(m, m, Q, qs0, qs1);
+    }
 
-    return SerialApplyQ_LeftNoTransForwardInternal ::invoke(m, m, k, A, as0, as1, t, ts, Q, qs0, qs1, w);
+    return SerialApplyQ_LeftForwardInternal::invoke(m, m, k, A, as0, as1, t, ts, Q, qs0, qs1, w);
   }
 };
 

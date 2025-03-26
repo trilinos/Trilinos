@@ -94,8 +94,8 @@ void run_test_par_ilut() {
   const size_type nnzL = par_ilut_handle->get_nnzL();
   const size_type nnzU = par_ilut_handle->get_nnzU();
 
-  ASSERT_EQ(nnzL, 10);
-  ASSERT_EQ(nnzU, 8);
+  ASSERT_EQ(nnzL, size_type(10));
+  ASSERT_EQ(nnzU, size_type(8));
 
   EntriesType L_entries("L_entries", nnzL);
   ValuesType L_values("L_values", nnzL);
@@ -337,8 +337,8 @@ void run_test_par_ilut_zerorow_A() {
   const size_type nnzL = par_ilut_handle->get_nnzL();
   const size_type nnzU = par_ilut_handle->get_nnzU();
 
-  ASSERT_EQ(nnzL, 0);
-  ASSERT_EQ(nnzU, 0);
+  ASSERT_EQ(nnzL, size_type(0));
+  ASSERT_EQ(nnzU, size_type(0));
 
   EntriesType L_entries("L_entries", nnzL);
   ValuesType L_values("L_values", nnzL);

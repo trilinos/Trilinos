@@ -83,8 +83,8 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
 
   /* create lhs and rhs */
   cusparseDnVecDescr_t vecX, vecY;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x.extent_int(0), (void*)x.data(), myCudaDataType));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x.extent_int(0), (void*)x.data(), myCudaDataType));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y.extent_int(0), (void*)y.data(), myCudaDataType));
 
   // Prior to CUDA 11.2.1, ALG2 was more performant than default for imbalanced
   // matrices. After 11.2.1, the default is performant for imbalanced matrices,
@@ -115,14 +115,15 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
     handle->tpl_rank1 = subhandle;
 
     /* create matrix */
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&subhandle->mat, A.numRows(), A.numCols(), A.nnz(),
-                                                (void*)A.graph.row_map.data(), (void*)A.graph.entries.data(),
-                                                (void*)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
-                                                CUSPARSE_INDEX_BASE_ZERO, myCudaDataType));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseCreateCsr(&subhandle->mat, A.numRows(), A.numCols(), A.nnz(), (void*)A.graph.row_map.data(),
+                          (void*)A.graph.entries.data(), (void*)A.values.data(), myCusparseOffsetType,
+                          myCusparseEntryType, CUSPARSE_INDEX_BASE_ZERO, myCudaDataType));
 
     /* size and allocate buffer */
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(cusparseHandle, myCusparseOperation, &alpha, subhandle->mat, vecX,
-                                                      &beta, vecY, myCudaDataType, algo, &subhandle->bufferSize));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(cusparseHandle, myCusparseOperation, &alpha,
+                                                                 subhandle->mat, vecX, &beta, vecY, myCudaDataType,
+                                                                 algo, &subhandle->bufferSize));
     //  Async memory management introduced in CUDA 11.2
 #if (CUDA_VERSION >= 11020)
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMallocAsync(&subhandle->buffer, subhandle->bufferSize, exec.cuda_stream()));
@@ -132,11 +133,11 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   }
 
   /* perform SpMV */
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV(cusparseHandle, myCusparseOperation, &alpha, subhandle->mat, vecX, &beta, vecY,
-                                         myCudaDataType, algo, subhandle->buffer));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMV(cusparseHandle, myCusparseOperation, &alpha, subhandle->mat, vecX,
+                                                    &beta, vecY, myCudaDataType, algo, subhandle->buffer));
 
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
 
 #elif (9000 <= CUDA_VERSION)
 
@@ -151,9 +152,9 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
     subhandle                 = new KokkosSparse::Impl::CuSparse9_SpMV_Data(exec);
     handle->tpl_rank1         = subhandle;
     cusparseMatDescr_t descrA = 0;
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&subhandle->mat));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(subhandle->mat, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(subhandle->mat, CUSPARSE_INDEX_BASE_ZERO));
   }
 
   /* perform the actual SpMV operation */
@@ -161,26 +162,26 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
                 "With cuSPARSE pre-10.0, offset type must be int. Something wrong with "
                 "TPL avail logic.");
   if constexpr (std::is_same_v<value_type, float>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrmv(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseScsrmv(
         cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(), reinterpret_cast<float const*>(&alpha),
         subhandle->mat, reinterpret_cast<float const*>(A.values.data()), A.graph.row_map.data(), A.graph.entries.data(),
         reinterpret_cast<float const*>(x.data()), reinterpret_cast<float const*>(&beta),
         reinterpret_cast<float*>(y.data())));
 
   } else if constexpr (std::is_same_v<value_type, double>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrmv(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDcsrmv(
         cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(), reinterpret_cast<double const*>(&alpha),
         subhandle->mat, reinterpret_cast<double const*>(A.values.data()), A.graph.row_map.data(),
         A.graph.entries.data(), reinterpret_cast<double const*>(x.data()), reinterpret_cast<double const*>(&beta),
         reinterpret_cast<double*>(y.data())));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<float>>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCcsrmv(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCcsrmv(
         cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(),
         reinterpret_cast<cuComplex const*>(&alpha), subhandle->mat, reinterpret_cast<cuComplex const*>(A.values.data()),
         A.graph.row_map.data(), A.graph.entries.data(), reinterpret_cast<cuComplex const*>(x.data()),
         reinterpret_cast<cuComplex const*>(&beta), reinterpret_cast<cuComplex*>(y.data())));
   } else if constexpr (std::is_same_v<value_type, Kokkos::complex<double>>) {
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseZcsrmv(cusparseHandle, myCusparseOperation, A.numRows(), A.numCols(), A.nnz(),
                        reinterpret_cast<cuDoubleComplex const*>(&alpha), subhandle->mat,
                        reinterpret_cast<cuDoubleComplex const*>(A.values.data()), A.graph.row_map.data(),

@@ -263,8 +263,8 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
   double numericTime  = 0;
 
   // Do an untimed warm up symbolic, and preallocate space for C entries/values
-  spadd_symbolic(exec_space{}, &kh, A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries, B.graph.row_map,
-                 B.graph.entries, row_mapC);
+  KokkosSparse::spadd_symbolic(exec_space{}, &kh, A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries,
+                               B.graph.row_map, B.graph.entries, row_mapC);
 
   bool use_kk = !params.use_cusparse && !params.use_mkl;
 
@@ -277,20 +277,20 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
   const double alphabeta = 1.0;
 
   if (params.use_cusparse) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(cusparseHandle, CUSPARSE_POINTER_MODE_HOST));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&A_cusparse));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&B_cusparse));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&C_cusparse));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(A_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(B_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatType(C_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatDiagType(A_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatDiagType(B_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatDiagType(C_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(A_cusparse, CUSPARSE_INDEX_BASE_ZERO));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(B_cusparse, CUSPARSE_INDEX_BASE_ZERO));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(C_cusparse, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(cusparseHandle, CUSPARSE_POINTER_MODE_HOST));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&A_cusparse));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&B_cusparse));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateMatDescr(&C_cusparse));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(A_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(B_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatType(C_cusparse, CUSPARSE_MATRIX_TYPE_GENERAL));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatDiagType(A_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatDiagType(B_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatDiagType(C_cusparse, CUSPARSE_DIAG_TYPE_NON_UNIT));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(A_cusparse, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(B_cusparse, CUSPARSE_INDEX_BASE_ZERO));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetMatIndexBase(C_cusparse, CUSPARSE_INDEX_BASE_ZERO));
   }
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
@@ -312,24 +312,24 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
   for (int sumRep = 0; sumRep < params.repeat; sumRep++) {
     timer.reset();
     if (use_kk) {
-      spadd_symbolic(exec_space{}, &kh, A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries, B.graph.row_map,
-                     B.graph.entries, row_mapC);
+      KokkosSparse::spadd_symbolic(exec_space{}, &kh, A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries,
+                                   B.graph.row_map, B.graph.entries, row_mapC);
       c_nnz = addHandle->get_c_nnz();
     } else if (params.use_cusparse) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
       if constexpr (std::is_same_v<lno_t, int> && std::is_same_v<size_type, int>) {
         // Symbolic phase: compute buffer size, then compute nnz
         size_t bufferSize;
-        KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2_bufferSizeExt(
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2_bufferSizeExt(
             cusparseHandle, A.numRows(), A.numCols(), &alphabeta, A_cusparse, A.nnz(), A.values.data(),
             A.graph.row_map.data(), A.graph.entries.data(), &alphabeta, B_cusparse, B.nnz(), B.values.data(),
             B.graph.row_map.data(), B.graph.entries.data(), C_cusparse, NULL, row_mapC.data(), NULL, &bufferSize));
         // Allocate work buffer
         KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void**)&cusparseBuffer, bufferSize));
-        KOKKOS_CUSPARSE_SAFE_CALL(cusparseXcsrgeam2Nnz(cusparseHandle, m, n, A_cusparse, A.nnz(),
-                                                       A.graph.row_map.data(), A.graph.entries.data(), B_cusparse,
-                                                       B.nnz(), B.graph.row_map.data(), B.graph.entries.data(),
-                                                       C_cusparse, row_mapC.data(), &c_nnz, cusparseBuffer));
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+            cusparseXcsrgeam2Nnz(cusparseHandle, m, n, A_cusparse, A.nnz(), A.graph.row_map.data(),
+                                 A.graph.entries.data(), B_cusparse, B.nnz(), B.graph.row_map.data(),
+                                 B.graph.entries.data(), C_cusparse, row_mapC.data(), &c_nnz, cusparseBuffer));
       } else {
         throw std::runtime_error(
             "Must enable int as both ordinal and offset type in KokkosKernels "
@@ -351,7 +351,7 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
       if (params.use_cusparse) {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
         if constexpr (std::is_same_v<lno_t, int> && std::is_same_v<size_type, int>) {
-          KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2(
+          KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDcsrgeam2(
               cusparseHandle, m, n, &alphabeta, A_cusparse, A.nnz(), A.values.data(), A.graph.row_map.data(),
               A.graph.entries.data(), &alphabeta, B_cusparse, B.nnz(), B.values.data(), B.graph.row_map.data(),
               B.graph.entries.data(), C_cusparse, valuesC.data(), row_mapC.data(), entriesC.data(), cusparseBuffer));
@@ -365,11 +365,12 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
         }
 #endif
       } else {
-        spadd_numeric(exec_space{}, &kh, A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries, A.values,
-                      1.0,  // A, alpha
-                      B.graph.row_map, B.graph.entries, B.values,
-                      1.0,                           // B, beta
-                      row_mapC, entriesC, valuesC);  // C
+        KokkosSparse::spadd_numeric(exec_space{}, &kh, A.numRows(), A.numCols(), A.graph.row_map, A.graph.entries,
+                                    A.values,
+                                    1.0,  // A, alpha
+                                    B.graph.row_map, B.graph.entries, B.values,
+                                    1.0,                           // B, beta
+                                    row_mapC, entriesC, valuesC);  // C
       }
     }
     numericTime += timer.seconds();
@@ -379,7 +380,7 @@ void run_experiment(int argc, char** argv, CommonInputParams) {
   }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-  if (params.use_cusparse) KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroy(cusparseHandle));
+  if (params.use_cusparse) KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroy(cusparseHandle));
 #endif
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL

@@ -1200,7 +1200,7 @@ class GraphColorDistance2 {
                 if (vid_d1 != vid) {
                   const color_type color        = _colors(vid_d1);
                   const color_type color_offset = color - offset;
-                  if (color && color_offset <= VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
+                  if (color && color_offset < VBBIT_D2_COLORING_FORBIDDEN_SIZE) {
                     // if it is in the current range, then add the color to the
                     // banned colors
                     if (color > offset) {

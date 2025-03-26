@@ -338,7 +338,7 @@ struct SerialEigendecompositionInternal {
   inline static int host_invoke(const int m, RealType* A, const int as0, const int as1, RealType* er, const int ers,
                                 RealType* ei, const int eis, RealType* UL, const int uls0, const int uls1, RealType* UR,
                                 const int urs0, const int urs1, RealType* w, const int wlen) {
-#if defined(__KOKKOSBATCHED_ENABLE_LAPACKE__) || defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL)
+#if defined(KOKKOSBATCHED_IMPL_ENABLE_LAPACKE) || defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL)
     int matrix_layout(0), lda(0), uls(0), urs(0);
     if (as0 == 1) {
       assert(uls0 == 1 && "UL is not column major");
