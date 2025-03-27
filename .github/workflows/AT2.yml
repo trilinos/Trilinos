@@ -110,6 +110,13 @@ jobs:
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
             --num-concurrent-tests=16
+      - name: Copy artifacts
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          cp ./packageEnables.cmake /home/runner/artifacts/
+          cp ./configure_command.txt /home/runner/artifacts/
+          cp ./genconfig_build_name.txt /home/runner/artifacts/
       - name: Upload artifacts
         if: success() || failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
@@ -213,6 +220,13 @@ jobs:
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
             --num-concurrent-tests=16
+      - name: Copy artifacts
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          cp ./packageEnables.cmake /home/runner/artifacts/
+          cp ./configure_command.txt /home/runner/artifacts/
+          cp ./genconfig_build_name.txt /home/runner/artifacts/
       - name: Upload artifacts
         if: success() || failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
@@ -315,6 +329,13 @@ jobs:
             --max-cores-allowed=56 \
             --num-concurrent-tests=112 \
             --slots-per-gpu=8
+      - name: Copy artifacts
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          cp ./packageEnables.cmake /home/runner/artifacts/
+          cp ./configure_command.txt /home/runner/artifacts/
+          cp ./genconfig_build_name.txt /home/runner/artifacts/
       - name: Upload artifacts
         if: success() || failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
@@ -413,7 +434,14 @@ jobs:
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
-            --skip-create-packageenables \
+            --skip-create-packageenables
+      - name: Copy artifacts
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          cp ./packageEnables.cmake /home/runner/artifacts/
+          cp ./configure_command.txt /home/runner/artifacts/
+          cp ./genconfig_build_name.txt /home/runner/artifacts/
       - name: Upload artifacts
         if: success() || failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
