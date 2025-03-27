@@ -264,7 +264,8 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
   TEUCHOS_ASSERT(prefixSumHost(numMyRows) == totalNumOwnedCols)
   Kokkos::deep_copy(prefixSumEntriesPerRow, prefixSumHost);
 
-  auto uniqueColumnIndices = Kokkos::View<GO*>(
+  using device_type        = typename NT::device_type;
+  auto uniqueColumnIndices = Kokkos::View<GO*, device_type>(
       Kokkos::ViewAllocateWithoutInitializing("uniqueColumnIndices"), totalNumOwnedCols);
   auto columnIndices = Kokkos::View<GO*>(Kokkos::ViewAllocateWithoutInitializing("columnIndices"),
                                          totalNumOwnedCols);
