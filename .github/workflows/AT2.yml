@@ -70,7 +70,7 @@ jobs:
           git branch -a
       - name: Output ccache stats
         run: |
-          ccache --show-stats --verbose
+          bash -l -c "ccache --show-stats --verbose"
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
@@ -175,7 +175,7 @@ jobs:
           git branch -a
       - name: Output ccache stats
         run: |
-          ccache --show-stats --verbose
+          bash -l -c "ccache --show-stats --verbose"
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
@@ -281,7 +281,7 @@ jobs:
           git branch -a
       - name: Output ccache stats
         run: |
-          ccache --show-stats --verbose
+          bash -l -c "ccache --show-stats --verbose"
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
@@ -386,7 +386,7 @@ jobs:
           git branch -a
       - name: Output ccache stats
         run: |
-          ccache --show-stats --verbose
+          bash -l -c "ccache --show-stats --verbose"
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
