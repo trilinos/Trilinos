@@ -1,7 +1,9 @@
 #include <Akri_MeshSpecs.hpp>
+#include <Akri_SecondOrderMeshSpecs.hpp>
 #include <Akri_Unit_RefinementFixture.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <Akri_OutputUtils.hpp>
+#include <Akri_UnitTestUtils.hpp>
 
 
 namespace krino {
@@ -14,32 +16,50 @@ public:
     set_valid_proc_sizes_for_test({1});
     StkMeshTriFixture::build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1});
   }
-  stk::mesh::Entity get_element()
-  {
-    const std::vector<stk::mesh::Entity> ownedElements = get_owned_elements();
-    return ownedElements[0];
-  }
+  stk::mesh::Entity get_element() { return get_owned_elements()[0]; }
   Edge get_edge(unsigned edgeOrdinal) { std::vector<Edge> elemEdges; fill_entity_edges(mMesh, get_element(), elemEdges); return elemEdges[edgeOrdinal]; }
-protected:
 };
+
+class RegularTri6Refinement : public RefinementFixture<RegularTri6>
+{
+public:
+  RegularTri6Refinement()
+  {
+    set_valid_proc_sizes_for_test({1});
+    StkMeshTri6Fixture::build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1});
+  }
+  stk::mesh::Entity get_element() { return get_owned_elements()[0]; }
+  Edge get_edge(unsigned edgeOrdinal) { std::vector<Edge> elemEdges; fill_entity_edges(mMesh, get_element(), elemEdges); return elemEdges[edgeOrdinal]; }
+};
+
+template<typename FIXTURE, typename MESHSPEC>
+void set_valid_procs_and_build_mesh_for_UMR_regular_tri(FIXTURE & fixture,
+    const MESHSPEC & meshSpec,
+    stk::ParallelMachine comm)
+{
+  fixture.set_valid_proc_sizes_for_test({1,2,3,4});
+  if(stk::parallel_machine_size(comm) == 1)
+    fixture.build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
+  else if(stk::parallel_machine_size(comm) == 2)
+    fixture.build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1,1,1}, {0,1,0,1});
+  else if(stk::parallel_machine_size(comm) == 3)
+    fixture.build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1,1,1}, {0,1,2,0});
+  else if(stk::parallel_machine_size(comm) == 4)
+    fixture.build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1,1,1}, {0,1,2,3});
+}
 
 class UMRRegularTriRefinement : public RefinementFixture<UMRRegularTri>
 {
 public:
-  UMRRegularTriRefinement()
-  {
-    set_valid_proc_sizes_for_test({1,2,3,4});
-    if(stk::parallel_machine_size(mComm) == 1)
-      this->build_mesh(meshSpec.nodeLocs, {meshSpec.allElementConn});
-    else if(stk::parallel_machine_size(mComm) == 2)
-      this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1,1,1}, {0,1,0,1});
-    else if(stk::parallel_machine_size(mComm) == 3)
-      this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1,1,1}, {0,1,2,0});
-    else if(stk::parallel_machine_size(mComm) == 4)
-      this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {1,1,1,1}, {0,1,2,3});
-  }
-protected:
+  UMRRegularTriRefinement() { set_valid_procs_and_build_mesh_for_UMR_regular_tri(*this, meshSpec, mComm); }
 };
+
+class UMRRegularTriShellRefinement : public RefinementFixture<UMRRegularTriShell>
+{
+public:
+  UMRRegularTriShellRefinement() { set_valid_procs_and_build_mesh_for_UMR_regular_tri(*this, meshSpec, mComm); }
+};
+
 
 class UMRRegularTriRefinementWithCornerElementsInBlock2 : public RefinementFixture<UMRRegularTri>
 {
@@ -101,6 +121,24 @@ class RightTriSurroundedByEdgeTrisRefinement : public RefinementFixture<RightTri
 {
 public:
   RightTriSurroundedByEdgeTrisRefinement()
+  {
+    set_valid_proc_sizes_for_test({1,2,3,4});
+    if(stk::parallel_machine_size(mComm) == 1)
+      this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {2,2,2,1}, {0,0,0,0});
+    else if(stk::parallel_machine_size(mComm) == 2)
+      this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {2,2,2,1}, {0,0,1,1});
+    else if(stk::parallel_machine_size(mComm) == 3)
+      this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {2,2,2,1}, {0,1,2,2});
+    else if(stk::parallel_machine_size(mComm) == 4)
+      this->build_mesh(meshSpec.nodeLocs, meshSpec.allElementConn, {2,2,2,1}, {0,1,2,3});
+  }
+protected:
+};
+
+class RightTri6SurroundedByEdgeTrisRefinement : public RefinementFixture<RightTri6SurroundedByEdgeTris>
+{
+public:
+  RightTri6SurroundedByEdgeTrisRefinement()
   {
     set_valid_proc_sizes_for_test({1,2,3,4});
     if(stk::parallel_machine_size(mComm) == 1)
@@ -238,6 +276,74 @@ TEST_F(RegularTriRefinement, meshAfter3LevelsOfUMRViaUniformMarker_have85Element
   }
 }
 
+bool does_at_least_one_element_use_node(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & elems, const stk::mesh::Entity node)
+{
+  for (auto & elem : elems)
+    if (std::find(mesh.begin_nodes(elem), mesh.end_nodes(elem), node) != mesh.end_nodes(elem))
+      return true;
+  return false;
+}
+
+void expect_all_nodes_of_parent_are_used_by_at_least_one_child(const stk::mesh::BulkData & mesh, const stk::mesh::Entity parent, const std::vector<stk::mesh::Entity> & children)
+{
+  for (auto parentNode : StkMeshEntities{mesh.begin_nodes(parent), mesh.end_nodes(parent)})
+  {
+    EXPECT_TRUE(does_at_least_one_element_use_node(mesh, children, parentNode));
+  }
+}
+
+TEST_F(RegularTri6Refinement, givenMeshWithSingleTriMarked_afterRefinement_have4ChildElements)
+{
+  if(is_valid_proc_size_for_test())
+  {
+    refine_elements_with_given_indices({0});
+
+    EXPECT_EQ(5u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
+
+    EXPECT_TRUE(myRefinement.is_parent(get_element()));
+    const std::vector<stk::mesh::Entity> children = myRefinement.get_children(get_element());
+    EXPECT_EQ(4u, children.size());
+
+    expect_all_nodes_of_parent_are_used_by_at_least_one_child(mMesh, get_element(), children); // Checking that all parent edge midnodes end up as child nodes
+  }
+}
+
+TEST_F(RegularTri6Refinement, givenMeshWithSingleTriMarkedAndDisplaceMidNode_afterRefinement_displaceLocationPreserved)
+{
+  if(is_valid_proc_size_for_test())
+  {
+    const stk::mesh::Entity edgeNode = mMesh.get_entity(stk::topology::NODE_RANK, mBuilder.get_assigned_node_global_ids()[3]);
+    const stk::mesh::Entity edgeOppNode = mMesh.get_entity(stk::topology::NODE_RANK, mBuilder.get_assigned_node_global_ids()[2]);
+    const stk::math::Vector3d preRefineNodeCoords = 0.75*get_node_coordinates(edgeNode)+0.25*get_node_coordinates(edgeOppNode);
+    set_node_coordinates(edgeNode, preRefineNodeCoords);
+
+    refine_elements_with_given_indices({0});
+
+    EXPECT_EQ(5u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
+    const stk::math::Vector3d postRefineNodeCoords = get_node_coordinates(edgeNode);
+    expect_near(preRefineNodeCoords, postRefineNodeCoords);
+  }
+}
+
+TEST_F(RegularTri6Refinement, twoRoundsOfRefiningTipElement_11Elements)
+{
+  if(is_valid_proc_size_for_test())
+  {
+    refine_elements({get_element()});
+
+    EXPECT_EQ(5u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
+
+    std::vector<stk::mesh::Entity> childElems = get_children(get_element());
+    ASSERT_EQ(4u, childElems.size());
+
+    refine_elements({childElems[0]});
+
+    EXPECT_EQ(25u, get_global_num_entities(mMesh, stk::topology::NODE_RANK));
+    EXPECT_EQ(11u, get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK));
+  }
+}
+
+
 TEST_F(RightTriSurroundedByEdgeTrisRefinement, refinementOfOneTriInParallel_expectEdgeIsRefinedAndCoordinatesAreCorrect)
 {
   if(is_valid_proc_size_for_test())
@@ -283,6 +389,36 @@ TEST_F(RightTriSurroundedByEdgeTrisRefinement, checkAllPossibleRefinementsInPara
         edgeElementsToRefine.push_back(iEdge);
 
     refine_elements_with_given_indices(edgeElementsToRefine);
+
+    stk::mesh::create_all_sides(mMesh, mMesh.mesh_meta_data().universal_part(), stk::mesh::PartVector{}, false);
+    EXPECT_TRUE(mBuilder.check_boundary_sides());
+    EXPECT_TRUE(mBuilder.check_block_boundary_sides());
+
+    unrefine_mesh();
+  }
+}
+
+TEST_F(RightTri6SurroundedByEdgeTrisRefinement, checkAllPossibleRefinementsInParallel_expectBoundarySidesAreCorrect)
+{
+  if(!is_valid_proc_size_for_test())
+    return;
+
+  const bool doWriteMesh = true;
+
+  for (int i=0; i<8; ++i)
+  {
+    std::vector<unsigned> edgeElementsToRefine;
+    for (unsigned iEdge=0; iEdge<3; ++iEdge)
+      if (i & (1<<iEdge))
+        edgeElementsToRefine.push_back(iEdge);
+
+    refine_elements_with_given_indices(edgeElementsToRefine);
+
+    if (doWriteMesh)
+    {
+      const std::string filename = "test" + std::to_string(i) + ".e";
+      write_mesh(filename);
+    }
 
     stk::mesh::create_all_sides(mMesh, mMesh.mesh_meta_data().universal_part(), stk::mesh::PartVector{}, false);
     EXPECT_TRUE(mBuilder.check_boundary_sides());
@@ -508,6 +644,53 @@ TEST_F(UMRRegularTriRefinementWithCornerElementsInBlock2, centerElementInDiffere
   mark_all_children_of_center_element_and_one_corner_element_for_unrefinement_and_unrefine();
 
   test_field_is_preserved_on_child_edge_during_unrefinement(block1Field, get_assigned_node_for_index(3), get_assigned_node_for_index(5), goldFieldVal);
+}
+
+TEST_F(UMRRegularTriShellRefinement, refinementThenUnrefinementTest)
+{
+  if(!is_valid_proc_size_for_test())
+    return;
+
+  const bool doWriteMesh = false;
+
+  if (doWriteMesh)
+    write_mesh("test.e");
+
+  int count = 0;
+
+  const std::vector<size_t> goldNumElementsByRefinementLevel = {20, 68, 180, 420, 916, 1924, 3956};
+  for (size_t i=0; i<goldNumElementsByRefinementLevel.size(); ++i)
+  {
+    mark_elements_spanning_x_equal_0();
+
+    if (doWriteMesh)
+      refine_marked_elements(create_file_name("test", ++count));
+    else
+      refine_marked_elements();
+
+    const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+    EXPECT_EQ(goldNumElementsByRefinementLevel[i], numElements);
+
+    if (0 == stk::parallel_machine_rank(mComm))
+      std::cout << "Refinement Level " << i+1 << ", num elements = " << numElements << std::endl;
+  }
+
+  const std::vector<size_t> goldNumElementsByUnrefinementLevel = {1924, 916, 420, 180, 68, 20, 4};
+  for (size_t i=0; i<goldNumElementsByUnrefinementLevel.size(); ++i)
+  {
+    mark_all_elements_for_unrefinement();
+
+    if (doWriteMesh)
+      refine_marked_elements(create_file_name("test", ++count));
+    else
+      refine_marked_elements();
+
+    const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
+    EXPECT_EQ(goldNumElementsByUnrefinementLevel[i], numElements);
+
+    if (0 == stk::parallel_machine_rank(mComm))
+      std::cout << "Unrefinement Level " << i+1 << ", num elements = " << numElements << std::endl;
+  }
 }
 
 }

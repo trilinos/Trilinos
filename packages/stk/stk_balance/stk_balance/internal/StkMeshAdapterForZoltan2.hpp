@@ -83,7 +83,7 @@ private:
   const Zoltan2ParallelGraph &mGraph;
 
 public: // defaultish
-  virtual bool availAdjs(Zoltan2::MeshEntityType /*source*/, Zoltan2::MeshEntityType /*target*/) const
+  virtual bool availAdjs(Zoltan2::MeshEntityType /*source*/, Zoltan2::MeshEntityType /*target*/) const override
   {
     return false;
   }

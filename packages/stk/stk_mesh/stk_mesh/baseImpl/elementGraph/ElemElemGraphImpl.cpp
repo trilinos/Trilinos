@@ -150,10 +150,7 @@ bool is_id_already_in_use_locally(stk::mesh::BulkData& bulkData, stk::mesh::Enti
 bool does_side_exist_with_different_permutation(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
         stk::mesh::ConnectivityOrdinal side_ordinal, stk::mesh::Permutation perm)
 {
-    unsigned ranked_side_ordinal;
-    stk::mesh::EntityRank side_rank;
-
-    bulkData.bucket(element).topology().ranked_side_ordinal(side_ordinal, ranked_side_ordinal, side_rank);
+    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
 
     unsigned elem_num_sides = bulkData.num_connectivity(element, side_rank);
     const stk::mesh::ConnectivityOrdinal * elem_ord_it = bulkData.begin_ordinals(element, side_rank);
@@ -161,7 +158,7 @@ bool does_side_exist_with_different_permutation(stk::mesh::BulkData& bulkData, s
 
     for (unsigned i=0 ; i<elem_num_sides ; ++i)
     {
-        if (elem_ord_it[i] == ranked_side_ordinal)
+        if (elem_ord_it[i] == static_cast<unsigned>(side_ordinal))
         {
             if (perm != elem_perm_it[i])
             {
@@ -179,17 +176,14 @@ bool does_side_exist_with_different_permutation(stk::mesh::BulkData& bulkData, s
 bool does_element_side_exist(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side_ordinal)
 {
     stk::mesh::Entity side = stk::mesh::Entity();
-    unsigned ranked_side_ordinal;
-    stk::mesh::EntityRank side_rank;
-
-    bulkData.bucket(element).topology().ranked_side_ordinal(side_ordinal, ranked_side_ordinal, side_rank);
+    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
 
     unsigned elem_num_sides = bulkData.num_connectivity(element, side_rank);
     const stk::mesh::Entity * elem_sides = bulkData.begin(element, side_rank);
     const stk::mesh::ConnectivityOrdinal * elem_ord_it = bulkData.begin_ordinals(element, side_rank);
     for (unsigned i=0 ; i<elem_num_sides ; ++i)
     {
-        if (elem_ord_it[i] == ranked_side_ordinal)
+        if (elem_ord_it[i] == static_cast<unsigned>(side_ordinal))
         {
             side = elem_sides[i];
             break;
@@ -324,18 +318,15 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
         stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
         stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts)
 {
-    unsigned ranked_side_ordinal;
-    stk::mesh::EntityRank side_rank;
-
-    stk::topology elem_top = bulkData.bucket(element).topology();
-    elem_top.ranked_side_ordinal(side_ordinal, ranked_side_ordinal, side_rank);
+    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
 
     stk::mesh::Entity side = bulkData.internal_declare_entity(side_rank, side_global_id, parts);
 
     // connect element to side
-    bulkData.declare_relation(element, side, ranked_side_ordinal, side_permutation);
+    bulkData.declare_relation(element, side, side_ordinal, side_permutation);
 
     // connect side to nodes
+    stk::topology elem_top = bulkData.bucket(element).topology();
     stk::topology side_top = elem_top.side_topology(side_ordinal);
     const stk::mesh::Entity* elemNodes = bulkData.begin_nodes(element);
     stk::mesh::EntityVector side_nodes;

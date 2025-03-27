@@ -26,13 +26,14 @@ LevelSetSurfaceInterfaceGeometry::LevelSetSurfaceInterfaceGeometry(const int dim
     myLSSurfaces.emplace_back(FacetedSurfaceBase::build(dim));
   }
 
+  const std::vector<stk::mesh::Selector> levelsetElementSelectors = get_levelset_element_selectors();
   for (size_t i=0; i<mySurfaceIdentifiers.size(); ++i)
-    add_surface(mySurfaceIdentifiers[i], *myLSSurfaces[i]);
+    add_surface(mySurfaceIdentifiers[i], *myLSSurfaces[i], levelsetElementSelectors[i]);
 }
 
 std::vector<stk::mesh::Selector> LevelSetSurfaceInterfaceGeometry::get_levelset_element_selectors() const
 {
-  const bool isCdfemUseCase = is_cdfem_use_case(get_phase_support());
+  const bool isCdfemUseCase = get_phase_support().is_cdfem_use_case();
 
   std::vector<stk::mesh::Selector> levelsetElementSelector;
   for (auto && lsField : myLSFields)
@@ -87,22 +88,33 @@ void LevelSetSurfaceInterfaceGeometry::build_levelset_facets(const stk::mesh::Bu
   if (myLSFields.empty())
     return;
 
-  const stk::mesh::Selector elementSelector = (is_cdfem_use_case(get_phase_support())) ?
+  const stk::mesh::Selector elementSelector = (get_phase_support().is_cdfem_use_case()) ?
       stk::mesh::Selector(get_active_part() & get_phase_support().get_all_decomposed_blocks_selector()) :
       stk::mesh::Selector(get_active_part());
+  const stk::mesh::Selector ownedElementSelector = elementSelector & mesh.mesh_meta_data().locally_owned_part();
 
   std::vector<stk::mesh::Entity> elementsToIntersect;
-  const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
-  stk::mesh::get_selected_entities( elementSelector, mesh.buckets(stk::topology::ELEMENT_RANK), elementsToIntersect, false );
+  const FieldRef coordsField = get_coordinates_field(mesh);
+  stk::mesh::get_selected_entities( ownedElementSelector, mesh.buckets(stk::topology::ELEMENT_RANK), elementsToIntersect, false );
   const double avgEdgeLength = compute_global_average_edge_length_for_elements(mesh, coordsField, elementsToIntersect);
 
   const std::vector<stk::mesh::Selector> levelsetElementSelectors = get_levelset_element_selectors();
   for (size_t i=0; i<myLSFields.size(); ++i)
   {
-    const stk::mesh::Selector elemFieldSelector = elementSelector & levelsetElementSelectors[i];
+    const stk::mesh::Selector elemFieldSelector = ownedElementSelector & levelsetElementSelectors[i];
     stk::mesh::get_selected_entities( elemFieldSelector, mesh.buckets(stk::topology::ELEMENT_RANK), elementsToIntersect, false );
 
-    LevelSet::build_facets_for_elements(mesh, coordsField, myLSFields[i].isovar, elementsToIntersect, avgEdgeLength, *myLSSurfaces[i]);
+    if (myLSFields[i].ptr && myLSFields[i].ptr->is_transient())
+    {
+      if (2 == mesh.mesh_meta_data().spatial_dimension())
+        myLSSurfaces[i]->get_facets_2d() = myLSFields[i].ptr->get_facets().get_facets_2d();
+      else
+        myLSSurfaces[i]->get_facets_3d() = myLSFields[i].ptr->get_facets().get_facets_3d();
+    }
+    else
+    {
+      LevelSet::build_facets_for_elements(mesh, coordsField, myLSFields[i].isovar, elementsToIntersect, avgEdgeLength, *myLSSurfaces[i]);
+    }
   }
 }
 

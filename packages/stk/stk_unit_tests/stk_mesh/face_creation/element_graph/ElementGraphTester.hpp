@@ -66,7 +66,6 @@ public:
 
   void fill_graph() { ElemElemGraph::fill_graph(); }
 
-  void write_graph(const std::string& preamble) const { ElemElemGraph::write_graph(std::cout, preamble); }
   void write_graph(std::ostream& out) const { ElemElemGraph::write_graph(out); }
 
   stk::mesh::Graph & get_graph() { return m_graph; }

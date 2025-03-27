@@ -77,8 +77,9 @@ void write_mesh_with_fields(const std::string& filename,
                             stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
 
 void write_mesh_with_specified_fields(const std::string& filename, stk::mesh::BulkData &bulkData,
-							const std::vector<std::string>& fieldNames,
-							int step, double time, stk::io::DatabasePurpose databasePurpose);
+                                      const std::vector<std::string>& fieldNames,
+                                      int step=0, double time=0.0,
+                                      stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
 
 void write_mesh_with_fields(const std::string& filename,
                             StkMeshIoBroker &broker,
@@ -87,7 +88,7 @@ void write_mesh_with_fields(const std::string& filename,
 
 void write_mesh_with_specified_fields(const std::string& filename,
                             StkMeshIoBroker &broker,
-							const std::vector<std::string>& fieldNames,
+                            const std::vector<std::string>& fieldNames,
                             int step=0, double time=0.0,
                             stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
 

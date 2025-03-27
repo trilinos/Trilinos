@@ -40,7 +40,6 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "stk_util/diag/String.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for source_relative_path, set_report_handler, report
 
 namespace {
@@ -109,7 +108,6 @@ TEST(UnitTestReportHandler, ConditionType)
 
   EXPECT_FALSE(condition_test("test"));
   EXPECT_FALSE(condition_test(std::string("test")));
-  EXPECT_FALSE(condition_test(sierra::String("test")));
 
   {
     const char* test = "test";

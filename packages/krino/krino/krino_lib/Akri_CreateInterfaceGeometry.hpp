@@ -16,7 +16,7 @@ namespace krino {
 
 class CDFEM_Support;
 class Phase_Support;
-class LS_Field;
+struct LS_Field;
 class Surface_Manager;
 
 std::unique_ptr<InterfaceGeometry> create_interface_geometry(const stk::mesh::MetaData & meta);

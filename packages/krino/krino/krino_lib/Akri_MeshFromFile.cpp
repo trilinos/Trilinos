@@ -1,5 +1,8 @@
+#include <Akri_AllReduce.hpp>
 #include <Akri_AuxMetaData.hpp>
+#include <Akri_DiagWriter.hpp>
 #include <Akri_MeshFromFile.hpp>
+#include <Ioss_IOFactory.h>
 #include <Ioss_Utils.h>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
@@ -9,7 +12,7 @@
 
 namespace krino {
 
-MeshFromFile::MeshFromFile(const std::string & fileName, stk::ParallelMachine comm, const std::string & decompMethod)
+MeshFromFile::MeshFromFile(const std::string & fileName, stk::ParallelMachine comm, const std::string & decompMethod, const bool useAllSidesForShells)
 : myComm(comm)
 {
   myIOBroker = std::make_unique<stk::io::StkMeshIoBroker>(comm);
@@ -20,6 +23,14 @@ MeshFromFile::MeshFromFile(const std::string & fileName, stk::ParallelMachine co
     myIOBroker->property_add(Ioss::Property("DECOMPOSITION_METHOD", Ioss::Utils::uppercase(decompMethod)));
 
   myIOBroker->add_mesh_database(fileName, stk::io::READ_MESH);
+
+  if (useAllSidesForShells)
+  {
+    std::shared_ptr<Ioss::Region> ioRegion = myIOBroker->get_input_ioss_region();
+    if(ioRegion && 3 == ioRegion->get_property("spatial_dimension").get_int())
+      myIOBroker->set_enable_all_face_sides_shell_topo(true);
+  }
+
   myIOBroker->create_input_mesh();
   myMeta = &myIOBroker->meta_data();
 
@@ -40,6 +51,7 @@ void MeshFromFile::populate_mesh(const stk::mesh::BulkData::AutomaticAuraOption 
   myMesh = & myIOBroker->bulk_data();
 
   stk::mesh::create_exposed_block_boundary_sides(*myMesh, myMeta->universal_part(), {&AuxMetaData::get(*myMeta).exposed_boundary_part()});
+  stk::mesh::create_interior_block_boundary_sides(*myMesh, myMeta->universal_part(), {&AuxMetaData::get(*myMeta).block_boundary_part()});
 }
 
 } // namespace krino

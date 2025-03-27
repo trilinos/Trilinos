@@ -30,28 +30,76 @@ void NodeRefiner::assign_refined_edge_node_parent_ids(const stk::mesh::BulkData 
   }
 }
 
-void NodeRefiner::create_refined_edge_nodes(stk::mesh::BulkData & mesh, const stk::mesh::PartVector & refinedEdgeNodeParts, FieldRef refinedEdgeNodeParentIdsField)
+static void create_refined_edge_or_midedge_nodes(stk::mesh::BulkData & mesh,
+    typename NodeRefiner::EdgeToNodeMap & edgesToChildNodes,
+    const stk::mesh::PartVector & nodePartsToAdd,
+    const bool assert32Bit,
+    const bool force64Bit)
 {
-  const size_t numEdgesToRefine = myRefinedEdgesToChildNodes.size();
+  const size_t numEdgesNeedingChildNode = edgesToChildNodes.size();
   std::vector<std::array<stk::mesh::Entity,2>> edgesParentNodes;
-  edgesParentNodes.reserve(numEdgesToRefine);
   std::vector<ChildNodeRequest> childNodeRequests;
-  childNodeRequests.reserve(numEdgesToRefine);
-  for (auto && myRefinedEdgeToChildNodes : myRefinedEdgesToChildNodes)
+
+  edgesParentNodes.reserve(numEdgesNeedingChildNode);
+  childNodeRequests.reserve(numEdgesNeedingChildNode);
+  for (auto && edgeToChildNodes : edgesToChildNodes)
   {
-    edgesParentNodes.emplace_back(get_edge_nodes(myRefinedEdgeToChildNodes.first));
+    edgesParentNodes.emplace_back(get_edge_nodes(edgeToChildNodes.first));
     std::array<stk::mesh::Entity,2> & edgeParentNodes = edgesParentNodes.back();
-    childNodeRequests.emplace_back(std::vector<stk::mesh::Entity*>{&(edgeParentNodes[0]), &(edgeParentNodes[1])}, &(myRefinedEdgeToChildNodes.second));
+    childNodeRequests.emplace_back(std::vector<stk::mesh::Entity*>{&(edgeParentNodes[0]), &(edgeParentNodes[1])}, &(edgeToChildNodes.second));
   }
 
   auto generate_new_ids = [&](stk::topology::rank_t entityRank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds)
   {
-     EntityIdPool::generate_new_ids(mesh, entityRank, numIdsNeeded, requestedIds, myAssert32Bit, myForce64Bit);
+     EntityIdPool::generate_new_ids(mesh, entityRank, numIdsNeeded, requestedIds, assert32Bit, force64Bit);
   };
 
-  batch_create_child_nodes(mesh, childNodeRequests, refinedEdgeNodeParts, generate_new_ids);
+  batch_create_child_nodes(mesh, childNodeRequests, nodePartsToAdd, generate_new_ids);
+}
 
-  assign_refined_edge_node_parent_ids(mesh, refinedEdgeNodeParentIdsField);
+static stk::mesh::Entity get_existing_edge_midnode(const stk::mesh::BulkData & mesh, const Edge & edge)
+{
+  const std::array<stk::mesh::Entity,2> edgeNodes = get_edge_nodes(edge);
+  const stk::mesh::Entity elemWithEdge = find_any_element_using_edge(mesh, edgeNodes);
+  STK_ThrowAssert(mesh.is_valid(elemWithEdge));
+  return find_edge_midnode(mesh, edgeNodes, elemWithEdge);
+}
+
+static
+void fill_refined_edge_nodes_from_existing_midedge_nodes_and_apply_parts(stk::mesh::BulkData & mesh,
+    typename NodeRefiner::RefinedEdgeMap & edgesToChildNodes,
+    const stk::mesh::PartVector & refinedEdgeNodeParts)
+{
+  std::vector<stk::mesh::Entity> midNodesBecomingRefinedNodes;
+  midNodesBecomingRefinedNodes.reserve(edgesToChildNodes.size());
+  for (auto && edgeToChildNodes : edgesToChildNodes)
+  {
+    const stk::mesh::Entity existingMidNode = get_existing_edge_midnode(mesh,edgeToChildNodes.first);
+    STK_ThrowAssert(mesh.is_valid(existingMidNode));
+    edgeToChildNodes.second = existingMidNode;
+
+    if (mesh.bucket(existingMidNode).owned())
+      midNodesBecomingRefinedNodes.push_back(existingMidNode);
+  }
+
+  mesh.change_entity_parts(midNodesBecomingRefinedNodes, refinedEdgeNodeParts);
+}
+
+void NodeRefiner::create_refined_edge_nodes(stk::mesh::BulkData & mesh, const stk::mesh::PartVector & refinedEdgeNodeParts, const bool useExistingEdgeMidNodes)
+{
+  if (useExistingEdgeMidNodes)
+  {
+    fill_refined_edge_nodes_from_existing_midedge_nodes_and_apply_parts(mesh, myRefinedEdgesToChildNodes, refinedEdgeNodeParts);
+  }
+  else
+  {
+    create_refined_edge_or_midedge_nodes(mesh, myRefinedEdgesToChildNodes, refinedEdgeNodeParts, myAssert32Bit, myForce64Bit);
+  }
+}
+
+void NodeRefiner::create_edge_midnodes(stk::mesh::BulkData & mesh, const stk::mesh::PartVector & refinedEdgeMidNodeParts)
+{
+  create_refined_edge_or_midedge_nodes(mesh, myRefinedEdgesToMidNodes, refinedEdgeMidNodeParts, myAssert32Bit, myForce64Bit);
 }
 
 void NodeRefiner::create_refined_element_centroid_nodes(stk::mesh::BulkData & mesh, const stk::mesh::PartVector & refinedElemCentroidNodeParts)
@@ -86,7 +134,7 @@ void NodeRefiner::assign_refined_quad_face_node_parent_ids(const stk::mesh::Bulk
   }
 }
 
-void NodeRefiner::create_refined_quad_face_nodes(stk::mesh::BulkData & mesh, const stk::mesh::PartVector & refinedQuadFaceNodeParts, FieldRef refinedQuadFaceNodeParentIdsField)
+void NodeRefiner::create_refined_quad_face_nodes(stk::mesh::BulkData & mesh, const stk::mesh::PartVector & refinedQuadFaceNodeParts)
 {
   if(stk::is_true_on_all_procs(mesh.parallel(), myRefinedQuadFacesToChildNodes.empty()))
     return;
@@ -109,14 +157,20 @@ void NodeRefiner::create_refined_quad_face_nodes(stk::mesh::BulkData & mesh, con
   };
 
   batch_create_child_nodes(mesh, childNodeRequests, refinedQuadFaceNodeParts, generate_new_ids);
-
-  assign_refined_quad_face_node_parent_ids(mesh, refinedQuadFaceNodeParentIdsField);
 }
 
 stk::mesh::Entity NodeRefiner::get_edge_child_node(const Edge edge) const
 {
   const auto iter = myRefinedEdgesToChildNodes.find(edge);
   if (iter != myRefinedEdgesToChildNodes.end())
+    return iter->second;
+  return stk::mesh::Entity();
+}
+
+stk::mesh::Entity NodeRefiner::get_edge_midnode(const Edge edge) const
+{
+  const auto iter = myRefinedEdgesToMidNodes.find(edge);
+  if (iter != myRefinedEdgesToMidNodes.end())
     return iter->second;
   return stk::mesh::Entity();
 }
@@ -190,11 +244,21 @@ static void prolong_child_node(const stk::mesh::BulkData & mesh, const NODECONTA
   }
 }
 
-void NodeRefiner::prolong_refined_nodes(const stk::mesh::BulkData & mesh) const
+void NodeRefiner::prolong_refined_nodes_and_edge_midnodes(const stk::mesh::BulkData & mesh) const
 {
-  for (auto && refinedEdgeToChildNodes : myRefinedEdgesToChildNodes)
+  if (!myRefinedEdgesToMidNodes.empty())
   {
-    prolong_child_node(mesh, get_edge_nodes(refinedEdgeToChildNodes.first), refinedEdgeToChildNodes.second);
+    for (auto && refinedEdgeToMidNodes : myRefinedEdgesToMidNodes)
+    {
+      prolong_child_node(mesh, get_edge_nodes(refinedEdgeToMidNodes.first), refinedEdgeToMidNodes.second);
+    }
+  }
+  else
+  {
+    for (auto && refinedEdgeToChildNodes : myRefinedEdgesToChildNodes)
+    {
+      prolong_child_node(mesh, get_edge_nodes(refinedEdgeToChildNodes.first), refinedEdgeToChildNodes.second);
+    }
   }
 
   std::vector<stk::mesh::Entity> elemNodes;
@@ -310,6 +374,7 @@ void NodeRefiner::clear_entities_to_refine()
   myRefinedEdgesToChildNodes.clear();
   myRefinedElementsToChildNodes.clear();
   myRefinedQuadFacesToChildNodes.clear();
+  myRefinedEdgesToMidNodes.clear();
 }
 
 bool NodeRefiner::mark_edge_for_refinement(const Edge & edge)
@@ -318,15 +383,15 @@ bool NodeRefiner::mark_edge_for_refinement(const Edge & edge)
   return result.second;
 }
 
-bool NodeRefiner::mark_quad_face_for_refinement(const QuadFace & quadFace)
+bool NodeRefiner::mark_edge_as_needing_midnode(const Edge & edge)
 {
-  auto result = myRefinedQuadFacesToChildNodes.emplace(quadFace, stk::mesh::Entity::InvalidEntity);
+  auto result = myRefinedEdgesToMidNodes.emplace(edge, stk::mesh::Entity::InvalidEntity);
   return result.second;
 }
 
-bool NodeRefiner::mark_already_refined_edge(const Edge & edge, const stk::mesh::Entity refinedEdgeNode)
+bool NodeRefiner::mark_quad_face_for_refinement(const QuadFace & quadFace)
 {
-  auto result = myRefinedEdgesToChildNodes.emplace(edge, refinedEdgeNode);
+  auto result = myRefinedQuadFacesToChildNodes.emplace(quadFace, stk::mesh::Entity::InvalidEntity);
   return result.second;
 }
 

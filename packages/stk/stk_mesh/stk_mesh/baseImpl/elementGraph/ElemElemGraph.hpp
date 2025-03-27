@@ -139,8 +139,6 @@ public:
 
     size_t num_parallel_edges() const;
 
-    size_t num_coincident_edges() const;
-
     void add_elements(const stk::mesh::EntityVector &elements);
 
     void delete_elements(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete);
@@ -226,10 +224,6 @@ public:
         return m_idMapper.local_to_entity(localId);
     }
 
-    bool is_valid_graph_element(stk::mesh::Entity local_element) const;
-
-    bool is_valid_graph_edge(const GraphEdge &graphEdge) const;
-
 protected:
     void fill_graph();
     void fill_parallel_graph(impl::ElemSideProcVector & elementSidesToSend, impl::ParallelElementDataVector & elementSidesReceived);
@@ -257,8 +251,9 @@ protected:
                                                stk::topology elementTopology,
                                                impl::SerialElementDataVector& connectedElementDataVector) const;
     void get_elements_attached_to_remote_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
-                                               stk::topology elementTopology,
-                                               impl::ParallelElementDataVector& connectedElementDataVector) const;
+                                                                          stk::mesh::EntityId elementId,
+                                                                          stk::topology elementTopology,
+                                                                          impl::ParallelElementDataVector& connectedElementDataVector) const;
 
     impl::LocalId get_new_local_element_id_from_pool();
     int size_data_members();
@@ -305,6 +300,10 @@ protected:
 
     void unpack_remote_edge_across_shell(stk::CommSparse &comm);
 
+    bool is_valid_graph_element(stk::mesh::Entity local_element) const;
+
+    bool is_valid_graph_edge(const GraphEdge &graphEdge) const;
+
     stk::mesh::BulkData &m_bulk_data;
     Graph m_graph;
     std::vector<GraphEdge> m_edgesToAdd;
@@ -322,7 +321,6 @@ protected:
     impl::ElementLocalIdMapper m_idMapper;
     SideConnector m_sideConnector;
     SideNodeConnector m_sideNodeConnector;
-    mutable impl::SortedKeyBoolPairVector<impl::LocalId> m_hasShellFaceFaceConfiguration;
 private:
     void add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,

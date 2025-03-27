@@ -13,7 +13,6 @@
 #include <utility>
 #include <vector>
 #include <stk_util/environment/Scheduler.hpp>
-#include <stk_util/diag/String.hpp>     // for String
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include <Ioss_PropertyManager.h>
 

@@ -36,19 +36,13 @@ register_blocks_for_level_set(Surface_Manager & surfaceManager, Phase_Support & 
   {
     LS_SideTag::declare_composite(ls.get_identifier(), surfaceManager.get_identifier(composite_name));
   }
-
-  const PhaseVec & mesh_phases = phaseSupport.get_mesh_phases();
-  const std::vector<unsigned> ls_phases = Phase_Support::get_level_set_phases(phaseSupport.has_one_levelset_per_phase(), mesh_phases, ls);
-  const std::vector<stk::mesh::Part*> decomposed_blocks = phaseSupport.get_blocks_decomposed_by_levelset(ls_phases);
-  phaseSupport.register_blocks_for_level_set(ls.get_identifier(), decomposed_blocks);
+  phaseSupport.register_blocks_for_surface(ls.get_identifier());
 }
 
 void
 register_blocks_for_bounding_surface(Surface_Manager & surfaceManager, Phase_Support & phaseSupport, const std::string & boundingSurfaceName)
 {
-  const Surface_Identifier boundingSurfaceID = surfaceManager.get_identifier(boundingSurfaceName);
-  const std::vector<stk::mesh::Part*> decomposedBlocks = phaseSupport.get_blocks_decomposed_by_bounding_surface(boundingSurfaceID.get());
-  phaseSupport.register_blocks_for_level_set(boundingSurfaceID, decomposedBlocks);
+  phaseSupport.register_blocks_for_surface(surfaceManager.get_identifier(boundingSurfaceName));
 }
 
 }
@@ -74,7 +68,7 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
       std::string distance_name;
       if (ls_node.get_if_present("distance_variable", distance_name))
       {
-        ls.set_distance_name(distance_name);
+        ls.set_levelset_field_name(distance_name);
       }
 
       std::vector<std::string> interfaceVelocity;
@@ -127,6 +121,8 @@ LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & m
         SemiLagrangianAlgorithm algType = NON_ADAPTIVE_SINGLE_STEP;
         if (semilagrangianMethodName == "NON_ADAPTIVE_SINGLE_STEP")
           algType = NON_ADAPTIVE_SINGLE_STEP;
+        else if (semilagrangianMethodName == "ADAPTIVE_SINGLE_STEP")
+                  algType = ADAPTIVE_SINGLE_STEP;
         else if (semilagrangianMethodName == "ADAPTIVE_PREDICTOR_CORRECTOR")
           algType = ADAPTIVE_PREDICTOR_CORRECTOR;
         else

@@ -365,6 +365,13 @@ TransitionElementEdgeMarker & KrinoRefinement::setup_marker() const
 void KrinoRefinement::set_marker_field(const std::string & markerFieldName)
 {
   myElementMarkerField = myMeta.get_field(stk::topology::ELEMENT_RANK, markerFieldName);
+  if(myMarker)
+  {
+    STK_ThrowRequire(myElementMarkerField.type_is<int>());
+    auto markerFld = static_cast<stk::mesh::Field<int>*>(&myElementMarkerField.field());
+    STK_ThrowRequire(markerFld);
+    myMarker->set_marker_field(markerFld);
+  }
 }
 
 FieldRef KrinoRefinement::get_marker_field_and_sync_to_host() const

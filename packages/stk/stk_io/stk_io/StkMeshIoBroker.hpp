@@ -211,6 +211,11 @@ namespace stk {
           m_autoLoadDistributionFactorPerNodeSet = shouldAutoLoad;
       }
 
+      void set_create_empty_block_for_omitted_block(bool shouldCreateEmptyBlockForOmittedBlock)
+      {
+          m_createEmptyBlockForOmittedBlock = shouldCreateEmptyBlockForOmittedBlock;
+      }
+
       void cache_entity_list_for_transient_steps(bool cacheEntityList)
       {
           m_cacheEntityListForTransientSteps = cacheEntityList;
@@ -760,6 +765,7 @@ namespace stk {
       bool m_cacheEntityListForTransientSteps;
       bool m_throwOnMissingInputFields{false};
       bool m_enableAllFaceSidesShellTopo;
+      bool m_createEmptyBlockForOmittedBlock;
 
       FileOption m_dynamicTopologyFileOption{FileOption::NO_DYNAMIC_TOPOLOGY_FILE_CONTROL};
     };

@@ -2,7 +2,6 @@
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/Relation.hpp"
-#include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/SidesetUpdater.hpp"
@@ -42,12 +41,10 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
         const stk::mesh::Part &parentPart = get_sideset_parent(sidesetPart);
 
         bool sidesetExists = bulkData.does_sideset_exist(parentPart);
-        if(sidesetExists) {
+        if(sidesetExists)
             sideSet = &bulkData.get_sideset(parentPart);
-        }
-        else {
+        else
             sideSet = &bulkData.create_sideset(parentPart);
-        }
 
         stk::mesh::EntityVector sides = get_sides(bulkData, parentPart);
         std::vector<stk::mesh::SideSetEntry> newSides;
@@ -75,35 +72,29 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
     }
 }
 
-stk::mesh::EntityRank get_sideset_rank(const stk::mesh::SideSet& sset)
+bool is_face_represented_in_sideset(const stk::mesh::BulkData& bulk, const stk::mesh::Entity face, const stk::mesh::SideSet& sset)
 {
-  const stk::mesh::Part* ssPart = sset.get_part();
-  stk::mesh::EntityRank ssRank = (nullptr != ssPart ? ssPart->primary_entity_rank() : sset.get_bulk_data().mesh_meta_data().side_rank());
-
-  return ssRank;
-}
-
-bool is_side_represented_in_sideset(const stk::mesh::BulkData& bulk, const stk::mesh::Entity side, const stk::mesh::SideSet& sset)
-{
-    stk::mesh::EntityRank sideRank = get_sideset_rank(sset);
-    STK_ThrowRequire(bulk.entity_rank(side) == sideRank);
+    stk::mesh::EntityRank sideRank = bulk.mesh_meta_data().side_rank();
+    STK_ThrowRequire(bulk.entity_rank(face) == sideRank);
 
     std::vector<stk::mesh::Entity> side_elements;
 
-    stk::mesh::ConnectedEntities sideNodes = bulk.get_connected_entities(side, stk::topology::NODE_RANK);
+    stk::mesh::ConnectedEntities sideNodes = bulk.get_connected_entities(face, stk::topology::NODE_RANK);
     stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEM_RANK, sideNodes.size(), sideNodes.data(), side_elements);
 
     bool found = false;
 
     for(stk::mesh::Entity elem : side_elements)
     {
-        std::vector<ElemSideOrdinal> elemSideOrdinals = stk::mesh::get_element_side_entries(bulk, elem);
+        const stk::mesh::Entity * elem_sides = bulk.begin(elem, sideRank);
+        stk::mesh::ConnectivityOrdinal const * side_ordinal = bulk.begin_ordinals(elem, sideRank);
+        const size_t num_elem_sides = bulk.num_connectivity(elem, sideRank);
 
-        for(auto elemSideOrdinal : elemSideOrdinals)
+        for(size_t k = 0; k < num_elem_sides; ++k)
         {
-            if(elemSideOrdinal.side == side)
+            if(elem_sides[k] == face)
             {
-                if(sset.contains(elem, elemSideOrdinal.ordinal)) {
+                if(sset.contains(elem, side_ordinal[k])) {
                     found = true;
                     break;
                 }
@@ -143,14 +134,14 @@ bool should_reconstruct_sideset(const stk::mesh::BulkData& bulkData, const stk::
         }
 
         stk::mesh::EntityVector faces;
-        stk::topology::rank_t sideRank = get_sideset_rank(ss);
+        stk::topology::rank_t sideRank = bulkData.mesh_meta_data().side_rank();
         stk::mesh::get_selected_entities(surfacePart, bulkData.buckets(sideRank), faces);
 
         for(stk::mesh::Entity face : faces)
         {
             bool modifiedState    = (bulkData.state(face) != stk::mesh::Unchanged);
             bool emptySideset     = (ss.size() == 0);
-            bool faceNotInSideset = (emptySideset || !is_side_represented_in_sideset(bulkData, face, ss));
+            bool faceNotInSideset = (emptySideset || !is_face_represented_in_sideset(bulkData, face, ss));
 
             if(modifiedState && faceNotInSideset)
             {
@@ -199,9 +190,10 @@ void create_bulkdata_sidesets(stk::mesh::BulkData& bulkData)
     }
 }
 
-std::vector<const stk::mesh::Part*> get_sideset_io_parts(const stk::mesh::BulkData& bulkData, stk::mesh::Entity side)
+std::vector<const stk::mesh::Part*> get_sideset_io_parts(const stk::mesh::BulkData& bulkData, stk::mesh::Entity face)
 {
-    const stk::mesh::PartVector& parts = bulkData.bucket(side).supersets();
+    STK_ThrowRequire(bulkData.entity_rank(face) == bulkData.mesh_meta_data().side_rank());
+    const stk::mesh::PartVector& parts = bulkData.bucket(face).supersets();
 
     std::vector<const stk::mesh::Part *> sidesetParts;
 

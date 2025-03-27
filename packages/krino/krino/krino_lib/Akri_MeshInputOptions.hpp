@@ -71,6 +71,9 @@ namespace krino {
     void set_filetype(std::string type) { my_filetype = type; }
     const std::string & get_filetype() const { return my_filetype; }
 
+    void set_use_all_sides_for_shells(bool useAllSidesForShells) { myUseAllSidesForShells = useAllSidesForShells; }
+    bool get_use_all_sides_for_shells() const { return myUseAllSidesForShells; }
+
     void set_decomposition_method(std::string decomposition_method) { my_decomposition_method = decomposition_method; }
     const std::string & get_decomposition_method() const { return my_decomposition_method; }
 
@@ -97,6 +100,7 @@ namespace krino {
     std::string my_name;
     std::string my_filename;
     std::string my_filetype;
+    bool myUseAllSidesForShells{true};
     GeneratedMeshDomainType my_generated_mesh_domain_type;
     BoundingBoxMeshStructureType myGeneratedMeshStructureType;
     std::vector<double> my_generated_mesh_domain;

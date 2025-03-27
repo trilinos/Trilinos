@@ -2,25 +2,22 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 
 namespace stk { namespace mesh {
 
-stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::BulkData& bulkData, stk::mesh::EntityRank rank)
+stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::BulkData& bulkData)
 {
     stk::mesh::EntityVector sides;
     const bool sortByGlobalId = false;
     const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
     stk::mesh::Selector owned = meta.locally_owned_part();
+    stk::mesh::get_entities(bulkData, meta.side_rank(), owned, sides, sortByGlobalId);
 
     stk::mesh::EntityVector sidesThatNeedFixing;
     stk::mesh::EntityVector nodeVec;
     std::vector<int> shared_procs;
-
-    stk::mesh::get_entities(bulkData, rank, owned, sides, sortByGlobalId);
-
-    for(stk::mesh::Entity side : sides) {
+    for(stk::mesh::Entity side : sides)
         if(bulkData.state(side) == stk::mesh::Created)
         {
             unsigned num_nodes = bulkData.num_nodes(side);
@@ -31,34 +28,28 @@ stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::B
                 nodeVec[i] = nodes[i];
 
             bulkData.shared_procs_intersection(nodeVec, shared_procs);
-            if(!shared_procs.empty()) {
+            if(!shared_procs.empty())
                 sidesThatNeedFixing.push_back(side);
-            }
         }
-    }
-
     return sidesThatNeedFixing;
 }
 
-stk::mesh::impl::ElementViaSidePair find_element_side_ord_for_side(const stk::mesh::BulkData& bulkData,
-                                                                   unsigned num_elements,
-                                                                   const stk::mesh::Entity* elements,
-                                                                   stk::mesh::Entity side,
-                                                                   std::vector<stk::mesh::ElemSideOrdinal>& scratchElemSideOrdinals)
+stk::mesh::impl::ElementViaSidePair find_element_side_ord_for_side(const stk::mesh::BulkData& bulkData, unsigned num_elements, const stk::mesh::Entity* elements, stk::mesh::Entity side)
 {
+    const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
     for(unsigned i=0;i<num_elements;++i)
     {
-        stk::mesh::Entity elem = elements[i];
-
-        if(bulkData.bucket(elem).owned())
+        if(bulkData.bucket(elements[i]).owned())
         {
-            stk::mesh::fill_element_side_entries(bulkData, elem, false, scratchElemSideOrdinals);
+            const stk::mesh::Entity* sides = bulkData.begin(elements[i], meta.side_rank());
+            unsigned num_sides = bulkData.num_connectivity(elements[i], meta.side_rank());
 
-            for(const auto& entry : scratchElemSideOrdinals)
+            for(unsigned j=0;j<num_sides;++j)
             {
-                if(entry.side == side)
+                if(sides[j]==side)
                 {
-                    return stk::mesh::impl::ElementViaSidePair{elem, static_cast<int>(entry.ordinal)};
+                    const stk::mesh::ConnectivityOrdinal* ordinals = bulkData.begin_ordinals(elements[i], meta.side_rank());
+                    return stk::mesh::impl::ElementViaSidePair{elements[i], static_cast<int>(ordinals[j])};
                 }
             }
         }
@@ -66,12 +57,11 @@ stk::mesh::impl::ElementViaSidePair find_element_side_ord_for_side(const stk::me
     return stk::mesh::impl::ElementViaSidePair{stk::mesh::Entity(),0};
 }
 
-stk::mesh::impl::ElementViaSidePair get_element_and_side_ordinal(const stk::mesh::BulkData& bulkData, stk::mesh::Entity side,
-                                                                 std::vector<stk::mesh::ElemSideOrdinal>& scratchElemSideOrdinals)
+stk::mesh::impl::ElementViaSidePair get_element_and_side_ordinal(const stk::mesh::BulkData& bulkData, stk::mesh::Entity side)
 {
     unsigned num_elements = bulkData.num_elements(side);
     const stk::mesh::Entity* elements = bulkData.begin_elements(side);
-    return find_element_side_ord_for_side(bulkData, num_elements, elements, side, scratchElemSideOrdinals);
+    return find_element_side_ord_for_side(bulkData, num_elements, elements, side);
 }
 
 const unsigned * get_first_part_after_owned_and_shared(const stk::mesh::PartOrdinal sharedOrd, const unsigned *start, const unsigned *end)
@@ -96,11 +86,10 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, stk::mesh::ElemElemGraph &
     // Element 2, side 3: face 23
     // Are these faces the same? Yes: delete face 23, then connect face 15 to element 2 with negative permutation
 
-    std::vector<stk::mesh::ElemSideOrdinal> scratchElemSideOrdinals;
     const stk::mesh::PartOrdinal sharedOrd = bulkData.mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal();
     for(size_t i=0;i<sidesThatNeedFixing.size();++i)
     {
-        stk::mesh::impl::ElementViaSidePair elementAndSide = get_element_and_side_ordinal(bulkData, sidesThatNeedFixing[i], scratchElemSideOrdinals);
+        stk::mesh::impl::ElementViaSidePair elementAndSide = get_element_and_side_ordinal(bulkData, sidesThatNeedFixing[i]);
         if (elementAndSide.element.local_offset() == 0) {
             //solo side !!!
             continue;

@@ -55,6 +55,12 @@ MeshInput_Parser::parse(const Parser::Node & base_node)
       options->set_decomposition_method(decomposition_method);
     }
 
+    bool useAllSidesForShells = true;
+    if (fem_node.get_if_present("use_all_sides_for_shells", useAllSidesForShells))
+    {
+      options->set_use_all_sides_for_shells(useAllSidesForShells);
+    }
+
     Phase_Parser::parse(fem_node, model_name);
   }
 }

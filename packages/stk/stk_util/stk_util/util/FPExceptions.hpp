@@ -14,7 +14,7 @@
 namespace stk {
 namespace util {
 
-constexpr bool have_errno()
+inline bool have_errno()
 {
 #ifdef STK_HAVE_FP_ERRNO
   return math_errhandling & MATH_ERRNO;
@@ -23,7 +23,7 @@ constexpr bool have_errno()
 #endif
 }
 
-constexpr bool have_errexcept()
+inline bool have_errexcept()
 {
 #ifdef STK_HAVE_FP_EXCEPT
   return math_errhandling & MATH_ERREXCEPT;
@@ -38,7 +38,7 @@ std::string get_fe_except_string(int fe_except_bitmask);
 
 inline void clear_fp_errors()
 {
-  if constexpr (have_errexcept())
+  if (have_errexcept())
   {
     // experimental results show calling std::feclearexcept is *very*
     // expensive, so dont call it unless needed.
@@ -46,7 +46,7 @@ inline void clear_fp_errors()
     {
       std::feclearexcept(FE_EXCEPT_CHECKS);
     }
-  } else if constexpr (have_errno())
+  } else if (have_errno())
   {
     errno = 0;
   }
@@ -54,7 +54,7 @@ inline void clear_fp_errors()
 
 inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=false, std::ostream& os = std::cerr)
 {
-  if constexpr (have_errexcept())
+  if (have_errexcept())
   {
     int fe_except_bitmask = std::fetestexcept(FE_EXCEPT_CHECKS);
     if (fe_except_bitmask != 0)
@@ -68,7 +68,7 @@ inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=fal
         STK_ThrowRequireMsg(fe_except_bitmask == 0, msg);
       }
     }
-  } else if constexpr (have_errno())
+  } else if (have_errno())
   {
     if (errno != 0)
     {

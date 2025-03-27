@@ -7,7 +7,6 @@
 // license that can be found in the LICENSE file.
 
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Compute_Surface_Distance.hpp>
 #include <Akri_FieldRef.hpp>

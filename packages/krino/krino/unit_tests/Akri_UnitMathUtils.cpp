@@ -8,6 +8,7 @@
 
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MathUtil.hpp>
+#include <Akri_Optimize.hpp>
 #include <gtest/gtest.h>
 #include <functional>
 
@@ -77,6 +78,59 @@ TEST(compute_edge_values, singleCrossings)
   expect_quadratic_crossing(0.25, compute_edge_values(0.25, 1.25));
   expect_quadratic_crossing(0.33, compute_edge_values(0.33, -0.25));
   expect_quadratic_crossing(0.77, compute_edge_values(0.77, 1.25));
+}
+
+std::tuple<double,double> minimize_function_along_gradient(const std::function<double(double)> & fn, const std::function<double(double)> & dfdx, const double x0, const double maxDeltax, const double tol)
+{
+  const auto vecfn = [&](const std::vector<double>& x) { return fn(x[0]); };
+  const auto vecgrad = [&](const std::vector<double>& x) { return std::vector{dfdx(x[0])}; };
+  std::cout << "Minimization starting at " << x0 << " " << fn(x0) << std::endl;
+  const std::vector soln = bfgs<std::vector<double>>(vecfn, vecgrad, std::vector{x0});
+  double xmin = soln[0];
+  double fmin = fn(xmin);
+  return {xmin, fmin};
+}
+
+void expect_find_minimum_along_gradient(const std::function<double(double)> & fn, const std::function<double(double)> & dfdx, const double x0, const double goldXmin, const double tol)
+{
+  const auto & [xmin, fmin] = minimize_function_along_gradient(fn, dfdx, x0, 1., tol);
+  EXPECT_NEAR(goldXmin, xmin, tol);
+}
+
+TEST(minimize_function, quadraticFunction)
+{
+  const double tol = 1.e-4;
+  const auto f = [](const double x) { return std::pow(x-5.,2); };
+  const auto dfdx = [](const double x) { return 2.*(x-5.); };
+
+  expect_find_minimum_along_gradient(f, dfdx, -5, 5., tol);
+  expect_find_minimum_along_gradient(f, dfdx, 0., 5., tol);
+  expect_find_minimum_along_gradient(f, dfdx, 5., 5., tol);
+  expect_find_minimum_along_gradient(f, dfdx, 10., 5., tol);
+}
+
+TEST(minimize_function, absFunction)
+{
+  const double tol = 0.03;
+  const auto f = [](const double x) { return std::pow(std::abs(x-5.)/5., 3); };
+  const auto dfdx = [](const double x) { return (x<5.) ? (-3/5.*std::pow((5.-x)/5.,2)) : (3/5.*std::pow((x-5.)/5.,2)); };
+
+  expect_find_minimum_along_gradient(f, dfdx, 1.1, 5., tol);
+  expect_find_minimum_along_gradient(f, dfdx, 2.1, 5., tol);
+  expect_find_minimum_along_gradient(f, dfdx, 5., 5., tol);
+  expect_find_minimum_along_gradient(f, dfdx, 8.1, 5., tol);
+}
+
+TEST(minimize_function, quarticFunction)
+{
+  const double tol = 0.3; // large tol because function is so flat near minimum
+  const auto f = [](const double x) { return std::pow((x-5.)/5., 4); };
+  const auto dfdx = [](const double x) { return 0.8*pow((x-5.)/5.,3); };
+
+  expect_find_minimum_along_gradient(f, dfdx, 1.1, 5., tol);
+  expect_find_minimum_along_gradient(f, dfdx, 2.1, 5., tol);
+  expect_find_minimum_along_gradient(f, dfdx, 5., 5., tol);
+  expect_find_minimum_along_gradient(f, dfdx, 8.1, 5., tol);
 }
 
 }

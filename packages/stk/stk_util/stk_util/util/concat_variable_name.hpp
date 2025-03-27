@@ -36,7 +36,6 @@
 #define STK_UTIL_UTIL_CONCAT_VARIABLE_NAME_H
 
 #include <string>  // for string
-#include <vector>
 namespace stk {
 namespace util {
   /*!

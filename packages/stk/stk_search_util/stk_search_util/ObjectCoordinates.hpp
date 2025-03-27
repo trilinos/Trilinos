@@ -13,7 +13,6 @@
 #include <map>
 #include <ostream>                                   // for operator<<, etc
 #include <stk_mesh/base/Types.hpp>                   // for EntityRank
-#include <stk_util/diag/String.hpp>                  // for operator<<, etc
 #include <string>                                    // for allocator, etc
 #include <utility>                                   // for pair, make_pair
 #include <vector>                                    // for vector

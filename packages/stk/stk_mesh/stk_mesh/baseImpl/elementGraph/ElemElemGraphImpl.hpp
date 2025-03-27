@@ -390,15 +390,10 @@ struct GraphEdgeLessByElem1 {
         {
             return a_side2 < b_side2;
         }
-
-        int a_side1 = a.side1();
-        int b_side1 = b.side1();
-        if(a_side1 == b_side1)
+        else
         {
-          return a.elem2() < b.elem2();
+            return a.side1() < b.side1();
         }
-
-        return a_side1 < b_side1;
     }
 };
 
@@ -572,11 +567,6 @@ inline bool is_shell_or_beam2(stk::topology top)
     //return top.is_shell() || top == stk::topology::BEAM_2;
 }
 
-inline bool is_shell_face_side(stk::topology elemTopology, unsigned sideIndex)
-{
-  return elemTopology.is_shell() && (sideIndex == 0 || elemTopology.side_topology(sideIndex) == elemTopology.side_topology(0));
-}
-
 struct TopologyChecker
 {
     bool are_both_shells() const
@@ -591,117 +581,6 @@ struct TopologyChecker
 
     stk::topology localTopology;
     stk::topology remoteTopology;
-};
-
-template<typename Key, typename Value>
-struct ComparePairByKey {
-
-  inline bool operator()(const std::pair<Key, Value>& lhs, const std::pair<Key, Value>& rhs) const
-  {
-    return lhs.first < rhs.first;
-  }
-
-  inline bool operator()(const std::pair<Key, Value>& lhs, const Key& rhs) const
-  {
-    return lhs.first < rhs;
-  }
-
-  inline bool operator()(const Key& lhs, const std::pair<Key, Value>& rhs) const
-  {
-    return lhs < rhs.first;
-  }
-
-  inline bool operator()(const Key& lhs, const Key& rhs) const
-  {
-    return lhs < rhs;
-  }
-};
-
-template<typename T>
-class SortedKeyBoolPairVector {
-public:
-  SortedKeyBoolPairVector() = default;
-  ~SortedKeyBoolPairVector() = default;
-
-  bool set_if_not_already_set(const T& key, bool value)
-  {
-    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
-
-    if (iter == m_values.end() || iter->first != key) {
-      m_values.insert(iter, std::make_pair(key, value));
-      return true;
-    }
-
-    return false;
-  }
-
-  bool set(const T& key, bool value)
-  {
-    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
-
-    if (iter == m_values.end() || iter->first != key) {
-      m_values.insert(iter, std::make_pair(key, value));
-    }
-
-    iter->second = value;
-    return true;
-  }
-
-  bool get(const T& key) const
-  {
-    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
-
-    if (iter == m_values.end() || iter->first != key) {
-      return false;
-    }
-
-    return iter->second;
-  }
-
-  void clear()
-  {
-    m_values.clear();
-  }
-
-private:
-  std::vector<std::pair<T, bool>> m_values;
-  ComparePairByKey<T, bool> m_compare;
-};
-
-// Implementation of above using maps ... which is better to use?
-template<typename T>
-class SortedKeyBoolPairMap {
-public:
-  SortedKeyBoolPairMap() = default;
-  ~SortedKeyBoolPairMap() = default;
-
-  bool set_if_not_already_set(const T& key, bool value)
-  {
-    if(m_values.find(key) == m_values.end()) {
-      m_values[key] = value;
-      return true;
-    }
-
-    return false;
-  }
-
-  bool set(const T& key, bool value)
-  {
-    m_values[key] = value;
-    return true;
-  }
-
-  bool get(const T& key)
-  {
-    return m_values[key];
-  }
-
-  void clear()
-  {
-    m_values.clear();
-  }
-private:
-  std::map<T, bool> m_values;
 };
 
 }}} // end namespaces stk mesh

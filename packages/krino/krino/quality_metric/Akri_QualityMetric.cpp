@@ -17,7 +17,8 @@ double calculate_tet_volume_using_sides(const stk::math::Vector3d &side0, const 
     return Dot(side3, Cross(side2, side0))/6.0;
 }
 
-double MeanRatioQualityMetric::tet_mean_ratio(const std::vector<stk::math::Vector3d> &nodeLocations)
+template <typename CONTAINER>
+double tet4_mean_ratio(const CONTAINER &nodeLocations)
 {
   STK_ThrowAssert(nodeLocations.size() == 4 || nodeLocations.size() == 10);
 
@@ -43,6 +44,16 @@ double MeanRatioQualityMetric::tet_mean_ratio(const std::vector<stk::math::Vecto
 
   const int sign = tetVolume < 0. ? -1 : 1;
   return sign * 12. * std::pow(3.*std::abs(tetVolume), 2./3.) / (side0_length_squared + side1_length_squared + side2_length_squared + side3_length_squared + side4_length_squared + side5_length_squared);
+}
+
+double MeanRatioQualityMetric::tet_mean_ratio(const std::vector<stk::math::Vector3d> &nodeLocations)
+{
+  return tet4_mean_ratio(nodeLocations);
+}
+
+double MeanRatioQualityMetric::tet_mean_ratio(const std::array<stk::math::Vector3d,4> &nodeLocations)
+{
+  return tet4_mean_ratio(nodeLocations);
 }
 
 double ScaledJacobianQualityMetric::tet_scaled_jacobian(const std::vector<stk::math::Vector3d> &nodeLocations)
