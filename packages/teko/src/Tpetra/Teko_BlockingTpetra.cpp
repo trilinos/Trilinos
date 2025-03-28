@@ -9,6 +9,7 @@
 
 #include "Teko_BlockingTpetra.hpp"
 #include "Teko_Utilities.hpp"
+#include "Tpetra_Details_makeColMap_decl.hpp"
 
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Map.hpp"
@@ -177,7 +178,7 @@ RCP<Tpetra::Vector<GO, LO, GO, NT>> getSubBlockColumnGIDs(
     // LID is need to get to contiguous map
     LO lid = blkGIDMap->getLocalElement(
         A.getRowMap()->getGlobalElement(i));  // this LID makes me nervous
-    if (lid > invalidLO)
+    if (lid != invalidLO)
       rIndex.replaceLocalValue(i, blkContigMap->getGlobalElement(lid));
     else
       rIndex.replaceLocalValue(i, invalidLO);
@@ -213,68 +214,70 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
   Tpetra::Vector<GO, LO, GO, NT>& local2ContigGIDs = *plocal2ContigGIDs;
 
   // get entry information
-  LO numMyRows = rangeMap->getLocalNumElements();
+  LO numMyRows         = rangeMap->getLocalNumElements();
+  const auto invalidLO = Teuchos::OrdinalTraits<LO>::invalid();
 
   auto nEntriesPerRow =
       Kokkos::View<LO*>(Kokkos::ViewAllocateWithoutInitializing("nEntriesPerRow"), numMyRows);
-  auto prefixSumEntriesPerRow = Kokkos::View<LO*>(
+  Kokkos::deep_copy(nEntriesPerRow, invalidLO);
+
+  using local_matrix_type     = Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type;
+  using row_map_type          = local_matrix_type::row_map_type::non_const_type;
+  auto prefixSumEntriesPerRow = row_map_type(
       Kokkos::ViewAllocateWithoutInitializing("prefixSumEntriesPerRow"), numMyRows + 1);
 
   const auto invalid = Teuchos::OrdinalTraits<GO>::invalid();
 
-  LO totalNumOwnedCols = 0;
-  auto A_dev           = A->getLocalMatrixDevice();
-  auto gRowMap_dev     = gRowMap->getLocalMap();
-  auto A_rowmap_dev    = A->getRowMap()->getLocalMap();
-  auto data            = local2ContigGIDs.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto A_dev        = A->getLocalMatrixDevice();
+  auto gRowMap_dev  = gRowMap->getLocalMap();
+  auto A_rowmap_dev = A->getRowMap()->getLocalMap();
+  auto data         = local2ContigGIDs.getLocalViewDevice(Tpetra::Access::ReadOnly);
 
   using matrix_execution_space =
       typename Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type::execution_space;
   using team_policy = Kokkos::TeamPolicy<matrix_execution_space>;
   using team_member = typename team_policy::member_type;
 
-  LO maxNumEntriesSubblock = 0;
-  Kokkos::parallel_reduce(
+  LO totalNumOwnedCols = 0;
+  Kokkos::parallel_scan(
       Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, matrix_execution_space>(0, numMyRows),
-      KOKKOS_LAMBDA(const LO localRow, LO& sumNumEntries, LO& maxNumEntries) {
-        GO globalRow             = gRowMap_dev.getGlobalElement(localRow);
-        LO lid                   = A_rowmap_dev.getLocalElement(globalRow);
-        const auto sparseRowView = A_dev.row(lid);
+      KOKKOS_LAMBDA(const LO localRow, LO& sumNumEntries, bool finalPass) {
+        auto numOwnedCols = nEntriesPerRow(localRow);
 
-        LO numOwnedCols = 0;
-        for (auto localCol = 0; localCol < sparseRowView.length; localCol++) {
-          GO gid = data(sparseRowView.colidx(localCol), 0);
-          if (gid == invalid) continue;
-          numOwnedCols++;
+        if (numOwnedCols == invalidLO) {
+          GO globalRow             = gRowMap_dev.getGlobalElement(localRow);
+          LO lid                   = A_rowmap_dev.getLocalElement(globalRow);
+          const auto sparseRowView = A_dev.row(lid);
+
+          numOwnedCols = 0;
+          for (auto localCol = 0; localCol < sparseRowView.length; localCol++) {
+            GO gid = data(sparseRowView.colidx(localCol), 0);
+            if (gid == invalid) continue;
+            numOwnedCols++;
+          }
+          nEntriesPerRow(localRow) = numOwnedCols;
         }
-        nEntriesPerRow(localRow) = numOwnedCols;
+
+        if (finalPass) {
+          prefixSumEntriesPerRow(localRow) = sumNumEntries;
+          if (localRow == (numMyRows - 1)) {
+            prefixSumEntriesPerRow(numMyRows) = prefixSumEntriesPerRow(localRow) + numOwnedCols;
+          }
+        }
         sumNumEntries += numOwnedCols;
-        maxNumEntries = Kokkos::max(maxNumEntries, numOwnedCols);
       },
-      totalNumOwnedCols, Kokkos::Max<LO>(maxNumEntriesSubblock));
+      totalNumOwnedCols);
 
-  auto numPerRowHost = Kokkos::create_mirror_view(nEntriesPerRow);
-  Kokkos::deep_copy(numPerRowHost, nEntriesPerRow);
-
-  auto prefixSumHost = Kokkos::create_mirror_view(prefixSumEntriesPerRow);
-  prefixSumHost(0)   = 0;
-  for (auto localRow = 0; localRow < numMyRows; ++localRow) {
-    prefixSumHost(localRow + 1) = prefixSumHost(localRow) + numPerRowHost(localRow);
-  }
-  TEUCHOS_ASSERT(prefixSumHost(numMyRows) == totalNumOwnedCols)
-  Kokkos::deep_copy(prefixSumEntriesPerRow, prefixSumHost);
-
-  using device_type        = typename NT::device_type;
-  auto uniqueColumnIndices = Kokkos::View<GO*, device_type>(
-      Kokkos::ViewAllocateWithoutInitializing("uniqueColumnIndices"), totalNumOwnedCols);
-  auto columnIndices = Kokkos::View<GO*>(Kokkos::ViewAllocateWithoutInitializing("columnIndices"),
-                                         totalNumOwnedCols);
+  using device_type  = typename NT::device_type;
+  auto columnIndices = Kokkos::View<GO*, device_type>(
+      Kokkos::ViewAllocateWithoutInitializing("columnIndices"), totalNumOwnedCols);
   auto values =
       Kokkos::View<ST*>(Kokkos::ViewAllocateWithoutInitializing("values"), totalNumOwnedCols);
 
-  Kokkos::parallel_for(
+  LO maxNumEntriesSubblock = 0;
+  Kokkos::parallel_reduce(
       Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, matrix_execution_space>(0, numMyRows),
-      KOKKOS_LAMBDA(const LO localRow) {
+      KOKKOS_LAMBDA(const LO localRow, LO& maxNumEntries) {
         GO globalRow             = gRowMap_dev.getGlobalElement(localRow);
         LO lid                   = A_rowmap_dev.getLocalElement(globalRow);
         const auto sparseRowView = A_dev.row(lid);
@@ -284,23 +287,19 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
         for (auto localCol = 0; localCol < sparseRowView.length; localCol++) {
           GO gid = data(sparseRowView.colidx(localCol), 0);
           if (gid == invalid) continue;
-          auto value                              = sparseRowView.value(localCol);
-          uniqueColumnIndices(colId + colIdStart) = gid;
-          values(colId + colIdStart)              = value;
+          auto value                        = sparseRowView.value(localCol);
+          columnIndices(colId + colIdStart) = gid;
+          values(colId + colIdStart)        = value;
           colId++;
         }
-      });
+        const auto numOwnedCols = nEntriesPerRow(localRow);
+        maxNumEntries           = Kokkos::max(maxNumEntries, numOwnedCols);
+      },
+      Kokkos::Max<LO>(maxNumEntriesSubblock));
 
-  Kokkos::deep_copy(columnIndices, uniqueColumnIndices);
-  auto exec_space = matrix_execution_space{};
-  Kokkos::sort(uniqueColumnIndices);
-  auto end = Kokkos::Experimental::unique(exec_space, uniqueColumnIndices);
-  auto nUnique =
-      Kokkos::Experimental::distance(Kokkos::Experimental::begin(uniqueColumnIndices), end);
-  auto listColumnIndices = Kokkos::subview(uniqueColumnIndices, Kokkos::pair<int, int>(0, nUnique));
-
-  auto colMap = RCP<Tpetra::Map<LO, GO, NT>>(new Tpetra::Map<LO, GO, NT>(
-      invalid, listColumnIndices, rangeMap->getIndexBase(), rangeMap->getComm()));
+  Teuchos::RCP<const Tpetra::Map<LO, GO, NT>> colMap;
+  Tpetra::Details::makeColMap<LO, GO, NT>(colMap, domainMap, columnIndices);
+  TEUCHOS_ASSERT(colMap);
 
   auto colMap_dev         = colMap->getLocalMap();
   auto localColumnIndices = Kokkos::View<LO*>(
@@ -321,16 +320,9 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
         Kokkos::Experimental::sort_by_key_team(t, rowColumnIndices, rowValues);
       });
 
-  auto rowPtr = Kokkos::create_mirror_view(prefixSumEntriesPerRow);
-  Kokkos::deep_copy(rowPtr, prefixSumEntriesPerRow);
-  auto valuesHost = Kokkos::create_mirror_view(values);
-  Kokkos::deep_copy(valuesHost, values);
-  auto localColsHost = Kokkos::create_mirror_view(localColumnIndices);
-  Kokkos::deep_copy(localColsHost, localColumnIndices);
-
   auto lcl_mat = Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type(
-      "localMat", numMyRows, maxNumEntriesSubblock, totalNumOwnedCols, valuesHost.data(),
-      rowPtr.data(), localColsHost.data());
+      "localMat", numMyRows, maxNumEntriesSubblock, totalNumOwnedCols, values,
+      prefixSumEntriesPerRow, localColumnIndices);
 
   RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> mat =
       rcp(new Tpetra::CrsMatrix<ST, LO, GO, NT>(lcl_mat, rowMap, colMap, domainMap, rangeMap));
