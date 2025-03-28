@@ -18,7 +18,7 @@ Then for every executable or library in your project:
 target_link_libraries(myTarget Kokkos::kokkoskernels)
 ````
 There is no checking Kokkos preprocessor, compiler, or linker flags.
-CMake propagates all the necesssary flags to your project.
+CMake propagates all the necessary flags to your project.
 This means not only is linking to Kokkos Kernels easy, but Kokkos Kernels itself can actually configure compiler and linker flags for *your* 
 project. If building in-tree, there is no `find_package`.
 In fact, you only ever need to link to Kokkos Kernels and not Kokkos!
@@ -30,7 +30,7 @@ A very basic installation is done with:
 ````
 cmake ${srcdir} \
  -DCMAKE_CXX_COMPILER=g++ \
- -DCMAKE_INSTALL_PREFIX=${my_install_folder}
+ -DCMAKE_INSTALL_PREFIX=${my_install_folder} \
  -DKokkos_ROOT=${kokkos_install_prefix}
 ````
 which builds and installs a default Kokkos Kernels when you run `make install`.
@@ -93,7 +93,7 @@ spack diy -u cmake ${myproject}@${myversion} ... ^kokkos...
 where the `...` are the specs for your project and the desired underlying Kokkos configuration.
 Again, a `spack-build` directory will be created where you can run `make`.
 
-Spack has a few idiosyncracies that make building outside of Spack annoying related to Spack forcing use of a compiler wrapper. This can be worked around by having a `-DSpack_WORKAROUND=On` given in your CMake. Then add the block of code to your CMakeLists.txt:
+Spack has a few idiosyncrasies that make building outside of Spack annoying related to Spack forcing use of a compiler wrapper. This can be worked around by having a `-DSpack_WORKAROUND=On` given in your CMake. Then add the block of code to your CMakeLists.txt:
 
 ````
 if (Spack_WORKAROUND)

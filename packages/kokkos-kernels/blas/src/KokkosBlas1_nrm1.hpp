@@ -40,6 +40,8 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
   static_assert(Kokkos::is_execution_space<execution_space>::value,
                 "KokkosBlas::nrm1: execution_space must be a Kokkos::execution_space.");
   static_assert(Kokkos::is_view<XVector>::value, "KokkosBlas::nrm1: XVector must be a Kokkos::View.");
+  static_assert(Kokkos::SpaceAccessibility<execution_space, typename XVector::memory_space>::accessible,
+                "KokkosBlas::nrm1: XVector must be accessible from execution_space");
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrm1: "
                 "Both Vector inputs must have rank 1.");

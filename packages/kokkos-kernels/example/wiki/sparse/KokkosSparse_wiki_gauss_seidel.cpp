@@ -60,13 +60,11 @@ int main() {
     Handle handle;
     handle.create_gs_handle(KokkosSparse::GS_DEFAULT);
     // Set up Gauss-Seidel for the graph (matrix sparsity pattern)
-    KokkosSparse::Experimental::gauss_seidel_symbolic(&handle, numRows, numRows, A.graph.row_map, A.graph.entries,
-                                                      false);
+    KokkosSparse::gauss_seidel_symbolic(&handle, numRows, numRows, A.graph.row_map, A.graph.entries, false);
     // Set up Gauss-Seidel for the matrix values (numeric)
     // Another matrix with the same sparsity pattern could re-use the handle and
     // symbolic phase, and only call numeric.
-    KokkosSparse::Experimental::gauss_seidel_numeric(&handle, numRows, numRows, A.graph.row_map, A.graph.entries,
-                                                     A.values, false);
+    KokkosSparse::gauss_seidel_numeric(&handle, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, false);
     // Now, preconditioner is ready to use. Set up an unknown vector
     // (uninitialized) and randomized right-hand-side vector.
     Vector x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "x"), numRows);
@@ -87,8 +85,8 @@ int main() {
       //  * to zero out x (it was uninitialized)
       //  * that b has changed since the previous apply (since there was no
       //  previous apply)
-      KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply(
-          &handle, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, x, b, firstIter, firstIter, one, 1);
+      KokkosSparse::forward_sweep_gauss_seidel_apply(&handle, numRows, numRows, A.graph.row_map, A.graph.entries,
+                                                     A.values, x, b, firstIter, firstIter, one, 1);
       firstIter = false;
       // Now, compute the new residual norm using SPMV
       Kokkos::deep_copy(res, b);

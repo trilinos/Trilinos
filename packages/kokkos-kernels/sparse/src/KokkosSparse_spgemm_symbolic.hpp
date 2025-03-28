@@ -22,8 +22,6 @@
 
 namespace KokkosSparse {
 
-namespace Experimental {
-
 template <typename KernelHandle, typename alno_row_view_t_, typename alno_nnz_view_t_, typename blno_row_view_t_,
           typename blno_nnz_view_t_, typename clno_row_view_t_>
 void spgemm_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t m,
@@ -181,6 +179,20 @@ void spgemm_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_
                                                                                     transposeA, const_b_r, const_b_l,
                                                                                     transposeB, c_r, computeRowptrs);
   }
+}
+
+namespace Experimental {
+
+template <typename KernelHandle, typename alno_row_view_t_, typename alno_nnz_view_t_, typename blno_row_view_t_,
+          typename blno_nnz_view_t_, typename clno_row_view_t_>
+[[deprecated(
+    "spgemm_symbolic was promoted out of Experimental, please use KokkosSparse::spgemm_symbolic instead.")]] void
+spgemm_symbolic(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t m,
+                typename KernelHandle::const_nnz_lno_t n, typename KernelHandle::const_nnz_lno_t k,
+                alno_row_view_t_ row_mapA, alno_nnz_view_t_ entriesA, bool transposeA, blno_row_view_t_ row_mapB,
+                blno_nnz_view_t_ entriesB, bool transposeB, clno_row_view_t_ row_mapC, bool computeRowptrs = false) {
+  KokkosSparse::spgemm_symbolic(handle, m, n, k, row_mapA, entriesA, transposeA, row_mapB, entriesB, transposeB,
+                                row_mapC, computeRowptrs);
 }
 
 }  // namespace Experimental

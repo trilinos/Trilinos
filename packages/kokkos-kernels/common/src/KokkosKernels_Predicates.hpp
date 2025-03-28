@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSKERNELS_PREDICATES_HPP
-#define _KOKKOSKERNELS_PREDICATES_HPP
+#ifndef KOKKOSKERNELS_PREDICATES_HPP
+#define KOKKOSKERNELS_PREDICATES_HPP
 
 #include "Kokkos_ArithTraits.hpp"
 
@@ -147,4 +147,4 @@ struct Refl {
 
 }  // namespace KokkosKernels
 
-#endif  // _KOKKOSKERNELS_PREDICATES_HPP
+#endif  // KOKKOSKERNELS_PREDICATES_HPP

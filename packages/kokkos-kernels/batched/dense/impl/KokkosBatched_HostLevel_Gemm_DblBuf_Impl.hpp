@@ -135,9 +135,9 @@ class BatchedDblBufGemm {
       std::conditional_t<std::is_same<ArgAlphaFmaTag, AlphaTag::Yes>::value, AlphaTag::No, AlphaTag::Yes>;
 
   HandleType *const __handle;
-  AViewType __A;
-  BViewType __B;
-  CViewType __C;
+  AViewType A_;
+  BViewType B_;
+  CViewType C_;
   ScalarType __alpha, __beta;
   ArgTransA __transA_tag;
   ArgTransB __transB_tag;
@@ -156,7 +156,7 @@ class BatchedDblBufGemm {
 
  public:
   BatchedDblBufGemm(HandleType *const handle, ScalarType alpha, AViewType A, BViewType B, ScalarType beta, CViewType C)
-      : __handle(handle), __A(A), __B(B), __C(C), __alpha(alpha), __beta(beta) {}
+      : __handle(handle), A_(A), B_(B), C_(C), __alpha(alpha), __beta(beta) {}
 
   int invoke() {
     __run();
@@ -181,7 +181,7 @@ class BatchedDblBufGemm {
     constexpr int stride_n = TILE_N / reg_n;
     using functor_type     = Functor<member_type, reg_m, reg_n, stride_m, stride_n>;
 
-    functor_type functor(*this, __A, __B, __C);
+    functor_type functor(*this, A_, B_, C_);
 
     if (__handle->enableDebug) {
       std::cout << "algo_type:" << __handle->get_kernel_algo_type() << std::endl
@@ -244,9 +244,9 @@ class BatchedDblBufGemm {
   class Functor {
    private:
     BatchedDblBufGemm &__ei;
-    AViewType __A;
-    BViewType __B;
-    CViewType __C;
+    AViewType A_;
+    BViewType B_;
+    CViewType C_;
     ScalarType __alpha, __beta;
     int __k;
     size_t __n_sub_tiles, __tiles_per_col, __tiles_per_row;
@@ -254,27 +254,27 @@ class BatchedDblBufGemm {
    public:
     size_t get_n_sub_tiles() { return __n_sub_tiles; }
 
-    // NOTE: We cannot use __ei.{__A,__B,__C,__beta,__alpha,__k} in the operator
+    // NOTE: We cannot use __ei.{A_,B_,C_,__beta,__alpha,__k} in the operator
     // below. If those are used, we  get an invalid memory error from cuda. I
     // suspect this is due the values not being copied to device and then
     // runtime resolution of the host address &__ei.
-    Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C) : __ei(ei), __A(A), __B(B), __C(C) {
+    Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C) : __ei(ei), A_(A), B_(B), C_(C) {
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
-        ei.__c_batch_size = ei.__C.extent_int(0);
-        ei.__c_m          = ei.__C.extent_int(1);
-        ei.__c_n          = ei.__C.extent_int(2);
+        ei.__c_batch_size = ei.C_.extent_int(0);
+        ei.__c_m          = ei.C_.extent_int(1);
+        ei.__c_n          = ei.C_.extent_int(2);
         if (std::is_same<ArgTransA, Trans::Transpose>::value)
-          __k = ei.__A.extent_int(1);
+          __k = ei.A_.extent_int(1);
         else
-          __k = ei.__A.extent_int(2);
+          __k = ei.A_.extent_int(2);
       } else {
-        ei.__c_batch_size = ei.__C.extent_int(2);
-        ei.__c_m          = ei.__C.extent_int(0);
-        ei.__c_n          = ei.__C.extent_int(1);
+        ei.__c_batch_size = ei.C_.extent_int(2);
+        ei.__c_m          = ei.C_.extent_int(0);
+        ei.__c_n          = ei.C_.extent_int(1);
         if (std::is_same<ArgTransA, Trans::Transpose>::value)
-          __k = ei.__A.extent_int(0);
+          __k = ei.A_.extent_int(0);
         else
-          __k = ei.__A.extent_int(1);
+          __k = ei.A_.extent_int(1);
       }
       __beta  = ei.__beta;   // Copy to device
       __alpha = ei.__alpha;  // Copy to device
@@ -381,10 +381,10 @@ class BatchedDblBufGemm {
 
       // Fetch entire 2-rank sub-matrix
       auto svA =
-          subview_wrapper(__A, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transA_tag);
+          subview_wrapper(A_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transA_tag);
       auto svB =
-          subview_wrapper(__B, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
-      auto svC = subview_wrapper(__C, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag);
+          subview_wrapper(B_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
+      auto svC = subview_wrapper(C_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag);
 
       // Allocate scratch memory buffers used for prefetching
       view_type_2d_scratch svA_scr(member.team_scratch(0), TILE_M, TILE_K);
@@ -524,10 +524,10 @@ class BatchedDblBufGemm {
 
       // Fetch entire 2-rank sub-matrix
       auto svA =
-          subview_wrapper(__A, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transA_tag);
+          subview_wrapper(A_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transA_tag);
       auto svB =
-          subview_wrapper(__B, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
-      auto svC = subview_wrapper(__C, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag);
+          subview_wrapper(B_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
+      auto svC = subview_wrapper(C_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag);
 
       // Allocate scratch memory buffers used for prefetching
       view_type_2d_scratch svA_scr(member.team_scratch(0), TILE_K, TILE_M);

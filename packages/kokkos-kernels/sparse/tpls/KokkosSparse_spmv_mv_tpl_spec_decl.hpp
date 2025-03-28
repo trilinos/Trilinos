@@ -87,8 +87,9 @@ cusparseDnMatDescr_t make_cusparse_dn_mat_descr_t(ViewType &view) {
   const cusparseOrder_t order = CUSPARSE_ORDER_COL;
 
   cusparseDnMatDescr_t descr;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnMat(&descr, static_cast<int64_t>(rows), static_cast<int64_t>(cols),
-                                                static_cast<int64_t>(ld), values, valueType, order));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateDnMat(&descr, static_cast<int64_t>(rows),
+                                                           static_cast<int64_t>(cols), static_cast<int64_t>(ld), values,
+                                                           valueType, order));
 
   return descr;
 }
@@ -175,22 +176,23 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle, const char mode[
     subhandle         = new KokkosSparse::Impl::CuSparse10_SpMV_Data(exec);
     handle->tpl_rank2 = subhandle;
     /* create matrix */
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&subhandle->mat, A.numRows(), A.numCols(), A.nnz(),
-                                                (void *)A.graph.row_map.data(), (void *)A.graph.entries.data(),
-                                                (void *)A.values.data(), myCusparseOffsetType, myCusparseEntryType,
-                                                CUSPARSE_INDEX_BASE_ZERO, aCusparseType));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseCreateCsr(&subhandle->mat, A.numRows(), A.numCols(), A.nnz(), (void *)A.graph.row_map.data(),
+                          (void *)A.graph.entries.data(), (void *)A.values.data(), myCusparseOffsetType,
+                          myCusparseEntryType, CUSPARSE_INDEX_BASE_ZERO, aCusparseType));
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMM_bufferSize(cusparseHandle, opA, opB, &alpha, subhandle->mat, vecX, &beta,
-                                                      vecY, computeType, algo, &subhandle->bufferSize));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMM_bufferSize(cusparseHandle, opA, opB, &alpha, subhandle->mat, vecX,
+                                                                 &beta, vecY, computeType, algo,
+                                                                 &subhandle->bufferSize));
 
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&subhandle->buffer, subhandle->bufferSize));
   }
 
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMM(cusparseHandle, opA, opB, &alpha, subhandle->mat, vecX, &beta, vecY,
-                                         computeType, algo, subhandle->buffer));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMM(cusparseHandle, opA, opB, &alpha, subhandle->mat, vecX, &beta, vecY,
+                                                    computeType, algo, subhandle->buffer));
 
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecX));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecY));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecX));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnMat(vecY));
 }
 
 #define KOKKOSSPARSE_SPMV_MV_CUSPARSE(SCALAR, ORDINAL, OFFSET, XL, YL, SPACE)                                       \

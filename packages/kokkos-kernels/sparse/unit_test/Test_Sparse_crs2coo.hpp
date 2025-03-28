@@ -51,9 +51,9 @@ void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col, DataType data
 
   Kokkos::fence();
 
-  ASSERT_EQ(crsMatRef.nnz(), row.extent(0));
-  ASSERT_EQ(crsMatRef.nnz(), col.extent(0));
-  ASSERT_EQ(crsMatRef.nnz(), data.extent(0));
+  ASSERT_EQ(size_t(crsMatRef.nnz()), row.extent(0));
+  ASSERT_EQ(size_t(crsMatRef.nnz()), col.extent(0));
+  ASSERT_EQ(size_t(crsMatRef.nnz()), data.extent(0));
 
   for (decltype(row.extent(0)) idx = 0; idx < row.extent(0); ++idx) {
     auto row_id = row_h(idx);

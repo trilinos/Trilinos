@@ -66,11 +66,11 @@ struct QR {
   KOKKOS_FORCEINLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const tViewType &t,
                                                 const wViewType &w) {
     int r_val = 0;
-    if (std::is_same<ArgMode, Mode::Serial>::value) {
+    if constexpr (std::is_same_v<ArgMode, Mode::Serial>) {
       r_val = SerialQR<ArgAlgo>::invoke(A, t, w);
-    } else if (std::is_same<ArgMode, Mode::Team>::value) {
+    } else if constexpr (std::is_same_v<ArgMode, Mode::Team>) {
       r_val = TeamQR<MemberType, ArgAlgo>::invoke(member, A, t, w);
-    } else if (std::is_same<ArgMode, Mode::TeamVector>::value) {
+    } else if constexpr (std::is_same_v<ArgMode, Mode::TeamVector>) {
       r_val = TeamVectorQR<MemberType, ArgAlgo>::invoke(member, A, t, w);
     }
     return r_val;

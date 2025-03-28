@@ -37,7 +37,7 @@ struct SerialApplyQ_LeftForwardInternal {
                                            /* */ ValueType *t, const int ts,
                                            /* */ ValueType *B, const int bs0, const int bs1,
                                            /* */ ValueType *w) {
-    typedef ValueType value_type;
+    using value_type = ValueType;
 
     /// Given a matrix A that includes a series of householder vectors,
     /// it applies a unitary matrix Q to B from left without transpose
@@ -91,10 +91,10 @@ struct SerialApplyQ_LeftBackwardInternal {
                                            /* */ ValueType *t, const int ts,
                                            /* */ ValueType *B, const int bs0, const int bs1,
                                            /* */ ValueType *w) {
-    typedef ValueType value_type;
+    using value_type = ValueType;
 
     /// Given a matrix A that includes a series of householder vectors,
-    /// it applies a unitary matrix Q to B from left without transpose
+    /// it applies a unitary matrix Q to B from left with transpose
     ///   B = Q^H B = (H(k-1) H(k-2) ... H0) B
     /// where
     ///   A is m x k (holding H0, H1 ... H(k-1)
@@ -128,7 +128,6 @@ struct SerialApplyQ_LeftBackwardInternal {
       // left apply householder to partitioned B1 and B2
       SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1, B_part3x1.A2, bs0,
                                                  bs1, w);
-
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);
@@ -145,7 +144,7 @@ struct SerialApplyQ_RightForwardInternal {
                                            /* */ ValueType *t, const int ts,
                                            /* */ ValueType *B, const int bs0, const int bs1,
                                            /* */ ValueType *w) {
-    typedef ValueType value_type;
+    using value_type = ValueType;
 
     /// Given a matrix A that includes a series of householder vectors,
     /// it applies a unitary matrix Q to B from left without transpose

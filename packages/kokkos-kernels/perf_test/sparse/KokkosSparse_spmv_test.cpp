@@ -64,7 +64,7 @@ SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
   test_data.h_y         = Kokkos::create_mirror_view(y);
   test_data.h_y_compare = Kokkos::create_mirror(y);
 
-  h_graph_type h_graph   = Kokkos::create_mirror(test_data.A.graph);
+  h_graph_type h_graph   = KokkosSparse::create_mirror(test_data.A.graph);
   h_values_type h_values = Kokkos::create_mirror_view(test_data.A.values);
 
   for (int i = 0; i < test_data.numCols; i++) {

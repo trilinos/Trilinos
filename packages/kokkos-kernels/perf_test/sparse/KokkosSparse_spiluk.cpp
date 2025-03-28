@@ -163,7 +163,8 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin, int
       Kokkos::Timer timer;
 
       timer.reset();
-      spiluk_symbolic(&kh, fill_lev, A.graph.row_map, A.graph.entries, L_row_map, L_entries, U_row_map, U_entries);
+      KokkosSparse::spiluk_symbolic(&kh, fill_lev, A.graph.row_map, A.graph.entries, L_row_map, L_entries, U_row_map,
+                                    U_entries);
       std::cout << "ILU(" << fill_lev << ") Symbolic Time: " << timer.seconds() << std::endl;
 
       Kokkos::resize(L_entries, kh.get_spiluk_handle()->get_nnzL());
@@ -179,8 +180,8 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin, int
       std::cout << "nnzU: " << kh.get_spiluk_handle()->get_nnzU() << std::endl;
 
       timer.reset();
-      spiluk_numeric(&kh, fill_lev, A.graph.row_map, A.graph.entries, A.values, L_row_map, L_entries, L_values,
-                     U_row_map, U_entries, U_values);
+      KokkosSparse::spiluk_numeric(&kh, fill_lev, A.graph.row_map, A.graph.entries, A.values, L_row_map, L_entries,
+                                   L_values, U_row_map, U_entries, U_values);
       Kokkos::fence();
       std::cout << "ILU(" << fill_lev << ") Numeric Time: " << timer.seconds() << std::endl;
 
@@ -331,8 +332,8 @@ int test_spiluk_perf(std::vector<int> tests, std::string afilename, int kin, int
 
       for (int i = 0; i < loop; i++) {
         timer.reset();
-        spiluk_numeric(&kh, fill_lev, A.graph.row_map, A.graph.entries, A.values, L_row_map, L_entries, L_values,
-                       U_row_map, U_entries, U_values);
+        KokkosSparse::spiluk_numeric(&kh, fill_lev, A.graph.row_map, A.graph.entries, A.values, L_row_map, L_entries,
+                                     L_values, U_row_map, U_entries, U_values);
         Kokkos::fence();
         double time = timer.seconds();
         ave_time += time;

@@ -57,7 +57,7 @@ struct HostBlas {
   static void axpy(KK_INT n, const T alpha, const T *x, KK_INT x_inc,
                    /* */ T *y, KK_INT y_inc);
 
-  static void rot(KK_INT const N, T *X, KK_INT const incx, T *Y, KK_INT const incy, mag_type *c, mag_type *s);
+  static void rot(KK_INT const N, T *X, KK_INT const incx, T *Y, KK_INT const incy, mag_type *c, T *s);
 
   static void rotg(T *a, T *b, mag_type *c, T *s);
 

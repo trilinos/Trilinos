@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSKERNELS_BLOCKHASHMAPACCUMULATOR_HPP
-#define _KOKKOSKERNELS_BLOCKHASHMAPACCUMULATOR_HPP
+#ifndef KOKKOSKERNELS_BLOCKHASHMAPACCUMULATOR_HPP
+#define KOKKOSKERNELS_BLOCKHASHMAPACCUMULATOR_HPP
 #include <Kokkos_Atomic.hpp>
 #include <atomic>
 #include "KokkosKernels_BlockUtils.hpp"
@@ -584,4 +584,4 @@ struct BlockHashmapAccumulator {
 }  // namespace Experimental
 }  // namespace KokkosKernels
 
-#endif  //  _KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
+#endif  // KOKKOSKERNELS_HASHMAPACCUMULATOR_HPP
