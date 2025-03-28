@@ -17,6 +17,7 @@
 
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_PerfUtils.hpp"
@@ -437,23 +438,7 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP
       coarseCoordMap = coarseMap;
     } else {
       // Vector system
-      // NOTE: There could be further optimizations here where we detect contiguous maps and then
-      // create a contiguous amalgamated maps, which bypasses the expense of the getMyGlobalIndicesDevice()
-      // call (which is free for non-contiguous maps, but costs something if the map is contiguous).
-      using range_policy      = Kokkos::RangePolicy<typename Node::execution_space>;
-      array_type elementAList = coarseMap->getMyGlobalIndicesDevice();
-      GO indexBase            = coarseMap->getIndexBase();
-      auto numElements        = elementAList.size() / blkSize;
-      typename array_type::non_const_type elementList_nc("elementList", numElements);
-
-      // Amalgamate the map
-      Kokkos::parallel_for(
-          "Amalgamate Element List", range_policy(0, numElements), KOKKOS_LAMBDA(LO i) {
-            elementList_nc[i] = (elementAList[i * blkSize] - indexBase) / blkSize + indexBase;
-          });
-      array_type elementList = elementList_nc;
-      coarseCoordMap         = MapFactory::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                 elementList, indexBase, coarseMap->getComm());
+      AmalgamationFactory<SC, LO, GO, NO>::AmalgamateMap(rcp_dynamic_cast<const StridedMap>(coarseMap), coarseCoordMap);
     }
 
     coarseCoords = RealValuedMultiVectorFactory::Build(coarseCoordMap, fineCoords->getNumVectors());

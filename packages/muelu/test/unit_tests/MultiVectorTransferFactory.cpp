@@ -230,7 +230,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildNormalize, Sc
 
 //------------------------------------------------------------------------------------------
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildAgg, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildAggScalar, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
@@ -289,7 +289,64 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildAgg, Scalar, 
   RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector", mvtf.get());
 
   TEST_FLOATING_EQUALITY(coarseOnes->getVector(0)->meanValue(), fineOnes->getVector(0)->meanValue(), 1e-12);
-}  // BuildAgg test
+}  // BuildAggScalar test
+
+//------------------------------------------------------------------------------------------
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, BuildAggVector, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  out << "Tests the action of the transfer factory on a vector. In this test, the transfer are the aggregates" << std::endl;
+  out << "and the vector is all ones. So the norm of the resulting coarse grid vector should be equal to the" << std::endl;
+  out << "number of fine degrees of freedom." << std::endl;
+
+  Level fineLevel;
+  Level coarseLevel;
+
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+  GO nx = 199, ny = 199;
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build2DElasticity(nx, ny);
+
+  RCP<MultiVector> fineOnes = MultiVectorFactory::Build(A->getRowMap(), 1);
+  fineOnes->putScalar(1.0);
+
+  fineLevel.Set("A", A);
+  fineLevel.Set("onesVector", fineOnes);
+
+  RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+
+  RCP<TransPFactory> RFact = rcp(new TransPFactory());
+
+  RCP<FactoryManager> Mf = rcp(new FactoryManager());
+  Mf->SetKokkosRefactor(false);
+  fineLevel.SetFactoryManager(Mf);
+  RCP<FactoryManager> Mc = rcp(new FactoryManager());
+  Mc->SetKokkosRefactor(false);
+  Mc->SetFactory("P", TentativePFact);
+  Mc->SetFactory("Ptent", TentativePFact);
+  Mc->SetFactory("R", RFact);
+  coarseLevel.SetFactoryManager(Mc);
+
+  RCP<MueLu::MultiVectorTransferFactory<SC, LO, GO, NO> > mvtf = rcp(new MueLu::MultiVectorTransferFactory<SC, LO, GO, NO>());
+  Teuchos::ParameterList mvtfParams;
+  mvtfParams.set("Vector name", "onesVector");
+  mvtfParams.set("Transfer name", "Aggregates");
+  mvtfParams.set("Normalize", true);
+  mvtf->SetParameterList(mvtfParams);
+  mvtf->SetFactory("Transfer factory", fineLevel.GetFactoryManager()->GetFactory("Aggregates"));
+
+  coarseLevel.Request("onesVector", mvtf.get());
+  coarseLevel.Request("P", TentativePFact.get());
+
+  mvtf->Build(fineLevel, coarseLevel);
+
+  RCP<MultiVector> coarseOnes = coarseLevel.Get<RCP<MultiVector> >("onesVector", mvtf.get());
+
+  TEST_FLOATING_EQUALITY(coarseOnes->getVector(0)->meanValue(), fineOnes->getVector(0)->meanValue(), 1e-12);
+}  // BuildAggVector test
 
 //------------------------------------------------------------------------------------------
 
@@ -393,7 +450,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVectorTransferFactory, ThreeLevels, Scala
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, Build, Scalar, LO, GO, Node)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, BuildP, Scalar, LO, GO, Node)         \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, BuildNormalize, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, BuildAgg, Scalar, LO, GO, Node)       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, BuildAggScalar, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, BuildAggVector, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MultiVectorTransferFactory, ThreeLevels, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>

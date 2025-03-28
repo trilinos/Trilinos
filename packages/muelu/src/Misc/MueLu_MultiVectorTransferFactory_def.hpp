@@ -14,9 +14,11 @@
 #include "Xpetra_Access.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
-#include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -107,6 +109,7 @@ void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     using execution_space  = typename Node::execution_space;
     using ATS              = Kokkos::ArithTraits<Scalar>;
     using impl_scalar_type = typename ATS::val_type;
+    using array_type       = typename Map::global_indices_array_device_type;
 
     auto aggregates = fineLevel.Get<RCP<Aggregates>>(transferName, GetFactory("Transfer factory").get());
     TEUCHOS_ASSERT(!aggregates->AggregatesCrossProcessors());
@@ -115,7 +118,22 @@ void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     auto aggGraph = aggregates->GetGraph();
     auto numAggs  = aggGraph.numRows();
 
-    coarseVector = MultiVectorFactory::Build(coarseMap, fineVector->getNumVectors());
+    RCP<const Map> coarseVectorMap;
+
+    LO blkSize = 1;
+    if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
+      blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
+
+    if (blkSize == 1) {
+      // Scalar system
+      // No amalgamation required, we can use the coarseMap
+      coarseVectorMap = coarseMap;
+    } else {
+      // Vector system
+      AmalgamationFactory<SC, LO, GO, NO>::AmalgamateMap(rcp_dynamic_cast<const StridedMap>(coarseMap), coarseVectorMap);
+    }
+
+    coarseVector = MultiVectorFactory::Build(coarseVectorMap, fineVector->getNumVectors());
 
     auto lcl_fineVector   = fineVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
     auto lcl_coarseVector = coarseVector->getDeviceLocalView(Xpetra::Access::OverwriteAll);
