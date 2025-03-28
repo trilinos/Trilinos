@@ -13,11 +13,12 @@
 
 #include <BelosConfigDefs.hpp>
 #include <BelosMultiVecTraits.hpp>
+#include <BelosDenseMatTraits.hpp>
 #include <BelosOutputManager.hpp>
 #include <BelosOrthoManagerFactory.hpp>
+#include <BelosMVOPTester.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_SerialDenseHelpers.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -30,13 +31,13 @@ namespace Belos {
     /// \brief OrthoManager benchmark
     /// \author Mark Hoemmen
     ///
-    template<class Scalar, class MV>
+    template<class Scalar, class MV, class DM>
     class OrthoManagerBenchmarker {
     private:
       typedef Scalar scalar_type;
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
-      typedef MultiVecTraits<Scalar, MV> MVT;
-      typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
+      typedef MultiVecTraits<Scalar, MV, DM> MVT;
+      typedef DenseMatTraits<Scalar, DM> DMT;
 
     public:
       /// \brief Establish baseline run time for OrthoManager benchmark
@@ -119,7 +120,7 @@ namespace Belos {
       ///   labels.  The second line contains the actual data, again
       ///   in ASCII comma-delimited format.
       static void
-      benchmark (const Teuchos::RCP<OrthoManager<Scalar, MV> >& orthoMan,
+      benchmark (const Teuchos::RCP<OrthoManager<Scalar, MV, DM> >& orthoMan,
                  const std::string& orthoManName,
                  const std::string& normalization,
                  const Teuchos::RCP<const MV>& X,
@@ -161,11 +162,11 @@ namespace Belos {
 
         // Make space to put the projection and normalization
         // coefficients.
-        Array<RCP<mat_type> > C (numBlocks);
+        Array<RCP<DM>> C (numBlocks);
         for (int k = 0; k < numBlocks; ++k) {
-          C[k] = rcp (new mat_type (numCols, numCols));
+          C[k] = DMT::Create(numCols, numCols);
         }
-        RCP<mat_type> B (new mat_type (numCols, numCols));
+        RCP<DM> B = DMT::Create(numCols, numCols);
 
         // Make some blocks to orthogonalize.  Fill with random data.
         // We won't be orthogonalizing X, or even modifying X.  We
@@ -289,7 +290,7 @@ namespace Belos {
     /// \class OrthoManagerTester
     /// \brief Wrapper around OrthoManager test functionality
     ///
-    template< class Scalar, class MV >
+    template<class Scalar, class MV, class DM>
     class OrthoManagerTester {
     private:
       typedef typename Teuchos::Array<Teuchos::RCP<MV> >::size_type size_type;
@@ -299,8 +300,8 @@ namespace Belos {
       typedef Teuchos::ScalarTraits<scalar_type> SCT;
       typedef typename SCT::magnitudeType magnitude_type;
       typedef Teuchos::ScalarTraits<magnitude_type> SMT;
-      typedef MultiVecTraits<scalar_type, MV> MVT;
-      typedef Teuchos::SerialDenseMatrix<int, scalar_type> mat_type;
+      typedef MultiVecTraits<scalar_type, MV, DM> MVT;
+      typedef DenseMatTraits<scalar_type, DM> DMT;
 
       /// \brief Run all the tests
       ///
@@ -319,7 +320,7 @@ namespace Belos {
       ///
       /// \return Number of tests that failed (zero means success)
       static int
-      runTests (const Teuchos::RCP<OrthoManager<Scalar, MV> >& OM,
+      runTests (const Teuchos::RCP<OrthoManager<Scalar, MV, DM> >& OM,
                 const bool isRankRevealing,
                 const Teuchos::RCP<MV>& S,
                 const int sizeX1,
@@ -395,17 +396,10 @@ namespace Belos {
           debugOut << "done." << endl
                    << "Calling projectAndNormalize(X2, C, B, tuple(X1))... "
                    << std::flush;
-          // The projectAndNormalize() interface also differs between
-          // Anasazi and Belos.  Anasazi's projectAndNormalize() puts
-          // the multivector and the array of multivectors first, and
-          // the (array of) SerialDenseMatrix arguments (which are
-          // optional) afterwards.  Belos puts the (array of)
-          // SerialDenseMatrix arguments in the middle, and they are
-          // not optional.
           int initialX2Rank;
           {
-            Array<RCP<mat_type> > C (1);
-            RCP<mat_type> B = Teuchos::null;
+            Array<RCP<DM> > C (1);
+            RCP<DM> B = Teuchos::null;
             initialX2Rank =
               OM->projectAndNormalize (*X2, C, B, tuple<RCP<const MV> >(X1));
           }
@@ -495,8 +489,8 @@ namespace Belos {
                      << "C, B, X1_out)...";
             int initialX2Rank;
             {
-              Array<RCP<mat_type> > C (1);
-              RCP<mat_type> B = Teuchos::null;
+              Array<RCP<DM> > C (1);
+              RCP<DM> B = Teuchos::null;
               initialX2Rank =
                 tsqr->projectAndNormalizeOutOfPlace (*X2_in, *X2_out, C, B,
                                                      tuple<RCP<const MV> >(X1_out));
@@ -564,13 +558,13 @@ namespace Belos {
             // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
             // it should require randomization, as
             // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
-            mat_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-            Teuchos::randomSyncedMatrix(C1);
-            Teuchos::randomSyncedMatrix(C2);
+            RCP<DM> C1 = DMT::Create(sizeX1,sizeS), C2 = DMT::Create(sizeX2,sizeS);
+            RandomSyncedMpiMatrix<Scalar,DM>(*C1);
+            RandomSyncedMpiMatrix<Scalar,DM>(*C2);
             // S := X1*C1
-            MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
+            MVT::MvTimesMatAddMv(ONE,*X1,*C1,ZERO,*S);
             // S := S + X2*C2
-            MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
+            MVT::MvTimesMatAddMv(ONE,*X2,*C2,ONE,*S);
 
             debugOut << "Testing project() by projecting [X1 X2]-range multivector "
               "against P_X1 P_X2 " << endl;
@@ -588,8 +582,8 @@ namespace Belos {
           {
             MVT::MvRandom(*S);
             RCP<MV> mid = MVT::Clone(*S,1);
-            mat_type c(sizeS,1);
-            MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
+            RCP<DM> c = DMT::Create(sizeS,1);
+            MVT::MvTimesMatAddMv(ONE,*S,*c,ZERO,*mid);
             std::vector<int> ind(1);
             ind[0] = sizeS-1;
             MVT::SetBlock(*mid,ind,*S);
@@ -610,15 +604,15 @@ namespace Belos {
             // rank-1
             RCP<MV> one = MVT::Clone(*S,1);
             MVT::MvRandom(*one);
-            mat_type scaleS(sizeS,1);
-            Teuchos::randomSyncedMatrix(scaleS);
+            RCP<DM> scaleS = DMT::Create(sizeS,1);
+            RandomSyncedMpiMatrix<Scalar,DM>(*scaleS);
             // put multiple of column 0 in columns 0:sizeS-1
             for (int i=0; i<sizeS; i++)
               {
                 std::vector<int> ind(1);
                 ind[0] = i;
                 RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-                MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
+                MVT::MvAddMv(DMT::ValueConst(*scaleS,i,0),*one,ZERO,*one,*Si);
               }
             debugOut << "Testing normalize() on a rank-1 multivector " << endl;
             const int thisNumFailed = testNormalizeRankReveal(OM,S,MyOM);
@@ -650,11 +644,11 @@ namespace Belos {
             // P_X1 P_X2 (X1*C1 + X2*C2) = P_X1 X1*C1 = 0
             // and
             // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
-            mat_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-            Teuchos::randomSyncedMatrix(C1);
-            Teuchos::randomSyncedMatrix(C2);
-            MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
-            MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
+            RCP<DM> C1 = DMT::Create(sizeX1,sizeS), C2 = DMT::Create(sizeX2,sizeS);
+            RandomSyncedMpiMatrix<Scalar,DM>(*C1);
+            RandomSyncedMpiMatrix<Scalar,DM>(*C2);
+            MVT::MvTimesMatAddMv(ONE,*X1,*C1,ZERO,*S);
+            MVT::MvTimesMatAddMv(ONE,*X2,*C2,ONE,*S);
 
             debugOut << "Testing projectAndNormalize() by projecting [X1 X2]-range "
               "multivector against P_X1 P_X2 " << endl;
@@ -672,8 +666,8 @@ namespace Belos {
           {
             MVT::MvRandom(*S);
             RCP<MV> mid = MVT::Clone(*S,1);
-            mat_type c(sizeS,1);
-            MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
+            RCP<DM> c = DMT::Create(sizeS,1);
+            MVT::MvTimesMatAddMv(ONE,*S,*c,ZERO,*mid);
             std::vector<int> ind(1);
             ind[0] = sizeS-1;
             MVT::SetBlock(*mid,ind,*S);
@@ -695,15 +689,15 @@ namespace Belos {
             // rank-1
             RCP<MV> one = MVT::Clone(*S,1);
             MVT::MvRandom(*one);
-            mat_type scaleS(sizeS,1);
-            Teuchos::randomSyncedMatrix(scaleS);
+            RCP<DM> scaleS = DMT::Create(sizeS,1);
+            RandomSyncedMpiMatrix<Scalar,DM>(*scaleS);
             // Put a multiple of column 0 in columns 0:sizeS-1.
             for (int i=0; i<sizeS; i++)
               {
                 std::vector<int> ind(1);
                 ind[0] = i;
                 RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
-                MVT::MvAddMv(scaleS(i,0),*one,ZERO,*one,*Si);
+                MVT::MvAddMv(DMT::ValueConst(*scaleS,i,0),*one,ZERO,*one,*Si);
               }
             debugOut << "Testing projectAndNormalize() on a rank-1 multivector " << endl;
             bool constantStride = true;
@@ -773,23 +767,26 @@ namespace Belos {
       static magnitude_type
       frobeniusNorm (const MV& X)
       {
+        using Teuchos::RCP;
+
         const scalar_type ONE = SCT::one();
         const int numCols = MVT::GetNumberVecs(X);
-        mat_type C (numCols, numCols);
+        RCP<DM> C = DMT::Create(numCols, numCols);
 
         // $C := X^* X$
-        MVT::MvTransMv (ONE, X, X, C);
+        MVT::MvTransMv (ONE, X, X, *C);
+        DMT::SyncDeviceToHost( *C );
 
         magnitude_type err (0);
         for (int i = 0; i < numCols; ++i)
-          err += SCT::magnitude (C(i,i));
+          err += SCT::magnitude (DMT::ValueConst(*C,i,i));
 
         return SCT::magnitude (SCT::squareroot (err));
       }
 
 
       static int
-      testProjectAndNormalize (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM,
+      testProjectAndNormalize (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV, DM > > OM,
                                const Teuchos::RCP< const MV >& S,
                                const Teuchos::RCP< const MV >& X1,
                                const Teuchos::RCP< const MV >& X2,
@@ -803,7 +800,7 @@ namespace Belos {
       ///
       /// \return Count of errors (should be zero)
       static int
-      testProjectAndNormalizeOld (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
+      testProjectAndNormalizeOld (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV, DM > >& OM,
                                   const Teuchos::RCP< const MV >& S,
                                   const Teuchos::RCP< const MV >& X1,
                                   const Teuchos::RCP< const MV >& X2,
@@ -873,8 +870,8 @@ namespace Belos {
         for (int t=0; t<numtests; t++) {
 
           Array< RCP< const MV > > theX;
-          RCP<mat_type > B = rcp( new mat_type(sizeS,sizeS) );
-          Array<RCP<mat_type > > C;
+          RCP<DM> B = DMT::Create( sizeS,sizeS );
+          Array<RCP< DM > > C;
           if ( (t % 3) == 0 ) {
             // neither <X1,Y1> nor <X2,Y2>
             // C, theX and theY are already empty
@@ -882,18 +879,18 @@ namespace Belos {
           else if ( (t % 3) == 1 ) {
             // X1
             theX = tuple(X1);
-            C = tuple( rcp(new mat_type(sizeX1,sizeS)) );
+            C = tuple( DMT::Create(sizeX1,sizeS) );
           }
           else if ( (t % 3) == 2 ) {
             // X2
             theX = tuple(X2);
-            C = tuple( rcp(new mat_type(sizeX2,sizeS)) );
+            C = tuple( DMT::Create(sizeX2,sizeS) );
           }
           else {
             // X1 and X2, and the reverse.
             theX = tuple(X1,X2);
-            C = tuple( rcp(new mat_type(sizeX1,sizeS)),
-                       rcp(new mat_type(sizeX2,sizeS)) );
+            C = tuple( DMT::Create(sizeX1,sizeS),
+                       DMT::Create(sizeX2,sizeS) );
           }
 
           // We wrap up all the OrthoManager calls in a try-catch
@@ -910,17 +907,17 @@ namespace Belos {
 
             // here is where the outputs go
             Array<RCP<MV> > S_outs;
-            Array<Array<RCP<mat_type > > > C_outs;
-            Array<RCP<mat_type > > B_outs;
+            Array<Array<RCP<DM > > > C_outs;
+            Array<RCP<DM > > B_outs;
             RCP<MV> Scopy;
             Array<int> ret_out;
 
             // copies of S,MS
             Scopy = MVT::CloneCopy(*S);
             // randomize this data, it should be overwritten
-            Teuchos::randomSyncedMatrix(*B);
+            RandomSyncedMpiMatrix<Scalar,DM>(*B);
             for (size_type i=0; i<C.size(); i++) {
-              Teuchos::randomSyncedMatrix(*C[i]);
+              RandomSyncedMpiMatrix<Scalar,DM>(*C[i]);
             }
             // Run test.  Since S was specified by the caller and
             // Scopy is a copy of S, we don't know what rank to expect
@@ -951,18 +948,18 @@ namespace Belos {
                 ind[i] = i;
               }
               S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
-              B_outs.push_back( rcp( new mat_type(Teuchos::Copy,*B,ret,sizeS) ) );
+              B_outs.push_back( DMT::SubviewCopy(*B,ret,sizeS) );
             }
             else {
               S_outs.push_back( Scopy );
-              B_outs.push_back( rcp( new mat_type(*B) ) );
+              B_outs.push_back( DMT::CreateCopy( *B ) );
             }
-            C_outs.push_back( Array<RCP<mat_type > >(0) );
+            C_outs.push_back( Array<RCP<DM> >(0) );
             if (C.size() > 0) {
-              C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
+              C_outs.back().push_back( DMT::CreateCopy( *C[0] ) );
             }
             if (C.size() > 1) {
-              C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
+              C_outs.back().push_back( DMT::CreateCopy( *C[1]) );
             }
 
             // do we run the reversed input?
@@ -974,9 +971,9 @@ namespace Belos {
               // data will be overwritten by projectAndNormalize().
               // Filling these matrices here is only to catch some
               // bugs in projectAndNormalize().
-              Teuchos::randomSyncedMatrix(*B);
+              RandomSyncedMpiMatrix<Scalar,DM>(*B);
               for (size_type i=0; i<C.size(); i++) {
-                Teuchos::randomSyncedMatrix(*C[i]);
+                RandomSyncedMpiMatrix<Scalar,DM>(*C[i]);
               }
               // flip the inputs
               theX = tuple( theX[1], theX[0] );
@@ -1005,16 +1002,16 @@ namespace Belos {
                   ind[i] = i;
                 }
                 S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
-                B_outs.push_back( rcp( new mat_type(Teuchos::Copy,*B,ret,sizeS) ) );
+                B_outs.push_back( DMT::SubviewCopy( *B,ret,sizeS) );
               }
               else {
                 S_outs.push_back( Scopy );
-                B_outs.push_back( rcp( new mat_type(*B) ) );
+                B_outs.push_back( DMT::CreateCopy( *B ) );
               }
-              C_outs.push_back( Array<RCP<mat_type > >() );
+              C_outs.push_back( Array<RCP<DM> >() );
               // reverse the Cs to compensate for the reverse projectors
-              C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
-              C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
+              C_outs.back().push_back( DMT::CreateCopy(*C[1]) );
+              C_outs.back().push_back( DMT::CreateCopy(*C[0]) );
               // flip the inputs back
               theX = tuple( theX[1], theX[0] );
             }
@@ -1111,7 +1108,7 @@ namespace Belos {
       ///
       /// \return Count of errors (should be zero)
       static int
-      testNormalize (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
+      testNormalize (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV, DM > >& OM,
                      const Teuchos::RCP< const MV >& S,
                      const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
       {
@@ -1124,7 +1121,7 @@ namespace Belos {
 
         // Check that the orthogonalization gracefully handles zero vectors.
         RCP<MV> zeroVec = MVT::Clone(*S,1);
-        RCP< mat_type > bZero (new mat_type (1, 1));
+        RCP<DM> bZero = DMT::Create(1,1);
         std::vector< magnitude_type > zeroNorm( 1 );
 
         MVT::MvInit( *zeroVec, ZERO );
@@ -1145,7 +1142,7 @@ namespace Belos {
       ///
       /// \return Count of errors (should be zero)
       static int
-      testNormalizeRankReveal (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
+      testNormalizeRankReveal (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV, DM > >& OM,
                                const Teuchos::RCP< const MV >& S,
                                const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
       {
@@ -1217,12 +1214,12 @@ namespace Belos {
             RCP< MV > S_copy = MVT::CloneCopy (*S);
 
             // Matrix of coefficients from the normalization.
-            RCP< mat_type > B (new mat_type (sizeS, sizeS));
+            RCP< DM > B = DMT::Create(sizeS, sizeS);
             // The contents of B will be overwritten, but fill with
             // random data just to make sure that the normalization
             // operated on all the elements of B on which it should
             // operate.
-            Teuchos::randomSyncedMatrix(*B);
+            RandomSyncedMpiMatrix<Scalar,DM>(*B);
 
             const int reportedRank = OM->normalize (*S_copy, B);
             sout << "normalize() returned rank " << reportedRank << endl;
@@ -1251,10 +1248,7 @@ namespace Belos {
             //
             // NOTE: We create this as a copy and not a view, because
             // otherwise it would not be safe with respect to RCPs.
-            // This is because mat_type uses raw pointers
-            // inside, so that a view would become invalid when B
-            // would fall out of scope.
-            RCP< mat_type > B_top (new mat_type (Teuchos::Copy, *B, reportedRank, sizeS));
+            RCP< DM > B_top = DMT::SubviewCopy(*B, reportedRank, sizeS);
 
             // Check ||<S_view,S_view> - I||
             {
@@ -1310,7 +1304,7 @@ namespace Belos {
       ///
       /// \return Count of errors (should be zero)
       static int
-      testProjectAndNormalizeNew (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM,
+      testProjectAndNormalizeNew (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV, DM > > OM,
                                   const Teuchos::RCP< const MV >& S,
                                   const Teuchos::RCP< const MV >& X1,
                                   const Teuchos::RCP< const MV >& X2,
@@ -1377,16 +1371,16 @@ namespace Belos {
         X[1] = MVT::CloneCopy(*X2);
 
         // Coefficients for the normalization
-        RCP< mat_type > B (new mat_type (sizeS, sizeS));
+        RCP< DM > B = DMT::Create( sizeS, sizeS );
 
         // Array of coefficients matrices from the projection.
         // For our first test, we allocate each of these matrices
         // with the proper dimensions.
-        Array< RCP< mat_type > > C (num_X);
+        Array< RCP< DM > > C (num_X);
         for (int k = 0; k < num_X; ++k)
           {
-            C[k] = rcp (new mat_type (MVT::GetNumberVecs(*X[k]), sizeS));
-            Teuchos::randomSyncedMatrix(*C[k]); // will be overwritten
+            C[k] = DMT::Create( MVT::GetNumberVecs(*X[k]), sizeS );
+            RandomSyncedMpiMatrix<Scalar,DM>(*C[k]); // will be overwritten
           }
         try {
           // Q*B := (I - X X^*) S
@@ -1421,10 +1415,10 @@ namespace Belos {
           MVT::MvAddMv (SCT::one(), *S, SCT::zero(), *Residual, *Residual);
           {
             // Pick out the first reportedRank rows of B.  Make a deep
-            // copy, since mat_type is not safe with respect
+            // copy, since DM is not safe with respect
             // to RCP-based memory management (it uses raw pointers
             // inside).
-            RCP< const mat_type > B_top (new mat_type (Teuchos::Copy, *B, reportedRank, B->numCols()));
+            RCP< const DM > B_top = DMT::SubviewCopy( *B, reportedRank, DMT::GetNumCols(*B) );
             // Residual := Residual - Q(:, 1:reportedRank) * B(1:reportedRank, :)
             MVT::MvTimesMatAddMv (-SCT::one(), *Q_left, *B_top, SCT::one(), *Residual);
           }
@@ -1487,7 +1481,7 @@ namespace Belos {
       ///
       /// \return Count of errors (should be zero)
       static int
-      testProjectNew (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM,
+      testProjectNew (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV, DM > > OM,
                       const Teuchos::RCP< const MV >& S,
                       const Teuchos::RCP< const MV >& X1,
                       const Teuchos::RCP< const MV >& X2,
@@ -1555,11 +1549,11 @@ namespace Belos {
         // Array of coefficients matrices from the projection.
         // For our first test, we allocate each of these matrices
         // with the proper dimensions.
-        Array< RCP< mat_type > > C (num_X);
+        Array< RCP< DM > > C (num_X);
         for (int k = 0; k < num_X; ++k)
           {
-            C[k] = rcp (new mat_type (MVT::GetNumberVecs(*X[k]), sizeS));
-            Teuchos::randomSyncedMatrix(*C[k]); // will be overwritten
+            C[k] = DMT::Create( MVT::GetNumberVecs(*X[k]), sizeS );
+            RandomSyncedMpiMatrix<Scalar,DM>(*C[k]); // will be overwritten
           }
         try {
           // Compute the projection: S_copy := (I - X X^*) S
@@ -1610,7 +1604,7 @@ namespace Belos {
       }
 
       static int
-      testProject (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM,
+      testProject (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV, DM > > OM,
                    const Teuchos::RCP< const MV >& S,
                    const Teuchos::RCP< const MV >& X1,
                    const Teuchos::RCP< const MV >& X2,
@@ -1623,7 +1617,7 @@ namespace Belos {
       ///
       /// \return Count of errors (should be zero)
       static int
-      testProjectOld (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM,
+      testProjectOld (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV, DM > > OM,
                       const Teuchos::RCP< const MV >& S,
                       const Teuchos::RCP< const MV >& X1,
                       const Teuchos::RCP< const MV >& X2,
@@ -1725,7 +1719,7 @@ namespace Belos {
         for (int t = 0; t < numtests; ++t)
           {
             Array< RCP< const MV > > theX;
-            Array< RCP< mat_type > > C;
+            Array< RCP< DM > > C;
             if ( (t % 3) == 0 ) {
               // neither X1 nor X2
               // C and theX are already empty
@@ -1733,18 +1727,18 @@ namespace Belos {
             else if ( (t % 3) == 1 ) {
               // X1
               theX = tuple(X1);
-              C = tuple( rcp(new mat_type(sizeX1,sizeS)) );
+              C = tuple( DMT::Create(sizeX1,sizeS) );
             }
             else if ( (t % 3) == 2 ) {
               // X2
               theX = tuple(X2);
-              C = tuple( rcp(new mat_type(sizeX2,sizeS)) );
+              C = tuple( DMT::Create(sizeX2,sizeS) );
             }
             else {
               // X1 and X2, and the reverse.
               theX = tuple(X1,X2);
-              C = tuple( rcp(new mat_type(sizeX1,sizeS)),
-                         rcp(new mat_type(sizeX2,sizeS)) );
+              C = tuple( DMT::Create(sizeX1,sizeS),
+                         DMT::Create(sizeX2,sizeS) );
             }
 
             try {
@@ -1757,14 +1751,14 @@ namespace Belos {
 
               // here is where the outputs go
               Array< RCP< MV > > S_outs;
-              Array< Array< RCP< mat_type > > > C_outs;
+              Array< Array< RCP< DM > > > C_outs;
               RCP< MV > Scopy;
 
               // copies of S,MS
               Scopy = MVT::CloneCopy(*S);
               // randomize this data, it should be overwritten
               for (size_type i = 0; i < C.size(); ++i) {
-                Teuchos::randomSyncedMatrix(*C[i]);
+                RandomSyncedMpiMatrix<Scalar,DM>(*C[i]);
               }
               // Run test.
               // Note that Anasazi and Belos differ, among other places,
@@ -1773,12 +1767,12 @@ namespace Belos {
               // we allocate S and MS for each test, so we can save these as views
               // however, save copies of the C
               S_outs.push_back( Scopy );
-              C_outs.push_back( Array< RCP< mat_type > >(0) );
+              C_outs.push_back( Array< RCP< DM > >(0) );
               if (C.size() > 0) {
-                C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
+                C_outs.back().push_back( DMT::CreateCopy( *C[0]) );
               }
               if (C.size() > 1) {
-                C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
+                C_outs.back().push_back( DMT::CreateCopy( *C[1]) );
               }
 
               // do we run the reversed input?
@@ -1787,7 +1781,7 @@ namespace Belos {
                 Scopy = MVT::CloneCopy(*S);
                 // randomize this data, it should be overwritten
                 for (size_type i = 0; i < C.size(); ++i) {
-                  Teuchos::randomSyncedMatrix(*C[i]);
+                  RandomSyncedMpiMatrix<Scalar,DM>(*C[i]);
                 }
                 // flip the inputs
                 theX = tuple( theX[1], theX[0] );
@@ -1800,10 +1794,10 @@ namespace Belos {
                 S_outs.push_back( Scopy );
                 // we are in a special case: P_X1 and P_X2, so we know we applied
                 // two projectors, and therefore have two C[i]
-                C_outs.push_back( Array<RCP<mat_type > >() );
+                C_outs.push_back( Array<RCP<DM> >() );
                 // reverse the Cs to compensate for the reverse projectors
-                C_outs.back().push_back( rcp( new mat_type(*C[1]) ) );
-                C_outs.back().push_back( rcp( new mat_type(*C[0]) ) );
+                C_outs.back().push_back( DMT::CreateCopy(*C[1]) );
+                C_outs.back().push_back( DMT::CreateCopy(*C[0]) );
                 // flip the inputs back
                 theX = tuple( theX[1], theX[0] );
               }
