@@ -35,6 +35,7 @@
 #ifndef stk_util_parallel_ReceiveCounter_hpp
 #define stk_util_parallel_ReceiveCounter_hpp
 
+#include <cstddef>
 #include <vector>
 
 #include "stk_util/parallel/Parallel.hpp"   // for MPI

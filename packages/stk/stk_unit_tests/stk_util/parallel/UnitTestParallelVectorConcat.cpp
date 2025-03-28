@@ -33,7 +33,6 @@
 // 
 
 #include "gtest/gtest.h"
-#include "stk_util/diag/String.hpp"                    // for String
 #include "stk_util/parallel/Parallel.hpp"              // for MPI_COMM_WORLD, MPI_SUCCESS, paral...
 #include "stk_util/parallel/ParallelVectorConcat.hpp"  // for parallel_vector_concat
 #include <iostream>                                    // for operator<<, ostringstream, basic_o...
@@ -137,41 +136,6 @@ TEST(UnitTestParallel, testParallelVectorConcat)
           localStringList.push_back(os.str());
         }
         expectedStringList.push_back(os.str());
-      }
-    }
-
-    int status = stk::parallel_vector_concat(MPI_COMM_WORLD, localStringList, globalStringList);
-
-    EXPECT_EQ(status, MPI_SUCCESS);
-  
-    EXPECT_EQ(globalStringList.size(), expectedStringList.size()); 
-
-
-    for(unsigned int i=0; i<expectedStringList.size(); ++i) {
-      EXPECT_EQ(globalStringList[i], expectedStringList[i]);
-    }
-  }
-  //
-  //  Test 5, test sierra::String specialization.  Net string should have form:
-  //  0: "PROC |1|"
-  //  1: "PROC |2|"
-  //  2: "PROC |2|"
-  //  3: "PROC |3|"
-  //  4: "PROC |3|"
-  //  5: "PROC |3|"
-  //
-  {
-    std::vector<sierra::String> localStringList;
-    std::vector<sierra::String> globalStringList;
-    std::vector<sierra::String> expectedStringList;
-    for(int iproc=0; iproc<mpi_size; ++iproc) {
-      for(int i=0; i<iproc; ++i) {
-        std::ostringstream os;
-        os <<"PROC |"<<iproc<<"|";
-        if(iproc == mpi_rank) {
-          localStringList.push_back(os.str().c_str());
-        }
-        expectedStringList.push_back(os.str().c_str());
       }
     }
 

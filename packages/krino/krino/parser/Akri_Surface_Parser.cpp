@@ -105,6 +105,58 @@ parse_ellipsoid(const Parser::Node & ic_node)
   return new Ellipsoid(center, semiaxes, rotationVec, sign);
 }
 
+Cuboid *
+parse_cuboid(const Parser::Node & ic_node)
+{
+  std::vector<double> center;
+  if (ic_node.get_if_present("center", center))
+  {
+    if (center.size() != 3)
+    {
+      stk::RuntimeDoomedAdHoc() << "Expecting 3 real values for center for cuboid.\n";
+    }
+  }
+  else
+  {
+    stk::RuntimeDoomedAdHoc() << "Missing center for cuboid.\n";
+  }
+
+  std::vector<double> dimensions;
+  if (ic_node.get_if_present("dimensions", dimensions))
+  {
+    if (dimensions.size() != 3)
+    {
+      stk::RuntimeDoomedAdHoc() << "Expecting 3 real values for dimensions for cuboid.\n";
+    }
+  }
+  else
+  {
+    stk::RuntimeDoomedAdHoc() << "Missing dimensions for IC cuboid.\n";
+  }
+
+  double sign = 1.0;
+  if (ic_node.get_if_present("sign", sign))
+  {
+    if (sign != -1.0 && sign == 1.0)
+    {
+      stk::RuntimeDoomedAdHoc() << "Sign for sphere must be -1 or 1.\n";
+    }
+  }
+
+  std::vector<double> rotation;
+  if (ic_node.get_if_present("rotation", rotation))
+  {
+    if (rotation.size() != 3)
+    {
+      stk::RuntimeDoomedAdHoc() << "Expecting 3 real values for rotation for cuboid.\n";
+    }
+
+    return new Cuboid(stk::math::Vector3d(center.data()), stk::math::Vector3d(dimensions.data()), stk::math::Vector3d(rotation.data()), sign);
+  }
+
+  return new Cuboid(stk::math::Vector3d(center.data()), stk::math::Vector3d(dimensions.data()), sign);
+}
+
 Plane *
 parse_plane(const Parser::Node & ic_node)
 {
@@ -338,6 +390,10 @@ Surface_Parser::parse(const Parser::Node & parserNode, const stk::mesh::MetaData
   else if ( parserNode.get_null_if_present("ellipsoid") )
   {
     return parse_ellipsoid(parserNode);
+  }
+  else if ( parserNode.get_null_if_present("cuboid") )
+  {
+    return parse_cuboid(parserNode);
   }
   else if ( parserNode.get_null_if_present("plane") )
   {

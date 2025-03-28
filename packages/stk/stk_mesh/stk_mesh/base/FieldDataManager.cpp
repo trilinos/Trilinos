@@ -729,6 +729,10 @@ void ContiguousFieldDataManager::remove_field_data_for_entity(EntityRank rm_rank
                 resetFieldMetaDataPointers(rm_bucket_id+1, numBucketsOfRank, field_meta_data_vector,
                                            m_field_raw_data[field_ordinal], new_field_data-allocationToRemove);
 
+                ASAN_UNPOISON_MEMORY_REGION(new_field_data + sizeOfBucketsToTheLeft + currentBucketStorageUsed,
+                                            currentBucketAllocation - currentBucketStorageUsed);
+                ASAN_UNPOISON_MEMORY_REGION(new_field_data + sizeOfBucketsToTheLeft + currentBucketAllocation,
+                                            rightHalfSize);
                 std::memmove(new_field_data + sizeOfBucketsToTheLeft + newBucketAllocation,
                              m_field_raw_data[field_ordinal] + sizeOfBucketsToTheLeft + currentBucketAllocation, rightHalfSize);
                 m_num_bytes_used_per_field[field_ordinal] -= allocationToRemove;

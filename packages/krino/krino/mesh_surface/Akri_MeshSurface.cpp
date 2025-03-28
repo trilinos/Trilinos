@@ -15,7 +15,6 @@
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <Ioss_SubSystem.h>
 

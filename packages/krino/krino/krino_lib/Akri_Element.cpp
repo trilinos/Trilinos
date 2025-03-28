@@ -450,7 +450,7 @@ Mesh_Element::is_single_coincident() const
   if(conformal_subelems.size() != 1) return false;
 
   const SubElement * subelem = conformal_subelems[0];
-  if(subelem->topology() != coord_topology()) return false;
+  if(subelem->topology().num_nodes() != coord_topology().num_nodes()) return false;
   for (auto && node : get_nodes())
     if (std::find(subelem->get_nodes().begin(), subelem->get_nodes().end(), node) == subelem->get_nodes().end())
       return false;
@@ -504,6 +504,14 @@ Mesh_Element::determine_subelement_topology(stk::topology elem_topology)
         return std::pair<stk::topology, unsigned>(stk::topology::TRIANGLE_3_2D, 1);
     case stk::topology::TRIANGLE_6_2D:
         return std::pair<stk::topology, unsigned>(stk::topology::TRIANGLE_6_2D, 2);
+    case stk::topology::TRIANGLE_3:
+    case stk::topology::SHELL_TRIANGLE_3:
+    case stk::topology::SHELL_TRIANGLE_3_ALL_FACE_SIDES:
+        return std::pair<stk::topology, unsigned>(stk::topology::TRIANGLE_3, 1); // Using side topology instead of shell topology for shells so that it looks just like lower dimensional element wrt to sides
+    case stk::topology::TRIANGLE_6:
+    case stk::topology::SHELL_TRIANGLE_6:
+    case stk::topology::SHELL_TRIANGLE_6_ALL_FACE_SIDES:
+        return std::pair<stk::topology, unsigned>(stk::topology::TRIANGLE_6, 2); // Using side topology instead of shell topology for shells so that it looks just like lower dimensional element wrt to sides
     case stk::topology::TETRAHEDRON_4:
         return std::pair<stk::topology, unsigned>(stk::topology::TETRAHEDRON_4, 1);
     case stk::topology::TETRAHEDRON_10:
@@ -608,12 +616,12 @@ static ElementIntersectionPointFilter build_element_intersection_filter(const No
 }
 
 void
-Mesh_Element::fill_face_interior_intersections(const NodeVec & faceNodes, const InterfaceID & interface1, const InterfaceID & interface2, std::vector<ElementIntersection> & faceIntersectionPoints) const
+Mesh_Element::fill_face_interior_intersections(const NodeVec & faceNodes, std::vector<ElementIntersection> & faceIntersectionPoints) const
 {
   STK_ThrowRequire(get_cutter() && faceNodes.size() == 3);
   const std::array<stk::math::Vector3d,3> faceNodeOwnerCoords = {{faceNodes[0]->owner_coords(this), faceNodes[1]->owner_coords(this), faceNodes[2]->owner_coords(this)}};
   const ElementIntersectionPointFilter intersectionPointFilter = build_element_intersection_filter(faceNodes);
-  get_cutter()->fill_tetrahedron_face_interior_intersections(faceNodeOwnerCoords, interface1, interface2, intersectionPointFilter, faceIntersectionPoints);
+  get_cutter()->fill_tetrahedron_face_interior_intersections(faceNodeOwnerCoords, intersectionPointFilter, faceIntersectionPoints);
 }
 
 std::pair<int, double>
@@ -752,15 +760,8 @@ Mesh_Element::cut_interior_intersection_points(CDMesh & mesh)
       elem->cut_interior_intersection_point(mesh, containingElemPCoords, intersectionPoint.get_sorted_domains());
   }
 
-  const std::vector<InterfaceID> interfaces = get_sorted_cutting_interfaces();
-  for (size_t i1=0; i1<interfaces.size(); ++i1)
-  {
-    for (size_t i2=i1+1; i2<interfaces.size(); ++i2)
-    {
-      for (auto && subelem : my_subelements)
-        subelem->cut_face_interior_intersection_points(mesh, interfaces[i1], interfaces[i2]);
-    }
-  }
+  for (auto && subelem : my_subelements)
+    subelem->cut_face_interior_intersection_points(mesh);
 
   std::vector<const SubElement *> leafSubElements;
   get_subelements(leafSubElements);
@@ -784,9 +785,9 @@ void
 Mesh_Element::create_base_subelement()
 { /* %TRACE% */  /* %TRACE% */
 
-  stk::topology base_topology = coord_topology();
+  stk::topology baseTopology = coord_topology();
 
-  const unsigned num_sides = base_topology.num_sides();
+  const unsigned num_sides = baseTopology.num_sides();
 
   std::vector<int> parent_side_ids(num_sides);
   for (unsigned i=0; i<num_sides; ++i)
@@ -795,27 +796,27 @@ Mesh_Element::create_base_subelement()
   }
 
   std::unique_ptr<SubElement> base_subelement;
-  if (stk::topology::TETRAHEDRON_4 == base_topology)
+  if (stk::topology::TETRAHEDRON_4 == baseTopology)
   {
     base_subelement = std::make_unique<SubElement_Tet_4>( my_nodes, parent_side_ids, this);
   }
-  else if (stk::topology::TETRAHEDRON_10 == base_topology)
+  else if (stk::topology::TETRAHEDRON_10 == baseTopology)
   {
     // purposely use lower order base subelement
     std::vector<const SubElementNode *> sub_nodes(my_nodes.begin(), my_nodes.begin()+4);
     base_subelement = std::make_unique<SubElement_Tet_4>( sub_nodes, parent_side_ids, this);
   }
-  else if (stk::topology::TRIANGLE_3_2D == base_topology)
+  else if (stk::topology::TRIANGLE_3_2D == baseTopology || stk::topology::TRIANGLE_3 == baseTopology)
   {
     base_subelement = std::make_unique<SubElement_Tri_3>( my_nodes, parent_side_ids, this);
   }
-  else if (stk::topology::TRIANGLE_6_2D == base_topology)
+  else if (stk::topology::TRIANGLE_6_2D == baseTopology || stk::topology::TRIANGLE_6 == baseTopology)
   {
     // purposely use lower order base subelement
     std::vector<const SubElementNode *> sub_nodes(my_nodes.begin(), my_nodes.begin()+3);
     base_subelement = std::make_unique<SubElement_Tri_3>( sub_nodes, parent_side_ids, this);
   }
-  STK_ThrowErrorMsgIf(!base_subelement, "Elements with topology " << base_topology.name() << " not supported for CDFEM.");
+  STK_ThrowErrorMsgIf(!base_subelement, "Elements with topology " << baseTopology.name() << " not supported for CDFEM.");
 
   base_subelement->initialize_interface_signs();
   add_subelement(std::move(base_subelement));

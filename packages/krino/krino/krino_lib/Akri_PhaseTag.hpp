@@ -120,6 +120,7 @@ public:
   const std::string & name() const { return my_name; }
   const PhaseTag & tag() const { return my_tag; }
   PhaseTag & tag() { return my_tag; }
+  friend std::ostream& operator<<(std::ostream & os, const NamedPhase & namedPhase);
 protected:
   std::string my_name;
   PhaseTag my_tag;

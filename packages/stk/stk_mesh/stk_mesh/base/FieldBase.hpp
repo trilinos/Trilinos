@@ -218,6 +218,8 @@ public:
   }
 
   bool defined_on(const stk::mesh::Part& part) const;
+  
+  bool defined_on(const stk::mesh::Entity& entity) const;
 
   void modify_on_host() const;
   void modify_on_device() const;
@@ -588,6 +590,11 @@ inline size_t get_total_ngp_field_allocation_bytes(const FieldBase & f) {
   const size_t bytesPerScalar = f.data_traits().size_of;
 
   return numBuckets * bucketCapacity * numPerEntity * bytesPerScalar;
+}
+
+inline bool FieldBase::defined_on(const stk::mesh::Entity& entity) const
+{ 
+  return field_bytes_per_entity(*this, entity) > 0;
 }
 
 struct FieldBasePtrLess {

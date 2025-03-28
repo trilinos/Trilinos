@@ -87,20 +87,24 @@ TEST_F(SemiLagrangianTriElements, initialTwoParallelPlanesIntersectingElementsMu
 
   set_interface_velocity({"0.", "1."});
 
-  const BoundingBox paddedNodeBBox = compute_padded_node_bounding_box_for_semilagrangian(mMesh, activeFieldSelector, 0., 0.5, get_coordinates_field(), myInterfaceVelocity, *facetsOrig);
+  const ExtensionVelocityFunction velAtClosestPt = build_extension_velocity_at_closest_point_using_string_expressions(myInterfaceVelocity);
+
+  const BoundingBox paddedNodeBBox = compute_padded_node_bounding_box_for_semilagrangian_using_string_velocity_expressions(mMesh, activeFieldSelector, 0., 0.5, get_coordinates_field(), myInterfaceVelocity, *facetsOrig);
   facetsOrig->prepare_to_compute(paddedNodeBBox, 0.);
 
   // single step advection (still surprised that this is unstable in the circle advection, molenkamp, test (not here))
+  auto oldExtV = build_extension_velocity_using_velocity_at_closest_point(*facetsOrig, velAtClosestPt);
   std::unique_ptr<FacetedSurfaceBase> facetsEnd = FacetedSurfaceBase::build(2);
-  calc_single_step_semilagrangian_nodal_distance_and_build_facets(mMesh, activeFieldSelector, 0.0, 0.5, get_coordinates_field(), myDistanceField, myInterfaceVelocity, zeroNarrowBandSize, avgEdgeLength, *facetsOrig, *facetsEnd);
+  calc_single_step_semilagrangian_nodal_distance_and_build_facets(mMesh, activeFieldSelector, 0.0, 0.5, get_coordinates_field(), myDistanceField, oldExtV, zeroNarrowBandSize, avgEdgeLength, *facetsOrig, *facetsEnd);
   test_facets(*facetsEnd, {0.3});
 
   // predistor-corrector (seems super stable and accurate, but expensive)
   std::unique_ptr<FacetedSurfaceBase> facetsPred = FacetedSurfaceBase::build(2);
-  predict_semilagrangian_nodal_distance_and_build_facets(mMesh, activeFieldSelector, 0.0, 0.5, get_coordinates_field(), myDistanceField, myInterfaceVelocity, zeroNarrowBandSize, avgEdgeLength, *facetsOrig, *facetsPred);
+  predict_semilagrangian_nodal_distance_and_build_facets(mMesh, activeFieldSelector, 0.0, 0.5, get_coordinates_field(), myDistanceField, oldExtV, zeroNarrowBandSize, avgEdgeLength, *facetsOrig, *facetsPred);
 
   facetsPred->prepare_to_compute(paddedNodeBBox, 0.);
-  correct_semilagrangian_nodal_distance_and_build_facets(mMesh, activeFieldSelector, 0.0, 0.5, get_coordinates_field(), myDistanceField, myInterfaceVelocity, zeroNarrowBandSize, avgEdgeLength, *facetsOrig, *facetsPred, *facetsEnd);
+  auto predicetExtV = build_extension_velocity_using_velocity_at_closest_point(*facetsPred, velAtClosestPt);
+  correct_semilagrangian_nodal_distance_and_build_facets(mMesh, activeFieldSelector, 0.0, 0.5, get_coordinates_field(), myDistanceField, oldExtV, predicetExtV, zeroNarrowBandSize, avgEdgeLength, *facetsOrig, *facetsEnd);
   test_facets(*facetsEnd, {0.3});
 }
 }

@@ -63,10 +63,11 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, meta.universal_part(), stk::topology::NODE_RANK);
 }
 
-void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
+void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta,
+                           TopologyErrorHandler handler, bool createEmptyOmittedBlocks)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  stk::io::default_part_processing(elem_blocks, meta, handler);
+  stk::io::default_part_processing(elem_blocks, meta, handler, createEmptyOmittedBlocks);
 }
 
 void process_nodesets_without_distribution_factors(Ioss::Region &region, stk::mesh::MetaData &meta)

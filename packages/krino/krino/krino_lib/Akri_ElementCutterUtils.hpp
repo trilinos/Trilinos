@@ -26,10 +26,10 @@ void append_intersection_points_from_element_interior(const MasterElement & mast
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints);
 
-void append_intersection_points_from_within_elements_and_owned_faces(const stk::mesh::BulkData & mesh,
+void append_intersection_points_from_within_element_and_owned_faces(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & parentElementSelector,
-    const std::vector<stk::mesh::Entity> & elements,
-    const InterfaceGeometry & geometry,
+    const stk::mesh::Entity element,
+    const ElementCutter & elementCutter,
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints);
 

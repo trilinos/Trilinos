@@ -363,6 +363,32 @@ LevelSetElementCutter::get_interface_signs_based_on_crossings(const std::vector<
   return interfaceSigns;
 }
 
+void LevelSetElementCutter::fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodesParamCoords,
+    const ElementIntersectionPointFilter & intersectionPointFilter,
+    std::vector<ElementIntersection> & faceIntersections) const
+{
+  const std::vector<InterfaceID> interfaces = get_sorted_cutting_interfaces();
+  for (size_t i1=0; i1<interfaces.size(); ++i1)
+    for (size_t i2=i1+1; i2<interfaces.size(); ++i2)
+      myElementInterfaceCutter->append_tetrahedron_face_interior_intersections(faceNodesParamCoords, interfaces[i1], interfaces[i2], intersectionPointFilter, faceIntersections);
+}
+
+std::array<stk::math::Vector3d,3> tetrahedron_face_node_parametric_coordinates(const std::array<int,3>& faceNodeOrdinals)
+{
+  static const MasterElement tetMasterElement(stk::topology::TETRAHEDRON_4);
+  const double * elemNodeParamCoords = tetMasterElement.nodal_parametric_coordinates();
+  const std::array<stk::math::Vector3d,3> faceNodeCoordinates = {{stk::math::Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[0]), stk::math::Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[1]), stk::math::Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[2])}};
+  return faceNodeCoordinates;
+}
+
+void LevelSetElementCutter::fill_tetrahedron_face_interior_intersections(const std::array<int,3> & faceNodeOrdinals,
+    const ElementIntersectionPointFilter & intersectionPointFilter,
+    std::vector<ElementIntersection> & faceIntersections) const
+{
+  const std::array<stk::math::Vector3d,3> & faceNodesParamCoords = tetrahedron_face_node_parametric_coordinates(faceNodeOrdinals);
+  fill_tetrahedron_face_interior_intersections(faceNodesParamCoords, intersectionPointFilter, faceIntersections);
+}
+
 void LevelSetElementCutter::update_edge_crossings(const unsigned iEdge, const std::vector<std::vector<double>> & nodesIsovar)
 {
   STK_ThrowRequire(iEdge < myParentEdges.size());
@@ -524,8 +550,8 @@ static stk::mesh::Selector get_active_and_any_levelset_selector(const stk::mesh:
 
 void LevelSetInterfaceGeometry::set_parent_element_selector()
 {
-  myParentElementSelector = (is_cdfem_use_case(myPhaseSupport)) ?
-    get_cdfem_parent_element_selector(myActivePart, myCdfemSupport, myPhaseSupport) :
+  myParentElementSelector = (myPhaseSupport.is_cdfem_use_case()) ?
+    get_decomposed_cdfem_parent_element_selector(myActivePart, myCdfemSupport, myPhaseSupport) :
     get_active_and_any_levelset_selector(myActivePart, myLSFields);
 }
 
@@ -693,6 +719,30 @@ std::vector<IntersectionPoint> LevelSetInterfaceGeometry::get_edge_intersection_
   const IntersectionPointFilter intersectionPointFilter = keep_all_intersection_points_filter();
   append_intersection_points_from_all_parent_edges(intersectionPoints, myParentEdges, intersectionPointFilter);
   return intersectionPoints;
+}
+
+static void append_intersection_points_from_within_elements_and_owned_faces(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & parentElementSelector,
+    const std::vector<stk::mesh::Entity> & elements,
+    const InterfaceGeometry & geometry,
+    const IntersectionPointFilter & intersectionPointFilter,
+    std::vector<IntersectionPoint> & intersectionPoints)
+{
+  const auto diagonalPicker = temporary_build_always_true_diagonal_picker();
+
+  for (auto element : elements)
+  {
+    if (parentElementSelector(mesh.bucket(element)))
+    {
+      std::unique_ptr<ElementCutter> elementCutter = geometry.build_element_cutter(mesh, element, diagonalPicker);
+      append_intersection_points_from_within_element_and_owned_faces(mesh,
+          parentElementSelector,
+          element,
+          *elementCutter,
+          intersectionPointFilter,
+          intersectionPoints);
+    }
+  }
 }
 
 void LevelSetInterfaceGeometry::append_element_intersection_points(const stk::mesh::BulkData & mesh,

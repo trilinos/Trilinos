@@ -168,9 +168,9 @@ bool node_is_connected_to_local_element(const stk::mesh::BulkData &bulk, stk::me
  */
 bool include_entity(const Ioss::GroupingEntity *entity);
 
-void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
+void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler, bool createEmptyOmittedParts = false);
 
-void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler);
+void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta, TopologyErrorHandler handler, bool createEmptyOmittedParts = false);
 
 void declare_stk_aliases(Ioss::Region& region, stk::mesh::MetaData& meta);
 
@@ -185,22 +185,23 @@ void declare_stk_aliases(Ioss::Region& region, stk::mesh::MetaData& meta);
  *	results or restart file.
  */
 template <typename T>
-void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta, TopologyErrorHandler handler)
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta,
+                             TopologyErrorHandler handler, bool createEmptyOmittedParts = false)
 {
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
-    internal_part_processing(entity, meta, handler);
+    internal_part_processing(entity, meta, handler, createEmptyOmittedParts);
   }
 }
 
 template <typename T>
-void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta)
+void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaData &meta, bool createEmptyOmittedParts = false)
 {
   TopologyErrorHandler handler = [](stk::mesh::Part & /*part*/) { };
 
   for(size_t i=0; i < entities.size(); i++) {
     T* entity = entities[i];
-    internal_part_processing(entity, meta, handler);
+    internal_part_processing(entity, meta, handler, createEmptyOmittedParts);
   }
 }
 

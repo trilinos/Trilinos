@@ -229,50 +229,27 @@ public:
    *           False if already in this state.
    */
   virtual
-  bool modification_begin(const std::string description = std::string("UNSPECIFIED"))
-  {
-      ProfilingBlock block("mod begin:" + description);
-      confirm_host_mesh_is_synchronized_from_device();
-      if(m_meshModification.in_modifiable_state()) {
-        return false;
-      }
-      notifier.notify_modification_begin();
-      m_lastModificationDescription = description;
-      return m_meshModification.modification_begin(description);
-  }
+  bool modification_begin(const std::string description = std::string("UNSPECIFIED"));
 
   /** \brief  Parallel synchronization of modifications and
    *          transition to the guaranteed parallel consistent state.
    *
    *  Parallel synchronization of accumulated local modifications
-   *  is probably an expensive operation.  Operations include:
+   *  is an expensive operation.  Operations include:
    *  - Determining ownership and sharing of created entities.
    *  - Synchronizing entity membership in parts for shared entities.
    *  - Refreshing the shared entities ghosting (e.g. aura).
-   *  - Updating ghost entities that have change part membership.
+   *  - Updating ghost entities that have changed part membership.
    *  - Sorting buckets' entities for a well-defined ordering.
    *
    *  \return  True if transitioned from the "ok to modify" state.
-   *           False if already already in this state.
+   *           False if already in this state.
    *
    *  \exception  If modification resolution errors occur then
    *              a parallel-consistent exception will be thrown.
    */
-
   virtual
-  bool modification_end(ModEndOptimizationFlag modEndOpt = ModEndOptimizationFlag::MOD_END_SORT)
-  {
-      bool endStatus = false;
-      {
-          ProfilingBlock block("mod end begin:"+m_lastModificationDescription);
-          notifier.notify_started_modification_end();
-      }
-      {
-          ProfilingBlock block("mod end end:"+m_lastModificationDescription);
-          endStatus = m_meshModification.modification_end(modEndOpt);
-      }
-      return endStatus;
-  }
+  bool modification_end(ModEndOptimizationFlag modEndOpt = ModEndOptimizationFlag::MOD_END_SORT);
 
   void sort_entities(const stk::mesh::EntitySorterBase& sorter);
 
@@ -923,11 +900,7 @@ protected: //functions
       return m_meshModification.resolve_node_sharing();
   }
 
-  bool modification_end_after_node_sharing_resolution()
-  {
-      notifier.notify_started_modification_end();
-      return m_meshModification.modification_end_after_node_sharing_resolution();
-  }
+  bool modification_end_after_node_sharing_resolution();
 
   void make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
                                                          const stk::mesh::EntityVector& deletedSides,
@@ -1276,11 +1249,10 @@ protected: //functions
 
   virtual void notify_finished_mod_end();
 
-  void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities, stk::mesh::EntityRank rank);
+  void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities);
   void use_nodes_to_resolve_sharing(stk::mesh::EntityRank rank, std::vector<Entity>& shared_new, bool onlyConsiderSoloSides = false);
   void change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys);
-  void resolve_parallel_side_connections(stk::mesh::EntityRank rank,
-                                         std::vector<SideSharingData>& sideSharingDataToSend,
+  void resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
                                          std::vector<SideSharingData>& sideSharingDataReceived);
   void add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities);
 

@@ -48,6 +48,10 @@ CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaDat
       }
     }
 
+    bool myFlagUseFacetsInsteadOfLevelSets = false;
+    cdfem_node.get_if_present("use_facets_to_perform_decomposition", myFlagUseFacetsInsteadOfLevelSets);
+    cdfem_support.set_use_facets_instead_of_levelset_fields( myFlagUseFacetsInsteadOfLevelSets );
+
     double cdfem_edge_tol = 0.0;
     if (cdfem_node.get_if_present("cdfem_edge_tolerance", cdfem_edge_tol))
     {

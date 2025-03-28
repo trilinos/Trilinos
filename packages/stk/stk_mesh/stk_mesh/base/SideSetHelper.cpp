@@ -208,7 +208,7 @@ void SideSetHelper::fill_coincident_sideset_entries_for_side_using_connectivity(
       for(unsigned j=i+1; j<numElements; ++j) {
         impl::fill_element_side_nodes_from_topology(mesh.bucket(elems[j]).topology(), mesh.begin_nodes(elems[j]), ordinals[j], sideNodes_j);
 
-        if(impl::is_coincident_connection(mesh, elems[i], sideNodes_i, ordinals[i], mesh.bucket(elems[j]).topology(), sideNodes_j, ordinals[j])) {
+        if(impl::is_coincident_connection(mesh, elems[i], sideNodes_i, ordinals[i], mesh.bucket(elems[j]).topology(), sideNodes_j)) {
           coincidentEdges.emplace_back(std::make_pair(SideSetEntry(elems[i], ordinals[i]), SideSetEntry(elems[j], ordinals[j])));
         }
       }
@@ -389,7 +389,7 @@ bool SideSetHelper::element_side_has_coincidence_using_connectivity(const Entity
       if(elems[i] != element) {
         impl::fill_element_side_nodes_from_topology(mesh.bucket(elems[i]).topology(), mesh.begin_nodes(elems[i]), ordinals[i], sideNodes);
 
-        if(impl::is_coincident_connection(mesh, element, inputSideNodes, ordinal, mesh.bucket(elems[i]).topology(), sideNodes, ordinals[i])) {
+        if(impl::is_coincident_connection(mesh, element, inputSideNodes, ordinal, mesh.bucket(elems[i]).topology(), sideNodes)) {
           return true;
         }
       }

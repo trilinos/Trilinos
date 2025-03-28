@@ -46,7 +46,6 @@
 
 #include "stk_search/FilterCoarseSearch.hpp"
 #include "stk_search/IdentProc.hpp"                   // for IdentProc
-#include "stk_util/diag/String.hpp"                   // for String
 #include "stk_util/parallel/Parallel.hpp"             // for parallel_machin...
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"

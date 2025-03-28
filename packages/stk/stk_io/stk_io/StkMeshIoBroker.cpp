@@ -166,7 +166,8 @@ StkMeshIoBroker::StkMeshIoBroker()
   m_enableEdgeIO(false),
   m_cacheEntityListForTransientSteps(false),
   m_throwOnMissingInputFields(false),
-  m_enableAllFaceSidesShellTopo(false)
+  m_enableAllFaceSidesShellTopo(false),
+  m_createEmptyBlockForOmittedBlock(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -181,7 +182,8 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
   m_enableEdgeIO(false),
   m_cacheEntityListForTransientSteps(false),
   m_throwOnMissingInputFields(false),
-  m_enableAllFaceSidesShellTopo(false)
+  m_enableAllFaceSidesShellTopo(false),
+  m_createEmptyBlockForOmittedBlock(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -526,7 +528,7 @@ void StkMeshIoBroker::create_input_mesh()
     }
 
     process_nodeblocks(*region,    meta_data());
-    process_elementblocks(*region, meta_data(), handler);
+    process_elementblocks(*region, meta_data(), handler, m_createEmptyBlockForOmittedBlock);
     process_sidesets(*region,      meta_data());
     process_face_blocks(*region,   meta_data(), handler);
     process_edge_blocks(*region,   meta_data(), handler);
@@ -1219,7 +1221,7 @@ bool StkMeshIoBroker::read_input_field(stk::io::MeshField &mf, stk::io::FieldRea
     readStatus.timeRead = mf.time_restored();
 
     double timeToRead = mf.get_read_time();
-    double lastTime = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region()->get_max_time().second;
+    double lastTime = m_inputFiles[m_activeMeshIndex]->get_max_time();
 
     if(timeToRead > lastTime) {
       readStatus.possiblyCorrupt = true;

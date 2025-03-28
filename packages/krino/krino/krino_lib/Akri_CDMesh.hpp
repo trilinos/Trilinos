@@ -86,6 +86,9 @@ public:
 
   static CDMesh* get_new_mesh() { return the_new_mesh.get(); }
 
+  int decompose_mesh(const InterfaceGeometry & interfaceGeometry, const int stashStepCount);
+  static void reset_new_mesh() { the_new_mesh.reset(); }
+
   void snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
     NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
 
@@ -276,7 +279,7 @@ private:
   double get_maximum_cdfem_displacement() const;
 
   void add_possible_interface_sides(std::vector<SideDescription> & sideRequests) const;
-  bool check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nodes) const;
+  bool check_element_side_parts(const stk::mesh::Entity elem, const unsigned sideId) const;
   void update_element_side_parts();
 
   void parallel_communicate_elemental_death_fields() const;

@@ -333,6 +333,61 @@ TEST(UnitTestField, testFieldWithSelectorInvalid)
 
 }
 
+TEST(UnitTestField, testFieldEntityMembership)
+{
+  stk::ParallelMachine pm = MPI_COMM_SELF ;
+
+  using rank_zero_field = stk::mesh::Field<double>;
+
+  const int spatial_dimension = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatial_dimension, pm);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk_data = *bulkPtr;
+
+  rank_zero_field  & f0 = meta_data.declare_field<double>( NODE_RANK, "test_field_0");
+
+  stk::mesh::Part & p0 = meta_data.declare_part("P0", NODE_RANK );
+  stk::mesh::Part & p1 = meta_data.declare_part("P1", NODE_RANK );
+
+  stk::mesh::Selector field_selector = p0;
+  stk::mesh::Selector not_field_selector = !p0;
+
+  stk::mesh::put_field_on_mesh( f0 , field_selector , nullptr);
+
+
+  meta_data.commit();
+
+  bulk_data.modification_begin();
+
+  // Declare 10 nodes on each part
+
+  for ( unsigned i = 1 ; i < 11 ; ++i )
+    bulk_data.declare_node(i, std::vector< stk::mesh::Part * >(1, &p0));
+
+  for ( unsigned i = 11 ; i < 21 ; ++i )
+    bulk_data.declare_node(i, std::vector< stk::mesh::Part * >(1, &p1));
+
+  EXPECT_TRUE(f0.defined_on(p0));
+  EXPECT_FALSE(f0.defined_on(p1));
+
+  for (stk::mesh::Bucket* bucket : bulk_data.get_buckets(stk::topology::NODE_RANK, field_selector))
+  {
+    for (stk::mesh::Entity node : *bucket)
+    {
+      EXPECT_TRUE(f0.defined_on(node));      
+    }
+  }
+  
+  for (stk::mesh::Bucket* bucket : bulk_data.get_buckets(stk::topology::NODE_RANK, not_field_selector))
+  {
+    for (stk::mesh::Entity node : *bucket)
+    {
+      EXPECT_FALSE(f0.defined_on(node));      
+    }
+  } 
+
+}
+
 TEST(UnitTestField, writeFieldsWithSameName)
 {
   std::string mesh_name = "mesh_fields_with_same_name.e";

@@ -101,7 +101,7 @@ public:
   using StkMeshFixture<MESHSPEC::TOPOLOGY>::mComm;
   void assign_nodal_level_set(const std::vector<double> & nodalLevelset)
   {
-    const FieldRef distanceField = myLs.get_distance_field();
+    const FieldRef distanceField = myLs.get_isovar_field();
     for (size_t n=0; n<nodalLevelset.size(); ++n)
     {
       stk::mesh::Entity node = this->get_assigned_node_for_index(n);
@@ -114,7 +114,7 @@ public:
   void build_facets_in_element(const stk::mesh::Entity elem, FacetedSurfaceBase & facetedSurface)
   {
     facetedSurface.clear();
-    ContourElement contourElement(mMesh, elem, myLs.get_coordinates_field(), myLs.get_distance_field(), 0.);
+    ContourElement contourElement(mMesh, elem, myLs.get_coordinates_field(), myLs.get_isovar_field(), 0.);
     contourElement.compute_subelement_decomposition(avgElemSize);
     contourElement.build_subelement_facets(facetedSurface);
   }

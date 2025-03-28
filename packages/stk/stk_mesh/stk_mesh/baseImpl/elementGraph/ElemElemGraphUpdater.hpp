@@ -84,7 +84,7 @@ public:
     {
         if(bulkData.entity_rank(entity) == stk::topology::ELEM_RANK && bulkData.bucket(entity).owned())
         {
-            elementsDeleted.push_back({entity, bulkData.identifier(entity), bulkData.bucket(entity).topology()});
+            elementsDeleted.push_back({entity, bulkData.identifier(entity), bulkData.bucket(entity).topology().is_shell()});
         }
     }
 
