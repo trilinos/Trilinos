@@ -200,8 +200,8 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateM
   // NOTE: There could be further optimizations here where we detect contiguous maps and then
   // create a contiguous amalgamated maps, which bypasses the expense of the getMyGlobalIndicesDevice()
   // call (which is free for non-contiguous maps, but costs something if the map is contiguous).
-  using range_policy      = Kokkos::RangePolicy<typename Node::execution_space>;
-  using array_type        = typename Map::global_indices_array_device_type;
+  using range_policy = Kokkos::RangePolicy<typename Node::execution_space>;
+  using array_type   = typename Map::global_indices_array_device_type;
 
   array_type elementAList = sourceMap->getMyGlobalIndicesDevice();
   GO indexBase            = sourceMap->getIndexBase();
@@ -217,7 +217,7 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateM
   array_type elementList = elementList_nc;
 
   amalgamatedMap = MapFactory::Build(sourceMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                             elementList, indexBase, sourceMap->getComm());
+                                     elementList, indexBase, sourceMap->getComm());
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
