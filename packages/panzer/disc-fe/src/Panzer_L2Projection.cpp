@@ -354,8 +354,7 @@ namespace panzer {
 
     {
       PANZER_FUNC_TIME_MONITOR_DIFF("Exporting of mass matrix",ExportMM);
-      auto map = factory.getMap(0);
-      ghostedMatrix->fillComplete(map,map);
+      ghostedMatrix->fillComplete();
       const auto exporter = factory.getGhostedExport(0);
       ownedMatrix->doExport(*ghostedMatrix, *exporter, Tpetra::ADD);
       ownedMatrix->fillComplete();
