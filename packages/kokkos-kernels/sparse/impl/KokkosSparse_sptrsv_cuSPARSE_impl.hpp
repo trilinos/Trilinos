@@ -55,7 +55,7 @@ void sptrsvcuSPARSE_symbolic(ExecutionSpace &space, KernelHandle *sptrsv_handle,
 
     typename KernelHandle::SPTRSVcuSparseHandleType *h = sptrsv_handle->get_cuSparseHandle();
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
 
     int64_t nnz = static_cast<int64_t>(entries.extent(0));
     size_t pBufferSize;
@@ -85,52 +85,52 @@ void sptrsvcuSPARSE_symbolic(ExecutionSpace &space, KernelHandle *sptrsv_handle,
     cudaDataType cudaValueType            = cuda_data_type_from<scalar_type>();
 
     // Create sparse matrix in CSR format
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
         &(h->matDescr), static_cast<int64_t>(nrows), static_cast<int64_t>(nrows), nnz, rm, (void *)entries.data(),
         (void *)values.data(), cudaCsrRowMapType, cudaCsrColIndType, CUSPARSE_INDEX_BASE_ZERO, cudaValueType));
 
     // Create dummy dense vector B (RHS)
     nnz_scalar_view_t b_dummy(Kokkos::view_alloc(space, "b_dummy"), nrows);
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseCreateDnVec(&(h->vecBDescr_dummy), static_cast<int64_t>(nrows), b_dummy.data(), cudaValueType));
 
     // Create dummy dense vector X (LHS)
     nnz_scalar_view_t x_dummy(Kokkos::view_alloc(space, "x_dummy"), nrows);
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseCreateDnVec(&(h->vecXDescr_dummy), static_cast<int64_t>(nrows), x_dummy.data(), cudaValueType));
 
     // Specify Lower|Upper fill mode
     if (is_lower) {
       cusparseFillMode_t fillmode = CUSPARSE_FILL_MODE_LOWER;
-      KOKKOS_CUSPARSE_SAFE_CALL(
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
           cusparseSpMatSetAttribute(h->matDescr, CUSPARSE_SPMAT_FILL_MODE, &fillmode, sizeof(fillmode)));
     } else {
       cusparseFillMode_t fillmode = CUSPARSE_FILL_MODE_UPPER;
-      KOKKOS_CUSPARSE_SAFE_CALL(
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
           cusparseSpMatSetAttribute(h->matDescr, CUSPARSE_SPMAT_FILL_MODE, &fillmode, sizeof(fillmode)));
     }
 
     // Specify Unit|Non-Unit diagonal type.
     cusparseDiagType_t diagtype = CUSPARSE_DIAG_TYPE_NON_UNIT;
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseSpMatSetAttribute(h->matDescr, CUSPARSE_SPMAT_DIAG_TYPE, &diagtype, sizeof(diagtype)));
 
     // Allocate an external buffer for analysis
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_bufferSize(h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr_dummy,
-                                                      h->vecXDescr_dummy, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT,
-                                                      h->spsvDescr, &pBufferSize));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+        cusparseSpSV_bufferSize(h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr_dummy, h->vecXDescr_dummy,
+                                cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr, &pBufferSize));
 
     // pBuffer returned by cudaMalloc is automatically aligned to 128 bytes.
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&(h->pBuffer), pBufferSize));
 
     // Run analysis
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_analysis(h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr_dummy,
-                                                    h->vecXDescr_dummy, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT,
-                                                    h->spsvDescr, h->pBuffer));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpSV_analysis(h->handle, h->transpose, &alpha, h->matDescr,
+                                                               h->vecBDescr_dummy, h->vecXDescr_dummy, cudaValueType,
+                                                               CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr, h->pBuffer));
 
     // Destroy dummy dense vector descriptors
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecBDescr_dummy));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecXDescr_dummy));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecBDescr_dummy));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecXDescr_dummy));
   }
 #else  // CUDA_VERSION < 11030
   typedef typename KernelHandle::nnz_lno_t idx_type;
@@ -152,7 +152,7 @@ void sptrsvcuSPARSE_symbolic(ExecutionSpace &space, KernelHandle *sptrsv_handle,
 
     typename KernelHandle::SPTRSVcuSparseHandleType *h = sptrsv_handle->get_cuSparseHandle();
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
 
     cusparseStatus_t status;
     status = cusparseCreateCsrsv2Info(&(h->info));
@@ -283,27 +283,28 @@ void sptrsvcuSPARSE_solve(ExecutionSpace &space, KernelHandle *sptrsv_handle, ty
   } else {
     typename KernelHandle::SPTRSVcuSparseHandleType *h = sptrsv_handle->get_cuSparseHandle();
 
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
 
     const scalar_type alpha = scalar_type(1.0);
 
     cudaDataType cudaValueType = cuda_data_type_from<scalar_type>();
 
     // Create dense vector B (RHS)
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseCreateDnVec(&(h->vecBDescr), static_cast<int64_t>(nrows), (void *)rhs.data(), cudaValueType));
 
     // Create dense vector X (LHS)
-    KOKKOS_CUSPARSE_SAFE_CALL(
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
         cusparseCreateDnVec(&(h->vecXDescr), static_cast<int64_t>(nrows), (void *)lhs.data(), cudaValueType));
 
     // Solve
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_solve(h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr,
-                                                 h->vecXDescr, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h->spsvDescr));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpSV_solve(h->handle, h->transpose, &alpha, h->matDescr, h->vecBDescr,
+                                                            h->vecXDescr, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT,
+                                                            h->spsvDescr));
 
     // Destroy dense vector descriptors
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecBDescr));
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecXDescr));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecBDescr));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h->vecXDescr));
   }
 #else  // CUDA_VERSION < 11030
   typedef typename KernelHandle::nnz_lno_t idx_type;
@@ -316,7 +317,7 @@ void sptrsvcuSPARSE_solve(ExecutionSpace &space, KernelHandle *sptrsv_handle, ty
     typename KernelHandle::SPTRSVcuSparseHandleType *h = sptrsv_handle->get_cuSparseHandle();
 
     if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(h->handle, space.cuda_stream()));
     }
 
     int nnz = entries.extent_int(0);
@@ -439,30 +440,30 @@ void sptrsvcuSPARSE_solve_streams(const std::vector<ExecutionSpace> &execspace_v
       h_v[i]                          = sptrsv_handle->get_cuSparseHandle();
 
       // Bind cuspare handle to a stream
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h_v[i]->handle, execspace_v[i].cuda_stream()));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(h_v[i]->handle, execspace_v[i].cuda_stream()));
 
       int64_t nrows = static_cast<int64_t>(sptrsv_handle->get_nrows());
 
       // Create dense vector B (RHS)
-      KOKKOS_CUSPARSE_SAFE_CALL(
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
           cusparseCreateDnVec(&(h_v[i]->vecBDescr), nrows, (void *)rhs_v[i].data(), cudaValueType));
 
       // Create dense vector X (LHS)
-      KOKKOS_CUSPARSE_SAFE_CALL(
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
           cusparseCreateDnVec(&(h_v[i]->vecXDescr), nrows, (void *)lhs_v[i].data(), cudaValueType));
     }
 
     // Solve
     for (int i = 0; i < nstreams; i++) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_solve(h_v[i]->handle, h_v[i]->transpose, &alpha, h_v[i]->matDescr,
-                                                   h_v[i]->vecBDescr, h_v[i]->vecXDescr, cudaValueType,
-                                                   CUSPARSE_SPSV_ALG_DEFAULT, h_v[i]->spsvDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
+          cusparseSpSV_solve(h_v[i]->handle, h_v[i]->transpose, &alpha, h_v[i]->matDescr, h_v[i]->vecBDescr,
+                             h_v[i]->vecXDescr, cudaValueType, CUSPARSE_SPSV_ALG_DEFAULT, h_v[i]->spsvDescr));
     }
 
     // Destroy dense vector descriptors
     for (int i = 0; i < nstreams; i++) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h_v[i]->vecBDescr));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h_v[i]->vecXDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h_v[i]->vecBDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(h_v[i]->vecXDescr));
     }
   }
 #else  // CUDA_VERSION < 11030
@@ -493,7 +494,7 @@ void sptrsvcuSPARSE_solve_streams(const std::vector<ExecutionSpace> &execspace_v
       h_v[i]             = sptrsv_handle_v[i]->get_cuSparseHandle();
 
       // Bind cuspare handle to a stream
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(h_v[i]->handle, execspace_v[i].cuda_stream()));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(h_v[i]->handle, execspace_v[i].cuda_stream()));
 
       if (h_v[i]->pBuffer == nullptr) {
         std::cout << "  pBuffer invalid on stream " << i << std::endl;
@@ -510,25 +511,25 @@ void sptrsvcuSPARSE_solve_streams(const std::vector<ExecutionSpace> &execspace_v
       int nnz   = entries_v[i].extent_int(0);
       int nrows = static_cast<int>(sptrsv_handle_v[i]->get_nrows());
       if (std::is_same<scalar_type, double>::value) {
-        KOKKOS_CUSPARSE_SAFE_CALL(cusparseDcsrsv2_solve(
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDcsrsv2_solve(
             h_v[i]->handle, h_v[i]->transpose, nrows, nnz, reinterpret_cast<const double *>(&alpha), h_v[i]->descr,
             reinterpret_cast<const double *>(vals_v[i]), reinterpret_cast<const int *>(rm_v[i]),
             reinterpret_cast<const int *>(ent_v[i]), h_v[i]->info, reinterpret_cast<const double *>(bv_v[i]),
             reinterpret_cast<double *>(xv_v[i]), h_v[i]->policy, h_v[i]->pBuffer));
       } else if (std::is_same<scalar_type, float>::value) {
-        KOKKOS_CUSPARSE_SAFE_CALL(cusparseScsrsv2_solve(
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseScsrsv2_solve(
             h_v[i]->handle, h_v[i]->transpose, nrows, nnz, reinterpret_cast<const float *>(&alpha), h_v[i]->descr,
             reinterpret_cast<const float *>(vals_v[i]), reinterpret_cast<const int *>(rm_v[i]),
             reinterpret_cast<const int *>(ent_v[i]), h_v[i]->info, reinterpret_cast<const float *>(bv_v[i]),
             reinterpret_cast<float *>(xv_v[i]), h_v[i]->policy, h_v[i]->pBuffer));
       } else if (std::is_same<scalar_type, Kokkos::complex<double> >::value) {
-        KOKKOS_CUSPARSE_SAFE_CALL(cusparseZcsrsv2_solve(
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseZcsrsv2_solve(
             h_v[i]->handle, h_v[i]->transpose, nrows, nnz, reinterpret_cast<const cuDoubleComplex *>(&alpha),
             h_v[i]->descr, reinterpret_cast<const cuDoubleComplex *>(vals_v[i]), reinterpret_cast<const int *>(rm_v[i]),
             reinterpret_cast<const int *>(ent_v[i]), h_v[i]->info, reinterpret_cast<const cuDoubleComplex *>(bv_v[i]),
             reinterpret_cast<cuDoubleComplex *>(xv_v[i]), h_v[i]->policy, h_v[i]->pBuffer));
       } else if (std::is_same<scalar_type, Kokkos::complex<float> >::value) {
-        KOKKOS_CUSPARSE_SAFE_CALL(cusparseCcsrsv2_solve(
+        KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCcsrsv2_solve(
             h_v[i]->handle, h_v[i]->transpose, nrows, nnz, reinterpret_cast<const cuComplex *>(&alpha), h_v[i]->descr,
             reinterpret_cast<const cuComplex *>(vals_v[i]), reinterpret_cast<const int *>(rm_v[i]),
             reinterpret_cast<const int *>(ent_v[i]), h_v[i]->info, reinterpret_cast<const cuComplex *>(bv_v[i]),

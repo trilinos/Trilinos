@@ -154,25 +154,23 @@ void Element_Cutter::fill_triangle_interior_intersection_points(const ElementInt
   }
 }
 
-void Element_Cutter::fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes,
+void Element_Cutter::append_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes,
     const InterfaceID & interface1,
     const InterfaceID & interface2,
     const ElementIntersectionPointFilter & intersectionPointFilter,
     std::vector<ElementIntersection> & intersections) const
 {
-  const stk::math::Plane3d facePlane{faceNodes[0], faceNodes[1], faceNodes[2]};
-
   std::vector<int> sortedDomains;
-  stk::math::Vector3d intersectionPoint;
-
-  intersections.clear();
   fill_sorted_domains(is_one_ls_per_phase(), interface1, interface2, sortedDomains);
-  if (sorted_domains_form_triple_point(is_one_ls_per_phase(), sortedDomains))
+  if (sorted_domains_form_triple_point(is_one_ls_per_phase(), sortedDomains) &&
+      intersectionPointFilter(sortedDomains))
   {
+    const stk::math::Plane3d facePlane{faceNodes[0], faceNodes[1], faceNodes[2]};
+    stk::math::Vector3d intersectionPoint;
+
     const stk::math::Plane3d & plane0 = cutting_surfaces.at(interface1)->get_plane();
     const stk::math::Plane3d & plane1 = cutting_surfaces.at(interface2)->get_plane();
-    if (intersectionPointFilter(sortedDomains) &&
-        find_intersection_of_three_planes(plane0, plane1, facePlane, intersectionPoint) &&
+    if (find_intersection_of_three_planes(plane0, plane1, facePlane, intersectionPoint) &&
         intersection_point_is_real(intersectionPoint, sortedDomains))
     {
       const stk::math::Vector3d faceCoords = triangle_parametric_coordinates_of_projected_point(faceNodes, intersectionPoint);

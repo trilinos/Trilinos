@@ -115,8 +115,9 @@ KOKKOS_INLINE_FUNCTION int SerialLU_Internal<Algo::LU::Blocked>::invoke(
       trsm_run.serial_invoke(Ap, pb, m_abr, Ap + mb * as0);
 
       // gemm update
-      SerialGemmInternal<Algo::Gemm::Blocked>::invoke(m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
-                                                      Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
+      Impl::SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
+          KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
+          Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
     }
   };
 

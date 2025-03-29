@@ -22,8 +22,6 @@
 #include "KokkosBatched_Pbtrf.hpp"
 #include "Test_Batched_DenseUtils.hpp"
 
-using namespace KokkosBatched;
-
 namespace Test {
 namespace Pbtrf {
 
@@ -35,14 +33,14 @@ struct ParamTag {
 template <typename DeviceType, typename ABViewType, typename ParamTagType, typename AlgoTagType>
 struct Functor_BatchedSerialPbtrf {
   using execution_space = typename DeviceType::execution_space;
-  ABViewType _ab;
+  ABViewType m_ab;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialPbtrf(const ABViewType &ab) : _ab(ab) {}
+  Functor_BatchedSerialPbtrf(const ABViewType &ab) : m_ab(ab) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ParamTagType &, const int k, int &info) const {
-    auto sub_ab = Kokkos::subview(_ab, k, Kokkos::ALL(), Kokkos::ALL());
+    auto sub_ab = Kokkos::subview(m_ab, k, Kokkos::ALL(), Kokkos::ALL());
 
     info += KokkosBatched::SerialPbtrf<typename ParamTagType::uplo, AlgoTagType>::invoke(sub_ab);
   }
@@ -54,7 +52,7 @@ struct Functor_BatchedSerialPbtrf {
     std::string name                  = name_region + name_value_type;
     int info_sum                      = 0;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _ab.extent(0));
+    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, m_ab.extent(0));
     Kokkos::parallel_reduce(name.c_str(), policy, *this, info_sum);
     Kokkos::Profiling::popRegion();
     return info_sum;
@@ -65,23 +63,23 @@ template <typename DeviceType, typename ScalarType, typename AViewType, typename
           typename ArgTransA, typename ArgTransB>
 struct Functor_BatchedSerialGemm {
   using execution_space = typename DeviceType::execution_space;
-  AViewType _a;
-  BViewType _b;
-  CViewType _c;
-  ScalarType _alpha, _beta;
+  AViewType m_a;
+  BViewType m_b;
+  CViewType m_c;
+  ScalarType m_alpha, m_beta;
 
   KOKKOS_INLINE_FUNCTION
   Functor_BatchedSerialGemm(const ScalarType alpha, const AViewType &a, const BViewType &b, const ScalarType beta,
                             const CViewType &c)
-      : _a(a), _b(b), _c(c), _alpha(alpha), _beta(beta) {}
+      : m_a(a), m_b(b), m_c(c), m_alpha(alpha), m_beta(beta) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int k) const {
-    auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-    auto bb = Kokkos::subview(_b, k, Kokkos::ALL(), Kokkos::ALL());
-    auto cc = Kokkos::subview(_c, k, Kokkos::ALL(), Kokkos::ALL());
+    auto aa = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
+    auto bb = Kokkos::subview(m_b, k, Kokkos::ALL(), Kokkos::ALL());
+    auto cc = Kokkos::subview(m_c, k, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBatched::SerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked>::invoke(_alpha, aa, bb, _beta, cc);
+    KokkosBatched::SerialGemm<ArgTransA, ArgTransB, Algo::Gemm::Unblocked>::invoke(m_alpha, aa, bb, m_beta, cc);
   }
 
   inline void run() {
@@ -89,15 +87,14 @@ struct Functor_BatchedSerialGemm {
     std::string name_region("KokkosBatched::Test::SerialPbtrf");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
-    Kokkos::RangePolicy<execution_space> policy(0, _a.extent(0));
+    Kokkos::RangePolicy<execution_space> policy(0, m_a.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
   }
 };
 
-template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
-/// \brief Implementation details of batched pbtrf test
+/// \brief Implementation details of batched pbtrf analytical test
 ///        Confirm A = U**H * U or L * L**H, where
-///        For full storage,
+///        For conventional storage,
 ///        A: [[4, 1],
 ///            [1, 4]]
 ///        L: [[sqrt(4), 0],
@@ -117,12 +114,13 @@ template <typename DeviceType, typename ScalarType, typename LayoutType, typenam
 ///        Ub: [[0, 1/sqrt(4)],
 ///             [sqrt(4), sqrt(4 - (1/sqrt(4))**2)]]
 /// \param N [in] Batch size of AB
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_pbtrf_analytical(const int N) {
   using ats        = typename Kokkos::ArithTraits<ScalarType>;
   using RealType   = typename ats::mag_type;
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
 
-  constexpr int BlkSize = 2, k = 1;
+  const int BlkSize = 2, k = 1;
   View3DType A("A", N, BlkSize, BlkSize), Ab("Ab", N, k + 1, BlkSize),
       Ab_ref("Ab_ref", N, k + 1, BlkSize);  // Banded matrix
 
@@ -142,7 +140,7 @@ void impl_test_batched_pbtrf_analytical(const int N) {
   create_banded_triangular_matrix<View3DType, View3DType, ArgUplo>(A, Ab, k, true);
 
   // Make a reference using the naive Cholesky decomposition
-  // Cholesky decomposition for full storage
+  // Cholesky decomposition for conventional storage
   // l_kk = np.sqrt( a_kk - sum_{i=1}^{k-1}( l_ik^2 ) )
   // l_ik = 1/l_kk * ( a_ik - sum_{j=1}^{k-1}( l_ij * l_kj ) )
   auto h_Ab_ref = Kokkos::create_mirror_view(Ab_ref);
@@ -182,12 +180,12 @@ void impl_test_batched_pbtrf_analytical(const int N) {
   }
 }
 
-template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
-/// \brief Implementation details of batched pbtrs test
+/// \brief Implementation details of batched pbtrf test
 ///
-/// \param N [in] Batch size of RHS (banded matrix can also be batched matrix)
+/// \param N [in] Batch size of RHS
 /// \param k [in] Number of superdiagonals or subdiagonals of matrix A
 /// \param BlkSize [in] Block size of matrix A
+template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType, typename AlgoTagType>
 void impl_test_batched_pbtrf(const int N, const int k, const int BlkSize) {
   using View3DType = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   View3DType A("A", N, BlkSize, BlkSize), A_reconst("A_reconst", N, BlkSize, BlkSize),
@@ -220,53 +218,20 @@ void impl_test_batched_pbtrf(const int N, const int k, const int BlkSize) {
   Kokkos::fence();
   EXPECT_EQ(info, 0);
 
+  // Compute A = U**H * U or A = L * L**H
   if (std::is_same_v<typename ParamTagType::uplo, KokkosBatched::Uplo::Upper>) {
     // A = U**H * U
-    View3DType U("U", N, BlkSize, BlkSize), Uc("Uc", N, BlkSize, BlkSize);
-    banded_to_full<View3DType, View3DType, ArgUplo>(Ab, U, k);
-
-    // Compute the complex conjugate of U
-    // U -> conj(U)
-    auto h_U  = Kokkos::create_mirror_view(U);
-    auto h_Uc = Kokkos::create_mirror_view(Uc);
-    Kokkos::deep_copy(h_U, U);
-    Kokkos::deep_copy(h_Uc, Uc);
-    for (int ib = 0; ib < N; ib++) {
-      for (int i = 0; i < BlkSize; i++) {
-        for (int j = 0; j < BlkSize; j++) {
-          h_Uc(ib, i, j) = Kokkos::ArithTraits<ScalarType>::conj(h_U(ib, i, j));
-        }
-      }
-    }
-    Kokkos::deep_copy(Uc, h_Uc);
-
-    // Create conjugate of U
-    Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::Transpose,
-                              Trans::NoTranspose>(1.0, Uc, U, 0.0, A_reconst)
+    View3DType U("U", N, BlkSize, BlkSize);
+    banded_to_dense<View3DType, View3DType, ArgUplo>(Ab, U, k);
+    Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::ConjTranspose,
+                              Trans::NoTranspose>(1.0, U, U, 0.0, A_reconst)
         .run();
   } else {
     // A = L * L**H
-    View3DType L("L", N, BlkSize, BlkSize), Lc("Lc", N, BlkSize, BlkSize);
-    banded_to_full<View3DType, View3DType, ArgUplo>(Ab, L, k);
-
-    // Compute the complex conjugate of L
-    // L -> conj(L)
-    auto h_L  = Kokkos::create_mirror_view(L);
-    auto h_Lc = Kokkos::create_mirror_view(Lc);
-    Kokkos::deep_copy(h_L, L);
-    Kokkos::deep_copy(h_Lc, Lc);
-    for (int ib = 0; ib < N; ib++) {
-      for (int i = 0; i < BlkSize; i++) {
-        for (int j = 0; j < BlkSize; j++) {
-          h_Lc(ib, i, j) = Kokkos::ArithTraits<ScalarType>::conj(h_L(ib, i, j));
-        }
-      }
-    }
-    Kokkos::deep_copy(Lc, h_Lc);
-
-    // Create conjugate of L
+    View3DType L("L", N, BlkSize, BlkSize);
+    banded_to_dense<View3DType, View3DType, ArgUplo>(Ab, L, k);
     Functor_BatchedSerialGemm<DeviceType, ScalarType, View3DType, View3DType, View3DType, Trans::NoTranspose,
-                              Trans::Transpose>(1.0, L, Lc, 0.0, A_reconst)
+                              Trans::ConjTranspose>(1.0, L, L, 0.0, A_reconst)
         .run();
   }
 
@@ -320,3 +285,63 @@ int test_batched_pbtrf() {
 
   return 0;
 }
+
+#if defined(KOKKOSKERNELS_INST_FLOAT)
+TEST_F(TestCategory, test_batched_pbtrf_l_float) {
+  using algo_tag_type  = typename Algo::Pbtrf::Unblocked;
+  using param_tag_type = ::Test::Pbtrf::ParamTag<Uplo::Lower>;
+
+  test_batched_pbtrf<TestDevice, float, param_tag_type, algo_tag_type>();
+}
+TEST_F(TestCategory, test_batched_pbtrf_u_float) {
+  using algo_tag_type  = typename Algo::Pbtrf::Unblocked;
+  using param_tag_type = ::Test::Pbtrf::ParamTag<Uplo::Upper>;
+
+  test_batched_pbtrf<TestDevice, float, param_tag_type, algo_tag_type>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_DOUBLE)
+TEST_F(TestCategory, test_batched_pbtrf_l_double) {
+  using algo_tag_type  = typename Algo::Pbtrf::Unblocked;
+  using param_tag_type = ::Test::Pbtrf::ParamTag<Uplo::Lower>;
+
+  test_batched_pbtrf<TestDevice, double, param_tag_type, algo_tag_type>();
+}
+TEST_F(TestCategory, test_batched_pbtrf_u_double) {
+  using algo_tag_type  = typename Algo::Pbtrf::Unblocked;
+  using param_tag_type = ::Test::Pbtrf::ParamTag<Uplo::Upper>;
+
+  test_batched_pbtrf<TestDevice, double, param_tag_type, algo_tag_type>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+TEST_F(TestCategory, test_batched_pbtrf_l_fcomplex) {
+  using algo_tag_type  = typename Algo::Pbtrf::Unblocked;
+  using param_tag_type = ::Test::Pbtrf::ParamTag<Uplo::Lower>;
+
+  test_batched_pbtrf<TestDevice, Kokkos::complex<float>, param_tag_type, algo_tag_type>();
+}
+TEST_F(TestCategory, test_batched_pbtrf_u_fcomplex) {
+  using algo_tag_type  = typename Algo::Pbtrf::Unblocked;
+  using param_tag_type = ::Test::Pbtrf::ParamTag<Uplo::Upper>;
+
+  test_batched_pbtrf<TestDevice, Kokkos::complex<float>, param_tag_type, algo_tag_type>();
+}
+#endif
+
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+TEST_F(TestCategory, test_batched_pbtrf_l_dcomplex) {
+  using algo_tag_type  = typename Algo::Pbtrf::Unblocked;
+  using param_tag_type = ::Test::Pbtrf::ParamTag<Uplo::Lower>;
+
+  test_batched_pbtrf<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+}
+TEST_F(TestCategory, test_batched_pbtrf_u_dcomplex) {
+  using algo_tag_type  = typename Algo::Pbtrf::Unblocked;
+  using param_tag_type = ::Test::Pbtrf::ParamTag<Uplo::Upper>;
+
+  test_batched_pbtrf<TestDevice, Kokkos::complex<double>, param_tag_type, algo_tag_type>();
+}
+#endif

@@ -40,7 +40,6 @@
 #include <string>     // for operator+, allocator, string, char_traits
 #include <type_traits>
 
-#include "stk_util/diag/String.hpp"
 #include "stk_util/stk_kokkos_macros.h"  // for STK_FUNCTION
 
 #ifdef STK_ENABLE_GPU_BUT_NO_RDC
@@ -266,7 +265,7 @@ class is_valid_throw_condition
 
  public:
   static constexpr bool value =
-      !is_same_as_any<raw_t, sierra::String, std::string, const char*, char*>::value && !is_string_literal<T>::value;
+      !is_same_as_any<raw_t, std::string, const char*, char*>::value && !is_string_literal<T>::value;
 };
 template <typename T>
 inline auto eval_test_condition(const T& val)

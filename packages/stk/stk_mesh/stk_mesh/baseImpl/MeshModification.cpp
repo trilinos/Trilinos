@@ -129,11 +129,6 @@ bool MeshModification::modification_end(modification_optimization opt)
 
   m_bulkData.internal_finish_modification_end(opt);
 
-  if(m_bulkData.parallel_size() > 1)
-  {
-      m_bulkData.check_mesh_consistency();
-  }
-
   return true;
 }
 

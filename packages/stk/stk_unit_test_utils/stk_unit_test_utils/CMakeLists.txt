@@ -81,6 +81,7 @@ SET(HEADERS
   getOption.h
   StkReportRedirector.hpp
   stringAndNumberComparisons.hpp
+  timer.hpp
   )
 SET(SOURCES
   AssemblyUtils.cpp

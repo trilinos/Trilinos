@@ -13,7 +13,6 @@
 #include <Akri_Element.hpp>
 #include <Akri_MasterElement.hpp>
 
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
 

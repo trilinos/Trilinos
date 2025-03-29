@@ -60,28 +60,17 @@ static void append_intersection_points_from_element_face(const MasterElement & e
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints)
 {
-  std::vector<ElementIntersection> interiorIntersections;
-
-  const std::vector<InterfaceID> interfaces = elementCutter.get_sorted_cutting_interfaces();
-
   std::array<int,3> faceNodeOrdinals;
   elementMasterElement.get_topology().face_node_ordinals(iFace, faceNodeOrdinals.data());
-  const std::vector<stk::mesh::Entity> faceNodes{elementNodes[faceNodeOrdinals[0]], elementNodes[faceNodeOrdinals[1]], elementNodes[faceNodeOrdinals[2]]};
-  const double * elemNodeParamCoords = elementMasterElement.nodal_parametric_coordinates();
-  const std::array<stk::math::Vector3d,3> faceNodeCoordinates = {{stk::math::Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[0]), stk::math::Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[1]), stk::math::Vector3d(elemNodeParamCoords+3*faceNodeOrdinals[2])}};
 
-  const MasterElement & faceMasterElement = MasterElementDeterminer::getMasterElement(elementMasterElement.get_topology().face_topology(iFace));
+  const std::vector<stk::mesh::Entity> faceNodes{elementNodes[faceNodeOrdinals[0]], elementNodes[faceNodeOrdinals[1]], elementNodes[faceNodeOrdinals[2]]};
   const ElementIntersectionPointFilter faceIntersectionPointFilter = build_element_intersection_filter(faceNodes, intersectionPointFilter);
 
-  std::vector<int> sortedDomains;
-  for (size_t i1=0; i1<interfaces.size(); ++i1)
-  {
-    for (size_t i2=i1+1; i2<interfaces.size(); ++i2)
-    {
-      elementCutter.fill_tetrahedron_face_interior_intersections(faceNodeCoordinates, interfaces[i1], interfaces[i2], faceIntersectionPointFilter, interiorIntersections);
-      append_intersection_points_from_interior(faceMasterElement, faceNodes, interiorIntersections, intersectionPoints);
-    }
-  }
+  std::vector<ElementIntersection> faceIntersections;
+  elementCutter.fill_tetrahedron_face_interior_intersections(faceNodeOrdinals, faceIntersectionPointFilter, faceIntersections);
+
+  const MasterElement & faceMasterElement = MasterElementDeterminer::getMasterElement(elementMasterElement.get_topology().face_topology(iFace));
+  append_intersection_points_from_interior(faceMasterElement, faceNodes, faceIntersections, intersectionPoints);
 }
 
 static bool element_owns_face(const stk::mesh::BulkData & mesh,
@@ -103,11 +92,10 @@ static bool element_owns_face(const stk::mesh::BulkData & mesh,
   return true;
 }
 
-static void append_intersection_points_from_within_element_and_owned_faces(const stk::mesh::BulkData & mesh,
+void append_intersection_points_from_within_element_and_owned_faces(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & parentElementSelector,
     const stk::mesh::Entity element,
-    const InterfaceGeometry & geometry,
-    const std::function<bool(const std::array<unsigned,4> &)> & diagonalPicker,
+    const ElementCutter & elementCutter,
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints)
 {
@@ -115,10 +103,9 @@ static void append_intersection_points_from_within_element_and_owned_faces(const
   const MasterElement & masterElement = MasterElementDeterminer::getMasterElement(elementTopology);
   const std::vector<stk::mesh::Entity> elementNodes(mesh.begin_nodes(element), mesh.end_nodes(element));
 
-  std::unique_ptr<ElementCutter> elementCutter = geometry.build_element_cutter(mesh, element, diagonalPicker);
-  if (elementCutter->might_have_interior_or_face_intersections())
+  if (elementCutter.might_have_interior_or_face_intersections())
   {
-    append_intersection_points_from_element_interior(masterElement, elementNodes, *elementCutter, intersectionPointFilter, intersectionPoints);
+    append_intersection_points_from_element_interior(masterElement, elementNodes, elementCutter, intersectionPointFilter, intersectionPoints);
 
     const int numFaces = masterElement.get_topology().num_faces();
     if (numFaces > 0)
@@ -127,44 +114,9 @@ static void append_intersection_points_from_within_element_and_owned_faces(const
       {
         if (element_owns_face(mesh, parentElementSelector, elementTopology, element, elementNodes, iFace))
         {
-          append_intersection_points_from_element_face(masterElement, elementNodes, iFace, *elementCutter, intersectionPointFilter, intersectionPoints);
+          append_intersection_points_from_element_face(masterElement, elementNodes, iFace, elementCutter, intersectionPointFilter, intersectionPoints);
         }
       }
-    }
-  }
-}
-
-static std::function<bool(const std::array<unsigned,4> &)>
-temporary_build_always_true_diagonal_picker()
-{
-  auto diagonalPicker =
-  [](const std::array<unsigned,4> & faceNodes)
-  {
-    return true;
-  };
-  return diagonalPicker;
-}
-
-void append_intersection_points_from_within_elements_and_owned_faces(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Selector & parentElementSelector,
-    const std::vector<stk::mesh::Entity> & elements,
-    const InterfaceGeometry & geometry,
-    const IntersectionPointFilter & intersectionPointFilter,
-    std::vector<IntersectionPoint> & intersectionPoints)
-{
-  const auto diagonalPicker = temporary_build_always_true_diagonal_picker();
-
-  for (auto element : elements)
-  {
-    if (parentElementSelector(mesh.bucket(element)))
-    {
-      append_intersection_points_from_within_element_and_owned_faces(mesh,
-          parentElementSelector,
-          element,
-          geometry,
-          diagonalPicker,
-          intersectionPointFilter,
-          intersectionPoints);
     }
   }
 }

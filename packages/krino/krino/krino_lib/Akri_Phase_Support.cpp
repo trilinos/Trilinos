@@ -77,16 +77,11 @@ std::string build_part_name(const krino::Phase_Support & ps,
 
   STK_ThrowRequireMsg(touching_block_ordinals.size() > 0, 
       "krino::Akri_Phase_Support: Side block must be touching at least 1 block");
-  stk::topology block_topo = part.mesh_meta_data().get_part(*touching_block_ordinals.begin()).topology();
-  for(auto b : touching_block_ordinals)
-  {
-    STK_ThrowRequireMsg(block_topo == part.mesh_meta_data().get_part(b).topology(), 
-      "krino::Akri_Phase_Support: Touching blocks do not all have same topology");
-  }
-  Ioss::ElementTopology *ioss_side_topo = Ioss::ElementTopology::factory(part.topology().name());
+  const stk::topology blockTopology = part.mesh_meta_data().get_part(*touching_block_ordinals.begin()).topology();
+  Ioss::ElementTopology *ioss_side_topo = Ioss::ElementTopology::factory(stk::io::map_stk_topology_to_ioss(part.topology()));
   STK_ThrowRequireMsg(ioss_side_topo != nullptr, 
       "krino::Akri_Phase_Support: IOSS topology factory must return a topology type");
-  Ioss::ElementTopology *ioss_block_topo = Ioss::ElementTopology::factory(block_topo.name());
+  Ioss::ElementTopology *ioss_block_topo = Ioss::ElementTopology::factory(stk::io::map_stk_topology_to_ioss(blockTopology));
   STK_ThrowRequireMsg(ioss_block_topo != nullptr, 
       "krino::Akri_Phase_Support: IOSS topology factory must return a topology type");
 
@@ -143,6 +138,11 @@ void Phase_Support::check_phase_parts() const
     }
   }
   STK_ThrowErrorMsgIf(error, "Error: Phases are not defined correctly.");
+}
+
+bool Phase_Support::is_cdfem_use_case() const
+{
+  return !(get_all_decomposed_blocks_selector() == stk::mesh::Selector());
 }
 
 std::vector<unsigned> Phase_Support::get_negative_levelset_interface_ordinals(const Surface_Identifier levelSetIdentifier) const
@@ -392,24 +392,41 @@ Phase_Support::get_conformal_parts_of_rank(const stk::mesh::EntityRank rank) con
   return result;
 }
 
-std::vector<unsigned>
-Phase_Support::get_level_set_phases(const bool oneLSPerPhase, const PhaseVec & mesh_phases, const LevelSet & levelSet)
+static std::vector<unsigned>
+get_indices_of_phases_that_explicity_depend_on_surface(const PhaseVec & meshPhases, const Surface_Identifier & surfaceID)
 {
-  // gather up the set of phases that depend on this levelSet
-  PhaseTag ls_neg_phase;
-  PhaseTag ls_pos_phase;
-  ls_neg_phase.add(levelSet.get_identifier(),-1);
-  ls_pos_phase.add(levelSet.get_identifier(),+1);
-  std::vector<unsigned> ls_phases;
-  for(unsigned phase_index=0; phase_index<mesh_phases.size(); ++phase_index)
+  // gather up the set of phases that depend on this surface
+  PhaseTag negPhase;
+  PhaseTag posPhase;
+  negPhase.add(surfaceID,-1);
+  posPhase.add(surfaceID,+1);
+
+  std::vector<unsigned> phases;
+  for(unsigned phaseIndex=0; phaseIndex<meshPhases.size(); ++phaseIndex)
   {
-    const NamedPhase & phase = mesh_phases[phase_index];
-    if (oneLSPerPhase || phase.tag().contain(ls_neg_phase) || phase.tag().contain(ls_pos_phase))
-    {
-      ls_phases.push_back(phase_index);
-    }
+    const NamedPhase & phase = meshPhases[phaseIndex];
+    if (phase.tag().contain(negPhase) || phase.tag().contain(posPhase))
+      phases.push_back(phaseIndex);
   }
-  return ls_phases;
+
+  return phases;
+}
+
+static std::vector<unsigned> build_unsigned_vector_from_0_to_N(const size_t N)
+{
+  std::vector<unsigned> v;
+  v.reserve(N);
+  for (unsigned i=0; i<N; ++i)
+    v.push_back(i);
+  return v;
+}
+
+std::vector<unsigned>
+Phase_Support::get_indices_of_phases_that_depend_on_surface(const bool oneLSPerPhase, const PhaseVec & meshPhases, const Surface_Identifier & surfaceID)
+{
+  if (oneLSPerPhase)
+    return build_unsigned_vector_from_0_to_N(meshPhases.size()); // Every level set impacts every phase
+  return get_indices_of_phases_that_explicity_depend_on_surface(meshPhases, surfaceID);
 }
 
 Phase_Support::PartSet
@@ -579,6 +596,30 @@ Phase_Support::build_decomposed_block_surface_connectivity()
   }
 }
 
+static stk::topology interface_topology(const stk::mesh::Part & decomposedPart)
+{
+  stk::topology partTopology = decomposedPart.topology();
+  if (partTopology.is_shell())
+  {
+    switch(partTopology())
+    {
+    case stk::topology::SHELL_QUAD_4:
+    case stk::topology::SHELL_TRI_3:
+    case stk::topology::SHELL_TRI_3_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_4_ALL_FACE_SIDES:
+        return stk::topology::SHELL_SIDE_BEAM_2;
+    case stk::topology::SHELL_QUAD_9:
+    case stk::topology::SHELL_TRI_6:
+    case stk::topology::SHELL_TRI_6_ALL_FACE_SIDES:
+    case stk::topology::SHELL_QUAD_9_ALL_FACE_SIDES:
+      return stk::topology::SHELL_SIDE_BEAM_3;
+    default:
+        throw std::runtime_error("Shell topology not found in interface_topology(): " + partTopology.name());
+    }
+  }
+  return partTopology.side_topology();
+}
+
 void
 Phase_Support::create_interface_phase_parts(
     const PhaseVec& ls_phases,
@@ -635,7 +676,7 @@ Phase_Support::create_interface_phase_parts(
             std::string subset_interface_phase_name = phase_pair.first.name() + "_" + phase_pair.second.name();
             const std::string subset_phase_part_name = interface_name_gen.interface_subset_name(io_part->name(), subset_interface_phase_name);
             const bool restartOnlyIOPart = true; // Subset part is only output for restart
-            stk::mesh::Part &subset_phase_part = aux_meta().declare_io_part_with_topology(subset_phase_part_name, io_part->topology().side_topology(), restartOnlyIOPart);
+            stk::mesh::Part &subset_phase_part = aux_meta().declare_io_part_with_topology(subset_phase_part_name, interface_topology(*io_part), restartOnlyIOPart);
             meta().declare_part_subset(superset_phase_part, subset_phase_part);
 
             const stk::mesh::Part * const nonconf_part = find_nonconformal_part(*io_part);
@@ -684,9 +725,11 @@ Phase_Support::decompose_blocks(std::vector<std::tuple<stk::mesh::PartVector,
     {
       topo = decompose_block->topology();
       if(topo != stk::topology::TET_4 && topo != stk::topology::TET_10
+        && topo != stk::topology::SHELL_TRI_3 && topo != stk::topology::SHELL_TRI_6
+        && topo != stk::topology::SHELL_TRI_3_ALL_FACE_SIDES && topo != stk::topology::SHELL_TRI_6_ALL_FACE_SIDES
         && topo != stk::topology::TRI_3_2D && topo != stk::topology::TRI_6_2D)
       {
-        stk::RuntimeDoomedAdHoc() << "Currently only Tetrahedron 4 or 10 (in 3D) and Triangle 3 or 6 (in 2D) element types are supported when using CDFEM.\n";
+        stk::RuntimeDoomedAdHoc() << "Currently only Tetrahedron 4 or 10, Shell_Triangle 3 or 6 (in 3D) and Triangle 3 or 6 (in 2D) element types are supported when using CDFEM.\n";
         return;
       }
     }
@@ -798,42 +841,28 @@ Phase_Support::determine_block_phases()
 
 //--------------------------------------------------------------------------------
 
-std::vector<stk::mesh::Part*>
-Phase_Support::get_blocks_decomposed_by_levelset(const std::vector<unsigned> ls_phases) const
+static bool does_block_have_any_of_surface_phases(const std::set<unsigned> & blockPhases, const std::vector<unsigned> surfacePhases)
 {
-  std::vector<stk::mesh::Part*> blocks_decomposed_by_ls;
-  for (auto && map_it : my_mesh_block_phases)
-  {
-    stk::mesh::Part & FEmodel_block = meta().get_part(map_it.first);
-    const auto & block_phases = map_it.second;
-    for(auto ls_phase : ls_phases)
-    {
-      if (block_phases.find(ls_phase) != block_phases.end())
-      {
-        blocks_decomposed_by_ls.push_back(&FEmodel_block);
-        break;
-      }
-    }
-  }
-
-  return blocks_decomposed_by_ls;
+  for(auto surfPhase : surfacePhases)
+    if (blockPhases.find(surfPhase) != blockPhases.end())
+      return true;
+  return false;
 }
 
-//--------------------------------------------------------------------------------
-
 std::vector<stk::mesh::Part*>
-Phase_Support::get_blocks_decomposed_by_bounding_surface(const unsigned surfaceID) const
+Phase_Support::get_blocks_decomposed_by_surface(const std::vector<unsigned> & surfacePhases) const
 {
-  std::vector<stk::mesh::Part*> blocksDecomposeByBoundingSurface;
-  for (auto && map_it : my_mesh_block_phases)
+  std::vector<stk::mesh::Part*> blocksDecomposedBySurface;
+  for (const auto & entry : my_mesh_block_phases)
   {
-    stk::mesh::Part & FEmodel_block = meta().get_part(map_it.first);
-    const auto & blockPhases = map_it.second;
-    if (blockPhases.find(surfaceID) != blockPhases.end())
-      blocksDecomposeByBoundingSurface.push_back(&FEmodel_block);
+    const auto & blockPhases = entry.second;
+    if (does_block_have_any_of_surface_phases(blockPhases, surfacePhases))
+    {
+      stk::mesh::Part & block = meta().get_part(entry.first);
+      blocksDecomposedBySurface.push_back(&block);
+    }
   }
-
-  return blocksDecomposeByBoundingSurface;
+  return blocksDecomposedBySurface;
 }
 
 //--------------------------------------------------------------------------------
@@ -1099,13 +1128,13 @@ void Phase_Support::register_blocks_for_level_set(const Surface_Identifier level
   nonconformalLsMapsAreFilled_ = false;
 
   // Loop over block names
-  for (auto && block_ptr : blocks_decomposed_by_ls)
+  for (auto * blockPtr : blocks_decomposed_by_ls)
   {
     // Add direct relationship between this block and level set
-    lsUsedByParts_[levelSetIdentifier].insert(block_ptr);
+    lsUsedByParts_[levelSetIdentifier].insert(blockPtr);
 
     // Now get surfaces touching this block
-    const std::set<stk::mesh::PartOrdinal> surfaceOrdinals = my_input_block_surface_connectivity.get_surfaces_touching_block(block_ptr->mesh_meta_data_ordinal());
+    const std::set<stk::mesh::PartOrdinal> surfaceOrdinals = my_input_block_surface_connectivity.get_surfaces_touching_block(blockPtr->mesh_meta_data_ordinal());
     for (auto && surfaceOrdinal : surfaceOrdinals)
     {
       // For each surface, add IO Part/Level Set pairing to maps
@@ -1115,6 +1144,12 @@ void Phase_Support::register_blocks_for_level_set(const Surface_Identifier level
   }
 }
 
+void Phase_Support::register_blocks_for_surface(const Surface_Identifier & surfID)
+{
+  const std::vector<unsigned> surfPhases = get_indices_of_phases_that_depend_on_surface(has_one_levelset_per_phase(), myMeshPhases, surfID);
+  const std::vector<stk::mesh::Part*> decomposedBlocks = get_blocks_decomposed_by_surface(surfPhases);
+  register_blocks_for_level_set(surfID, decomposedBlocks);
+}
 
 //--------------------------------------------------------------------------------
 bool Phase_Support::level_set_is_used_by_nonconformal_part(const Surface_Identifier levelSetIdentifier,
@@ -1123,7 +1158,7 @@ bool Phase_Support::level_set_is_used_by_nonconformal_part(const Surface_Identif
   if (!nonconformalLsMapsAreFilled_)
     fill_nonconformal_level_set_maps();
 
-  IOPartSet & ioPartSet = lsUsedByNonconformalParts_[levelSetIdentifier];
+  IOPartSet & ioPartSet = lsUsedByNonconformalParts_.at(levelSetIdentifier);
   bool contains = (ioPartSet.find(ioPart) != ioPartSet.end());
   return contains;
 }
@@ -1337,7 +1372,7 @@ void CDFEM_Inequality_Spec::create_levelset(stk::mesh::MetaData & meta, stk::dia
       "Region already has a LevelSet named " << my_name);
 
   my_ls = &LevelSet::build(meta, my_name, parent_timer);
-  my_ls->set_isovar(get_threshold_variable_name(), get_threshold_value());
+  my_ls->set_tracked_isovar(get_threshold_variable_name(), get_threshold_value());
 
   int deactivated_phase_sign = ( get_criterion_compare_type() == CDFEM_Inequality_Spec::LESS_THAN ) ? -1 : 1;
   my_deactivated_phase.add(my_ls->get_identifier(), deactivated_phase_sign);

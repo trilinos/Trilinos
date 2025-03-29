@@ -32,7 +32,13 @@ Driver<VT, DT>::Driver()
       #else
       _variant(-1), // sequential by default
       #endif
-      _nstreams(16), _pivot_tol(0.0), _max_num_superblocks(-1) {}
+      _nstreams(16), _pivot_tol(0.0),
+#if defined(KOKKOS_ENABLE_HIP)
+      _store_transpose(true),
+#else
+      _store_transpose(false),
+#endif
+      _max_num_superblocks(-1) {}
 
 ///
 /// duplicate the object
@@ -175,6 +181,10 @@ template <typename VT, typename DT> void Driver<VT, DT>::useNoPivotTolerance() {
 template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotTolerance() {
   using arith_traits = ArithTraits<value_type>;
   _pivot_tol = sqrt(arith_traits::epsilon());
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::storeExplicitTranspose(bool flag) {
+  _store_transpose = flag;
 }
 
 ///
@@ -396,7 +406,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
   if (_m <= _small_problem_thres) {
     factorize_small_host(ax);
   } else {
-    _N->factorize(ax, _pivot_tol, _verbose);
+    _N->factorize(ax, _store_transpose, _pivot_tol, _verbose);
   }
   return 0;
 }

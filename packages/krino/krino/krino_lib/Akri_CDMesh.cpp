@@ -14,7 +14,6 @@
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_io/IossBridge.hpp>
@@ -295,6 +294,42 @@ void CDMesh::prepare_for_resnapping(const stk::mesh::BulkData & mesh, const Inte
   }
 }
 
+static void straighten_quadratic_edge(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordsField, const unsigned dim, const std::array<stk::mesh::Entity,3> & edgeNodes)
+{
+  const double * coords0 = static_cast<double*>(stk::mesh::field_data( coordsField, edgeNodes[0] ));
+  const double * coords1 = static_cast<double*>(stk::mesh::field_data( coordsField, edgeNodes[1] ));
+  double * coordsMid = static_cast<double*>(stk::mesh::field_data( coordsField, edgeNodes[2] ));
+  for (unsigned d=0; d<dim; ++d)
+    coordsMid[d] = 0.5*(coords0[d]+coords1[d]);
+}
+
+static void straighten_quadratic_edges_with_snapped_vertex_nodes(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elemSelector, const NodeToCapturedDomainsMap & nodesToCapturedDomains)
+{
+  const unsigned dim = mesh.mesh_meta_data().spatial_dimension();
+  std::array<stk::mesh::Entity,3> edgeNodes;
+  std::vector<stk::mesh::Entity> edgeParentNodes;
+  for ( auto * bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, elemSelector) )
+  {
+    const stk::topology elemTopology = bucketPtr->topology();
+    if (elemTopology != bucketPtr->topology().base())
+    {
+      for(const auto elem : *bucketPtr)
+      {
+        const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elem);
+        for (unsigned iEdge=0; iEdge<elemTopology.num_edges(); ++iEdge)
+        {
+          elemTopology.edge_nodes(elemNodes, iEdge, edgeNodes.data());
+          edgeParentNodes = {edgeNodes[0], edgeNodes[1]};
+          if (any_node_was_snapped(edgeParentNodes, nodesToCapturedDomains))
+          {
+            straighten_quadratic_edge(mesh, coordsField, dim, edgeNodes);
+          }
+        }
+      }
+    }
+  }
+}
+
 void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
     NodeToCapturedDomainsMap & nodesToCapturedDomains) const
 {
@@ -313,15 +348,23 @@ void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry
 
   const double minIntPtWeightForEstimatingCutQuality = get_snapper().get_edge_tolerance();
 
-  const stk::mesh::Selector parentElementSelector = get_cdfem_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
+  const stk::mesh::Selector decomposedParentElementSelector = get_decomposed_cdfem_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
+  const stk::mesh::Selector potentialParentElementSelector = get_potential_cdfem_parent_element_selector(get_active_part(), my_cdfem_support);
   nodesToCapturedDomains = snap_as_much_as_possible_while_maintaining_quality(stk_bulk(),
-      parentElementSelector,
+      potentialParentElementSelector,
+      decomposedParentElementSelector,
+      my_cdfem_support.get_coords_field(),
       snapFields,
       interfaceGeometry,
       my_cdfem_support.get_global_ids_are_parallel_consistent(),
       my_cdfem_support.get_snapping_sharp_feature_angle_in_degrees(),
       minIntPtWeightForEstimatingCutQuality,
       my_cdfem_support.get_max_edge_snap());
+
+  if (cdfemSnapField.valid())
+  {
+    straighten_quadratic_edges_with_snapped_vertex_nodes(stk_bulk(), my_cdfem_support.get_coords_field(), potentialParentElementSelector, nodesToCapturedDomains);
+  }
 
   if (cdfemSnapField.valid())
   {
@@ -338,17 +381,72 @@ void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry
 }
 
 int
+CDMesh::decompose_mesh(const InterfaceGeometry & interfaceGeometry, const int stashStepCount)
+{
+  const CDFEM_Support & cdfemSupport = get_cdfem_support();
+  stk::diag::TimeBlock timer_(cdfemSupport.get_timer_cdfem());
+
+  stk::mesh::BulkData & mesh = stk_bulk();
+  stk::log_with_time_and_memory(mesh.parallel(), "Begin Mesh Decomposition.");
+  krinolog << "Decomposing mesh for region into phase conformal elements." << stk::diag::dendl;
+
+  NodeToCapturedDomainsMap nodesToCapturedDomains;
+
+  {
+    fix_node_owners_to_assure_active_owned_element_for_node(mesh, get_active_part());
+
+    // Not sure if this is krino's responsibility or the driving application.  If we have
+    // elemental death fields, these need to be parallel consistent on aura elements.
+    parallel_communicate_elemental_death_fields();
+
+    stk::diag::TimeBlock timer__(my_timer_decompose);
+
+    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
+      snap_and_update_fields_and_captured_domains(interfaceGeometry, nodesToCapturedDomains);
+
+    interfaceGeometry.prepare_to_decompose_elements(mesh, nodesToCapturedDomains);
+  }
+
+  {
+    stk::diag::TimeBlock timer__(my_timer_decompose);
+
+    generate_nonconformal_elements();
+    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
+      snap_nearby_intersections_to_nodes(interfaceGeometry, nodesToCapturedDomains);
+    set_phase_of_uncut_elements(interfaceGeometry);
+    triangulate(interfaceGeometry);
+    decompose(interfaceGeometry);
+  }
+
+  stash_field_data(stashStepCount);
+
+  const bool mesh_modified = modify_mesh();
+
+  prolongation();
+
+  // debugging
+  if ( krinolog.shouldPrint(LOG_DEBUG) )
+  {
+    debug_output();
+  }
+
+  {
+    const ScaledJacobianQualityMetric qualityMetric;
+    krinolog << "After cutting quality is " << compute_mesh_quality(mesh, get_active_part(), cdfemSupport.get_coords_field(), qualityMetric) << stk::diag::dendl;
+  }
+
+  stk::log_with_time_and_memory(mesh.parallel(), "End Mesh Decomposition.");
+
+  const int status = mesh_modified ? (COORDINATES_MAY_BE_MODIFIED | MESH_MODIFIED) : COORDINATES_MAY_BE_MODIFIED;
+  return status;
+}
+
+int
 CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
       const InterfaceGeometry & interfaceGeometry,
       const int stepCount,
       const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs)
 {
-  stk::diag::TimeBlock root_timer__(CDFEM_Support::get(mesh.mesh_meta_data()).get_timer_cdfem());
-
-  stk::log_with_time_and_memory(mesh.parallel(), "Begin Mesh Decomposition.");
-
-  CDFEM_Support & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
-
   const bool wasPreviouslyDecomposed = nullptr != the_new_mesh;
   if (!wasPreviouslyDecomposed)
   {
@@ -356,69 +454,21 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
     attach_sides_to_elements(mesh);
   }
 
-  krinolog << "Decomposing mesh for region into phase conformal elements." << stk::diag::dendl;
-  NodeToCapturedDomainsMap nodesToCapturedDomains;
+  the_new_mesh = std::make_unique<CDMesh>(mesh);
 
+  for(auto && pair : periodic_node_pairs)
   {
-    the_new_mesh = std::make_unique<CDMesh>(mesh);
-
-    fix_node_owners_to_assure_active_owned_element_for_node(mesh, the_new_mesh->get_active_part());
-
-    for(auto && pair : periodic_node_pairs)
-    {
-      the_new_mesh->add_periodic_node_pair(pair.first, pair.second);
-    }
-
-    // Not sure if this is krino's responsibility or the driving application.  If we have
-    // elemental death fields, these need to be parallel consistent on aura elements.
-    the_new_mesh->parallel_communicate_elemental_death_fields();
-
-    stk::diag::TimeBlock timer__(the_new_mesh->my_timer_decompose);
-
-    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-      the_new_mesh->snap_and_update_fields_and_captured_domains(interfaceGeometry, nodesToCapturedDomains);
-
-    interfaceGeometry.prepare_to_decompose_elements(the_new_mesh->stk_bulk(), nodesToCapturedDomains);
-  }
-
-  {
-    stk::diag::TimeBlock timer__(the_new_mesh->my_timer_decompose);
-
-    the_new_mesh->generate_nonconformal_elements();
-    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-      the_new_mesh->snap_nearby_intersections_to_nodes(interfaceGeometry, nodesToCapturedDomains);
-    the_new_mesh->set_phase_of_uncut_elements(interfaceGeometry);
-    the_new_mesh->triangulate(interfaceGeometry);
-    the_new_mesh->decompose(interfaceGeometry);
+    the_new_mesh->add_periodic_node_pair(pair.first, pair.second);
   }
 
   const int stashStepCount = wasPreviouslyDecomposed ? stepCount : (-1);
-  the_new_mesh->stash_field_data(stashStepCount);
-
-  const bool mesh_modified = the_new_mesh->modify_mesh();
-
-  the_new_mesh->prolongation();
-
-  // debugging
-  if ( krinolog.shouldPrint(LOG_DEBUG) )
-  {
-    the_new_mesh->debug_output();
-  }
-
-  {
-    const ScaledJacobianQualityMetric qualityMetric;
-    krinolog << "After cutting quality is " << compute_mesh_quality(mesh, the_new_mesh->get_active_part(), qualityMetric) << stk::diag::dendl;
-  }
-
+  const int status = the_new_mesh->decompose_mesh(interfaceGeometry, stashStepCount);
 
   if (!the_new_mesh->aux_meta().using_fmwk())
   {
     the_new_mesh->print_conformal_volumes_and_surface_areas();
   }
 
-  stk::log_with_time_and_memory(mesh.parallel(), "End Mesh Decomposition.");
-
-  const int status = mesh_modified ? (COORDINATES_MAY_BE_MODIFIED | MESH_MODIFIED) : COORDINATES_MAY_BE_MODIFIED;
   return status;
 }
 
@@ -1880,7 +1930,7 @@ CDMesh::snap_nearby_intersections_to_nodes(const InterfaceGeometry & interfaceGe
 { /* %TRACE[ON]% */ Trace trace__("krino::Mesh::snap_nearby_intersections_to_nodes(void)"); /* %TRACE% */
   stk::diag::TimeBlock timer__(my_timer_snap);
 
-  const stk::mesh::Selector parentElementSelector = get_cdfem_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
+  const stk::mesh::Selector parentElementSelector = get_decomposed_cdfem_parent_element_selector(get_active_part(), my_cdfem_support, my_phase_support);
   snap_to_node(stk_bulk(), parentElementSelector, interfaceGeometry, get_snapper(), domainsAtNodes);
   for (auto && entry : domainsAtNodes)
   {
@@ -2460,44 +2510,74 @@ CDMesh::create_subelement_mesh_entities(
   }
 }
 
+static int get_parent_side_id_for_subelement_side(const stk::topology elemTopology, const SubElement & subelem, const unsigned subelemSideId)
+{
+  if(elemTopology.is_shell())
+  {
+    if (subelemSideId < 2)
+      return subelemSideId;
+    const int parentSideId = subelem.parent_side_id(subelemSideId-2);
+    if (parentSideId < 0)
+      return parentSideId;
+    return parentSideId+2;
+  }
+  return subelem.parent_side_id(subelemSideId);
+}
+
+static unsigned get_num_functioning_sides_for_topology(const stk::topology elemTopology)
+{
+  switch(elemTopology())
+  {
+  case stk::topology::SHELL_TRIANGLE_3:
+  case stk::topology::SHELL_TRIANGLE_6:
+  {
+    return 2; // Currently the shell sides for these element are not completely working in stk (for example declare_element_side doesn't work)
+  }
+  default:
+      break;
+  }
+  return elemTopology.num_sides();
+}
+
 void
 CDMesh::attach_existing_and_identify_missing_subelement_sides(
     const Mesh_Element & elem,
     const std::vector<const SubElement *> conformal_subelems,
     std::vector<SideDescription> & side_requests)
 {
-  stk::mesh::BulkData & stk_mesh = stk_bulk();
+  stk::mesh::BulkData & stkMesh = stk_bulk();
+
   const bool build_internal_sides = my_cdfem_support.use_internal_face_stabilization();
+
+  std::vector<stk::mesh::Entity> existingSides;
 
   for (auto && subelem : conformal_subelems)
   {
-    const stk::topology topology = subelem->topology();
-    const stk::mesh::Entity * elem_nodes = stk_bulk().begin_nodes(subelem->entity());
+    const stk::topology elemTopology = stkMesh.bucket(subelem->entity()).topology();
+    const stk::mesh::Entity * elemNodes = stkMesh.begin_nodes(subelem->entity());
 
-    for (unsigned s=0; s<topology.num_sides(); ++s)
+    for (unsigned s=0; s<get_num_functioning_sides_for_topology(elemTopology); ++s)
     {
-      const stk::topology side_topology = topology.side_topology(s);
-      std::vector<stk::mesh::Entity> side_nodes(side_topology.num_nodes());
-      topology.side_nodes(elem_nodes, s, side_nodes.data());
+      fill_existing_sides_using_nodes_of_side_of_element(stkMesh, elemTopology, elemNodes, s, existingSides);
 
-      std::vector<stk::mesh::Entity> sides;
-      stk::mesh::get_entities_through_relations(stk_mesh, side_nodes, stk_meta().side_rank(), sides);
-
-      if (sides.empty())
+      if (existingSides.empty())
       {
-        stk::mesh::Entity parent_side = find_entity_by_ordinal(stk_bulk(), elem.entity(), stk_meta().side_rank(), subelem->parent_side_id(s));
-        const bool have_parent_side = stk_bulk().is_valid(parent_side);
-        const bool is_internal_side = subelem->parent_side_id(s) == -1;
+        const stk::topology sideTopology = elemTopology.side_topology(s);
+        const int parentSideId = get_parent_side_id_for_subelement_side(elemTopology, *subelem, s);
+        const stk::mesh::Entity parentSide = find_entity_by_ordinal(stkMesh, elem.entity(), sideTopology.rank(), parentSideId);
+
+        const bool have_parent_side = stkMesh.is_valid(parentSide);
+        const bool is_internal_side = parentSideId == -1;
 
         if (have_parent_side || (is_internal_side && build_internal_sides))
         {
           static stk::mesh::PartVector empty_parts;
-          const stk::mesh::PartVector & parent_parts = have_parent_side ? stk_bulk().bucket(parent_side).supersets() : empty_parts;
+          const stk::mesh::PartVector & parent_parts = have_parent_side ? stkMesh.bucket(parentSide).supersets() : empty_parts;
 
           // We have to make sure that pre-existing sideset parts are added to the side so that we
           // can figure out the correct conformal side parts during the second modification pass.
           stk::mesh::PartVector side_parts;
-          determine_child_conformal_parts(side_topology, parent_parts, subelem->get_phase(), side_parts);
+          determine_child_conformal_parts(sideTopology, parent_parts, subelem->get_phase(), side_parts);
           if (is_internal_side)
           {
             side_parts.push_back(&get_internal_side_part());
@@ -2508,8 +2588,9 @@ CDMesh::attach_existing_and_identify_missing_subelement_sides(
       }
       else
       {
-        STK_ThrowRequire(sides.size() == 1);
-        attach_entity_to_element(stk_bulk(), stk_meta().side_rank(), sides[0], subelem->entity());
+        STK_ThrowRequire(existingSides.size() == 1 || (existingSides.size() == 2 && elemTopology.is_shell()));
+        for (auto side : existingSides)
+          attach_entity_to_element_if_not_already_attached(stkMesh, side, subelem->entity());
       }
     }
   }
@@ -2529,29 +2610,24 @@ CDMesh::check_element_side_parts() const
   stk::mesh::Selector active_locally_owned = aux_meta().active_locally_owned_selector();
   stk::mesh::BucketVector const& buckets = stk_bulk().get_buckets(stk::topology::ELEMENT_RANK, active_locally_owned);
 
-  std::vector<stk::mesh::Entity> side_nodes;
-
   for (auto&& bucket : buckets)
   {
-    const stk::topology topology = bucket->topology();
-    const unsigned num_sides = topology.num_sides();
+    const stk::topology elemTopology = bucket->topology();
+    const unsigned numSides = elemTopology.num_sides();
     for (auto&& elem : *bucket)
     {
-      auto elem_nodes = stk_bulk().begin(elem, stk::topology::NODE_RANK);
-      for (unsigned s=0; s<num_sides; ++s)
+      for (unsigned s=0; s<numSides; ++s)
       {
-        auto side_topology = topology.side_topology(s);
-        side_nodes.resize(side_topology.num_nodes());
-        topology.side_nodes(elem_nodes, s, side_nodes.data());
-
-        if (!check_element_side_parts(side_nodes))
+        if (!check_element_side_parts(elem, s))
         {
+          std::vector<stk::mesh::Entity> sideNodes;
+          fill_side_nodes(stk_bulk(), elem, s, sideNodes);
           krinolog << "Side nodes: ";
-          for(auto && node : side_nodes) krinolog << debug_entity(stk_bulk(), node) << stk::diag::dendl;
+          for(auto && node : sideNodes) krinolog << debug_entity(stk_bulk(), node) << stk::diag::dendl;
 
           krinolog << "Elements connected to side nodes: ";
           std::vector<stk::mesh::Entity> elems;
-          stk::mesh::get_entities_through_relations(stk_bulk(), side_nodes, stk::topology::ELEMENT_RANK, elems);
+          stk::mesh::get_entities_through_relations(stk_bulk(), sideNodes, stk::topology::ELEMENT_RANK, elems);
           for(auto && touching_elem : elems) krinolog << debug_entity(stk_bulk(), touching_elem) << stk::diag::dendl;
 
           success = false;
@@ -2616,16 +2692,15 @@ CDMesh::add_possible_interface_sides(std::vector<SideDescription> & sideRequests
 
   for (auto&& bucket : buckets)
   {
-    const stk::topology topology = bucket->topology();
-    const unsigned num_sides = topology.num_sides();
+    const stk::topology elemTopology = bucket->topology();
+    const unsigned numSides = get_num_functioning_sides_for_topology(elemTopology);
     for (auto&& elem : *bucket)
     {
-      auto elem_nodes = stk_bulk().begin(elem, stk::topology::NODE_RANK);
-      for (unsigned s=0; s<num_sides; ++s)
+      auto elemNodes = stk_bulk().begin(elem, stk::topology::NODE_RANK);
+      for (unsigned s=0; s<numSides; ++s)
       {
-        auto sideTopology = topology.side_topology(s);
-        sideNodes.resize(sideTopology.num_nodes());
-        topology.side_nodes(elem_nodes, s, sideNodes.data());
+        auto sideTopology = elemTopology.side_topology(s);
+        fill_side_nodes(stk_bulk(), elemTopology, sideTopology, elemNodes, s, sideNodes);
 
         const bool possibleInterfaceSide = have_multiple_conformal_volume_parts_in_common(stk_bulk(), my_phase_support, sideNodes);
         if (possibleInterfaceSide)
@@ -2640,31 +2715,31 @@ CDMesh::add_possible_interface_sides(std::vector<SideDescription> & sideRequests
 
 
 bool
-CDMesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nodes) const
-{ /* %TRACE[ON]% */ Trace trace__("krino::Mesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nodes)"); /* %TRACE% */
-
+CDMesh::check_element_side_parts(const stk::mesh::Entity elem, const unsigned sideId) const
+{
   // This method requires aura.
   STK_ThrowRequire(stk_bulk().is_automatic_aura_on());
 
-  std::vector<stk::mesh::Entity> elems;
-  stk::mesh::get_entities_through_relations(stk_bulk(), side_nodes, stk::topology::ELEMENT_RANK, elems);
+  const stk::mesh::Entity * elemNodes = stk_bulk().begin_nodes(elem);
+  const stk::topology elemTopology = stk_bulk().bucket(elem).topology();
+  const stk::topology sideTopology = elemTopology.side_topology(sideId);
+  std::vector<stk::mesh::Entity> sideNodes;
+  fill_side_nodes(stk_bulk(), elemTopology, elemNodes, sideId, sideNodes);
+  const bool isCoincidentShellSide = elemTopology.is_shell() && sideNodes.size() == stk_bulk().num_nodes(elem);
+
+  std::vector<stk::mesh::Entity> sideElems;
+  stk::mesh::get_entities_through_relations(stk_bulk(), sideNodes, stk::topology::ELEMENT_RANK, sideElems);
 
   std::vector<const stk::mesh::Part *> conformal_volume_parts;
-  for (auto&& elem : elems)
+  for (auto sideElem : sideElems)
   {
-    if (!stk_bulk().bucket(elem).member(get_active_part()))
+    if (stk_bulk().bucket(sideElem).member(get_active_part()))
     {
-      continue;
-    }
-    auto& elem_parts = stk_bulk().bucket(elem).supersets();
-    for(auto&& part : elem_parts)
-    {
-      if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK && my_phase_support.is_conformal(part))
+      for(auto&& part : stk_bulk().bucket(sideElem).supersets())
       {
-        if (std::find(conformal_volume_parts.begin(), conformal_volume_parts.end(), part) == conformal_volume_parts.end())
-        {
+        if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK && my_phase_support.is_conformal(part) &&
+            (std::find(conformal_volume_parts.begin(), conformal_volume_parts.end(), part) == conformal_volume_parts.end()))
           conformal_volume_parts.push_back(part);
-        }
       }
     }
   }
@@ -2677,7 +2752,7 @@ CDMesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nod
   if (conformal_volume_parts.size() > 2)
   {
     krinolog << "Expected to find 1 or 2 conformal side parts when examining side nodes: ";
-    for (auto&& side_node : side_nodes) krinolog << stk_bulk().identifier(side_node) << " ";
+    for (auto&& side_node : sideNodes) krinolog << stk_bulk().identifier(side_node) << " ";
     krinolog << " but instead found the parts: ";
     for (auto&& part : conformal_volume_parts) krinolog << part->name() << " ";
     krinolog << stk::diag::dendl;
@@ -2692,9 +2767,12 @@ CDMesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nod
   }
 
   std::vector<stk::mesh::Entity> sides;
-  stk::mesh::get_entities_through_relations(stk_bulk(), side_nodes, stk_meta().side_rank(), sides);
+  const bool doOnlyConsiderSidesWithSameNumNodes = elemTopology.is_shell();
+  fill_sides_using_side_nodes(stk_bulk(), sideTopology.rank(), sideNodes, doOnlyConsiderSidesWithSameNumNodes, sides);
 
-  if (conformal_volume_parts.size() == 2 && side_phases[0] != side_phases[1])
+  const bool shouldExpectCorrectSides = !elemTopology.is_shell() || sideId < get_num_functioning_sides_for_topology(elemTopology);
+
+  if (conformal_volume_parts.size() == 2 && side_phases[0] != side_phases[1] && shouldExpectCorrectSides)
   {
     stk::mesh::PartVector conformal_side_parts;
     const stk::mesh::Part * conformal_side_part = my_phase_support.find_interface_part(*conformal_volume_parts[0], *conformal_volume_parts[1]);
@@ -2708,7 +2786,7 @@ CDMesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nod
       if (sides.size() != 1)
       {
         krinolog << "Expected to find 1 conformal side, but instead found " << sides.size() << " when examining side nodes: ";
-        for (auto&& side_node : side_nodes) krinolog << stk_bulk().identifier(side_node) << " ";
+        for (auto&& side_node : sideNodes) krinolog << stk_bulk().identifier(side_node) << " ";
         krinolog << " with conformal volume parts: ";
         for (auto&& part : conformal_volume_parts) krinolog << part->name() << " ";
         krinolog << stk::diag::dendl;
@@ -2733,10 +2811,10 @@ CDMesh::check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nod
   else
   {
     // Check that if the side exists, then it does not have any interface sides
-    if (sides.size() > 1)
+    if (sides.size() > 1 && !isCoincidentShellSide)
     {
       krinolog << "Expected to find 0 or 1 side, but instead found " << sides.size() << " when examining side nodes: ";
-      for (auto&& side_node : side_nodes) krinolog << stk_bulk().identifier(side_node) << " ";
+      for (auto&& side_node : sideNodes) krinolog << stk_bulk().identifier(side_node) << " ";
       krinolog << " with conformal volume parts: ";
       for (auto&& part : conformal_volume_parts) krinolog << part->name() << " ";
       krinolog << stk::diag::dendl;
@@ -3672,14 +3750,7 @@ CDMesh::prolongation()
   }
 
   // We might want to check what causes any parallel discrepencies, but sync everything here
-  const stk::mesh::FieldVector & all_fields = stk_bulk().mesh_meta_data().get_fields();
-  const std::vector<const stk::mesh::FieldBase *> const_fields(all_fields.begin(), all_fields.end());
-  for (auto && f : all_fields)
-  {
-    f->sync_to_host();
-    f->modify_on_host();
-  }
-  stk::mesh::communicate_field_data(stk_bulk(), const_fields);
+  parallel_sync_all_fields(stk_bulk());
 }
 
 void

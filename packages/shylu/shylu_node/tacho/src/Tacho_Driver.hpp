@@ -164,6 +164,7 @@ private:
   ordinal_type _nstreams;            // on cuda, multi streams are used
 
   mag_type _pivot_tol;               // tolerance for tiny pivot perturbation
+  bool _store_transpose;             // store transpose explicitly
 
   // parallelism and memory constraint is made via this parameter
   ordinal_type _max_num_superblocks; // # of superblocks in the memoyrpool
@@ -214,6 +215,7 @@ public:
   void setPivotTolerance(const mag_type pivot_tol);
   void useNoPivotTolerance();
   void useDefaultPivotTolerance();
+  void storeExplicitTranspose(bool flag);
 
   ///
   /// get interface

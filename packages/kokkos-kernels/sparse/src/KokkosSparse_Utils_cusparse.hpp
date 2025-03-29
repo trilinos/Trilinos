@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
-#define _KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
+#ifndef KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
+#define KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "cuda.h"
@@ -64,9 +64,23 @@ inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus, const c
   }
 }
 
-// The macro below defines is the public interface for the safe cusparse calls.
-// The functions themselves are protected by impl namespace.
-#define KOKKOS_CUSPARSE_SAFE_CALL(call) KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, __LINE__)
+#define KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(call) \
+  KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, __LINE__)
+
+// Deprecated public interface for the cuSparse safe calls
+#if defined(KOKKOS_COMPILER_MSVC)
+#define KOKKOS_CUSPARSE_SAFE_CALL(call)                                                                          \
+  (__pragma(message("warning: KOKKOS_CUSPARSE_SAFE_CALL is deprecated and will be removed in a future version")) \
+       KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL(call))
+#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
+#define KOKKOS_CUSPARSE_SAFE_CALL(call)                                                             \
+  (__extension__({                                                                                  \
+    _Pragma("\"KOKKOS_CUSPARSE_SAFE_CALL is deprecated and will be removed in a future version\""); \
+    KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL(call);                                                      \
+  }))
+#else
+#define KOKKOS_CUSPARSE_SAFE_CALL(call) KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL(call)  // no good way to deprecate?
+#endif
 
 template <typename T>
 cudaDataType cuda_data_type_from() {
@@ -152,10 +166,10 @@ inline cusparseIndexType_t cusparse_index_type_t_from<unsigned short>() {
 // destructed.
 struct TemporarySetCusparseStream {
   TemporarySetCusparseStream(cusparseHandle_t handle_, const Kokkos::Cuda& exec_) : handle(handle_) {
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(handle, exec_.cuda_stream()));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(handle, exec_.cuda_stream()));
   }
 
-  ~TemporarySetCusparseStream() { KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(handle, NULL)); }
+  ~TemporarySetCusparseStream() { KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(handle, NULL)); }
 
   cusparseHandle_t handle;
 };
@@ -165,4 +179,4 @@ struct TemporarySetCusparseStream {
 }  // namespace KokkosSparse
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-#endif  // _KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
+#endif  // KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP

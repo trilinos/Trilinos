@@ -226,6 +226,7 @@ std::array<T, NSUBNODES> subarray(const std::array<T, NNODES> & a, const std::ar
 }
 
 void adaptively_append_facets_for_subtri_using_semilagrangian_distance(const std::array<stk::math::Vector3d,6> & tri6Coords,
+    const std::array<stk::math::Vector3d,6> & tri6DepartureCoords,
   const std::array<double,6> & tri6Dist,
   const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
   const double lengthScale,
@@ -236,6 +237,7 @@ void adaptively_append_facets_for_subtri_using_semilagrangian_distance(const std
   const std::array<int, 3> & subElemNodeIndices)
 {
   adaptively_append_facets_for_tri_using_semilagrangian_distance(subarray(tri6Coords, subElemNodeIndices),
+      subarray(tri6DepartureCoords, subElemNodeIndices),
       subarray(tri6Dist, subElemNodeIndices),
       distance_at_point,
       lengthScale,
@@ -343,7 +345,87 @@ void adaptively_append_facets_for_tri_using_interpolated_distance(const std::arr
   }
 }
 
+void adaptively_append_facets_for_tri6_using_semilagrangian_distance(const std::array<stk::math::Vector3d,6> & coords,
+  const std::array<stk::math::Vector3d,6> & departureCoords,
+  const std::array<double,6> & distance,
+  const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+  const double lengthScale,
+  FacetedSurfaceBase & facets,
+  const int currentDepth,
+  const int minDepth,
+  const int maxDepth)
+{
+  const int refinementCaseId = determine_tri_edge_refinement_case_id(distance, lengthScale, currentDepth, minDepth, maxDepth);
+
+  switch (refinementCaseId)
+  {
+    case 0:
+    {
+      const std::array<double,6> filteredDistance = apply_tri_snapping_and_clipping(distance, snapTol*lengthScale);
+      adaptively_append_facets_for_tri_using_interpolated_distance(coords, filteredDistance, lengthScale, currentDepth, currentDepth+1, facets);
+    }
+    break;
+
+    case 1:
+    {
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,3,2}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,2,3}});
+    }
+    break;
+
+    case 2:
+    {
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,1,4}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,4,2}});
+    }
+    break;
+
+    case 3:
+    {
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,4,3}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,3,2}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{2,3,4}});
+    }
+    break;
+
+    case 4:
+    {
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,2,5}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,5,0}});
+    }
+    break;
+
+    case 5:
+    {
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,3,5}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{2,5,1}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,5,3}});
+    }
+    break;
+
+    case 6:
+    {
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{2,5,4}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,4,0}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,4,5}});
+    }
+    break;
+
+    case 7:
+    {
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,3,5}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,4,3}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{2,5,4}});
+      adaptively_append_facets_for_subtri_using_semilagrangian_distance(coords, departureCoords, distance, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{3,4,5}});
+    }
+    break;
+
+    default: ThrowRuntimeError("Missing refinement case id =" << refinementCaseId);
+  }
+}
+
 void adaptively_append_facets_for_tri_using_semilagrangian_distance(const std::array<stk::math::Vector3d,3> & coords,
+  const std::array<stk::math::Vector3d,3> & departureCoords,
   const std::array<double,3> & distance,
   const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
   const double lengthScale,
@@ -354,76 +436,12 @@ void adaptively_append_facets_for_tri_using_semilagrangian_distance(const std::a
 {
   if (!have_possibly_cut_edge(coords, distance))
     return;
+
   const std::array<stk::math::Vector3d,6> tri6Coords = get_tri6_coords_on_tri3(coords);
-  const std::array<double,6> tri6Dist = get_tri6_distance_on_tri3(tri6Coords, distance, distance_at_point);
+  const std::array<stk::math::Vector3d,6> tri6DepartureCoords = get_tri6_coords_on_tri3(departureCoords);
+  const std::array<double,6> tri6Dist = get_tri6_distance_on_tri3(tri6DepartureCoords, distance, distance_at_point);
 
-  const int refinementCaseId = determine_tri_edge_refinement_case_id(tri6Dist, lengthScale, currentDepth, minDepth, maxDepth);
-
-  switch (refinementCaseId)
-  {
-    case 0:
-    {
-      const std::array<double,6> filteredTri6Dist = apply_tri_snapping_and_clipping(tri6Dist, snapTol*lengthScale);
-      adaptively_append_facets_for_tri_using_interpolated_distance(tri6Coords, filteredTri6Dist, lengthScale, currentDepth, currentDepth+1, facets);
-    }
-    break;
-
-    case 1:
-    {
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,3,2}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,2,3}});
-    }
-    break;
-
-    case 2:
-    {
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,1,4}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,4,2}});
-    }
-    break;
-
-    case 3:
-    {
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,4,3}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,3,2}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{2,3,4}});
-    }
-    break;
-
-    case 4:
-    {
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,2,5}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,5,0}});
-    }
-    break;
-
-    case 5:
-    {
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,3,5}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{2,5,1}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,5,3}});
-    }
-    break;
-
-    case 6:
-    {
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{2,5,4}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,4,0}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,4,5}});
-    }
-    break;
-
-    case 7:
-    {
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{0,3,5}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{1,4,3}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{2,5,4}});
-      adaptively_append_facets_for_subtri_using_semilagrangian_distance(tri6Coords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth, {{3,4,5}});
-    }
-    break;
-
-    default: ThrowRuntimeError("Missing refinement case id =" << refinementCaseId);
-  }
+  adaptively_append_facets_for_tri6_using_semilagrangian_distance(tri6Coords, tri6DepartureCoords, tri6Dist, distance_at_point, lengthScale, facets, currentDepth, minDepth, maxDepth);
 }
 
 }

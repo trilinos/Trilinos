@@ -1543,7 +1543,7 @@ SubElement_Tri_3::determine_diagonal_for_cut_triangle(const Simplex_Generation_M
   }
   else
   {
-    STK_ThrowAssert(simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE);
+    STK_ThrowAssert(simplexMethod == CUT_QUADS_BY_DEFAULT_METHOD || simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE);
 
     // Angle-based scheme
     // Select diagonal that cuts largest angle in quad.  Since there isn't an issue with
@@ -1742,14 +1742,14 @@ struct FaceIntersection
 };
 
 void
-SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, const InterfaceID & interface1, const InterfaceID & interface2, int level)
+SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, int level)
 {
 
   if ( my_subelements.size() > 0 )
   {
     for ( auto && subelem : my_subelements )
     {
-      subelem->cut_face_interior_intersection_points(mesh, interface1, interface2, level);
+      subelem->cut_face_interior_intersection_points(mesh, level);
     }
     return;
   }
@@ -1765,7 +1765,7 @@ SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, const Int
       faceNodes[i] = my_nodes[permuteNodes[iFace][i]];
 
     std::vector<ElementIntersection> faceIntersections;
-    my_owner->fill_face_interior_intersections(faceNodes, interface1, interface2, faceIntersections);
+    my_owner->fill_face_interior_intersections(faceNodes, faceIntersections);
 
     for (auto && faceIntersection : faceIntersections)
     {
@@ -1786,7 +1786,7 @@ SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, const Int
       {
         STK_ThrowRequireMsg(level < 8, "Face cut recursion level exceeded.");
         cut_face_intersection_point_with_permutation(mesh, permuteNodes[iFace], permuteSides[iFace], faceNodeWeights, faceIntersection.sortedDomains);
-        cut_face_interior_intersection_points(mesh, interface1, interface2, ++level);
+        cut_face_interior_intersection_points(mesh, ++level);
         return;
       }
     }
@@ -2017,7 +2017,7 @@ static void determine_node_scores_on_triangle_face( const Simplex_Generation_Met
    *   0   3   1
    */
 
-  if (simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT)
+  if (simplexMethod == CUT_QUADS_BY_DEFAULT_METHOD || simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT)
   {
     //  nodal edge cut length based criterion
     //  Use globally consistent comparison at nodes based on the shortest relative edge length for the cut edges that use the node.
@@ -2290,7 +2290,7 @@ bool SubElement_Tet_4::determine_diagonal_for_cut_triangular_face(const Simplex_
   }
   else
   {
-    STK_ThrowRequire(simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE || simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT);
+    STK_ThrowAssert(simplexMethod == CUT_QUADS_BY_DEFAULT_METHOD  || simplexMethod == CUT_QUADS_BY_LARGEST_ANGLE || simplexMethod == CUT_QUADS_BY_NEAREST_EDGE_CUT);
     return SubElementNode::higher_priority_by_score_then_ancestry(*lnodes[i2],*lnodes[i1], globalIDsAreParallelConsistent);
   }
 }
@@ -2801,7 +2801,7 @@ SubElement::build_quadratic_subelements(CDMesh & mesh)
 }
 
 void
-SubElement::cut_face_interior_intersection_points(CDMesh & mesh, const InterfaceID & interface1, const InterfaceID & interface2, int level)
+SubElement::cut_face_interior_intersection_points(CDMesh & mesh, int level)
 {
 
   if (topology().num_faces() == 0)

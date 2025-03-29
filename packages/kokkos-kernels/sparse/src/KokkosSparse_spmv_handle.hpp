@@ -124,7 +124,7 @@ struct CuSparse10_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
     exec.fence();
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer));
 #endif
-    KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(mat));
+    KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(mat));
   }
 
   cusparseSpMatDescr_t mat;
@@ -136,7 +136,7 @@ struct CuSparse10_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
 // Data used by cuSPARSE <10.3 for CRS, and >=9 for BSR
 struct CuSparse9_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
   CuSparse9_SpMV_Data(const Kokkos::Cuda& exec_) : TPL_SpMV_Data(exec_) {}
-  ~CuSparse9_SpMV_Data() { KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(mat)); }
+  ~CuSparse9_SpMV_Data() { KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyMatDescr(mat)); }
 
   cusparseMatDescr_t mat;
 };

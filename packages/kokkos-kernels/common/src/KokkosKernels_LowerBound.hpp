@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSKERNELS_LOWERBOUND_HPP
-#define _KOKKOSKERNELS_LOWERBOUND_HPP
+#ifndef KOKKOSKERNELS_LOWERBOUND_HPP
+#define KOKKOSKERNELS_LOWERBOUND_HPP
 
 /*! \file KokkosKernels_LowerBound.hpp
    Define thread and team-collaborative lower-bound search
@@ -434,4 +434,4 @@ KOKKOS_INLINE_FUNCTION typename ViewLike::size_type lower_bound_team(
 
 }  // namespace KokkosKernels
 
-#endif  // _KOKKOSKERNELS_LOWERBOUND_HPP
+#endif  // KOKKOSKERNELS_LOWERBOUND_HPP

@@ -13,7 +13,7 @@ namespace krino {
 
 class MeshFromFile : public MeshInterface {
 public:
-  MeshFromFile(const std::string & fileName, stk::ParallelMachine comm, const std::string & decompMethod = "");
+  MeshFromFile(const std::string & fileName, stk::ParallelMachine comm, const std::string & decompMethod = "", const bool useAllSidesForShells = true);
   virtual ~MeshFromFile();
 
   virtual void populate_mesh(const stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::AUTO_AURA) override;

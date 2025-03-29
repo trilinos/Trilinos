@@ -18,6 +18,7 @@ namespace krino
 class NodePatchInterface
 {
 public:
+  virtual ~NodePatchInterface() = default;
   virtual const std::vector<stk::math::Vector3d>  & get_halo_node_locations() const = 0;
   virtual const std::vector<std::array<int,2>>& get_halo_segments() const = 0;
 };

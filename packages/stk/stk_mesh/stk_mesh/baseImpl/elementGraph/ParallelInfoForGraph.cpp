@@ -18,6 +18,7 @@ namespace impl
 {
 void pack_data_for_part_ordinals(stk::CommSparse &comm, const ElemElemGraph& graph, const stk::mesh::BulkData& bulkData);
 void pack_edge(stk::CommSparse &comm, const ElemElemGraph& graph, const stk::mesh::BulkData& bulkData, const stk::mesh::GraphEdge& edge, int other_proc);
+void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph);
 void unpack_and_update_part_ordinals(stk::CommSparse &comm, const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, ParallelPartInfo &parallelPartInfo);
 stk::mesh::GraphEdge unpack_edge(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, const ElemElemGraph& graph, int proc_id);
 
@@ -62,15 +63,13 @@ get_face_and_permutation_on_element_side_ordinal(const stk::mesh::BulkData& bulk
   stk::mesh::Entity face;
   stk::mesh::Permutation permutation = INVALID_PERMUTATION;
 
+  const stk::mesh::MetaData& metaData = bulkData.mesh_meta_data();
+  const stk::mesh::EntityRank sideRank = metaData.side_rank();
+
   const stk::mesh::MeshIndex& meshIndex = bulkData.mesh_index(localElement);
   const stk::mesh::Bucket& bucket = *meshIndex.bucket;
+
   const unsigned bucketOrdinal = meshIndex.bucket_ordinal;
-
-  const stk::topology topology = bucket.topology();
-  unsigned rankedSideOrdinal;
-  stk::mesh::EntityRank sideRank;
-
-  topology.ranked_side_ordinal(localOrdinal, rankedSideOrdinal, sideRank);
 
   const unsigned numSides = bucket.num_connectivity(bucketOrdinal, sideRank);
   const stk::mesh::Entity* sides = bucket.begin(bucketOrdinal, sideRank);
@@ -78,7 +77,7 @@ get_face_and_permutation_on_element_side_ordinal(const stk::mesh::BulkData& bulk
   const stk::mesh::Permutation * sidePermutations= bucket.begin_permutations(bucketOrdinal, sideRank);
 
   for(unsigned i=0; i<numSides; i++) {
-    if(rankedSideOrdinal == sideOrdinals[i]) {
+    if(localOrdinal == sideOrdinals[i]) {
       face = sides[i];
       permutation = sidePermutations[i];
       break;

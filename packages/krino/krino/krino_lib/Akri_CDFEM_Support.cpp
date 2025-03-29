@@ -47,7 +47,7 @@ bool CDFEM_Support::is_active(const stk::mesh::MetaData & meta)
 CDFEM_Support::CDFEM_Support(stk::mesh::MetaData & meta)
   : my_meta(meta),
     my_aux_meta(AuxMetaData::get(meta)),
-    my_simplex_generation_method(CUT_QUADS_BY_LARGEST_ANGLE),
+    my_simplex_generation_method(CUT_QUADS_BY_DEFAULT_METHOD),
     my_fully_coupled_cdfem(false),
     my_num_initial_decomposition_cycles(1),
     myGlobalIDsAreParallelConsistent(true),
@@ -66,9 +66,6 @@ CDFEM_Support::CDFEM_Support(stk::mesh::MetaData & meta)
     my_timer_cdfem("CDFEM", sierra::Diag::sierraTimer())
 {
   my_prolongation_model = ALE_CLOSEST_POINT;
-
-  if (3 == my_meta.spatial_dimension())
-    my_simplex_generation_method = CUT_QUADS_BY_NEAREST_EDGE_CUT;
 
   create_parts();
 }

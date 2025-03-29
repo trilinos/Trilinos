@@ -82,12 +82,12 @@ public:
   stk::mesh::Selector get_levelset_decomposed_blocks_selector(const Surface_Identifier levelSetIdentifier) const;
 
   void check_phase_parts() const;
+  bool is_cdfem_use_case() const;
 
   bool phases_defined() const { return !my_phase_parts.empty(); }
 
   void decompose_blocks(std::vector<std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets);
-  std::vector<stk::mesh::Part*> get_blocks_decomposed_by_levelset(const std::vector<unsigned> ls_phases) const;
-  std::vector<stk::mesh::Part*> get_blocks_decomposed_by_bounding_surface(const unsigned surfaceID) const;
+  std::vector<stk::mesh::Part*> get_blocks_decomposed_by_surface(const std::vector<unsigned> & surfacePhases) const;
   void setup_phases();
   void set_input_block_surface_connectivity(const Block_Surface_Connectivity & input_block_surface_info) { my_input_block_surface_connectivity = input_block_surface_info; }
   const Block_Surface_Connectivity & get_input_block_surface_connectivity() const {return my_input_block_surface_connectivity;}
@@ -107,6 +107,7 @@ public:
 
   void register_blocks_for_level_set(const Surface_Identifier levelSetIdentifier,
       const std::vector<stk::mesh::Part *> & blocks_decomposed_by_ls);
+  void register_blocks_for_surface(const Surface_Identifier & surfID);
   stk::mesh::Selector get_all_conformal_surfaces_selector() const;
 
   bool level_set_is_used_by_nonconformal_part(const Surface_Identifier levelSetIdentifier, const stk::mesh::Part * const ioPart) const;
@@ -128,7 +129,7 @@ public:
   void determine_block_phases();
   static PartSet get_blocks_and_touching_surfaces(const stk::mesh::MetaData & mesh_meta, const stk::mesh::PartVector& input_blocks, const Block_Surface_Connectivity & input_block_surface_info);
 
-  static std::vector<unsigned> get_level_set_phases(const bool oneLSPerPhase, const PhaseVec & mesh_phases, const LevelSet & levelSet);
+  static std::vector<unsigned> get_indices_of_phases_that_depend_on_surface(const bool oneLSPerPhase, const PhaseVec & meshPhases, const Surface_Identifier & surfaceID);
 
 private:
   Phase_Support();

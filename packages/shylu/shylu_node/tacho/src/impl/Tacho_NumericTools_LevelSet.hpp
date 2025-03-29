@@ -1629,7 +1629,7 @@ public:
     }
   }
 
-  inline void extractCRS(bool lu) {
+  inline void extractCRS(bool lu, bool store_transpose) {
 
     // ========================
     // free CRS, 
@@ -1719,11 +1719,7 @@ public:
 
       // the first supernode in this lvl (where the CRS matrix is stored)
       auto &s0 = _h_supernodes(_h_level_sids(pbeg));
-#if defined(KOKKOS_ENABLE_HIP)
-      s0.spmv_explicit_transpose = true;
-#else
-      s0.spmv_explicit_transpose = false; // okay for SpMV, though may not for SpMM
-#endif
+      s0.spmv_explicit_transpose = store_transpose;
 
       #define TACHO_INSERT_DIAGONALS
       // NOTE: this needs extra vector-entry copy for the non-active rows at each level for solve (copy t to w, and w back to t)
@@ -1917,6 +1913,7 @@ public:
           using team_policy_type = Kokkos::RangePolicy<typename functor_type::TransMatTag, exec_space>;
           team_policy_type team_policy(0, m);
           Kokkos::parallel_for("transpose pointer", team_policy, extractor_crs);
+          exec_space().fence();
         }
         // ========================
         // shift back
@@ -2149,7 +2146,7 @@ public:
   ///
   /// Level set factorize
   ///
-  inline void factorizeCholesky(const value_type_array &ax, const ordinal_type verbose) {
+  inline void factorizeCholesky(const value_type_array &ax, const bool store_transpose, const mag_type pivot_tol, const ordinal_type verbose) {
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
     Kokkos::Timer tick;
@@ -2202,6 +2199,9 @@ public:
       {
         typedef TeamFunctor_FactorizeChol<supernode_info_type> functor_type;
         functor_type functor(_info, _factorize_mode, _level_sids, _buf, d_rval.data());
+        if (pivot_tol > 0.0) {
+          functor.setDiagPertubationTol(pivot_tol);
+        }
 
 #if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::DummyTag>
@@ -2272,9 +2272,6 @@ public:
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "POTRF (team) returns non-zero error code.");
             }
-            //if (_status != 0) {
-            //  TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "POTRF (device) returns non-zero error code.");
-            //}
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             if (verbose) {
@@ -2291,7 +2288,7 @@ public:
     if (variant == 3) {
       // compress each partitioned inverse at each level into CRS matrix
       bool lu = false;
-      extractCRS(lu);
+      extractCRS(lu, store_transpose);
     }
     stat.t_extra += timer.seconds();
 
@@ -2300,10 +2297,10 @@ public:
       printf("=====================================================\n");
       printf( "\n  ** Team = %f s, Device = %f s, Update = %f s **\n",time_parallel,time_device,time_update );
       if (variant == 3) {
-        printf( " extractCRS with total nnzL = %ld and nnzU = %ld\n\n",colindL.extent(0),colindU.extent(0) );
-      } else {
-        printf( "\n" );
+        printf( "  extractCRS with total nnzL = %ld and nnzU = %ld\n",colindL.extent(0),colindU.extent(0) );
+	if (store_transpose) printf( "  > explicitly storing transpose\n" );
       }
+      printf( "\n" );
       print_stat_factor();
       fflush(stdout);
     }
@@ -2616,6 +2613,11 @@ public:
         }
       }
     }
+    if ((nlvls-1-lvl)%2 == 0) {
+      Kokkos::deep_copy(_w_vec, h_t);
+    } else {
+      Kokkos::deep_copy(t, h_t);
+    }
 #endif
     if (lvl == 0) {
       // end : copy to output
@@ -2917,7 +2919,11 @@ public:
         }
       }
     }
-    Kokkos::deep_copy(t, h_t);
+    if (lvl%2 == 0) {
+      Kokkos::deep_copy(_w_vec, h_t);
+    } else {
+      Kokkos::deep_copy(t, h_t);
+    }
 #endif
     if (lvl == nlvls-1) {
       // end : copy to output
@@ -4019,9 +4025,6 @@ public:
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "SYTRF (team) returns non-zero error code.");
             }
-            //if (_status != 0) {
-            //  TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "SYTRF (device) returns non-zero error code.");
-            //}
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             if (verbose) {
@@ -4239,7 +4242,7 @@ public:
     }
   }
 
-  inline void factorizeLU(const value_type_array &ax, const mag_type pivot_tol, const ordinal_type verbose) {
+  inline void factorizeLU(const value_type_array &ax, const bool store_transpose, const mag_type pivot_tol, const ordinal_type verbose) {
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
     Kokkos::Timer tick;
@@ -4374,9 +4377,6 @@ public:
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "GETRF (team) returns non-zero error code.");
             }
-            //if (_status != 0) {
-            //  TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "GETRF (device) returns non-zero error code.");
-            //}
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             if (verbose) {
@@ -4395,7 +4395,7 @@ public:
     if (variant == 3) {
       // compress each partitioned inverse at each level into CRS matrix
       bool lu = true;
-      extractCRS(lu);
+      extractCRS(lu, store_transpose);
     }
     stat.t_extra += timer.seconds();
 
@@ -4613,11 +4613,11 @@ public:
     }
   }
 
-  inline void factorize(const value_type_array &ax, const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) override {
+  inline void factorize(const value_type_array &ax, const bool store_transpose, const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) override {
     Kokkos::deep_copy(_superpanel_buf, value_type(0));
     switch (this->getSolutionMethod()) {
     case 1: { /// Cholesky
-      factorizeCholesky(ax, verbose);
+      factorizeCholesky(ax, store_transpose, pivot_tol, verbose);
       break;
     }
     case 2: { /// LDL
@@ -4649,7 +4649,7 @@ public:
           track_alloc(_piv.span() * sizeof(ordinal_type));
         }
       }
-      factorizeLU(ax, pivot_tol, verbose);
+      factorizeLU(ax, store_transpose, pivot_tol, verbose);
       break;
     }
     default: {

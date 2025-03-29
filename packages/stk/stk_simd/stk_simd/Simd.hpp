@@ -35,6 +35,10 @@
 #ifndef STK_SIMD_SIMD_HPP
 #define STK_SIMD_SIMD_HPP
 
+#ifndef STK_INCLUDE_ONLY_STK_SIMD_HEADER
+#define STK_INCLUDE_ONLY_STK_SIMD_HEADER
+#endif
+
 #include <stk_util/stk_config.h>
 
 #include <iostream>
@@ -62,21 +66,22 @@ constexpr int nfloats = SIMD_NAMESPACE::native_simd<float>::size();
 }
 }
 
-#include "SimdDouble.hpp"
-#include "SimdFloat.hpp"
-#include "SimdBool.hpp"
-#include "SimdBoolF.hpp"
+#include "SimdDouble.hpp"            // IWYU pragma: export
+#include "SimdFloat.hpp"             // IWYU pragma: export
+#include "SimdBool.hpp"              // IWYU pragma: export
+#include "SimdBoolF.hpp"             // IWYU pragma: export
 //
-#include "SimdDoubleOperators.hpp"
-#include "SimdDoubleLoadStore.hpp"
-#include "SimdDoubleMath.hpp"
+#include "SimdDoubleOperators.hpp"   // IWYU pragma: export
+#include "SimdDoubleLoadStore.hpp"   // IWYU pragma: export
+#include "SimdDoubleMath.hpp"        // IWYU pragma: export
 //
-#include "SimdFloatOperators.hpp"
-#include "SimdFloatLoadStore.hpp"
-#include "SimdFloatMath.hpp"
+#include "SimdFloatOperators.hpp"    // IWYU pragma: export
+#include "SimdFloatLoadStore.hpp"    // IWYU pragma: export
+#include "SimdFloatMath.hpp"         // IWYU pragma: export
 
 #include "stk_util/util/AlignedAllocator.hpp"
-#include "Traits.hpp" // has to be included after Double, Bool, Float, Boolf are defined
+// has to be included after Double, Bool, Float, Boolf are defined
+#include "Traits.hpp"                // IWYU pragma: export
 
 #include <Kokkos_Macros.hpp>
 #include <sys/time.h>
@@ -537,5 +542,7 @@ void store_array(float* const to, const Float* const from, const int numValid) {
 
 } // namespace simd
 } // namespace stk
+
+#undef STK_INCLUDE_ONLY_STK_SIMD_HEADER
 
 #endif // #ifndef STK_SIMD_SIMD_HPP

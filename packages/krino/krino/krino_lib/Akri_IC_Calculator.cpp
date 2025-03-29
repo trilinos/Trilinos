@@ -15,7 +15,6 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 
 #include <limits>
 
@@ -25,7 +24,7 @@ void IC_Binder::compute_signed_distance(const LevelSet &ls) const
 {
   const stk::mesh::MetaData & meta = ls.meta();
   const stk::mesh::BulkData & mesh = ls.mesh();
-  const FieldRef distRef = ls.get_distance_field();
+  const FieldRef distRef = ls.get_isovar_field();
 
   const stk::mesh::Selector selector = stk::mesh::selectField(distRef);
 
@@ -38,7 +37,7 @@ void IC_Binder::compute_signed_distance(const LevelSet &ls) const
     {
       break;
     }
-    otherDistRefs.push_back(otherLS->get_distance_field());
+    otherDistRefs.push_back(otherLS->get_isovar_field());
   }
 
   const unsigned num_other_dist = otherDistRefs.size();

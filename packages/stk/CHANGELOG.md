@@ -1,5 +1,12 @@
 # CHANGELOG
 
+5.23.8-01 (STK_VERSION 5230801) 3/27/2025
+  stk_util: Remove unused diag/Resource2.h, diag/String.hpp
+  stk_util: Fix size_t issue by including <cstddef> in parallel/ReceiveCounter.hpp
+  stk_util: Fix FP err-handling issue for MacOS
+  stk_balance: Deprecate stk_balance_m2n executable. (Functionality is available
+               in stk_balance executable.)
+
 5.23.8 (STK_VERSION 5230800) 3/10/2025
   stk_mesh: Contains reversion of bucketized NGP fields.
   stk_topology: Fix incorrect deprecation macro.

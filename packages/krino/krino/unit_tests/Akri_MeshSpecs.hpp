@@ -90,6 +90,28 @@ struct UMRRegularTri
     std::vector<std::array<unsigned, 3>> allElementConn{TriConn0,TriConn1,TriConn2,TriConn3};
 };
 
+struct UMRRegularTriShell
+{
+    UMRRegularTriShell() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::SHELL_TRIANGLE_3_ALL_FACE_SIDES;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        {-0.500,  0.000, 0. },
+        { 0.500,  0.000, 0. },
+        { 0.000,  std::sqrt(3.)/2., 1. },
+
+        { 0.000,  0.000, 0. },
+        { 0.250,  std::sqrt(3.)/4., 0.5 },
+        {-0.250,  std::sqrt(3.)/4., 0.5 }
+    }};
+
+    std::array<unsigned,3> TriConn0{{3,4,5}};
+    std::array<unsigned,3> TriConn1{{0,3,5}};
+    std::array<unsigned,3> TriConn2{{1,4,3}};
+    std::array<unsigned,3> TriConn3{{2,5,4}};
+    std::vector<std::array<unsigned, 3>> allElementConn{TriConn0,TriConn1,TriConn2,TriConn3};
+};
+
 struct RightTriSurroundedByEdgeTris
 {
     RightTriSurroundedByEdgeTris() = default;
@@ -588,6 +610,41 @@ struct UMRRegularHex
     std::array<unsigned,8> Hex7Conn{{14,26,20,24,6,18,22,17}};
     std::array<unsigned,8> Hex8Conn{{15,23,20,26,7,19,22,18}};
     std::vector<std::array<unsigned, 8>> allElementConn{Hex1Conn, Hex2Conn, Hex3Conn, Hex4Conn, Hex5Conn, Hex6Conn, Hex7Conn, Hex8Conn};
+};
+
+
+struct CubeOf12Tets
+{
+    CubeOf12Tets() = default;
+    static constexpr stk::topology::topology_t TOPOLOGY = stk::topology::TETRAHEDRON_4;
+    std::vector<stk::math::Vector3d> nodeLocs
+    {{
+        { 0.5, -0.5, -0.5},
+        { 0.5,  0.5, -0.5},
+        {-0.5,  0.5, -0.5},
+        {-0.5, -0.5, -0.5},
+
+        { 0.5, -0.5,  0.5},
+        { 0.5,  0.5,  0.5},
+        {-0.5,  0.5,  0.5},
+        {-0.5, -0.5,  0.5},
+
+        { 0.0,  0.0, 0.0 },
+    }};
+
+    std::array<unsigned,4> TetConn0{{0,4,1,8}};
+    std::array<unsigned,4> TetConn1{{1,4,5,8}};
+    std::array<unsigned,4> TetConn2{{1,5,2,8}};
+    std::array<unsigned,4> TetConn3{{2,5,6,8}};
+    std::array<unsigned,4> TetConn4{{2,6,3,8}};
+    std::array<unsigned,4> TetConn5{{3,6,7,8}};
+    std::array<unsigned,4> TetConn6{{3,7,0,8}};
+    std::array<unsigned,4> TetConn7{{0,7,4,8}};
+    std::array<unsigned,4> TetConn8{{4,7,5,8}};
+    std::array<unsigned,4> TetConn9{{5,7,6,8}};
+    std::array<unsigned,4> TetConn10{{0,2,3,8}};
+    std::array<unsigned,4> TetConn11{{0,1,2,8}};
+    std::vector<std::array<unsigned, 4>> allElementConn{TetConn0,TetConn1,TetConn2,TetConn3,TetConn4,TetConn5,TetConn6,TetConn7,TetConn8,TetConn9,TetConn10,TetConn11};
 };
 
 }

@@ -41,60 +41,11 @@
 #include <vector>                       // for vector, etc
 #include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Entity.hpp"     // for Entity
-#include "stk_util/util/ReportHandler.hpp"
-
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {
-
-
-struct ElemSideOrdinal
-{
-  ElemSideOrdinal()
-    : element(Entity()), side(Entity()), ordinal(INVALID_CONNECTIVITY_ORDINAL)
-  {  };
-  ElemSideOrdinal(Entity in_element)
-    : element(in_element), side(Entity()), ordinal(INVALID_CONNECTIVITY_ORDINAL)
-  {  }
-  ElemSideOrdinal(Entity in_element, Entity in_side)
-    : element(in_element), side(in_side), ordinal(INVALID_CONNECTIVITY_ORDINAL)
-  {  }
-  ElemSideOrdinal(Entity in_element, Entity in_side, ConnectivityOrdinal in_ordinal)
-    : element(in_element), side(in_side), ordinal(in_ordinal)
-  {  }
-  ElemSideOrdinal(Entity in_element, Entity in_side, int in_ordinal)
-    : ElemSideOrdinal(in_element, in_side, static_cast<ConnectivityOrdinal>(in_ordinal))
-  {  }
-
-  bool operator==(const ElemSideOrdinal &rhs) const
-  {
-    return ((element == rhs.element) && (side == rhs.side) && (ordinal == rhs.ordinal));
-  }
-
-  bool operator!=(const ElemSideOrdinal &rhs) const
-  {
-    return ((element != rhs.element) || (side != rhs.side) || (ordinal != rhs.ordinal));
-  }
-
-  bool operator<(const ElemSideOrdinal &rhs) const
-  {
-    if(element != rhs.element) {
-      return element < rhs.element;
-    }
-
-    if(side != rhs.side) {
-      return side < rhs.side;
-    }
-
-    return ordinal < rhs.ordinal;
-  }
-
-  Entity element;
-  Entity side;
-  ConnectivityOrdinal ordinal;
-};
 
 Entity declare_element( BulkData & mesh ,
                         PartVector & parts , // parts[0] expected to have topology
@@ -202,25 +153,14 @@ void get_parts_with_topology(stk::topology topology,
                              bool skip_topology_root_parts=false);
 
 stk::mesh::Entity get_side_entity_for_elem_side_pair_of_rank(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal, stk::mesh::EntityRank sideRank);
-stk::mesh::Entity get_side_entity_for_elem_id_side_pair_of_rank(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal, stk::mesh::EntityRank sideRank);
 stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal);
-stk::mesh::Entity get_side_entity_for_elem_id_side_pair(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal);
-
-stk::mesh::EntityId get_max_id_on_local_proc(const BulkData& bulk, EntityRank rank);
+stk::mesh::Entity get_side_entity_for_elem_id_side_pair_of_rank(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal, stk::mesh::EntityRank sideRank);
 
 size_t num_sides(const BulkData& mesh, Entity entity);
-
-// fill_*() versions are for performance when you need to run a long loop without local vector allocation
-// get_*() versions simply call the corresponding fill_*() version with a locally declared vector
-void fill_sides(const BulkData& mesh, Entity entity, stk::mesh::EntityVector& sides);
 stk::mesh::EntityVector get_sides(const BulkData& mesh, Entity entity);
+std::vector<stk::mesh::ConnectivityOrdinal> get_side_ordinals(const BulkData& mesh, Entity entity);
 
-void fill_side_ordinals(const BulkData & mesh, Entity elem, bool sortOrdinals, std::vector<ConnectivityOrdinal>& connectedOrdinals);
-std::vector<stk::mesh::ConnectivityOrdinal> get_side_ordinals(const BulkData& mesh, Entity entity, bool sortOrdinals = false);
-
-void fill_element_side_entries(const BulkData & mesh, Entity elem, bool sortEntries, std::vector<ElemSideOrdinal>& connectedElementSide);
-std::vector<ElemSideOrdinal> get_element_side_entries(const BulkData & mesh, Entity elem, bool sortEntries = false);
-
+stk::mesh::EntityId get_max_id_on_local_proc(const BulkData& bulk, EntityRank rank);
 
 /** \---} */
 

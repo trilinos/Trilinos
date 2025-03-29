@@ -34,7 +34,6 @@
 
 #include "stk_util/util/concat_variable_name.hpp"
 #include <cstddef>  // for size_t
-#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace util {
@@ -60,6 +59,5 @@ namespace util {
       return false;
     }
   }
-
 }
 }

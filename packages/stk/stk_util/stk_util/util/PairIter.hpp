@@ -35,6 +35,7 @@
 #ifndef stk_util_util_PairIter_hpp
 #define stk_util_util_PairIter_hpp
 
+#include <cstddef>
 #include <utility>
 #include <iterator>
 

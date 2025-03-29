@@ -16,6 +16,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/DeviceAwareMPI.hpp>
 #include "stk_unit_test_utils/TextMesh.hpp"
+#include <stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp>
 
 namespace  {
 
@@ -691,6 +692,64 @@ NGP_TEST_F(NgpParallelSum, Performance)
   }
 
   unlink(serialMeshName.c_str());
+}
+
+void proc0_ghost_node1_to_proc1_and_proc2(stk::mesh::BulkData& bulk)
+{
+  bulk.modification_begin();
+
+  stk::mesh::Ghosting& myGhosting = bulk.create_ghosting("myCustomGhosting");
+  std::vector<stk::mesh::EntityProc> nodesToGhost;
+
+  stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+  if (bulk.parallel_rank() == 0) {
+    EXPECT_TRUE(bulk.is_valid(node1));
+    EXPECT_TRUE(bulk.bucket(node1).owned());
+    nodesToGhost.push_back(stk::mesh::EntityProc(node1, 1));
+    nodesToGhost.push_back(stk::mesh::EntityProc(node1, 2));
+  }
+
+  bulk.change_ghosting(myGhosting, nodesToGhost);
+
+  bulk.modification_end();
+}
+
+NGP_TEST(ParallelSumIncludingGhosts, hex_3procs_1ghostNode_host)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  const int numProcs = stk::parallel_machine_size(comm);
+  if(numProcs != 3) { GTEST_SKIP(); }
+  const int myProc = stk::parallel_machine_rank(comm);
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(comm)
+                                         .set_spatial_dimension(3)
+                                         .set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA)
+                                         .create();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::Field<double>& nodeField = meta.declare_field<double>(stk::topology::NODE_RANK, "myNodeField");
+  stk::mesh::put_field_on_mesh(nodeField, meta.universal_part(), nullptr);
+  size_t nx=1, ny=1, nz=3;
+  stk::mesh::fixtures::HexFixture::fill_mesh(nx,ny,nz, *bulkPtr);
+
+  proc0_ghost_node1_to_proc1_and_proc2(*bulkPtr);
+
+  stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
+  EXPECT_TRUE(bulkPtr->is_valid(node1));
+
+  double* value = stk::mesh::field_data(nodeField, node1);
+  double initValue = (myProc+1);
+  *value = initValue;
+
+  stk::mesh::parallel_sum_including_ghosts(*bulkPtr, {&nodeField});
+
+  constexpr double tolerance = 1.e-9;
+
+  double expectedValue = 0;
+  for(int p=0; p<numProcs; ++p) {
+    expectedValue += (p+1);
+  }
+
+  EXPECT_NEAR(*value, expectedValue, tolerance);
 }
 
 }

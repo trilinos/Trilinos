@@ -8,8 +8,6 @@
 #include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/stk_config.h"
 
-#include <climits>
-
 namespace stk {
 
 STK_INLINE_FUNCTION
@@ -239,71 +237,6 @@ stk::topology::rank_t topology::side_rank(unsigned ord) const {
   functor f(ord);
   topology::apply_functor< functor > apply(f);
   return apply(m_value);
-}
-
-STK_INLINE_FUNCTION
-unsigned topology::num_side_ranks() const {
-  using functor = topology_detail::num_side_ranks_impl;
-  topology::apply_functor< functor > apply;
-  return apply(m_value);
-}
-
-STK_INLINE_FUNCTION
-unsigned topology::side_ordinal(unsigned ranked_side_ordinal, rank_t rank) const {
-  auto invalid_ordinal = UINT_MAX;
-
-  if(ranked_side_ordinal >= num_sub_topology(rank)) {
-    return invalid_ordinal;
-  }
-
-  if (num_side_ranks() == 2) {
-    if(rank != stk::topology::FACE_RANK && rank != stk::topology::EDGE_RANK) {
-      return invalid_ordinal;
-    }
-
-    if(rank == stk::topology::FACE_RANK) {
-      return ranked_side_ordinal;
-    } else if(rank == stk::topology::EDGE_RANK) {
-      return ranked_side_ordinal + num_faces();
-    }
-  } else if (num_side_ranks() == 1) {
-    if(rank != side_rank()) {
-      return invalid_ordinal;
-    }
-
-    return ranked_side_ordinal;
-  }
-
-  return invalid_ordinal;
-}
-
-STK_INLINE_FUNCTION
-void topology::ranked_side_ordinal(unsigned side_ordinal, unsigned& ranked_side_ordinal, rank_t& rank) const {
-  auto invalid_ordinal = UINT_MAX;
-
-  if(side_ordinal >= num_sides()) {
-    ranked_side_ordinal = invalid_ordinal;
-    rank = stk::topology::INVALID_RANK;
-    return;
-  }
-
-  auto offset = num_sub_topology(side_rank());
-
-  rank = side_rank(side_ordinal);
-  ranked_side_ordinal = side_ordinal;
-
-  if(has_mixed_rank_sides() && (side_ordinal >= offset)) {
-    ranked_side_ordinal -= offset;
-  }
-}
-
-template <typename SideRanksOutputIterator>
-STK_INLINE_FUNCTION
-void topology::side_ranks( SideRanksOutputIterator output_ranks) const {
-  using functor = topology_detail::side_ranks_impl<SideRanksOutputIterator>;
-  functor f(output_ranks);
-  topology::apply_functor< functor > apply( f );
-  apply(m_value);
 }
 
 STK_INLINE_FUNCTION

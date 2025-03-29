@@ -98,9 +98,10 @@ namespace io {
 	    m_offsetTime(0.0),
 	    m_startTime(-std::numeric_limits<double>::max()),
 	    m_stopTime(std::numeric_limits<double>::max()),
+      m_maxTime(-std::numeric_limits<double>::max()),
 	    m_periodType(CYCLIC),
 	    m_fieldsInitialized(false),
-        m_haveCachedEntityList(false),
+	    m_haveCachedEntityList(false),
 	    m_multiStateSuffixes(nullptr)
   {
     Ioss::DatabaseUsage db_usage = Ioss::READ_MODEL;
@@ -127,6 +128,7 @@ namespace io {
 	    m_offsetTime(0.0),
 	    m_startTime(-std::numeric_limits<double>::max()),
 	    m_stopTime(std::numeric_limits<double>::max()),
+      m_maxTime(-std::numeric_limits<double>::max()),
 	    m_periodType(CYCLIC),
 	    m_fieldsInitialized(false),
 	    m_haveCachedEntityList(false),
@@ -521,6 +523,23 @@ namespace io {
       }
 
       m_fieldsInitialized = false;
+    }
+
+    double InputFile::get_max_time(bool useCache)
+    {
+      if(m_maxTime == -std::numeric_limits<double>::max()) {
+        m_maxTime = get_input_ioss_region()->get_max_time().second;
+        return m_maxTime;
+      }
+
+      auto mode = get_input_ioss_region()->get_database()->open_create_behavior();
+      bool openForReadAndWrite = (mode == Ioss::DB_APPEND || mode == Ioss::DB_APPEND_GROUP);
+      if(useCache && !openForReadAndWrite) {
+        return m_maxTime;
+      }
+
+      m_maxTime = get_input_ioss_region()->get_max_time().second;
+      return m_maxTime;
     }
   }
 }

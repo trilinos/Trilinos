@@ -32,6 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+// IWYU pragma: private; include "Simd.hpp"
+
+#ifndef STK_INCLUDE_ONLY_STK_SIMD_HEADER
+static_assert(false, "Do not include simd impl files directly. Only include stk_simd/Simd.hpp");
+#endif
+
 #ifndef STK_SIMD_FLOAT_HPP
 #define STK_SIMD_FLOAT_HPP
 

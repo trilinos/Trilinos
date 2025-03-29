@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
-#define _KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
+#ifndef KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
+#define KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
 
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_TplsVersion.hpp"
@@ -168,4 +168,4 @@ inline void print_configuration(std::ostream& os) {
 }
 
 }  // namespace KokkosKernels
-#endif  // _KOKKOSKERNELS_PRINT_CONFIGURATION_HPP
+#endif  // KOKKOSKERNELS_PRINT_CONFIGURATION_HPP

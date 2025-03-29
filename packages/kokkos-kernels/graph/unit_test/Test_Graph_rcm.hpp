@@ -19,7 +19,7 @@
 
 #include "KokkosGraph_RCM.hpp"
 #include "KokkosKernels_IOUtils.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
+#include "KokkosSparse_StaticCrsGraph.hpp"
 
 #include <vector>
 
@@ -119,7 +119,7 @@ void test_rcm(const rowmap_t& rowmap, const entries_t& entries, bool expectBandw
 
 template <typename lno_t, typename size_type, typename device>
 void test_rcm_zerorows() {
-  using graph_t   = Kokkos::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device, void, size_type>;
+  using graph_t   = KokkosSparse::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device, void, size_type>;
   using rowmap_t  = typename graph_t::row_map_type::non_const_type;
   using entries_t = typename graph_t::entries_type::non_const_type;
   rowmap_t rowmap;
@@ -129,7 +129,7 @@ void test_rcm_zerorows() {
 
 template <typename lno_t, typename size_type, typename device>
 void test_rcm_7pt(lno_t gridX, lno_t gridY, lno_t gridZ, bool expectBandwidthReduced) {
-  using graph_t   = Kokkos::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device, void, size_type>;
+  using graph_t   = KokkosSparse::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device, void, size_type>;
   using rowmap_t  = typename graph_t::row_map_type::non_const_type;
   using entries_t = typename graph_t::entries_type::non_const_type;
   rowmap_t rowmap;
@@ -140,7 +140,7 @@ void test_rcm_7pt(lno_t gridX, lno_t gridY, lno_t gridZ, bool expectBandwidthRed
 
 template <typename lno_t, typename size_type, typename device>
 void test_rcm_4clique() {
-  using graph_t   = Kokkos::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device, void, size_type>;
+  using graph_t   = KokkosSparse::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device, void, size_type>;
   using rowmap_t  = typename graph_t::row_map_type::non_const_type;
   using entries_t = typename graph_t::entries_type::non_const_type;
   rowmap_t rowmap("rowmap", 5);
@@ -156,7 +156,7 @@ void test_rcm_4clique() {
 
 template <typename lno_t, typename size_type, typename device>
 void test_rcm_multiple_components() {
-  using graph_t   = Kokkos::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device, void, size_type>;
+  using graph_t   = KokkosSparse::StaticCrsGraph<lno_t, KokkosKernels::default_layout, device, void, size_type>;
   using rowmap_t  = typename graph_t::row_map_type::non_const_type;
   using entries_t = typename graph_t::entries_type::non_const_type;
   // Generate a single 3D grid first
