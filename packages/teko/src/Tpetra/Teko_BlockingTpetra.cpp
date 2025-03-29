@@ -223,6 +223,8 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
 
   using local_matrix_type     = Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type;
   using row_map_type          = local_matrix_type::row_map_type::non_const_type;
+  using values_type           = local_matrix_type::values_type::non_const_type;
+  using index_type            = local_matrix_type::index_type::non_const_type;
   auto prefixSumEntriesPerRow = row_map_type(
       Kokkos::ViewAllocateWithoutInitializing("prefixSumEntriesPerRow"), numMyRows + 1);
 
@@ -271,8 +273,7 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
   using device_type  = typename NT::device_type;
   auto columnIndices = Kokkos::View<GO*, device_type>(
       Kokkos::ViewAllocateWithoutInitializing("columnIndices"), totalNumOwnedCols);
-  auto values =
-      Kokkos::View<ST*>(Kokkos::ViewAllocateWithoutInitializing("values"), totalNumOwnedCols);
+  auto values = values_type(Kokkos::ViewAllocateWithoutInitializing("values"), totalNumOwnedCols);
 
   LO maxNumEntriesSubblock = 0;
   Kokkos::parallel_reduce(
@@ -301,9 +302,9 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
   Tpetra::Details::makeColMap<LO, GO, NT>(colMap, domainMap, columnIndices);
   TEUCHOS_ASSERT(colMap);
 
-  auto colMap_dev         = colMap->getLocalMap();
-  auto localColumnIndices = Kokkos::View<LO*>(
-      Kokkos::ViewAllocateWithoutInitializing("localColumnIndices"), totalNumOwnedCols);
+  auto colMap_dev = colMap->getLocalMap();
+  auto localColumnIndices =
+      index_type(Kokkos::ViewAllocateWithoutInitializing("localColumnIndices"), totalNumOwnedCols);
   Kokkos::parallel_for(
       team_policy(numMyRows, Kokkos::AUTO()), KOKKOS_LAMBDA(const team_member& t) {
         const auto localRow = t.league_rank();
