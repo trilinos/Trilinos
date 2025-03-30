@@ -196,6 +196,31 @@ void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateM
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AmalgamateMap(RCP<const StridedMap> sourceMap, RCP<const Map>& amalgamatedMap) {
+  // NOTE: There could be further optimizations here where we detect contiguous maps and then
+  // create a contiguous amalgamated maps, which bypasses the expense of the getMyGlobalIndicesDevice()
+  // call (which is free for non-contiguous maps, but costs something if the map is contiguous).
+  using range_policy = Kokkos::RangePolicy<typename Node::execution_space>;
+  using array_type   = typename Map::global_indices_array_device_type;
+
+  array_type elementAList = sourceMap->getMyGlobalIndicesDevice();
+  GO indexBase            = sourceMap->getIndexBase();
+  LO blkSize              = sourceMap->getFixedBlockSize();
+  auto numElements        = elementAList.size() / blkSize;
+  typename array_type::non_const_type elementList_nc("elementList", numElements);
+
+  // Amalgamate the map
+  Kokkos::parallel_for(
+      "Amalgamate Element List", range_policy(0, numElements), KOKKOS_LAMBDA(LO i) {
+        elementList_nc[i] = (elementAList[i * blkSize] - indexBase) / blkSize + indexBase;
+      });
+  array_type elementList = elementList_nc;
+
+  amalgamatedMap = MapFactory::Build(sourceMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                     elementList, indexBase, sourceMap->getComm());
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const GlobalOrdinal AmalgamationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DOFGid2NodeId(GlobalOrdinal gid, LocalOrdinal blockSize,
                                                                                                   const GlobalOrdinal offset, const GlobalOrdinal indexBase) {
   GlobalOrdinal globalblockid = ((GlobalOrdinal)gid - offset - indexBase) / blockSize + indexBase;
