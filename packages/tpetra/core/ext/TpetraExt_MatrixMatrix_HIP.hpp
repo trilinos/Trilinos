@@ -436,7 +436,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi newmatrix unknown kernel");
   }
 
-  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC"));
+  Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC");
 
   // Final Fillcomplete
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
@@ -474,9 +474,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
 
-  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore"));
   using Teuchos::RCP;
   using Teuchos::rcp;
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore"));
 
   // Lots and lots of typedefs
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
@@ -541,7 +541,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   auto Dvals =
        Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
-  MM2 = Teuchos::null; MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore - Compare"));
+  RCP<Tpetra::Details::ProfilingRegion> MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore - Compare"));
 
   // The status array will contain the index into colind where this entry was last deposited.
   //   c_status[i] <  CSR_ip - not in the row yet
@@ -663,6 +663,10 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     }
   }
 
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix KokkosKernels"));
+
   // Usings
   using device_t = typename Tpetra::KokkosCompat::KokkosHIPWrapperNode::device_type;
   using matrix_t = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::KokkosHIPWrapperNode>::local_matrix_device_type;
@@ -734,11 +738,16 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
 
     auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
     auto Bint = irph.getIntRowptrMatrix(Bmerged);
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels symbolic int");
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
-                  Aint.graph.row_map, Aint.graph.entries, false,
-                  Bint.graph.row_map, Bint.graph.entries, false,
-                  int_row_mapC);
+      KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                                                  Aint.graph.row_map, Aint.graph.entries, false,
+                                                  Bint.graph.row_map, Bint.graph.entries, false,
+                                                  int_row_mapC);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels numeric int");
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
@@ -761,10 +770,16 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     kh.create_spgemm_handle(alg_enum);
     kh.set_team_work_size(team_work_size);
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
-                  Amat.graph.row_map, Amat.graph.entries, false,
-                  Bmerged.graph.row_map, Bmerged.graph.entries, false,
-                  row_mapC);
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels symbolic non-int");
+
+      KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                                                  Amat.graph.row_map, Amat.graph.entries, false,
+                                                  Bmerged.graph.row_map, Bmerged.graph.entries, false,
+                                                  row_mapC);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels numeric non-int");
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
