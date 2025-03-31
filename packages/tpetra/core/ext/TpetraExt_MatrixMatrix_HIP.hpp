@@ -262,12 +262,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse SerialCore"))));
-  Teuchos::RCP<Teuchos::TimeMonitor> MM2;
-#endif
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Reuse SerialCore");
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -333,9 +328,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
     Ivals   = lclB.values;
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = Teuchos::null; MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore - Compare"))));
-#endif
+  MM2 = Teuchos::null; MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix SerialCore - Compare");
 
   // Classic csr assembly (low memory edition)
   // mfh 27 Sep 2016: The c_status array is an implementation detail
@@ -421,11 +414,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-    using Teuchos::TimeMonitor;
-    Teuchos::RCP<TimeMonitor> MM;
-#endif
+
 
   // Node-specific code
   using Teuchos::RCP;
@@ -448,9 +437,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi newmatrix unknown kernel");
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix HIPESFC"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC");
 
   // Final Fillcomplete
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
@@ -488,12 +475,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse HIPCore"))));
-  Teuchos::RCP<Teuchos::TimeMonitor> MM2;
-#endif
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore");
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -560,9 +542,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   auto Dvals =
        Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = Teuchos::null; MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse HIPCore - Compare"))));
-#endif
+  MM2 = Teuchos::null; MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore - Compare");
 
   // The status array will contain the index into colind where this entry was last deposited.
   //   c_status[i] <  CSR_ip - not in the row yet
@@ -639,10 +619,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     }
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2= Teuchos::null;
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse ESFC"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse ESFC");
 
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 
@@ -666,11 +643,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
 												const std::string& label,
 												const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> MM;
-#endif
+
 
   // Check if the diagonal entries exist in debug mode
   const bool debug = Tpetra::Details::Behavior::debug();
@@ -807,18 +780,14 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     kh.destroy_spgemm_handle();
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix HIPSort"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPSort");
 
   // Sort & set values
   if (params.is_null() || params->get("sort entries",true))
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC,entriesC,valuesC);
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix HIPESFC"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC");
 
   // Final Fillcomplete
   Teuchos::RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
