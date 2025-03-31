@@ -261,11 +261,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
 
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
-
-  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Reuse SerialCore");
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Reuse SerialCore"));
 
   // Lots and lots of typedefs
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
@@ -328,7 +327,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
     Ivals   = lclB.values;
   }
 
-  MM2 = Teuchos::null; MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix SerialCore - Compare");
+  auto MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix SerialCore - Compare"));
 
   // Classic csr assembly (low memory edition)
   // mfh 27 Sep 2016: The c_status array is an implementation detail
@@ -437,7 +436,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi newmatrix unknown kernel");
   }
 
-  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC");
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC"));
 
   // Final Fillcomplete
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
@@ -475,7 +474,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
 
-  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore");
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore"));
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -542,7 +541,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   auto Dvals =
        Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
-  MM2 = Teuchos::null; MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore - Compare");
+  MM2 = Teuchos::null; MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore - Compare"));
 
   // The status array will contain the index into colind where this entry was last deposited.
   //   c_status[i] <  CSR_ip - not in the row yet
@@ -619,7 +618,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     }
   }
 
-  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse ESFC");
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse ESFC"));
 
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 
@@ -780,14 +779,14 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     kh.destroy_spgemm_handle();
   }
 
-  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPSort");
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPSort"));
 
   // Sort & set values
   if (params.is_null() || params->get("sort entries",true))
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC,entriesC,valuesC);
 
-  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC");
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC"));
 
   // Final Fillcomplete
   Teuchos::RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
