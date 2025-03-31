@@ -195,7 +195,12 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
 
     auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
     auto Bint = irph.getIntRowptrMatrix(Bmerged);
-    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,false,Bint.graph.row_map,Bint.graph.entries,false, int_row_mapC);
+
+     {
+       Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic int");
+       KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,false,Bint.graph.row_map,Bint.graph.entries,false, int_row_mapC);
+     }
+     Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric int");
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
@@ -211,7 +216,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
     kh.create_spgemm_handle(alg_enum);
     kh.set_team_work_size(team_work_size);
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic non-int");
+      KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
+    }
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
@@ -219,6 +227,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
 
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric non-int");
     KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,Amat.values,false,Bmerged.graph.row_map,Bmerged.graph.entries,Bmerged.values,false,row_mapC,entriesC,valuesC);
     kh.destroy_spgemm_handle();
   }
