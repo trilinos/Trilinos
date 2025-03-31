@@ -112,17 +112,13 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix HIPWrapper")))));
-#endif
   // Node-specific code
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
   std::string nodename("HIP");
 
   // Lots and lots of typedefs
   using Teuchos::RCP;
+  using Teuchos::rcp;
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
@@ -132,6 +128,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
   //typedef typename graph_t::row_map_type::const_type lno_view_t_const;
+
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix HIPWrapper"));
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
@@ -171,9 +169,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   // Merge the B and Bimport matrices
   const KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getLocalNumElements());
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix HIPCore"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix HIP Core"));
 
   // Do the multiply on whatever we've got
   typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
@@ -186,8 +182,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   scalar_view_t   valuesC;
 
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-  const bool useIntRowptrs = 
-     irph.shouldUseIntRowptrs() && 
+  const bool useIntRowptrs =
+     irph.shouldUseIntRowptrs() &&
      Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
   if (useIntRowptrs) {
@@ -227,18 +223,16 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
     kh.destroy_spgemm_handle();
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix HIPSort"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix HIP Sort"));
 
   // Sort & set values
   if (params.is_null() || params->get("sort entries",true))
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC,entriesC,valuesC);
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix HIPESFC"))));
-#endif
+
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix HIP ESFC"));
+
 
   // Final Fillcomplete
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
@@ -755,8 +749,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-  const bool useIntRowptrs = 
-    irph.shouldUseIntRowptrs() && 
+  const bool useIntRowptrs =
+    irph.shouldUseIntRowptrs() &&
     Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
   if (useIntRowptrs) {
