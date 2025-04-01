@@ -218,7 +218,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
 
     {
       Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic non-int");
-      KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
+      KokkosSparse::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
     }
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
