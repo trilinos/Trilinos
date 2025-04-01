@@ -16,6 +16,10 @@
                 <Parameter name="Type" type="string" value="Initial Condition Evaluator"/>
                 <Parameter name="DOF Name" type="string" value="TEMPERATURE"/>
             </ParameterList>
+            <ParameterList name="V_TEMPERATURE">
+                <Parameter name="Type" type="string" value="Initial Condition Evaluator"/>
+                <Parameter name="DOF Name" type="string" value="V_TEMPERATURE"/>
+            </ParameterList>
         </ParameterList>
         <ParameterList name="right">
             <ParameterList name="TEMPERATURE">
@@ -41,7 +45,7 @@
     </ParameterList>
 
     <ParameterList name="Block ID to Physics ID Mapping">
-        <Parameter name="left" type="string" value="solid"/>
+        <Parameter name="left" type="string" value="fluid"/>
         <Parameter name="right" type="string" value="solid"/>
     </ParameterList>
 
@@ -53,7 +57,16 @@
     <ParameterList name="Physics Blocks">
 
         <ParameterList name="solid">
-
+            <ParameterList name="EQ 0">
+                <Parameter name="Type" type="string" value="Energy"/> 
+                <Parameter name="Basis Type" type="string" value="HGrad"/> 
+                <Parameter name="Basis Order" type="int" value="1"/> 
+                <Parameter name="Integration Order" type="int" value="2"/> 
+                <Parameter name="Model ID" type="string" value="solid model"/> 
+                <Parameter name="Prefix" type="string" value=""/>
+            </ParameterList>
+        </ParameterList>
+        <ParameterList name="fluid">
             <ParameterList name="EQ 0">
                 <Parameter name="Type" type="string" value="Energy"/> 
                 <Parameter name="Basis Type" type="string" value="HGrad"/> 
@@ -62,7 +75,14 @@
                 <Parameter name="Model ID" type="string" value="fluid model"/> 
                 <Parameter name="Prefix" type="string" value=""/>
             </ParameterList>
-
+            <ParameterList name="EQ 1">
+                <Parameter name="Type" type="string" value="Energy"/> 
+                <Parameter name="Basis Type" type="string" value="HGrad"/> 
+                <Parameter name="Basis Order" type="int" value="1"/> 
+                <Parameter name="Integration Order" type="int" value="2"/> 
+                <Parameter name="Model ID" type="string" value="fluid model"/> 
+                <Parameter name="Prefix" type="string" value="V_"/>
+            </ParameterList>
         </ParameterList>
 
     </ParameterList>
@@ -70,12 +90,15 @@
     <ParameterList name="Closure Models">
  
         <ParameterList name="fluid model">
-
             <ParameterList name="Volume Integral">
             </ParameterList>
-
             <ParameterList name="SOURCE_TEMPERATURE">
-                <Parameter name="Type" type="string" value="Parameter"/>
+                <!--<Parameter name="Type" type="string" value="Parameter"/>-->
+                <Parameter name="Value" type="double" value="0.0"/>
+            </ParameterList>
+            <ParameterList name="SOURCE_V_TEMPERATURE">
+                <!--<Parameter name="Value" type="double" value="1.0"/>-->
+                <Parameter name="Value" type="double" value="0.0"/>
             </ParameterList>
             <ParameterList name="Heat Capacity">
                 <Parameter name="Value" type="double" value="1.0"/>
@@ -90,7 +113,26 @@
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
         </ParameterList>
-
+        <ParameterList name="solid model">
+            <ParameterList name="Volume Integral">
+            </ParameterList>
+            <ParameterList name="SOURCE_TEMPERATURE">
+                <!--<Parameter name="Type" type="string" value="Parameter"/>-->
+                <Parameter name="Value" type="double" value="0.0"/>
+            </ParameterList>
+            <ParameterList name="Heat Capacity">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="Thermal Conductivity">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="DENSITY">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="HEAT_CAPACITY">
+                <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+        </ParameterList>
     </ParameterList>
 
     <ParameterList name="User Data">
@@ -120,57 +162,28 @@
         </ParameterList>
 
         <ParameterList>
+            <Parameter name="Type" type="string" value="Neumann"/>
+	    <Parameter name="Sideset ID" type="string" value="xmin"/>
+            <Parameter name="Element Block ID" type="string" value="left"/>
+            <Parameter name="Equation Set Name" type="string" value="V_TEMPERATURE"/>
+            <Parameter name="Strategy" type="string" value="Neumann Constant"/>
+            <ParameterList name="Data">
+                <Parameter name="Integration Order" type="int" value="2"/>
+		<ParameterList name="Flux Values">
+                    <Parameter name="X" type="double" value="0.0"/>
+                    <Parameter name="Y" type="double" value="0.0"/>
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
+        
+        <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
             <Parameter name="Sideset ID" type="string" value="center"/> 
-            <Parameter name="Element Block ID" type="string" value="right"/> 
-            <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
-            <Parameter name="Strategy" type="string" value="Constant"/>
-            <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="1.0"/>
-            </ParameterList>
-        </ParameterList>
-
-        <ParameterList>
-            <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="ymax"/> 
             <Parameter name="Element Block ID" type="string" value="left"/> 
-            <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
+            <Parameter name="Equation Set Name" type="string" value="V_TEMPERATURE"/> 
             <Parameter name="Strategy" type="string" value="Constant"/>
             <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="0.0"/>
-            </ParameterList>
-        </ParameterList>
-
-        <ParameterList>
-            <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="ymin"/> 
-            <Parameter name="Element Block ID" type="string" value="left"/> 
-            <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
-            <Parameter name="Strategy" type="string" value="Constant"/>
-            <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="0.0"/>
-            </ParameterList>
-        </ParameterList>
-    
-        <ParameterList>
-            <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="ymax"/> 
-            <Parameter name="Element Block ID" type="string" value="right"/> 
-            <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
-            <Parameter name="Strategy" type="string" value="Constant"/>
-            <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="1.0"/>
-            </ParameterList>
-        </ParameterList>
-
-        <ParameterList>
-            <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="ymin"/> 
-            <Parameter name="Element Block ID" type="string" value="right"/> 
-            <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
-            <Parameter name="Strategy" type="string" value="Constant"/>
-            <ParameterList name="Data">
-                <Parameter name="Value" type="double" value="1.0"/>
+                <Parameter name="Value" type="double" value="2.0"/>
             </ParameterList>
         </ParameterList>
 
@@ -256,7 +269,6 @@
                     <Parameter name="Maximum Iterations" type="int" value="100"/>
                     <Parameter name="Block Size" type="int" value="1"/>
                     <Parameter name="Num Blocks" type="int" value="20"/>
-                    <Parameter name="Flexible Gmres" type="bool" value="0"/>
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
