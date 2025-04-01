@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-/*! \file 
+/*! \file
 
    How we communicate (Send, ISend).
    How / whether a Distributor is initialized.
@@ -91,6 +91,10 @@ class DistributorPlan : public Teuchos::ParameterListAcceptorDefaultBase {
   static constexpr int DEFAULT_MPI_TAG = 0;
 
 public:
+
+  using IndexView = std::vector<size_t>;
+  using SubViewLimits = std::pair<IndexView, IndexView>;
+
   DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
   DistributorPlan(const DistributorPlan& otherPlan);
 
@@ -121,6 +125,11 @@ public:
   Teuchos::ArrayView<const size_t> getIndicesTo() const { return indicesTo_; }
   Details::EDistributorHowInitialized howInitialized() const { return howInitialized_; }
 
+  SubViewLimits getImportViewLimits(size_t numPackets) const;
+  SubViewLimits getImportViewLimits(const Teuchos::ArrayView<const size_t> &numImportPacketsPerLID) const;
+  SubViewLimits getExportViewLimits(size_t numPackets) const;
+  SubViewLimits getExportViewLimits(const Teuchos::ArrayView<const size_t> &numExportPacketsPerLID) const;
+
 private:
 
   // after the plan has been created we have the info we need to initialize the MPI advance communicator
@@ -137,7 +146,7 @@ private:
   /// This method computes numReceives_, lengthsFrom_, procsFrom_,
   /// totalReceiveLength_, indicesFrom_, and startsFrom_.
   ///
-  /// \note This method currently ignores the sendType_ 
+  /// \note This method currently ignores the sendType_
   ///   parameter, and always uses ireceive() /
   ///   send() for communication of the process IDs from which our
   ///   process is receiving and their corresponding receive packet

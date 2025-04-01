@@ -187,7 +187,7 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // numActive is the number of sends that are not Null
   size_t numActive = 0;
   int needSendBuff = 0; // Boolean
-  
+
   for (size_t i = 0; i < numExports; ++i) {
     const int exportID = exportProcIDs[i];
     if (exportID >= 0) {
@@ -578,7 +578,7 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
   totalReceiveLength_ = remoteProcIDs.size();
   indicesFrom_.clear ();
   numReceives_-=sendMessageToSelf_;
-  
+
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   initializeMpiAdvance();
 #endif
@@ -959,7 +959,7 @@ void DistributorPlan::initializeMpiAdvance() {
   else if (sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
     int numRecvs = (int)(numReceives_ + (sendMessageToSelf_ ? 1 : 0));
     int *sourceRanks = procsFrom_.data();
-    
+
     // int *sourceWeights = static_cast<int*>(lengthsFrom_.data());// lengthsFrom_ may not be int
     const int *sourceWeights = MPI_UNWEIGHTED;
     int numSends = (int)(numSendsToOtherProcs_ + (sendMessageToSelf_ ? 1 : 0));
@@ -979,6 +979,99 @@ void DistributorPlan::initializeMpiAdvance() {
   TEUCHOS_ASSERT(err == 0);
 }
 #endif
+
+
+  DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(size_t numPackets) const {
+    const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);
+
+    IndexView importStarts(actualNumReceives);
+    IndexView importLengths(actualNumReceives);
+
+    size_t offset = 0;
+    for (size_t i = 0; i < actualNumReceives; ++i) {
+      importStarts[i] = offset;
+      offset += getLengthsFrom()[i] * numPackets;
+      importLengths[i] = getLengthsFrom()[i] * numPackets;
+    }
+    return std::make_pair(importStarts, importLengths);
+  }
+
+  DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(const Teuchos::ArrayView<const size_t> &numImportPacketsPerLID) const {
+
+    const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);
+
+    IndexView importStarts(actualNumReceives);
+    IndexView importLengths(actualNumReceives);
+
+    size_t offset = 0;
+    size_t curLIDoffset = 0;
+    for (size_t i = 0; i < actualNumReceives; ++i) {
+      size_t totalPacketsFrom_i = 0;
+      for (size_t j = 0; j < getLengthsFrom()[i]; ++j) {
+        totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset + j];
+      }
+      curLIDoffset += getLengthsFrom()[i];
+      importStarts[i] = offset;
+      offset += totalPacketsFrom_i;
+      importLengths[i] = totalPacketsFrom_i;
+    }
+    return std::make_pair(importStarts, importLengths);
+  }
+
+
+  DistributorPlan::SubViewLimits DistributorPlan::getExportViewLimits(size_t numPackets) const {
+    if (getIndicesTo().is_null()) {
+
+      const size_t actualNumSends = getNumSends() + (hasSelfMessage() ? 1 : 0);
+      IndexView exportStarts(actualNumSends);
+      IndexView exportLengths(actualNumSends);
+      for (size_t pp = 0; pp < actualNumSends; ++pp) {
+        exportStarts[pp] = getStartsTo()[pp] * numPackets;
+        exportLengths[pp] = getLengthsTo()[pp] * numPackets;
+      }
+      return std::make_pair(exportStarts, exportLengths);
+    } else {
+      const size_t numIndices = getIndicesTo().size();
+      IndexView exportStarts(numIndices);
+      IndexView exportLengths(numIndices);
+      for (size_t j = 0; j < numIndices; ++j) {
+        exportStarts[j] = getIndicesTo()[j]*numPackets;
+        exportLengths[j] = numPackets;
+      }
+      return std::make_pair(exportStarts, exportLengths);
+    }
+  }
+
+  DistributorPlan::SubViewLimits DistributorPlan::getExportViewLimits(const Teuchos::ArrayView<const size_t> &numExportPacketsPerLID) const {
+    if (getIndicesTo().is_null()) {
+      const size_t actualNumSends = getNumSends() + (hasSelfMessage() ? 1 : 0);
+      IndexView exportStarts(actualNumSends);
+      IndexView exportLengths(actualNumSends);
+      size_t offset = 0;
+      for (size_t pp = 0; pp < actualNumSends; ++pp) {
+        size_t numPackets = 0;
+        for (size_t j = getStartsTo()[pp];
+             j < getStartsTo()[pp] + getLengthsTo()[pp]; ++j) {
+          numPackets += numExportPacketsPerLID[j];
+        }
+        exportStarts[pp] = offset;
+        offset += numPackets;
+        exportLengths[pp] = numPackets;
+      }
+      return std::make_pair(exportStarts, exportLengths);
+    } else {
+      const size_t numIndices = getIndicesTo().size();
+      IndexView exportStarts(numIndices);
+      IndexView exportLengths(numIndices);
+      size_t offset = 0;
+      for (size_t j = 0; j < numIndices; ++j) {
+        exportStarts[j] = offset;
+        offset += numExportPacketsPerLID[j];
+        exportLengths[j] = numExportPacketsPerLID[j];
+      }
+      return std::make_pair(exportStarts, exportLengths);
+    }
+  }
 
 }
 }
