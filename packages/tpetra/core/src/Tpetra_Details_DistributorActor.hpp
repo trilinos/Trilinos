@@ -13,13 +13,14 @@
 #define TPETRA_DETAILS_DISTRIBUTOR_ACTOR_HPP
 
 #include "Tpetra_Details_DistributorPlan.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Util.hpp"
 
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Tpetra_Details_MpiTypeTraits.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_Time.hpp"
 
 #include "Kokkos_TeuchosCommAdapters.hpp"
 
@@ -27,8 +28,7 @@
 #include "mpi.h"
 #endif
 
-namespace Tpetra {
-namespace Details {
+namespace Tpetra::Details {
 
 template <class View>
 constexpr bool isKokkosView = Kokkos::is_view<View>::value;
@@ -132,26 +132,6 @@ private:
 
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requestsRecv_;
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requestsSend_;
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_;
-  Teuchos::RCP<Teuchos::Time> timer_doWaitsRecv_;
-  Teuchos::RCP<Teuchos::Time> timer_doWaitsSend_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_recvs_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_recvs_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_barrier_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_barrier_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_slow_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_slow_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_fast_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_fast_;
-
-  //! Make the instance's timers.  (Call only in constructor.)
-  void makeTimers();
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 };
 
 template <class ExpView, class ImpView>
@@ -259,7 +239,7 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan &plan,
     size_t sendcount = plan.getLengthsTo()[p] * numPackets;
     // sendcount is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(sendcount > size_t(INT_MAX), std::logic_error,
-                               "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                               "Tpetra::Distributor::doPostsAllToAll(3 args): "
                                "Send count for block "
                                    << p << " (" << sendcount
                                    << ") is too large "
@@ -276,7 +256,7 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan &plan,
     TEUCHOS_TEST_FOR_EXCEPTION(
         curBufferOffset + curBufLen > static_cast<size_t>(imports.size()),
         std::logic_error,
-        "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+        "Tpetra::Distributor::doPostsAllToAll(3 args): "
         "Exceeded size of 'imports' array in packing loop on Process "
             << myRank << ".  imports.size() = " << imports.size()
             << " < "
@@ -285,7 +265,7 @@ void DistributorActor::doPostsAllToAll(const DistributorPlan &plan,
     rdispls[plan.getProcsFrom()[i]] = curBufferOffset;
     // curBufLen is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(curBufLen > size_t(INT_MAX), std::logic_error,
-                               "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                               "Tpetra::Distributor::doPostsAllToAll(3 args): "
                                "Recv count for receive "
                                    << i << " (" << curBufLen
                                    << ") is too large "
@@ -360,7 +340,7 @@ void DistributorActor::doPostsNbrAllToAllV(const DistributorPlan &plan,
     const size_t sendcount = plan.getLengthsTo()[p] * numPackets;
     // sendcount is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(sendcount > size_t(INT_MAX), std::logic_error,
-                               "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                               "Tpetra::Distributor::doPostsNbrAllToAllV(3 args): "
                                "Send count for block "
                                    << p << " (" << sendcount
                                    << ") is too large "
@@ -374,7 +354,7 @@ void DistributorActor::doPostsNbrAllToAllV(const DistributorPlan &plan,
     TEUCHOS_TEST_FOR_EXCEPTION(
         curBufferOffset + curBufLen > static_cast<size_t>(imports.size()),
         std::logic_error,
-        "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+        "Tpetra::Distributor::doPostsNbrAllToAllV(3 args): "
         "Exceeded size of 'imports' array in packing loop on Process "
             << myRank << ".  imports.size() = " << imports.size()
             << " < "
@@ -383,7 +363,7 @@ void DistributorActor::doPostsNbrAllToAllV(const DistributorPlan &plan,
     rdispls[i] = curBufferOffset;
     // curBufLen is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(curBufLen > size_t(INT_MAX), std::logic_error,
-                               "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                               "Tpetra::Distributor::doPostsNbrAllToAllV(3 args): "
                                "Recv count for receive "
                                    << i << " (" << curBufLen
                                    << ") is too large "
@@ -414,7 +394,7 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
                                    const ImpView& imports)
 {
   static_assert(isKokkosView<ImpView>,
-      "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
+      "Data arrays for DistributorActor::doPostRecvs must be Kokkos::Views");
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::FancyOStream;
@@ -446,7 +426,6 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
        "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
 #endif // KOKKOS_ENABLE_SYCL
 
-//clang-format on
 #if defined(HAVE_TPETRA_MPI)
   // All-to-all communication layout is quite different from
   // point-to-point, so we handle it separately.
@@ -460,13 +439,9 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
       ) {
     return;
   }
-#endif // defined(HAVE_TPETRACORE_MPI_ADVANCE)
-// clang-format off
 #endif // HAVE_TPETRA_MPI
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-  Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+  ProfilingRegion pr3("Tpetra::Distributor: doPostRecvs(3)");
 
   const int myRank = plan.getComm()->getRank ();
 
@@ -474,7 +449,7 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
   TEUCHOS_TEST_FOR_EXCEPTION
     (requestsRecv_.size () != 0,
      std::logic_error,
-     "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
+     "Tpetra::Distributor::doPostRecvs(3 args): Process "
      << myRank << ": requestsRecv_.size() = " << requestsRecv_.size () << " != 0.");
 #endif // HAVE_TPETRA_DEBUG
 
@@ -501,9 +476,7 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
   // to the "unexpected queue" (of arrived messages not yet matched
   // with a receive).
   {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3KV_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    ProfilingRegion pr3r("Tpetra::Distributor: doPostRecvs(3) irecvs");
 
     size_t curBufferOffset = 0;
     for (size_type i = 0; i < actualNumReceives; ++i) {
@@ -518,7 +491,7 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
         // 2. Start the Irecv and save the resulting request.
         TEUCHOS_TEST_FOR_EXCEPTION(
             curBufferOffset + curBufLen > static_cast<size_t> (imports.size ()),
-            std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+            std::logic_error, "Tpetra::Distributor::doPostRecvs(3 args): "
             "Exceeded size of 'imports' array in packing loop on Process " <<
             myRank << ".  imports.size() = " << imports.size () << " < "
             "curBufferOffset(" << curBufferOffset << ") + curBufLen(" <<
@@ -540,7 +513,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
                                    const ImpView& imports)
 {
   static_assert(areKokkosViews<ExpView, ImpView>,
-      "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
+      "Data arrays for DistributorActor::doPostSends must be Kokkos::Views");
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::FancyOStream;
@@ -574,16 +547,13 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
        "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
 #endif // KOKKOS_ENABLE_SYCL
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-  Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+  ProfilingRegion ps3("Tpetra::Distributor: doPostSends(3)");
 
   const int myRank = plan.getComm()->getRank ();
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
 
-//clang-format on
 #if defined(HAVE_TPETRA_MPI)
   //  All-to-all communication layout is quite different from
   //  point-to-point, so we handle it separately.
@@ -601,7 +571,6 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
     return;
   }
 #endif // defined(HAVE_TPETRACORE_MPI_ADVANCE)
-// clang-format off
 
 #else // HAVE_TPETRA_MPI
     if (plan.hasSelfMessage()) {
@@ -627,7 +596,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
   TEUCHOS_TEST_FOR_EXCEPTION
     (requestsSend_.size () != 0,
      std::logic_error,
-     "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
+     "Tpetra::Distributor::doPostSends(3 args): Process "
      << myRank << ": requestsSend_.size() = " << requestsSend_.size () << " != 0.");
 #endif // HAVE_TPETRA_DEBUG
 
@@ -659,9 +628,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
     }
   }
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-  Teuchos::TimeMonitor timeMonSends (*timer_doPosts3KV_sends_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+  ProfilingRegion ps3s("Tpetra::Distributor: doPostSends(3) sends");
 
   // setup scan through getProcsTo() list starting with higher numbered procs
   // (should help balance message traffic)
@@ -681,10 +648,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
   size_t selfIndex = 0;
 
   if (plan.getIndicesTo().is_null()) {
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3KV_sends_fast_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    ProfilingRegion ps3sf("Tpetra::Distributor: doPostSends(3) sends FAST");
 
     // Data are already blocked (laid out) by process, so we don't
     // need a separate send buffer (besides the exports array).
@@ -734,10 +698,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
 
   }
   else { // data are not blocked by proc, use send buffer
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3KV_sends_slow_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    ProfilingRegion ps3ss("Tpetra::Distributor: doPostSends(3): sends SLOW");
 
     using Packet = typename ExpView::non_const_value_type;
     using Layout = typename ExpView::array_layout;
@@ -748,7 +709,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
     // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
     // of sendType requested by user.
     // This code path formerly errored out with message:
-    //     Tpetra::Distributor::doPosts(3 args, Kokkos):
+    //     Tpetra::Distributor::doPosts(3 args):
     //     The "send buffer" code path
     //     doesn't currently work with nonblocking sends.
     // Now, we opt to just do the communication in a way that works.
@@ -835,7 +796,7 @@ void DistributorActor::doPostsAllToAll(
     }
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
-                               "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                               "Tpetra::Distributor::doPostsAllToAll(4 args): "
                                "Send count for send "
                                    << pp << " (" << numPackets
                                    << ") is too large "
@@ -862,7 +823,7 @@ void DistributorActor::doPostsAllToAll(
     // represented
     TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
                                std::logic_error,
-                               "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                               "Tpetra::Distributor::doPostsAllToAll(3 args): "
                                "Recv count for receive "
                                    << i << " (" << totalPacketsFrom_i
                                    << ") is too large "
@@ -947,7 +908,7 @@ void DistributorActor::doPostsNbrAllToAllV(
     }
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
-                               "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                               "Tpetra::Distributor::doPostsNbrAllToAllV(4 args): "
                                "Send count for send "
                                    << pp << " (" << numPackets
                                    << ") is too large "
@@ -969,7 +930,7 @@ void DistributorActor::doPostsNbrAllToAllV(
     // represented
     TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
                                std::logic_error,
-                               "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                               "Tpetra::Distributor::doPostsNbrAllToAllV(3 args): "
                                "Recv count for receive "
                                    << i << " (" << totalPacketsFrom_i
                                    << ") is too large "
@@ -998,7 +959,7 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
                                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
 {
   static_assert(isKokkosView<ImpView>,
-      "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
+      "Data arrays for DistributorActor::doPostRecvs must be Kokkos::Views");
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::ireceive;
@@ -1023,9 +984,6 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
                    "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
 #endif // KOKKOS_ENABLE_SYCL
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-  Teuchos::TimeMonitor timeMon (*timer_doPosts4KV_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
 #if defined(HAVE_TPETRA_MPI)
   // All-to-all communication layout is quite different from
@@ -1042,6 +1000,8 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
   }
 #endif // HAVE_TPETRA_MPI
 
+  ProfilingRegion pr4("Tpetra::Distributor: doPostRecvs(4)");
+
   const int myProcID = plan.getComm()->getRank ();
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -1052,13 +1012,13 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
       imports.extent (0) < totalNumImportPackets, std::runtime_error,
-      "Tpetra::Distributor::doPosts(4 args, Kokkos): The 'imports' array must have "
+      "Tpetra::Distributor::doPostRecvs(4 args): The 'imports' array must have "
       "enough entries to hold the expected number of import packets.  "
       "imports.extent(0) = " << imports.extent (0) << " < "
       "totalNumImportPackets = " << totalNumImportPackets << ".");
   TEUCHOS_TEST_FOR_EXCEPTION
     (requestsRecv_.size () != 0, std::logic_error, "Tpetra::Distributor::"
-     "doPosts(4 args, Kokkos): Process " << myProcID << ": requestsRecv_.size () = "
+     "doPostRecvs(4 args): Process " << myProcID << ": requestsRecv_.size () = "
      << requestsRecv_.size () << " != 0.");
 #endif // HAVE_TPETRA_DEBUG
   // Distributor uses requestsRecv_.size() and requestsSend_.size()
@@ -1084,9 +1044,7 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
   // to the "unexpected queue" (of arrived messages not yet matched
   // with a receive).
   {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4KV_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    ProfilingRegion pr4r("Tpetra::Distributor: doPostRecvs(4) recvs");
 
     size_t curBufferOffset = 0;
     size_t curLIDoffset = 0;
@@ -1097,7 +1055,7 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
       }
       // totalPacketsFrom_i is converted down to int, so make sure it can be represented
       TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
-                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 std::logic_error, "Tpetra::Distributor::doPostRecvs(3 args): "
                                  "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
                                  "to be represented as int.");
       curLIDoffset += plan.getLengthsFrom()[i];
@@ -1128,7 +1086,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
                                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
 {
   static_assert(areKokkosViews<ExpView, ImpView>,
-      "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
+      "Data arrays for DistributorActor::doPostSends must be Kokkos::Views");
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::ireceive;
@@ -1157,9 +1115,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
                    "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
 #endif // KOKKOS_ENABLE_SYCL
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-  Teuchos::TimeMonitor timeMon (*timer_doPosts4KV_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+  ProfilingRegion ps4("Tpetra::Distributor: doPostSends(4)");
 
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
@@ -1220,13 +1176,13 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
       imports.extent (0) < totalNumImportPackets, std::runtime_error,
-      "Tpetra::Distributor::doPosts(4 args, Kokkos): The 'imports' array must have "
+      "Tpetra::Distributor::doPostSends(4 args): The 'imports' array must have "
       "enough entries to hold the expected number of import packets.  "
       "imports.extent(0) = " << imports.extent (0) << " < "
       "totalNumImportPackets = " << totalNumImportPackets << ".");
   TEUCHOS_TEST_FOR_EXCEPTION
     (requestsSend_.size () != 0, std::logic_error, "Tpetra::Distributor::"
-     "doPosts(4 args, Kokkos): Process " << myProcID << ": requestsSend_.size () = "
+     "doPostSends(4 args): Process " << myProcID << ": requestsSend_.size () = "
      << requestsSend_.size () << " != 0.");
 #endif // HAVE_TPETRA_DEBUG
   // Distributor uses requestsRecv_.size() and requestsSend_.size()
@@ -1256,7 +1212,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
       }
       // totalPacketsFrom_i is converted down to int, so make sure it can be represented
       TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
-                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 std::logic_error, "Tpetra::Distributor::doPostSends(4 args): "
                                  "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
                                  "to be represented as int.");
       curLIDoffset += plan.getLengthsFrom()[i];
@@ -1268,9 +1224,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
     }
   }
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-  Teuchos::TimeMonitor timeMonSends (*timer_doPosts4KV_sends_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+  ProfilingRegion ps4s("Tpetra::Distributor: doPostSends(4) sends");
 
   // setup arrays containing starting-offsets into exports for each send,
   // and num-packets-to-send for each send.
@@ -1286,7 +1240,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
     if (numPackets > maxNumPackets) maxNumPackets = numPackets;
     // numPackets will be used as a message length, so make sure it can be represented as int
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX),
-                               std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+                               std::logic_error, "Tpetra::Distributor::doPostSends(4 args): "
                                "packetsPerSend[" << pp << "] = " << numPackets << " is too large "
                                "to be represented as int.");
     packetsPerSend[pp] = numPackets;
@@ -1308,9 +1262,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
   size_t selfIndex = 0;
   if (plan.getIndicesTo().is_null()) {
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_fast_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    ProfilingRegion ps4sf("Tpetra::Distributor: doPostSends(4) sends FAST");
 
     // Data are already blocked (laid out) by process, so we don't
     // need a separate send buffer (besides the exports array).
@@ -1347,10 +1299,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
     }
   }
   else { // data are not blocked by proc, use send buffer
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_slow_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    ProfilingRegion ps4ss("Tpetra::Distributor: doPostSends(4) sends SLOW");
 
     // FIXME (mfh 05 Mar 2013) This may be broken for Isend.
     using Packet = typename ExpView::non_const_value_type;
@@ -1362,7 +1311,7 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
     // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
     // of sendType requested by user.
     // This code path formerly errored out with message:
-    //     Tpetra::Distributor::doPosts(4-arg, Kokkos):
+    //     Tpetra::Distributor::doPostSends(4-arg):
     //     The "send buffer" code path
     //     doesn't currently work with nonblocking sends.
     // Now, we opt to just do the communication in a way that works.
@@ -1413,7 +1362,6 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
   }
 }
 
-}
 }
 
 #endif
