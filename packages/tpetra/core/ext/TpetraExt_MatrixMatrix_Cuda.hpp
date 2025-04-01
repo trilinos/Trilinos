@@ -771,7 +771,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
 
     {
       Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: KokkosKernels symbolic int");
-      KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
                                                   Aint.graph.row_map, Aint.graph.entries, false,
                                                   Bint.graph.row_map, Bint.graph.entries, false,
                                                   int_row_mapC);
