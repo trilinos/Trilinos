@@ -30,6 +30,9 @@
 namespace Tpetra {
 namespace Details {
 
+template <class View>
+constexpr bool isKokkosView = Kokkos::is_view<View>::value;
+
 template <class View1, class View2>
 constexpr bool areKokkosViews = Kokkos::is_view<View1>::value && Kokkos::is_view<View2>::value;
 
@@ -53,11 +56,34 @@ public:
                        const ImpView &imports,
                        const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
+  template <class ImpView>
+  void doPostRecvs(const DistributorPlan& plan,
+                   size_t numPackets,
+                   const ImpView& imports);
+
+  template <class ExpView, class ImpView>
+  void doPostSends(const DistributorPlan& plan,
+                   const ExpView& exports,
+                   size_t numPackets,
+                   const ImpView& imports);
+
   template <class ExpView, class ImpView>
   void doPosts(const DistributorPlan& plan,
                const ExpView& exports,
                size_t numPackets,
                const ImpView& imports);
+
+  template <class ImpView>
+  void doPostRecvs(const DistributorPlan& plan,
+                   const ImpView &imports,
+                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+
+  template <class ExpView, class ImpView>
+  void doPostSends(const DistributorPlan& plan,
+                   const ExpView &exports,
+                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                   const ImpView &imports,
+                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
   template <class ExpView, class ImpView>
   void doPosts(const DistributorPlan& plan,
@@ -129,6 +155,16 @@ private:
 };
 
 template <class ExpView, class ImpView>
+void DistributorActor::doPosts(const DistributorPlan& plan,
+                               const ExpView& exports,
+                               size_t numPackets,
+                               const ImpView& imports)
+{
+  doPostRecvs(plan, numPackets, imports);
+  doPostSends(plan, exports, numPackets, imports);
+}
+
+template <class ExpView, class ImpView>
 void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
                                        const ExpView& exports,
                                        size_t numPackets,
@@ -138,6 +174,17 @@ void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
       "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPosts(plan, exports, numPackets, imports);
   doWaits(plan);
+}
+
+template <class ExpView, class ImpView>
+void DistributorActor::doPosts(const DistributorPlan& plan,
+                               const ExpView &exports,
+                               const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                               const ImpView &imports,
+                               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+{
+  doPostRecvs(plan, imports, numImportPacketsPerLID);
+  doPostSends(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
 }
 
 template <class ExpView, class ImpView>
@@ -361,11 +408,136 @@ void DistributorActor::doPostsNbrAllToAllV(const DistributorPlan &plan,
 #endif // HAVE_TPETRA_MPI
 // clang-format off
 
+template <class ImpView>
+void DistributorActor::doPostRecvs(const DistributorPlan& plan,
+                                   size_t numPackets,
+                                   const ImpView& imports)
+{
+  static_assert(isKokkosView<ImpView>,
+      "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
+  using Teuchos::Array;
+  using Teuchos::as;
+  using Teuchos::FancyOStream;
+  using Teuchos::includesVerbLevel;
+  using Teuchos::ireceive;
+  using Teuchos::isend;
+  using Teuchos::send;
+  using Teuchos::TypeNameTraits;
+  using Teuchos::typeName;
+  using std::endl;
+  using Kokkos::Compat::create_const_view;
+  using Kokkos::Compat::create_view;
+  using Kokkos::Compat::subview_offset;
+  using Kokkos::Compat::deep_copy_offset;
+  using size_type = Array<size_t>::size_type;
+  using imports_view_type = ImpView;
+
+#ifdef KOKKOS_ENABLE_CUDA
+  static_assert
+    (! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
+     "Please do not use Tpetra::Distributor with UVM allocations.  "
+     "See Trilinos GitHub issue #1088.");
+#endif // KOKKOS_ENABLE_CUDA
+
+#ifdef KOKKOS_ENABLE_SYCL
+    static_assert
+      (! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+       "Please do not use Tpetra::Distributor with SharedUSM allocations.  "
+       "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
+#endif // KOKKOS_ENABLE_SYCL
+
+//clang-format on
+#if defined(HAVE_TPETRA_MPI)
+  // All-to-all communication layout is quite different from
+  // point-to-point, so we handle it separately.
+  // These send options require no matching receives, so we just return.
+  const Details::EDistributorSendType sendType = plan.getSendType();
+  if ((sendType == Details::DISTRIBUTOR_ALLTOALL)
+#ifdef HAVE_TPETRACORE_MPI_ADVANCE
+      || (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL)
+      || (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV)
+#endif
+      ) {
+    return;
+  }
+#endif // defined(HAVE_TPETRACORE_MPI_ADVANCE)
+// clang-format off
+#endif // HAVE_TPETRA_MPI
+
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+  Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
+  const int myRank = plan.getComm()->getRank ();
+
+#ifdef HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (requestsRecv_.size () != 0,
+     std::logic_error,
+     "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
+     << myRank << ": requestsRecv_.size() = " << requestsRecv_.size () << " != 0.");
+#endif // HAVE_TPETRA_DEBUG
+
+  // Distributor uses requestsRecv_.size() and requestsSend_.size()
+  // as the number of outstanding nonblocking message requests, so
+  // we resize to zero to maintain this invariant.
+  //
+  // getNumReceives() does _not_ include the self message, if there is
+  // one.  Here, we do actually send a message to ourselves, so we
+  // include any self message in the "actual" number of receives to
+  // post.
+  //
+  // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
+  // doesn't (re)allocate its array of requests.  That happens in
+  // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
+  // demand), or Resize_().
+  const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
+    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+  requestsRecv_.resize (0);
+
+  // Post the nonblocking receives.  It's common MPI wisdom to post
+  // receives before sends.  In MPI terms, this means favoring
+  // adding to the "posted queue" (of receive requests) over adding
+  // to the "unexpected queue" (of arrived messages not yet matched
+  // with a receive).
+  {
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3KV_recvs_);
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
+    size_t curBufferOffset = 0;
+    for (size_type i = 0; i < actualNumReceives; ++i) {
+      const size_t curBufLen = plan.getLengthsFrom()[i] * numPackets;
+      if (plan.getProcsFrom()[i] != myRank) {
+        // If my process is receiving these packet(s) from another
+        // process (not a self-receive):
+        //
+        // 1. Set up the persisting view (recvBuf) of the imports
+        //    array, given the offset and size (total number of
+        //    packets from process getProcsFrom()[i]).
+        // 2. Start the Irecv and save the resulting request.
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            curBufferOffset + curBufLen > static_cast<size_t> (imports.size ()),
+            std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+            "Exceeded size of 'imports' array in packing loop on Process " <<
+            myRank << ".  imports.size() = " << imports.size () << " < "
+            "curBufferOffset(" << curBufferOffset << ") + curBufLen(" <<
+            curBufLen << ").");
+        imports_view_type recvBuf =
+          subview_offset (imports, curBufferOffset, curBufLen);
+        requestsRecv_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
+              mpiTag_, *plan.getComm()));
+      }
+      curBufferOffset += curBufLen;
+    }
+  }
+}
+
 template <class ExpView, class ImpView>
-void DistributorActor::doPosts(const DistributorPlan& plan,
-                               const ExpView& exports,
-                               size_t numPackets,
-                               const ImpView& imports)
+void DistributorActor::doPostSends(const DistributorPlan& plan,
+                                   const ExpView& exports,
+                                   size_t numPackets,
+                                   const ImpView& imports)
 {
   static_assert(areKokkosViews<ExpView, ImpView>,
       "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
@@ -383,9 +555,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   using Kokkos::Compat::create_view;
   using Kokkos::Compat::subview_offset;
   using Kokkos::Compat::deep_copy_offset;
-  typedef Array<size_t>::size_type size_type;
-  typedef ExpView exports_view_type;
-  typedef ImpView imports_view_type;
+  using size_type = Array<size_t>::size_type;
+  using exports_view_type = ExpView;
 
 #ifdef KOKKOS_ENABLE_CUDA
   static_assert
@@ -454,11 +625,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
 #ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION
-    (requestsRecv_.size () != 0,
-     std::logic_error,
-     "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
-     << myRank << ": requestsRecv_.size() = " << requestsRecv_.size () << " != 0.");
-  TEUCHOS_TEST_FOR_EXCEPTION
     (requestsSend_.size () != 0,
      std::logic_error,
      "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
@@ -480,43 +646,13 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // demand), or Resize_().
   const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
     as<size_type> (plan.hasSelfMessage() ? 1 : 0);
-  requestsRecv_.resize (0);
   requestsSend_.resize (0);
 
-  // Post the nonblocking receives.  It's common MPI wisdom to post
-  // receives before sends.  In MPI terms, this means favoring
-  // adding to the "posted queue" (of receive requests) over adding
-  // to the "unexpected queue" (of arrived messages not yet matched
-  // with a receive).
   {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3KV_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
     size_t curBufferOffset = 0;
     for (size_type i = 0; i < actualNumReceives; ++i) {
       const size_t curBufLen = plan.getLengthsFrom()[i] * numPackets;
-      if (plan.getProcsFrom()[i] != myRank) {
-        // If my process is receiving these packet(s) from another
-        // process (not a self-receive):
-        //
-        // 1. Set up the persisting view (recvBuf) of the imports
-        //    array, given the offset and size (total number of
-        //    packets from process getProcsFrom()[i]).
-        // 2. Start the Irecv and save the resulting request.
-        TEUCHOS_TEST_FOR_EXCEPTION(
-            curBufferOffset + curBufLen > static_cast<size_t> (imports.size ()),
-            std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-            "Exceeded size of 'imports' array in packing loop on Process " <<
-            myRank << ".  imports.size() = " << imports.size () << " < "
-            "curBufferOffset(" << curBufferOffset << ") + curBufLen(" <<
-            curBufLen << ").");
-        imports_view_type recvBuf =
-          subview_offset (imports, curBufferOffset, curBufLen);
-        requestsRecv_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
-              mpiTag_, *plan.getComm()));
-      }
-      else { // Receiving from myself
+      if (plan.getProcsFrom()[i] == myRank) { // Receiving from myself
         selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
       }
       curBufferOffset += curBufLen;
@@ -603,10 +739,10 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3KV_sends_slow_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
-    typedef typename ExpView::non_const_value_type Packet;
-    typedef typename ExpView::array_layout Layout;
-    typedef typename ExpView::device_type Device;
-    typedef typename ExpView::memory_traits Mem;
+    using Packet = typename ExpView::non_const_value_type;
+    using Layout = typename ExpView::array_layout;
+    using Device = typename ExpView::device_type;
+    using Mem = typename ExpView::memory_traits;
 
     // This buffer is long enough for only one message at a time.
     // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
@@ -856,12 +992,140 @@ void DistributorActor::doPostsNbrAllToAllV(
 #endif // HAVE_TPETRA_MPI
        // clang-format off
 
+template <class ImpView>
+void DistributorActor::doPostRecvs(const DistributorPlan& plan,
+                                   const ImpView &imports,
+                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+{
+  static_assert(isKokkosView<ImpView>,
+      "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
+  using Teuchos::Array;
+  using Teuchos::as;
+  using Teuchos::ireceive;
+  using Teuchos::TypeNameTraits;
+  using std::endl;
+  using Kokkos::Compat::create_const_view;
+  using Kokkos::Compat::create_view;
+  using Kokkos::Compat::subview_offset;
+  using Kokkos::Compat::deep_copy_offset;
+  using size_type = Array<size_t>::size_type;
+  using imports_view_type = ImpView;
+
+#ifdef KOKKOS_ENABLE_CUDA
+  static_assert (! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
+                 "Please do not use Tpetra::Distributor with UVM "
+                 "allocations.  See GitHub issue #1088.");
+#endif // KOKKOS_ENABLE_CUDA
+
+#ifdef KOKKOS_ENABLE_SYCL
+    static_assert (! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+                   "Please do not use Tpetra::Distributor with SharedUSM "
+                   "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
+#endif // KOKKOS_ENABLE_SYCL
+
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+  Teuchos::TimeMonitor timeMon (*timer_doPosts4KV_);
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
+#if defined(HAVE_TPETRA_MPI)
+  // All-to-all communication layout is quite different from
+  // point-to-point, so we handle it separately.
+  // These send options require no matching receives, so we just return.
+  const Details::EDistributorSendType sendType = plan.getSendType();
+  if ((sendType == Details::DISTRIBUTOR_ALLTOALL)
+#ifdef HAVE_TPETRACORE_MPI_ADVANCE
+      || (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL)
+      || (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV)
+#endif
+      ) {
+    return;
+  }
+#endif // HAVE_TPETRA_MPI
+
+  const int myProcID = plan.getComm()->getRank ();
+
+#ifdef HAVE_TPETRA_DEBUG
+  // Different messages may have different numbers of packets.
+  size_t totalNumImportPackets = 0;
+  for (size_type ii = 0; ii < numImportPacketsPerLID.size (); ++ii) {
+    totalNumImportPackets += numImportPacketsPerLID[ii];
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      imports.extent (0) < totalNumImportPackets, std::runtime_error,
+      "Tpetra::Distributor::doPosts(4 args, Kokkos): The 'imports' array must have "
+      "enough entries to hold the expected number of import packets.  "
+      "imports.extent(0) = " << imports.extent (0) << " < "
+      "totalNumImportPackets = " << totalNumImportPackets << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (requestsRecv_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+     "doPosts(4 args, Kokkos): Process " << myProcID << ": requestsRecv_.size () = "
+     << requestsRecv_.size () << " != 0.");
+#endif // HAVE_TPETRA_DEBUG
+  // Distributor uses requestsRecv_.size() and requestsSend_.size()
+  // as the number of outstanding nonblocking message requests, so
+  // we resize to zero to maintain this invariant.
+  //
+  // getNumReceives() does _not_ include the self message, if there is
+  // one.  Here, we do actually send a message to ourselves, so we
+  // include any self message in the "actual" number of receives to
+  // post.
+  //
+  // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
+  // doesn't (re)allocate its array of requests.  That happens in
+  // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
+  // demand), or Resize_().
+  const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
+    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+  requestsRecv_.resize (0);
+
+  // Post the nonblocking receives.  It's common MPI wisdom to post
+  // receives before sends.  In MPI terms, this means favoring
+  // adding to the "posted queue" (of receive requests) over adding
+  // to the "unexpected queue" (of arrived messages not yet matched
+  // with a receive).
+  {
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+    Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4KV_recvs_);
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
+    size_t curBufferOffset = 0;
+    size_t curLIDoffset = 0;
+    for (size_type i = 0; i < actualNumReceives; ++i) {
+      size_t totalPacketsFrom_i = 0;
+      for (size_t j = 0; j < plan.getLengthsFrom()[i]; ++j) {
+        totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
+      }
+      // totalPacketsFrom_i is converted down to int, so make sure it can be represented
+      TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
+                                 std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
+                                 "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
+                                 "to be represented as int.");
+      curLIDoffset += plan.getLengthsFrom()[i];
+      if (plan.getProcsFrom()[i] != myProcID && totalPacketsFrom_i) {
+        // If my process is receiving these packet(s) from another
+        // process (not a self-receive), and if there is at least
+        // one packet to receive:
+        //
+        // 1. Set up the persisting view (recvBuf) into the imports
+        //    array, given the offset and size (total number of
+        //    packets from process getProcsFrom()[i]).
+        // 2. Start the Irecv and save the resulting request.
+        imports_view_type recvBuf =
+          subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
+        requestsRecv_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
+              mpiTag_, *plan.getComm()));
+      }
+      curBufferOffset += totalPacketsFrom_i;
+    }
+  }
+}
+
 template <class ExpView, class ImpView>
-void DistributorActor::doPosts(const DistributorPlan& plan,
-                               const ExpView &exports,
-                               const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                               const ImpView &imports,
-                               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+void DistributorActor::doPostSends(const DistributorPlan& plan,
+                                   const ExpView &exports,
+                                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                                   const ImpView &imports,
+                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
 {
   static_assert(areKokkosViews<ExpView, ImpView>,
       "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
@@ -876,9 +1140,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   using Kokkos::Compat::create_view;
   using Kokkos::Compat::subview_offset;
   using Kokkos::Compat::deep_copy_offset;
-  typedef Array<size_t>::size_type size_type;
-  typedef ExpView exports_view_type;
-  typedef ImpView imports_view_type;
+  using size_type = Array<size_t>::size_type;
+  using exports_view_type = ExpView;
 
 #ifdef KOKKOS_ENABLE_CUDA
   static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
@@ -962,10 +1225,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       "imports.extent(0) = " << imports.extent (0) << " < "
       "totalNumImportPackets = " << totalNumImportPackets << ".");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (requestsRecv_.size () != 0, std::logic_error, "Tpetra::Distributor::"
-     "doPosts(4 args, Kokkos): Process " << myProcID << ": requestsRecv_.size () = "
-     << requestsRecv_.size () << " != 0.");
-  TEUCHOS_TEST_FOR_EXCEPTION
     (requestsSend_.size () != 0, std::logic_error, "Tpetra::Distributor::"
      "doPosts(4 args, Kokkos): Process " << myProcID << ": requestsSend_.size () = "
      << requestsSend_.size () << " != 0.");
@@ -985,19 +1244,9 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // demand), or Resize_().
   const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
     as<size_type> (plan.hasSelfMessage() ? 1 : 0);
-  requestsRecv_.resize (0);
   requestsSend_.resize (0);
 
-  // Post the nonblocking receives.  It's common MPI wisdom to post
-  // receives before sends.  In MPI terms, this means favoring
-  // adding to the "posted queue" (of receive requests) over adding
-  // to the "unexpected queue" (of arrived messages not yet matched
-  // with a receive).
   {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4KV_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
     size_t curBufferOffset = 0;
     size_t curLIDoffset = 0;
     for (size_type i = 0; i < actualNumReceives; ++i) {
@@ -1011,21 +1260,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
                                  "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
                                  "to be represented as int.");
       curLIDoffset += plan.getLengthsFrom()[i];
-      if (plan.getProcsFrom()[i] != myProcID && totalPacketsFrom_i) {
-        // If my process is receiving these packet(s) from another
-        // process (not a self-receive), and if there is at least
-        // one packet to receive:
-        //
-        // 1. Set up the persisting view (recvBuf) into the imports
-        //    array, given the offset and size (total number of
-        //    packets from process getProcsFrom()[i]).
-        // 2. Start the Irecv and save the resulting request.
-        imports_view_type recvBuf =
-          subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
-        requestsRecv_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
-              mpiTag_, *plan.getComm()));
-      }
-      else { // Receiving these packet(s) from myself
+      if (plan.getProcsFrom()[i] == myProcID && totalPacketsFrom_i) {
+        // Receiving these packet(s) from myself
         selfReceiveOffset = curBufferOffset; // Remember the offset
       }
       curBufferOffset += totalPacketsFrom_i;
@@ -1117,10 +1353,10 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     // FIXME (mfh 05 Mar 2013) This may be broken for Isend.
-    typedef typename ExpView::non_const_value_type Packet;
-    typedef typename ExpView::array_layout Layout;
-    typedef typename ExpView::device_type Device;
-    typedef typename ExpView::memory_traits Mem;
+    using Packet = typename ExpView::non_const_value_type;
+    using Layout = typename ExpView::array_layout;
+    using Device = typename ExpView::device_type;
+    using Mem = typename ExpView::memory_traits;
 
     // This buffer is long enough for only one message at a time.
     // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
@@ -1158,28 +1394,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         p -= numBlocks;
       }
 
-      if (plan.getProcsTo()[p] != myProcID) {
-        size_t sendArrayOffset = 0;
-        size_t j = plan.getStartsTo()[p];
-        size_t numPacketsTo_p = 0;
-        for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
-          numPacketsTo_p += numExportPacketsPerLID[j];
-          deep_copy_offset(sendArray, exports, sendArrayOffset,
-              indicesOffsets[j], numExportPacketsPerLID[j]);
-          sendArrayOffset += numExportPacketsPerLID[j];
-        }
-        typename ExpView::execution_space().fence();
-
-        if (numPacketsTo_p > 0) {
-          ImpView tmpSend =
-            subview_offset(sendArray, size_t(0), numPacketsTo_p);
-
-          send<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
-        }
-      }
-      else { // "Sending" the message to myself
+      if (plan.getProcsTo()[p] == myProcID) {
+        // "Sending" the message to myself
         selfNum = p;
         selfIndex = plan.getStartsTo()[p];
       }
