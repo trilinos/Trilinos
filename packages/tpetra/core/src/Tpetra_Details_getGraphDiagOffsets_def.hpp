@@ -28,7 +28,7 @@ namespace Impl {
 ///   implementation detail of Tpetra::CrsGraph.
 ///
 /// FIXME (mfh 12 Mar 2016) There's currently no way to make a
-/// MemoryUnmanaged Kokkos::StaticCrsGraph.  Thus, we have to do this
+/// MemoryUnmanaged KokkosSparse::StaticCrsGraph.  Thus, we have to do this
 /// separately for its column indices.  We want the column indices to
 /// be unmanaged because we need to take subviews in this kernel.
 /// Taking a subview of a managed View updates the reference count,

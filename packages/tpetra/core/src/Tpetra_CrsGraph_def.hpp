@@ -3353,7 +3353,7 @@ namespace Tpetra {
     // that process to avoid communiation in the Import setup.
     this->makeImportExport (remotePIDs, mustBuildColMap);
 
-    // Create the Kokkos::StaticCrsGraph, if it doesn't already exist.
+    // Create the KokkosSparse::StaticCrsGraph, if it doesn't already exist.
     this->fillLocalGraph (params);
 
     const bool callComputeGlobalConstants = params.get () == nullptr ||
@@ -7519,15 +7519,15 @@ namespace Tpetra {
     }
 
     // Check lclGraph_ isa
-    // Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>
-    // Kokkos::StaticCrsGraph has 3 data members in it:
+    // KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>
+    // KokkosSparse::StaticCrsGraph has 3 data members in it:
     //   Kokkos::View<size_type*, ...> row_map            
     //           (local_graph_device_type::row_map_type)
     //   Kokkos::View<data_type*, ...> entries            
     //           (local_graph_device_type::entries_type)
     //   Kokkos::View<size_type*, ...> row_block_offsets  
     //           (local_graph_device_type::row_block_type)
-    // There is currently no Kokkos::StaticCrsGraph comparison function 
+    // There is currently no KokkosSparse::StaticCrsGraph comparison function 
     // that's built-in, so we will just compare
     // the three data items here. This can be replaced if Kokkos ever 
     // puts in its own comparison routine.
