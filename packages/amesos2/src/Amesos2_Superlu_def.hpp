@@ -1030,9 +1030,9 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
     using STM = Teuchos::ScalarTraits<magnitude_type>;
     const magnitude_type eps = STM::eps ();
 
-    SCformat *Lstore = (SCformat*)(data_.L.Store);
-    int nsuper = 1 + Lstore->nsuper;
-    int *nb = Lstore->sup_to_col;
+    SCformat *Lstore2 = (SCformat*)(data_.L.Store);
+    int nsuper = 1 + Lstore2->nsuper;
+    int *nb = Lstore2->sup_to_col;
     int max_cols = 0;
     for (int i = 0; i < nsuper; i++) {
       if (nb[i+1] - nb[i] > max_cols) {
