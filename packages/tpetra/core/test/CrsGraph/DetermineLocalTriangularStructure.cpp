@@ -20,7 +20,7 @@
 namespace { // (anonymous)
 
 template<class LocalOrdinalType, class DeviceType>
-using LocalCrsGraph = Kokkos::StaticCrsGraph<LocalOrdinalType, Kokkos::LayoutLeft, DeviceType>;
+using LocalCrsGraph = KokkosSparse::StaticCrsGraph<LocalOrdinalType, Kokkos::LayoutLeft, DeviceType>;
 
 // template<class ScalarType, class LocalOrdinalType, class DeviceType>
 // using LocalCrsMatrix =
