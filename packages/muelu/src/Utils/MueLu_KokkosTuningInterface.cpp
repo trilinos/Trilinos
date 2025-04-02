@@ -43,7 +43,7 @@ namespace MueLu {
 // FIXME: Will probably need to bump this
 namespace KokkosTuningParams {
 const int MAX_VALID_PARAMS = 10;
-};
+}
 
 // ***********************************************************************
 KokkosTuningInterface::KokkosTuningInterface(const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
