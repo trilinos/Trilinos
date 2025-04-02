@@ -408,7 +408,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::QueryObject( Teuchos::RCP< const
     //weights_(0),
     input_type_(inputType) 
 {
-  std::cout << "Entering QueryObject<>::constructor()"
+  std::cout << "EEP Entering QueryObject<>::constructor()"
             << ": input_type_ = " << input_type_
             << ", costs_ = " << costs_
 	    << std::endl;
@@ -420,7 +420,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::QueryObject( Teuchos::RCP< const
   {
     throw std::runtime_error("EEP Invalid 'input_type_ = graph_input_' in QueryObject<>::constructor()");
   }
-  std::cout << "Leaving QueryObject<>::constructor()" << std::endl;
+  std::cout << "EEP Leaving QueryObject<>::constructor()" << std::endl;
 }
 
 template <class LocalOrdinal,
@@ -432,7 +432,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::~QueryObject()
 
 // Create a map required by graph queries
 
-#if 0 // EEP___
+#if 0 // EEP__
 template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
@@ -440,7 +440,7 @@ void
 QueryObject<LocalOrdinal, GlobalOrdinal, Node>::fill_procmap()
 {
 }
-#endif // EEP___
+#endif // EEP__
 
 template <class LocalOrdinal,
           class GlobalOrdinal,
@@ -691,44 +691,44 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_Object_List(int num_gid_entri
 		  ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
 		  int weight_dim, float * object_weights, int * ierr )
 {
+  std::cout << "EEP Entering QueryObject<>::My_Object_List()" << std::endl;
   *ierr = ZOLTAN_OK;
   int ngids = 0;
-  int *ibuf;
 
   //M.M.W. need to add hierarchical support
 
-  if ((input_type_ == geometric_input_) || (input_type_ == hgraph_input_) || (input_type_ == graph_input_) || (input_type_==simple_input_)) 
-  {
+  if (( input_type_            == hgraph_input_) &&
+      ( sizeof(ZOLTAN_ID_TYPE) == sizeof(int)  )) {
     ngids = rowMap_->getLocalNumElements();
 
-    if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
-      ibuf = nullptr; // rowMap_->MyGlobalElements(); // EEP___
-
-      for (int i=0; i < ngids; i++){
-        global_ids[i] = (ZOLTAN_ID_TYPE)ibuf[i];
-      }
-    }
-    else{
-      //rowMap_->MyGlobalElements( ((int *) global_ids) ); // EEP___
+    std::cout << "EEP In QueryObject<>::My_Object_List(), pos 000" << std::endl;
+    //rowMap_->MyGlobalElements( ((int *) global_ids) );
+    auto tmpBuf = rowMap_->getMyGlobalIndices();
+    for (int i(0); i < ngids; ++i){
+      global_ids[i] = (ZOLTAN_ID_TYPE)tmpBuf[i];
     }
   }
-  else if(input_type_ == hgraph2d_finegrain_input_)
-  {
-    throw x
+  else {
+    throw std::runtime_error("EEP QueryObject<>::My_Object_List(000)");
   } // fine-grain hypergraph case
 
+  std::cout << "EEP In QueryObject<>::My_Object_List(), pos 002"
+            << ": ngids = " << ngids
+            << std::endl;
   if (ngids < 1)
   {
     return;
   }
 
+  std::cout << "EEP In QueryObject<>::My_Object_List(), pos 003"
+            << std::endl;
   for (int i=0; i<ngids; i++){
     local_ids[i] = (ZOLTAN_ID_TYPE)i;
   }
   if (weight_dim >= 1) // Note we only supply 1-D weights
   {          
     // EEP weight_dim is 0 here, during the epetra example run
-    throw x
+    throw std::runtime_error("EEP QueryObject<>::My_Object_List(001)");
   }
   return;
 }
@@ -765,7 +765,7 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_Size_CS(int* num_lists, in
 
   if(input_type_ == hgraph2d_finegrain_input_) // 2D fine-grain hypergraph
   {
-    throw x
+    throw std::runtime_error("EEP QueryObject<>::My_HG_Size_CS(000)");
   }
   else // 1D hypergraph
   {
@@ -791,7 +791,13 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_CS (int num_gid_entries, i
 	    ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
 				     int * ierr )
 {
-  int num_indices, rc, npins;
+  std::cout << "EEP Entering QueryObject<>::My_HG_CS()"
+            << ": input_type_ = " << input_type_
+            << ", haveGraph_ = " << haveGraph_
+            << std::endl;
+
+  int npins;
+  size_t num_indices;
   double *tmp=NULL;
 
 
@@ -815,6 +821,10 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_CS (int num_gid_entries, i
   {
     npins = graph_->getLocalNumEntries(); // NumMyNonzeros(); // EEP
     maxrow = graph_->getLocalMaxNumRowEntries(); // MaxNumIndices(); // EEP
+    std::cout << "EEP In QueryObject<>::My_HG_CS(), pos 000"
+              << ": npins = " << npins
+              << ", maxrow = " << maxrow
+              << std::endl;
   }
 #if 0 // EEP
   else
@@ -841,6 +851,11 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_CS (int num_gid_entries, i
     return;
   }
 
+  std::cout << "EEP In QueryObject<>::My_HG_CS(), pos 001"
+            << ": sizeof(ZOLTAN_ID_TYPE) = " << sizeof(ZOLTAN_ID_TYPE)
+            << ", sizeof(unsigned int) = "   << sizeof(unsigned int)
+            << std::endl;
+
   int pin_start_pos = 0;
   unsigned int *gids = NULL;
 
@@ -855,64 +870,34 @@ QueryObject<LocalOrdinal, GlobalOrdinal, Node>::My_HG_CS (int num_gid_entries, i
     gids = (unsigned int *)pin_GID;
   }
 
-  for (int i=0; i<num_row_or_col; i++){ 
+  typename ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::nonconst_local_inds_host_view_type lclColInds ("colind",npins);
+  for (int i(0); i < num_row_or_col; ++i) { 
     vtxedge_GID[i] = (ZOLTAN_ID_TYPE)rowMap_->getGlobalElement(i);
     vtxedge_ptr[i] = pin_start_pos;
 
-    if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
-      if (haveGraph_){
-        rc = 0; // graph_->ExtractMyRowCopy(i, maxrow, num_indices, (int *)gids); // EEP___
+    if (( sizeof(ZOLTAN_ID_TYPE) == sizeof(int) ) &&
+        ( haveGraph_             == true        )) {
+      //rc = graph_->ExtractMyRowCopy(i, npins, num_indices,(int *)gids + pin_start_pos); // EEP
+      graph_->getLocalRowCopy (i, lclColInds, num_indices);
+      std::cout << "EEP In QueryObject<>::My_HG_CS(), pos 002"
+                << ": i = " << i
+                << ", num_indices = " << num_indices
+                << std::endl;
+      for (int j(0); j < num_indices; ++j) {
+        *(gids + pin_start_pos + j) = lclColInds[j];
       }
-#if 0 // EEP
-      else{
-        rc = matrix_->ExtractMyRowCopy(i, maxrow, num_indices, tmp,  (int *)gids);
-      }
-#endif // EEP
-      if (rc == 0){
-        for (int j=pin_start_pos, count=0; count < num_indices; j++, count++){
-          pin_GID[j] = (ZOLTAN_ID_TYPE)colMap_->getGlobalElement(gids[count]);
-          if (pin_GID[i] < base_){
-     	    *ierr = ZOLTAN_FATAL;
-    	    std::cout << "Proc:" << myProc_ << " Error: ";
-    	    std::cout << "QueryObject::My_HG_CS, local ID not in column map" << std::endl;
-    	    return;
-          }
+      for (int k(pin_start_pos); k < pin_start_pos+num_indices; ++k) {
+        gids[k] = (unsigned int)colMap_->getGlobalElement(gids[k]); // convert to global IDs
+        if (gids[k] < base_){
+          *ierr = ZOLTAN_FATAL;
+          std::cout << "Proc:" << myProc_ << " Error: ";
+          std::cout << "QueryObject::My_HG_CS, local ID not in column map" << std::endl;
+          return;
         }
-      }
-      else{
-        *ierr = ZOLTAN_FATAL;
-        std::cout << "Proc:" << myProc_ << " Error: ";
-        std::cout << "QueryObject::My_HG_CS, extracting row" << std::endl;
-        break;
       }
     }
-    else{
-      if (haveGraph_){
-        rc = 0; // graph_->ExtractMyRowCopy(i, npins, num_indices,(int *)gids + pin_start_pos); // EEP___
-      }
-#if 0 // EEP
-      else{
-        rc = matrix_->ExtractMyRowCopy(i, npins, num_indices, tmp, (int *)gids + pin_start_pos);
-      }
-#endif // EEP
-
-      if (rc == 0){
-        for (int i=pin_start_pos; i<pin_start_pos+num_indices; i++){
-          gids[i] = (unsigned int)colMap_->getGlobalElement(gids[i]); // convert to global IDs
-          if (gids[i] < base_){
-     	    *ierr = ZOLTAN_FATAL;
-    	    std::cout << "Proc:" << myProc_ << " Error: ";
-    	    std::cout << "QueryObject::My_HG_CS, local ID not in column map" << std::endl;
-    	    return;
-          }
-        }
-      }
-      else{
-        *ierr = ZOLTAN_FATAL;
-        std::cout << "Proc:" << myProc_ << " Error: ";
-        std::cout << "QueryObject::My_HG_CS, extracting row" << std::endl;
-        break;
-      }
+    else {
+      throw std::runtime_error("EEP In QueryObject<>::My_HG_CS(): incomplete code");
     }
 
     pin_start_pos += num_indices;

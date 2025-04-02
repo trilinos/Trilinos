@@ -661,6 +661,9 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
     return;
   } // fine-grain hypergraph case
 
+  std::cout << "EEP In QueryObject::My_Object_List(), pos 002"
+            << ": ngids = " << ngids
+            << std::endl;
 
   if (ngids < 1)
   {
@@ -954,6 +957,10 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   {
     npins = graph_->NumMyNonzeros();
     maxrow = graph_->MaxNumIndices();
+    std::cout << "EEP In QueryObject::My_HG_CS(), pos 000"
+              << ": npins = " << npins
+              << ", maxrow = " << maxrow
+              << std::endl;
   }
   else
   {
@@ -1024,6 +1031,10 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
     else{
       if (haveGraph_){
         rc = graph_->ExtractMyRowCopy(i, npins, num_indices,(int *)gids + pin_start_pos);
+        std::cout << "EEP In QueryObject::My_HG_CS(), pos 002"
+                  << ": i = " << i
+                  << ", num_indices = " << num_indices
+                  << std::endl;
       }
       else{
         rc = matrix_->ExtractMyRowCopy(i, npins, num_indices, tmp, (int *)gids + pin_start_pos);
