@@ -3027,7 +3027,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
 
   {
-    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Reuse ESFC");
+    Tpetra::Details::ProfilingRegion MM3("TpetraExt: Jacobi: Reuse ESFC");
     C.fillComplete(C.getDomainMap(), C.getRangeMap());
   }
 
