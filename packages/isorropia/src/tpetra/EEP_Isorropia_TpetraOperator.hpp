@@ -275,6 +275,8 @@ template <class LocalOrdinal,
 void
 Operator<LocalOrdinal, GlobalOrdinal, Node>::computeNumberOfProperties()
 {
+  std::cout << "EEP Entering Operator<>::computeNumberOfProperties()" << std::endl;
+
   std::vector<int>::const_iterator elemsIter;
   std::vector<int>::iterator numberIter;
 
@@ -296,11 +298,20 @@ Operator<LocalOrdinal, GlobalOrdinal, Node>::computeNumberOfProperties()
     (*(numberIter + property)) ++;
   }
 
-  max = numberOfProperties_; //input_map_->getComm()->maxAll(&max, &numberOfProperties_, 1); // EEP___
-
+  max = numberOfProperties_; //input_map_->getComm()->maxAll(&max, &numberOfProperties_, 1); // EEP____: generalize to MPI np > 1
+  std::cout << "EEP In Operator<>::computeNumberOfProperties()"
+            << ": max = " << max
+            << std::endl;
+  
   numberOfProperties_ = numberOfProperties_ - base_ + 1;
 
   localNumberOfProperties_ = max - base_ + 1;
+
+  std::cout << "EEP Leaving Operator<>::computeNumberOfProperties()"
+            << ", base_ = " << base_
+            << ", numberOfProperties_ = " << numberOfProperties_
+            << ", localNumberOfProperties_ = " << localNumberOfProperties_
+	    << std::endl;
 }
 
 template <class LocalOrdinal,

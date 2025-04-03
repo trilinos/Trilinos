@@ -532,7 +532,10 @@ void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getVertexWeights(int numV
                                      int* global_ids,
                                      float* weights) const
 {
-  if (getNumVertices() == 0){
+  std::cout << "EEP Entering CostDescriber<>::getVertexWeights()"
+            << ": numVertices = " << numVertices
+	    << std::endl;
+  if (getNumVertices() == 0) {
     return;
   }
 
@@ -540,12 +543,19 @@ void CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getVertexWeights(int numV
     throw std::runtime_error/*Isorropia::Exception*/("CostDescriber::getVertexWeights: wrong numVertices");
   }
 
-  //vertex_weights_->getMap()->getGlobalElements(global_ids); // EEP___
+  std::cout << "EEP In CostDescriber<>::getVertexWeights(), pos 001" << std::endl;
 
-  double* vals = nullptr; // vertex_weights_->Values(); // EEP___
-  for(int i=0; i<numVertices; ++i) {
+  //vertex_weights_->getMap()->getGlobalElements(global_ids); // EEP__
+  auto tmpBuf = vertex_weights_->getMap()->getMyGlobalIndices();
+  for (int i(0); i < numVertices; ++i){
+    global_ids[i] = tmpBuf[i];
+  }
+
+  auto vals = vertex_weights_->getData(); // double* vals = vertex_weights_->Values(); // EEP__
+  for(int i(0); i < numVertices; ++i) {
     weights[i] = vals[i];
   }
+  std::cout << "EEP Leaving CostDescriber<>::getVertexWeights()" << std::endl;
 }
 
 template <class LocalOrdinal,
@@ -591,6 +601,7 @@ template <class LocalOrdinal,
           class Node>
 int CostDescriber<LocalOrdinal, GlobalOrdinal, Node>::getEdges(int vertexGID, int len, int *nborGID, float *weights) const
 {
+  throw std::runtime_error("EEP Inb CostDescriber<>::getEdges(): incomplete code");
   //int vertexLID = 0; // graph_edge_weights_->getRowMap()->LID(vertexGID); // EEP___
   int numRealEdges = getNumGraphEdges(vertexGID);  //excluding self edges
 
@@ -760,6 +771,8 @@ void CostDescriber::getCosts(std::map<int, float> &vertexWeights,
                            std::map<int, std::map<int, float > > &graphEdgeWeights, 
                            std::map<int, float> &hypergraphEdgeWeights) const
 {
+  std::cout << "EEP Entering CostDescriber<>::getCosts()" << std::endl;
+
   if (haveVertexWeights()){
     getVertexWeights(vertexWeights);
   }
@@ -781,6 +794,8 @@ void CostDescriber::getCosts(std::map<int, float> &vertexWeights,
       curr++;
     }
   }
+
+  std::cout << "EEP Leaving CostDescriber<>::getCosts()" << std::endl;
 }
 
 template <class LocalOrdinal,

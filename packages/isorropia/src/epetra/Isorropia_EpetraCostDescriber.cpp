@@ -460,6 +460,9 @@ void CostDescriber::getVertexWeights(int numVertices,
                                      int* global_ids,
                                      float* weights) const
 {
+  std::cout << "EEP Entering CostDescriber::getVertexWeights()"
+            << ": numVertices = " << numVertices
+	    << std::endl;
   if (getNumVertices() == 0){
     return;
   }
@@ -470,12 +473,15 @@ void CostDescriber::getVertexWeights(int numVertices,
     throw Isorropia::Exception("CostDescriber::getVertexWeights: wrong numVertices");
   }
 
+  std::cout << "EEP In CostDescriber<>::getVertexWeights(), pos 001" << std::endl;
+
   map.MyGlobalElements(global_ids);
 
   double* vals = vertex_weights_->Values();
   for(int i=0; i<numVertices; ++i) {
     weights[i] = vals[i];
   }
+  std::cout << "EEP Leaving CostDescriber::getVertexWeights()" << std::endl;
 }
 
 bool CostDescriber::haveGraphEdgeWeights() const
@@ -657,6 +663,8 @@ void CostDescriber::getCosts(std::map<int, float> &vertexWeights,
                            std::map<int, std::map<int, float > > &graphEdgeWeights, 
                            std::map<int, float> &hypergraphEdgeWeights) const
 {
+  std::cout << "EEP Entering CostDescriber::getCosts()" << std::endl;
+  
   if (haveVertexWeights()){
     getVertexWeights(vertexWeights);
   }
@@ -678,6 +686,8 @@ void CostDescriber::getCosts(std::map<int, float> &vertexWeights,
       curr++;
     }
   }
+
+  std::cout << "EEP Leaving CostDescriber::getCosts()" << std::endl;
 }
 
 bool CostDescriber::haveGlobalVertexWeights() const

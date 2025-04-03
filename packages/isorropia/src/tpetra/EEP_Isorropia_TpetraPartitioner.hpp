@@ -455,8 +455,18 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<Local
   else
     gidptr = NULL;
 
-  //outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm());
-  outputMap = nullptr; // new ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), myNewGID.size(), gidptr, 0, this->input_map_->getComm()); // EEP___
+  GlobalOrdinal tmpBuf[myNewGID.size()];
+  for (size_t i(0); i < myNewGID.size(); ++i) {
+    tmpBuf[i] = gidptr[i];
+  }
+  
+  //outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm()); // EEP__
+  outputMap = new ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>( Teuchos::OrdinalTraits<GlobalOrdinal>::invalid()
+                                                                  , tmpBuf
+                                                                  , myNewGID.size()
+                                                                  , 0
+                                                                  , this->input_map_->getComm()
+                                                                  );
 
   std::cout << "EEP Leaving isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap()" << std::endl;
   return;

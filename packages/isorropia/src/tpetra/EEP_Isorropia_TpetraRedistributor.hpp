@@ -150,9 +150,12 @@ Redistributor<LocalOrdinal, GlobalOrdinal, Node>::Redistributor(Teuchos::RCP<Iso
   importer_(),
   target_map_()
 {
+  std::cout << "EEP Entering Redistributor<>::constructor()" << std::endl;
   if (!partitioner_->alreadyComputed()) {
+    std::cout << "In Entering Redistributor<>::constructor(), pos 001" << std::endl;
     partitioner_->partition();
   }
+  std::cout << "EEP Leaving Redistributor<>::constructor()" << std::endl;
 }
 
 template <class LocalOrdinal,
@@ -168,9 +171,11 @@ template <class LocalOrdinal,
 Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
 Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, bool callFillComplete)
 {
+  std::cout << "EEP Entering Redistributor<>::redistribute(2)" << std::endl;
   Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>outputGraphPtr(nullptr);
   redistribute(input_graph, outputGraphPtr, callFillComplete);
 
+  std::cout << "EEP Leaving Redistributor<>::redistribute(2)" << std::endl;
   return Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>(outputGraphPtr);
 }
 
@@ -180,13 +185,20 @@ template <class LocalOrdinal,
 void
 Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> outputGraphPtr, bool callFillComplete)
 {
+  std::cout << "EEP Entering Redistributor<>::redistribute(3)" << std::endl;
   create_importer( input_graph->getRowMap() ); // EEP___
-#if 0 // EEP___
+
   // First obtain the length of each of my new rows
 
-  int myOldRows = input_graph.getLocalNumRows(); // NumMyRows();
-  int myNewRows = target_map_->getLocalNumEntries(); // NumMyElements();
+  int myOldRows = input_graph->getLocalNumRows(); // NumMyRows();
+  int myNewRows = target_map_->getLocalNumElements(); // NumMyElements();
 
+  std::cout << "EEP In Redistributor<>::redistribute(3)"
+            << ": myOldRows = " << myOldRows
+            << ", myNewRows = " << myNewRows
+	    << std::endl;
+  
+#if 0 // EEP____  agora
   double *nnz = new double [myOldRows];
   for (int i=0; i < myOldRows; i++){
     nnz[i] = 0; // input_graph.NumMyIndices(i); // EEP___
@@ -228,6 +240,7 @@ Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RC
     outputGraphPtr->FillComplete(*newDomainMap, *target_map_);
 #endif // EEP
 
+  std::cout << "EEP Leaving Redistributor<>::redistribute(3)" << std::endl;
   return;
 }
 
@@ -237,6 +250,7 @@ template <class LocalOrdinal,
 void
 Redistributor<LocalOrdinal, GlobalOrdinal, Node>::create_importer(const Teuchos::RCP<const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> src_map)
 {
+  std::cout << "EEP Entering Redistributor<>::create_importer()" << std::endl;
 
   if (!Teuchos::is_null(partitioner_) && partitioner_->numProperties() >
                                 src_map->getComm()->getSize()) {
@@ -248,6 +262,7 @@ Redistributor<LocalOrdinal, GlobalOrdinal, Node>::create_importer(const Teuchos:
 
   importer_ = Teuchos::rcp(new ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>(target_map_, src_map));
 
+  std::cout << "EEP Leaving Redistributor<>::create_importer()" << std::endl;
 }
   
 }//namespace Tpetra

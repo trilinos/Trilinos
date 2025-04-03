@@ -73,9 +73,12 @@ Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partit
   importer_(),
   target_map_()
 {
+  std::cout << "EEP Entering Redistributor::constructor()" << std::endl;
   if (!partitioner_->alreadyComputed()) {
+    std::cout << "In Entering Redistributor::constructor(), pos 001" << std::endl;
     partitioner_->partition();
   }
+  std::cout << "EEP Leaving Redistributor::constructor()" << std::endl;
 }
 
 Redistributor::Redistributor(Isorropia::Epetra::Partitioner *partitioner)
@@ -112,29 +115,41 @@ void
 Redistributor::redistribute(const Epetra_SrcDistObject& src,
 				 Epetra_DistObject& target)
 {
+  std::cout << "EEP Entering Redistributor::redistribute(1)" << std::endl;
   create_importer(src.Map());
 
   target.Import(src, *importer_, Insert);
+  std::cout << "EEP Leaving Redistributor::redistribute(1)" << std::endl;
 }
 
 Teuchos::RCP<Epetra_CrsGraph>
 Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete)
 {
+  std::cout << "EEP Entering Redistributor::redistribute(2)" << std::endl;
+
   Epetra_CrsGraph *outputGraphPtr=0;
   redistribute(input_graph, outputGraphPtr, callFillComplete);
 
+  std::cout << "EEP Leaving Redistributor::redistribute(2)" << std::endl;
   return Teuchos::RCP<Epetra_CrsGraph>(outputGraphPtr);
 }
 
 void 
 Redistributor::redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph * &outputGraphPtr, bool callFillComplete)
 {
+  std::cout << "EEP Entering Redistributor::redistribute(3)" << std::endl;
+
   create_importer(input_graph.RowMap());
 
   // First obtain the length of each of my new rows
 
   int myOldRows = input_graph.NumMyRows();
   int myNewRows = target_map_->NumMyElements();
+
+  std::cout << "EEP In Redistributor::redistribute(3)"
+            << ": myOldRows = " << myOldRows
+            << ", myNewRows = " << myNewRows
+	    << std::endl;
 
   double *nnz = new double [myOldRows];
   for (int i=0; i < myOldRows; i++){
@@ -176,6 +191,7 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph 
   if (callFillComplete && (!outputGraphPtr->Filled()))
     outputGraphPtr->FillComplete(*newDomainMap, *target_map_);
 
+  std::cout << "EEP Leaving Redistributor::redistribute(3)" << std::endl;
   return;
 }
 
@@ -485,6 +501,7 @@ Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector, Epet
 
 void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 {
+  std::cout << "EEP Entering Redistributor::create_importer()" << std::endl;
 
   if (!Teuchos::is_null(partitioner_) && partitioner_->numProperties() >
                                 src_map.Comm().NumProc()) {
@@ -496,6 +513,7 @@ void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 
   importer_ = Teuchos::rcp(new Epetra_Import(*target_map_, src_map));
 
+  std::cout << "EEP Leaving Redistributor::create_importer()" << std::endl;
 }
 
 #endif //HAVE_EPETRA
