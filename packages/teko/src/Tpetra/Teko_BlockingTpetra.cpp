@@ -16,6 +16,7 @@
 #include "Kokkos_StdAlgorithms.hpp"
 #include "Kokkos_Sort.hpp"
 #include "Kokkos_NestedSort.hpp"
+#include "KokkosSparse_SortCrs.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -237,8 +238,6 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
 
   using matrix_execution_space =
       typename Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type::execution_space;
-  using team_policy = Kokkos::TeamPolicy<matrix_execution_space>;
-  using team_member = typename team_policy::member_type;
 
   LO totalNumOwnedCols = 0;
   Kokkos::parallel_scan(
@@ -306,20 +305,14 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildSubBlock(
   auto localColumnIndices =
       index_type(Kokkos::ViewAllocateWithoutInitializing("localColumnIndices"), totalNumOwnedCols);
   Kokkos::parallel_for(
-      team_policy(numMyRows, Kokkos::AUTO()), KOKKOS_LAMBDA(const team_member& t) {
-        const auto localRow = t.league_rank();
-        const auto numCols  = nEntriesPerRow(localRow);
-        const auto colStart = prefixSumEntriesPerRow(localRow);
-        for (auto localCol = 0; localCol < numCols; localCol++) {
-          const auto globalColId                  = columnIndices(localCol + colStart);
-          const auto localColId                   = colMap_dev.getLocalElement(globalColId);
-          localColumnIndices(localCol + colStart) = localColId;
-        }
-        auto rowColumnIndices =
-            Kokkos::subview(localColumnIndices, Kokkos::make_pair(colStart, colStart + numCols));
-        auto rowValues = Kokkos::subview(values, Kokkos::make_pair(colStart, colStart + numCols));
-        Kokkos::Experimental::sort_by_key_team(t, rowColumnIndices, rowValues);
+      Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>, matrix_execution_space>(
+          0, totalNumOwnedCols),
+      KOKKOS_LAMBDA(const LO index) {
+        localColumnIndices(index) = colMap_dev.getLocalElement(columnIndices(index));
       });
+
+  KokkosSparse::sort_crs_matrix<matrix_execution_space, row_map_type, index_type, values_type>(
+      prefixSumEntriesPerRow, localColumnIndices, values);
 
   auto lcl_mat = Tpetra::CrsMatrix<ST, LO, GO, NT>::local_matrix_device_type(
       "localMat", numMyRows, maxNumEntriesSubblock, totalNumOwnedCols, values,
@@ -378,7 +371,7 @@ void rebuildSubBlock(int i, int j, const RCP<const Tpetra::CrsMatrix<ST, LO, GO,
 
           auto lidCol = colMap_dev.getLocalElement(gid);
           auto value  = sparseRowView.value(localCol);
-          mat_dev.sumIntoValues(localRow, &lidCol, 1, &value, 1);
+          mat_dev.sumIntoValues(localRow, &lidCol, 1, &value, true, false);
         }
       });
 
