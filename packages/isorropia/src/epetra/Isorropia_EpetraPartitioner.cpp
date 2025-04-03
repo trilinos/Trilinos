@@ -742,7 +742,7 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
   //Generate New Element List
   int myPID = input_map_->Comm().MyPID();
   int numMyElements = input_map_->NumMyElements();
-  std::cout << "EEP In isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap()"
+  std::cout << "EEP In isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap(), pos 000"
             << ": numMyElements = " << numMyElements
 	    << std::endl;
   std::vector<int> elementList( numMyElements );
@@ -752,9 +752,14 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
     input_map_->MyGlobalElements((int*)NULL); // disambiguate int/long long
 
   int newGIDSize = numMyElements - exportsSize_;
+  std::cout << "EEP In isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap(), pos 001"
+            << ": newGIDSize = " << newGIDSize
+	    << std::endl;
 
   std::vector<int> myNewGID;
 
+  size_t cnt1 = 0;
+  size_t cnt2 = 0;
   if (newGIDSize > 0){
     myNewGID.resize(newGIDSize);
     std::vector<int>::iterator newElemsIter;
@@ -762,14 +767,25 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
 
     for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
          elemsIter != properties_.end() ; elemsIter ++) {
+      cnt1 += 1;
       if ((*elemsIter) == myPID) {
+        cnt2 += 1;
         (*newElemsIter) = elementList[elemsIter - properties_.begin()];
         newElemsIter ++;
       }
     }
   }
+  std::cout << "EEP In isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap(), pos 002"
+            << ": cnt1 = " << cnt1
+            << ", cnt2 = " << cnt2
+            << ", myNewGID.size() = " << myNewGID.size()
+            << ", imports_->size() = " << this->imports_.size()
+	    << std::endl;
   //Add imports to end of list
   myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
+  std::cout << "EEP In isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap(), pos 003"
+            << ": myNewGID.size() = " << myNewGID.size()
+	    << std::endl;
 
   int *gidptr;
   if (myNewGID.size() > 0)
@@ -779,7 +795,9 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
 
   outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm());
 
-  std::cout << "EEP Leaving isorropia/src/tpetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap()" << std::endl;
+  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap()"
+            << ": *outputMap = " << *outputMap
+	    << std::endl;
   return;
 }
 ////////////////////////////////////////////////////////////////////////////////

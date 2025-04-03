@@ -417,7 +417,7 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<Local
   //Generate New Element List
   int myPID = this->input_map_->getComm()->getRank();
   int numMyElements = this->input_map_->getLocalNumElements();
-  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap()"
+  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap(), pos 000"
             << ": numMyElements = " << numMyElements
 	    << std::endl;
   if (numMyElements <= 0) {
@@ -430,9 +430,14 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<Local
   }
 
   int newGIDSize = numMyElements - this->exportsSize_;
+  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap(), pos 001"
+            << ": newGIDSize = " << newGIDSize
+	    << std::endl;
 
   std::vector<int> myNewGID;
 
+  size_t cnt1 = 0;
+  size_t cnt2 = 0;
   if (newGIDSize > 0){
     myNewGID.resize(newGIDSize);
     std::vector<int>::iterator newElemsIter;
@@ -440,14 +445,25 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<Local
 
     for (elemsIter = this->properties_.begin(), newElemsIter= myNewGID.begin() ;
          elemsIter != this->properties_.end() ; elemsIter ++) {
+      cnt1 += 1;
       if ((*elemsIter) == myPID) {
+        cnt2 += 1;
         (*newElemsIter) = elementList[elemsIter - this->properties_.begin()];
         newElemsIter ++;
       }
     }
   }
+  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap(), pos 002"
+            << ": cnt1 = " << cnt1
+            << ", cnt2 = " << cnt2
+            << ", myNewGID.size() = " << myNewGID.size()
+            << ", imports_->size() = " << this->imports_.size()
+	    << std::endl;
   //Add imports to end of list
   myNewGID.insert(myNewGID.end(), this->imports_.begin(), this->imports_.end());
+  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap(), pos 003"
+            << ": myNewGID.size() = " << myNewGID.size()
+	    << std::endl;
 
   int *gidptr;
   if (myNewGID.size() > 0)
@@ -460,7 +476,7 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<Local
     tmpBuf[i] = gidptr[i];
   }
   
-  //outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm()); // EEP__
+  //outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm()); // EEP____ check agora
   outputMap = new ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>( Teuchos::OrdinalTraits<GlobalOrdinal>::invalid()
                                                                   , tmpBuf
                                                                   , myNewGID.size()
@@ -468,7 +484,9 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<Local
                                                                   , this->input_map_->getComm()
                                                                   );
 
-  std::cout << "EEP Leaving isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap()" << std::endl;
+  std::cout << "EEP Leaving isorropia/src/tpetra/Isorropia_TpetraPartitioner.hpp Partitioner::createNewMap()"
+            << ": *outputMap = " << *outputMap
+	    << std::endl;
   return;
 }
 ////////////////////////////////////////////////////////////////////////////////

@@ -183,62 +183,147 @@ template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
 void
-Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> outputGraphPtr, bool callFillComplete)
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> outputGraphPtr, bool callFillComplete) // EEP____ check lots of changes
 {
   std::cout << "EEP Entering Redistributor<>::redistribute(3)" << std::endl;
-  create_importer( input_graph->getRowMap() ); // EEP___
+  create_importer( input_graph->getRowMap() ); // EEP__
 
   // First obtain the length of each of my new rows
 
   int myOldRows = input_graph->getLocalNumRows(); // NumMyRows();
   int myNewRows = target_map_->getLocalNumElements(); // NumMyElements();
 
-  std::cout << "EEP In Redistributor<>::redistribute(3)"
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 000"
             << ": myOldRows = " << myOldRows
             << ", myNewRows = " << myNewRows
-	    << std::endl;
+            << std::endl;
   
-#if 0 // EEP____  agora
   double *nnz = new double [myOldRows];
   for (int i=0; i < myOldRows; i++){
-    nnz[i] = 0; // input_graph.NumMyIndices(i); // EEP___
+    nnz[i] = input_graph->getNumEntriesInLocalRow(i); // input_graph.NumMyIndices(i); // EEP__
   }
 
-  ::Tpetra::Vector<LocalOrdinal, GlobalOrdinal, Node, double> oldRowSizes(Copy, input_graph.RowMap(), nnz);
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 001"
+            << std::endl;
 
-  if (myOldRows)
-    delete [] nnz;
+  ::Teuchos::ArrayView<double> tmpArray1(nnz, myOldRows);
+  ::Tpetra::Vector<double, LocalOrdinal, GlobalOrdinal, Node> oldRowSizes(input_graph->getRowMap(), tmpArray1);
 
-  ::Tpetra::Vector<LocalOrdinal, GlobalOrdinal, Node, double> newRowSizes(*target_map_);
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 002"
+            << std::endl;
 
-  newRowSizes.Import(oldRowSizes, *importer_, Insert);
+  //if (myOldRows)
+  //  delete [] nnz;
 
-  int *rowSize = new int [myNewRows];
+  ::Tpetra::Vector<double, LocalOrdinal, GlobalOrdinal, Node> newRowSizes(target_map_);
+
+  newRowSizes.doImport(oldRowSizes, *importer_, ::Tpetra::INSERT);
+  auto tmpView = newRowSizes.getLocalViewHost(::Tpetra::Access::ReadOnly);
+
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 003"
+            << std::endl;
+
+  size_t *rowSize = new size_t [myNewRows];
   for (int i=0; i< myNewRows; i++){
-    rowSize[i] = static_cast<int>(newRowSizes[i]);
+    rowSize[i] = static_cast<size_t>(tmpView.data()[i]);
   }
 
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 004"
+            << ": rowSize =";
+  for (int i(0); i < myNewRows; ++i) {
+    std::cout << " " << rowSize[i];
+  }
+  std::cout << std::endl;
+  
   // Receive new rows, send old rows
 
-  outputGraphPtr = new ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(Copy, *target_map_, rowSize, true);
+  ::Teuchos::ArrayView<size_t> tmpArray2(rowSize, myNewRows);
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 004.2"
+            << ": tmpArray2 =";
+  for (int i(0); i < myNewRows; ++i) {
+    std::cout << " " << tmpArray2[i];
+  }
+  std::cout << std::endl;
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 004.3"
+            << ": *target_map_ = " << *target_map_
+            << std::endl;
+  outputGraphPtr = Teuchos::rcp( new ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(target_map_, tmpArray2) ); // , true);
 
-  if (myNewRows)
-    delete [] rowSize;
+  //if (myNewRows)
+  //  delete [] rowSize;
 
-  outputGraphPtr->Import(input_graph, *importer_, Insert);
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 005"
+	    << ": *outputGraphPtr = " << *outputGraphPtr
+            << std::endl;
+
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 005.2"
+	    << ": outputGraphPtr->getRangeMap() = " << outputGraphPtr->getRangeMap()
+            << std::endl;
+
+  outputGraphPtr->doImport(*input_graph, *importer_, ::Tpetra::INSERT);
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 005.3"
+	    << ": outputGraphPtr->getRangeMap() = " << outputGraphPtr->getRangeMap()
+            << std::endl;
+  outputGraphPtr->fillComplete(); // EEP____ check
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 005.4"
+	    << ": outputGraphPtr->getRangeMap() = " << outputGraphPtr->getRangeMap()
+            << std::endl;
+  outputGraphPtr->resumeFill(); // EEP____ check
+  
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 006"
+	    << ": outputGraphPtr->getRangeMap() = " << outputGraphPtr->getRangeMap()
+	    << std::endl;
 
   // Set the new domain map such that
   // (a) if old DomainMap == old RangeMap, preserve this property,
   // (b) otherwise, let the new DomainMap be the old DomainMap 
-  const Epetra_BlockMap *newDomainMap;
-  if (input_graph.DomainMap().SameAs(input_graph.RangeMap()))
-     newDomainMap = &(outputGraphPtr->RangeMap());
-  else
-     newDomainMap = &(input_graph.DomainMap());
+  Teuchos::RCP<const ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> newDomainMap;
+  if ( input_graph->getDomainMap()->isSameAs( *(input_graph->getRangeMap()) ) ) {
+    std::cout << "EEP In Redistributor<>::redistribute(3), pos 006.a" << std::endl;
+    newDomainMap = outputGraphPtr->getRangeMap();
+  }
+  else {
+    std::cout << "EEP In Redistributor<>::redistribute(3), pos 006.b" << std::endl;
+    newDomainMap = input_graph->getDomainMap();
+  }
 
-  if (callFillComplete && (!outputGraphPtr->Filled()))
-    outputGraphPtr->FillComplete(*newDomainMap, *target_map_);
-#endif // EEP
+  std::cout << "EEP In Redistributor<>::redistribute(3), pos 007"
+            << std::endl;
+
+  if (callFillComplete) {
+    std::cout << "EEP In Redistributor<>::redistribute(3), pos 008" << std::endl;
+    if (outputGraphPtr->isFillComplete() == false) {
+      std::cout << "EEP In Redistributor<>::redistribute(3), pos 009"
+	        << ": newDomainMap = " << newDomainMap
+	        << ", target_map_ = " << target_map_
+		<< std::endl;
+      std::cout << "EEP In Redistributor<>::redistribute(3), information on newDomainMap"
+                << ": isOneToOne() = " << newDomainMap->isOneToOne()
+                << ", GlobalNumElements() = " << newDomainMap->getGlobalNumElements()
+                << ", LocalNumElements() = " << newDomainMap->getLocalNumElements()
+                << ", IndexBase() = " << newDomainMap->getIndexBase()
+                << ", MinLocalIndex() = " << newDomainMap->getMinLocalIndex()
+                << ", MaxLocalIndex() = " << newDomainMap->getMaxLocalIndex()
+                << ", MinGlobalIndex() = " << newDomainMap->getMinGlobalIndex()
+                << ", MaxGlobalIndex() = " << newDomainMap->getMaxGlobalIndex()
+                << ", MinAllGlobalIndex() = " << newDomainMap->getMinAllGlobalIndex()
+                << ", MaxAllGlobalIndex() = " << newDomainMap->getMaxAllGlobalIndex()
+                << std::endl;
+      std::cout << "EEP In Redistributor<>::redistribute(3), information on target_map_"
+                << ": isOneToOne() = " << target_map_->isOneToOne()
+                << ", GlobalNumElements() = " << target_map_->getGlobalNumElements()
+                << ", LocalNumElements() = " << target_map_->getLocalNumElements()
+                << ", IndexBase() = " << target_map_->getIndexBase()
+                << ", MinLocalIndex() = " << target_map_->getMinLocalIndex()
+                << ", MaxLocalIndex() = " << target_map_->getMaxLocalIndex()
+                << ", MinGlobalIndex() = " << target_map_->getMinGlobalIndex()
+                << ", MaxGlobalIndex() = " << target_map_->getMaxGlobalIndex()
+                << ", MinAllGlobalIndex() = " << target_map_->getMinAllGlobalIndex()
+                << ", MaxAllGlobalIndex() = " << target_map_->getMaxAllGlobalIndex()
+                << std::endl;
+      outputGraphPtr->fillComplete(newDomainMap, target_map_); // EEP____ check
+    }
+  }
 
   std::cout << "EEP Leaving Redistributor<>::redistribute(3)" << std::endl;
   return;
@@ -257,8 +342,10 @@ Redistributor<LocalOrdinal, GlobalOrdinal, Node>::create_importer(const Teuchos:
     throw std::runtime_error/*Isorropia::Exception*/("Cannot redistribute: Too many parts for too few processors.");
   }
 
-  if (Teuchos::is_null(target_map_) && !Teuchos::is_null(partitioner_))
+  if (Teuchos::is_null(target_map_) && !Teuchos::is_null(partitioner_)) {
+      std::cout << "EEP In Redistributor<>::create_importer(), pos 000" << std::endl;
       target_map_ = partitioner_->createNewMap();
+  }
 
   importer_ = Teuchos::rcp(new ::Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>(target_map_, src_map));
 
