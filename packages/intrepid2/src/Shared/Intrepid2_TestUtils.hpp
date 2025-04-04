@@ -321,7 +321,6 @@ The total number of points defined will be a triangular number; if n=numPointsBa
       }
     }
     Kokkos::deep_copy(points, pointsHost);
-    std::cout << "cur: " << cur << std::endl;
   }
 
   ordinal_type
