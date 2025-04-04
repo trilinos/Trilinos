@@ -24,13 +24,6 @@
 #include <memory>
 #include <type_traits>
 
-// #ifndef HAVE_TPETRA_TRANSFER_TIMERS
-// #  define HAVE_TPETRA_TRANSFER_TIMERS 1
-// #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-#  undef HAVE_TPETRA_TRANSFER_TIMERS
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
 
 namespace KokkosClassic {
   /// \brief Read/write options for non-const views.
@@ -759,12 +752,17 @@ namespace Tpetra {
                      const CombineMode CM,
                      const bool restrictedMode);
 
-    void doPosts(const Details::DistributorPlan& distributorPlan,
-                 size_t constantNumPackets,
-                 bool commOnHost,
-                 std::shared_ptr<std::string> prefix,
-                 const bool canTryAliasing,
-                 const CombineMode CM);
+    void doPostRecvs(const Details::DistributorPlan& distributorPlan,
+                     size_t constantNumPackets,
+                     bool commOnHost,
+                     std::shared_ptr<std::string> prefix,
+                     const bool canTryAliasing,
+                     const CombineMode CM);
+
+    void doPostSends(const Details::DistributorPlan& distributorPlan,
+                     size_t constantNumPackets,
+                     bool commOnHost,
+                     std::shared_ptr<std::string> prefix);
 
     void doPackAndPrepare(const SrcDistObject& src,
                           const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
@@ -820,7 +818,7 @@ namespace Tpetra {
     /// \param permuteFromLIDs [in] List of the elements that are
     ///   permuted.  They are listed by their local index (LID) in the
     ///   source object.
-    /// \param CM [in] CombineMode to be used during copyAndPermute; 
+    /// \param CM [in] CombineMode to be used during copyAndPermute;
     ///   may or may not be used by the particular object being called;
     ///   behavior with respect to CombineMode may differ by object.
     virtual void
@@ -1047,13 +1045,6 @@ namespace Tpetra {
 
     Details::DistributorActor distributorActor_;
 
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-    Teuchos::RCP<Teuchos::Time> doXferTimer_;
-    Teuchos::RCP<Teuchos::Time> copyAndPermuteTimer_;
-    Teuchos::RCP<Teuchos::Time> packAndPrepareTimer_;
-    Teuchos::RCP<Teuchos::Time> doPostsAndWaitsTimer_;
-    Teuchos::RCP<Teuchos::Time> unpackAndCombineTimer_;
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
   }; // class DistObject
 } // namespace Tpetra
 
