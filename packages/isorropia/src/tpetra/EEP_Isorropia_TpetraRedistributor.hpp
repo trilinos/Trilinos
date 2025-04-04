@@ -127,7 +127,7 @@ public:
       the original domain map is preserved.  By default callFillComplete is @c true.
 
   */
-  void redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> outputGraphPtr, bool callFillComplete= true);
+  void redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> & outputGraphPtr, bool callFillComplete= true);
 
 private:
   /** @ingroup partitioning_grp
@@ -183,7 +183,7 @@ template <class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
 void
-Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> outputGraphPtr, bool callFillComplete) // EEP____ check lots of changes
+Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> input_graph, Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> & outputGraphPtr, bool callFillComplete) // EEP____ check lots of changes
 {
   std::cout << "EEP Entering Redistributor<>::redistribute(3)" << std::endl;
   create_importer( input_graph->getRowMap() ); // EEP__
@@ -325,7 +325,9 @@ Redistributor<LocalOrdinal, GlobalOrdinal, Node>::redistribute(const Teuchos::RC
     }
   }
 
-  std::cout << "EEP Leaving Redistributor<>::redistribute(3)" << std::endl;
+  std::cout << "EEP Leaving Redistributor<>::redistribute(3)"
+            << ": outputGraphPtr = " << outputGraphPtr
+	    << std::endl;
   return;
 }
 

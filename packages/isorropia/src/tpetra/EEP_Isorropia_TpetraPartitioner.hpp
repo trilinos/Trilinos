@@ -476,7 +476,7 @@ Partitioner<LocalOrdinal, GlobalOrdinal, Node>::createNewMap(::Tpetra::Map<Local
     tmpBuf[i] = gidptr[i];
   }
   
-  //outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm()); // EEP____ check agora
+  //outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm()); // EEP____ check
   outputMap = new ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>( Teuchos::OrdinalTraits<GlobalOrdinal>::invalid()
                                                                   , tmpBuf
                                                                   , myNewGID.size()

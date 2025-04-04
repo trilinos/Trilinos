@@ -198,7 +198,7 @@ operator()( typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdin
             << ": NewGraph = " << NewGraph
 	    << std::endl;
   NewMatrix_ = new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>(&NewGraph) );
-#if 0 // AquiToDo // EEP____
+#if 0 // AquiToDo // EEP____ agora
   Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & NewRowMap = const_cast<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>&>(NewGraph.getRowMap());
 
   NewRHS_ = new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>( NewRowMap, 1 );

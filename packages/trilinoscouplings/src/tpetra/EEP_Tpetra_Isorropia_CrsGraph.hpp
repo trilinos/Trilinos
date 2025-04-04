@@ -112,7 +112,12 @@ operator()( typename Isorropia_CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::Orig
     }
   }
 
-  std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 005" << std::endl;
+  std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 005"
+            << ": NewGraph_ = " << NewGraph_
+	    << std::endl;
+  std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 005.2"
+            << ": *NewGraph_ = " << *NewGraph_
+	    << std::endl;
   // Set the raw pointer to the new graph.
   // This should be OK, since the destructor does not attempt to destroy the raw pointer.
   this->newObj_ = NewGraph_.get();
