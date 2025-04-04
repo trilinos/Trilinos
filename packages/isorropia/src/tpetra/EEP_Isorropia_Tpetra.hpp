@@ -69,12 +69,16 @@ template <class LocalOrdinal,
 createBalancedCopy(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> & input_graph,
                    const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4)..." << std::endl;
-  //Teuchos::RCP< const ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > rcp_input_graph = Teuchos::rcp(&(input_graph), false); // EEP
+  std::cout << "EEP Entering isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4)..."
+            << ": *input_graph = " << *input_graph
+	    << std::endl;
+  Teuchos::RCP< ::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > rcp_input_graph = Teuchos::rcp(input_graph.get(), false); // EEP____ important
 
-  std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 001" << std::endl;
+  std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 001"
+            << ": *input_graph = " << *input_graph
+	    << std::endl;
 
-  Teuchos::RCP< Partitioner<LocalOrdinal, GlobalOrdinal, Node> > partitioner = Teuchos::rcp(new Partitioner<LocalOrdinal, GlobalOrdinal, Node>(input_graph, paramlist));
+  Teuchos::RCP< Partitioner<LocalOrdinal, GlobalOrdinal, Node> > partitioner = Teuchos::rcp(new Partitioner<LocalOrdinal, GlobalOrdinal, Node>(rcp_input_graph, paramlist));
 
   std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 002" << std::endl; 
 
@@ -82,13 +86,15 @@ createBalancedCopy(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrd
 
   std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 003" << std::endl; 
 
-  Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> balanced_graph = rd.redistribute(input_graph);
+  Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> balanced_graph = rd.redistribute(rcp_input_graph);
 
   std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 004" << std::endl; 
   
   balanced_graph.release();
 
-  std::cout << "EEP Leaving isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4)" << std::endl; 
+  std::cout << "EEP Leaving isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4)"
+            << ": *input_graph = " << *input_graph
+	    << std::endl; 
   return balanced_graph.get();
 }
 

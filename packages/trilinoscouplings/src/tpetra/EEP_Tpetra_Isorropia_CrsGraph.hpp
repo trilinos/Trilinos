@@ -105,7 +105,7 @@ operator()( typename Isorropia_CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::Orig
   else {
     std::cout << "EEP In trilinoscouplings/src/tpetra/EEP_Tpetra_Isorropia_CrsGraph.cpp Isorropia_CrsGraph::operator(), pos 004" << std::endl; // Aqui
     try {
-      NewGraph_ = Teuchos::rcp( Isorropia::Tpetra::createBalancedCopy( Teuchos::RCP<tCrsGraph>(&orig), partitionList_) ); // AquiToDo // EEP__
+      NewGraph_ = Teuchos::rcp( Isorropia::Tpetra::createBalancedCopy( Teuchos::rcp<tCrsGraph>(&orig), partitionList_) ); // AquiToDo // EEP__
     }
     catch(std::exception& e) {
       std::cout << "Isorropia::Tpetra::createBalancedCopy threw exception '" << e.what() << "' on proc " << orig.getComm()->getRank() << std::endl;

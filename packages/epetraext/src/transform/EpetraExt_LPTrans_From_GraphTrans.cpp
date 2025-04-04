@@ -113,9 +113,18 @@ bool
 LinearProblem_GraphTrans::
 fwd()
 {
+  std::cout << "Entering LinearProblem_GraphTrans::fwd()" << std::endl;
   NewLHS_->Export( *OldLHS_, *VecExporter_, Insert );
   NewRHS_->Export( *OldRHS_, *VecExporter_, Insert );
+  std::cout << "In LinearProblem_GraphTrans::fwd(), pos 001"
+            << ": *NewMatrix_ = " << *NewMatrix_
+            << ", *OldMatrix_ = " << *OldMatrix_
+            << ", *MatExporter_ = " << *MatExporter_
+	    << std::endl;
   NewMatrix_->Export( *OldMatrix_, *MatExporter_, Insert );
+  std::cout << "Leaving LinearProblem_GraphTrans<>::fwd()"
+            << ": *NewMatrix_ = " << *NewMatrix_
+	    << std::endl;
 
   return true;
 }

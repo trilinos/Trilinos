@@ -186,31 +186,52 @@ operator()( typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdin
   std::cout << "EEP Entering tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator()..." << std::endl;
   
   OldProblem_ = &orig;
-  OldMatrix_ = dynamic_cast<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>*>( orig.getMatrix().get() );
-  OldGraph_ = dynamic_cast<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>*>( OldMatrix_->getGraph().get() );
+  OldMatrix_ = dynamic_cast< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>* >( orig.getMatrix().get() );
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 000"
+            << ": OldMatrix_ = " << OldMatrix_
+            << std::endl;
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 000.1"
+            << ": *OldMatrix_ = " << *OldMatrix_
+            << std::endl;
+  OldGraph_ = dynamic_cast< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>* >( OldMatrix_->getGraph().get() );
   OldRHS_ = orig.getRHS().get();
   OldLHS_ = orig.getLHS().get();
   OldRowMap_ = dynamic_cast<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>*>( OldMatrix_->getRowMap().get() );
 
-  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 001" << std::endl;
-  Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & NewGraph = graphTrans_( *(const_cast<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>*>(OldGraph_)) );
-  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 002"
-            << ": NewGraph = " << NewGraph
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 001"
+            << ": *OldMatrix_ = " << *OldMatrix_
 	    << std::endl;
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 001.1"
+            << ": *OldGraph_ = " << *OldGraph_
+	    << std::endl;
+  Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & NewGraph = graphTrans_( *(const_cast<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>*>(OldGraph_)) );
+#if 1
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 002" << std::endl;
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 002.1"
+            << ": *OldGraph_ = " << *OldGraph_ // EEP____ error agora
+	    << std::endl;
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 002.2"
+            << ": NewGraph = " << NewGraph
+            << ": *OldMatrix_ = " << *OldMatrix_
+	    << std::endl;
+#endif
   NewMatrix_ = new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>(&NewGraph) );
-#if 0 // AquiToDo // EEP____ agora
-  Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> & NewRowMap = const_cast<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>&>(NewGraph.getRowMap());
+  Teuchos::RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > NewRowMap = NewGraph.getRowMap();
 
   NewRHS_ = new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>( NewRowMap, 1 );
   NewLHS_ = new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>( NewRowMap, 1 );
 
-  MatExporter_ = new Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>( *OldRowMap_, NewRowMap );
-  VecExporter_ = new Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>( *OldRowMap_, NewRowMap );
-  Importer_ = new Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>( *OldRowMap_, NewRowMap );
+  MatExporter_ = new Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(OldRowMap_), NewRowMap );
+  VecExporter_ = new Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(OldRowMap_), NewRowMap );
+  Importer_ = new Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(OldRowMap_), NewRowMap );
 
-  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 003" << std::endl;
-  NewProblem_ = new Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>( NewMatrix_, NewLHS_, NewRHS_ );
-#endif
+  std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 003"
+            << ": *OldMatrix_ = " << *OldMatrix_
+	    << std::endl;
+  NewProblem_ = new Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(NewMatrix_)
+                                                                                    , Teuchos::rcp< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(NewLHS_)
+                                                                                    , Teuchos::rcp< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(NewRHS_)
+                                                                                    );
   std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 004" << std::endl;
 
   std::cout << "EEP Leaving tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator()" << std::endl;
@@ -225,9 +246,25 @@ bool
 LinearProblem_GraphTrans<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 fwd()
 {
+  std::cout << "Entering LinearProblem_GraphTrans<>::fwd()" << std::endl;
   NewLHS_->doExport( *OldLHS_, *VecExporter_, INSERT );
+  std::cout << "In LinearProblem_GraphTrans<>::fwd(), pos 000" << std::endl;
   NewRHS_->doExport( *OldRHS_, *VecExporter_, INSERT );
+  std::cout << "In LinearProblem_GraphTrans<>::fwd(), pos 001.a"
+            << ": *MatExporter_ = " << *MatExporter_
+	    << std::endl;
+  std::cout << "In LinearProblem_GraphTrans<>::fwd(), pos 001.b"
+            << ": *NewMatrix_ = " << *NewMatrix_
+	    << std::endl;
+  std::cout << "In LinearProblem_GraphTrans<>::fwd(), pos 001.c"
+            << ": OldMatrix_ = " << OldMatrix_
+	    << std::endl;
+  std::cout << "In LinearProblem_GraphTrans<>::fwd(), pos 001.d"
+            << ": *OldMatrix_ = " << *OldMatrix_
+	    << std::endl;
+  std::cout << "In LinearProblem_GraphTrans<>::fwd(), pos 001.e" << std::endl;
   NewMatrix_->doExport( *OldMatrix_, *MatExporter_, INSERT );
+  std::cout << "Leaving LinearProblem_GraphTrans<>::fwd()" << std::endl;
 
   return true;
 }
