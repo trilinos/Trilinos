@@ -86,7 +86,7 @@ createBalancedCopy(const Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrd
 
   std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 003" << std::endl; 
 
-  Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> balanced_graph = rd.redistribute(rcp_input_graph);
+  Teuchos::RCP<::Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> balanced_graph = rd.redistribute(input_graph);
 
   std::cout << "EEP In isorropia/src/tpetra/EEP_Isorropia_Tpetra.hpp createBalancedCopy(4), pos 004" << std::endl; 
   

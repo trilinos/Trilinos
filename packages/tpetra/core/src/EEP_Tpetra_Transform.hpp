@@ -164,7 +164,10 @@ class Transform
   Transform()
   : origObj_(0),
     newObj_(0)
-  {}
+  {
+    std::cout << "EEP Entering Transform<>::constructor() in tpetra/core/src/EEP_Tpetra_Transform.hpp" << std::endl;
+    std::cout << "EEP Leaving Transform<>::constructor() in tpetra/core/src/EEP_Tpetra_Transform.hpp" << std::endl;
+  }
 
   OriginalTypePtr origObj_;
 
@@ -174,12 +177,12 @@ class Transform
   Transform(const Transform<T,U>& src)
     :origObj_(src.origObj_), newObj_(src.newObj_)
   {
-    std::cout << "Passing through tpetra/code/src/Tpetra_Transform.h Transform::copy_constructor()..." << std::endl;
+    std::cout << "EEP Passing through tpetra/code/src/EEP_Tpetra_Transform.h Transform::copy_constructor()..." << std::endl;
   }
 
   Transform<T,U>& operator=(const Transform<T,U>& src)
     {
-      std::cout << "Passing through tpetra/code/src/Tpetra_Transform.h Transform::assingment_opeeator()..." << std::endl;
+      std::cout << "EEP Passing through tpetra/code/src/EEP_Tpetra_Transform.h Transform::assingment_opeeator()..." << std::endl;
       //not currently supported
       abort();
       return(*this);
@@ -231,6 +234,12 @@ class SameTypeTransform : public Transform<T,T>
   typedef T* TransformTypePtr;
   typedef T& TransformTypeRef;
 
+  SameTypeTransform()
+  {
+    std::cout << "EEP Entering SameTypeTransform<>::constructor() in tpetra/core/src/EEP_Tpetra_Transform.hpp" << std::endl;
+    std::cout << "EEP Leaving SameTypeTransform<>::constructor() in tpetra/core/src/EEP_Tpetra_Transform.hpp" << std::endl;
+  }
+  
   virtual ~SameTypeTransform() {}
 };
 

@@ -130,20 +130,22 @@ void runExample() {
                                                 , Tpetra::CrsMatrix<double>::local_ordinal_type
                                                 , Tpetra::CrsMatrix<double>::global_ordinal_type
                                                 , Tpetra::CrsMatrix<double>::node_type
-                                                > > LPTrans;
+                                                > > LPTrans
+    = Teuchos::rcp( new Tpetra::LinearProblem_GraphTrans< double
+                                                        , Tpetra::CrsMatrix<double>::local_ordinal_type
+                                                        , Tpetra::CrsMatrix<double>::global_ordinal_type
+                                                        , Tpetra::CrsMatrix<double>::node_type
+                                                        >( *( dynamic_cast< Tpetra::StructuralSameTypeTransform< Tpetra::CrsGraph< Tpetra::CrsMatrix<double>::local_ordinal_type
+                                                                                                                                 , Tpetra::CrsMatrix<double>::global_ordinal_type
+                                                                                                                                 , Tpetra::CrsMatrix<double>::node_type
+                                                                                                                                 >
+                                                                                                               >*
+                                                                          >( Trans.get() )
+                                                            )
+                                                         )
+                  );
 
   std::cout << "In main(), pos 004" << std::endl;
-
-  LPTrans = Teuchos::rcp( new Tpetra::LinearProblem_GraphTrans< double
-                                                              , Tpetra::CrsMatrix<double>::local_ordinal_type
-                                                              , Tpetra::CrsMatrix<double>::global_ordinal_type
-                                                              , Tpetra::CrsMatrix<double>::node_type
-                                                              >
-                              ( *( dynamic_cast< Tpetra::StructuralSameTypeTransform< Tpetra::CrsGraph< Tpetra::CrsMatrix<double>::local_ordinal_type
-                                                                                                      , Tpetra::CrsMatrix<double>::global_ordinal_type
-                                                                                                      , Tpetra::CrsMatrix<double>::node_type
-                                                                                                      > >*>(Trans.get()) )
-                              ) );
 
   // Create a Tpetra::CrsMatrix with rows spread un-evenly over processors.
   if (localProc == 0) {

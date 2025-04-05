@@ -460,7 +460,7 @@ ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::ZoltanLibClass::computeCost()
   else{
     this->costs_ = Teuchos::rcp(new CostDescriber<LocalOrdinal, GlobalOrdinal, Node>());
   }
-  //comm.SumAll(&err, &gerr ,1); // EEP___
+  //comm.SumAll(&err, &gerr ,1); // EEP____ // ZoltanLibClass<>::computeCost()
 
   if (gerr > 0){
     throw std::runtime_error/*Isorropia::Exception*/(str1+str2);
@@ -471,7 +471,7 @@ ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::ZoltanLibClass::computeCost()
   lval[1] = numMyGWeights;
   lval[2] = numMyHGWeights;
 
-  //comm.SumAll(lval, gval, 3); // EEP___
+  //comm.SumAll(lval, gval, 3); // EEP____ // ZoltanLibClass<>::computeCost()
   gval[0] = lval[0];
   gval[1] = lval[1];
   gval[2] = lval[2];
@@ -504,6 +504,7 @@ template <class LocalOrdinal,
           class Node>
 void ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::preCheckPartition()
 {
+  std::cout << "EEP Entering ZoltanLibClass<>::preCheckPartition()" << std::endl;
   std::string str1("Isorropia::ZoltanLibClass::precheckPartition ");
   std::string str2;
 
@@ -530,12 +531,12 @@ void ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::preCheckPartition()
   int maxGparts, maxLparts, sumLparts;
   int fixGparts = -1;
   int fixLparts = -1;
-  int numrows = this->input_map_->getLocalNumElements(); // Elements(); // EEP___
+  int numrows = this->input_map_->getLocalNumElements(); // Elements(); // EEP___ // ZoltanLibClass<>::preCheckPartition()
 
   int myParts[] = {myGparts, myLparts};
   int maxParts[2];
 
-  //comm.MaxAll(myParts, maxParts, 2); // EEP___
+  //comm.MaxAll(myParts, maxParts, 2); // EEP____ // ZoltanLibClass<>::preCheckPartition()
   maxParts[0] = myParts[0];
   maxParts[1] = myParts[1];
 
@@ -554,7 +555,7 @@ void ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::preCheckPartition()
   }
 
   if (maxLparts > 0) {
-    //comm.SumAll(&myLparts, &sumLparts, 1); // EEP___
+    //comm.SumAll(&myLparts, &sumLparts, 1); // EEP____ // ZoltanLibClass<>::preCheckPartition()
     sumLparts = myLparts;
   }
   else
@@ -611,6 +612,7 @@ void ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::preCheckPartition()
       zoltanParamList_.set(lparts_str, s);
     }
   }
+  std::cout << "EEP Leaving ZoltanLibClass<>::preCheckPartition()" << std::endl;
 }
 
 template <class LocalOrdinal,
@@ -722,6 +724,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::
 color(Teuchos::ParameterList& zoltanParamList,
       std::vector<int>& properties)
 {
+  throw std::runtime_error("EEP Entering ZoltanLibClass<>::color(): incomplete code");
   zoltanParamList_ = zoltanParamList;
   // Distance 2 coloring by default.
   if (!zoltanParamList_.isParameter("COLORING_PROBLEM"))
@@ -746,13 +749,13 @@ color(Teuchos::ParameterList& zoltanParamList,
       return -1;
     }
 
-    int *intIds = nullptr; // queryObject_->RowMap().getLocalElementList(); // MyGlobalElements(); // EEP___
+    int *intIds = nullptr; // queryObject_->RowMap().getLocalElementList(); // MyGlobalElements(); // EEP___ // ZoltanLibClass<>::color() routine entrace has throw()
     for (int i=0; i < num_obj_; i++){
       gids[i] = (ZOLTAN_ID_TYPE)intIds[i];
     }
   }
   else{
-    gids = nullptr; // (ZOLTAN_ID_PTR)queryObject_->RowMap().getLocalElementList(); // MyGlobalElements(); // EEP___
+    gids = nullptr; // (ZOLTAN_ID_PTR)queryObject_->RowMap().getLocalElementList(); // MyGlobalElements(); // EEP___ // ZoltanLibClass<>::color() routine entrace has throw()
   }
 
   int err = zz_->Color(num_gid_entries, num_obj_, gids, &properties[0]);
@@ -777,6 +780,7 @@ int ZoltanLibClass<LocalOrdinal, GlobalOrdinal, Node>::
 order(Teuchos::ParameterList& zoltanParamList,
       std::vector<int>& properties)
 {
+  throw std::runtime_error("EEP Entering ZoltanLibClass<>::order(): incomplete code");
   zoltanParamList_ = zoltanParamList;
 
   precompute();
@@ -797,13 +801,13 @@ order(Teuchos::ParameterList& zoltanParamList,
       return -1;
     }
 
-    int *intIds = nullptr; // queryObject_->RowMap().MyGlobalElements(); // EEP___
+    int *intIds = nullptr; // queryObject_->RowMap().MyGlobalElements(); // EEP___ // ZoltanLibClass<>::order() routine entrace has throw()
     for (int i=0; i < num_obj_; i++){
       gids[i] = (ZOLTAN_ID_TYPE)intIds[i];
     }
   }
   else{
-    gids = nullptr; // (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements(); // EEP___
+    gids = nullptr; // (ZOLTAN_ID_PTR)queryObject_->RowMap().MyGlobalElements(); // EEP___ // ZoltanLibClass<>::order() routine entrace has throw()
   }
 
   int err = zz_->Order(num_gid_entries, num_obj_, gids, &properties[0], NULL);

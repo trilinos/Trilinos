@@ -139,7 +139,8 @@ class LinearProblem_GraphTrans : public SameTypeTransform< Tpetra::LinearProblem
     NewLHS_(0),
     NewRHS_(0)
   {
-    std::cout << "EEP Passing through LinearProblem_GraphTrans::constructor()..." << std::endl;
+    std::cout << "EEP Entering LinearProblem_GraphTrans<>::constructor()..." << std::endl;
+    std::cout << "EEP Leaving LinearProblem_GraphTrans<>::constructor()" << std::endl;
   }
 
   //! Constructs an Tpetra::LinearProblem from the original using the same row transformation given by the Tpetra::CrsGraph Transform
@@ -204,8 +205,8 @@ operator()( typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdin
   std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 001.1"
             << ": *OldGraph_ = " << *OldGraph_
 	    << std::endl;
-  Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & NewGraph = graphTrans_( *(const_cast<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>*>(OldGraph_)) );
-#if 1
+  Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & NewGraph = graphTrans_( *(const_cast<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>*>(OldGraph_)) ); // EEP____ important
+#if 1 // EEP important
   std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 002" << std::endl;
   std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 002.1"
             << ": *OldGraph_ = " << *OldGraph_ // EEP____ error agora
@@ -225,9 +226,11 @@ operator()( typename SameTypeTransform< Tpetra::LinearProblem<Scalar, LocalOrdin
   VecExporter_ = new Tpetra::Export<LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(OldRowMap_), NewRowMap );
   Importer_ = new Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(OldRowMap_), NewRowMap );
 
+#if 1 // EEP important
   std::cout << "EEP In tpetra/core/src/EEP_Tpetra_LPTrans_From_GraphTrans.hpp LinearProblem_GraphTrans::operator(), pos 003"
             << ": *OldMatrix_ = " << *OldMatrix_
 	    << std::endl;
+#endif
   NewProblem_ = new Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>( Teuchos::rcp< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(NewMatrix_)
                                                                                     , Teuchos::rcp< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(NewLHS_)
                                                                                     , Teuchos::rcp< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(NewRHS_)
