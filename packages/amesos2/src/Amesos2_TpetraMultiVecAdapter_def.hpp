@@ -22,6 +22,7 @@
 #include <type_traits>
 #include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
 #include "Amesos2_Kokkos_View_Copy_Assign.hpp"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 
 namespace Amesos2 {
@@ -76,7 +77,7 @@ namespace Amesos2 {
     return contig_local_view_1d.data();
   }
 
-  // TODO Proper type handling: 
+  // TODO Proper type handling:
   // Consider a MultiVectorTraits class
   // typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> multivector_type
   // NOTE: In this class, above already has a typedef multivec_t
@@ -145,7 +146,7 @@ namespace Amesos2 {
         // needs to keep the distribution Map, we have to make a copy of
         // the latter in order to ensure that it will stick around past
         // the scope of this function call.  (Ptr is not reference
-        // counted.)  
+        // counted.)
         distMap = rcp(new map_type(*distribution_map));
         // (Re)create the Export object.
         exporter_ = rcp (new export_type (this->getMap (), distMap));
@@ -248,6 +249,7 @@ namespace Amesos2 {
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Resolve handling for non-constant stride.");
+        TEUCHOS_UNREACHABLE_RETURN(false);
       }
     }
     else {
@@ -292,6 +294,7 @@ namespace Amesos2 {
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter non-constant stride not imlemented.");
+          TEUCHOS_UNREACHABLE_RETURN(false);
         }
       }
     }
