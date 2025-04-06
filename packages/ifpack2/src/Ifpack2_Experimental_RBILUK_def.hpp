@@ -925,13 +925,13 @@ void RBILUK<MatrixType>::compute ()
       auto U_entries = lclU.graph.entries;
       auto U_values  = lclU.values;
 
-      KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
-                                                  A_local_rowmap, A_local_entries, A_local_values,
-                                                  L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
+      KokkosSparse::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
+                                   A_local_rowmap, A_local_entries, A_local_values,
+                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
 
       // Now call symbolic for sptrsvs
-      KokkosSparse::Experimental::sptrsv_symbolic(L_Sptrsv_KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values);
-      KokkosSparse::Experimental::sptrsv_symbolic(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values);
+      KokkosSparse::sptrsv_symbolic(L_Sptrsv_KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values);
+      KokkosSparse::sptrsv_symbolic(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values);
     }
   } // Stop timing
 
@@ -1126,7 +1126,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           for (LO vec = 0; vec < numVecs; ++vec) {
             auto X_view = Kokkos::subview(X_views, Kokkos::ALL(), vec);
             auto Y_view = Kokkos::subview(Y_views, Kokkos::ALL(), vec);
-            KokkosSparse::Experimental::sptrsv_solve(L_Sptrsv_KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values, X_view, tmp_);
+            KokkosSparse::sptrsv_solve(L_Sptrsv_KernelHandle_.getRawPtr(), L_rowmap, L_entries, L_values, X_view, tmp_);
           }
         }
 
@@ -1134,7 +1134,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           const LO numVecs = X.getNumVectors();
           for (LO vec = 0; vec < numVecs; ++vec) {
             auto Y_view = Kokkos::subview(Y_views, Kokkos::ALL(), vec);
-            KokkosSparse::Experimental::sptrsv_solve(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values, tmp_, Y_view);
+            KokkosSparse::sptrsv_solve(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values, tmp_, Y_view);
           }
         }
 
