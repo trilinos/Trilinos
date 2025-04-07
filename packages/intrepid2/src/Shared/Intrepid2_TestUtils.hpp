@@ -289,68 +289,6 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     }
   }
 
-  //! A copy of PointTools::getEquispacedLatticePyramid() that only includes the points on the pyramid surface (which is where the pyramidal bases are polynomial).
-  template<typename PointValueType, class ...PointProperties>
-  inline void
-  getEquispacedLatticePyramidBoundary( Kokkos::DynRankView<PointValueType,PointProperties...> points,
-                                      const ordinal_type order ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( (order <= 0) ,
-      std::invalid_argument ,
-      ">>> ERROR (Intrepid2::getEquispacedLatticePyramidBoundary): order must be positive" );
-
-    auto pointsHost = Kokkos::create_mirror_view(points);
-
-    const PointValueType h = 1.0 / order;
-    ordinal_type cur = 0;
-
-    for (ordinal_type i=0;i<=order;i++) { // z dimension (goes from 0 to 1)
-      PointValueType z = i * h;
-      for (ordinal_type j=0;j<=order-i;j++) { // y (goes from -(1-z) to 1-z)
-        for (ordinal_type k=0;k<=order-i;k++) { // x (goes from -(1-z) to 1-z)
-          const bool i_extremum = (i == 0) || (i==order);
-          const bool j_extremum = (j == 0) || (j==order-i);
-          const bool k_extremum = (k == 0) || (k==order-i);
-          if (i_extremum || j_extremum || k_extremum) // point will be on the surface
-          {
-            pointsHost(cur,0) = 2. * k * h - (1.-z);
-            pointsHost(cur,1) = 2. * j * h - (1.-z);
-            pointsHost(cur,2) = z;
-            cur++;
-          }
-        }
-      }
-    }
-    Kokkos::deep_copy(points, pointsHost);
-  }
-
-  inline ordinal_type
-  getEquispacedLatticePyramidBoundarySize(const ordinal_type order ) {
-    TEUCHOS_TEST_FOR_EXCEPTION( (order < 0) ,
-      std::invalid_argument ,
-      ">>> ERROR (Intrepid2::getEquispacedLatticePyramidBoundarySize): order must be non-negative" );
-    // base will be (order+1)*(order+1) (the whole bottom square is on the boundary)
-    // each level above the base contributes  n * n - (n-2) * (n-2) for n ≥ 2
-    // n = 1 contributes 1
-    // so the formula is:
-    // -       sum of squares from n=1 to order+1
-    // - minus sum of squares from n=1 to (order-2)
-    // all but three terms cancel
-    // which gives us 
-    //   (order+1)*(order+1) + order*order + (order-1)*(order-1).
-    if (order == 0)
-    {
-      return 1;
-    }
-    else if (order == 1)
-    {
-      return 5;
-    }
-    else
-    {
-      return (order+1)*(order+1) + order*order + (order-1)*(order-1);
-    }
-  }
-
   template<typename OutputValueType, typename DeviceType>
   inline ViewType<OutputValueType,DeviceType> getOutputView(Intrepid2::EFunctionSpace fs, Intrepid2::EOperator op, int basisCardinality, int numPoints, int spaceDim)
   {
