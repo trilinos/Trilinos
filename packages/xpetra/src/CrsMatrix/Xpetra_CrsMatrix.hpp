@@ -20,7 +20,7 @@
 #include "Xpetra_Vector.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#include <Kokkos_StaticCrsGraph.hpp>
+#include <KokkosSparse_StaticCrsGraph.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #endif
 
@@ -277,11 +277,11 @@ class CrsMatrix
   using execution_space  = typename node_type::device_type;
 
   // that is the local_graph_type in Tpetra::CrsGraph...
-  using local_graph_type = Kokkos::StaticCrsGraph<LocalOrdinal,
-                                                  Kokkos::LayoutLeft,
-                                                  execution_space,
-                                                  void,
-                                                  size_t>;
+  using local_graph_type = KokkosSparse::StaticCrsGraph<LocalOrdinal,
+                                                        Kokkos::LayoutLeft,
+                                                        execution_space,
+                                                        void,
+                                                        size_t>;
   /// \brief The specialization of Kokkos::CrsMatrix that represents
   ///   the part of the sparse matrix on each MPI process.
   ///  The same as for Tpetra

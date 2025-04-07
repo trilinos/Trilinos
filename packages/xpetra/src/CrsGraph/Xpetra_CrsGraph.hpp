@@ -21,7 +21,7 @@
 #include "Xpetra_Map.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#include <Kokkos_StaticCrsGraph.hpp>
+#include <KokkosSparse_StaticCrsGraph.hpp>
 #endif
 
 namespace Xpetra {
@@ -194,7 +194,7 @@ class CrsGraph
 #ifdef HAVE_XPETRA_TPETRA
   typedef typename node_type::execution_space execution_space;
   typedef typename node_type::device_type device_type;
-  typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t> local_graph_type;
+  typedef KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t> local_graph_type;
 
   /// \brief Get the local graph.
   ///
