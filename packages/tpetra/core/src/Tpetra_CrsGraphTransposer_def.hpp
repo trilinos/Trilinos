@@ -261,7 +261,7 @@ namespace Tpetra {
 
       global_col_inds_array globalColindsSym;
 
-      KokkosSparse::Experimental::spadd_symbolic
+      KokkosSparse::spadd_symbolic
         (&handle,
 #if KOKKOSKERNELS_VERSION >= 40299
          nrows, graph->getGlobalNumCols(),
@@ -296,7 +296,7 @@ namespace Tpetra {
       handle.create_spadd_handle(sorted);
       auto addHandle = handle.get_spadd_handle();
 
-      KokkosSparse::Experimental::spadd_symbolic
+      KokkosSparse::spadd_symbolic
         (&handle,
 #if KOKKOSKERNELS_VERSION >= 40299
          nrows, graph->getGlobalNumCols(),
