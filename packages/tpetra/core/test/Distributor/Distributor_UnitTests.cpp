@@ -11,6 +11,7 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_DistributorActor.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_as.hpp"
 
@@ -729,6 +730,23 @@ namespace {
     }
     // check the values
     TEST_COMPARE_ARRAYS(expectedImports,imports);
+
+    // reset imports
+    Kokkos::deep_copy(imports, 0);
+    // get DistributorPlan
+    auto& plan = distributor.getPlan();
+
+    // Set up a fresh DistributorActor
+    Tpetra::Details::DistributorActor actor;
+
+    // Perform communication steps
+    actor.doPostRecvs(plan, 1, imports);
+    actor.doPostSends(plan, myExportsConst, 1, imports);
+    actor.doWaitsRecv(plan);
+    actor.doWaitsSend(plan);
+
+    // check the values
+    TEST_COMPARE_ARRAYS(expectedImports,imports);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -830,6 +848,24 @@ namespace {
       }
       // check the values
       TEST_COMPARE_ARRAYS(expectedImports,imports);
+
+      // reset imports
+      Kokkos::deep_copy(imports, 0);
+      // get DistributorPlan
+      auto& plan = distributor.getPlan();
+
+      // Set up a fresh DistributorActor
+      Tpetra::Details::DistributorActor actor;
+
+      // Perform communication steps
+      actor.doPostRecvs(plan, 1, imports);
+      actor.doPostSends(plan, myExportsConst, 1, imports);
+      actor.doWaitsRecv(plan);
+      actor.doWaitsSend(plan);
+
+      // check the values
+      TEST_COMPARE_ARRAYS(expectedImports,imports);
+
       // All procs fail if any proc fails
       int globalSuccess_int = -1;
       reduceAll( *comm, REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
