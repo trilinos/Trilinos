@@ -3587,7 +3587,7 @@ addSorted(
 
   auto MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: sorted symbolic"));
 
-  KokkosSparse::Experimental::spadd_symbolic
+  KokkosSparse::spadd_symbolic
     (&handle,
      nrows, numGlobalCols,
      Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
@@ -3596,7 +3596,7 @@ addSorted(
   Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 
   MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: sorted numeric"));
-  KokkosSparse::Experimental::spadd_numeric(&handle,
+  KokkosSparse::spadd_numeric(&handle,
      nrows, numGlobalCols,
     Arowptrs, Acolinds, Avals, scalarA,
     Browptrs, Bcolinds, Bvals, scalarB,
@@ -3631,7 +3631,7 @@ addUnsorted(
   auto addHandle = handle.get_spadd_handle();
   auto MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: unsorted symbolic"));
 
-  KokkosSparse::Experimental::spadd_symbolic
+  KokkosSparse::spadd_symbolic
       (&handle,
        nrows, numGlobalCols,
        Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
@@ -3639,7 +3639,7 @@ addUnsorted(
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
   MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: unsorted numeric"));
-  KokkosSparse::Experimental::spadd_numeric(&handle,
+  KokkosSparse::spadd_numeric(&handle,
     nrows, numGlobalCols,
     Arowptrs, Acolinds, Avals, scalarA,
     Browptrs, Bcolinds, Bvals, scalarB,
@@ -3712,7 +3712,7 @@ convertToGlobalAndAdd(
   MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: diff col map kernel: unsorted symbolic"));
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
-  KokkosSparse::Experimental::spadd_symbolic
+  KokkosSparse::spadd_symbolic
     (&handle,
      nrows, A.numCols(),
      Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
@@ -3721,7 +3721,7 @@ convertToGlobalAndAdd(
 
   MM = Teuchos::null;
   MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: diff col map kernel: unsorted numeric"));
-  KokkosSparse::Experimental::spadd_numeric(&handle,
+  KokkosSparse::spadd_numeric(&handle,
     nrows, A.numCols(),
     Arowptrs, AcolindsConverted, Avals, scalarA,
     Browptrs, BcolindsConverted, Bvals, scalarB,
