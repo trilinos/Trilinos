@@ -765,15 +765,18 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
 
         //HDIV Case
         {
-          //compute reference points: use a lattice on the quad base of the pyramid
-          const ordinal_type numPointsSurface      = getEquispacedLatticePyramidBoundarySize(order);
-          ViewType<ValueType,DeviceType> refPoints = getView<ValueType,DeviceType>("pyramid surface points",numPointsSurface,dim);
-          getEquispacedLatticePyramidBoundary<double,DeviceType>(refPoints, order);
+          // compute reference points on the shared face of the pyramid
+          shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+          auto refPointsQuad = getInputPointsView<double,DeviceType>(quad, order);
+          ordinal_type numRefCoords = refPointsQuad.extent_int(0);
           
-          int numQuadPoints = (order + 1) * (order + 1);
-          resize(refPoints, numQuadPoints, dim); // delete all but the base of the pyramid
-          
-          ordinal_type numRefCoords = refPoints.extent_int(0);
+          // map the ref points to the pyramid
+          DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
+          const ordinal_type PYR_QUAD_FACE = 4;
+          const ordinal_type QUAD_DIM  = 2;
+          CellTools<DeviceType>::mapToReferenceSubcell(refPoints, refPointsQuad,
+                                                       QUAD_DIM, PYR_QUAD_FACE,
+                                                       pyramid);
           
           // compute orientations for cells (one time computation)
           DynRankViewInt elemNodes(&pyrs[0][0], numCells, numElemVertices);
