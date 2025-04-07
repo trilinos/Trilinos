@@ -291,7 +291,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
 
   //! A copy of PointTools::getEquispacedLatticePyramid() that only includes the points on the pyramid surface (which is where the pyramidal bases are polynomial).
   template<typename PointValueType, class ...PointProperties>
-  void
+  inline void
   getEquispacedLatticePyramidBoundary( Kokkos::DynRankView<PointValueType,PointProperties...> points,
                                       const ordinal_type order ) {
     TEUCHOS_TEST_FOR_EXCEPTION( (order <= 0) ,
@@ -323,7 +323,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     Kokkos::deep_copy(points, pointsHost);
   }
 
-  ordinal_type
+  inline ordinal_type
   getEquispacedLatticePyramidBoundarySize(const ordinal_type order ) {
     TEUCHOS_TEST_FOR_EXCEPTION( (order < 0) ,
       std::invalid_argument ,
