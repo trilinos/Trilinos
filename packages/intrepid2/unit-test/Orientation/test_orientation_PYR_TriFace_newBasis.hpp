@@ -151,7 +151,7 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
       dofsToExclude0(dofsToExclude0_),
       dofsToExclude1(dofsToExclude1_),
       work("lapack_work", fullBasisCardinality-std::min(dofsToExclude0.size(),dofsToExclude1.size())+dim*numRefCoords, 1) ,
-      cellMassMat("basisMat", dim*numRefCoords,fullBasisCardinality-dofsToExclude0.size()),
+      cellMassMat("basisMat", dim*numRefCoords,fullBasisCardinality-std::min(dofsToExclude0.size(),dofsToExclude1.size())),
       cellRhsMat("rhsMat",dim*numRefCoords, 1) {
         
         
@@ -533,9 +533,13 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
 
         //computing common face and edges
         {
+          for (int i=0; i<numCells; ++i)
+          {
+            faceIndex[i] = -1;
+          }
+          
           faceType face={};
           edgeType edge={};
-          //bool faceOrientation[numCells][4];
           for(ordinal_type i=0; i<numCells; ++i) {
             for (std::size_t iv=0; iv<pyramid.getNodeCount(); ++iv) {
               auto vertex = pyrs_rotated[i][pyramid.getNodeMap(0,iv,0)];
@@ -543,19 +547,21 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
                 if(common_face[isv] == vertex)
                   shared_vertices[i][isv] = iv;
             }
-            //compute faces' tangents
             for (std::size_t is=0; is<pyramid.getSideCount(); ++is) {
-              for (std::size_t k=0; k<pyramid.getNodeCount(2,is); ++k)
-                face[k]= pyrs_rotated[i][pyramid.getNodeMap(2,is,k)];
+              const std::size_t nodeCount = pyramid.getNodeCount(2,is);
+              for (std::size_t k=0; k<nodeCount; ++k)
+              {
+                auto pyrNode = pyramid.getNodeMap(2,is,k);
+                face[k]= pyrs_rotated[i][pyrNode];
+              }
 
               //rotate and flip
               auto minElPtr= std::min_element(face.begin(), face.end());
               std::rotate(face.begin(),minElPtr,face.end());
-              if(face[3]<face[1]) {auto tmp=face[1]; face[1]=face[3]; face[3]=tmp;}
+              if(face[2]<face[1]) {auto tmp=face[1]; face[1]=face[2]; face[2]=tmp;}
 
               if(face == common_face) faceIndex[i]=is;
             }
-            //compute edges' tangents
             for (std::size_t ie=0; ie<pyramid.getEdgeCount(); ++ie) {
               for (std::size_t k=0; k<pyramid.getNodeCount(1,ie); ++k)
                 edge[k]= pyrs_rotated[i][pyramid.getNodeMap(1,ie,k)];
@@ -565,6 +571,10 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
                 auto edge_lid = std::distance(common_edges.begin(),it);
                 edgeIndices[i][edge_lid]=ie;
               }
+            }
+            if (faceIndex[i] == -1)
+            {
+              INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "common face not found for cell");
             }
           }
         }
@@ -744,9 +754,27 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
         //HDIV Case
         {
           // compute reference points on the shared face of the pyramid
-          shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
-          auto refPointsQuad = getInputPointsView<double,DeviceType>(quad, order);
-          ordinal_type numRefCoords = refPointsQuad.extent_int(0);
+          shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
+          auto refPointsTri = getInputPointsView<double,DeviceType>(tri, order);
+          ordinal_type numRefCoords = refPointsTri.extent_int(0);
+          
+          // refPointsTri will include the apex of the pyramid, which is an excluded (singular) point.
+          // to correct this, we move the points toward the center by a factor of s=0.1:
+          
+          const double s = 0.1;
+          const double centroid_x = 1./3.;
+          const double centroid_y = 1./3.;
+          using ExecutionSpace = typename DynRankView::execution_space;
+          Kokkos::RangePolicy < ExecutionSpace > policy(0,numRefCoords);
+          Kokkos::parallel_for( policy,
+          KOKKOS_LAMBDA (const ordinal_type &pointOrdinal )
+          {
+            const auto p_x = refPointsTri(pointOrdinal,0);
+            const auto p_y = refPointsTri(pointOrdinal,1);
+            refPointsTri(pointOrdinal,0) = (1.0 - s) * p_x + s * centroid_x;
+            refPointsTri(pointOrdinal,1) = (1.0 - s) * p_y + s * centroid_y;
+          });
+          Kokkos::fence();
           
           DynRankView ConstructWithLabel(refPointsMultiCell, 2, numRefCoords, dim);
           auto refPoints0 = Kokkos::subview(refPointsMultiCell, 0, Kokkos::ALL(), Kokkos::ALL());
@@ -754,10 +782,10 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
           
           // map the ref points to the pyramid
           const ordinal_type FACE_DIM  = 2;
-          CellTools<DeviceType>::mapToReferenceSubcell(refPoints0, refPointsQuad,
+          CellTools<DeviceType>::mapToReferenceSubcell(refPoints0, refPointsTri,
                                                        FACE_DIM, faceIndex[0],
                                                        pyramid);
-          CellTools<DeviceType>::mapToReferenceSubcell(refPoints1, refPointsQuad,
+          CellTools<DeviceType>::mapToReferenceSubcell(refPoints1, refPointsTri,
                                                        FACE_DIM, faceIndex[1],
                                                        pyramid);
           
@@ -855,11 +883,11 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
             std::set<ordinal_type> nonTriDofs0, nonTriDofs1;
             for (ordinal_type i=0; i<basisCardinality; i++)
             {
-              if (nonTriDofs0.find(i) == nonTriDofs0.end())
+              if (triDofs0.find(i) == triDofs0.end())
               {
                 nonTriDofs0.insert(i);
               }
-              if (nonTriDofs1.find(i) == nonTriDofs1.end())
+              if (triDofs1.find(i) == triDofs1.end())
               {
                 nonTriDofs1.insert(i);
               }
