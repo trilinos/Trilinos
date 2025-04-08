@@ -133,7 +133,7 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
     return hierarchyMultiphysics_;
   }
 
-  //! Return an array of hierarchies corresponding to each diagona subblock
+  //! Return an array of hierarchies corresponding to each diagonal subblock
   Teuchos::ArrayRCP<Teuchos::RCP<Hierarchy>> subblockHierarchies() {
     return arrayOfHierarchies_;
   }
