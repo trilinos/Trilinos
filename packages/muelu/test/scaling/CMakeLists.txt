@@ -762,7 +762,7 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_Serial
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=serial"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -786,7 +786,7 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_CUDA
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=cuda"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -810,7 +810,7 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_HIP
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=hip"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -834,7 +834,7 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_SYCL
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=sycl"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
