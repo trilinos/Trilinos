@@ -68,6 +68,9 @@ jobs:
           git status
           git branch -vv
           git branch -a
+      - name: Output ccache stats
+        run: |
+          bash -l -c "ccache --show-stats --verbose"
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
@@ -128,8 +131,9 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -138,6 +142,7 @@ jobs:
           AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
           echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
           echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
@@ -177,6 +182,9 @@ jobs:
           git status
           git branch -vv
           git branch -a
+      - name: Output ccache stats
+        run: |
+          bash -l -c "ccache --show-stats --verbose"
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
@@ -238,8 +246,9 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -248,6 +257,7 @@ jobs:
           AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
           echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
           echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
@@ -287,6 +297,9 @@ jobs:
           git status
           git branch -vv
           git branch -a
+      - name: Output ccache stats
+        run: |
+          bash -l -c "ccache --show-stats --verbose"
       - name: get dependencies
         working-directory: ./packages/framework
         run: |
@@ -347,8 +360,9 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -357,6 +371,7 @@ jobs:
           AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
           echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
           echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
 
@@ -453,8 +468,9 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
+          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
           echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
           echo "### Current Build" >> $GITHUB_STEP_SUMMARY
           AT2_URL=$(</home/runner/AT2_URL.txt)
@@ -463,5 +479,6 @@ jobs:
           AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
           echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
           echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
+          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
           echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
           echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY

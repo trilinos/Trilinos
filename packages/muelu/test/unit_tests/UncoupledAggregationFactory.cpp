@@ -54,15 +54,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build, Scalar, Lo
   out << "version: " << MueLu::Version() << std::endl;
   Teuchos::ParameterList galeriList;
   GlobalOrdinal nx = 20, ny = 20;
-  galeriList.set("nx", nx);
-  galeriList.set("ny", ny);
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<const Map> map                  = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
-  map                                 = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 2);  // expand map for 2 DOFs per node
-  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
-  RCP<Matrix> A = Pr->BuildMatrix();
-  A->SetFixedBlockSize(2);
+  auto A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build2DElasticity(nx, ny);
 
   Level aLevel;
   TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
@@ -87,15 +79,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, Build_ML, Scalar,
   out << "version: " << MueLu::Version() << std::endl;
   Teuchos::ParameterList galeriList;
   GlobalOrdinal nx = 20, ny = 20;
-  galeriList.set("nx", nx);
-  galeriList.set("ny", ny);
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<const Map> map                  = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
-  map                                 = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 2);  // expand map for 2 DOFs per node
-  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
-  RCP<Matrix> A = Pr->BuildMatrix();
-  A->SetFixedBlockSize(2);
+  auto A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build2DElasticity(nx, ny);
 
   Level aLevel;
   TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);

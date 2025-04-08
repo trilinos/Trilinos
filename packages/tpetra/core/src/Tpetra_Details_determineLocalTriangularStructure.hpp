@@ -50,7 +50,7 @@ namespace Impl {
   /// number of diagonal entries in a sparse graph, and determining
   /// whether the graph is lower or upper triangular (or neither).
   ///
-  /// \tparam LocalGraphType Kokkos::StaticCrsGraph specialization
+  /// \tparam LocalGraphType KokkosSparse::StaticCrsGraph specialization
   /// \tparam LocalMapType Result of Tpetra::Map::getLocalGraph()
   template<class LocalGraphType, class LocalMapType>
   class DetermineLocalTriangularStructure {
@@ -192,7 +192,7 @@ namespace Impl {
 /// \warning This is an implementation detail of Tpetra.  It may
 ///   change or disappear at any time.
 ///
-/// \tparam LocalGraphType Kokkos::StaticCrsGraph specialization
+/// \tparam LocalGraphType KokkosSparse::StaticCrsGraph specialization
 /// \tparam LocalMapType Result of Tpetra::Map::getLocalGraph()
 ///
 /// \param G [in] The local sparse graph

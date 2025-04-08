@@ -25,12 +25,13 @@
 
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
 
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
+
+#include "KokkosSparse_StaticCrsGraph.hpp"
 
 #include <functional> // std::function
 #include <memory>
@@ -222,7 +223,7 @@ namespace Tpetra {
 
     //! The type of the part of the sparse graph on each MPI process.
     using local_graph_device_type =
-           Kokkos::StaticCrsGraph<local_ordinal_type, Kokkos::LayoutLeft,
+           KokkosSparse::StaticCrsGraph<local_ordinal_type, Kokkos::LayoutLeft,
                                   device_type, void, size_t>;
 
     //! The type of the part of the sparse graph on each MPI process.
