@@ -105,7 +105,15 @@ void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
 
   for (int iii = 0; iii < nBlks_; iii++) {
     if (arrayOfCoords_ != Teuchos::null) {
-      arrayOfParamLists_[iii]->sublist("user data").set("Coordinates", arrayOfCoords_[iii]);
+      if (arrayOfCoords_[iii] != Teuchos::null) {
+        arrayOfParamLists_[iii]->sublist("user data").set("Coordinates", arrayOfCoords_[iii]);
+      }
+    }
+
+    if (arrayOfMaterials_ != Teuchos::null) {
+      if (arrayOfMaterials_[iii] != Teuchos::null) {
+        arrayOfParamLists_[iii]->sublist("user data").set("Material", arrayOfMaterials_[iii]);
+      }
     }
 
     bool wantToRepartition = false;
@@ -223,7 +231,8 @@ void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfNullspaces,
                const Teuchos::ArrayRCP<Teuchos::RCP<RealValuedMultiVector>> arrayOfCoords,
                const int nBlks,
-               Teuchos::ParameterList& List) {
+               Teuchos::ParameterList& List,
+               const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfMaterials) {
   arrayOfHierarchies_.resize(nBlks_);
   for (int i = 0; i < nBlks_; i++) arrayOfHierarchies_[i] = Teuchos::null;
 
