@@ -45,47 +45,20 @@ TRIBITS_ADD_TEST(
 # Performance Testing
 ###################################
 
-TRIBITS_ADD_TEST(
-  FEMAssembly
-  NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --num-elements-x=8192 --num-elements-y=8192 --kokkos"
-  COMM mpi
-  NUM_MPI_PROCS 4
-  STANDARD_PASS_OUTPUT
-  RUN_SERIAL
-  CATEGORIES PERFORMANCE
-)
-
-TRIBITS_ADD_TEST(
-  FEMAssembly
-  NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --num-elements-x=8192 --num-elements-y=8192 --kokkos"
-  COMM mpi
-  NUM_MPI_PROCS 9
-  STANDARD_PASS_OUTPUT
-  RUN_SERIAL
-  CATEGORIES PERFORMANCE
-)
-
-TRIBITS_ADD_TEST(
-  FEMAssembly
-  NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --num-elements-x=8192 --num-elements-y=8192 --kokkos"
-  COMM mpi
-  NUM_MPI_PROCS 16
-  STANDARD_PASS_OUTPUT
-  RUN_SERIAL
-  CATEGORIES PERFORMANCE
-)
-
-TRIBITS_ADD_TEST(
-  FEMAssembly
-  NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
-  ARGS "--with-insert-global-indices-fe --num-elements-x=8192 --num-elements-y=8192 --kokkos"
-  COMM mpi
-  NUM_MPI_PROCS 25
-  STANDARD_PASS_OUTPUT
-  RUN_SERIAL
-  CATEGORIES PERFORMANCE
-)
+set(COUNTER 1)
+set(MAX_COUNT 11)
+WHILE(COUNTER LESS MAX_COUNT)
+  math(EXPR NP "${COUNTER} * ${COUNTER}")
+  TRIBITS_ADD_TEST(
+      FEMAssembly
+      NAME Performance_StrongScaling_FEMAssembly_InsertGlobalIndicesFESPKokkos
+      ARGS "--with-insert-global-indices-fe --num-elements-x=8192 --num-elements-y=8192 --kokkos"
+      COMM mpi
+      NUM_MPI_PROCS ${NP}
+      STANDARD_PASS_OUTPUT
+      RUN_SERIAL
+      CATEGORIES PERFORMANCE
+  )
+  math(EXPR COUNTER "${COUNTER} + 1")
+ENDWHILE()
 
