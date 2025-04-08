@@ -92,7 +92,7 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
     }
   };
 
-  struct FunDivQuadFace {
+  struct FunDivQuadFace { // quad face is z-orthogonal
     ValueType
     KOKKOS_INLINE_FUNCTION
     operator()(const ValueType& x, const ValueType& y, const ValueType& z, const int comp=0) {
@@ -386,7 +386,7 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
       ordinal_type fullBasisCardinality = basisCoeffs.extent(1);
 
       // we only use the shared points (here, on the quad) for coefficient setting.
-      const ordinal_type quadDofCount = basis->getDofCount(2, 0); // quad is face 0
+      const ordinal_type quadDofCount = basis->getDofCount(2, 4); // quad is face 4
       
       INTREPID2_TEST_FOR_EXCEPTION(numRefCoords < quadDofCount, std::invalid_argument, "numRefCoords must be at least as large as quadDofCount");
       ordinal_type basis_dim = (interfaceBasisValues.rank()==3) ? 1 : dim;
