@@ -85,7 +85,7 @@ correctVirtualNormals(PHX::MDField<Scalar,Cell,IP,Dim> normals,
 
     // Find the face and local face ids for the given virtual cell
     // Note that virtual cells only connect to the owned cells through a single face
-    int face, virtual_lidx;
+    int face = -1, virtual_lidx = -1;
     for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++){
       // Faces that exist have positive indexes
       face = face_connectivity.subcellForCell(virtual_cell, local_face_id);
@@ -153,7 +153,7 @@ correctVirtualRotationMatrices(PHX::MDField<Scalar,Cell,IP,Dim,Dim> rotation_mat
 
     // Find the face and local face ids for the given virtual cell
     // Note that virtual cells only connect to the owned cells through a single face
-    int face, virtual_lidx;
+    int face = -1, virtual_lidx = -1;
     for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++){
       // Faces that exist have positive indexes
       face = face_connectivity.subcellForCell(virtual_cell, local_face_id);
@@ -962,7 +962,7 @@ getJacobian(const bool cache,
     auto const_ref_coord = getCubaturePointsRef(false,force);
     auto ref_coord = PHX::getNonConstDynRankViewFromConstMDField(const_ref_coord);
     auto node_coord = PHX::getNonConstDynRankViewFromConstMDField(getNodeCoordinates());
-    
+
     const auto cell_range = std::make_pair(0,num_evaluate_cells_);
     auto s_ref_coord  = Kokkos::subview(ref_coord,     cell_range,Kokkos::ALL(),Kokkos::ALL());
     auto s_node_coord = Kokkos::subview(node_coord,    cell_range,Kokkos::ALL(),Kokkos::ALL());
@@ -976,7 +976,7 @@ getJacobian(const bool cache,
     auto const_ref_coord = getUniformCubaturePointsRef(false,force,false);
     auto ref_coord = PHX::getNonConstDynRankViewFromConstMDField(const_ref_coord);
     auto node_coord = PHX::getNonConstDynRankViewFromConstMDField(getNodeCoordinates());
-    
+
     const auto cell_range = std::make_pair(0,num_evaluate_cells_);
     auto s_node_coord = Kokkos::subview(node_coord,    cell_range,Kokkos::ALL(),Kokkos::ALL());
     auto s_jac        = Kokkos::subview(aux.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -1639,7 +1639,7 @@ getCubaturePoints(const bool cache,
 
     Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
     cell_tools.mapToPhysicalFrame(s_coord, s_ref_coord, s_node_coord, *(int_rule->topology));
-  
+
   } else {
 
     // Don't forget that since we are not caching this, we have to make sure the managed view remains alive while we use the non-const wrapper
