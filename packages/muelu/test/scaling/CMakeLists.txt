@@ -59,7 +59,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
       Driver
       NAME SetupSolve_Performance
       COMM mpi
-      ARGS "--stacked-timer --nx=${NX} --ny=${NX} --nz={NX} --matrixType=Laplace3D"
+      ARGS "--stacked-timer --nx=${NX} --ny=${NX} --nz=${NX} --matrixType=Laplace3D"
       NUM_MPI_PROCS ${NP}
       PASS_REGULAR_EXPRESSION "Belos converged"
       RUN_SERIAL
