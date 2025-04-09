@@ -24,7 +24,6 @@ namespace { // (anonymous)
     using map_type = Tpetra::Map<LO, GO, Node>;
     using vec_type = Tpetra::Vector<Scalar, LO, GO, Node>;
     using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
-    using row_matrix_type = Tpetra::RowMatrix<Scalar, LO, GO, Node>;
 
     using STS = Teuchos::ScalarTraits<Scalar>;
     using MT = typename STS::magnitudeType;
