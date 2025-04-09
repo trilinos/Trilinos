@@ -69,6 +69,7 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
    * \param[in] List Parameter list
    * \param[in] ComputePrec If true, compute the preconditioner immediately
    * \param[in] arrayOfMaterials      Material multivectors used to generate subblock prolongators for multiphysics system
+   * \param[in] OmitSubblockSmoother If true, omit construction of subblock-level smoothers
    */
   MultiPhys(const Teuchos::RCP<Matrix>& AmatMultiPhysics,
             const Teuchos::ArrayRCP<RCP<Matrix>> arrayOfAuxMatrices,
@@ -77,12 +78,14 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
             const int nBlks,
             Teuchos::ParameterList& List,
             bool ComputePrec                                                    = true,
-            const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfMaterials = Teuchos::null)
+            const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfMaterials = Teuchos::null,
+            bool OmitSubblockSmoother                                           = true)
     : AmatMultiphysics_(AmatMultiPhysics)
     , arrayOfAuxMatrices_(arrayOfAuxMatrices)
     , arrayOfNullspaces_(arrayOfNullspaces)
     , arrayOfCoords_(arrayOfCoords)
     , arrayOfMaterials_(arrayOfMaterials)
+    , OmitSubblockSmoother_(OmitSubblockSmoother)
     , nBlks_(nBlks) {
     initialize(AmatMultiPhysics, arrayOfAuxMatrices, arrayOfNullspaces, arrayOfCoords, nBlks, List, arrayOfMaterials);
     compute(false);
@@ -181,6 +184,8 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
   Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfNullspaces_;        // array of nullspaces for smoothed aggregation.
   Teuchos::ArrayRCP<Teuchos::RCP<RealValuedMultiVector>> arrayOfCoords_;  // array of coordinates for smoothed aggregation/rebalancing.
   Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfMaterials_;         // array of materials for smoothed aggregation.
+
+  bool OmitSubblockSmoother_;
 
   int nBlks_;  // number of PDE sub-systems within multiphysics system
   bool useKokkos_, enable_reuse_, syncTimers_;
