@@ -69,7 +69,7 @@ void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teuchos
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must provide sublist " + listName);
 
     arrayOfParamLists_[i]->set("verbosity", arrayOfParamLists_[i]->get("verbosity", verbosity));
-    if(OmitSubblockSmoother_){
+    if (OmitSubblockSmoother_) {
       arrayOfParamLists_[i]->set("smoother: pre or post", "none");
       arrayOfParamLists_[i]->set("smoother: type", "none");
     }
