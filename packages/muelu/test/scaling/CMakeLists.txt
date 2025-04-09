@@ -745,7 +745,7 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_Serial
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=serial"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -769,7 +769,7 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_CUDA
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=cuda"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -793,7 +793,31 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_HIP
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=hip"
+        NUM_MPI_PROCS ${NP}
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
+
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
+
+  ENDIF()
+
+  IF (Tpetra_INST_SYCL)
+
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
+
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR n "600 * ${COUNTER}")
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
+
+      TRIBITS_ADD_TEST(
+        MatvecKernelDriver
+        NAME Matvec_SYCL
+        COMM mpi
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=sycl"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
