@@ -20,30 +20,13 @@ namespace Tpetra::Details {
     requestsSend_(otherActor.requestsSend_) {}
 
   void DistributorActor::doWaits(const DistributorPlan& plan) {
-    if (requestsRecv_.size() > 0) {
-      ProfilingRegion wr("Tpetra::Distributor: doWaitsRecv");
-
-      Teuchos::waitAll(*plan.getComm(), requestsRecv_());
-
-      // Restore the invariant that requests_.size() is the number of
-      // outstanding nonblocking communication requests.
-      requestsRecv_.resize(0);
-    }
-
-    if (requestsSend_.size() > 0) {
-      ProfilingRegion ws("Tpetra::Distributor: doWaitsSend");
-
-      Teuchos::waitAll(*plan.getComm(), requestsSend_());
-
-      // Restore the invariant that requests_.size() is the number of
-      // outstanding nonblocking communication requests.
-      requestsSend_.resize(0);
-    }
+    doWaitsRecv(plan);
+    doWaitsSend(plan);
   }
 
   void DistributorActor::doWaitsRecv(const DistributorPlan& plan) {
     if (requestsRecv_.size() > 0) {
-      ProfilingRegion wr("Tpetra::Distributor: doWaitsRecv");
+      ProfilingRegion wr("Tpetra::Distributor::doWaitsRecv");
 
       Teuchos::waitAll(*plan.getComm(), requestsRecv_());
 
@@ -55,7 +38,7 @@ namespace Tpetra::Details {
 
   void DistributorActor::doWaitsSend(const DistributorPlan& plan) {
     if (requestsSend_.size() > 0) {
-      ProfilingRegion ws("Tpetra::Distributor: doWaitsSend");
+      ProfilingRegion ws("Tpetra::Distributor::doWaitsSend");
 
       Teuchos::waitAll(*plan.getComm(), requestsSend_());
 
