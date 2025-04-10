@@ -157,7 +157,7 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
         std::cout << "fullBasisCardinality is " << fullBasisCardinality << std::endl;
         std::cout << "dofsToExclude.size() is " << dofsToExclude.size() << std::endl;
       }
-      INTREPID2_TEST_FOR_EXCEPTION(numRefCoords < fullBasisCardinality-dofsToExclude.size(), std::invalid_argument, "numRefCoords must be at least as large as boundaryBasisCardinality");
+      INTREPID2_TEST_FOR_EXCEPTION(numRefCoords < includedDofCount, std::invalid_argument, "numRefCoords must be at least as large as boundaryBasisCardinality");
     };
 
     std::vector<int> computeBasisCoeffs(DynRankView basisCoeffs, ordinal_type& errorFlag, const DynRankView basisValues, const DynRankView funAtPhysRefCoords) {
