@@ -1110,7 +1110,18 @@ namespace Tpetra {
 
     // We've already called checkSizes(), so this cast must succeed.
     MV& sourceMV = const_cast<MV &>(dynamic_cast<const MV&> (sourceObj));
-    const bool copyOnHost = runKernelOnHost(sourceMV);
+
+    bool copyOnHost;
+    if (importsAreAliased () && (this->constantNumberOfPackets () != 0)) {
+      // imports are aliased to the target. We already posted Irecvs
+      // into imports using a memory space that depends on GPU
+      // awareness. Therefore we want to modify target in the same
+      // memory space. See comments in DistObject::beginTransfer.
+      copyOnHost = ! Behavior::assumeMpiIsGPUAware ();
+    } else {
+      // We are free to choose the better memory space for copyAndPermute.
+      copyOnHost = runKernelOnHost(sourceMV);
+    }
     const char longFuncNameHost[] = "Tpetra::MultiVector::copyAndPermute[Host]";
     const char longFuncNameDevice[] = "Tpetra::MultiVector::copyAndPermute[Device]";
     const char tfecfFuncName[] = "copyAndPermute: ";
@@ -1150,7 +1161,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Copy" << endl;
+      os << *prefix << "Copy first " << numSameIDs << " elements" << endl;
       std::cerr << os.str ();
     }
 
