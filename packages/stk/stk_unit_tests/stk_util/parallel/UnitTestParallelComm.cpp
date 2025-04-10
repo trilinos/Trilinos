@@ -33,12 +33,14 @@
 // 
 
 #include "gtest/gtest.h"
+#include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingProbe.hpp"
 #include "stk_util/parallel/Parallel.hpp"      // for parallel_machine_rank, parallel_machine_size
 
 #ifdef STK_HAS_MPI
 
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlocking.hpp"
+#include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingPrepost.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternNonBlockingBuffer.hpp"
 #include "stk_util/parallel/DataExchangeUnknownPatternBlockingBuffer.hpp"
 #include "stk_util/parallel/DataExchangeKnownPatternNonBlocking.hpp"
@@ -324,6 +326,13 @@ class DenseParallelCommTester : public ::testing::Test,
 using DenseParallelCommTesterInt = DenseParallelCommTester<int>;
 using DenseParallelCommTesterDouble = DenseParallelCommTester<double>;
 
+template <typename ExchangerTypeT>
+class DenseParallelCommTesterIntT : public ::testing::Test,
+                                    public DenseParallelCommTesterBase<int>
+{
+  using ExchangerType = ExchangerTypeT;
+};
+
 // test when process i only sends to i + 1 and i + 2 (with wrap around)
 template <typename T>
 class NeighborParallelCommTesterBase : public ParallelCommTester<T>
@@ -485,6 +494,14 @@ using NeighborParallelCommTesterInt = NeighborParallelCommTester<int>;
 using NeighborParallelCommTesterDouble = NeighborParallelCommTester<double>;
 
 
+}
+
+TEST(UnknownPatternExchanger, StringToEnum)
+{
+  EXPECT_EQ(stk::stringToUnknownPatternExchangerEnum("Default"), stk::UnknownPatternExchanger::Default);
+  EXPECT_EQ(stk::stringToUnknownPatternExchangerEnum("Probe"),   stk::UnknownPatternExchanger::Probe);
+  EXPECT_EQ(stk::stringToUnknownPatternExchangerEnum("Prepost"), stk::UnknownPatternExchanger::Prepost);
+  EXPECT_ANY_THROW(stk::stringToUnknownPatternExchangerEnum("foo"));
 }
 
 //-----------------------------------------------------------------------------
@@ -871,11 +888,98 @@ TEST_F(NeighborParallelCommTesterDouble, ClassBlocking)
   }
 }
 
+namespace {
+  using ExchangerTypes = ::testing::Types<DataExchangeNonBlocking,
+                                          stk::DataExchangeUnknownPatternNonBlockingProbe,
+                                          stk::DataExchangeUnknownPatternNonBlockingPrepost>;
+                                          
+  class NameGenerator
+  {
+    public:
+      template <typename T>
+      static std::string GetName(int)
+      {
+        if constexpr (std::is_same_v<T, stk::DataExchangeUnknownPatternNonBlockingProbe>)
+        {
+          return "DataExchangeUnknownPatternNonBlockingProbe";
+        } else if constexpr (std::is_same_v<T, stk::DataExchangeUnknownPatternNonBlockingPrepost>)
+        {
+          return "DataExchangeUnknownPatternNonBlockingPrepost";        
+        } else
+        {
+          return "OtherDataExchanger";
+        }
+      }
+  };                                          
+}
 
-TEST_F(DenseParallelCommTesterInt, ClassNonBlocking)
+TYPED_TEST_SUITE(DenseParallelCommTesterIntT, ExchangerTypes, NameGenerator);
+
+TYPED_TEST(DenseParallelCommTesterIntT, ClassNonBlocking)
 {
-  DataExchangeNonBlocking exchanger1(comm);
-  DataExchangeNonBlocking exchanger2(comm);
+  using ExchangerType = TypeParam;
+  using ElementType = int;
+  
+  ExchangerType exchanger1(this->comm);
+  ExchangerType exchanger2(this->comm);
+
+  EXPECT_FALSE(exchanger1.are_recvs_in_progress());
+  EXPECT_FALSE(exchanger1.are_sends_in_progress());
+  EXPECT_FALSE(exchanger2.are_recvs_in_progress());
+  EXPECT_FALSE(exchanger2.are_sends_in_progress());
+
+  auto& sendListsTest = this->get_send_lists();
+  auto& recvListsTest = this->get_receive_lists();
+
+  for (int i=0; i < 100; ++i) {
+    this->set_offset(i);
+    
+    std::vector< std::vector<ElementType> > sendLists2 = sendListsTest;
+    std::vector< std::vector<ElementType> > recvLists2 = recvListsTest;
+
+    exchanger1.start_nonblocking(sendListsTest, recvListsTest);
+    exchanger2.start_nonblocking(sendLists2, recvLists2);
+
+    EXPECT_TRUE(exchanger1.are_recvs_in_progress());
+    EXPECT_TRUE(exchanger1.are_sends_in_progress());
+    EXPECT_TRUE(exchanger2.are_recvs_in_progress());
+    EXPECT_TRUE(exchanger2.are_sends_in_progress());
+    exchanger1.post_nonblocking_receives(recvListsTest);
+    exchanger2.post_nonblocking_receives(recvLists2);
+    
+    this->test_send_ranks(sendListsTest);
+    this->test_recv_ranks(recvListsTest);
+
+    this->test_send_ranks(sendLists2);
+    this->test_recv_ranks(recvLists2);
+
+    auto f = [&](int rank, std::vector<int>& buf) { this->test_recv_vals(buf, rank); };
+
+    exchanger1.complete_receives(recvListsTest, f);
+    EXPECT_FALSE(exchanger1.are_recvs_in_progress());
+    EXPECT_TRUE(exchanger1.are_sends_in_progress());
+    this->test_results(recvListsTest);
+
+    exchanger2.complete_receives(recvLists2, f);
+    EXPECT_FALSE(exchanger2.are_recvs_in_progress());
+    EXPECT_TRUE(exchanger2.are_sends_in_progress());
+    this->test_results(recvLists2);
+
+    exchanger1.complete_sends();
+    EXPECT_FALSE(exchanger1.are_recvs_in_progress());
+    EXPECT_FALSE(exchanger1.are_sends_in_progress());
+
+    exchanger2.complete_sends();
+    EXPECT_FALSE(exchanger2.are_sends_in_progress());
+    EXPECT_FALSE(exchanger2.are_recvs_in_progress());
+  }
+}
+
+/*
+TEST_F(DenseParallelCommTesterInt, ClassNonBlockingPrepost)
+{
+  stk::DataExchangeUnknownPatternNonBlockingPrepost exchanger1(comm);
+  stk::DataExchangeUnknownPatternNonBlockingPrepost exchanger2(comm);
 
   EXPECT_FALSE(exchanger1.are_recvs_in_progress());
   EXPECT_FALSE(exchanger1.are_sends_in_progress());
@@ -926,6 +1030,7 @@ TEST_F(DenseParallelCommTesterInt, ClassNonBlocking)
     EXPECT_FALSE(exchanger2.are_recvs_in_progress());
   }
 }
+*/
 
 TEST_F(DenseParallelCommTesterInt, ClassNonBlockingKnownPattern)
 {

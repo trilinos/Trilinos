@@ -56,6 +56,7 @@
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/FieldSyncDebugging.hpp"
+#include "stk_mesh/base/SharingInfo.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
@@ -141,30 +142,10 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
 }
 
 
-struct sharing_info
-{
-    stk::mesh::Entity m_entity;
-    int m_sharing_proc;
-    int m_owner;
-    sharing_info(stk::mesh::Entity entity, int sharing_proc, int owner) :
-        m_entity(entity), m_sharing_proc(sharing_proc), m_owner(owner) {}
-};
-
-struct SharingInfoLess
-{
-    bool operator()(const stk::mesh::sharing_info &a, const stk::mesh::sharing_info &b)
-    {
-        if(a.m_entity == b.m_entity)
-            return a.m_owner < b.m_owner;
-        else
-            return a.m_entity < b.m_entity;
-    }
-};
-
 class BulkData {
 
 public:
-  enum GhostingId { SHARED = 0, AURA = 1 };
+  enum GhostingId { SHARED = 0, AURA = 1, SYMM_INFO = 99999 };
   enum EntitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
   enum AutomaticAuraOption { NO_AUTO_AURA, AUTO_AURA };
 
@@ -552,7 +533,7 @@ public:
                          const RelationIdentifier local_id );
 
   template <typename NgpMemSpace>
-  inline NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(EntityRank rank, int proc) const;
+  inline NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(EntityRank rank, int proc, bool includeGhosts=false) const;
 
   const std::vector<int>& all_sharing_procs(stk::mesh::EntityRank rank) const;
 
@@ -873,6 +854,8 @@ public:
   void confirm_host_mesh_is_synchronized_from_device(const char * fileName = HOST_DEBUG_FILE_NAME,
                                       int lineNumber = HOST_DEBUG_LINE_NUMBER) const;
 
+  bool has_symmetric_ghost_info() const { return m_symmetricGhostInfo; }
+
 protected: //functions
   BulkData(std::shared_ptr<MetaData> mesh_meta_data,
            ParallelMachine parallel,
@@ -1173,9 +1156,6 @@ protected: //functions
   void internal_remove_aura();
 
   void require_ok_to_modify() const ;
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sept 2024
-  void internal_update_fast_comm_maps() const;
-#endif
   template <typename NgpMemSpace> void internal_update_ngp_fast_comm_maps() const;
   void internal_update_all_sharing_procs() const;
 
@@ -1249,10 +1229,11 @@ protected: //functions
 
   virtual void notify_finished_mod_end();
 
-  void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities);
+  void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities, stk::mesh::EntityRank rank);
   void use_nodes_to_resolve_sharing(stk::mesh::EntityRank rank, std::vector<Entity>& shared_new, bool onlyConsiderSoloSides = false);
   void change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys);
-  void resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
+  void resolve_parallel_side_connections(stk::mesh::EntityRank rank,
+                                         std::vector<SideSharingData>& sideSharingDataToSend,
                                          std::vector<SideSharingData>& sideSharingDataReceived);
   void add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities);
 
@@ -1416,6 +1397,10 @@ private:
 
   bool is_valid_connectivity(Entity entity, EntityRank rank) const;
 
+  void set_symmetric_ghost_info(bool trueOrFalse) { m_symmetricGhostInfo = trueOrFalse; }
+  void make_ghost_info_symmetric();
+  void remove_symmetric_ghost_info();
+
   friend class MeshBuilder;
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::impl::BucketRepository;
@@ -1536,8 +1521,6 @@ protected: //data
   Parallel m_parallel;
 
 private: // data
-  mutable VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
-  mutable unsigned m_volatile_fast_shared_comm_map_sync_count;
   mutable std::shared_ptr<impl::NgpMeshHostDataBase> m_ngpMeshHostDataBase;
   mutable std::vector<std::vector<int> > m_all_sharing_procs;
   mutable unsigned m_all_sharing_procs_sync_count;
@@ -1559,6 +1542,7 @@ private: // data
   mutable bool m_isDeviceMeshRegistered;
   mutable size_t m_ngpFieldSyncBufferModCount;
   bool m_runConsistencyCheck;
+  bool m_symmetricGhostInfo;
 
 protected:
   std::string m_lastModificationDescription;
@@ -1989,10 +1973,12 @@ void BulkData::internal_update_ngp_fast_comm_maps() const
         const EntityCommListInfoVector& all_comm = m_entity_comm_list;
         const EntityCommDatabase& commDB = internal_comm_db();
 
-        // Assemble map, find all shared entities and pack into volatile fast map
+        // Assemble map, find all shared and ghost entities and pack into volatile fast map
         std::vector<std::vector<unsigned> > shared_entity_counts(num_ranks);
+        std::vector<std::vector<unsigned> > ghost_entity_counts(num_ranks);
         for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
             shared_entity_counts[r].assign(parallel_size(), 0);
+            ghost_entity_counts[r].assign(parallel_size(), 0);
         }
 
         for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
@@ -2001,41 +1987,55 @@ void BulkData::internal_update_ngp_fast_comm_maps() const
 
             if (all_comm[i].entity_comm != -1) {
                 PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
-                for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
-                    shared_entity_counts[rank][ec->proc]++;
+                unsigned idx = 0;
+                while(idx<ec.size() && ec[idx].ghost_id == BulkData::SHARED) {
+                    shared_entity_counts[rank][ec[idx].proc]++;
+                    ++idx;
+                }
+                while(idx<ec.size()) {
+                    ghost_entity_counts[rank][ec[idx].proc]++;
+                    ++idx;
                 }
             }
         }
 
         for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
             Kokkos::resize(Kokkos::WithoutInitializing, ngpHostData->hostVolatileFastSharedCommMapOffset[r], parallel_size()+1);
+            Kokkos::resize(Kokkos::WithoutInitializing, ngpHostData->hostVolatileFastSharedCommMapNumShared[r], parallel_size());
             unsigned offset = 0;
             for(int p=0; p<parallel_size(); ++p) {
                 ngpHostData->hostVolatileFastSharedCommMapOffset[r](p) = offset;
-                offset += shared_entity_counts[r][p];
+                ngpHostData->hostVolatileFastSharedCommMapNumShared[r](p) = shared_entity_counts[r][p];
+                offset += shared_entity_counts[r][p] + ghost_entity_counts[r][p];
             }
             ngpHostData->hostVolatileFastSharedCommMapOffset[r](parallel_size()) = offset;
             Kokkos::resize(Kokkos::WithoutInitializing, ngpHostData->hostVolatileFastSharedCommMap[r], offset);
-        }
-
-        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
             shared_entity_counts[r].assign(parallel_size(), 0);
+            ghost_entity_counts[r].assign(parallel_size(), 0);
         }
 
         for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
             Entity const e        = all_comm[i].entity;
-            MeshIndex const& idx  = mesh_index(e);
-            if (idx.bucket->shared() && all_comm[i].entity_comm != -1) {
-              const unsigned bucket_id  = idx.bucket->bucket_id();
-              const unsigned bucket_ord = idx.bucket_ordinal;
+            MeshIndex const& meshIdx  = mesh_index(e);
+            if (all_comm[i].entity_comm != -1) {
+              const unsigned bucket_id  = meshIdx.bucket->bucket_id();
+              const unsigned bucket_ord = meshIdx.bucket_ordinal;
 
               const EntityKey key   = all_comm[i].key;
               const EntityRank rank = key.rank();
 
               PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
-              for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
-                const unsigned index = ngpHostData->hostVolatileFastSharedCommMapOffset[rank](ec->proc) + shared_entity_counts[rank][ec->proc]++;
+              unsigned idx = 0;
+              while(idx<ec.size() && ec[idx].ghost_id == BulkData::SHARED) {
+                const unsigned index = ngpHostData->hostVolatileFastSharedCommMapOffset[rank](ec[idx].proc) + shared_entity_counts[rank][ec[idx].proc]++;
                 ngpHostData->hostVolatileFastSharedCommMap[rank](index) = FastMeshIndex{bucket_id, bucket_ord};
+                ++idx;
+              }
+              while(idx<ec.size()) {
+                const unsigned index = ngpHostData->hostVolatileFastSharedCommMapOffset[rank](ec[idx].proc)
+                                     + ngpHostData->hostVolatileFastSharedCommMapNumShared[rank](ec[idx].proc) + ghost_entity_counts[rank][ec[idx].proc]++;
+                ngpHostData->hostVolatileFastSharedCommMap[rank](index) = FastMeshIndex{bucket_id, bucket_ord};
+                ++idx;
               }
             }
         }
@@ -2045,7 +2045,7 @@ void BulkData::internal_update_ngp_fast_comm_maps() const
 
 template <typename NgpMemSpace>
 inline NgpCommMapIndicesHostMirrorT<NgpMemSpace>
-BulkData::volatile_fast_shared_comm_map(EntityRank rank, int proc) const
+BulkData::volatile_fast_shared_comm_map(EntityRank rank, int proc, bool includeGhosts) const
 {
   confirm_host_mesh_is_synchronized_from_device();
   STK_ThrowAssert(this->in_synchronized_state());
@@ -2060,7 +2060,8 @@ BulkData::volatile_fast_shared_comm_map(EntityRank rank, int proc) const
     impl::NgpMeshHostData<NgpMemSpace>* ngpHostData = dynamic_cast<impl::NgpMeshHostData<NgpMemSpace>*>(m_ngpMeshHostDataBase.get());
 
     const size_t dataBegin = ngpHostData->hostVolatileFastSharedCommMapOffset[rank](proc);
-    const size_t dataEnd = ngpHostData->hostVolatileFastSharedCommMapOffset[rank](proc+1);
+    const size_t dataEnd = includeGhosts ? ngpHostData->hostVolatileFastSharedCommMapOffset[rank](proc+1)
+                         : dataBegin + ngpHostData->hostVolatileFastSharedCommMapNumShared[rank](proc);
     return Kokkos::subview(ngpHostData->hostVolatileFastSharedCommMap[rank], Kokkos::pair<size_t,size_t>(dataBegin, dataEnd));
   } else
   {

@@ -92,7 +92,6 @@ message("PACKAGE_NAME: '${PACKAGE_NAME}'")
 message("${PACKAGE_NAME}_SOURCE_DIR: '${${PACKAGE_NAME}_SOURCE_DIR}'\n")
 
 IF (HAVE_STK_Trilinos)
-  SET(STK_HAVE_KOKKOS ON)
   if (TPL_ENABLE_MPI OR HAVE_MPI)
     message("STK_HAS_MPI is true")
     SET(STK_HAS_MPI ON)
@@ -106,7 +105,6 @@ ELSE()
   endif()
 
   find_package(Kokkos REQUIRED)
-  SET(STK_HAVE_KOKKOS ON)
 
   IF(DEFINED STK_ENABLE_MPI)
     IF(STK_ENABLE_MPI)

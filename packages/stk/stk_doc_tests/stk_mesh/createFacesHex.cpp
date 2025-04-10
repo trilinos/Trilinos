@@ -37,7 +37,7 @@
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/SkinBoundary.hpp>  // for create_all_sides
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
@@ -60,11 +60,11 @@ TEST(StkMeshHowTo, CreateFacesHex)
   // ============================================================
   //+ EXAMPLE
   //+ Create the faces..
-  stk::mesh::create_faces(*bulkPtr);
+  stk::mesh::Selector allEntities = bulkPtr->mesh_meta_data().universal_part();
+  stk::mesh::create_all_sides(*bulkPtr, allEntities);
 
   // ==================================================
   // VERIFICATION
-  stk::mesh::Selector allEntities = bulkPtr->mesh_meta_data().universal_part();
   std::vector<size_t> entityCounts;
   stk::mesh::count_entities(allEntities, *bulkPtr, entityCounts);
   EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);

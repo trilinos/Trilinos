@@ -84,13 +84,16 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
   stk::mesh::MeshBuilder builder(pm);
   unsigned spatialDim = 3;
   builder.set_spatial_dimension(spatialDim);
+  if (with_ghosts) {
+    builder.set_symmetric_ghost_info(true);
+  }
   builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
   stk::mesh::BulkData& bulk = *bulkPtr;
   if (parallel_rank == 0)
   {
-      std::cerr << "Mesh: " << oss.str() << std::endl;
+      std::cout << "Mesh: " << oss.str() << std::endl;
   }
 
   std::vector<const FieldBase*> fields(numFields);
@@ -192,8 +195,12 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
 
   for (int t = 0; t < numIters; ++t) {
     if (with_ghosts) {
-      STK_ThrowRequireMsg(!device_mpi, "NGP parallel_sum_including_ghosts not implemented yet.");
-      stk::mesh::parallel_sum_including_ghosts(bulk, fields);
+      if (device_mpi) {
+        stk::mesh::parallel_sum_including_ghosts(*ngpMesh, ngpFields);
+      }
+      else {
+        stk::mesh::parallel_sum_including_ghosts(bulk, fields);
+      }
     }
     else {
       if (device_mpi) {
@@ -369,6 +376,13 @@ TEST(STKMesh_perf, parallel_sum_including_ghosts)
 {
     const bool with_ghosts = true;
     do_stk_test(with_ghosts);
+}
+
+TEST(STKMesh_perf, parallel_sum_including_ghosts_device_mpi)
+{
+    const bool with_ghosts = true;
+    const bool device_mpi = true;
+    do_stk_test(with_ghosts, device_mpi);
 }
 
 } //namespace STKperf

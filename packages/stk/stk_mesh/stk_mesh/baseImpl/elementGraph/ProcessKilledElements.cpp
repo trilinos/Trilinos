@@ -42,39 +42,7 @@ public:
                                                             stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector)
     {
         std::vector<impl::GraphEdgeProc> remote_edges = get_remote_edges();
-
-        for(impl::GraphEdgeProc& re : remote_edges)
-        {
-            stk::mesh::EntityId local_id = re.get_local_element_global_id();
-            int local_side = re.get_local_element_side_index();
-            stk::mesh::EntityId remote_id = re.get_remote_element_global_id();
-            int remote_side = re.get_remote_element_side_index();
-
-            stk::mesh::Entity element = m_bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
-
-            impl::ParallelInfo &parallel_edge_info = m_elementGraph.get_parallel_edge_info(element, local_side, remote_id, remote_side);
-            remoteActiveSelector[-remote_id] = false;
-
-            m_topology_modified = true;
-
-            bool create_side = m_bulkData.bucket(element).member(m_active);
-            if(create_side==true)
-            {
-                impl::add_side_into_exposed_boundary(m_bulkData,
-                                                     parallel_edge_info,
-                                                     element,
-                                                     local_side,
-                                                     remote_id,
-                                                     m_parts_for_creating_side,
-                                                     shared_modified,
-                                                     remoteActiveSelector,
-                                                     m_boundary_mesh_parts);
-            }
-            else
-            {
-                impl::remove_side_from_death_boundary(m_bulkData, element, m_active, deletedEntities, local_side);
-            }
-        }
+        process_remote_edges(shared_modified, deletedEntities, remoteActiveSelector, remote_edges);
     }
 
     void set_topology_is_modified()
@@ -88,6 +56,134 @@ public:
     }
 
 private:
+
+    void process_remote_edges(std::vector<stk::mesh::sharing_info> &shared_modified,
+                              stk::mesh::EntityVector& deletedEntities,
+                              stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                              std::vector<impl::GraphEdgeProc>& remote_edges)
+    {
+      for(impl::GraphEdgeProc& re : remote_edges)
+      {
+          stk::mesh::EntityId remote_id = re.get_remote_element_global_id();
+          remoteActiveSelector[-remote_id] = false;
+      }
+
+      for(impl::GraphEdgeProc& re : remote_edges)
+      {
+          stk::mesh::EntityId local_id = re.get_local_element_global_id();
+          int local_side = re.get_local_element_side_index();
+          stk::mesh::EntityId remote_id = re.get_remote_element_global_id();
+          int remote_side = re.get_remote_element_side_index();
+
+          stk::mesh::Entity element = m_bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
+
+          impl::ParallelInfo &parallel_edge_info = m_elementGraph.get_parallel_edge_info(element, local_side, remote_id, remote_side);
+
+          m_topology_modified = true;
+          process_dead_remote_parallel_graph_edge(parallel_edge_info, element, local_side, remote_id,
+                                                  shared_modified, deletedEntities, remoteActiveSelector);
+      }
+
+      if(m_elementGraph.has_shell_elements()) {
+        process_remote_edges_for_shell_sides_with_multiple_adjacencies(shared_modified, deletedEntities, remoteActiveSelector, remote_edges);
+      }
+    }
+
+    void process_remote_edges_for_shell_sides_with_multiple_adjacencies(std::vector<stk::mesh::sharing_info> &shared_modified,
+                                                                        stk::mesh::EntityVector& deletedEntities,
+                                                                        stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                                                                        std::vector<impl::GraphEdgeProc>& remote_edges)
+    {
+      for(impl::GraphEdgeProc& re : remote_edges)
+      {
+          stk::mesh::EntityId local_id = re.get_local_element_global_id();
+          int local_side = re.get_local_element_side_index();
+          stk::mesh::EntityId remote_id = re.get_remote_element_global_id();
+          int remote_side = re.get_remote_element_side_index();
+
+          stk::mesh::Entity element = m_bulkData.get_entity(stk::topology::ELEM_RANK, local_id);
+
+          stk::mesh::impl::LocalId elemLocalId = m_elementGraph.get_local_element_id(element);
+          stk::mesh::GraphEdgesForElement graphEdges = m_elementGraph.get_edges_for_element(elemLocalId);
+
+          for(size_t i = 0; i < graphEdges.size(); ++i) {
+            const GraphEdge& graphEdge = m_elementGraph.get_graph().get_edge_for_element(elemLocalId, i);
+            int sideOrdinal = graphEdge.side1();
+            if(local_side == sideOrdinal) {
+              stk::mesh::impl::LocalId elem2LocalId = graphEdge.elem2();
+              bool isParallelGraphEdge = !stk::mesh::impl::is_local_element(elem2LocalId);
+              if(isParallelGraphEdge) {
+                stk::mesh::EntityId elem2GlobalId = m_elementGraph.convert_negative_local_id_to_global_id(elem2LocalId);
+
+                if((elem2GlobalId != remote_id) || (graphEdge.side2() != remote_side)) {
+                  auto iter = remoteActiveSelector.find(elem2LocalId);
+                  bool isActiveRemoteGraphElement = (iter != remoteActiveSelector.end() ? iter->second : true);
+                  if(isActiveRemoteGraphElement) {
+                    impl::ParallelInfo &other_parallel_edge_info = m_elementGraph.get_parallel_edge_info(graphEdge);
+
+                    impl::add_side_into_exposed_boundary(m_bulkData,
+                                                         other_parallel_edge_info,
+                                                         element,
+                                                         local_side,
+                                                         m_parts_for_creating_side,
+                                                         shared_modified,
+                                                         remoteActiveSelector,
+                                                         m_active,
+                                                         m_boundary_mesh_parts);
+                  }
+                }
+              }
+            }
+          }
+      }
+    }
+
+    void process_dead_remote_parallel_graph_edge(const impl::ParallelInfo &parallel_edge_info,
+                                                 stk::mesh::Entity element,
+                                                 int local_side,
+                                                 stk::mesh::EntityId remote_id,
+                                                 std::vector<stk::mesh::sharing_info> &shared_modified,
+                                                 stk::mesh::EntityVector& deletedEntities,
+                                                 stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector)
+    {
+        bool create_side = m_bulkData.bucket(element).member(m_active);
+        if(create_side==true)
+        {
+            impl::add_side_into_exposed_boundary(m_bulkData,
+                                                 parallel_edge_info,
+                                                 element,
+                                                 local_side,
+                                                 m_parts_for_creating_side,
+                                                 shared_modified,
+                                                 remoteActiveSelector,
+                                                 m_active,
+                                                 m_boundary_mesh_parts);
+        }
+        else
+        {
+            if(!impl::remove_side_from_death_boundary(m_bulkData, element, m_active, deletedEntities, local_side, remoteActiveSelector)) {
+              stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(m_bulkData, element, local_side);
+
+              if(m_bulkData.is_valid(side)) {
+                // Update shared info for existing side that can't be removed
+                int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
+                int owning_proc = std::min(other_proc, m_bulkData.parallel_rank());
+                shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
+              } else {
+                // Create the side since it is meant to exist
+                impl::add_side_into_exposed_boundary(m_bulkData,
+                                                     parallel_edge_info,
+                                                     element,
+                                                     local_side,
+                                                     m_parts_for_creating_side,
+                                                     shared_modified,
+                                                     remoteActiveSelector,
+                                                     m_active,
+                                                     m_boundary_mesh_parts);
+              }
+            }
+        }
+    }
 
     std::vector<impl::GraphEdgeProc> get_remote_edges() const
     {
@@ -126,7 +222,6 @@ private:
     const stk::mesh::PartVector* m_boundary_mesh_parts;
     bool m_topology_modified;
 };
-
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData,
                              const stk::mesh::EntityVector& killedElements,
@@ -183,7 +278,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                                     bulkData.change_entity_parts(side, parts);
                                 }
                             }
-                            else
+                            else if(impl::can_add_side_into_exposed_boundary(bulkData, this_element, side_id, remoteActiveSelector, active))
                             {
                                 stk::mesh::PartVector parts = impl::get_parts_for_creating_side(bulkData, parts_for_creating_side, other_element, side_id);
 
@@ -202,7 +297,27 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                         }
                         else
                         {
-                            impl::remove_side_from_death_boundary(bulkData, this_element, active, deletedEntities, side_id);
+                            if(!impl::remove_side_from_death_boundary(bulkData, this_element, active, deletedEntities, side_id, remoteActiveSelector)) {
+                                stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, this_element, side_id);
+                                bool sideExists = bulkData.is_valid(side);
+
+                                if(!sideExists && impl::can_add_side_into_exposed_boundary(bulkData, this_element, side_id, remoteActiveSelector, active)) {
+                                  // Create the side since it is meant to exist
+                                  stk::mesh::PartVector parts = impl::get_parts_for_creating_side(bulkData, parts_for_creating_side, other_element, side_id);
+
+                                  // switch elements
+                                  stk::mesh::Entity element_with_perm_0 = other_element;
+                                  stk::mesh::Entity element_with_perm_4 = this_element;
+
+                                  int side_id_needed = elementGraph.get_connected_elements_side(this_element, j);
+
+                                  STK_ThrowRequireMsg(side_id_needed >= 0, "ERROR: proc " << bulkData.parallel_rank() << " found side_id_needed=" << side_id_needed
+                                                  << " between elem " << bulkData.identifier(element_with_perm_0)<< " and " << bulkData.identifier(element_with_perm_4)
+                                                  << " in elem-elem-graph");
+
+                                  side = bulkData.declare_element_side(element_with_perm_0, side_id_needed, parts);
+                                }
+                            }
                         }
                     }
                 }
@@ -217,20 +332,34 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
 
                     if(create_side)
                     {
-                        impl::add_side_into_exposed_boundary(bulkData, parallel_edge_info, this_element, remote_id_side_pair.side, remote_id, parts_for_creating_side,
-                                shared_modified, remoteActiveSelector, boundary_mesh_parts);
+                        impl::add_side_into_exposed_boundary(bulkData, parallel_edge_info, this_element, remote_id_side_pair.side, parts_for_creating_side,
+                                                             shared_modified, remoteActiveSelector, active, boundary_mesh_parts);
                     }
                     else
                     {
                         int side_id = remote_id_side_pair.side;
                         STK_ThrowRequireWithSierraHelpMsg(side_id != -1);
-                        impl::remove_side_from_death_boundary(bulkData, this_element, active, deletedEntities, side_id);
+                        if(!impl::remove_side_from_death_boundary(bulkData, this_element, active, deletedEntities, side_id, remoteActiveSelector)) {
+                          stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulkData, this_element, side_id);
+                          if(bulkData.is_valid(side)) {
+                            // Update shared info for existing side that can't be removed
+                            int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
+                            int owning_proc = std::min(other_proc, bulkData.parallel_rank());
+                            shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
+                          } else {
+                            // Create the side since it is meant to exist
+                            impl::add_side_into_exposed_boundary(bulkData, parallel_edge_info, this_element, remote_id_side_pair.side, parts_for_creating_side,
+                                                            shared_modified, remoteActiveSelector, active, boundary_mesh_parts);
+                          }
+                        }
                     }
                 }
             }
         }
     }
+
     stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
+    stk::mesh::update_sharing_info_ownership(shared_modified);
     bulkData.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, elementGraph, killedElements, active, modEndOpt);
     bulkData.m_bucket_repository.set_remove_mode_fill_and_sort();
     return remote_death_boundary.get_topology_modification_status();
