@@ -1,5 +1,15 @@
 # CHANGELOG
 
+5.23.8-02 (STK_VERSION 5230802) 4/10/2025
+  stk_util: CommSparse can switch underlying comm scheme to pre-post recvs
+            instead of the default which is sends and probes. This can be
+            set at run-time with an environment variable:
+                export STK_UNKNOWN_PATTERN_EXCHANGER=Prepost
+  stk_mesh: Ghost comm info is now symmetric. This produces a change in
+            the procs returned from BulkData::comm_procs(entity, procs). Now
+            the ghost-receiver procs know about each other. Previously they
+            only knew about the entity owner.
+
 5.23.8-01 (STK_VERSION 5230801) 3/27/2025
   stk_util: Remove unused diag/Resource2.h, diag/String.hpp
   stk_util: Fix size_t issue by including <cstddef> in parallel/ReceiveCounter.hpp

@@ -481,8 +481,8 @@ TEST(LoadBalance, DISABLED_createGraphEdgesUsingNodeConnectivity)
 
     Zoltan2ParallelGraph myGraph;
 
-    size_t numElements = 0;
-    std::vector<stk::balance::GraphEdge> graphEdges;
+    constexpr size_t numElements = 2u;
+    std::vector<stk::balance::GraphEdge> graphEdges(3);
     stk::balance::GraphCreationSettings graphSettings;
     std::vector<int> adjacencyProcs;
 
