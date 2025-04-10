@@ -637,8 +637,8 @@ LocalSparseTriangularSolver<MatrixType>::kokkosKernelsAlgorithm() const
       std::is_same<int, local_ordinal_type>::value &&
     (std::is_same<scalar_type, float>::value ||
       std::is_same<scalar_type, double>::value ||
-      std::is_same<scalar_type, Kokkos::complex<float>>::value ||
-      std::is_same<scalar_type, Kokkos::complex<double>>::value))
+      std::is_same<impl_scalar_type, Kokkos::complex<float>>::value ||
+      std::is_same<impl_scalar_type, Kokkos::complex<double>>::value))
   {
     return KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE;
   }
