@@ -154,8 +154,8 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
       cellMassMat("basisMat", dim*numRefCoords,fullBasisCardinality-std::min(dofsToExclude0.size(),dofsToExclude1.size())),
       cellRhsMat("rhsMat",dim*numRefCoords, 1) {
         
-        
-      if (numRefCoords < fullBasisCardinality-std::min(dofsToExclude0.size(),dofsToExclude1.size()))
+      ordinal_type includedDofCount = fullBasisCardinality-std::min(dofsToExclude0.size(),dofsToExclude1.size());
+      if (numRefCoords < includedDofCount)
       {
         std::cout << "point count is " << numRefCoords << std::endl;
         std::cout << "fullBasisCardinality is " << fullBasisCardinality << std::endl;
@@ -866,7 +866,6 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
 
             // on the interior, pyramid basis is not polynomial.  We span the appropriate polynomial space in the normal direction on any face; that's what we test here.
             // exclude all dofs that don't belong to the shared face (which is face 4 in Intrepid2/shards numbering)
-            const ordinal_type FACE_DIM  = 2;
             const ordinal_type triDofCount0 = basis.getDofCount(FACE_DIM, faceIndex[0]); // cell 0's dofs on the face
             const ordinal_type triDofCount1 = basis.getDofCount(FACE_DIM, faceIndex[1]); // cell 1's dofs on the face
             std::set<ordinal_type> triDofs0, triDofs1;

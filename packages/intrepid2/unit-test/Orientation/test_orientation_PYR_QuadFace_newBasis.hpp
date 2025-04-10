@@ -150,7 +150,8 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
       cellMassMat("basisMat", dim*numRefCoords,fullBasisCardinality-dofsToExclude.size()),
       cellRhsMat("rhsMat",dim*numRefCoords, 1) {
         
-      if (numRefCoords < fullBasisCardinality-dofsToExclude.size())
+      ordinal_type includedDofCount = fullBasisCardinality-dofsToExclude.size();
+      if (numRefCoords < includedDofCount)
       {
         std::cout << "point count is " << numRefCoords << std::endl;
         std::cout << "fullBasisCardinality is " << fullBasisCardinality << std::endl;
@@ -850,7 +851,6 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
             // on the interior, pyramid basis is not polynomial.  We span the appropriate polynomial space in the normal direction on any face; that's what we test here.
             // exclude all dofs that don't belong to the quad face (which is face 4 in Intrepid2/shards numbering)
             const ordinal_type QUAD_FACE = 4;
-            const ordinal_type QUAD_DIM  = 2;
             const ordinal_type quadDofCount = basis.getDofCount(QUAD_DIM, QUAD_FACE);
             std::set<ordinal_type> quadDofs;
             for (ordinal_type i=0; i<quadDofCount; i++)
