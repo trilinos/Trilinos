@@ -101,6 +101,8 @@ constexpr const std::string_view SKIP_COPY_AND_PERMUTE =
     "TPETRA_SKIP_COPY_AND_PERMUTE";
 constexpr const std::string_view FUSED_RESIDUAL = "TPETRA_FUSED_RESIDUAL";
 constexpr const std::string_view OVERLAP = "TPETRA_OVERLAP";
+  constexpr const std::string_view DEFAULT_SEND_TYPE = "TPETRA_DEFAULT_SEND_TYPE";
+constexpr const std::string_view GRANULAR_TRANSFERS = "TPETRA_GRANULAR_TRANSFERS";
 constexpr const std::string_view SPACES_ID_WARN_LIMIT =
     "TPETRA_SPACES_ID_WARN_LIMIT";
 constexpr const std::string_view TIME_KOKKOS_DEEP_COPY =
@@ -128,6 +130,7 @@ constexpr const auto RECOGNIZED_VARS = make_array(
     HIERARCHICAL_UNPACK_BATCH_SIZE, HIERARCHICAL_UNPACK_TEAM_SIZE,
     USE_TEUCHOS_TIMERS, USE_KOKKOS_PROFILING, DEBUG, VERBOSE, TIMING,
     HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, FUSED_RESIDUAL, OVERLAP,
+    DEFAULT_SEND_TYPE, GRANULAR_TRANSFERS,
     SPACES_ID_WARN_LIMIT, TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
     TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS);
 
@@ -672,6 +675,24 @@ bool Behavior::overlapCommunicationAndComputation() {
   static bool initialized_ = false;
   return idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::OVERLAP, defaultValue);
+}
+
+int Behavior::defaultSendType() {
+  constexpr int defaultValue(1);
+
+  static int value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariable(
+      value_, initialized_, BehaviorDetails::DEFAULT_SEND_TYPE, defaultValue);
+}
+
+bool Behavior::enableGranularTransfers() {
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariable(
+      value_, initialized_, BehaviorDetails::GRANULAR_TRANSFERS, defaultValue);
 }
 
 size_t Behavior::spacesIdWarnLimit() {

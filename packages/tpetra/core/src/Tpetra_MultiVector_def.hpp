@@ -1112,7 +1112,7 @@ namespace Tpetra {
     MV& sourceMV = const_cast<MV &>(dynamic_cast<const MV&> (sourceObj));
 
     bool copyOnHost;
-    if (importsAreAliased () && (this->constantNumberOfPackets () != 0)) {
+    if (importsAreAliased () && (this->constantNumberOfPackets () != 0) && Behavior::enableGranularTransfers()) {
       // imports are aliased to the target. We already posted Irecvs
       // into imports using a memory space that depends on GPU
       // awareness. Therefore we want to modify target in the same
