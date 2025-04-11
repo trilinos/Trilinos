@@ -257,6 +257,12 @@ public:
   /// <tt>TPETRA_FAST_TRANSFERS</tt> environment variable.
   static bool fastTransfers();
 
+  /// \brief Default send type
+  ///
+  /// This is defaults to "Send".  You may control this at run time via the
+  /// <tt>TPETRA_DEFAULT_SEND_TYPE</tt> environment variable.
+  static int defaultSendType();
+
   /// \brief Add Teuchos timers for all host calls to Kokkos::deep_copy().
   /// This is especially useful for identifying host/device data transfers
   ///
