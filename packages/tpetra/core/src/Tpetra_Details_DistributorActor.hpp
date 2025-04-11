@@ -488,7 +488,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   // to the "unexpected queue" (of arrived messages not yet matched
   // with a receive).
   {
-    ProfilingRegion prr("Tpetra::Distributor::doPostRecvs recvs");
+    ProfilingRegion prr("Tpetra::Distributor::doPostRecvs MPI_Irecv");
 
     for (size_type i = 0; i < actualNumReceives; ++i) {
       size_t totalPacketsFrom_i = importLengths[Teuchos::as<size_t>(i)];
@@ -673,7 +673,9 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
   size_t selfIndex = 0;
 
   if (plan.getIndicesTo().is_null()) {
-    ProfilingRegion pssf("Tpetra::Distributor::doPostSends sends FAST");
+    const char isend_region[] = "Tpetra::Distributor::doPostSends MPI_Isend FAST";
+    const char send_region[] = "Tpetra::Distributor::doPostSends MPI_Send FAST";
+    ProfilingRegion pssf((sendType == Details::DISTRIBUTOR_ISEND) ? isend_region : send_region);
 
     // Data are already blocked (laid out) by process, so we don't
     // need a separate send buffer (besides the exports array).
@@ -725,7 +727,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
 
   }
   else { // data are not blocked by proc, use send buffer
-    ProfilingRegion psss("Tpetra::Distributor::doPostSends: sends SLOW");
+    ProfilingRegion psss("Tpetra::Distributor::doPostSends: MPI_Send SLOW");
 
     using Packet = typename ExpView::non_const_value_type;
     using Layout = typename ExpView::array_layout;
