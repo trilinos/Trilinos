@@ -1031,10 +1031,10 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
     const magnitude_type eps = STM::eps ();
 
     SCformat *Lstore2 = (SCformat*)(data_.L.Store);
-    int nsuper = 1 + Lstore2->nsuper;
+    int nsuperL = 1 + Lstore2->nsuper;
     int *nb = Lstore2->sup_to_col;
     int max_cols = 0;
-    for (int i = 0; i < nsuper; i++) {
+    for (int i = 0; i < nsuperL; i++) {
       if (nb[i+1] - nb[i] > max_cols) {
         max_cols = nb[i+1] - nb[i];
       }
