@@ -993,7 +993,7 @@ namespace Tpetra {
     // the overlapping of communication and computation in the "fast"
     // transfer case, i.e. when constantNumPackets > 0.
 
-    const bool overlapTransferSteps = (constantNumPackets != 0);
+    const bool overlapTransferSteps = (constantNumPackets != 0) && Behavior::fastTransfers();
 
     if (verbose) {
       std::ostringstream os;
