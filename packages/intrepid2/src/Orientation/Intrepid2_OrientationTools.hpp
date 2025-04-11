@@ -380,13 +380,15 @@ namespace Intrepid2 {
 
     /** \brief  subcell ordinal, orientation, matrix m x n
      */
-    typedef Kokkos::View<double****,DeviceType> CoeffMatrixDataViewType;
+    using CoeffMatrixDataViewType = Kokkos::View<double****,DeviceType>;
 
     // 
     /** \brief  key :: basis name, order, value :: matrix data view type 
      */
-    static std::map<std::pair<std::string,ordinal_type>,CoeffMatrixDataViewType> ortCoeffData;
-    static std::map<std::pair<std::string,ordinal_type>,CoeffMatrixDataViewType> ortInvCoeffData;
+    using OrtCoeffDataType = std::map<std::pair<std::string,ordinal_type>,Kokkos::View<double****,DeviceType> >;
+
+    static OrtCoeffDataType ortCoeffData;
+    static OrtCoeffDataType ortInvCoeffData;
     
   private:
 
@@ -541,14 +543,13 @@ namespace Intrepid2 {
                               const BasisTypeLeft* basisLeft,
                               const BasisTypeRight* basisRight);
   };
-  
+
+  //Definition of static members
   template<typename T> 
-  std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<T>::CoeffMatrixDataViewType>
-  OrientationTools<T>::ortCoeffData;
+  typename OrientationTools<T>::OrtCoeffDataType OrientationTools<T>::ortCoeffData;
 
   template<typename T> 
-  std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<T>::CoeffMatrixDataViewType>
-  OrientationTools<T>::ortInvCoeffData;
+  typename OrientationTools<T>::OrtCoeffDataType OrientationTools<T>::ortInvCoeffData;
 }
 
 // include templated function definitions
