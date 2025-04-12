@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 # actions: write needed by skip-duplicate-actions (handled below as per OpenSSF scorecard)
-permissions: 
+permissions:
   contents: read
 
 jobs:
@@ -24,6 +24,7 @@ jobs:
         # actions: write needed by skip-duplicate-actions
         permissions:
           actions: write
+          pull-requests: write
         outputs:
             should_skip: ${{ steps.skip_check.outputs.should_skip }}
         steps:
@@ -31,6 +32,16 @@ jobs:
           uses: fkirc/skip-duplicate-actions@f75f66ce1886f00957d99748a42c724f4330bdcf # v5.3.1
           with:
             skip_after_successful_duplicate: 'true'
+
+        - name: Post CDash URLs
+          uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            message-id: cdash
+            message: |
+              [CDash for AT1 results](https://trilinos-cdash.sandia.gov/index.php?project=Trilinos&filtercombine=and&filtercombine=and&filtercombine=and&filtercombine=and&filtercombine=and&filtercombine=and&filtercount=2&showfilters=1&filtercombine=and&field1=buildname&compare1=63&value1=PR-${{ github.event.number }}-test&field2=buildstarttime&compare2=84&value2=NOW) [Only accessible from Sandia networks]
+              [CDash for AT2 results](https://sems-cdash-son.sandia.gov/cdash/index.php?project=Trilinos&display=project&begin=2024-01-01&end=now&filtercount=1&showfilters=1&field1=buildname&compare1=65&value1=PR-${{ github.event.number }}) [Currently only accessible from Sandia networks]
 
   gcc10-openmpi4:
     needs: pre-checks
