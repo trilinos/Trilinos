@@ -691,7 +691,7 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
              }
          }
          
-         FunDivCurlFace fun;
+         FunCurlQuadFace fun;
          DynRankView ConstructWithLabel(funAtPhysRefCoords, numCells, numRefCoords, dim);
          for(ordinal_type i=0; i<numCells; ++i) {
            for(ordinal_type j=0; j<numRefCoords; ++j) {
