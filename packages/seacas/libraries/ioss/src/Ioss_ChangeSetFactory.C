@@ -1,4 +1,4 @@
-// Copyright(C) 2024 National Technology & Engineering Solutions
+// Copyright(C) 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -63,8 +63,11 @@ std::shared_ptr<Ioss::ChangeSet> Ioss::ChangeSetFactory::create(Ioss::Region *re
                          "       Was Ioss::Init::Initializer() called?\n\n");
       IOSS_ERROR(errmsg);
     }
-    else {
-      iter = registry()->find("ioss");
+    iter = registry()->find("ioss");
+    if (iter == registry()->end()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not locate correct change set types.\n\n");
+      IOSS_ERROR(errmsg);
     }
   }
 
@@ -89,8 +92,11 @@ std::shared_ptr<Ioss::ChangeSet> Ioss::ChangeSetFactory::create(Ioss::DatabaseIO
                          "       Was Ioss::Init::Initializer() called?\n\n");
       IOSS_ERROR(errmsg);
     }
-    else {
-      iter = registry()->find("ioss");
+    iter = registry()->find("ioss");
+    if (iter == registry()->end()) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "ERROR: Could not locate correct change set types.\n\n");
+      IOSS_ERROR(errmsg);
     }
   }
 

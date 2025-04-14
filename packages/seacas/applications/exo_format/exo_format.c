@@ -180,16 +180,18 @@ int main(int argc, char *argv[])
 
   /* Determine number of dims and vars -- useful in debugging incorrect NC_MAX_DIMS|VARS in netcdf.h
    */
-#if NC_HAS_HDF5
   {
     int ndims = 0;
     int nvars = 0;
+#if NC_HAS_HDF5
     nc_inq_dimids(exoid, &ndims, NULL, 0);
     nc_inq_varids(exoid, &nvars, NULL);
-    fprintf(stderr, "\t\tNumber of dims = %d\n", ndims);
-    fprintf(stderr, "\t\tNumber of vars = %d\n", nvars);
-  }
+#else
+    nc_inq(exoid, &ndims, &nvars, NULL, NULL);
 #endif
+    fprintf(stderr, "\t\tNumber of dims = %d\n", ndims);
+    fprintf(stderr, "\t\tNumber of vars = %d\n\n", nvars);
+  }
 
   if (ex_close(exoid) == -1) {
     printf("ex_close failed");

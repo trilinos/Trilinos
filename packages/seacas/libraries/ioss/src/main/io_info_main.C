@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,10 @@ int main(int argc, char *argv[])
 #endif
 
   Info::Interface interFace(version);
-  interFace.parse_options(argc, argv);
+  bool            success = interFace.parse_options(argc, argv);
+  if (!success) {
+    exit(EXIT_FAILURE);
+  }
 
   Ioss::Init::Initializer io;
 

@@ -1,4 +1,4 @@
-// Copyright(C) 2024 National Technology & Engineering Solutions
+// Copyright(C) 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -87,7 +87,7 @@ namespace Ioss {
 
     virtual void clear_change_sets();
 
-    DatabaseIO                         *get_database() const;
+    IOSS_NODISCARD DatabaseIO          *get_database() const;
     IOSS_NODISCARD const ParallelUtils &util() const;
 
     Ioss::DatabaseIO *m_database{nullptr};

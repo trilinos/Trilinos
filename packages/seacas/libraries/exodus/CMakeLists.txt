@@ -7,7 +7,6 @@ endif()
 TRIBITS_INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
-
 FILE(GLOB SOURCES src/ex_*.c)
 
 if (NOT ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
@@ -55,7 +54,8 @@ if (SEACASExodus_ENABLE_SHARED)
 endif()
 
 # Many users of the SEACAS installations still want a static exodus library...
-if (SEACASExodus_ENABLE_STATIC)
+# But if only building a static library, it will be added in the `TRIBITS_ADD_LIBRARY` call.
+if (SEACASExodus_ENABLE_STATIC AND SEACASExodus_ENABLE_SHARED)
    # NOTE: If use `TRIBITS_ADD_LIBRARY` here, then both exodus and exodus_static linked to all executables.
    ADD_LIBRARY(
            exodus_static
@@ -72,7 +72,7 @@ if (SEACASExodus_ENABLE_STATIC)
 
    # For backwards compatibility, the C exodus library was called libexoIIv2c.a
    # Create a symbolic link from libexodus.a to libexoIIv2c.a -- do only for static lib
-   InstallSymLink(libexodus.a ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libexoIIv2c.a)
+   InstallSymLink(libexodus.a ${CMAKE_INSTALL_PREFIX}/lib/libexoIIv2c.a)
 endif()
 
 if (${CMAKE_PROJECT_NAME} STREQUAL "Seacas")
