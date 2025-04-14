@@ -567,7 +567,7 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
 
         //HGRAD BASIS
         {
-          //compute reference points: use a lattice on the quad base of the pyramid
+          //compute reference points: use a lattice
           auto refPoints = getInputPointsView<double,DeviceType>(pyramid, order*3);
           ordinal_type numRefCoords = refPoints.extent_int(0);
           
@@ -660,14 +660,17 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
         /*{
 
          //compute reference points: use a lattice on the quad base of the pyramid
-         const ordinal_type numPointsSurface      = getEquispacedLatticePyramidBoundarySize(order);
-         ViewType<ValueType,DeviceType> refPoints = getView<ValueType,DeviceType>("pyramid surface points",numPointsSurface,dim);
-         getEquispacedLatticePyramidBoundary<double,DeviceType>(refPoints, order);
+         shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+         auto refPointsQuad = getInputPointsView<double,DeviceType>(quad, order);
+         ordinal_type numRefCoords = refPointsQuad.extent_int(0);
          
-         int numQuadPoints = (order + 1) * (order + 1);
-         resize(refPoints, numQuadPoints, dim); // delete all but the base of the pyramid
-         
-         ordinal_type numRefCoords = refPoints.extent_int(0);
+         // map the ref points to the pyramid
+         DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
+         const ordinal_type PYR_QUAD_FACE = 4;
+         const ordinal_type QUAD_DIM  = 2;
+         CellTools<DeviceType>::mapToReferenceSubcell(refPoints, refPointsQuad,
+                                                      QUAD_DIM, PYR_QUAD_FACE,
+                                                      pyramid);
          
          // compute orientations for cells (one time computation)
          DynRankViewInt elemNodes(&pyrs[0][0], numCells, numElemVertices);
@@ -688,15 +691,15 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
              }
          }
          
-          FunCurl fun;
-          DynRankView ConstructWithLabel(funAtPhysRefCoords, numCells, numRefCoords, dim);
-          for(ordinal_type i=0; i<numCells; ++i) {
-            for(ordinal_type j=0; j<numRefCoords; ++j) {
-              for(ordinal_type k=0; k<dim; ++k)
-                funAtPhysRefCoords(i,j,k) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
-            }
-          }
-
+         FunDivCurlFace fun;
+         DynRankView ConstructWithLabel(funAtPhysRefCoords, numCells, numRefCoords, dim);
+         for(ordinal_type i=0; i<numCells; ++i) {
+           for(ordinal_type j=0; j<numRefCoords; ++j) {
+             for(ordinal_type k=0; k<dim; ++k)
+               funAtPhysRefCoords(i,j,k) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
+           }
+         }
+         
           basis_set.clear();
           basis_set.push_back(new typename  CG_HBasis::HCURL_PYR(order));
 
@@ -737,18 +740,39 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
                 jacobianAtRefCoords_inv,
                 basisValuesAtRefCoords);
 
-            // on the interior, pyramid basis is not polynomial.  So we exclude those dofs when we do the coefficient setting.
-            const ordinal_type volumeDofCount = basis.getDofCount(dim, 0);
-            std::set<ordinal_type> volumeDofs;
-            for (ordinal_type i=0; i<volumeDofCount; i++)
+            // on the interior, pyramid basis is not polynomial.  We span the appropriate polynomial space in the tangent direction on any face; that's what we test here.
+            // exclude all dofs that don't belong to the quad face (which is face 4 in Intrepid2/shards numbering)
+            const ordinal_type QUAD_FACE = 4;
+            const ordinal_type quadDofCount = basis.getDofCount(QUAD_DIM, QUAD_FACE);
+            std::set<ordinal_type> quadDofs;
+            for (ordinal_type i=0; i<quadDofCount; i++)
             {
-              ordinal_type dofOrdinal = basis.getDofOrdinal(dim, 0, i);
-              volumeDofs.insert(dofOrdinal);
+              ordinal_type dofOrdinal = basis.getDofOrdinal(QUAD_DIM, QUAD_FACE, i);
+              quadDofs.insert(dofOrdinal);
+            }
+            std::set<ordinal_type> nonQuadDofs;
+            for (ordinal_type i=0; i<basisCardinality; i++)
+            {
+              if (quadDofs.find(i) == quadDofs.end())
+              {
+                nonQuadDofs.insert(i);
+              }
             }
             
-            BasisFunctionsSystem  basisFunctionsSystem(basisCardinality, numRefCoords, 1, volumeDofs);
-            auto info = basisFunctionsSystem.computeBasisCoeffs(basisCoeffs, errorFlag, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords);
-
+            BasisFunctionsSystem  basisFunctionsSystem(basisCardinality, numRefCoords, 3, nonQuadDofs);
+ 
+            // cross with the normal
+            auto transformedBasisValuesAtRefCoordsOriented_tangent = ...; // TODO: finish this
+            auto funAtPhysRefCoords_tangent = ...; // TODO: finish this
+            
+            DynRankView ConstructWithLabel(tangentBasisValues, numCells, basisCardinality, numRefCoords, dim);
+            Kokkos::deep_copy(tangentBasisValues, transformedBasisValuesAtRefCoordsOriented_tangent);
+            
+            DynRankView ConstructWithLabel(funTangent, numCells, numRefCoords);
+            Kokkos::deep_copy(funNormal, funAtPhysRefCoords_tangent);
+            
+            auto info = basisFunctionsSystem.computeBasisCoeffs(basisCoeffs, errorFlag, tangentBasisValues, funTangent);
+ 
             for (int ic =0; ic < numCells; ++ic) {
               if(info[ic] != 0) {
                 errorFlag++;
@@ -757,7 +781,8 @@ int OrientationPyrQuadFaceNewBasis(const bool verbose) {
               }
             }
 
-            TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoords, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords, elemOrts, basisPtr);
+            TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoords, transformedBasisValuesAtRefCoordsOriented,
+                                    tangentBasisValues, funTangent, elemOrts, basisPtr);
             testResults.test(errorFlag,tol);
             delete basisPtr;
           }

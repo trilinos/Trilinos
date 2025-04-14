@@ -675,79 +675,161 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
         //HCURL Case
         //TODO: uncomment after we implement H(curl) basis for pyramids
         /*{
-          FunCurl fun;
-          DynRankView ConstructWithLabel(funAtPhysRefCoords, numCells, numRefCoords, dim);
-          for(ordinal_type i=0; i<numCells; ++i) {
-            for(ordinal_type j=0; j<numRefCoords; ++j) {
-              for(ordinal_type k=0; k<dim; ++k)
-                funAtPhysRefCoords(i,j,k) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
-            }
-          }
+         // compute reference points on the shared face of the pyramid
+         shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
+         auto refPointsTri = getInputPointsView<double,DeviceType>(tri, order);
+         ordinal_type numRefCoords = refPointsTri.extent_int(0);
+         
+         // refPointsTri will include the apex of the pyramid, which is an excluded (singular) point.
+         // to correct this, we move the points toward the center by a factor of s=0.1:
+         
+         const double s = 0.1;
+         const double centroid_x = 1./3.;
+         const double centroid_y = 1./3.;
+         using ExecutionSpace = typename DynRankView::execution_space;
+         Kokkos::RangePolicy < ExecutionSpace > policy(0,numRefCoords);
+         Kokkos::parallel_for( policy,
+         KOKKOS_LAMBDA (const ordinal_type &pointOrdinal )
+         {
+           const auto p_x = refPointsTri(pointOrdinal,0);
+           const auto p_y = refPointsTri(pointOrdinal,1);
+           refPointsTri(pointOrdinal,0) = (1.0 - s) * p_x + s * centroid_x;
+           refPointsTri(pointOrdinal,1) = (1.0 - s) * p_y + s * centroid_y;
+         });
+         Kokkos::fence();
+         
+         DynRankView ConstructWithLabel(refPointsMultiCell, 2, numRefCoords, dim);
+         auto refPoints0 = Kokkos::subview(refPointsMultiCell, 0, Kokkos::ALL(), Kokkos::ALL());
+         auto refPoints1 = Kokkos::subview(refPointsMultiCell, 1, Kokkos::ALL(), Kokkos::ALL());
+         
+         // map the ref points to the pyramid
+         const ordinal_type FACE_DIM  = 2;
+         CellTools<DeviceType>::mapToReferenceSubcell(refPoints0, refPointsTri,
+                                                      FACE_DIM, faceIndex[0],
+                                                      pyramid);
+         CellTools<DeviceType>::mapToReferenceSubcell(refPoints1, refPointsTri,
+                                                      FACE_DIM, faceIndex[1],
+                                                      pyramid);
+         
+         // compute orientations for cells (one time computation)
+         DynRankViewInt elemNodes(&pyrs[0][0], numCells, numElemVertices);
+         Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
+         ots::getOrientation(elemOrts, elemNodes, pyramid);
 
-          basis_set.clear();
-          basis_set.push_back(new typename  CG_HBasis::HCURL_PYR(order));
+         //Compute physical Dof Coordinates and Reference coordinates
+         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
+         {
+           Basis_HGRAD_PYR_C1_FEM<DeviceType,ValueType,ValueType> pyramidLinearBasis; //used for computing physical coordinates
+           DynRankView ConstructWithLabel(pyramidLinearBasisValuesAtRefCoords0, pyramid.getNodeCount(), numRefCoords);
+           DynRankView ConstructWithLabel(pyramidLinearBasisValuesAtRefCoords1, pyramid.getNodeCount(), numRefCoords);
+           pyramidLinearBasis.getValues(pyramidLinearBasisValuesAtRefCoords0, refPoints0);
+           pyramidLinearBasis.getValues(pyramidLinearBasisValuesAtRefCoords1, refPoints1);
+           std::vector<DynRankView> pyramidLinearBasisValuesAtRefCoords {pyramidLinearBasisValuesAtRefCoords0, pyramidLinearBasisValuesAtRefCoords1};
+           for(ordinal_type i=0; i<numCells; ++i)
+             for(ordinal_type d=0; d<dim; ++d) {
+               for(ordinal_type j=0; j<numRefCoords; ++j)
+                 for(std::size_t k=0; k<pyramid.getNodeCount(); ++k)
+                   physRefCoords(i,j,d) += vertices[pyrs[i][k]][d]*pyramidLinearBasisValuesAtRefCoords[i](k,j);
+             }
+         }
+         
+         FunCurlTriFace fun;
+         DynRankView ConstructWithLabel(funAtPhysRefCoords, numCells, numRefCoords, dim);
+         for(ordinal_type i=0; i<numCells; ++i) {
+           for(ordinal_type j=0; j<numRefCoords; ++j) {
+             for(ordinal_type k=0; k<dim; ++k)
+               funAtPhysRefCoords(i,j,k) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
+           }
+         }
+         basis_set.clear();
+         basis_set.push_back(new typename CG_HBasis::HCURL_PYR(order));
 
-          for (auto basisPtr:basis_set) {
-            auto& basis = *basisPtr;
-            auto name = basis.getName();
-            *outStream << " " << name << std::endl;
+         basis_set.clear();
+         basis_set.push_back(new typename  CG_HBasis::HCURL_PYR(order));
 
-            ordinal_type basisCardinality = basis.getCardinality();
-            DynRankView ConstructWithLabel(basisCoeffs, numCells, basisCardinality);
+         for (auto basisPtr:basis_set) {
+           auto& basis = *basisPtr;
+           auto name = basis.getName();
+           *outStream << " " << name << std::endl;
 
-            //check that fun values at reference points coincide with those computed using basis functions
-            DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords, dim);
-            DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords, dim);
-            DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoords, numCells, basisCardinality, numRefCoords, dim);
-            DynRankView basisValuesAtRefCoordsCells("inValues", numCells, basisCardinality, numRefCoords, dim);
+           ordinal_type basisCardinality = basis.getCardinality();
+           DynRankView ConstructWithLabel(basisCoeffs, numCells, basisCardinality);
+
+           //check that fun values at reference points coincide with those computed using basis functions
+           DynRankView ConstructWithLabel(basisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords, dim);
+           DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoordsOriented, numCells, basisCardinality, numRefCoords, dim);
+           DynRankView ConstructWithLabel(transformedBasisValuesAtRefCoords, numCells, basisCardinality, numRefCoords, dim);
+           DynRankView basisValuesAtRefCoordsCells("inValues", numCells, basisCardinality, numRefCoords, dim);
 
 
-            DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords, dim);
-            basis.getValues(basisValuesAtRefCoords, refPoints);
-            rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
+           DynRankView ConstructWithLabel(basisValuesAtRefCoords, basisCardinality, numRefCoords, dim);
+           basis.getValues(basisValuesAtRefCoords, refPoints);
+           rst::clone(basisValuesAtRefCoordsCells,basisValuesAtRefCoords);
 
-            // modify basis values to account for orientations
-            ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
-                basisValuesAtRefCoordsCells,
-                elemOrts,
-                &basis);
+           // modify basis values to account for orientations
+           ots::modifyBasisByOrientation(basisValuesAtRefCoordsOriented,
+               basisValuesAtRefCoordsCells,
+               elemOrts,
+               &basis);
 
-            // transform basis values
-            DynRankView ConstructWithLabel(jacobianAtRefCoords, numCells, numRefCoords, dim, dim);
-            DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numCells, numRefCoords, dim, dim);
-            ct::setJacobian(jacobianAtRefCoords, refPoints, physVertices, pyramid);
-            ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
-            fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
-                jacobianAtRefCoords_inv,
-                basisValuesAtRefCoordsOriented);
-            fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoords,
-                jacobianAtRefCoords_inv,
-                basisValuesAtRefCoords);
+           // transform basis values
+           DynRankView ConstructWithLabel(jacobianAtRefCoords, numCells, numRefCoords, dim, dim);
+           DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numCells, numRefCoords, dim, dim);
+           ct::setJacobian(jacobianAtRefCoords, refPoints, physVertices, pyramid);
+           ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
+           fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
+               jacobianAtRefCoords_inv,
+               basisValuesAtRefCoordsOriented);
+           fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoords,
+               jacobianAtRefCoords_inv,
+               basisValuesAtRefCoords);
 
-            // on the interior, pyramid basis is not polynomial.  So we exclude those dofs when we do the coefficient setting.
-            const ordinal_type volumeDofCount = basis.getDofCount(dim, 0);
-            std::set<ordinal_type> volumeDofs;
-            for (ordinal_type i=0; i<volumeDofCount; i++)
-            {
-              ordinal_type dofOrdinal = basis.getDofOrdinal(dim, 0, i);
-              volumeDofs.insert(dofOrdinal);
-            }
-            
-            BasisFunctionsSystem  basisFunctionsSystem(basisCardinality, numRefCoords, 1, volumeDofs);
-            auto info = basisFunctionsSystem.computeBasisCoeffs(basisCoeffs, errorFlag, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords);
+           // on the interior, pyramid basis is not polynomial.  We span the appropriate polynomial space in the tangent direction on any face; that's what we test here.
+           // exclude all dofs that don't belong to the quad face (which is face 4 in Intrepid2/shards numbering)
+           const ordinal_type QUAD_FACE = 4;
+           const ordinal_type quadDofCount = basis.getDofCount(QUAD_DIM, QUAD_FACE);
+           std::set<ordinal_type> quadDofs;
+           for (ordinal_type i=0; i<quadDofCount; i++)
+           {
+             ordinal_type dofOrdinal = basis.getDofOrdinal(QUAD_DIM, QUAD_FACE, i);
+             quadDofs.insert(dofOrdinal);
+           }
+           std::set<ordinal_type> nonQuadDofs;
+           for (ordinal_type i=0; i<basisCardinality; i++)
+           {
+             if (quadDofs.find(i) == quadDofs.end())
+             {
+               nonQuadDofs.insert(i);
+             }
+           }
+           
+           BasisFunctionsSystem  basisFunctionsSystem(basisCardinality, numRefCoords, 3, nonQuadDofs);
+ 
+           // cross with the normal
+           auto transformedBasisValuesAtRefCoordsOriented_tangent = ...; // TODO: finish this
+           auto funAtPhysRefCoords_tangent = ...; // TODO: finish this
+           
+           DynRankView ConstructWithLabel(tangentBasisValues, numCells, basisCardinality, numRefCoords, dim);
+           Kokkos::deep_copy(tangentBasisValues, transformedBasisValuesAtRefCoordsOriented_tangent);
+           
+           DynRankView ConstructWithLabel(funTangent, numCells, numRefCoords);
+           Kokkos::deep_copy(funNormal, funAtPhysRefCoords_tangent);
+           
+           auto info = basisFunctionsSystem.computeBasisCoeffs(basisCoeffs, errorFlag, tangentBasisValues, funTangent);
+ 
+           for (int ic =0; ic < numCells; ++ic) {
+             if(info[ic] != 0) {
+               errorFlag++;
+               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+               *outStream << "LAPACK error flag for cell " << ic << " is: " << info[ic] << std::endl;
+             }
+           }
 
-            for (int ic =0; ic < numCells; ++ic) {
-              if(info[ic] != 0) {
-                errorFlag++;
-                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << "LAPACK error flag for cell " << ic << " is: " << info[ic] << std::endl;
-              }
-            }
-
-            TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoords, transformedBasisValuesAtRefCoordsOriented, funAtPhysRefCoords, elemOrts, basisPtr);
-            testResults.test(errorFlag,tol);
-            delete basisPtr;
-          }
+           TestResults testResults(basisCoeffs, transformedBasisValuesAtRefCoords, transformedBasisValuesAtRefCoordsOriented,
+                                   tangentBasisValues, funTangent, elemOrts, basisPtr);
+           testResults.test(errorFlag,tol);
+           delete basisPtr;
+         }
         }*/
 
 
