@@ -30,6 +30,8 @@ namespace panzer {
   class Intrepid2FieldPattern : public FieldPattern {
   public:
     Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<PHX::Device,double,double> > &intrepidBasis);
+    Teuchos::RCP<panzer::FieldPattern> clone() const
+    {return Teuchos::rcp(new Intrepid2FieldPattern(*this));}
 
     virtual int getSubcellCount(int dim) const;
     virtual const std::vector<int> & getSubcellIndices(int dim, int cellIndex) const;
