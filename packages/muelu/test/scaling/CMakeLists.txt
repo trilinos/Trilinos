@@ -49,53 +49,36 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
-  # Do a simple weak scaling experiment (4x ranks and 4x grid size)
-  TRIBITS_ADD_TEST(
-    Driver
-    NAME SetupSolve_Performance_1
-    COMM mpi
-    ARGS "--stacked-timer --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D"
-    NUM_MPI_PROCS 1
-    PASS_REGULAR_EXPRESSION "Belos converged"
-    RUN_SERIAL
-    CATEGORIES PERFORMANCE
-  )
-
-  TRIBITS_ADD_TEST(
-    Driver
-    NAME SetupSolve_Performance_4
-    COMM mpi
-    ARGS "--stacked-timer --nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
-    NUM_MPI_PROCS 4
-    PASS_REGULAR_EXPRESSION "Belos converged"
-    RUN_SERIAL
-    CATEGORIES PERFORMANCE
-  )
-
-  # ML Version of the Weak Scaling Test
-  IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND {PACKAGE_NAME}_HAVE_ML)
+  # Do a simple weak scaling experiment in 3D
+  set(COUNTER 1)
+  set(MAX_COUNT 7)
+  WHILE(COUNTER LESS MAX_COUNT)
+    math(EXPR NP "${COUNTER} * ${COUNTER} * ${COUNTER}")
+    math(EXPR NX "${COUNTER} * 120")
     TRIBITS_ADD_TEST(
       Driver
-      NAME ML_SetupSolve_Performance_1
+      NAME SetupSolve_Performance
       COMM mpi
-      ARGS "--stacked-timer --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --xml=scaling-ml.xml --watchr-problem-name='ML Setup-Solve 1 ranks' --linAlgebra=Epetra"
-      NUM_MPI_PROCS 1
+      ARGS "--stacked-timer --nx=${NX} --ny=${NX} --nz=${NX} --matrixType=Laplace3D"
+      NUM_MPI_PROCS ${NP}
+      PASS_REGULAR_EXPRESSION "Belos converged"
       RUN_SERIAL
       CATEGORIES PERFORMANCE
-      )
-
-    TRIBITS_ADD_TEST(
+    )
+    math(EXPR COUNTER "${COUNTER} + 1")
+  ENDWHILE()
+  
+  # This an artifact to reproduce the old 4-rank test that is weak scaled by only adding guys in (x,y)
+  TRIBITS_ADD_TEST(
       Driver
-      NAME ML_SetupSolve_Performance_4
+      NAME SetupSolve_Performance_4
       COMM mpi
-      ARGS "--stacked-timer --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --xml=scaling-ml.xml --watchr-problem-name='ML Setup-Solve 4 ranks' --linAlgebra=Epetra"
-      NUM_MPI_PROCS 4
+      ARGS "--stacked-timer --nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
+      NUM_MPI_PROCS ${NP}
+      PASS_REGULAR_EXPRESSION "Belos converged"
       RUN_SERIAL
       CATEGORIES PERFORMANCE
-      )
-
-  ENDIF()
-
+    ) 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
     SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling_apex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml recurMG.xml anisotropic.xml  comp_rotations.xml generalBlkSmoothing.xml GblkMap.dat GblkAmat.dat GblkRhs.dat Gblks.dat blkSmooEquivOlapSchwarz.xml oLapSchwarzEquivBlkSmoo.xml regularOverLap.dat zeroAggTest.xml blkDiag3x3And6x6.mat  coords2.mm aux1.mat aux2.mat  coords1.mat  coords2.mat  multiPhys4x4.mat multiPhys4x4.mat  null1.mat null2.mat comboP.xml material.xml material.mm
@@ -762,7 +745,7 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_Serial
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=serial"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -786,7 +769,7 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_CUDA
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=cuda"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE
@@ -810,7 +793,31 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         MatvecKernelDriver
         NAME Matvec_HIP
         COMM mpi
-        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n}"
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=hip"
+        NUM_MPI_PROCS ${NP}
+        RUN_SERIAL
+        CATEGORIES PERFORMANCE
+      )
+
+      math(EXPR COUNTER "${COUNTER} + 1")
+    ENDWHILE()
+
+  ENDIF()
+
+  IF (Tpetra_INST_SYCL)
+
+    set(COUNTER 1)
+    set(MAX_COUNT 11)
+
+    WHILE(COUNTER LESS MAX_COUNT)
+      math(EXPR n "600 * ${COUNTER}")
+      math(EXPR NP "${COUNTER} * ${COUNTER}")
+
+      TRIBITS_ADD_TEST(
+        MatvecKernelDriver
+        NAME Matvec_SYCL
+        COMM mpi
+        ARGS "--stackedtimer --matrixType=Laplace2D --nx=${n} --ny=${n} --node=sycl"
         NUM_MPI_PROCS ${NP}
         RUN_SERIAL
         CATEGORIES PERFORMANCE

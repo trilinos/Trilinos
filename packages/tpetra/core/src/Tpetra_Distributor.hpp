@@ -815,6 +815,9 @@ namespace Tpetra {
       exportGIDs[i] = static_cast<OrdinalType> (exportObjs[2*i]);
       exportProcIDs[i] = static_cast<int> (exportObjs[2*i+1]);
     }
+
+    // Store tempPlan instead of recreating it later
+    plan_ = tempPlan.plan_;
   }
 
   template <class OrdinalType>

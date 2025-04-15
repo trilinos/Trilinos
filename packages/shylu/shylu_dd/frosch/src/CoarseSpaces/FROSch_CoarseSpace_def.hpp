@@ -88,8 +88,8 @@ namespace FROSch {
         if (!AssembledBasisMap_.is_null()) {
             if (AssembledBasisMap_->getGlobalNumElements()>0) { // AH 02/12/2019: Is this the right condition? Seems to work for now...
                 LO totalSize = -1;
-                for (UN i=0; i<UnassembledSubspaceBases_.size(); i++) {
-                    if (!UnassembledSubspaceBases_[i].is_null()) totalSize = max(totalSize,LO(UnassembledSubspaceBases_[i]->getLocalLength()+Offsets_[i]));
+                for (UN j=0; j<UnassembledSubspaceBases_.size(); j++) {
+                    if (!UnassembledSubspaceBases_[j].is_null()) totalSize = max(totalSize,LO(UnassembledSubspaceBases_[j]->getLocalLength()+Offsets_[j]));
                 }
                 XMapPtr serialMap = MapFactory<LO,GO,NO>::Build(AssembledBasisMap_->lib(),totalSize,0,this->SerialComm_);
 

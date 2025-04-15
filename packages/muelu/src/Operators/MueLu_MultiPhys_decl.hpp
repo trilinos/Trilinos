@@ -68,6 +68,8 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
    * \param[in] nBlks                 nBlks x nBlks gives the block dimensions of the multiphysics operator
    * \param[in] List Parameter list
    * \param[in] ComputePrec If true, compute the preconditioner immediately
+   * \param[in] arrayOfMaterials      Material multivectors used to generate subblock prolongators for multiphysics system
+   * \param[in] OmitSubblockSmoother If true, omit construction of subblock-level smoothers
    */
   MultiPhys(const Teuchos::RCP<Matrix>& AmatMultiPhysics,
             const Teuchos::ArrayRCP<RCP<Matrix>> arrayOfAuxMatrices,
@@ -75,13 +77,17 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
             const Teuchos::ArrayRCP<Teuchos::RCP<RealValuedMultiVector>> arrayOfCoords,
             const int nBlks,
             Teuchos::ParameterList& List,
-            bool ComputePrec = true)
+            bool ComputePrec                                                    = true,
+            const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfMaterials = Teuchos::null,
+            bool OmitSubblockSmoother                                           = true)
     : AmatMultiphysics_(AmatMultiPhysics)
     , arrayOfAuxMatrices_(arrayOfAuxMatrices)
     , arrayOfNullspaces_(arrayOfNullspaces)
     , arrayOfCoords_(arrayOfCoords)
+    , arrayOfMaterials_(arrayOfMaterials)
+    , OmitSubblockSmoother_(OmitSubblockSmoother)
     , nBlks_(nBlks) {
-    initialize(AmatMultiPhysics, arrayOfAuxMatrices, arrayOfNullspaces, arrayOfCoords, nBlks, List);
+    initialize(AmatMultiPhysics, arrayOfAuxMatrices, arrayOfNullspaces, arrayOfCoords, nBlks, List, arrayOfMaterials);
     compute(false);
   }
 
@@ -125,6 +131,16 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
     this->apply(X, R, Teuchos::NO_TRANS, -STS::one(), STS::one());
   }
 
+  //! Return the multiphysics hierarchy
+  Teuchos::RCP<Hierarchy> multiphysicsHierarchy() {
+    return hierarchyMultiphysics_;
+  }
+
+  //! Return an array of hierarchies corresponding to each diagonal subblock
+  Teuchos::ArrayRCP<Teuchos::RCP<Hierarchy>> subblockHierarchies() {
+    return arrayOfHierarchies_;
+  }
+
  private:
   /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
    *
@@ -134,13 +150,15 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
    * \param[in] arrayOfCoords         Array of coordinate multivectors used to generate subblock prolongators for multiphysics system
    * \param[in] nBlks                 nBlks x nBlks gives the block dimensions of the multiphysics operator
    * \param[in] List Parameter list
+   * \param[in] arrayOfMaterials      Array of material multivectors used to generate subblock prolongators for multiphysics system
    */
   void initialize(const Teuchos::RCP<Matrix>& AmatMultiPhysics,
                   const Teuchos::ArrayRCP<RCP<Matrix>> arrayOfAuxMatrices,
                   const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfNullspaces,
                   const Teuchos::ArrayRCP<Teuchos::RCP<RealValuedMultiVector>> arrayOfCoords,
                   const int nBlks,
-                  Teuchos::ParameterList& List);
+                  Teuchos::ParameterList& List,
+                  const Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfMaterials);
 
   //! apply standard MultiPhys cycle
   void applyInverse(const MultiVector& RHS, MultiVector& X) const;
@@ -165,6 +183,9 @@ class MultiPhys : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrd
   Teuchos::ArrayRCP<Teuchos::RCP<Matrix>> arrayOfAuxMatrices_;            // array of discretization/auxiliary matrices used to generate subblock prolongators
   Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfNullspaces_;        // array of nullspaces for smoothed aggregation.
   Teuchos::ArrayRCP<Teuchos::RCP<RealValuedMultiVector>> arrayOfCoords_;  // array of coordinates for smoothed aggregation/rebalancing.
+  Teuchos::ArrayRCP<Teuchos::RCP<MultiVector>> arrayOfMaterials_;         // array of materials for smoothed aggregation.
+
+  bool OmitSubblockSmoother_;
 
   int nBlks_;  // number of PDE sub-systems within multiphysics system
   bool useKokkos_, enable_reuse_, syncTimers_;

@@ -30,7 +30,7 @@ namespace Details {
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
 
-inline void cusparse_error_throw(cusparseStatus_t cusparseStatus, const char* name, 
+inline void cusparse_error_throw(cusparseStatus_t cusparseStatus, const char* name,
                                  const char* file, const int line) {
   std::ostringstream out;
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
@@ -144,7 +144,7 @@ public:
 
     Teuchos::RCP<HtsCrsMatrix> T_hts = Teuchos::rcpWithDealloc(
       HTST::make_CrsMatrix(rowptr.size() - 1,
-                           rowptr.data(), colidx.data(), 
+                           rowptr.data(), colidx.data(),
                            // For std/Kokkos::complex.
                            reinterpret_cast<const scalar_type*>(val.data()),
                            transpose_, conjugate_),
@@ -455,7 +455,7 @@ initialize ()
         (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
       return lclTriStruct;
     } ();
-    
+
     if (reverseStorage_ && lclTriStructure.couldBeUpperTriangular &&
         htsImpl_.is_null ()) {
       // Reverse the storage for an upper triangular matrix
@@ -463,21 +463,21 @@ initialize ()
       auto ptr    = Alocal.graph.row_map;
       auto ind    = Alocal.graph.entries;
       auto val    = Alocal.values;
-    
+
       auto numRows = Alocal.numRows();
       auto numCols = Alocal.numCols();
       auto numNnz = Alocal.nnz();
-    
+
       typename decltype(ptr)::non_const_type  newptr ("ptr", ptr.extent (0));
       typename decltype(ind)::non_const_type  newind ("ind", ind.extent (0));
       decltype(val)                           newval ("val", val.extent (0));
-    
+
       // FIXME: The code below assumes UVM
       typename crs_matrix_type::execution_space().fence();
       newptr(0) = 0;
       for (local_ordinal_type row = 0, rowStart = 0; row < numRows; ++row) {
         auto A_r = Alocal.row(numRows-1 - row);
-    
+
         auto numEnt = A_r.length;
         for (local_ordinal_type k = 0; k < numEnt; ++k) {
           newind(rowStart + k) = numCols-1 - A_r.colidx(numEnt-1 - k);
@@ -487,7 +487,7 @@ initialize ()
         newptr(row+1) = rowStart;
       }
       typename crs_matrix_type::execution_space().fence();
-    
+
       // Reverse maps
       Teuchos::RCP<map_type> newRowMap, newColMap;
       {
@@ -495,11 +495,11 @@ initialize ()
         auto rowMap = A_->getRowMap();
         auto numElems = rowMap->getLocalNumElements();
         auto rowElems = rowMap->getLocalElementList();
-    
+
         Teuchos::Array<global_ordinal_type> newRowElems(rowElems.size());
         for (size_t i = 0; i < numElems; i++)
           newRowElems[i] = rowElems[numElems-1 - i];
-    
+
         newRowMap = Teuchos::rcp(new map_type(rowMap->getGlobalNumElements(), newRowElems, rowMap->getIndexBase(), rowMap->getComm()));
       }
       {
@@ -507,21 +507,21 @@ initialize ()
         auto colMap = A_->getColMap();
         auto numElems = colMap->getLocalNumElements();
         auto colElems = colMap->getLocalElementList();
-    
+
         Teuchos::Array<global_ordinal_type> newColElems(colElems.size());
         for (size_t i = 0; i < numElems; i++)
           newColElems[i] = colElems[numElems-1 - i];
-    
+
         newColMap = Teuchos::rcp(new map_type(colMap->getGlobalNumElements(), newColElems, colMap->getIndexBase(), colMap->getComm()));
       }
-    
+
       // Construct new matrix
       local_matrix_type newLocalMatrix("Upermuted", numRows, numCols, numNnz, newval, newptr, newind);
-    
+
       A_crs_ = Teuchos::rcp(new crs_matrix_type(newLocalMatrix, newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap()));
-    
+
       isInternallyChanged_ = true;
-    
+
       // FIXME (mfh 18 Apr 2019) Recomputing this is unnecessary, but I
       // didn't want to break any invariants, especially considering
       // that this branch is likely poorly tested.
@@ -553,7 +553,7 @@ initialize ()
       TEUCHOS_TEST_FOR_EXCEPTION
         (! G->isFillComplete (), std::runtime_error, "If you call this method, "
          "the matrix's graph must be fill complete.  It is not.");
-	  
+
       // mfh 30 Apr 2018: See GitHub Issue #2658.
       constexpr bool ignoreMapsForTriStructure = true;
       std::string prev_uplo_ = this->uplo_;
@@ -599,9 +599,9 @@ initialize ()
       auto ind    = Alocal.graph.entries;
       auto val    = Alocal.values;
 
-      auto numRows = Alocal.numRows();    
+      auto numRows = Alocal.numRows();
       kh_->create_sptrsv_handle(kokkosKernelsAlgorithm(), numRows, is_lower_tri);
-      KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
+      KokkosSparse::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
     } else {
       kh_v_ = std::vector< Teuchos::RCP<k_handle> >(num_streams_);
       for (int i = 0; i < num_streams_; i++) {
@@ -611,12 +611,12 @@ initialize ()
         auto ptr_i    = Alocal_i.graph.row_map;
         auto ind_i    = Alocal_i.graph.entries;
         auto val_i    = Alocal_i.values;
-    
+
         auto numRows_i = Alocal_i.numRows();
 
         const bool is_lower_tri = (this->uplo_ == "L") ? true : false;
         kh_v_[i]->create_sptrsv_handle(kokkosKernelsAlgorithm(), numRows_i, is_lower_tri);
-        KokkosSparse::Experimental::sptrsv_symbolic(kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
+        KokkosSparse::sptrsv_symbolic(kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
       }
       kh_v_nonnull_ = true;
     }
@@ -627,11 +627,11 @@ initialize ()
 }
 
 template<class MatrixType>
-KokkosSparse::Experimental::SPTRSVAlgorithm 
+KokkosSparse::Experimental::SPTRSVAlgorithm
 LocalSparseTriangularSolver<MatrixType>::kokkosKernelsAlgorithm() const
 {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && defined(KOKKOS_ENABLE_CUDA)
-  // CuSparse only supports int type ordinals 
+  // CuSparse only supports int type ordinals
   // and scalar types of float, double, float complex and double complex
   if constexpr (std::is_same<Kokkos::Cuda, HandleExecSpace>::value &&
       std::is_same<int, local_ordinal_type>::value &&
@@ -695,7 +695,7 @@ compute ()
 // even when matrix values are changed with the same sparsity pattern.
 // For Cuda >= 12.1 has a new cusparseSpSV_updateMatrix function just for updating the
 // values that is substantially faster.
-// This would all be much better handled via a KokkosSparse::Experimental::sptrsv_numeric(...)
+// This would all be much better handled via a KokkosSparse::sptrsv_numeric(...)
 // that could hide the Cuda implementation details.
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && (CUDA_VERSION >= 11030)
   if constexpr ( std::is_same_v<typename crs_matrix_type::execution_space, Kokkos::Cuda> )
@@ -715,7 +715,7 @@ compute ()
   #else
         auto ptr    = Alocal.graph.row_map;
         auto ind    = Alocal.graph.entries;
-        KokkosSparse::Experimental::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
+        KokkosSparse::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
   #endif
       } else if (kh_v_nonnull_) {
         for (int i = 0; i < num_streams_; i++) {
@@ -734,7 +734,7 @@ compute ()
   #else
           auto ptr_i    = Alocal_i.graph.row_map;
           auto ind_i    = Alocal_i.graph.entries;
-          KokkosSparse::Experimental::sptrsv_symbolic(exec_space_instances_[i], kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
+          KokkosSparse::sptrsv_symbolic(exec_space_instances_[i], kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
   #endif
         }
       }
@@ -862,7 +862,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
        "Please report this bug to the Ifpack2 developers.");
     auto importer = G->getImporter ();
     auto exporter = G->getExporter ();
-    
+
     if (! importer.is_null ()) {
       if (X_colMap_.is_null () || X_colMap_->getNumVectors () != X.getNumVectors ()) {
         X_colMap_ = rcp (new MV (importer->getTargetMap (), X.getNumVectors ()));
@@ -877,7 +877,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
     }
     X_cur = importer.is_null () ? rcpFromRef (X) :
       Teuchos::rcp_const_cast<const MV> (X_colMap_);
-    
+
     if (! exporter.is_null ()) {
       if (Y_rowMap_.is_null () || Y_rowMap_->getNumVectors () != Y.getNumVectors ()) {
         Y_rowMap_ = rcp (new MV (exporter->getSourceMap (), Y.getNumVectors ()));
@@ -968,7 +968,7 @@ localTriangularSolve (const MV& Y,
     auto ptr    = A_lclk.graph.row_map;
     auto ind    = A_lclk.graph.entries;
     auto val    = A_lclk.values;
-	
+
     for (size_t j = 0; j < numVecs; ++j) {
       auto X_j = X.getVectorNonConst (j);
       auto Y_j = Y.getVector (j);
@@ -976,7 +976,7 @@ localTriangularSolve (const MV& Y,
       auto Y_lcl = Y_j->getLocalViewDevice (Tpetra::Access::ReadOnly);
       auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::ALL (), 0);
       auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::ALL (), 0);
-      KokkosSparse::Experimental::sptrsv_solve(kh_.getRawPtr(), ptr, ind, val, Y_lcl_1d, X_lcl_1d);
+      KokkosSparse::sptrsv_solve(kh_.getRawPtr(), ptr, ind, val, Y_lcl_1d, X_lcl_1d);
       // TODO is this fence needed...
       typename k_handle::HandleExecSpace().fence();
     }
@@ -1021,7 +1021,7 @@ localTriangularSolve (const MV& Y,
     const std::string diag = this->diag_;
     // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
     // sequential, host-only code.  See
-    // https://github.com/kokkos/kokkos-kernels/issues/48. 
+    // https://github.com/kokkos/kokkos-kernels/issues/48.
 
     auto A_lcl = this->A_crs_->getLocalMatrixHost ();
 
@@ -1148,7 +1148,7 @@ description () const
 
   if(isKokkosKernelsSptrsv_) os << "KK-SPTRSV, ";
   if(isKokkosKernelsStream_) os << "KK-SolveStream, ";
-	
+
   if (A_.is_null ()) {
     os << "Matrix: null";
   }
@@ -1305,13 +1305,13 @@ setMatrices (const std::vector< Teuchos::RCP<crs_matrix_type> >& A_crs_v)
          "process, then A must be square.  Instead, you provided a matrix A with "
          << A_crs_v[i]->getLocalNumRows () << " rows and " << A_crs_v[i]->getLocalNumCols ()
          << " columns.");
-    
+
       // It's legal for A to be null; in that case, you may not call
       // initialize() until calling setMatrix() with a nonnull input.
       // Regardless, setting the matrix invalidates the preconditioner.
       isInitialized_ = false;
       isComputed_ = false;
-    
+
       if (A_crs_v[i].is_null ()) {
         A_crs_v_[i] = Teuchos::null;
       }

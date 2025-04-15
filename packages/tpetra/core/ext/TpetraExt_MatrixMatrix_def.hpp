@@ -2815,44 +2815,48 @@ void jacobi_A_B_reuse(
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
   typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
 
-  Tpetra::Details::ProfilingRegion MM("TpetraExt: Jacobi: Reuse Cmap");
-
-  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-
-  // Grab all the maps
   RCP<const import_type> Cimport = C.getGraph()->getImporter();
-  RCP<const map_type>    Ccolmap = C.getColMap();
-  local_map_type Acolmap_local = Aview.colMap->getLocalMap();
-  local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
-  local_map_type Irowmap_local;  if(!Bview.importMatrix.is_null()) Irowmap_local = Bview.importMatrix->getRowMap()->getLocalMap();
-  local_map_type Bcolmap_local = Bview.origMatrix->getColMap()->getLocalMap();
-  local_map_type Icolmap_local;  if(!Bview.importMatrix.is_null()) Icolmap_local = Bview.importMatrix->getColMap()->getLocalMap();
-  local_map_type Ccolmap_local = Ccolmap->getLocalMap();
-
-  // Build the final importer / column map, hash table lookups for C
-  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getLocalNumElements()), Icol2Ccol;
+  lo_view_t Bcol2Ccol, Icol2Ccol;
+  lo_view_t targetMapToOrigRow;
+  lo_view_t targetMapToImportRow;
   {
-    // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
-    // So, column map of C may be a strict subset of the column map of B
-    Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Tpetra::Details::ProfilingRegion MM("TpetraExt: Jacobi: Reuse Cmap");
+
+    LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+    // Grab all the maps
+    RCP<const map_type>    Ccolmap = C.getColMap();
+    local_map_type Acolmap_local = Aview.colMap->getLocalMap();
+    local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
+    local_map_type Irowmap_local;  if(!Bview.importMatrix.is_null()) Irowmap_local = Bview.importMatrix->getRowMap()->getLocalMap();
+    local_map_type Bcolmap_local = Bview.origMatrix->getColMap()->getLocalMap();
+    local_map_type Icolmap_local;  if(!Bview.importMatrix.is_null()) Icolmap_local = Bview.importMatrix->getColMap()->getLocalMap();
+    local_map_type Ccolmap_local = Ccolmap->getLocalMap();
+
+    // Build the final importer / column map, hash table lookups for C
+    Bcol2Ccol = lo_view_t(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getLocalNumElements());
+    {
+      // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
+      // So, column map of C may be a strict subset of the column map of B
+      Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
         Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(i));
       });
 
-    if (!Bview.importMatrix.is_null()) {
-      TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
-                                 std::runtime_error, "Tpetra::Jacobi: Import setUnion messed with the DomainMap in an unfortunate way");
+      if (!Bview.importMatrix.is_null()) {
+        TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
+                                   std::runtime_error, "Tpetra::Jacobi: Import setUnion messed with the DomainMap in an unfortunate way");
 
-      Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getLocalNumElements());
-      Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
+        Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getLocalNumElements());
+        Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
           Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
         });
+      }
     }
-  }
 
-  // Run through all the hash table lookups once and for all
-  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
-  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
-  Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
+    // Run through all the hash table lookups once and for all
+    targetMapToOrigRow = lo_view_t(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+    targetMapToImportRow = lo_view_t(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
+    Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
       if (B_LID != LO_INVALID) {
@@ -2866,9 +2870,7 @@ void jacobi_A_B_reuse(
       }
     });
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null;
-#endif
+  }
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
@@ -3585,7 +3587,7 @@ addSorted(
 
   auto MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: sorted symbolic"));
 
-  KokkosSparse::Experimental::spadd_symbolic
+  KokkosSparse::spadd_symbolic
     (&handle,
      nrows, numGlobalCols,
      Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
@@ -3594,7 +3596,7 @@ addSorted(
   Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 
   MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: sorted numeric"));
-  KokkosSparse::Experimental::spadd_numeric(&handle,
+  KokkosSparse::spadd_numeric(&handle,
      nrows, numGlobalCols,
     Arowptrs, Acolinds, Avals, scalarA,
     Browptrs, Bcolinds, Bvals, scalarB,
@@ -3629,7 +3631,7 @@ addUnsorted(
   auto addHandle = handle.get_spadd_handle();
   auto MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: unsorted symbolic"));
 
-  KokkosSparse::Experimental::spadd_symbolic
+  KokkosSparse::spadd_symbolic
       (&handle,
        nrows, numGlobalCols,
        Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
@@ -3637,7 +3639,7 @@ addUnsorted(
   Cvals = values_array("C values", addHandle->get_c_nnz());
   Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
   MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: unsorted numeric"));
-  KokkosSparse::Experimental::spadd_numeric(&handle,
+  KokkosSparse::spadd_numeric(&handle,
     nrows, numGlobalCols,
     Arowptrs, Acolinds, Avals, scalarA,
     Browptrs, Bcolinds, Bvals, scalarB,
@@ -3710,7 +3712,7 @@ convertToGlobalAndAdd(
   MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: diff col map kernel: unsorted symbolic"));
   auto nrows = Arowptrs.extent(0) - 1;
   Crowptrs = row_ptrs_array(Kokkos::ViewAllocateWithoutInitializing("C row ptrs"), nrows + 1);
-  KokkosSparse::Experimental::spadd_symbolic
+  KokkosSparse::spadd_symbolic
     (&handle,
      nrows, A.numCols(),
      Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
@@ -3719,7 +3721,7 @@ convertToGlobalAndAdd(
 
   MM = Teuchos::null;
   MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: add: diff col map kernel: unsorted numeric"));
-  KokkosSparse::Experimental::spadd_numeric(&handle,
+  KokkosSparse::spadd_numeric(&handle,
     nrows, A.numCols(),
     Arowptrs, AcolindsConverted, Avals, scalarA,
     Browptrs, BcolindsConverted, Bvals, scalarB,

@@ -574,9 +574,9 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
   do {
     symbolicError = false;
     try {
-      KokkosSparse::Experimental::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_,
-                                                   localOverlapGraph.row_map, localOverlapGraph.entries,
-                                                   L_row_map, L_entries, U_row_map, U_entries );
+      KokkosSparse::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_,
+                                    localOverlapGraph.row_map, localOverlapGraph.entries,
+                                    L_row_map, L_entries, U_row_map, U_entries );
     }
     catch (std::runtime_error &e) {
       symbolicError = true;
