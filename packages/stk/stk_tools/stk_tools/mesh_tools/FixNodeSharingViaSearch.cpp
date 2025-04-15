@@ -11,12 +11,13 @@
 namespace stk {
 namespace tools {
 
-void fix_node_sharing_via_search(stk::mesh::BulkData& bulkData)
+void fix_node_sharing_via_search(stk::mesh::BulkData& bulkData, double tolerance)
 {
   const int psize = bulkData.parallel_size();
   const int prank = bulkData.parallel_rank();
 
   const stk::mesh::FieldBase *coordsField = bulkData.mesh_meta_data().coordinate_field();
+  const unsigned dim = bulkData.mesh_meta_data().spatial_dimension();
 
   if(psize > 1)
   {
@@ -28,7 +29,6 @@ void fix_node_sharing_via_search(stk::mesh::BulkData& bulkData)
 
     SphereVec sourceBboxVector;
 
-    const double radius = 1.0e-6;
     const stk::mesh::BucketVector& buckets = bulkData.buckets(stk::topology::NODE_RANK);
     for(const stk::mesh::Bucket *bucket : buckets)
     {
@@ -40,8 +40,8 @@ void fix_node_sharing_via_search(stk::mesh::BulkData& bulkData)
           stk::mesh::EntityId id = bulkData.identifier(node);
           const double* coords = static_cast<double*>(stk::mesh::field_data(*coordsField, node));
           IdentProc searchId = IdentProc(id, prank);
-          Point point(coords[0], coords[1], bulkData.mesh_meta_data().spatial_dimension() == 3 ? coords[2] : 0.0);
-          Sphere sphere(point, radius);
+          Point point(coords[0], dim >= 2 ? coords[1] : 0.0, dim == 3 ? coords[2] : 0.0);
+          Sphere sphere(point, tolerance);
           sourceBboxVector.push_back(std::make_pair(sphere, searchId));
         }
       }

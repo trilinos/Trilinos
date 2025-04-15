@@ -72,6 +72,7 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
 #include <stk_mesh/base/FaceCreator.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SideSetHelper.hpp>
@@ -361,8 +362,6 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
     m_turningOffAutoAura(false),
     m_meshModification(*this),
     m_parallel( parallel ),
-    m_volatile_fast_shared_comm_map(),
-    m_volatile_fast_shared_comm_map_sync_count(0),
     m_ngpMeshHostDataBase(),
     m_all_sharing_procs(mesh_meta_data->entity_rank_count()),
     m_all_sharing_procs_sync_count(0),
@@ -379,6 +378,7 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
     m_isDeviceMeshRegistered(false),
     m_ngpFieldSyncBufferModCount(0),
     m_runConsistencyCheck(false),
+    m_symmetricGhostInfo(false),
     m_soloSideIdGenerator(stk::parallel_machine_size(parallel), stk::parallel_machine_rank(parallel), std::numeric_limits<stk::mesh::EntityId>::max()),
     m_supportsLargeIds(false)
 {
@@ -811,13 +811,17 @@ Entity BulkData::create_and_connect_side(const stk::mesh::EntityId globalSideId,
                                          const unsigned localSideId,
                                          const PARTVECTOR& parts)
 {
-  stk::topology sideTop = bucket(elem).topology().side_topology(localSideId);
+  stk::topology elemTop = bucket(elem).topology();
+  stk::topology sideTop = elemTop.side_topology(localSideId);
   Entity side = internal_declare_entity(sideTop.rank(), globalSideId, add_root_topology_part(parts, mesh_meta_data().get_topology_root_part(sideTop)));
+
   if (has_face_adjacent_element_graph()) {
     use_graph_to_connect_side(get_face_adjacent_element_graph(), side, elem, localSideId);
   }
   else {
-    impl::connect_element_to_entity(*this, elem, side, localSideId, parts, sideTop);
+    impl::connect_element_to_side(*this, elem, side, localSideId, parts, sideTop);
+
+    impl::connect_side_to_other_elements(*this, side, elem, localSideId);
   }
   if(this->num_edges(elem) != 0) {
     impl::connect_face_to_edges(*this, side);
@@ -879,14 +883,11 @@ Entity BulkData::declare_element_side_with_id(const stk::mesh::EntityId globalSi
           internal_set_owner(side, parallel_rank());
         }
 
-        bool isShellEdgeSide = elemTop.is_shell() &&
-                               elemTop.has_mixed_rank_sides() &&
-                               (elemTop.side_topology(0) != elemTop.side_topology(sideOrd));
-        if (has_face_adjacent_element_graph() && !isShellEdgeSide) {
+        if (has_face_adjacent_element_graph()) {
           use_graph_to_connect_side(get_face_adjacent_element_graph(), side, elem, sideOrd);
         }
         else {
-          impl::connect_element_to_entity(*this, elem, side, sideOrd, parts, sideTop);
+          impl::connect_element_to_side(*this, elem, side, sideOrd, parts, sideTop);
 
           impl::connect_side_to_other_elements(*this, side, elem, sideOrd);
         }
@@ -3478,12 +3479,13 @@ void BulkData::change_connectivity_for_edge_or_face(stk::mesh::Entity side, cons
     }
 }
 
-void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
+void BulkData::resolve_parallel_side_connections(stk::mesh::EntityRank rank,
+                                                 std::vector<SideSharingData>& sideSharingDataToSend,
                                                  std::vector<SideSharingData>& sideSharingDataReceived)
 {
     std::vector<stk::mesh::impl::IdViaSidePair> idAndSides;
 
-    stk::mesh::EntityVector sharedSides = fill_shared_entities_that_need_fixing(*this);
+    stk::mesh::EntityVector sharedSides = fill_shared_entities_that_need_fixing(*this, rank);
 
     fill_sharing_data(*this, *m_elemElemGraph, sharedSides, sideSharingDataToSend, idAndSides);
 
@@ -3506,7 +3508,7 @@ void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& s
         {
             if (parallel_rank() != sideSharingData.owningProc)
             {
-                stk::mesh::EntityKey newKey(mesh_meta_data().side_rank(), sideSharingData.chosenSideId);
+                stk::mesh::EntityKey newKey(rank, sideSharingData.chosenSideId);
                 stk::mesh::EntityKey existingKey = entity_key(side);
                 if(newKey != existingKey)
                     internal_change_entity_key(existingKey, newKey, side);
@@ -3530,12 +3532,13 @@ void BulkData::add_comm_map_for_sharing(const std::vector<SideSharingData>& side
     }
 }
 
-void BulkData::use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities)
+void BulkData::use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities,
+                                                                stk::mesh::EntityRank rank)
 {
     std::vector<SideSharingData> sideSharingDataReceived;
     std::vector<SideSharingData> sideSharingDataToSend;
 
-    resolve_parallel_side_connections(sideSharingDataToSend, sideSharingDataReceived);
+    resolve_parallel_side_connections(rank, sideSharingDataToSend, sideSharingDataReceived);
 
     add_comm_map_for_sharing(sideSharingDataToSend, shared_entities);
     add_comm_map_for_sharing(sideSharingDataReceived, shared_entities);
@@ -3553,9 +3556,9 @@ void BulkData::use_nodes_to_resolve_sharing(stk::mesh::EntityRank rank, std::vec
 
 void BulkData::fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new)
 {
-    if (this->has_face_adjacent_element_graph() && rank == mesh_meta_data().side_rank())
+    if (this->has_face_adjacent_element_graph() && (rank == stk::topology::EDGE_RANK || rank == stk::topology::FACE_RANK))
     {
-        use_elem_elem_graph_to_determine_shared_entities(shared_new);
+        use_elem_elem_graph_to_determine_shared_entities(shared_new, rank);
         const bool onlyConsiderSoloSides = true;
         use_nodes_to_resolve_sharing(rank, shared_new, onlyConsiderSoloSides);
     }
@@ -4093,6 +4096,85 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(Ent
     stk::mesh::impl::comm_sync_send_recv(*this, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
 }
 
+void BulkData::make_ghost_info_symmetric()
+{
+  remove_symmetric_ghost_info();
+
+  const EntityCommListInfoVector& all_comm = m_entity_comm_list;
+  const EntityCommDatabase& commDB = m_entity_comm_map;
+
+  stk::CommSparse commSparse(parallel());
+  stk::pack_and_communicate(commSparse,
+    [this, &commSparse, &commDB, all_comm]() {
+      for(size_t i=0; i<all_comm.size(); ++i) {
+
+        if (this->parallel_owner_rank(all_comm[i].entity) == this->parallel_rank()) {
+          PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
+          PairIterEntityComm ecSh = shared_comm_info_range(ec);
+
+          const bool sharedAndGhostedOrMultipleGhosted =
+                 (ecSh.size() > 0 && ecSh.size() < ec.size()) ||
+                 (ecSh.size() == 0 && ec.size() > 1);
+
+          if (sharedAndGhostedOrMultipleGhosted) {
+            for(unsigned ii=0; ii<ec.size(); ++ii) {
+              int proc_ii = ec[ii].proc;
+              commSparse.send_buffer(proc_ii).pack<EntityKey>(all_comm[i].key);
+              commSparse.send_buffer(proc_ii).pack<unsigned>(ec.size()-1);
+
+              for(unsigned jj=0; jj<ec.size(); ++jj) {
+                if (ii != jj) {
+                  int proc_jj = ec[jj].proc;
+                  commSparse.send_buffer(proc_ii).pack<int>(proc_jj);
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+  EntityCommListInfoVector newCommListEntries;
+
+  for(int p=0; p<parallel_size(); ++p) {
+    CommBuffer& buf = commSparse.recv_buffer(p);
+    while(buf.remaining()) {
+      EntityKey key;
+      buf.unpack<EntityKey>(key);
+      Entity entity = get_entity(key);
+
+      unsigned numOtherProcs = 0;
+      buf.unpack<unsigned>(numOtherProcs);
+
+      for(unsigned i=0; i<numOtherProcs; ++i) {
+        int otherProc = -1;
+        buf.unpack<int>(otherProc);
+        EntityCommInfo entityCommInfo(SYMM_INFO, otherProc);
+
+        std::pair<int,bool> result = entity_comm_map_insert(entity, entityCommInfo);
+        if (result.second) {
+          const int entityCommIndex = result.first;
+          EntityCommListInfo commListInfo = {key, entity, entityCommIndex};
+          newCommListEntries.push_back(commListInfo);
+        }
+      }
+    }
+  }
+
+  internal_add_comm_list_entries(newCommListEntries);
+}
+
+void BulkData::remove_symmetric_ghost_info()
+{
+  const EntityCommListInfoVector& all_comm = m_entity_comm_list;
+  EntityCommDatabase& commDB = m_entity_comm_map;
+  for(size_t i=0; i<all_comm.size(); ++i) {
+    if (all_comm[i].entity_comm != -1) {
+      commDB.erase(all_comm[i].key, SYMM_INFO);
+    }
+  }
+}
+
 void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
 {
   if(opt == impl::MeshModification::MOD_END_SORT) {
@@ -4115,6 +4197,10 @@ void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
         }
       }
     }
+  }
+
+  if (has_symmetric_ghost_info() && parallel_size() > 2) {
+    make_ghost_info_symmetric();
   }
 
   notify_finished_mod_end();
@@ -5120,6 +5206,27 @@ void BulkData::sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes)
     std::sort(nodes.begin(),nodes.end());
 }
 
+inline bool determine_if_is_side(const BulkData& bulk, Entity entity, EntityRank entityRank)
+{
+  if(entityRank == bulk.mesh_meta_data().side_rank()) {
+    return true;
+  }
+
+  if(stk::topology::EDGE_RANK == entityRank) {
+    // Check if edge is connected to a shell
+    auto elements = bulk.begin_elements(entity);
+    unsigned numElements = bulk.num_elements(entity);
+
+    for(unsigned i=0; i<numElements; i++) {
+      if(bulk.bucket(elements[i]).topology().is_shell()) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 //----------------------------------------------------------------------
 void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, bool onlyConsiderSoloSides, std::vector<shared_entity_type>& shared_entities)
 {
@@ -5144,7 +5251,7 @@ void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRa
               continue;
             }
 
-            const bool isSide = entityRank==this->mesh_meta_data().side_rank();
+            const bool isSide = determine_if_is_side(*this, entity, entityRank);
             const bool isSoloSide = isSide && (this->num_elements(entity)==0);
             if (isSide && onlyConsiderSoloSides && !isSoloSide) {
                 continue;
@@ -5334,11 +5441,6 @@ void BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
 {
     if(!in_synchronized_state())
     {
-        for(size_t i = 0; i < deletedSides.size(); ++i)
-        {
-            STK_ThrowAssertMsg(entity_rank(deletedSides[i]) == mesh_meta_data().side_rank(), "ERROR, modification_end_for_face_deletion only handles faces");
-        }
-
         STK_ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
         STK_ThrowAssertMsg(add_fmwk_data() || stk::mesh::impl::check_no_shared_elements_or_higher(*this)==0,

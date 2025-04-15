@@ -58,16 +58,8 @@ void FaceCreator::create_side_entities_given_sideset(const SideSet &skinnedSideS
     i += create_face_entities_per_element(i, skinnedSideSet, skinParts, sharedModified);
   }
 
-  std::sort(sharedModified.begin(), sharedModified.end(), SharingInfoLess());
-  if(!sharedModified.empty()) {
-    for(size_t i=1; i<sharedModified.size(); i++) {
-      if(sharedModified[i].m_entity == sharedModified[i-1].m_entity) {
-        sharedModified[i].m_owner = sharedModified[i-1].m_owner;
-      }
-    }
-  }
-
   if (doLocalModCycle) {
+    stk::mesh::update_sharing_info_ownership(sharedModified);
     m_bulkData.make_mesh_parallel_consistent_after_skinning(sharedModified);
   }
 }

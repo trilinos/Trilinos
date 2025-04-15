@@ -63,6 +63,7 @@ public:
   MeshBuilder& set_maximum_bucket_capacity(unsigned maximumCapacity);
 
   MeshBuilder& set_upward_connectivity(bool onOrOff);
+  MeshBuilder& set_symmetric_ghost_info(bool onOrOff);
 
   virtual std::unique_ptr<BulkData> create();
   virtual std::unique_ptr<BulkData> create(std::shared_ptr<MetaData> metaData);
@@ -82,6 +83,7 @@ protected:
   unsigned m_spatialDimension;
   std::vector<std::string> m_entityRankNames;
   bool m_upwardConnectivity;
+  bool m_symmetricGhostInfo;
 };
 
 }

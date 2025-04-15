@@ -71,6 +71,7 @@ else()
   add_executable(stk_tools_pmesh_unit_tester ${PMESH_SOURCES})
   target_link_libraries(stk_tools_pmesh_unit_tester PUBLIC stk_pmesh_lib)
   target_link_libraries(stk_tools_pmesh_unit_tester PUBLIC stk_unit_main)
+  target_link_libraries(stk_tools_pmesh_unit_tester PUBLIC GTest::gtest)
 
   target_include_directories(stk_tools_pmesh_unit_tester PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
