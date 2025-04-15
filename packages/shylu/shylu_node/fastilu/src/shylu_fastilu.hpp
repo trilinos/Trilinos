@@ -1830,16 +1830,16 @@ class FastILUPrec
                 // setup L solve
                 khL.create_sptrsv_handle(algo, m_nRows, true);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx, m_lVal);
+                KokkosSparse::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx, m_lVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx);
+                KokkosSparse::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx);
                 #endif
                 // setup U solve
                 khU.create_sptrsv_handle(algo, m_nRows, false);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx, m_utVal);
+                KokkosSparse::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx, m_utVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx);
+                KokkosSparse::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx);
                 #endif
                 FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(),
                   "  > sptrsv_symbolic : nnz(L)=" << m_lColIdx.extent(0) << " nnz(U)=" << m_utColIdx.extent(0));
