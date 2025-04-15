@@ -44,7 +44,7 @@
 #include <stk_mesh/base/GetEntities.hpp>                        // for count...
 #include <stk_mesh/base/MetaData.hpp>                           // for MetaData
 #include <stk_mesh/base/CreateEdges.hpp>
-#include <stk_mesh/base/CreateFaces.hpp>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_util/Version.hpp>                                 // for versi...
 #include <stk_util/command_line/CommandLineParserParallel.hpp>  // for Comma...
 #include <stk_util/parallel/OutputStreams.hpp>
@@ -204,8 +204,6 @@ public:
     stk::reset_high_water_mark_in_ptrs();
 #endif
 
-//    constexpr unsigned N = 1000000;
-//    std::vector<double> v(N, 0.0);
     if (interpolation_intervals == 0)
       interpolation_intervals = 1;
     
@@ -226,12 +224,16 @@ public:
 
     ioBroker.populate_bulk_data();
 
-    if (m_addEdges) {
-      stk::mesh::create_edges(ioBroker.bulk_data());
-    }
+    log_msg("Finished reading input mesh");
 
     if (m_addFaces) {
-      stk::mesh::create_faces(ioBroker.bulk_data());
+      stk::mesh::Part& universalPart = ioBroker.meta_data().universal_part();
+      stk::mesh::create_all_sides(ioBroker.bulk_data(), universalPart, stk::mesh::PartVector{}, false);
+      log_msg("Finished create_all_sides");
+    }
+    if (m_addEdges) {
+      stk::mesh::create_edges(ioBroker.bulk_data());
+      log_msg("Finished create_edges");
     }
   }
 
@@ -441,8 +443,6 @@ public:
     }
     ioBroker.set_bulk_data(bulk);
     mesh_read(type, working_directory, filename, ioBroker, integer_size, hb_type, interpolation_intervals);
-
-    log_msg("Finished reading input mesh");
 
     log_mesh_counts(*bulk);
 

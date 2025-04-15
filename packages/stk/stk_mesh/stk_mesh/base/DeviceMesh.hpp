@@ -388,10 +388,11 @@ public:
   }
 
   KOKKOS_FUNCTION
-  NgpCommMapIndicesT<NgpMemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
+  NgpCommMapIndicesT<NgpMemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc, bool includeGhosts=false) const
   {
     const size_t dataBegin = volatileFastSharedCommMapOffset[rank][proc];
-    const size_t dataEnd   = volatileFastSharedCommMapOffset[rank][proc+1];
+    const size_t dataEnd   = includeGhosts ? volatileFastSharedCommMapOffset[rank][proc+1]
+                         : dataBegin + volatileFastSharedCommMapNumShared[rank][proc];
     NgpCommMapIndicesT<NgpMemSpace> buffer = Kokkos::subview(volatileFastSharedCommMap[rank], Kokkos::pair<size_t, size_t>(dataBegin, dataEnd));
     return buffer;
   }
@@ -589,6 +590,7 @@ private:
   MeshIndexType deviceMeshIndices;
 
   UnsignedViewType volatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
+  UnsignedViewType volatileFastSharedCommMapNumShared[stk::topology::NUM_RANKS];
   FastSharedCommMapViewType volatileFastSharedCommMap[stk::topology::NUM_RANKS];
 
   UnsignedViewType m_deviceBufferOffsets;
@@ -994,13 +996,16 @@ void DeviceMeshT<NgpMemSpace>::copy_volatile_fast_shared_comm_map_to_device()
 {
   bulk->volatile_fast_shared_comm_map<NgpMemSpace>(stk::topology::NODE_RANK, 0);
   auto& hostVolatileFastSharedCommMapOffset = deviceMeshHostData->hostVolatileFastSharedCommMapOffset;
+  auto& hostVolatileFastSharedCommMapNumShared = deviceMeshHostData->hostVolatileFastSharedCommMapNumShared;
   auto& hostVolatileFastSharedCommMap = deviceMeshHostData->hostVolatileFastSharedCommMap;
 
   for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < stk::topology::ELEM_RANK; ++rank)
   {
     Kokkos::resize(Kokkos::WithoutInitializing, volatileFastSharedCommMapOffset[rank], hostVolatileFastSharedCommMapOffset[rank].extent(0));
+    Kokkos::resize(Kokkos::WithoutInitializing, volatileFastSharedCommMapNumShared[rank], hostVolatileFastSharedCommMapNumShared[rank].extent(0));
     Kokkos::resize(Kokkos::WithoutInitializing, volatileFastSharedCommMap[rank], hostVolatileFastSharedCommMap[rank].extent(0));
     Kokkos::deep_copy(volatileFastSharedCommMapOffset[rank], hostVolatileFastSharedCommMapOffset[rank]);
+    Kokkos::deep_copy(volatileFastSharedCommMapNumShared[rank], hostVolatileFastSharedCommMapNumShared[rank]);
     Kokkos::deep_copy(volatileFastSharedCommMap[rank], hostVolatileFastSharedCommMap[rank]);
   }
 }
