@@ -11,7 +11,6 @@
 #define IFPACK2_ILUT_DEF_HPP
 
 #include <type_traits>
-#include "Kokkos_StaticCrsGraph.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_Time.hpp"
