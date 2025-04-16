@@ -172,7 +172,7 @@ size_t Zoltan_RCB_Serialize_Structure_Size(ZZ const *zz) {
 
 void Zoltan_RCB_Serialize_Structure(ZZ const *zz, char **buf)
 {
-  char *yo = "Zoltan_RCB_Serialize_Structure";
+  // char *yo = "Zoltan_RCB_Serialize_Structure";
   RCB_STRUCT const *zzrcb = (RCB_STRUCT const *) zz->LB.Data_Structure;
 
   if (!zzrcb)
@@ -199,7 +199,7 @@ void Zoltan_RCB_Serialize_Structure(ZZ const *zz, char **buf)
 
 void Zoltan_RCB_Deserialize_Structure(ZZ *zz, char **buf)
 {
-  char *yo = "Zoltan_RCB_Serialize_Structure";
+  // char *yo = "Zoltan_RCB_Serialize_Structure";
   RCB_STRUCT *zzrcb = (RCB_STRUCT *) ZOLTAN_MALLOC(sizeof(RCB_STRUCT));
   zz->LB.Data_Structure = zzrcb;
 
