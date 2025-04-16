@@ -109,10 +109,10 @@ namespace
     view2_host(0,0,1) = 0.5;
     view2_host(0,0,2) = 3.0;
     
-    tensor_expected_host(0,0,0) = 0;
+    tensor_expected_host.access(0,0,0) = 0;
     for (int d=0; d<space_dim; d++)
     {
-      tensor_expected_host(0,0,0) += view1_host(0,0,d) * view2_host(0,0,d);
+      tensor_expected_host.access(0,0,0) += view1_host(0,0,d) * view2_host(0,0,d);
     }
     Kokkos::deep_copy(view1,           view1_host);
     Kokkos::deep_copy(view2,           view2_host);
