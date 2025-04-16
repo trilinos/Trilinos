@@ -244,8 +244,12 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
       mesh.buildLocalFaceIDs();
       addFaceBlocks(mesh);
    }
-   mesh.endModification();
 
+   {
+     const bool find_and_set_shared_nodes_in_stk = false;
+     mesh.endModification(find_and_set_shared_nodes_in_stk);
+   }
+   
    if (userMeshScaling_) {
      stk::mesh::Field<double>* coord_field = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
      std::vector< const stk::mesh::FieldBase *> fields;
