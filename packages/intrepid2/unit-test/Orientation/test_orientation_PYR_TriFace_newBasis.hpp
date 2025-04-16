@@ -8,7 +8,7 @@
 // @HEADER
 
 
-/** \file test_orientation_PYR_newBasis.hpp
+/** \file test_orientation_PYR_TriFace_newBasis.hpp
     \brief  Test for checking orientation tools for the Hierarchical basis on Pyramids
 
     The test considers two pyramids in physical space sharing a common triangular face.
@@ -24,6 +24,14 @@
     3. Checks that the dofs shared between the two pyramids are equivalent (this ensures that the orientation works correctly)
     4. Checks that the functions are indeed exactly reproduced
 
+    Note that there is some subtlety with these tests, stemming largely from the fact that the pyramidal basis
+    consists of rational functions which are only guaranteed to be polynomial on the space-appropriate (scalar/tangent/normal)
+    restrictions of the basis to the faces (the minimal requirement for compatibility with elements of other topologies that might
+    share the face).  When setting up the H(div) and H(curl) systems in particular, we restrict the test points to the shared face,
+    and work only with the normal or tangent part of the polynomial function that we are seeking to reproduce with the basis.
+    We similarly restrict the basis functions to those associated with the shared face, since the other functions will have
+    vanishing normals or tangents there.
+  
     \author Created by Nate Roberts, based on HEX tests by Mauro Perego.
  */
 
