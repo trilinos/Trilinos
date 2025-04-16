@@ -14,7 +14,6 @@ import numpy as np
 from PyTrilinos2.PyTrilinos2 import Teuchos
 from PyTrilinos2.PyTrilinos2 import Tpetra
 from PyTrilinos2.PyTrilinos2 import MueLu
-from PyTrilinos2.getTpetraTypeName import getDefaultNodeType
 from math import sqrt
 
 try:
@@ -160,7 +159,8 @@ def main():
 if __name__ == "__main__":
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
-    if getDefaultNodeType() == 'cuda':
+    defaultNode = Tpetra.Map.defaults['Node']
+    if defaultNode in ('cuda', 'cuda_uvm', 'hip', 'hip_managed'):
         Tpetra.initialize_Kokkos(device_id=rank)
     else:
         Tpetra.initialize_Kokkos(num_threads=12)

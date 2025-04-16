@@ -22,6 +22,7 @@ def setupInstantiationHelpers():
 
     SLGN = ('Scalar', 'LocalOrdinal', 'GlobalOrdinal', 'Node')
     LGN = ('LocalOrdinal', 'GlobalOrdinal', 'Node')
+    S = ('Scalar', )
 
     templatedClasses = {
         "PyTrilinos2.PyTrilinos2.Tpetra": [("MultiVector", SLGN),
@@ -37,36 +38,64 @@ def setupInstantiationHelpers():
                                            ("FECrsGraph", LGN),
                                            ("RowGraph", LGN),
                                            ("CrsMatrix", SLGN),
-                                           ("FECrsMatrix", SLGN)]
+                                           ("FECrsMatrix", SLGN)],
+        "PyTrilinos2.PyTrilinos2.Stratimikos": [("LinearSolverBuilder", S)],
+        "PyTrilinos2.PyTrilinos2.Teuchos": [("ScalarTraits", S)],
+        "PyTrilinos2.PyTrilinos2.Thyra": [("TpetraEuclideanScalarProd", SLGN),
+                                          ("TpetraLinearOp", SLGN),
+                                          ("TpetraMultiVector", SLGN),
+                                          ("TpetraOperatorVectorExtraction", SLGN),
+                                          ("TpetraVectorSpace", SLGN),
+                                          ("TpetraVector", SLGN),
+                                          ("XpetraLinearOp", SLGN),]
     }
 
-    replacements = [('long_long', 'long long'),
-                    ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_Serial_Kokkos_HostSpace_t', 'serial'),
-                    ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_Serial_t', 'serial'),
+    replacements = [('_t', ''),
+                    ('unsigned_int', 'unsigned int'),
+                    ('unsigned_short', 'unsigned short'),
+                    ('unsigned_long', 'unsigned long'),
+                    ('long_long', 'long long'),
+                    ('unsigned_long_long', 'unsigned long long'),
+                    ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_Serial_Kokkos_HostSpace', 'serial'),
+                    ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_Serial', 'serial'),
                     ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_OpenMP_Kokkos_HostSpace', 'openmp'),
                     ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_OpenMP', 'openmp'),
                     ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_Cuda_Kokkos_CudaSpace', 'cuda'),
                     ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_Cuda_Kokkos_CudaUVMSpace', 'cuda_uvm'),
+                    ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_HIP_Kokkos_HIPSpace', 'hip'),
+                    ('Tpetra_KokkosCompat_KokkosDeviceWrapperNode_Kokkos_HIP_Kokkos_HIPManagedSpace', 'hip_managed'),
                     ]
 
 
+    class Instantiator:
+        def __init__(self, class_name, templateParams, available_instantiations):
+            self.class_name = class_name
+            self.templateParams = templateParams
+            self.available_instantiations = available_instantiations
+            self.defaults = {k: v for k, v in zip(templateParams, list(available_instantiations.keys())[0])}
 
-    def getInstantiation(class_name, templateParams, available_instantiations):
+        @property
+        def templatedClasses(self):
+            return tuple([inst[1] for inst in self.available_instantiations.values()])
 
-        defaults = {k: v for k, v in zip(templateParams, list(available_instantiations.keys())[0])}
-
-        def instantiator(**kwargs):
-            k = copy(defaults)
+        def __call__(self, **kwargs):
+            k = copy(self.defaults)
             k.update(kwargs)
-            args = tuple([k[templateParam] for templateParam in templateParams])
-            if args in available_instantiations:
-                instantiation = available_instantiations[*args][1]
+            args = tuple([k[templateParam] for templateParam in self.templateParams])
+            if args in self.available_instantiations:
+                instantiation = self.available_instantiations[*args][1]
                 return instantiation
             else:
-                raise NotImplementedError("No instantiation of \"{}\" available for {}. Available instatiations: {}".format(class_name, args, list(available_instantiations.keys())))
+                raise NotImplementedError("No instantiation of \"{}\" available for {}. Available instatiations: {}".format(self.class_name, args, list(self.available_instantiations.keys())))
 
-        return instantiator
+        def __getitem__(self, args):
+            if isinstance(args, str):
+                args = (args, )
+            kwargs = {k: v for k, v in zip(self.templateParams, args)}
+            return self(**kwargs)
 
+        def __repr__(self):
+            return "{}{}".format(self.class_name, self.templateParams)
 
     for pkg in templatedClasses:
         classes = [(cls_name , cls_obj) for cls_name, cls_obj in inspect.getmembers(sys.modules[pkg]) if inspect.isclass(cls_obj)]
@@ -80,7 +109,7 @@ def setupInstantiationHelpers():
                     d = d.replace(*r)
                 components = d.split('_')
                 available_instantiations[tuple(components[1:])] = c
-            setattr(sys.modules[pkg], class_name, getInstantiation(class_name, templateParams, available_instantiations))
+            setattr(sys.modules[pkg], class_name, Instantiator(class_name, templateParams, available_instantiations))
 
 
 setupInstantiationHelpers()
