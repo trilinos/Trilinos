@@ -2363,7 +2363,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     Kokkos::View<char*, Kokkos::HostSpace> importsView(imports.data(), imports.size());
     auto exportsView_h = create_mirror_view(Kokkos::HostSpace(),exports.view_host());
     deep_copy(exportsView_h,exports.view_host());
-    distor.doPostsAndWaits(exportsView_h,numExportPackets(),importsView,numImportPackets());
+    distor.doPostsAndWaits(exportsView_h,numExportPacketsView,importsView,numImportPacketsView);
     auto importsView_d = Kokkos::create_mirror_view(Node::device_type::memory_space(), importsView);
     deep_copy(importsView_d,importsView);
     if (verbose) {
