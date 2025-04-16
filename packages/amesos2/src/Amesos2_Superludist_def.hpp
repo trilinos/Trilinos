@@ -1014,7 +1014,7 @@ namespace Amesos2 {
       fst_global_row = as<int_t>(superlu_contig_rowmap_->getMinGlobalIndex());
 
       // fill arrays
-      if (current_phase == PREORDERING || current_phase == SYMBFACT)
+      if (current_phase == PREORDERING)
       {
         Kokkos::resize(nzvals_temp_, l_nnz);
         Kokkos::resize(nzvals_view_, l_nnz);
