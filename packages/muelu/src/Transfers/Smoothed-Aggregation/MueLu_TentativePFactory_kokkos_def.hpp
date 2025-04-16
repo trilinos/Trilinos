@@ -426,7 +426,6 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP
 
   if (bTransferCoordinates_) {
     RCP<const Map> coarseCoordMap;
-    using array_type = typename Map::global_indices_array_device_type;
 
     LO blkSize = 1;
     if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
