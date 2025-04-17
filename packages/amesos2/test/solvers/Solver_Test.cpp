@@ -951,20 +951,41 @@ bool do_tpetra_test_with_types(const string& mm_file,
 
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MAT;
   typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node> MAP;
   const size_t numVecs = 5;     // arbitrary number
   const size_t numRHS  = 5;     // also arbitrary
-
-  bool transpose = solve_params.get<bool>("Transpose", false);
-
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
+  bool isContiguous = true;
+  string rowmap_file = "";
+  if (solve_params.isParameter("rowmap")) {
+    // Test non-contig GIDS with rowmap
+    rowmap_file = solve_params.get<string>("rowmap");
+    isContiguous = solve_params.sublist(solver_name).get("IsContiguous", false);
+    solve_params.remove("rowmap");
+  }
   if (verbosity > 2) {
-    *fos << endl << "      Reading matrix from " << mm_file << " ... " << flush;
+    *fos << endl << "      Reading matrix from " << mm_file;
+    if (rowmap_file != "") {
+      *fos << " with " << rowmap_file;
+    }
+    if (isContiguous) {
+      *fos << " (contiguous)";
+    }
+    *fos << " ... " << flush;
   }
   std::string path = filedir + mm_file;
-  RCP<MAT> A =
-    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm);
-
+  RCP<MAT> A;
+  if (rowmap_file == "") {
+    A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm);
+  } else {
+    int num_header_lines = 2;
+    bool convert_mtx_to_zero_base = true;
+    RCP<const MAP> rowMap = Tpetra::MatrixMarket::Reader<MAT>::readMapFile(filedir + rowmap_file, comm);
+    RCP<const MAP> domainMap = rowMap;
+    RCP<const MAP> rangeMap = rowMap;
+    A = Amesos2::Util::readCrsMatrixFromFile<MAP, MAT> (path, fos, rowMap, domainMap, rangeMap, convert_mtx_to_zero_base, num_header_lines);
+  }
   if (verbosity > 2) {
     *fos << "done" << endl;
     switch (verbosity) {
@@ -977,9 +998,10 @@ bool do_tpetra_test_with_types(const string& mm_file,
     }
   }
 
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > dmnmap = A->getDomainMap();
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rngmap = A->getRangeMap();
+  RCP<const MAP > dmnmap = A->getDomainMap();
+  RCP<const MAP > rngmap = A->getRangeMap();
 
+  bool transpose = solve_params.get<bool>("Transpose", false);
   ETransp trans = transpose ? CONJ_TRANS : NO_TRANS;
 
   if (verbosity > 2) {

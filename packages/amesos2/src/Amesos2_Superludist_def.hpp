@@ -1064,7 +1064,8 @@ namespace Amesos2 {
 
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != l_nnz,
                         std::runtime_error,
-                        "Did not get the expected number of non-zero vals");
+                        "Did not get the expected number of non-zero vals ("
+                        +std::to_string(nnz_ret)+" vs "+std::to_string(l_nnz)+")");
 
     // Get the SLU data type for this type of matrix
     SLUD::Dtype_t dtype = type_map::dtype;
