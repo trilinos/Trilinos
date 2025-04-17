@@ -294,8 +294,9 @@ void VariableDofLaplacianFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   // We need the ghosted Coordinates in the buildLaplacian routine. But we access the data
   // through getData only, i.e., the global ids are not interesting as long as we do not change
   // the ordering of the entries
-  Coords->replaceMap(amalgRowMap);
-  ghostedCoords->doImport(*Coords, *nodeImporter, Xpetra::INSERT);
+  RCP<dxMV> CoordsCopy = dxMVf::Build(Coords, Teuchos::Copy);
+  CoordsCopy->replaceMap(amalgRowMap);
+  ghostedCoords->doImport(*CoordsCopy, *nodeImporter, Xpetra::INSERT);
 
   Teuchos::ArrayRCP<Scalar> lapVals(amalgRowPtr[nLocalNodes]);
   this->buildLaplacian(amalgRowPtr, amalgCols, lapVals, Coords->getNumVectors(), ghostedCoords);
