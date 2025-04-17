@@ -111,11 +111,11 @@ static unsigned const int hilbert_state2d[] = {
   2, 3, 3, 1
 };
 
-static const struct Tables z2d = {z_data2d, z_state2d, z_idata2d, z_istate2d};
-static const struct Tables hilbert = {hilbert_data2d, hilbert_state2d, hilbert_idata2d, hilbert_istate2d};
-
 enum Curve2d {Z2D, HILBERT, N_CURVE2D};
-static const struct Tables tables2d[N_CURVE2D] = {z2d, hilbert};
+static const struct Tables tables2d[N_CURVE2D] = {
+  {z_data2d, z_state2d, z_idata2d, z_istate2d},
+  {hilbert_data2d, hilbert_state2d, hilbert_idata2d, hilbert_istate2d}
+};
 
 // The Z-curve
 static unsigned const int z_data3d [] = {
@@ -1320,17 +1320,17 @@ static unsigned const int beta_istate3d [] = {
   40, 38, 14, 39, 42, 21, 43, 44
 };
 
-static const struct Tables z3d = {z_data3d, z_state3d, z_idata3d, z_istate3d};
-static const struct Tables octree = {octree_data3d, octree_state3d, octree_idata3d, octree_istate3d};
-static const struct Tables butz = {butz_data3d, butz_state3d, butz_idata3d, butz_istate3d};
-static const struct Tables alfa = {alfa_data3d, alfa_state3d, alfa_idata3d, alfa_istate3d};
-static const struct Tables harmonious = {harmonious_data3d, harmonious_state3d, harmonious_idata3d, harmonious_istate3d};
-static const struct Tables sasburg = {sasburg_data3d, sasburg_state3d, sasburg_idata3d, sasburg_istate3d};
-static const struct Tables base_camp = {base_camp_data3d, base_camp_state3d, base_camp_idata3d, base_camp_istate3d};
-static const struct Tables beta = {beta_data3d, beta_state3d, beta_idata3d, beta_istate3d};
-
 enum Curve3d {Z3D, OCTREE, BUTZ, ALFA, HARMONIOUS, SASBURG, BASE_CAMP, BETA, N_CURVE3D};
-static const struct Tables tables3d[N_CURVE3D] = {z3d, octree, butz, alfa, harmonious, sasburg, base_camp, beta};
+static const struct Tables tables3d[N_CURVE3D] = {
+  {z_data3d, z_state3d, z_idata3d, z_istate3d}, 
+  {octree_data3d, octree_state3d, octree_idata3d, octree_istate3d}, 
+  {butz_data3d, butz_state3d, butz_idata3d, butz_istate3d}, 
+  {alfa_data3d, alfa_state3d, alfa_idata3d, alfa_istate3d}, 
+  {harmonious_data3d, harmonious_state3d, harmonious_idata3d, harmonious_istate3d}, 
+  {sasburg_data3d, sasburg_state3d, sasburg_idata3d, sasburg_istate3d}, 
+  {base_camp_data3d, base_camp_state3d, base_camp_idata3d, base_camp_istate3d}, 
+  {beta_data3d, beta_state3d, beta_idata3d, beta_istate3d}
+};
 
 double Zoltan_HSFC_InvHilbert1d (ZZ*, double *coord);
 double Zoltan_HSFC_InvHilbert2d (ZZ*, double *coord);
