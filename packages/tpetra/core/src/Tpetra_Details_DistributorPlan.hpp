@@ -27,6 +27,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
 #include "TpetraCore_config.h"
+#include "Kokkos_Core.hpp"
 
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
 #include <mpi_advance.h>
@@ -126,9 +127,11 @@ public:
   Details::EDistributorHowInitialized howInitialized() const { return howInitialized_; }
 
   SubViewLimits getImportViewLimits(size_t numPackets) const;
-  SubViewLimits getImportViewLimits(const Teuchos::ArrayView<const size_t> &numImportPacketsPerLID) const;
+  template <class ImpPacketsView>
+  SubViewLimits getImportViewLimits(const ImpPacketsView &numImportPacketsPerLID) const;
   SubViewLimits getExportViewLimits(size_t numPackets) const;
-  SubViewLimits getExportViewLimits(const Teuchos::ArrayView<const size_t> &numExportPacketsPerLID) const;
+  template <class ExpPacketsView>
+  SubViewLimits getExportViewLimits(const ExpPacketsView &numExportPacketsPerLID) const;
 
 private:
 
@@ -256,6 +259,66 @@ private:
   /// Distributor's indicesTo_.
   Teuchos::Array<size_t> indicesFrom_;
 };
+
+template <class ImpPacketsView>
+DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(const ImpPacketsView &numImportPacketsPerLID) const {
+  static_assert(Kokkos::is_view<ImpPacketsView>::value,
+      "Data array for DistributorPlan::getImportViewLimits must be Kokkos::View");
+
+  const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);
+
+  IndexView importStarts(actualNumReceives);
+  IndexView importLengths(actualNumReceives);
+
+  size_t offset = 0;
+  size_t curLIDoffset = 0;
+  for (size_t i = 0; i < actualNumReceives; ++i) {
+    size_t totalPacketsFrom_i = 0;
+    for (size_t j = 0; j < getLengthsFrom()[i]; ++j) {
+      totalPacketsFrom_i += numImportPacketsPerLID(curLIDoffset + j);
+    }
+    curLIDoffset += getLengthsFrom()[i];
+    importStarts[i] = offset;
+    offset += totalPacketsFrom_i;
+    importLengths[i] = totalPacketsFrom_i;
+  }
+  return std::make_pair(importStarts, importLengths);
+}
+
+template <class ExpPacketsView>
+DistributorPlan::SubViewLimits DistributorPlan::getExportViewLimits(const ExpPacketsView &numExportPacketsPerLID) const {
+  static_assert(Kokkos::is_view<ExpPacketsView>::value,
+      "Data array for DistributorPlan::getImportViewLimits must be Kokkos::View");
+
+  if (getIndicesTo().is_null()) {
+    const size_t actualNumSends = getNumSends() + (hasSelfMessage() ? 1 : 0);
+    IndexView exportStarts(actualNumSends);
+    IndexView exportLengths(actualNumSends);
+    size_t offset = 0;
+    for (size_t pp = 0; pp < actualNumSends; ++pp) {
+      size_t numPackets = 0;
+      for (size_t j = getStartsTo()[pp];
+           j < getStartsTo()[pp] + getLengthsTo()[pp]; ++j) {
+        numPackets += numExportPacketsPerLID(j);
+      }
+      exportStarts[pp] = offset;
+      offset += numPackets;
+      exportLengths[pp] = numPackets;
+    }
+    return std::make_pair(exportStarts, exportLengths);
+  } else {
+    const size_t numIndices = getIndicesTo().size();
+    IndexView exportStarts(numIndices);
+    IndexView exportLengths(numIndices);
+    size_t offset = 0;
+    for (size_t j = 0; j < numIndices; ++j) {
+      exportStarts[j] = offset;
+      offset += numExportPacketsPerLID(j);
+      exportLengths[j] = numExportPacketsPerLID(j);
+    }
+    return std::make_pair(exportStarts, exportLengths);
+  }
+}
 
 }
 }

@@ -8299,11 +8299,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
           destMat->numExportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
           destMat->numImportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
 
           if (verbose) {
             std::ostringstream os;
@@ -8321,8 +8317,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           }
 
           size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
-            totalImportPackets += numImportPacketsPerLID[i];
+          for (size_t i = 0; i < destMat->numImportPacketsPerLID_.view_host().size (); ++i) {
+            totalImportPackets += destMat->numImportPacketsPerLID_.view_host()[i];
           }
 
           // Reallocation MUST go before setting the modified flag,
@@ -8342,9 +8338,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             std::cerr << os.str ();
           }
           Distor.doReversePostsAndWaits (hostExports,
-                                         numExportPacketsPerLID,
+                                         destMat->numExportPacketsPerLID_.view_host(),
                                          hostImports,
-                                         numImportPacketsPerLID);
+                                         destMat->numImportPacketsPerLID_.view_host());
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Finished 4-arg doReversePostsAndWaits"
@@ -8394,11 +8390,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
           destMat->numExportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
           destMat->numImportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Calling 3-arg doPostsAndWaits"
@@ -8415,8 +8407,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           }
 
           size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
-            totalImportPackets += numImportPacketsPerLID[i];
+          for (size_t i = 0; i < destMat->numImportPacketsPerLID_.view_host().size (); ++i) {
+            totalImportPackets += destMat->numImportPacketsPerLID_.view_host()[i];
           }
 
           // Reallocation MUST go before setting the modified flag,
@@ -8436,9 +8428,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             std::cerr << os.str ();
           }
           Distor.doPostsAndWaits (hostExports,
-                                  numExportPacketsPerLID,
+                                  destMat->numExportPacketsPerLID_.view_host(),
                                   hostImports,
-                                  numImportPacketsPerLID);
+                                  destMat->numImportPacketsPerLID_.view_host());
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Finished 4-arg doPostsAndWaits"

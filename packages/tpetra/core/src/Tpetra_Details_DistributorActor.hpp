@@ -50,22 +50,22 @@ public:
                        size_t numPackets,
                        const ImpView &imports);
 
-  template <class ExpView, class ImpView>
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
   void doPostsAndWaits(const DistributorPlan& plan,
                        const ExpView &exports,
-                       const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                       const ExpPacketsView &numExportPacketsPerLID,
                        const ImpView &imports,
-                       const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+                       const ImpPacketsView &numImportPacketsPerLID);
 
   template <class ImpView>
   void doPostRecvs(const DistributorPlan& plan,
                    size_t numPackets,
                    const ImpView& imports);
 
-  template <class ImpView>
+  template <class ImpView, class ImpPacketsView>
   void doPostRecvs(const DistributorPlan& plan,
                    const ImpView &imports,
-                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+                   const ImpPacketsView &numImportPacketsPerLID);
 
   template <class ExpView, class ImpView>
   void doPostSends(const DistributorPlan& plan,
@@ -73,12 +73,12 @@ public:
                    size_t numPackets,
                    const ImpView& imports);
 
-  template <class ExpView, class ImpView>
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
   void doPostSends(const DistributorPlan& plan,
                    const ExpView &exports,
-                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                   const ExpPacketsView &numExportPacketsPerLID,
                    const ImpView &imports,
-                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+                   const ImpPacketsView &numImportPacketsPerLID);
 
   template <class ExpView, class ImpView>
   void doPosts(const DistributorPlan& plan,
@@ -86,12 +86,12 @@ public:
                size_t numPackets,
                const ImpView& imports);
 
-  template <class ExpView, class ImpView>
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
   void doPosts(const DistributorPlan& plan,
                const ExpView &exports,
-               const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+               const ExpPacketsView &numExportPacketsPerLID,
                const ImpView &imports,
-               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+               const ImpPacketsView &numImportPacketsPerLID);
 
   void doWaits(const DistributorPlan& plan);
 
@@ -161,25 +161,31 @@ void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
   doWaits(plan);
 }
 
-template <class ExpView, class ImpView>
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
 void DistributorActor::doPosts(const DistributorPlan& plan,
                                const ExpView &exports,
-                               const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                               const ExpPacketsView &numExportPacketsPerLID,
                                const ImpView &imports,
-                               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                               const ImpPacketsView &numImportPacketsPerLID)
 {
+  static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
+  static_assert(areKokkosViews<ExpPacketsView, ImpPacketsView>,
+      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPostRecvs(plan, imports, numImportPacketsPerLID);
   doPostSends(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
 }
 
-template <class ExpView, class ImpView>
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
 void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
-                                       const ExpView& exports,
-                                       const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                                       const ImpView& imports,
-                                       const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                                       const ExpView &exports,
+                                       const ExpPacketsView &numExportPacketsPerLID,
+                                       const ImpView &imports,
+                                       const ImpPacketsView &numImportPacketsPerLID)
 {
   static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
+  static_assert(areKokkosViews<ExpPacketsView, ImpPacketsView>,
       "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPosts(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   doWaits(plan);
@@ -389,11 +395,13 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
   doPostRecvsImpl(plan, imports, importSubViewLimits);
 }
 
-template <class ImpView>
+template <class ImpView, class ImpPacketsView>
 void DistributorActor::doPostRecvs(const DistributorPlan& plan,
                                    const ImpView &imports,
-                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                                   const ImpPacketsView &numImportPacketsPerLID)
 {
+  static_assert(isKokkosView<ImpPacketsView>,
+      "Data arrays for DistributorActor::doPostRecvs must be Kokkos::Views");
   auto importSubViewLimits = plan.getImportViewLimits(numImportPacketsPerLID);
   doPostRecvsImpl(plan, imports, importSubViewLimits);
 }
@@ -525,13 +533,15 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
   doPostSendsImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
 }
 
-template <class ExpView, class ImpView>
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
 void DistributorActor::doPostSends(const DistributorPlan& plan,
                                    const ExpView &exports,
-                                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                                   const ExpPacketsView &numExportPacketsPerLID,
                                    const ImpView &imports,
-                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                                   const ImpPacketsView &numImportPacketsPerLID)
 {
+  static_assert(areKokkosViews<ExpPacketsView, ImpPacketsView>,
+      "Data arrays for DistributorActor::doPostSends must be Kokkos::Views");
   auto exportSubViewLimits = plan.getExportViewLimits(numExportPacketsPerLID);
   auto importSubViewLimits = plan.getImportViewLimits(numImportPacketsPerLID);
   doPostSendsImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
