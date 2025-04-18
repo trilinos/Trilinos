@@ -22,7 +22,6 @@
 #include <functional>
 #include <stdexcept>
 #include <numeric>
-#include <strings.h>
 
 #include "Iotm_TextMeshFuncs.h"
 #include "Iotm_TextMeshEntityGroup.h"

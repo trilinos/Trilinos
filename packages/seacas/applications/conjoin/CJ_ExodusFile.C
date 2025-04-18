@@ -111,8 +111,8 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
     fmt::print("Single file mode... (Max open = {})\n\n", max_files);
   }
 
-  float version                 = 0.0;
-  int   overall_max_name_length = 32;
+  float   version                 = 0.0;
+  int64_t overall_max_name_length = 32;
 
   if (si.inputFiles_.size() == 1) {
     // The file should contain multiple change sets which will be concatenated...
@@ -125,7 +125,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
       return false;
     }
 
-    int num_change_sets = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
+    auto num_change_sets = ex_inquire_int(exoid, EX_INQ_NUM_CHILD_GROUPS);
     if (num_change_sets > 1) {
       usingChangeSets_ = true;
 
@@ -140,7 +140,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
         exodusMode_ = EX_ALL_INT64_API;
       }
 
-      int name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+      auto name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
       if (name_length > overall_max_name_length) {
         overall_max_name_length = name_length;
       }
@@ -150,8 +150,8 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
       fileids_.resize(num_change_sets, exoid);
 
       // Get names of change sets...
-      int group_name_length = ex_inquire_int(exoid, EX_INQ_GROUP_NAME_LEN);
-      group_name_length     = std::max(32, group_name_length);
+      auto group_name_length = ex_inquire_int(exoid, EX_INQ_GROUP_NAME_LEN);
+      group_name_length      = std::max(int64_t(32), group_name_length);
       std::vector<char> group_name(group_name_length + 1, '\0');
 
       for (int i = 1; i <= num_change_sets; i++) {
@@ -189,7 +189,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
           return false;
         }
 
-        int name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+        auto name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
         if (name_length > overall_max_name_length) {
           overall_max_name_length = name_length;
         }
@@ -217,7 +217,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si)
           fmt::print(stderr, "ERROR: Cannot open file '{}'\n", filenames_[p]);
           return false;
         }
-        int num_change_sets = ex_inquire_int(fileids_[p], EX_INQ_NUM_CHILD_GROUPS);
+        auto num_change_sets = ex_inquire_int(fileids_[p], EX_INQ_NUM_CHILD_GROUPS);
         if (num_change_sets > 1) {
           fmt::print(stderr,
                      "ERROR: Cannot (yet) handle multiple input files containing change "

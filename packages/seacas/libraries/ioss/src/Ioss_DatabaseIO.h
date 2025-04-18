@@ -289,7 +289,7 @@ namespace Ioss {
     /** \brief If a database type supports internal change sets, open the change set
      *         specified [zero-based] index
      *
-     *  \param[in] child_index The [zero-based] index of the internal change set to open.
+     *  \param[in] set_index The [zero-based] index of the internal change set to open.
      *  \returns True if successful.
      */
     bool open_internal_change_set(int set_index)

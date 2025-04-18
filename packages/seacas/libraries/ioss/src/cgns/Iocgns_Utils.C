@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1250,7 +1250,7 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
     // TODO: Calculate it outside of the loop...
     // Need to handle possible range == 0,0,0.  Only affects the beg data...
     if (is_parallel_io) {
-      region.get_database()->progress("\t\tBoundary Conditions");
+      region.get_database()->progress(fmt::format("\t\tBoundary Conditions for zone {}.", name));
     }
     CGNSIntVector bc_range(sb->m_boundaryConditions.size() * 6);
     size_t        idx = 0;
@@ -1265,6 +1265,9 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
       }
       for (size_t i = 0; i < 3; i++) {
         bc_range[idx++] = bc.m_rangeEnd[i];
+      }
+      if (is_parallel_io) {
+        region.get_database()->progress(fmt::format("\t\tBC Range calculation, {}.", bc.m_bcName));
       }
     }
 
@@ -1309,7 +1312,7 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
     }
     // Transfer Zone Grid Connectivity...
     if (is_parallel_io) {
-      region.get_database()->progress("\t\tZone Grid Connectivity");
+      region.get_database()->progress(fmt::format("\t\tZone Grid Connectivity for Zone {}", name));
     }
 
     // Used to detect duplicate zgc names in parallel but non-parallel-io case
@@ -1392,6 +1395,10 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
           }
         }
 
+        if (is_parallel_io) {
+          region.get_database()->progress(
+              fmt::format("\t\tcg_1to1_write Name: {}, Donor: {}.", connect_name, donor_name));
+        }
         CGERR(cg_1to1_write(file_ptr, base, db_zone, connect_name.c_str(), donor_name.c_str(),
                             Data(owner_range), Data(donor_range), Data(zgc.m_transform), &zgc_idx));
 

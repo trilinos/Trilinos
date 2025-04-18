@@ -30,6 +30,7 @@
 #include "Ioss_Property.h"
 #include "Ioss_PropertyManager.h"
 #include "Ioss_Region.h"
+#include "Ioss_SerializeIO.h"
 #include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
 #include "Ioss_SmartAssert.h"
@@ -594,8 +595,16 @@ namespace Ioss {
     int  num_width = Ioss::Utils::number_width(max_entity, true) + 2;
     int  sb_width  = Ioss::Utils::number_width(max_sb, true) + 2;
 
-    int  change_set_count = get_database()->num_internal_change_set();
-    auto change_set_name  = get_internal_change_set_name();
+    int         change_set_count = -1;
+    std::string change_set_name  = "unknown";
+
+    // If in file-per-rank parallel and serialize io is enabled, then usually only want summary on
+    // single rank. If called that way, then the following calls will fail since they expect all
+    // ranks to call...
+    if (!Ioss::SerializeIO::isEnabled()) {
+      change_set_count = get_database()->num_internal_change_set();
+      change_set_name  = get_internal_change_set_name();
+    }
     if (!change_set_name.empty() && change_set_name != "/") {
       change_set_name = ",\t[CS: " + change_set_name + "]";
     }
@@ -2859,7 +2868,7 @@ namespace Ioss {
       state++; // For the state we are going to write.
 
       if (topologyObserver) {
-	topologyObserver->initialize_region();
+        topologyObserver->initialize_region();
       }
 
       DynamicTopologyFileControl fileControl(this);

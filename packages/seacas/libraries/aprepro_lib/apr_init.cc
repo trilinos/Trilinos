@@ -134,6 +134,9 @@ namespace SEAMS {
                                             {nullptr, nullptr, nullptr, nullptr}};
 
   const str_init string_fncts[] = {
+      {"use_legacy_output_format", do_use_legacy_output_format, "use_legacy_output_format()",
+       "Use the output format of `%.10g` which was the default before the full-precision output "
+       "became the default."},
       {"DUMP", do_dumpsym, "DUMP()",
        "Output a list of all user-defined variables and their value."},
       {"DUMP_JSON", do_dumpsym_json, "DUMP_JSON()",
@@ -381,7 +384,7 @@ namespace SEAMS {
   };
   // clang-format on
 
-  const svar_init svariables[] = {{"_FORMAT", "%.10g"}, /* Default output format */
+  const svar_init svariables[] = {{"_FORMAT", ""}, /* Default output format if full-precision */
                                   {"_UNITS_SYSTEM", "none"},
                                   {nullptr, nullptr}};
   /* NOTE: The current comment is stored in "_C_"

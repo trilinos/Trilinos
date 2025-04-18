@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -165,7 +165,8 @@ namespace {
         double dx = interFace.coord_tol.Delta(x1[n], x2[n2]);
         if (dx > interFace.coord_tol.value) {
           fmt::print("   x coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
-                     interFace.coord_tol.abrstr(), x1[n], x2[n2], dx, (size_t)id_map[n]);
+                     interFace.coord_tol.abrstr(), x1[n], x2[n2], dx,
+                     static_cast<size_t>(id_map[n]));
           is_same = false;
         }
         norm = (x1[n] - x2[n2]) * (x1[n] - x2[n2]);
@@ -174,7 +175,8 @@ namespace {
           double dy = interFace.coord_tol.Delta(y1[n], y2[n2]);
           if (dy > interFace.coord_tol.value) {
             fmt::print("   y coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
-                       interFace.coord_tol.abrstr(), y1[n], y2[n2], dy, (size_t)id_map[n]);
+                       interFace.coord_tol.abrstr(), y1[n], y2[n2], dy,
+                       static_cast<size_t>(id_map[n]));
             is_same = false;
           }
           norm += (y1[n] - y2[n2]) * (y1[n] - y2[n2]);
@@ -184,7 +186,8 @@ namespace {
           double dz = interFace.coord_tol.Delta(z1[n], z2[n2]);
           if (dz > interFace.coord_tol.value) {
             fmt::print("   z coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
-                       interFace.coord_tol.abrstr(), z1[n], z2[n2], dz, (size_t)id_map[n]);
+                       interFace.coord_tol.abrstr(), z1[n], z2[n2], dz,
+                       static_cast<size_t>(id_map[n]));
             is_same = false;
           }
           norm += (z1[n] - z2[n2]) * (z1[n] - z2[n2]);

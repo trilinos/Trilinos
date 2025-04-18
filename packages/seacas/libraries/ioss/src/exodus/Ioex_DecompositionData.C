@@ -1940,7 +1940,7 @@ namespace Ioex {
     // map for all locally-owned nodes and also determine how many
     // of my nodes are owned by which other processors.
 
-    global_implicit_map.resize(owning_proc.size());
+    global_implicit_map.resize(owning_proc.size(), -1);
 
     std::vector<int64_t> snd_count(m_processorCount);
     std::vector<int64_t> rcv_count(m_processorCount);
@@ -1969,7 +1969,9 @@ namespace Ioex {
     }
 
     for (auto &i : global_implicit_map) {
-      i += *processor_offset + 1;
+      if (i >= 0) {
+        i += *processor_offset + 1;
+      }
     }
 
     // Now, tell the other processors how many nodes I will be sending
@@ -2002,9 +2004,11 @@ namespace Ioex {
 
     // Iterate rcv_list and convert global ids to the global-implicit position...
     for (auto &i : rcv_list) {
-      int64_t local_id     = node_map.global_to_local(i) - 1;
+      int64_t local_id = node_map.global_to_local(i) - 1;
+      SMART_ASSERT(local_id >= 0)(local_id)(i);
       int64_t rcv_position = global_implicit_map[local_id];
-      i                    = rcv_position;
+      SMART_ASSERT(rcv_position >= 0)(rcv_position)(local_id)(i);
+      i = rcv_position;
     }
 
     // Send the data back now...

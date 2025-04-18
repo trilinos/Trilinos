@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -258,7 +258,7 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   auto max_field = calculate_maximum_field_size(region);
   if (options.verbose && rank == 0) {
     std::string label = "MiB";
-    double      size  = (double)max_field.first / 1024 / 1024;
+    double      size  = static_cast<double>(max_field.first) / 1024.0 / 1024.0;
     if (size > 1024.0) {
       label = "GiB";
       size /= 1024.0;
@@ -309,7 +309,7 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   // to the output region based on values in `options`
   std::vector<int> selected_steps = get_selected_steps(region, options);
 
-  int step_count = (int)region.get_property("state_count").get_int();
+  int step_count = static_cast<int>(region.get_property("state_count").get_int());
 #ifdef SEACAS_HAVE_MPI
   int min_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MIN);
   int max_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MAX);
@@ -348,7 +348,7 @@ namespace {
     // This routine checks all steps of the input database and selects those which
     // meet the requirements specified in `options`.  The returned (1-based) vector will have a
     // value of `1` if the step is to be output and `0` if skipped.
-    int              step_count = (int)region.get_property("state_count").get_int();
+    int              step_count = static_cast<int>(region.get_property("state_count").get_int());
     std::vector<int> selected_steps(step_count + 1);
 
     // If user specified a list of times to transfer to output database,
@@ -408,10 +408,10 @@ namespace {
     if (options.define_geometry && options.boundary_sideset) {
       Ioss::FaceGenerator face_generator(region);
       if (region.get_database()->int_byte_size_api() == 4) {
-        face_generator.generate_faces((int)0, false);
+        face_generator.generate_faces(static_cast<int>(0), false);
       }
       else {
-        face_generator.generate_faces((int64_t)0, false);
+        face_generator.generate_faces(static_cast<int64_t>(0), false);
       }
 
       // Get vector of all boundary faces which will be output as the skin...
@@ -670,10 +670,10 @@ namespace {
         if (ss != nullptr) {
           auto *sb = ss->get_side_block("boundary");
           if (output_region.get_database()->int_byte_size_api() == 4) {
-            output_boundary_sideset(sb, boundary, (int)0);
+            output_boundary_sideset(sb, boundary, static_cast<int>(0));
           }
           else {
-            output_boundary_sideset(sb, boundary, (int64_t)0);
+            output_boundary_sideset(sb, boundary, static_cast<int64_t>(0));
           }
         }
       }

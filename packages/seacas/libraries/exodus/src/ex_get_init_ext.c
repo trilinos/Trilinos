@@ -36,7 +36,7 @@ static void exi_get_entity_count(int exoid, ex_init_params *info)
   nc_inq(exoid, &ndims, NULL, NULL, NULL);
 #endif
   for (int dimid = 0; dimid < ndims; dimid++) {
-    char   dim_nm[NC_MAX_NAME + 1] = {'\0'};
+    char   dim_nm[EX_MAX_NAME + 1] = {'\0'};
     size_t dim_sz;
 #if NC_HAS_HDF5
     nc_inq_dim(exoid, dimids[dimid], dim_nm, &dim_sz);

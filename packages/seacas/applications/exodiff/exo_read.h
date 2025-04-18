@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -75,7 +75,7 @@ public:
   size_t             Num_Assembly() const { return num_assemblies; }
 
   // Times:
-  int    Num_Times() const { return (int)times.size(); }
+  int    Num_Times() const { return static_cast<int>(times.size()); }
   double Time(int time_num) const;
 
   // Change Sets:
@@ -102,14 +102,14 @@ public:
   const NameList &EB_Var_Names() const { return eb_vars; }
   const NameList &FB_Var_Names() const { return fb_vars; }
 
-  const std::string &Global_Var_Name(int index) const;
-  const std::string &Nodal_Var_Name(int index) const;
-  const std::string &Element_Var_Name(int index) const;
-  const std::string &Element_Att_Name(int index) const;
-  const std::string &NS_Var_Name(int index) const;
-  const std::string &SS_Var_Name(int index) const;
-  const std::string &EB_Var_Name(int index) const;
-  const std::string &FB_Var_Name(int index) const;
+  const std::string &Global_Var_Name(size_t index) const;
+  const std::string &Nodal_Var_Name(size_t index) const;
+  const std::string &Element_Var_Name(size_t index) const;
+  const std::string &Element_Att_Name(size_t index) const;
+  const std::string &NS_Var_Name(size_t index) const;
+  const std::string &SS_Var_Name(size_t index) const;
+  const std::string &EB_Var_Name(size_t index) const;
+  const std::string &FB_Var_Name(size_t index) const;
 
   // Element blocks:
   size_t Num_Element_Blocks() const { return num_elmt_blocks; }
@@ -150,12 +150,12 @@ public:
   void Free_Nodal_Coordinates();
 
   // (First time step = 1.)
-  std::string   Load_Nodal_Results(int time_step_num, int var_index);
-  const double *Get_Nodal_Results(int var_index) const;
+  std::string   Load_Nodal_Results(int time_step_num, size_t var_index);
+  const double *Get_Nodal_Results(size_t var_index) const;
   const double *Get_Nodal_Results(int t1, int t2, double proportion,
-                                  int var_index) const; // Interpolated results
+                                  size_t var_index) const; // Interpolated results
   void          Free_Nodal_Results();
-  void          Free_Nodal_Results(int var_index);
+  void          Free_Nodal_Results(size_t var_index);
 
   // Global data:  (NOTE:  Global and Nodal data are always stored at the same
   //                       time step.  Therefore, if current time step number

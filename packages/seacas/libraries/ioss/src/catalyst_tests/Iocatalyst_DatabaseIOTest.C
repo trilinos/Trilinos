@@ -79,7 +79,9 @@ void Iocatalyst_DatabaseIOTest::runStructuredTest(const std::string &testName)
   EXPECT_TRUE(regionsAreEqual(cgnsFileName, catalystFileName, CGNS_DATABASE_TYPE));
 }
 
-void Iocatalyst_DatabaseIOTest::runUnstructuredTest(const std::string &testName)
+void Iocatalyst_DatabaseIOTest::runUnstructuredTest(const std::string &testName,
+                                                    bool               writeConnectivityRaw,
+                                                    const std::string &nodeBlockName)
 {
   std::string exodusFileName =
       testName + CATALYST_TEST_FILE_NP + std::to_string(part.size) + EXODUS_FILE_EXTENSION;
@@ -87,7 +89,9 @@ void Iocatalyst_DatabaseIOTest::runUnstructuredTest(const std::string &testName)
                                  std::to_string(part.size) + EXODUS_FILE_EXTENSION;
   Iocatalyst::BlockMeshSet::IOSSparams iop(exodusFileName, EXODUS_DATABASE_TYPE);
   bmSet.writeIOSSFile(iop);
-  iop.fileName = catalystFileName;
+  iop.fileName             = catalystFileName;
+  iop.nodeBlockName        = nodeBlockName;
+  iop.writeConnectivityRaw = writeConnectivityRaw;
   bmSet.writeCatalystIOSSFile(iop);
   checkZeroCopyFields(iop);
   EXPECT_TRUE(regionsAreEqual(exodusFileName, catalystFileName, EXODUS_DATABASE_TYPE));
