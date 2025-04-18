@@ -36,6 +36,12 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     periodic_wedge.xml
     periodic_wedge.pam
     energy-periodic-32bit-limit.xml
+    energy-ss-tp-multiblock-ic-bc-issue.xml
+    energy-ss-tp-multiblock-ic-bc-issue.jou
+    energy-ss-tp-multiblock-ic-bc-issue.gen
+    make-mesh.sh
+    do-runs-multiblock.sh
+    set_seacas_decomp.sh
   EXEDEPS main_driver
   )
 
