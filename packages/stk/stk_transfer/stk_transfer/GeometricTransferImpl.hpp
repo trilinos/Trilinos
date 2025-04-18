@@ -11,10 +11,12 @@
 #define STK_STK_TRANSFER_STK_TRANSFER_GEOMETRICTRANSFERIMPL_HPP_
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 #include <stk_util/parallel/OutputStreams.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
+#include "stk_search/BoundingBox.hpp"
 #include "stk_search/CoarseSearch.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 
@@ -22,6 +24,18 @@ namespace stk {
 namespace transfer {
 
 namespace impl {
+
+inline void throw_error_on_coarse_expansion_limit(stk::ParallelMachine comm, const std::string local_err_msg)
+{
+  if (stk::util::get_common_coupling_version() >= 15) {
+    std::ostringstream global_err_msg;
+    stk::all_write_string(comm, global_err_msg, local_err_msg);
+    int err = (int) global_err_msg.str().size();
+    int global_err = 0;
+    stk::all_reduce_sum(comm, &err, &global_err, 1);
+    STK_ThrowRequireMsg(!global_err, global_err_msg.str());
+  }
+}
 
 template <class BoundingBoxType>
 struct BoundingBoxCompare{
@@ -134,7 +148,8 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec &domain_to_r
     const typename INTERPOLATE::MeshA *mesha,
     const typename INTERPOLATE::MeshB *meshb,
     const stk::search::SearchMethod search_method,
-    const double expansion_factor)
+    const double expansion_factor,
+    const double expansion_limit = std::numeric_limits<double>::max())
 {
   using BoundingBoxA = typename INTERPOLATE::MeshA::BoundingBox;
   using BoundingBoxB = typename INTERPOLATE::MeshB::BoundingBox;
@@ -195,12 +210,26 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec &domain_to_r
     domain_to_range.insert(domain_to_range.end(), this_pass_domain_to_range.begin(), this_pass_domain_to_range.end());
 
     if (!domain_empty) {
+      std::string local_err_msg;
       for (BoundingBoxB &box : domain) {
+        const auto box_scale = search::length_scale(box.first);
+
+        if(box_scale > expansion_limit)
+        {
+          std::ostringstream err;
+          err << "During coarse search, bounding box size = " << box_scale << " which exceeds the expansion tolerance = "
+                                                         << expansion_limit << ".  Box info: " << box.first << std::endl;
+          local_err_msg +=  err.str();
+        }
+
         search::scale_by(box.first, expansion_factor);
       }
+
       for (BoundingBoxA &box : range) {
         search::scale_by(box.first, expansion_factor);
       }
+
+      throw_error_on_coarse_expansion_limit(comm, local_err_msg);
       print_expansion_warnings<INTERPOLATE>(comm, num_coarse_search_passes, domain.size());
     }
   }

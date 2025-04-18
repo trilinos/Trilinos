@@ -54,8 +54,10 @@ class LocalSparseTriangularSolver :
                                                                        typename MatrixType::node_type> >
 {
 public:
-  //! Type of the entries of the input matrix.
+  //! Scalar type of the entries of the input matrix.
   typedef typename MatrixType::scalar_type scalar_type;
+  //! Implementation scalar type of the entries of the input matrix.
+  typedef typename MatrixType::impl_scalar_type impl_scalar_type;
   //! Type of the local indices of the input matrix.
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   //! Type of the global indices of the input matrix.

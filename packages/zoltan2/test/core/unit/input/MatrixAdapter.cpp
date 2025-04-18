@@ -15,7 +15,6 @@
  *
  */
 
-#include "Kokkos_StaticCrsGraph.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_InputTraits.hpp>

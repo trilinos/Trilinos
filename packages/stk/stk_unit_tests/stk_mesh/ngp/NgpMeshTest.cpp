@@ -414,7 +414,7 @@ TEST(NgpDeviceMesh, dont_let_stacksize_get_out_of_control)
   constexpr size_t expectedBucketSize = 1120;
   EXPECT_NEAR(expectedBucketSize, sizeof(stk::mesh::Bucket), tol);
 
-  constexpr size_t expectedDeviceMeshSize = 536;
+  constexpr size_t expectedDeviceMeshSize = 656;
   EXPECT_NEAR(expectedDeviceMeshSize, sizeof(stk::mesh::DeviceMesh), tol);
 
   constexpr size_t expectedDeviceBucketSize = 264;

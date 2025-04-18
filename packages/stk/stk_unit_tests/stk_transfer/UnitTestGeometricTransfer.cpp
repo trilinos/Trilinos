@@ -48,6 +48,18 @@ public:
   { /* empty to test coarse_search_impl with empty domain */ }
 };
 
+class NonTrivialTestSrcMesh {
+public:
+  typedef TrivialTestKey Key;
+  typedef stk::search::IdentProc<Key, int> EntityProc;
+  typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
+  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  {
+    boxes.clear();
+    boxes.push_back(BoundingBox(stk::search::Box<double>(),EntityProc(0,0)));
+  }
+};
+
 class TrivialTestDestMesh {
 public:
   typedef TrivialTestKey Key;
@@ -60,26 +72,56 @@ public:
   }
 };
 
+class NonTrivialTestDestMesh {
+public:
+  typedef TrivialTestKey Key;
+  typedef stk::search::IdentProc<Key, int> EntityProc;
+  typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
+  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  {
+    boxes.clear();
+    boxes.push_back(BoundingBox(stk::search::Box<double>({0,0,0}, {1,1,1}),EntityProc(0,0)));
+  }
+};
+
+template <typename SrcMeshType, typename DestMeshType>
 class TrivialTestInterp {
 public:
-  typedef TrivialTestSrcMesh MeshA;
-  typedef TrivialTestDestMesh MeshB;
-  typedef MeshA::EntityProc EntityProcA;
-  typedef MeshB::EntityProc EntityProcB;
+  typedef SrcMeshType MeshA;
+  typedef DestMeshType MeshB;
+  typedef typename MeshA::EntityProc EntityProcA;
+  typedef typename MeshB::EntityProc EntityProcB;
   typedef std::pair<EntityProcA, EntityProcB> EntityProcRelation;
   typedef std::vector<EntityProcRelation> EntityProcRelationVec;
 };
 
 TEST(GeomXferImpl, coarseSearchImpl_emptyDomain)
 {
-  TrivialTestInterp::EntityProcRelationVec entProcRelVec;
+  using Interp = TrivialTestInterp<TrivialTestSrcMesh, TrivialTestDestMesh>;
+
+  Interp::EntityProcRelationVec entProcRelVec;
   TrivialTestSrcMesh empty_meshA;
   TrivialTestDestMesh meshB;
-  const double expansionFactor = 1.1; // >1 so coarse_search_impl will try
-                                    //to expand boxes to find range entries
-  EXPECT_NO_THROW(stk::transfer::impl::coarse_search_impl<TrivialTestInterp>
-                  (entProcRelVec, MPI_COMM_WORLD, &empty_meshA, &meshB,
-                  stk::search::KDTREE, expansionFactor));
+  const double expansionFactor = 1.1;  // >1 so coarse_search_impl will try
+                                       // to expand boxes to find range entries
+  EXPECT_NO_THROW(stk::transfer::impl::coarse_search_impl<Interp>(
+      entProcRelVec, MPI_COMM_WORLD, &empty_meshA, &meshB, stk::search::KDTREE, expansionFactor));
+  EXPECT_TRUE(entProcRelVec.empty());
+}
+
+TEST(GeomXferImpl, coarseSearchImpl_expansionLimitThrow)
+{
+  using Interp = TrivialTestInterp<NonTrivialTestSrcMesh, NonTrivialTestDestMesh>;
+
+  Interp::EntityProcRelationVec entProcRelVec;
+  NonTrivialTestSrcMesh meshA;
+  NonTrivialTestDestMesh meshB;
+  const double expansionFactor = 1.1;  // >1 so coarse_search_impl will try
+                                       // to expand boxes to find range entries
+
+  //dest mesh has an expanding box, will throw when this box length scale hits 3.0 (arbitrary)                                       
+  EXPECT_ANY_THROW(stk::transfer::impl::coarse_search_impl<Interp>(
+      entProcRelVec, MPI_COMM_WORLD, &meshA, &meshB, stk::search::KDTREE, expansionFactor, 3.0));
   EXPECT_TRUE(entProcRelVec.empty());
 }
 

@@ -423,6 +423,7 @@ template <class INTERPOLATE> ReducedDependencyGeometricTransfer<INTERPOLATE>::Re
     static_assert(8 == sizeof(typename InterpolateClass::EntityKeyB), "Size of EntityKeyB needs to be 64 bit");
     m_comm_data.m_shared_comm = pm;
     STK_ThrowRequire(mesha || meshb);
+
   }
 
   template <class INTERPOLATE>

@@ -57,6 +57,7 @@ template<typename T, typename ExchangeHandler>
 void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
                                                 const std::vector<int> & comm_procs,
                                                 ExchangeHandler & exchangeHandler,
+                                                bool includeGhosts,
                                                 bool deterministic)
 {
 #if defined( STK_HAS_MPI)
@@ -69,11 +70,10 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   auto& bulkData = ngpMesh.get_bulk_on_host();
   stk::mesh::EntityRank fieldRank = exchangeHandler.get_ngp_fields()[0]->get_rank();
   size_t maxMeshIndicesMapExtent = 0;
-
   Kokkos::Profiling::pushRegion("NGP Cuda-aware MPI bookkeeping setup - max map extent");
 
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {
-    auto sharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, comm_procs[proc]);
+    auto sharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, comm_procs[proc], includeGhosts);
     maxMeshIndicesMapExtent = std::max(maxMeshIndicesMapExtent, sharedCommMap.extent(0));
   }
 
@@ -82,7 +82,7 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   std::vector<size_t> messageSizes(num_comm_procs, 0);
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {
     int iproc = comm_procs[proc];
-    exchangeHandler.hostSizeMessages(iproc, messageSizes[proc]);
+    exchangeHandler.hostSizeMessages(iproc, messageSizes[proc], includeGhosts);
     totalSizeForAllProcs += messageSizes[proc];
   }
   Kokkos::Profiling::popRegion();
@@ -107,7 +107,7 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {
     hostBufferOffsets[proc+1] = hostBufferOffsets[proc] + messageSizes[proc];
 
-    auto sharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, comm_procs[proc]);
+    auto sharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, comm_procs[proc], includeGhosts);
 
     unsigned hostMeshIndicesOffsetsCounter = 0;
     for (size_t i = 0; i < sharedCommMap.extent(0); ++i) {
@@ -134,11 +134,11 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   Kokkos::Profiling::pushRegion("NGP Cuda-aware MPI - message pack");
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {
     auto iProc = comm_procs[proc];
-    auto hostSharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, iProc);
+    auto hostSharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, iProc, includeGhosts);
     auto dataBegin = hostBufferOffsets[proc];
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, hostSharedCommMap.extent(0)),
       KOKKOS_LAMBDA(size_t idx) {
-        auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc);
+        auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc, includeGhosts);
         auto fastMeshIndex = deviceSharedCommMap(idx);
         int sendBufferStartIdx = deviceMeshIndicesOffsets(idx, proc);
 
@@ -180,13 +180,13 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
 
     Kokkos::Profiling::pushRegion("NGP Cuda-aware MPI - message unpacking");
     auto iProc = comm_procs[idx];
-    auto hostSharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, iProc);
+    auto hostSharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, iProc, includeGhosts);
     auto dataBegin = hostBufferOffsets[idx];
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, hostSharedCommMap.extent(0)),
       KOKKOS_LAMBDA(size_t index) {
-        auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc);
+        auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc, includeGhosts);
         auto fastMeshIndex = deviceSharedCommMap(index);
-        int recvBufferStartIdx = deviceMeshIndicesOffsets(index, proc);
+        int recvBufferStartIdx = deviceMeshIndicesOffsets(index, idx);
 
         for (size_t fieldIdx = 0; fieldIdx < exchangeHandler.get_ngp_fields_on_device().extent(0); ++fieldIdx) {
           stk::mesh::NgpField<T> const& field = exchangeHandler.get_ngp_fields_on_device()(fieldIdx);

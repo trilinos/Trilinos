@@ -429,7 +429,7 @@ namespace Intrepid2 {
 
       for (ordinal_type i=0;i<iend;++i)
         for (ordinal_type j=0;j<jend;++j)
-          A(i,j) *= alpha;
+          A.access(i,j) *= alpha;
     }
 
     template<typename AViewType,
@@ -444,7 +444,7 @@ namespace Intrepid2 {
       
       for (ordinal_type i=0;i<iend;++i)
         for (ordinal_type j=0;j<jend;++j)
-          A(i,j) /= alpha;
+          A.access(i,j) /= alpha;
     }
 
     template<typename AViewType,
@@ -461,7 +461,7 @@ namespace Intrepid2 {
 
       for (ordinal_type i=0;i<iend;++i)
         for (ordinal_type j=0;j<jend;++j)
-          A(i,j) = alpha*B(i,j);
+          A.access(i,j) = alpha*B.access(i,j);
     }
 
     template<typename AViewType,
@@ -478,7 +478,7 @@ namespace Intrepid2 {
       
       for (ordinal_type i=0;i<iend;++i)
         for (ordinal_type j=0;j<jend;++j)
-          A(i,j) = B(i,j)/alpha;
+          A.access(i,j) = B.access(i,j)/alpha;
     }
 
   }

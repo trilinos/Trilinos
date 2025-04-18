@@ -475,12 +475,17 @@ bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & va
 
 bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 {
+  return erase(key, ghost.ordinal());
+}
+
+bool EntityCommDatabase::erase( const EntityKey & key, unsigned ghostID )
+{
   if (!cached_find(key)) return false;
 
   int entityCommIndex = m_last_lookup->second;
 
   bool result = m_entityCommInfo.remove_items_if(entityCommIndex, [&](const EntityCommInfo& info) {
-    if (info.ghost_id == ghost.ordinal()) {
+    if (info.ghost_id == ghostID) {
       if (m_comm_map_change_listener != nullptr) {
         m_comm_map_change_listener->removedGhost(key, info.ghost_id, info.proc);
       }

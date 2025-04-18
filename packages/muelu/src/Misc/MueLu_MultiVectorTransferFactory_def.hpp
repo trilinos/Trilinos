@@ -109,7 +109,6 @@ void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     using execution_space  = typename Node::execution_space;
     using ATS              = Kokkos::ArithTraits<Scalar>;
     using impl_scalar_type = typename ATS::val_type;
-    using array_type       = typename Map::global_indices_array_device_type;
 
     auto aggregates = fineLevel.Get<RCP<Aggregates>>(transferName, GetFactory("Transfer factory").get());
     TEUCHOS_ASSERT(!aggregates->AggregatesCrossProcessors());

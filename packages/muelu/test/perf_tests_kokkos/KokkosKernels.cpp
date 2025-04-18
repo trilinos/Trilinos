@@ -11,7 +11,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#include <Kokkos_StaticCrsGraph.hpp>
+#include <KokkosSparse_StaticCrsGraph.hpp>
 #include <Kokkos_Timer.hpp>
 
 template <class scalar_type, class local_ordinal_type, class device_type>

@@ -31,6 +31,7 @@ namespace Intrepid2 {
   class VectorData
   {
   public:
+    using value_type = Scalar;
     using VectorArray = Kokkos::Array< TensorData<Scalar,DeviceType>, Parameters::MaxVectorComponents >; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
     using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxTensorComponents>;
 

@@ -33,6 +33,8 @@ namespace Intrepid2 {
   class TransformedBasisValues
   {
   public:
+    using value_type = Scalar;
+    
     ordinal_type numCells_;
     
     Data<Scalar,DeviceType> transform_; // vector case: (C,P,D,D) jacobian or jacobian inverse; can also be unset for identity transform.  Scalar case: (C,P), or unset for identity.  Contracted vector case: (C,P,D) transform, to be contracted with a vector field to produce a scalar result.

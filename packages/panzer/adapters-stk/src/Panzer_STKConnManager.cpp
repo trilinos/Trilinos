@@ -221,11 +221,8 @@ STKConnManager::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk
 
 void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
 {
-#ifdef HAVE_EXTRA_TIMERS
-  using Teuchos::TimeMonitor;
-  RCP<Teuchos::TimeMonitor> tM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("panzer_stk::STKConnManager::buildConnectivity"))));
-#endif
-
+   PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::STKConnManager::buildConnectivity", build_connectivity);
+  
    stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
 
    // get element info from STK_Interface
@@ -302,10 +299,7 @@ void STKConnManager::applyPeriodicBCs(const panzer::FieldPattern & fp, GlobalOrd
    using Teuchos::RCP;
    using Teuchos::rcp;
 
-#ifdef HAVE_EXTRA_TIMERS
-  using Teuchos::TimeMonitor;
-  RCP<Teuchos::TimeMonitor> tM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("panzer_stk::STKConnManager::applyPeriodicBCs"))));
-#endif
+   PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::STKConnManager::applyPeriodicBCs", apply_periodic_bcs);
 
    std::pair<Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > >, Teuchos::RCP<std::vector<unsigned int> > > matchedValues
             = stkMeshDB_->getPeriodicNodePairing();

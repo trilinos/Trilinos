@@ -114,7 +114,7 @@ struct ComputeBasisCoeffsOnEdges_L2 {
 
     for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq)
       for(ordinal_type d=0; d <fieldDim_; ++d)
-        targetTanAtTargetEPoints_(ic,iq) += targetAtTargetEPoints_(ic,offsetTarget_+iq,d)*refEdgesVec_(iedge_,d);
+        targetTanAtTargetEPoints_(ic,iq) += targetAtTargetEPoints_.access(ic,offsetTarget_+iq,d)*refEdgesVec_(iedge_,d);
 
     for(ordinal_type j=0; j <numVertexDofs_; ++j) {
       ordinal_type jdof = computedDofs_(j);
@@ -243,7 +243,7 @@ struct ComputeBasisCoeffsOnFaces_L2 {
 
       for(ordinal_type d=0; d <fieldDim_; ++d)
         for(ordinal_type iq=0; iq <ordinal_type(targetEWeights_.extent(0)); ++iq)
-          targetDofAtTargetEPoints_(ic,iq,0) += coeff[d]*targetAtTargetEPoints_(ic,offsetTarget_+iq,d);
+          targetDofAtTargetEPoints_(ic,iq,0) += coeff[d]*targetAtTargetEPoints_.access(ic,offsetTarget_+iq,d);
 
       for(ordinal_type j=0; j <numVertexEdgeDofs_; ++j) {
         ordinal_type jdof = computedDofs_(j);

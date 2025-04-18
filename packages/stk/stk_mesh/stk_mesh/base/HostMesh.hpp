@@ -232,9 +232,9 @@ public:
     return *bulk->buckets(rank)[i];
   }
 
-  NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc) const
+  NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc, bool includeGhosts=false) const
   {
-    return bulk->template volatile_fast_shared_comm_map<NgpMemSpace>(rank, proc);
+    return bulk->template volatile_fast_shared_comm_map<NgpMemSpace>(rank, proc, includeGhosts);
   }
 
   stk::mesh::BulkData &get_bulk_on_host()

@@ -11,7 +11,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
-#include "Kokkos_StaticCrsGraph.hpp"
+#include "KokkosSparse_StaticCrsGraph.hpp"
 #include "KokkosGraph_Distance2ColorHandle.hpp"
 #include "KokkosGraph_Distance2Color.hpp"
 
