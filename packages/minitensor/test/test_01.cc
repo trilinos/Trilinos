@@ -881,7 +881,7 @@ TEST(MiniTensor, LeftPolarDecomposition)
   Tensor<Real> const X(1.1, 0.2, 0.0, 0.2, 1.0, 0.0, 0.0, 0.0, 1.2);
 
   Real const
-  c = sqrt(2.0) / 2.0;
+  c = std::sqrt(2.0) / 2.0;
 
   Tensor<Real> const Y(c, -c, 0.0, c, c, 0.0, 0.0, 0.0, 1.0);
 
@@ -901,6 +901,41 @@ TEST(MiniTensor, LeftPolarDecomposition)
   ASSERT_LE(error_y, machine_epsilon<Real>());
 }
 
+TEST(MiniTensor, Log)
+{
+  Tensor<Real>
+  I = identity<Real>(3);
+
+  Tensor<Real>
+  r = sqrt(I);
+
+  Real const
+  error_sqrt = norm(r - I);
+
+  ASSERT_LE(error_sqrt, machine_epsilon<Real>());
+
+  Tensor<Real>
+  i = log(I);
+
+  Real const
+  error_I = norm(i) / norm(I);
+
+  ASSERT_LE(error_I, machine_epsilon<Real>());
+
+  Tensor<Real>
+  F(-0.16777540263807703,   1.2889030921484332,    0.09298444646599896,
+    -0.718646161000825955,  0.02120989960140519,  -0.039217352050714333,
+    -0.073802850037046119,  0.036685806156092855,  1.0456450021778172);
+
+  Tensor<Real>
+  f = exp(log(F));
+
+  Real const
+  error_F = norm(f - F);
+
+  ASSERT_LE(error_F, 8 * machine_epsilon<Real>());
+}
+
 TEST(MiniTensor, LogRotation)
 {
   // Identity rotation
@@ -917,7 +952,7 @@ TEST(MiniTensor, LogRotation)
 
   // Pi / 4 rotation about Z.
   Real const
-  c = sqrt(2.0) / 2.0;
+  c = std::sqrt(2.0) / 2.0;
 
   Tensor<Real> const R(c, -c, 0.0, c, c, 0.0, 0.0, 0.0, 1.0);
 
@@ -991,7 +1026,7 @@ TEST(MiniTensor, PolarLeftLog)
   Tensor<Real> const X = exp(x);
 
   Real const
-  c = sqrt(2.0) / 2.0;
+  c = std::sqrt(2.0) / 2.0;
 
   Tensor<Real> const Y(c, -c, 0.0, c, c, 0.0, 0.0, 0.0, 1.0);
 
@@ -1030,9 +1065,9 @@ TEST(MiniTensor, SVD2x2)
 
   Real const psi = 2.0;
 
-  Real const s0 = sqrt(3.0);
+  Real const s0 = std::sqrt(3.0);
 
-  Real const s1 = sqrt(2.0);
+  Real const s1 = std::sqrt(2.0);
 
   Real const cl = cos(phi);
 
@@ -1458,7 +1493,7 @@ TEST(MiniTensor, TemplateMetaProgramming)
     double_string = "double";
 
     std::string const
-    fad_string = "Sacado::Fad::DFad< double >";
+    fad_string = "Sacado::Fad::Exp::GeneralFad< double >";
 
     std::string
     type_string =
