@@ -23,6 +23,7 @@
 
 #include "Kokkos_View_Fad.hpp"
 
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 namespace Kokkos {
 namespace Impl {
 
@@ -809,6 +810,7 @@ public:
 };
 
 }} //end Kokkos::Impl
+#endif
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 

@@ -53,6 +53,11 @@ struct ViewFactory {
 
   typedef typename Impl::ViewFactoryType<ViewPack...>::type value_type;
 
+  template<class T>
+  struct IsCtorProp : std::false_type{};
+  template<class ... Args>
+  struct IsCtorProp<Kokkos::Impl::ViewCtorProp<Args...>> : std::true_type{};
+
   template <class ResultView, class CtorProp, class ... Dims>
   static ResultView
   create_view(const ViewPack& ... views,
@@ -87,7 +92,27 @@ struct ViewFactory {
       layout = Impl::reconstructLayout(layout, r);
     }
 
+#ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+    if constexpr (is_view_fad<ResultView>::value) {
+      size_t fad_size = dimension_scalar(views...);
+      if (fad_size == 0) fad_size = 1;
+      if (!is_scalar) layout.dimension[rank] = is_dyn_rank ? KOKKOS_INVALID_INDEX : KOKKOS_IMPL_CTOR_DEFAULT_ARG;
+      // turns out CtorProp can be just a pointer or a label...
+      if constexpr (IsCtorProp<CtorProp>::value) {
+        return ResultView(Kokkos::Impl::with_properties_if_unset(prop, Kokkos::Impl::AccessorArg_t{fad_size}), layout);
+      } else {
+        if constexpr (std::is_pointer_v<CtorProp> && !std::is_convertible_v<CtorProp, const char*>) {
+          return ResultView(Kokkos::view_wrap(prop, Kokkos::Impl::AccessorArg_t{fad_size}), layout);
+        } else {
+          return ResultView(Kokkos::view_alloc(prop, Kokkos::Impl::AccessorArg_t{fad_size}), layout);
+        }
+      }
+    } else {
+      return ResultView(prop, layout);
+    }
+#else
     return ResultView(prop, layout);
+#endif
   }
 
 };
