@@ -252,7 +252,7 @@ Finally, it is important to declare all necessary main factories in the **Hierar
 
 .. _advanced_concepts/line-smoothing:
 
-Line-smoohing
+Line-smoothing
 =============
 
 General idea
