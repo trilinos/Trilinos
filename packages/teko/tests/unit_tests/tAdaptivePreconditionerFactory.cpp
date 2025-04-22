@@ -17,23 +17,17 @@
 #include <string>
 #include <iostream>
 
-#include "Teko_StratimikosFactory.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
 // Teko-Package includes
 #include "Teko_ConfigDefs.hpp"
 #include "Teko_Utilities.hpp"
-#include "Teko_DiagnosticLinearOp.hpp"
 #include "Teko_AdaptivePreconditionerFactory.hpp"
 #include "Teko_PreconditionerInverseFactory.hpp"
 #include "Teko_PreconditionerLinearOp.hpp"
 
 #include "Thyra_TpetraLinearOp.hpp"
-
-#include "Teuchos_AbstractFactoryStd.hpp"
-
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 // Test-rig
 
@@ -91,25 +85,15 @@ TEUCHOS_UNIT_TEST(tAdaptivePreconditionerFactory, relative_residual_test) {
   // build global (or serial communicator)
   RCP<const Teuchos::Comm<int> > Comm = Tpetra::getDefaultComm();
 
-  // build stratimikos factory, adding Teko's version
-  Stratimikos::DefaultLinearSolverBuilder stratFactory;
-  stratFactory.setPreconditioningStrategyFactory(
-      Teuchos::abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,
-                                  Teko::StratimikosFactory>(),
-      "Teko");
-  RCP<ParameterList> params = Teuchos::rcp(new ParameterList(*stratFactory.getValidParameters()));
-  ParameterList& tekoList   = params->sublist("Preconditioner Types").sublist("Teko");
-  tekoList.set("Write Block Operator", false);
-  tekoList.set("Test Block Operator", false);
-  tekoList.set("Strided Blocking", "1 1");
-  ParameterList& ifl = tekoList.sublist("Inverse Factory Library");
+  const double targetReduction = 1e-4;
 
-  double targetReduction = 1e-4;
-  ifl.sublist("adapt").set("Type", "Adaptive");
-  ifl.sublist("adapt").set("Inverse Type 1", "Ifpack2");
-  ifl.sublist("adapt").set("Inverse Type 2", "Amesos2");
+  Teuchos::ParameterList pl;
+  Teuchos::ParameterList& adaptivePl = pl.sublist("adapt");
+  adaptivePl.set("Type", "Adaptive");
+  adaptivePl.set("Inverse Type 1", "Ifpack2");
+  adaptivePl.set("Inverse Type 2", "Amesos2");
 
-  RCP<Teko::InverseLibrary> invLibrary = Teko::InverseLibrary::buildFromParameterList(ifl);
+  RCP<Teko::InverseLibrary> invLibrary = Teko::InverseLibrary::buildFromParameterList(pl);
   RCP<Teko::InverseFactory> invFact    = invLibrary->getInverseFactory("adapt");
   Teko::LinearOp A                     = buildSystem(Comm, 1000);
   Teko::ModifiableLinearOp invA        = Teko::buildInverse(*invFact, A);
