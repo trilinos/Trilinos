@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "RebalanceTransientFieldTransferById.hpp"
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
+#include "stk_transfer_util/TransientFieldTransferById.hpp"
 #include "stk_mesh/base/FieldParallel.hpp"
 #include "stk_mesh/base/Field.hpp"
 #include "stk_mesh/base/Entity.hpp"

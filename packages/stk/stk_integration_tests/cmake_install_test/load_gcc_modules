@@ -16,3 +16,5 @@ module load aue/netcdf-c/4.9.2-gcc-10.3.0-openmpi-4.1.6
 module load aue/parmetis/4.0.3-gcc-10.3.0-openmpi-4.1.6
 module load aue/parallel-netcdf/1.12.3-gcc-10.3.0-openmpi-4.1.6
 
+export LD_LIBRARY_PATH=$LIBRARY_PATH:$LD_LIBRARY_PATH
+

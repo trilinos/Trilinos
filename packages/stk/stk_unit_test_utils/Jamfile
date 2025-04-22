@@ -192,7 +192,7 @@ lib stk_transfer_fixtures
       [ glob $(stk_unit_test_utils-root)/stk_unit_test_utils/stk_transfer_fixtures/*.cpp ]
     ]
     stk_unit_test_utils      
-    /sierra/stk_transfer//stk_transfer
+    /sierra/stk_transfer//stk_transfer_lib
     /sierra/stk_middle_mesh_util//stk_middle_mesh_util
     /sierra/stk_middle_mesh//stk_middle_mesh
 

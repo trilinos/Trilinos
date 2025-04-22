@@ -35,7 +35,7 @@
 #include "stk_balance/internal/privateDeclarations.hpp"
 #include "stk_balance/fixSplitCoincidentElements.hpp"
 #include "stk_tools/mesh_clone/MeshClone.hpp"
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
+#include "stk_transfer_util/TransientFieldTransferById.hpp"
 #include "stk_mesh/base/MeshBuilder.hpp"
 
 #include <sys/stat.h> // move us

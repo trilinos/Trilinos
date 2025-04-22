@@ -1,7 +1,7 @@
 #include "mpi.h"
 #include <stk_util/stk_config.h>
 #include <stk_tools/block_extractor/ExtractBlocks.hpp>
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
+#include "stk_transfer_util/TransientFieldTransferById.hpp"
 #include <stk_io/FillMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
