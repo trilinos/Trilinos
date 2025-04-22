@@ -74,7 +74,7 @@ we provide a chapter describing the migration process from ML to MueLu.
 
    pages/xml_interface_for_advanced_users.rst
    pages/muelu_factories_for_transfer_operators.rst
-   pages/rebalancing_hypergraph_repartitioning.rst
+   pages/rebalancing.rst
    pages/advanced_concepts.rst
    pages/aggregation.rst
    pages/useful_commands_and_debugging.rst
@@ -87,14 +87,6 @@ we provide a chapter describing the migration process from ML to MueLu.
    pages/multigrid_for_multiphysics.rst
    pages/user_api.rst
    pages/ml_parameterlist_interpreter.rst
-
-.. toctree::
-   :maxdepth: 2
-   :caption: More useful informations
-
-   pages/virtual_box_image.rst
-   pages/docker_container.rst
-   pages/error_messages.rst
 
 Indices and tables
 ==================

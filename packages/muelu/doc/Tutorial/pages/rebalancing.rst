@@ -1,5 +1,5 @@
 =======================================
-Rebalancing - Hypergraph repartitioning
+Rebalancing
 =======================================
 
 Basic concepts and parameters
@@ -8,17 +8,11 @@ Basic concepts and parameters
 Especially when using the uncoupled aggregation strategy it is essential to reduce the number of processors used on the coarser levels.
 A natural strategy is to make sure that each processor gets a minimum number of equations to solve and reduce the number of active processors accordingly.
 
-In this tutorial we use a hypergraph-based repartitioning for the coarse level matrices $A_c$ to rebalance the coarse level problems.
+In this tutorial we use a multijagged-based repartitioning for the coarse level matrices $A_c$ to rebalance the coarse level problems.
 The repartitioning algorithm is implemented in the Zoltan2 package of Trilinos.
-The advantage of the hypergraph-based repartitioning methods is,
-that they do not need additional information such as node coordinates and therefore are the consequent choice within algebraic multigrid preconditioners.
-
-.. note::
-
-    Hypergraph partitioning algorithms as PHG are not available in the new Zoltan2 package of Trilinos, yet.
-    Therefore we can use this type of repartitioning only in context of Epetra based applications.
-    If you use the new templated Tpetra stack, you have to use repartitioning algorithms which are available in Zoltan2 such as RCB.
-
+A potential disadvantage of the multijagged-based repartitioning methods is
+that the algorithm needs additional node coordinates.  There are algorithms such as hypergraph partitioning that don't require coordinates,
+but current implementations are much more computationally expensive without a commensurate increase in quality.
 
 Repartitioning algorithms are a very wide field of research and can be very complicated.
 Here, we cannot go into details and just focus on how to use them.
