@@ -1061,6 +1061,9 @@ int main(int argc, char *argv[]) {
     if (rhsFilename != "") {
       writer_type::writeDenseFile (rhsFilename, rhsVector);
     }
+    if (initialGuessFilename != "") {
+      writer_type::writeDenseFile (initialGuessFilename, lhsVector);
+    }
     if (coordsFilename != "") {
       writer_type::writeDenseFile (coordsFilename, nCoord);
     }
@@ -1354,11 +1357,13 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   using namespace TrilinosCouplings::TpetraIntrepidPoissonExample;
   using MT = Teuchos::ScalarTraits<Tpetra_MultiVector::scalar_type>::magnitudeType;
 
-  // FIXME: This should be CLI controlled
-  double tol = 1e-10;
-  int maxNumIters = 200;
-  int num_steps = 1;
-  std::string solverName = "cg";
+
+  // Solver params
+  std::string solverName = MLList.get("solver","cg");
+  int maxNumIters = MLList.get("Maximum Iterations",200);
+  double tol = MLList.get("Convergence Tolerance",1e-10);
+  int num_steps = MLList.get("Number of Time Steps",1);
+
 
   // Multigrid Hierarchy
   Teuchos::ParameterList mueluParams;
