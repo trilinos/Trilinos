@@ -192,56 +192,56 @@ template <typename INT> double Exo_Read<INT>::Time(int time_num) const
 template <typename INT> const std::string &Exo_Read<INT>::Global_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && index < global_vars.size());
+  SMART_ASSERT(index < global_vars.size());
   return global_vars[index];
 }
 
 template <typename INT> const std::string &Exo_Read<INT>::Nodal_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && index < nodal_vars.size());
+  SMART_ASSERT(index < nodal_vars.size());
   return nodal_vars[index];
 }
 
 template <typename INT> const std::string &Exo_Read<INT>::Element_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && index < elmt_vars.size());
+  SMART_ASSERT(index < elmt_vars.size());
   return elmt_vars[index];
 }
 
 template <typename INT> const std::string &Exo_Read<INT>::Element_Att_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && index < elmt_atts.size());
+  SMART_ASSERT(index < elmt_atts.size());
   return elmt_atts[index];
 }
 
 template <typename INT> const std::string &Exo_Read<INT>::NS_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && index < ns_vars.size());
+  SMART_ASSERT(index < ns_vars.size());
   return ns_vars[index];
 }
 
 template <typename INT> const std::string &Exo_Read<INT>::SS_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && index < ss_vars.size());
+  SMART_ASSERT(index < ss_vars.size());
   return ss_vars[index];
 }
 
 template <typename INT> const std::string &Exo_Read<INT>::EB_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && index < eb_vars.size());
+  SMART_ASSERT(index < eb_vars.size());
   return eb_vars[index];
 }
 
 template <typename INT> const std::string &Exo_Read<INT>::FB_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && index < fb_vars.size());
+  SMART_ASSERT(index < fb_vars.size());
   return fb_vars[index];
 }
 
@@ -706,7 +706,7 @@ std::string Exo_Read<INT>::Load_Nodal_Results(int time_step_num, size_t var_inde
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(time_step_num > 0 && time_step_num <= Num_Times());
-  SMART_ASSERT(var_index >= 0 && var_index < nodal_vars.size());
+  SMART_ASSERT(var_index < nodal_vars.size());
 
   if (!Open()) {
     return "WARNING:  File not open!";
@@ -757,7 +757,7 @@ const double *Exo_Read<INT>::Get_Nodal_Results(int t1, int t2, double proportion
   SMART_ASSERT(Check_State());
   SMART_ASSERT(t1 > 0 && t1 <= Num_Times());
   SMART_ASSERT(t2 > 0 && t2 <= Num_Times());
-  SMART_ASSERT(var_index >= 0 && var_index < nodal_vars.size());
+  SMART_ASSERT(var_index < nodal_vars.size());
 
   if (!Open()) {
     return nullptr;
@@ -816,7 +816,7 @@ template <typename INT> const double *Exo_Read<INT>::Get_Nodal_Results(size_t va
   if (cur_time == 0) {
     return nullptr;
   }
-  SMART_ASSERT(var_index >= 0 && static_cast<size_t>(var_index) < nodal_vars.size());
+  SMART_ASSERT(static_cast<size_t>(var_index) < nodal_vars.size());
 
   return results[var_index];
 }
@@ -1025,20 +1025,18 @@ template <typename INT> std::string Exo_Read<INT>::Open_Change_Set(int index)
 {
   SMART_ASSERT(Check_State());
 
-  if (index >= 0) {
-    if (index == current_change_set_index) {
-      return "";
-    }
-
-    if (index >= num_change_sets) {
-      return fmt::format("exodiff: ERROR: Index {} is out of range. Valid range: 0 <= index < {}",
-                         index, num_change_sets);
-    }
-
-    Reset_Meta_Data();
-    current_change_set_index = index;
-    file_id                  = change_set_ids[index];
+  if (index == current_change_set_index) {
+    return "";
   }
+
+  if (index >= num_change_sets) {
+    return fmt::format("exodiff: ERROR: Index {} is out of range. Valid range: 0 <= index < {}",
+		       index, num_change_sets);
+  }
+
+  Reset_Meta_Data();
+  current_change_set_index = index;
+  file_id                  = change_set_ids[index];
   Get_Meta_Data();
 
   return "";
