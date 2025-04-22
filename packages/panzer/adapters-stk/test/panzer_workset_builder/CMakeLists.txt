@@ -21,6 +21,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  exodus_workset_builder_internal_sideset_check
+  SOURCES exodus_workset_builder_internal_sideset_check.cpp ${UNIT_TEST_DRIVER}
+  COMM mpi
+  NUM_MPI_PROCS 2
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   d_workset_builder_3d
   SOURCES d_workset_builder_3d.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi

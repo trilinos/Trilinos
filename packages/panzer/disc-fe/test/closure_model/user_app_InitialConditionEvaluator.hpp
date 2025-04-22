@@ -31,9 +31,9 @@ namespace user_app {
         {
           const double& x = coords(cell,point,0);
           if (x > -0.05)
-            temperature(cell,point) = 1.0;
+            temperature(cell,point) = 2.0;
           else
-            temperature(cell,point) = 0.0;
+            temperature(cell,point) = 1.0;
         });
       });
     }

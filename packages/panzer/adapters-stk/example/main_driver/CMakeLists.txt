@@ -113,6 +113,15 @@ TRIBITS_ADD_ADVANCED_TEST(
     NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy-ss-tp-multiblock-ic-bc-issue
+  TEST_0 EXEC main_driver
+    ARGS  --i=energy-ss-tp-multiblock-ic-bc-issue.xml --time
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 2
+    ENVIRONMENT IOSS_PROPERTIES=DECOMPOSITION_METHOD=rib
+  )
+
 IF(${PACKAGE_NAME}_ENABLE_Teko)
   IF(${PACKAGE_NAME}_ENABLE_Tempus)
     # Simple Tempus transient test
