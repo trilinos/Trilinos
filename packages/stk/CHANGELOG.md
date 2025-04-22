@@ -1,5 +1,13 @@
 # CHANGELOG
 
+5.23.8-03 (STK_VERSION 5230803) 4/22/2025
+  stk_tools: fix compiler error in pmesh lib when SEACASNemesis
+             is not enabled.
+  stk_transfer: Change from libstk_transfer.a to libstk_transfer_lib.a
+                In preparation for the coming-soon stk_transfer executable.
+                This is consistent with stk_balance_lib and stk_balance exe
+                and avoids duplicate target names.
+
 5.23.8-02 (STK_VERSION 5230802) 4/10/2025
   stk_util: CommSparse can switch underlying comm scheme to pre-post recvs
             instead of the default which is sends and probes. This can be

@@ -47,7 +47,7 @@
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Comm.hpp"
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
+#include "stk_transfer_util/TransientFieldTransferById.hpp"
 #include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/parallel/OutputStreams.hpp"

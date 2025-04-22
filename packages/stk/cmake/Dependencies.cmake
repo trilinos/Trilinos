@@ -13,9 +13,9 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Middle_mesh      stk_middle_mesh        EX  OPTIONAL
   Transfer         stk_transfer           PT  OPTIONAL
   Mesh             stk_mesh               PT  OPTIONAL
-  SearchUtil       stk_search_util        PT  OPTIONAL
-  TransferUtil     stk_transfer_util      EX  OPTIONAL
   IO               stk_io                 PT  OPTIONAL
+  SearchUtil       stk_search_util        PT  OPTIONAL
+  TransferUtil     stk_transfer_util      PT  OPTIONAL
   Middle_mesh_util stk_middle_mesh_util   EX  OPTIONAL
   Tools            stk_tools              PT  OPTIONAL
   Balance          stk_balance            PT  OPTIONAL

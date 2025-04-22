@@ -46,6 +46,7 @@ IF(HAVE_STK_Trilinos)
   )
 ELSE()
   add_library(stk_util_diag ${SOURCES})
+  target_compile_definitions(stk_util_diag PUBLIC SIERRA_DLOPEN_ENABLED=1)
 
   target_link_libraries(stk_util_diag PUBLIC stk_util_env)
 ENDIF()
