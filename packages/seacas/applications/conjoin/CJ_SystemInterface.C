@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,7 +11,7 @@
 #include <cctype>        // for tolower
 #include <copyright.h>
 #include <cstddef> // for size_t
-#include <cstdlib> // for exit, strtol, EXIT_SUCCESS, etc
+#include <cstdlib> // for exit, EXIT_SUCCESS, etc
 #include <fmt/format.h>
 #include <term_width.h>
 #include <utility> // for pair, make_pair
@@ -184,7 +184,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("alive_value");
     if (temp != nullptr) {
-      int value = strtol(temp, nullptr, 10);
+      int value = std::stoi(temp);
       if (value == 1 || value == 0) {
         aliveValue_ = value;
       }
@@ -264,7 +264,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("compress");
     if (temp != nullptr) {
-      compressionLevel_ = std::strtol(temp, nullptr, 10);
+      compressionLevel_ = std::stoi(temp);
       if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
         zlib_ = true;
       }
@@ -300,7 +300,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("quantize_nsd");
     if (temp != nullptr) {
-      quantizeNSD_ = std::strtol(temp, nullptr, 10);
+      quantizeNSD_ = std::stoi(temp);
       if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
         zlib_ = true;
       }

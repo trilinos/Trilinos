@@ -3,7 +3,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1207,11 +1207,9 @@ namespace Iocgns {
           size_t               ep_data_size = ent_proc.size() * sizeof(int64_t);
           get_field_internal(css, ep_field, Data(ent_proc), ep_data_size);
           for (size_t i = 0; i < ent_proc.size(); i += 2) {
-            int64_t node = ent_proc[i + 0];
-            int64_t proc = ent_proc[i + 1];
-            if (proc < idata[node - 1]) {
-              idata[node - 1] = proc;
-            }
+            int64_t node    = ent_proc[i + 0];
+            int64_t proc    = ent_proc[i + 1];
+            idata[node - 1] = std::min(idata[node - 1], proc);
           }
         }
         else {
@@ -1224,11 +1222,9 @@ namespace Iocgns {
           size_t           ep_data_size = ent_proc.size() * sizeof(int);
           get_field_internal(css, ep_field, Data(ent_proc), ep_data_size);
           for (size_t i = 0; i < ent_proc.size(); i += 2) {
-            int node = ent_proc[i + 0];
-            int proc = ent_proc[i + 1];
-            if (proc < idata[node - 1]) {
-              idata[node - 1] = proc;
-            }
+            int node        = ent_proc[i + 0];
+            int proc        = ent_proc[i + 1];
+            idata[node - 1] = std::min(idata[node - 1], proc);
           }
         }
       }

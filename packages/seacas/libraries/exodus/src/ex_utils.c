@@ -272,9 +272,9 @@ int ex_set_max_name_length(int exoid, int length)
     ex_err_fn(exoid, __func__, errmsg, NC_EMAXNAME);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-  if (length > NC_MAX_NAME) {
+  if (length > EX_MAX_NAME) {
     snprintf(errmsg, MAX_ERR_LENGTH,
-             "ERROR: Max name length (%d) exceeds netcdf max name size (%d).", length, NC_MAX_NAME);
+             "ERROR: Max name length (%d) exceeds netcdf max name size (%d).", length, EX_MAX_NAME);
     ex_err_fn(exoid, __func__, errmsg, NC_EMAXNAME);
     EX_FUNC_LEAVE(EX_FATAL);
   }
