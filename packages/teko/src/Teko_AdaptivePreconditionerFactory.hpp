@@ -65,6 +65,12 @@ class AdaptivePreconditionerFactory : public PreconditionerFactory {
 
   void initializeFromParameterList(const Teuchos::ParameterList& pl) override;
 
+  const std::vector<Teuchos::RCP<InverseFactory>>& get_inverses() const { return inverses; }
+
+  const std::vector<Teuchos::RCP<InverseFactory>>& get_preconditioners() const {
+    return preconditioners;
+  }
+
  private:
   std::vector<Teuchos::RCP<InverseFactory>> inverses;
   std::vector<Teuchos::RCP<InverseFactory>> preconditioners;
