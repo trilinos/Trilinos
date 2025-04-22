@@ -18,5 +18,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyMatrixTestFiles
                ./matrices/amesos2_test_mat4.mtx
                ./matrices/tacho_test.mtx
                ./matrices/tacho_test_complex.mtx
+               ./matrices/gap-ids-1procA.mm
+               ./matrices/gap-ids-1proc-rowmap.mm
   )
 

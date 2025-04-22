@@ -99,37 +99,26 @@ struct TestAssignmentFunctor {
 
 template<typename FieldType,typename ScalarType>
 struct BracketAssignmentTest {
-  FieldType f1_,f2_,f3_,f4_,f5_,f6_;
-  BracketAssignmentTest(FieldType f1,FieldType f2,FieldType f3,FieldType f4,FieldType f5,FieldType f6)
-    : f1_(f1),f2_(f2),f3_(f3),f4_(f4),f5_(f5),f6_(f6){}
+  FieldType f1_;
+  BracketAssignmentTest(FieldType f1)
+    : f1_(f1){}
   KOKKOS_INLINE_FUNCTION
   void operator() (const int ) const {
     f1_[f1_.size()-1] = ScalarType(2.0);
-    f2_[f2_.size()-1] = ScalarType(3.0);
-    f3_[f3_.size()-1] = ScalarType(4.0);
-    f4_[f4_.size()-1] = ScalarType(5.0);
-    f5_[f5_.size()-1] = ScalarType(6.0);
-    f6_[f6_.size()-1] = ScalarType(7.0);
   }
 };
 
 template<typename FieldType,typename ScalarType>
 struct BracketAssignmentCheck {
-  FieldType f1_,f2_,f3_,f4_,f5_,f6_;
-  const FieldType cf1_,cf2_,cf3_,cf4_,cf5_,cf6_;
-  BracketAssignmentCheck(FieldType f1,FieldType f2,FieldType f3,FieldType f4,FieldType f5,FieldType f6,
-			 const FieldType cf1,const FieldType cf2,const FieldType cf3,const FieldType cf4,const FieldType cf5,const FieldType cf6)
-    : f1_(f1),f2_(f2),f3_(f3),f4_(f4),f5_(f5),f6_(f6),
-      cf1_(cf1),cf2_(cf2),cf3_(cf3),cf4_(cf4),cf5_(cf5),cf6_(cf6){}
+  FieldType f1_;
+  const FieldType cf1_;
+  BracketAssignmentCheck(FieldType f1,const FieldType cf1)
+    : f1_(f1),cf1_(cf1)
+  {}
   KOKKOS_INLINE_FUNCTION
-  void operator() (const int , int& lsum) const {
+  void operator() (const int , int& num_failures) const {
     const double tol = 1.0e-10;
-    PHX_TEST_FLOAT_EQUAL(f1_[f1_.size()-1], cf1_[f1_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f2_[f2_.size()-1], cf2_[f2_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f3_[f3_.size()-1], cf3_[f3_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f4_[f4_.size()-1], cf4_[f4_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f5_[f5_.size()-1], cf5_[f5_.size()-1], tol, lsum);
-    PHX_TEST_FLOAT_EQUAL(f6_[f6_.size()-1], cf6_[f6_.size()-1], tol, lsum);
+    PHX_TEST_FLOAT_EQUAL(f1_[f1_.size()-1], cf1_[f1_.size()-1], tol, num_failures);
   }
 };
 
@@ -470,24 +459,14 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     // operator[]
     out << "Testing operator[](...) accessors...";
 
-    // The bracket operator use in Kokkos is normally liimited to a
-    // rank-1 view. Intrepid requires access to the entire array for
-    // views with rank greater than 1. This is a very dangerous hack
-    // because it allows users to bypass the underlying layout. This
-    // accessor will not work correctly with subviews or
-    // padding. Kokkos will suppor this for now until we can remove
-    // all use of bracket operator from intrepid. Teh below tests
-    // verify that this capability works. We can remove the tests
-    // below once the bracket op is no longer needed in our stack.
-
-    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<double>,double>(f1,f2,f3,f4,f5,f6));
+    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<double>,double>(f1));
 
     int num_failed = 0;
-    Kokkos::parallel_reduce("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentCheck<MDField<double>,double>(f1,f2,f3,f4,f5,f6,cf1,cf2,cf3,cf4,cf5,cf6),num_failed);
+    Kokkos::parallel_reduce("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentCheck<MDField<double>,double>(f1,cf1),num_failed);
     TEST_EQUALITY(num_failed,0);
 
     // fad checking
-    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<MyTraits::FadType>,MyTraits::FadType>(f1_fad,f2_fad,f3_fad,f4_fad,f5_fad,f6_fad));
+    Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),BracketAssignmentTest<MDField<MyTraits::FadType>,MyTraits::FadType>(f1_fad));
 
     out << "passed!" << endl;
 

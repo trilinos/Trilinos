@@ -95,6 +95,13 @@ bool is_shell_side(stk::topology elem_topo, unsigned ordinal);
 ShellConnectionConfiguration get_shell_configuration(stk::topology elemTopo1, unsigned ordinal1,
                                                      stk::topology elemTopo2, unsigned ordinal2);
 
+ShellConnectionConfiguration get_shell_configuration(stk::topology elemTopo1, unsigned ordinal1,
+                                                     stk::topology elemTopo2, unsigned ordinal2,
+                                                     bool samePolarityForBothSides);
+
+ShellConnectionConfiguration get_shell_configuration(stk::topology elemTopo1, unsigned ordinal1, stk::mesh::Permutation perm1,
+                                                     stk::topology elemTopo2, unsigned ordinal2, stk::mesh::Permutation perm2);
+
 ShellConnectionConfiguration get_shell_configuration(const SideCreationElementPair& shellPair);
 
 bool is_shell_configuration_valid_for_side_connection(stk::topology creationElementTopology,
@@ -243,13 +250,25 @@ stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::EntityId new_face_global_id,
                                                      const stk::mesh::PartVector & parts = stk::mesh::PartVector());
 
+// Used for specialized connection of element to side based on sideOrdinal and side ordinal rank of the element
+template<typename PARTVECTOR>
+stk::mesh::Entity connect_element_to_side(stk::mesh::BulkData & mesh, stk::mesh::Entity elem, stk::mesh::Entity side,
+                                          const unsigned sideOrdinal, const PARTVECTOR& parts, stk::topology side_topo);
+
+template<typename PARTVECTOR>
+stk::mesh::Entity connect_element_to_side(stk::mesh::BulkData & mesh, stk::mesh::Entity elem, stk::mesh::Entity side,
+                                          const unsigned sideOrdinal, const PARTVECTOR& parts, stk::topology side_top,
+                                          const std::vector<Entity> & side_nodes);
+
+// Used for generalized connection of element to entity based on local relationOrdinal of entity's rank
 template<typename PARTVECTOR>
 stk::mesh::Entity connect_element_to_entity(stk::mesh::BulkData & mesh, stk::mesh::Entity elem, stk::mesh::Entity entity,
-        const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entity_top);
+                                            const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entity_top);
 
 template<typename PARTVECTOR>
 stk::mesh::Entity connect_element_to_entity(stk::mesh::BulkData & mesh, stk::mesh::Entity elem, stk::mesh::Entity entity,
-        const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entity_top, const std::vector<Entity> & entity_nodes);
+                                            const unsigned relationOrdinal, const PARTVECTOR& parts, stk::topology entity_top,
+                                            const std::vector<Entity> & entity_nodes);
 
 void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
                                     stk::mesh::Entity face,
@@ -338,11 +357,6 @@ bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_node
     }
     return should_connect;
 }
-
-void send_entity_keys_to_owners(
-  BulkData & mesh ,
-  const std::vector<Entity> & recvGhosts ,
-        std::set< EntityProc , EntityLess > & sendGhosts);
 
 void comm_sync_send_recv(const BulkData& mesh,
                          EntityProcVec& sendGhosts,
@@ -459,6 +473,9 @@ void destroy_upward_connected_aura_entities(stk::mesh::BulkData &bulk,
 void print_upward_connected_entities(stk::mesh::BulkData& bulk,
                                      stk::mesh::Entity entity,
                                      std::ostream& os);
+
+std::vector<ConnectivityOrdinal> get_ordinals_without_connected_sides(BulkData & mesh, const Entity elem);
+void connect_element_to_existing_sides(BulkData & mesh, const Entity elem);
 
 } // namespace impl
 } // namespace mesh

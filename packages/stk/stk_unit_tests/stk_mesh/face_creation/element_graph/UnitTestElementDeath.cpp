@@ -4,6 +4,7 @@
 #include <algorithm>                    // for find
 #include <iostream>                     // for operator<<, ostream, cerr, etc
 #include <stk_io/IossBridge.hpp>        // for put_io_part_attribute
+#include <stk_io/FillMesh.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
@@ -25,6 +26,7 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector, etc
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 #include "stk_unit_test_utils/BuildMesh.hpp"
+
 
 namespace
 {
@@ -427,6 +429,251 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
   }
 }
 
+std::string get_abutting_cross_shell_element_death_mesh_desc(stk::ParallelMachine comm)
+{
+  int nProc = stk::parallel_machine_size(comm);
+  std::string meshDesc = "textmesh:\n\
+                          0, 1,SHELL_QUAD_4, 1, 2, 5, 4, block_1\n\
+                          0, 2,SHELL_QUAD_4, 2, 3, 6, 5, block_1\n";
+
+  if(nProc == 1) {
+    meshDesc += "0, 3,SHELL_QUAD_4, 4, 5, 8, 7, block_2\n\
+                 0, 4,SHELL_QUAD_4, 5, 6, 9, 8, block_2\n";
+    meshDesc += "0, 5,SHELL_QUAD_4, 4, 5,11,10, block_3\n\
+                 0, 6,SHELL_QUAD_4, 5, 6,12,11, block_3\n";
+    meshDesc += "0, 7,SHELL_QUAD_4, 5, 4,13,14, block_4\n\
+                 0, 8,SHELL_QUAD_4, 6, 5,14,15, block_4\n";
+    meshDesc += "0, 9,SHELL_QUAD_4, 5,11,16, 2, block_5\n\
+                 0,10,SHELL_QUAD_4,14, 5, 2,17, block_5\n";
+    meshDesc += "0,11,SHELL_QUAD_4,11, 5, 8,18, block_6\n\
+                 0,12,SHELL_QUAD_4, 5,14,19, 8, block_6";
+  } else if(nProc == 2) {
+    meshDesc += "1, 3,SHELL_QUAD_4, 4, 5, 8, 7, block_2\n\
+                 1, 4,SHELL_QUAD_4, 5, 6, 9, 8, block_2\n";
+    meshDesc += "0, 5,SHELL_QUAD_4, 4, 5,11,10, block_3\n\
+                 0, 6,SHELL_QUAD_4, 5, 6,12,11, block_3\n";
+    meshDesc += "1, 7,SHELL_QUAD_4, 5, 4,13,14, block_4\n\
+                 1, 8,SHELL_QUAD_4, 6, 5,14,15, block_4\n";
+    meshDesc += "0, 9,SHELL_QUAD_4, 5,11,16, 2, block_5\n\
+                 0,10,SHELL_QUAD_4,14, 5, 2,17, block_5\n";
+    meshDesc += "1,11,SHELL_QUAD_4,11, 5, 8,18, block_6\n\
+                 1,12,SHELL_QUAD_4, 5,14,19, 8, block_6";
+  } else if(nProc == 3) {
+    meshDesc += "0, 3,SHELL_QUAD_4, 4, 5, 8, 7, block_2\n\
+                 0, 4,SHELL_QUAD_4, 5, 6, 9, 8, block_2\n";
+    meshDesc += "1, 5,SHELL_QUAD_4, 4, 5,11,10, block_3\n\
+                 1, 6,SHELL_QUAD_4, 5, 6,12,11, block_3\n";
+    meshDesc += "1, 7,SHELL_QUAD_4, 5, 4,13,14, block_4\n\
+                 1, 8,SHELL_QUAD_4, 6, 5,14,15, block_4\n";
+    meshDesc += "2, 9,SHELL_QUAD_4, 5,11,16, 2, block_5\n\
+                 2,10,SHELL_QUAD_4,14, 5, 2,17, block_5\n";
+    meshDesc += "2,11,SHELL_QUAD_4,11, 5, 8,18, block_6\n\
+                 2,12,SHELL_QUAD_4, 5,14,19, 8, block_6";
+  } else {
+    meshDesc += "0, 3,SHELL_QUAD_4, 4, 5, 8, 7, block_2\n\
+                 1, 4,SHELL_QUAD_4, 5, 6, 9, 8, block_2\n";
+    meshDesc += "1, 5,SHELL_QUAD_4, 4, 5,11,10, block_3\n\
+                 1, 6,SHELL_QUAD_4, 5, 6,12,11, block_3\n";
+    meshDesc += "2, 7,SHELL_QUAD_4, 5, 4,13,14, block_4\n\
+                 2, 8,SHELL_QUAD_4, 6, 5,14,15, block_4\n";
+    meshDesc += "2, 9,SHELL_QUAD_4, 5,11,16, 2, block_5\n\
+                 3,10,SHELL_QUAD_4,14, 5, 2,17, block_5\n";
+    meshDesc += "3,11,SHELL_QUAD_4,11, 5, 8,18, block_6\n\
+                 3,12,SHELL_QUAD_4, 5,14,19, 8, block_6";
+  }
+
+  meshDesc += "|coordinates: 0, 0,0, 1, 0,0, 2, 0,0,\n\
+                             0, 0,1, 1, 0,1, 2, 0,1,\n\
+                             0, 0,2, 1, 0,2, 2, 0,2,\n\
+                             0, 1,1, 1, 1,1, 2, 1,1,\n\
+                             0,-1,1, 1,-1,1, 2,-1,1,\n\
+                             1, 1,0, 1,-1,0,\n\
+                             1, 1,2, 1,-1,2";
+
+  return meshDesc;
+}
+
+std::string get_abutting_shell_element_death_mesh_desc(stk::ParallelMachine comm)
+{
+  int nProc = stk::parallel_machine_size(comm);
+  std::string meshDesc = "textmesh:\n\
+                          0, 1,SHELL_QUAD_4, 1, 2, 6, 5, block_1\n\
+                          0, 2,SHELL_QUAD_4, 2, 3, 7, 6, block_1\n\
+                          0, 3,SHELL_QUAD_4, 3, 4, 8, 7, block_1\n";
+
+  if(nProc == 1) {
+    meshDesc += "0, 4,SHELL_QUAD_4, 5, 6,10, 9, block_2\n\
+                 0, 5,SHELL_QUAD_4, 6, 7,11,10, block_2\n\
+                 0, 6,SHELL_QUAD_4, 7, 8,12,11, block_2\n";
+    meshDesc += "0, 7,SHELL_QUAD_4, 5, 6,14,13, block_3\n\
+                 0, 8,SHELL_QUAD_4, 6, 7,15,14, block_3\n\
+                 0, 9,SHELL_QUAD_4, 7, 8,16,15, block_3\n";
+    meshDesc += "0,10,SHELL_QUAD_4, 6, 5,17,18, block_4\n\
+                 0,11,SHELL_QUAD_4, 7, 6,18,19, block_4\n\
+                 0,12,SHELL_QUAD_4, 8, 7,19,20, block_4";
+  } else if(nProc == 2) {
+    meshDesc += "0, 4,SHELL_QUAD_4, 5, 6,10, 9, block_2\n\
+                 0, 5,SHELL_QUAD_4, 6, 7,11,10, block_2\n\
+                 0, 6,SHELL_QUAD_4, 7, 8,12,11, block_2\n";
+    meshDesc += "1, 7,SHELL_QUAD_4, 5, 6,14,13, block_3\n\
+                 1, 8,SHELL_QUAD_4, 6, 7,15,14, block_3\n\
+                 1, 9,SHELL_QUAD_4, 7, 8,16,15, block_3\n";
+    meshDesc += "1,10,SHELL_QUAD_4, 6, 5,17,18, block_4\n\
+                 1,11,SHELL_QUAD_4, 7, 6,18,19, block_4\n\
+                 1,12,SHELL_QUAD_4, 8, 7,19,20, block_4";
+  } else if(nProc == 3) {
+    meshDesc += "0, 4,SHELL_QUAD_4, 5, 6,10, 9, block_2\n\
+                 0, 5,SHELL_QUAD_4, 6, 7,11,10, block_2\n\
+                 0, 6,SHELL_QUAD_4, 7, 8,12,11, block_2\n";
+    meshDesc += "1, 7,SHELL_QUAD_4, 5, 6,14,13, block_3\n\
+                 1, 8,SHELL_QUAD_4, 6, 7,15,14, block_3\n\
+                 1, 9,SHELL_QUAD_4, 7, 8,16,15, block_3\n";
+    meshDesc += "2,10,SHELL_QUAD_4, 6, 5,17,18, block_4\n\
+                 2,11,SHELL_QUAD_4, 7, 6,18,19, block_4\n\
+                 2,12,SHELL_QUAD_4, 8, 7,19,20, block_4";
+  } else {
+    meshDesc += "1, 4,SHELL_QUAD_4, 5, 6,10, 9, block_2\n\
+                 1, 5,SHELL_QUAD_4, 6, 7,11,10, block_2\n\
+                 1, 6,SHELL_QUAD_4, 7, 8,12,11, block_2\n";
+    meshDesc += "2, 7,SHELL_QUAD_4, 5, 6,14,13, block_3\n\
+                 2, 8,SHELL_QUAD_4, 6, 7,15,14, block_3\n\
+                 2, 9,SHELL_QUAD_4, 7, 8,16,15, block_3\n";
+    meshDesc += "3,10,SHELL_QUAD_4, 6, 5,17,18, block_4\n\
+                 3,11,SHELL_QUAD_4, 7, 6,18,19, block_4\n\
+                 3,12,SHELL_QUAD_4, 8, 7,19,20, block_4";
+  }
+
+  meshDesc += "|coordinates: 0, 0,0, 1, 0,0, 2, 0,0, 3, 0,0,\n\
+                             0, 0,1, 1, 0,1, 2, 0,1, 3, 0,1,\n\
+                             0, 0,2, 1, 0,2, 2, 0,2, 3, 0,2,\n\
+                             0, 1,1, 1, 1,1, 2, 1,1, 3, 1,1,\n\
+                             0,-1,1, 1,-1,1, 2,-1,1, 3,-1,1";
+  return meshDesc;
+}
+
+void run_abutting_shell_element_death_case(stk::ParallelMachine comm,
+                                           const std::string& meshDesc,
+                                           const stk::mesh::EntityIdVector& killedElementIds,
+                                           unsigned expectedNumSides,
+                                           stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::NO_AUTO_AURA)
+{
+  unsigned spatialDim = 3;
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, comm, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
+  stk::mesh::PartVector boundary_mesh_parts;
+
+  stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
+
+  ASSERT_TRUE(active.primary_entity_rank() == stk::topology::INVALID_RANK);
+
+  stk::io::fill_mesh(meshDesc, bulkData);
+
+  stk::unit_test_util::put_mesh_into_part(bulkData, active);
+
+  stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
+
+  stk::mesh::EntityVector deactivated_elems;
+
+  for(stk::mesh::EntityId id : killedElementIds) {
+    stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, id);
+
+    if(bulkData.is_valid(elem) && bulkData.bucket(elem).owned()) {
+      deactivated_elems.push_back(elem);
+    }
+  }
+
+  boundary_mesh_parts.push_back(&active);
+
+  ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData, active);
+
+  stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+  stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
+
+  EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData,
+                                                     deactivated_elems,
+                                                     active,
+                                                     remoteActiveSelector,
+                                                     boundary_mesh_parts,
+                                                     &boundary_mesh_parts));
+
+  std::vector<size_t> entity_counts;
+  stk::mesh::comm_mesh_counts(bulkData, entity_counts);
+  EXPECT_EQ(expectedNumSides, entity_counts[stk::topology::EDGE_RANK]);
+}
+
+TEST(ElementDeath, abutting_shell_case_1)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::mesh::EntityIdVector killedElementIds{5u, 7u};
+  const std::string meshDesc = get_abutting_shell_element_death_mesh_desc(comm);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 3u);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 3u, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ElementDeath, abutting_shell_case_2)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::mesh::EntityIdVector killedElementIds{5u, 8u};
+  const std::string meshDesc = get_abutting_shell_element_death_mesh_desc(comm);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 4u);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 4u, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ElementDeath, abutting_shell_case_3)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::mesh::EntityIdVector killedElementIds{2u, 5u};
+  const std::string meshDesc = get_abutting_shell_element_death_mesh_desc(comm);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 4u);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 4u, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ElementDeath, abutting_shell_case_4)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::mesh::EntityIdVector killedElementIds{2u, 5u, 8u};
+  const std::string meshDesc = get_abutting_shell_element_death_mesh_desc(comm);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 7u);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 7u, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ElementDeath, abutting_shell_case_5)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::mesh::EntityIdVector killedElementIds{5u, 11u};
+  const std::string meshDesc = get_abutting_shell_element_death_mesh_desc(comm);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 4u);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 4u, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ElementDeath, abutting_cross_shell_case_1)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::mesh::EntityIdVector killedElementIds{1u, 6u};
+  const std::string meshDesc = get_abutting_cross_shell_element_death_mesh_desc(comm);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 0u);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 0u, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ElementDeath, abutting_cross_shell_case_2)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::mesh::EntityIdVector killedElementIds{1u, 2u, 10u};
+  const std::string meshDesc = get_abutting_cross_shell_element_death_mesh_desc(comm);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 1u);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 1u, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ElementDeath, abutting_cross_shell_case_3)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::mesh::EntityIdVector killedElementIds{1u, 2u, 3u, 4u, 10u, 11u};
+  const std::string meshDesc = get_abutting_cross_shell_element_death_mesh_desc(comm);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 2u);
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 2u, stk::mesh::BulkData::AUTO_AURA);
+}
 
 } // end namespace
 

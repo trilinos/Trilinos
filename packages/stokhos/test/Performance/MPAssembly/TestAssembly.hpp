@@ -20,7 +20,6 @@
 
 // Kokkos libraries' headers:
 #include <Kokkos_UnorderedMap.hpp>
-#include <Kokkos_StaticCrsGraph.hpp>
 #include <Kokkos_Timer.hpp>
 
 // Utilities

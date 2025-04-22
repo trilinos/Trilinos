@@ -50,7 +50,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
-#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/SkinBoundary.hpp>  // for create_all_sides
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/BulkDataTester.hpp>
@@ -562,7 +562,7 @@ TEST ( UnitTestCreateEdges, Hex_2x1x1_select_out_a_face )
     EXPECT_EQ( counts[stk::topology::FACE_RANK] , 0u );
     EXPECT_EQ( counts[stk::topology::ELEM_RANK] , 2u );
   }
-  stk::mesh::create_faces(mesh);
+  stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part());
   const stk::mesh::BucketVector & buckets = mesh.buckets(stk::topology::FACE_RANK);
   mesh.modification_begin();
   for (unsigned bucketCount = 0 ; bucketCount < buckets.size() ; ++bucketCount) {

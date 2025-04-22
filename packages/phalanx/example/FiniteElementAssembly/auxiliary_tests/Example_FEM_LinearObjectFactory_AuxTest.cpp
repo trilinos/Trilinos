@@ -45,7 +45,7 @@ TEUCHOS_UNIT_TEST(mesh, coord_gids)
 
   // Mirror calls deep_copy on underlying obejcts so host copy is up
   // to date.
-  auto graph = Kokkos::create_mirror(J.graph);
+  auto graph = KokkosSparse::create_mirror(J.graph);
   
   const int max_entries_per_row = 27*num_equations;
   const int min_entries_per_row = 8*num_equations;

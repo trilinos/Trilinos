@@ -289,6 +289,21 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
     STANDARD_PASS_OUTPUT
     COMM mpi
     )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUDistFiles_Gap
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES superludist_gapped_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME SuperLU_DIST_Solver_Gapped_Test
+    ARGS "--xml-params=superludist_gapped_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves"
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    COMM mpi
+    )
 ENDIF()
 
 

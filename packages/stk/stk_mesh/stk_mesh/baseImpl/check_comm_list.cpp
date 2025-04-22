@@ -75,7 +75,8 @@ void push_back_key_procs_ghost_ids(EntityKey key, bool locally_owned,
                                    std::vector<KeyProcGhostId>& key_proc_ghostid_vec)
 {
     for(; !commInfo.empty(); ++commInfo) {
-        const bool expectToRecv = !locally_owned || (commInfo->ghost_id == 0);
+        const bool expectToRecv = (!locally_owned || (commInfo->ghost_id == 0))
+                                && commInfo->ghost_id != BulkData::SYMM_INFO;
         if (expectToRecv) {
             push_back_key_proc_ghost_id(key, commInfo->proc, commInfo->ghost_id, key_proc_ghostid_vec);
         }

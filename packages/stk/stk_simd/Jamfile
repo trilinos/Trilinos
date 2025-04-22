@@ -155,7 +155,7 @@ exe stk_simd_old_unit
     /sierra/stk_math//stk_math
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_unit_test_utils//stk_unit_main
-    /tpl/trilinos//kokkoscore
+    /tpl/kokkos//kokkoscore
     /tpl/googletest//gtest
   : <tag>@sierra-exec-tag
     $(export-dynamic)
@@ -166,7 +166,7 @@ exe stk_simd_docs_tests
     [ glob $(stk_simd-root)/../stk_doc_tests/stk_simd/*.cpp ]
     /sierra/stk_math//stk_math
     /sierra/stk_unit_test_utils//stk_unit_main
-    /tpl/trilinos//kokkoscore
+    /tpl/kokkos//kokkoscore
     /tpl/googletest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_simd-root)/../stk_doc_tests/stk_simd

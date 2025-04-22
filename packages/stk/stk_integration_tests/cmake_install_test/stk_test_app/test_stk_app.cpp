@@ -1,8 +1,6 @@
 
 #include <stk_util/stk_config.h>
-#ifdef STK_HAVE_KOKKOS
 #include <Kokkos_Core.hpp>
-#endif
 #include <iostream>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
@@ -17,12 +15,10 @@ int main(int argc, char** argv)
 {
   stk::parallel_machine_init(&argc, &argv);
 
-#ifdef STK_HAVE_KOKKOS
   Kokkos::initialize(argc, argv);
   if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
     std::cout << "Kokkos::DefaultExecutionSpace: " << Kokkos::DefaultExecutionSpace::device_type::execution_space::name() << std::endl;
   }
-#endif
 
   const bool proc0 = (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0);
 
@@ -57,9 +53,7 @@ int main(int argc, char** argv)
 
   test_stk_lib::test_stk_tools();
 
-#ifdef STK_HAVE_KOKKOS
   Kokkos::finalize();
-#endif
 
   stk::parallel_machine_finalize();
 
