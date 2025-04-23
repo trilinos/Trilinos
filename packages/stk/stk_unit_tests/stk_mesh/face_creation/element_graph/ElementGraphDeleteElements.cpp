@@ -59,7 +59,7 @@ protected:
       stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
       if(get_bulk().is_valid(elem) && get_bulk().bucket(elem).owned())
       {
-        elements_to_delete.push_back( {elem, elemId, get_bulk().bucket(elem).topology().is_shell()});
+        elements_to_delete.push_back( {elem, elemId, get_bulk().bucket(elem).topology()});
       }
     }
   }

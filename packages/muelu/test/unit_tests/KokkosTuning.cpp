@@ -48,7 +48,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Basic, Scalar, LocalOrd
   interface.SetParameterList(baseList);
 
   // Call the tuner
-  size_t kokkos_context_id;
+  size_t kokkos_context_id = 0;
   Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
   Teuchos::ParameterList outputList;
   interface.SetMueLuParameters(kokkos_context_id, outputList);
@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced, Scalar, Local
   interface.SetParameterList(baseList);
 
   // Call the tuner
-  size_t kokkos_context_id;
+  size_t kokkos_context_id = 0;
   Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
   Teuchos::ParameterList outputList;
   interface.SetMueLuParameters(kokkos_context_id, outputList);
@@ -243,7 +243,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(KokkosTuningInterface, Advanced_PLContext, Sca
   MueLu::KokkosTuningInterface interface(comm);
 
   // Call the tuner, using a PL-based context ID
-  size_t kokkos_context_id;
+  size_t kokkos_context_id = 0;
   Kokkos::Tools::Experimental::begin_context(kokkos_context_id);
   interface.SetParameterList(baseList);
 

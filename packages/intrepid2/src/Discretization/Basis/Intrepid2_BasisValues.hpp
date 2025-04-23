@@ -34,6 +34,9 @@ namespace Intrepid2
   template<class Scalar, typename DeviceType>
   class BasisValues
   {
+  public:
+    using value_type = Scalar;
+  private:
     using TensorDataType = TensorData<Scalar,DeviceType>;
     using VectorDataType = VectorData<Scalar,DeviceType>;
     

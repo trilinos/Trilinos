@@ -162,7 +162,7 @@ lib stk_ngp_test
         [ glob $(stk_ngp_test-root)/stk_ngp_test/*.cpp ]
     ]
     /tpl/googletest//gtest
-    /tpl/trilinos//kokkoscore
+    /tpl/kokkos//kokkoscore
     /mpi//mpi
     /sierra/stk_util//stk_util_ngp
   :
@@ -188,7 +188,7 @@ lib stk_ngp_test_main
         [ glob $(stk_ngp_test-root)/stk_ngp_test/main/main.cpp ]
     ]
     /tpl/googletest//gtest
-    /tpl/trilinos//kokkoscore
+    /tpl/kokkos//kokkoscore
     /mpi//mpi
     /sierra/stk_util//stk_util_ngp
   :

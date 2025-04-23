@@ -11,6 +11,7 @@
 #define THYRA_TPETRA_LINEAR_OP_HPP
 
 #include "Thyra_TpetraLinearOp_decl.hpp"
+#include "Kokkos_Core.hpp"
 #include "Thyra_TpetraVectorSpace.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"

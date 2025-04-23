@@ -5,7 +5,7 @@ namespace stk { namespace mesh { class BulkData; }}
 namespace stk {
 namespace tools {
 
-void fix_node_sharing_via_search(stk::mesh::BulkData& bulkData);
+void fix_node_sharing_via_search(stk::mesh::BulkData& bulkData, double tolerance = 1.e-6);
 
 }}
 

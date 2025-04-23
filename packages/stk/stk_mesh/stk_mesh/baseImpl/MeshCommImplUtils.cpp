@@ -80,16 +80,14 @@ void pack_induced_memberships_for_entities_less_than_element_rank(
                 CommBuffer & buf = comm.send_buffer(owner);
 
                 unsigned tmp = induced.size();
-
                 buf.pack<stk::mesh::EntityKey>(info.key);
                 buf.pack<unsigned>(tmp);
-
                 for(unsigned ord : induced) {
                     buf.pack<unsigned>(ord);
-                }    
+                }
             }    
         }    
-    }    
+    }
 }
 
 void append_parts_from_sharer_to_owner(const BulkData& bulk,
@@ -203,7 +201,6 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
         stk::mesh::EntityKey key;
         buf.unpack<stk::mesh::EntityKey>(key);
         STK_ThrowAssertMsg(key == expected_key, "Program error. Contact sierra-help@sandia.gov for support. Key mismatch!" << key << " not same as " << expected_key);
-
         buf.unpack<unsigned>(count);
         for(unsigned j = 0; j < count; ++j)
         {
