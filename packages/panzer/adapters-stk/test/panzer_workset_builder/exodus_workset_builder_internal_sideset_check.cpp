@@ -59,7 +59,7 @@ namespace panzer {
     RCP<panzer_stk::STK_Interface> mesh;
     {
       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-      pl->set("File Name","../../example/main_driver/energy-ss-tp-multiblock-ic-bc-issue.gen");
+      pl->set("File Name","energy-ss-tp-multiblock-ic-bc-issue.gen");
       panzer_stk::STK_ExodusReaderFactory factory;
       factory.setParameterList(pl);
       mesh = factory.buildMesh(MPI_COMM_WORLD);
