@@ -152,9 +152,6 @@ solveWithBelos (bool& converged,
   converged = true;
   numItersPerformed = 0;
   for (int step = 0; step < num_steps; ++step) {
-    // Set x
-    MVT::MvInit(*X);
-
     // Reset problem
     const bool set = problem->setProblem ();
     TEUCHOS_TEST_FOR_EXCEPTION(
