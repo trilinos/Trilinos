@@ -7081,8 +7081,8 @@ namespace Tpetra {
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
           destGraph->reallocImportsIfNeeded(totalImportPackets, false, nullptr);
-          destGraph->imports_.modify_host();
-          auto hostImports = destGraph->imports_.view_host();
+          destGraph->imports_->modify_host();
+          auto hostImports = destGraph->imports_->view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
@@ -7093,8 +7093,8 @@ namespace Tpetra {
                                          numImportPacketsPerLID);
         }
         else { // constant number of packets per LI
-          destGraph->imports_.modify_host();
-          auto hostImports = destGraph->imports_.view_host();
+          destGraph->imports_->modify_host();
+          auto hostImports = destGraph->imports_->view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
@@ -7124,8 +7124,8 @@ namespace Tpetra {
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
           destGraph->reallocImportsIfNeeded(totalImportPackets, false, nullptr);
-          destGraph->imports_.modify_host();
-          auto hostImports = destGraph->imports_.view_host();
+          destGraph->imports_->modify_host();
+          auto hostImports = destGraph->imports_->view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
@@ -7135,8 +7135,8 @@ namespace Tpetra {
           Distor.doPostsAndWaits(hostExports, numExportPacketsPerLID, hostImports, numImportPacketsPerLID);
         }
         else { // constant number of packets per LID
-          destGraph->imports_.modify_host();
-          auto hostImports = destGraph->imports_.view_host();
+          destGraph->imports_->modify_host();
+          auto hostImports = destGraph->imports_->view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
@@ -7159,9 +7159,9 @@ namespace Tpetra {
     destGraph->numImportPacketsPerLID_.sync_host();
     Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
       getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
-    destGraph->imports_.sync_host();
+    destGraph->imports_->sync_host();
     Teuchos::ArrayView<const packet_type> hostImports =
-      getArrayViewFromDualView(destGraph->imports_);
+      getArrayViewFromDualView(*destGraph->imports_);
     size_t mynnz =
       unpackAndCombineWithOwningPIDsCount(*this, RemoteLIDs, hostImports,
                                            numImportPacketsPerLID,
@@ -7195,6 +7195,7 @@ namespace Tpetra {
                                   PermuteFromLIDs, N, mynnz, MyPID,
                                   CSR_rowptr(), CSR_colind_GID(),
                                   SourcePids(), TargetPids);
+    destGraph->imports_.reset();
 
     /**************************************************************/
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/

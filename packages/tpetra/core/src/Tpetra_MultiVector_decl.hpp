@@ -2422,10 +2422,6 @@ namespace Tpetra {
   public:
     bool importsAreAliased();
 
-  protected:
-    Kokkos::DualView<impl_scalar_type*, buffer_device_type> unaliased_imports_;
-
-    //@}
   }; // class MultiVector
 
   template<class SC, class LO, class GO, class NT>

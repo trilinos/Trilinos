@@ -19,11 +19,13 @@
 /// for you).  If you only want the declaration of Tpetra::DistObject,
 /// include "Tpetra_DistObject_decl.hpp".
 
+#include "Tpetra_DistObject_decl.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_checkGlobalError.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "Tpetra_Pool.hpp"
 #include "Tpetra_Util.hpp" // Details::createPrefix
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -190,7 +192,7 @@ namespace Tpetra {
                 << exports_.extent (0)
                 << endl
                 << "Import buffer size (in packets): "
-                << imports_.extent (0)
+                << (imports_ ? imports_->extent (0) : 0)
                 << endl;
           }
           if (! comm.is_null ()) {
@@ -664,18 +666,17 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Realloc (if needed) imports_ from "
-         << imports_.extent (0) << " to " << newSize << std::endl;
+         << (imports_ ? imports_->extent (0) : 0) << " to " << newSize << std::endl;
       std::cerr << os.str ();
     }
     using ::Tpetra::Details::reallocDualViewIfNeeded;
-    const bool reallocated =
-      reallocDualViewIfNeeded (this->imports_, newSize, "imports");
+    this->imports_ = getDualViewFromPool<imports_dv_t>(newSize);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Finished realloc'ing imports_" << std::endl;
       std::cerr << os.str ();
     }
-    return reallocated;
+    return true;
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1266,15 +1267,6 @@ namespace Tpetra {
 
     // We only need to send data if the combine mode is not ZERO.
     if (CM != ZERO) {
-      if (constantNumPackets != 0) {
-        // There are a constant number of packets per element.  We
-        // already know (from the number of "remote" (incoming)
-        // elements) how many incoming elements we expect, so we can
-        // resize the buffer accordingly.
-        const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
-        reallocImportsIfNeeded (rbufLen, verbose, prefix.get (), canTryAliasing, CM);
-      }
-
       // Do we need to do communication (via doPostsAndWaits)?
       bool needCommunication = true;
 
@@ -1314,6 +1306,8 @@ namespace Tpetra {
         doUnpackAndCombine(remoteLIDs, constantNumPackets, CM, execution_space());
 
         distributorActor_.doWaitsSend(distributorPlan);
+
+        this->imports_.reset();
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1448,7 +1442,7 @@ namespace Tpetra {
       // prevent spurious debug-mode errors (e.g., "modified on
       // both device and host"), we first need to clear its
       // "modified" flags.
-      this->imports_.clear_sync_state ();
+      this->imports_->clear_sync_state ();
 
       if (verbose) {
         std::ostringstream os;
@@ -1459,22 +1453,22 @@ namespace Tpetra {
       }
 
       if (commOnHost) {
-        this->imports_.modify_host ();
+        this->imports_->modify_host ();
         distributorActor_.doPosts
           (distributorPlan,
            create_const_view (this->exports_.view_host ()),
            numExportPacketsPerLID_av,
-           this->imports_.view_host (),
+           this->imports_->view_host (),
            numImportPacketsPerLID_av);
       }
       else { // pack on device
         Kokkos::fence("DistObject::doPosts-1"); // for UVM
-        this->imports_.modify_device ();
+        this->imports_->modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
            create_const_view (this->exports_.view_device ()),
            numExportPacketsPerLID_av,
-           this->imports_.view_device (),
+           this->imports_->view_device (),
            numImportPacketsPerLID_av);
       }
     }
@@ -1486,7 +1480,7 @@ namespace Tpetra {
           << dualViewStatusToString (this->exports_, "exports_")
           << endl
           << *prefix << "  "
-          << dualViewStatusToString (this->exports_, "imports_")
+          << dualViewStatusToString (*this->imports_, "imports_")
           << endl;
         std::cerr << os.str ();
       }
@@ -1495,7 +1489,7 @@ namespace Tpetra {
       // prevent spurious debug-mode errors (e.g., "modified on
       // both device and host"), we first need to clear its
       // "modified" flags.
-      this->imports_.clear_sync_state ();
+      this->imports_->clear_sync_state ();
 
       if (verbose) {
         std::ostringstream os;
@@ -1505,21 +1499,21 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
       if (commOnHost) {
-        this->imports_.modify_host ();
+        this->imports_->modify_host ();
         distributorActor_.doPosts
           (distributorPlan,
            create_const_view (this->exports_.view_host ()),
            constantNumPackets,
-           this->imports_.view_host ());
+           this->imports_->view_host ());
       }
       else { // pack on device
         Kokkos::fence("DistObject::doPosts-2"); // for UVM
-        this->imports_.modify_device ();
+        this->imports_->modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
            create_const_view (this->exports_.view_device ()),
            constantNumPackets,
-           this->imports_.view_device ());
+           this->imports_->view_device ());
       } // commOnHost
     } // constant or variable num packets per LID
   }
@@ -1616,7 +1610,7 @@ namespace Tpetra {
       std::ostringstream lclErrStrm;
       bool lclSuccess = false;
       try {
-        this->unpackAndCombine (remoteLIDs, this->imports_,
+        this->unpackAndCombine (remoteLIDs, *this->imports_,
             this->numImportPacketsPerLID_,
             constantNumPackets, CM, space);
         lclSuccess = true;
@@ -1638,7 +1632,7 @@ namespace Tpetra {
           gblErrMsgHeader, *comm);
     }
     else {
-      this->unpackAndCombine (remoteLIDs, this->imports_,
+      this->unpackAndCombine (remoteLIDs, *this->imports_,
           this->numImportPacketsPerLID_,
           constantNumPackets, CM, space);
     }
