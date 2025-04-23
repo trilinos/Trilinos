@@ -1007,6 +1007,10 @@ namespace Amesos2 {
       // reinex GIDs
       superlu_rowmap_ = this->matrixA_->getRowMap(); // use original map to redistribute vectors in solve
       Teuchos::RCP<const MatrixAdapter<Matrix> > contig_mat = this->matrixA_->reindex(superlu_contig_rowmap_, superlu_contig_colmap_, current_phase);
+
+      superlu_contig_rowmap_ = contig_mat->getRowMap();
+      superlu_contig_colmap_ = contig_mat->getColMap();
+
       l_nnz  = as<int_t>(contig_mat->getLocalNNZ());
       l_rows = as<int_t>(contig_mat->getLocalNumRows());
       g_rows = as<int_t>(contig_mat->getGlobalNumRows());
