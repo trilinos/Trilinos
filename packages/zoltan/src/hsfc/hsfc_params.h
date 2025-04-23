@@ -18,12 +18,14 @@ extern "C" {
 #include "zz_const.h"
 
 /* This structure is the Zoltan convention for user settable parameters */
-static PARAM_VARS HSFC_params[] =
-   {{"KEEP_CUTS", NULL, "INT", 0},
+static PARAM_VARS HSFC_params[] = {
+    {"KEEP_CUTS", NULL, "INT", 0},
     { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
     { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
     {"FINAL_OUTPUT",  NULL,  "INT",    0},
-    {NULL,        NULL,  NULL, 0}};
+    {"CURVE", NULL, "STRING", 0},
+    {NULL,        NULL,  NULL, 0}
+};
 
 
 #ifdef __cplusplus
