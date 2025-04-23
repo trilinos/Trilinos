@@ -56,6 +56,9 @@ public:
           const Teuchos::RCP<const row_matrix_type>& matrix,
           const int overlap);
 
+  std::vector<std::string>
+  getSupportedNames () const;
+
   bool
   isSupported (const std::string& precType);
 };
