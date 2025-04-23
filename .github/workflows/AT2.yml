@@ -111,6 +111,7 @@ jobs:
             --max-cores-allowed=29 \
             --num-concurrent-tests=16
       - name: Copy artifacts
+        if: success() || failure()
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
@@ -226,6 +227,7 @@ jobs:
             --max-cores-allowed=29 \
             --num-concurrent-tests=16
       - name: Copy artifacts
+        if: success() || failure()
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
@@ -340,6 +342,7 @@ jobs:
             --num-concurrent-tests=112 \
             --slots-per-gpu=8
       - name: Copy artifacts
+        if: success() || failure()
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
@@ -450,6 +453,14 @@ jobs:
             --filename-packageenables ./packageEnables.cmake \
             --max-cores-allowed=29 \
             --num-concurrent-tests=16
+      - name: Copy artifacts
+        if: success() || failure()
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          cp ./packageEnables.cmake /home/runner/artifacts/
+          cp ./configure_command.txt /home/runner/artifacts/
+          cp ./genconfig_build_name.txt /home/runner/artifacts/
       - name: Upload artifacts
         if: success() || failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -550,6 +561,7 @@ jobs:
             --filename-subprojects ./package_subproject_list.cmake \
             --skip-create-packageenables
       - name: Copy artifacts
+        if: success() || failure()
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
