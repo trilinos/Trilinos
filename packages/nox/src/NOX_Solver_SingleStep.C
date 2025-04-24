@@ -132,7 +132,6 @@ bool NOX::Solver::SingleStep::try_step()
   // Pick Jacobian matrix to use
   Teuchos::RCP<NOX::Abstract::Group> jacobian = updateJacobian ? solnPtr : frozenJacobianPtr;
 
-  // Reuse memory in group instead of new allocation for dir
   NOX::Abstract::Vector& dir = *dirVecPtr;
   const auto ls_status = jacobian->applyJacobianInverse(paramsPtr->sublist("Single Step Solver").sublist("Linear Solver"),
                                                         solnPtr->getF(),
