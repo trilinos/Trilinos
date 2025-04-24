@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
 #if 1
     std::string mtx_name = "gap-ids-1procA.mm";
-    std::string map_name = "gap-ids-1proc-rowmap.mm";
+    std::string map_name = "gap-ids-1proc-rowmap-tpetra.mm";
     std::string rhs_name = "gap-ids-1procRhs.mm";
 #else
     std::string mtx_name = "badMatrix.mm";

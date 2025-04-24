@@ -55,6 +55,7 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_CrsMatrix.h>
 #include <EpetraExt_CrsMatrixIn.h>
+#include <EpetraExt_BlockMapIn.h>
 #endif  // HAVE_AMESOS2_EPETRAEXT
 //#endif
 
@@ -772,6 +773,7 @@ bool do_epetra_test(const string& mm_file,
 
   typedef Epetra_CrsMatrix MAT;
   typedef Epetra_MultiVector MV;
+  typedef Epetra_Map MAP;
   const size_t numVecs = 5;     // arbitrary number
   const size_t numRHS  = 5;     // also quite arbitrary
 
@@ -783,23 +785,59 @@ bool do_epetra_test(const string& mm_file,
   const Epetra_SerialComm comm;
 #endif
 
-  if( verbosity > 2 ){
-    *fos << std::endl << "      Reading matrix from " << mm_file << " ... " << std::flush;
+  bool isContiguous = true;
+  string rowmap_file = "";
+  if (solve_params.isParameter("rowmap")) {
+    // Test non-contig GIDS with rowmap
+    rowmap_file = solve_params.get<string>("rowmap");
+    isContiguous = solve_params.sublist(solver_name).get("IsContiguous", false);
+    solve_params.remove("rowmap");
   }
+  if (verbosity > 2) {
+    *fos << std::endl << "      Reading matrix from " << mm_file;
+    if (rowmap_file != "") {
+      *fos << " with " << rowmap_file;
+    }
+    if (isContiguous) {
+      *fos << " (contiguous)";
+    }
+    *fos << " ... " << std::flush;
+  }
+
   std::string path = filedir + mm_file;
-  MAT* A;
-  int ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm, A, false, false);
-  if( ret == -1 ){
-    *fos << "error reading file from disk, aborting run." << std::endl;
-    return( false );
+  RCP<MAT> A_rcp;
+
+  if (rowmap_file == "") {
+    MAT* A;
+    int ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm, A, false, false);
+    if( ret == -1 ) {
+      *fos << "error reading matrix file from disk, aborting run." << std::endl;
+      return( false );
+    }
+    A_rcp = Teuchos::rcpFromRef(*A);
+  } else {
+    MAP* map;
+    int ret = 0;
+    std::string rowmap_path = filedir + rowmap_file;
+    ret = EpetraExt::MatrixMarketFileToMap(rowmap_path.c_str(), comm, map);
+    if( ret == -1 ){
+      *fos << "error reading map file from disk, aborting run." << std::endl;
+      return( false );
+    }
+    if( verbosity > 3 ) map->Print(std::cout);
+    int num_header_lines = 2;
+    bool convert_mtx_to_zero_base = true;
+    RCP<const MAP> rowMap = Teuchos::rcpFromRef(*map);
+    RCP<const MAP> domainMap = Teuchos::rcpFromRef(*map);
+    RCP<const MAP> rangeMap = Teuchos::rcpFromRef(*map);
+    A_rcp = Amesos2::Util::readEpetraCrsMatrixFromFile<MAP, MAT> (path, fos, rowMap, domainMap, rangeMap, convert_mtx_to_zero_base, num_header_lines);
   }
   if( verbosity > 2 ) *fos << "done" << std::endl;
-  if( verbosity > 3 ) A->Print(std::cout);
+  if( verbosity > 3 ) A_rcp->Print(std::cout);
 
-  const Epetra_Map dmnmap = A->DomainMap();
-  const Epetra_Map rngmap = A->RangeMap();
+  const Epetra_Map dmnmap = A_rcp->DomainMap();
+  const Epetra_Map rngmap = A_rcp->RangeMap();
 
-  RCP<MAT> A_rcp(A);
   RCP<MAT> A2;
   RCP<MV> x2, b2;
   RCP<MV> Xhat;
@@ -835,14 +873,14 @@ bool do_epetra_test(const string& mm_file,
     b[i]->SetLabel(blabel.str().c_str());
 
     x[i]->Random();
-    A->Multiply(transpose, *x[i], *b[i]);
+    A_rcp->Multiply(transpose, *x[i], *b[i]);
   }
 
   if( refactor ){
     // There isn't a really nice way to get a deep copy of an entire
     // CrsMatrix, so we just read the file again.
     MAT* A2_ptr;
-    ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm,
+    int ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm,
                                                  A2_ptr,
                                                  false, false);
     if( ret == -1 ){

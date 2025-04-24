@@ -1082,6 +1082,98 @@ namespace Amesos2 {
       return true;
     }
 
+#ifdef HAVE_AMESOS2_EPETRA
+    template<class map_type, class MAT>
+    Teuchos::RCP<MAT>
+    readEpetraCrsMatrixFromFile (const std::string& matrixFilename,
+                           Teuchos::RCP<Teuchos::FancyOStream> & fos,
+                           const Teuchos::RCP<const map_type>& rowMap,
+                           const Teuchos::RCP<const map_type>& domainMap,
+                           const Teuchos::RCP<const map_type>& rangeMap,
+                           const bool convert_to_zero_base,
+                           const int header_size)
+    {
+      using Scalar = double;
+      using GO = int;
+
+      using counter_type = std::map<GO, size_t>;
+      using pair_type = std::pair<const GO, size_t>;
+      using Teuchos::RCP;
+
+      const int myRank = rowMap->Comm().MyPID();
+
+      std::ifstream inFile;
+      int opened = 0;
+      if (myRank == 0)
+      {
+        try {
+          inFile.open (matrixFilename);
+          if (inFile) {
+            opened = 1;
+          }
+        }
+        catch (...) {
+          opened = 0;
+        }
+      }
+      rowMap->Comm().Broadcast(&opened, 1, 0);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (opened == 0, std::runtime_error, "readCrsMatrixFromFile: "
+         "Failed to open file \"" << matrixFilename << "\" on Process 0.");
+
+      RCP<MAT> A;
+      if (myRank == 0)
+      {
+        std::string line;
+
+        // Skip the first N lines.  This is a hack, specific to the input file in question.
+        //*fos << "  Reading matrix market file. Skip " << header_size << "  header lines" << std::endl;
+        for ( int i = 0; i < header_size; ++i ) {
+          std::getline (inFile, line);
+        }
+
+        counter_type counts;
+        Teuchos::Array<Scalar> vals;
+        Teuchos::Array<GO> gblRowInds;
+        Teuchos::Array<GO> gblColInds;
+        while (inFile) {
+          std::getline (inFile, line);
+          GO gblRowInd {};
+          GO gblColInd {};
+          Scalar val {};
+          const bool gotLine = readEntryFromFile (gblRowInd, gblColInd, val, line);
+          if (gotLine) {
+            if ( convert_to_zero_base ) {
+              gblRowInd -= 1 ;
+              gblColInd -= 1 ;
+            }
+            counts[gblRowInd]++;
+            vals.push_back(val);
+            gblRowInds.push_back(gblRowInd);
+            gblColInds.push_back(gblColInd);
+          }
+        }
+
+        // Max number of entries in any row
+        auto pr = std::max_element(
+          std::begin(counts),
+          std::end(counts),
+          [] (pair_type const& p1, pair_type const& p2){ return p1.second < p2.second; }
+        );
+        size_t maxCount = (counts.empty()) ? size_t(0) : pr->second;
+        A = Teuchos::rcp(new MAT(Epetra_DataAccess::Copy, *rowMap, maxCount));
+        for (typename Teuchos::Array<GO>::size_type i=0; i<gblRowInds.size(); i++) {
+          A->InsertGlobalValues (gblRowInds[i], 1, &vals[i], &gblColInds[i]);
+        }
+      } else {
+        A = Teuchos::rcp(new MAT(Epetra_DataAccess::Copy, *rowMap, 0));
+      }
+
+      A->FillComplete (*domainMap, *rangeMap);
+      return A;
+    }
+#endif
+
     template<class map_type, class MAT>
     Teuchos::RCP<MAT>
     readCrsMatrixFromFile (const std::string& matrixFilename,

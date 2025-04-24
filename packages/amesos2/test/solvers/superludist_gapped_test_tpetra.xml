@@ -4,7 +4,7 @@
     <Parameter name="complex" type="bool" value="false"/>
 
     <ParameterList name="all_solver_params">
-      <Parameter name="rowmap" type="string" value="gap-ids-1proc-rowmap.mm"/>
+      <Parameter name="rowmap" type="string" value="gap-ids-1proc-rowmap-tpetra.mm"/>
     </ParameterList>
 
     <ParameterList name="SuperLU_DIST">
