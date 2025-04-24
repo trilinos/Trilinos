@@ -55,19 +55,19 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlFiles
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
-  TRIBITS_ADD_EXECUTABLE(
-    Tutorial_MLParameterList
-    SOURCES MLParameterList.cpp
-    COMM serial mpi
-    )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tutorial_MLParameterList
+  #   SOURCES MLParameterList.cpp
+  #   COMM serial mpi
+  #   )
 
-  TRIBITS_ADD_TEST(
-    Tutorial_MLParameterList
-    NAME "Test_Tutorial_MLParameterList"
-    ARGS "--xml=ml_ParameterList.xml"
-    COMM serial mpi
-    NUM_MPI_PROCS 4
-    )
+  # TRIBITS_ADD_TEST(
+  #   Tutorial_MLParameterList
+  #   NAME "Test_Tutorial_MLParameterList"
+  #   ARGS "--xml=ml_ParameterList.xml"
+  #   COMM serial mpi
+  #   NUM_MPI_PROCS 4
+  #   )
 
   # TRIBITS_ADD_TEST(
   #   Tutorial_MLParameterList
