@@ -564,7 +564,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
                                                std::cout << "Replacing (" << range_row << "," << row.colidx(kk) << ") = " << row.value(kk) << " with " << val << std::endl;
 #endif
 #ifdef PANZER_DEBUG
-                                               TEUCHOS_ASSERT(false);
+                                               Kokkos::abort("MiniEM interpolation worksetLoop failed!");
 #endif
                                              }
                                        }
