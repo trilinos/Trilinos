@@ -375,6 +375,130 @@ namespace {
     } // end if numProcs = 2
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Superludist, ContgGID, SCALAR, LO, GO )
+  {
+    typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+    typedef ScalarTraits<SCALAR> ST;
+    typedef MultiVector<SCALAR,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+
+    using Tpetra::global_size_t;
+    using Teuchos::tuple;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Scalar = SCALAR;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+
+    size_t myRank = comm->getRank();
+    const global_size_t numProcs = comm->getSize();
+
+    printf( " Contig test\n" );
+    // Unit test created for 2 processes
+    if ( numProcs == 2 ) {
+
+      const global_size_t numVectors = 1;
+      const global_size_t nrows = 6;
+
+      const GO numGlobalEntries = nrows;
+      const LO numLocalEntries = (myRank == 0 ? nrows : 0);
+
+      // Create non-contiguous Map
+      // This example: np 2 leads to GIDS: proc0 - 0,2,4  proc 1 - 1,3,5
+      Teuchos::Array<GO> elementList(numLocalEntries);
+      for ( LO k = 0; k < numLocalEntries; ++k ) {
+        elementList[k] = k;
+      }
+
+      typedef Tpetra::Map<LO,GO>  map_type;
+      RCP< const map_type > map = rcp( new map_type(numGlobalEntries, elementList, 0, comm) );
+
+      RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
+      A->setObjectLabel("A");
+
+      /*
+       * We will solve a system with a known solution, for which we will be using
+       * the following 2D Laplace matrix:
+       */
+
+      // Construct matrix
+      if( myRank == 0 ){
+        A->insertGlobalValues(0,tuple<GO>(  0,1),tuple<Scalar>(2,-1));
+        A->insertGlobalValues(1,tuple<GO>(0,1,2),tuple<Scalar>(-1,2,-1));
+        A->insertGlobalValues(2,tuple<GO>(1,2,3),tuple<Scalar>(-1,2,-1));
+        A->insertGlobalValues(3,tuple<GO>(2,3,4),tuple<Scalar>(-1,2,-1));
+        A->insertGlobalValues(4,tuple<GO>(3,4,5),tuple<Scalar>(-1,2,-1));
+        A->insertGlobalValues(5,tuple<GO>(4,5),  tuple<Scalar>(-1,2));
+      }
+      A->fillComplete();
+      //{ RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(rcpFromRef(std::cout)); A->describe(*fancy,Teuchos::VERB_EXTREME); }
+
+      // Create X with random values
+      RCP<MV> X = rcp(new MV(map,numVectors));
+      X->setObjectLabel("X");
+      X->randomize();
+      //{ RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(rcpFromRef(std::cout)); X->describe(*fancy,Teuchos::VERB_EXTREME); }
+
+      /* Create B, use same GIDs
+       *
+       * Use RHS:
+       *
+       *  [[1]
+       *   [0]
+       *   [0]
+       *   [0]
+       *   [0]
+       *   [1]]
+       */
+      RCP<MV> B = rcp(new MV(map,numVectors));
+      B->setObjectLabel("B");
+      GO rowids[nrows] = {0,1,2,3,4,5};
+      Scalar data[nrows] = {1,0,0,0,0,1};
+      for( global_size_t i = 0; i < nrows; ++i ){
+        if( B->getMap()->isNodeGlobalElement(rowids[i]) ){
+          B->replaceGlobalValue(rowids[i],0,data[i]);
+        }
+      }
+
+      // Create solver interface with Amesos2 factory method
+      RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("SuperLU_DIST", A, X, B);
+
+      // Create a Teuchos::ParameterList to hold solver parameters
+      solver->symbolicFactorization().numericFactorization().solve();
+      //{ RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(rcpFromRef(std::cout)); B->describe(*fancy,Teuchos::VERB_EXTREME); }
+      //{ RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(rcpFromRef(std::cout)); X->describe(*fancy,Teuchos::VERB_EXTREME); }
+
+
+      /* Check the solution
+       *
+       * Should be:
+       *
+       *  [[1]
+       *   [1]
+       *   [1]
+       *   [1]
+       *   [1]
+       *   [1]]
+       */
+      // Solution Vector for later comparison
+      RCP<MV> Xhat = rcp(new MV(map,numVectors));
+      Xhat->setObjectLabel("Xhat");
+      GO rowids_soln[nrows] = {0,1,2,3,4,5};
+      Scalar data_soln[nrows] = {1,1,1,1,1,1};
+      for( global_size_t i = 0; i < nrows; ++i ){
+        if( Xhat->getMap()->isNodeGlobalElement(rowids_soln[i]) ){
+          Xhat->replaceGlobalValue(rowids_soln[i],0,data_soln[i]);
+        }
+      }
+
+      // Check result of solve
+      Array<Mag> xhatnorms(numVectors), xnorms(numVectors);
+      Xhat->norm2(xhatnorms());
+      X->norm2(xnorms());
+      TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
+    } // end if numProcs = 2
+  }
+
 #if defined(HAVE_AMESOS2_EPETRA)
   //! @test Test for Epetra non-contiguous GIDs.
   TEUCHOS_UNIT_TEST( Superludist, NonContigGIDEpetra)
@@ -566,6 +690,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superludist, SymbolicFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superludist, NumericFactorization, SCALAR, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superludist, NonContgGID, SCALAR, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Superludist, ContgGID, SCALAR, LO, GO ) \
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL )              \
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
@@ -600,6 +725,10 @@ namespace {
   #ifdef HAVE_TPETRA_INST_INT_LONG
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongInt)
+  #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+  typedef long long int LongLongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongLongInt)
   #endif
 #endif  // EXPL-INST
 
