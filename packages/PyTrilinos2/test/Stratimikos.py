@@ -68,14 +68,30 @@ def assemble1DLaplacian(globalNumRows, comm):
 
 
 def main():
-    comm = Teuchos.getTeuchosComm(MPI.COMM_WORLD)
+    commMpi4py = MPI.COMM_WORLD
+    comm = Teuchos.getTeuchosComm(commMpi4py)
 
     parser = ArgumentParser()
     parser.add_argument("--problemSize", default=1000, help="Global problem size", type=int)
     parser.add_argument("--solver", default="GMRES", choices=["LU", "CG", "BiCGStab", "GMRES"], help="Linear solver")
     parser.add_argument("--prec", default="None", choices=["None", "Jacobi", "Chebyshev", "ILU", "multigrid"], help="Preconditioner")
     parser.add_argument("--maxIts", default=100, help="Maximum number of iterations", type=int)
-    args = parser.parse_args()
+
+    # do a little dance to avoid redundant output
+    doTerminate = False
+    if comm.getRank() == 0:
+        try:
+            args = parser.parse_args()
+        except SystemExit:
+            doTerminate = True
+        doTerminate = commMpi4py.bcast(doTerminate, root=0)
+        if doTerminate:
+            exit()
+    else:
+        doTerminate = commMpi4py.bcast(doTerminate, root=0)
+        if doTerminate:
+            exit()
+        args = parser.parse_args()
 
     # Set up timers
     timer = Teuchos.StackedTimer("Main")
