@@ -106,7 +106,12 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
   int status = 0;
   if ( this->root_ ) {
     if(do_optimization()) {
-     this->matrixA_->returnValues_kokkos_view(device_nzvals_view_);
+     // instead of holding onto the device poinster
+     //  this->matrixA_->returnValues_kokkos_view(device_nzvals_view_);
+     // make an explicit copy
+     device_value_type_array device_nzvals_temp;
+     this->matrixA_->returnValues_kokkos_view(device_nzvals_temp);
+     Kokkos::deep_copy(device_nzvals_view_, device_nzvals_temp);
     }
     if (data_.pivot_pert) {
       data_.solver.useDefaultPivotTolerance();
@@ -324,6 +329,14 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
                                                       nnz_ret,
                                                       ROOTED, ARBITRARY,
                                                       this->columnIndexBase_);
+    }
+  }
+  else {
+    if( this->root_ ) {
+      // instead of holding onto the device poinster (which could cause issue)
+      // make an explicit copy
+      device_nzvals_view_ = device_value_type_array(
+        Kokkos::ViewAllocateWithoutInitializing("nzvals"), this->globalNumNonZeros_);
     }
   }
 
