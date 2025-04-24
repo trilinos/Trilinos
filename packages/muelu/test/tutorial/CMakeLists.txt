@@ -9,7 +9,7 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Tpetra
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyXmlFiles
+TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTutorialXmlFiles
   SOURCE_FILES
     blocked_rebalancing.xml
     ml_ParameterList.xml
@@ -327,6 +327,60 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     ARGS "--xml=s6_export.xml"
     COMM serial mpi
     NUM_MPI_PROCS 2
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    Tutorial_ScalingTestParamList
+    SOURCES ScalingTestParamList.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_TEST(
+    Tutorial_ScalingTestParamList
+    NAME "Test_Tutorial_recirc2d_n1_easy"
+    ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n1_easy.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    Tutorial_ScalingTestParamList
+    NAME "Test_Tutorial_recirc2d_n1_easy_pg"
+    ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n1_easy_pg.xml --notimings"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    Tutorial_ScalingTestParamList
+    NAME "Test_Tutorial_recirc2d_n2_easy_agg"
+    ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n2_easy_agg.xml --notimings"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    Tutorial_ScalingTestParamList
+    NAME "Test_Tutorial_recirc2d_n2_easy_agg2"
+    ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n2_easy_agg2.xml --notimings"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    Tutorial_ScalingTestParamList
+    NAME "Test_Tutorial_recirc2d_n2_easy_agg3"
+    ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n2_easy_agg3.xml --notimings"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+
+  TRIBITS_ADD_TEST(
+    Tutorial_ScalingTestParamList
+    NAME "Test_Tutorial_recirc2d_n2_easy_export"
+    ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n2_easy_export.xml --notimings"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
     )
 
 ENDIF()

@@ -1,6 +1,6 @@
 <ParameterList name="MueLu">
 
-  <Parameter name="verbosity" type="string" value="low"/>
+  <Parameter name="verbosity" type="string" value="high"/>
 
   <Parameter name="max levels" type="int" value="3"/>
   <Parameter name="coarse: max size" type="int" value="10"/>
