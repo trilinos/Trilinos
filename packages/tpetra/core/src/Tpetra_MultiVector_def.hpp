@@ -1856,8 +1856,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   importsAreAliased() {
-    return (this->imports_->view_device().data() + this->imports_->view_device().extent(0) ==
-            view_.getDualView().view_device().data() + view_.getDualView().view_device().extent(0));
+    return this->imports_ ? (this->imports_->view_device().data() + this->imports_->view_device().extent(0) ==
+            view_.getDualView().view_device().data() + view_.getDualView().view_device().extent(0)) : false;
   }
 
 

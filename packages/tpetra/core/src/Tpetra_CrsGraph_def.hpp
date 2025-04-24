@@ -7159,9 +7159,11 @@ namespace Tpetra {
     destGraph->numImportPacketsPerLID_.sync_host();
     Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
       getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
-    destGraph->imports_->sync_host();
+    if(destGraph->imports_) destGraph->imports_->sync_host();
+    using imports_dv_t = typename DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::imports_dv_t;
+    auto destImports = destGraph->imports_ ? *destGraph->imports_ : imports_dv_t{};
     Teuchos::ArrayView<const packet_type> hostImports =
-      getArrayViewFromDualView(*destGraph->imports_);
+      getArrayViewFromDualView(destImports);
     size_t mynnz =
       unpackAndCombineWithOwningPIDsCount(*this, RemoteLIDs, hostImports,
                                            numImportPacketsPerLID,
