@@ -122,8 +122,10 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   // Combine into velocity vector
   {
     Teuchos::ParameterList params;
-    Teuchos::RCP<const std::vector<std::string>> scalar_names = Teuchos::rcp(new std::vector<std::string>{"OTHER_UX","OTHER_UY"});
-    params.set("Scalar Names",scalar_names);
+    Teuchos::RCP<std::vector<std::string>> scalar_names = Teuchos::make_rcp<std::vector<std::string>>();
+    scalar_names->push_back("OTHER_UX");
+    scalar_names->push_back("OTHER_UY");
+    params.set<Teuchos::RCP<const std::vector<std::string>>>("Scalar Names",scalar_names);
     params.set("Vector Name", "OTHER_U");
     params.set("Data Layout Scalar",ir->dl_scalar);
     params.set("Data Layout Vector",ir->dl_vector);
