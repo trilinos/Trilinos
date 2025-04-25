@@ -47,11 +47,20 @@
 #include <Amesos2.hpp>
 #include <Amesos2_config.h>
 
+#include "Xpetra_ConfigDefs.hpp"
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_IO.hpp>
+
+#include <BelosConfigDefs.hpp>
+#include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
+#include <BelosPseudoBlockCGSolMgr.hpp>
+#include <BelosBlockGmresSolMgr.hpp>
+#include <BelosXpetraAdapter.hpp>
 #include <BelosMueLuAdapter.hpp>
 #include <BelosSolverFactory.hpp>
 #include <BelosStatusTestCombo.hpp>
-#include <BelosXpetraAdapter.hpp>
 #include <BelosXpetraStatusTestGenResSubNorm.hpp>
 
 #include <Galeri_XpetraMaps.hpp>
