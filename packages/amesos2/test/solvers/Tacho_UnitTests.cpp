@@ -365,6 +365,12 @@ namespace {
     // Create solver interface to Tacho through Amesos2 factory method
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("Tacho",A,Xhat,B);
 
+    // Use LU
+    Teuchos::ParameterList amesos2_params("Amesos2");
+    amesos2_params.sublist("Tacho").set("method", "lu", "Factorization Time");
+    solver->setParameters( rcpFromRef(amesos2_params) );
+    out << "Done creating solver" << std::endl;
+
     solver->symbolicFactorization().numericFactorization().solve();
 
     Xhat->describe(out, Teuchos::VERB_EXTREME);
@@ -409,6 +415,12 @@ namespace {
     // Solve A*Xhat = B for Xhat using the Tacho solver
     RCP<Amesos2::Solver<MAT,MV> > solver
       = Amesos2::create<MAT,MV>("Tacho", A, Xhat, B);
+
+    // Use LU
+    Teuchos::ParameterList amesos2_params("Amesos2");
+    amesos2_params.sublist("Tacho").set("method", "lu", "Factorization Time");
+    solver->setParameters( rcpFromRef(amesos2_params) );
+    out << "Done creating solver" << std::endl;
 
     solver->symbolicFactorization().numericFactorization().solve();
 
@@ -491,9 +503,9 @@ namespace {
 
 #  define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO )     \
   UNIT_TEST_GROUP_ORDINAL_FLOAT(LO, GO)                 \
-  UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)                
-// UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO,GO)          
-// UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
+  UNIT_TEST_GROUP_ORDINAL_DOUBLE(LO, GO)                \
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO,GO)          \
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO,GO)
 
   //Add JDB (10-19-215)
 #ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
