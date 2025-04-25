@@ -14,6 +14,10 @@
 #define MY_SCALAR_ABS(x) (((x) < 0) ? -(x) : (x))
 #endif
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+#include "Teuchos_ScalarTraits.hpp"
+#endif
+
 namespace BaskerNS
 {
 
