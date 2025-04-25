@@ -115,12 +115,15 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       {
         std::ifstream in;
         in.open(file);
-        if (!in.good()) {
-          std::cout << "Failed in open the file: " << file << std::endl;
+        if (in.good()) {
+          std::cout << "Read matrix from  " << file << std::endl;
+        } else {
+          std::cout << "Failed to open the matrix file: " << file << std::endl;
           return -1;
         }
       }
       Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose);
+      if (verbose) A.showMe(std::cout, false);
     }
 
     /// read graph file if available
@@ -135,11 +138,11 @@ template <typename value_type> int driver(int argc, char *argv[]) {
         {
           std::ifstream in;
           in.open(graph_file);
-          if (!in.good()) {
-            std::cout << "Failed in open the file: " << graph_file << std::endl;
-            return -1;
-          } else if (verbose) {
+          if (in.good()) {
             std::cout << " > Condensed graph file: " << graph_file << std::endl;
+          } else {
+            std::cout << "Failed to open the graph file: " << graph_file << std::endl;
+            return -1;
           }
           in >> m_graph;
 
@@ -160,11 +163,11 @@ template <typename value_type> int driver(int argc, char *argv[]) {
         {
           std::ifstream in;
           in.open(weight_file);
-          if (!in.good()) {
+          if (in.good()) {
+            std::cout << " > Weight file for condensed graph: " << weight_file << std::endl;
+          } else {
             std::cout << "Failed in open the file: " << weight_file << std::endl;
             return -1;
-          } else if (verbose) {
-            std::cout << " > Weight file for condensed graph: " << weight_file << std::endl;
           }
           ordinal_type m(0);
           in >> m;
