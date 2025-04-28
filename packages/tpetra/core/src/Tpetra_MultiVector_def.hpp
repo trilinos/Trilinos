@@ -20,6 +20,7 @@
 /// Tpetra::MultiVector, include "Tpetra_MultiVector_decl.hpp".
 
 #include "Tpetra_Core.hpp"
+#include "Tpetra_Pool.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_allReduceView.hpp"
@@ -1569,7 +1570,10 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
          << ", newExportsSize: " << newExportsSize << std::endl;
       std::cerr << os.str ();
     }
-    reallocDualViewIfNeeded (exports, newExportsSize, "exports");
+    exports_from_pool.reset();
+    exports_from_pool = getDualViewFromPool<Kokkos::DualView< impl_scalar_type*, buffer_device_type>>(newExportsSize);
+    exports = *exports_from_pool;
+    //reallocDualViewIfNeeded (exports, newExportsSize, "exports");
 
     // mfh 04 Feb 2019: sourceMV doesn't belong to us, so we can't
     // sync it.  Pack it where it's currently sync'd.

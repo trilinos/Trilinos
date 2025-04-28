@@ -13,7 +13,7 @@
 #define TPETRA_POOL_HPP
 
 #include "Kokkos_Core.hpp"
-#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra
 {
