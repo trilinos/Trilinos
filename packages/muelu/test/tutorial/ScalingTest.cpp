@@ -140,7 +140,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int optMaxCoarseSize = 50;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
 
   // - Smoothed-Aggregation
+<<<<<<< HEAD
   Scalar optSaDamping = 4./3;             clp.setOption("saDamping",      &optSaDamping,          "prolongator damping factor");
+=======
+  double optSaDamping = 4. / 3;
+  clp.setOption("saDamping", &optSaDamping, "prolongator damping factor");
+>>>>>>> 5abb8856f7 (MueLu: fix tutorial example for complex scalar)
 
   // - Aggregation
   std::string optAggOrdering = "natural"; clp.setOption("aggOrdering",    &optAggOrdering,        "aggregation ordering strategy (natural, random, graph)");
