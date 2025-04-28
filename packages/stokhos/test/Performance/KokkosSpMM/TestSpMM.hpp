@@ -111,7 +111,7 @@ test_spmm(const OrdinalType ensemble_length,
   // Generate matrix
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length);
