@@ -164,7 +164,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Set the list of classes in MueLu adapters that are templated
   # on <Scalar, LO, GO, Node> for which we want to do ETI using this system.
   GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES  )
-  IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+  IF (${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
       Thyra::MueLuPreconditionerFactory
       Thyra::XpetraLinearOp
