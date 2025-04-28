@@ -534,23 +534,23 @@ namespace Galeri {
           ny = list.get<GlobalOrdinal>("ny");
       }
 
-      Scalar lx=1.;
+      double lx=1.;
       if (list.isParameter("lx")) {
-        lx = list.get<Scalar>("lx");
+        lx = list.get<double>("lx");
       }
-      Scalar ly=1.;
+      double ly=1.;
       if (list.isParameter("ly")) {
-        ly = list.get<Scalar>("ly");
+        ly = list.get<double>("ly");
       }
 
-      Scalar conv=1.;
+      double conv=1.;
       if (list.isParameter("convection")) {
-        conv = list.get<Scalar>("convection");
+        conv = list.get<double>("convection");
       }
 
-      Scalar diff=1.;
+      double diff=1.;
       if (list.isParameter("diffusion")) {
-        diff = list.get<Scalar>("diffusion");
+        diff = list.get<double>("diffusion");
       }
 
       auto &map = this->Map_;
@@ -563,7 +563,7 @@ namespace Galeri {
       auto D = MultiVectorTraits<Map,MultiVector>::Build(map, 1);
       auto E = MultiVectorTraits<Map,MultiVector>::Build(map, 1);
 
-      Scalar zero= Teuchos::ScalarTraits<Scalar>::zero();
+      double zero= Teuchos::ScalarTraits<double>::zero();
 
       A->putScalar(zero);
       B->putScalar(zero);
@@ -577,17 +577,17 @@ namespace Galeri {
       auto Ddata = D->getDataNonConst(0);
       auto Edata = E->getDataNonConst(0);
 
-      Scalar hx = lx / (nx + 1);
-      Scalar hy = ly / (ny + 1);
+      double hx = lx / (nx + 1);
+      double hy = ly / (ny + 1);
 
       for (int i = 0 ; i < numMyElements ; i++) {
         int ix, iy;
         ix = (myGlobalElements[i]) % nx;
         iy = (myGlobalElements[i] - ix) / nx;
-        Scalar x = hx * (ix + 1);
-        Scalar y = hy * (iy + 1);
-        Scalar ConvX =  conv * 4 * x * (x - 1.) * (1. - 2 * y) / hx;
-        Scalar ConvY = -conv * 4 * y * (y - 1.) * (1. - 2 * x) / hy;
+        double x = hx * (ix + 1);
+        double y = hy * (iy + 1);
+        double ConvX =  conv * 4 * x * (x - 1.) * (1. - 2 * y) / hx;
+        double ConvY = -conv * 4 * y * (y - 1.) * (1. - 2 * x) / hy;
 
         // convection part
 
