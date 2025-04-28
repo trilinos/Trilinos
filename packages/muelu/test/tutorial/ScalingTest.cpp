@@ -140,7 +140,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int optMaxCoarseSize = 50;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
 
   // - Smoothed-Aggregation
-  Scalar optSaDamping = 4./3;             clp.setOption("saDamping",      &optSaDamping,          "prolongator damping factor");
+  double optSaDamping = 4. / 3;           clp.setOption("saDamping",      &optSaDamping,          "prolongator damping factor");
 
   // - Aggregation
   std::string optAggOrdering = "natural"; clp.setOption("aggOrdering",    &optAggOrdering,        "aggregation ordering strategy (natural, random, graph)");
