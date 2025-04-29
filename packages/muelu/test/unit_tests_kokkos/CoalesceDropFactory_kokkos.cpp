@@ -131,7 +131,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacian,
   TEST_EQUALITY(myDomainMap->getGlobalNumElements(), 36);
 
   TEST_EQUALITY(graph->GetGlobalNumEdges(), 40);
-
 }  // DistanceLaplacian
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacianScaledCut, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
