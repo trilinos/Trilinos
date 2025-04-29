@@ -55,6 +55,9 @@ int main(int argc, char *argv[]) {
     GO nx, ny, nz;
     GO mx, my, mz;
     double stretchx, stretchy, stretchz, h, delta;
+    double Kxx = 1.0, Kxy = 0., Kyy = 1.0;
+    double dt            = 1.0;
+    std::string meshType = "tri";
     int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
     double omega, shift;
     int model;
@@ -90,6 +93,7 @@ int main(int argc, char *argv[]) {
       std::cout << "velocity model: " << model << std::endl;
 
     Galeri::Xpetra::Parameters<GO> matrixParameters_aux(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
+                                                        Kxx, Kxy, Kyy, dt, meshType,
                                                         h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, 0.0, mx, my, mz, model);
     Xpetra::Parameters xpetraParameters(clp);
 
@@ -138,8 +142,10 @@ int main(int argc, char *argv[]) {
     // loop over frequencies
     for (size_t i = 0; i < omegas.size(); i++) {
       Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
+                                                                Kxx, Kxy, Kyy, dt, meshType,
                                                                 h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omegas[i], 0.0, mx, my, mz, model);
       Galeri::Xpetra::Parameters<GO> matrixParameters_shifted(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
+                                                              Kxx, Kxy, Kyy, dt, meshType,
                                                               h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omegas[i], shift, mx, my, mz, model);
 
       Teuchos::ParameterList matrixParams_helmholtz = matrixParameters_helmholtz.GetParameterList();

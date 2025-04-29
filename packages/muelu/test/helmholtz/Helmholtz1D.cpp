@@ -72,11 +72,14 @@ int main(int argc, char *argv[]) {
     ny = 100;
     nz = 100;
     double stretchx, stretchy, stretchz, h, delta;
-    stretchx = 1.0;
-    stretchy = 1.0;
-    stretchz = 1.0;
-    h        = 0.01;
-    delta    = 2.0;
+    stretchx   = 1.0;
+    stretchy   = 1.0;
+    stretchz   = 1.0;
+    h          = 0.01;
+    delta      = 2.0;
+    double Kxx = 1.0, Kxy = 0., Kyy = 1.0;
+    double dt            = 1.0;
+    std::string meshType = "tri";
     int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
     PMLXL = 10;
     PMLXR = 10;
@@ -87,8 +90,10 @@ int main(int argc, char *argv[]) {
     double omega, shift;
     omega = 20.0 * M_PI;
     shift = 0.5;
+    double lx, ly, conv, diff;
 
     Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Helmholtz1D", 0, stretchx, stretchy, stretchz,
+                                                    Kxx, Kxy, Kyy, dt, meshType,
                                                     h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
     Xpetra::Parameters xpetraParameters(clp);
 
