@@ -978,6 +978,9 @@ namespace Tpetra {
     /// them.
     Kokkos::DualView<packet_type*, buffer_device_type> imports_;
 
+    // \brief Parent View for imports_ to avoid reallocation
+    Kokkos::DualView<packet_type*, buffer_device_type> imports_parentView_;
+
     /// \brief Reallocate imports_ if needed.
     ///
     /// This unfortunately must be declared protected, for the same

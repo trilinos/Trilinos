@@ -622,7 +622,7 @@ namespace Tpetra {
     }
     using ::Tpetra::Details::reallocDualViewIfNeeded;
     const bool reallocated =
-      reallocDualViewIfNeeded (this->imports_, newSize, "imports");
+      reallocDualViewIfNeeded (this->imports_parentView_,this->imports_, newSize, "imports");
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Finished realloc'ing imports_" << std::endl;

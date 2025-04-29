@@ -25,7 +25,10 @@ namespace Details {
 
 /// \brief Reallocate the DualView in/out argument, if needed.
 ///
-/// \param dv [in/out] The DualView to reallocate, if needed.
+/// \param parent_view [in/out] Parent view of the DualView dv.
+/// \param dv [in/out] The DualView to reallocate, if needed.  This
+///   can be set to the same thing as parent_view, but then you lose the
+///   memory advantages of specifying the parentview.
 /// \param newSize [in] New (requested) size of the DualView.
 /// \param newLabel [in] New label for the DualView; only used if
 ///   reallocating.
@@ -48,7 +51,8 @@ namespace Details {
 ///   <tt>DeviceType::execution_space().fence()</tt>.
 template<class ValueType, class DeviceType>
 bool
-reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
+reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& parent_view,
+                         Kokkos::DualView<ValueType*, DeviceType>& dv,
                          const size_t newSize,
                          const char newLabel[],
                          const size_t tooBigFactor = 2,
@@ -63,10 +67,21 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
   ProfilingRegion region ("Tpetra::Details::reallocDualViewIfNeeded");
 
   const size_t curSize = static_cast<size_t> (dv.extent (0));
+  const size_t parentSize = static_cast<size_t> (parent_view.extent (0));
   if (curSize == newSize) {
-    return false; // did not reallocate
+    // The right size, do not reallocate
+    return false;
   }
-  else if (curSize < newSize) { // too small; need to reallocate
+  else if (curSize < newSize && newSize <= parentSize) {
+    // dv is too small, but parent is big enough
+    dv = dual_view_type ();
+    auto d_view = Kokkos::subview (parent_view.view_device(), range_type (0, newSize));
+    auto h_view = Kokkos::subview (parent_view.view_host(), range_type (0, newSize));
+    dv = Kokkos::DualView<ValueType*, DeviceType>(d_view, h_view);
+    return false; // we did not reallocate
+  }
+  else if (curSize < newSize && parentSize < newSize) {
+    // both the parent view and dv are too small
     if (needFenceBeforeRealloc) {
       execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
     }
@@ -75,32 +90,37 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
     dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), newSize);
     return true; // we did reallocate
   }
-  else {
-    if (newSize == 0) { // special case: realloc to 0 means always do it
-      if (needFenceBeforeRealloc) {
-        execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
-      }
-      // If current size is 0, the DualView's Views likely lack a label.
-      dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), 0);
-      return true; // we did reallocate
+  else if (newSize == 0) {
+    // We've asked for a size zero vector, so we make dv a zero-length view
+    if (needFenceBeforeRealloc) {
+      execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
     }
+    // If current size is 0, the DualView's Views likely lack a label.
+    dv = dual_view_type (newLabel, 0);
+    return true;
+  }
+  else {
+    // dv is bigger than we need, so check tooBigFactor to see if we shrink
+
     // Instead of writing curSize >= tooBigFactor * newSize, express
     // via division to avoid overflow (for very large right-hand side).
     // We've already tested whether newSize == 0, so this is safe.
-    else if (curSize / newSize >= tooBigFactor) {
+    if (curSize / newSize >= tooBigFactor) {
       // The allocation is much too big, so free it and reallocate
       // to the new, smaller size.
       if (needFenceBeforeRealloc) {
         execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
       }
       dv = dual_view_type (); // free first, in order to save memory
+      parent_view = dual_view_type(); // free first, in order to save memory
       // If current size is 0, the DualView's Views likely lack a label.
-      dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), newSize);
+      parent_view = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), newSize);
+      dv = parent_view;
       return true; // we did reallocate
     }
     else {
-      auto d_view = Kokkos::subview (dv.view_device(), range_type (0, newSize));
-      auto h_view = Kokkos::subview (dv.view_host(), range_type (0, newSize));
+      auto d_view = Kokkos::subview (parent_view.view_device(), range_type (0, newSize));
+      auto h_view = Kokkos::subview (parent_view.view_host(), range_type (0, newSize));
       dv = Kokkos::DualView<ValueType*, DeviceType>(d_view, h_view);
       return false; // we did not reallocate
     }
