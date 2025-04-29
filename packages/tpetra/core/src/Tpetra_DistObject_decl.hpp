@@ -820,7 +820,7 @@ namespace Tpetra {
     /// \param permuteFromLIDs [in] List of the elements that are
     ///   permuted.  They are listed by their local index (LID) in the
     ///   source object.
-    /// \param CM [in] CombineMode to be used during copyAndPermute; 
+    /// \param CM [in] CombineMode to be used during copyAndPermute;
     ///   may or may not be used by the particular object being called;
     ///   behavior with respect to CombineMode may differ by object.
     virtual void
@@ -979,6 +979,9 @@ namespace Tpetra {
     /// CrsMatrix uses them at one point.  Please, nobody else use
     /// them.
     Kokkos::DualView<packet_type*, buffer_device_type> imports_;
+
+    // \brief Parent View for imports_ to avoid reallocation
+    Kokkos::DualView<packet_type*, buffer_device_type> imports_parentView_;
 
     /// \brief Reallocate imports_ if needed.
     ///
