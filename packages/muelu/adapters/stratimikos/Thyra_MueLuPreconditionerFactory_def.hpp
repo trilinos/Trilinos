@@ -12,6 +12,7 @@
 
 #include "Thyra_MueLuPreconditionerFactory_decl.hpp"
 #include "MueLu_TpetraOperatorAsRowMatrix.hpp"
+#include "MueLu_MasterList.hpp"
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 
@@ -675,8 +676,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValidParameters() const {
   static RCP<const ParameterList> validPL;
 
-  if (Teuchos::is_null(validPL))
-    validPL = rcp(new ParameterList());
+  if (Teuchos::is_null(validPL)) {
+    validPL = MueLu::MasterList::List();
+  }
 
   return validPL;
 }

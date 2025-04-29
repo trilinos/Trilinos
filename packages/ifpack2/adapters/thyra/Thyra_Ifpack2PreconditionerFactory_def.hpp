@@ -28,6 +28,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #include <string>
 
@@ -130,7 +131,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
     Teuchos::ptr(dynamic_cast<DefaultPreconditioner<scalar_type> *>(prec));
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(defaultPrec));
 
-  // This check needed to address Issue #535. 
+  // This check needed to address Issue #535.
   // Corresponding fix exists in stratimikos/adapters/belos/tpetra/Thyra_BelosTpetraPreconditionerFactory_def.hpp
   RCP<Teuchos::ParameterList> innerParamList;
   if (paramList_.is_null ()) {
@@ -150,7 +151,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   // precTypeUpper is the upper-case version of preconditionerType.
   std::string precTypeUpper (preconditionerType);
   std::transform(precTypeUpper.begin(), precTypeUpper.end(),precTypeUpper.begin(), ::toupper);
-  
+
   // mfh 09 Nov 2013: If the Ifpack2 list doesn't already have the
   // "schwarz: overlap level" parameter, then override it with the
   // value of "Overlap".  This avoids use of the newly deprecated
@@ -323,14 +324,24 @@ template <typename MatrixType>
 Teuchos::RCP<const Teuchos::ParameterList>
 Ifpack2PreconditionerFactory<MatrixType>::getValidParameters() const
 {
+  using local_ordinal_type = typename MatrixType::local_ordinal_type;
+  using global_ordinal_type = typename MatrixType::global_ordinal_type;
+  using node_type = typename MatrixType::node_type;
+
   static Teuchos::RCP<Teuchos::ParameterList> validParamList;
 
   if (Teuchos::is_null(validParamList)) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("Ifpack2"));
 
+
+    using row_matrix_type = Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+
+    auto supportedNames = Ifpack2::Factory::getSupportedNames<row_matrix_type> ();
+    auto validator = Teuchos::rcp(new Teuchos::StringValidator(supportedNames, /*caseSensitive=*/false));
     validParamList->set(
       "Prec Type", "ILUT",
-      "Type of Ifpack2 preconditioner to use."
+      "Type of Ifpack2 preconditioner to use.",
+      validator
       );
     validParamList->set(
       "Overlap", 0,
