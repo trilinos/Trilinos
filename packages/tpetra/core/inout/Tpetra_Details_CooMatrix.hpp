@@ -1213,7 +1213,7 @@ protected:
     // numPacketsPerLID with zeros.
     if (* (this->localError_)) {
       // Resize 'exports' to zero, so we won't be tempted to read it.
-      Details::reallocDualViewIfNeeded (exports, 0, "CooMatrix exports");
+      Details::reallocDualViewIfNeeded (exports, exports, 0, "CooMatrix exports");
       // Trick to get around const DualView& being const.
       {
         auto numPacketsPerLID_tmp = numPacketsPerLID;
@@ -1227,7 +1227,7 @@ protected:
 
     const size_t numExports = exportLIDs.extent (0);
     if (numExports == 0) {
-      Details::reallocDualViewIfNeeded (exports, 0, exports.view_host().label ());
+      Details::reallocDualViewIfNeeded (exports, exports, 0, exports.view_host().label ());
       return; // nothing to send
     }
     RCP<const Comm<int> > comm = src->getMap ().is_null () ?
@@ -1337,7 +1337,7 @@ protected:
 
     {
       const bool reallocated =
-        Details::reallocDualViewIfNeeded (exports, totalNumPackets,
+        Details::reallocDualViewIfNeeded (exports, exports, totalNumPackets,
                                           "CooMatrix exports");
       if (reallocated) {
         exports.sync_host (); // make sure alloc'd on host
