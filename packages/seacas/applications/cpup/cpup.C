@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,10 +43,12 @@ namespace {
   using GlobalBcMap    = std::map<std::pair<std::string, std::string>, Ioss::BoundaryCondition>;
   using GlobalBlockMap = std::map<const std::string, const Ioss::StructuredBlock *>;
   using GlobalIJKMap   = std::map<const std::string, Ioss::IJK_t>;
+  using GlobalAssembly = std::map<std::string, std::vector<std::string>>;
   using PartVector     = std::vector<std::unique_ptr<Ioss::Region>>;
 
   GlobalZgcMap generate_global_zgc(const PartVector &part_mesh);
   GlobalBcMap  generate_global_bc(const PartVector &part_mesh);
+  GlobalZgcMap consolidate_zgc(const GlobalZgcMap &zgc_map);
 
   void   info_structuredblock(const Ioss::Region &region);
   void   resolve_offsets(const PartVector &part_mesh, GlobalBlockMap &all_blocks);
@@ -238,6 +240,8 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 
   GlobalBlockMap all_blocks;
   GlobalIJKMap   global_block;
+  GlobalAssembly global_assemblies;
+
   for (const auto &part : part_mesh) {
     const auto &blocks = part->get_structured_blocks();
     for (const auto &block : blocks) {
@@ -256,6 +260,18 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
         }
       }
     }
+
+    // proc-0 should have all the assemblies, but the membership of the
+    // assemblies requires all parts to be read...
+    const auto &assems = part->get_assemblies();
+    for (const auto &assem : assems) {
+      const auto &members       = assem->get_members();
+      auto       &assem_members = global_assemblies[assem->name()];
+      for (const auto &member : members) {
+        const auto [member_name, member_proc] = Iocgns::Utils::decompose_name(member->name(), true);
+        assem_members.push_back(std::move(member_name));
+      }
+    }
   }
 
   // Resolve the offsets for each split block based on the decomp-ZGC
@@ -271,6 +287,11 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   // Need a consistent set of ZGC for each zone unioned across the proc-local-zones...
   // Skip the ZGC that are "from_decomp"
   GlobalZgcMap global_zgc = generate_global_zgc(part_mesh);
+
+  // At this point, we Have a consistent set of zgc for each zone, but
+  // possibly multiples due to parallel decomposition.  See if there
+  // are "similar" zgc that can be consolidated.
+  global_zgc = consolidate_zgc(global_zgc);
 
   // Create output file...
   Ioss::PropertyManager properties{};
@@ -315,7 +336,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
     }
   }
 
-  // Copy the sidesets and assemblies from the proc-0 input file to the output file...
+  // Copy the sidesets from the proc-0 input file to the output file...
   auto       &part  = part_mesh[0];
   const auto &ssets = part->get_sidesets();
   for (const auto &sset : ssets) {
@@ -323,10 +344,18 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
     output_region.add(oss);
   }
 
-  const auto &assems = part->get_assemblies();
-  for (const auto &assem : assems) {
-    auto *oass = new Ioss::Assembly(*assem);
-    output_region.add(oass);
+  // Add assemblies to the output file...
+  int id = 1;
+  for (auto &[name, members] : global_assemblies) {
+    Ioss::Utils::uniquify(members);
+    auto *assembly = new Ioss::Assembly(dbo, name);
+    assembly->property_add(Ioss::Property("id", id++));
+    for (const auto &block_name : members) {
+      auto *block = output_region.get_structured_block(block_name);
+      assert(block);
+      assembly->add(block);
+    }
+    output_region.add(assembly);
   }
 
   if (debug_level & 4) {
@@ -507,6 +536,45 @@ namespace {
       }
     }
     return global_zgc;
+  }
+
+  GlobalZgcMap consolidate_zgc(const GlobalZgcMap &zgc_map)
+  {
+    // Check all `zgc` in `zgc_map` and consolidate the ones that are "similar"
+    // * Same zone that they are associated with
+    // * Similar connectionName
+    //   - We assume that the `zgc_map` is sorted such that the "base" zgc is first
+    //    and then the similar ones follow.  This means that the base will have
+    //    a name that is a subset of the similar ones following.
+
+    GlobalZgcMap consolidated;
+
+    std::string            zone_name{};
+    std::string            conn_name{};
+    Ioss::ZoneConnectivity zgc_test{};
+    for (const auto &zgc : zgc_map) {
+      if (zone_name.empty()) {
+        zone_name = zgc.first.first;
+        conn_name = zgc.first.second;
+        zgc_test  = zgc.second;
+        continue;
+      }
+
+      if (zone_name == zgc.first.first && Ioss::Utils::substr_equal(conn_name, zgc.first.second)) {
+        union_zgc_range(zgc_test, zgc.second);
+        continue;
+      }
+
+      // If we make it to this point, then we don't have a similar zgc, so
+      // save the one we were working on and reset to gather the next set.
+      consolidated.emplace(std::make_pair(zone_name, conn_name), zgc_test);
+      zone_name = zgc.first.first;
+      conn_name = zgc.first.second;
+      zgc_test  = zgc.second;
+    }
+    // Handle the last one..
+    consolidated.emplace(std::make_pair(zone_name, conn_name), zgc_test);
+    return consolidated;
   }
 
   GlobalBcMap generate_global_bc(const PartVector &part_mesh)

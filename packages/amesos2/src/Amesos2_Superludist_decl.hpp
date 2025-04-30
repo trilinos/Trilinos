@@ -88,6 +88,10 @@ public:
   typedef Kokkos::View<SLUD::int_t*, HostExecSpaceType>   host_ordinal_type_array;
   typedef Kokkos::View<slu_type*,    HostExecSpaceType>   host_value_type_array;
 
+  typedef Tpetra::Map<local_ordinal_type,
+                      global_ordinal_type,
+                      node_type>                          map_type;
+
   /// \name Constructor/Destructor methods
   //@{
 
@@ -288,6 +292,7 @@ private:
   // The following Arrays are persisting storage arrays for A, X, and B
   /// Stores the values of the nonzero entries for SuperLU_DIST
   host_value_type_array nzvals_view_;
+  host_value_type_array nzvals_temp_;
   /// Stores the row indices of the nonzero entries
   host_ordinal_type_array colind_view_;
   /// Stores the location in \c Ai_ and Aval_ that starts row j
@@ -304,9 +309,9 @@ private:
   mutable bool same_solve_struct_; // may be modified in solve_impl, but still `logically const'
 
   /// Maps rows of the matrix to processors in the SuperLU_DIST processor grid
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
-                                 global_ordinal_type,
-                                 node_type> > superlu_rowmap_;
+  Teuchos::RCP<const map_type> superlu_rowmap_;
+  Teuchos::RCP<const map_type> superlu_contig_rowmap_;
+  Teuchos::RCP<const map_type> superlu_contig_colmap_;
 
   bool is_contiguous_;
 

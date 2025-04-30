@@ -5,7 +5,7 @@
 //    strange cases
 //
 //
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -527,15 +527,13 @@ namespace Ioex {
     }
 #endif
 
-    bool do_timer = false;
-    Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
-    double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
+    double t_begin = (timeFileOpenCloseFlush ? Ioss::Utils::timer() : 0);
 
     int app_opt_val = ex_opts(EX_VERBOSE);
     m_exodusFilePtr = ex_open_par(filename.c_str(), EX_READ | mode, &cpu_word_size, &io_word_size,
                                   &version, util().communicator(), info);
 
-    if (do_timer) {
+    if (timeFileOpenCloseFlush) {
       double t_end    = Ioss::Utils::timer();
       double duration = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
       if (myProcessor == 0) {
@@ -624,9 +622,7 @@ namespace Ioex {
     (void)chdir(path.c_str());
 #endif
 
-    bool do_timer = false;
-    Ioss::Utils::check_set_bool_property(properties, "IOSS_TIME_FILE_OPEN_CLOSE", do_timer);
-    double t_begin = (do_timer ? Ioss::Utils::timer() : 0);
+    double t_begin = (timeFileOpenCloseFlush ? Ioss::Utils::timer() : 0);
 
     if (fileExists) {
       m_exodusFilePtr = ex_open_par(filename.c_str(), EX_WRITE | mode, &cpu_word_size,
@@ -666,7 +662,7 @@ namespace Ioex {
                                       util().communicator(), info);
     }
 
-    if (do_timer) {
+    if (timeFileOpenCloseFlush) {
       double      t_end       = Ioss::Utils::timer();
       double      duration    = util().global_minmax(t_end - t_begin, Ioss::ParallelUtils::DO_MAX);
       std::string open_create = fileExists ? "Open" : "Create";
@@ -1502,7 +1498,6 @@ namespace Ioex {
           }
           if (ss_name[0] != '\0') {
             Ioss::Utils::fixup_name(ss_name.data());
-            Ioex::decode_surface_name(ss_map, ss_set, ss_name.data());
           }
         }
       }
@@ -2054,11 +2049,9 @@ namespace Ioex {
           size_t               ep_data_size = ent_proc.size() * sizeof(int64_t);
           get_field_internal(css, ep_field, ent_proc.data(), ep_data_size);
           for (size_t i = 0; i < ent_proc.size(); i += 2) {
-            int64_t node = ent_proc[i + 0];
-            int64_t proc = ent_proc[i + 1];
-            if (proc < idata[node - 1]) {
-              idata[node - 1] = proc;
-            }
+            int64_t node    = ent_proc[i + 0];
+            int64_t proc    = ent_proc[i + 1];
+            idata[node - 1] = std::min(idata[node - 1], static_cast<int>(proc));
           }
         }
         else {
@@ -2068,11 +2061,9 @@ namespace Ioex {
           size_t           ep_data_size = ent_proc.size() * sizeof(int);
           get_field_internal(css, ep_field, ent_proc.data(), ep_data_size);
           for (size_t i = 0; i < ent_proc.size(); i += 2) {
-            int node = ent_proc[i + 0];
-            int proc = ent_proc[i + 1];
-            if (proc < idata[node - 1]) {
-              idata[node - 1] = proc;
-            }
+            int node        = ent_proc[i + 0];
+            int proc        = ent_proc[i + 1];
+            idata[node - 1] = std::min(idata[node - 1], proc);
           }
         }
       }

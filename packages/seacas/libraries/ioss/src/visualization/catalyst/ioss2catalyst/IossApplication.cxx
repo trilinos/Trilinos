@@ -130,7 +130,6 @@ void IossApplication::processCommandLine(int argc, char **argv)
   hasCommandLineArguments = true;
 
   int   c;
-  char *cvalue = NULL;
   while ((c = getopt(argc, argv, "a:b:cd:e:hi:mnp:rs:")) != -1) {
     char *cvalue = nullptr;
     switch (c) {
@@ -278,7 +277,7 @@ int IossApplication::getNumberOfFileNames() { return fileName.size(); }
 
 std::string &IossApplication::getFileName(int ndx)
 {
-  if (ndx >= fileName.size()) {
+  if (ndx >= (int) fileName.size()) {
     printErrorMessage("getFileName called with ndx too large.");
     printUsageMessage();
     exitApplicationFailure();
@@ -326,7 +325,7 @@ int IossApplication::getNumberOfPhactoriInputJSONs() { return phctriInptJSONFile
 
 std::string IossApplication::getPhactoriInputJSON(int ndx)
 {
-  if (ndx >= phctriInptJSONFilePathList.size()) {
+  if (ndx >= (int) phctriInptJSONFilePathList.size()) {
     printErrorMessage("phctriInptJSONFilePathList called with ndx too large.");
     printUsageMessage();
     exitApplicationFailure();
@@ -586,7 +585,7 @@ int IossApplication::getNumberOfInputIOSSRegions() { return inputIOSSRegion.size
 
 Ioss::Region *IossApplication::getInputIOSSRegion(int ndx)
 {
-  if (ndx >= inputIOSSRegion.size()) {
+  if (ndx >= (int) inputIOSSRegion.size()) {
     printErrorMessage("getInputIOSSRegion called with ndx too large.");
     printUsageMessage();
   }
@@ -862,7 +861,7 @@ std::string IossApplication::getIOSSDatabaseType(int ndx)
 
 std::string IossApplication::getIOSSDatabaseTypeFromFile(int ndx)
 {
-  if (ndx >= fileName.size()) {
+  if (ndx >= (int) fileName.size()) {
     printErrorMessage("getIOSSDatabaseTypeFromFile called with ndx too large.");
     printUsageMessage();
     exitApplicationFailure();

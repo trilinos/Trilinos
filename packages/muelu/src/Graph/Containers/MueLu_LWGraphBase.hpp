@@ -91,7 +91,7 @@ class LWGraphBase {
   using boundary_nodes_type     = Kokkos::View<bool*, memory_space>;
   using row_type                = typename local_graph_type::row_map_type;
   using entries_type            = typename local_graph_type::entries_type;
-  using neighbor_vertices_type  = Kokkos::GraphRowViewConst<local_graph_type>;
+  using neighbor_vertices_type  = KokkosSparse::GraphRowViewConst<local_graph_type>;
 
 #undef MUELU_LWGRAPHBASE_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"

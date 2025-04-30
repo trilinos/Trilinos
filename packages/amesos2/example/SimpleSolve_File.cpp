@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
 #endif
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
   typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
+  typedef Tpetra::MatrixMarket::Reader<MAT> MMReader;
 
   using Tpetra::global_size_t;
   using Tpetra::Map;
@@ -78,12 +79,14 @@ int main(int argc, char *argv[]) {
   bool useZoltan2 = false;
   bool useParMETIS = false;
   std::string mat_filename("arc130.mtx");
+  std::string map_filename("");
   std::string rhs_filename("");
   std::string solvername("Superlu");
   std::string xml_filename("");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("filename",&mat_filename,"Filename for Matrix-Market test matrix.");
+  cmdp.setOption("map_filename",&map_filename,"Filename for matrix rowmap.");
   cmdp.setOption("nrhs",&numVectors,"Number of right-hand-side vectors.");
   cmdp.setOption("rhs_filename",&rhs_filename,"Filename for Matrix-Market right-hand-side.");
   cmdp.setOption("solvername",&solvername,"Name of solver.");
@@ -108,7 +111,14 @@ int main(int argc, char *argv[]) {
   out << myRank << " : " << Amesos2::version() << " on " << comm->getSize() << " MPIs" << std::endl << std::endl;
 
   // Read matrix
-  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(mat_filename, comm);
+  RCP<MAT> A;
+  if (map_filename == "") {
+    A = MMReader::readSparseFile(mat_filename, comm);
+  } else {
+    RCP<const Map<LO,GO> > rowMap = MMReader::readMapFile(map_filename, comm);
+    RCP<const Map<LO,GO> > colMap = Teuchos::null;
+    A = MMReader::readSparseFile (mat_filename, rowMap, colMap, rowMap, rowMap);
+  }
 
   // get the map (Range Map used for both X & B)
   RCP<const Map<LO,GO> > rngmap = A->getRangeMap();
@@ -139,7 +149,7 @@ int main(int argc, char *argv[]) {
       B->putScalar(10);
     }
   } else {
-    B = Tpetra::MatrixMarket::Reader<MAT>::readDenseFile (rhs_filename, comm, rngmap);
+    B = MMReader::readDenseFile (rhs_filename, comm, rngmap);
     numVectors = B->getNumVectors();
   }
 

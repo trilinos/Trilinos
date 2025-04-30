@@ -74,16 +74,20 @@ impl_is_zero(T &val, bool &is_zero) {
 
 template <typename T>
 inline typename std::enable_if<std::is_same<T, double>::value || std::is_same<T, float>::value>::type
-impl_read_value_from_file(std::ifstream &file, ordinal_type &row, ordinal_type &col, T &val) {
+impl_read_value_from_file(std::ifstream &file, bool /*cmplx*/, ordinal_type &row, ordinal_type &col, T &val) {
   file >> row >> col >> val;
 }
 
 template <typename T>
 inline typename std::enable_if<std::is_same<T, Kokkos::complex<double>>::value ||
                                std::is_same<T, Kokkos::complex<float>>::value>::type
-impl_read_value_from_file(std::ifstream &file, ordinal_type &row, ordinal_type &col, T &val) {
-  typename T::value_type r, i;
-  file >> row >> col >> r >> i;
+impl_read_value_from_file(std::ifstream &file, bool cmplx, ordinal_type &row, ordinal_type &col, T &val) {
+  typename T::value_type r, i (0.0);
+  if (cmplx) {
+    file >> row >> col >> r >> i;
+  } else {
+    file >> row >> col >> r;
+  }
   val = T(r, i);
 }
 
@@ -122,7 +126,7 @@ template <typename ValueType> struct MatrixMarket {
     // reading mm header
     ordinal_type m, n;
     size_type nnz, nnz_input;
-    bool symmetry = false, hermitian = false; //, cmplx = false;
+    bool symmetry = false, hermitian = false, cmplx = false;
     {
       std::string header;
       std::getline(file, header);
@@ -138,6 +142,8 @@ template <typename ValueType> struct MatrixMarket {
       symmetry = (header.find("symmetric") != std::string::npos || header.find("hermitian") != std::string::npos);
 
       hermitian = (header.find("hermitian") != std::string::npos);
+
+      cmplx = (header.find("complex") != std::string::npos);
 
       file >> m >> n >> nnz;
     }
@@ -155,12 +161,12 @@ template <typename ValueType> struct MatrixMarket {
         ordinal_type row, col;
         value_type val;
 
-        impl_read_value_from_file(file, row, col, val);
+        impl_read_value_from_file(file, cmplx, row, col, val);
 
         row -= mm_base;
         col -= mm_base;
-
         mm_org.push_back(ijv_type(row, col, val));
+
         if (symmetry && row != col) {
           value_type conj_val;
           impl_conj_val(val, conj_val);

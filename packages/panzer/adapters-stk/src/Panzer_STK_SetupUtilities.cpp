@@ -260,7 +260,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   try {
      // grab local entities on this side
      // ...catch any failure...primarily wrong side set and element block info
-     mesh.getMySides(sidesetID,eblockID,sideEntities);
+     mesh.getAllSides(sidesetID,eblockID,sideEntities);
   } 
   catch(STK_Interface::SidesetException & e) {
      std::stringstream ss;
@@ -296,8 +296,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
   std::vector<stk::mesh::Entity> elements;
   std::vector<std::size_t> local_cell_ids;
   std::vector<std::size_t> local_side_ids;
-  getSideElements(mesh, eblockID,
-		      sideEntities,local_side_ids,elements);
+  getSideElements(mesh, eblockID,sideEntities,local_side_ids,elements);
 
   // loop over elements of this block
   for(std::size_t elm=0;elm<elements.size();++elm) {
@@ -316,7 +315,7 @@ buildBCWorksets(const panzer_stk::STK_Interface & mesh,
 
       Kokkos::DynRankView<double,PHX::Device> nodes;
       mesh.getElementNodes(local_cell_ids,eblockID,nodes);
-  
+
       return panzer::buildBCWorkset(needs, eblockID, local_cell_ids, local_side_ids, nodes);
   }
   
