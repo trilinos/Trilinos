@@ -68,6 +68,7 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& parent_view,
 
   const size_t curSize = static_cast<size_t> (dv.extent (0));
   const size_t parentSize = static_cast<size_t> (parent_view.extent (0));
+
   if (curSize == newSize) {
     // The right size, do not reallocate
     return false;
@@ -130,13 +131,15 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& parent_view,
 /// \brief Like above, but with <tt>std::string</tt> label argument.
 template<class ValueType, class DeviceType>
 bool
-reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& exports,
+reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& parent_view,
+                         Kokkos::DualView<ValueType*, DeviceType>& exports,
                          const size_t newSize,
                          const std::string& newLabel,
                          const size_t tooBigFactor = 2,
                          const bool needFenceBeforeRealloc = true)
 {
-  return reallocDualViewIfNeeded<ValueType, DeviceType> (exports, newSize,
+  return reallocDualViewIfNeeded<ValueType, DeviceType> (parent_view,
+                                                         exports, newSize,
                                                          newLabel.c_str (),
                                                          tooBigFactor,
                                                          needFenceBeforeRealloc);

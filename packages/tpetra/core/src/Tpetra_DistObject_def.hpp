@@ -672,6 +672,7 @@ namespace Tpetra {
     // Reallocate numExportPacketsPerLID_ if needed.
     const bool firstReallocated =
       reallocDualViewIfNeeded (this->numExportPacketsPerLID_,
+                               this->numExportPacketsPerLID_,
                                numExportLIDs,
                                "numExportPacketsPerLID",
                                tooBigFactor,
@@ -683,6 +684,7 @@ namespace Tpetra {
     const bool needFenceBeforeNextAlloc = ! firstReallocated;
     const bool secondReallocated =
       reallocDualViewIfNeeded (this->numImportPacketsPerLID_,
+                               this->numImportPacketsPerLID_,
                                numImportLIDs,
                                "numImportPacketsPerLID",
                                tooBigFactor,
