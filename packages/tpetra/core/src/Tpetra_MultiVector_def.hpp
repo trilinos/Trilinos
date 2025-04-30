@@ -1822,7 +1822,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     {
       using ::Tpetra::Details::reallocDualViewIfNeeded;
       reallocated =
-        reallocDualViewIfNeeded (this->unaliased_imports_, newSize, "imports");
+        reallocDualViewIfNeeded (this->unaliased_imports_,this->unaliased_imports_, newSize, "imports");
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Finished realloc'ing unaliased_imports_" << std::endl;
