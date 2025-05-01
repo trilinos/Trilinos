@@ -12,6 +12,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <pybind11/pybind11.h>
+#include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 #include <Teuchos_CommHelpers.hpp>
@@ -100,6 +101,8 @@ void def_Teuchos_functions(T m) {
     else
       return Teuchos::null;
   }, "");
+
+  py::add_ostream_redirect(m, "ostream_redirect");
 }
 
 template <typename T>
