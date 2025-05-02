@@ -57,10 +57,10 @@ class UnweightedDistanceFunctor {
     if (!importer.is_null()) {
       ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
-      coords        = coordsMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
-      ghostedCoords = ghostedCoordsMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
     } else {
-      coords        = coordsMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
       ghostedCoords = coords;
     }
   }
@@ -114,18 +114,18 @@ class ScalarMaterialDistanceFunctor {
     if (!importer.is_null()) {
       ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
-      coords        = coordsMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
-      ghostedCoords = ghostedCoordsMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
 
       ghostedMaterialMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), materialMV->getNumVectors());
       ghostedMaterialMV->doImport(*materialMV, *importer, Xpetra::INSERT);
-      material        = materialMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
-      ghostedMaterial = ghostedMaterialMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      material        = materialMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghostedMaterial = ghostedMaterialMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
     } else {
-      coords        = coordsMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
       ghostedCoords = coords;
 
-      material        = materialMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      material        = materialMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
       ghostedMaterial = material;
     }
   }
@@ -215,10 +215,10 @@ class TensorMaterialDistanceFunctor {
     if (!importer.is_null()) {
       ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
-      coords        = coordsMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
-      ghostedCoords = ghostedCoordsMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
     } else {
-      coords        = coordsMV->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
       ghostedCoords = coords;
     }
 
@@ -235,7 +235,7 @@ class TensorMaterialDistanceFunctor {
       using range_type      = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
 
       local_ordinal_type dim = std::sqrt(material_->getNumVectors());
-      auto lclMaterial       = ghostedMaterial->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto lclMaterial       = ghostedMaterial->getLocalViewDevice(Xpetra::Access::ReadOnly);
       material               = local_material_type("material", lclMaterial.extent(0), dim, dim);
       lcl_dist               = local_dist_type("material", lclMaterial.extent(0), dim);
       TensorInversion<local_ordinal_type, typename material_type::dual_view_type::t_dev_const_um, local_material_type> functor(lclMaterial, material);
@@ -310,7 +310,7 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1);
   {
     auto lclA    = A.getLocalMatrixDevice();
-    auto lclDiag = diag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+    auto lclDiag = diag->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
     Kokkos::parallel_for(
         "MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag",
@@ -383,7 +383,7 @@ class DropFunctor {
     , dist2(dist2_)
     , results(results_) {
     diagVec        = getDiagonal(A_, dist2);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
 

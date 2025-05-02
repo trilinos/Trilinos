@@ -1519,8 +1519,8 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<S
     RCP<MultiVector> Nullspace = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(facesToNodes->getRangeMap(), dim_);
     {
       auto facesToNodesLocal     = facesToNodes->getLocalMatrixDevice();
-      auto localNodalCoordinates = ghostedNodalCoordinates->getDeviceLocalView(Xpetra::Access::ReadOnly);
-      auto localFaceNullspace    = Nullspace->getDeviceLocalView(Xpetra::Access::ReadWrite);
+      auto localNodalCoordinates = ghostedNodalCoordinates->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto localFaceNullspace    = Nullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
 
       // enter values
       Kokkos::parallel_for(
@@ -1654,7 +1654,7 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildProjection(const int
         rowptr(i) = dim * localIncidence.graph.row_map(i);
       });
 
-  auto localNullspace = Nullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  auto localNullspace = Nullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
 
   // set column indices and values
   magnitudeType tol = 1e-5;
@@ -1944,7 +1944,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     //   auto localP = Prolongator->getLocalMatrixDevice();
     //   auto localAggsToFaces = aggsToFaces->getLocalMatrixDevice();
-    //   auto localNullspace = Nullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    //   auto localNullspace = Nullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
 
     //   size_t dim = dim_;
     //   Kokkos::parallel_for(solverName_+"::buildVectorNodalProlongator_adjustRowptr",
@@ -1967,8 +1967,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     size_t dim      = dim_;
     coarseNullspace = MultiVectorFactory::Build(vectorP_nodal->getDomainMap(), dim);
 
-    auto localNullspace_nodal  = coarseNodalNullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    auto localNullspace_coarse = coarseNullspace->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto localNullspace_nodal  = coarseNodalNullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    auto localNullspace_coarse = coarseNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
     Kokkos::parallel_for(
         solverName_ + "::buildProlongator_nullspace_" + typeStr,
         range_type(0, coarseNodalNullspace->getLocalLength()),
@@ -1987,7 +1987,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     } else if (spaceNumber >= 1) {
       size_t dim                 = dim_;
       coarseNullspace            = MultiVectorFactory::Build(projection->getDomainMap(), dim);
-      auto localNullspace_coarse = coarseNullspace->getDeviceLocalView(Xpetra::Access::ReadWrite);
+      auto localNullspace_coarse = coarseNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
       Kokkos::parallel_for(
           solverName_ + "::buildProlongator_nullspace_" + typeStr,
           range_type(0, coarseNullspace->getLocalLength() / dim),
