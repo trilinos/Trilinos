@@ -264,7 +264,7 @@ buildDiagonalMatrix(typename MatrixType::ordinal_type nrow,
   ordinal_type graph_length = nrow;
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>("graph", graph);
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>("graph", graph);
   matrix_values_type matrix_values =
     Kokkos::make_view<matrix_values_type>("values", cijk, graph_length, pce_size);
 
@@ -575,7 +575,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   // Generate block matrix -- it is always LayoutRight (currently)
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     Kokkos::make_view<matrix_values_type>(
@@ -770,7 +770,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   //------------------------------
   // Generate block matrix -- it is always LayoutRight (currently)
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     Kokkos::make_view<matrix_values_type>(
@@ -916,7 +916,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
  //------------------------------
   // Generate matrix with stochastic dimension 1
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     Kokkos::make_view<matrix_values_type>(

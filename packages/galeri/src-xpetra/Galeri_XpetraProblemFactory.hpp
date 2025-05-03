@@ -41,6 +41,7 @@ namespace Galeri {
       else if (MatrixType == "Elasticity2D") P.reset(new Elasticity2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
       else if (MatrixType == "Elasticity3D") P.reset(new Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
       else if (MatrixType == "Identity")     P.reset(new IdentityProblem    <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
+      else if (MatrixType == "Recirc2D")     P.reset(new Recirc2DProblem    <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
       else
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                    "`MatrixType' has incorrect value (" << MatrixType << ") in input to function CreateCrsMatrix()."

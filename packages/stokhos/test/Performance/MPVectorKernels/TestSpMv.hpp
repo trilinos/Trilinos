@@ -104,7 +104,7 @@ test_mpvector_spmv(const int ensemble_length,
   //------------------------------
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length, ensemble_length);
@@ -192,7 +192,7 @@ test_scalar_spmv(const int ensemble_length,
   std::vector<matrix_type> matrix(ensemble_length);
   for (int e=0; e<ensemble_length; ++e) {
     matrix_graph_type matrix_graph =
-      Kokkos::create_staticcrsgraph<matrix_graph_type>(
+      KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
         std::string("test crs graph"), fem_graph);
     matrix_values_type matrix_values =
       matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("matrix"), graph_length);

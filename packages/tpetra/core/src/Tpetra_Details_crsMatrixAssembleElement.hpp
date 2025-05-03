@@ -242,7 +242,7 @@ crsMatrixReplaceValues_sortedSortedLinear (const SparseMatrixType& A,
         // compiler might not need to insert a branch here.  This
         // could help vectorization, if vectorization is possible.
         if (forceAtomic) {
-          Kokkos::atomic_assign (&(row_view.value(offset)), vals[perm_index]);
+          Kokkos::atomic_store (&(row_view.value(offset)), vals[perm_index]);
         }
         else {
           row_view.value(offset) += vals[perm_index];

@@ -506,6 +506,127 @@ namespace Galeri {
 
     }
 
+    // =============================================  Recirc2D  =============================================
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    class Recirc2DProblem : public ScalarProblem<Map,Matrix,MultiVector> {
+    public:
+      Recirc2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : ScalarProblem<Map,Matrix,MultiVector>(list, map) { }
+      Teuchos::RCP<Matrix> BuildMatrix();
+    };
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<Matrix> Recirc2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
+      Teuchos::ParameterList list = this->list_;
+      GlobalOrdinal nx = -1;
+      GlobalOrdinal ny = -1;
+
+      //TODO FIXME need to check that all parameters are provided, otherwise error out
+      if (list.isParameter("nx")) {
+        if (list.isType<int>("nx"))
+          nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+        else
+          nx = list.get<GlobalOrdinal>("nx");
+      }
+      if (list.isParameter("ny")) {
+        if (list.isType<int>("ny"))
+          ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+        else
+          ny = list.get<GlobalOrdinal>("ny");
+      }
+
+      double lx=1.;
+      if (list.isParameter("lx")) {
+        lx = list.get<double>("lx");
+      }
+      double ly=1.;
+      if (list.isParameter("ly")) {
+        ly = list.get<double>("ly");
+      }
+
+      double conv=1.;
+      if (list.isParameter("convection")) {
+        conv = list.get<double>("convection");
+      }
+
+      double diff=1.;
+      if (list.isParameter("diffusion")) {
+        diff = list.get<double>("diffusion");
+      }
+
+      auto &map = this->Map_;
+      LocalOrdinal  numMyElements = map->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getLocalElementList();
+
+      auto A = MultiVectorTraits<Map,MultiVector>::Build(map, 1);
+      auto B = MultiVectorTraits<Map,MultiVector>::Build(map, 1);
+      auto C = MultiVectorTraits<Map,MultiVector>::Build(map, 1);
+      auto D = MultiVectorTraits<Map,MultiVector>::Build(map, 1);
+      auto E = MultiVectorTraits<Map,MultiVector>::Build(map, 1);
+
+      double zero= Teuchos::ScalarTraits<double>::zero();
+
+      A->putScalar(zero);
+      B->putScalar(zero);
+      C->putScalar(zero);
+      D->putScalar(zero);
+      E->putScalar(zero);
+
+      auto Adata = A->getDataNonConst(0);
+      auto Bdata = B->getDataNonConst(0);
+      auto Cdata = C->getDataNonConst(0);
+      auto Ddata = D->getDataNonConst(0);
+      auto Edata = E->getDataNonConst(0);
+
+      double hx = lx / (nx + 1);
+      double hy = ly / (ny + 1);
+
+      for (int i = 0 ; i < numMyElements ; i++) {
+        int ix, iy;
+        ix = (myGlobalElements[i]) % nx;
+        iy = (myGlobalElements[i] - ix) / nx;
+        double x = hx * (ix + 1);
+        double y = hy * (iy + 1);
+        double ConvX =  conv * 4 * x * (x - 1.) * (1. - 2 * y) / hx;
+        double ConvY = -conv * 4 * y * (y - 1.) * (1. - 2 * x) / hy;
+
+        // convection part
+
+        if (ConvX < zero)
+        {
+          Cdata[i] += ConvX;
+          Adata[i] -= ConvX;
+        }
+        else
+        {
+          Bdata[i] -= ConvX;
+          Adata[i] += ConvX;
+        }
+
+        if (ConvY < zero)
+        {
+          Edata[i] += ConvY;
+          Adata[i] -= ConvY;
+        }
+        else
+        {
+          Ddata[i] -= ConvY;
+          Adata[i] += ConvY;
+        }
+
+        // add diffusion part
+        Adata[i] += diff * 2. / (hx * hx) + diff * 2. / (hy * hy);
+        Bdata[i] -= diff / (hx * hx);
+        Cdata[i] -= diff / (hx * hx);
+        Ddata[i] -= diff / (hy * hy);
+        Edata[i] -= diff / (hy * hy);
+      }
+      Adata = Bdata = Cdata = Ddata = Edata = Teuchos::null;
+
+      this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, A, B, C, D, E);
+      this->A_->setObjectLabel(this->getObjectLabel());
+      return this->A_;
+    } //Recirc2DProblem
+
   } // namespace Xpetra
 
 } // namespace Galeri

@@ -195,7 +195,7 @@ unpackAndCombineWithOwningPIDsCount (
 ///
 /// Note: This method does the work previously done in unpackAndCombineWithOwningPIDsCount,
 /// namely, calculating the local number of nonzeros, and allocates CRS
-/// arrays of the correct sizes.
+/// arrays of the correct sizes
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
@@ -203,25 +203,40 @@ unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
     const Kokkos::View<LocalOrdinal const *, 
           Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
-          void, void>,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     const Kokkos::View<const char*, 
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
-          ,void, void >,
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     const Kokkos::View<const size_t*, 
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
-          ,void, void >,
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     const size_t numSameIDs,
     const Kokkos::View<LocalOrdinal const *, 
           Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
-          void, void>,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     const Kokkos::View<LocalOrdinal const *, 
           Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
-          void, void>,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     size_t TargetNumRows,
     const int MyTargetPID,
     Teuchos::ArrayRCP<size_t>& CRS_rowptr,
@@ -236,25 +251,40 @@ unpackAndCombineIntoCrsArrays (
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
     const Kokkos::View<LocalOrdinal const *, 
           Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
-          void, void>,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     const Kokkos::View<const char*, 
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
-          ,void, void >,
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     const Kokkos::View<const size_t*, 
           Kokkos::Device<typename Node::device_type::execution_space,
                          Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
-          ,void, void >,
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     const size_t numSameIDs,
     const Kokkos::View<LocalOrdinal const *, 
           Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
-          void, void>,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     const Kokkos::View<LocalOrdinal const *, 
           Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>,
-          void, void>,
+                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+          , void, void
+#endif
+          >,
     size_t TargetNumRows,
     const int MyTargetPID,
     Kokkos::View<size_t*,typename Node::device_type>& /*crs_rowptr_d*/,

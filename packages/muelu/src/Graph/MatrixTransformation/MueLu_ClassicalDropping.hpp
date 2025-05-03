@@ -83,7 +83,7 @@ class SAFunctor {
 
   Evaluates the dropping criterion
   \f[
-  \frac{-\operatorname{Re}A_{ij}}{|A_{ii}|} \le \theta
+  \frac{-\operatorname{Re}A_{ij}}{| max_j -A_{ij}|} \le \theta
   \f]
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -105,8 +105,8 @@ class SignedRSFunctor {
   using diag_view_type = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
 
   local_matrix_type A;
-  Teuchos::RCP<diag_vec_type> diagVec;
-  diag_view_type diag;  // corresponds to overlapped diagonal
+  Teuchos::RCP<diag_vec_type> max_offdiagVec;
+  diag_view_type max_offdiag;
   magnitudeType eps;
   results_view results;
 
@@ -115,9 +115,9 @@ class SignedRSFunctor {
     : A(A_.getLocalMatrixDevice())
     , eps(threshold)
     , results(results_) {
-    diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixMaxMinusOffDiagonal(A_);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    max_offdiagVec = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixMaxMinusOffDiagonal(A_);
+    auto lcl2d     = max_offdiagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    max_offdiag    = Kokkos::subview(lcl2d, Kokkos::ALL(), 0);
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
@@ -127,7 +127,7 @@ class SignedRSFunctor {
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto val            = row.value(k);
       auto neg_aij        = -ATS::real(val);
-      auto max_neg_aik    = eps * ATS::real(diag(rlid));
+      auto max_neg_aik    = eps * ATS::real(max_offdiag(rlid));
       results(offset + k) = Kokkos::max((neg_aij <= max_neg_aik) ? DROP : KEEP,
                                         results(offset + k));
     }
