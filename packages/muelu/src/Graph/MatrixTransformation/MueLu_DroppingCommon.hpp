@@ -304,8 +304,8 @@ class BlockDiagonalizeFunctor {
  public:
   BlockDiagonalizeFunctor(matrix_type& A_, block_indices_type& point_to_block_, block_indices_type& ghosted_point_to_block_, results_view& results_)
     : A(A_.getLocalMatrixDevice())
-    , point_to_block(point_to_block_.getDeviceLocalView(Xpetra::Access::ReadOnly))
-    , ghosted_point_to_block(ghosted_point_to_block_.getDeviceLocalView(Xpetra::Access::ReadOnly))
+    , point_to_block(point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
+    , ghosted_point_to_block(ghosted_point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
     , results(results_) {}
 
   KOKKOS_FORCEINLINE_FUNCTION
