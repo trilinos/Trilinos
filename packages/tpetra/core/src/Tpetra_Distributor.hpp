@@ -419,12 +419,13 @@ namespace Tpetra {
     ///
     /// \param numImportPacketsPerLID [in] The number of packets for
     ///   each import LID (i.e., each LID to be received).
-    template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+    template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ExpPacketsView>::value && 
+                             Kokkos::is_view<ImpView>::value && Kokkos::is_view<ImpPacketsView>::value)>::type
     doPostsAndWaits (const ExpView &exports,
-                     const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                     const ExpPacketsView &numExportPacketsPerLID,
                      const ImpView &imports,
-                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+                     const ImpPacketsView &numImportPacketsPerLID);
 
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
@@ -474,12 +475,13 @@ namespace Tpetra {
     ///
     /// \param numImportPacketsPerLID [in] Same as in the
     ///   four-argument version of doPostsAndWaits().
-    template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+    template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ExpPacketsView>::value && 
+                             Kokkos::is_view<ImpView>::value && Kokkos::is_view<ImpPacketsView>::value)>::type
     doPosts (const ExpView &exports,
-             const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+             const ExpPacketsView& numExportPacketsPerLID,
              const ImpView &imports,
-             const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+             const ImpPacketsView& numImportPacketsPerLID);
 
     /// \brief Execute the reverse communication plan.
     ///
@@ -495,12 +497,13 @@ namespace Tpetra {
     ///
     /// This method takes the same arguments as the four-argument
     /// version of doPostsAndWaits().
-    template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+    template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ExpPacketsView>::value && 
+                             Kokkos::is_view<ImpView>::value && Kokkos::is_view<ImpPacketsView>::value)>::type
     doReversePostsAndWaits (const ExpView &exports,
-                            const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                            const ExpPacketsView &numExportPacketsPerLID,
                             const ImpView &imports,
-                            const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+                            const ImpPacketsView &numImportPacketsPerLID);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
@@ -516,12 +519,13 @@ namespace Tpetra {
     ///
     /// This method takes the same arguments as the four-argument
     /// version of doPosts().
-    template <class ExpView, class ImpView>
-    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+    template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+    typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ExpPacketsView>::value && 
+                             Kokkos::is_view<ImpView>::value && Kokkos::is_view<ImpPacketsView>::value)>::type
     doReversePosts (const ExpView &exports,
-                    const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                    const ExpPacketsView &numExportPacketsPerLID,
                     const ImpView &imports,
-                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+                    const ImpPacketsView &numImportPacketsPerLID);
 
     //@}
     //! @name Implementation of Teuchos::Describable
@@ -629,13 +633,14 @@ namespace Tpetra {
     actor_.doPostsAndWaits(plan_, exports, numPackets, imports);
   }
 
-  template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ExpPacketsView>::value && 
+                           Kokkos::is_view<ImpView>::value && Kokkos::is_view<ImpPacketsView>::value)>::type
   Distributor::
   doPostsAndWaits(const ExpView& exports,
-                  const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                  const ExpPacketsView &numExportPacketsPerLID,
                   const ImpView& imports,
-                  const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                  const ImpPacketsView &numImportPacketsPerLID)
   {
     actor_.doPostsAndWaits(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   }
@@ -651,13 +656,14 @@ namespace Tpetra {
     actor_.doPosts(plan_, exports, numPackets, imports);
   }
 
-  template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ExpPacketsView>::value && 
+                           Kokkos::is_view<ImpView>::value && Kokkos::is_view<ImpPacketsView>::value)>::type
   Distributor::
   doPosts (const ExpView &exports,
-           const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+           const ExpPacketsView& numExportPacketsPerLID,
            const ImpView &imports,
-           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+           const ImpPacketsView& numImportPacketsPerLID)
   {
     actor_.doPosts(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   }
@@ -673,13 +679,14 @@ namespace Tpetra {
     doReverseWaits ();
   }
 
-  template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ExpPacketsView>::value && 
+                           Kokkos::is_view<ImpView>::value && Kokkos::is_view<ImpPacketsView>::value)>::type
   Distributor::
   doReversePostsAndWaits (const ExpView& exports,
-                          const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                          const ExpPacketsView& numExportPacketsPerLID,
                           const ImpView& imports,
-                          const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                          const ImpPacketsView& numImportPacketsPerLID)
   {
     doReversePosts (exports, numExportPacketsPerLID, imports,
                     numImportPacketsPerLID);
@@ -704,13 +711,14 @@ namespace Tpetra {
     reverseDistributor_->doPosts (exports, numPackets, imports);
   }
 
-  template <class ExpView, class ImpView>
-  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ImpView>::value)>::type
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
+  typename std::enable_if<(Kokkos::is_view<ExpView>::value && Kokkos::is_view<ExpPacketsView>::value && 
+                           Kokkos::is_view<ImpView>::value && Kokkos::is_view<ImpPacketsView>::value)>::type
   Distributor::
   doReversePosts (const ExpView &exports,
-                  const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                  const ExpPacketsView& numExportPacketsPerLID,
                   const ImpView &imports,
-                  const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                  const ImpPacketsView& numImportPacketsPerLID)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(

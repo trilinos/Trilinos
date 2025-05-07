@@ -50,22 +50,22 @@ public:
                        size_t numPackets,
                        const ImpView &imports);
 
-  template <class ExpView, class ImpView>
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
   void doPostsAndWaits(const DistributorPlan& plan,
                        const ExpView &exports,
-                       const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                       const ExpPacketsView &numExportPacketsPerLID,
                        const ImpView &imports,
-                       const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+                       const ImpPacketsView &numImportPacketsPerLID);
 
   template <class ImpView>
   void doPostRecvs(const DistributorPlan& plan,
                    size_t numPackets,
                    const ImpView& imports);
 
-  template <class ImpView>
+  template <class ImpView, class ImpPacketsView>
   void doPostRecvs(const DistributorPlan& plan,
                    const ImpView &imports,
-                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+                   const ImpPacketsView &numImportPacketsPerLID);
 
   template <class ExpView, class ImpView>
   void doPostSends(const DistributorPlan& plan,
@@ -73,12 +73,12 @@ public:
                    size_t numPackets,
                    const ImpView& imports);
 
-  template <class ExpView, class ImpView>
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
   void doPostSends(const DistributorPlan& plan,
                    const ExpView &exports,
-                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                   const ExpPacketsView &numExportPacketsPerLID,
                    const ImpView &imports,
-                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+                   const ImpPacketsView &numImportPacketsPerLID);
 
   template <class ExpView, class ImpView>
   void doPosts(const DistributorPlan& plan,
@@ -86,12 +86,12 @@ public:
                size_t numPackets,
                const ImpView& imports);
 
-  template <class ExpView, class ImpView>
+  template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
   void doPosts(const DistributorPlan& plan,
                const ExpView &exports,
-               const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+               const ExpPacketsView &numExportPacketsPerLID,
                const ImpView &imports,
-               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+               const ImpPacketsView &numImportPacketsPerLID);
 
   void doWaits(const DistributorPlan& plan);
 
@@ -161,25 +161,31 @@ void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
   doWaits(plan);
 }
 
-template <class ExpView, class ImpView>
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
 void DistributorActor::doPosts(const DistributorPlan& plan,
                                const ExpView &exports,
-                               const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                               const ExpPacketsView &numExportPacketsPerLID,
                                const ImpView &imports,
-                               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                               const ImpPacketsView &numImportPacketsPerLID)
 {
+  static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
+  static_assert(areKokkosViews<ExpPacketsView, ImpPacketsView>,
+      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPostRecvs(plan, imports, numImportPacketsPerLID);
   doPostSends(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
 }
 
-template <class ExpView, class ImpView>
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
 void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
-                                       const ExpView& exports,
-                                       const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                                       const ImpView& imports,
-                                       const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                                       const ExpView &exports,
+                                       const ExpPacketsView &numExportPacketsPerLID,
+                                       const ImpView &imports,
+                                       const ImpPacketsView &numImportPacketsPerLID)
 {
   static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
+  static_assert(areKokkosViews<ExpPacketsView, ImpPacketsView>,
       "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPosts(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   doWaits(plan);
@@ -241,8 +247,8 @@ void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
   auto& [exportStarts, exportLengths] = exportSubViewLimits;
 
   for (size_t pp = 0; pp < plan.getNumSends(); ++pp) {
-    sdispls[plan.getProcsTo()[pp]] = exportStarts[pp];
-    size_t numPackets = exportLengths[pp];
+    sdispls[plan.getProcsTo()[pp]] = exportStarts(pp);
+    size_t numPackets = exportLengths(pp);
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
                                "Tpetra::Distributor::doPostsAllToAll: "
@@ -258,8 +264,8 @@ void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
       Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
 
   for (size_type i = 0; i < actualNumReceives; ++i) {
-    rdispls[plan.getProcsFrom()[i]] = importStarts[i];
-    size_t totalPacketsFrom_i = importLengths[i];
+    rdispls[plan.getProcsFrom()[i]] = importStarts(i);
+    size_t totalPacketsFrom_i = importLengths(i);
     // totalPacketsFrom_i is converted down to int, so make sure it can be
     // represented
     TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
@@ -334,8 +340,8 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
   auto& [exportStarts, exportLengths] = exportSubViewLimits;
 
   for (size_t pp = 0; pp < plan.getNumSends(); ++pp) {
-    sdispls[plan.getProcsTo()[pp]] = exportStarts[pp];
-    size_t numPackets = exportLengths[pp];
+    sdispls[plan.getProcsTo()[pp]] = exportStarts(pp);
+    size_t numPackets = exportLengths(pp);
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
                                "Tpetra::Distributor::doPostsNbrAllToAllV: "
@@ -389,11 +395,13 @@ void DistributorActor::doPostRecvs(const DistributorPlan& plan,
   doPostRecvsImpl(plan, imports, importSubViewLimits);
 }
 
-template <class ImpView>
+template <class ImpView, class ImpPacketsView>
 void DistributorActor::doPostRecvs(const DistributorPlan& plan,
                                    const ImpView &imports,
-                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                                   const ImpPacketsView &numImportPacketsPerLID)
 {
+  static_assert(isKokkosView<ImpPacketsView>,
+      "Data arrays for DistributorActor::doPostRecvs must be Kokkos::Views");
   auto importSubViewLimits = plan.getImportViewLimits(numImportPacketsPerLID);
   doPostRecvsImpl(plan, imports, importSubViewLimits);
 }
@@ -466,7 +474,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
 #ifdef HAVE_TPETRA_DEBUG
   size_t totalNumImportPackets = 0;
   for (size_t i = 0; i < Teuchos::as<size_t>(actualNumReceives); ++i) {
-    totalNumImportPackets += importLengths[i];
+    totalNumImportPackets += importLengths(i);
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
       imports.extent (0) < totalNumImportPackets, std::runtime_error,
@@ -491,7 +499,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
     ProfilingRegion prr("Tpetra::Distributor: doPostRecvs recvs");
 
     for (size_type i = 0; i < actualNumReceives; ++i) {
-      size_t totalPacketsFrom_i = importLengths[Teuchos::as<size_t>(i)];
+      size_t totalPacketsFrom_i = importLengths(Teuchos::as<size_t>(i));
       TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
                                  std::logic_error, "Tpetra::Distributor::doPostRecvs: "
                                  "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
@@ -506,7 +514,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
         //    packets from process getProcsFrom()[i]).
         // 2. Start the Irecv and save the resulting request.
         imports_view_type recvBuf =
-          subview_offset (imports, importStarts[i], totalPacketsFrom_i);
+          subview_offset (imports, importStarts(i), totalPacketsFrom_i);
         requestsRecv_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
               mpiTag_, *plan.getComm()));
       }
@@ -525,13 +533,15 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
   doPostSendsImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
 }
 
-template <class ExpView, class ImpView>
+template <class ExpView, class ExpPacketsView, class ImpView, class ImpPacketsView>
 void DistributorActor::doPostSends(const DistributorPlan& plan,
                                    const ExpView &exports,
-                                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                                   const ExpPacketsView &numExportPacketsPerLID,
                                    const ImpView &imports,
-                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+                                   const ImpPacketsView &numImportPacketsPerLID)
 {
+  static_assert(areKokkosViews<ExpPacketsView, ImpPacketsView>,
+      "Data arrays for DistributorActor::doPostSends must be Kokkos::Views");
   auto exportSubViewLimits = plan.getExportViewLimits(numExportPacketsPerLID);
   auto importSubViewLimits = plan.getImportViewLimits(numImportPacketsPerLID);
   doPostSendsImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
@@ -611,8 +621,8 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
       // message's tag.)
       size_t selfReceiveOffset = 0;
       deep_copy_offset(imports, exports, selfReceiveOffset,
-                       exportStarts[0],
-                       exportLengths[0]);
+                       exportStarts(0),
+                       exportLengths(0));
     }
     // should we just return here?
     // likely not as comm could be a serial comm
@@ -648,7 +658,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
   {
     for (size_type i = 0; i < actualNumReceives; ++i) {
       if (plan.getProcsFrom()[i] == myRank) { // Receiving from myself
-        selfReceiveOffset = importStarts[i];  // Remember the self-recv offset
+        selfReceiveOffset = importStarts(i);  // Remember the self-recv offset
       }
     }
   }
@@ -684,19 +694,19 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
       }
 
       if (plan.getProcsTo()[p] != myRank) {
-        if (exportLengths[p] == 0) {
+        if (exportLengths(p) == 0) {
           // Do not attempt to send messages of length 0.
           continue;
         }
 
-        exports_view_type tmpSend = subview_offset(exports, exportStarts[p], exportLengths[p]);
+        exports_view_type tmpSend = subview_offset(exports, exportStarts(p), exportLengths(p));
 
         if (sendType == Details::DISTRIBUTOR_ISEND) {
           // NOTE: This looks very similar to the tmpSend above, but removing
           // tmpSendBuf and uses tmpSend leads to a performance hit on Arm
           // SerialNode builds
           exports_view_type tmpSendBuf =
-            subview_offset (exports, exportStarts[p], exportLengths[p]);
+            subview_offset (exports, exportStarts(p), exportLengths(p));
           requestsSend_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
                 mpiTag_, *plan.getComm()));
         }
@@ -720,7 +730,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
       // need internal buffer space for messages, keyed on the
       // message's tag.)
       deep_copy_offset(imports, exports, selfReceiveOffset,
-                       exportStarts[selfNum], exportLengths[selfNum]);
+                       exportStarts(selfNum), exportLengths(selfNum));
     }
 
   }
@@ -762,7 +772,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
       size_t sendArrayOffset = 0;
         size_t j = plan.getStartsTo()[p];
         for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
-        sendArrayOffset += exportLengths[j];
+        sendArrayOffset += exportLengths(j);
       }
       maxSendLength = std::max(maxSendLength, sendArrayOffset);
     }
@@ -778,8 +788,8 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
         size_t sendArrayOffset = 0;
         size_t j = plan.getStartsTo()[p];
         for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
-          packOffset(sendArray, exports, sendArrayOffset, exportStarts[j], exportLengths[j]);
-          sendArrayOffset += exportLengths[j];
+          packOffset(sendArray, exports, sendArrayOffset, exportStarts(j), exportLengths(j));
+          sendArrayOffset += exportLengths(j);
         }
         typename ExpView::execution_space().fence();
 
@@ -798,8 +808,8 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
 
     if (plan.hasSelfMessage()) {
       for (size_t k = 0; k < plan.getLengthsTo()[selfNum]; ++k) {
-        packOffset(imports, exports, selfReceiveOffset, exportStarts[selfIndex], exportLengths[selfIndex]);
-        selfReceiveOffset += exportLengths[selfIndex];
+        packOffset(imports, exports, selfReceiveOffset, exportStarts(selfIndex), exportLengths(selfIndex));
+        selfReceiveOffset += exportLengths(selfIndex);
         ++selfIndex;
       }
     }
