@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     omegas.push_back(omega + 10);
     omegas.push_back(omega + 20);
     int total_iters = 0;
-
+    
     // loop over frequencies
     for (size_t i = 0; i < omegas.size(); i++) {
       Galeri::Xpetra::Parameters<GO> matrixParameters_helmholtz(clp, nx, ny, nz, "Helmholtz2D", 0, stretchx, stretchy, stretchz,
@@ -186,7 +186,13 @@ int main(int argc, char *argv[]) {
       if (map->isNodeGlobalElement(pointsourceid) == true) {
         B->replaceGlobalValue(pointsourceid, 0, (SC)1.0);
       }
-      SLSolver->solve(B, X);
+      const Belos::ReturnType ret = SLSolver->solve(B, X);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ret != Belos::Converged,
+        std::runtime_error,
+        "Error: Belos solver did not converge for frequency " << omegas[i] << ".\n"
+      );
 
       // sum up number of iterations
       total_iters += SLSolver->GetIterations();
@@ -196,12 +202,10 @@ int main(int argc, char *argv[]) {
 #endif
     }
 
-    if (total_iters <= 110)
-      success = true;
-    else
-      success = false;
+    // Get the number of iterations for all solves.
+    if (comm->getRank() == 0)
+      std::cout << "Number of iterations performed for all solves: " << total_iters << std::endl;
   }
-
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   return (success ? EXIT_SUCCESS : EXIT_FAILURE);

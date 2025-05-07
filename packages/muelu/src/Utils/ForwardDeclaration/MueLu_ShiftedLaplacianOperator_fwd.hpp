@@ -11,7 +11,7 @@
 #define MUELU_SHIFTEDLAPLACIANOPERATOR_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+#if defined(HAVE_MUELU_BELOS) && defined(HAVE_TEUCHOS_COMPLEX)
 
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
