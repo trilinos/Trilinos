@@ -938,7 +938,7 @@ Piro::PerformROLTransientAnalysis(
         *out << "Piro::PerformROLTransientAnalysis: Solving Reduced Space Bound Constrained Optimization Problem" << std::endl;
         auto algo = ROL::TypeB::AlgorithmFactory<double>(rolParams.sublist("ROL Options"));
 
-        std::streambuf *coutbuf;
+        std::streambuf *coutbuf = nullptr;
         std::ofstream out_file;
         if(rolParams.get<bool>("Redirect Tempus Output", true)) {
           out_file.open(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
@@ -955,7 +955,7 @@ Piro::PerformROLTransientAnalysis(
         *out << "Piro::PerformROLTransientAnalysis: Solving Reduced Space Unconstrained Optimization Problem" << std::endl;
         auto algo = ROL::TypeU::AlgorithmFactory<double>(rolParams.sublist("ROL Options"));
         
-        std::streambuf *coutbuf;
+        std::streambuf *coutbuf = nullptr;
         std::ofstream out_file;
         if(rolParams.get<bool>("", true)) {
           out_file.open(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));
@@ -1045,7 +1045,7 @@ Piro::PerformROLTransientAnalysis(
           steps[i] = pow(ten,static_cast<double>(-i-1));
         }
 
-        std::streambuf *coutbuf;
+        std::streambuf *coutbuf = nullptr;
         std::ofstream out_file;
         if(rolParams.get<bool>("Redirect Tempus Output", true)) {
           out_file.open(rolParams.get<string>("Tempus Output Filename", "log_tempus.txt"));

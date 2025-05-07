@@ -186,6 +186,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
     // if vector weights supplied, these will decrease the rank (we interpret as a dot product)
     ultimateBasis1Rank = (vectorWeight1 == Teuchos::null) ? 4 : 3; // (C,F,P,D) or (C,F,P)
   }
+  else INTREPID2_TEST_FOR_EXCEPTION(true, std::domain_error, "Basis rank outside of expected [2,3]");
   if (basis2Values.rank() == 2)
   {
     // the un-transformed values have shape (F,P): scalar values
@@ -198,6 +199,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardAssembly(Intrepid2::Cell
     // if vector weights supplied, these will decrease the rank (we interpret as a dot product)
     ultimateBasis2Rank = (vectorWeight2 == Teuchos::null) ? 4 : 3; // (C,F,P,D) or (C,F,P)
   }
+  else INTREPID2_TEST_FOR_EXCEPTION(true, std::domain_error, "Basis rank outside of expected [2,3]");
   
   INTREPID2_TEST_FOR_EXCEPTION(ultimateBasis1Rank != ultimateBasis2Rank, std::invalid_argument, "basis1 and basis2 must agree on their rank under the respective operators");
   

@@ -69,9 +69,8 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
   my_out->setProcRankAndSize(comm->getRank(), comm->getSize());
   my_out->setOutputToRootOnly(0);
 
-  SENS_METHOD sens_method;
-  if (sens_method_string == "None") sens_method = Piro::NONE;
-  else if (sens_method_string == "Forward") sens_method = Piro::FORWARD;
+  SENS_METHOD sens_method = Piro::NONE;
+  if (sens_method_string == "Forward") sens_method = Piro::FORWARD;
   else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
 
   for (int n=0; n<nTimeStepSizes; n++) {

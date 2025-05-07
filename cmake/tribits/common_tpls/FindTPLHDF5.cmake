@@ -44,7 +44,7 @@ if (NOT TARGET HDF5::all_libs)
   endif()
 
   if (TPL_ENABLE_Netcdf)
-    set(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} hdf5_hl)
+    set(REQUIRED_LIBS_NAMES hdf5_hl ${REQUIRED_LIBS_NAMES})
   endif()
 
   #
