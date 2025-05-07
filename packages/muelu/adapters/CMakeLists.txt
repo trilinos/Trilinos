@@ -12,7 +12,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_GLOB(HEADERS ${BDIR}/MueLu_ExplicitInstantiation.hpp)
 ENDIF()
 
-ASSERT_DEFINED(Tpetra_INST_INT_INT)
 #
 # Belos
 #
@@ -61,7 +60,7 @@ APPEND_SET(HEADERS
   tpetra/MueLu_TpetraOperatorAsRowMatrix.hpp
 )
 
-IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT AND ${PACKAGE_NAME}_ENABLE_Experimental)
+IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND HAVE_TEUCHOS_COMPLEX)
 
   APPEND_SET(HEADERS
     tpetra/MueLu_ShiftedLaplacian_decl.hpp

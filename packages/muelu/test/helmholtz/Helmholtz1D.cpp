@@ -90,8 +90,7 @@ int main(int argc, char *argv[]) {
     double omega, shift;
     omega = 20.0 * M_PI;
     shift = 0.5;
-    double lx, ly, conv, diff;
-
+  
     Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Helmholtz1D", 0, stretchx, stretchy, stretchz,
                                                     Kxx, Kxy, Kyy, dt, meshType,
                                                     h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
@@ -183,8 +182,7 @@ int main(int argc, char *argv[]) {
     RCP<TBelosSolver> solver = rcp(new TBelosGMRES(belosProblem, rcp(&belosList, false)));
 
     // Perform solve
-    Belos::ReturnType ret = Belos::Unconverged;
-    ret                   = solver->solve();
+    const Belos::ReturnType ret = solver->solve();
     if (comm->getRank() == 0)
       std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
@@ -197,17 +195,13 @@ int main(int argc, char *argv[]) {
                                           << "SUCCESS:  Belos converged!" << std::endl;
     }
 
-    // Get the number of iterations for this solve.
-    if (comm->getRank() == 0)
-      std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-
     tm = Teuchos::null;
 
     globalTimeMonitor = Teuchos::null;
 
     TimeMonitor::summarize();
 
-    success = true;
+    success = (ret == Belos::Converged);
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
