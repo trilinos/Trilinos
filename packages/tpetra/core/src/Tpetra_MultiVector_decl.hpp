@@ -562,7 +562,7 @@ namespace Tpetra {
     /// around with multiple memory spaces.
     MultiVector (const Teuchos::RCP<const map_type>& map,
                  const typename dual_view_type::t_dev& d_view);
-   
+
     /// \brief Expert mode constructor, that takes a Kokkos::DualView
     ///   of the MultiVector's data and the "original"
     ///   Kokkos::DualView of the data, and returns a MultiVector that
@@ -1434,13 +1434,30 @@ namespace Tpetra {
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev::const_type getLocalViewDevice(Access::ReadOnlyStruct) const;
 
+    /// \brief Return a read-only, up-to-date view of this MultiVector's local data on device.
+    /// This requires that there are no live host-space views.
+    /// @warning This function will only synchronize the provided @c execution_space instance, which if not used correctly can lead to errors.
+    typename dual_view_type::t_dev::const_type getLocalViewDevice(const execution_space & exec, Access::ReadOnlyStruct) const;
+
     /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::ReadWriteStruct);
 
+    /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
+    /// This requires that there are no live host-space views.
+    /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
+    /// can lead to errors.
+    typename dual_view_type::t_dev getLocalViewDevice(const execution_space & exec,Access::ReadWriteStruct);
+
     /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
+
+    /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
+    /// This requires that there are no live host-space views.
+    /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
+    /// can lead to errors.
+    typename dual_view_type::t_dev getLocalViewDevice(const execution_space & exec, Access::OverwriteAllStruct);
 
     /// \brief Return the wrapped dual view holding this MultiVector's local data.
     ///
@@ -1639,8 +1656,20 @@ namespace Tpetra {
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this)
     void abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
+    //\brief Put element-wise absolute values of input Multi-vector in target: A = abs(this)
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void abs (const execution_space& exec, const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
+
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     void reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
+
+    //\brief Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void reciprocal (const execution_space& exec, const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
     /// \brief Scale in place: <tt>this = alpha*this</tt>.
     ///
@@ -1650,6 +1679,18 @@ namespace Tpetra {
     /// before calling this method, the NaN entries will remain after
     /// this method finishes.
     void scale (const Scalar& alpha);
+
+    /// \brief Scale in place: <tt>this = alpha*this</tt>.
+    ///
+    /// Replace this MultiVector with alpha times this MultiVector.
+    /// This method will always multiply, even if alpha is zero.  That
+    /// means, for example, that if \c *this contains NaN entries
+    /// before calling this method, the NaN entries will remain after
+    /// this method finishes.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void scale (const execution_space& exec, const Scalar& alpha);
 
     /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
     ///
@@ -1671,6 +1712,19 @@ namespace Tpetra {
     /// the NaN entries will remain after this method finishes.
     void scale (const Kokkos::View<const impl_scalar_type*, device_type>& alpha);
 
+    /// \brief Scale each column in place: <tt>this[j] = alpha[j]*this[j]</tt>.
+    ///
+    /// Replace each column j of this MultiVector with
+    /// <tt>alpha[j]</tt> times the current column j of this
+    /// MultiVector.  This method will always multiply, even if all
+    /// the entries of alpha are zero.  That means, for example, that
+    /// if \c *this contains NaN entries before calling this method,
+    /// the NaN entries will remain after this method finishes.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void scale (const execution_space& exec, const Kokkos::View<const impl_scalar_type*, device_type>& alpha);
+
     /// \brief Scale in place: <tt>this = alpha * A</tt>.
     ///
     /// Replace this MultiVector with scaled values of A.  This method
@@ -1681,6 +1735,21 @@ namespace Tpetra {
     /// MultiVector.
     void
     scale (const Scalar& alpha,
+           const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
+
+    /// \brief Scale in place: <tt>this = alpha * A</tt>.
+    ///
+    /// Replace this MultiVector with scaled values of A.  This method
+    /// will always multiply, even if alpha is zero.  That means, for
+    /// example, that if \c *this contains NaN entries before calling
+    /// this method, the NaN entries will remain after this method
+    /// finishes.  It is legal for the input A to alias this
+    /// MultiVector.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void
+    scale (const execution_space& exec, const Scalar& alpha,
            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A);
 
     /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
@@ -1694,6 +1763,22 @@ namespace Tpetra {
             const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             const Scalar& beta);
 
+    /// \brief Update: <tt>this = beta*this + alpha*A</tt>.
+    ///
+    /// Update this MultiVector with scaled values of A.  If beta is
+    /// zero, overwrite \c *this unconditionally, even if it contains
+    /// NaN entries.  It is legal for the input A to alias this
+    /// MultiVector.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void
+    update (const execution_space& exec,
+            const Scalar& alpha,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+            const Scalar& beta);
+
+
     /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
     ///
     /// Update this MultiVector with scaled values of A and B.  If
@@ -1706,6 +1791,24 @@ namespace Tpetra {
             const Scalar& beta,
             const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
             const Scalar& gamma);
+
+    /// \brief Update: <tt>this = gamma*this + alpha*A + beta*B</tt>.
+    ///
+    /// Update this MultiVector with scaled values of A and B.  If
+    /// gamma is zero, overwrite \c *this unconditionally, even if it
+    /// contains NaN entries.  It is legal for the inputs A or B to
+    /// alias this MultiVector.
+    ///
+    /// WARNING: This will only synchronize the MultiVectors w.r.t. the used-provided execution space instance.
+    /// This can lead to incorrect behavior if other execution_space instances are attempting to modify the vectors.
+    void
+    update (const execution_space& exec,
+            const Scalar& alpha,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+            const Scalar& beta,
+            const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+            const Scalar& gamma);
+
 
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a host view.
@@ -2038,6 +2141,35 @@ namespace Tpetra {
                          const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
                          const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
                          Scalar scalarThis);
+
+    /// \brief Multiply a Vector A elementwise by a MultiVector B.
+    ///
+    /// Compute <tt>this = scalarThis * this + scalarAB * B @ A</tt>
+    /// where <tt>@</tt> denotes element-wise multiplication.  In
+    /// pseudocode, if C denotes <tt>*this</tt> MultiVector:
+    /// \code
+    /// C(i,j) = scalarThis * C(i,j) + scalarAB * B(i,j) * A(i,1);
+    /// \endcode
+    /// for all rows i and columns j of C.
+    ///
+    /// B must have the same dimensions as <tt>*this</tt>, while A
+    /// must have the same number of rows but a single column.
+    ///
+    /// We do not require that A, B, and <tt>*this</tt> have
+    /// compatible Maps, as long as the number of rows in A, B, and
+    /// <tt>*this</tt> on each process is the same.  For example, one
+    /// or more of these vectors might have a locally replicated Map,
+    /// or a Map with a local communicator (<tt>MPI_COMM_SELF</tt>).
+    /// This case may occur in block relaxation algorithms when
+    /// applying a diagonal scaling.
+    /// WARNING: This function will only synchronize the provided execution_space instance, which if not used correctly
+    /// can lead to errors.
+    void
+    elementWiseMultiply (const execution_space& exec, Scalar scalarAB,
+                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                         const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+                         Scalar scalarThis);
+
     //@}
     //! @name Attribute access functions
     //@{
