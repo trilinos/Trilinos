@@ -20,6 +20,7 @@
 /// Tpetra::MultiVector, include "Tpetra_MultiVector_decl.hpp".
 
 #include "Tpetra_Core.hpp"
+#include "Tpetra_Pool.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_allReduceView.hpp"
@@ -1569,7 +1570,10 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
          << ", newExportsSize: " << newExportsSize << std::endl;
       std::cerr << os.str ();
     }
-    reallocDualViewIfNeeded (exports, newExportsSize, "exports");
+    exports_from_pool.reset();
+    exports_from_pool = getDualViewFromPool<Kokkos::DualView< impl_scalar_type*, buffer_device_type>>(newExportsSize);
+    exports = *exports_from_pool;
+    //reallocDualViewIfNeeded (exports, newExportsSize, "exports");
 
     // mfh 04 Feb 2019: sourceMV doesn't belong to us, so we can't
     // sync it.  Pack it where it's currently sync'd.
@@ -1776,14 +1780,14 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Realloc (if needed) imports_ from "
-         << this->imports_.extent (0) << " to " << newSize << std::endl;
+         << this->imports_->extent (0) << " to " << newSize << std::endl;
       std::cerr << os.str ();
     }
 
     bool reallocated = false;
 
     using IST = impl_scalar_type;
-    using DV = Kokkos::DualView<IST*, Kokkos::LayoutLeft, buffer_device_type>;
+    using DV = Kokkos::DualView<IST*, buffer_device_type>;
 
     // Conditions for aliasing memory:
     // - When both sides of the dual view are in the same memory
@@ -1804,12 +1808,12 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
         (newSize > 0)) {
 
       size_t offset = getLocalLength () - newSize;
-      reallocated = this->imports_.view_device().data() != view_.getDualView().view_device().data() + offset;
+      reallocated = !this->imports_ || (this->imports_->view_device().data() != view_.getDualView().view_device().data() + offset);
       if (reallocated) {
         typedef std::pair<size_t, size_t> range_type;
-        this->imports_ = DV(view_.getDualView(),
+        this->imports_ = Teuchos::rcp(new DV(view_.getDualView(),
                             range_type (offset, getLocalLength () ),
-                            0);
+                            0));
 
         if (verbose) {
           std::ostringstream os;
@@ -1820,15 +1824,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       return reallocated;
     }
     {
-      using ::Tpetra::Details::reallocDualViewIfNeeded;
-      reallocated =
-        reallocDualViewIfNeeded (this->unaliased_imports_, newSize, "imports");
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Finished realloc'ing unaliased_imports_" << std::endl;
-        std::cerr << os.str ();
-      }
-      this->imports_ = this->unaliased_imports_;
+      DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>::reallocImportsIfNeeded(newSize, verbose, prefix, areRemoteLIDsContiguous, CM);
     }
     return reallocated;
   }
@@ -1864,8 +1860,8 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   importsAreAliased() {
-    return (this->imports_.view_device().data() + this->imports_.view_device().extent(0) ==
-            view_.getDualView().view_device().data() + view_.getDualView().view_device().extent(0));
+    return this->imports_ ? (this->imports_->view_device().data() + this->imports_->view_device().extent(0) ==
+            view_.getDualView().view_device().data() + view_.getDualView().view_device().extent(0)) : false;
   }
 
 
@@ -1964,10 +1960,10 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     // DistObject::doTransferNew decides where it was last modified (based on
     // whether communication buffers used were on host or device).
     if (unpackOnHost) {
-      if (this->imports_.need_sync_host()) this->imports_.sync_host();
+      if (imports.need_sync_host()) imports.sync_host();
     }
     else {
-      if (this->imports_.need_sync_device()) this->imports_.sync_device();
+      if (imports.need_sync_device()) imports.sync_device();
     }
 
     if (printDebugOutput) {
@@ -3702,18 +3698,9 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     // MultiVector.  Thus, it is safe to reuse communication buffers.
     // See #1560 discussion.
     //
-    // We only need one column's worth of buffer for imports_ and
+    // We only need one column's worth of buffer for
     // exports_.  Taking subviews now ensures that their lengths will
     // be exactly what we need, so we won't have to resize them later.
-    {
-      const size_t newSize = X.imports_.extent (0) / numCols;
-      const size_t offset = jj*newSize;
-      auto device_view = subview (X.imports_.view_device(),
-                                   range_type (offset, offset+newSize));
-      auto host_view = subview (X.imports_.view_host(),
-                                   range_type (offset, offset+newSize));
-      this->imports_ = decltype(X.imports_)(device_view, host_view);
-    }
     {
       const size_t newSize = X.exports_.extent (0) / numCols;
       const size_t offset = jj*newSize;

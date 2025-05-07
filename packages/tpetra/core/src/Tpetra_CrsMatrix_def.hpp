@@ -8329,8 +8329,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           // because it may clear out the flags.
           destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
                                            verbosePrefix.get ());
-          destMat->imports_.modify_host ();
-          auto hostImports = destMat->imports_.view_host();
+          destMat->imports_->modify_host ();
+          auto hostImports = destMat->imports_->view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destMat->exports_.sync_host ();
@@ -8359,8 +8359,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                << std::endl;
             std::cerr << os.str ();
           }
-          destMat->imports_.modify_host ();
-          auto hostImports = destMat->imports_.view_host();
+          destMat->imports_->modify_host ();
+          auto hostImports = destMat->imports_->view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destMat->exports_.sync_host ();
@@ -8423,8 +8423,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           // because it may clear out the flags.
           destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
                                            verbosePrefix.get ());
-          destMat->imports_.modify_host ();
-          auto hostImports = destMat->imports_.view_host();
+          destMat->imports_->modify_host ();
+          auto hostImports = destMat->imports_->view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destMat->exports_.sync_host ();
@@ -8453,8 +8453,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                << std::endl;
             std::cerr << os.str ();
           }
-          destMat->imports_.modify_host ();
-          auto hostImports = destMat->imports_.view_host();
+          destMat->imports_->modify_host ();
+          auto hostImports = destMat->imports_->view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destMat->exports_.sync_host ();
@@ -8503,7 +8503,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       ArrayRCP<LO> CSR_colind_LID;
       ArrayRCP<Scalar> CSR_vals;
   
-      destMat->imports_.sync_device ();
+      if(destMat->imports_) destMat->imports_->sync_device ();
+      using imports_v_t = typename DistObject<char, LocalOrdinal, GlobalOrdinal, Node>::imports_dv_t::t_dev;
+      auto destMat_imports = destMat->imports_ ? destMat->imports_->view_device() : imports_v_t{};
       destMat->numImportPacketsPerLID_.sync_device ();
   
       size_t N = BaseRowMap->getLocalNumElements ();
@@ -8515,7 +8517,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Details::unpackAndCombineIntoCrsArrays(
                                      *this,
                                      RemoteLIDs_d,
-                                     destMat->imports_.view_device(),                //hostImports
+                                     destMat_imports,
                                      destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
                                      NumSameIDs,
                                      PermuteToLIDs_d,
@@ -8701,7 +8703,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       ArrayRCP<LO> CSR_colind_LID;
       ArrayRCP<Scalar> CSR_vals;
   
-      destMat->imports_.sync_device ();
+      if(destMat->imports_) destMat->imports_->sync_device ();
+      using imports_v_t = typename DistObject<char, LocalOrdinal, GlobalOrdinal, Node>::imports_dv_t::t_dev;
+      auto destMat_imports = destMat->imports_ ? destMat->imports_->view_device() : imports_v_t{};
       destMat->numImportPacketsPerLID_.sync_device ();
   
       size_t N = BaseRowMap->getLocalNumElements ();
@@ -8719,7 +8723,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Details::unpackAndCombineIntoCrsArrays(
                                      *this,
                                      RemoteLIDs_d,
-                                     destMat->imports_.view_device(),                //hostImports
+                                     destMat_imports,
                                      destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
                                      NumSameIDs,
                                      PermuteToLIDs_d,
@@ -8865,6 +8869,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
   
     } //if (runOnHost) .. else ..
+    destMat->imports_.reset();
 
     /***************************************************/
     /**** 7) Build Importer & Call ESFC             ****/
