@@ -32,15 +32,16 @@ namespace user_app {
 		       const Teuchos::RCP<panzer::GlobalData>& gd,
 		       const bool build_transient_support);
     
-      void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-						 const panzer::FieldLibrary& field_library,
-						 const Teuchos::ParameterList& user_data) const;
+    void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+                                               const panzer::FieldLibrary& field_library,
+                                               const Teuchos::ParameterList& user_data) const;
 
   private:
 
-      std::string m_prefix;
-      std::string m_dof_name;
-      std::string m_do_convection;
+    std::string m_prefix;
+    std::string m_dof_name;
+    std::string m_do_convection;
+    bool m_convection_term_is_in_conservation_form;
   };
 
 }

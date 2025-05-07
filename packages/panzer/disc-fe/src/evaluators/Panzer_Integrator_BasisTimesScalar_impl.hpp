@@ -108,11 +108,10 @@ namespace panzer
   /////////////////////////////////////////////////////////////////////////////
   template<typename EvalT, typename Traits>
   Integrator_BasisTimesScalar<EvalT, Traits>::
-  Integrator_BasisTimesScalar(
-    const Teuchos::ParameterList& p)
+  Integrator_BasisTimesScalar(const Teuchos::ParameterList& p,
+                              const panzer::EvaluatorStyle es)
     :
-    Integrator_BasisTimesScalar(
-      panzer::EvaluatorStyle::EVALUATES,
+    Integrator_BasisTimesScalar(es,
       p.get<std::string>("Residual Name"),
       p.get<std::string>("Value Name"),
       (*p.get<Teuchos::RCP<panzer::BasisIRLayout>>("Basis")),
