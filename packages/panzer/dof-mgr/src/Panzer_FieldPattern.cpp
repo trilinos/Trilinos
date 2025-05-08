@@ -20,6 +20,12 @@ bool operator==(const panzer::FieldPattern& left,
   return left.equals(right);
 }
 
+bool operator!=(const panzer::FieldPattern& left,
+                const panzer::FieldPattern& right)
+{
+  return !left.equals(right);
+}
+
 int FieldPattern::numberIds() const
 {
    int count = 0;

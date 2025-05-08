@@ -115,6 +115,7 @@ public:
 };
 
 bool operator==(const panzer::FieldPattern& left,const panzer::FieldPattern& right);
+bool operator!=(const panzer::FieldPattern& left,const panzer::FieldPattern& right);
 
 //! Stream IO
 std::ostream & operator<<(std::ostream & os,const FieldPattern & fp);

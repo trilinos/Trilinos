@@ -106,7 +106,7 @@ namespace panzer {
 
     std::vector<std::pair<panzer::FieldType,RCP<const panzer::FieldPattern>>> geometric_patterns{{panzer::FieldType::CG,fp1},
                                                                                                  {panzer::FieldType::CG,fp2}};
-    RCP<const FieldPattern> fp_geom_agg = make_rcp<panzer::GeometricAggFieldPattern>(geometric_patterns);
+    RCP<const FieldPattern> fp_geom_agg = Teuchos::make_rcp<panzer::GeometricAggFieldPattern>(geometric_patterns);
     TEST_EQUALITY(fp_geom_agg->getSubcellIndices(1,0).size(),1); // one edge dof
     auto fpgeom_agg_clone = fp_geom_agg->clone();
     TEST_ASSERT(fp_geom_agg != fpgeom_agg_clone); // pointers not equal
@@ -115,7 +115,7 @@ namespace panzer {
     std::vector<std::tuple<int,panzer::FieldType,RCP<const panzer::FieldPattern>>> field_patterns{{0,panzer::FieldType::CG,fp1},
                                                                                                   {1,panzer::FieldType::CG,fp2},
                                                                                                   {2,panzer::FieldType::CG,fp2}};
-    RCP<const FieldPattern> fp_agg = make_rcp<panzer::FieldAggPattern>(field_patterns);
+    RCP<const FieldPattern> fp_agg = Teuchos::make_rcp<panzer::FieldAggPattern>(field_patterns);
     TEST_EQUALITY(fp_agg->getSubcellIndices(0,0).size(),3); // three vertex dof
     TEST_EQUALITY(fp_agg->getSubcellIndices(1,0).size(),2); // two edge dof
 
@@ -125,11 +125,11 @@ namespace panzer {
 
     // Let's make some aggregates that are not the same as above
     std::vector<std::pair<panzer::FieldType,RCP<const panzer::FieldPattern>>> geometric_patterns_alt{{panzer::FieldType::CG,fp1}};
-    RCP<const FieldPattern> fp_geom_agg_alt = make_rcp<panzer::GeometricAggFieldPattern>(geometric_patterns_alt);
+    RCP<const FieldPattern> fp_geom_agg_alt = Teuchos::make_rcp<panzer::GeometricAggFieldPattern>(geometric_patterns_alt);
     TEST_ASSERT(*fp_geom_agg_alt != *fpgeom_agg_clone); // values not equal
 
     std::vector<std::tuple<int,panzer::FieldType,RCP<const panzer::FieldPattern>>> field_patterns_alt{{0,panzer::FieldType::CG,fp2}};
-    RCP<const FieldPattern> fp_agg_alt = make_rcp<panzer::FieldAggPattern>(field_patterns_alt);
+    RCP<const FieldPattern> fp_agg_alt = Teuchos::make_rcp<panzer::FieldAggPattern>(field_patterns_alt);
     TEST_INEQUALITY(*fp_agg,*fp_agg_alt);
 
     // Geometric agg for both fp_agg are the same
