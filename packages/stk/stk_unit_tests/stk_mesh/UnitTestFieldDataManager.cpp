@@ -512,7 +512,7 @@ TYPED_TEST(TestContiguousFieldDataManager, allocate_bucket_field_data)
   size_t expectedNumBucketsInField = 1;
   ASSERT_EQ(expectedNumBucketsInField, part1FieldMetaDataVector.size());
   ASSERT_EQ(expectedNumBucketsInField, part2FieldMetaDataVector.size());
-  const unsigned char *nullPointer = nullptr;
+  const std::byte *nullPointer = nullptr;
   EXPECT_EQ(nullPointer, part1FieldMetaDataVector[0].m_data);
   EXPECT_EQ(nullPointer, part2FieldMetaDataVector[0].m_data);
   int expectedNumBytesPerEntity = sizeof(FieldDataType);
@@ -690,7 +690,9 @@ void testAddingSingleEntity(stk::mesh::MetaData &meshMetaData,
 
   int destinationBucketId = 0;
   int destinationBucketOffset = 0;
-  fieldDataManager.add_field_data_for_entity(allFields, stk::topology::NODE_RANK, destinationBucketId, destinationBucketOffset);
+  int newBucketSize = 1;
+  fieldDataManager.add_field_data_for_entity(allFields, stk::topology::NODE_RANK, destinationBucketId,
+                                             destinationBucketOffset, newBucketSize);
 
   const std::vector<size_t> &numBytesAllocated = fieldDataManager.get_num_bytes_allocated_per_field_array();
   ASSERT_EQ(allFields.size(), numBytesAllocated.size());
@@ -703,10 +705,10 @@ void testAddingSingleEntity(stk::mesh::MetaData &meshMetaData,
   EXPECT_EQ(expectedNumBytesAllocated[0], numBytesAllocated[field1Ordinal]);
   EXPECT_EQ(expectedNumBytesAllocated[1], numBytesAllocated[field2Ordinal]);
 
-  const std::vector<unsigned char*> &fieldRawData = fieldDataManager.get_field_raw_data();
+  const std::vector<std::byte*> &fieldRawData = fieldDataManager.get_field_raw_data();
   ASSERT_EQ(allFields.size(), fieldRawData.size());
   EXPECT_EQ(part1FieldMetaDataVector[firstBucketIndex].m_data, fieldRawData[field1Ordinal]);
-  unsigned char *nullPointer = nullptr;
+  std::byte *nullPointer = nullptr;
   EXPECT_EQ(nullPointer, part2FieldMetaDataVector[firstBucketIndex].m_data);
   EXPECT_EQ(nullPointer, fieldRawData[field2Ordinal]);
 }
@@ -730,9 +732,10 @@ TYPED_TEST(TestContiguousFieldDataManager, add_field_data_for_entity)
 
   int destinationBucketId = 0;
   int destinationBucketOffset = 0;
+  int newBucketSize = 0;
 
   fieldDataManager.remove_field_data_for_entity(stk::topology::NODE_RANK, destinationBucketId, destinationBucketOffset,
-                                                allFields);
+                                                newBucketSize, allFields);
 
   size_t expectedNumBuckets = 1;
   const stk::mesh::FieldMetaDataVector &part1FieldMetaDataVector = allFields[field1Ordinal]->get_meta_data_for_field();
@@ -753,11 +756,11 @@ TYPED_TEST(TestContiguousFieldDataManager, add_field_data_for_entity)
   EXPECT_EQ(expectedNumBytesAllocated[0], numBytesAllocated[field1Ordinal]);
   EXPECT_EQ(expectedNumBytesAllocated[1], numBytesAllocated[field2Ordinal]);
 
-  const std::vector<unsigned char*> &fieldRawData = fieldDataManager.get_field_raw_data();
+  const std::vector<std::byte*> &fieldRawData = fieldDataManager.get_field_raw_data();
   ASSERT_EQ(allFields.size(), fieldRawData.size());
   const unsigned firstBucketIndex = 0;
   EXPECT_EQ(part1FieldMetaDataVector[firstBucketIndex].m_data, fieldRawData[field1Ordinal]);
-  unsigned char *nullPointer = nullptr;
+  std::byte *nullPointer = nullptr;
   EXPECT_EQ(nullPointer, fieldRawData[field2Ordinal]);
 
   size_t unusedCapacity = 0;
@@ -808,7 +811,7 @@ TYPED_TEST(TestContiguousFieldDataManager, deallocate_nonempty_bucket)
   const unsigned firstBucketIndex = 0;
   const stk::mesh::FieldMetaDataVector &part1FieldMetaDataVector = allFields[field1Ordinal]->get_meta_data_for_field();
   const stk::mesh::FieldMetaDataVector &part2FieldMetaDataVector = allFields[field2Ordinal]->get_meta_data_for_field();
-  unsigned char *nullPointer = nullptr;
+  std::byte *nullPointer = nullptr;
   EXPECT_EQ(nullPointer, part1FieldMetaDataVector[firstBucketIndex].m_data);
   EXPECT_EQ(nullPointer, part2FieldMetaDataVector[firstBucketIndex].m_data);
   EXPECT_EQ(0, part1FieldMetaDataVector[firstBucketIndex].m_bytesPerEntity);
@@ -820,7 +823,7 @@ TYPED_TEST(TestContiguousFieldDataManager, deallocate_nonempty_bucket)
   size_t expectedNumBuckets = 0;
   ASSERT_EQ(expectedNumBuckets, part1FieldMetaDataVector.size());
   ASSERT_EQ(expectedNumBuckets, part2FieldMetaDataVector.size());
-  const std::vector<unsigned char*> &fieldRawData = fieldDataManager.get_field_raw_data();
+  const std::vector<std::byte*> &fieldRawData = fieldDataManager.get_field_raw_data();
   ASSERT_EQ(allFields.size(), fieldRawData.size());
   EXPECT_NE(nullPointer, fieldRawData[field1Ordinal]);
   EXPECT_NE(nullPointer, fieldRawData[field2Ordinal]);

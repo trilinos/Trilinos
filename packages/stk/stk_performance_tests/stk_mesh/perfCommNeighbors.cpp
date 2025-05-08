@@ -278,7 +278,8 @@ protected:
     const std::vector<int>& procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
     stk::CommNeighbors commNeighbors(get_bulk().parallel(), procs);
     for(int p : procs) {
-      const stk::mesh::HostCommMapIndices sharedCommMap = get_bulk().volatile_fast_shared_comm_map<stk::ngp::MemSpace>(stk::topology::NODE_RANK, p);
+      const stk::mesh::HostCommMapIndices<stk::ngp::MemSpace> sharedCommMap =
+          get_bulk().volatile_fast_shared_comm_map<stk::ngp::MemSpace>(stk::topology::NODE_RANK, p);
       size_t numEntities = sharedCommMap.extent(0);
       commNeighbors.send_buffer(p).reserve(numEntities*sizeof(stk::mesh::EntityKey));
     }

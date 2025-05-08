@@ -232,6 +232,33 @@ TEST(GhostingSymmetry, ghostNode_fromProc0_toProc1andProc2_symmetric)
   EXPECT_TRUE(is_comm_globally_symmetric(*bulkPtr));
 }
 
+TEST(GhostingSymmetry, ghostNode_fromProc0_toProc1andProc2_symmetric_ghosting)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  const int numProcs = stk::parallel_machine_size(comm);
+  if(numProcs != 3) { GTEST_SKIP(); }
+
+  constexpr bool symmetricGhostInfo = true;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = setup_hex_mesh(comm, 1, 1, 3, symmetricGhostInfo);
+
+  stk::mesh::unit_test::proc0_ghost_node1_to_proc1_and_proc2(*bulkPtr);
+
+  stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
+  EXPECT_TRUE(bulkPtr->is_valid(node1));
+
+  const stk::mesh::Ghosting* myGhosting = bulkPtr->ghostings().back();
+  EXPECT_EQ("myCustomGhosting", myGhosting->name());
+
+  std::vector<int> commProcs;
+  bulkPtr->comm_procs(*myGhosting, bulkPtr->entity_key(node1), commProcs);
+
+  const size_t numOtherProcs = 2;
+
+  EXPECT_EQ(numOtherProcs, commProcs.size());
+
+  EXPECT_TRUE(is_comm_globally_symmetric(*bulkPtr));
+}
+
 TEST(GhostingSymmetry, ghostSharedNode_fromProc0_toProc2_notSymmetric)
 {
   stk::ParallelMachine comm = stk::parallel_machine_world();

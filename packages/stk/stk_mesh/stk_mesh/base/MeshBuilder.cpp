@@ -50,7 +50,8 @@ MeshBuilder::MeshBuilder()
    m_spatialDimension(0),
    m_entityRankNames(),
    m_upwardConnectivity(true),
-   m_symmetricGhostInfo(true)
+   m_symmetricGhostInfo(true),
+   m_maintainLocalIds(false)
 {
 }
 
@@ -64,7 +65,8 @@ MeshBuilder::MeshBuilder(ParallelMachine comm)
    m_spatialDimension(0),
    m_entityRankNames(),
    m_upwardConnectivity(true),
-   m_symmetricGhostInfo(true)
+   m_symmetricGhostInfo(true),
+   m_maintainLocalIds(false)
 {
 }
 
@@ -136,6 +138,12 @@ MeshBuilder& MeshBuilder::set_symmetric_ghost_info(bool onOrOff)
   return *this;
 }
 
+MeshBuilder& MeshBuilder::set_maintain_local_ids(bool onOrOff)
+{
+  m_maintainLocalIds = onOrOff;
+  return *this;
+}
+
 std::shared_ptr<MetaData> MeshBuilder::create_meta_data()
 {
   if (m_spatialDimension > 0 || !m_entityRankNames.empty()) {
@@ -169,6 +177,7 @@ std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData
                                                 create_aura_ghosting(),
                                                 m_upwardConnectivity));
   bulkPtr->set_symmetric_ghost_info(m_symmetricGhostInfo);
+  bulkPtr->set_maintain_local_ids(m_maintainLocalIds);
   return bulkPtr;
 }
 

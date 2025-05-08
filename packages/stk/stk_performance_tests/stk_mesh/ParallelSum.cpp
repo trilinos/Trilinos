@@ -31,6 +31,7 @@
 #include "stk_mesh/base/MetaData.hpp"          // for MetaData, put_field_on...
 #include "stk_util/environment/Env.hpp"        // for parallel_rank, paralle...
 #include "stk_util/environment/perf_util.hpp"  // for get_max_hwm_across_procs
+#include "stk_unit_test_utils/timer.hpp"
 #include <cstddef>                             // for size_t
 #include <algorithm>                           // for fill
 #include <iostream>                            // for operator<<, basic_ostr...
@@ -42,10 +43,10 @@ namespace stk { namespace mesh { class Ghosting; } }
 
 namespace STKperf {
 
-static const int X_DIM = 800; //num_elems_x
-static const int Y_DIM = 800; //num_elems_y
+static const int X_DIM = 200; //num_elems_x
+static const int Y_DIM = 200; //num_elems_y
 
-static const int NUM_FIELDS = 120;
+static const int NUM_FIELDS = 20;
 
 static const int NUM_ITERS = 40;
 
@@ -60,7 +61,7 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
 
   typedef Field<double> ScalarField;
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk::ParallelMachine pm = stk::parallel_machine_world();
   const int parallel_size = stk::parallel_machine_size(pm);
   const int parallel_rank = stk::parallel_machine_rank(pm);
   if (parallel_size < 3)
@@ -180,7 +181,6 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
 
   MPI_Barrier(pm);
 
-  double start_time = stk::cpu_time();
   NgpMesh* ngpMesh = nullptr;
   if (device_mpi) {
     ngpMesh = & stk::mesh::get_updated_ngp_mesh(bulk);
@@ -193,36 +193,41 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
     }
   }
 
-  for (int t = 0; t < numIters; ++t) {
-    if (with_ghosts) {
-      if (device_mpi) {
-        stk::mesh::parallel_sum_including_ghosts(*ngpMesh, ngpFields);
-      }
-      else {
-        stk::mesh::parallel_sum_including_ghosts(bulk, fields);
-      }
-    }
-    else {
-      if (device_mpi) {
-        stk::mesh::parallel_sum(*ngpMesh, ngpFields);
-      }
-      else {
-        stk::mesh::parallel_sum(bulk, fields);
+  stk::unit_test_util::BatchTimer batchTimer(pm);
+  batchTimer.initialize_batch_timer();
 
-        for (int i = 0; i < numFields; ++i) {
-          ngpFields[i] = &stk::mesh::get_updated_ngp_field<double>(*fields[i]);
+  const int NUM_RUNS = 5;
+  for(int r=0; r<NUM_RUNS; ++r) {
+    batchTimer.start_batch_timer();
+
+    for (int t = 0; t < numIters; ++t) {
+      if (with_ghosts) {
+        if (device_mpi) {
+          stk::mesh::parallel_sum_including_ghosts(*ngpMesh, ngpFields);
+        }
+        else {
+          stk::mesh::parallel_sum_including_ghosts(bulk, fields);
+        }
+      }
+      else {
+        if (device_mpi) {
+          stk::mesh::parallel_sum(*ngpMesh, ngpFields);
+        }
+        else {
+          stk::mesh::parallel_sum(bulk, fields);
+
+          for (int i = 0; i < numFields; ++i) {
+            ngpFields[i] = &stk::mesh::get_updated_ngp_field<double>(*fields[i]);
+          }
         }
       }
     }
+
+    batchTimer.stop_batch_timer();
   }
 
-  double stk_sum_time = stk::cpu_time() - start_time;
-
-  double max_time;
-  MPI_Reduce(static_cast<void*>(&stk_sum_time), static_cast<void*>(&max_time), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, MPI_COMM_WORLD);
-
-  double power2 = std::pow(2,numIters);
-  double power3 = std::pow(3,numIters);
+  double power2 = std::pow(2,numIters*NUM_RUNS);
+  double power3 = std::pow(3,numIters*NUM_RUNS);
   const double tolerance = 1.e-8;
 
   if (device_mpi) {
@@ -261,9 +266,7 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
   }
   EXPECT_EQ(expected_num_shared_nodes, num_comm_nodes);
 
-  size_t hwm_max = stk::get_max_hwm_across_procs(pm);
-
-  stk::print_stats_for_performance_compare(std::cout, max_time, hwm_max, numIters, pm);
+  batchTimer.print_batch_timing(numIters);
 }
 
 TEST(ParallelDataExchange, test_nonsym_known_sizes_from_proc0_to_all_other_procs)

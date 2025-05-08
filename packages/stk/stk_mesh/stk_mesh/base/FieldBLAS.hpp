@@ -35,16 +35,15 @@
 #ifndef STK_MESH_BASE_FIELDBLAS_HPP
 #define STK_MESH_BASE_FIELDBLAS_HPP
 
-#include <stk_util/stk_config.h>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
-
+#include <stk_mesh/base/GetNgpMesh.hpp>
+#include <stk_mesh/base/DeviceField.hpp>
 #include <complex>
 #include <string>
 #include <algorithm>
@@ -547,21 +546,46 @@ void field_product(const FieldBase& xField, const FieldBase& yField, const Field
     field_product(xField,yField,zField,selector);
 }
 
+
+template<class NGP_FIELD_TYPE>
+class LegacyDeviceFieldCopy {
+public:
+  LegacyDeviceFieldCopy(const NGP_FIELD_TYPE& ngpXfield, const NGP_FIELD_TYPE& ngpYfield)
+  : ngpX(ngpXfield), ngpY(ngpYfield)
+  {}
+
+  KOKKOS_FUNCTION
+  void operator()(const stk::mesh::FastMeshIndex& entityIndex) const
+  {
+    const unsigned numComponents = ngpX.get_num_components_per_entity(entityIndex);
+    STK_NGP_ThrowAssert(numComponents == ngpY.get_num_components_per_entity(entityIndex));
+    for (unsigned d = 0; d < numComponents; ++d) {
+      ngpY(entityIndex, d) = ngpX(entityIndex, d);
+    }
+  }
+
+  NGP_FIELD_TYPE ngpX;
+  NGP_FIELD_TYPE ngpY;
+};
+
+
 template<class Scalar>
 inline
 void INTERNAL_field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
   BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
+  int orig_thread_count = fix_omp_threads();
+
+  // We need to remove the modify_on_host()/modify_on_device() behavior from this, as well as
+  // the device-side copying.  Folks should use the NGP-flavored version of field_copy() if
+  // they want to copy data in a different memory space, rather than relying on an odd
+  // side-effect of this function.  None of the other functions in this file have this
+  // behavior.
 #ifdef STK_USE_DEVICE_MESH
-  const bool alreadySyncd_or_HostNewest = !xField.need_sync_to_host();
-
-  yField.clear_sync_state();
-
-  if (alreadySyncd_or_HostNewest) {
+  const bool upToDateOnHost = not xField.need_sync_to_host();
+  if (upToDateOnHost) {
 #endif
-
-    int orig_thread_count = fix_omp_threads();
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp parallel for schedule(static)
 #endif
@@ -572,20 +596,26 @@ void INTERNAL_field_copy(const FieldBase& xField, const FieldBase& yField, const
         y = x;
     }
     unfix_omp_threads(orig_thread_count);
+
     yField.clear_sync_state();
     yField.modify_on_host();
 #ifdef STK_USE_DEVICE_MESH
   }
-  else { // copy on device
-    auto ngpX = stk::mesh::get_updated_ngp_field<Scalar>(xField);
-    auto ngpY = stk::mesh::get_updated_ngp_field<Scalar>(yField);
-    auto ngpXview = impl::get_device_data(ngpX);
-    auto ngpYview = impl::get_device_data(ngpY);
+  else {
+    if constexpr (std::is_same_v<Scalar, double> || std::is_same_v<Scalar, float> || std::is_same_v<Scalar, int>) {
+      auto ngpMesh = stk::mesh::get_updated_ngp_mesh(xField.get_mesh());
+      auto ngpX = stk::mesh::get_updated_ngp_field<Scalar>(xField);
+      auto ngpY = stk::mesh::get_updated_ngp_field<Scalar>(yField);
+      LegacyDeviceFieldCopy fieldCopy(ngpX, ngpY);
+      stk::mesh::for_each_entity_run(ngpMesh, xField.entity_rank(), selector, fieldCopy);
 
-    Kokkos::deep_copy(ngpYview, ngpXview);
-    yField.modify_on_device();
+      yField.clear_sync_state();
+      yField.modify_on_device();
+    }
+    else {
+      STK_ThrowErrorMsg("NgpField does not support std::complex datatypes!");
+    }
   }
-
 #endif
 }
 

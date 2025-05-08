@@ -199,14 +199,16 @@ class Selector {
 public:
 
   Selector()
-    : m_expr(1) // default Selector is null part (selects nothing)
-    , m_meta(nullptr)
+    : m_expr(1),// default Selector is null part (selects nothing)
+      m_meta(nullptr),
+      m_modCount(0)
   {}
 
   /** \brief  A part that is required */
   Selector(const Part & part)
-    : m_expr(1, impl::SelectorNode(&part))
-    , m_meta(((m_expr[0].part()==InvalidPartOrdinal) ? nullptr : &part.mesh_meta_data()))
+    : m_expr(1, impl::SelectorNode(&part)),
+      m_meta(((m_expr[0].part()==InvalidPartOrdinal) ? nullptr : &part.mesh_meta_data())),
+      m_modCount(0)
   {
     STK_ThrowAssertMsg(m_meta!=nullptr, "constructing Selector with bad part reference, probably from dereferencing a null part pointer.");
   }
@@ -339,6 +341,7 @@ public:
   }
 
 private:
+  void update_part_ords() const;
   bool select_part_impl(Part const& part, impl::SelectorNode const* root) const;
   bool select_bucket_impl(Bucket const& bucket, impl::SelectorNode const* root) const;
 
@@ -346,8 +349,9 @@ private:
 
   Selector& add_binary_op(SelectorNodeType::node_type type, const Selector& rhs);
 
-  std::vector<impl::SelectorNode> m_expr;
+  mutable std::vector<impl::SelectorNode> m_expr;
   mutable const MetaData* m_meta;
+  mutable size_t m_modCount;
 };
 
 inline

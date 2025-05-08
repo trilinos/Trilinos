@@ -13,6 +13,7 @@ SET(HEADERS_NEED_IO
   FaceCreationTestUtils.hpp
   FaceTestingUtils.hpp
   GeneratedMeshToFile.hpp
+  MockSearchMesh.hpp
   ReadWriteSidesetTester.hpp
   StkMeshFromGeneratedMesh.hpp
   TextMeshAdjacencyGraph.hpp
@@ -53,10 +54,12 @@ SET(HEADERS_NEED_MESH_BUT_NOT_IO
   MeshFixture.hpp
   MeshFileFixture.hpp
   MeshUtilsForBoundingVolumes.hpp
+  MockSearchHex8MasterElementProvider.hpp
   ParticleUtils.hpp
   unittestMeshUtils.hpp
   )
 SET(SOURCES_NEED_MESH_BUT_NOT_IO
+  MockSearchHex8MasterElementProvider.cpp
   ParticleUtils.cpp
   unittestMeshUtils.cpp
   )
@@ -77,14 +80,17 @@ SET(SOURCES_NEED_MPI
 SET(HEADERS
   algorithmTimer.hpp
   AssemblyUtils.hpp
+  Legendre.hpp
   CommandLineArgs.hpp
   getOption.h
+  MockSearchHex8Element.hpp
   StkReportRedirector.hpp
   stringAndNumberComparisons.hpp
   timer.hpp
   )
 SET(SOURCES
   AssemblyUtils.cpp
+  Legendre.cpp
   StkReportRedirector.cpp
   stringAndNumberComparisons.cpp
   )
@@ -135,6 +141,10 @@ else()
       message(FATAL_ERROR "stk_unit_test_utils requires that STKNGP_TEST is enabled if STKIO is enabled.")
     endif()
     target_link_libraries(stk_unit_test_utils PUBLIC stk_ngp_test)
+  endif()
+
+  if(STK_ENABLE_STKSearchUtil)
+    target_link_libraries(stk_unit_test_utils PUBLIC stk_search_util)
   endif()
 
   target_link_libraries(stk_unit_test_utils PUBLIC stk_util_parallel)

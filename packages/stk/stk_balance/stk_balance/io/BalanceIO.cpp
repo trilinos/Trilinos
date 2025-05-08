@@ -109,6 +109,14 @@ void BalanceIO::write(BalanceMesh& mesh)
 {
   stk::io::StkMeshIoBroker outputBroker;
   outputBroker.set_bulk_data(mesh.get_bulk());
+
+  const size_t inputFileIndex = m_inputBroker.get_active_mesh();
+  const Ioss::DatabaseIO* inputDBIO = m_inputBroker.get_input_database(inputFileIndex);
+  const int maxSymbolLength = inputDBIO->maximum_symbol_length();
+  if (maxSymbolLength > 0) {
+    outputBroker.property_add(Ioss::Property("MAXIMUM_NAME_LENGTH", maxSymbolLength));
+  }
+
   outputBroker.set_attribute_field_ordering_stored_by_part_ordinal(m_inputBroker.get_attribute_field_ordering_stored_by_part_ordinal());
   m_inputBroker.cache_entity_list_for_transient_steps(true);
 
