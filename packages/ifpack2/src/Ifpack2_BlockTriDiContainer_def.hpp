@@ -165,18 +165,11 @@ namespace Ifpack2 {
                        bool pointIndexed)
     : Container<MatrixType>(matrix, partitions, pointIndexed), partitions_(partitions)
   {
-    using Helpers = BlockHelperDetails::ImplType<MatrixType>;
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer", BlockTriDiContainer);
     const bool useSeqMethod = false;
     const bool overlapCommAndComp = false;
     initInternal(matrix, importer, overlapCommAndComp, useSeqMethod);
-    auto matrixBCRS = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
-    bool hasBlockCrs = !matrixBCRS.is_null();
-    bool onePartitionPerRow = hasBlockCrs && size_t(partitions.size()) == matrixBCRS->getLocalNumRows();
-    // Decide upfront whether the fused block Jacobi path can be used.
-    impl_->use_fused_jacobi = 
-      BlockHelperDetails::is_device<typename Helpers::execution_space>::value \
-      && hasBlockCrs && (!partitions.size() || onePartitionPerRow);
+    impl_->use_fused_jacobi = shouldUseFusedBlockJacobi(matrix, partitions, useSeqMethod);
     n_subparts_per_part_ = -1;
     block_size_ = -1;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
@@ -193,21 +186,36 @@ namespace Ifpack2 {
                        const bool explicitConversion)
     : Container<MatrixType>(matrix, partitions, false), partitions_(partitions)
   {
-    using Helpers = BlockHelperDetails::ImplType<MatrixType>;
     IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::BlockTriDiContainer", BlockTriDiContainer);
     initInternal(matrix, Teuchos::null, overlapCommAndComp, useSeqMethod, block_size, explicitConversion);
-    auto matrixBCRS = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
-    bool hasBlockCrs = !matrixBCRS.is_null();
-    bool onePartitionPerRow = hasBlockCrs && size_t(partitions.size()) == matrixBCRS->getLocalNumRows();
-    // Jacobi case can be represented in two ways:
-    // - partitions is empty
-    // - partitions has length equal to local number of rows (meaning all line lengths must be 1)
-    impl_->use_fused_jacobi = 
-      BlockHelperDetails::is_device<typename Helpers::execution_space>::value \
-      && !useSeqMethod && hasBlockCrs && (!partitions.size() || onePartitionPerRow);
+    impl_->use_fused_jacobi = shouldUseFusedBlockJacobi(matrix, partitions, useSeqMethod);
     n_subparts_per_part_ = n_subparts_per_part;
     block_size_ = block_size;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(typename BlockHelperDetails::ImplType<MatrixType>::execution_space)
+  }
+
+  template <typename MatrixType>
+  bool BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
+  ::shouldUseFusedBlockJacobi(
+      const Teuchos::RCP<const row_matrix_type>& matrix,
+      const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+      bool useSeqMethod)
+  {
+    using Helpers = BlockHelperDetails::ImplType<MatrixType>;
+    auto matrixBCRS = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(matrix);
+    bool hasBlockCrs = !matrixBCRS.is_null();
+    bool onePartitionPerRow = hasBlockCrs && size_t(partitions.size()) == matrixBCRS->getLocalNumRows();
+    constexpr bool isGPU = BlockHelperDetails::is_device<typename Helpers::execution_space>::value;
+    // The fused block Jacobi solve is actually slower on V100
+#ifdef KOKKOS_ARCH_VOLTA
+    constexpr bool isVolta = true;
+#else
+    constexpr bool isVolta = false;
+#endif
+    // Jacobi case can be represented in two ways:
+    // - partitions is empty
+    // - partitions has length equal to local number of rows (meaning all line lengths must be 1)
+    return isGPU && !isVolta && !useSeqMethod && hasBlockCrs && (!partitions.size() || onePartitionPerRow);
   }
 
   template <typename MatrixType>
