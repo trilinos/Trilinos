@@ -21,6 +21,9 @@ class TestFieldPattern : public FieldPattern {
 public:
    TestFieldPattern() {}
 
+   Teuchos::RCP<panzer::FieldPattern> clone() const override
+   {return Teuchos::rcp(new TestFieldPattern(*this));}
+  
    /* This function has no functionality in this case.
     * If called it will throw an assertion failure
     */
