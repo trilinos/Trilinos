@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2025 National Technology & Engineering Solutions
+∂do// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -2089,7 +2089,7 @@ namespace Ioex {
       }
 
       // Output field metadata
-      bool do_metadata = true;
+      bool do_metadata = false;
       Ioss::Utils::check_set_bool_property(properties, "OUTPUT_FIELD_METADATA", do_metadata);
       if (do_metadata) {
         output_field_metadata();
