@@ -525,14 +525,19 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
       for(int s = 0; s < numStates; ++s) {
         NgpFieldBase* ngpField = field_state(static_cast<FieldState>(s))->get_ngp_field();
         if (ngpField != nullptr) {
-          ngpField->update_bucket_pointer_view();
+          if (ngpField->needs_update()) {
+            ngpField->update_field(Kokkos::DefaultExecutionSpace());
+          }
+          else {
+            ngpField->update_host_bucket_pointers();
+          }
           ngpField->fence();
         }
       }
       Kokkos::Profiling::popRegion();
     }
 
-    Kokkos::Profiling::pushRegion("ngpField swap_field_views");
+    Kokkos::Profiling::pushRegion("ngpField swap");
     if (rotateNgpFieldViews && allStatesHaveNgpFields) {
       for (int s = 1; s < numStates; ++s) {
         NgpFieldBase* ngpField_sminus1 = field_state(static_cast<FieldState>(s-1))->get_ngp_field();
@@ -627,9 +632,6 @@ void FieldBase::sync_to_device(const stk::ngp::ExecSpace& exec_space) const
 void
 FieldBase::clear_sync_state() const
 {
-  if(m_ngpField != nullptr) {
-    m_ngpField->notify_sync_debugger_clear_sync_state();
-  }
   m_modifiedOnHost = false;
   m_modifiedOnDevice = false;
 }
@@ -637,18 +639,12 @@ FieldBase::clear_sync_state() const
 void
 FieldBase::clear_host_sync_state() const
 {
-  if(m_ngpField != nullptr) {
-    m_ngpField->notify_sync_debugger_clear_host_sync_state();
-  }
   m_modifiedOnHost = false;
 }
 
 void
 FieldBase::clear_device_sync_state() const
 {
-  if(m_ngpField != nullptr) {
-    m_ngpField->notify_sync_debugger_clear_device_sync_state();
-  }
   m_modifiedOnDevice = false;
 }
 

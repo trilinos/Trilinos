@@ -47,6 +47,7 @@
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_bytes_per_entity, etc
 #include "stk_mesh/base/FieldDataManager.hpp"
+#include "stk_mesh/base/DeviceFieldDataManager.hpp"
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for operator<<, Selector, etc
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector, etc
@@ -64,6 +65,8 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/base/NgpUtils.hpp>
+#include <stk_mesh/base/Ngp.hpp>
+#include <stk_mesh/base/NgpField.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
@@ -1940,19 +1943,22 @@ public:
     }
 
     return std::accumulate(buckets.begin(), buckets.end(), 0,
-                           [&](int currentValue, const stk::mesh::Bucket * bucket) {
-                              const int allocationCount = (GetParam() == FieldDataManagerType::DEFAULT) ? bucket->capacity()
-                                                                                                        : bucket->size();
-                              return currentValue + stk::adjust_up_to_alignment_boundary(dataSize*allocationCount,
-                                                                                         m_fieldDataManager->get_alignment_bytes());
-                           }) + extraCapacity;
+      [&](int currentValue, const stk::mesh::Bucket * bucket) {
+         const int allocationCount = (GetParam() == FieldDataManagerType::DEFAULT) ? bucket->capacity()
+                                                                                   : bucket->size();
+         return currentValue + stk::adjust_up_to_alignment_boundary(static_cast<size_t>(dataSize)*allocationCount,
+                                                                    m_fieldDataManager->get_alignment_bytes());
+      }) + extraCapacity;
   }
 
-  int expected_bytes_allocated_device(const stk::mesh::BulkData & bulk,
-                                      const stk::mesh::FieldBase & stkField,
-                                      const stk::mesh::BucketVector & buckets, int dataSize)
+  int expected_bytes_allocated_device(const stk::mesh::BucketVector & buckets, int dataSize)
   {
-    return buckets.size() * bulk.get_maximum_bucket_capacity() * stkField.max_size() * dataSize;
+    return std::accumulate(buckets.begin(), buckets.end(), 0,
+      [&](int currentValue, const stk::mesh::Bucket* bucket) {
+         const int allocationCount = bucket->capacity();
+         return currentValue + stk::adjust_up_to_alignment_boundary(static_cast<size_t>(dataSize)*allocationCount,
+                                                                    stk::mesh::DeviceFieldAlignmentSize);
+      });
   }
 
   void check_expected_bytes_allocated([[maybe_unused]] const stk::mesh::BulkData & bulk,
@@ -1961,16 +1967,16 @@ public:
     const int dataSize = sizeof(FieldDataType);
     const unsigned fieldOrdinal = stkField.mesh_meta_data_ordinal();
     const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
-    const int bytesAllocated = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
-    ASSERT_EQ(bytesAllocated, expected_bytes_allocated_host(buckets, dataSize));
+    const int bytesAllocatedOnHost = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
+    ASSERT_EQ(bytesAllocatedOnHost, expected_bytes_allocated_host(buckets, dataSize));
 
 #ifdef STK_USE_DEVICE_MESH
     if (std::is_same_v<stk::mesh::NgpField<FieldDataType>, stk::mesh::DeviceField<FieldDataType>>) {
-      stk::mesh::NgpField<FieldDataType> & ngpField = stk::mesh::get_updated_ngp_field<FieldDataType>(stkField);
-      const auto fieldData = stk::mesh::impl::get_device_data(ngpField);
-      const int bytesAllocatedDevice = fieldData.extent(0) * fieldData.extent(1) * fieldData.extent(2) *
-                                       sizeof(FieldDataType);
-      ASSERT_EQ(bytesAllocatedDevice, expected_bytes_allocated_device(bulk, stkField, buckets, dataSize));
+      const stk::mesh::DeviceFieldDataManagerBase* deviceFieldDataManager =
+          stk::mesh::impl::get_device_field_data_manager<stk::ngp::MemSpace>(bulk);
+
+      const int bytesAllocatedOnDevice = deviceFieldDataManager->get_num_bytes_allocated_on_field(stkField);
+      ASSERT_EQ(bytesAllocatedOnDevice, expected_bytes_allocated_device(buckets, dataSize));
     }
 #endif
   }

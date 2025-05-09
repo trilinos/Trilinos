@@ -42,7 +42,7 @@ exe module load aue/git/2.42.0
 exe module load aue/netlib-lapack/3.11.0-gcc-10.3.0
 exe module load aue/openmpi/4.1.6-gcc-10.3.0
 
-exe git clone --depth=100 --branch=releases/latest git@github.com:spack/spack.git
+exe git clone --depth=100 git@github.com:spack/spack.git
 exe source ./spack/share/spack/setup-env.sh
 
 exe spack env create stkSpackTesting
@@ -70,7 +70,7 @@ exe spack add openmpi@4.1.6
 exe spack add cuda@11.4.4
 exe spack add googletest cxxstd=17
 exe spack add kokkos+cuda~cuda_uvm+wrapper+cuda_constexpr+cuda_lambda+cuda_relocatable_device_code~shared cuda_arch=70
-exe spack add trilinos@master+cuda+cuda_rdc~uvm+exodus+kokkos+shards+intrepid2+zoltan2+wrapper~amesos~epetra~shared~boost cuda_arch=70 cxxstd=17
+exe spack add trilinos@16.1+cuda+cuda_rdc~uvm+exodus+kokkos+shards+intrepid2+zoltan2+wrapper~amesos~epetra~shared~boost cuda_arch=70 cxxstd=17
 
 exe spack concretize -f
 if [ $? -ne 0 ] ; then

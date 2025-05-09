@@ -2111,6 +2111,38 @@ void connect_element_to_existing_sides(BulkData & mesh, const Entity elem)
   }
 }
 
+void set_local_ids(BulkData& mesh)
+{
+  const MetaData& meta = mesh.mesh_meta_data();
+
+  Selector owned = meta.locally_owned_part();
+  Selector shared = meta.globally_shared_part();
+  Selector sharedNotOwned = shared & (!owned);
+  Selector ghost = (!owned) & (!shared);
+
+  const EntityRank endRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+
+  EntityVector entities;
+  const bool sortById = true;
+  for(EntityRank rank=stk::topology::NODE_RANK; rank<endRank; ++rank) {
+    get_entities(mesh, rank, owned, entities, sortById);
+    unsigned localId = 0;
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+
+    get_entities(mesh, rank, sharedNotOwned, entities, sortById);
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+
+    get_entities(mesh, rank, ghost, entities, sortById);
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+  }
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

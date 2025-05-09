@@ -1,5 +1,20 @@
 # CHANGELOG
 
+5.25.1 (STK_VERSION 5250100) 5/05/2025
+  stk_util: fix command-line-parser bug with partial flag matching
+  stk_tools: stk_block_extractor now preserves case in exodus variable/field names
+             stk_block_extractor also now preserves long name lengths
+  stk_balance: stk_balance now preserves name lengths
+  stk_mesh: Calling code must now initialize Kokkos before creating STK Mesh
+            and must not finalize Kokkos until after destroying STK Mesh.
+  stk_util: convenience functions stk::initialize and stk::finalize added
+            in stk_util/parallel/Parallel.hpp. These functions can be used to
+            initialize/finalize Kokkos and MPI.
+  stk_mesh: NgpMesh now has local_ids
+  stk_mesh: fix MacOS build error for BulkData::declare_entities
+  stk_mesh: NGP field-data is bucketized
+  stk_mesh: parallel_sum_including_ghosts can work on device or host
+
 5.23.8-03 (STK_VERSION 5230803) 4/22/2025
   stk_tools: fix compiler error in pmesh lib when SEACASNemesis
              is not enabled.

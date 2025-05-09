@@ -61,7 +61,7 @@
 #include <string>
 #include <cstdlib>
 
-namespace ngp_field_test {
+namespace {
 
 using ngp_unit_test_utils::check_bucket_layout;
 
@@ -215,31 +215,6 @@ public:
     stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
-  void setup_two_element_mesh_field_on_each_element(stk::mesh::Field<int>& intField, stk::mesh::Field<double>& doubleField)
-  {
-    stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::SHELL_QUAD_4);
-    stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::SHELL_QUAD_4);
-
-    int initIntVal = 1;
-    double initDoubleVal = 2.0;
-    stk::mesh::put_field_on_mesh(intField, block1, 1, &initIntVal);
-    stk::mesh::put_field_on_mesh(doubleField, block2, 1, &initDoubleVal);
-
-    const std::string meshDesc = "0,1,SHELL_QUAD_4,1,2,4,3,block_1\n"
-                                 "0,2,SHELL_QUAD_4,2,5,6,4,block_2\n";
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
-  }
-
-  void add_3rd_element_to_2hex_3block_mesh()
-  {
-    get_bulk().modification_begin();
-    stk::mesh::PartVector parts {get_meta().get_part("block_3")};
-    stk::mesh::EntityIdVector nodeIds(8);
-    std::iota(nodeIds.begin(), nodeIds.end(), 9);
-    stk::mesh::declare_element(get_bulk(), parts, 3, nodeIds);
-    get_bulk().modification_end();
-  }
-
   template<typename T>
   void copy_fields_on_device(stk::mesh::NgpMesh& ngpMesh, stk::mesh::FieldBase* inputField,
                              stk::mesh::FieldBase* outputField, const stk::mesh::Selector& selector)
@@ -380,21 +355,6 @@ public:
       EXPECT_EQ(hostData, stkData);
     };
     check_field_data_equality_on_device<T>(elements, ngpField, stkField, checkFunc);
-  }
-
-  void set_element_field_data(stk::mesh::FieldBase* field)
-  {
-    stk::mesh::EntityVector elements;
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
-    stk::mesh::get_selected_entities(get_meta().universal_part(), buckets, elements);
-
-    for(stk::mesh::Entity elem : elements) {
-      int* data = static_cast<int*>(stk::mesh::field_data(*field, elem));
-      unsigned numComponents = stk::mesh::field_scalars_per_entity(*field, get_bulk().bucket(elem));
-      for(unsigned i = 0; i < numComponents; i++) {
-        data[i] = get_bulk().identifier(elem) * 10 + i;
-      }
-    }
   }
 };
 
@@ -562,30 +522,6 @@ public:
     }
   }
 
-  void run_add_bucket_in_middle_copy(unsigned numComponents)
-  {
-    const unsigned bucketCapacity = 1;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
-    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
-
-    setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
-    stk::mesh::NgpField<int> ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
-
-    modify_and_test_add_bucket_in_middle(stkIntField, ngpIntField);
-  }
-
-  void run_add_bucket_in_middle_external(unsigned numComponents)
-  {
-    const unsigned bucketCapacity = 1;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
-    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
-
-    setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
-    stk::mesh::NgpField<int> ngpIntField(get_bulk(), stkIntField);
-
-    modify_and_test_add_bucket_in_middle(stkIntField, ngpIntField);
-  }
-
   void run_add_bucket_in_middle_internal(unsigned numComponents)
   {
     const unsigned bucketCapacity = 1;
@@ -613,9 +549,9 @@ public:
     modify_mesh_add_element(stkIntField, ngpIntField, bucketCapacity);
 
     ngpIntField.modify_on_host();
-    stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::NgpField<int>& updatedNgpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
-    check_field_data_on_device<int>(ngpIntField, stkIntField);
+    check_field_data_on_device<int>(updatedNgpIntField, stkIntField);
   }
 
   void run_change_bucket_content_by_mesh_modification(unsigned numComponents)
@@ -633,24 +569,6 @@ public:
     ngpIntField.clear_sync_state();
     ngpIntField.modify_on_host();
     ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
-
-    check_field_data_on_device<int>(ngpIntField, stkIntField);
-  }
-
-  void run_change_bucket_content_by_user(unsigned numComponents)
-  {
-    const unsigned bucketCapacity = 2;
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
-    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
-
-    setup_3hex_2block_mesh_with_field(bucketCapacity, stkIntField);
-    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
-    check_field_data_on_device<int>(ngpIntField, stkIntField);
-
-    set_element_field_data(stkIntField, get_meta().universal_part(), 20u);
-
-    ngpIntField.modify_on_host();
-    ngpIntField.sync_to_device();
 
     check_field_data_on_device<int>(ngpIntField, stkIntField);
   }
@@ -706,24 +624,6 @@ public:
     stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 1);
     stk::mesh::destroy_relations(get_bulk(), element, stk::topology::NODE_RANK);
     get_bulk().destroy_entity(element);
-  }
-
-  void modify_host_bucket_value_with_selector(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField,
-                                              stk::mesh::Selector selector, int newMultiplier)
-  {
-    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    check_field_data_on_device<int>(ngpIntField, stkIntField, selector);
-    set_element_field_data(stkIntField, selector, newMultiplier);
-    ngpMesh.update_mesh();
-  }
-
-  void modify_device_bucket_value_with_selector(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField,
-                                                stk::mesh::Selector selector, int newMultiplier)
-  {
-    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    check_field_data_on_device<int>(ngpIntField, stkIntField, selector);
-    set_element_field_data_on_device(ngpMesh, stkIntField, selector, newMultiplier);
-    // ngpMesh.update_mesh();
   }
 
   void modify_mesh_add_and_delete_bucket3(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
@@ -987,9 +887,10 @@ void multiply_field_data_on_device(stk::mesh::BulkData & bulk, stk::mesh::Field<
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, meta.locally_owned_part(),
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                                   const int numScalarsPerEntity = ngpField.get_num_components_per_entity(entity);
+                                   stk::mesh::EntityFieldData<T> fieldData = ngpField(entity);
+                                   const int numScalarsPerEntity = fieldData.size();
                                    for (int component=0; component<numScalarsPerEntity; component++) {
-                                     ngpField(entity, component) *= multiplier;
+                                     fieldData[component] *= multiplier;
                                    }
                                  });
 }
@@ -1014,12 +915,12 @@ void modify_field_on_device(stk::mesh::BulkData& bulk, stk::mesh::Field<T>& stkF
   ngpField.sync_to_device();
 
   stk::mesh::Selector selection = meta.locally_owned_part() & part;
-  const stk::mesh::BucketVector& buckets = bulk.get_buckets(stkField.entity_rank(), selection);
-  const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(stkField, *buckets[0]);
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selection,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                                   for (unsigned component=0; component<numScalarsPerEntity; component++) {
-                                     ngpField(entity, component) = value;
+                                   stk::mesh::EntityFieldData<T> fieldData = ngpField(entity);
+                                   const int numScalarsPerEntity = fieldData.size();
+                                   for (int component=0; component<numScalarsPerEntity; component++) {
+                                     fieldData[component] = value;
                                    }
                                  });
   stkField.modify_on_device();
@@ -1209,14 +1110,14 @@ TEST_F(NgpFieldFixture, blas_field_copy_device_to_device)
   const double myConstantValue = 97.9;
   stk::mesh::field_fill(myConstantValue, *stkField1, stk::ngp::ExecSpace());
 
-#ifdef STK_ENABLE_GPU
+#ifdef STK_USE_DEVICE_MESH
   stk::mesh::NgpField<double>& ngpField1 = stk::mesh::get_updated_ngp_field<double>(*stkField1);
   EXPECT_TRUE(ngpField1.need_sync_to_host());
 #endif
 
-  stk::mesh::field_copy(*stkField1, *stkField2);
+  stk::mesh::field_copy(*stkField1, *stkField2, stk::ngp::ExecSpace());
 
-#ifdef STK_ENABLE_GPU
+#ifdef STK_USE_DEVICE_MESH
   EXPECT_TRUE(stkField1->need_sync_to_host());
   EXPECT_TRUE(stkField2->need_sync_to_host());
 #endif
@@ -1741,18 +1642,38 @@ TEST_F(NgpFieldFixture, ClearDeviceSyncState_doesntClearHostMod)
   EXPECT_TRUE(ngpField.need_sync_to_device());
 }
 
-TEST_F(NgpFieldFixture, updateBucketPtrView)
+TEST_F(NgpFieldFixture, EntityFieldDataUsage)
 {
-  const unsigned bucketCapacity = 1;
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity, bucketCapacity);
-  stk::mesh::Field<int>& field = create_field<int>(stk::topology::ELEM_RANK, "field");
-  get_meta().declare_part_with_topology("block_3", stk::topology::HEX_8);
-  ngp_unit_test_utils::setup_mesh_2hex_2block(get_bulk(), bucketCapacity);
-  stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(field);
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
-  add_3rd_element_to_2hex_3block_mesh();
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::Field<int> & stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", 3);
+  stk::io::fill_mesh("generated:2x2x2", get_bulk());
 
-  ngpField.update_bucket_pointer_view();
+  initialize_ngp_field(stkIntField);
+
+  int multiplier = 2;
+  modify_field_on_device(get_bulk(), stkIntField, multiplier);
+  sync_field_to_host(stkIntField);
+  check_field_on_host(get_bulk(), stkIntField, multiplier);
+}
+
+TEST_F(NgpFieldFixture, setAll)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::Field<int> & stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", 3);
+  stk::io::fill_mesh("generated:2x2x2", get_bulk());
+
+  stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  const int newValue = 123;
+  ngpIntField.set_all(ngpMesh, newValue);
+
+  sync_field_to_host(stkIntField);
+  check_field_on_host(get_bulk(), stkIntField, newValue);
 }
 
 TEST_F(NgpFieldFixture, LateFieldUsage)
@@ -1841,7 +1762,7 @@ TEST_F(OptimizedNgpFieldFixture, CreateConsecutiveNgpFields)
 //   -------------------------        -------------------------
 //
 
-TEST_F(OptimizedNgpFieldFixture, AddBucketInMiddleWithSingleComponent_FieldReference)
+TEST_F(OptimizedNgpFieldFixture, AddBucketInMiddleWithSingleComponent)
 {
   if (get_parallel_size() != 1) return;
 
@@ -1850,14 +1771,6 @@ TEST_F(OptimizedNgpFieldFixture, AddBucketInMiddleWithSingleComponent_FieldRefer
   run_add_bucket_in_middle_internal(numComponents);
 }
 
-TEST_F(OptimizedNgpFieldFixture, AddBucketInMiddleWithSingleComponent_FieldCopy)
-{
-  if (get_parallel_size() != 1) return;
-
-  unsigned numComponents = 1;
-
-  run_add_bucket_in_middle_copy(numComponents);
-}
 
 //   -------------------------        -------------------------
 //   |       |       |       |        |       |       |       |
@@ -1991,12 +1904,6 @@ public:
     return stkField;
   }
 
-  void fill_field_on_device(stk::mesh::Field<int>& stkField)
-  {
-    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    set_element_field_data_on_device(ngpMesh, stkField, get_meta().universal_part(), entityIdMultiplier);
-  }
-
 protected:
   unsigned entityIdMultiplier;
 
@@ -2035,10 +1942,65 @@ TEST_F(ModifyBySelectorFixture, hostToDevice_partialField_byReference)
 
 TEST(DeviceField, checkSizeof)
 {
-  size_t expectedNumBytes = 384;
+  size_t expectedNumBytes = 96;
   std::cout << "sizeof(stk::mesh::DeviceField<double>): " << sizeof(stk::mesh::DeviceField<double>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::DeviceField<double>) <= expectedNumBytes);
 }
+
+
+class SortedBulkData : public stk::mesh::BulkData
+{
+protected:
+  friend class SortedMeshBuilder;
+
+  SortedBulkData(std::shared_ptr<stk::mesh::MetaData> metaData,
+                 stk::ParallelMachine parallel,
+                 enum AutomaticAuraOption autoAuraOption = AUTO_AURA,
+                 std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager = std::unique_ptr<stk::mesh::FieldDataManager>(),
+                 unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
+                 unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity(),
+                 std::shared_ptr<stk::mesh::impl::AuraGhosting> auraGhosting = std::shared_ptr<stk::mesh::impl::AuraGhosting>(),
+                 bool createUpwardConnectivity = true)
+#ifdef SIERRA_MIGRATION
+    : BulkData(metaData, parallel, autoAuraOption, false, std::move(fieldDataManager), initialBucketCapacity,
+               maximumBucketCapacity, auraGhosting, createUpwardConnectivity)
+#else
+    : BulkData(metaData, parallel, autoAuraOption, std::move(fieldDataManager), initialBucketCapacity,
+               maximumBucketCapacity, auraGhosting, createUpwardConnectivity)
+#endif
+  {}
+
+public:
+  bool should_sort_buckets_by_first_entity_identifier() const override {
+    return true;
+  };
+};
+
+class SortedMeshBuilder : public stk::mesh::MeshBuilder
+{
+public:
+  SortedMeshBuilder() = default;
+  SortedMeshBuilder(stk::ParallelMachine comm)
+    : stk::mesh::MeshBuilder(comm)
+  {}
+
+  virtual ~SortedMeshBuilder() override = default;
+
+  //using statement to avoid compile-warning about 'only partially overridden'
+  using stk::mesh::MeshBuilder::create;
+
+  virtual std::unique_ptr<stk::mesh::BulkData> create(std::shared_ptr<stk::mesh::MetaData> metaData) override
+  {
+    STK_ThrowRequireMsg(m_haveComm, "MeshBuilder must be given an MPI communicator before creating BulkData");
+
+    return std::unique_ptr<SortedBulkData>(new SortedBulkData(metaData,
+                                                              m_comm,
+                                                              m_auraOption,
+                                                              std::move(m_fieldDataManager),
+                                                              m_initialBucketCapacity,
+                                                              m_maximumBucketCapacity));
+  }
+};
 
 
 enum PartIds : int {
@@ -2059,55 +2021,96 @@ enum PartIds : int {
   part_15 = 15
 };
 
+enum FieldIds : int {
+  field_0  = 0,
+  field_1  = 1,
+  field_2  = 2
+};
+
 struct NodeIdPartId {
-  int     nodeId;
+  int nodeId;
   PartIds partId;
+};
+
+struct FieldIdPartIds {
+  FieldIds fieldId;
+  std::vector<PartIds> partIds;
 };
 
 class NgpFieldUpdate : public ::ngp_testing::Test
 {
 public:
   NgpFieldUpdate()
-    : m_field(nullptr)
   {
     stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
     builder.set_spatial_dimension(3);
     m_meta = builder.create_meta_data();
   }
 
-  void create_mesh_with_parts_and_nodes(std::vector<PartIds> partIds, std::vector<NodeIdPartId> nodes)
+  void create_mesh_with_parts_and_fields(std::vector<PartIds> partIds, std::vector<FieldIdPartIds> fieldPartIds,
+                                         std::vector<NodeIdPartId> nodes, bool useSortedBuckets = false)
   {
     for (PartIds partId : partIds) {
-      stk::mesh::Part & part = m_meta->declare_part_with_topology("part_" + std::to_string(partId),
-                                                                   stk::topology::NODE);
+      stk::mesh::Part& part = m_meta->declare_part_with_topology("part_" + std::to_string(partId),
+                                                                 stk::topology::NODE);
       m_parts[partId] = &part;
     }
 
-    m_field = &m_meta->declare_field<int>(stk::topology::NODE_RANK, "nodeField");
-    stk::mesh::put_field_on_mesh(*m_field, m_meta->universal_part(), nullptr);
+    for (FieldIdPartIds fieldIdPartIds : fieldPartIds) {
+      FieldIds fieldId = fieldIdPartIds.fieldId;
+      std::vector<PartIds> partIdsForField = fieldIdPartIds.partIds;
 
-    stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
-    builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
-    m_bulk = builder.create(m_meta);
+      stk::mesh::Field<int>& field = m_meta->declare_field<int>(stk::topology::NODE_RANK,
+                                                                "nodeField_" + std::to_string(fieldId));
+      m_fields.push_back(&field);
+
+      stk::mesh::Selector fieldSelector;
+      for (PartIds partId : partIdsForField) {
+        fieldSelector |= *m_parts.at(partId);
+      }
+      stk::mesh::put_field_on_mesh(field, fieldSelector, nullptr);
+    }
+
+    if (useSortedBuckets) {
+      SortedMeshBuilder builder(MPI_COMM_WORLD);
+      builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
+      m_bulk = builder.create(m_meta);
+    }
+    else {
+      stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+      builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
+      m_bulk = builder.create(m_meta);
+    }
 
     m_bulk->modification_begin();
     for (NodeIdPartId node : nodes) {
-      const stk::mesh::Entity newNode = m_bulk->declare_node(node.nodeId,
-                                                             stk::mesh::PartVector{m_parts.at(node.partId)});
-      *stk::mesh::field_data(*m_field, newNode) = node.nodeId;
+      stk::mesh::Part& part = *m_parts.at(node.partId);
+      const stk::mesh::Entity newNode = m_bulk->declare_node(node.nodeId, stk::mesh::PartVector{&part});
+      for (stk::mesh::Field<int>* field : m_fields) {
+        if (field->defined_on(part)) {
+          *stk::mesh::field_data(*field, newNode) = node.nodeId;
+        }
+      }
     }
     m_bulk->modification_end();
 
     stk::mesh::get_updated_ngp_mesh(*m_bulk);
-    stk::mesh::get_updated_ngp_field<int>(*m_field);
+    for (stk::mesh::Field<int>* field : m_fields) {
+      stk::mesh::get_updated_ngp_field<int>(*field);
+    }
   }
 
   void add_node(NodeIdPartId newNodeInfo)
   {
     m_bulk->modification_begin();
+    stk::mesh::Part& part = *m_parts.at(newNodeInfo.partId);
     const stk::mesh::Entity node = m_bulk->declare_node(newNodeInfo.nodeId,
-                                                        stk::mesh::PartVector{m_parts.at(newNodeInfo.partId)});
-    *stk::mesh::field_data(*m_field, node) = newNodeInfo.nodeId;
+                                                        stk::mesh::PartVector{&part});
+    for (stk::mesh::Field<int>* field : m_fields) {
+      if (field->defined_on(part)) {
+        *stk::mesh::field_data(*field, node) = newNodeInfo.nodeId;
+      }
+    }
     m_bulk->modification_end();
   }
 
@@ -2119,46 +2122,71 @@ public:
     m_bulk->modification_end();
   }
 
-  void check_field_values()
+  void scale_all_field_values_on_host(int scaleFactor)
   {
-    const stk::mesh::BucketVector& buckets = m_bulk->buckets(stk::topology::NODE_RANK);
-    unsigned nodeIdx = 0;
-    for (const stk::mesh::Bucket* bucket : buckets) {
-      for (stk::mesh::Entity node : *bucket) {
-        const int* fieldValue = stk::mesh::field_data(*m_field, node);
-        const int expectedValue = m_bulk->identifier(node);
-        EXPECT_EQ(*fieldValue, expectedValue);
-      }
-    }
-
-    const unsigned numNodes = stk::mesh::count_entities(*m_bulk, stk::topology::NODE_RANK, m_meta->universal_part());
-    Kokkos::View<int*> deviceValues("deviceValues", numNodes);
-    Kokkos::View<int*>::HostMirror hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
-
-    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
-    stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(*m_field);
-
-    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(size_t /*index*/) {
-        unsigned nodeGlobalIndex = 0;
-        const unsigned numBuckets = ngpMesh.num_buckets(stk::topology::NODE_RANK);
-        for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
-          const stk::mesh::NgpMesh::BucketType & deviceBucket = ngpMesh.get_bucket(stk::topology::NODE_RANK, bucketId);
-          const unsigned numNodesInBucket = deviceBucket.size();
-          for (unsigned nodeOrdinal = 0; nodeOrdinal < numNodesInBucket; ++nodeOrdinal) {
-            const stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(deviceBucket[nodeOrdinal]);
-            deviceValues[nodeGlobalIndex++] = ngpField.get(nodeIndex, 0);
-          }
+    for (stk::mesh::Field<int>* field : m_fields) {
+      const stk::mesh::BucketVector buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, *field);
+      for (stk::mesh::Bucket* bucket : buckets) {
+        for (stk::mesh::Entity node : *bucket) {
+          int& value = *stk::mesh::field_data(*field, node);
+          value *= scaleFactor;
         }
-      });
+      }
+      field->modify_on_host();
+    }
+  }
 
-    Kokkos::deep_copy(hostValuesFromDevice, deviceValues);
+  void sync_all_fields_to_device()
+  {
+    for (stk::mesh::Field<int>* field : m_fields) {
+      field->sync_to_device();
+    }
+  }
 
-    nodeIdx = 0;
-    for (const stk::mesh::Bucket * bucket : buckets) {
-      for (stk::mesh::Entity node : *bucket) {
-        const int expectedValue = m_bulk->identifier(node);
-        EXPECT_EQ(hostValuesFromDevice[nodeIdx++], expectedValue);
+  void check_field_values(int scaleFactor = 1)
+  {
+    for (stk::mesh::Field<int>* field : m_fields) {
+      const stk::mesh::BucketVector& buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, *field);
+      for (const stk::mesh::Bucket* bucket : buckets) {
+        for (stk::mesh::Entity node : *bucket) {
+          const int* fieldValue = stk::mesh::field_data(*field, node);
+          const int expectedValue = m_bulk->identifier(node) * scaleFactor;
+          EXPECT_EQ(*fieldValue, expectedValue);
+        }
+      }
+
+      const unsigned numNodes = stk::mesh::count_entities(*m_bulk, stk::topology::NODE_RANK, *field);
+      Kokkos::View<int*> deviceValues("deviceValues", numNodes);
+      Kokkos::View<int*>::HostMirror hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
+
+      stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+      stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(*field);
+      stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::NODE_RANK, *field);
+      bucketIds.copy_host_to_device();
+
+      Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
+        KOKKOS_LAMBDA(size_t /*index*/) {
+          unsigned deviceNodeIdx = 0;
+          const unsigned numBuckets = bucketIds.size();
+          for (unsigned bucketIndex = 0; bucketIndex < numBuckets; ++bucketIndex) {
+            const stk::mesh::NgpMesh::BucketType & deviceBucket = ngpMesh.get_bucket(stk::topology::NODE_RANK,
+                                                                                     bucketIds.device_get(bucketIndex));
+            const unsigned numNodesInBucket = deviceBucket.size();
+            for (unsigned nodeOrdinal = 0; nodeOrdinal < numNodesInBucket; ++nodeOrdinal) {
+              const stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(deviceBucket[nodeOrdinal]);
+              deviceValues[deviceNodeIdx++] = ngpField.get(nodeIndex, 0);
+            }
+          }
+        });
+
+      Kokkos::deep_copy(hostValuesFromDevice, deviceValues);
+
+      unsigned nodeIdx = 0;
+      for (const stk::mesh::Bucket * bucket : buckets) {
+        for (stk::mesh::Entity node : *bucket) {
+          const int expectedValue = m_bulk->identifier(node) * scaleFactor;
+          EXPECT_EQ(hostValuesFromDevice[nodeIdx++], expectedValue);
+        }
       }
     }
   }
@@ -2167,7 +2195,7 @@ protected:
   std::shared_ptr<stk::mesh::BulkData> m_bulk;
   std::shared_ptr<stk::mesh::MetaData> m_meta;
   std::map<PartIds, stk::mesh::Part*> m_parts;
-  stk::mesh::Field<int> * m_field;
+  std::vector<stk::mesh::Field<int>*> m_fields;
 };
 
 //   o = Node that persists through modification
@@ -2182,8 +2210,9 @@ TEST_F(NgpFieldUpdate, AddBucketAtBeginning_WhileReallocating)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3},
-                                   {{2, part_2}, {3, part_3}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3},
+                                    {{field_0, {part_1, part_2, part_3}}},
+                                    {{2, part_2}, {3, part_3}});
   add_node({1, part_1});
 
   check_field_values();
@@ -2197,8 +2226,9 @@ TEST_F(NgpFieldUpdate, AddBucketInMiddle_WhileReallocating)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3},
-                                   {{1, part_1}, {3, part_3}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3},
+                                    {{field_0, {part_1, part_2, part_3}}},
+                                    {{1, part_1}, {3, part_3}});
   add_node({2, part_2});
 
   check_field_values();
@@ -2212,8 +2242,9 @@ TEST_F(NgpFieldUpdate, AddBucketAtEnd_WhileReallocating)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3},
-                                   {{1, part_1}, {2, part_2}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3},
+                                    {{field_0, {part_1, part_2, part_3}}},
+                                    {{1, part_1}, {2, part_2}});
   add_node({3, part_3});
 
   check_field_values();
@@ -2227,8 +2258,9 @@ TEST_F(NgpFieldUpdate, RemoveBucketAtFront_WhileReallocating)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3},
-                                   {{1, part_1}, {2, part_2}, {3, part_3}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3},
+                                    {{field_0, {part_1, part_2, part_3}}},
+                                    {{1, part_1}, {2, part_2}, {3, part_3}});
   remove_node(1);
 
   check_field_values();
@@ -2242,8 +2274,9 @@ TEST_F(NgpFieldUpdate, RemoveBucketInMiddle_WhileReallocating)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3},
-                                   {{1, part_1}, {2, part_2}, {3, part_3}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3},
+                                    {{field_0, {part_1, part_2, part_3}}},
+                                    {{1, part_1}, {2, part_2}, {3, part_3}});
   remove_node(2);
 
   check_field_values();
@@ -2257,8 +2290,9 @@ TEST_F(NgpFieldUpdate, RemoveBucketAtEnd_WhileReallocating)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3},
-                                   {{1, part_1}, {2, part_2}, {3, part_3}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3},
+                                    {{field_0, {part_1, part_2, part_3}}},
+                                    {{1, part_1}, {2, part_2}, {3, part_3}});
   remove_node(3);
 
   check_field_values();
@@ -2272,8 +2306,9 @@ TEST_F(NgpFieldUpdate, ModifyBucketAtBeginning_WhileReallocating)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_3, part_4, part_5},
-                                   {{1, part_1}, {3, part_3}, {4, part_4}});
+  create_mesh_with_parts_and_fields({part_1, part_3, part_4, part_5},
+                                    {{field_0, {part_1, part_3, part_4, part_5}}},
+                                    {{1, part_1}, {3, part_3}, {4, part_4}});
   add_node({2, part_1});
   add_node({5, part_5});
 
@@ -2288,8 +2323,9 @@ TEST_F(NgpFieldUpdate, ModifyBucketInMiddle_WhileReallocating)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_4, part_5},
-                                   {{1, part_1}, {2, part_2}, {4, part_4}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_4, part_5},
+                                    {{field_0, {part_1, part_2, part_4, part_5}}},
+                                    {{1, part_1}, {2, part_2}, {4, part_4}});
   add_node({3, part_2});
   add_node({5, part_5});
 
@@ -2304,8 +2340,9 @@ TEST_F(NgpFieldUpdate, ModifyBucketAtEnd_WhileReallocating)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4},
-                                   {{1, part_1}, {3, part_3}, {4, part_4}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4},
+                                    {{field_0, {part_1, part_2, part_3, part_4}}},
+                                    {{1, part_1}, {3, part_3}, {4, part_4}});
   add_node({2, part_2});
   add_node({5, part_4});
 
@@ -2320,8 +2357,9 @@ TEST_F(NgpFieldUpdate, AddAndRemoveBucketSameLocation)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4},
-                                   {{1, part_1}, {2, part_2}, {4, part_4}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4},
+                                    {{field_0, {part_1, part_2, part_3, part_4}}},
+                                    {{1, part_1}, {2, part_2}, {4, part_4}});
   remove_node(2);
   add_node({3, part_3});
 
@@ -2344,8 +2382,9 @@ TEST_F(NgpFieldUpdate, OverlapBackwardMovedRangesDueToModifiedBucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_6, part_7, part_8},
-                                   {{1, part_1}, {2, part_2}, {3, part_3}, {4, part_4}, {6, part_6}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_6, part_7, part_8},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_6, part_7, part_8}}},
+                                    {{1, part_1}, {2, part_2}, {3, part_3}, {4, part_4}, {6, part_6}});
   remove_node(1);
   remove_node(2);
   add_node({5, part_4});
@@ -2371,8 +2410,9 @@ TEST_F(NgpFieldUpdate, OverlapBackwardMovedRangesDueToDeletedBucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_5, part_6, part_7},
-                                   {{1, part_1}, {2, part_2}, {3, part_3}, {4, part_4}, {5, part_5}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_5, part_6, part_7},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_5, part_6, part_7}}},
+                                    {{1, part_1}, {2, part_2}, {3, part_3}, {4, part_4}, {5, part_5}});
   remove_node(2);
   remove_node(4);
   add_node({6, part_6});
@@ -2397,10 +2437,12 @@ TEST_F(NgpFieldUpdate, DoubleOverlapBackwardMovedRangesDueToModifiedBucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_5, part_6, part_8, part_9, part_11,
-                                    part_12, part_13, part_14, part_15},
-                                   {{1, part_1}, {2, part_2}, {3, part_3}, {4, part_4}, {5, part_5}, {6, part_6},
-                                    {8, part_8}, {9, part_9}, {11, part_11}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_5, part_6, part_8, part_9, part_11,
+                                     part_12, part_13, part_14, part_15},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_5, part_6, part_8, part_9, part_11,
+                                                part_12, part_13, part_14, part_15}}},
+                                    {{1, part_1}, {2, part_2}, {3, part_3}, {4, part_4}, {5, part_5}, {6, part_6},
+                                     {8, part_8}, {9, part_9}, {11, part_11}});
   remove_node(1);
   remove_node(2);
   remove_node(3);
@@ -2431,10 +2473,12 @@ TEST_F(NgpFieldUpdate, DoubleOverlapBackwardMovedRangesDueToDeletedBucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9,
-                                    part_10, part_11, part_12},
-                                   {{1, part_1}, {2, part_2}, {3, part_3}, {4, part_4}, {5, part_5}, {6, part_6},
-                                    {7, part_7}, {8, part_8}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9,
+                                     part_10, part_11, part_12},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9,
+                                                part_10, part_11, part_12}}},
+                                    {{1, part_1}, {2, part_2}, {3, part_3}, {4, part_4}, {5, part_5}, {6, part_6},
+                                     {7, part_7}, {8, part_8}});
   remove_node(1);
   remove_node(2);
   remove_node(5);
@@ -2463,8 +2507,9 @@ TEST_F(NgpFieldUpdate, OverlapForwardMovedRangesDueToModifiedBucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_6, part_7, part_8},
-                                   {{3, part_3}, {4, part_4}, {6, part_6}, {7, part_7}, {8, part_8}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_6, part_7, part_8},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_6, part_7, part_8}}},
+                                    {{3, part_3}, {4, part_4}, {6, part_6}, {7, part_7}, {8, part_8}});
   remove_node(7);
   remove_node(8);
   add_node({1, part_1});
@@ -2490,8 +2535,9 @@ TEST_F(NgpFieldUpdate, OverlapForwardMovedRangesDueToDeletedBucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_5, part_6, part_7},
-                                   {{3, part_3}, {4, part_4}, {5, part_5}, {6, part_6}, {7, part_7}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_5, part_6, part_7},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_5, part_6, part_7}}},
+                                    {{3, part_3}, {4, part_4}, {5, part_5}, {6, part_6}, {7, part_7}});
   remove_node(4);
   remove_node(6);
   add_node({1, part_1});
@@ -2516,10 +2562,12 @@ TEST_F(NgpFieldUpdate, DoubleOverlapForwardMovedRangesDueToModifiedBucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_5, part_6, part_8, part_9, part_11,
-                                    part_12, part_13, part_14, part_15},
-                                   {{5, part_5}, {6, part_6}, {8, part_8}, {9, part_9}, {11, part_11}, {12, part_12},
-                                    {13, part_13}, {14, part_14}, {15, part_15}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_5, part_6, part_8, part_9, part_11,
+                                     part_12, part_13, part_14, part_15},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_5, part_6, part_8, part_9, part_11,
+                                                part_12, part_13, part_14, part_15}}},
+                                    {{5, part_5}, {6, part_6}, {8, part_8}, {9, part_9}, {11, part_11}, {12, part_12},
+                                     {13, part_13}, {14, part_14}, {15, part_15}});
   remove_node(12);
   remove_node(13);
   remove_node(14);
@@ -2550,10 +2598,12 @@ TEST_F(NgpFieldUpdate, DoubleOverlapForwardMovedRangesDueToDeletedBucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9,
-                                    part_10, part_11, part_12},
-                                   {{5, part_5}, {6, part_6}, {7, part_7}, {8, part_8}, {9, part_9}, {10, part_10},
-                                    {11, part_11}, {12, part_12}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9,
+                                     part_10, part_11, part_12},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9,
+                                                part_10, part_11, part_12}}},
+                                    {{5, part_5}, {6, part_6}, {7, part_7}, {8, part_8}, {9, part_9}, {10, part_10},
+                                     {11, part_11}, {12, part_12}});
   remove_node(6);
   remove_node(8);
   remove_node(11);
@@ -2582,8 +2632,9 @@ TEST_F(NgpFieldUpdate, MoveForwardBackwardForward)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9},
-                                   {{2, part_2}, {3, part_3}, {4, part_4}, {5, part_5}, {8, part_8}, {9, part_9}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9}}},
+                                    {{2, part_2}, {3, part_3}, {4, part_4}, {5, part_5}, {8, part_8}, {9, part_9}});
   remove_node(3);
   remove_node(4);
   remove_node(9);
@@ -2610,14 +2661,72 @@ TEST_F(NgpFieldUpdate, MoveBackwardForwardBackward)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
-  create_mesh_with_parts_and_nodes({part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9},
-                                   {{1, part_1}, {2, part_2}, {5, part_5}, {6, part_6}, {7, part_7}, {8, part_8}});
+  create_mesh_with_parts_and_fields({part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9},
+                                    {{field_0, {part_1, part_2, part_3, part_4, part_5, part_6, part_7, part_8, part_9}}},
+                                    {{1, part_1}, {2, part_2}, {5, part_5}, {6, part_6}, {7, part_7}, {8, part_8}});
   remove_node(1);
   remove_node(6);
   remove_node(7);
   add_node({3, part_3});
   add_node({4, part_4});
   add_node({9, part_9});
+
+  check_field_values();
+}
+
+// |   1   |   3   |   2   |   4   |       |   2   |   3   |   1   |   4   |
+// |   o   |   o   |   o   |   o   |  ==>  |   o   |   o   |   o   |   o   |
+// |part_1 |part_1 |part_2 |part_2 |       |part_1 |part_1 |part_2 |part_2 |
+//
+TEST_F(NgpFieldUpdate, BucketsSortedByFirstId_SwapPlaces)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  const bool sortBucketsByFirstId = true;
+  create_mesh_with_parts_and_fields({part_1, part_2},
+                                    {{field_0, {part_1, part_2}}, {field_1, {part_1, part_2}}},
+                                    {{1, part_1}, {2, part_2}, {3, part_1}, {4, part_2}},
+                                    sortBucketsByFirstId);
+  remove_node(1);
+  remove_node(2);
+  add_node({1, part_2});
+  add_node({2, part_1});
+
+  check_field_values();
+}
+
+TEST_F(NgpFieldUpdate, SyncWithFieldsOnDifferentBuckets)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  create_mesh_with_parts_and_fields({part_1, part_2},
+                                    {{field_1, {part_1}}, {field_2, {part_2}}},
+                                    {{1, part_1}, {2, part_2}});
+
+  scale_all_field_values_on_host(10);
+  sync_all_fields_to_device();
+  check_field_values(10);
+}
+
+TEST_F(NgpFieldUpdate, LaggedFieldUpdateAfterMeshModification)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  create_mesh_with_parts_and_fields({part_1, part_2},
+                                    {{field_1, {part_1, part_2}}, {field_2, {part_1, part_2}}},
+                                    {{1, part_1}, {2, part_2}});
+
+  add_node({3, part_1}); // First Bucket modified
+
+  // Trigger update of all Field data through second Field
+  stk::mesh::get_updated_ngp_field<int>(*m_fields[1]);
+
+  add_node({4, part_2}); // Second Bucket modified
+
+  // Trigger update of all Field data through first Field.  This Field needs to detect that its first Bucket was
+  // modified two mod-cycles ago.
+  stk::mesh::get_updated_ngp_field<int>(*m_fields[0]);
+  stk::mesh::get_updated_ngp_field<int>(*m_fields[1]);
 
   check_field_values();
 }
@@ -2679,18 +2788,16 @@ TEST_F(NgpFieldExecSpaceTestFixture, UseNonDefaultMemSpace)
   EXPECT_NO_THROW((stk::mesh::get_updated_ngp_field<int, stk::ngp::HostPinnedSpace>(*field)));
 
 #ifdef STK_ENABLE_GPU
-  EXPECT_ANY_THROW(
+  EXPECT_ANY_THROW((stk::mesh::get_updated_ngp_field<int>(*field)));
 #else
-  EXPECT_NO_THROW(
+  EXPECT_NO_THROW((stk::mesh::get_updated_ngp_field<int>(*field)));
 #endif
-    (stk::mesh::get_updated_ngp_field<int>(*field)));
 
 #ifdef STK_ENABLE_GPU
-  EXPECT_ANY_THROW(
+  EXPECT_ANY_THROW((stk::mesh::get_updated_ngp_field<int, stk::mesh::NgpMeshDefaultMemSpace>(*field)));
 #else
-  EXPECT_NO_THROW(
+  EXPECT_NO_THROW((stk::mesh::get_updated_ngp_field<int, stk::mesh::NgpMeshDefaultMemSpace>(*field)));
 #endif
-    (stk::mesh::get_updated_ngp_field<int, stk::mesh::NgpMeshDefaultMemSpace>(*field)));
 }
 
 }  // namespace ngp_field_test

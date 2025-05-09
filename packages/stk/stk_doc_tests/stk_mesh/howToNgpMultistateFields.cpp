@@ -10,6 +10,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_ngp_test/ngp_test.hpp>

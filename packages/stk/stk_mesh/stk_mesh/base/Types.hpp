@@ -37,14 +37,14 @@
 
 //----------------------------------------------------------------------
 
-#include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint64_t
-#include <limits>                       // for numeric_limits
 #include <stk_util/stk_config.h>
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/NamedPair.hpp>  // for NAMED_PAIR
 #include <stk_util/util/PairIter.hpp>   // for PairIter
+#include <cstddef>
+#include <cstdint>
+#include <limits>                       // for numeric_limits
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include <set>
@@ -261,7 +261,8 @@ enum ConnectivityType
   INVALID_CONNECTIVITY_TYPE
 };
 
-constexpr unsigned INVALID_BUCKET_ID = std::numeric_limits<unsigned>::max();
+constexpr unsigned INVALID_BUCKET_ID = std::numeric_limits<int>::max();
+constexpr unsigned INVALID_PARTITION_ID = std::numeric_limits<int>::max();
 
 #define STK_16BIT_CONNECTIVITY_ORDINAL
 #ifdef STK_16BIT_CONNECTIVITY_ORDINAL
@@ -284,6 +285,26 @@ enum Permutation : unsigned char
 {
   DEFAULT_PERMUTATION = 0,
   INVALID_PERMUTATION = 128
+};
+
+struct FieldMetaData
+{
+  std::byte* m_data {};
+  int m_bytesPerEntity {};
+  int m_numComponentsPerEntity {};
+  int m_numCopiesPerEntity {};
+  int m_bucketSize {};
+  int m_bucketCapacity {};
+};
+
+struct DeviceFieldMetaData
+{
+  std::byte* m_data {};
+  std::byte* m_hostData {};
+  int m_numComponentsPerEntity {};
+  int m_numCopiesPerEntity {};
+  int m_bucketSize {};
+  int m_bucketCapacity {};
 };
 
 } // namespace mesh

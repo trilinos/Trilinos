@@ -45,10 +45,10 @@
 namespace stk {
 namespace mesh {
 
-template <typename T>
+template <typename NgpFieldType>
 struct NgpFieldInfo
 {
-  NgpFieldInfo(stk::mesh::NgpField<T>& fld)
+  NgpFieldInfo(NgpFieldType& fld)
     : m_field(fld) {}
 
   KOKKOS_DEFAULTED_FUNCTION
@@ -61,35 +61,40 @@ struct NgpFieldInfo
   ~NgpFieldInfo() = default;
 
   KOKKOS_FUNCTION
-  operator const stk::mesh::NgpField<T>&() const { return m_field; }
+  operator const NgpFieldType&() const { return m_field; }
 
-  stk::mesh::NgpField<T> m_field;
+  NgpFieldType m_field;
 };
 
-template <typename T>
-using FieldDataViewType = Kokkos::View<T*, stk::ngp::MemSpace>;
+template <typename T, typename MEMSPACE>
+using FieldDataViewType = Kokkos::View<T*, MEMSPACE>;
 
-template <typename T>
-using FieldView = Kokkos::View<NgpFieldInfo<T>*, stk::ngp::MemSpace>;
+template <typename NgpFieldType, typename MEMSPACE>
+using FieldView = Kokkos::View<NgpFieldInfo<NgpFieldType>*, MEMSPACE>;
 
-template <typename T>
-using BufferViewType = Kokkos::View<T*, stk::ngp::MemSpace>;
+template <typename T, typename MEMSPACE>
+using BufferViewType = Kokkos::View<T*, MEMSPACE>;
 
-template <typename T>
+template <typename NgpMeshType, typename NgpFieldType>
 class ParallelSumDataExchangeSymPackUnpackHandler
 {
 public:
-  ParallelSumDataExchangeSymPackUnpackHandler(const stk::mesh::NgpMesh& mesh, const std::vector<stk::mesh::NgpField<T> *> & ngpFields)
-    : m_ngpMesh(const_cast<stk::mesh::NgpMesh&>(mesh)),
+  using T = typename NgpFieldType::value_type;
+  using mem_space = typename NgpMeshType::ngp_mem_space;
+  using mesh_type = NgpMeshType;
+  using field_type = NgpFieldType;
+
+  ParallelSumDataExchangeSymPackUnpackHandler(const NgpMeshType& mesh, const std::vector<NgpFieldType *> & ngpFields)
+    : m_ngpMesh(const_cast<NgpMeshType&>(mesh)),
       m_ngpFields(ngpFields),
-      m_ngpFieldsOnDevice(FieldView<T>("ngpFieldsOnDevice", ngpFields.size())),
-      m_deviceSendData(BufferViewType<T>("deviceSendData", 1)),
-      m_deviceRecvData(BufferViewType<T>("deviceRecvData", 1))
+      m_ngpFieldsOnDevice(FieldView<NgpFieldType,mem_space>("ngpFieldsOnDevice", ngpFields.size())),
+      m_deviceSendData(BufferViewType<T,mem_space>("deviceSendData", 1)),
+      m_deviceRecvData(BufferViewType<T,mem_space>("deviceRecvData", 1))
   {
-    typename FieldView<T>::HostMirror ngpFieldsHostMirror = Kokkos::create_mirror_view(m_ngpFieldsOnDevice);
+    typename FieldView<NgpFieldType,mem_space>::HostMirror ngpFieldsHostMirror = Kokkos::create_mirror_view(m_ngpFieldsOnDevice);
     for (size_t fieldIdx = 0; fieldIdx < m_ngpFields.size(); fieldIdx++)
     {
-      ngpFieldsHostMirror(fieldIdx) = NgpFieldInfo<T>(*m_ngpFields[fieldIdx]);
+      ngpFieldsHostMirror(fieldIdx) = NgpFieldInfo<NgpFieldType>(*m_ngpFields[fieldIdx]);
     }
     Kokkos::deep_copy(m_ngpFieldsOnDevice, ngpFieldsHostMirror);
   }
@@ -99,10 +104,11 @@ public:
   void hostSizeMessages(int proc, size_t & numValues, bool includeGhosts=false) const
   {
     numValues = 0;
-    for (stk::mesh::NgpField<T>* field : m_ngpFields)
+    for (NgpFieldType* field : m_ngpFields)
     {
       stk::mesh::FieldBase* stkField = m_ngpMesh.get_bulk_on_host().mesh_meta_data().get_fields()[field->get_ordinal()];
-      stk::mesh::HostCommMapIndices  commMapIndices = m_ngpMesh.get_bulk_on_host().template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(field->get_rank(), proc, includeGhosts);
+      stk::mesh::HostCommMapIndices<stk::ngp::MemSpace> commMapIndices =
+          m_ngpMesh.get_bulk_on_host().template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(field->get_rank(), proc, includeGhosts);
       for (size_t i = 0; i < commMapIndices.extent(0); ++i) {
         const unsigned bucketId = commMapIndices(i).bucket_id;
         const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(*stkField, bucketId);
@@ -111,51 +117,59 @@ public:
     }
   }
 
-  stk::mesh::NgpMesh& get_ngp_mesh() const {
+  NgpMeshType& get_ngp_mesh() const {
     return m_ngpMesh;
   }
 
-  std::vector<stk::mesh::NgpField<T> *> const& get_ngp_fields() const {
+  std::vector<NgpFieldType*> const& get_ngp_fields() const {
     return m_ngpFields;
   }
 
   KOKKOS_FUNCTION
-  FieldView<T> get_ngp_fields_on_device() const {
+  const FieldView<NgpFieldType,mem_space>& get_ngp_fields_on_device() const
+  {
     return m_ngpFieldsOnDevice;
   }
 
-  BufferViewType<T> get_device_send_data() const {
+  BufferViewType<T,mem_space>& get_device_send_data() {
     return m_deviceSendData;
   }
 
-  BufferViewType<T> get_device_recv_data() const {
+  BufferViewType<T,mem_space>& get_device_recv_data() {
     return m_deviceRecvData;
   }
 
-  UnsignedViewType::HostMirror get_host_buffer_offsets() const {
+  typename UnsignedViewType<stk::ngp::MemSpace>::HostMirror& get_host_buffer_offsets()
+  {
     return m_ngpMesh.get_ngp_parallel_sum_host_buffer_offsets();
   }
 
-  Unsigned2dViewType::HostMirror get_host_mesh_indices_offsets() const {
+  typename UnsignedViewType<stk::ngp::MemSpace>::HostMirror& get_host_mesh_indices_offsets()
+  {
     return m_ngpMesh.get_ngp_parallel_sum_host_mesh_indices_offsets();
   }
 
-  Unsigned2dViewType get_device_mesh_indices_offsets() const {
+  auto& get_device_mesh_indices_offsets()
+  {
     return m_ngpMesh.get_ngp_parallel_sum_device_mesh_indices_offsets();
   }
 
   void resize_device_mpi_buffers(size_t size) {
-    Kokkos::resize(Kokkos::WithoutInitializing, m_deviceSendData, size);
-    Kokkos::resize(Kokkos::WithoutInitializing, m_deviceRecvData, size);
+    if (m_deviceSendData.size() < size) {
+      Kokkos::resize(Kokkos::WithoutInitializing, m_deviceSendData, size);
+    }
+    if (m_deviceRecvData.size() < size) {
+      Kokkos::resize(Kokkos::WithoutInitializing, m_deviceRecvData, size);
+    }
   }
 
 private:
-  stk::mesh::NgpMesh& m_ngpMesh;
-  const std::vector<stk::mesh::NgpField<T> *>& m_ngpFields;
-  FieldView<T> m_ngpFieldsOnDevice;
+  NgpMeshType& m_ngpMesh;
+  const std::vector<NgpFieldType *>& m_ngpFields;
+  FieldView<NgpFieldType,mem_space> m_ngpFieldsOnDevice;
 
-  BufferViewType<T> m_deviceSendData;
-  BufferViewType<T> m_deviceRecvData;
+  BufferViewType<T,mem_space> m_deviceSendData;
+  BufferViewType<T,mem_space> m_deviceRecvData;
 };
 
 }

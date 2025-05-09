@@ -329,7 +329,6 @@ void verify_mesh_balanced_wrt_selectors(const stk::mesh::BulkData& bulk, const s
     std::vector<size_t> counts;
     for(const stk::mesh::Selector & sel : selectors)
     {
-        stk::mesh::EntityVector elements;
         size_t num_elements = stk::mesh::count_selected_entities(sel, bulk.buckets(stk::topology::ELEM_RANK));
         counts.clear();
         stk::mesh::comm_mesh_counts(bulk, counts, &sel);

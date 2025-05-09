@@ -53,8 +53,8 @@
 #include <utility>    // for move, pair
 #include <vector>     // for vector, swap
 
-namespace doc_test
-{
+namespace stk {
+namespace unit_test_util {
 
 class Hex8
 {
@@ -328,8 +328,41 @@ class Hex8
 
     return dist;
   }
+
+  static const std::vector<double>& coordinate_center()
+  {
+    static const std::vector<double> C(3, 0.);
+    return C;
+  }
+
+  static void interpolate_point(const int&  /*npar_coord*/, // (==3)
+      const double* par_coord, // (3)
+      const int& ncomp_field,
+      const double* field,  // (8,ncomp_field)
+      double* result)       // (ncomp_field)
+  {
+    // 'field' is a flat array of dimension (8,ncomp_field) (Fortran ordering);
+    double xi = par_coord[0];
+    double eta = par_coord[1];
+    double zeta = par_coord[2];
+
+    for(int i = 0; i < ncomp_field; i++) {
+      // Base 'field array' index for ith component
+      int b = 8 * i;
+
+      result[i] = 0.125 * (1.0 - eta) * (1.0 - xi) * (1.0 - zeta) * field[b + 0] +
+                  0.125 * (1.0 - eta) * (1.0 + xi) * (1.0 - zeta) * field[b + 1] +
+                  0.125 * (1.0 + eta) * (1.0 + xi) * (1.0 - zeta) * field[b + 2] +
+                  0.125 * (1.0 + eta) * (1.0 - xi) * (1.0 - zeta) * field[b + 3] +
+                  0.125 * (1.0 - eta) * (1.0 - xi) * (1.0 + zeta) * field[b + 4] +
+                  0.125 * (1.0 - eta) * (1.0 + xi) * (1.0 + zeta) * field[b + 5] +
+                  0.125 * (1.0 + eta) * (1.0 + xi) * (1.0 + zeta) * field[b + 6] +
+                  0.125 * (1.0 + eta) * (1.0 - xi) * (1.0 + zeta) * field[b + 7];
+    }
+  }
 };
 
+}
 }
 
 #endif

@@ -1025,10 +1025,6 @@ TEST(LoadBalance, testGraphCreationUsingSearchForContact)
     loadBalanceSettings.setToleranceForFaceSearch(options.getToleranceForFaceSearch());
     loadBalanceSettings.setToleranceForParticleSearch(options.getToleranceForParticleSearch());
 
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
-
-    std::vector<double> vertexWeights(numElements, 1);
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
     unsigned numEdgesCreated = 2;
@@ -1147,9 +1143,6 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticles)
 
     loadBalanceSettings.setToleranceForParticleSearch(2.01);
 
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
-    std::vector<double> vertexWeights(numElements, 1);
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
     unsigned numEdgesCreated = 2;
@@ -1204,10 +1197,6 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticlesAndSkin)
     loadBalanceSettings.setToleranceForFaceSearch(0.21);
     loadBalanceSettings.setToleranceForParticleSearch(2.01);
 
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
-
-    std::vector<double> vertexWeights(numElements, 1);
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
     unsigned numEdgesCreated = 12;

@@ -477,6 +477,8 @@ void print_upward_connected_entities(stk::mesh::BulkData& bulk,
 std::vector<ConnectivityOrdinal> get_ordinals_without_connected_sides(BulkData & mesh, const Entity elem);
 void connect_element_to_existing_sides(BulkData & mesh, const Entity elem);
 
+void set_local_ids(BulkData& mesh);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

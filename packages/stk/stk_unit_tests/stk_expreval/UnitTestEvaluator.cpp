@@ -3122,6 +3122,24 @@ TEST(UnitTestEvaluator, Ngp_testFunction_point3d)
   EXPECT_DOUBLE_EQ(device_evaluate("point3d(0, 0, -2, 1, 1)"),   0);
 }
 
+TEST(UnitTestEvaluator, testFunction_relative_error)
+{
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(5, 4)"), -0.2);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(4, 5)"), 0.2);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(4e-17, 5e-17)"), 0.0);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(4e-6, 5e-6, 1e-8)"), 0.2);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(5e-6, 4e-6, 1e-8)"), -0.2);
+}
+
+TEST(UnitTestEvaluator, Ngp_testFunction_relative_error)
+{
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(5, 4)"), -0.2);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(4, 5)"), 0.2);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(4e-17, 5e-17)"), 0.0);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(4e-6, 5e-6, 1e-8)"), 0.2);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(5e-6, 4e-6, 1e-8)"), -0.2);
+}
+
 TEST(UnitTestEvaluator, testFunction_exponential_pdf)
 {
   EXPECT_DOUBLE_EQ(evaluate("exponential_pdf(-1, 1)"), 0);

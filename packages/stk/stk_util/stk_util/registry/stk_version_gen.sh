@@ -41,34 +41,44 @@ DIR=$(dirname $0)
 # the source tree, but I'm not going to change that now.
 cd ${DIR}
 
-# Don't prepend DIR here, since we are now in that directory.
-STK_HEADER_FILE=stk_version.hpp
-
 REMOTE_REPO="git@cee-gitlab.sandia.gov:1540-compsim/sierra/base"
 
-NEW_VERSION=$(git describe --long --abbrev=8 --match=[0-9]*.[0-9]*.[0-9]* HEAD 2>/dev/null)
-
- if [ -z "${NEW_VERSION}" ] ; then
-    NEW_VERSION=$(git ls-remote --tags ${REMOTE_REPO} | awk -F'/' '{print $3}' | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
-    if [ -z "${NEW_VERSION}" ] ; then
-       echo >&2 "stk_version_gen.sh: Unable to determine version!"
-       exit 1
-    fi
-else
-    ROOT=$(git rev-parse --show-toplevel)
-    test -z "$(git ls-files -m $ROOT)" ||
-    NEW_VERSION="${NEW_VERSION}-modified"
- fi
-
-# Trim the 'v' from the beginning of the version (why is it there in the first place?)
-NEW_VERSION=$(expr "$NEW_VERSION" : v*'\(.*\)')
-
+# Don't prepend DIR here, since we are now in that directory.
+STK_HEADER_FILE=stk_version.hpp
 if test -r $STK_HEADER_FILE
 then
     CURRENT_VERSION=$(cat $STK_HEADER_FILE)
 else
     CURRENT_VERSION=unset
 fi
+
+if [[ ! "$(git config --get remote.origin.url)" =~ ${REMOTE_REPO%:*} ]]
+then
+    # Check to see if we have access to cee-gitlab.
+    NEW_VERSION=$(git ls-remote --tags ${REMOTE_REPO} 2>/dev/null | awk -F'/' '{print $3}' | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
+    # If we are not in a cee-gitlab git repo, and we don't have access
+    # to cee-gitlab, assume this is an external customer build and use
+    # the current version.
+    test -z "${NEW_VERSION}" && NEW_VERSION=${CURRENT_VERSION##* }
+else
+    NEW_VERSION=$(git describe --long --abbrev=8 --match=[0-9]*.[0-9]*.[0-9]* HEAD 2>/dev/null)
+
+    if [ -z "${NEW_VERSION}" ] ; then
+        NEW_VERSION=$(git ls-remote --tags ${REMOTE_REPO} 2>/dev/null | awk -F'/' '{print $3}' | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
+        if [ -z "${NEW_VERSION}" ] ; then
+            echo >&2 "stk_version_gen.sh: Unable to determine version!"
+            exit 1
+        fi
+    else
+        ROOT=$(git rev-parse --show-toplevel)
+        test -z "$(git ls-files -m $ROOT)" ||
+            NEW_VERSION="${NEW_VERSION}-modified"
+    fi
+
+    # Trim the 'v' from the beginning of the version (why is it there in the first place?)
+    NEW_VERSION=$(expr "$NEW_VERSION" : v*'\(.*\)')
+fi
+
 # Don't touch the header if it already contains this version (to prevent unwanted recompilation.)
 test "// $NEW_VERSION" = "$CURRENT_VERSION" ||
     echo "// $NEW_VERSION" > $STK_HEADER_FILE

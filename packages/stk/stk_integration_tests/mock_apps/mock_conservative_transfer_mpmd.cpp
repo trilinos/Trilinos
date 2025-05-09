@@ -1,6 +1,7 @@
 #include "stk_middle_mesh/communication_api.hpp"
 #include "stk_middle_mesh_util/create_stk_mesh.hpp"
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
+#include "stk_util/parallel/Parallel.hpp"
 #include "stk_unit_test_utils/ConservativeTransferUserExample.hpp"
 
 
@@ -78,7 +79,7 @@ std::function<double(const utils::Point&)> function_factory(const std::string& f
 
 int main(int argc, char* argv[])
 {
-  stk::parallel_machine_init(&argc, &argv);
+  stk::initialize(&argc, &argv);
 
   int defaultColor = -1;
   int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
@@ -148,5 +149,5 @@ int main(int argc, char* argv[])
     MPI_Comm_free(&meshComm);
   }
 
-  stk::parallel_machine_finalize();
+  stk::finalize();
 }
