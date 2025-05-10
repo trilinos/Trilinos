@@ -336,8 +336,8 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       if (IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: MIS-2 aggregation" << std::endl;
       labels = KokkosGraph::graph_mis2_aggregate<device_t, rowmap_t, colinds_t>(aRowptrs, aColinds, numAggs);
     }
-    auto vertex2AggId = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-    auto procWinner   = aggregates->GetProcWinner()->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+    auto vertex2AggId = aggregates->GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadWrite);
+    auto procWinner   = aggregates->GetProcWinner()->getLocalViewDevice(Xpetra::Access::OverwriteAll);
     int rank          = comm->getRank();
     Kokkos::parallel_for(
         Kokkos::RangePolicy<exec_space>(0, numRows),

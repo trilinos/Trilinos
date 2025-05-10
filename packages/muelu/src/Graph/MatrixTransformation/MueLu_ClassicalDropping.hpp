@@ -56,7 +56,7 @@ class SAFunctor {
     , eps(threshold)
     , results(results_) {
     diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
 
@@ -116,7 +116,7 @@ class SignedRSFunctor {
     , eps(threshold)
     , results(results_) {
     max_offdiagVec = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixMaxMinusOffDiagonal(A_);
-    auto lcl2d     = max_offdiagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto lcl2d     = max_offdiagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
     max_offdiag    = Kokkos::subview(lcl2d, Kokkos::ALL(), 0);
   }
 
@@ -174,7 +174,7 @@ class SignedSAFunctor {
     , results(results_) {
     // Construct ghosted matrix diagonal
     diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
 

@@ -436,7 +436,7 @@ materialTestCase<Scalar, LocalOrdinal, GlobalOrdinal, Node> constructVariableMat
   {
     magnitudeType data[27][3] = {{0.0, 0.0, 2.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 1.0}, {0.0, 1.0, 2.0}, {1.0, 0.0, 2.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 1.0}, {1.0, 1.0, 2.0}, {0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}, {1.0, 1.0, 0.0}, {0.0, 2.0, 1.0}, {0.0, 2.0, 2.0}, {1.0, 2.0, 1.0}, {1.0, 2.0, 2.0}, {0.0, 2.0, 0.0}, {1.0, 2.0, 0.0}, {2.0, 0.0, 2.0}, {2.0, 0.0, 1.0}, {2.0, 1.0, 1.0}, {2.0, 1.0, 2.0}, {2.0, 0.0, 0.0}, {2.0, 1.0, 0.0}, {2.0, 2.0, 1.0}, {2.0, 2.0, 2.0}, {2.0, 2.0, 0.0}};
     Kokkos::View<magnitudeType **, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> kv(&data[0][0], 27, 3);
-    auto lclMV = coords->getHostLocalView(Xpetra::Access::OverwriteAll);
+    auto lclMV = coords->getLocalViewHost(Xpetra::Access::OverwriteAll);
     Kokkos::deep_copy(lclMV, kv);
   }
 
@@ -444,7 +444,7 @@ materialTestCase<Scalar, LocalOrdinal, GlobalOrdinal, Node> constructVariableMat
   {
     impl_scalar_type data[27][9] = {{128.0, 0.0, 0.0, 0.0, 128.0, 0.0, 0.0, 0.0, 128.0}, {128.0, 0.0, 0.0, 0.0, 128.0, 0.0, 0.0, 0.0, 128.0}, {128.0, 0.0, 0.0, 0.0, 128.0, 0.0, 0.0, 0.0, 128.0}, {128.0, 0.0, 0.0, 0.0, 128.0, 0.0, 0.0, 0.0, 128.0}, {64.5, 0.0, 0.0, 0.0, 64.5, 0.0, 0.0, 0.0, 64.5}, {64.5, 0.0, 0.0, 0.0, 64.5, 0.0, 0.0, 0.0, 64.5}, {64.5, 0.0, 0.0, 0.0, 64.5, 0.0, 0.0, 0.0, 64.5}, {64.5, 0.0, 0.0, 0.0, 64.5, 0.0, 0.0, 0.0, 64.5}, {128.0, 0.0, 0.0, 0.0, 128.0, 0.0, 0.0, 0.0, 128.0}, {128.0, 0.0, 0.0, 0.0, 128.0, 0.0, 0.0, 0.0, 128.0}, {64.5, 0.0, 0.0, 0.0, 64.5, 0.0, 0.0, 0.0, 64.5}, {64.5, 0.0, 0.0, 0.0, 64.5, 0.0, 0.0, 0.0, 64.5}, {128.0, 0.0, 0.0, 0.0, 128.0, 0.0, 0.0, 0.0, 128.0}, {128.0, 0.0, 0.0, 0.0, 128.0, 0.0, 0.0, 0.0, 128.0}, {64.5, 0.0, 0.0, 0.0, 64.5, 0.0, 0.0, 0.0, 64.5}, {64.5, 0.0, 0.0, 0.0, 64.5, 0.0, 0.0, 0.0, 64.5}, {128.0, 0.0, 0.0, 0.0, 128.0, 0.0, 0.0, 0.0, 128.0}, {64.5, 0.0, 0.0, 0.0, 64.5, 0.0, 0.0, 0.0, 64.5}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}, {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}};
     Kokkos::View<impl_scalar_type **, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> kv(&data[0][0], 27, 9);
-    auto lclMV = material->getHostLocalView(Xpetra::Access::OverwriteAll);
+    auto lclMV = material->getLocalViewHost(Xpetra::Access::OverwriteAll);
     Kokkos::deep_copy(lclMV, kv);
   }
   return std::make_tuple(A, droppedA, coords, material);
@@ -2238,7 +2238,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, 2x2, Scalar, Local
   Teuchos::RCP<Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>> coords;
   coords = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(mtx->getRowMap(), 1);
   {
-    auto lclCoords  = coords->getHostLocalView(Xpetra::Access::OverwriteAll);
+    auto lclCoords  = coords->getLocalViewHost(Xpetra::Access::OverwriteAll);
     auto rank       = comm->getRank();
     lclCoords(0, 0) = 2 * rank;
     lclCoords(1, 0) = 2 * rank + 1;

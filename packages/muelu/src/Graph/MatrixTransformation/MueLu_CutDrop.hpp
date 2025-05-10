@@ -140,7 +140,7 @@ class ScaledComparison {
     : A(A_.getLocalMatrixDevice())
     , results(results_) {
     diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
 
@@ -236,7 +236,7 @@ class UnscaledDistanceLaplacianComparison {
     , dist2(dist2_) {
     // Construct ghosted distance Laplacian diagonal
     diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
 
@@ -346,7 +346,7 @@ class ScaledDistanceLaplacianComparison {
     , dist2(dist2_) {
     // Construct ghosted distance Laplacian diagonal
     diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
 

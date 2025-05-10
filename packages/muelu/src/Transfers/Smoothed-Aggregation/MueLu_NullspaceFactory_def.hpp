@@ -178,7 +178,7 @@ void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& c
         Coords->meanValue(hostMeans);
         Kokkos::View<typename RealValuedMultiVector::impl_scalar_type*, Kokkos::HostSpace> hostMeanView(hostMeans.getRawPtr(), hostMeans.size());
         Kokkos::deep_copy(meanView, hostMeanView);
-        coordsView = Coords->getDeviceLocalView(Xpetra::Access::ReadOnly);
+        coordsView = Coords->getLocalViewDevice(Xpetra::Access::ReadOnly);
         GetOStream(Runtime1) << "Generating nullspace with rotations: dimension = " << nullspaceDim << std::endl;
       } else
         GetOStream(Runtime1) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
@@ -203,7 +203,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fillNullspaceVector(const RCP<MultiVector>& nullspace, LocalOrdinal numPDEs, LocalOrdinal nullspaceDim, CoordsType coordsView, MeanCoordsType meanView) const {
   RCP<BlockedMultiVector> bnsp = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(nullspace);
   if (bnsp.is_null() == true) {
-    auto nullspaceView = nullspace->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+    auto nullspaceView = nullspace->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
     int numBlocks = nullspace->getLocalLength() / numPDEs;
     if (nullspaceDim > numPDEs)
