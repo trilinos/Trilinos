@@ -13,6 +13,7 @@
 #include "MueLu_ConstraintFactory_decl.hpp"
 
 #include "MueLu_Constraint.hpp"
+#include "MueLu_DenseConstraint.hpp"
 #include "MueLu_Monitor.hpp"
 
 namespace MueLu {
@@ -21,9 +22,9 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  validParamList->set<RCP<const FactoryBase> >("FineNullspace", Teuchos::null, "Generating factory for the nullspace");
-  validParamList->set<RCP<const FactoryBase> >("CoarseNullspace", Teuchos::null, "Generating factory for the nullspace");
-  validParamList->set<RCP<const FactoryBase> >("Ppattern", Teuchos::null, "Generating factory for the nonzero pattern");
+  validParamList->set<RCP<const FactoryBase>>("FineNullspace", Teuchos::null, "Generating factory for the nullspace");
+  validParamList->set<RCP<const FactoryBase>>("CoarseNullspace", Teuchos::null, "Generating factory for the nullspace");
+  validParamList->set<RCP<const FactoryBase>>("Ppattern", Teuchos::null, "Generating factory for the nonzero pattern");
 
   return validParamList;
 }
@@ -39,12 +40,16 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
   FactoryMonitor m(*this, "Constraint", coarseLevel);
 
-  RCP<MultiVector> fineNullspace   = Get<RCP<MultiVector> >(fineLevel, "Nullspace", "FineNullspace");
-  RCP<MultiVector> coarseNullspace = Get<RCP<MultiVector> >(coarseLevel, "Nullspace", "CoarseNullspace");
+  auto Ppattern = Get<RCP<const CrsGraph>>(coarseLevel, "Ppattern");
+  RCP<Constraint> constraint;
+  if (fineLevel.IsType<RCP<MultiVector>>("Nullspace", GetFactory("FineNullspace").get())) {
+    RCP<MultiVector> fineNullspace   = Get<RCP<MultiVector>>(fineLevel, "Nullspace", "FineNullspace");
+    RCP<MultiVector> coarseNullspace = Get<RCP<MultiVector>>(coarseLevel, "Nullspace", "CoarseNullspace");
 
-  RCP<Constraint> constraint(new Constraint);
-  constraint->Setup(fineNullspace, coarseNullspace,
-                    Get<RCP<const CrsGraph> >(coarseLevel, "Ppattern"));
+    constraint = rcp(new DenseConstraint(fineNullspace, coarseNullspace, Ppattern));
+  } else {
+    TEUCHOS_ASSERT(false);
+  }
 
   Set(coarseLevel, "Constraint", constraint);
 }
