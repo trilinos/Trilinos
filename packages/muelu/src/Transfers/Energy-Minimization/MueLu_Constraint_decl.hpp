@@ -10,14 +10,21 @@
 #ifndef MUELU_CONSTRAINT_DECL_HPP
 #define MUELU_CONSTRAINT_DECL_HPP
 
-#include <Teuchos_SerialDenseMatrix.hpp>
+#include "Teuchos_ScalarTraits.hpp"
 
 #include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_Matrix_fwd.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsGraph_fwd.hpp>
+#include <Xpetra_MatrixFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
+#include "MueLu_ProductOperator_fwd.hpp"
+
+#include <BelosLinearProblem.hpp>
+#include <BelosSolverFactory.hpp>
+#include <BelosXpetraAdapter.hpp>
 
 namespace MueLu {
 
@@ -66,7 +73,9 @@ template <class Scalar        = DefaultScalar,
           class LocalOrdinal  = DefaultLocalOrdinal,
           class GlobalOrdinal = DefaultGlobalOrdinal,
           class Node          = DefaultNode>
-class Constraint : public BaseClass {
+class Constraint
+  : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
+    public BaseClass {
 #undef MUELU_CONSTRAINT_SHORT
 #include "MueLu_UseShortNames.hpp"
  public:
@@ -77,25 +86,40 @@ class Constraint : public BaseClass {
 
   using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
-  //! @name Setup methods.
-  //@{
+  Constraint() = default;
 
-  /*! Setup constraint.
-      \param B -- Fine nullspace vectors
-      \param Bc -- Coarse nullspace vectors
-      \param Ppattern -- Nonzero sparsity pattern for the prolongator
-   */
-  void Setup(const RCP<MultiVector>& B, const RCP<MultiVector>& Bc, RCP<const CrsGraph> Ppattern);
+  virtual MagnitudeType ResidualNorm(const RCP<const Matrix> P) const = 0;
 
-  MagnitudeType ResidualNorm(const RCP<const Matrix> P) const;
+  //! The Map associated with the domain of this operator, which must be compatible with X.getMap().
+  virtual const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getDomainMap() const {
+    return X_->getDomainMap();
+  }
 
-  //@}
+  //! The Map associated with the range of this operator, which must be compatible with Y.getMap().
+  virtual const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> getRangeMap() const {
+    return X_->getDomainMap();
+  }
 
   //! @name Apply methods.
   //@{
 
   //! Apply constraint.
-  void Apply(const Matrix& P, Matrix& Projected) const;
+  virtual void apply(const MultiVector& P,
+                     MultiVector& Projected,
+                     Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                     Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
+                     Scalar beta           = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
+  //! Compute a residual R = B - (*this) * X
+  void residual(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+                const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+                Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& R) const {
+    const auto one  = Teuchos::ScalarTraits<Scalar>::one();
+    const auto zero = Teuchos::ScalarTraits<Scalar>::zero();
+
+    apply(X, R, Teuchos::NO_TRANS, one, zero);
+    R.update(one, B, -one);
+  }
 
   //@}
 
@@ -103,15 +127,66 @@ class Constraint : public BaseClass {
     return Ppattern_;
   }
 
+  void SetPattern(RCP<const CrsGraph>& Ppattern) {
+    Ppattern_ = Ppattern;
+  }
+
+  void SetX(RCP<Matrix>& X) {
+    X_ = X;
+
+    // Allocate memory
+    temp1_ = MultiVectorFactory::Build(X_->getRangeMap(), 1);
+    temp2_ = MultiVectorFactory::Build(X_->getRangeMap(), 1);
+    temp3_ = MultiVectorFactory::Build(X_->getDomainMap(), 1);
+  }
+
+  RCP<Matrix> GetConstraintMatrix() {
+    return X_;
+  }
+
+  void AssignMatrixEntriesToVector(const Matrix& P, const RCP<const CrsGraph>& pattern, MultiVector& vecP) const;
+
+  void AssignMatrixEntriesToVector(const Matrix& P, MultiVector& vecP) const;
+
+  RCP<Matrix> GetMatrixWithEntriesFromVector(MultiVector& vecP) const;
+
+  void LeastSquaresSolve(const MultiVector& B, MultiVector& C) const;
+
+ protected:
+  void PrepareLeastSquaresSolve(bool singular = false);
+
  private:
-  RCP<MultiVector> B_;
-  RCP<MultiVector> Bc_;
-  RCP<MultiVector> X_;                                    //!< Overlapped coarse nullspace
-  RCP<const CrsGraph> Ppattern_;                          //!< Nonzero sparsity pattern
-  ArrayRCP<Teuchos::SerialDenseMatrix<LO, SC> > XXtInv_;  //!< Array storing \f$(Q_i Q_i^H)^{-1}\f$
+  //! The constraints matrix
+  RCP<Matrix> X_;
+
+  //! Nonzero sparsity pattern
+  RCP<const CrsGraph> Ppattern_;
+
+  using MV = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using OP = Belos::OperatorT<MV>;
+  RCP<Belos::LinearProblem<Scalar, MV, OP>> problem_;
+  RCP<Belos::SolverManager<Scalar, MV, OP>> solver_;
+
+  //! Prepare least-squares solve using Belos
+  void PrepareLeastSquaresSolveBelos(bool singular);
+
+  //! Perform least-squares solve using Belos
+  void LeastSquaresSolveBelos(const MultiVector& B, MultiVector& C) const;
+
+  //! Inverse of X*X^T
+  RCP<Matrix> invXXt_;
+
+  //! Prepare direct solution of least-squares problem
+  void PrepareLeastSquaresSolveDirect(bool singular);
+
+  //! Direct solve of least-squares problem
+  void LeastSquaresSolveDirect(const MultiVector& B, MultiVector& C) const;
+
+  // temporary memory
+  RCP<MultiVector> temp1_, temp2_, temp3_;
 };
 
 }  // namespace MueLu
 
 #define MUELU_CONSTRAINT_SHORT
-#endif  // MUELU_CONSTRAINT_DECL_HPP
+#endif
