@@ -21,15 +21,11 @@
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_ConstraintFactory.hpp>
 #include <MueLu_Constraint.hpp>
+#include <MueLu_DenseConstraint.hpp>
 #include <MueLu_PatternFactory.hpp>
 #include <MueLu_EminPFactory.hpp>
-#include <MueLu_TrilinosSmoother.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
-#include <MueLu_TransPFactory.hpp>
-#include <MueLu_RAPFactory.hpp>
-#include <MueLu_SmootherFactory.hpp>
-#include <MueLu_Utilities.hpp>
 
 namespace MueLuTests {
 
@@ -58,7 +54,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint, Scalar, Loc
   for (auto &matrixType : matrixTypes) {
     out << "\n\n==================================================\nTesting " << matrixType << "\n\n";
 
-    Level fineLevel, coarseLevel;
+    Level fineLevel;
+    Level coarseLevel;
     test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
@@ -135,6 +132,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint, Scalar, Loc
 
     // Test that Ptent satisfies the constraint.
     TEST_COMPARE(constraint->ResidualNorm(Ptent), <, 400 * eps);
+
+    // Test that both Ptent satisfies the constraint after converting it to a vector and back to a matrix.
+    auto vecP = MultiVectorFactory::Build(constraint->getDomainMap(), 1);
+    constraint->AssignMatrixEntriesToVector(*Ptent, *vecP);
+    auto Ptent2 = constraint->GetMatrixWithEntriesFromVector(*vecP);
+    TEST_COMPARE(constraint->ResidualNorm(Ptent2), <, 400 * eps);
+
+    // Teuchos::rcp_const_cast<CrsGraph>(Ptent->getCrsGraph())->computeGlobalConstants();
+    // Teuchos::rcp_const_cast<CrsGraph>(Ptent2->getCrsGraph())->computeGlobalConstants();
+    // Ptent->describe(out, Teuchos::VERB_EXTREME);
+    // Ptent2->describe(out, Teuchos::VERB_EXTREME);
 
     // Test that P satisfies the constraint.
     TEST_COMPARE(constraint->ResidualNorm(P), <, 20000 * eps);
