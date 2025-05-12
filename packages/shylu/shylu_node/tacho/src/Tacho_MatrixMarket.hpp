@@ -111,8 +111,8 @@ template <typename ValueType> struct MatrixMarket {
 
   /// \brief matrix market reader
   template <typename DeviceType>
-  static void read(const std::string &filename, CrsMatrixBase<ValueType, DeviceType> &A,
-                   const ordinal_type sanitize = 0, const ordinal_type verbose = 0) {
+  static int read(const std::string &filename, CrsMatrixBase<ValueType, DeviceType> &A,
+                  const ordinal_type sanitize = 0, const ordinal_type verbose = 0) {
     static_assert(Kokkos::Impl::MemorySpaceAccess<Kokkos::HostSpace, typename DeviceType::memory_space>::assignable,
                   "DeviceType is not assignable from HostSpace");
 
@@ -122,6 +122,12 @@ template <typename ValueType> struct MatrixMarket {
 
     std::ifstream file;
     file.open(filename);
+    if (file.good()) {
+      std::cout << "Read matrix from  " << filename << std::endl;
+    } else {
+      std::cout << "Failed to open the matrix file: " << filename << std::endl;
+      return -1;
+    }
 
     // reading mm header
     ordinal_type m, n;
@@ -234,7 +240,6 @@ template <typename ValueType> struct MatrixMarket {
 
     const double t = timer.seconds();
     if (verbose) {
-
       printf("Summary: MatrixMarket\n");
       printf("=====================\n");
       printf("  File:      %s\n", filename.c_str());
@@ -248,6 +253,8 @@ template <typename ValueType> struct MatrixMarket {
       printf("             number of nonzeros after sanitized:              %10d\n", ordinal_type(nnz));
       printf("\n");
     }
+
+    return 0;
   }
 
   /// \brief matrix marker writer
@@ -311,6 +318,31 @@ template <typename ValueType> struct MatrixMarket {
 
     file.unsetf(std::ios::scientific);
     file.precision(prec);
+  }
+
+  /// \brief dense vector read
+  template <typename DenseMultiVectorType>
+  static int readDenseVectors(const std::string &filename, DenseMultiVectorType &B) {
+
+    std::ifstream file;
+    file.open(filename);
+    if (file.good()) {
+      std::cout << "Read RHS from  " << filename << std::endl;
+    } else {
+      std::cout << "Failed to open the RHS file: " << filename << std::endl;
+      return -1;
+    }
+
+    ordinal_type m = B.extent(0), n = B.extent(1);
+
+    ValueType val;
+    auto hB = Kokkos::create_mirror_view(B);
+    for (ordinal_type i = 0; i < m; i++) {
+        file >> val;
+        hB(i,0) = val;
+    }
+    Kokkos::deep_copy(B, hB);
+    return 0;
   }
 };
 

@@ -37,6 +37,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   bool sanitize = false;
   bool duplicate = false;
   std::string file = "test.mtx";
+  std::string rhs_file = "";
   std::string graph_file = "";
   std::string weight_file = "";
   int dofs_per_node = 1;
@@ -67,6 +68,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<bool>("duplicate", "Flag to duplicate input graph in the solver", &duplicate);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
+  opts.set_option<std::string>("rhs", "Input RHS file", &rhs_file);
   opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
   opts.set_option<std::string>("weight", "Input condensed graph weight", &weight_file);
   opts.set_option<int>("dofs-per-node", "# DoFs per node", &dofs_per_node);
@@ -126,17 +128,9 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     /// read a spd matrix of matrix market format
     CrsMatrixBaseTypeHost A;
     {
-      {
-        std::ifstream in;
-        in.open(file);
-        if (in.good()) {
-          std::cout << "Read matrix from  " << file << std::endl;
-        } else {
-          std::cout << "Failed to open the matrix file: " << file << std::endl;
-          return -1;
-        }
+      if (Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose) != 0) {
+        return -1;
       }
-      Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose);
       if (verbose) A.showMe(std::cout, false);
     }
 
@@ -271,7 +265,11 @@ template <typename value_type> int driver(int argc, char *argv[]) {
         t("t", A.NumRows(), nrhs);                  // temp workspace (store permuted rhs)
 
     {
-      if (onesRHS) {
+      if (rhs_file.length() > 0) {
+        if(Tacho::MatrixMarket<value_type>::readDenseVectors(rhs_file, b) != 0) {
+          return -1;
+        }
+      } else if (onesRHS) {
         const value_type one(1.0);
         Kokkos::deep_copy (b, one);
       } else if (randomRHS) {
