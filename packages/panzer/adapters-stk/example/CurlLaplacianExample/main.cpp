@@ -59,6 +59,7 @@
 
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "Ifpack2_Factory.hpp"
 
 #include "Example_BCStrategy_Factory.hpp"
 #include "Example_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -559,6 +560,7 @@ int main(int argc,char * argv[])
    }
 
    stackedTimer->stop("Curl Laplacian");
+   stackedTimer->stopBaseTimer();
    Teuchos::StackedTimer::OutputOptions options;
    options.output_fraction = true;
    options.output_minmax = true;
@@ -625,6 +627,13 @@ void solveTpetraSystem(panzer::LinearObjContainer & container)
   typedef Tpetra::Operator<double,int,panzer::GlobalOrdinal> OP;
   typedef Belos::LinearProblem<double,MV, OP> ProblemType;
   Teuchos::RCP<ProblemType> problem(new ProblemType(tp_container.get_A(), tp_container.get_x(), tp_container.get_f()));
+  auto prec = Ifpack2::Factory::create<Tpetra::RowMatrix<double,int,panzer::GlobalOrdinal>>("RILUK",tp_container.get_A(),1);
+  Teuchos::ParameterList precParams;
+  precParams.set("fact: iluk level of fill", 1);
+  prec->setParameters(precParams);
+  prec->initialize();
+  prec->compute();
+  problem->setRightPrec(prec);
   TEUCHOS_ASSERT(problem->setProblem());
 
   typedef Belos::PseudoBlockGmresSolMgr<double,MV,OP> SolverType;
