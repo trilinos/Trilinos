@@ -240,15 +240,16 @@ struct FilterCoarseSearchStats
 
 template <class MESH>
 inline
-double get_distance_squared_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const double* toCoords)
+double get_distance_squared_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const std::vector<double>& toCoords)
 {
-  std::vector<double> centroid = mesh.centroid(k);
-  return stk::search::distance_sq(centroid.size(), centroid.data(), toCoords);
+  std::vector<double> centroid;
+  mesh.centroid(k, centroid);
+  return stk::search::distance_sq(centroid.size(), centroid.data(), toCoords.data());
 }
 
 template <class MESH>
 inline
-double get_distance_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const double* toCoords)
+double get_distance_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const std::vector<double>& toCoords)
 {
   double distanceSquared = get_distance_squared_from_centroid<MESH>(mesh, k, toCoords);
   return std::sqrt(distanceSquared);
@@ -313,7 +314,7 @@ void accept_candidate(std::vector<double>& parametricCoords,
 
 template <class SENDMESH>
 void set_geometric_info(SENDMESH& sendMesh,
-                        const typename SENDMESH::EntityKey sendEntity, const double* tocoords,
+                        const typename SENDMESH::EntityKey sendEntity, const std::vector<double>& tocoords,
                         const double searchToleranceSquared, const bool useCentroidForGeometricProximity,
                         double& geometricDistanceSquared, bool& isWithinGeometricTolerance)
 {
@@ -354,6 +355,8 @@ FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRela
   double searchToleranceSquared = searchTolerance * searchTolerance;
 
   std::vector<double> parametricCoords;
+  std::vector<double> tocoords;
+  std::vector<double> fromcoords;
 
   while(current_key != rangeToDomain.end()) {
     FilterResult<SENDMESH, RECVMESH> bestCandidate;
@@ -365,7 +368,7 @@ FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRela
 
     const typename RECVMESH::EntityKey recvEntity = current_key->first.id();
 
-    const double* tocoords = recvMesh.coord(recvEntity);
+    recvMesh.coordinates(recvEntity, tocoords);
 
     std::pair<const_iterator, const_iterator> keys = std::make_pair(current_key, next_key);
     bestCandidate.nearest = keys.second;
@@ -382,7 +385,7 @@ FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRela
                                                           geometricDistanceSquared, isWithinGeometricTolerance);
 
       if(useNearestNodeForClosestBoundingBox) {
-        const double* fromcoords = sendMesh.coord(sendEntity);
+        sendMesh.coordinates(sendEntity, fromcoords);
         double distance = recvMesh.get_distance_from_nearest_node(recvEntity, fromcoords);
         geometricDistanceSquared = std::pow(distance, 2);
         isWithinParametricTolerance = false;

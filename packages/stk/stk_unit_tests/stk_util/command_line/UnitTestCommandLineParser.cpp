@@ -144,6 +144,19 @@ TEST(CommandLineParser, oneFlag_provided_querySaysProvided)
   EXPECT_TRUE(parser.is_option_provided("flag"));
 }
 
+TEST(CommandLineParser, oneFlag_partialProvided_querySaysProvided)
+{
+  stk::CommandLineParser parser;
+  parser.add_flag("flag,f", "One flag description");
+
+  stk::unit_test_util::Args args({"exe", "--fla"});
+  EXPECT_TRUE(parse_command_line_without_error(parser, args));
+
+  EXPECT_FALSE(parser.is_empty());
+  EXPECT_TRUE(parser.is_option_parsed("flag"));
+  EXPECT_TRUE(parser.is_option_provided("flag"));
+}
+
 TEST(CommandLineParser, oneFlag_shortProvided_querySaysProvided)
 {
   stk::CommandLineParser parser;

@@ -35,6 +35,7 @@
 #ifndef STK_UTIL_DIAG_TimerImpl_hpp
 #define STK_UTIL_DIAG_TimerImpl_hpp
 
+#include "stk_util/stk_config.h"
 #include "stk_util/diag/TimerMetricTraits.hpp"
 #include "stk_util/util/string_case_compare.hpp"  // for equal_case
 #include "stk_util/diag/Timer.hpp"
@@ -78,7 +79,9 @@ public:
 
   static void deleteRootTimer(TimerImpl *root_timer);
 
-  static void findTimer(TimerImpl *timer, std::vector<std::string> &path_tail_vector, std::vector<Timer> &found_timers);
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
+STK_DEPRECATED static void findTimer(TimerImpl *timer, std::vector<std::string> &path_tail_vector, std::vector<Timer> &found_timers);
+#endif
 
 private:
   /**
@@ -270,6 +273,7 @@ public:
 
   Timer getSubtimer(const std::string &name);
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
 public:
   /**
    * Member function <b>dump</b> writes the timer to the specified
@@ -279,7 +283,8 @@ public:
    *
    * @return      a <b>Writer</b> reference to <it>dout</it>.
    */
-  Writer &dump(Writer &dout) const;
+  STK_DEPRECATED Writer &dump(Writer &dout) const;
+#endif
 
 private:
   /**
@@ -317,9 +322,11 @@ private:
   Timer::Metric<HeapAlloc>      m_heapAlloc;    ///< Heap allocated
 };
 
-inline Writer &operator<<(Writer &dout, const TimerImpl &timer) {
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
+STK_DEPRECATED inline Writer &operator<<(Writer &dout, const TimerImpl &timer) {
   return timer.dump(dout);
 }
+#endif
 
 
 

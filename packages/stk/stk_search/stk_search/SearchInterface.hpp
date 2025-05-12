@@ -57,7 +57,7 @@ class EvaluatePointsInterface
 {
  public:
   virtual size_t num_points(ENTITYKEY, TOPOLOGY) = 0;
-  virtual const double* coords(ENTITYKEY, size_t) = 0;
+  virtual void coordinates(ENTITYKEY, size_t, std::vector<double>& coords) = 0;
 
   virtual ~EvaluatePointsInterface() {}
 };
@@ -67,7 +67,7 @@ class ExternalPointHandlerInterface
 {
  public:
   virtual bool handle_point(const ENTITYKEY k,
-      const double* toCoords,
+      const std::vector<double>& point,
       std::vector<double>& parametricCoords,
       double& geometricDistanceSquared,
       bool& isWithinGeometricTolerance) const = 0;
@@ -76,20 +76,20 @@ class ExternalPointHandlerInterface
 };
 
 template <typename ENTITYKEY>
-class FindParametricCoordsInterface
+class FindParametricCoordinatesInterface
 {
  public:
   virtual void find_parametric_coords(const ENTITYKEY k,
-      const double* toCoords,
+      const std::vector<double>& point,
       std::vector<double>& paramCoords,
       double& paramDistance,
       bool& isWithinParametricTolerance) const = 0;
   virtual void evaluate_parametric_coords(
       const ENTITYKEY k, const std::vector<double>& paramCoords, std::vector<double>& evalPoint) const = 0;
-  virtual ~FindParametricCoordsInterface() {}
+  virtual ~FindParametricCoordinatesInterface() {}
 };
 
-template <typename TOPOLOGY>
+template <typename TOPOLOGY, typename ENTITYKEY, typename ENTITY, typename FIELD>
 class ProvideMasterElementInterface
 {
  public:
@@ -99,6 +99,28 @@ class ProvideMasterElementInterface
       const std::vector<double>& fieldData,  // (numFieldComponents x numNodes)
       std::vector<double>& result) = 0;      // (numFieldComponents)
 
+  virtual void nodal_field_data(const ENTITYKEY key,
+      const FIELD& field,
+      unsigned& numFieldComponents,
+      unsigned& numNodes,
+      std::vector<double>& fieldData) = 0;  // (numFieldComponents x numNodes))
+
+  virtual void nodal_field_data(const ENTITY entity,
+      const FIELD& field,
+      unsigned& numFieldComponents,
+      unsigned& numNodes,
+      std::vector<double>& fieldData) = 0;  // (numFieldComponents x numNodes))
+
+  virtual void nodal_field_data(const std::vector<ENTITYKEY>& nodeKeys,
+      const FIELD& field,
+      unsigned& numFieldComponents,
+      std::vector<double>& fieldData) = 0;  // (numFieldComponents x numNodes))
+
+  virtual void nodal_field_data(const std::vector<ENTITY>& nodes,
+      const FIELD& field,
+      unsigned& numFieldComponents,
+      std::vector<double>& fieldData) = 0;
+
   virtual void find_parametric_coordinates(const TOPOLOGY& topo,
       const unsigned numCoordComponents,
       const std::vector<double>& elemNodeCoords,  // (numCoordComponents x numNodes)
@@ -106,10 +128,10 @@ class ProvideMasterElementInterface
       std::vector<double>& paramCoords,
       double& paramDistance) = 0;
 
-  virtual void coordinate_center(const TOPOLOGY& topo, std::vector<double>&) = 0;
+  virtual void coordinate_center(const TOPOLOGY& topo, std::vector<double>& coords) = 0;
   virtual unsigned num_parametric_coordinates(const TOPOLOGY& topo) = 0;
   virtual unsigned num_integration_points(const TOPOLOGY& topo) = 0;
-  virtual const double* integration_points(const TOPOLOGY& topo) = 0;
+  virtual void integration_points(const TOPOLOGY& topo, std::vector<double>& gaussPoints) = 0;
   virtual ~ProvideMasterElementInterface() {}
 };
 
@@ -124,10 +146,12 @@ class SourceMeshInterface
   using Entity = typename MeshTraits<SENDMESH>::Entity;
   using EntityVec = typename MeshTraits<SENDMESH>::EntityVec;
   using EntityKey = typename MeshTraits<SENDMESH>::EntityKey;
+  using EntityKeySet = typename MeshTraits<SENDMESH>::EntityKeySet;
   using EntityProc = typename MeshTraits<SENDMESH>::EntityProc;
   using EntityProcVec = typename MeshTraits<SENDMESH>::EntityProcVec;
   using Point = typename MeshTraits<SENDMESH>::Point;
   using Box = typename MeshTraits<SENDMESH>::Box;
+  using Sphere = typename MeshTraits<SENDMESH>::Sphere;
   using BoundingBox = typename MeshTraits<SENDMESH>::BoundingBox;
 
   SourceMeshInterface() = default;
@@ -137,37 +161,37 @@ class SourceMeshInterface
 
   virtual std::string name() const = 0;
 
-  virtual void bounding_boxes(std::vector<BoundingBox>& boxes) const = 0;
+  virtual void bounding_boxes(std::vector<BoundingBox>& boxes, bool includeGhosts=false) const = 0;
 
   virtual void find_parametric_coords(
     const EntityKey k,
-    const double* toCoords,
+    const std::vector<double>& point,
     std::vector<double>& parametricCoords,
     double& parametricDistance,
     bool& isWithinParametricTolerance) const = 0;
 
   virtual bool modify_search_outside_parametric_tolerance(
     const EntityKey k,
-    const double* toCoords,
+    const std::vector<double>& point,
     std::vector<double>& parametricCoords,
     double& geometricDistanceSquared,
     bool& isWithinGeometricTolerance) const = 0;
 
   virtual double get_distance_from_nearest_node(
-    const EntityKey k, const double* point) const = 0;
+    const EntityKey k, const std::vector<double>& point) const = 0;
 
   virtual double get_closest_geometric_distance_squared(
-    const EntityKey k, const double* toCoords) const = 0;
+    const EntityKey k, const std::vector<double>& point) const = 0;
 
   virtual double get_distance_from_centroid(
-    const EntityKey k, const double* toCoords) const = 0;
+    const EntityKey k, const std::vector<double>& point) const = 0;
 
   virtual double get_distance_squared_from_centroid(
-    const EntityKey k, const double* toCoords) const = 0;
+    const EntityKey k, const std::vector<double>& point) const = 0;
 
   virtual void centroid(const EntityKey k, std::vector<double>& centroidVec) const = 0;
 
-  virtual const double* coord(const EntityKey k) const = 0;
+  virtual void coordinates(const EntityKey k, std::vector<double>& coords) const = 0;
 };
 
 template <typename RECVMESH>
@@ -177,10 +201,12 @@ class DestinationMeshInterface
   using Entity = typename MeshTraits<RECVMESH>::Entity;
   using EntityVec = typename MeshTraits<RECVMESH>::EntityVec;
   using EntityKey = typename MeshTraits<RECVMESH>::EntityKey;
+  using EntityKeySet = typename MeshTraits<RECVMESH>::EntityKeySet;
   using EntityProc = typename MeshTraits<RECVMESH>::EntityProc;
   using EntityProcVec = typename MeshTraits<RECVMESH>::EntityProcVec;
   using Point = typename MeshTraits<RECVMESH>::Point;
   using Sphere = typename MeshTraits<RECVMESH>::Sphere;
+  using Box = typename MeshTraits<RECVMESH>::Box;
   using BoundingBox = typename MeshTraits<RECVMESH>::BoundingBox;
 
   DestinationMeshInterface() = default;
@@ -192,13 +218,13 @@ class DestinationMeshInterface
 
   virtual void bounding_boxes(std::vector<BoundingBox>& v) const = 0;
 
-  virtual const double* coord(const EntityKey k) const = 0;
+  virtual void coordinates(const EntityKey k, std::vector<double>& coords) const = 0;
   virtual double get_search_tolerance() const = 0;
   virtual double get_parametric_tolerance() const = 0;
 
   virtual void centroid(const EntityKey k, std::vector<double>& centroidVec) const = 0;
   virtual double get_distance_from_nearest_node(
-    const EntityKey k, const double* toCoords) const = 0;
+    const EntityKey k, const std::vector<double>& point) const = 0;
 };
 //ENDSearch_Interface
 

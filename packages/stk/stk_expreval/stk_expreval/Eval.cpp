@@ -372,6 +372,7 @@ Eval::initialize_function_map()
   m_functionMap["haversine_pulse"] = FunctionType::HAVERSINE_PULSE;
   m_functionMap["point2d"] = FunctionType::POINT2D;
   m_functionMap["point3d"] = FunctionType::POINT3D;
+  m_functionMap["relative_error"] = FunctionType::RELATIVE_ERROR;
 
   m_functionMap["exponential_pdf"] = FunctionType::EXPONENTIAL_PDF;
   m_functionMap["log_uniform_pdf"] = FunctionType::LOG_UNIFORM_PDF;
