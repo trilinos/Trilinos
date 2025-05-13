@@ -602,6 +602,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
           dxdpContainer->setOwnedVector(dxdpBlock->getNonconstVectorBlock(j));
           string name("X TANGENT GATHER CONTAINER: " +
             (*parameters_[i]->names)[j]);
+            std::cout << name << std::endl;
           ae_inargs.addGlobalEvaluationData(name, dxdpContainer);
         } // end loop over the parameters
       } // end if (not dxdp.is_null())
@@ -650,27 +651,56 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
 
     // add in dg/dx (if appropriate)
     for(std::size_t i=0;i<responses_.size();i++) {
-      typedef panzer::Traits::Jacobian RespEvalT;
+      {
+        typedef panzer::Traits::Jacobian RespEvalT;
 
-      // check dg/dx and add it in if appropriate
-      Teuchos::RCP<panzer::ResponseBase> respJacBase
-          = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
-      if(respJacBase!=Teuchos::null) {
-        // cast is guranteed to succeed because of check in addResponse
-        Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
-           = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
+        // check dg/dx and add it in if appropriate
+        Teuchos::RCP<panzer::ResponseBase> respJacBase
+            = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
+        if(respJacBase!=Teuchos::null) {
+          // cast is guranteed to succeed because of check in addResponse
+          Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
+             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
 
-        // class must supppot a derivative
-        if(resp->supportsDerivative()) {
-          outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+          // class must supppot a derivative
+          if(resp->supportsDerivative()) {
+            outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
 
 
-          for(std::size_t p=0;p<parameters_.size();p++) {
-            if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
-              outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
-            if(!parameters_[p]->is_distributed)
-              outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+            for(std::size_t p=0;p<parameters_.size();p++) {
+              if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
+                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+              if(!parameters_[p]->is_distributed)
+                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+            }
           }
+        }
+      }
+      // TODO BWR is this needed?
+      {
+        typedef panzer::Traits::Tangent RespEvalT;
+
+        // check dg/dx and add it in if appropriate
+        Teuchos::RCP<panzer::ResponseBase> respTanBase
+            = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
+        if(respTanBase!=Teuchos::null) {
+          std::cout << " TAN RESPONSE " << responses_[i]->name << std::endl;
+          // cast is guranteed to succeed because of check in addResponse
+          Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
+             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respTanBase);
+
+          //// class must supppot a derivative
+          //if(resp->supportsDerivative()) {
+          //  outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+
+
+            for(std::size_t p=0;p<parameters_.size();p++) {
+              if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
+                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+              if(!parameters_[p]->is_distributed)
+                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+            }
+          //}
         }
       }
     }
@@ -1662,6 +1692,7 @@ evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   for(std::size_t i=0;i<responses_.size();i++) {
     Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = outArgs.get_g(i);
+    std::cout << " RESPONSE " << i << " " << responses_[i]->name << std::endl;
     if(vec!=Teuchos::null) {
       std::string responseName = responses_[i]->name;
       Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp
@@ -1810,6 +1841,31 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
 
   // evaluate response tangent
   if(totalParameterCount>0) {
+    // TODO BWR response vector seems to get set OK above
+    // TODO BWR but unavailable (segfault) when we go to evaluate below...
+    // TODO BWR ask roger
+    // TODO BWR OK -> so Value In Middle sets a vector
+    // TODO BWR but when we do evaluate below, TEST_TEMPERATURE Integral gets scattered
+    // TODO BWR and looks for the multivector and its not there
+    // TODO BWR why is that getting called as a tangent type?
+    // TODO BWR remember I had to mess with outArgs above
+    // TODO BWR it seems like all responses are tangent type? or at least
+    // TODO BWR some can be without being dependent on an active parameter
+
+    // TODO BWR it seems like Value In Middle is both residual and tangent type?
+    // TODO BWR the other two are just tangent?
+    // TODO BWR very hard to tell what type the responses are 
+    // TODO BWR ask...
+
+    // TODO BWR OK so if i turn off other responses, we're OK
+    // TODO BWR however, something is off with the optimization and the RK stepper
+    // TODO BWR no errors for the SDIRK and optimization vals are off
+    // TODO BWR this is probably where the debug is failing, and catching it
+    // TODO BWR is tempus problem getting set up correctly? I had to "fix" the tempus_params_ thing
+    // TODO BWR these are not even needed for the FD path...
+    // TODO BWR there is some foo in user_app to set up tempus for FD path
+
+    std::cout << " CALL EVAL RESP " << std::endl;
     responseLibrary_->addResponsesToInArgs<Traits::Tangent>(ae_inargs);
     responseLibrary_->evaluate<Traits::Tangent>(ae_inargs);
   }

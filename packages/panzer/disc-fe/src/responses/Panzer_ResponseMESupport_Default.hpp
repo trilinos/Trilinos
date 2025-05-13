@@ -311,6 +311,7 @@ public:
                                 "Epetra object, now trying to initalize as a Thyra object! Error!");
      tVector_ = destVec;
      useThyra_ = true;
+     std::cout << " IM SET " << this->getName() << std::endl;
    }
 
 protected:

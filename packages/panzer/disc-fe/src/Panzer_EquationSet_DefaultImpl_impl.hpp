@@ -145,6 +145,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
 
   // Gather, includes construction of orientation gathers
   for (BasisIterator basis_it = m_basis_to_dofs.begin(); basis_it != m_basis_to_dofs.end(); ++basis_it) {
+    std::cout << " HI IM HERE" << std::endl;
 
     // Set tangent field names (first dimension is DOF, second is parameter)
     Teuchos::RCP< std::vector< std::vector<std::string> > > tangent_field_names;
