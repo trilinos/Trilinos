@@ -195,9 +195,14 @@ struct ComputeResidualAndSolve_1Pass {
             // entry.
             impl_scalar_type old_y    = x(row + k, col);
             impl_scalar_type y_update = local_Dinv_residual[k] - old_y;
-            magnitude_type ydiff =
-                Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
-            update += ydiff * ydiff;
+            if constexpr(Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
+              magnitude_type ydiff =
+                  Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
+              update += ydiff * ydiff;
+            }
+            else {
+              update += y_update * y_update;
+            }
             y(row + k, col) = old_y + damping_factor * y_update;
           },
           colNorm);
@@ -457,9 +462,14 @@ struct ComputeResidualAndSolve_2Pass {
             // entry.
             impl_scalar_type old_y    = x(row + k, col);
             impl_scalar_type y_update = local_Dinv_residual[k] - old_y;
-            magnitude_type ydiff =
-                Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
-            update += ydiff * ydiff;
+            if constexpr(Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
+              magnitude_type ydiff =
+                  Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
+              update += ydiff * ydiff;
+            }
+            else {
+              update += y_update * y_update;
+            }
             y(row + k, col) = old_y + damping_factor * y_update;
           },
           colNorm);
@@ -638,9 +648,14 @@ struct ComputeResidualAndSolve_SolveOnly {
             // Compute the change in y (assuming damping_factor == 1) for this
             // entry.
             impl_scalar_type y_update = local_Dinv_residual[k];
-            magnitude_type ydiff =
-                Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
-            update += ydiff * ydiff;
+            if constexpr(Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
+              magnitude_type ydiff =
+                  Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
+              update += ydiff * ydiff;
+            }
+            else {
+              update += y_update * y_update;
+            }
             y(row + k, col) = damping_factor * y_update;
           },
           colNorm);
