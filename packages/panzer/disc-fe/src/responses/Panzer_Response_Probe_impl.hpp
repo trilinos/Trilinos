@@ -85,6 +85,7 @@ scatterResponse()
     TEUCHOS_ASSERT(this->useThyra());
 
     this->getThyraVector()[0] = glbValue;
+    std::cout << " VAL " << glbValue << std::endl;
   }
 }
 
@@ -126,11 +127,13 @@ template < >
 void Response_Probe<panzer::Traits::Tangent>::
 scatterResponse()
 {
+  std::cout << "HERE?" << std::endl;
   const int n = value.size();
   const int num_deriv = this->numDeriv();
   TEUCHOS_ASSERT(n == 0 || n == num_deriv);
   if (n == 0)
     value.resize(num_deriv);
+  std::cout << " NUM " << num_deriv << std::endl;
 
   // find the minimum processor who has the probe value
   if (num_deriv > 0) {
@@ -158,8 +161,10 @@ scatterResponse()
     // use thyra
     TEUCHOS_ASSERT(this->useThyra());
     Thyra::ArrayRCP< Thyra::ArrayRCP<double> > deriv = this->getThyraMultiVector();
-    for (int i=0; i<num_deriv; ++i)
+    for (int i=0; i<num_deriv; ++i) {
       deriv[i][0] = value.dx(i);
+      std::cout << "VALS " << value.val() << " " << value.dx(i) << std::endl;
+    }
   }
 }
 

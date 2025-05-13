@@ -398,7 +398,7 @@
     <Parameter name="Sensitivity Method" type="string" value="Forward"/>
     <Parameter name="Parameter Name" type="string" value="S"/>
     <Parameter name="Response Name" type="string" value="Value In Middle"/>
-    <Parameter name="Use FD Gradient" type="bool" value="True"/>
+    <Parameter name="Use FD Gradient" type="bool" value="False"/>
   </ParameterList>
 
   <ParameterList name="ROL">
