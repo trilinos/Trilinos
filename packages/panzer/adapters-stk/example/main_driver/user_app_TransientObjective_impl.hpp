@@ -6,6 +6,7 @@ namespace ROL {
 template <typename Real>
 TransientReducedObjective<Real>::
 TransientReducedObjective(const Teuchos::RCP<Teuchos::ParameterList>& input_params,
+                          const Teuchos::RCP<Teuchos::ParameterList>& tempus_params,
                           const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
                           const Teuchos::RCP<Teuchos::ParameterList>& objective_params,
                           const Teuchos::RCP<std::ostream>& os) :
@@ -15,6 +16,7 @@ TransientReducedObjective(const Teuchos::RCP<Teuchos::ParameterList>& input_para
   response_index_(0),
   use_fd_gradient_(false),
   input_params_(input_params),
+  tempus_params_(tempus_params),
   comm_(comm),
   os_(os),
   print_debug_(true)
@@ -288,12 +290,22 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
   
   // Create and run integrator
   if (dgdp != Teuchos::null && sensitivity_method_ == "Forward") {
-    RCP<Tempus::IntegratorForwardSensitivity<Real> > integrator =
-      Tempus::createIntegratorForwardSensitivity<Real>(tempus_params_, wrapped_model);
-    const bool integratorStatus = integrator->advanceTime();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      !integratorStatus, std::logic_error, "Integrator failed!");
+    //RCP<Tempus::IntegratorForwardSensitivity<Real> > integrator =
+    //  Tempus::createIntegratorForwardSensitivity<Real>(tempus_params_, wrapped_model);
+    //const bool integratorStatus = integrator->advanceTime();
+    //TEUCHOS_TEST_FOR_EXCEPTION(
+    //  !integratorStatus, std::logic_error, "Integrator failed!");
 
+    auto input_params_copy = Teuchos::parameterList(*input_params_);
+    const bool override_nox_output = true;
+    auto integrator = user_app::buildTimeIntegrator(input_params_copy,comm_,wrapped_model,mesh_,response_library_,
+                                                    stk_io_response_library_,
+                                                    lin_obj_factory_,global_indexer_,
+                                                    override_nox_output);
+
+    bool integratorStatus = integrator->advanceTime();
+    TEUCHOS_ASSERT(integratorStatus);
+ 
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
