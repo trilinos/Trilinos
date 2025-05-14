@@ -236,7 +236,7 @@ int ConvergenceHex(const bool verbose) {
     
     KOKKOS_INLINE_FUNCTION
     void
-    operator()(const int &i, double &norm2Update) {
+    operator()(const int &i, double &norm2Update) const {
       for(ordinal_type j=0; j<numRefCoords; ++j) {
         for(ordinal_type k=0; k<basisCardinality; ++k) {
           for(ordinal_type d=0; d<dim; ++d)
