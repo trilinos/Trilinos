@@ -16,5 +16,7 @@
 
 using DefaultDeviceType = Kokkos::DefaultExecutionSpace::device_type;
 
-//template class Intrepid2::Data<double,Kokkos::DefaultExecutionSpace>;
+// a HIP ldd bug results in it not being able to find Data::isDiagonal() -- it claims it is hidden and undefined even though readelf -s --wide libintrepid2.a | grep isDiagonal() | c++filt shows that it is WEAK DEFAULT (i.e., visible, and defined) -- when we do ETI on Intrepid2::Data.  So for now we disable this ETI on HIP.
+#if !defined(KOKKOS_ENABLE_DEFAULT_DEVICE_TYPE_HIP)
 template class Intrepid2::Data<double,DefaultDeviceType>;
+#endif
