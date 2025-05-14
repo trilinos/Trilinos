@@ -39,6 +39,8 @@ namespace Intrepid2 {
     
     Data<Scalar,DeviceType> transform_; // vector case: (C,P,D,D) jacobian or jacobian inverse; can also be unset for identity transform.  Scalar case: (C,P), or unset for identity.  Contracted vector case: (C,P,D) transform, to be contracted with a vector field to produce a scalar result.
     
+    bool transformIsDiagonal_;
+    
     BasisValues<Scalar, DeviceType> basisValues_;
     
     /**
@@ -50,10 +52,11 @@ namespace Intrepid2 {
     :
     numCells_(transform.extent_int(0)),
     transform_(transform),
+    transformIsDiagonal_(transform.isDiagonal()),
     basisValues_(basisValues)
     {
       // sanity check: when transform is diagonal, we expect there to be no pointwise variation.
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(transform_.isDiagonal() && (transform_.getVariationTypes()[1] != CONSTANT), std::invalid_argument, "When transform is diagonal, we assume in various places that there is no pointwise variation; the transform_ Data should have CONSTANT as its variation type in dimension 1.");
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(transformIsDiagonal_ && (transform_.getVariationTypes()[1] != CONSTANT), std::invalid_argument, "When transform is diagonal, we assume in various places that there is no pointwise variation; the transform_ Data should have CONSTANT as its variation type in dimension 1.");
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE((transform_.rank() < 2) || (transform_.rank() > 4), std::invalid_argument, "Only transforms of rank 2, 3, or 4 are supported");
     }
     
@@ -64,6 +67,7 @@ namespace Intrepid2 {
     TransformedBasisValues(const ordinal_type &numCells, const BasisValues<Scalar,DeviceType> &basisValues)
     :
     numCells_(numCells),
+    transformIsDiagonal_(true),
     basisValues_(basisValues)
     {}
     
@@ -73,6 +77,7 @@ namespace Intrepid2 {
     :
     numCells_(transformedVectorData.numCells()),
     transform_(transformedVectorData.transform()),
+    transformIsDiagonal_(transformedVectorData.transform().isDiagonal()),
     basisValues_(transformedVectorData.basisValues())
     {}
     
@@ -81,7 +86,8 @@ namespace Intrepid2 {
      */
     TransformedBasisValues()
     :
-    numCells_(-1)
+    numCells_(-1),
+    transformIsDiagonal_(true)
     {}
     
     //! Returns true if the transformation matrix is diagonal.
@@ -94,7 +100,7 @@ namespace Intrepid2 {
       }
       else
       {
-        return transform_.isDiagonal();
+        return transformIsDiagonal_;
       }
     }
 
@@ -217,7 +223,7 @@ namespace Intrepid2 {
         // null transform is understood as the identity
         return basisValues_(fieldOrdinal,pointOrdinal,dim);
       }
-      else if (transform_.isDiagonal())
+      else if (transformIsDiagonal_)
       {
         return transform_(cellOrdinal,pointOrdinal,dim,dim) * basisValues_(fieldOrdinal,pointOrdinal,dim);
       }
