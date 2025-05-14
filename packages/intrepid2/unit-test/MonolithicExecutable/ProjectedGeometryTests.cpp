@@ -246,9 +246,9 @@ namespace
   TEUCHOS_UNIT_TEST( ProjectedGeometry, CircularGeometryConvergesInP_MultiCell )
   {
     using Scalar = double;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
     const int meshWidth = 4;
-    testCircularGeometryProjectionConvergesInP<Scalar, ExecSpace>(meshWidth, out, success);
+    testCircularGeometryProjectionConvergesInP<Scalar, DeviceType>(meshWidth, out, success);
   }
 
   TEUCHOS_UNIT_TEST( ProjectedGeometry, LinearGeometryIsExact_Line )
@@ -256,19 +256,19 @@ namespace
     // 1D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 1;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
     
     const int meshWidth = 4;
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-15;
     const double absTol = 1e-15;
-    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<8; polyOrder++)
     {
-      testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, polyOrder, relTol, absTol, out, success);
+      testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, relTol, absTol, out, success);
     }
   }
 
@@ -277,19 +277,19 @@ namespace
     // 2D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 2;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
     
     const int meshWidth = 4;
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-14;
     const double absTol = 1e-14;
-    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<5; polyOrder++)
     {
-      testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, polyOrder, relTol, absTol, out, success);
+      testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, relTol, absTol, out, success);
     }
   }
 
@@ -298,19 +298,19 @@ namespace
     // 3D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 3;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
     
     const int meshWidth = 2;
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-14;
     const double absTol = 1e-14;
-    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<4; polyOrder++)
     {
-      testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, polyOrder, relTol, absTol, out, success);
+      testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, relTol, absTol, out, success);
     }
   }
 
