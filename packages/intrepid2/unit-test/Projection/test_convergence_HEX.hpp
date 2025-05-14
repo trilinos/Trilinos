@@ -959,10 +959,15 @@ int ConvergenceHex(const bool verbose) {
         DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords, dim);
         DynRankView ConstructWithLabel(funDivAtRefCoordsOriented, numElems, numRefCoords);
 
+        /*
+         rocmcc 6.0.0 with llvm has trouble (compiler crash) when compiling
+         the KOKKOS_LAMBDA below if we also compile the corresponding H1 norm KOKKOS_LAMBDA
+         above.  So, here we try perturbing the implementation a bit in hopes of avoiding
+         whatever collision is happening.
+         */
         //compute error of projection in HDIV norm
         ValueType norm2(0);
-        Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
-        KOKKOS_LAMBDA (const int &i, double &norm2Update) {
+        auto hdivProjectionReduceLambda = KOKKOS_LAMBDA (const int &i, double &norm2Update) {
           for(ordinal_type j=0; j<numRefCoords; ++j) {
             for(ordinal_type k=0; k<basisCardinality; ++k) {
               for(ordinal_type d=0; d<dim; ++d)
@@ -979,7 +984,9 @@ int ConvergenceHex(const bool verbose) {
                 (funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j))*
                 weights(j)*jacobianAtRefCoords_det(i,j);
           }
-        },norm2);
+        };
+        Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+                                hdivProjectionReduceLambda,norm2);
         ExecSpaceType().fence();
         hdivNorm[iter] = std::sqrt(norm2);
         auto expected_error = useL2Projection ? hdiv_errors_L2[iter] : hdiv_errors[iter];
