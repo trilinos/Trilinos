@@ -785,7 +785,6 @@ int ConvergenceHex(const bool verbose) {
 
         //Compute physical Dof Coordinates and Reference coordinates
         DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
-        DynRankView ConstructWithLabel(physDofCoords, numElems, basisCardinality, dim);
         {
           Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> linearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(linearBasisValuesAtRefCoords, numNodesPerElem, numRefCoords);
