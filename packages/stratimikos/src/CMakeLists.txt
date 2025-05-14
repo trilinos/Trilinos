@@ -48,6 +48,7 @@ APPEND_SET(HEADERS
   Stratimikos_LinearSolverBuilder_decl.hpp
   Stratimikos_LinearSolverBuilder_def.hpp
   Thyra_DefaultRealLinearSolverBuilder.hpp
+  Stratimikos_InternalConfig.h
   )
 
 APPEND_SET(SOURCES

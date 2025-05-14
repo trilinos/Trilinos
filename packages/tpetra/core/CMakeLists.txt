@@ -86,12 +86,12 @@ ASSERT_DEFINED (Tpetra_ETI_LORDS)
 ASSERT_DEFINED (Tpetra_ETI_GORDS)
 ASSERT_DEFINED (Tpetra_ETI_NODES)
 
-SET(${PACKAGE_NAME}_ETI_SCALARS "${Tpetra_ETI_SCALARS}")
+SET(${PACKAGE_NAME}_ETI_SCALARS "${Tpetra_ETI_SCALARS}" CACHE STRING "")
 # Exclude all ordinal types (GlobalOrdinal and int).
-SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "${Tpetra_ETI_SCALARS_NO_ORDS}")
-SET(${PACKAGE_NAME}_ETI_LORDS "${Tpetra_ETI_LORDS}")
-SET(${PACKAGE_NAME}_ETI_GORDS "${Tpetra_ETI_GORDS}")
-SET(${PACKAGE_NAME}_ETI_NODES "${Tpetra_ETI_NODES}")
+SET(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "${Tpetra_ETI_SCALARS_NO_ORDS}" CACHE STRING "")
+SET(${PACKAGE_NAME}_ETI_LORDS "${Tpetra_ETI_LORDS}" CACHE STRING "")
+SET(${PACKAGE_NAME}_ETI_GORDS "${Tpetra_ETI_GORDS}" CACHE STRING "")
+SET(${PACKAGE_NAME}_ETI_NODES "${Tpetra_ETI_NODES}" CACHE STRING "")
 
 # "Export" the names for use in the ETI system.
 # If we don't do this, ETI won't see these variables.
@@ -202,6 +202,17 @@ ADD_SUBDIRECTORY(ext)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example guide)
+
+############################################################
+# Add variables to ${Package_NAME}Config.cmake
+############################################################
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_SCALARS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_LORDS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_GORDS)
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_NODES)
+
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_LIBRARYSET)
 
 #
 # Do standard subpackage postprocessing

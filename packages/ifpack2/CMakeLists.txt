@@ -1,3 +1,5 @@
+INCLUDE(TribitsETISupport)
+
 #
 # Define the package
 #

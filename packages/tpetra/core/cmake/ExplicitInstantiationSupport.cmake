@@ -214,3 +214,8 @@ CONFIGURE_FILE(
   ${${PACKAGE_NAME}_ETI_FILE_PATH}
   )
 add_custom_target(Tpetra_ETI_generated DEPENDS ${${PACKAGE_NAME}_ETI_FILE_PATH})
+
+############################################################
+# Add variables to ${Package_NAME}Config.cmake
+############################################################
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_ETI_LIBRARYSET)
