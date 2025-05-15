@@ -52,7 +52,7 @@ inline void clear_fp_errors()
   }
 }
 
-inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=false, std::ostream& os = std::cerr)
+inline bool throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=false, std::ostream& os = std::cerr)
 {
   if (have_errexcept())
   {
@@ -67,6 +67,8 @@ inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=fal
       } else {
         STK_ThrowRequireMsg(fe_except_bitmask == 0, msg);
       }
+      
+      return true;
     }
   } else if (have_errno())
   {
@@ -81,14 +83,18 @@ inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=fal
       {
         STK_ThrowRequireMsg(errno == 0, msg);
       }
+      
+      return true;
     }
   }
+  
+  return false;
 
 }
 
-inline void warn_on_fp_error(const char* fname = nullptr, std::ostream& os = std::cerr)
+inline bool warn_on_fp_error(const char* fname = nullptr, std::ostream& os = std::cerr)
 {
-  throw_or_warn_on_fp_error(fname, true, os);
+  return throw_or_warn_on_fp_error(fname, true, os);
 }
 
 inline void throw_on_fp_error(const char* fname = nullptr)

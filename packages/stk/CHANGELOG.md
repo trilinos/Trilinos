@@ -1,5 +1,8 @@
 # CHANGELOG
 
+5.25.1-01 (STK_VERSION 5250101) 5/15/2025
+  stk_unit_test_utils: fix build error if STKSearchUtil is disabled.
+
 5.25.1 (STK_VERSION 5250100) 5/05/2025
   stk_util: fix command-line-parser bug with partial flag matching
   stk_tools: stk_block_extractor now preserves case in exodus variable/field names

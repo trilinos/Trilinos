@@ -472,6 +472,37 @@ bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & va
   return result ;
 }
 
+bool EntityCommDatabase::erase(unsigned entityCommIndex, const EntityKey& key, unsigned ghostID)
+{
+  const bool deletingSymmInfo = ghostID == BulkData::SYMM_INFO;
+
+  bool result = m_entityCommInfo.remove_items_if(entityCommIndex, [&](const EntityCommInfo& info) {
+    const bool shouldRemove = (info.ghost_id == ghostID) ||
+                              (deletingSymmInfo && info.ghost_id >= BulkData::SYMM_INFO) ||
+                              (info.ghost_id == BulkData::SYMM_INFO+ghostID);
+    if (shouldRemove) {
+      if (m_comm_map_change_listener != nullptr) {
+        m_comm_map_change_listener->removedGhost(key, info.ghost_id, info.proc);
+      }
+      return true;
+    }
+    return false;
+  });
+
+  if ( result ) {
+    if (comm(entityCommIndex).empty()) {
+      cached_find(key);
+      m_last_lookup = m_comm_map.erase(m_last_lookup);
+      m_removedEntityCommIndices.push_back(entityCommIndex);
+
+      if (m_comm_map_change_listener != nullptr) {
+        m_comm_map_change_listener->removedKey(key);
+      }
+    }
+  }
+
+  return result ;
+}
 
 bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 {
@@ -484,33 +515,7 @@ bool EntityCommDatabase::erase( const EntityKey & key, unsigned ghostID )
 
   int entityCommIndex = m_last_lookup->second;
 
-  const bool deletingSymmInfo = ghostID == BulkData::SYMM_INFO;
-
-  bool result = m_entityCommInfo.remove_items_if(entityCommIndex, [&](const EntityCommInfo& info) {
-    const bool shouldRemove = (info.ghost_id == ghostID) ||
-                              (info.ghost_id == BulkData::SYMM_INFO+ghostID) ||
-                              (deletingSymmInfo && info.ghost_id >= BulkData::SYMM_INFO);
-    if (shouldRemove) {
-      if (m_comm_map_change_listener != nullptr) {
-        m_comm_map_change_listener->removedGhost(key, info.ghost_id, info.proc);
-      }
-      return true;
-    }
-    return false;
-  });
-
-  if ( result ) {
-    if (comm(entityCommIndex).empty()) {
-      m_last_lookup = m_comm_map.erase(m_last_lookup);
-      m_removedEntityCommIndices.push_back(entityCommIndex);
-
-      if (m_comm_map_change_listener != nullptr) {
-        m_comm_map_change_listener->removedKey(key);
-      }
-    }
-  }
-
-  return result ;
+  return erase(entityCommIndex, key, ghostID);
 }
 
 

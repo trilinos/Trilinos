@@ -2287,6 +2287,7 @@ TEST(UnitTestEvaluator, IgnoreFloatingPointError)
   eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Ignore);
   eval.parse();
   EXPECT_NO_THROW(eval.evaluate());
+  EXPECT_FALSE(eval.get_fp_warning_issued());
 }
 
 TEST(UnitTestEvaluator, WarnFloatingPointError)
@@ -2295,6 +2296,59 @@ TEST(UnitTestEvaluator, WarnFloatingPointError)
   eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
   eval.parse();
   EXPECT_NO_THROW(eval.evaluate());
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+}
+
+TEST(UnitTestEvaluator, WarnFloatingPointErrorMultipleErrors)
+{
+  stk::expreval::Eval eval("sqrt(-1); sqrt(-2)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
+  eval.parse();
+
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  std::string stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+  size_t line_count = std::count(stderr_message.begin(), stderr_message.end(), '\n');
+  EXPECT_EQ(line_count, 4U);  
+}
+
+TEST(UnitTestEvaluator, NoWarningWhenNoError)
+{
+  stk::expreval::Eval eval("sqrt(1)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
+  eval.parse();
+
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  std::string stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_EQ(stderr_message.size(), 0U);
+}
+
+TEST(UnitTestEvaluator, WarnFloatingPointErrorOnlyOnce)
+{
+  stk::expreval::Eval eval("sqrt(-1); sqrt(-2)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::WarnOnce);
+  eval.parse();
+
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  std::string stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+  size_t line_count = std::count(stderr_message.begin(), stderr_message.end(), '\n');
+  EXPECT_EQ(line_count, 3U);  
+  
+  
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+  line_count = std::count(stderr_message.begin(), stderr_message.end(), '\n');
+  EXPECT_EQ(line_count, 0U);    
 }
 
 TEST(UnitTestEvaluator, ThrowFloatingPointError)
