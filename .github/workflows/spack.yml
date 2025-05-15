@@ -27,7 +27,7 @@ jobs:
       - name: Spack build
         shell: bash -l {0}
         run: |
-          cd /home/runner/spack && git checkout develop && git pull --quiet
+          cd /home/runner/spack && git remote add special https://github.com/sebrowne/spack.git && git fetch special && git checkout develop && git pull special update-trilinos-kokkos-dependency
           sed -i 's/.*- gh.*//g' /home/runner/environment/spack.yaml
           cat /home/runner/environment/spack.yaml
           spack reindex
