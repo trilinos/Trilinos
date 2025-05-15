@@ -93,15 +93,7 @@ namespace Intrepid2 {
     //! Returns true if the transformation matrix is diagonal.
     KOKKOS_INLINE_FUNCTION bool axisAligned() const
     {
-      if (!transform_.isValid())
-      {
-        // null transform is understood as the identity
-        return true;
-      }
-      else
-      {
-        return transformIsDiagonal_;
-      }
+      return transformIsDiagonal_;
     }
 
     BasisValues<Scalar, DeviceType> basisValues() const
