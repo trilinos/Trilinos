@@ -164,30 +164,20 @@ public:
   bool remove_items_if(unsigned row, const Matcher& matcher)
   {
     IndexRange& indices = m_offsets[row];
-    unsigned numRemoved = 0;
-    for(unsigned i=indices.first; i<indices.second; ++i) {
-      if (matcher(m_items[i])) {
-        m_items[i] = m_invalidItem;
-        ++numRemoved;
-      }
-    }
-
+    T* beg = &m_items[indices.first];
+    T* end = &m_items[indices.second];
+    T* newEnd = std::remove_if(beg, end, matcher);
+    unsigned numRemoved = end - newEnd;
+ 
     if (numRemoved > 0) {
-      if (numRemoved < (indices.second-indices.first)) {
-        unsigned idx = indices.first;
-        for(unsigned i=indices.first; i<indices.second; ++i) {
-          if (m_items[i] != m_invalidItem) {
-            if (i > idx) {
-              m_items[idx] = m_items[i];
-            }
-            ++idx;
-          }
-        }
+      for(T* it=newEnd; it<end; ++it) {
+        *it = m_invalidItem;
       }
       indices.second -= numRemoved;
       m_numUnusedEntries += numRemoved;
       return true;
     }
+
     return false;
   }
 

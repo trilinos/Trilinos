@@ -45,24 +45,23 @@ REMOTE_REPO="git@cee-gitlab.sandia.gov:1540-compsim/sierra/base"
 
 # Don't prepend DIR here, since we are now in that directory.
 STK_HEADER_FILE=stk_version.hpp
-if test -r $STK_HEADER_FILE
-then
+test -r $STK_HEADER_FILE &&
     CURRENT_VERSION=$(cat $STK_HEADER_FILE)
-else
-    CURRENT_VERSION=unset
-fi
 
-if [[ ! "$(git config --get remote.origin.url)" =~ ${REMOTE_REPO%:*} ]]
+# If this is a git repo get its version. Otherwise we'll try other
+# approaches to getting the version below, depending on whether this
+# is an internal or external build.
+NEW_VERSION=$(git describe --long --abbrev=8 --match=[0-9]*.[0-9]*.[0-9]* HEAD 2>/dev/null)
+
+# If we do not have access to the REMOTE_REPO assume this is an external customer build.
+if ! git ls-remote --exit-code --tags ${REMOTE_REPO} >/dev/null 2>&1
 then
-    # Check to see if we have access to cee-gitlab.
-    NEW_VERSION=$(git ls-remote --tags ${REMOTE_REPO} 2>/dev/null | awk -F'/' '{print $3}' | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
-    # If we are not in a cee-gitlab git repo, and we don't have access
-    # to cee-gitlab, assume this is an external customer build and use
-    # the current version.
+    # This could still be a clone of our repo (ie, Goodyear), in which case
+    # NEW_VERSION will be set. If not try some fallbacks.
     test -z "${NEW_VERSION}" && NEW_VERSION=${CURRENT_VERSION##* }
+    test -z "${NEW_VERSION}" && NEW_VERSION=unset
 else
-    NEW_VERSION=$(git describe --long --abbrev=8 --match=[0-9]*.[0-9]*.[0-9]* HEAD 2>/dev/null)
-
+    # For internal builds we are either in a repo or not. Determine versions based on that.
     if [ -z "${NEW_VERSION}" ] ; then
         NEW_VERSION=$(git ls-remote --tags ${REMOTE_REPO} 2>/dev/null | awk -F'/' '{print $3}' | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
         if [ -z "${NEW_VERSION}" ] ; then

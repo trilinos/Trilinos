@@ -42,7 +42,7 @@
 //In Sierra, STK_VERSION_STRING is provided on the compile line by bake.
 //For Trilinos stk snapshots, the following macro definition gets populated with
 //the real version string by the trilinos_snapshot.sh script.
-#define STK_VERSION_STRING "5.25.1-1351-gbb3e7fbf"
+#define STK_VERSION_STRING "5.25.1-1574-g3cae6182"
 #endif
 
 namespace stk {

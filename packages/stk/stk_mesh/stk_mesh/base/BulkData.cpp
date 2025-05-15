@@ -4177,7 +4177,7 @@ void BulkData::remove_symmetric_ghost_info()
   EntityCommDatabase& commDB = m_entity_comm_map;
   for(size_t i=0; i<all_comm.size(); ++i) {
     if (all_comm[i].entity_comm != -1) {
-      commDB.erase(all_comm[i].key, SYMM_INFO);
+      commDB.erase(all_comm[i].entity_comm, all_comm[i].key, SYMM_INFO);
     }
   }
 }
