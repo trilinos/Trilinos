@@ -27,7 +27,11 @@ jobs:
       - name: Spack build
         shell: bash -l {0}
         run: |
+          cd /home/runner/spack && git checkout develop && git pull --quiet
+          sed -i 's/.*- gh.*//g' /home/runner/environment/spack.yaml
+          cat /home/runner/environment/spack.yaml
+          spack reindex
           spack develop --no-clone --path $GITHUB_WORKSPACE trilinos@develop
           spack add trilinos@develop
           spack concretize -f
-          spack install --cdash-upload-url=https://sems-cdash-son.sandia.gov/cdash/submit.php?project=Trilinos --cdash-track='Pull Request' --cdash-build='PR-${{ github.event.pull_request.number }}-spack' -j16
+          spack install --cdash-upload-url=https://sems-cdash-son.sandia.gov/cdash/submit.php?project=Trilinos --cdash-track='Pull Request' --cdash-build='PR-${{ github.event.pull_request.number }}-spack' -j16 trilinos
