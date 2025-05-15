@@ -13,7 +13,6 @@ SET(HEADERS_NEED_IO
   FaceCreationTestUtils.hpp
   FaceTestingUtils.hpp
   GeneratedMeshToFile.hpp
-  MockSearchMesh.hpp
   ReadWriteSidesetTester.hpp
   StkMeshFromGeneratedMesh.hpp
   TextMeshAdjacencyGraph.hpp
@@ -47,6 +46,14 @@ SET(SOURCES_NEED_IO
   meshCreationHelpers.cpp
   )
 
+SET(HEADERS_NEED_SEARCHUTIL
+  MockSearchMesh.hpp
+  MockSearchHex8MasterElementProvider.hpp
+  )
+SET(SOURCES_NEED_SEARCHUTIL
+  MockSearchHex8MasterElementProvider.cpp
+  )
+
 SET(HEADERS_NEED_MESH_BUT_NOT_IO
   BuildMesh.hpp
   BucketTester.hpp
@@ -54,12 +61,10 @@ SET(HEADERS_NEED_MESH_BUT_NOT_IO
   MeshFixture.hpp
   MeshFileFixture.hpp
   MeshUtilsForBoundingVolumes.hpp
-  MockSearchHex8MasterElementProvider.hpp
   ParticleUtils.hpp
   unittestMeshUtils.hpp
   )
 SET(SOURCES_NEED_MESH_BUT_NOT_IO
-  MockSearchHex8MasterElementProvider.cpp
   ParticleUtils.cpp
   unittestMeshUtils.cpp
   )
@@ -104,6 +109,11 @@ ENDIF()
 IF(${PROJECT_NAME}_ENABLE_STKMesh)
   LIST(APPEND SOURCES ${SOURCES_NEED_MESH_BUT_NOT_IO})
   LIST(APPEND HEADERS ${HEADERS_NEED_MESH_BUT_NOT_IO})
+ENDIF()
+
+IF(${PROJECT_NAME}_ENABLE_STKSearchUtil)
+  LIST(APPEND SOURCES ${SOURCES_NEED_SEARCHUTIL})
+  LIST(APPEND HEADERS ${HEADERS_NEED_SEARCHUTIL})
 ENDIF()
 
 IF(${PROJECT_NAME}_ENABLE_STKIO)

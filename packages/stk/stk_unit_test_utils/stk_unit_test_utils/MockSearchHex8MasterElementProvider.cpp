@@ -72,7 +72,7 @@ namespace unit_test_util {
     result.assign(numFieldComponents, 0.0);
 
     const unsigned numNodes = topo.num_nodes();
-    STK_ThrowRequireMsg(fieldData.size() >= static_cast<size_t>(numNodes)*numFieldComponents,
+    STK_ThrowRequireMsg(fieldData.size() >= numNodes*numFieldComponents,
                         "Insufficient length for fieldData: " << fieldData.size() << " Expected: " << numNodes*numFieldComponents);
 
     Hex8::interpolate_point(numParCoords, paramCoords.data(), numFieldComponents, fieldData.data(), result.data());

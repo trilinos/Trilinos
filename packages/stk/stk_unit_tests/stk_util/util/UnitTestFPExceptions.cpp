@@ -91,7 +91,7 @@ TEST(FPExceptions, NoWarning)
   stk::util::clear_fp_errors();
   double x = 1.0 + 2.0;
   std::stringstream ss;
-  EXPECT_NO_THROW(stk::util::warn_on_fp_error(nullptr, ss));
+  EXPECT_FALSE(stk::util::warn_on_fp_error(nullptr, ss));
   EXPECT_EQ(ss.str().size(), 0U);
   EXPECT_EQ(x, 3.0);  // appease the compiler
 }
@@ -103,6 +103,6 @@ TEST(FPExceptions, Warning)
   stk::util::clear_fp_errors();
   std::log(0.0);
   std::stringstream ss;
-  EXPECT_NO_THROW(stk::util::warn_on_fp_error(nullptr, ss));
+  EXPECT_TRUE(stk::util::warn_on_fp_error(nullptr, ss));
   EXPECT_GT(ss.str().size(), 0U);
 }
