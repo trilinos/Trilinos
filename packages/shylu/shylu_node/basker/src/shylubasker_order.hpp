@@ -1719,15 +1719,31 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   )
   {
     //Permute
+#if 0
     for(Int i = 0; i < n; ++i)
     {
       perm_comp_fworkspace_array(p(i)) = vec(i);
     }
+#else
+    Kokkos::parallel_for(
+      "permute_inv_with_workspace::perm", n,
+      KOKKOS_LAMBDA(const int i) {
+        perm_comp_fworkspace_array(p(i)) = vec(i);
+      });
+#endif
     //Copy back
+#if 0
     for(Int i = 0; i < n; ++i)
     {
       vec(i) = perm_comp_fworkspace_array(i);
     }
+#else
+    Kokkos::parallel_for(
+      "permute_inv_with_workspace::copy-back", n,
+      KOKKOS_LAMBDA(const int i) {
+        vec(i) = perm_comp_fworkspace_array(i);
+      });
+#endif
 
     return BASKER_SUCCESS;
   }
