@@ -641,12 +641,16 @@ namespace BaskerNS
     while (num_queued > 0) {
       // pop a node from queue
       int dom_id = post_queue(num_queued-1);
-      if (Options.verbose) printf( " > check (dom_id = %d) = %d\n",dom_id,post_check(dom_id) );
+      if (Options.verbose) std::cout << " > check (dom_id = " << dom_id << ") = " << post_check(dom_id) << std::endl;
       if (dom_id >= leaves_id ||     // leaf
           post_check(dom_id) == 2)   // both children processed
       {
         post2topdown(num_doms) = dom_id;
-        if (Options.verbose) printf( "  pop queue(%d) = %d -> post(%d) = %d\n\n",num_queued-1,dom_id, num_doms,dom_id );
+        if (Options.verbose) {
+          std::cout << "  pop queue(" << num_queued-1 << ") = " << dom_id
+                    << " -> post(" << num_doms << ") = " << dom_id
+                    << std::endl << std::endl;
+        }
         num_doms ++;
 
         if (dom_id != 0) {
@@ -673,7 +677,7 @@ namespace BaskerNS
       printf("\ntop-down bf to/from post-order\n" );
       printf(" post=[\n");
       for (int i = 0; i < (2*Nprocs)-1; i++) {
-        printf(" %d %d\n",post2topdown(i),topdown2post(i));
+        std::cout << post2topdown(i) << ", " << topdown2post(i) << std::endl;
       }
       printf(" ];\n");
       fflush(stdout);
@@ -698,10 +702,14 @@ namespace BaskerNS
     if (Options.verbose) {
       printf("\ntop-down to bottom-up bf:\n" );
       printf( " bottomup2topdown=[\n" );
-      for (int i=0; i < 2*Nprocs-1; i++ ) printf( " %d %d\n",bottomup2topdown(i),topdown2bottomup(i) );
+      for (int i=0; i < 2*Nprocs-1; i++ ) {
+        std::cout << bottomup2topdown(i) << ", " << topdown2bottomup(i) << std::endl;
+      }
       printf( " ];\n\n" ); fflush(stdout);
       printf("\npost to bottom-up bf:\n" );
-      for (int i=0; i < 2*Nprocs-1; i++ ) printf( " %d \n",topdown2post(bottomup2topdown(i)) );
+      for (int i=0; i < 2*Nprocs-1; i++ ) {
+        std::cout <<  topdown2post(bottomup2topdown(i)) << std::endl;
+      }
       printf( " ];\n\n" ); fflush(stdout);
     }
 
@@ -718,7 +726,7 @@ namespace BaskerNS
   )
   {
     if (Options.verbose) {
-      printf( "\n *** serial_forward_solve : Nblks = %d **\n",tree.nblks);
+      std::cout << "\n *** serial_forward_solve : Nblks = " << tree.nblks << " **" << std::endl;
       fflush(stdout);
     }
 
@@ -902,14 +910,14 @@ namespace BaskerNS
   )
   {
     if (Options.verbose) {
-      printf( "\n *** serial_backward_solve : Nblks = %d **\n",tree.nblks);
+      std::cout << "\n *** serial_backward_solve : Nblks = " << tree.nblks << " **" << std::endl;
       fflush(stdout);
     }
 
     Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
     for(Int b = tree.nblks-1; b >=0; b--)
     {
-      #if 1//def BASKER_DEBUG_SOLVE_RHS
+      #ifdef BASKER_DEBUG_SOLVE_RHS
       printf("Upper solve blk: %d, %d \n", b,LU_size(b)-1);
       #endif
 

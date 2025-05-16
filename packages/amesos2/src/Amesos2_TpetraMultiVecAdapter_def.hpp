@@ -601,9 +601,11 @@ namespace Amesos2 {
     auto comm = this->mv_->getMap()->getComm();
     auto myRank = comm->getRank();
     if (myRank == 0) {
-      Kokkos::resize(kokkos_new_view, nRows, nCols);
+      if (kokkos_new_view.extent(0) != nRows || kokkos_new_view.extent(1) != nCols) {
+        Kokkos::resize(kokkos_new_view, nRows, nCols);
+      }
       if (perm_g2l.extent(0) == nRows) {
-        Kokkos::resize(this->buf_, nRows, 1);
+        if (this->buf_.extent(0) < nRows) Kokkos::resize(this->buf_, nRows, 1);
       } else {
         Kokkos::resize(this->buf_, 0, 1);
       }
@@ -621,7 +623,9 @@ namespace Amesos2 {
                                        recvbuf, recvCountRows.data(), recvDisplRows.data(),
                                        0, *comm);
         if (myRank == 0 && this->buf_.extent(0) > 0) {
-          for (global_size_t i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
+          //for (global_size_t i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
+          Kokkos::parallel_for("MultiVecAdapter<Tpetra::MultiVector", nRows,
+            KOKKOS_LAMBDA(const int i) { kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0); });
         }
       }
     }
@@ -651,7 +655,9 @@ namespace Amesos2 {
       auto lclMV = Kokkos::create_mirror_view(lclMV_d);
       for (size_t j=0; j<nCols; j++) {
         if (myRank == 0 && this->buf_.extent(0) > 0) {
-          for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
+          //for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
+          Kokkos::parallel_for("MultiVecAdapter<Tpetra::MultiVector", nRows,
+            KOKKOS_LAMBDA(const int i) { this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j); });
         }
         // lclMV with OverwriteAll
         Scalar * sendbuf = reinterpret_cast<Scalar*> (this->buf_.extent(0) > 0 || myRank != 0 ? this->buf_.data() : &kokkos_new_view(0,j));
