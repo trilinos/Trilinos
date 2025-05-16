@@ -624,7 +624,8 @@ namespace Amesos2 {
                                        0, *comm);
         if (myRank == 0 && this->buf_.extent(0) > 0) {
           //for (global_size_t i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
-          Kokkos::parallel_for("MultiVecAdapter<Tpetra::MultiVector", nRows,
+          typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+          Kokkos::parallel_for("Amesos2::TpetraMultiVecAdapter::gather", Kokkos::RangePolicy<HostExecSpaceType>(0, nRows),
             KOKKOS_LAMBDA(const int i) { kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0); });
         }
       }
@@ -656,7 +657,8 @@ namespace Amesos2 {
       for (size_t j=0; j<nCols; j++) {
         if (myRank == 0 && this->buf_.extent(0) > 0) {
           //for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
-          Kokkos::parallel_for("MultiVecAdapter<Tpetra::MultiVector", nRows,
+          typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+          Kokkos::parallel_for("Amesos2::TpetraMultiVecAdapter::scatter", Kokkos::RangePolicy<HostExecSpaceType>(0, nRows),
             KOKKOS_LAMBDA(const int i) { this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j); });
         }
         // lclMV with OverwriteAll
