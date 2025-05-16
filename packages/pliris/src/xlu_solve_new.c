@@ -80,7 +80,7 @@ void XLU_SOLVE_ (DATA_TYPE *matrix, int *matrix_size, int *num_procsr,
 
   int begin_rhs;                /* Beginning index for the RHS   */
   double run_secs;              /* time (in secs) during which the prog ran */
-  double seconds();             /* function to generate timings */
+  double seconds(double);       /* function to generate timings */
   double tsecs;                 /* intermediate storage of timing info */
 
   int totmem;
