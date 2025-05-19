@@ -15,6 +15,7 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_IO.hpp>
 
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_CoarseMapFactory.hpp>
@@ -26,6 +27,7 @@
 #include <MueLu_EminPFactory.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
+#include "MueLu_NoFactory.hpp"
 
 namespace MueLuTests {
 
@@ -154,8 +156,116 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint, Scalar, Loc
   }
 }
 
-#define MUELU_ETI_GROUP(SC, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint, SC, LO, GO, Node)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+
+  using TST                   = Teuchos::ScalarTraits<SC>;
+  using magnitude_type        = typename TST::magnitudeType;
+  using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+  using real                  = typename TST::coordinateType;
+  using RealValuedMultiVector = Xpetra::MultiVector<real, LO, GO, NO>;
+  using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
+
+  out << "version: " << MueLu::Version() << std::endl;
+
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  int numProcs                        = comm->getSize();
+  if (numProcs != 1) {
+    std::cout << "\nThis test must be run on 1 processor!\n"
+              << std::endl;
+    return;
+  }
+
+  std::string scalarName = Teuchos::ScalarTraits<Scalar>::name();
+  out << "scalar type = " << scalarName << std::endl;
+  if (scalarName.find("complex") != std::string::npos) {
+    out << "Skipping Test for SC=complex" << std::endl;
+    return;
+  }
+
+  Level fineLevel, coarseLevel;
+  test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
+  fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+  coarseLevel.SetFactoryManager(Teuchos::null);
+
+  LocalOrdinal indexBase = 0;
+
+  GlobalOrdinal global_num_fine_edges   = 56;
+  GlobalOrdinal global_num_coarse_edges = 5;
+  GlobalOrdinal global_num_fine_nodes   = 25;
+  GlobalOrdinal global_num_coarse_nodes = 4;
+
+  LocalOrdinal local_num_fine_edges   = 56;
+  LocalOrdinal local_num_coarse_edges = 5;
+  LocalOrdinal local_num_fine_nodes   = 25;
+  LocalOrdinal local_num_coarse_nodes = 4;
+
+  auto lib = TestHelpers::Parameters::getLib();
+
+  auto fine_edge_map    = MapFactory::Build(lib, global_num_fine_edges, local_num_fine_edges, indexBase, comm);
+  auto coarse_edge_map  = MapFactory::Build(lib, global_num_coarse_edges, local_num_coarse_edges, indexBase, comm);
+  auto fine_nodal_map   = MapFactory::Build(lib, global_num_fine_nodes, local_num_fine_nodes, indexBase, comm);
+  auto coarse_nodal_map = MapFactory::Build(lib, global_num_coarse_nodes, local_num_coarse_nodes, indexBase, comm);
+  auto A                = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/A.mm", fine_edge_map, fine_edge_map, fine_edge_map, fine_edge_map);
+  auto Pe               = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/Pe.mm", fine_edge_map, coarse_edge_map, coarse_edge_map, fine_edge_map);
+  auto Pn               = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/Pn.mm", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
+  auto D                = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/D0h.mm", fine_edge_map, fine_nodal_map, fine_nodal_map, fine_edge_map);
+  auto Dc               = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/D0H.mm", coarse_edge_map, coarse_nodal_map, coarse_nodal_map, coarse_edge_map);
+
+  fineLevel.Request("A");
+  fineLevel.Set("A", A);
+  // fineLevel.Set("D0", D);
+  // coarseLevel.Set("D0", Dc);
+  coarseLevel.Set("P_nodal", Pn);
+  fineLevel.Set("Nullspace", D);
+  coarseLevel.Set("Nullspace", Dc);
+  coarseLevel.Set("P", Pe);
+
+  RCP<PatternFactory> patternFact = rcp(new PatternFactory());
+  // patternFact->SetFactory("P", TentativePFact);
+
+  RCP<ConstraintFactory> constraintFact = rcp(new ConstraintFactory());
+  // constraintFact->SetFactory("CoarseNullspace", MueLu::NoFactory::getRCP(), "Nullspace");
+  constraintFact->SetFactory("Ppattern", patternFact);
+
+  RCP<EminPFactory> eminFact = rcp(new EminPFactory());
+  eminFact->SetFactory("Constraint", constraintFact);
+
+  coarseLevel.Request("P", eminFact.get());  // request P
+  coarseLevel.Request("Constraint", constraintFact.get());
+  coarseLevel.Request(*eminFact);
+
+  RCP<Matrix> P;
+  coarseLevel.Get("P", P, eminFact.get());
+
+  RCP<Constraint> constraint;
+  coarseLevel.Get("Constraint", constraint, constraintFact.get());
+
+  const auto eps = Teuchos::ScalarTraits<magnitude_type>::eps();
+
+  // Test that both Ptent satisfies the constraint.
+  TEST_COMPARE(constraint->ResidualNorm(Pe), <, 10 * eps);
+
+  // Test that both Ptent satisfies the constraint after converting it to a vector and back to a matrix.
+  auto vecP = MultiVectorFactory::Build(constraint->getDomainMap(), 1);
+  constraint->AssignMatrixEntriesToVector(*Pe, *vecP);
+  auto Pe2 = constraint->GetMatrixWithEntriesFromVector(*vecP);
+  TEST_COMPARE(constraint->ResidualNorm(Pe2), <, 10 * eps);
+
+  // Test that both P satisfies the constraint.
+  TEST_COMPARE(constraint->ResidualNorm(P), <, 20 * eps);
+
+  // Test that P has lower energy norm than Ptent.
+  auto energyNormPtent = EminPFactory::ComputeProlongatorEnergyNorm(A, Pe, out);
+  auto energyNormP     = EminPFactory::ComputeProlongatorEnergyNorm(A, P, out);
+  TEST_COMPARE(energyNormP, <, energyNormPtent);
+}
+
+#define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint, SC, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, MaxwellConstraint, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

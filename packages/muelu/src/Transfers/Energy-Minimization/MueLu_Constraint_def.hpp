@@ -525,6 +525,9 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AssignMatrixEntriesT
       "MueLu::Constraint::filter", range_type(0, lclPattern.numRows()), KOKKOS_LAMBDA(const size_t i) {
         auto row_mat = lclMat.rowConst(i);
 
+        if (row_mat.length == 0)
+          return;
+
         for (size_t jj = lclPattern.row_map(i); jj < lclPattern.row_map(i + 1); ++jj) {
           auto offset     = lclPattern.entries(jj);
           LocalOrdinal kk = 0;
