@@ -251,7 +251,8 @@ void NOX::Solver::SingleStep::printUpdate()
       double normDx = dirVecPtr->norm();
       utilsPtr->out() << "||F||=" << normF << ", ||dx||=" << normDx;
       if (computeRelativeNorm) {
-        utilsPtr->out() << ", ||F|| / ||F_0||=" << normF/normF_0;
+        utilsPtr->out() << ", ||F|| / ||F_0||=";
+        utilsPtr->out() << (normF_0 ? normF / normF_0 : std::numeric_limits<double>::quiet_NaN());
       }
     }
     if (status == NOX::StatusTest::Converged)
