@@ -1373,7 +1373,6 @@ TEST(ElementGraph, make_items_inactive)
 
   stk::mesh::MetaData meta(spatialDim);
   stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
-  stk::mesh::PartVector boundary_mesh_parts { &faces_part };
   stk::io::put_io_part_attribute(faces_part);
   ElemGraphTestUtils::ElementDeathBulkDataTester bulkData(meta, comm, stk::mesh::BulkData::AUTO_AURA);
 

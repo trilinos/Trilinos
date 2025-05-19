@@ -32,14 +32,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <stk_io/FillMesh.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetEntities.hpp>        // for get_selected_entities
+#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -53,6 +55,7 @@
 #include <vector>
 #include <limits>
 #include <sstream>
+#include <memory>
 
 template<class A>
 struct BLASFixture {
@@ -63,8 +66,7 @@ struct BLASFixture {
   unsigned int numEntitiesUniversal;
   unsigned int numEntitiesOwned;
   unsigned int numEntitiesGlobal;
-  stk::io::StkMeshIoBroker * stkMeshIoBroker;
-  stk::mesh::BulkData  * stkMeshBulkData;
+  std::shared_ptr<stk::mesh::BulkData> stkMeshBulkData;
   stk::mesh::Field<A>  * field1;
   stk::mesh::FieldBase * fieldBase1;
   stk::mesh::Field<A>  * field2;
@@ -100,13 +102,8 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
   const unsigned int meshSizeY = 4;
   const unsigned int meshSizeZ = 4;
 
-  stkMeshIoBroker = new stk::io::StkMeshIoBroker(my_comm);
-  stk::io::StkMeshIoBroker & io = *stkMeshIoBroker;
-  std::ostringstream osstr;
-  osstr << "generated:" << meshSizeX << "x" << meshSizeY << "x" << meshSizeZ;
-  io.add_mesh_database(osstr.str(), stk::io::READ_MESH);
-  io.create_input_mesh();
-  stk::mesh::MetaData &meta_data = io.meta_data();
+  stkMeshBulkData = stk::mesh::MeshBuilder(my_comm).set_spatial_dimension(3).create();
+  stk::mesh::MetaData &meta_data = stkMeshBulkData->mesh_meta_data();
 
   field1 = &meta_data.declare_field<A>(stk::topology::NODE_RANK, "field1");
   stk::mesh::put_field_on_mesh(*field1,field1->mesh_meta_data().universal_part(),&initial_value1);
@@ -120,8 +117,9 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
   stk::mesh::put_field_on_mesh(*field3,field3->mesh_meta_data().universal_part(),&initial_value3);
   fieldBase3 = field3;
 
-  io.populate_bulk_data();
-  stkMeshBulkData = &io.bulk_data();
+  std::ostringstream osstr;
+  osstr << "generated:" << meshSizeX << "x" << meshSizeY << "x" << meshSizeZ;
+  stk::io::fill_mesh(osstr.str(), *stkMeshBulkData);
 
   pPartA = &meta_data.declare_part( "PartA" , stk::topology::NODE_RANK );
   pPartB = &meta_data.declare_part( "PartB" , stk::topology::NODE_RANK );
@@ -184,11 +182,14 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
   stk::all_reduce_sum(stkMeshBulkData->parallel(),&numPartAEntitiesOwned,&numPartAEntitiesGlobal,1u);
   stk::all_reduce_sum(stkMeshBulkData->parallel(),&numPartBEntitiesOwned,&numPartBEntitiesGlobal,1u);
   EXPECT_EQ(numEntitiesGlobal, (meshSizeX+1) * (meshSizeY+1) * (meshSizeZ+1));
+
+  // stk::mesh::get_updated_ngp_field<A>(*field1);
+  // stk::mesh::get_updated_ngp_field<A>(*field2);
+  // stk::mesh::get_updated_ngp_field<A>(*field3);
 }
 
 template<class A>
 BLASFixture<A>::~BLASFixture() {
-  delete stkMeshIoBroker;
 }
 
 template<class Scalar>
@@ -399,8 +400,34 @@ void test_copy(const Scalar initial1,const Scalar initial2,const Scalar initial3
   stk::mesh::field_copy(*Fixture.field1,*Fixture.field2);
   testFieldValidation(Fixture,initial1,initial1,initial3);
 
+  if (Fixture.field1->has_ngp_field()) {
+    EXPECT_EQ(Fixture.field1->need_sync_to_device(), false);
+  }
+  else {
+    EXPECT_EQ(Fixture.field1->need_sync_to_device(), true);
+  }
+
+  EXPECT_EQ(Fixture.field2->need_sync_to_device(), true);
+
+  if (Fixture.field3->has_ngp_field()) {
+    EXPECT_EQ(Fixture.field3->need_sync_to_device(), false);
+  }
+  else {
+    EXPECT_EQ(Fixture.field3->need_sync_to_device(), true);
+  }
+
   stk::mesh::field_copy(*Fixture.field3,*Fixture.field1);
   testFieldValidation(Fixture,initial3,initial1,initial3);
+
+  EXPECT_EQ(Fixture.field1->need_sync_to_device(), true);
+  EXPECT_EQ(Fixture.field2->need_sync_to_device(), true);
+
+  if (Fixture.field3->has_ngp_field()) {
+    EXPECT_EQ(Fixture.field3->need_sync_to_device(), false);
+  }
+  else {
+    EXPECT_EQ(Fixture.field3->need_sync_to_device(), true);
+  }
 }
 
 TEST(FieldBLAS,copy_double)

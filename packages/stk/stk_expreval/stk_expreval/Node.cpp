@@ -116,6 +116,7 @@ Node::eval()
   }
   case OPCODE_DIVIDE: {
     setResult() = m_left->getResult()/m_right->getResult();
+    checkFPError("operator/");
     break;
   }
   case OPCODE_MODULUS: {
@@ -445,9 +446,16 @@ void Node::checkFPError(const char* fname)
   if (behavior == Eval::FPErrorBehavior::Ignore)
   {
     return;
-  } else if (behavior == Eval::FPErrorBehavior::Warn)
+  } else if (behavior == Eval::FPErrorBehavior::Warn || behavior == Eval::FPErrorBehavior::WarnOnce)
   {
-    stk::util::warn_on_fp_error(fname);
+    if (!(behavior == Eval::FPErrorBehavior::WarnOnce && m_owner->get_fp_warning_issued()))
+    {
+      bool did_warn = stk::util::warn_on_fp_error(fname);    
+      if (did_warn)
+      {
+        m_owner->set_fp_warning_issued();    
+      }
+    }
   } else if (behavior == Eval::FPErrorBehavior::Error)
   {
     stk::util::throw_on_fp_error(fname);

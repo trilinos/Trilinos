@@ -205,13 +205,14 @@ Timer::checkpoint() const {
   m_timerImpl->checkpoint();
 }
 
-Writer &
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
+STK_DEPRECATED Writer &
 Timer::dump(Writer& dout) const {
   return m_timerImpl->dump(dout);
 }
 
 template <class T>
-Writer &
+STK_DEPRECATED Writer &
 Timer::Metric<T>::dump(
   Writer &    dout) const
 {
@@ -232,6 +233,7 @@ template Writer &Timer::Metric<WallTime>::dump(Writer &) const;
 template Writer &Timer::Metric<MPICount>::dump(Writer &) const;
 template Writer &Timer::Metric<MPIByteCount>::dump(Writer &) const;
 template Writer &Timer::Metric<HeapAlloc>::dump(Writer &) const;
+#endif
 
 
 TimeBlockSynchronized::TimeBlockSynchronized(

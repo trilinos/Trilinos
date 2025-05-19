@@ -371,10 +371,7 @@ public:
   // stk::mesh::Field<double> * field = meta.get_field<double>(stk::topology::NODE_RANK, "density");
   //
   template <typename T>
-  Field<T> * get_field(stk::mesh::EntityRank entity_rank,
-                       const std::string & name,
-                       const char * fileName = HOST_DEBUG_FILE_NAME,
-                       int lineNumber = HOST_DEBUG_LINE_NUMBER) const;
+  Field<T> * get_field(stk::mesh::EntityRank entity_rank, const std::string & name) const;
 
   // Get a field by name with an unknown type.  A nullptr will be
   // returned if it does not exist.  A case-insensitive name search
@@ -411,9 +408,7 @@ public:
   template <typename T>
   Field<T> & declare_field(stk::topology::rank_t arg_entity_rank,
                            const std::string & name,
-                           unsigned number_of_states = 1,
-                           const char * fileName = HOST_DEBUG_FILE_NAME,
-                           int lineNumber = HOST_DEBUG_LINE_NUMBER);
+                           unsigned number_of_states = 1);
 
   /** \brief  Declare an attribute on a field.
    *          Return the attribute of that type,
@@ -467,6 +462,8 @@ public:
 
   /** \brief  Query if the meta data manager is committed */
   bool is_commit() const { return m_commit ; }
+
+  size_t modification_count() const { return m_modificationCount; }
 
   /** \brief  Allow late field registration */
   void enable_late_fields() { m_are_late_fields_enabled = true; }
@@ -590,22 +587,6 @@ public:
   bool delete_part_alias_case_insensitive(Part& part, const std::string& alias);
   std::vector<std::string> get_part_aliases(const Part& part) const;
 
-  // To enable the Field Sync Debugger in a production run, add the STK_DEBUG_FIELD_SYNC
-  // define to your build.  This function is solely used to flip external parts of the
-  // debugger on for unit testing when it is not enabled globally.
-  //
-  void enable_field_sync_debugger() {
-    m_isFieldSyncDebuggerEnabled = true;
-  }
-
-  bool is_field_sync_debugger_enabled() {
-#ifdef STK_DEBUG_FIELD_SYNC
-    return true;
-#else
-    return m_isFieldSyncDebuggerEnabled;
-#endif
-  }
-
 protected:
 
   Part & declare_internal_part( const std::string & p_name);
@@ -624,8 +605,6 @@ private:
   void internal_declare_part_subset( Part & superset , Part & subset, bool verifyFieldRestrictions );
 
   void assign_topology(Part& part, stk::topology stkTopo);
-
-  void declare_field_sync_debugger_field(stk::mesh::FieldBase& field);
 
   BulkData* m_bulk_data;
   impl::PartRepository m_part_repo ;
@@ -654,8 +633,8 @@ private:
   std::map<unsigned, std::vector<std::string>> m_partReverseAlias;
 
   bool m_commit;
+  size_t m_modificationCount;
   bool m_are_late_fields_enabled;
-  bool m_isFieldSyncDebuggerEnabled;
 
   /** \name  Invariants/preconditions for MetaData.
    * \{
@@ -784,10 +763,7 @@ Part & MetaData::get_part( unsigned ord ) const
 
 template <typename T>
 inline
-Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
-                               const std::string & name,
-                               const char * /*fileName*/,
-                               int /*lineNumber*/) const
+Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank, const std::string & name) const
 {
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to MetaData::get_field(), "
@@ -809,11 +785,7 @@ Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank,
 
 template <typename T>
 Field<T> &
-MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
-                        const std::string & name,
-                        unsigned number_of_states,
-                        const char * /*fileName*/,
-                        int /*lineNumber*/)
+MetaData::declare_field(stk::topology::rank_t arg_entity_rank, const std::string & name, unsigned number_of_states)
 {
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to MetaData::declare_field(), "
@@ -893,8 +865,6 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank,
   }
 
   f[0]->set_mesh(m_bulk_data);
-
-  declare_field_sync_debugger_field(*f[0]);
 
   return *f[0];
 }
@@ -1090,9 +1060,7 @@ is_auto_declared_part(const Part &part)
 
 template <typename T>
 Field<T> * get_field_by_name(const std::string & name,
-                             const MetaData & metaData,
-                             [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
-                             [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER)
+                             const MetaData & metaData)
 {
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to get_field_by_name(), "

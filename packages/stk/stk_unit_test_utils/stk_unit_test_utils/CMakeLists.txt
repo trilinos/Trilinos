@@ -46,6 +46,14 @@ SET(SOURCES_NEED_IO
   meshCreationHelpers.cpp
   )
 
+SET(HEADERS_NEED_SEARCHUTIL
+  MockSearchMesh.hpp
+  MockSearchHex8MasterElementProvider.hpp
+  )
+SET(SOURCES_NEED_SEARCHUTIL
+  MockSearchHex8MasterElementProvider.cpp
+  )
+
 SET(HEADERS_NEED_MESH_BUT_NOT_IO
   BuildMesh.hpp
   BucketTester.hpp
@@ -77,14 +85,17 @@ SET(SOURCES_NEED_MPI
 SET(HEADERS
   algorithmTimer.hpp
   AssemblyUtils.hpp
+  Legendre.hpp
   CommandLineArgs.hpp
   getOption.h
+  MockSearchHex8Element.hpp
   StkReportRedirector.hpp
   stringAndNumberComparisons.hpp
   timer.hpp
   )
 SET(SOURCES
   AssemblyUtils.cpp
+  Legendre.cpp
   StkReportRedirector.cpp
   stringAndNumberComparisons.cpp
   )
@@ -98,6 +109,11 @@ ENDIF()
 IF(${PROJECT_NAME}_ENABLE_STKMesh)
   LIST(APPEND SOURCES ${SOURCES_NEED_MESH_BUT_NOT_IO})
   LIST(APPEND HEADERS ${HEADERS_NEED_MESH_BUT_NOT_IO})
+ENDIF()
+
+IF(${PROJECT_NAME}_ENABLE_STKSearchUtil)
+  LIST(APPEND SOURCES ${SOURCES_NEED_SEARCHUTIL})
+  LIST(APPEND HEADERS ${HEADERS_NEED_SEARCHUTIL})
 ENDIF()
 
 IF(${PROJECT_NAME}_ENABLE_STKIO)
@@ -135,6 +151,10 @@ else()
       message(FATAL_ERROR "stk_unit_test_utils requires that STKNGP_TEST is enabled if STKIO is enabled.")
     endif()
     target_link_libraries(stk_unit_test_utils PUBLIC stk_ngp_test)
+  endif()
+
+  if(STK_ENABLE_STKSearchUtil)
+    target_link_libraries(stk_unit_test_utils PUBLIC stk_search_util)
   endif()
 
   target_link_libraries(stk_unit_test_utils PUBLIC stk_util_parallel)

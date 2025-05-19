@@ -377,8 +377,10 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
     m_ngpMeshBase(nullptr),
     m_isDeviceMeshRegistered(false),
     m_ngpFieldSyncBufferModCount(0),
+    m_deviceFastMeshIndicesSynchronizedCount(0),
     m_runConsistencyCheck(false),
     m_symmetricGhostInfo(false),
+    m_maintainLocalIds(false),
     m_soloSideIdGenerator(stk::parallel_machine_size(parallel), stk::parallel_machine_rank(parallel), std::numeric_limits<stk::mesh::EntityId>::max()),
     m_supportsLargeIds(false)
 {
@@ -1527,6 +1529,8 @@ template
 void BulkData::declare_entities(stk::topology::rank_t rank, const std::vector<int64_t>& newIds, const PartVector& parts, std::vector<Entity>& requested_entities);
 template
 void BulkData::declare_entities(stk::topology::rank_t rank, const std::vector<unsigned long>& newIds, const PartVector& parts, std::vector<Entity>& requested_entities);
+template
+void BulkData::declare_entities(stk::topology::rank_t rank, const std::vector<unsigned long long>& newIds, const PartVector& parts, std::vector<Entity>& requested_entities);
 
 bool BulkData::in_shared(EntityKey key, int proc) const
 {
@@ -1828,14 +1832,12 @@ void BulkData::allocate_field_data()
 
 void BulkData::reallocate_field_data(stk::mesh::FieldBase & field)
 {
-  const std::vector<FieldBase *> & field_set = mesh_meta_data().get_fields();
-  for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
-    const std::vector<Bucket*>& buckets = this->buckets(rank);
-    m_field_data_manager->reallocate_field_data(rank, buckets, field, field_set);
-    for (Bucket * bucket : buckets) {
-      bucket->grow_ngp_field_bucket_ids();
-      bucket->mark_for_modification();
-    }
+  const std::vector<FieldBase *> & allFields = mesh_meta_data().get_fields();
+  const EntityRank fieldRank = field.entity_rank();
+  const std::vector<Bucket*>& bucketsOfRank = this->buckets(fieldRank);
+  m_field_data_manager->reallocate_field_data(fieldRank, bucketsOfRank, field, allFields);
+  for (Bucket * bucket : bucketsOfRank) {
+    bucket->mark_for_modification();
   }
   m_meshModification.increment_sync_count();
 }
@@ -1915,9 +1917,9 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
         for(const FieldBase* field : *field_set) {
             const FieldMetaData& srcFieldMeta = field->get_meta_data_for_field()[src_bucket_id];
             const int src_size = srcFieldMeta.m_bytesPerEntity;
-            unsigned char * const src = srcFieldMeta.m_data;
+            std::byte* const src = srcFieldMeta.m_data;
             const FieldMetaData& dstFieldMeta = field->get_meta_data_for_field()[dst_bucket_id];
-            unsigned char * const dst = dstFieldMeta.m_data;
+            std::byte* const dst = dstFieldMeta.m_data;
 
             STK_ThrowAssert(src_size == dstFieldMeta.m_bytesPerEntity);
 
@@ -1945,8 +1947,8 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
 
                 if (src_size) {
                     STK_ThrowAssertMsg( dst_size == src_size, "Incompatible field sizes: " << dst_size << " != " << src_size);
-                    unsigned char * const src = srcFieldMeta.m_data;
-                    unsigned char * const dst = dstFieldMeta.m_data;
+                    std::byte* const src = srcFieldMeta.m_data;
+                    std::byte* const dst = dstFieldMeta.m_data;
 
                     std::memcpy(dst + dst_size * dst_bucket_ord,
                             src + src_size * src_bucket_ord,
@@ -1957,7 +1959,8 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
     }
 }
 
-void BulkData::add_entity_callback(EntityRank rank, unsigned bucketId, unsigned bucketCapacity, unsigned indexInBucket)
+void BulkData::add_entity_callback(EntityRank rank, unsigned bucketId, unsigned newBucketSize, unsigned bucketCapacity,
+                                   unsigned indexInBucket)
 {
   if (not m_keep_fields_updated) {
     return;
@@ -1969,16 +1972,17 @@ void BulkData::add_entity_callback(EntityRank rank, unsigned bucketId, unsigned 
     m_field_data_manager->grow_bucket_capacity(fields, rank, bucketId, indexInBucket, bucketCapacity);
   }
 
-  m_field_data_manager->add_field_data_for_entity(fields, rank, bucketId, indexInBucket);
+  m_field_data_manager->add_field_data_for_entity(fields, rank, bucketId, indexInBucket, newBucketSize);
 }
 
-void BulkData::remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord)
+void BulkData::remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, unsigned newBucketSize,
+                                                 unsigned bucket_ord)
 {
     if (!m_keep_fields_updated) {
       return;
     }
     const std::vector<FieldBase *> &fields = mesh_meta_data().get_fields();
-    m_field_data_manager->remove_field_data_for_entity(rank, bucket_id, bucket_ord, fields);
+    m_field_data_manager->remove_field_data_for_entity(rank, bucket_id, bucket_ord, newBucketSize, fields);
 }
 
 void BulkData::remove_entity_callback(EntityRank /*rank*/, unsigned /*bucket_id*/, unsigned /*bucket_ord*/)
@@ -4125,6 +4129,7 @@ void BulkData::make_ghost_info_symmetric()
               for(unsigned jj=0; jj<ec.size(); ++jj) {
                 if (ii != jj) {
                   int proc_jj = ec[jj].proc;
+                  commSparse.send_buffer(proc_ii).pack<unsigned>(ec[jj].ghost_id);
                   commSparse.send_buffer(proc_ii).pack<int>(proc_jj);
                 }
               }
@@ -4147,9 +4152,11 @@ void BulkData::make_ghost_info_symmetric()
       buf.unpack<unsigned>(numOtherProcs);
 
       for(unsigned i=0; i<numOtherProcs; ++i) {
+        unsigned ghostId = 0;
+        buf.unpack<unsigned>(ghostId);
         int otherProc = -1;
         buf.unpack<int>(otherProc);
-        EntityCommInfo entityCommInfo(SYMM_INFO, otherProc);
+        EntityCommInfo entityCommInfo(SYMM_INFO+ghostId, otherProc);
 
         std::pair<int,bool> result = entity_comm_map_insert(entity, entityCommInfo);
         if (result.second) {
@@ -4170,7 +4177,7 @@ void BulkData::remove_symmetric_ghost_info()
   EntityCommDatabase& commDB = m_entity_comm_map;
   for(size_t i=0; i<all_comm.size(); ++i) {
     if (all_comm[i].entity_comm != -1) {
-      commDB.erase(all_comm[i].key, SYMM_INFO);
+      commDB.erase(all_comm[i].entity_comm, all_comm[i].key, SYMM_INFO);
     }
   }
 }
@@ -4203,18 +4210,14 @@ void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
     make_ghost_info_symmetric();
   }
 
+  if (get_maintain_local_ids()) {
+    impl::set_local_ids(*this);
+  }
+
   notify_finished_mod_end();
 
   if(parallel_size() > 1) {
     check_mesh_consistency();
-  }
-
-  if (mesh_meta_data().is_field_sync_debugger_enabled()) {
-    for (FieldBase * stkField : mesh_meta_data().get_fields()) {
-      if (stkField->has_ngp_field()) {
-        impl::get_ngp_field(*stkField)->debug_modification_end(synchronized_count());
-      }
-    }
   }
 }
 

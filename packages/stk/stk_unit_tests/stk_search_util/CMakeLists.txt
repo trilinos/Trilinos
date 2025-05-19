@@ -1,5 +1,18 @@
 
-FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+SET(SOURCES
+  UnitTestIsInElement.cpp
+  UnitTestSearchWithPeriodicBC.cpp
+)
+
+SET(SOURCES_NEED_IO
+  UnitTestMockSearch.cpp
+  UnitTestMockSearchInspector.cpp
+  UnitTestSearchUtils.cpp
+)
+
+if(${PROJECT_NAME}_ENABLE_STKIO)
+  LIST(APPEND SOURCES ${SOURCES_NEED_IO})
+endif()
 
 if(HAVE_STK_Trilinos)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(stk_search_util_utest

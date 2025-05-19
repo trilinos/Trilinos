@@ -70,7 +70,7 @@ namespace user_app {
     
     void runPreSolve(const NOX::Solver::Generic& /* solver */)
     {
-
+      m_mesh->writeToExodus(0.0);
     }
     
     void runPostSolve(const NOX::Solver::Generic& solver)
@@ -104,7 +104,7 @@ namespace user_app {
       m_response_library->evaluate<panzer::Traits::Residual>(ae_inargs);
       
       // write to disk
-      m_mesh->writeToExodus(0.0);
+      m_mesh->writeToExodus(1.0);
     }
     
   protected:

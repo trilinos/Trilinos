@@ -46,14 +46,11 @@ public:
       m_sendFieldName2()
   { }
 
-  ~MockSparc()
-  {
-    stk::parallel_machine_finalize();
-  }
+  ~MockSparc() = default;
 
   void read_input_and_setup_split_comms(int argc, char** argv)
   {
-    MPI_Comm commWorld = stk::parallel_machine_init(&argc, &argv);
+    MPI_Comm commWorld = stk::initialize(&argc, &argv);
 
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
@@ -362,27 +359,30 @@ private:
 
 int main(int argc, char** argv)
 {
-  MockSparc app;
-  app.read_input_and_setup_split_comms(argc, argv);
-  if (app.get_number_of_other_coupled_apps() != 1) {
-    return 0;
+  {
+    MockSparc app;
+    app.read_input_and_setup_split_comms(argc, argv);
+
+    if (app.get_number_of_other_coupled_apps() == 1) {
+      app.communicate_and_check_initial_setup_compatibility();
+      app.setup_fields_and_transfers();
+
+      do {
+        app.communicate_time_step_info();
+        if (app.time_to_stop()) break;
+
+        app.agree_with_other_app_on_timestep();
+        app.physics_inner_subcycling_loop();
+        app.perform_transfers();
+
+        app.compute_my_timestep_and_decide_if_i_want_to_stop();
+      } while (!app.time_to_stop());
+
+      app.communicate_finish();
+    }
   }
 
-  app.communicate_and_check_initial_setup_compatibility();
-  app.setup_fields_and_transfers();
-
-  do {
-    app.communicate_time_step_info();
-    if (app.time_to_stop()) break;
-
-    app.agree_with_other_app_on_timestep();
-    app.physics_inner_subcycling_loop();
-    app.perform_transfers();
-
-    app.compute_my_timestep_and_decide_if_i_want_to_stop();
-  } while (!app.time_to_stop());
-
-  app.communicate_finish();
+  stk::finalize();
 
   return 0;
 }

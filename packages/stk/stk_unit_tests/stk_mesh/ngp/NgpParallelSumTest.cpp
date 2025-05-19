@@ -101,7 +101,6 @@ protected:
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().globally_shared_part());
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
-        std::vector<int> sharingProcs;
         double id = static_cast<double>(get_bulk().identifier(node));
         double * gold = static_cast<double*>(stk::mesh::field_data(goldValues, node));
         *gold = id;
@@ -131,7 +130,6 @@ protected:
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, (get_meta().locally_owned_part() & !get_meta().globally_shared_part()) | get_meta().aura_part());
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
-        std::vector<int> sharingProcs;
         double id = static_cast<double>(get_bulk().identifier(node));
         double * gold = static_cast<double*>(stk::mesh::field_data(goldValues, node));
         *gold = id;
@@ -766,7 +764,11 @@ NGP_TEST_F(NgpParallelSumIncludingGhosts, hex_3procs_1ghostNode_host)
   const double initValue = (myProc+1);
   *value = initValue;
 
-  stk::mesh::parallel_sum_including_ghosts(*bulkPtr, {nodeField});
+  stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
+  using HostNgpField = stk::mesh::HostField<double,stk::ngp::HostMemSpace>;
+  HostNgpField hostNgpField(*bulkPtr,*nodeField);
+  std::vector<HostNgpField*> hostNgpFields = {&hostNgpField};
+  stk::mesh::parallel_sum_including_ghosts<stk::mesh::HostMesh,HostNgpField,stk::ngp::HostMemSpace>(hostNgpMesh, hostNgpFields);
 
   constexpr double tolerance = 1.e-9;
 
@@ -786,6 +788,9 @@ NGP_TEST_F(NgpParallelSumIncludingGhosts, hex_3procs_1ghostNode_device)
   stk::ParallelMachine comm = stk::parallel_machine_world();
   const int numProcs = stk::parallel_machine_size(comm);
   if(numProcs != 3) { GTEST_SKIP(); }
+#ifdef STK_ENABLE_GPU
+  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
+#endif
   const int myProc = stk::parallel_machine_rank(comm);
 
   setup_mesh();
@@ -824,6 +829,9 @@ NGP_TEST_F(NgpParallelSumIncludingGhosts, hex_3procs_node5_sharedAndGhosted_devi
   stk::ParallelMachine comm = stk::parallel_machine_world();
   const int numProcs = stk::parallel_machine_size(comm);
   if(numProcs != 3) { GTEST_SKIP(); }
+#ifdef STK_ENABLE_GPU
+  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
+#endif
   const int myProc = stk::parallel_machine_rank(comm);
 
   setup_mesh();

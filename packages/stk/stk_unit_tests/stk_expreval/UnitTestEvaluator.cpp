@@ -2287,6 +2287,7 @@ TEST(UnitTestEvaluator, IgnoreFloatingPointError)
   eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Ignore);
   eval.parse();
   EXPECT_NO_THROW(eval.evaluate());
+  EXPECT_FALSE(eval.get_fp_warning_issued());
 }
 
 TEST(UnitTestEvaluator, WarnFloatingPointError)
@@ -2295,6 +2296,59 @@ TEST(UnitTestEvaluator, WarnFloatingPointError)
   eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
   eval.parse();
   EXPECT_NO_THROW(eval.evaluate());
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+}
+
+TEST(UnitTestEvaluator, WarnFloatingPointErrorMultipleErrors)
+{
+  stk::expreval::Eval eval("sqrt(-1); sqrt(-2)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
+  eval.parse();
+
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  std::string stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+  size_t line_count = std::count(stderr_message.begin(), stderr_message.end(), '\n');
+  EXPECT_EQ(line_count, 4U);  
+}
+
+TEST(UnitTestEvaluator, NoWarningWhenNoError)
+{
+  stk::expreval::Eval eval("sqrt(1)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::Warn);
+  eval.parse();
+
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  std::string stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_EQ(stderr_message.size(), 0U);
+}
+
+TEST(UnitTestEvaluator, WarnFloatingPointErrorOnlyOnce)
+{
+  stk::expreval::Eval eval("sqrt(-1); sqrt(-2)");
+  eval.set_fp_error_behavior(stk::expreval::Eval::FPErrorBehavior::WarnOnce);
+  eval.parse();
+
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  std::string stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+  size_t line_count = std::count(stderr_message.begin(), stderr_message.end(), '\n');
+  EXPECT_EQ(line_count, 3U);  
+  
+  
+  testing::internal::CaptureStderr();  
+  EXPECT_NO_THROW(eval.evaluate());
+  stderr_message = testing::internal::GetCapturedStderr();
+  
+  EXPECT_TRUE(eval.get_fp_warning_issued());
+  line_count = std::count(stderr_message.begin(), stderr_message.end(), '\n');
+  EXPECT_EQ(line_count, 0U);    
 }
 
 TEST(UnitTestEvaluator, ThrowFloatingPointError)
@@ -3120,6 +3174,24 @@ TEST(UnitTestEvaluator, Ngp_testFunction_point3d)
   EXPECT_DOUBLE_EQ(device_evaluate("point3d(0, 0, -7/6, 1, 1)"), 0.25);
   EXPECT_DOUBLE_EQ(device_evaluate("point3d(0, 0, -1.5, 1, 1)"), 0);
   EXPECT_DOUBLE_EQ(device_evaluate("point3d(0, 0, -2, 1, 1)"),   0);
+}
+
+TEST(UnitTestEvaluator, testFunction_relative_error)
+{
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(5, 4)"), -0.2);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(4, 5)"), 0.2);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(4e-17, 5e-17)"), 0.0);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(4e-6, 5e-6, 1e-8)"), 0.2);
+  EXPECT_DOUBLE_EQ(evaluate("relative_error(5e-6, 4e-6, 1e-8)"), -0.2);
+}
+
+TEST(UnitTestEvaluator, Ngp_testFunction_relative_error)
+{
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(5, 4)"), -0.2);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(4, 5)"), 0.2);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(4e-17, 5e-17)"), 0.0);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(4e-6, 5e-6, 1e-8)"), 0.2);
+  EXPECT_DOUBLE_EQ(device_evaluate("relative_error(5e-6, 4e-6, 1e-8)"), -0.2);
 }
 
 TEST(UnitTestEvaluator, testFunction_exponential_pdf)

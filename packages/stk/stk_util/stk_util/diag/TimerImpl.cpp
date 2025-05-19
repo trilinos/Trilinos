@@ -289,7 +289,8 @@ TimerImpl::deleteRootTimer(
 }
 
 
-void
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
+STK_DEPRECATED void
 TimerImpl::findTimer(
   TimerImpl *                   timer,
   std::vector<std::string> &    path_tail_vector,
@@ -301,9 +302,11 @@ TimerImpl::findTimer(
     for (TimerList::const_iterator it = timer->begin(); it != timer->end(); ++it)
       findTimer((*it).m_timerImpl, path_tail_vector, found_timers);
 }
+#endif
 
 
-Writer &
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
+STK_DEPRECATED Writer &
 TimerImpl::dump(
   Writer &    dout) const
 {
@@ -327,7 +330,6 @@ TimerImpl::dump(
 
   return dout;
 }
-
-
+#endif
 
 }

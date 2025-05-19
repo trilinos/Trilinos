@@ -35,7 +35,10 @@ public:
    //! Do nothing destructor
    virtual ~NodalFieldPattern() {}
 
-   //! Set the cell topology for this field pattern
+  Teuchos::RCP<panzer::FieldPattern> clone() const
+  {return Teuchos::rcp(new NodalFieldPattern(*this));}
+
+  //! Set the cell topology for this field pattern
    void setCellTopology(const shards::CellTopology & ct);
 
    /** How many sub cells of a particular dimension are there?

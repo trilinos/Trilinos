@@ -41,12 +41,12 @@ TEST_F(QueryExoVars, nodeVars_getNames_externalFile)
   {
     stk::io::StkMeshIoBroker stkIo;
     read_meta(stkIo, "allTypesOfData.exo");
-    expect_names({{"dispx","{UNIVERSAL}"},
-                  {"dispy","{UNIVERSAL}"},
-                  {"dispz","{UNIVERSAL}"},
-                  {"rotx","{UNIVERSAL}"},
-                  {"roty","{UNIVERSAL}"},
-                  {"rotz","{UNIVERSAL}"}}, stkIo.get_nodal_var_names());
+    expect_names({{"DispX","{UNIVERSAL}"},
+                  {"DispY","{UNIVERSAL}"},
+                  {"DispZ","{UNIVERSAL}"},
+                  {"RotX","{UNIVERSAL}"},
+                  {"RotY","{UNIVERSAL}"},
+                  {"RotZ","{UNIVERSAL}"}}, stkIo.get_nodal_var_names());
   }
 }
 
@@ -56,8 +56,8 @@ TEST_F(QueryExoVars, elemVars_getNames_externalFile)
   {
     stk::io::StkMeshIoBroker stkIo;
     read_meta(stkIo, "elemData.exo");
-    expect_names({{"vonmises","block_1"},
-                  {"vonmises","block_11"}}, stkIo.get_elem_var_names());
+    expect_names({{"VonMises","block_1"},
+                  {"VonMises","block_11"}}, stkIo.get_elem_var_names());
   }
 }
 
@@ -67,7 +67,7 @@ TEST_F(QueryExoVars, nodesetVars_getNames_externalFile)
   {
     stk::io::StkMeshIoBroker stkIo;
     read_meta(stkIo, "nodesetData.exo");
-    expect_names({{"apressure","nodelist_2"},
+    expect_names({{"APressure","nodelist_2"},
                   {"dispx","nodelist_1"},
                   {"dispy","nodelist_1"},
                   {"dispz","nodelist_1"}}, stkIo.get_nodeset_var_names());
@@ -80,9 +80,9 @@ TEST_F(QueryExoVars, sidesetVars_getNames_externalFile)
   {
     stk::io::StkMeshIoBroker stkIo;
     read_meta(stkIo, "allTypesOfData.exo");
-    expect_names({{"appliedpressure_sideset_30","surface_hex8_quad4_30"},
-                  {"appliedpressure_sideset_31","surface_hex8_quad4_31"},
-                  {"appliedpressure_sideset_32","surface_hex8_quad4_32"}}, stkIo.get_sideset_var_names());
+    expect_names({{"AppliedPressure_sideset_30","surface_hex8_quad4_30"},
+                  {"AppliedPressure_sideset_31","surface_hex8_quad4_31"},
+                  {"AppliedPressure_sideset_32","surface_hex8_quad4_32"}}, stkIo.get_sideset_var_names());
   }
 }
 
