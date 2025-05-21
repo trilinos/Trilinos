@@ -180,7 +180,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacian,
       Teuchos::ArrayRCP<real_type> old     = coordinates->getDataNonConst(kkk);
       Teuchos::ArrayRCP<real_type> newvals = newcoordinates->getDataNonConst(kkk);
       int numCopies                        = newvals.size() / old.size();
-      for (int jj = 0; jj < old.size(); jj++) old[jj] = newvals[numCopies * jj];
+      for (int jj = 0; jj < old.size(); jj++) old[jj] = newvals[numCopies * (Teuchos_Ordinal)jj];
     }
 
     fineLevel.Set("A", A);
