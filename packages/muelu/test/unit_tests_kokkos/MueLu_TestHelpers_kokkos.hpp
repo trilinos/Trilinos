@@ -374,7 +374,7 @@ class TestFactory {
     galeriList.set("nz", nz);
 
     RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, "Cartesian3D", comm, galeriList);
-    map                = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 2);  // expand map for 3 DOFs per node
+    map                = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 3);  // expand map for 3 DOFs per node
 
     RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
         Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity3D", map, galeriList);
