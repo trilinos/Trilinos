@@ -829,71 +829,27 @@ namespace BaskerNS
     for (int lvl = num_levels-1; lvl >= 0; lvl--) {
       int num_nodes = pow(2, lvl);
       //Forward solve on A
-#if 1
-      //L\x -> y 
+      // L\x -> y (!! in parallel !!)
       lower_tri_solve_functor<Int, Entry, Exe_Space> lower_func(Options.no_pivot, gperm, post2downtop, LL, x, y, scol_top);
       Kokkos::RangePolicy<Exe_Space> policy_lower (tot_nodes, tot_nodes+num_nodes);
       Kokkos::parallel_for("shylubasker::lower_tri_solve", policy_lower, lower_func);
-#else
-      for(Int j = 0; j < num_nodes; ++j) {
-          Int b = post2downtop(tot_nodes+j);
 
-          //L\x -> y 
-          BASKER_MATRIX &L = LL(b)(0);
-          lower_tri_solve(L, x, y, scol_top);
-
-          #ifdef BASKER_DEBUG_SOLVE_RHS
-          printf("Lower Solve blk (%d, 0): size=(%dx%d) srow=%d, scol=%d\n",b,(int)L.nrow,(int)L.ncol, (int)L.srow,(int)L.scol);
-          /*printf("[\n");
-          for (Int i = 0; i < gn; i++) printf( "%d %.16e %.16e\n",i,x(i),y(i));
-          printf( "];\n");
-          if (b == 3) {
-            const Int bcol = L.scol + scol_top;
-            const Int brow = L.scol + scol_top;
-            printf( " P = [\n" );
-            for (Int k = 0; k < L.ncol; k++) printf( "%d %d\n",brow+k,gperm(brow+k) );
-            printf("];\n");
-            char filename[200];
-            sprintf(filename,"LL_%d_%d.dat",b,0);
-            L.print_matrix(filename);
-          }*/
-          #endif
-      }
-#endif
       //Update offdiag
       for(Int j = 0; j < num_nodes; ++j)
       {
         Int b = post2downtop(tot_nodes+j);
         for(Int bb = 1; bb < LL_size(b); ++bb)
         {
+          // x = LL*y;
           BASKER_MATRIX &LD = LL(b)(bb);
-          #ifdef BASKER_DEBUG_SOLVE_RHS
-          char filename[200];
-          sprintf(filename,"LL_%d_%d.dat",b,bb);
-          LD.print_matrix(filename);
-          //printf( "];\n" );
-          //std::cout << " ++ neg_spmv_perm ( LL(" << b << "," << bb << ") )" << std::endl;
-          #endif
-
-          //x = LD*y;
           neg_spmv_perm(LD, y, x, scol_top);
-
-          #ifdef BASKER_DEBUG_SOLVE_RHS
-          printf("Lower Solver Update blk = (%d %d): size=(%dx%d) srow=%d, scol=%d \n",
-                 b, bb, (int)LD.nrow,(int)LD.ncol, (int)LD.srow,(int)LD.scol);
-          printf("[\n");
-          for (Int i = 0; i < gn; i++) printf( "%d  %e %e\n",i,x(i),y(i));
-          printf( "];\n");
-          #endif
         }
       }
       tot_nodes += num_nodes;
-      //printVec(y,gn);
     }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("Done forward solve A \n");
-    printVec(y, gn);
     #endif
 
     return 0;
@@ -993,37 +949,18 @@ namespace BaskerNS
     Int tot_nodes = Nblks;
     for (int lvl = 0; lvl < num_levels; lvl++) {
       int num_nodes = pow(2, lvl);
-#if 1
-      // U\y -> x
+      //Backward solve on A
+      // U\y -> x (!! in parallel !!)
       upper_tri_solve_functor<Int, Entry, Exe_Space> upper_func(post2downtop, LU_size, LU, y, x, scol_top);
       Kokkos::RangePolicy<Exe_Space> policy_upper (tot_nodes-num_nodes, tot_nodes);
       Kokkos::parallel_for("shylubasker::upper_tri_solve", policy_upper, upper_func);
-#else
-      for(Int j = 0; j < num_nodes; ++j) {
-        Int b = post2downtop((tot_nodes-1)-j);
-        #ifdef BASKER_DEBUG_SOLVE_RHS
-        printf(" %d: Upper solve blk: %d, %d \n", lvl,b,LU_size(b)-1);
-        #endif
-
-        //U\y -> x
-        BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
-        upper_tri_solve(U, y, x, scol_top); // NDE: y , x positions swapped...
-                                            //      seems role of x and y changed...
-
-      }
-#endif
 
       // update with off-diagonal blocks
       for(Int j = 0; j < num_nodes; ++j) {
         Int b = post2downtop((tot_nodes-1)-j);
         for(Int bb = LU_size(b)-2; bb >= 0; bb--)
         {
-          #ifdef BASKER_DEBUG_SOLVE_RHS
-          printf("Upper solver spmv: %d %d \n",
-              b, bb);
-          #endif
-
-          //y = UB*x;
+          // y = UB*x;
           BASKER_MATRIX &UB = LU(b)(bb);
           neg_spmv(UB, x, y, scol_top);
         }
@@ -1033,7 +970,6 @@ namespace BaskerNS
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("Done with Upper Solve: \n");
-    printVec(x, gn);
     #endif
 
     return 0;
