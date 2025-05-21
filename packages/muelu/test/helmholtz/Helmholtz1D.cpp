@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     double omega, shift;
     omega = 20.0 * M_PI;
     shift = 0.5;
-  
+
     Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Helmholtz1D", 0, stretchx, stretchy, stretchz,
                                                     Kxx, Kxy, Kyy, dt, meshType,
                                                     h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
