@@ -1385,19 +1385,19 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   )
   {
     //Permute
-#if 0
-    for(Int i = 0; i < n; i++) {
-      xcon(p(i))  = y[i];
-      ycon(i)     = (Entry) 0.0;
-    }
-#else
-    Kokkos::parallel_for(
-      "permute_inv_and_init_for_solve", n,
-      KOKKOS_LAMBDA(const int i) {
+    if(Options.small_matrix == BASKER_TRUE) {
+      for(Int i = 0; i < n; i++) {
         xcon(p(i))  = y[i];
         ycon(i)     = (Entry) 0.0;
-      });
-#endif
+      }
+    } else {
+      Kokkos::parallel_for(
+        "permute_inv_and_init_for_solve", n,
+        KOKKOS_LAMBDA(const int i) {
+          xcon(p(i))  = y[i];
+          ycon(i)     = (Entry) 0.0;
+        });
+    }
     return 0;
   }
 
@@ -1413,51 +1413,39 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    Int n
   )
   {
-    /*
-    // Steps from original code - this works with ND
-    for(Int i = btf_tabs(btf_tabs_offset); i < n; i++) // final step from serial_btf_solve
-    {
-      xconv(i) = yconv(i);
-    }
-
-    for(Int i = 0; i < n; i++) //perm xconv back to original ordering and copy back to raw lhs pointer
-    { x[i] = xconv(p(i)); }
-    */
-
     const Int poffset = btf_tabs(btf_tabs_offset);
-#if 0
-    for(Int i = 0; i < n; i++) //perm xconv back to original ordering and copy back to raw lhs pointer
-    { 
-      Int permi = p(i);
-      if ( permi < poffset )
-      {
-      // ND blocks
-        //x[i] = xconv(p(i)); 
-        x[i] = xconv(permi);
-      } 
-      else {
-      // btf blocks
-        //x[i] = yconv(p(i)); 
-        x[i] = yconv(permi); 
-      }
-    }
-#else
-    Kokkos::parallel_for(
-      "permute_and_finalcopy_after_solve", n,
-      KOKKOS_LAMBDA(const int i) {
+    if(Options.small_matrix == BASKER_TRUE) {
+      for(Int i = 0; i < n; i++) //perm xconv back to original ordering and copy back to raw lhs pointer
+      { 
         Int permi = p(i);
         if ( permi < poffset )
         {
         // ND blocks
+          //x[i] = xconv(p(i)); 
           x[i] = xconv(permi);
         } 
         else {
         // btf blocks
+          //x[i] = yconv(p(i)); 
           x[i] = yconv(permi); 
         }
-      });
-#endif
-
+      }
+    } else {
+      Kokkos::parallel_for(
+        "permute_and_finalcopy_after_solve", n,
+        KOKKOS_LAMBDA(const int i) {
+          Int permi = p(i);
+          if ( permi < poffset )
+          {
+          // ND blocks
+            x[i] = xconv(permi);
+          } 
+          else {
+          // btf blocks
+            x[i] = yconv(permi); 
+          }
+        });
+    }
     return 0;
   }
 
@@ -1609,33 +1597,31 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    Int offset
   )
   {
-    //Permute
-#if 0
-    for(Int i = 0; i < n; ++i)
-    {
-      perm_comp_iworkspace_array(p(i+offset)) = vec(istart+i);
-    }
-#else
-    Kokkos::parallel_for(
-      "permute_inv_with_workspace::perm", n,
-      KOKKOS_LAMBDA(const int i) {
+    if(Options.small_matrix == BASKER_TRUE) {
+      //Permute
+      for(Int i = 0; i < n; ++i)
+      {
         perm_comp_iworkspace_array(p(i+offset)) = vec(istart+i);
-      });
-#endif
-    //Copy back
-#if 0
-    for(Int i = 0; i < n; ++i)
-    {
-      vec(istart+i) = perm_comp_iworkspace_array(i);
-    }
-#else
-    Kokkos::parallel_for(
-      "permute_inv_with_workspace::copy-back", n,
-      KOKKOS_LAMBDA(const int i) {
+      }
+      //Copy back
+      for(Int i = 0; i < n; ++i)
+      {
         vec(istart+i) = perm_comp_iworkspace_array(i);
-      });
-#endif
-
+      }
+    } else {
+      //Permute
+      Kokkos::parallel_for(
+        "permute_inv_with_workspace::perm", n,
+        KOKKOS_LAMBDA(const int i) {
+          perm_comp_iworkspace_array(p(i+offset)) = vec(istart+i);
+        });
+      //Copy back
+      Kokkos::parallel_for(
+        "permute_inv_with_workspace::copy-back", n,
+        KOKKOS_LAMBDA(const int i) {
+          vec(istart+i) = perm_comp_iworkspace_array(i);
+        });
+    }
     return BASKER_SUCCESS;
   }
 
@@ -1718,32 +1704,31 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    Int n
   )
   {
-    //Permute
-#if 0
-    for(Int i = 0; i < n; ++i)
-    {
-      perm_comp_fworkspace_array(p(i)) = vec(i);
-    }
-#else
-    Kokkos::parallel_for(
-      "permute_inv_with_workspace::perm", n,
-      KOKKOS_LAMBDA(const int i) {
+    if(Options.small_matrix == BASKER_TRUE) {
+      //Permute
+      for(Int i = 0; i < n; ++i)
+      {
         perm_comp_fworkspace_array(p(i)) = vec(i);
-      });
-#endif
-    //Copy back
-#if 0
-    for(Int i = 0; i < n; ++i)
-    {
-      vec(i) = perm_comp_fworkspace_array(i);
-    }
-#else
-    Kokkos::parallel_for(
-      "permute_inv_with_workspace::copy-back", n,
-      KOKKOS_LAMBDA(const int i) {
+      }
+      //Copy back
+      for(Int i = 0; i < n; ++i)
+      {
         vec(i) = perm_comp_fworkspace_array(i);
-      });
-#endif
+      }
+    } else {
+      //Permute
+      Kokkos::parallel_for(
+        "permute_inv_with_workspace::perm", n,
+        KOKKOS_LAMBDA(const int i) {
+          perm_comp_fworkspace_array(p(i)) = vec(i);
+        });
+      //Copy back
+      Kokkos::parallel_for(
+        "permute_inv_with_workspace::copy-back", n,
+        KOKKOS_LAMBDA(const int i) {
+          vec(i) = perm_comp_fworkspace_array(i);
+        });
+    }
 
     return BASKER_SUCCESS;
   }

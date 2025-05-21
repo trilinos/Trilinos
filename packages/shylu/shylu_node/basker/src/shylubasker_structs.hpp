@@ -751,6 +751,9 @@ namespace BaskerNS
       verbose    = BASKER_FALSE;
       verbose_matrix_out = BASKER_FALSE;
      
+      // Too small for thread-parallel
+      small_matrix = BASKER_FALSE;
+
       //Memory Options
       realloc    = BASKER_FALSE;
 
@@ -824,6 +827,7 @@ namespace BaskerNS
     //Operation Options
     BASKER_BOOL verbose; 
     BASKER_BOOL verbose_matrix_out;
+    BASKER_BOOL small_matrix;
 
     //Memory Options
     BASKER_BOOL  realloc;
