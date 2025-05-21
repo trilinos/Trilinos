@@ -60,7 +60,6 @@ int main(int argc, char *argv[]) {
     int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
     double omega, shift;
     int model;
-    double lx, ly, conv, diff;
 
     std::ifstream inputfile;
     inputfile.open("helm3D.inp");
