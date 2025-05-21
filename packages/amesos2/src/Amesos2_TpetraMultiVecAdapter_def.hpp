@@ -626,7 +626,7 @@ namespace Amesos2 {
           //for (global_size_t i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
           typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
           Kokkos::parallel_for("Amesos2::TpetraMultiVecAdapter::gather", Kokkos::RangePolicy<HostExecSpaceType>(0, nRows),
-            KOKKOS_LAMBDA(const int i) { kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0); });
+            [&](const int i) { kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0); });
         }
       }
     }
@@ -659,7 +659,7 @@ namespace Amesos2 {
           //for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
           typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
           Kokkos::parallel_for("Amesos2::TpetraMultiVecAdapter::scatter", Kokkos::RangePolicy<HostExecSpaceType>(0, nRows),
-            KOKKOS_LAMBDA(const int i) { this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j); });
+            [&](const int i) { this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j); });
         }
         // lclMV with OverwriteAll
         Scalar * sendbuf = reinterpret_cast<Scalar*> (this->buf_.extent(0) > 0 || myRank != 0 ? this->buf_.data() : &kokkos_new_view(0,j));
