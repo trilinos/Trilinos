@@ -717,7 +717,7 @@ namespace BaskerNS
       double break_block_size = 0.0;
       printf( " > debug: break_size = %f, %f\n",break_work_size,break_block_size );
       #else
-      // A block if it is larger than work esitimate assigned to one thread
+      // A block if it is larger than work esitimate assigned to one thread (otherwise, we could factor in parallel)
       double break_fact = 0.7;
       double break_work_size = ceil(total_work_estimate*(break_fact * ((double)1.0/num_threads) + ((double)BASKER_BTF_IMBALANCE)));
       double break_block_size = 20 * num_threads; //0;

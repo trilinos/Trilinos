@@ -452,11 +452,14 @@ namespace Amesos2 {
             Teuchos::TimeMonitor GatherTimer_(*gatherTime_);
 #endif
             if (transpose_map.extent(0) > 0) {
-              for (int k=0; k<ret; k++) {
-                if (transpose_map(k) >= 0) {
-                  nzvals(transpose_map(k)) = nzvals_t(k);
-                }
-              }
+              //for (int k=0; k<ret; k++) {
+              //  if (transpose_map(k) >= 0) {
+              //    nzvals(transpose_map(k)) = nzvals_t(k);
+              //  }
+              //}
+              typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+              Kokkos::parallel_for("Amesos2::TpetraCrsMatrixAdapter::gather", Kokkos::RangePolicy<HostExecSpaceType>(0, ret),
+                KOKKOS_LAMBDA(const int k) { if (transpose_map(k) >= 0) nzvals(transpose_map(k)) = nzvals_t(k); });
             }
           }
         }

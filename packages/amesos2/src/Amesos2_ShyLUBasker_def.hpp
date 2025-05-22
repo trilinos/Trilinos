@@ -65,7 +65,8 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.use_nodeNDP       = BASKER_TRUE;  // use nodeNDP to compute ND partition
   ShyLUbasker->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
   ShyLUbasker->Options.run_amd_on_leaves = BASKER_FALSE; // run AMD on the final leaf-nodes
-  ShyLUbasker->Options.transpose     = BASKER_FALSE;
+  ShyLUbasker->Options.transpose      = BASKER_FALSE;
+  ShyLUbasker->Options.threaded_solve = BASKER_FALSE;
   ShyLUbasker->Options.replace_zero_pivot = BASKER_TRUE;
   ShyLUbasker->Options.replace_tiny_pivot = BASKER_FALSE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
@@ -462,6 +463,10 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       if (transpose == true)
         this->control_.useTranspose_ = true;
     }
+  if(parameterList->isParameter("threaded_solve"))
+    {
+      ShyLUbasker->Options.threaded_solve = parameterList->get<bool>("threaded_solve");
+    }
   if(parameterList->isParameter("use_sequential_diag_facto"))
     {
       ShyLUbasker->Options.use_sequential_diag_facto = parameterList->get<bool>("use_sequential_diag_facto");
@@ -564,6 +569,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Run AMD on each diagonal blocks");
       pl->set("transpose", false,
               "Solve the transpose A");
+      pl->set("threaded_solve", false,
+              "Use threads for forward/backward solves");
       pl->set("use_sequential_diag_facto", false,
               "Use sequential algorithm to factor each diagonal block");
       pl->set("user_fill", (double)BASKER_FILL_USER,
