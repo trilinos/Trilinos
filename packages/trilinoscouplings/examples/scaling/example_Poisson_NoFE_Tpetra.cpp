@@ -55,7 +55,7 @@
 */
 
 /*** Uncomment if you would like output data for plotting ***/
-// #define DUMP_DATA
+#define DUMP_DATA
 
 /**************************************************************/
 /*                          Includes                          */
@@ -73,6 +73,7 @@
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_RealSpaceTools.hpp"
 #include "Intrepid2_Utils.hpp"
+#include "Intrepid2_CellGeometry.hpp"
 
 // Tpetra includes
 #include "Tpetra_Map.hpp"
@@ -112,12 +113,9 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTpetraAdapter.hpp"
 
-#ifdef HAVE_INTREPID_KOKKOS
-#include "Sacado.hpp"
-#else
 // Sacado includes
-#include "Sacado_No_Kokkos.hpp"
-#endif
+#include "Sacado.hpp"
+
 
 using namespace std;
 using Teuchos::ParameterList;
@@ -348,7 +346,6 @@ int main(int argc, char* argv[]) {
   /***************************** GET CELL TOPOLOGY **********************************/
   /**********************************************************************************/
 
-  // Get cell topology for base hexahedron
   shards::CellTopology cellType(shards::getCellTopologyData<shards::Hexahedron<8> >());
 
   // Get dimensions
@@ -406,6 +403,7 @@ int main(int argc, char* argv[]) {
     cout << " Number of Global Elements: " << numElemsGlobal << " \n";
     cout << "    Number of Global Nodes: " << numNodesGlobal << " \n\n";
   }
+  printf("CMS: Checkpoint #1\n");
 
   long long* block_ids = new long long[numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
@@ -434,7 +432,7 @@ int main(int argc, char* argv[]) {
 
   // Get node-element connectivity
   int telct = 0;
-  Kokkos::DynRankView<double, memory_space> elemToNode("elemToNode", numElems, numNodesPerElem);
+  Kokkos::DynRankView<long long, memory_space> elemToNode("elemToNode", numElems, numNodesPerElem);
   for (long long b = 0; b < numElemBlk; b++) {
     for (long long el = 0; el < elements[b]; el++) {
       for (int j = 0; j < numNodesPerElem; j++) {
@@ -505,6 +503,8 @@ int main(int argc, char* argv[]) {
     } else
       sigma[b] = 1.0;
   }
+
+  printf("CMS: Checkpoint #2\n");
 
   // Get node-element connectivity and set element mu/sigma value
   telct = 0;
@@ -624,6 +624,7 @@ int main(int argc, char* argv[]) {
   }
   delete[] sideSetIds;
 
+  printf("CMS: Checkpoint #3\n");
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
   /**********************************************************************************/
@@ -635,24 +636,27 @@ int main(int argc, char* argv[]) {
 
   int cubDim       = hexCub->getDimension();
   int numCubPoints = hexCub->getNumPoints();
-  Kokkos::DynRankView<double, memory_space> cubPoints("cubPoints", numCubPoints, cubDim);
-  Kokkos::DynRankView<double, memory_space> cubWeights("cubWeights", numCubPoints);
-
+  Intrepid2::ScalarView<double, memory_space> cubPoints("cubPoints", numCubPoints, cubDim);
+  Intrepid2::ScalarView<double, memory_space> cubWeights("cubWeights", numCubPoints);
   hexCub->getCubature(cubPoints, cubWeights);
-
+  printf("CMS: Checkpoint #4\n");fflush(stdout);
   /**********************************************************************************/
   /*********************************** GET BASIS ************************************/
   /**********************************************************************************/
 
   // Define basis
-  Intrepid2::Impl::Basis_HGRAD_HEX_C1_FEM hexHGradBasis;
+  auto basis = Intrepid2::getBasis<Intrepid2::DerivedNodalBasisFamily<device_type> >(cellType, Intrepid2::FUNCTION_SPACE_HGRAD, 1);
+  printf("CMS: Checkpoint #4.1\n");fflush(stdout);
   int numFieldsG = 1;//hexHGradBasis.getCardinality();
   Intrepid2::ScalarView<double, memory_space> HGBValues("HGBValues", numFieldsG, numCubPoints);
   Intrepid2::ScalarView<double, memory_space> HGBGrads("HGBGrads", numFieldsG, numCubPoints, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
-  hexHGradBasis.getValues<device_type>(execution_space(), HGBValues, cubPoints, Intrepid2::OPERATOR_VALUE);
-  hexHGradBasis.getValues<device_type>(execution_space(), HGBGrads, cubPoints, Intrepid2::OPERATOR_GRAD);
+  printf("CMS: Checkpoint #4.2\n");fflush(stdout);
+  basis->getValues(HGBValues, cubPoints, Intrepid2::OPERATOR_VALUE);
+  printf("CMS: Checkpoint #4.3\n");fflush(stdout);
+  basis->getValues(HGBGrads, cubPoints, Intrepid2::OPERATOR_GRAD);
+  printf("CMS: Checkpoint #5\n");fflush(stdout);
 
   /**********************************************************************************/
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
@@ -685,7 +689,7 @@ int main(int argc, char* argv[]) {
       globalMapGT = rcp(new Map(INVALID_GO, ownedGIDs(), 0, CommT));
     }
   }
-
+  printf("CMS: Checkpoint #6\n");
   /**********************************************************************************/
   /********************* BUILD MAPS FOR OVERLAPPED SOLUTION *************************/
   /**********************************************************************************/

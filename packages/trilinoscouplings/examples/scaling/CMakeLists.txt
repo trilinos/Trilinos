@@ -261,10 +261,6 @@ IF(TPL_ENABLE_MPI AND ${PACKAGE_NAME}_ENABLE_Tpetra AND
   )
 ENDIF()
 
-# ik 20 Mar 2012, mfh 17 May 2012
-#
-# Just build this executable; don't run it as a test (yet).
-#
 # Intrepid2 has required dependencies on Teuchos, Shards, and Sacado,
 # so we don't have to name those packages explicitly here.
 # Belos and Tpetra also both have required dependencies on Teuchos.
@@ -278,6 +274,15 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
       TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
     )
+
+  TRIBITS_ADD_TEST(
+      Example_Poisson_NoFE_Tpetra
+      NAME "Poisson_NoFE_Tpetra_Basic"
+      ARGS "--mesh=Poisson.xml"
+      COMM mpi
+      NUM_MPI_PROCS 1
+      )
+
 ENDIF()
 
 # ik 20 Mar 2012, mfh 17 May 2012
