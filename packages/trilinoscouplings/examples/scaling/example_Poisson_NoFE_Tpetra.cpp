@@ -639,7 +639,7 @@ int main(int argc, char* argv[]) {
   Intrepid2::ScalarView<double, memory_space> cubPoints("cubPoints", numCubPoints, cubDim);
   Intrepid2::ScalarView<double, memory_space> cubWeights("cubWeights", numCubPoints);
   hexCub->getCubature(cubPoints, cubWeights);
-  printf("CMS: Checkpoint #4\n");fflush(stdout);
+  printf("CMS: Checkpoint #4 numCubPoints = %d\n",numCubPoints);fflush(stdout);
   /**********************************************************************************/
   /*********************************** GET BASIS ************************************/
   /**********************************************************************************/
