@@ -281,8 +281,8 @@ namespace Galeri {
       Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getLocalElementList();
     
       GlobalOrdinal left, right, lower, upper;
-      Scalar Values[nnz];
-      GlobalOrdinal Indices[nnz];
+      std::vector<Scalar> Values(nnz);
+      std::vector<GlobalOrdinal> Indices(nnz);
 
       auto Adata = A->getData(0);
       auto Bdata = B->getData(0);
@@ -325,8 +325,8 @@ namespace Galeri {
         Values[NumEntries] = Adata[i];
         ++NumEntries;
     
-        Teuchos::ArrayView<GlobalOrdinal> inds(&Indices[0], NumEntries);
-        Teuchos::ArrayView<Scalar>        vals(&Values[0], NumEntries);
+        Teuchos::ArrayView<GlobalOrdinal> inds(Indices.data(), NumEntries);
+        Teuchos::ArrayView<Scalar>        vals(Values.data(), NumEntries);
         mtx->insertGlobalValues(myGlobalElements[i], inds, vals);
       }
       tm = Teuchos::null;
