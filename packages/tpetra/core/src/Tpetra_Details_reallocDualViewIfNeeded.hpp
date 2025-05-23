@@ -71,9 +71,11 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& parent_view,
 
   if (curSize == newSize) {
     // The right size, do not reallocate
+    std::cout<<"reallocDualViewIfNeeded: Correct size = "<<newSize<<std::endl;
     return false;
   }
   else if (curSize < newSize && newSize <= parentSize) {
+    std::cout<<"reallocDualViewIfNeeded: curr is too small, but parent is big enough "<<std::endl;
     // dv is too small, but parent is big enough
     dv = dual_view_type ();
     auto d_view = Kokkos::subview (parent_view.view_device(), range_type (0, newSize));
@@ -82,16 +84,20 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& parent_view,
     return false; // we did not reallocate
   }
   else if (curSize < newSize && parentSize < newSize) {
+    std::cout<<"reallocDualViewIfNeeded: curr and parent are too small "<<std::endl;
     // both the parent view and dv are too small
     if (needFenceBeforeRealloc) {
       execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
     }
     dv = dual_view_type (); // free first, in order to save memory
+
     // If current size is 0, the DualView's Views likely lack a label.
-    dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), newSize);
+    parent_view = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), newSize);
+    dv = parent_view;
     return true; // we did reallocate
   }
   else if (newSize == 0) {
+    std::cout<<"reallocDualViewIfNeeded: new size is zero "<<std::endl;
     // We've asked for a size zero vector, so we make dv a zero-length view
     if (needFenceBeforeRealloc) {
       execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
@@ -101,6 +107,8 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& parent_view,
     return true;
   }
   else {
+#ifdef ENABLE_SHRINK
+    std::cout<<"reallocDualViewIfNeeded: new size is too big so we shrink newSize = "<newSize<std::endl;
     // dv is bigger than we need, so check tooBigFactor to see if we shrink
 
     // Instead of writing curSize >= tooBigFactor * newSize, express
@@ -120,11 +128,16 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& parent_view,
       return true; // we did reallocate
     }
     else {
+#else
+      std::cout<<"reallocDualViewIfNeeded: new size is too big so we should shrink (but shrink is disabled) newSize = "<<newSize<<std::endl;
+#endif
       auto d_view = Kokkos::subview (parent_view.view_device(), range_type (0, newSize));
       auto h_view = Kokkos::subview (parent_view.view_host(), range_type (0, newSize));
       dv = Kokkos::DualView<ValueType*, DeviceType>(d_view, h_view);
       return false; // we did not reallocate
+#ifdef ENABLE_SHRINK
     }
+#endif
   }
 }
 
