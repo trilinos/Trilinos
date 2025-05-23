@@ -25,7 +25,7 @@ namespace Belos {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Forward declaration
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM>
 class SolverManager;
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -45,7 +45,7 @@ class SolverManager;
 ///
 /// For a test and example of how to do this (with a trivial solver),
 /// see <tt>Trilinos/packages/belos/tpetra/test/CustomSolverFactory.cpp</tt>.
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,Scalar>>
 class CustomSolverFactory {
 public:
   /// \brief Return an instance of the specified solver, or
@@ -78,7 +78,7 @@ public:
   /// Teuchos::RCP<Teuchos::ParameterList>.  We allow a null parameter
   /// list only for convenience, and will use default parameter values
   /// in that case.
-  virtual Teuchos::RCP<SolverManager<Scalar, MV, OP> >
+  virtual Teuchos::RCP<SolverManager<Scalar, MV, OP, DM> >
   getSolver (const std::string& solverName,
              const Teuchos::RCP<Teuchos::ParameterList>& solverParams) = 0;
 

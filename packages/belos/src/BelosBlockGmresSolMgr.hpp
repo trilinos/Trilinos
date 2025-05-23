@@ -19,6 +19,8 @@
 
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
+#include "BelosDenseMatTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
@@ -92,11 +94,12 @@ class BlockGmresSolMgrOrthoFailure : public BelosError {public:
  * PseudoBlockGmresSolMgr.  If you want Flexible GMRES, use this class
  * with the "Flexible Gmres" parameter set to true.
  */
-template<class ScalarType, class MV, class OP>
-class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int, ScalarType>>
+class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP,DM> {
 
 private:
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV,DM> MVT;
+  typedef DenseMatTraits<ScalarType,DM> DMT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -141,8 +144,8 @@ public:
   virtual ~BlockGmresSolMgr() {};
 
   //! clone for Inverted Injection (DII)
-  Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-    return Teuchos::rcp(new BlockGmresSolMgr<ScalarType,MV,OP>);
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+    return Teuchos::rcp(new BlockGmresSolMgr<ScalarType,MV,OP,DM>);
   }
   //@}
 
@@ -208,7 +211,7 @@ public:
   void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) override;
 
   //! Set a debug status test that will be checked at the same time as the top-level status test.
-  void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest ) override;
+  void setDebugStatusTest( const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest ) override;
 
   //@}
 
@@ -277,15 +280,15 @@ private:
   Teuchos::RCP<std::ostream> outputStream_;
 
   // Status test.
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugStatusTest_;
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-  Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
-  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
-  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > debugStatusTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
+  Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > convTest_;
+  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP,DM> > expConvTest_, impConvTest_;
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
   // Orthogonalization manager.
-  Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
+  Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
 
   // Current parameter list.
   Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -326,8 +329,8 @@ private:
 
 
 // Empty Constructor
-template<class ScalarType, class MV, class OP>
-BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
+template<class ScalarType, class MV, class OP, class DM>
+BlockGmresSolMgr<ScalarType,MV,OP,DM>::BlockGmresSolMgr() :
   outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   orthoKappa_(DefaultSolverParameters::orthoKappa),
@@ -355,8 +358,8 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
 
 
 // Basic Constructor
-template<class ScalarType, class MV, class OP>
-BlockGmresSolMgr<ScalarType,MV,OP>::
+template<class ScalarType, class MV, class OP, class DM>
+BlockGmresSolMgr<ScalarType,MV,OP,DM>::
 BlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                   const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
@@ -395,9 +398,9 @@ BlockGmresSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-BlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
+BlockGmresSolMgr<ScalarType,MV,OP,DM>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
@@ -460,8 +463,8 @@ BlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
 }
 
 
-template<class ScalarType, class MV, class OP>
-void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+template<class ScalarType, class MV, class OP, class DM>
+void BlockGmresSolMgr<ScalarType,MV,OP,DM>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
 
   // Create the internal parameter list if ones doesn't already exist.
@@ -628,14 +631,14 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
     params_->set("Orthogonalization Constant",orthoKappa_);
     if (orthoType_=="DGKS") {
       if (orthoKappa_ > 0 && ortho_ != Teuchos::null && !changedOrthoType) {
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP,DM> >(ortho_)->setDepTol( orthoKappa_ );//TODO
       }
     }
   }
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null || changedOrthoType) {
-    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Belos::OrthoManagerFactory<ScalarType,MV,OP,DM> factory; 
     Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
       paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
@@ -743,15 +746,15 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
 }
 
 // Check the status test versus the defined linear problem
-template<class ScalarType, class MV, class OP>
-bool BlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
+template<class ScalarType, class MV, class OP, class DM>
+bool BlockGmresSolMgr<ScalarType,MV,OP,DM>::checkStatusTest() {
 
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestGenResNorm_t;
-  typedef Belos::StatusTestImpResNorm<ScalarType,MV,OP>  StatusTestImpResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM>  StatusTestGenResNorm_t;
+  typedef Belos::StatusTestImpResNorm<ScalarType,MV,OP,DM>  StatusTestImpResNorm_t;
 
   // Basic test checks maximum iterations and native residual.
-  maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+  maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxIters_ ) );
 
   // Perform sanity checking for flexible Gmres here.
   // NOTE:  If the user requests that the solver manager use flexible GMRES, but there is no right preconditioner, don't use flexible GMRES.
@@ -827,7 +830,7 @@ bool BlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 
   // Create the status test output class.
   // This class manages and formats the output from the status test.
-  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+  StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
   outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
   // Set the solver string for the output test
@@ -842,9 +845,9 @@ bool BlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
   return false;
 }
 
-template<class ScalarType, class MV, class OP>
-void BlockGmresSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &debugStatusTest
+template<class ScalarType, class MV, class OP, class DM>
+void BlockGmresSolMgr<ScalarType,MV,OP,DM>::setDebugStatusTest(
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &debugStatusTest
   )
 {
   debugStatusTest_ = debugStatusTest;
@@ -852,8 +855,8 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
 
 
 // solve()
-template<class ScalarType, class MV, class OP>
-ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType BlockGmresSolMgr<ScalarType,MV,OP,DM>::solve() {
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -929,12 +932,12 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
 
-  Teuchos::RCP<GmresIteration<ScalarType,MV,OP> > block_gmres_iter;
+  Teuchos::RCP<GmresIteration<ScalarType,MV,OP,DM> > block_gmres_iter;
 
   if (isFlexible_)
-    block_gmres_iter = Teuchos::rcp( new BlockFGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+    block_gmres_iter = Teuchos::rcp( new BlockFGmresIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist) ); 
   else
-    block_gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+    block_gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,ortho_,plist) );
 
   // Enter solve() iterations
   {
@@ -986,8 +989,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       }
 
       // Get a matrix to hold the orthonormalization coefficients.
-      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 =
-        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+      Teuchos::RCP<DM> z_0 = DMT::Create(blockSize_, blockSize_);
 
       // Orthonormalize the new V_0
       int rank = ortho_->normalize( *V_0, z_0 );
@@ -995,7 +997,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
         "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
 
       // Set the new state and initialize the solver.
-      GmresIterationState<ScalarType,MV> newstate;
+      GmresIterationState<ScalarType,MV,DM> newstate;
       newstate.V = V_0;
       newstate.z = z_0;
       newstate.curDim = 0;
@@ -1058,7 +1060,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
               problem_->updateSolution( update, true );
 
             // Get the state.
-            GmresIterationState<ScalarType,MV> oldState = block_gmres_iter->getState();
+            GmresIterationState<ScalarType,MV,DM> oldState = block_gmres_iter->getState();
 
             // Compute the restart std::vector.
             // Get a view of the current Krylov basis.
@@ -1069,7 +1071,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
               problem_->computeCurrPrecResVec( &*V_0 );
 
             // Get a view of the first block of the Krylov basis.
-            z_0 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( blockSize_, blockSize_ ) );
+            z_0 = DMT::Create(blockSize_, blockSize_);
 
             // Orthonormalize the new V_0
             rank = ortho_->normalize( *V_0, z_0 );
@@ -1149,7 +1151,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
         if ( !Teuchos::is_null(expConvTest_->getSolution()) ) {
           Teuchos::RCP<MV> newX = expConvTest_->getSolution();
           Teuchos::RCP<MV> curX = problem_->getCurrLHSVec();
-          MVT::MvAddMv( 0.0, *newX, 1.0, *newX, *curX );
+          MVT::Assign( *newX, *curX );
         }
         else {
           Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
@@ -1250,8 +1252,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 }
 
 
-template<class ScalarType, class MV, class OP>
-std::string BlockGmresSolMgr<ScalarType,MV,OP>::description() const
+template<class ScalarType, class MV, class OP, class DM>
+std::string BlockGmresSolMgr<ScalarType,MV,OP,DM>::description() const
 {
   std::ostringstream out;
   out << "\"Belos::BlockGmresSolMgr\": {";
@@ -1268,9 +1270,9 @@ std::string BlockGmresSolMgr<ScalarType,MV,OP>::description() const
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 void
-BlockGmresSolMgr<ScalarType, MV, OP>::
+BlockGmresSolMgr<ScalarType, MV, OP, DM>::
 describe (Teuchos::FancyOStream &out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {

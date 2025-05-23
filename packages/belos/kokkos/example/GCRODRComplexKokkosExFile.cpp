@@ -17,6 +17,7 @@
 #include "BelosGCRODRSolMgr.hpp"
 #include "BelosOutputManager.hpp"
 
+#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -41,11 +42,12 @@ bool success = true;
   typedef Kokkos::complex<double>           ST;
   typedef int                               OT;
   typedef Kokkos::DefaultExecutionSpace     EXSP;
-  typedef Teuchos::ScalarTraits<ST>        SCT;
+  typedef Teuchos::ScalarTraits<ST>         SCT;
+  typedef Teuchos::SerialDenseMatrix<int,ST>DM;
   typedef SCT::magnitudeType                MT;
-  typedef Belos::KokkosMultiVec<ST, EXSP>         MV;
-  typedef Belos::MultiVec<ST> KMV;
-  typedef Belos::Operator<ST> KOP; 
+  typedef Belos::KokkosMultiVec<ST, EXSP>   MV;
+  typedef Belos::MultiVec<ST>               KMV;
+  typedef Belos::Operator<ST>               KOP; 
   typedef Belos::MultiVecTraits<ST,KMV>     MVT;
   typedef Belos::OperatorTraits<ST,KMV,KOP>  OPT;
 
@@ -136,8 +138,8 @@ try {
   // *******************************************************************
   //
   // Create an iterative solver manager.
-  RCP< Belos::SolverManager<ST,KMV,KOP> > newSolver
-    = rcp( new Belos::GCRODRSolMgr<ST,KMV,KOP,true>(rcpFromRef(problem), rcpFromRef(belosList)) );
+  RCP< Belos::SolverManager<ST,KMV,KOP,DM> > newSolver
+    = rcp( new Belos::GCRODRSolMgr<ST,KMV,KOP,DM,true>(rcpFromRef(problem), rcpFromRef(belosList)) );
 
   //
   // **********Print out information about problem*******************
