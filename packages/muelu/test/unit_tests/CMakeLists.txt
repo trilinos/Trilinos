@@ -36,6 +36,7 @@ APPEND_SET(SOURCES
   GenericRFactory.cpp
   Hierarchy.cpp
   IndexManager.cpp
+  InterfaceAggregationFactory.cpp
   Level.cpp
   LowPrecision.cpp
   LWGraph.cpp
