@@ -1438,10 +1438,6 @@ namespace Tpetra {
       //
       // NOTE (mfh 04 Feb 2019) This does NOT copy from host to
       // device.  The above syncs might.
-      auto numExportPacketsPerLID_av =
-        getArrayViewFromDualView (this->numExportPacketsPerLID_);
-      auto numImportPacketsPerLID_av =
-        getArrayViewFromDualView (this->numImportPacketsPerLID_);
 
       // imports_ is for output only, so we don't need to sync it
       // before marking it as modified.  However, in order to
@@ -1463,9 +1459,9 @@ namespace Tpetra {
         distributorActor_.doPosts
           (distributorPlan,
            create_const_view (this->exports_.view_host ()),
-           numExportPacketsPerLID_av,
+           this->numExportPacketsPerLID_.view_host(),
            this->imports_.view_host (),
-           numImportPacketsPerLID_av);
+           this->numImportPacketsPerLID_.view_host());
       }
       else { // pack on device
         Kokkos::fence("DistObject::doPosts-1"); // for UVM
@@ -1473,9 +1469,9 @@ namespace Tpetra {
         distributorActor_.doPosts
           (distributorPlan,
            create_const_view (this->exports_.view_device ()),
-           numExportPacketsPerLID_av,
+           this->numExportPacketsPerLID_.view_host(),
            this->imports_.view_device (),
-           numImportPacketsPerLID_av);
+           this->numImportPacketsPerLID_.view_host());
       }
     }
     else { // constant number of packets per LID
