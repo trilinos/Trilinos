@@ -176,8 +176,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     if (paramList->isSublist("Preconditioner Types") &&
         paramList->sublist("Preconditioner Types").isSublist("MueLu")) {
       ParameterList &userParamList = paramList->sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
-      userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
-      userParamList.set<RCP<MultiVector> >("Nullspace", nullspace);
+      if (!coordinates.is_null())
+        userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+      if (!nullspace.is_null())
+        userParamList.set<RCP<MultiVector> >("Nullspace", nullspace);
     }
 
     // Setup solver parameters using a Stratimikos parameter list.

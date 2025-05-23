@@ -16,10 +16,6 @@
 #include "KokkosGraph_Distance2Color.hpp"
 
 #include <Xpetra_Matrix.hpp>
-#include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraProblemFactory.hpp>
-#include <Galeri_XpetraUtils.hpp>
-#include <Galeri_XpetraMaps.hpp>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
@@ -697,20 +693,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichlet, Scalar, Lo
   //    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(30);
   // Make a Matrix with multiple degrees of freedom per node
   GlobalOrdinal nx = 8, ny = 8;
-
-  // Describes the initial layout of matrix rows across processors.
-  Teuchos::ParameterList galeriList;
-  galeriList.set("nx", nx);
-  galeriList.set("ny", ny);
-  RCP<const Teuchos::Comm<int>> comm = TestHelpers_kokkos::Parameters::getDefaultComm();
-  RCP<const Map> map                 = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers_kokkos::Parameters::getLib(), "Cartesian2D", comm, galeriList);
-
-  map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(map, 2);  // expand map for 2 DOFs per node
-
-  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
-      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
-  RCP<Matrix> A = Pr->BuildMatrix();
-  A->SetFixedBlockSize(2);
+  auto A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build2DElasticity(nx, ny);
 
   Teuchos::ArrayView<const LocalOrdinal> indices;
   Teuchos::ArrayView<const Scalar> values;

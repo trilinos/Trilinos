@@ -320,15 +320,20 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
           auto length  = rowView.length;
 
           magnitudeType d;
-          impl_scalar_type d2 = implATS::zero();
+          impl_scalar_type d2  = implATS::zero();
+          bool haveAddedToDiag = false;
           for (local_ordinal_type colID = 0; colID < length; colID++) {
             auto col = rowView.colidx(colID);
             if (row != col) {
               d = distFunctor.distance2(row, col);
               d2 += implATS::one() / d;
+              haveAddedToDiag = true;
             }
           }
-          lclDiag(row, 0) = d2;
+
+          // Deal with the situation where boundary conditions have only been enforced on rows, but not on columns.
+          // We enforce dropping of these entries by assigning a very large number to the diagonal entries corresponding to BCs.
+          lclDiag(row, 0) = !haveAddedToDiag ? implATS::squareroot(implATS::rmax()) : d2;
         });
   }
   auto importer = A.getCrsGraph()->getImporter();
@@ -402,6 +407,71 @@ class DropFunctor {
       }
       auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
       auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
+
+      results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
+                                        results(offset + k));
+    }
+  }
+};
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+class VectorDropFunctor {
+ private:
+  using matrix_type             = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type       = typename matrix_type::local_matrix_type;
+  using scalar_type             = typename local_matrix_type::value_type;
+  using local_ordinal_type      = typename local_matrix_type::ordinal_type;
+  using memory_space            = typename local_matrix_type::memory_space;
+  using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
+  using diag_vec_type           = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using diag_view_type          = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
+
+  using results_view = Kokkos::View<DecisionType*, memory_space>;
+
+  using ATS                 = Kokkos::ArithTraits<scalar_type>;
+  using magnitudeType       = typename ATS::magnitudeType;
+  using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
+
+  local_matrix_type A;
+  magnitudeType eps;
+  Teuchos::RCP<diag_vec_type> diagVec;
+  diag_view_type diag;  // corresponds to overlapped diagonal
+  DistanceFunctorType dist2;
+  results_view results;
+  block_indices_view_type point_to_block;
+  block_indices_view_type ghosted_point_to_block;
+  const scalar_type one = ATS::one();
+
+ public:
+  VectorDropFunctor(matrix_type& A_, matrix_type& mergedA_, magnitudeType threshold, DistanceFunctorType& dist2_, results_view& results_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
+    : A(A_.getLocalMatrixDevice())
+    , eps(threshold)
+    , dist2(dist2_)
+    , results(results_)
+    , point_to_block(point_to_block_)
+    , ghosted_point_to_block(ghosted_point_to_block_) {
+    diagVec        = getDiagonal(mergedA_, dist2);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()(local_ordinal_type rlid) const {
+    auto brlid          = point_to_block(rlid);
+    auto row            = A.rowConst(rlid);
+    const size_t offset = A.graph.row_map(rlid);
+    for (local_ordinal_type k = 0; k < row.length; ++k) {
+      auto clid  = row.colidx(k);
+      auto bclid = ghosted_point_to_block(clid);
+
+      scalar_type val;
+      if (brlid != bclid) {
+        val = one / dist2.distance2(brlid, bclid);
+      } else {
+        val = diag(brlid);
+      }
+      auto aiiajj = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
+      auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                  // |a_ij|^2
 
       results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
                                         results(offset + k));

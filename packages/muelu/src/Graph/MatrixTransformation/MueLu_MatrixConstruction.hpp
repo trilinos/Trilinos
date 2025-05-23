@@ -15,6 +15,8 @@
 
 #include "MueLu_DroppingCommon.hpp"
 
+#include "Xpetra_MatrixFactory.hpp"
+
 #ifdef MUELU_COALESCE_DROP_DEBUG
 // For demangling function names
 #include <cxxabi.h>
@@ -899,6 +901,158 @@ class VectorFillFunctor {
       // add entry to graph
       if (!alreadyAdded && (results(idx) == KEEP)) {
         graph.entries(j) = bclid;
+        ++j;
+        alreadyAdded = true;
+      }
+      prev_bclid = bclid;
+    }
+  }
+};
+
+template <class local_matrix_type>
+class MergeCountFunctor {
+ private:
+  using scalar_type             = typename local_matrix_type::value_type;
+  using local_ordinal_type      = typename local_matrix_type::ordinal_type;
+  using memory_space            = typename local_matrix_type::memory_space;
+  using results_view            = Kokkos::View<DecisionType*, memory_space>;
+  using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
+  using permutation_type        = Kokkos::View<local_ordinal_type*, memory_space>;
+
+  using rowptr_type = typename local_matrix_type::row_map_type::non_const_type;
+  using ATS         = Kokkos::ArithTraits<local_ordinal_type>;
+
+  local_matrix_type A;
+  local_ordinal_type blockSize;
+  block_indices_view_type ghosted_point_to_block;
+  rowptr_type merged_rowptr;
+
+  BlockRowComparison<local_matrix_type> comparison;
+  permutation_type permutation;
+
+ public:
+  MergeCountFunctor(local_matrix_type& A_, local_ordinal_type blockSize_, block_indices_view_type ghosted_point_to_block_, rowptr_type& merged_rowptr_)
+    : A(A_)
+    , blockSize(blockSize_)
+    , ghosted_point_to_block(ghosted_point_to_block_)
+    , merged_rowptr(merged_rowptr_)
+    , comparison(BlockRowComparison(A, blockSize_, ghosted_point_to_block)) {
+    permutation = permutation_type("permutation", A.nnz());
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const local_ordinal_type brlid, local_ordinal_type& nnz_graph, const bool& final) const {
+    // column lids for all rows in the block
+    auto block_clids = Kokkos::subview(A.graph.entries, Kokkos::make_pair(A.graph.row_map(blockSize * brlid),
+                                                                          A.graph.row_map(blockSize * (brlid + 1))));
+    // set up a permutation index
+    auto block_permutation = Kokkos::subview(permutation, Kokkos::make_pair(A.graph.row_map(blockSize * brlid),
+                                                                            A.graph.row_map(blockSize * (brlid + 1))));
+    for (size_t i = 0; i < block_permutation.extent(0); ++i)
+      block_permutation(i) = i;
+    // get permutation for sorted column indices of the entire block
+    auto comparator = comparison.getComparator(brlid);
+    Misc::serialHeapSort(block_permutation, comparator);
+
+    local_ordinal_type prev_bclid = -1;
+    bool alreadyAdded             = false;
+
+    // loop over all sorted entries in block
+    auto offset = A.graph.row_map(blockSize * brlid);
+    for (size_t i = 0; i < block_permutation.extent(0); ++i) {
+      auto idx   = offset + block_permutation(i);
+      auto clid  = A.graph.entries(idx);
+      auto bclid = ghosted_point_to_block(clid);
+
+      // unseen block column index
+      if (bclid > prev_bclid)
+        alreadyAdded = false;
+
+      // add entry to graph
+      if (!alreadyAdded) {
+        ++nnz_graph;
+        alreadyAdded = true;
+#ifdef MUELU_COALESCE_DROP_DEBUG
+        Kokkos::printf("%5d ", bclid);
+#endif
+      }
+      prev_bclid = bclid;
+    }
+#ifdef MUELU_COALESCE_DROP_DEBUG
+    Kokkos::printf("\n");
+#endif
+    if (final)
+      merged_rowptr(brlid + 1) = nnz_graph;
+  }
+};
+
+template <class local_matrix_type>
+class MergeFillFunctor {
+ private:
+  using scalar_type             = typename local_matrix_type::value_type;
+  using local_ordinal_type      = typename local_matrix_type::ordinal_type;
+  using local_graph_type        = typename local_matrix_type::staticcrsgraph_type;
+  using memory_space            = typename local_matrix_type::memory_space;
+  using results_view            = Kokkos::View<DecisionType*, memory_space>;
+  using ATS                     = Kokkos::ArithTraits<scalar_type>;
+  using OTS                     = Kokkos::ArithTraits<local_ordinal_type>;
+  using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
+  using permutation_type        = Kokkos::View<local_ordinal_type*, memory_space>;
+  using magnitudeType           = typename ATS::magnitudeType;
+
+  local_matrix_type A;
+  local_ordinal_type blockSize;
+  block_indices_view_type ghosted_point_to_block;
+  local_matrix_type mergedA;
+  const scalar_type zero = ATS::zero();
+  const scalar_type one  = ATS::one();
+
+  BlockRowComparison<local_matrix_type> comparison;
+  permutation_type permutation;
+
+ public:
+  MergeFillFunctor(local_matrix_type& A_, local_ordinal_type blockSize_, block_indices_view_type ghosted_point_to_block_, local_matrix_type& mergedA_)
+    : A(A_)
+    , blockSize(blockSize_)
+    , ghosted_point_to_block(ghosted_point_to_block_)
+    , mergedA(mergedA_)
+    , comparison(BlockRowComparison(A, blockSize_, ghosted_point_to_block)) {
+    permutation = permutation_type("permutation", A.nnz());
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const local_ordinal_type brlid) const {
+    // column lids for all rows in the block
+    auto block_clids = Kokkos::subview(A.graph.entries, Kokkos::make_pair(A.graph.row_map(blockSize * brlid),
+                                                                          A.graph.row_map(blockSize * (brlid + 1))));
+    // set up a permuatation index
+    auto block_permutation = Kokkos::subview(permutation, Kokkos::make_pair(A.graph.row_map(blockSize * brlid),
+                                                                            A.graph.row_map(blockSize * (brlid + 1))));
+    for (size_t i = 0; i < block_permutation.extent(0); ++i)
+      block_permutation(i) = i;
+    // get permutation for sorted column indices of the entire block
+    auto comparator = comparison.getComparator(brlid);
+    Misc::serialHeapSort(block_permutation, comparator);
+
+    local_ordinal_type prev_bclid = -1;
+    bool alreadyAdded             = false;
+    local_ordinal_type j          = mergedA.graph.row_map(brlid);
+
+    // loop over all sorted entries in block
+    auto offset = A.graph.row_map(blockSize * brlid);
+    for (size_t i = 0; i < block_permutation.extent(0); ++i) {
+      auto idx   = offset + block_permutation(i);
+      auto clid  = A.graph.entries(idx);
+      auto bclid = ghosted_point_to_block(clid);
+
+      // unseen block column index
+      if (bclid > prev_bclid)
+        alreadyAdded = false;
+
+      // add entry to graph
+      if (!alreadyAdded) {
+        mergedA.graph.entries(j) = bclid;
+        mergedA.values(j)        = one;
         ++j;
         alreadyAdded = true;
       }
