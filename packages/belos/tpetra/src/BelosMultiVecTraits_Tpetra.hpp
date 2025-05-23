@@ -19,6 +19,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_StaticView.hpp"
+#include "Tpetra_Pool.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Kokkos_ArithTraits.hpp"
@@ -91,80 +92,8 @@ makeStaticLocalMultiVector (const MultiVectorType& gblMv,
   return MultiVectorType (lclMap, dv);
 }
 
-template<class Scalar, class LO, class GO, class Node>
-class MultiVecPool
-{
-public:
-  MultiVecPool() {
-    Kokkos::push_finalize_hook([this]() { this->availableDVs.clear(); });
-  }
-
-  using MV = ::Tpetra::MultiVector<Scalar, LO, GO, Node>;
-
-  Teuchos::RCP<MV> getMV(const Teuchos::RCP<const ::Tpetra::Map<LO, GO, Node>> & map, const int numVecs) {
-    const auto num_local_elems = map->getLocalNumElements();
-    size_t total_size = num_local_elems * numVecs;
-
-    // Use lower_bound so that we can re-use a slightly larger allocation if it is available
-    auto available_it = availableDVs.lower_bound(total_size);
-    while(available_it != availableDVs.end() && available_it->second.empty()) {
-      ++available_it;
-    }
-    if(available_it != availableDVs.end()) {
-      auto & available = available_it->second;
-      auto full_size_dv = available.back();
-      available.pop_back();
-
-      typename dv_t::t_dev mv_dev(full_size_dv.view_device().data(), num_local_elems, numVecs);
-      typename dv_t::t_host mv_host(full_size_dv.view_host().data(), num_local_elems, numVecs);
-
-      return Teuchos::rcpWithDealloc(new MV(map, dv_t(mv_dev, mv_host)), RCPDeleter{available, full_size_dv});
-    }
-
-    // No sufficiently large allocations were found so we need to create a new one.
-    // Also remove the largest currently available allocation if there is one because it would be able
-    // to use the allocation we are adding instead.
-    auto available_rit = availableDVs.rbegin();
-    while(available_rit != availableDVs.rend() && available_rit->second.empty()) {
-      ++available_rit;
-    }
-    if(available_rit != availableDVs.rend()) {
-      available_rit->second.pop_back();
-    }
-    dv_t dv("Belos::MultiVecPool DV", num_local_elems, numVecs);
-    auto & available = availableDVs[total_size];
-    return Teuchos::rcpWithDealloc(new MV(map, dv), RCPDeleter{available, dv});
-  }
-
-private:
-  using dv_t = typename MV::dual_view_type;
-  struct RCPDeleter
-  {
-    void free(MV * mv_ptr) {
-      if(mv_ptr) {
-        dv_pool.push_back(dv);
-        delete mv_ptr;
-      }
-    }
-    std::vector<dv_t> & dv_pool;
-    dv_t dv;
-  };
-  std::map<size_t, std::vector<dv_t>> availableDVs;
-};
-
-
-template<class Scalar, class LO, class GO, class Node>
-inline MultiVecPool<Scalar, LO, GO, Node> & getPool()
-{
-  static MultiVecPool<Scalar, LO, GO, Node> static_pool;
-  return static_pool;
-}
-
-template<class Scalar, class LO, class GO, class Node>
-inline Teuchos::RCP<::Tpetra::MultiVector<Scalar, LO, GO, Node>> getMultiVectorFromPool(const Teuchos::RCP<const ::Tpetra::Map<LO, GO, Node>> & map, const int numVecs)
-{
-  return getPool<Scalar, LO, GO, Node>().getMV(map, numVecs);
-}
+using Tpetra::getPool;
+using Tpetra::getMultiVectorFromPool;
 
 } // namespace impl
 

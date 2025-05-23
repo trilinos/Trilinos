@@ -978,7 +978,8 @@ namespace Tpetra {
     /// Unfortunately, I had to declare these protected, because
     /// CrsMatrix uses them at one point.  Please, nobody else use
     /// them.
-    Kokkos::DualView<packet_type*, buffer_device_type> imports_;
+    using imports_dv_t = Kokkos::DualView<packet_type*, buffer_device_type>;
+    Teuchos::RCP<imports_dv_t> imports_;
 
     /// \brief Reallocate imports_ if needed.
     ///
