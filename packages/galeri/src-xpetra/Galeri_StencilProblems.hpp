@@ -77,7 +77,7 @@ namespace Galeri {
         nx = this->Map_->getGlobalNumElements();
       }
 
-      Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("1D", this->Map_, this->list_);
+      this->Coords_ = Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("1D", this->Map_, this->list_);
 
       return this->Coords_;
 
@@ -87,8 +87,11 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     class Laplace2DProblem : public ScalarProblem<Map,Matrix,MultiVector> {
     public:
+      using RealValuedMultiVector = typename Problem<Map, Matrix, MultiVector>::RealValuedMultiVector;
+
       Laplace2DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : ScalarProblem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
+      Teuchos::RCP<RealValuedMultiVector> BuildCoords();
     };
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
@@ -133,7 +136,16 @@ namespace Galeri {
       return this->A_;
     }
 
-    // =============================================  Laplace2D  =============================================
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector> Laplace2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
+
+      Teuchos::ParameterList list = this->list_;
+      this->Coords_ = Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("2D", this->Map_, this->list_);
+      return this->Coords_;
+
+    }
+
+    // =============================================  AnisotropicDiffusion2DProblem  =============================================
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     class AnisotropicDiffusion2DProblem : public ScalarProblem<Map,Matrix,MultiVector> {
     public:
@@ -262,8 +274,11 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     class Laplace3DProblem : public ScalarProblem<Map,Matrix,MultiVector> {
     public:
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
+
       Laplace3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : ScalarProblem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
+      Teuchos::RCP<RealValuedMultiVector> BuildCoords();
     };
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
@@ -315,6 +330,16 @@ namespace Galeri {
       this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
+    }
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector> Laplace3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
+
+      Teuchos::ParameterList list = this->list_;
+      this->Coords_ = Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("3D", this->Map_, this->list_);
+
+      return this->Coords_;
+
     }
 
     // =============================================  Star2D  =============================================
@@ -413,8 +438,11 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     class Brick3DProblem : public ScalarProblem<Map,Matrix,MultiVector> {
     public:
+      using RealValuedMultiVector = typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector;
+
       Brick3DProblem(Teuchos::ParameterList& list, const Teuchos::RCP<const Map>& map) : ScalarProblem<Map,Matrix,MultiVector>(list, map) { }
       Teuchos::RCP<Matrix> BuildMatrix();
+      Teuchos::RCP<RealValuedMultiVector> BuildCoords();
     };
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
@@ -455,6 +483,16 @@ namespace Galeri {
       this->A_ = Brick3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs);
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
+    }
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
+    Teuchos::RCP<typename Problem<Map,Matrix,MultiVector>::RealValuedMultiVector> Brick3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildCoords() {
+
+      Teuchos::ParameterList list = this->list_;
+      this->Coords_ = Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("3D", this->Map_, this->list_);
+
+      return this->Coords_;
+
     }
 
     // =============================================  Identity  =============================================
@@ -500,7 +538,7 @@ namespace Galeri {
         nx = this->Map_->getGlobalNumElements();
       }
 
-      Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("1D", this->Map_, this->list_);
+      this->Coords_ = Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("1D", this->Map_, this->list_);
 
       return this->Coords_;
 
