@@ -27,6 +27,24 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    ComputeProlongatorEnergyNorm(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+                                 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& P,
+                                 Teuchos::FancyOStream& out) {
+  using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  RCP<Matrix> AP;
+  AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false, AP, out, true, true);
+  RCP<Matrix> PtAP;
+  PtAP             = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*P, true, *AP, false, PtAP, out, true, true);
+  RCP<Vector> diag = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(PtAP->getRowMap());
+  PtAP->getLocalDiagCopy(*diag);
+  MagnitudeType norm = diag->norm1();
+  norm               = Teuchos::ScalarTraits<MagnitudeType>::squareroot(norm);
+  return norm;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
@@ -39,14 +57,14 @@ RCP<const ParameterList> EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   }
 #undef SET_VALID_ENTRY
 
-  validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory for the matrix A used during internal iterations");
-  validParamList->set<RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory for the initial guess");
-  validParamList->set<RCP<const FactoryBase> >("Constraint", Teuchos::null, "Generating factory for constraints");
+  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory for the matrix A used during internal iterations");
+  validParamList->set<RCP<const FactoryBase>>("P", Teuchos::null, "Generating factory for the initial guess");
+  validParamList->set<RCP<const FactoryBase>>("Constraint", Teuchos::null, "Generating factory for constraints");
 
-  validParamList->set<RCP<Matrix> >("P0", Teuchos::null, "Initial guess at P");
+  validParamList->set<RCP<Matrix>>("P0", Teuchos::null, "Initial guess at P");
   validParamList->set<bool>("Keep P0", false, "Keep an initial P0 (for reuse)");
 
-  validParamList->set<RCP<Constraint> >("Constraint0", Teuchos::null, "Initial Constraint");
+  validParamList->set<RCP<Constraint>>("Constraint0", Teuchos::null, "Initial Constraint");
   validParamList->set<bool>("Keep Constraint0", false, "Keep an initial Constraint (for reuse)");
 
   return validParamList;
@@ -94,7 +112,7 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
   const ParameterList& pL = GetParameterList();
 
   // Get the matrix
-  RCP<Matrix> A = Get<RCP<Matrix> >(fineLevel, "A");
+  RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
 
   if (restrictionMode_) {
     SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
@@ -107,13 +125,13 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
   int numIts;
   if (coarseLevel.IsAvailable("P0", this)) {
     // Reuse data
-    P0     = coarseLevel.Get<RCP<Matrix> >("P0", this);
+    P0     = coarseLevel.Get<RCP<Matrix>>("P0", this);
     numIts = pL.get<int>("emin: num reuse iterations");
     GetOStream(Runtime0) << "Reusing P0" << std::endl;
 
   } else {
     // Construct data
-    P0     = Get<RCP<Matrix> >(coarseLevel, "P");
+    P0     = Get<RCP<Matrix>>(coarseLevel, "P");
     numIts = pL.get<int>("emin: num iterations");
   }
   // NOTE: the main assumption here that P0 satisfies both constraints:
@@ -124,12 +142,12 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
   RCP<Constraint> X;
   if (coarseLevel.IsAvailable("Constraint0", this)) {
     // Reuse data
-    X = coarseLevel.Get<RCP<Constraint> >("Constraint0", this);
+    X = coarseLevel.Get<RCP<Constraint>>("Constraint0", this);
     GetOStream(Runtime0) << "Reusing Constraint0" << std::endl;
 
   } else {
     // Construct data
-    X = Get<RCP<Constraint> >(coarseLevel, "Constraint");
+    X = Get<RCP<Constraint>>(coarseLevel, "Constraint");
   }
   GetOStream(Runtime0) << "Number of emin iterations = " << numIts << std::endl;
 
