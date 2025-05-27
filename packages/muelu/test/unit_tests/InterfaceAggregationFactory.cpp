@@ -220,12 +220,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
   LO_view aggNodesPrimal;
   LO_view unaggregatedPrimal;
   primalAggs->ComputeNodesInAggregate(aggPtrPrimal, aggNodesPrimal, unaggregatedPrimal);
+  auto aggPtrPrimal_h       = Kokkos::create_mirror_view(aggPtrPrimal);
+  auto aggNodesPrimal_h     = Kokkos::create_mirror_view(aggNodesPrimal);
+  auto unaggregatedPrimal_h = Kokkos::create_mirror_view(unaggregatedPrimal);
+  Kokkos::deep_copy(aggPtrPrimal_h, aggPtrPrimal);
+  Kokkos::deep_copy(aggNodesPrimal_h, aggNodesPrimal);
+  Kokkos::deep_copy(unaggregatedPrimal_h, unaggregatedPrimal);
 
   const LO numDualAggs = dualAggs->GetNumAggregates();
   LO_view aggPtrDual;
   LO_view aggNodesDual;
   LO_view unaggregatedDual;
   dualAggs->ComputeNodesInAggregate(aggPtrDual, aggNodesDual, unaggregatedDual);
+  auto aggPtrDual_h       = Kokkos::create_mirror_view(aggPtrDual);
+  auto aggNodesDual_h     = Kokkos::create_mirror_view(aggNodesDual);
+  auto unaggregatedDual_h = Kokkos::create_mirror_view(unaggregatedDual);
+  Kokkos::deep_copy(aggPtrDual_h, aggPtrDual);
+  Kokkos::deep_copy(aggNodesDual_h, aggNodesDual);
+  Kokkos::deep_copy(unaggregatedDual_h, unaggregatedDual);
+
+  Kokkos::fence();
 
   // Write some outputs for a manual verification of the correct dual aggregates given the dual2Primal mapping
   std::stringstream myStream;
@@ -242,9 +256,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
   myStream << " - Primal Aggregates:" << std::endl;
   for (LO primalAggId = 0; primalAggId < numPrimalAggs; ++primalAggId) {
     myStream << "\tPrimal Aggregate with local AggID " << primalAggId << ":";
-    for (LO ptrPos = aggPtrPrimal[primalAggId]; ptrPos < aggPtrPrimal[primalAggId + 1]; ++ptrPos) {
+    for (LO ptrPos = aggPtrPrimal_h[primalAggId]; ptrPos < aggPtrPrimal_h[primalAggId + 1]; ++ptrPos) {
       // Global ID so we can compare with the global dual2Primal mapping
-      const GO gNodeId = primalVertex2AggIdMap->getGlobalElement(aggNodesPrimal[ptrPos]);
+      const GO gNodeId = primalVertex2AggIdMap->getGlobalElement(aggNodesPrimal_h[ptrPos]);
       myStream << "  " << gNodeId;
     }
     myStream << std::endl;
@@ -253,9 +267,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
   myStream << " - Dual Aggregates:" << std::endl;
   for (LO dualAggId = 0; dualAggId < numDualAggs; ++dualAggId) {
     myStream << "\tDual Aggregate with local AggID " << dualAggId << ":";
-    for (LO ptrPos = aggPtrDual[dualAggId]; ptrPos < aggPtrDual[dualAggId + 1]; ++ptrPos) {
+    for (LO ptrPos = aggPtrDual_h[dualAggId]; ptrPos < aggPtrDual_h[dualAggId + 1]; ++ptrPos) {
       // Global ID so we can compare with the global dual2Primal mapping
-      const GO gNodeId = dualVertex2AggIdMap->getGlobalElement(aggNodesDual[ptrPos]);
+      const GO gNodeId = dualVertex2AggIdMap->getGlobalElement(aggNodesDual_h[ptrPos]);
       myStream << "  " << gNodeId;
     }
     myStream << std::endl;
@@ -296,8 +310,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
   bool aggStructureCheck = true;
   for (LO dualAggId = 0; dualAggId < numDualAggs && aggStructureCheck; ++dualAggId) {
     LO primalAggId_mapped_firstIter = -1;
-    for (LO ptrPos = aggPtrDual[dualAggId]; ptrPos < aggPtrDual[dualAggId + 1]; ++ptrPos) {
-      LO dualNodeId = aggNodesDual[ptrPos];
+    for (LO ptrPos = aggPtrDual_h[dualAggId]; ptrPos < aggPtrDual_h[dualAggId + 1]; ++ptrPos) {
+      LO dualNodeId = aggNodesDual_h[ptrPos];
 
       // Sanity check for complete dual2Primal mapping
       if (myDual2Primal->find(dualNodeId) == myDual2Primal->end()) {
