@@ -32,28 +32,19 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_util_Version_hpp
-#define stk_util_Version_hpp
+#include "gtest/gtest.h"
+#include "stk_util/util/AnyData.hpp"
+#include <sstream>
 
-#include <stk_util/registry/ProductRegistry.hpp>
+namespace {
 
-//STK_VERSION is related to the Sierra release/sprint number,
-//which appears in the below 'version_string()' as
-//something like '5.19.2-725-g23c8d219'.
+TEST(TestAnyData, BadCast) {
+  float value = 99.9;
+  sierra::Value<float> floatValue = value;
 
-//See the file CHANGELOG.md for a listing that shows the
-//correspondence between version numbers and API changes.
+  sierra::AnyData& anyValue = floatValue;
+  EXPECT_NO_THROW((anyValue.value<float>()));
+  EXPECT_ANY_THROW((anyValue.value<int>()));
+}
 
-#define STK_VERSION 5250102
-
-
-namespace stk
-{
-
-inline
-std::string version_string() { return std::string(ProductRegistry::version()); }
-
-} // namespace stk
-
-#endif /* stk_util_Version_hpp */
-
+}

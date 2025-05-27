@@ -355,7 +355,6 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
 #ifdef SIERRA_MIGRATION
     m_add_fmwk_data(add_fmwk_data),
     m_fmwk_global_ids(),
-    m_fmwk_aux_relations(),
     m_shouldSortFacesByNodeIds(false),
 #endif
     m_autoAuraOption(auto_aura_option),
@@ -410,12 +409,6 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
 
 BulkData::~BulkData()
 {
-#ifdef SIERRA_MIGRATION
-  for(size_t i=0; i<m_fmwk_aux_relations.size(); ++i) {
-    delete m_fmwk_aux_relations[i];
-  }
-#endif
-
   while ( ! m_ghosting.empty() ) {
     delete m_ghosting.back();
     m_ghosting.pop_back();
@@ -598,7 +591,6 @@ Entity BulkData::generate_new_entity(unsigned preferred_offset)
 
 #ifdef SIERRA_MIGRATION
     if (add_fmwk_data()) {
-      m_fmwk_aux_relations.push_back(nullptr);
       m_fmwk_global_ids.push_back(0);
     }
 #endif
@@ -617,9 +609,6 @@ Entity BulkData::generate_new_entity(unsigned preferred_offset)
 
 #ifdef SIERRA_MIGRATION
     if (add_fmwk_data()) {
-      //bulk-data allocated aux-relation vector, so delete it here.
-      delete m_fmwk_aux_relations[new_local_offset];
-      m_fmwk_aux_relations[new_local_offset] = nullptr;
       m_fmwk_global_ids[new_local_offset] = 0;
     }
 #endif
@@ -647,7 +636,6 @@ void BulkData::initialize_arrays()
 
 #ifdef SIERRA_MIGRATION
   if (add_fmwk_data()) {
-    m_fmwk_aux_relations.push_back(nullptr);
     m_fmwk_global_ids.push_back(0);
   }
 #endif
@@ -666,13 +654,6 @@ BulkData::initialize_global_ids()
       }
     }
   }
-}
-
-void
-BulkData::initialize_aux_relations()
-{
-  m_fmwk_aux_relations.clear();
-  m_fmwk_aux_relations.resize(m_entity_keys.size(), nullptr);
 }
 #endif
 
@@ -1287,68 +1268,6 @@ uint64_t  BulkData::get_max_allowed_id() const {
   }
   return stk::mesh::EntityKey::MAX_ID;
 }
-
-#ifdef SIERRA_MIGRATION
-
-const RelationVector&
-BulkData::aux_relations(Entity entity) const
-{
-  STK_ThrowAssert(add_fmwk_data());
-  STK_ThrowAssert(entity.local_offset() > 0);
-
-  if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
-    m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
-  }
-  return *m_fmwk_aux_relations[entity.local_offset()];
-}
-
-RelationVector&
-BulkData::aux_relations(Entity entity)
-{
-  STK_ThrowAssert(add_fmwk_data());
-  STK_ThrowAssert(entity.local_offset() > 0);
-
-  if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
-    m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
-  }
-  return *m_fmwk_aux_relations[entity.local_offset()];
-}
-
-RelationIterator
-BulkData::internal_begin_relation(Entity entity, const RelationType relation_type) const
-{
-  STK_ThrowAssert(add_fmwk_data());
-  if (impl::internal_is_handled_generically(relation_type)) {
-    STK_ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
-    return RelationIterator();
-  }
-  else {
-    return aux_relations(entity).begin();
-  }
-}
-
-RelationIterator
-BulkData::internal_end_relation(Entity entity, const RelationType relation_type) const
-{
-  STK_ThrowAssert(add_fmwk_data());
-  if (impl::internal_is_handled_generically(relation_type)) {
-    STK_ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
-    return RelationIterator();
-  }
-  else {
-    return aux_relations(entity).end();
-  }
-}
-
-void
-BulkData::compress_relation_capacity(Entity entity)
-{
-  RelationVector &rels = aux_relations(entity);
-  RelationVector tmp(rels);
-  tmp.swap(rels);
-}
-
-#endif
 
 void BulkData::generate_new_ids_given_reserved_ids(stk::topology::rank_t rank, size_t numIdsNeeded, const std::vector<stk::mesh::EntityId>& reserved_ids, std::vector<stk::mesh::EntityId>& requestedIds) const
 {
@@ -2093,33 +2012,6 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
   const std::vector<FieldBase*>  fields = mesh_meta_data().get_fields();
   m_field_data_manager->reorder_bucket_field_data(rank, fields, reorderedBucketIds);
 }
-
-#ifdef SIERRA_MIGRATION
-
-void BulkData::reserve_relation(Entity entity, const unsigned num)
-{
-  if (num == 0 && aux_relations(entity).empty()) {
-    RelationVector tmp;
-    aux_relations(entity).swap(tmp); // clear memory of m_relations.
-  }
-  else {
-    aux_relations(entity).reserve(num);
-  }
-}
-
-void BulkData::erase_and_clear_if_empty(Entity entity, RelationIterator rel_itr)
-{
-  STK_ThrowAssert(!impl::internal_is_handled_generically(rel_itr->getRelationType()));
-
-  RelationVector& aux_rels = aux_relations(entity);
-  aux_rels.erase(aux_rels.begin() + (rel_itr - aux_rels.begin())); // Need to convert to non-const iterator
-
-  if (aux_rels.empty()) {
-    reserve_relation(entity, 0);
-  }
-}
-
-#endif
 
 BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selector) const
 {
@@ -4573,16 +4465,6 @@ void BulkData::internal_resolve_send_ghost_membership()
 {
     // This virtual method can be removed when we no longer need the
     // StkTransitionBulkData derived class in Framework.
-}
-
-void add_bucket_and_ord(unsigned bucket_id, unsigned bucket_ord, BucketIndices& bktIndices)
-{
-  if (bktIndices.bucket_info.empty() || bktIndices.bucket_info.back().bucket_id != bucket_id) {
-    bktIndices.bucket_info.push_back(BucketInfo(bucket_id, 0u));
-  }
-
-  bktIndices.bucket_info.back().num_entities_this_bucket += 1;
-  bktIndices.ords.push_back(bucket_ord);
 }
 
 const std::vector<int>& BulkData::all_sharing_procs(stk::mesh::EntityRank rank) const

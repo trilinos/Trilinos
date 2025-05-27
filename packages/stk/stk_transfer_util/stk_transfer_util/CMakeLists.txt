@@ -45,6 +45,8 @@ if(HAVE_STK_Trilinos)
     NOINSTALLHEADERS ${HEADERS}
     SOURCES ${SOURCES}
   )
+  find_package(LAPACK REQUIRED)
+  target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
 else()
   add_library(stk_transfer_util ${SOURCES})
   target_link_libraries(stk_transfer_util PUBLIC stk_transfer_lib)
@@ -55,10 +57,12 @@ else()
 
   if(STK_BUILT_FOR_SIERRA)
     find_package(SierraLapack REQUIRED)
-    target_link_libraries(stk_util_util PUBLIC SierraLapack::sierra_blas_lapack)
+    target_link_libraries(stk_transfer_util PUBLIC SierraLapack::sierra_blas_lapack)
   else()
+    find_package(LAPACK REQUIRED)
+    target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
     find_package(BLAS REQUIRED)
-    target_link_libraries(stk_util_util PUBLIC BLAS::BLAS)
+    target_link_libraries(stk_transfer_util PUBLIC ${BLAS_LIBRARIES})
   endif()
 
   target_include_directories(stk_transfer_util PUBLIC

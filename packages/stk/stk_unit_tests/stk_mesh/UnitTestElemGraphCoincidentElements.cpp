@@ -563,8 +563,8 @@ protected:
   }
 
 private:
-  void verify_local_and_parallel_edges_from_entity_to_remote_entity(stk::mesh::Entity entity, stk::mesh::EntityId remoteEntityId,
-                                                                    size_t numLocalEdges, size_t numParallelEdges)
+  void verify_local_and_parallel_edges_from_entity_to_remote_entity(stk::mesh::Entity entity, stk::mesh::EntityId /*remoteEntityId*/,
+                                                                    size_t numLocalEdges, size_t /*numParallelEdges*/)
   {
     if(get_bulk().is_valid(entity) && get_bulk().bucket(entity).owned())
     {
