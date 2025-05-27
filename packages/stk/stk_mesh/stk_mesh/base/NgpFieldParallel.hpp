@@ -258,7 +258,7 @@ void parallel_sum(NgpMesh const& ngpMesh, std::vector<NgpField*> const& ngpField
 }
 
 template <typename NGPMESH, typename NGPFIELD, typename MemSpace = stk::ngp::MemSpace>
-void parallel_sum_including_ghosts(NGPMESH const& ngpMesh, std::vector<NGPFIELD*> const& ngpFields, bool doFinalSyncBackToDevice = true)
+void parallel_sum_including_ghosts(NGPMESH const& ngpMesh, std::vector<NGPFIELD*> const& ngpFields, [[maybe_unused]] bool doFinalSyncBackToDevice = true)
 {
   STK_ThrowRequireMsg((Kokkos::SpaceAccessibility<typename NGPMESH::MeshExecSpace, MemSpace>::accessible), "parallel_sum_including_ghosts MemSpace not accessible from NGPMESH::MeshExecSpace");
 

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+5.25.1-02 (STK_VERSION 5250102) 5/27/2025
+  stk_mesh: add overload of for_each_entity_run(NgpMesh.. takes bucketIds
+  stk_mesh: misc cleanups, remove un-needed structure (fixed-elem-conn)
+            from Bucket, remove fmwk-aux-relation from BulkData.
+  stk_transfer_util: fix lapack dependency issue in cmake
+
 5.25.1-01 (STK_VERSION 5250101) 5/15/2025
   stk_unit_test_utils: fix build error if STKSearchUtil is disabled.
 
