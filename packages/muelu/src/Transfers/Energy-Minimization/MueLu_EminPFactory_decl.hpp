@@ -76,6 +76,12 @@ class EminPFactory : public PFactory {
 
   //@}
 
+  static
+      typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+      ComputeProlongatorEnergyNorm(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+                                   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& P,
+                                   Teuchos::FancyOStream& out);
+
 };  // class EminPFactory
 
 }  // namespace MueLu
