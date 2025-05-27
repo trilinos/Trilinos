@@ -101,7 +101,9 @@ enum NemoVersion {
   NEMO_1       = 101
 };
 
-bool is_comm_valid();
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after July 2025
+STK_DEPRECATED bool is_comm_valid();
+#endif
 
 /**
  * @ingroup EnvCommandLineDetail
@@ -350,13 +352,15 @@ MPI_Comm parallel_world_comm();
  */
 MPI_Comm parallel_intercomm();
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after July 2025
 /**
  * @brief Function <b>peer_group</b> returns the peer group rank for an application of type
  *        EXEC_TYPE_PEER.
  *
  * @return			a <b>int</b> value of the peer group for the peer application.
  */
-int peer_group();
+STK_DEPRECATED int peer_group();
+#endif
 
 /**
  * @ingroup EnvMPIDetail

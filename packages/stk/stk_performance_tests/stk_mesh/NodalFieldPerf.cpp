@@ -118,10 +118,11 @@ public:
     stk::mesh::NgpField<double> & ngpAccField   = stk::mesh::get_updated_ngp_field<double>(*accField);
     stk::mesh::NgpField<double> & ngpForceField = stk::mesh::get_updated_ngp_field<double>(*forceField);
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::NODE_RANK, get_meta().locally_owned_part());
     const int spatialDimension = static_cast<int>(get_meta().spatial_dimension());
 
       for (unsigned i = 0; i < NUM_ITERS; ++i) {
-        stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, get_meta().locally_owned_part(),
+        stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, bucketIds,
                                        KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex & index)
                                        {
                                          for (int component = 0; component < spatialDimension; ++component) {
@@ -129,7 +130,7 @@ public:
                                                                              beta * ngpVelField(index, component) +
                                                                              gamma * ngpAccField(index, component);
                                          }
-                                       });
+                                       }, stk::ngp::ExecSpace());
       }
 
     ngpForceField.modify_on_device();

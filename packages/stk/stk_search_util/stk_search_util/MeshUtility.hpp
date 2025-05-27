@@ -60,7 +60,7 @@ namespace search {
 
 inline int get_key(int ekey) { return ekey; }
 inline int get_id(int ekey) { return ekey; }
-inline int get_rank(int ekey) { return stk::topology::INVALID_RANK; }
+inline int get_rank(int /*ekey*/) { return stk::topology::INVALID_RANK; }
 
 inline stk::mesh::EntityKey get_key(stk::mesh::EntityKey ekey) { return ekey; }
 inline stk::mesh::EntityId get_id(stk::mesh::EntityKey ekey) { return ekey.id(); }

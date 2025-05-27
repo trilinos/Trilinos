@@ -103,11 +103,12 @@ public:
   void run_edge_check(unsigned numExpectedEdgesPerElem)
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(),
+    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, !stk::mesh::Selector());
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bucketIds,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
         stk::mesh::ConnectedEntities edges = ngpMesh.get_edges(stk::topology::ELEM_RANK, entityIndex);
         NGP_EXPECT_EQ(numExpectedEdgesPerElem, edges.size());
-      }
+      }, stk::ngp::ExecSpace()
     );
   }
 
@@ -416,7 +417,6 @@ double reduce_on_host(stk::mesh::BulkData& bulk)
 
   double max_val = 0.0;
   Kokkos::Max<double> max_reduction(max_val);
-
   stk::mesh::for_each_entity_reduce(
     ngp_mesh,
     stk::topology::NODE_RANK,
@@ -452,7 +452,7 @@ TEST(NgpDeviceMesh, dont_let_stacksize_get_out_of_control)
 #endif
   EXPECT_NEAR(expectedBulkDataSize, sizeof(stk::mesh::BulkData), tol);
 
-  constexpr size_t expectedBucketSize = 1056;
+  constexpr size_t expectedBucketSize = 976;
   EXPECT_NEAR(expectedBucketSize, sizeof(stk::mesh::Bucket), tol);
 
   constexpr size_t expectedDeviceMeshSize = 880;

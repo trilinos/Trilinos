@@ -98,7 +98,7 @@ class HostField : public NgpFieldBase
 
   unsigned get_component_stride(const FastMeshIndex& entityIndex) const { return 1; }
 
-  unsigned get_component_stride(unsigned bucketId) const { return 1; }
+  unsigned get_component_stride(unsigned /*bucketId*/) const { return 1; }
 
 #ifndef STK_HIDE_DEPRECATED_CODE // Delete after March 5, 2025
   STK_DEPRECATED_MSG("The component stride on device is now a function of the Bucket you are accessing.  Please use "
@@ -244,7 +244,7 @@ class HostField : public NgpFieldBase
   void update_host_bucket_pointers() override { }
 
   void swap_field_views(NgpFieldBase * /*other*/) override { }
-  void swap(HostField<T> &other) { }
+  void swap(HostField<T> &/*other*/) { }
 
   stk::mesh::EntityRank get_rank() const { return m_hostField ? m_hostField->entity_rank() : stk::topology::INVALID_RANK; }
 

@@ -32,28 +32,26 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_util_Version_hpp
-#define stk_util_Version_hpp
+#include "gtest/gtest.h"
+#include "stk_util/util/ci_string.hpp"
+#include <sstream>
 
-#include <stk_util/registry/ProductRegistry.hpp>
+namespace {
 
-//STK_VERSION is related to the Sierra release/sprint number,
-//which appears in the below 'version_string()' as
-//something like '5.19.2-725-g23c8d219'.
+TEST(TestCiString, basic) {
 
-//See the file CHANGELOG.md for a listing that shows the
-//correspondence between version numbers and API changes.
+  ci_string strMixed("MixedCase");
+  ci_string strLower("mixedcase");
+  EXPECT_EQ(strMixed, strLower);
+}
 
-#define STK_VERSION 5250102
+TEST(TestCiString, istream) {
 
+  ci_string str("MixedCase");
+  ci_string cistr;
+  std::istringstream is(str.c_str());
+  is>>cistr;
+  EXPECT_EQ(str, cistr);
+}
 
-namespace stk
-{
-
-inline
-std::string version_string() { return std::string(ProductRegistry::version()); }
-
-} // namespace stk
-
-#endif /* stk_util_Version_hpp */
-
+}
