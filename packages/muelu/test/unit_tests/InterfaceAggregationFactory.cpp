@@ -106,13 +106,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
   // Problem definition for the construction of the A00 matrix later
   Teuchos::ParameterList matrixList;
   // We choose random problem dimensions of nx in [5,12] and ny in [14,32]
-  GO nx, ny;
-  if (rank == 0) {
-    nx = 5 + ST::random() % 8;
-    ny = 14 + ST::random() % 19;
-  }
-  Teuchos::broadcast(*comm, 0, &nx);
-  Teuchos::broadcast(*comm, 0, &ny);
+  GO nx = 5 + ST::random() % 8;
+  GO ny = 14 + ST::random() % 19;
   matrixList.set("nx", nx);
   matrixList.set("ny", ny);
   // Distribution
@@ -128,27 +123,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
 
   // We choose a fixed ndofn of 3 and a random nnode in [19,36] for the dual (interface) field
   constexpr GO ndofnDual = 3;
-  GO nnodeDual;
-  if (rank == 0) {
-    nnodeDual = 19 + ST::random() % 18;
-  }
-  Teuchos::broadcast(*comm, 0, &nnodeDual);
+  GO nnodeDual           = 19 + ST::random() % 18;
   LO mynnodeDual;
 
   // Supply a random, injective global dual to primal mapping
-  RCP<Array<GO>> dual2Primal = rcp(new Teuchos::Array<GO>());
-  if (rank == 0) {
-    RCP<Array<GO>> primalCandidates = rcp(new Teuchos::Array<GO>());
-    for (GO i = 0; i < nnodePrimal; ++i)
-      primalCandidates->push_back(i);
-    for (GO dualNodeGID = 0; dualNodeGID < nnodeDual; ++dualNodeGID) {
-      GO choose = ST::random() % (nnodePrimal - 1 - dualNodeGID);
-      dual2Primal->push_back(primalCandidates->at(choose));
-      primalCandidates->erase(primalCandidates->begin() + choose);
-    }
-  } else
-    dual2Primal->resize(nnodeDual);
-  Teuchos::broadcast(*comm, 0, nnodeDual, dual2Primal->getRawPtr());
+  RCP<Array<GO>> dual2Primal      = rcp(new Teuchos::Array<GO>());
+  RCP<Array<GO>> primalCandidates = rcp(new Teuchos::Array<GO>());
+  for (GO i = 0; i < nnodePrimal; ++i)
+    primalCandidates->push_back(i);
+  for (GO dualNodeGID = 0; dualNodeGID < nnodeDual; ++dualNodeGID) {
+    GO choose = ST::random() % (nnodePrimal - 1 - dualNodeGID);
+    dual2Primal->push_back(primalCandidates->at(choose));
+    primalCandidates->erase(primalCandidates->begin() + choose);
+  }
 
   // Primal row map is uniform contiguous; nothing fancy
   RCP<const Map> nodeRowMapPrimal = Xpetra::MapFactory<LO, GO, NO>::createUniformContigMapWithNode(lib, nnodePrimal, comm);
