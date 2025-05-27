@@ -69,8 +69,8 @@ static void create_extra_phase_per_block(stk::mesh::MetaData & meta, const std::
     if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
         stk::io::is_part_io_part(*part))
     {
-      const stk::mesh::Part * originalPartPtr = phaseSupport.find_original_part(*part);
-      if (originalPartPtr && originalPartPtr->name() == part->name())
+      const stk::mesh::Part & originalPart = phaseSupport.find_original_part(*part);
+      if (originalPart.name() == part->name())
       {
         const std::string phasePartName = part->name() + "_" + phaseName;
         if (!auxMeta.has_part(phasePartName))
@@ -561,12 +561,11 @@ std::map<int,int> get_nonvoid_to_phase_part_ordinal_map(const stk::mesh::MetaDat
   const std::string phaseSuffix = "_" + phaseName;
 
   std::map<int,int> partOrdinalMapping;
-  for (auto * part : meta.get_parts())
+  for (auto * part : meta.get_mesh_parts())
   {
-    if ((part->primary_entity_rank() == stk::topology::ELEMENT_RANK || part->primary_entity_rank() == meta.side_rank()) &&
-        stk::io::is_part_io_part(*part))
+    if ((part->primary_entity_rank() == stk::topology::ELEMENT_RANK || part->primary_entity_rank() == meta.side_rank()))
     {
-      if (phaseSupport.is_interface(part))
+      if (phaseSupport.is_interface(*part))
       {
         partOrdinalMapping[part->mesh_meta_data_ordinal()] = -1; // negative value used to indicate that we will remove interface parts
       }

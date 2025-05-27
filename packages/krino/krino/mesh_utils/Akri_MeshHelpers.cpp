@@ -989,6 +989,37 @@ debug_mesh(const stk::mesh::BulkData & mesh)
   return out.str();
 }
 
+std::string debug_part_changes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::PartVector & addParts, const stk::mesh::PartVector & removeParts)
+{
+  std::ostringstream out;
+  out << "Part changes for entity  " << debug_entity_1line(mesh, entity) << "\n";
+  const stk::mesh::PartVector & currentParts = mesh.bucket(entity).supersets();
+  std::vector<std::string> partNames;
+  for (auto * part : addParts)
+  {
+    if (std::find(currentParts.begin(), currentParts.end(), part) == currentParts.end())
+      partNames.push_back(part->name());
+  }
+  stk::util::sort_and_unique(partNames);
+
+  out << "Add Parts: ";
+  for(auto & partName : partNames) out << partName << " ";
+
+  partNames.clear();
+  for (auto * part : removeParts)
+  {
+    if (std::find(currentParts.begin(), currentParts.end(), part) != currentParts.end() &&
+        std::find(addParts.begin(), addParts.end(), part) == addParts.end())
+      partNames.push_back(part->name());
+  }
+  stk::util::sort_and_unique(partNames);
+
+  out << "\nRemove Parts: ";
+  for(auto & partName : partNames) out << partName << " ";
+  out << "\n";
+  return out.str();
+}
+
 //--------------------------------------------------------------------------------
 
 std::vector<unsigned>
