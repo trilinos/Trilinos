@@ -33,7 +33,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>
 stridedDofMapHelper(
     const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& nodeMap,
-    int dofsPerNode) {
+    GlobalOrdinal dofsPerNode) {
   using GO = GlobalOrdinal;
   using LO = LocalOrdinal;
   using NO = Node;
@@ -48,7 +48,7 @@ stridedDofMapHelper(
   std::vector<GO> dofGIDs;
   dofGIDs.reserve(nodeGIDs.size() * dofsPerNode);
   for (GO nodeID : nodeGIDs)
-    for (int d = 0; d < dofsPerNode; ++d)
+    for (GO d = 0; d < dofsPerNode; ++d)
       dofGIDs.push_back(nodeID * dofsPerNode + d);
 
   std::vector<size_t> stridingInfo;
@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
 
   RCP<const Teuchos::Comm<int>> comm = TestHelpers::Parameters::getDefaultComm();
   int rank                           = comm->getRank();
-  int commSize                       = comm->getSize();
+  GO commSize                        = comm->getSize();
 
   ST::seedrandom(2654435761);
 
@@ -111,7 +111,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
   matrixList.set("nx", nx);
   matrixList.set("ny", ny);
   // Distribution
-  matrixList.set("mx", 1);
+  GO mx = 1;
+  matrixList.set("mx", mx);
   matrixList.set("my", commSize);
   matrixList.set("matrixType", "Elasticity2D");
 
