@@ -13,10 +13,10 @@
 #include "MueLu_Constraint.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Xpetra_Map.hpp"
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_MatrixMatrix.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_Operator.hpp"
-
-#include "Xpetra_Utils.hpp"
 
 #include "MueLu_VerboseObject.hpp"
 
