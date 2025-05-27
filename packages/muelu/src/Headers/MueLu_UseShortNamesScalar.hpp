@@ -344,6 +344,9 @@ using SmootherPrototype [[maybe_unused]] = MueLu::SmootherPrototype<Scalar, Loca
 #ifdef MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
 using SmooVecCoalesceDropFactory [[maybe_unused]] = MueLu::SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
+#ifdef MUELU_SPARSECONSTRAINT_SHORT
+using SparseConstraint [[maybe_unused]] = MueLu::SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
 #ifdef MUELU_STRATIMIKOSSMOOTHER_SHORT
 using StratimikosSmoother [[maybe_unused]] = MueLu::StratimikosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif

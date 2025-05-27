@@ -109,6 +109,7 @@ SmootherBase
 SmootherFactory
 SmootherPrototype
 SmooVecCoalesceDropFactory
+SparseConstraint
 StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 StructuredAggregationFactory
 StructuredLineDetectionFactory

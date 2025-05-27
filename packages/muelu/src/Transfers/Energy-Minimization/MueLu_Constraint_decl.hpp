@@ -131,7 +131,7 @@ class Constraint
     Ppattern_ = Ppattern;
   }
 
-  void SetX(RCP<Matrix>& X) {
+  void SetConstraintsMatrix(RCP<Matrix>& X) {
     X_ = X;
 
     // Allocate memory
