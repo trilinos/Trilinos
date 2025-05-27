@@ -46,12 +46,10 @@
 #include <MueLu_Utilities_fwd.hpp>
 
 // Belos
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
 #include <BelosTpetraAdapter.hpp>
-#endif
 
 #include "Kokkos_Core.hpp"
 
@@ -77,11 +75,9 @@ class ShiftedLaplacian : public BaseClass {
   typedef Tpetra::Vector<SC, LO, GO, NO> TVEC;
   typedef Tpetra::MultiVector<SC, LO, GO, NO> TMV;
   typedef Tpetra::Operator<SC, LO, GO, NO> OP;
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
   typedef Belos::LinearProblem<SC, TMV, OP> LinearProblem;
   typedef Belos::SolverManager<SC, TMV, OP> SolverManager;
   typedef Belos::SolverFactory<SC, TMV, OP> SolverFactory;
-#endif
 
  public:
   /*
@@ -174,7 +170,7 @@ class ShiftedLaplacian : public BaseClass {
   void resetLinearProblem();
 
   // Solve phase
-  int solve(const RCP<TMV> B, RCP<TMV>& X);
+  Belos::ReturnType solve(const RCP<TMV> B, RCP<TMV>& X);
   void multigrid_apply(const RCP<MultiVector> B,
                        RCP<MultiVector>& X);
   void multigrid_apply(const RCP<Tpetra::MultiVector<SC, LO, GO, NO> > B,
@@ -259,13 +255,11 @@ class ShiftedLaplacian : public BaseClass {
   RCP<MueLu::ShiftedLaplacianOperator<SC, LO, GO, NO> > MueLuOp_;
   RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> > TpetraA_;
 
-#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
   // Belos Linear Problem and Solver
   RCP<LinearProblem> LinearProblem_;
   RCP<SolverManager> SolverManager_;
   RCP<SolverFactory> SolverFactory_;
   RCP<Teuchos::ParameterList> BelosList_;
-#endif
 };
 
 }  // namespace MueLu
