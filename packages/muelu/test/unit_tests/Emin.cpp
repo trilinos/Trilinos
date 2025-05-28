@@ -24,6 +24,7 @@
 #include <MueLu_Constraint.hpp>
 #include <MueLu_DenseConstraint.hpp>
 #include <MueLu_PatternFactory.hpp>
+#include <MueLu_EdgeProlongatorPatternFactory.hpp>
 #include <MueLu_EminPFactory.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
@@ -209,34 +210,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   auto fine_nodal_map   = MapFactory::Build(lib, global_num_fine_nodes, local_num_fine_nodes, indexBase, comm);
   auto coarse_nodal_map = MapFactory::Build(lib, global_num_coarse_nodes, local_num_coarse_nodes, indexBase, comm);
   auto A                = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/A.mm", fine_edge_map, fine_edge_map, fine_edge_map, fine_edge_map);
-  auto Pe               = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/Pe.mm", fine_edge_map, coarse_edge_map, coarse_edge_map, fine_edge_map);
   auto Pn               = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/Pn.mm", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
   auto D                = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/D0h.mm", fine_edge_map, fine_nodal_map, fine_nodal_map, fine_edge_map);
   auto Dc               = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/D0H.mm", coarse_edge_map, coarse_nodal_map, coarse_nodal_map, coarse_edge_map);
 
   fineLevel.Request("A");
   fineLevel.Set("A", A);
-  // fineLevel.Set("D0", D);
-  // coarseLevel.Set("D0", Dc);
-  coarseLevel.Set("P_nodal", Pn);
-  fineLevel.Set("Nullspace", D);
-  coarseLevel.Set("Nullspace", Dc);
-  coarseLevel.Set("P", Pe);
+  fineLevel.Set("D0", D);
+  coarseLevel.Set("D0", Dc);
+  coarseLevel.Set("Pnodal", Pn);
 
-  RCP<PatternFactory> patternFact = rcp(new PatternFactory());
-  // patternFact->SetFactory("P", TentativePFact);
+  RCP<EdgeProlongatorPatternFactory> patternFact = rcp(new EdgeProlongatorPatternFactory());
 
   RCP<ConstraintFactory> constraintFact = rcp(new ConstraintFactory());
-  // constraintFact->SetFactory("CoarseNullspace", MueLu::NoFactory::getRCP(), "Nullspace");
   constraintFact->SetFactory("Ppattern", patternFact);
+  constraintFact->SetParameter("emin: constraint type", Teuchos::ParameterEntry(std::string("maxwell")));
 
   RCP<EminPFactory> eminFact = rcp(new EminPFactory());
   eminFact->SetFactory("Constraint", constraintFact);
+  eminFact->SetFactory("P", constraintFact);
 
   coarseLevel.Request("P", eminFact.get());  // request P
   coarseLevel.Request("Constraint", constraintFact.get());
+  coarseLevel.Request("P", constraintFact.get());
   coarseLevel.Request(*eminFact);
 
+  // This is the initial guess used for emin.
+  RCP<Matrix> P0;
+  coarseLevel.Get("P", P0, constraintFact.get());
+
+  // This is the result after running the minimization.
   RCP<Matrix> P;
   coarseLevel.Get("P", P, eminFact.get());
 
@@ -245,22 +248,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
 
   const auto eps = Teuchos::ScalarTraits<magnitude_type>::eps();
 
-  // Test that both Ptent satisfies the constraint.
-  TEST_COMPARE(constraint->ResidualNorm(Pe), <, 10 * eps);
+  // Test that P0 satisfies the constraint.
+  TEST_COMPARE(constraint->ResidualNorm(P0), <, 20 * eps);
 
-  // Test that both Ptent satisfies the constraint after converting it to a vector and back to a matrix.
-  auto vecP = MultiVectorFactory::Build(constraint->getDomainMap(), 1);
-  constraint->AssignMatrixEntriesToVector(*Pe, *vecP);
-  auto Pe2 = constraint->GetMatrixWithEntriesFromVector(*vecP);
-  TEST_COMPARE(constraint->ResidualNorm(Pe2), <, 10 * eps);
-
-  // Test that both P satisfies the constraint.
+  // Test that P satisfies the constraint.
   TEST_COMPARE(constraint->ResidualNorm(P), <, 20 * eps);
 
-  // Test that P has lower energy norm than Ptent.
-  auto energyNormPtent = EminPFactory::ComputeProlongatorEnergyNorm(A, Pe, out);
-  auto energyNormP     = EminPFactory::ComputeProlongatorEnergyNorm(A, P, out);
-  TEST_COMPARE(energyNormP, <, energyNormPtent);
+  // Test that P has lower energy norm than P0.
+  auto energyNormP0 = EminPFactory::ComputeProlongatorEnergyNorm(A, P0, out);
+  auto energyNormP  = EminPFactory::ComputeProlongatorEnergyNorm(A, P, out);
+  TEST_COMPARE(energyNormP, <, energyNormP0);
 }
 
 #define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                   \
