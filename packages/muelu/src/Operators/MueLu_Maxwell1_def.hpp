@@ -29,6 +29,7 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
+#include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
@@ -79,10 +80,12 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teuchos:
     newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2a", true);
     newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2b", true);
 
-    if (list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
-      newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
-    else
-      newList.sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+    if (!list.sublist("maxwell1: 11list").isParameter("multigrid algorithm") || (list.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") != "emin reitzinger")) {
+      if (list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
+        newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
+      else
+        newList.sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+    }
     newList.sublist("maxwell1: 11list").set("aggregation: type", "uncoupled");
 
     newList.sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
@@ -226,10 +229,10 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   /* Algorithm overview for Maxwell1 construction:
 
-     1) Create a nodal auxillary hierarchy based on (a) the user's nodal matrix or (b) a matrix constructed
+     1) Create a nodal auxiliary hierarchy based on (a) the user's nodal matrix or (b) a matrix constructed
      by D0^T A D0 if the user doesn't provide a nodal matrix.  We call this matrix "NodeAggMatrix."
 
-     2)  If the user provided a node matrix, we use the prolongators from the auxillary nodal hierarchy
+     2)  If the user provided a node matrix, we use the prolongators from the auxiliary nodal hierarchy
      to generate matrices for smoothers on all levels.  We call this "NodeMatrix."  Otherwise NodeMatrix = NodeAggMatrix
 
      3) We stick all of the nodal P matrices and NodeMatrix objects on the final (1,1) hierarchy and then use the
@@ -278,6 +281,36 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   if (!Material_.is_null())
     precList22_.sublist("user data").set("Material", Material_);
 
+  /* We do not need to set up any smoothers or coarse solver for the (2,2) hierarchy. */
+  if (!precList22_.isParameter("smoother: type") && !precList22_.isParameter("smoother: pre type") && !precList22_.isParameter("smoother: post type")) {
+    precList22_.set("smoother: type", "none");
+  }
+  if (!precList22_.isParameter("coarse: type")) {
+    precList22_.set("coarse: type", "none");
+  }
+
+  /* The nodal prolongator needs to be piecewise constant for ReitzingerPFactory to work.*/
+  if ((parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") != "emin reitzinger") &&
+      (precList22_.get<std::string>("multigrid algorithm") != "unsmoothed")) {
+    GetOStream(Warnings0) << "\"multigrid algorithm\" is set to \"" << precList22_.get<std::string>("multigrid algorithm") << "\", but it is required to be \"unsmoothed\". Changing it." << std::endl;
+    precList22_.set("multigrid algorithm", "unsmoothed");
+  }
+
+  if (!precList22_.isParameter("tentative: constant column sums"))
+    precList22_.set("tentative: constant column sums", false);
+  else if (precList22_.get<bool>("tentative: constant column sums") != false)
+    GetOStream(Warnings0) << "\"tentative: constant column sums\" is set to \"true\". There is no guarantee that this will work." << std::endl;
+
+  if (!precList22_.isParameter("tentative: calculate qr"))
+    precList22_.set("tentative: calculate qr", false);
+  else if (precList22_.get<bool>("tentative: calculate qr") != false)
+    GetOStream(Warnings0) << "\"tentative: calculate qr\" is set to \"true\". There is no guarantee that this will work." << std::endl;
+
+  /* We need both nodal Ptent and P for Emin. */
+  if ((parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "emin reitzinger") &&
+      (!precList22_.isParameter("sa: keep tentative prolongator") || !precList22_.get<bool>("sa: keep tentative prolongator")))
+    precList22_.set("sa: keep tentative prolongator", true);
+
   /* Repartitioning *must* be in sync between hierarchies, which means
      that we need to keep the importers in sync too */
   if (precList22_.isParameter("repartition: enable")) {
@@ -287,10 +320,26 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     // If we're repartitioning (2,2), we need to rebalance for (1,1) to do the right thing,
     // as well as keep the importers
     if (repartition) {
-      // FIXME: We should probably update rather than clobber
-      precList22_.set("repartition: save importer", true);
-      // precList22_.set("repartition: rebalance P and R", false);
-      precList22_.set("repartition: rebalance P and R", true);
+      if (!precList22_.isParameter("repartition: save importer"))
+        precList22_.set("repartition: save importer", true);
+      else if (!precList22_.get<bool>("repartition: save importer")) {
+        GetOStream(Warnings0) << "\"repartition: save importer\" is set to false, but it is required to be true. Changing it." << std::endl;
+        precList22_.set("repartition: save importer", true);
+      }
+
+      if (!precList22_.isParameter("repartition: rebalance P and R"))
+        precList22_.set("repartition: rebalance P and R", true);
+      else if (!precList22_.get<bool>("repartition: rebalance P and R")) {
+        GetOStream(Warnings0) << "\"repartition: rebalance P and R\" is set to false, but it is required to be true. Changing it." << std::endl;
+        precList22_.set("repartition: rebalance P and R", true);
+      }
+
+      if (!precList22_.isParameter("repartition: use subcommunicators"))
+        precList22_.set("repartition: use subcommunicators", true);
+      else if (!precList22_.get<bool>("repartition: use subcommunicators")) {
+        GetOStream(Warnings0) << "\"repartition: use subcommunicators\" is set to false, but it is required to be true. Changing it." << std::endl;
+        precList22_.set("repartition: use subcommunicators", true);
+      }
     }
 
     if (precList22_.isParameter("repartition: use subcommunicators")) {
@@ -390,7 +439,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   }
 
   ////////////////////////////////////////////////////////////////////////////////
-  // What ML does is generate nodal prolongators with an auxillary hierarchy based on the
+  // What ML does is generate nodal prolongators with an auxiliary hierarchy based on the
   // user's (2,2) matrix.  The actual nodal matrices for smoothing are generated by the
   // Hiptmair smoother construction.  We're not going to do that --- we'll
   // do as we insert them into the final (1,1) hierarchy.
@@ -426,13 +475,12 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
       OldEdgeLevel      = EdgeL;
     } else {
       // Set the Nodal P
+      auto NodalP = NodeL->Get<RCP<Matrix> >("P");
+      RCP<Matrix> P_for_RS_construction;
+
       // NOTE:  ML uses normalized prolongators for the aggregation hierarchy
       // and then prolongators of all 1's for doing the Reitzinger prolongator
       // generation for the edge hierarchy.
-      auto NodalP      = NodeL->Get<RCP<Matrix> >("P");
-      auto NodalP_ones = Utilities::ReplaceNonZerosWithOnes(NodalP);
-      TEUCHOS_TEST_FOR_EXCEPTION(NodalP_ones.is_null(), Exceptions::RuntimeError, "Applying ones to prolongator failed");
-      EdgeL->Set("Pnodal", NodalP_ones);
 
       // Get the importer if we have one (for repartitioning)
       RCP<const Import> importer;
@@ -441,9 +489,52 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
         EdgeL->Set("NodeImporter", importer);
       }
 
+      if (parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "emin reitzinger") {
+        // P on the nodal hierarchy could be generated by energy minimization as well. We used Ptent to generate the coarse discrete gradient.
+        auto NodalPtent = NodeL->Get<RCP<Matrix> >("Ptent");
+
+        if (!importer.is_null()) {
+          // The nodal hierarchy rebalanced the coarse level.
+          // P got rebalanced as well, but not Ptent.
+          // Let's do that here.
+          Level fineLevel;
+          Level coarseLevel;
+          fineLevel.SetFactoryManager(null);
+          coarseLevel.SetFactoryManager(null);
+          fineLevel.SetLevelID(0);
+          coarseLevel.SetLevelID(1);
+          auto rebalTransfer = rcp(new RebalanceTransferFactory());
+          ParameterList rebalTransferParams;
+          rebalTransferParams.set("repartition: rebalance P and R", true);
+          rebalTransferParams.set("type", "Interpolation");
+          rebalTransfer->SetParameterList(rebalTransferParams);
+          coarseLevel.Set("P", NodalPtent);
+          coarseLevel.Set("Importer", importer);
+          rebalTransfer->Build(fineLevel, coarseLevel);
+          NodalPtent = coarseLevel.Get<RCP<Matrix> >("P");
+        }
+
+        P_for_RS_construction = Utilities::ReplaceNonZerosWithOnes(NodalPtent);
+        TEUCHOS_TEST_FOR_EXCEPTION(P_for_RS_construction.is_null(), Exceptions::RuntimeError, "Applying ones to prolongator failed");
+
+        // Pnodal is used by ReitzingerP to generate a coarse discrete gradient D0c and by the Hiptmair smoother
+        EdgeL->Set("Pnodal", P_for_RS_construction);
+
+        // PnodalEmin is used for the RHS of the sparse constraint in energy minimization:
+        // Pe*D0c = D0*PnodalEmin
+        EdgeL->Set("PnodalEmin", NodalP);
+
+      } else {
+        P_for_RS_construction = Utilities::ReplaceNonZerosWithOnes(NodalP);
+        TEUCHOS_TEST_FOR_EXCEPTION(P_for_RS_construction.is_null(), Exceptions::RuntimeError, "Applying ones to prolongator failed");
+
+        // Pnodal is used by ReitzingerP to generate a coarse discrete gradient D0c and by the Hiptmair smoother
+        EdgeL->Set("Pnodal", P_for_RS_construction);
+      }
+
       // If we repartition a processor away, a RCP<Operator> is stuck
       // on the level instead of an RCP<Matrix>
-      if (!OldSmootherMatrix.is_null() && !NodalP_ones.is_null()) {
+      if (!OldSmootherMatrix.is_null() && !P_for_RS_construction.is_null()) {
         EdgeL->Set("NodeAggMatrix", NodeAggMatrix);
         if (!have_generated_Kn) {
           // The user gave us a Kn on the fine level, so we're using a seperate aggregation
@@ -457,7 +548,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
           // Generate the new matrix
           Teuchos::ParameterList RAPlist;
           RAPlist.set("rap: fix zero diagonals", false);
-          RCP<Matrix> NewKn = Maxwell_Utils<SC, LO, GO, NO>::PtAPWrapper(OldSmootherMatrix, NodalP_ones, RAPlist, labelstr);
+          RCP<Matrix> NewKn = Maxwell_Utils<SC, LO, GO, NO>::PtAPWrapper(OldSmootherMatrix, P_for_RS_construction, RAPlist, labelstr);
 
           // If there's an importer, we need to Rebalance the NewKn
           if (!importer.is_null()) {
@@ -508,7 +599,6 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
 
   ////////////////////////////////////////////////////////////////////////////////
   // Generating the (1,1) Hierarchy
-  std::string fine_smoother = precList11_.get<std::string>("smoother: type");
   {
     SM_Matrix_->setObjectLabel("A(1,1)");
     precList11_.set("coarse: max size", 1);
@@ -522,13 +612,14 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     }
 
     // Rip off non-serializable data before validation
-    Teuchos::ParameterList nonSerialList11, processedPrecList11;
+    Teuchos::ParameterList nonSerialList11;
+    Teuchos::ParameterList processedPrecList11;
     MueLu::ExtractNonSerializableData(precList11_, processedPrecList11, nonSerialList11);
     RCP<HierarchyManager<SC, LO, GO, NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC, LO, GO, NO>(processedPrecList11, SM_Matrix_->getDomainMap()->getComm()));
     Hierarchy11_->setlib(SM_Matrix_->getDomainMap()->lib());
     Hierarchy11_->SetProcRankVerbose(SM_Matrix_->getDomainMap()->getComm()->getRank());
 
-    // Stick the non-serializible data on the hierarchy and do setup
+    // Stick the non-serializable data on the hierarchy and do setup
     if (nonSerialList11.numParams() > 0) {
       HierarchyUtils<SC, LO, GO, NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *Hierarchy11_, nonSerialList11);
     }

@@ -20,6 +20,7 @@
 #include "MueLu_Hierarchy_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
+#include "MueLu_RebalanceTransferFactory_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
 
@@ -206,7 +207,7 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
   //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
   //! \param[in]  X - MultiVector of dimension NumVectors to multiply with matrix.
   //! \param[out] Y - MultiVector of dimension NumVectors containing result.
-  void apply(const MultiVector& X, MultiVector& Y,
+  void apply(const MultiVector& RHS, MultiVector& X,
              Teuchos::ETransp mode = Teuchos::NO_TRANS,
              Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
              Scalar beta           = Teuchos::ScalarTraits<Scalar>::zero()) const;
@@ -269,7 +270,7 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
   //! dump out boolean ArrayView
   void dump(const Teuchos::ArrayRCP<bool>& v, std::string name) const;
 
-  //! dump out boolean Kokkos::View
+  //! dump out Boolean Kokkos::View
   void dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const;
 
   //! get a (synced) timer
