@@ -113,6 +113,9 @@ using DirectSolver [[maybe_unused]] = MueLu::DirectSolver<Scalar, LocalOrdinal, 
 #ifdef MUELU_DROPNEGATIVEENTRIESFACTORY_SHORT
 using DropNegativeEntriesFactory [[maybe_unused]] = MueLu::DropNegativeEntriesFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
+#ifdef MUELU_EDGEPROLONGATORPATTERNFACTORY_SHORT
+using EdgeProlongatorPatternFactory [[maybe_unused]] = MueLu::EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
 #ifdef MUELU_EMINPFACTORY_SHORT
 using EminPFactory [[maybe_unused]] = MueLu::EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
