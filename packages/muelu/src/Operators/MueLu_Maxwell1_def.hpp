@@ -79,10 +79,12 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setParameters(Teuchos:
     newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2a", true);
     newList.sublist("maxwell1: 22list").set("aggregation: match ML phase2b", true);
 
-    if (list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
-      newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
-    else
-      newList.sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+    if (!list.sublist("maxwell1: 11list").isParameter("multigrid algorithm") || (list.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") != "emin reitzinger")) {
+      if (list.isParameter("aggregation: damping factor") && list.get<double>("aggregation: damping factor") == 0.0)
+        newList.sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
+      else
+        newList.sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+    }
     newList.sublist("maxwell1: 11list").set("aggregation: type", "uncoupled");
 
     newList.sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");

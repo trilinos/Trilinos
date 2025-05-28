@@ -35,6 +35,7 @@
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_EdgeProlongatorPatternFactory.hpp"
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_FacadeClassFactory.hpp"
@@ -543,7 +544,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                              Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
   MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-  TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen", "classical", "smoothed reitzinger", "unsmoothed reitzinger", "replicate", "combine"}).count(multigridAlgo) == 0,
+  TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen", "classical", "smoothed reitzinger", "unsmoothed reitzinger", "emin reitzinger", "replicate", "combine"}).count(multigridAlgo) == 0,
                              Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
   TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
@@ -589,7 +590,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_BlockNumber(paramList, defaultList, manager, levelID, keeps);
 
   // === Aggregation ===
-  if (multigridAlgo == "unsmoothed reitzinger" || multigridAlgo == "smoothed reitzinger")
+  if (multigridAlgo == "unsmoothed reitzinger" || multigridAlgo == "smoothed reitzinger" || multigridAlgo == "emin reitzinger")
     UpdateFactoryManager_Reitzinger(paramList, defaultList, manager, levelID, keeps);
   else
     UpdateFactoryManager_Aggregation_TentativeP(paramList, defaultList, manager, levelID, keeps);
@@ -622,6 +623,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   } else if (multigridAlgo == "emin") {
     // Energy minimization
     UpdateFactoryManager_Emin(paramList, defaultList, manager, levelID, keeps);
+
+  } else if (multigridAlgo == "emin reitzinger") {
+    // Energy minimization
+    UpdateFactoryManager_EminReitzinger(paramList, defaultList, manager, levelID, keeps);
 
   } else if (multigridAlgo == "replicate") {
     UpdateFactoryManager_Replicate(paramList, defaultList, manager, levelID, keeps);
@@ -968,7 +973,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 // =====================================================================================================
-// ========================================= TentativeP=================================================
+// ========================================= Reitzinger =================================================
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -2169,6 +2174,44 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Emin Factory
   auto P = rcp(new EminPFactory());
+  P->SetParameterList(Pparams);
+  P->SetFactory("P", manager.GetFactory("Ptent"));
+  P->SetFactory("Constraint", manager.GetFactory("Constraint"));
+  manager.SetFactory("P", P);
+}
+
+// =====================================================================================================
+// =============================== Algorithm: Energy Minimization Reitzinger ===========================
+// =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    UpdateFactoryManager_EminReitzinger(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
+                                        int /* levelID */, std::vector<keep_pair>& /* keeps */) const {
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+
+  // Pattern
+  auto patternFactory = rcp(new EdgeProlongatorPatternFactory());
+  // patternFactory->SetFactory("Pnodal", manager.GetFactory("Pnodal"));
+  manager.SetFactory("Ppattern", patternFactory);
+
+  // Constraint
+  auto constraintFactory = rcp(new ConstraintFactory());
+  constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
+  constraintFactory->SetParameter("emin: constraint type", Teuchos::ParameterEntry(std::string("maxwell")));
+  manager.SetFactory("Constraint", constraintFactory);
+
+  // Emin Factory
+  auto P = rcp(new EminPFactory());
+
+  // Energy minimization
+  ParameterList Pparams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations", int, Pparams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
+  if (reuseType == "emin") {
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations", int, Pparams);
+    Pparams.set("Keep P0", true);
+    Pparams.set("Keep Constraint0", true);
+  }
   P->SetParameterList(Pparams);
   P->SetFactory("P", manager.GetFactory("Ptent"));
   P->SetFactory("Constraint", manager.GetFactory("Constraint"));
