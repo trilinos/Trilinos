@@ -32,6 +32,7 @@ DemoFactory
 DenseConstraint
 DirectSolver
 DropNegativeEntriesFactory
+EdgeProlongatorPatternFactory
 EminPFactory
 FacadeBGS2x2
 FacadeClassBase
