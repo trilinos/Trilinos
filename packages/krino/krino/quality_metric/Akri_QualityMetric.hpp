@@ -29,6 +29,7 @@ public:
 class MeanRatioQualityMetric : public QualityMetric
 {
 public:
+    MeanRatioQualityMetric() = default;
     virtual ~MeanRatioQualityMetric() {}
 
     virtual double get_best_value_for_metric() const override { return 1.0; }

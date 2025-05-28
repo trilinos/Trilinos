@@ -98,7 +98,7 @@ public:
   virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override;
   virtual void fill_elements_that_intersect_distance_interval(const stk::mesh::BulkData & mesh, const Surface_Identifier surfaceIdentifier, const std::array<double,2> loAndHi, std::vector<stk::mesh::Entity> & elementsThaIntersectInterval) const override;
 
-  virtual bool snapped_elements_may_have_new_intersections() const override { return false; }
+  virtual bool snapped_elements_may_have_new_intersections() const override;
 
   virtual std::vector<IntersectionPoint> get_edge_intersection_points(const stk::mesh::BulkData & mesh,
       const NodeToCapturedDomainsMap & nodesToSnappedDomains) const override;
@@ -138,9 +138,11 @@ protected:
 private:
   unsigned get_index_of_surface_with_identifer(const Surface_Identifier surfaceIdentifier) const;
   bool does_element_possibly_have_cut_edge(const stk::mesh::BulkData & mesh, stk::topology elemTopology, const stk::mesh::Entity elem, const std::vector<stk::math::Vector3d> & elemNodeCoords, std::vector<double> & elemNodeDistWorkspace) const;
+  bool have_enough_surfaces_to_have_interior_intersections_or_multiple_crossings() const;
 
   std::vector<const Surface*> mySurfaces;
   bool myMightHaveInteriorOrFaceCrossings;
+  bool myFlagSurfacesCanComputeSign;
   const stk::mesh::Part & myActivePart;
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;

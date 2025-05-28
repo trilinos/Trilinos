@@ -36,27 +36,29 @@ parts_are_compatible_for_snapping(const stk::mesh::BulkData & mesh, stk::mesh::E
   return true;
 }
 
-static stk::mesh::Part * get_nonconformal_part(const Phase_Support & phaseSupport, stk::mesh::Part * part)
+static stk::mesh::Part & get_part_to_check(const Phase_Support & phaseSupport, stk::mesh::Part & part)
 {
-  return const_cast<stk::mesh::Part *>(phaseSupport.find_nonconformal_part(*part));
+  if (phaseSupport.is_decomposed(part))
+    return phaseSupport.find_nonconformal_part(part);
+  return part;
 }
 
 bool is_part_to_check_for_snapping_compatibility(const Phase_Support & phaseSupport, const AuxMetaData & auxMeta, const stk::mesh::EntityRank targetRank, const stk::mesh::Part & part)
 {
   const stk::mesh::Part & exposedBoundaryPart = auxMeta.exposed_boundary_part();
   return part.primary_entity_rank() == targetRank &&
-    (&part == &exposedBoundaryPart || stk::io::is_part_io_part(part) || phaseSupport.is_nonconformal(&part)) &&
-    part.name().compare(0,7,"refine_") != 0 &&
-    !phaseSupport.is_interface(&part);
+    !phaseSupport.is_interface(part) &&
+    (&part == &exposedBoundaryPart || stk::io::is_part_io_part(part) || phaseSupport.is_nonconformal(part)) &&
+    part.name().compare(0,7,"refine_") != 0; // Percept parts
 }
 
 static stk::mesh::PartVector get_nonconformal_parts_to_check(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, const stk::mesh::EntityRank targetRank, const std::vector<stk::mesh::Entity> & targetEntities)
 {
   stk::mesh::PartVector partsToCheck;
   for (auto && targetEntity : targetEntities)
-    for (auto && part : mesh.bucket(targetEntity).supersets())
+    for (auto * part : mesh.bucket(targetEntity).supersets())
       if (is_part_to_check_for_snapping_compatibility(phaseSupport, auxMeta, targetRank, *part))
-        partsToCheck.push_back(get_nonconformal_part(phaseSupport, part));
+        partsToCheck.push_back(&get_part_to_check(phaseSupport, *part));
   stk::util::sort_and_unique(partsToCheck, stk::mesh::PartLess());
   return partsToCheck;
 }
@@ -69,15 +71,10 @@ parts_are_compatible_for_snapping_when_ignoring_phase(const stk::mesh::BulkData 
     const stk::mesh::EntityRank targetRank,
     const stk::mesh::PartVector & nonconformalPartsToCheck)
 {
-  for (auto && possibleSnapNodePart : mesh.bucket(possibleSnapNode).supersets())
-  {
+  for (auto * possibleSnapNodePart : mesh.bucket(possibleSnapNode).supersets())
     if (is_part_to_check_for_snapping_compatibility(phaseSupport, auxMeta, targetRank, *possibleSnapNodePart))
-    {
-      stk::mesh::Part * nonconformalPart = get_nonconformal_part(phaseSupport, possibleSnapNodePart);
-      if (!stk::mesh::contain(nonconformalPartsToCheck, *nonconformalPart))
+      if (!stk::mesh::contain(nonconformalPartsToCheck, get_part_to_check(phaseSupport, *possibleSnapNodePart)))
         return false;
-    }
-  }
   return true;
 }
 
@@ -136,27 +133,13 @@ bool phase_matches_interface(const bool oneLSPerPhase, const std::vector<Surface
          phase.contain(surfaceIDs[interface.first_ls()], +1));
 }
 
-bool determine_phase_from_parts(PhaseTag & phase, const stk::mesh::PartVector & parts, const Phase_Support & phaseSupport)
+void determine_phase_from_parts(PhaseTag & phase, const stk::mesh::PartVector & parts, const Phase_Support & phaseSupport)
 {
   STK_ThrowAssert(phase.empty());
-  bool has_conformal_ioparts = false;
 
   for (auto && part : parts)
-  {
-    if (part->primary_entity_rank() != stk::topology::ELEMENT_RANK || // limit ourselves to phase-specific volumes
-        !(stk::io::is_part_io_part(*part) ||
-        phaseSupport.is_nonconformal(part)))
-      continue;
-
-    const PhaseTag & iopart_phase = phaseSupport.get_iopart_phase(*part);
-
-    if (!iopart_phase.empty())
-      has_conformal_ioparts = true;
-
-    phase.add(iopart_phase);
-  }
-
-  return (has_conformal_ioparts);
+    if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK && phaseSupport.is_conformal(*part))
+      phase.add(phaseSupport.get_iopart_phase(*part));
 }
 
 PhaseTag determine_phase_for_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const Phase_Support & phaseSupport)
@@ -175,9 +158,8 @@ bool node_is_on_interface(const stk::mesh::BulkData & mesh, const Phase_Support 
 
 bool nodes_are_on_any_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const stk::mesh::Bucket & nodeBucket)
 {
-  auto side_rank = mesh.mesh_meta_data().side_rank();
-  for(auto && part : nodeBucket.supersets())
-    if(part->primary_entity_rank() == side_rank && stk::io::is_part_io_part(*part) && phaseSupport.is_interface(part))
+  for(auto * part : nodeBucket.supersets())
+    if(phaseSupport.is_interface(*part))
       return true;
   return false;
 }

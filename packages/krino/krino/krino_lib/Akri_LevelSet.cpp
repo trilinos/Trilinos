@@ -174,10 +174,10 @@ void LevelSet::register_nodal_levelset_field_and_set_ref()
   if (cdfem_is_active)
   {
     Phase_Support & phase_support = Phase_Support::get(meta());
-    for (auto partPtr : meta().get_mesh_parts())
+    for (auto * partPtr : meta().get_mesh_parts())
     {
       if (partPtr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
-          phase_support.level_set_is_used_by_nonconformal_part(get_identifier(), phase_support.find_nonconformal_part(*partPtr)))
+          phase_support.level_set_is_used_by_nonconformal_part(get_identifier(), &phase_support.find_nonconformal_part(*partPtr)))
       {
         stk::mesh::put_field_on_mesh(isovarRef.field(), *partPtr, 1, nullptr);
       }
@@ -481,7 +481,13 @@ bool LevelSet::can_create_adaptive_initial_facets_from_initial_surfaces_because_
 
 void LevelSet::build_initial_facets(const double time)
 {
-  const bool buildAdaptiveFacets = (mySemiLagrangianAlg == ADAPTIVE_PREDICTOR_CORRECTOR) &&
+  if (get_isovar_field().entity_rank() != stk::topology::NODE_RANK)
+  {
+    krinolog << "Cannot build initial facets for invalid or non-nodal level set field " << get_isovar_field().name() << stk::diag::dendl;
+    return;
+  }
+
+  const bool buildAdaptiveFacets = (mySemiLagrangianAlg == ADAPTIVE_SINGLE_STEP || mySemiLagrangianAlg == ADAPTIVE_PREDICTOR_CORRECTOR) &&
     can_create_adaptive_initial_facets_from_initial_surfaces_because_initial_distance_is_solely_from_initial_surfaces();
 
   Composite_Surface & initSurfaces = my_IC_alg->get_surfaces(); // Note that it is assumed that this fn is called right after initialize and therefore initSurfaces.prepare_to_compute has already been called.
@@ -933,7 +939,7 @@ static void append_facet_from_line_side(const stk::mesh::BulkData & mesh, const 
   facets.emplace_back(sideNodeCoords[0], sideNodeCoords[1]);
 }
 
-static void append_facet_with_velocity_from_triangle_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const FieldRef interfaceVelocity, const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, std::vector<FacetWithVelocity3d> & facets)
+static void append_facet_with_velocity_from_triangle_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const FieldRef interfaceVelocity, const unsigned numVelocityStates, const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, std::vector<FacetWithVelocity3d> & facets)
 {
   const std::array<stk::mesh::Entity,3> orientedSideNodes = get_oriented_triangle_side_nodes(mesh, negativeSideElementSelector, side);
   const std::array<stk::math::Vector3d,3> sideNodeCoords = get_triangle_vector(mesh, coords, orientedSideNodes);
@@ -941,12 +947,21 @@ static void append_facet_with_velocity_from_triangle_side(const stk::mesh::BulkD
   facets.emplace_back( sideNodeCoords[0], sideNodeCoords[1], sideNodeCoords[2], sideNodeVelocity[0], sideNodeVelocity[1], sideNodeVelocity[2] );
 }
 
-static void append_facet_with_velocity_from_line_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const FieldRef interfaceVelocity, const stk::mesh::Selector & sideSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, std::vector<FacetWithVelocity2d> & facets)
+static void append_facet_with_velocity_from_line_side(const stk::mesh::BulkData & mesh, const FieldRef coords, const FieldRef interfaceVelocity, const unsigned numVelocityStates, const stk::mesh::Selector & sideSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side, std::vector<FacetWithVelocity2d> & facets)
 {
   const std::array<stk::mesh::Entity,2> orientedSideNodes = get_oriented_line_side_nodes(mesh, negativeSideElementSelector, side);
   const std::array<stk::math::Vector3d,2> sideNodeCoords = get_line_side_vector(mesh, coords, orientedSideNodes);
   const std::array<stk::math::Vector3d,2> sideNodeVelocity = get_line_side_vector(mesh, interfaceVelocity, orientedSideNodes);
-  facets.emplace_back( sideNodeCoords[0], sideNodeCoords[1], sideNodeVelocity[0], sideNodeVelocity[1] );
+  if (1 == numVelocityStates)
+  {
+    facets.emplace_back( sideNodeCoords[0], sideNodeCoords[1], sideNodeVelocity[0], sideNodeVelocity[1] );
+  }
+  else
+  {
+    STK_ThrowAssert(2==numVelocityStates && interfaceVelocity.number_of_states() > 1);
+    const std::array<stk::math::Vector3d,2> sideNodeVelocityOld = get_line_side_vector(mesh, interfaceVelocity.field_state(stk::mesh::StateOld), orientedSideNodes);
+    facets.emplace_back( sideNodeCoords[0], sideNodeCoords[1], 0.5*(sideNodeVelocity[0]+sideNodeVelocityOld[0]), 0.5*(sideNodeVelocity[1]+sideNodeVelocityOld[1]) );
+  }
 }
 
 static void append_owned_facets_from_triangle_sides(const stk::mesh::BulkData & mesh,
@@ -980,6 +995,7 @@ static void append_owned_facets_from_line_sides(const stk::mesh::BulkData & mesh
 static void append_owned_facets_with_velocity_from_triangle_sides(const stk::mesh::BulkData & mesh,
     const FieldRef cooordsField,
     const FieldRef interfaceVelocity,
+    const unsigned numVelocityStates,
     const stk::mesh::Selector & sideSelector,
     const stk::mesh::Selector & negativeSideElementSelector,
     std::vector<FacetWithVelocity3d> & facets)
@@ -988,13 +1004,14 @@ static void append_owned_facets_with_velocity_from_triangle_sides(const stk::mes
   {
     STK_ThrowRequire(bucket->topology() == stk::topology::TRIANGLE_3);
     for (auto & side : *bucket)
-      append_facet_with_velocity_from_triangle_side(mesh, cooordsField, interfaceVelocity, sideSelector, negativeSideElementSelector, side, facets);
+      append_facet_with_velocity_from_triangle_side(mesh, cooordsField, interfaceVelocity, numVelocityStates, sideSelector, negativeSideElementSelector, side, facets);
   }
 }
 
 static void append_owned_facets_with_velocity_from_line_sides(const stk::mesh::BulkData & mesh,
     const FieldRef cooordsField,
     const FieldRef interfaceVelocity,
+    const unsigned numVelocityStates,
     const stk::mesh::Selector & sideSelector,
     const stk::mesh::Selector & negativeSideElementSelector,
     std::vector<FacetWithVelocity2d> & facets)
@@ -1003,7 +1020,7 @@ static void append_owned_facets_with_velocity_from_line_sides(const stk::mesh::B
   {
     STK_ThrowRequire(bucket->topology() == stk::topology::LINE_2);
     for (auto & side : *bucket)
-      append_facet_with_velocity_from_line_side(mesh, cooordsField, interfaceVelocity, sideSelector, negativeSideElementSelector, side, facets);
+      append_facet_with_velocity_from_line_side(mesh, cooordsField, interfaceVelocity, numVelocityStates, sideSelector, negativeSideElementSelector, side, facets);
   }
 }
 
@@ -1032,6 +1049,7 @@ static void build_interface_conforming_facets_with_interface_velocity(const stk:
     const stk::mesh::Part & activePart,
     const FieldRef coordsField,
     const FieldRef interfaceVelocity,
+    const unsigned numVelocityStates,
     const Surface_Identifier lsIdentifier,
     FacetedSurfaceBase & facets)
 {
@@ -1043,9 +1061,9 @@ static void build_interface_conforming_facets_with_interface_velocity(const stk:
 
   facets.clear();
   if (3 == mesh.mesh_meta_data().spatial_dimension())
-    append_owned_facets_with_velocity_from_triangle_sides(mesh, coordsField, interfaceVelocity, sideSelector, negativeSideBlockSelector, facets.as_derived_type<FacetWithVelocity3d>().get_facets());
+    append_owned_facets_with_velocity_from_triangle_sides(mesh, coordsField, interfaceVelocity, numVelocityStates, sideSelector, negativeSideBlockSelector, facets.as_derived_type<FacetWithVelocity3d>().get_facets());
   else
-    append_owned_facets_with_velocity_from_line_sides(mesh, coordsField, interfaceVelocity, sideSelector, negativeSideBlockSelector, facets.as_derived_type<FacetWithVelocity2d>().get_facets());
+    append_owned_facets_with_velocity_from_line_sides(mesh, coordsField, interfaceVelocity, numVelocityStates, sideSelector, negativeSideBlockSelector, facets.as_derived_type<FacetWithVelocity2d>().get_facets());
 }
 
 void
@@ -1121,10 +1139,11 @@ void LevelSet::extend_interface_velocity_using_closest_point_projection(const st
   extendedVelocity.field().sync_to_host();
 
   const int nDim = mesh.mesh_meta_data().spatial_dimension();
+  const unsigned numVelocityStates = 1; // I think we only use NP1?
   std::unique_ptr<FacetedSurfaceBase> interfaceFacets = FacetedSurfaceBase::build_with_velocity(nDim);
   const auto & phaseSupport = Phase_Support::get(mesh.mesh_meta_data());
   const auto & auxMeta = AuxMetaData::get(mesh.mesh_meta_data());
-  build_interface_conforming_facets_with_interface_velocity(mesh, phaseSupport, auxMeta.active_part(), coordsField, interfaceVelocity, lsIdentifier, *interfaceFacets);
+  build_interface_conforming_facets_with_interface_velocity(mesh, phaseSupport, auxMeta.active_part(), coordsField, interfaceVelocity, numVelocityStates, lsIdentifier, *interfaceFacets);
 
   const stk::mesh::Selector nodeSelector = auxMeta.active_not_ghost_selector() & stk::mesh::selectField(extendedVelocity);
 
@@ -1144,11 +1163,11 @@ void LevelSet::advance_semilagrangian_using_interface_velocity(const FieldRef in
   interfaceVelocity.field().sync_to_host();
 
   const int nDim = mesh().mesh_meta_data().spatial_dimension();
+  const unsigned numVelocityStates = (interfaceVelocity.number_of_states() == 1) ? 1 : 2; // If we have multiple states, average N & NP1
   std::unique_ptr<FacetedSurfaceBase> interfaceFacets = FacetedSurfaceBase::build_with_velocity(nDim);
   const auto & phaseSupport = Phase_Support::get(mesh().mesh_meta_data());
-  build_interface_conforming_facets_with_interface_velocity(mesh(), phaseSupport, aux_meta().active_part(), interfaceCoordsField, interfaceVelocity, get_identifier(), *interfaceFacets);
+  build_interface_conforming_facets_with_interface_velocity(mesh(), phaseSupport, aux_meta().active_part(), interfaceCoordsField, interfaceVelocity, numVelocityStates, get_identifier(), *interfaceFacets);
 
-  krinolog << "For interface velocity " << interfaceVelocity.name() << " have " << interfaceFacets->size() << " facets " << stk::diag::dendl;
   mySemiLagrangianAlg = ADAPTIVE_SINGLE_STEP;
 
   auto velAtClosestPt = build_extension_velocity_at_closest_point_using_facets_with_velocity(nDim, *interfaceFacets);
@@ -1720,18 +1739,12 @@ LevelSet::set_surface_parts_vector()
 {
   Phase_Support & my_phase_support = Phase_Support::get(meta());
 
-  std::vector<stk::mesh::Part *> conformal_parts =  my_phase_support.get_conformal_parts();
+  const bool includeInterfaceParts = false;
+  my_surface_parts =  my_phase_support.get_conformal_parts_of_rank(meta().side_rank(), includeInterfaceParts);
 
   krinolog << "Removing small features less than " << my_max_feature_size << " on surfaces: ";
-  for (auto && mypart : conformal_parts)
-  {
-    if(mypart->primary_entity_rank() == meta().side_rank() && !my_phase_support.is_interface(mypart))
-    {
-      my_surface_parts.push_back(mypart);
-      krinolog << mypart->name() << " ";
-    }
-  }
-
+  for (auto * part : my_surface_parts)
+    krinolog << part->name() << " ";
   krinolog << stk::diag::dendl;
 }
 
