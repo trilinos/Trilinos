@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -389,6 +389,10 @@ void SystemInterface::enroll_options()
                   nullptr);
   options_.enroll("show_unmatched", GetLongOption::NoValue,
                   "If the -partial switch used, print the elements that did not match.", nullptr);
+  options_.enroll("allow_permuted_connectivity", GetLongOption::NoValue,
+                  "The element connectivities are the same if they match\n"
+                  "\t\texactly *OR* are a permutation of each other.",
+                  nullptr);
   options_.enroll("ignore_dups", GetLongOption::NoValue,
                   "If two elements/nodes are in the same location in map or partial\n"
                   "                  map case, just return first match instead of aborting.",
@@ -780,6 +784,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
   if (options_.retrieve("ignore_dups") != nullptr) {
     ignore_dups = true;
   }
+  allowPermutation = (options_.retrieve("allow_permuted_connectivity") != nullptr);
+
   if (options_.retrieve("ignore_steps") != nullptr) {
     ignore_steps = true;
   }
