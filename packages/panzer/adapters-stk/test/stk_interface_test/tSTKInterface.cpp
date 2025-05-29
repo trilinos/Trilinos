@@ -480,8 +480,6 @@ TEUCHOS_UNIT_TEST(tSTKInterface, globalVariables)
   int found(0);
   for (const auto& name : globalNames)
   {
-    std::cerr << "Name: " << name << "\n";
-
     if (name == "Answer")
       found |= 1;
     else if (name == "Perfection")
