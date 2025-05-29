@@ -72,18 +72,12 @@ public:
      *
      * This copy constructor is similar to the copy constructor in @ref NOX::Thyra::Vector. As in
      * @ref NOX::Thyra::Vector, the pointer to the @ref ::Tpetra::Vector used for weighting inner products
-     * and norms and @ref do_implicit_weighting are copied provided that this pointer is non-null.
+     * and norms and the flag @ref do_implicit_weighting are copied if this pointer is non-null.
      */
     Vector(const Vector& source, CopyType type = DeepCopy);
 
-    //! Destructor.
-    ~Vector() = default;
-
     //! Returns the encapsulated shared pointer holding the @ref ::Tpetra::Vector.
     Teuchos::RCP<vector_type> getTpetraVector() const;
-
-    //! Initializes every element with @p gamma.
-    Abstract::Vector& init(double gamma) override;
 
     /**
      * @brief Copies the elements of the @ref ::Tpetra::Vector held by the passed shared pointer into the
@@ -105,6 +99,9 @@ public:
 
     //! See above.
     Abstract::Vector& operator=(const Abstract::Vector& source) override;
+
+    //! Initializes every element with @p gamma.
+    Abstract::Vector& init(double gamma) override;
 
     /**
      * @brief Puts the absolute values of the elements of the @ref ::Tpetra::Vector wrapped in the referenced
@@ -293,13 +290,13 @@ private:
     Teuchos::RCP<vector_type> tpetraVec;
 
     //! Shared pointer holding the @ref ::Tpetra::Vector used for weighting inner products and norms.
-    Teuchos::RCP<const vector_type> weightVec;
+    Teuchos::RCP<const vector_type> weightVec = Teuchos::null;
 
     /**
      * @brief Flag that controls whether the @ref ::Tpetra::Vector for weighting
      *        inner products and norms (if not null) is used.
      */
-    bool do_implicit_weighting;
+    bool do_implicit_weighting = false;
 };
 
 } // namespace NOX::Tpetra

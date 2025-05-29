@@ -20,12 +20,11 @@ namespace NOX::Tpetra
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Vector(const Teuchos::RCP<vector_type>& source)
-  : tpetraVec(source), do_implicit_weighting(false) {}
+  : tpetraVec(source) {}
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Vector(const vector_type& source, CopyType type)
-  : do_implicit_weighting(false)
 {
     switch (type)
     {
@@ -41,7 +40,6 @@ Vector(const vector_type& source, CopyType type)
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Vector(const Vector& source, CopyType type)
-  : do_implicit_weighting(false)
 {
     switch (type)
     {
@@ -68,13 +66,6 @@ getTpetraVector() const {
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Abstract::Vector& Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-init(double gamma) {
-    tpetraVec->putScalar(gamma);
-    return *this;
-}
-
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Abstract::Vector& Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 operator=(const Teuchos::RCP<const vector_type>& source)
 {
     tpetraVec->assign(*source);
@@ -93,6 +84,13 @@ template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typena
 Abstract::Vector& Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 operator=(const Abstract::Vector& source) {
     return operator=(dynamic_cast<const Vector&>(source));
+}
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Abstract::Vector& Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+init(double gamma) {
+    tpetraVec->putScalar(gamma);
+    return *this;
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -265,9 +263,10 @@ norm(const Vector& weights) const
 
     if (!weightVec.is_null() && do_implicit_weighting) {
         tmpVec->elementWiseMultiply(1., *weightVec, *tpetraVec, 0.);
+        tmpVec->elementWiseMultiply(1., *weightVec, *tmpVec,    0.);
     }
 
-    tmpVec->elementWiseMultiply(1., *weights.getTpetraVector(), *tpetraVec, 0.);
+    tmpVec->elementWiseMultiply(1., *weights.getTpetraVector(), *tmpVec, 0.);
 
     return std::sqrt(tmpVec->dot(*tpetraVec));
 }
