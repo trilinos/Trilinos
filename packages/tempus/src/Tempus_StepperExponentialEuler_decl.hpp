@@ -12,6 +12,7 @@
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Tempus_StepperExponentialEulerAppAction.hpp"
 
+#include "Tempus_PhiEvaluator.hpp"
 
 namespace Tempus {
 
@@ -27,7 +28,7 @@ namespace Tempus {
  *  \f{center}{
  *    \parbox{5in}{
  *    \rule{5in}{0.4pt} \\
- *    {\bf Algorithm} Backward Euler \\
+ *    {\bf Algorithm} Exponential Euler \\
  *    \rule{5in}{0.4pt} \vspace{-15pt}
  *    \begin{enumerate}
  *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
@@ -125,6 +126,9 @@ public:
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
+  /// Set StepperExponential member data from the ParameterList.
+  void setStepperExponentialValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+  
   /// \name Overridden from Teuchos::Describable
   //@{
     virtual void describe(Teuchos::FancyOStream        & out,
@@ -132,7 +136,7 @@ public:
   //@}
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
-
+  
 private:
 
   /// Implementation of computeStep*() methods
@@ -147,6 +151,8 @@ private:
 private:
 
   Teuchos::RCP<StepperExponentialEulerAppAction<Scalar> > stepperEEAppAction_;
+
+  Teuchos::RCP<PhiEvaluator<Scalar> > phiEvaluator_;
 
 };
 
