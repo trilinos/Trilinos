@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2022, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -14,7 +14,7 @@ C        READ AND INTERPRET ALL INPUT DATA
       include 'exodusII.inc'
       CHARACTER*80 TITLE, COMMENT
       INTEGER IA(*)
-      DIMENSION A(*), TIME(*), MAT(6,*), DISP(NUMNP,*), CRD(NUMNP,*),
+      DIMENSION A(*), TIME(*), MAT(7,*), DISP(NUMNP,*), CRD(NUMNP,*),
      *   LINK(*), DENSTY(*), WAVE(*)
       INTEGER ITMSEL(*), ISEVOK(*)
       CHARACTER*(MXSTLN) NAMEGL(*), NAMENV(*), NAMEEL(*)
@@ -102,8 +102,8 @@ C   --changing the table.
 
 C     ... GET SOME SCRATCH SPACE
 
-      CALL MDRSRV ('SCRTCH', ISCR, NDIM*NUMNP)
-      CALL MDRSRV ('SCRTC2', ISCR2, NDIM*NUMNP)
+      CALL MDRSRV ('SCRTCH', ISCR, NDIM*MAX(NUMEL, NUMNP))
+      CALL MDRSRV ('SCRTC2', ISCR2, NDIM*MAX(NUMEL, NUMNP))
       CALL MDRSRV ('SORTMP', ISMP, MAX(NUMEL, NUMNP) )
       CALL MDRSRV ('NODSEL', INDSEL, NUMNP)
       CALL MDRSRV ('ELMSEL', IELSEL, NUMEL)
@@ -247,6 +247,11 @@ C ... SET NUMBER OF QUADRATURE POINTS
 C-----------------------------------------------------------------------
       ELSE IF (NAME .EQ. 'TIMESTEP') THEN
 
+         if (mat(7,1) .eq. 4) then
+            CALL PRTERR ('CMDERR',
+     *         'TIMESTEP command not supported for TET meshes')
+            GO TO 20
+         end if
          CALL FFREAL (IFLD, KV, RV,
      *      'common material wavespeed', 0.0, CWAVE, *20)
          IF (CWAVE .GT. 0.) THEN
@@ -310,7 +315,7 @@ C ... For 3d, if no center specified use 0,0,0 unless user enters 'centroid'
          END IF
          CALL CAVITY (A, CRD, A(IBC1), A(IBC2), A(IBC3), A(IBC4),
      *      A(IBC5),A(IBC6), A(IBC7), A(IBC8), DISP, NUMNP, NDIM,
-     *      NUMESS, TIME, ITMSEL, TITLE, CENT, CENTER)
+     *      NUMESS, TIME, ITMSEL, TITLE, CENT, CENTER, MAT(7,1))
 
       ELSE IF (NAME .EQ. 'MCAVITY') THEN
          NUMCAV = 0
@@ -346,10 +351,15 @@ C ... For 3d, if no center specified use 0,0,0 unless user enters 'centroid'
          END IF
          CALL MULTI_CAVITY (A, CRD, A(IBC1), A(IBC2), A(IBC3), A(IBC4),
      *      A(IBC5),A(IBC6), A(IBC7), A(IBC8), DISP, NUMNP, NDIM,
-     *      NUMESS, TIME, ITMSEL, TITLE, CENT, CENTER)
+     *      NUMESS, TIME, ITMSEL, TITLE, CENT, CENTER, MAT(7,1))
 
 C-----------------------------------------------------------------------
       ELSE IF (NAME .EQ. 'GAP') THEN
+         if (mat(7,1) .eq. 4) then
+            CALL PRTERR ('CMDERR',
+     *         'GAP command not supported for TET meshes')
+            GO TO 20
+         end if
          CALL FFINTG (IFLD, KV, IVAL,
      *      'gap master surface', 0, IMAS, *20)
          CALL FFINTG (IFLD, KV, IVAL,
@@ -373,6 +383,11 @@ C-----------------------------------------------------------------------
 
 C-----------------------------------------------------------------------
       ELSE IF (NAME .EQ. 'OVERLAP') THEN
+         if (mat(7,1) .eq. 4) then
+            CALL PRTERR ('CMDERR',
+     *         'OVERLAP command not supported for TET meshes')
+            GO TO 20
+         end if
          CALL FFINTG (IFLD, KV, IVAL,
      *      'overlap master surface', 0, IMAS, *20)
          CALL FFINTG (IFLD, KV, IVAL,
@@ -529,12 +544,12 @@ C-----------------------------------------------------------------------
             END IF
 
          ELSE IF (LISTYP .EQ. 'VOLUME') THEN
-           CALL PRVOL (ndim, CRD, link, numnp, numel, 8,
+           CALL PRVOL (ndim, CRD, link, numnp, numel, mat(7,1),
      &       a(ismp), IHARD)
            CALL PRTERR ('CMDSPEC',
      *       'Element Volumes were written to the list file')
          ELSE IF (LISTYP .EQ. 'NODALVOL') THEN
-           CALL PRNVOL (ndim, CRD, link, numnp, numel, 8,
+           CALL PRNVOL (ndim, CRD, link, numnp, numel, mat(7,1),
      &       a(ismp), IHARD)
            CALL PRTERR ('CMDSPEC',
      *       'Nodal Volumes were written to the list file')
@@ -739,11 +754,11 @@ C-----------------------------------------------------------------------
          END IF
          IF (ALLTIM) THEN
             CALL LIMITS (A(IXYZMN), A(IXYZMX), CRD, LINK, MAT, NDIM,
-     *         NELBLK, 2**NDIM, ALLTIM, TIME, ITMSEL,
+     *         NELBLK, MAT(7,1), ALLTIM, TIME, ITMSEL,
      *         DISP, NUMNP)
          ELSE
             CALL LIMITS (A(IXYZMN), A(IXYZMX), CRD, LINK, MAT, NDIM,
-     *         NELBLK, 2**NDIM, ALLTIM, TIME, ITMSEL,
+     *         NELBLK, MAT(7,1), ALLTIM, TIME, ITMSEL,
      *         CRD, NUMNP)
          END IF
          CALL MDDEL ('XYZMIN')
@@ -838,6 +853,11 @@ C ... Determine whether element variable is per unit volume or is total
          END IF
 C ----------------------------------------
       ELSE IF (NAME .EQ. 'CONDITIO' ) THEN
+         if (mat(7,1) .eq. 4) then
+            CALL PRTERR ('CMDERR',
+     *         'CONDITION command not supported for TET meshes')
+            GO TO 20
+         end if
          LTMP = .FALSE.
          CALL FFCHAR (IFLD, KV, CV, 'NODEBUG', CTMP)
          IF (MATSTR(CTMP, 'DEBUG', 1)) LTMP = .TRUE.
@@ -861,13 +881,12 @@ C ----------------------------------------
             CALL MEMERR
             STOP 'MEMORY'
          END IF
-         NNODES = 2**NDIM
          IF (NDIM .EQ. 2) THEN
-            CALL CON2D(CRD, NDIM, NUMNP, LINK, NNODES, NUMEL, MAT,
+            CALL CON2D(CRD, NDIM, NUMNP, LINK, 2**NDIM, NUMEL, MAT,
      *         NELBLK, A(IELSEL), A(IASPEC), A(ISKEW), A(ITAPER),
      *         A(IAREA), A(ISUMR), A(IISUM), LTMP)
          ELSE
-            CALL CON3D(CRD, NDIM, NUMNP, LINK, NNODES, NUMEL, MAT,
+            CALL CON3D(CRD, NDIM, NUMNP, LINK, 2**NDIM, NUMEL, MAT,
      *         NELBLK, A(IELSEL), A(IASPEC), A(ISKEW), A(ITAPER),
      *         A(IAREA), A(ISUMR), A(IISUM), A(ISKX), A(ISKY), A(ISKZ),
      *         A(ITPX), A(ITPY), A(ITPZ), A(IJAC), LTMP)

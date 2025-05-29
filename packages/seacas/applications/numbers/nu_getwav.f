@@ -1,11 +1,11 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
       SUBROUTINE GETWAV (MAT, WAVE, NELBLK, LABEL)
-      DIMENSION MAT(6,*), WAVE(*)
+      DIMENSION MAT(7,*), WAVE(*)
       DIMENSION IDUM(4), RV(4), KV(4)
       CHARACTER*16 LABEL(*), CV(4)
       CHARACTER*32 PRMPT
