@@ -50,7 +50,7 @@ class SparseConstraint
       \param Dc -- Coarse matrix
       \param Ppattern -- Nonzero sparsity pattern for the prolongator
    */
-  SparseConstraint(const RCP<Matrix>& P_nodal, const RCP<Matrix>& D, const RCP<Matrix>& Dc, RCP<const CrsGraph> Ppattern);
+  SparseConstraint(const RCP<Matrix>& P_nodal, const RCP<Matrix>& D, const RCP<Matrix>& Dc, RCP<const CrsGraph> Ppattern, const std::string& solverType);
 
   //@}
 

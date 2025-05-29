@@ -31,13 +31,14 @@ SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     SparseConstraint(const RCP<Matrix>& P_nodal,
                      const RCP<Matrix>& D,
                      const RCP<Matrix>& Dc,
-                     RCP<const CrsGraph> Ppattern) {
+                     RCP<const CrsGraph> Ppattern,
+                     const std::string& solverType) {
   this->SetPattern(Ppattern);
   P_nodal_ = P_nodal;
   D_       = D;
   Dc_      = Dc;
   Setup();
-  this->PrepareLeastSquaresSolve(/*singular=*/true);
+  this->PrepareLeastSquaresSolve(solverType, /*singular=*/true);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

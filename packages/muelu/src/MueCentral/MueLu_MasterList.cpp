@@ -307,6 +307,7 @@ namespace MueLu {
   "<Parameter name=\"emin: pattern order\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"emin: constraint type\" type=\"string\" value=\"nullspace\"/>"
+  "<Parameter name=\"emin: least squares solver type\" type=\"string\" value=\"direct\"/>"
   "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"tentative: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
@@ -892,6 +893,8 @@ namespace MueLu {
          ("emin: use filtered matrix","emin: use filtered matrix")
       
          ("emin: constraint type","emin: constraint type")
+      
+         ("emin: least squares solver type","emin: least squares solver type")
       
          ("tentative: calculate qr","tentative: calculate qr")
       

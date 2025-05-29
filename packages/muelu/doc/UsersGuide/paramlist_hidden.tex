@@ -376,6 +376,8 @@ Only used when tentative: calculate qr is set to false.}
         
 \cbb{emin: constraint type}{string}{nullspace}{Type of constraint to enforce. Valid values are "nullspace" and "maxwell".}
         
+\cbb{emin: least squares solver type}{string}{direct}{Type of solver to use for least squares problem. Valid values are "direct" and "Belos". "Belos" only works for nullspace constraints.}
+        
 \cbb{tentative: calculate qr}{bool}{true}{If false, skip local QR decomposition phase of smoothed aggregation.}
         
 \cbb{tentative: constant column sums}{bool}{false}{If true, scale the column sums to one (before applying nullspace).}

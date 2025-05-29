@@ -27,6 +27,9 @@ RCP<const ParameterList> ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("emin: constraint type");
   validParamList->getEntry("emin: constraint type").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("nullspace", "maxwell"))));
+
+  SET_VALID_ENTRY("emin: least squares solver type");
+  validParamList->getEntry("emin: least squares solver type").setValidator(rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("Belos", "direct"))));
 #undef SET_VALID_ENTRY
 
   validParamList->set<RCP<const FactoryBase>>("FineNullspace", Teuchos::null, "Generating factory for the nullspace");
@@ -60,15 +63,18 @@ void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& 
   auto Ppattern = Get<RCP<const CrsGraph>>(coarseLevel, "Ppattern");
   RCP<Constraint> constraint;
   const ParameterList& pL = GetParameterList();
+
+  std::string solverType = pL.get<std::string>("emin: least squares solver type");
+
   if (pL.get<std::string>("emin: constraint type") == "nullspace") {
     RCP<MultiVector> fineNullspace   = Get<RCP<MultiVector>>(fineLevel, "Nullspace", "FineNullspace");
     RCP<MultiVector> coarseNullspace = Get<RCP<MultiVector>>(coarseLevel, "Nullspace", "CoarseNullspace");
-    constraint                       = rcp(new DenseConstraint(fineNullspace, coarseNullspace, Ppattern));
+    constraint                       = rcp(new DenseConstraint(fineNullspace, coarseNullspace, Ppattern, solverType));
   } else {
     RCP<Matrix> fineD0     = Get<RCP<Matrix>>(fineLevel, "D0", "FineD0");
     RCP<Matrix> coarseD0   = Get<RCP<Matrix>>(coarseLevel, "D0", "CoarseD0");
     RCP<Matrix> Pnodal     = Get<RCP<Matrix>>(coarseLevel, "Pnodal", "Pnodal");
-    auto sparse_constraint = rcp(new SparseConstraint(Pnodal, fineD0, coarseD0, Ppattern));
+    auto sparse_constraint = rcp(new SparseConstraint(Pnodal, fineD0, coarseD0, Ppattern, solverType));
 
     // Construct an initial guess.
     // This is different from the nullspace constraint where we use the tentative prolongator as initial guess.

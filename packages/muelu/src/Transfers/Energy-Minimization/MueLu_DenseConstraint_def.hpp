@@ -33,12 +33,13 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 DenseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     DenseConstraint(const RCP<MultiVector>& B,
                     const RCP<MultiVector>& Bc,
-                    RCP<const CrsGraph> Ppattern) {
+                    RCP<const CrsGraph> Ppattern,
+                    const std::string& solverType) {
   this->SetPattern(Ppattern);
   B_  = B;
   Bc_ = Bc;
   Setup();
-  this->PrepareLeastSquaresSolve(/*singular=*/false);
+  this->PrepareLeastSquaresSolve(solverType, /*singular=*/false);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
