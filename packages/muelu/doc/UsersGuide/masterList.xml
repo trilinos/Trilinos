@@ -1425,6 +1425,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>sa: keep tentative prolongator</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Keep the tentative prolongator instead of dropping it once it has been smoothed.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>replicate: npdes</name>
       <type>int</type>
       <default>1</default>

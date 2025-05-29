@@ -26,6 +26,7 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_IO.hpp>
 
+#include "MueLu_KeepType.hpp"
 #include "Xpetra_TpetraBlockCrsMatrix.hpp"
 
 #include "MueLu_TentativePFactory_decl.hpp"
@@ -47,6 +48,7 @@ RCP<const ParameterList> TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
   SET_VALID_ENTRY("tentative: calculate qr");
   SET_VALID_ENTRY("tentative: build coarse coordinates");
   SET_VALID_ENTRY("tentative: constant column sums");
+  SET_VALID_ENTRY("sa: keep tentative prolongator");
 #undef SET_VALID_ENTRY
   validParamList->set<std::string>("Nullspace name", "Nullspace", "Name for the input nullspace");
 
@@ -225,6 +227,11 @@ void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
   }
   Set(coarseLevel, "Nullspace", coarseNullspace);
   Set(coarseLevel, "P", Ptentative);
+
+  if (pL.get<bool>("sa: keep tentative prolongator")) {
+    coarseLevel.Set("Ptent", Ptentative, NoFactory::get());
+    coarseLevel.AddKeepFlag("Ptent", NoFactory::get(), MueLu::Final);
+  }
 
   if (IsPrint(Statistics2)) {
     RCP<ParameterList> params = rcp(new ParameterList());
