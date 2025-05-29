@@ -258,7 +258,9 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
           }
 
           s.nchildren = stree_ptr_(sid + 1) - stree_ptr_(sid);
-          s.children = &stree_children_(stree_ptr_(sid));
+          if (s.nchildren > 0) {
+            s.children = &stree_children_(stree_ptr_(sid));
+          }
           // const ordinal_type offset = stree_ptr_(sid);
           // for (ordinal_type i=0;i<s.nchildren;++i)
           //   s.children[i] = stree_children_(offset + i);
