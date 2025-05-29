@@ -7,7 +7,10 @@
 #ifndef Tempus_StepperExponentialEuler_impl_hpp
 #define Tempus_StepperExponentialEuler_impl_hpp
 
+#include "Tempus_PhiEvaluator.hpp"
+#include "Tempus_PhiEvaluatorFactory.hpp"
 #include "Tempus_StepperExponentialEulerModifierDefault.hpp"
+#include "Tempus_StepperExponentialEuler_decl.hpp"
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"
 #include "Tempus_StepperFactory.hpp"
 
@@ -83,6 +86,8 @@ void StepperExponentialEuler<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
   StepperImplicit<Scalar>::setModel(appModel);
+
+  phiEvaluator_->setModel(appModel);
 
   this->isInitialized_ = false;
 }
@@ -239,11 +244,14 @@ void StepperExponentialEuler<Scalar>::takeStep(
         Thyra::initializePreconditionedOp<Scalar>(*lowsFactory, jac, jac_p, LOWSB.ptr());
       }
 
-      RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();      
+      RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();
       assign(vphi.ptr(), ST::zero()); // Must initialize to a guess before solve!
 
       // compute an approximation to dt*phi_1(dt*J)*f and write it to x
       sStatus = LOWSB->solve(Thyra::NOTRANS, *f, vphi.ptr());
+
+      phiEvaluator_->setLinearizationPoint(x);
+      phiEvaluator_->computePhi(vphi.ptr(), 1, dt, f);
 
       //std::cout << "ph[0,1] = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       //assign(x.ptr(), ST::zero());
@@ -371,6 +379,22 @@ StepperExponentialEuler<Scalar>::getValidParameters() const
   return pl;
 }
 
+
+template <class Scalar>
+void StepperExponentialEuler<Scalar>::setStepperExponentialValues(
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  // TODO: is this the right place to initialize the PhiEvaluator?
+  auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
+  auto phiPL = Teuchos::sublist(pl, "PhiEvaluator");
+  phiEvaluator_ = phif->createPhiEvaluator(phiPL);
+
+  if (pl != Teuchos::null) {
+  }
+  //TODO read in the pl for the exponential solver
+}
+
+
 // Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
 template<class Scalar>
@@ -383,6 +407,8 @@ createStepperExponentialEuler(
 
   stepper->setStepperImplicitValues(pl);
 
+  stepper->setStepperExponentialValues(pl);
+  
   if (model != Teuchos::null) {
     stepper->setModel(model);
     stepper->initialize();
