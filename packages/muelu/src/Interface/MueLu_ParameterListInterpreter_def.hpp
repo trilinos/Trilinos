@@ -1299,6 +1299,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ptentParams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
   test_and_set_param_2list<bool>(paramList, defaultList, "tentative: calculate qr", ptentParams);
   test_and_set_param_2list<bool>(paramList, defaultList, "tentative: build coarse coordinates", ptentParams);
+  test_and_set_param_2list<bool>(paramList, defaultList, "sa: keep tentative prolongator", ptentParams);
   Ptent->SetParameterList(ptentParams);
   Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
   Ptent->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
