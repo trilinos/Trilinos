@@ -1,22 +1,23 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include "EJ_mapping.h"
-#include "Ioss_ElementBlock.h"   // for ElementBlock
-#include "Ioss_GroupingEntity.h" // for GroupingEntity
-#include "Ioss_NodeBlock.h"      // for NodeBlock
-#include "Ioss_Property.h"       // for Property
-#include "Ioss_Region.h"         // for Region, etc
+#include "Ioss_ElementBlock.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
 #include "Ioss_SmartAssert.h"
 #include "Ioss_Sort.h"
-#include <algorithm> // for sort, unique
-#include <cstddef>   // for size_t
+#include <algorithm>
+#include <cstddef>
 #include <fmt/ostream.h>
 #include <numeric>
-#include <utility> // for make_pair, pair
+#include <utility>
 
 namespace {
   bool entity_is_omitted(const Ioss::GroupingEntity *block)
@@ -25,6 +26,53 @@ namespace {
     return omitted;
   }
 } // namespace
+
+template <typename INT>
+void select_nodeset_nodes(RegionVector &part_mesh, std::vector<INT> &local_node_map,
+                          const Omissions &nset_match)
+{
+  for (auto &entry : local_node_map) {
+    if (entry >= 0) {
+      entry = -1;
+    }
+  }
+
+  size_t offset     = 0;
+  size_t part_count = part_mesh.size();
+  for (size_t p = 0; p < part_count; p++) {
+    if (nset_match[p].empty()) {
+      continue;
+    }
+    const Ioss::NodeBlock *nb       = part_mesh[p]->get_node_blocks()[0];
+    size_t                 loc_size = nb->entity_count();
+
+    for (const auto &ns_name : nset_match[p]) {
+      if (ns_name == "ALL") {
+        // Punt for now...
+        continue;
+      }
+
+      const Ioss::NodeSet *ns = part_mesh[p]->get_nodeset(ns_name);
+      if (ns != nullptr) {
+        std::vector<INT> ns_nodes;
+        ns->get_field_data("ids_raw", ns_nodes);
+        for (auto node : ns_nodes) {
+          local_node_map[offset + node - 1] = offset + node - 1;
+        }
+      }
+      else {
+        fmt::print(stderr, "ERROR: Could not find {} on part {}.\n", ns_name, p + 1);
+        exit(EXIT_FAILURE);
+      }
+    }
+    offset += loc_size;
+  }
+}
+
+template void select_nodeset_nodes(RegionVector &part_mesh, std::vector<int> &local_node_map,
+                                   const Omissions &nset_match);
+template void select_nodeset_nodes(RegionVector &part_mesh, std::vector<int64_t> &local_node_map,
+                                   const Omissions &nset_match);
 
 template <typename INT>
 void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_node_map,
