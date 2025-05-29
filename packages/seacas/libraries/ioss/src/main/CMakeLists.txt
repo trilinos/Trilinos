@@ -277,6 +277,7 @@ if (TPL_ENABLE_MPI)
     XHOSTTYPE Windows
     )
 
+  IF (TPL_Netcdf_Enables_PNetcdf)
     TRIBITS_ADD_ADVANCED_TEST(omit_block
        TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --compose --omit_blocks block_1,block_3,block_5,block_7 ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-omitted.g
           NOEXEPREFIX NOEXESUFFIX
@@ -288,6 +289,7 @@ if (TPL_ENABLE_MPI)
     COMM mpi
     XHOSTTYPE Windows
     )
+  endif()
   endif()
 
   TRIBITS_ADD_ADVANCED_TEST(create_path_fpp
