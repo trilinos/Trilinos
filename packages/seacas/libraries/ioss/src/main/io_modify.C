@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,7 +12,9 @@
 #include "Ioss_ElementBlock.h"
 #include "Ioss_ElementTopology.h"
 #include "Ioss_FileInfo.h"
+#if !defined(USE_STD_GETLINE)
 #include "Ioss_Getline.h"
+#endif
 #include "Ioss_Glob.h"
 #include "Ioss_GroupingEntity.h"
 #include "Ioss_IOFactory.h"
@@ -71,7 +73,7 @@ using real = double;
 
 namespace {
   std::string codename;
-  std::string version = "2.07 (2024-04-15)";
+  std::string version = "2.09 (2025-05-08)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 
@@ -318,7 +320,10 @@ int main(int argc, char *argv[])
   while (true) {
     std::string input;
     if (from_term) {
-      fmt::print(fg(fmt::terminal_color::magenta), "\n");
+#if defined(USE_STD_GETLINE)
+      std::cout << "COMMAND> ";
+      std::getline(std::cin, input);
+#else
       const char *cinput = Ioss::getline_int("COMMAND> ");
       if (cinput && cinput[0] == '\0') {
         break;
@@ -327,6 +332,7 @@ int main(int argc, char *argv[])
         Ioss::gl_histadd(cinput);
       }
       input = cinput;
+#endif
     }
     else {
       std::getline(std::cin, input);
