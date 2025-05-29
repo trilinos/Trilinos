@@ -153,7 +153,7 @@ class Constraint
   void LeastSquaresSolve(const MultiVector& B, MultiVector& C) const;
 
  protected:
-  void PrepareLeastSquaresSolve(bool singular = false);
+  void PrepareLeastSquaresSolve(const std::string& solverType, bool singular = false);
 
  private:
   //! The constraints matrix
@@ -161,6 +161,8 @@ class Constraint
 
   //! Nonzero sparsity pattern
   RCP<const CrsGraph> Ppattern_;
+
+  std::string solverType_;
 
   using MV = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using OP = Belos::OperatorT<MV>;

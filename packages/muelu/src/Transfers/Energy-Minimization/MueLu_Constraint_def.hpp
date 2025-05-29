@@ -460,9 +460,14 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolve(const bool singular) {
-  // PrepareLeastSquaresSolveBelos();
-  PrepareLeastSquaresSolveDirect(singular);
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolve(const std::string& solverType, const bool singular) {
+  if (solverType == "Belos")
+    PrepareLeastSquaresSolveBelos(singular);
+  else if (solverType == "direct")
+    PrepareLeastSquaresSolveDirect(singular);
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be one of (Belos|direct), not \"" << solverType << "\".");
+  solverType_ = solverType;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -485,8 +490,12 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::LeastSquaresSolveDir
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::LeastSquaresSolve(const MultiVector& B, MultiVector& C) const {
-  // LeastSquaresSolveBelos(B, C);
-  LeastSquaresSolveDirect(B, C);
+  if (solverType_ == "Belos")
+    LeastSquaresSolveBelos(B, C);
+  else if (solverType_ == "direct")
+    LeastSquaresSolveDirect(B, C);
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be one of (Belos|direct), not \"" << solverType_ << "\".");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

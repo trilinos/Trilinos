@@ -48,7 +48,7 @@ class DenseConstraint
       \param Bc -- Coarse nullspace vectors
       \param Ppattern -- Nonzero sparsity pattern for the prolongator
    */
-  DenseConstraint(const RCP<MultiVector>& B, const RCP<MultiVector>& Bc, RCP<const CrsGraph> Ppattern);
+  DenseConstraint(const RCP<MultiVector>& B, const RCP<MultiVector>& Bc, RCP<const CrsGraph> Ppattern, const std::string& solverType);
 
   //@}
 
