@@ -313,16 +313,6 @@ namespace {
         }
       }
 
-      if (region.mesh_type() == Ioss::MeshType::HYBRID) {
-        if (rank == 0) {
-          fmt::print(stderr,
-                     "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
-                     "'Structured' mesh is supported at this time.\n",
-                     region.mesh_type_string());
-        }
-        return success;
-      }
-
       // Get length of longest name on input file...
       int max_name_length = dbi->maximum_symbol_length();
       if (max_name_length > 0) {
@@ -592,14 +582,6 @@ namespace {
     // NOTE: 'input_region1' owns 'dbi1' pointer at this time...
     Ioss::Region input_region1(dbi1, "region_1");
 
-    if (input_region1.mesh_type() == Ioss::MeshType::HYBRID) {
-      fmt::print(stderr,
-                 "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
-                 "'Structured' mesh is supported at this time.\n",
-                 input_region1.mesh_type_string());
-      return false;
-    }
-
     // Get integer size being used on input file #1 and set it in
     // the interFace.
     int int_byte_size_api = dbi1->int_byte_size_api();
@@ -644,14 +626,6 @@ namespace {
 
     // NOTE: 'input_region2' owns 'dbi2' pointer at this time...
     Ioss::Region input_region2(dbi2, "region_2");
-
-    if (input_region2.mesh_type() == Ioss::MeshType::HYBRID) {
-      fmt::print(stderr,
-                 "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
-                 "'Structured' mesh is supported at this time.\n",
-                 input_region2.mesh_type_string());
-      return false;
-    }
 
     // Get integer size being used on input file #1 and set it in
     // the interFace.

@@ -416,10 +416,6 @@ namespace Iocgns {
     else if (m_meshType == Ioss::MeshType::UNSTRUCTURED) {
       handle_unstructured_blocks();
     }
-#if IOSS_ENABLE_HYBRID
-    else if (mesh_type == Ioss::MeshType::HYBRID) {
-    }
-#endif
     else {
       std::ostringstream errmsg;
       fmt::print(errmsg, "ERROR: CGNS: Mesh is not Unstructured or Structured which are the only "
