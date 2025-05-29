@@ -20,7 +20,7 @@ namespace Ioss {
 
 namespace Ioss {
 
-  class IOSS_EXPORT Super : public Ioss::ElementTopology
+  class IOSS_EXPORT Super final : public Ioss::ElementTopology
   {
 
   public:
