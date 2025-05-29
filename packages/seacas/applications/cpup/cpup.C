@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "add_to_log.h"
-#define FMT_DEPRECATED_OSTREAM
+
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
 #include "format_time.h"
@@ -39,7 +39,8 @@ unsigned int debug_level = 0;
 namespace {
   std::string tsFormat = "[{:%H:%M:%S}] ";
 
-  using GlobalZgcMap   = std::map<std::pair<std::string, std::string>, Ioss::ZoneConnectivity>;
+  using GlobalZgcMap =
+      std::map<std::tuple<std::string, std::string, std::string>, Ioss::ZoneConnectivity>;
   using GlobalBcMap    = std::map<std::pair<std::string, std::string>, Ioss::BoundaryCondition>;
   using GlobalBlockMap = std::map<const std::string, const Ioss::StructuredBlock *>;
   using GlobalIJKMap   = std::map<const std::string, Ioss::IJK_t>;
@@ -173,9 +174,12 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
     // Query the system to see if the number of files exceeds the system limit and we
     // need to force use of minimize_open_files...
     int max_files = open_file_limit() - 1; // We also have an output file.
+    if (debug_level & 1) {
+      fmt::print(stderr, "{} Open file limit = {}\n", time_stamp(tsFormat), max_files);
+    }
     if (interFace.processor_count() > max_files) {
       minimize_open_files = true;
-      fmt::print("Single file mode... (Max open = {})\n", max_files);
+      fmt::print("INFO: Automatically setting single file mode... (Max open = {})\n", max_files);
     }
   }
 
@@ -330,7 +334,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
 
     // Add ZGC to the block...
     for (const auto &zgc_map : global_zgc) {
-      if (zgc_map.first.first == block_name) {
+      if (std::get<0>(zgc_map.first) == block_name) {
         block->m_zoneConnectivity.push_back(zgc_map.second);
       }
     }
@@ -497,11 +501,12 @@ namespace {
 
         for (const auto &zgc : block->m_zoneConnectivity) {
           if (!zgc.m_fromDecomp) {
-            auto &gzgc = global_zgc[std::make_pair(part_name, zgc.m_connectionName)];
+            std::string donor = Iocgns::Utils::decompose_name(zgc.m_donorName, true).first;
+            auto       &gzgc  = global_zgc[std::make_tuple(part_name, donor, zgc.m_connectionName)];
             if (gzgc.m_connectionName.empty()) {
               // First time this ZGC has been found.  Copy from the per-proc instance and update...
               gzgc.m_connectionName = zgc.m_connectionName;
-              gzgc.m_donorName      = Iocgns::Utils::decompose_name(zgc.m_donorName, true).first;
+              gzgc.m_donorName      = donor;
               gzgc.m_transform      = zgc.m_transform;
             }
 
@@ -518,8 +523,8 @@ namespace {
             tmp_zgc.m_ownerRangeEnd[2] += own_off[2];
 
             // Now find the donor block...
-            auto  donor       = Iocgns::Utils::decompose_name(zgc.m_donorName, true);
-            auto *donor_block = part_mesh[donor.second]->get_structured_block(zgc.m_donorName);
+            auto  tmp_donor   = Iocgns::Utils::decompose_name(zgc.m_donorName, true);
+            auto *donor_block = part_mesh[tmp_donor.second]->get_structured_block(zgc.m_donorName);
             SMART_ASSERT(donor_block != nullptr);
             Ioss::IJK_t don_off = donor_block->get_ijk_offset();
 
@@ -550,30 +555,30 @@ namespace {
     GlobalZgcMap consolidated;
 
     std::string            zone_name{};
+    std::string            donor_name{};
     std::string            conn_name{};
-    Ioss::ZoneConnectivity zgc_test{};
+    Ioss::ZoneConnectivity zgc_base{};
     for (const auto &zgc : zgc_map) {
       if (zone_name.empty()) {
-        zone_name = zgc.first.first;
-        conn_name = zgc.first.second;
-        zgc_test  = zgc.second;
+        std::tie(zone_name, donor_name, conn_name) = zgc.first;
+        zgc_base                                   = zgc.second;
         continue;
       }
 
-      if (zone_name == zgc.first.first && Ioss::Utils::substr_equal(conn_name, zgc.first.second)) {
-        union_zgc_range(zgc_test, zgc.second);
+      if (zone_name == std::get<0>(zgc.first) && donor_name == std::get<1>(zgc.first) &&
+          Ioss::Utils::substr_equal(conn_name, std::get<2>(zgc.first))) {
+        union_zgc_range(zgc_base, zgc.second);
         continue;
       }
 
       // If we make it to this point, then we don't have a similar zgc, so
       // save the one we were working on and reset to gather the next set.
-      consolidated.emplace(std::make_pair(zone_name, conn_name), zgc_test);
-      zone_name = zgc.first.first;
-      conn_name = zgc.first.second;
-      zgc_test  = zgc.second;
+      consolidated.emplace(std::make_tuple(zone_name, donor_name, conn_name), zgc_base);
+      std::tie(zone_name, donor_name, conn_name) = zgc.first;
+      zgc_base                                   = zgc.second;
     }
     // Handle the last one..
-    consolidated.emplace(std::make_pair(zone_name, conn_name), zgc_test);
+    consolidated.emplace(std::make_tuple(zone_name, donor_name, conn_name), zgc_base);
     return consolidated;
   }
 
