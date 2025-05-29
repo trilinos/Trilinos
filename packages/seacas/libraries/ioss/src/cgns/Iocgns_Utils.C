@@ -526,19 +526,14 @@ Ioss::MeshType Iocgns::Utils::check_mesh_type(int cgns_file_ptr)
     }
 
     if (common_zone_type != zone_type) {
-#if IOSS_ENABLE_HYBRID
-      common_zone_type = CGNS_ENUMV(ZoneTypeUserDefined); // This is how we represent hybrid...
-      break;
-#else
-      IOSS_ERROR(fmt::format("ERROR: CGNS: Zone {} is not the same zone type as previous zones."
-                             " This is currently not allowed or supported (hybrid mesh).",
-                             zone));
-#endif
+      IOSS_ERROR(fmt::format(
+          "ERROR: CGNS: Zone {} is not the same zone type as previous zones."
+          " This is currently not allowed or supported (mixed structured/unstructured mesh).",
+          zone));
     }
   }
 
   switch (common_zone_type) {
-  case CGNS_ENUMV(ZoneTypeUserDefined): return Ioss::MeshType::HYBRID;
   case CGNS_ENUMV(Structured): return Ioss::MeshType::STRUCTURED;
   case CGNS_ENUMV(Unstructured): return Ioss::MeshType::UNSTRUCTURED;
   default: return Ioss::MeshType::UNKNOWN;
@@ -1050,15 +1045,6 @@ void Iocgns::Utils::write_state_meta_data(int file_ptr, const Ioss::Region &regi
 size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &region,
                                             std::vector<size_t> &zone_offset, bool is_parallel_io)
 {
-#if !IOSS_ENABLE_HYBRID
-  // Make sure mesh is not hybrid...
-  if (region.mesh_type() == Ioss::MeshType::HYBRID) {
-    IOSS_ERROR(fmt::format("ERROR: CGNS: The mesh on region '{}' is of type 'hybrid'."
-                           " This is currently not allowed or supported.",
-                           region.name()));
-  }
-#endif
-
   region.get_database()->progress("\tEnter common_write_metadata");
   int base           = 0;
   int phys_dimension = region.get_property("spatial_dimension").get_int();

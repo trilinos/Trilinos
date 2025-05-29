@@ -488,7 +488,7 @@ namespace Ioss {
       return MeshType::UNSTRUCTURED;
     }
     if (!elementBlocks.empty() && !structuredBlocks.empty()) {
-      return MeshType::HYBRID;
+      return MeshType::UNKNOWN;
     }
     if (!structuredBlocks.empty()) {
       return MeshType::STRUCTURED;
@@ -501,7 +501,6 @@ namespace Ioss {
   {
     switch (mesh_type()) {
     case MeshType::UNKNOWN: return "Unknown";
-    case MeshType::HYBRID: return "Hybrid";
     case MeshType::STRUCTURED: return "Structured";
     case MeshType::UNSTRUCTURED: return "Unstructured";
     }
