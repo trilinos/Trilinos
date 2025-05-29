@@ -93,12 +93,12 @@ namespace Iotm {
       return tokens;
     }
 
-    inline void convert_to_upper_case(std::string &str)
+    inline void convert_to_uppercase(std::string &str)
     {
       std::transform(str.begin(), str.end(), str.begin(), ::toupper);
     }
 
-    inline void convert_to_lower_case(std::string &str)
+    inline void convert_to_lowercase(std::string &str)
     {
       std::transform(str.begin(), str.end(), str.begin(), ::tolower);
     }

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -526,9 +526,26 @@ namespace Ioss {
       return duplicateFieldBehavior;
     }
 
+    void set_lowercase_variable_names(bool true_false) const
+    {
+      lowerCaseVariableNames = true_false;
+    }
+
+    void set_lowercase_database_names(bool true_false) const
+    {
+      lowerCaseDatabaseNames = true_false;
+    }
+
+    // Retain for backward compatibility
     void set_lower_case_variable_names(bool true_false) const
     {
       lowerCaseVariableNames = true_false;
+    }
+
+    // Retain for backward compatibility
+    void set_lower_case_database_names(bool true_false) const
+    {
+      lowerCaseDatabaseNames = true_false;
     }
 
     /* \brief Set the method used to split sidesets into homogeneous blocks.
@@ -766,7 +783,8 @@ namespace Ioss {
     mutable bool usingDataWarp{false};
     bool         isParallel{false}; //!< true if running in parallel
 
-    mutable bool lowerCaseVariableNames{true};
+    mutable bool lowerCaseVariableNames{false};
+    mutable bool lowerCaseDatabaseNames{false};
     bool         usingParallelIO{false};
 
     // List of element blocks that should be omitted or included from

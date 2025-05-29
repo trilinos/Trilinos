@@ -276,6 +276,18 @@ if (TPL_ENABLE_MPI)
     COMM mpi
     XHOSTTYPE Windows
     )
+
+    TRIBITS_ADD_ADVANCED_TEST(omit_block
+       TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --compose --omit_blocks block_1,block_3,block_5,block_7 ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-omitted.g
+          NOEXEPREFIX NOEXESUFFIX
+          NUM_MPI_PROCS ${NPROCS}
+       TEST_1 EXEC exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block-omitted.g 8-block-omitted.g
+          DIRECTORY ../../../../applications/exodiff
+          NOEXEPREFIX NOEXESUFFIX
+          NUM_MPI_PROCS 1
+    COMM mpi
+    XHOSTTYPE Windows
+    )
   endif()
 
   TRIBITS_ADD_ADVANCED_TEST(create_path_fpp

@@ -804,6 +804,19 @@ namespace Ioex {
       decomp = std::make_unique<DecompositionData<int>>(properties, util().communicator());
     }
     assert(decomp != nullptr);
+
+    if (!blockInclusions.empty()) {
+      fmt::print(Ioss::WarnOut(), "Parallel Decomposition does not handle block Inclusions; only "
+                                  "element block Omissions.\n");
+    }
+    if (!assemblyInclusions.empty() || !assemblyOmissions.empty()) {
+      fmt::print(Ioss::WarnOut(), "Parallel Decomposition does not handle assembly "
+                                  "Omissions/Inclusions; only element block Omissions.\n");
+    }
+    if (!blockOmissions.empty()) {
+      decomp->set_block_omissions(blockOmissions);
+    }
+
     decomp->decompose_model(exoid, get_filename());
 
     read_region();
@@ -1216,7 +1229,7 @@ namespace Ioex {
       }
       else {
         block_name = Ioex::get_entity_name(get_file_pointer(), entity_type, id, basename,
-                                           maximumNameLength, db_has_name);
+                                           maximumNameLength, lowerCaseDatabaseNames, db_has_name);
       }
       if (get_use_generic_canonical_name()) {
         std::swap(block_name, alias);
@@ -1534,8 +1547,9 @@ namespace Ioex {
             side_set_name = alias;
           }
           else {
-            side_set_name = Ioex::get_entity_name(get_file_pointer(), EX_SIDE_SET, id, "surface",
-                                                  maximumNameLength, db_has_name);
+            side_set_name =
+                Ioex::get_entity_name(get_file_pointer(), EX_SIDE_SET, id, "surface",
+                                      maximumNameLength, lowerCaseDatabaseNames, db_has_name);
           }
 
           if (side_set_name == "universal_sideset") {
@@ -1897,7 +1911,7 @@ namespace Ioex {
       }
       else {
         Xset_name = Ioex::get_entity_name(get_file_pointer(), type, id, base + "list",
-                                          maximumNameLength, db_has_name);
+                                          maximumNameLength, lowerCaseDatabaseNames, db_has_name);
       }
 
       if (get_use_generic_canonical_name()) {

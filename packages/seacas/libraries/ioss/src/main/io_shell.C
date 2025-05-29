@@ -47,7 +47,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "7.0 (2024/11/08)";
+  std::string version = "7.2 (2025/05/08)";
 
   bool mem_stats = false;
 
@@ -59,6 +59,7 @@ namespace {
   {
     Ioss::MeshCopyOptions options{};
     options.selected_times       = interFace.selected_times;
+    options.selected_steps       = interFace.selected_steps;
     options.rel_tolerance        = interFace.rel_tolerance;
     options.abs_tolerance        = interFace.abs_tolerance;
     options.tol_floor            = interFace.tol_floor;
@@ -271,9 +272,11 @@ namespace {
       if (mem_stats) {
         dbi->progress("Database Creation");
       }
-      if (!interFace.lower_case_variable_names) {
-        dbi->set_lower_case_variable_names(false);
+      if (!interFace.lowercase_variable_names) {
+        dbi->set_lowercase_variable_names(false);
       }
+      dbi->set_lowercase_database_names(interFace.lowercase_database_names);
+
       if (interFace.outFiletype == "cgns") {
         // CGNS stores BCs (SideSets) on the zones which
         // correspond to element blocks.  If split input sideblocks
@@ -564,9 +567,11 @@ namespace {
     if (mem_stats) {
       dbi1->progress("Database #1 Open");
     }
-    if (!interFace.lower_case_variable_names) {
-      dbi1->set_lower_case_variable_names(false);
+    if (!interFace.lowercase_variable_names) {
+      dbi1->set_lowercase_variable_names(false);
     }
+    dbi1->set_lowercase_database_names(interFace.lowercase_database_names);
+
     if (interFace.outFiletype == "cgns") {
       // CGNS stores BCs (SideSets) on the zones which
       // correspond to element blocks.  If split input sideblocks
@@ -615,9 +620,11 @@ namespace {
     if (mem_stats) {
       dbi2->progress("Database #2 Open");
     }
-    if (!interFace.lower_case_variable_names) {
-      dbi2->set_lower_case_variable_names(false);
+    if (!interFace.lowercase_variable_names) {
+      dbi2->set_lowercase_variable_names(false);
     }
+    dbi2->set_lowercase_database_names(interFace.lowercase_database_names);
+
     if (interFace.outFiletype == "cgns") {
       // CGNS stores BCs (SideSets) on the zones which
       // correspond to element blocks.  If split input sideblocks
@@ -800,6 +807,14 @@ namespace {
       }
     }
 
+    if (!interFace.decomp_omitted_block_ids.empty()) {
+      properties.add(
+          Ioss::Property("DECOMP_OMITTED_BLOCK_IDS", interFace.decomp_omitted_block_ids));
+    }
+    if (!interFace.decomp_omitted_block_names.empty()) {
+      properties.add(
+          Ioss::Property("DECOMP_OMITTED_BLOCK_NAMES", interFace.decomp_omitted_block_names));
+    }
     if (interFace.retain_empty_blocks) {
       properties.add(Ioss::Property("RETAIN_EMPTY_BLOCKS", "YES"));
     }

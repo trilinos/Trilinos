@@ -1268,7 +1268,7 @@ namespace Ioex {
       else {
         Ioss::SerializeIO serializeio_(this);
         block_name = Ioex::get_entity_name(get_file_pointer(), entity_type, id, basename,
-                                           maximumNameLength, db_has_name);
+                                           maximumNameLength, lowerCaseDatabaseNames, db_has_name);
       }
       if (get_use_generic_canonical_name()) {
         std::swap(block_name, alias);
@@ -1596,8 +1596,9 @@ namespace Ioex {
             side_set_name = alias;
           }
           else {
-            side_set_name = Ioex::get_entity_name(get_file_pointer(), EX_SIDE_SET, id, "surface",
-                                                  maximumNameLength, db_has_name);
+            side_set_name =
+                Ioex::get_entity_name(get_file_pointer(), EX_SIDE_SET, id, "surface",
+                                      maximumNameLength, lowerCaseDatabaseNames, db_has_name);
           }
 
           if (side_set_name == "universal_sideset") {
@@ -2001,8 +2002,9 @@ namespace Ioex {
             Xset_name = alias;
           }
           else {
-            Xset_name = Ioex::get_entity_name(get_file_pointer(), type, id, base + "list",
-                                              maximumNameLength, db_has_name);
+            Xset_name =
+                Ioex::get_entity_name(get_file_pointer(), type, id, base + "list",
+                                      maximumNameLength, lowerCaseDatabaseNames, db_has_name);
           }
 
           if (get_use_generic_canonical_name()) {

@@ -371,6 +371,22 @@ namespace {
         }
       }
     }
+    else if (!options.selected_steps.empty()) {
+      for (const auto &step : options.selected_steps) {
+        if (step == 0 || abs(step) > step_count) {
+          fmt::print(std::cerr,
+                     "WARNING: Step {} is out of range. Must be non-zero and maximum of {}.\n",
+                     step, step_count);
+          continue;
+        }
+        if (step > 0) {
+          selected_steps[step] = 1;
+        }
+        else {
+          selected_steps[step_count + 1 + step] = 1;
+        }
+      }
+    }
     else {
       // User did not select specific times to be output...
       // Just select them all

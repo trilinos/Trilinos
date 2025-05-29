@@ -22,7 +22,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "1.07 (2024/11/08)";
+  std::string version = "1.09 (2025/05/01)";
 
 #ifdef SEACAS_HAVE_MPI
   void mpi_finalize()

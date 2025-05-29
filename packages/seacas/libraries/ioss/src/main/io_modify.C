@@ -524,6 +524,7 @@ namespace {
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
+    dbi->set_lowercase_database_names(false);
   }
 
   void handle_help(const std::string &topic)
