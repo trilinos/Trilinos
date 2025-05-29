@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -11,7 +11,7 @@ C See packages/seacas/LICENSE for details
 
       IELNK = 0
       IE = 0
-      DO 100 IELB = 1, nelblk
+      DO IELB = 1, nelblk
          IS = IE + 1
          IE = IE + NUMELB(IELB)
          ISLNK = IELNK + 1
@@ -19,7 +19,7 @@ C See packages/seacas/LICENSE for details
 
          CALL cent1(x, y, z, xcent(is), ycent(is), zcent(is),
      *     NUMELB(IELB), NUMLNK(IELB), LINK(ISLNK), NDIM)
-  100 CONTINUE
+      END DO
 
       RETURN
       END
@@ -33,17 +33,17 @@ C See packages/seacas/LICENSE for details
       integer link(numlnk,*)
       integer ndim
 
-      do 20 ne=1, numelb
+      do ne=1, numelb
         xc = 0.0
         yc = 0.0
         zc = 0.0
-        do 10 j=1, numlnk
+        do j=1, numlnk
           xc = xc + x(link(j,ne))
           yc = yc + y(link(j,ne))
           if (ndim .eq. 3) then
             zc = zc + z(link(j,ne))
           end if
- 10     continue
+        end do
 
         rnodes = numlnk
         xcent(ne) = xc / rnodes
@@ -52,6 +52,6 @@ C See packages/seacas/LICENSE for details
           zcent(ne) = zc / rnodes
         end if
 
- 20   continue
+      end do
       return
       end
