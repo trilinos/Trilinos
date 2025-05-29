@@ -444,7 +444,7 @@ C     ... Snap
          call mdrsrv('ssblk', issblk, nelblk)
          call mdrsrv('iscrn', iscrnp, numnp)
          call mdrsrv('iscre', iscrep, numel)
-         do 30 i=1, numsnp
+         do i=1, numsnp
            if (ismtyp(i) .eq. ISNAP) then
               call snap(ndbin, a, ia, i, a(kxn), a(kyn), a(kzn), ndim,
      *         numnp, numess, ia(kidss), ia(kness), ia(kixess),
@@ -456,7 +456,7 @@ C     ... Snap
      *         nelblk, ia(kidelb), ia(knelb), ia(knlnk), ia(klink),
      *         ia(issblk), ia(iscrnp), ia(iscrep))
            end if
- 30      continue
+         end do
          call mddel('ssblk')
          call mddel('iscrn')
          call mddel('iscre')
@@ -1212,7 +1212,7 @@ C ... NOTE: VARNP and VAREL are treated as doubly-dimensioned arrays
 C           dimensioned as (NUMEL, NVAREL)
       iostep = 0
 
-      do 110 istep = 1, nsteps
+      do istep = 1, nsteps
         if (ia(kitims+istep-1) .eq. 0) then
           iostep = iostep + 1
            CALL DBISTE (NDBIN, '*', istep,
@@ -1278,7 +1278,7 @@ C     number element blocks, and truth table.
            WRITE (*, 10000) IOSTEP, TIME
 10000      FORMAT (' ', I8, ' time steps processed.  Time = ',1PE10.3)
         end if
- 110  continue
+      end do
 
  120  CONTINUE
       WRITE (SCRSTR, '(I9)', IOSTAT=K) IOSTEP
@@ -1334,15 +1334,15 @@ C     number element blocks, and truth table.
       logical IEVOK(nblk,nvar)
       INTEGER ITMP(NVAR+iextra,nblk)
 
-      do 20 i=1, nvar
-        do 10 ielb = 1, nblk
+      do i=1, nvar
+        do ielb = 1, nblk
           if (ievok(ielb,i)) then
             itmp(i,ielb) = 1
           else
             itmp(i,ielb) = 0
           end if
- 10     continue
- 20   continue
+        end do
+      end do
 
       do i=1, iextra
         do ielb = 1, nblk
@@ -1368,11 +1368,11 @@ C     number element blocks, and truth table.
       if (ndim .ge. 2) names(2)(:maxnam) = 'centroid_y'
       if (ndim .eq. 3) names(3)(:maxnam) = 'centroid_z'
 
-      do 20 i=1, nelblk
-        do 10 j=1, nvarel
+      do i=1, nelblk
+        do j=1, nvarel
           isevok(i,j) = 1
- 10     continue
- 20   continue
+        end do
+      end do
 
       return
       end
@@ -1401,9 +1401,9 @@ C     number element blocks, and truth table.
 
       SUBROUTINE PRTT(NELBLK, NVAREL, truth)
       LOGICAL TRUTH(NELBLK, NVAREL)
-      DO 10 I=1, NELBLK
+      DO I=1, NELBLK
          WRITE (*,*) (TRUTH(I,IVAR),IVAR=1,NVAREL)
- 10   CONTINUE
+      END DO
       RETURN
       END
 
@@ -1417,12 +1417,12 @@ C   This is currently used in the sideset mirroring code
       character*(MXSTLN) comtop
 
       comtop = blktyp(1)(:3)
-      do 10 i=2, nelblk
+      do i=2, nelblk
          if (blktyp(i)(:3) .ne. comtop(:3)) then
             comtop = 'MULTIPLE_TOPOLOGIES'
             return
          end if
- 10   continue
+      end do
       return
       end
 
