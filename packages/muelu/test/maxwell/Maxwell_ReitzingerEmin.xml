@@ -28,7 +28,7 @@
 
   <ParameterList name="maxwell1: 22list">
     <Parameter name="use kokkos refactor" type="bool" value="false"/>
-    <Parameter name="multigrid algorithm" type="string"  value="unsmoothed"/>
+    <Parameter name="multigrid algorithm" type="string"  value="sa"/>
     <Parameter name="aggregation: type" type="string" value="uncoupled"/>
     <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
     <Parameter name="coarse: max size" type="int" value="50"/>
@@ -38,6 +38,9 @@
     <!-- Currently needed but we should fix this -->
     <Parameter name="tentative: constant column sums" type="bool" value="false"/>
     <Parameter name="tentative: calculate qr" type="bool" value="false"/>
+    <Parameter name="sa: keep tentative prolongator" type="bool" value="true"/>
+
+    <!-- <Parameter name="keep data" type="string" value="{Ptent}"/> -->
 
   </ParameterList>
 </ParameterList>

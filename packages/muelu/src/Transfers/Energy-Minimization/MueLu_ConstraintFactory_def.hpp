@@ -37,7 +37,7 @@ RCP<const ParameterList> ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
   validParamList->set<RCP<const FactoryBase>>("FineD0", Teuchos::null, "Generating factory for the fine discrete gradient");
   validParamList->set<RCP<const FactoryBase>>("CoarseD0", Teuchos::null, "Generating factory for the coarse discrete gradient");
   validParamList->set<RCP<const FactoryBase>>("Ppattern", Teuchos::null, "Generating factory for the nonzero pattern");
-  validParamList->set<RCP<const FactoryBase>>("Pnodal", Teuchos::null, "Generating factory for nodal P");
+  validParamList->set<RCP<const FactoryBase>>("PnodalEmin", Teuchos::null, "Generating factory for nodal P");
 
   return validParamList;
 }
@@ -51,7 +51,7 @@ void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(
   } else {
     Input(fineLevel, "D0", "FineD0");
     Input(coarseLevel, "D0", "CoarseD0");
-    Input(coarseLevel, "Pnodal", "Pnodal");
+    Input(coarseLevel, "PnodalEmin", "PnodalEmin");
   }
   Input(coarseLevel, "Ppattern");
 }
@@ -73,7 +73,7 @@ void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& 
   } else {
     RCP<Matrix> fineD0     = Get<RCP<Matrix>>(fineLevel, "D0", "FineD0");
     RCP<Matrix> coarseD0   = Get<RCP<Matrix>>(coarseLevel, "D0", "CoarseD0");
-    RCP<Matrix> Pnodal     = Get<RCP<Matrix>>(coarseLevel, "Pnodal", "Pnodal");
+    RCP<Matrix> Pnodal     = Get<RCP<Matrix>>(coarseLevel, "PnodalEmin", "PnodalEmin");
     auto sparse_constraint = rcp(new SparseConstraint(Pnodal, fineD0, coarseD0, Ppattern, solverType));
 
     // Construct an initial guess.
