@@ -24,6 +24,8 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SparseConstraint_decl.hpp"
 #include "MueLu_Utilities.hpp"
+#include "Xpetra_MatrixFactory.hpp"
+#include "MueLu_Monitor.hpp"
 
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -49,6 +51,8 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
   using lno_nnz_view_t = typename graph_t::entries_type::non_const_type;
   using scalar_view_t  = typename matrix_t::values_type::non_const_type;
   using range_type     = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+
+  Monitor m(*this, "Setup");
 
   auto D        = D_;
   auto Dc       = Dc_;
@@ -88,10 +92,16 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
   auto constraint_rowmap                      = MapFactory::Build(lib, global_numConstraints, numConstraints, indexBase, comm);
   auto constraint_domainmap                   = MapFactory::Build(lib, global_numUnknowns, numUnknowns, indexBase, comm);
 
+  RCP<Matrix> ghostedDc;
+  if (!Ppattern->getImporter().is_null())
+    ghostedDc = MatrixFactory::Build(Dc, *Ppattern->getImporter());
+  else
+    ghostedDc = Dc;
+
   RCP<Matrix> X;
   {
     auto lclPattern  = Ppattern->getLocalGraphDevice();
-    auto lclD0       = Dc->getLocalMatrixDevice();
+    auto lclD0       = ghostedDc->getLocalMatrixDevice();
     auto lclAuxGraph = auxGraph->getLocalGraphDevice();
 
     lno_view_t rowptr("constraint_rowptr", numConstraints + 1);
