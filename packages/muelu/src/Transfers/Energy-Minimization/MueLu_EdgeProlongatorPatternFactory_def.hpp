@@ -28,7 +28,7 @@ RCP<const ParameterList> EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, Glo
 
   validParamList->set<RCP<const FactoryBase> >("FineD0", Teuchos::null, "Generating factory for the fine discrete gradient");
   validParamList->set<RCP<const FactoryBase> >("CoarseD0", Teuchos::null, "Generating factory for the coarse discrete gradient");
-  validParamList->set<RCP<const FactoryBase> >("Pnodal", Teuchos::null, "Generating factory for the nodal prolongator");
+  validParamList->set<RCP<const FactoryBase> >("PnodalEmin", Teuchos::null, "Generating factory for the nodal prolongator");
 
   return validParamList;
 }
@@ -37,7 +37,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
   Input(fineLevel, "D0", "FineD0");
   Input(coarseLevel, "D0", "CoarseD0");
-  Input(coarseLevel, "Pnodal");
+  Input(coarseLevel, "PnodalEmin");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -46,9 +46,11 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
 
   RCP<Matrix> D  = Get<RCP<Matrix> >(fineLevel, "D0", "FineD0");
   RCP<Matrix> Dc = Get<RCP<Matrix> >(coarseLevel, "D0", "CoarseD0");
-  RCP<Matrix> Pn = Get<RCP<Matrix> >(coarseLevel, "Pnodal");
+  RCP<Matrix> Pn = Get<RCP<Matrix> >(coarseLevel, "PnodalEmin");
 
   const auto one = Teuchos::ScalarTraits<Scalar>::one();
+
+  // |FineD| * |Pnodal| * |CoarseD^T|
 
   auto absD = MatrixFactory::BuildCopy(D);
   absD->setAllToScalar(one);

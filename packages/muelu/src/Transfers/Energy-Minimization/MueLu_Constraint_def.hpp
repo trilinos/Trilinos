@@ -22,6 +22,8 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_ProductOperator.hpp"
 #include "MueLu_Constraint_decl.hpp"
+#include "MueLu_Utilities.hpp"
+#include "MueLu_Monitor.hpp"
 
 #include "KokkosBlas1_set.hpp"
 #include "KokkosBatched_QR_FormQ_TeamVector_Internal.hpp"
@@ -360,6 +362,8 @@ class BlockInverseFunctor {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveBelos(const bool singular) {
+  Monitor m(*this, "PrepareLeastSquaresSolveBelos");
+
   TEUCHOS_ASSERT(!singular);
 
   problem_ = rcp(new Belos::LinearProblem<Scalar, MV, OP>());
@@ -441,8 +445,13 @@ allocateBlockDiagonalMatrix(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, N
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveDirect(const bool singular) {
+  Monitor m(*this, "PrepareLeastSquaresSolveDirect");
+
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> XXt;
-  XXt = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*X_, false, *X_, true, XXt, GetOStream(Runtime0), true, true);
+  {
+    SubMonitor m2(*this, "XXt");
+    XXt = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*X_, false, *X_, true, XXt, GetOStream(Runtime0), true, true);
+  }
 
   auto XXtgraph = XXt->getCrsGraph();
   auto blocks   = FindBlocks(XXtgraph);
@@ -450,12 +459,26 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
 
   LocalOrdinal numBlocks    = blocks.numRows();
   LocalOrdinal maxBlocksize = invXXt_->getLocalMaxNumRowEntries();
-  if (singular) {
-    BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice());
-    Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
-  } else {
-    BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice());
-    Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
+  {
+    SubMonitor m2(*this, "inversion");
+
+    if (singular) {
+      BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice());
+      Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
+    } else {
+      BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice());
+      Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
+    }
+  }
+
+  if (IsPrint(Statistics0)) {
+    // print some stats
+
+    auto comm = invXXt_->getRowMap()->getComm();
+    GlobalOrdinal globalNumBlocks;
+    MueLu_sumAll(comm, (GlobalOrdinal)numBlocks, globalNumBlocks);
+
+    GetOStream(Statistics0) << "Least-squares problem:\n maximum block size: " << invXXt_->getGlobalMaxNumRowEntries() << "\n Number of blocks: " << globalNumBlocks << std::endl;
   }
 }
 

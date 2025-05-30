@@ -431,14 +431,24 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
       OldSmootherMatrix = Kn_Smoother_0;
       OldEdgeLevel      = EdgeL;
     } else {
+      if (parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "emin reitzinger") {
+        auto NodalPtent = NodeL->Get<RCP<Matrix> >("Ptent");
+        EdgeL->Set("Pnodal", NodalPtent);
+      }
       // Set the Nodal P
+      auto NodalP = NodeL->Get<RCP<Matrix> >("P");
+      RCP<Matrix> NodalP_ones;
+      // if (parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") != "emin reitzinger") {
       // NOTE:  ML uses normalized prolongators for the aggregation hierarchy
       // and then prolongators of all 1's for doing the Reitzinger prolongator
       // generation for the edge hierarchy.
-      auto NodalP      = NodeL->Get<RCP<Matrix> >("P");
-      auto NodalP_ones = Utilities::ReplaceNonZerosWithOnes(NodalP);
+
+      NodalP_ones = Utilities::ReplaceNonZerosWithOnes(NodalP);
       TEUCHOS_TEST_FOR_EXCEPTION(NodalP_ones.is_null(), Exceptions::RuntimeError, "Applying ones to prolongator failed");
-      EdgeL->Set("Pnodal", NodalP_ones);
+      EdgeL->Set("PnodalEmin", NodalP_ones);
+      // } else {
+      //   EdgeL->Set("Pnodal", NodalP);
+      // }
 
       // Get the importer if we have one (for repartitioning)
       RCP<const Import> importer;

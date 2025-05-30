@@ -590,8 +590,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_BlockNumber(paramList, defaultList, manager, levelID, keeps);
 
   // === Aggregation ===
-  if (multigridAlgo == "unsmoothed reitzinger" || multigridAlgo == "smoothed reitzinger" || multigridAlgo == "emin reitzinger")
+  if (multigridAlgo == "unsmoothed reitzinger" || multigridAlgo == "smoothed reitzinger")
     UpdateFactoryManager_Reitzinger(paramList, defaultList, manager, levelID, keeps);
+  else if (multigridAlgo == "emin reitzinger")
+    UpdateFactoryManager_EminReitzinger(paramList, defaultList, manager, levelID, keeps);
   else
     UpdateFactoryManager_Aggregation_TentativeP(paramList, defaultList, manager, levelID, keeps);
 
@@ -625,8 +627,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     UpdateFactoryManager_Emin(paramList, defaultList, manager, levelID, keeps);
 
   } else if (multigridAlgo == "emin reitzinger") {
-    // Energy minimization
-    UpdateFactoryManager_EminReitzinger(paramList, defaultList, manager, levelID, keeps);
+    // pass
 
   } else if (multigridAlgo == "replicate") {
     UpdateFactoryManager_Replicate(paramList, defaultList, manager, levelID, keeps);
@@ -1001,6 +1002,67 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   manager.SetFactory("Ptent", rFactory);
   manager.SetFactory("D0", rFactory);
   manager.SetFactory("InPlaceMap", rFactory);
+}
+
+// =====================================================================================================
+// =============================== Algorithm: Energy Minimization Reitzinger ===========================
+// =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    UpdateFactoryManager_EminReitzinger(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
+                                        int levelID, std::vector<keep_pair>& keeps) const {
+  ParameterList rParams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: enable", bool, rParams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rParams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: constant column sums", bool, rParams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, rParams);
+
+  RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
+  rFactory->SetParameterList(rParams);
+
+  // These are all going to be user provided, so NoFactory
+  rFactory->SetFactory("Pnodal", NoFactory::getRCP());
+  rFactory->SetFactory("NodeAggMatrix", NoFactory::getRCP());
+  // rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
+
+  if (levelID > 1)
+    rFactory->SetFactory("D0", this->GetFactoryManager(levelID - 1)->GetFactory("D0"));
+  else
+    rFactory->SetFactory("D0", NoFactory::getRCP());
+
+  manager.SetFactory("Ptent", rFactory);
+  manager.SetFactory("D0", rFactory);
+  manager.SetFactory("InPlaceMap", rFactory);
+
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+
+  // Pattern
+  auto patternFactory = rcp(new EdgeProlongatorPatternFactory());
+  // patternFactory->SetFactory("Pnodal", manager.GetFactory("Pnodal"));
+  manager.SetFactory("Ppattern", patternFactory);
+
+  // Constraint
+  auto constraintFactory = rcp(new ConstraintFactory());
+  constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
+  constraintFactory->SetParameter("emin: constraint type", Teuchos::ParameterEntry(std::string("maxwell")));
+  manager.SetFactory("Constraint", constraintFactory);
+
+  // Emin Factory
+  auto P = rcp(new EminPFactory());
+
+  // Energy minimization
+  ParameterList Pparams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations", int, Pparams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
+  if (reuseType == "emin") {
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations", int, Pparams);
+    Pparams.set("Keep P0", true);
+    Pparams.set("Keep Constraint0", true);
+  }
+  P->SetParameterList(Pparams);
+  P->SetFactory("P", manager.GetFactory("Ptent"));
+  P->SetFactory("Constraint", manager.GetFactory("Constraint"));
+  manager.SetFactory("P", P);
 }
 
 // =====================================================================================================
@@ -2175,44 +2237,6 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Emin Factory
   auto P = rcp(new EminPFactory());
-  P->SetParameterList(Pparams);
-  P->SetFactory("P", manager.GetFactory("Ptent"));
-  P->SetFactory("Constraint", manager.GetFactory("Constraint"));
-  manager.SetFactory("P", P);
-}
-
-// =====================================================================================================
-// =============================== Algorithm: Energy Minimization Reitzinger ===========================
-// =====================================================================================================
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_EminReitzinger(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                                        int /* levelID */, std::vector<keep_pair>& /* keeps */) const {
-  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
-
-  // Pattern
-  auto patternFactory = rcp(new EdgeProlongatorPatternFactory());
-  // patternFactory->SetFactory("Pnodal", manager.GetFactory("Pnodal"));
-  manager.SetFactory("Ppattern", patternFactory);
-
-  // Constraint
-  auto constraintFactory = rcp(new ConstraintFactory());
-  constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
-  constraintFactory->SetParameter("emin: constraint type", Teuchos::ParameterEntry(std::string("maxwell")));
-  manager.SetFactory("Constraint", constraintFactory);
-
-  // Emin Factory
-  auto P = rcp(new EminPFactory());
-
-  // Energy minimization
-  ParameterList Pparams;
-  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations", int, Pparams);
-  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
-  if (reuseType == "emin") {
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations", int, Pparams);
-    Pparams.set("Keep P0", true);
-    Pparams.set("Keep Constraint0", true);
-  }
   P->SetParameterList(Pparams);
   P->SetFactory("P", manager.GetFactory("Ptent"));
   P->SetFactory("Constraint", manager.GetFactory("Constraint"));
