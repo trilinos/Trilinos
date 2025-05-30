@@ -175,10 +175,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
   A11->fillComplete(dofRowMapDual, dofRowMapDual);
   A11->SetFixedBlockSize(ndofnDual);
 
-  // The true null space is not necessary for this test, so we construct a random one
-  RCP<MultiVector> nullspace1 = MultiVectorFactory::Build(dofRowMapPrimal, ndofnPrimal);
-  nullspace1->randomize();
-
+  // Factories necessary for primal aggregation
   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
   RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
   dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -189,8 +186,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(InterfaceAggregationFactory, BuildBasedOnNodeM
   uncoupledAggFact->SetFactory("DofsPerNode", dropFact);
   level.Set("DofsPerNode", ndofnPrimal);
   level.Set("A", A00);
-  level.Set("nullspace1", nullspace1);
-  uncoupledAggFact->SetOrdering("natural");
   level.Request("Aggregates", uncoupledAggFact.get());
   uncoupledAggFact->Build(level);
 
