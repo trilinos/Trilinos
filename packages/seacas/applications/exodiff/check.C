@@ -319,34 +319,64 @@ namespace {
     SMART_ASSERT(block2->Size() == 0 || block2->Num_Nodes_per_Element() == 0 || !conn2.empty());
 
     if (interFace.map_flag == MapType::FILE_ORDER || elmt_map.empty()) {
-      size_t node_count = block1->Size() * block1->Num_Nodes_per_Element();
-      SMART_ASSERT(node_count == block2->Size() * block2->Num_Nodes_per_Element());
+      SMART_ASSERT(block1->Size() == block2->Size());
+      SMART_ASSERT(block1->Num_Nodes_per_Element() == block2->Num_Nodes_per_Element());
+      size_t num_element = block1->Size();
+      size_t nnpe        = block1->Num_Nodes_per_Element();
 
       if (interFace.map_flag != MapType::FILE_ORDER && !node_map.empty()) {
-        for (size_t e = 0; e < node_count; ++e) {
-          if (node_map[conn1[e] - 1] + 1 != conn2[e]) {
-            size_t elem = e / block2->Num_Nodes_per_Element();
-            size_t node = e % block2->Num_Nodes_per_Element();
-            Warning(
-                fmt::format(".. Connectivities in block id {} are not the same.\n"
-                            "                  First difference is node {} of local element {}\n",
-                            block1->Id(), node + 1, elem + 1));
-            is_same = false;
-            break;
+        for (size_t e = 0; is_same && e < num_element; ++e) {
+          for (size_t n = 0; is_same && n < nnpe; ++n) {
+            if (node_map[conn1[e * nnpe + n] - 1] + 1 != conn2[e * nnpe + n]) {
+              bool permuted = false;
+              if (interFace.allowPermutation) {
+                // Mismatch in ordered connectivity for this element... See if a permutation
+                // matches...
+                std::vector<INT> e1_conn(nnpe);
+                for (size_t i = 0; i < nnpe; i++) {
+                  e1_conn[i] = node_map[conn1[e * nnpe + i] - 1] + 1;
+                }
+                permuted = std::is_permutation(e1_conn.begin(), e1_conn.end(), &conn2[e],
+                                               &conn2[e + nnpe]);
+              }
+              if (!permuted) {
+                const std::string permit_permute =
+                    interFace.allowPermutation ? " (or permuted)" : "";
+                Warning(fmt::format(
+                    fmt::runtime(
+                        ".. Connectivities in block id {} are not the same{}.\n"
+                        "                     First difference is node {} of local element {}\n"),
+                    block1->Id(), permit_permute, n + 1, e + 1));
+                is_same = false;
+                break;
+              }
+            }
           }
         }
       }
       else {
-        for (size_t e = 0; e < node_count; ++e) {
-          if (conn1[e] != conn2[e]) {
-            size_t elem = e / block2->Num_Nodes_per_Element();
-            size_t node = e % block2->Num_Nodes_per_Element();
-            Warning(
-                fmt::format(".. Connectivities in block id {} are not the same.\n"
-                            "                  First difference is node {} of local element {}\n",
-                            block1->Id(), node + 1, elem + 1));
-            is_same = false;
-            break;
+        for (size_t e = 0; is_same && e < num_element; ++e) {
+          for (size_t n = 0; is_same && n < nnpe; ++n) {
+            if (conn1[e * nnpe + n] != conn2[e * nnpe + n]) {
+              bool permuted = false;
+              if (interFace.allowPermutation) {
+                // Mismatch in ordered connectivity for this element... See if a permutation
+                // matches...
+                permuted = std::is_permutation(&conn1[e * nnpe], &conn1[e * nnpe + nnpe],
+                                               &conn2[e * nnpe], &conn2[e * nnpe + nnpe]);
+              }
+              if (!permuted) {
+                const std::string permit_permute =
+                    interFace.allowPermutation ? " (or permuted)" : "";
+                Warning(fmt::format(
+                    fmt::runtime(
+                        ".. Connectivities in block id {} are not the same{}.\n"
+                        "                     First difference is node {} of local element {}\n"),
+                    block1->Id(), permit_permute, n + 1, e + 1));
+                is_same = false;
+                break;
+              }
+            }
           }
         }
       }
@@ -366,13 +396,31 @@ namespace {
             auto   n1     = conn1[off1];
             auto   map_n1 = node_map.empty() ? n1 : node_map[n1 - 1] + 1;
             if (map_n1 != conn2[off2]) {
-              Warning(
-                  fmt::format(".. Connectivities in block id {} are not the same.\n"
-                              "                  First difference is node {} of local element {} "
-                              "(file1) {} (file2)\n",
-                              block1->Id(), n + 1, e1 + 1, e2 + 1));
-              is_same = false;
-              break;
+              bool permuted = false;
+              if (interFace.allowPermutation) {
+                // Mismatch in ordered connectivity for this element... See if a permutation
+                // matches...
+                std::vector<INT> e1_conn(nnpe);
+                for (size_t i = 0; i < nnpe; i++) {
+                  n1         = conn1[off1];
+                  map_n1     = node_map.empty() ? n1 : node_map[n1 - 1] + 1;
+                  e1_conn[i] = map_n1;
+                }
+                permuted = std::is_permutation(e1_conn.begin(), e1_conn.end(), &conn2[e2 * nnpe],
+                                               &conn2[e2 * nnpe + nnpe]);
+              }
+              if (!permuted) {
+                const std::string permit_permute =
+                    interFace.allowPermutation ? " (or permuted)" : "";
+                Warning(fmt::format(
+                    fmt::runtime(
+                        ".. Connectivities in block id {} are not the same{}.\n"
+                        "                     First difference is node {} of local element {} "
+                        "(file1) {} (file2)\n"),
+                    block1->Id(), n + 1, e1 + 1, e2 + 1));
+                is_same = false;
+                break;
+              }
             }
           }
         }

@@ -165,44 +165,6 @@ namespace {
     mutable std::vector<bool>       m_visitedAssemblies;
   };
 
-  std::vector<ex_assembly> get_exodus_assemblies(int exoid)
-  {
-    std::vector<ex_assembly> assemblies;
-    int                      nassem = ex_inquire_int(exoid, EX_INQ_ASSEMBLY);
-    if (nassem > 0) {
-      assemblies.resize(nassem);
-
-      int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-      for (auto &assembly : assemblies) {
-        assembly.name = new char[max_name_length + 1];
-      }
-
-      int ierr = ex_get_assemblies(exoid, Data(assemblies));
-      if (ierr < 0) {
-        Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
-      }
-
-      // Now allocate space for member list and get assemblies again...
-      for (auto &assembly : assemblies) {
-        assembly.entity_list = new int64_t[assembly.entity_count];
-      }
-
-      ierr = ex_get_assemblies(exoid, Data(assemblies));
-      if (ierr < 0) {
-        Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
-      }
-    }
-    return assemblies;
-  }
-
-  void cleanup_exodus_assembly_vector(std::vector<ex_assembly> &assemblies)
-  {
-    for (const auto &assembly : assemblies) {
-      delete[] assembly.entity_list;
-      delete[] assembly.name;
-    }
-  }
-
 } // namespace
 
 namespace Ioex {
@@ -801,7 +763,7 @@ namespace Ioex {
     Ioss::SerializeIO serializeIO_(this);
 
     // Query number of assemblies...
-    auto assemblies = get_exodus_assemblies(get_file_pointer());
+    auto assemblies = Ioex::get_exodus_assemblies(get_file_pointer());
     if (!assemblies.empty()) {
       Ioss::NameList exclusions;
       Ioss::NameList inclusions;
@@ -829,7 +791,7 @@ namespace Ioex {
       exclusionFilter.update_assembly_filter_list(assemblyOmissions);
       inclusionFilter.update_assembly_filter_list(assemblyInclusions);
 
-      cleanup_exodus_assembly_vector(assemblies);
+      Ioex::cleanup_exodus_assembly_vector(assemblies);
 
       Ioss::Utils::insert_sort_and_unique(exclusions, blockOmissions);
       Ioss::Utils::insert_sort_and_unique(inclusions, blockInclusions);
@@ -840,7 +802,7 @@ namespace Ioex {
   {
     Ioss::SerializeIO serializeIO_(this);
 
-    auto assemblies = get_exodus_assemblies(get_file_pointer());
+    auto assemblies = Ioex::get_exodus_assemblies(get_file_pointer());
     if (!assemblies.empty()) {
       for (const auto &assembly : assemblies) {
         auto *assem = new Ioss::Assembly(get_region()->get_database(), assembly.name);
@@ -888,7 +850,7 @@ namespace Ioex {
           m_reductionValues[EX_ASSEMBLY][assembly.id].resize(size);
         }
       }
-      cleanup_exodus_assembly_vector(assemblies);
+      Ioex::cleanup_exodus_assembly_vector(assemblies);
 
       assert(assemblyOmissions.empty() || assemblyInclusions.empty()); // Only one can be non-empty
 
@@ -1555,19 +1517,20 @@ namespace Ioex {
     }
   }
 
-  bool BaseDatabaseIO::begin_state_nl(int state, double time)
+  bool BaseDatabaseIO::begin_state_nl(int state, double a_time)
   {
     Ioss::SerializeIO serializeIO_(this);
 
-    time /= timeScaleFactor;
+    a_time /= timeScaleFactor;
 
     if (!is_input()) {
+      timeBeginStep = time(nullptr);
       if (get_file_per_state()) {
         // Close current file; create new file and output transient metadata...
         open_state_file(state);
         write_results_metadata(false, open_create_behavior());
       }
-      int ierr = ex_put_time(get_file_pointer(), get_database_step(state), &time);
+      int ierr = ex_put_time(get_file_pointer(), get_database_step(state), &a_time);
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
       }
@@ -1589,14 +1552,14 @@ namespace Ioex {
   }
 
   // common
-  bool BaseDatabaseIO::end_state_nl(int state, double time)
+  bool BaseDatabaseIO::end_state_nl(int state, double a_time)
   {
     Ioss::SerializeIO serializeIO_(this);
 
     if (!is_input()) {
       write_reduction_fields();
-      time /= timeScaleFactor;
-      finalize_write(state, time);
+      a_time /= timeScaleFactor;
+      finalize_write(state, a_time);
       if (minimizeOpenFiles) {
         free_file_pointer();
       }
@@ -1899,6 +1862,9 @@ namespace Ioex {
                 }
               }
               names[j] = "";
+              if (i == 0) {
+                field.set_index(j);
+              }
               break;
             }
           }
@@ -2610,6 +2576,8 @@ namespace Ioex {
     //  flushInterval == 1 -- flush every step
     //
     //  flushInterval > 1 -- flush if step % flushInterval == 0
+    //
+    //  if time between begin_state and end_state is > 10 seconds,
 
     bool do_flush = true;
     if (flushInterval == 1) {
@@ -2639,6 +2607,24 @@ namespace Ioex {
       if (state % flushInterval == 0) {
         do_flush = true;
       }
+    }
+
+    if (flushInterval != 0 && !do_flush) {
+      // One last check -- if output took more than 10 seconds (arbitrary)
+      // then flush since the relative flush cost is outweighted by the time
+      // it took to do the output (Basically, we have a lot of data being output...)
+      time_t cur_time = time(nullptr);
+      if (cur_time - timeBeginStep >= 10) {
+        timeLastFlush = cur_time;
+        do_flush      = true;
+      }
+#ifdef SEACAS_HAVE_MPI
+      if (isParallel) {
+        int iflush = do_flush ? 1 : 0;
+        util().broadcast(iflush);
+        do_flush = iflush == 1;
+      }
+#endif
     }
 
     if (do_flush) {
@@ -3117,7 +3103,7 @@ namespace Ioex {
           df_count += block->get_property("distribution_factor_count").get_int();
         }
         auto *new_entity = const_cast<Ioss::SideSet *>(set);
-        new_entity->property_add(Ioss::Property("entity_count", entity_count));
+        new_entity->reset_entity_count(entity_count);
         new_entity->property_add(Ioss::Property("distribution_factor_count", df_count));
       }
       m_groupCount[EX_SIDE_SET] = ssets.size();

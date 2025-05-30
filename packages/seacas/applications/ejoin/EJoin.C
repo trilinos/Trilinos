@@ -37,7 +37,7 @@
 #include "EJ_SystemInterface.h"
 #include "EJ_Version.h"
 #include "EJ_mapping.h"
-#include "EJ_match_xyz.h"
+#include "EJ_match.h"
 #include "EJ_vector3d.h"
 
 #ifdef SEACAS_HAVE_MPI
@@ -215,6 +215,7 @@ int main(int argc, char *argv[])
       if (dbi[p]->int_byte_size_api() > int_byte_size) {
         int_byte_size = dbi[p]->int_byte_size_api();
       }
+      dbi[p]->set_lowercase_database_names(false);
     }
 
     for (size_t p = 0; p < interFace.inputFiles_.size(); p++) {
@@ -397,6 +398,10 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   }
   else if (interFace.match_node_xyz()) {
     match_node_xyz(part_mesh, interFace.tolerance(), global_node_map, local_node_map);
+  }
+  else if (interFace.match_nodeset_nodes()) {
+    match_nodeset_nodes(part_mesh, interFace.tolerance(), global_node_map, local_node_map,
+                        interFace);
   }
   else {
     // Eliminate all nodes that were only connected to the omitted element blocks (if any).

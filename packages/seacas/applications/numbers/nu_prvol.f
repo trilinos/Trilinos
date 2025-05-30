@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -12,6 +12,7 @@ C     ... ESTIMATE TIMESTEP FOR MESH --- BRICKS ONLY
       DIMENSION CRD(NUMNP, *), IX(NNODE,*)
       DIMENSION GRADOP(8)
       REAL volume(*)
+      REAL M(3,3)
 
       IF (NDIM .EQ. 3 .AND. NNODE .EQ. 8) THEN
         DO 20 IEL = 1, numel
@@ -91,10 +92,54 @@ C     Calculate element volume
  20     CONTINUE
 
 C ... Special for Frank Dempsey -- Print volumes and connectivity to file
-        DO 30 IEL=1, NUMEL
+        DO IEL=1, NUMEL
           write (IUNIT,999) iel, volume(iel), (ix(i,iel),i=1,8)
  999      format(i8,1PE17.8,8i8)
- 30     CONTINUE
+       end do
+      else if (ndim .eq. 3 .and. nnode .eq. 4) then
+      DO iel = 1, numel
+         X1 = CRD(ix(1,iel),1)
+         X2 = CRD(ix(2,iel),1)
+         X3 = CRD(ix(3,iel),1)
+         X4 = CRD(ix(4,iel),1)
+
+         Y1 = CRD(ix(1,iel),2)
+         Y2 = CRD(ix(2,iel),2)
+         Y3 = CRD(ix(3,iel),2)
+         Y4 = CRD(ix(4,iel),2)
+
+         Z1 = CRD(ix(1,iel),3)
+         Z2 = CRD(ix(2,iel),3)
+         Z3 = CRD(ix(3,iel),3)
+         Z4 = CRD(ix(4,iel),3)
+
+         m(1,1) = x1 - x2
+         m(1,2) = y1 - y2
+         m(1,3) = z1 - z2
+
+         m(2,1) = x2 - x3
+         m(2,2) = y2 - y3
+         m(2,3) = z2 - z3
+
+         m(3,1) = x3 - x4
+         m(3,2) = y3 - y4
+         m(3,3) = z3 - z4
+
+         det = (m(1,1) * (m(2,2) * m(3,3) - m(2,3) * m(3,2)) -
+     $          m(2,1) * (m(1,2) * m(3,3) - m(1,3) * m(3,2)) +
+     $          m(3,1) * (m(1,2) * m(2,3) - m(1,3) * m(2,2)))
+
+         VOLUME(iel) = -det / 6.0
+          if (volume(iel) .lt. 0.0) then
+            write (*,*) 'Zero or negative volume at element',
+     &        iel
+          endif
+       end do
+C ... Special for Frank Dempsey -- Print volumes and connectivity to file
+        DO IEL=1, NUMEL
+          write (IUNIT,998) iel, volume(iel), (ix(i,iel),i=1,4)
+ 998      format(i8,1PE17.8,4i8)
+       end do
       ELSE
         STOP 'Not Implemented'
       END IF
