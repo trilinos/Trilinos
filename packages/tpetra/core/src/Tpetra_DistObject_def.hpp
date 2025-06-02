@@ -915,15 +915,6 @@ namespace Tpetra {
     bool needCommunication = true;
     // We only need to send data if the combine mode is not ZERO.
     if (CM != ZERO) {
-      if (constantNumPackets != 0) {
-        // There are a constant number of packets per element.  We
-        // already know (from the number of "remote" (incoming)
-        // elements) how many incoming elements we expect, so we can
-        // resize the buffer accordingly.
-        const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
-        reallocImportsIfNeeded (rbufLen, verbose, prefix.get (), canTryAliasing, CM);
-      }
-
       // This may be NULL.  It will be used below.
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
 
@@ -949,10 +940,14 @@ namespace Tpetra {
     // The operations for the transfer can be performed in different
     // order. The "safe" way is
     //
-    // - copyAndPermute
-    // - packAndPrepare
-    // - doPostRecvs
-    // - doPostSends
+    // - copyAndPermute     |
+    // - packAndPrepare     |--- beginTransfer
+    // - doPostRecvs        |
+    // - doPostSends        |
+    //
+    // - doWaitsRecv        |
+    // - unpackAndCombine   |--- endTransfer
+    // - doWaitsSend        |
 
     // This is "safe" because the local computation steps
     // copyAndPermute and packAndPrepare are free to run on host or
@@ -966,18 +961,23 @@ namespace Tpetra {
     // communication and computation, leading to this sequence of
     // operations:
     //
-    // - doPostRecvs
-    // - packAndPrepare
-    // - doPostSends
-    // - copyAndPermute
+    // - doPostRecvs       |
+    // - packAndPrepare    |--- beginTransfer
+    // - doPostSends       |
+    // - copyAndPermute    |
+    //
+    // - doWaitsRecv       |
+    // - unpackAndCombine  |--- endTransfer
+    // - doWaitsSend       |
     //
     // Note that this is not the same as overlap of communication and
-    // computation in the sparse matrix-vector product.
+    // computation in the sparse matrix-vector product which would involve
+    // performing computation between beginTransfer and endTransfer.
     //
-    // This has two advantages:
+    // The second approach has two advantages:
     // 1) Receives and sends are separated by computation. This
     // decreases the likelihood of MPI having to allocate temporary
-    // buffers because unexpected messages are received.
+    // buffers for unexpectedly received messages.
     // 2) Sends and doWaitsRecv in endTransfer are seperated by
     // copyAndPermute, giving MPI time to make progress.
     //
@@ -990,10 +990,10 @@ namespace Tpetra {
     // modify target in the same space.
     //
     // Given these additional constraints, we currently only enable
-    // the overlapping of communication and computation in the "fast"
-    // transfer case, i.e. when constantNumPackets > 0.
+    // the overlapping of communication and computation when constantNumPackets > 0
+    // and Behavior::enableGranularTransfers().
 
-    const bool overlapTransferSteps = (constantNumPackets != 0) && Behavior::fastTransfers();
+    const bool overlapTransferSteps = (constantNumPackets != 0) && Behavior::enableGranularTransfers();
 
     if (verbose) {
       std::ostringstream os;
@@ -1089,6 +1089,19 @@ namespace Tpetra {
         }
 
         ////////////////////////////////////////////////////////////////////
+        // reallocImportsIfNeeded
+        if (constantNumPackets != 0) {
+          ProfilingRegion region_reallocImportsIfNeeded("Tpetra::DistObject::beginTransfer::reallocImportsIfNeeded");
+
+          // There are a constant number of packets per element.  We
+          // already know (from the number of "remote" (incoming)
+          // elements) how many incoming elements we expect, so we can
+          // resize the buffer accordingly.
+          const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
+          reallocImportsIfNeeded (rbufLen, verbose, prefix.get (), canTryAliasing, CM);
+        }
+
+        ////////////////////////////////////////////////////////////////////
         // doPostRecvs
 
         // If only one round of communication is required: post receives.
@@ -1125,6 +1138,19 @@ namespace Tpetra {
 
         ////////////////////////////////////////////////////////////////////
         // doPostRecvs
+
+        ////////////////////////////////////////////////////////////////////
+        // reallocImportsIfNeeded
+        if (constantNumPackets != 0) {
+          ProfilingRegion region_reallocImportsIfNeeded("Tpetra::DistObject::beginTransfer::reallocImportsIfNeeded");
+
+          // There are a constant number of packets per element.  We
+          // already know (from the number of "remote" (incoming)
+          // elements) how many incoming elements we expect, so we can
+          // resize the buffer accordingly.
+          const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
+          reallocImportsIfNeeded (rbufLen, verbose, prefix.get (), canTryAliasing, CM);
+        }
 
         // If only one round of communication is required: post receives.
         // If two rounds are required: complete first round and post receives for second round.
@@ -1359,36 +1385,15 @@ namespace Tpetra {
 
     using const_lo_dv_type =
       Kokkos::DualView<const local_ordinal_type*, buffer_device_type>;
-    const_lo_dv_type permuteToLIDs = (revOp == DoForward) ?
-      transfer.getPermuteToLIDs_dv () :
-      transfer.getPermuteFromLIDs_dv ();
-    const_lo_dv_type permuteFromLIDs = (revOp == DoForward) ?
-      transfer.getPermuteFromLIDs_dv () :
-      transfer.getPermuteToLIDs_dv ();
     const_lo_dv_type remoteLIDs = (revOp == DoForward) ?
       transfer.getRemoteLIDs_dv () :
       transfer.getExportLIDs_dv ();
-    const_lo_dv_type exportLIDs = (revOp == DoForward) ?
-      transfer.getExportLIDs_dv () :
-      transfer.getRemoteLIDs_dv ();
-    const bool canTryAliasing = (revOp == DoForward) ?
-      transfer.areRemoteLIDsContiguous() :
-      transfer.areExportLIDsContiguous();
 
     size_t constantNumPackets = this->constantNumberOfPackets ();
 
     // We only need to send data if the combine mode is not ZERO.
     if (CM != ZERO) {
-      if (constantNumPackets != 0) {
-        // There are a constant number of packets per element.  We
-        // already know (from the number of "remote" (incoming)
-        // elements) how many incoming elements we expect, so we can
-        // resize the buffer accordingly.
-        const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
-        reallocImportsIfNeeded (rbufLen, verbose, prefix.get (), canTryAliasing, CM);
-      }
-
-      // Do we need to do communication (via doPostsAndWaits)?
+      // Do we need to do communication (via doWaitsRecv and doWaitsSend)?
       bool needCommunication = true;
 
       // This may be NULL.  It will be used below.
