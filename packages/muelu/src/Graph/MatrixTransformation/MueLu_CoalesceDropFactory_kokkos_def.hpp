@@ -99,7 +99,7 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Decl
   }
   if (algo == "signed classical sa")
     ;
-  else if (algo.find("block diagonal") != std::string::npos || algo.find("signed classical") != std::string::npos) {
+  else if (algo.find("block diagonal") != std::string::npos) {
     Input(currentLevel, "BlockNumber");
   }
 }
