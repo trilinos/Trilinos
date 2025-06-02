@@ -346,6 +346,59 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   }
 }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+getMaxMinusOffDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
+                       DistanceFunctorType& distFunctor) {
+  using scalar_type         = Scalar;
+  using local_ordinal_type  = LocalOrdinal;
+  using global_ordinal_type = GlobalOrdinal;
+  using node_type           = Node;
+  using ATS                 = Kokkos::ArithTraits<scalar_type>;
+  using impl_scalar_type    = typename ATS::val_type;
+  using implATS             = Kokkos::ArithTraits<impl_scalar_type>;
+  using magnitudeType       = typename implATS::magnitudeType;
+  using execution_space     = typename Node::execution_space;
+  using range_type          = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
+  using mATS                = Kokkos::ArithTraits<magnitudeType>;
+
+  auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1);
+  {
+    auto lclA    = A.getLocalMatrixDevice();
+    auto lclDiag = diag->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+
+    Kokkos::parallel_for(
+        "MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag",
+        range_type(0, lclA.numRows()),
+        KOKKOS_LAMBDA(const local_ordinal_type& row) {
+          auto rowView = lclA.rowConst(row);
+          auto length  = rowView.length;
+
+          impl_scalar_type mymax = implATS::zero();
+          magnitudeType d;
+          impl_scalar_type d2;
+          for (local_ordinal_type colID = 0; colID < length; colID++) {
+            auto col = rowView.colidx(colID);
+            if (row != col) {
+              d  = distFunctor.distance2(row, col);
+              d2 = implATS::one() / d;
+              if (implATS::magnitude(mymax) < -implATS::magnitude(d2))
+                mymax = -implATS::magnitude(d2);
+            }
+          }
+          lclDiag(row, 0) = mymax;
+        });
+  }
+  auto importer = A.getCrsGraph()->getImporter();
+  if (!importer.is_null()) {
+    auto ghostedDiag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getColMap(), 1);
+    ghostedDiag->doImport(*diag, *importer, Xpetra::INSERT);
+    return ghostedDiag;
+  } else {
+    return diag;
+  }
+}
+
 /*!
 @class DropFunctor
 @brief Drops entries the unscaled distance Laplacian.
@@ -356,9 +409,9 @@ Evaluates the dropping criterion
 \f]
 where \f$d_{ij}\f$ is a distance metric.
 */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType, Misc::StrengthMeasure measure>
 class DropFunctor {
- private:
+ public:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using local_matrix_type  = typename matrix_type::local_matrix_type;
   using scalar_type        = typename local_matrix_type::value_type;
@@ -372,7 +425,9 @@ class DropFunctor {
   using ATS                 = Kokkos::ArithTraits<scalar_type>;
   using magnitudeType       = typename ATS::magnitudeType;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
+  using mATS                = Kokkos::ArithTraits<magnitudeType>;
 
+ private:
   local_matrix_type A;
   magnitudeType eps;
   Teuchos::RCP<diag_vec_type> diagVec;
@@ -387,9 +442,15 @@ class DropFunctor {
     , eps(threshold)
     , dist2(dist2_)
     , results(results_) {
-    diagVec        = getDiagonal(A_, dist2);
-    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
-    diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
+      diagVec        = getDiagonal(A_, dist2);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+      diagVec        = getMaxMinusOffDiagonal(A_, dist2);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    }
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
@@ -405,18 +466,35 @@ class DropFunctor {
       } else {
         val = diag(rlid);
       }
-      auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
-      auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
 
-      results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
-                                        results(offset + k));
+      if constexpr (measure == Misc::SmoothedAggregationMeasure) {
+        auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+        auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
+
+        results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
+                                          results(offset + k));
+      } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+        auto neg_aij        = -ATS::real(val);
+        auto max_neg_aik    = eps * ATS::real(diag(rlid));
+        results(offset + k) = Kokkos::max((neg_aij <= max_neg_aik) ? DROP : KEEP,
+                                          results(offset + k));
+      } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
+        auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+        const bool is_nonpositive = ATS::real(val) <= mATS::zero();
+        magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+        // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
+        if (is_nonpositive)
+          aij2 = -aij2;
+        results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
+                                          results(offset + k));
+      }
     }
   }
 };
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType, Misc::StrengthMeasure measure>
 class VectorDropFunctor {
- private:
+ public:
   using matrix_type             = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using local_matrix_type       = typename matrix_type::local_matrix_type;
   using scalar_type             = typename local_matrix_type::value_type;
@@ -431,7 +509,9 @@ class VectorDropFunctor {
   using ATS                 = Kokkos::ArithTraits<scalar_type>;
   using magnitudeType       = typename ATS::magnitudeType;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
+  using mATS                = Kokkos::ArithTraits<magnitudeType>;
 
+ private:
   local_matrix_type A;
   magnitudeType eps;
   Teuchos::RCP<diag_vec_type> diagVec;
@@ -450,9 +530,15 @@ class VectorDropFunctor {
     , results(results_)
     , point_to_block(point_to_block_)
     , ghosted_point_to_block(ghosted_point_to_block_) {
-    diagVec        = getDiagonal(mergedA_, dist2);
-    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
-    diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
+      diagVec        = getDiagonal(mergedA_, dist2);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    } else if (measure == Misc::SignedRugeStuebenMeasure) {
+      diagVec        = getMaxMinusOffDiagonal(A_, dist2);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    }
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
@@ -470,14 +556,53 @@ class VectorDropFunctor {
       } else {
         val = diag(brlid);
       }
-      auto aiiajj = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
-      auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                  // |a_ij|^2
 
-      results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
-                                        results(offset + k));
+      if constexpr (measure == Misc::SmoothedAggregationMeasure) {
+        auto aiiajj = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
+        auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                  // |a_ij|^2
+
+        results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
+                                          results(offset + k));
+      } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+        auto neg_aij        = -ATS::real(val);
+        auto max_neg_aik    = eps * ATS::real(diag(brlid));
+        results(offset + k) = Kokkos::max((neg_aij <= max_neg_aik) ? DROP : KEEP,
+                                          results(offset + k));
+      } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
+        auto aiiajj               = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
+        const bool is_nonpositive = ATS::real(val) <= mATS::zero();
+        magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+        // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
+        if (is_nonpositive)
+          aij2 = -aij2;
+        results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
+                                          results(offset + k));
+      }
     }
   }
 };
+
+// helper function to allow partial template deduction
+template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+auto make_drop_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
+                       typename DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::magnitudeType threshold,
+                       DistanceFunctorType& dist2_,
+                       typename DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_) {
+  auto functor = DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, threshold, dist2_, results_);
+  return functor;
+}
+
+template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+auto make_vector_drop_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
+                              Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mergedA_,
+                              typename VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::magnitudeType threshold,
+                              DistanceFunctorType& dist2_,
+                              typename VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_,
+                              typename VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::block_indices_view_type point_to_block_,
+                              typename VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::block_indices_view_type ghosted_point_to_block_) {
+  auto functor = VectorDropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, mergedA_, threshold, dist2_, results_, point_to_block_, ghosted_point_to_block_);
+  return functor;
+}
 
 }  // namespace MueLu::DistanceLaplacian
 

@@ -19,133 +19,32 @@
 namespace MueLu::ClassicalDropping {
 
 /*!
-  @class SAFunctor
-  @brief Classical smoothed aggregation dropping criterion
+  @class DropFunctor
+  @brief Classical dropping criterion
 
-  Evaluates the dropping criterion
+  Depending on the value of measure evaluates the dropping criterion
+
+  SmoothedAggregationMeasure
+
   \f[
   \frac{|A_{ij}|^2}{|A_{ii}| |A_{jj}|} \le \theta^2
   \f]
-*/
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class SAFunctor {
- private:
-  using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using diag_vec_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
-  using scalar_type        = typename local_matrix_type::value_type;
-  using local_ordinal_type = typename local_matrix_type::ordinal_type;
-  using memory_space       = typename local_matrix_type::memory_space;
-  using diag_view_type     = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
 
-  using results_view = Kokkos::View<DecisionType*, memory_space>;
+  SignedRugeStuebenMeasure
 
-  using ATS                 = Kokkos::ArithTraits<scalar_type>;
-  using magnitudeType       = typename ATS::magnitudeType;
-  using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
-
-  local_matrix_type A;
-  Teuchos::RCP<diag_vec_type> diagVec;
-  diag_view_type diag;  // corresponds to overlapped diagonal
-  magnitudeType eps;
-  results_view results;
-
- public:
-  SAFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
-    : A(A_.getLocalMatrixDevice())
-    , eps(threshold)
-    , results(results_) {
-    diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
-    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
-    diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
-  }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  void operator()(const local_ordinal_type rlid) const {
-    auto row      = A.rowConst(rlid);
-    size_t offset = A.graph.row_map(rlid);
-    for (local_ordinal_type k = 0; k < row.length; ++k) {
-      auto clid = row.colidx(k);
-
-      auto val    = row.value(k);
-      auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
-      auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
-
-      results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
-                                        results(offset + k));
-    }
-  }
-};
-
-/*!
-  @class SignedRSFunctor
-  @brief Signed classical Ruge-Stueben dropping criterion
-
-  Evaluates the dropping criterion
   \f[
   \frac{-\operatorname{Re}A_{ij}}{| max_j -A_{ij}|} \le \theta
   \f]
-*/
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class SignedRSFunctor {
- private:
-  using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
-  using scalar_type        = typename local_matrix_type::value_type;
-  using local_ordinal_type = typename local_matrix_type::ordinal_type;
-  using memory_space       = typename local_matrix_type::memory_space;
 
-  using results_view = Kokkos::View<DecisionType*, memory_space>;
+  SignedSmoothedAggregationMeasure
 
-  using ATS                 = Kokkos::ArithTraits<scalar_type>;
-  using magnitudeType       = typename ATS::magnitudeType;
-  using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
-
-  using diag_vec_type  = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using diag_view_type = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
-
-  local_matrix_type A;
-  Teuchos::RCP<diag_vec_type> max_offdiagVec;
-  diag_view_type max_offdiag;
-  magnitudeType eps;
-  results_view results;
-
- public:
-  SignedRSFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
-    : A(A_.getLocalMatrixDevice())
-    , eps(threshold)
-    , results(results_) {
-    max_offdiagVec = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixMaxMinusOffDiagonal(A_);
-    auto lcl2d     = max_offdiagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
-    max_offdiag    = Kokkos::subview(lcl2d, Kokkos::ALL(), 0);
-  }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  void operator()(const local_ordinal_type rlid) const {
-    auto row      = A.rowConst(rlid);
-    size_t offset = A.graph.row_map(rlid);
-    for (local_ordinal_type k = 0; k < row.length; ++k) {
-      auto val            = row.value(k);
-      auto neg_aij        = -ATS::real(val);
-      auto max_neg_aik    = eps * ATS::real(max_offdiag(rlid));
-      results(offset + k) = Kokkos::max((neg_aij <= max_neg_aik) ? DROP : KEEP,
-                                        results(offset + k));
-    }
-  }
-};
-
-/*!
-  @class SignedSAFunctor
-  @brief Signed classical smoothed aggregation dropping criterion
-
-  Evaluates the dropping criterion
   \f[
   \frac{-\operatorname{sign}(A_{ij}) |A_{ij}|^2}{|A_{ii}| |A_{jj}|} \le \theta^2
   \f]
 */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class SignedSAFunctor {
- private:
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, Misc::StrengthMeasure measure>
+class DropFunctor {
+ public:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using diag_vec_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using local_matrix_type  = typename matrix_type::local_matrix_type;
@@ -161,6 +60,7 @@ class SignedSAFunctor {
   using mATS                = Kokkos::ArithTraits<magnitudeType>;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
 
+ private:
   local_matrix_type A;
   Teuchos::RCP<diag_vec_type> diagVec;
   diag_view_type diag;  // corresponds to overlapped diagonal
@@ -168,14 +68,20 @@ class SignedSAFunctor {
   results_view results;
 
  public:
-  SignedSAFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
+  DropFunctor(matrix_type& A_, magnitudeType threshold, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , eps(threshold)
     , results(results_) {
     // Construct ghosted matrix diagonal
-    diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
-    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
-    diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SmoothedAggregationMeasure)) {
+      diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+      diagVec    = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixMaxMinusOffDiagonal(A_);
+      auto lcl2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag       = Kokkos::subview(lcl2d, Kokkos::ALL(), 0);
+    }
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
@@ -185,18 +91,41 @@ class SignedSAFunctor {
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid = row.colidx(k);
 
-      auto val                  = row.value(k);
-      auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
-      const bool is_nonpositive = ATS::real(val) <= mATS::zero();
-      magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
-      // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
-      if (is_nonpositive)
-        aij2 = -aij2;
-      results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
-                                        results(offset + k));
+      auto val = row.value(k);
+
+      if constexpr (measure == Misc::SmoothedAggregationMeasure) {
+        auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+        auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
+
+        results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
+                                          results(offset + k));
+      } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+        auto neg_aij        = -ATS::real(val);
+        auto max_neg_aik    = eps * ATS::real(diag(rlid));
+        results(offset + k) = Kokkos::max((neg_aij <= max_neg_aik) ? DROP : KEEP,
+                                          results(offset + k));
+      } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
+        auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+        const bool is_nonpositive = ATS::real(val) <= mATS::zero();
+        magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+        // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
+        if (is_nonpositive)
+          aij2 = -aij2;
+        results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
+                                          results(offset + k));
+      }
     }
   }
 };
+
+// helper function to allow partial template deduction
+template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+auto make_drop_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
+                       typename DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, measure>::magnitudeType threshold,
+                       typename DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, measure>::results_view& results_) {
+  auto functor = DropFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, measure>(A_, threshold, results_);
+  return functor;
+}
 
 }  // namespace MueLu::ClassicalDropping
 
