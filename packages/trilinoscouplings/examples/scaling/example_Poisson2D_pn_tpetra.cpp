@@ -14,7 +14,7 @@
     This example uses the following Trilinos packages:
     \li     Pamgen to generate a Quad mesh.
     \li     Sacado to form the source term from user-specified manufactured solution.
-    \li     Intrepid to build the discretization matrix and right-hand side.
+    \li     Intrepid2 to build the discretization matrix and right-hand side.
     \li     Tpetra to handle the global matrix and vector.
     \li     Isorropia to partition the matrix. (Optional)
     \li     ML to solve the linear system.
@@ -69,16 +69,16 @@
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
 
-// Intrepid includes
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_CellTools.hpp"
-#include "Intrepid_ArrayTools.hpp"
-#include "Intrepid_HGRAD_QUAD_Cn_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
-#include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid_RealSpaceTools.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
-#include "Intrepid_Utils.hpp"
+// Intrepid2 includes
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_ArrayTools.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_RealSpaceTools.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_Utils.hpp"
 
 // Intrepid2 Includes
 #include "Kokkos_DynRankView.hpp"
@@ -133,7 +133,7 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 
 using namespace std;
-using namespace Intrepid;
+using namespace Intrepid2;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
@@ -167,7 +167,7 @@ struct fecomp{
 template<class FC>
 double distance2(const FC & coord, int n1, int n2) {
   double dist = 0.0;
-  for(int i=0; i<coord.dimension(1); i++)
+  for(int i=0; i<coord.extent(1); i++)
     dist += (coord(n2,i) -coord(n1,i)) * (coord(n2,i) -coord(n1,i));
   return sqrt(dist);
 }
@@ -176,15 +176,21 @@ double distance2(const FC & coord, int n1, int n2) {
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
+//Tpetra typedefs
+typedef Tpetra::Map<> Map;
+
+typedef Map::node_type::memory_space memory_space;
+typedef Map::node_type::device_type device_type;
+
 typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
-typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
-typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
-typedef Intrepid::CellTools<double>      IntrepidCTools;
+typedef Intrepid2::FunctionSpaceTools<device_type>     Intrepid2FSTools;
+typedef Intrepid2::RealSpaceTools<device_type> Intrepid2RSTools;
+typedef Intrepid2::CellTools<device_type>      Intrepid2CTools;
 
 typedef Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,NO>    operator_type;
 typedef Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,NO>   crs_graph_type;
@@ -223,22 +229,22 @@ double myDistance2(const multivector_type &v, int i0, int i1) {
 }
 
 // forward declarations
-void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
-                          FieldContainer<int> & Pn_elemToNode, FieldContainer<double> & Pn_nodeCoord,FieldContainer<int> & Pn_nodeOnBoundary, std::vector<int> &Pn_edgeNodes, std::vector<int> &Pn_cellNodes);
+void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const Intrepid2::ScalarView<int, memory_space> & P1_elemToNode, const Intrepid2::ScalarView<double, memory_space> & P1_nodeCoord, const Intrepid2::ScalarView<double, memory_space> & P1_edgeCoord,  const Intrepid2::ScalarView<int, memory_space> & P1_elemToEdge,  const Intrepid2::ScalarView<int, memory_space> & P1_elemToEdgeOrient, const Intrepid2::ScalarView<int, memory_space> & P1_nodeOnBoundary,
+                          Intrepid2::ScalarView<int, memory_space> & Pn_elemToNode, Intrepid2::ScalarView<double, memory_space> & Pn_nodeCoord,Intrepid2::ScalarView<int, memory_space> & Pn_nodeOnBoundary, std::vector<int> &Pn_edgeNodes, std::vector<int> &Pn_cellNodes);
 
-void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> & edgeToNode, FieldContainer<double> & edgeCoord);
+void GenerateEdgeEnumeration(const Intrepid2::ScalarView<int, memory_space> & elemToNode, const Intrepid2::ScalarView<double, memory_space> & nodeCoord, Intrepid2::ScalarView<int, memory_space> & elemToEdge, Intrepid2::ScalarView<int, memory_space> & elemToEdgeOrient, Intrepid2::ScalarView<int, memory_space> & edgeToNode, Intrepid2::ScalarView<double, memory_space> & edgeCoord);
 
-void CreateP1MeshFromPnMesh(const int degree, const FieldContainer<int> & P2_elemToNode, FieldContainer<int> &aux_P1_elemToNode);
+void CreateP1MeshFromPnMesh(const int degree, const Intrepid2::ScalarView<int, memory_space> & P2_elemToNode, Intrepid2::ScalarView<int, memory_space> &aux_P1_elemToNode);
 
 void CreateLinearSystem(int numWorkSets,
                         int desiredWorksetSize,
-                        FieldContainer<int> const &elemToNode,
-                        FieldContainer<double> const &nodeCoord,
-                        FieldContainer<double> const &cubPoints,
-                        FieldContainer<double> const &cubWeights,
-                        RCP<Basis<double,FieldContainer<double> > > &myBasis_rcp,
-                        FieldContainer<double> const &HGBGrads,
-                        FieldContainer<double> const &HGBValues,
+                        Intrepid2::ScalarView<int, memory_space> const &elemToNode,
+                        Intrepid2::ScalarView<double, memory_space> const &nodeCoord,
+                        Intrepid2::ScalarView<double, memory_space> const &cubPoints,
+                        Intrepid2::ScalarView<double, memory_space> const &cubWeights,
+                        RCP<Basis<device_type,double,double> > const &myBasis_rcp,
+                        Intrepid2::ScalarView<double, memory_space> const &HGBGrads,
+                        Intrepid2::ScalarView<double, memory_space> const &HGBValues,
                         std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
@@ -246,8 +252,8 @@ void CreateLinearSystem(int numWorkSets,
                         );
 
 
-void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & P2_elemToNode,
-                      //const FieldContainer<int> & P1_elemToNode,
+void GenerateIdentityCoarsening_pn_to_p1(const Intrepid2::ScalarView<int, memory_space> & P2_elemToNode,
+                      //const Intrepid2::ScalarView<int, memory_space> & P1_elemToNode,
                       RCP<const driver_map_type> const & P1_map_aux, RCP<const driver_map_type> const &P2_map,
                       RCP<crs_matrix_type> & Interpolation,
                       RCP<crs_matrix_type> & Restriction);
@@ -383,10 +389,10 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 // Copy field containers
 template<class FC1, class FC2>
 void CopyFieldContainer2D(const FC1 & c1, FC2 & c2) {
-  Kokkos::resize(c2,c1.dimension(0),c1.dimension(1));
+  Kokkos::resize(c2,c1.extent(0),c1.extent(1));
   auto c2_h = Kokkos::create_mirror_view(c2);
-  for(size_t i=0; i<(size_t)c1.dimension(0); i++)
-    for(size_t j=0; j<(size_t)c1.dimension(1); j++)
+  for(size_t i=0; i<(size_t)c1.extent(0); i++)
+    for(size_t j=0; j<(size_t)c1.extent(1); j++)
       c2_h(i,j) = c1(i,j);
   Kokkos::deep_copy(c2, c2_h);
 }
@@ -481,7 +487,7 @@ int main(int argc, char *argv[]) {
       << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
       << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
       << "|                                                                             |\n" \
-      << "|  Intrepid's website:   http://trilinos.sandia.gov/packages/intrepid         |\n" \
+      << "|  Intrepid2's website:   http://trilinos.sandia.gov/packages/intrepid2         |\n" \
       << "|  Pamgen's website:     http://trilinos.sandia.gov/packages/pamgen           |\n" \
       << "|  ML's website:         http://trilinos.sandia.gov/packages/ml               |\n" \
       << "|  Isorropia's website:  http://trilinos.sandia.gov/packages/isorropia        |\n" \
@@ -574,7 +580,7 @@ int main(int argc, char *argv[]) {
 
 
   // Build reference element edge to node map
-  FieldContainer<int> refEdgeToNode(P1_numEdgesPerElem, P1_numNodesPerEdge);
+  Intrepid2::ScalarView<int, memory_space> refEdgeToNode("refEdgeToNode", P1_numEdgesPerElem, P1_numNodesPerEdge);
   for (int i=0; i<P1_numEdgesPerElem; i++){
     refEdgeToNode(i,0)=P1_cellType.getNodeMap(1, i, 0);
     refEdgeToNode(i,1)=P1_cellType.getNodeMap(1, i, 1);
@@ -662,7 +668,7 @@ int main(int argc, char *argv[]) {
 
   // Get node-element connectivity
   int telct = 0;
-  FieldContainer<int> P1_elemToNode(numElems,P1_numNodesPerElem);
+  Intrepid2::ScalarView<int, memory_space> P1_elemToNode("P1_elemToNode",numElems,P1_numNodesPerElem);
   for(long long b = 0; b < numElemBlk; b++){
     for(long long el = 0; el < elements[b]; el++){
       for (int j=0; j<P1_numNodesPerElem; j++) {
@@ -673,7 +679,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Read node coordinates and place in field container
-  FieldContainer<double> P1_nodeCoord(numNodes,dim);
+  Intrepid2::ScalarView<double, memory_space> P1_nodeCoord("P1_nodeCoord", numNodes,dim);
   double * nodeCoordx = new double [numNodes];
   double * nodeCoordy = new double [numNodes];
   im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,0);
@@ -752,7 +758,7 @@ int main(int argc, char *argv[]) {
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Boundary Conds")));
 
   // Container indicating whether a node is on the boundary (1-yes 0-no)
-  FieldContainer<int> P1_nodeOnBoundary(numNodes);
+  Intrepid2::ScalarView<int, memory_space> P1_nodeOnBoundary("P1_nodeOnBoundary", numNodes);
 
   // Get boundary (side set) information
   long long * sideSetIds = new long long [numSideSets];
@@ -782,10 +788,10 @@ int main(int argc, char *argv[]) {
 
  // Enumerate edges
   // NOTE: Only correct in serial
-  FieldContainer<int> P1_elemToEdge(numElems,4);// Because quads
-  FieldContainer<int> P1_elemToEdgeOrient(numElems,4);
-  FieldContainer<double> P1_edgeCoord(1,dim);//will be resized
-  FieldContainer<int> P1_edgeToNode(1,2);//will be resized
+  Intrepid2::ScalarView<int, memory_space> P1_elemToEdge("P1_elemToEdge", numElems,4);// Because quads
+  Intrepid2::ScalarView<int, memory_space> P1_elemToEdgeOrient("P1_elemToEdgeOrient",numElems,4);
+  Intrepid2::ScalarView<double, memory_space> P1_edgeCoord("P1_edgeCoord",1,dim);//will be resized
+  Intrepid2::ScalarView<int, memory_space> P1_edgeToNode("P1_edgeToNode",1,2);//will be resized
   GenerateEdgeEnumeration(P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeToNode,P1_edgeCoord);
 
 
@@ -936,11 +942,11 @@ int main(int argc, char *argv[]) {
 
   // Generate higher order mesh
   // NOTE: Only correct in serial
-  int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.dimension(0) + (degree-1)*(degree-1)*numElems;
+  int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.extent(0) + (degree-1)*(degree-1)*numElems;
   int Pn_numNodesperElem = (degree+1)*(degree+1); // Quads
-  FieldContainer<int>    elemToNode(numElems,Pn_numNodesperElem);
-  FieldContainer<double> nodeCoord(Pn_numNodes,dim);
-  FieldContainer<int>   nodeOnBoundary(Pn_numNodes);
+  Intrepid2::ScalarView<int, memory_space>    elemToNode("elemToNode",numElems,Pn_numNodesperElem);
+  Intrepid2::ScalarView<double, memory_space> nodeCoord("nodeCoord",Pn_numNodes,dim);
+  Intrepid2::ScalarView<int, memory_space>   nodeOnBoundary("nodeOnBoundary", Pn_numNodes);
   std::vector<int> Pn_edgeNodes;
   std::vector<int> Pn_cellNodes;
 
@@ -950,7 +956,7 @@ int main(int argc, char *argv[]) {
 
 
   long long numElems_aux = numElems*degree*degree;  //degree^2 P1 elements per Pn element in auxiliary mesh
-  FieldContainer<int> aux_P1_elemToNode(numElems_aux,P1_numNodesPerElem); //4 P1 elements per Pn element
+  Intrepid2::ScalarView<int, memory_space> aux_P1_elemToNode("aux_P1_elemToNode", numElems_aux,P1_numNodesPerElem); //4 P1 elements per Pn element
   CreateP1MeshFromPnMesh(degree, elemToNode, aux_P1_elemToNode);
 
   // Only works in serial
@@ -975,7 +981,7 @@ int main(int argc, char *argv[]) {
   if (MyPID == 0){
     std::cout << " Number of Pn Global Elements: " << numElemsGlobal << " \n";
     std::cout << " Number of Pn Global Nodes: " << numNodesGlobal << " \n";
-    std::cout << " Number of faux P1 Global Elements: " << aux_P1_elemToNode.dimension(0) << " \n\n";
+    std::cout << " Number of faux P1 Global Elements: " << aux_P1_elemToNode.extent(0) << " \n\n";
   }
 
 
@@ -984,15 +990,15 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Get numerical integration points and weights
-  DefaultCubatureFactory<double>  cubFactory;
+  Intrepid2::DefaultCubatureFactory  cubFactory;
   int cubDegree = 2*degree;
-  RCP<Cubature<double> > myCub = cubFactory.create(Pn_cellType, cubDegree);
+  RCP<Intrepid2::Cubature<device_type> > myCub = cubFactory.create<device_type>(Pn_cellType, cubDegree);
 
   int cubDim       = myCub->getDimension();
   int numCubPoints = myCub->getNumPoints();
 
-  FieldContainer<double> cubPoints(numCubPoints, cubDim);
-  FieldContainer<double> cubWeights(numCubPoints);
+  Intrepid2::ScalarView<double, memory_space> cubPoints("cubPoints", numCubPoints, cubDim);
+  Intrepid2::ScalarView<double, memory_space> cubWeights("cubWeights", numCubPoints);
 
   myCub->getCubature(cubPoints, cubWeights);
 
@@ -1004,32 +1010,32 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Define basis
-  Basis_HGRAD_QUAD_Cn_FEM<double, FieldContainer<double> > myHGradBasis(degree,POINTTYPE_EQUISPACED);
-  RCP<Basis<double,FieldContainer<double> > > myHGradBasis_rcp(&myHGradBasis, false);
-  RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > myHGradBasisWithDofCoords_rcp(&myHGradBasis, false);
+  auto myHGradBasis = new Basis_HGRAD_QUAD_Cn_FEM<device_type, double, double>(degree,POINTTYPE_EQUISPACED);
+  RCP<Basis_HGRAD_QUAD_Cn_FEM<device_type,double,double> > myHGradBasis_rcp = rcp(myHGradBasis, false);
+  //RCP<Basis_HGRAD_QUAD_Cn_FEM<double,Intrepid2::ScalarView<double, memory_space> > > myHGradBasisWithDofCoords_rcp = rcp(&myHGradBasis, false);
 
   // Auxillary p=1 basis
-  Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis_aux;
-  RCP<Basis<double,FieldContainer<double> > > myHGradBasis_aux_rcp(&myHGradBasis_aux, false);
+  auto myHGradBasis_aux = new Basis_HGRAD_QUAD_C1_FEM<device_type, double, double>();
+  RCP<Basis_HGRAD_QUAD_C1_FEM<device_type,double,double> > myHGradBasis_aux_rcp = rcp(myHGradBasis_aux, false);
 
 
-  int numFieldsG = myHGradBasis.getCardinality();
+  int numFieldsG = myHGradBasis->getCardinality();
 
-  FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
-  FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
+  Intrepid2::ScalarView<double, memory_space> HGBValues("HGBValues", numFieldsG, numCubPoints);
+  Intrepid2::ScalarView<double, memory_space> HGBGrads("HGBGrads", numFieldsG, numCubPoints, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
-  myHGradBasis.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
-  myHGradBasis.getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
+  myHGradBasis->getValues(HGBValues, cubPoints, OPERATOR_VALUE);
+  myHGradBasis->getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
 
 
   //#define OUTPUT_REFERENCE_FUNCTIONS
 #ifdef OUTPUT_REFERENCE_FUNCTIONS
   // Evaluate basis values and gradients at DOF points
-  FieldContainer<double> DofCoords(numFieldsG,spaceDim);
+  Intrepid2::ScalarView<double, memory_space> DofCoords("DofCoords",numFieldsG,spaceDim);
   myHGradBasis.getDofCoords(DofCoords);
-  FieldContainer<double> HGBValues_at_Dofs(numFieldsG,numFieldsG);
-  myHGradBasis.getValues(HGBValues_at_Dofs, DofCoords, OPERATOR_VALUE);
+  Intrepid2::ScalarView<double, memory_space> HGBValues_at_Dofs("HGBValues_at_Dofs",numFieldsG,numFieldsG);
+  myHGradBasis->getValues(HGBValues_at_Dofs, DofCoords, OPERATOR_VALUE);
 
 
   printf("*** Dof Coords ***\n");
@@ -1275,13 +1281,13 @@ int main(int argc, char *argv[]) {
 
   // Get numerical integration points and weights
   int cubDegree_aux = 2; //TODO  This was 3 for P=2.  I think this should be 2 now .... Ask Chris.
-  RCP<Cubature<double> > myCub_aux = cubFactory.create(P1_cellType, cubDegree_aux);
+  RCP<Intrepid2::Cubature<device_type> > myCub_aux = cubFactory.create<device_type>(P1_cellType, cubDegree_aux);
 
   int cubDim_aux       = myCub_aux->getDimension();
   int numCubPoints_aux = myCub_aux->getNumPoints();
 
-  FieldContainer<double> cubPoints_aux(numCubPoints_aux, cubDim_aux);
-  FieldContainer<double> cubWeights_aux(numCubPoints_aux);
+  Intrepid2::ScalarView<double, memory_space> cubPoints_aux("cubPoints_aux", numCubPoints_aux, cubDim_aux);
+  Intrepid2::ScalarView<double, memory_space> cubWeights_aux("cubWeights_aux", numCubPoints_aux);
   myCub_aux->getCubature(cubPoints_aux, cubWeights_aux);
 
   tm.reset();
@@ -1290,13 +1296,13 @@ int main(int argc, char *argv[]) {
   //Basis
 
   // Define basis
-  int numFieldsG_aux = myHGradBasis_aux.getCardinality();
-  FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
-  FieldContainer<double> HGBGrads_aux(numFieldsG_aux, numCubPoints_aux, spaceDim);
+  int numFieldsG_aux = myHGradBasis_aux->getCardinality();
+  Intrepid2::ScalarView<double, memory_space> HGBValues_aux("HGBValues_aux", numFieldsG_aux, numCubPoints_aux);
+  Intrepid2::ScalarView<double, memory_space> HGBGrads_aux("HGBGrads_aux", numFieldsG_aux, numCubPoints_aux, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
-  myHGradBasis_aux.getValues(HGBValues_aux, cubPoints_aux, OPERATOR_VALUE);
-  myHGradBasis_aux.getValues(HGBGrads_aux, cubPoints_aux, OPERATOR_GRAD);
+  myHGradBasis_aux->getValues(HGBValues_aux, cubPoints_aux, OPERATOR_VALUE);
+  myHGradBasis_aux->getValues(HGBGrads_aux, cubPoints_aux, OPERATOR_GRAD);
 
   tm.reset();
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Global assembly (auxiliary system)")));
@@ -1627,20 +1633,20 @@ int main(int argc, char *argv[]) {
   if(numWorksetsErr*desiredWorksetSize < numElems) numWorksetsErr += 1;
 
   // Get cubature points and weights for error calc (may be different from previous)
-  Intrepid::DefaultCubatureFactory<double>  cubFactoryErr;
+  Intrepid2::DefaultCubatureFactory  cubFactoryErr;
   int cubDegErr = 3*degree;
-  RCP<Intrepid::Cubature<double> > cellCubatureErr = cubFactoryErr.create(Pn_cellType, cubDegErr);
+  RCP<Intrepid2::Cubature<device_type> > cellCubatureErr = cubFactoryErr.create<device_type>(Pn_cellType, cubDegErr);
   int cubDimErr       = cellCubatureErr->getDimension();
   int numCubPointsErr = cellCubatureErr->getNumPoints();
-  Intrepid::FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
-  Intrepid::FieldContainer<double> cubWeightsErr(numCubPointsErr);
+  Intrepid2::ScalarView<double, memory_space> cubPointsErr("cubPointsErr", numCubPointsErr, cubDimErr);
+  Intrepid2::ScalarView<double, memory_space> cubWeightsErr("cubWeightsErr", numCubPointsErr);
   cellCubatureErr->getCubature(cubPointsErr, cubWeightsErr);
 
   // Evaluate basis values and gradients at cubature points
-  Intrepid::FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr);
-  Intrepid::FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim);
-  myHGradBasis.getValues(uhGVals, cubPointsErr, Intrepid::OPERATOR_VALUE);
-  myHGradBasis.getValues(uhGrads, cubPointsErr, Intrepid::OPERATOR_GRAD);
+  Intrepid2::ScalarView<double, memory_space> uhGVals("uhGVals", numFieldsG, numCubPointsErr);
+  Intrepid2::ScalarView<double, memory_space> uhGrads("uhGrads", numFieldsG, numCubPointsErr, spaceDim);
+  myHGradBasis->getValues(uhGVals, cubPointsErr, Intrepid2::OPERATOR_VALUE);
+  myHGradBasis->getValues(uhGrads, cubPointsErr, Intrepid2::OPERATOR_GRAD);
 
   // Loop over worksets
   for(int workset = 0; workset < numWorksetsErr; workset++){
@@ -1655,8 +1661,8 @@ int main(int argc, char *argv[]) {
 
     // now we know the actual workset size and can allocate the array for the cell nodes
     worksetSize  = worksetEnd - worksetBegin;
-    Intrepid::FieldContainer<double> cellWorksetEr(worksetSize, numFieldsG, spaceDim);
-    Intrepid::FieldContainer<double> worksetApproxSolnCoef(worksetSize, numFieldsG);
+    Intrepid2::ScalarView<double, memory_space> cellWorksetEr("cellWorksetEr", worksetSize, numFieldsG, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetApproxSolnCoef("worksetApproxSolnCoef", worksetSize, numFieldsG);
 
     // loop over cells to fill arrays with coordinates and discrete solution coefficient
     int cellCounter = 0;
@@ -1681,67 +1687,67 @@ int main(int argc, char *argv[]) {
     } // end cell loop
 
       // Containers for Jacobian
-    Intrepid::FieldContainer<double> worksetJacobianE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
-    Intrepid::FieldContainer<double> worksetJacobInvE(worksetSize, numCubPointsErr, spaceDim, spaceDim);
-    Intrepid::FieldContainer<double> worksetJacobDetE(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetCubWeightsE(worksetSize, numCubPointsErr);
+    Intrepid2::ScalarView<double, memory_space> worksetJacobianE("worksetJacobianE", worksetSize, numCubPointsErr, spaceDim, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetJacobInvE("worksetJacobInvE", worksetSize, numCubPointsErr, spaceDim, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetJacobDetE("worksetJacobDetE", worksetSize, numCubPointsErr);
+    Intrepid2::ScalarView<double, memory_space> worksetCubWeightsE("worksetCubWeightsE", worksetSize, numCubPointsErr);
 
     // Containers for basis values and gradients in physical space
-    Intrepid::FieldContainer<double> uhGValsTrans(worksetSize,numFieldsG, numCubPointsErr);
-    Intrepid::FieldContainer<double> uhGradsTrans(worksetSize, numFieldsG, numCubPointsErr, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> uhGValsTrans("uhGValsTrans", worksetSize,numFieldsG, numCubPointsErr);
+    Intrepid2::ScalarView<double, memory_space> uhGradsTrans("uhGradsTrans", worksetSize, numFieldsG, numCubPointsErr, spaceDim);
 
     // compute cell Jacobians, their inverses and their determinants
-    IntrepidCTools::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetEr,  myHGradBasis_rcp);
-    IntrepidCTools::setJacobianInv(worksetJacobInvE, worksetJacobianE );
-    IntrepidCTools::setJacobianDet(worksetJacobDetE, worksetJacobianE );
+    Intrepid2CTools::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetEr,  myHGradBasis_rcp);
+    Intrepid2CTools::setJacobianInv(worksetJacobInvE, worksetJacobianE );
+    Intrepid2CTools::setJacobianDet(worksetJacobDetE, worksetJacobianE );
 
     // map cubature points to physical frame
-    Intrepid::FieldContainer<double> worksetCubPoints(worksetSize, numCubPointsErr, cubDimErr);
-    IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPointsErr, cellWorksetEr, myHGradBasis_rcp);
+    Intrepid2::ScalarView<double, memory_space> worksetCubPoints("worksetCubPoints", worksetSize, numCubPointsErr, cubDimErr);
+    Intrepid2CTools::mapToPhysicalFrame(worksetCubPoints, cubPointsErr, cellWorksetEr, myHGradBasis_rcp);
 
     // evaluate exact solution and gradient at cubature points
-    Intrepid::FieldContainer<double> worksetExactSoln(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetExactSolnGrad(worksetSize, numCubPointsErr, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetExactSoln("worksetExactSoln", worksetSize, numCubPointsErr);
+    Intrepid2::ScalarView<double, memory_space> worksetExactSolnGrad("worksetExactSolnGrad", worksetSize, numCubPointsErr, spaceDim);
     evaluateExactSolution(worksetExactSoln, worksetCubPoints);
     evaluateExactSolutionGrad(worksetExactSolnGrad, worksetCubPoints);
 
     // transform basis values to physical coordinates
-    IntrepidFSTools::HGRADtransformVALUE<double>(uhGValsTrans, uhGVals);
-    IntrepidFSTools::HGRADtransformGRAD<double>(uhGradsTrans, worksetJacobInvE, uhGrads);
+    Intrepid2FSTools::HGRADtransformVALUE(uhGValsTrans, uhGVals);
+    Intrepid2FSTools::HGRADtransformGRAD(uhGradsTrans, worksetJacobInvE, uhGrads);
 
     // compute weighted measure
-    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeightsE, worksetJacobDetE, cubWeightsErr);
+    Intrepid2FSTools::computeCellMeasure(worksetCubWeightsE, worksetJacobDetE, cubWeightsErr);
 
     // evaluate the approximate solution and gradient at cubature points
-    Intrepid::FieldContainer<double> worksetApproxSoln(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetApproxSolnGrad(worksetSize, numCubPointsErr, spaceDim);
-    IntrepidFSTools::evaluate<double>(worksetApproxSoln, worksetApproxSolnCoef, uhGValsTrans);
-    IntrepidFSTools::evaluate<double>(worksetApproxSolnGrad, worksetApproxSolnCoef, uhGradsTrans);
+    Intrepid2::ScalarView<double, memory_space> worksetApproxSoln("worksetApproxSoln", worksetSize, numCubPointsErr);
+    Intrepid2::ScalarView<double, memory_space> worksetApproxSolnGrad("worksetApproxSolnGrad", worksetSize, numCubPointsErr, spaceDim);
+    Intrepid2FSTools::evaluate(worksetApproxSoln, worksetApproxSolnCoef, uhGValsTrans);
+    Intrepid2FSTools::evaluate(worksetApproxSolnGrad, worksetApproxSolnCoef, uhGradsTrans);
 
     // get difference between approximate and exact solutions
-    Intrepid::FieldContainer<double> worksetDeltaSoln(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetDeltaSolnGrad(worksetSize, numCubPointsErr, spaceDim);
-    IntrepidRSTools::subtract(worksetDeltaSoln, worksetApproxSoln, worksetExactSoln);
-    IntrepidRSTools::subtract(worksetDeltaSolnGrad, worksetApproxSolnGrad, worksetExactSolnGrad);
+    Intrepid2::ScalarView<double, memory_space> worksetDeltaSoln("worksetDeltaSoln", worksetSize, numCubPointsErr);
+    Intrepid2::ScalarView<double, memory_space> worksetDeltaSolnGrad("worksetDeltaSolnGrad", worksetSize, numCubPointsErr, spaceDim);
+    Intrepid2RSTools::subtract(worksetDeltaSoln, worksetApproxSoln, worksetExactSoln);
+    Intrepid2RSTools::subtract(worksetDeltaSolnGrad, worksetApproxSolnGrad, worksetExactSolnGrad);
 
     // take absolute values
-    IntrepidRSTools::absval(worksetDeltaSoln);
-    IntrepidRSTools::absval(worksetDeltaSolnGrad);
+    Intrepid2RSTools::absval(worksetDeltaSoln);
+    Intrepid2RSTools::absval(worksetDeltaSolnGrad);
     // apply cubature weights to differences in values and grads for use in integration
-    Intrepid::FieldContainer<double> worksetDeltaSolnWeighted(worksetSize, numCubPointsErr);
-    Intrepid::FieldContainer<double> worksetDeltaSolnGradWeighted(worksetSize, numCubPointsErr, spaceDim);
-    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnWeighted,
+    Intrepid2::ScalarView<double, memory_space> worksetDeltaSolnWeighted("worksetDeltaSolnWeighted", worksetSize, numCubPointsErr);
+    Intrepid2::ScalarView<double, memory_space> worksetDeltaSolnGradWeighted("worksetDeltaSolnGradWeighted", worksetSize, numCubPointsErr, spaceDim);
+    Intrepid2FSTools::scalarMultiplyDataData(worksetDeltaSolnWeighted,
                                                     worksetCubWeightsE, worksetDeltaSoln);
-    IntrepidFSTools::scalarMultiplyDataData<double>(worksetDeltaSolnGradWeighted,
+    Intrepid2FSTools::scalarMultiplyDataData(worksetDeltaSolnGradWeighted,
                                                     worksetCubWeightsE, worksetDeltaSolnGrad);
 
     // integrate to get errors on each element
-    Intrepid::FieldContainer<double> worksetL2err(worksetSize);
-    Intrepid::FieldContainer<double> worksetH1err(worksetSize);
-    IntrepidFSTools::integrate<double>(worksetL2err, worksetDeltaSoln,
-                                       worksetDeltaSolnWeighted, Intrepid::COMP_BLAS);
-    IntrepidFSTools::integrate<double>(worksetH1err, worksetDeltaSolnGrad,
-                                       worksetDeltaSolnGradWeighted, Intrepid::COMP_BLAS);
+    Intrepid2::ScalarView<double, memory_space> worksetL2err("worksetL2err", worksetSize);
+    Intrepid2::ScalarView<double, memory_space> worksetH1err("worksetH1err", worksetSize);
+    Intrepid2FSTools::integrate(worksetL2err, worksetDeltaSoln,
+                                       worksetDeltaSolnWeighted);
+    Intrepid2FSTools::integrate(worksetH1err, worksetDeltaSolnGrad,
+                                       worksetDeltaSolnGradWeighted);
 
     // loop over cells to get errors for total workset
     cellCounter = 0;
@@ -1931,9 +1937,9 @@ template<class ArrayOut, class ArrayIn>
 void evaluateMaterialTensor(ArrayOut &        matTensorValues,
                             const ArrayIn &   evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.dimension(0);
-  int numPoints        = evaluationPoints.dimension(1);
-  int spaceDim         = evaluationPoints.dimension(2);
+  int numWorksetCells  = evaluationPoints.extent(0);
+  int numPoints        = evaluationPoints.extent(1);
+  int spaceDim         = evaluationPoints.extent(2);
 
   double material[2][2];
 
@@ -1958,8 +1964,8 @@ template<class ArrayOut, class ArrayIn>
 void evaluateSourceTerm(ArrayOut &       sourceTermValues,
                         const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.dimension(0);
-  int numPoints = evaluationPoints.dimension(1);
+  int numWorksetCells  = evaluationPoints.extent(0);
+  int numPoints = evaluationPoints.extent(1);
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
@@ -1977,8 +1983,8 @@ template<class ArrayOut, class ArrayIn>
 void evaluateExactSolution(ArrayOut &       exactSolutionValues,
                            const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.dimension(0);
-  int numPoints = evaluationPoints.dimension(1);
+  int numWorksetCells  = evaluationPoints.extent(0);
+  int numPoints = evaluationPoints.extent(1);
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
@@ -1995,9 +2001,9 @@ template<class ArrayOut, class ArrayIn>
 void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
                                const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.dimension(0);
-  int numPoints = evaluationPoints.dimension(1);
-  int spaceDim  = evaluationPoints.dimension(2);
+  int numWorksetCells  = evaluationPoints.extent(0);
+  int numPoints = evaluationPoints.extent(1);
+  int spaceDim  = evaluationPoints.extent(2);
 
   double gradient[2];
 
@@ -2127,7 +2133,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   // ================== //
   // compute ||Ax - b|| //
   // ================== //
-  Array<typename ScalarTraits::magnitudeType> Norm(1);
+  Array<double> Norm(1);
   vector_type Ax(rhs->getMap());
   A0->apply(*lhs, Ax);
   Ax.update(1.0, *rhs, -1.0);
@@ -2154,16 +2160,16 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 /*********************************************************************************************************/
 
 
-void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<int> & edgeToNode, FieldContainer<double> & edgeCoord) {
+void GenerateEdgeEnumeration(const Intrepid2::ScalarView<int, memory_space> & elemToNode, const Intrepid2::ScalarView<double, memory_space> & nodeCoord, Intrepid2::ScalarView<int, memory_space> & elemToEdge, Intrepid2::ScalarView<int, memory_space> & elemToEdgeOrient, Intrepid2::ScalarView<int, memory_space> & edgeToNode, Intrepid2::ScalarView<double, memory_space> & edgeCoord) {
   // Not especially efficient, but effective... at least in serial!
 
-  int numElems        = elemToNode.dimension(0);
-  int numNodesperElem = elemToNode.dimension(1);
-  int dim             = nodeCoord.dimension(1);
+  int numElems        = elemToNode.extent(0);
+  int numNodesperElem = elemToNode.extent(1);
+  int dim             = nodeCoord.extent(1);
 
   // Sanity checks
   if(numNodesperElem !=4) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
-  if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1))
+  if(elemToEdge.extent(0)!=numElems || elemToEdge.extent(1)!=4 || elemToEdge.extent(0)!=elemToEdgeOrient.extent(0) || elemToEdge.extent(1)!=elemToEdgeOrient.extent(1))
     throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
 
   int edge_node0_id[4]={0,1,2,3};
@@ -2200,7 +2206,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
   }
 
   // Fill out the edge centers (clobbering data if needed)
-  edgeCoord.resize(num_edges,dim);
+  //edgeCoord.resize(num_edges,dim);
   for(int i=0; i<numElems; i++) {
     for(int j=0; j<4; j++) {
       int n0 = elemToNode(i,edge_node0_id[j]);
@@ -2211,7 +2217,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
   }
 
   // Edge to Node connectivity
-  edgeToNode.resize(num_edges,2);
+  //edgeToNode.resize(num_edges,2);
   for(int i=0; i<numElems; i++) {
     for(int j=0; j<4; j++) {
       int lo = std::min(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
@@ -2235,29 +2241,29 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
 
 /*********************************************************************************************************/
 void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
-                 const FieldContainer<int>    & P1_elemToNode,
-                 const FieldContainer<double> & P1_nodeCoord,
-                 const FieldContainer<double> & P1_edgeCoord,
-                 const FieldContainer<int>    & P1_elemToEdge,
-                 const FieldContainer<int>    & P1_elemToEdgeOrient,
-                 const FieldContainer<int>    & P1_nodeOnBoundary,
-                 FieldContainer<int>          & Pn_elemToNode,
-                 FieldContainer<double>       & Pn_nodeCoord,
-                 FieldContainer<int>          & Pn_nodeOnBoundary,
+                 const Intrepid2::ScalarView<int, memory_space>    & P1_elemToNode,
+                 const Intrepid2::ScalarView<double, memory_space> & P1_nodeCoord,
+                 const Intrepid2::ScalarView<double, memory_space> & P1_edgeCoord,
+                 const Intrepid2::ScalarView<int, memory_space>    & P1_elemToEdge,
+                 const Intrepid2::ScalarView<int, memory_space>    & P1_elemToEdgeOrient,
+                 const Intrepid2::ScalarView<int, memory_space>    & P1_nodeOnBoundary,
+                 Intrepid2::ScalarView<int, memory_space>          & Pn_elemToNode,
+                 Intrepid2::ScalarView<double, memory_space>       & Pn_nodeCoord,
+                 Intrepid2::ScalarView<int, memory_space>          & Pn_nodeOnBoundary,
                  std::vector<int> & Pn_edgeNodes,
                  std::vector<int> & Pn_cellNodes) {
 //#define DEBUG_PROMOTE_MESH
-  int numElems           = P1_elemToNode.dimension(0);
-  int P1_numNodesperElem = P1_elemToNode.dimension(1);
-  int P1_numEdgesperElem = P1_elemToEdge.dimension(1);
-  int Pn_numNodesperElem = Pn_elemToNode.dimension(1);
-  int P1_numNodes        = P1_nodeCoord.dimension(0);
-  int P1_numEdges        = P1_edgeCoord.dimension(0);
-  int dim                = P1_nodeCoord.dimension(1);
+  int numElems           = P1_elemToNode.extent(0);
+  int P1_numNodesperElem = P1_elemToNode.extent(1);
+  int P1_numEdgesperElem = P1_elemToEdge.extent(1);
+  int Pn_numNodesperElem = Pn_elemToNode.extent(1);
+  int P1_numNodes        = P1_nodeCoord.extent(0);
+  int P1_numEdges        = P1_edgeCoord.extent(0);
+  int dim                = P1_nodeCoord.extent(1);
 
 
 #ifdef DEBUG_PROMOTE_MESH
-  int Pn_numNodes        = Pn_nodeCoord.dimension(0);
+  int Pn_numNodes        = Pn_nodeCoord.extent(0);
 #endif
 
   int Pn_ExpectedNodesperElem = P1_numNodesperElem + (degree-1)*P1_numEdgesperElem + (degree-1)*(degree-1);
@@ -2265,8 +2271,8 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
 
   // Sanity checks
   if(P1_numNodesperElem !=4 || Pn_numNodesperElem !=Pn_ExpectedNodesperElem ) throw std::runtime_error("Error: PromoteMesh_Pn_Kirby only works on Quads!");
-  if(P1_elemToEdge.dimension(0)!=numElems || P1_elemToEdge.dimension(1)!=4 || P1_elemToEdge.dimension(0)!=P1_elemToEdgeOrient.dimension(0) || P1_elemToEdge.dimension(1)!=P1_elemToEdgeOrient.dimension(1) ||
-     Pn_elemToNode.dimension(0)!=numElems || Pn_nodeCoord.dimension(0) != Pn_ExpectedNumNodes)
+  if(P1_elemToEdge.extent(0)!=numElems || P1_elemToEdge.extent(1)!=4 || P1_elemToEdge.extent(0)!=P1_elemToEdgeOrient.extent(0) || P1_elemToEdge.extent(1)!=P1_elemToEdgeOrient.extent(1) ||
+     Pn_elemToNode.extent(0)!=numElems || Pn_nodeCoord.extent(0) != Pn_ExpectedNumNodes)
     throw std::runtime_error("Error: PromoteMesh_Pn_Kirby array size mismatch");
 
   const CellTopologyData &cellTopoData = *shards::getCellTopologyData<shards::Quadrilateral<4> >();
@@ -2332,10 +2338,10 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   }
 
   // Get the p=n node locations
-  FieldContainer<double> RefNodeCoords(Pn_numNodesperElem,dim);
-  FieldContainer<double> RefNodeCoords2(1,Pn_numNodesperElem,dim);
-  FieldContainer<double> PhysNodeCoords(1,Pn_numNodesperElem,dim);
-  Basis_HGRAD_QUAD_Cn_FEM<double, FieldContainer<double> > BasisPn(degree,pointType);
+  Intrepid2::ScalarView<double, memory_space> RefNodeCoords("RefNodeCoords", Pn_numNodesperElem,dim);
+  Intrepid2::ScalarView<double, memory_space> RefNodeCoords2("RefNodeCoords2",1,Pn_numNodesperElem,dim);
+  Intrepid2::ScalarView<double, memory_space> PhysNodeCoords("PhysNodeCoords",1,Pn_numNodesperElem,dim);
+  Basis_HGRAD_QUAD_Cn_FEM<device_type, double, double> BasisPn(degree,pointType);
   BasisPn.getDofCoords(RefNodeCoords);
 
 #ifdef DEBUG_PROMOTE_MESH
@@ -2351,7 +2357,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   // Make the new coordinates (inefficient, but correct)
  for(int i=0; i<numElems; i++)  {
    // Get Element coords
-   FieldContainer<double> my_p1_nodes(1,P1_numNodesperElem,dim);
+   Intrepid2::ScalarView<double, memory_space> my_p1_nodes("my_p1_nodes",1,P1_numNodesperElem,dim);
    for(int j=0; j<P1_numNodesperElem; j++) {
      int jj = P1_elemToNode(i,j);
      for(int k=0; k<dim; k++)
@@ -2359,7 +2365,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
    }
 
    // Map the reference node location to physical
-   Intrepid::CellTools<double>::mapToPhysicalFrame(PhysNodeCoords,RefNodeCoords2,my_p1_nodes,cellTopo);
+   Intrepid2::CellTools<device_type>::mapToPhysicalFrame(PhysNodeCoords,RefNodeCoords2,my_p1_nodes,cellTopo);
 
 
 #ifdef DEBUG_PROMOTE_MESH
@@ -2436,8 +2442,8 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
 /*********************************************************************************************************/
 
 void CreateP1MeshFromPnMesh(int degree,
-                            FieldContainer<int> const    & Pn_elemToNode,
-                            FieldContainer<int>          & P1_elemToNode)
+                            Intrepid2::ScalarView<int, memory_space> const    & Pn_elemToNode,
+                            Intrepid2::ScalarView<int, memory_space>          & P1_elemToNode)
 {
 
   /*
@@ -2448,7 +2454,7 @@ void CreateP1MeshFromPnMesh(int degree,
     Create element to node map
   */
 
-  int Pn_numElems        = Pn_elemToNode.dimension(0);
+  int Pn_numElems        = Pn_elemToNode.extent(0);
 
   int p1ElemCtr=0;
   for (int i=0; i<Pn_numElems; ++i) {
@@ -2509,25 +2515,25 @@ void CreateP1MeshFromPnMesh(int degree,
 
 void CreateLinearSystem(int numWorksets,
                         int desiredWorksetSize,
-                        FieldContainer<int>    const &elemToNode,
-                        FieldContainer<double> const &nodeCoord,
-                        FieldContainer<double> const &cubPoints,
-                        FieldContainer<double> const &cubWeights,
-                        RCP<Basis<double,FieldContainer<double> > >&myBasis_rcp,
-                        FieldContainer<double> const &HGBGrads,
-                        FieldContainer<double> const &HGBValues,
+                        Intrepid2::ScalarView<int, memory_space>    const &elemToNode,
+                        Intrepid2::ScalarView<double, memory_space> const &nodeCoord,
+                        Intrepid2::ScalarView<double, memory_space> const &cubPoints,
+                        Intrepid2::ScalarView<double, memory_space> const &cubWeights,
+                        RCP<Basis<device_type,double,double> > const &myBasis_rcp,
+                        Intrepid2::ScalarView<double, memory_space> const &HGBGrads,
+                        Intrepid2::ScalarView<double, memory_space> const &HGBValues,
                         std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
                         std::string &msg
                         )
 {
-  int numCubPoints = cubPoints.dimension(0);
-  int cubDim = cubPoints.dimension(1);
-  int spaceDim = nodeCoord.dimension(1);
-  int numFieldsG = HGBGrads.dimension(0);
-  long long numElems = elemToNode.dimension(0);
-  int numNodesPerElem = elemToNode.dimension(1);
+  int numCubPoints = cubPoints.extent(0);
+  int cubDim = cubPoints.extent(1);
+  int spaceDim = nodeCoord.extent(1);
+  int numFieldsG = HGBGrads.extent(0);
+  long long numElems = elemToNode.extent(0);
+  int numNodesPerElem = elemToNode.extent(1);
 
 
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Allocate arrays")));
@@ -2540,12 +2546,12 @@ void CreateLinearSystem(int numWorksets,
   std::cout << "     numElems = " << numElems << std::endl;
   std::cout << "     numNodesPerElem = " << numNodesPerElem << std::endl;
   std::cout << "     length(globalNodeIds) = " << globalNodeIds.size() << std::endl;
-  std::cout << "     length(nodeCoord) = " << nodeCoord.dimension(0) << std::endl;
+  std::cout << "     length(nodeCoord) = " << nodeCoord.extent(0) << std::endl;
 
-  if(nodeCoord.dimension(0) != Teuchos::as<int>(globalNodeIds.size())) {
+  if(nodeCoord.extent(0) != Teuchos::as<int>(globalNodeIds.size())) {
     std::ostringstream errStr;
     errStr << "Error: CreateLinearSystem: length of coordinates != #nodes ("
-           << nodeCoord.dimension(0) << "!=" << globalNodeIds.size() << ")";
+           << nodeCoord.extent(0) << "!=" << globalNodeIds.size() << ")";
     throw std::runtime_error(errStr.str());
   }
 
@@ -2563,7 +2569,7 @@ void CreateLinearSystem(int numWorksets,
     worksetSize  = worksetEnd - worksetBegin;
     //std::cout << "     cellWorkset: begin=" << worksetBegin << ", end=" << worksetEnd
     //          << ", size=" << worksetSize << std::endl;
-    FieldContainer<double> cellWorkset(worksetSize, numNodesPerElem, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> cellWorkset("cellWorkset", worksetSize, numNodesPerElem, spaceDim);
 
     // Copy coordinates into cell workset
     int cellCounter = 0;
@@ -2580,28 +2586,28 @@ void CreateLinearSystem(int numWorksets,
     /**********************************************************************************/
 
     // Containers for Jacobians, integration measure & cubature points in workset cells
-    FieldContainer<double> worksetJacobian  (worksetSize, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetJacobInv  (worksetSize, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetJacobDet  (worksetSize, numCubPoints);
-    FieldContainer<double> worksetCubWeights(worksetSize, numCubPoints);
-    FieldContainer<double> worksetCubPoints (worksetSize, numCubPoints, cubDim);
+    Intrepid2::ScalarView<double, memory_space> worksetJacobian  ("worksetJacobian", worksetSize, numCubPoints, spaceDim, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetJacobInv  ("worksetJacobInv", worksetSize, numCubPoints, spaceDim, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetJacobDet  ("worksetJacobDet", worksetSize, numCubPoints);
+    Intrepid2::ScalarView<double, memory_space> worksetCubWeights("worksetCubWeights", worksetSize, numCubPoints);
+    Intrepid2::ScalarView<double, memory_space> worksetCubPoints ("worksetCubPoints", worksetSize, numCubPoints, cubDim);
 
     // Containers for basis values transformed to workset cells and them multiplied by cubature weights
-    FieldContainer<double> worksetHGBValues        (worksetSize, numFieldsG, numCubPoints);
-    FieldContainer<double> worksetHGBValuesWeighted(worksetSize, numFieldsG, numCubPoints);
-    FieldContainer<double> worksetHGBGrads         (worksetSize, numFieldsG, numCubPoints, spaceDim);
-    FieldContainer<double> worksetHGBGradsWeighted (worksetSize, numFieldsG, numCubPoints, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetHGBValues        ("worksetHGBValues", worksetSize, numFieldsG, numCubPoints);
+    Intrepid2::ScalarView<double, memory_space> worksetHGBValuesWeighted("worksetHGBValuesWeighted", worksetSize, numFieldsG, numCubPoints);
+    Intrepid2::ScalarView<double, memory_space> worksetHGBGrads         ("worksetHGBGrads", worksetSize, numFieldsG, numCubPoints, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetHGBGradsWeighted ("worksetHGBGradsWeighted", worksetSize, numFieldsG, numCubPoints, spaceDim);
 
     // Containers for diffusive & advective fluxes & non-conservative adv. term and reactive terms
-    FieldContainer<double> worksetDiffusiveFlux(worksetSize, numFieldsG, numCubPoints, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetDiffusiveFlux("worksetDiffusiveFlux", worksetSize, numFieldsG, numCubPoints, spaceDim);
 
     // Containers for material values and source term. Require user-defined functions
-    FieldContainer<double> worksetMaterialVals (worksetSize, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetSourceTerm   (worksetSize, numCubPoints);
+    Intrepid2::ScalarView<double, memory_space> worksetMaterialVals ("worksetMaterialVals", worksetSize, numCubPoints, spaceDim, spaceDim);
+    Intrepid2::ScalarView<double, memory_space> worksetSourceTerm   ("worksetSourceTerm", worksetSize, numCubPoints);
 
     // Containers for workset contributions to the discretization matrix and the right hand side
-    FieldContainer<double> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
-    FieldContainer<double> worksetRHS         (worksetSize, numFieldsG);
+    Intrepid2::ScalarView<double, memory_space> worksetStiffMatrix ("worksetStiffMatrix", worksetSize, numFieldsG, numFieldsG);
+    Intrepid2::ScalarView<double, memory_space> worksetRHS         ("worksetRHS", worksetSize, numFieldsG);
 
     tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Calculate Jacobians")));
@@ -2611,9 +2617,9 @@ void CreateLinearSystem(int numWorksets,
     /**********************************************************************************/
     // Due to the way setJacobian works, we need to use the basis form here
     //    IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, cellType);
-    IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, myBasis_rcp);
-    IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
-    IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
+    Intrepid2CTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, myBasis_rcp);
+    Intrepid2CTools::setJacobianInv(worksetJacobInv, worksetJacobian );
+    Intrepid2CTools::setJacobianDet(worksetJacobDet, worksetJacobian );
 
     //#define DEBUG_OUTPUT
 #ifdef DEBUG_OUTPUT
@@ -2647,7 +2653,7 @@ void CreateLinearSystem(int numWorksets,
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Map to physical frame and get source term")));
 
     // map cubature points to physical frame
-       IntrepidCTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, myBasis_rcp);
+       Intrepid2CTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, myBasis_rcp);
 
     // get A at cubature points
     evaluateMaterialTensor (worksetMaterialVals, worksetCubPoints);
@@ -2663,28 +2669,28 @@ void CreateLinearSystem(int numWorksets,
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Compute stiffness matrix")));
 
     // Transform basis gradients to physical frame:
-    IntrepidFSTools::HGRADtransformGRAD<double>(worksetHGBGrads,                // DF^{-T}(grad u)
+    Intrepid2FSTools::HGRADtransformGRAD(worksetHGBGrads,                // DF^{-T}(grad u)
                                                 worksetJacobInv,   HGBGrads);
 
     // Compute integration measure for workset cells:
-    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeights,              // Det(DF)*w = J*w
+    Intrepid2FSTools::computeCellMeasure(worksetCubWeights,              // Det(DF)*w = J*w
                                                 worksetJacobDet, cubWeights);
 
 
     // Multiply transformed (workset) gradients with weighted measure
-    IntrepidFSTools::multiplyMeasure<double>(worksetHGBGradsWeighted,           // DF^{-T}(grad u)*J*w
+    Intrepid2FSTools::multiplyMeasure(worksetHGBGradsWeighted,           // DF^{-T}(grad u)*J*w
                                              worksetCubWeights, worksetHGBGrads);
 
 
     // Compute the diffusive flux:
-    IntrepidFSTools::tensorMultiplyDataField<double>(worksetDiffusiveFlux,      //  A*(DF^{-T}(grad u)
+    Intrepid2FSTools::tensorMultiplyDataField(worksetDiffusiveFlux,      //  A*(DF^{-T}(grad u)
                                                      worksetMaterialVals,
                                                      worksetHGBGrads);
 
     // Integrate to compute workset diffusion contribution to global matrix:
-    IntrepidFSTools::integrate<double>(worksetStiffMatrix,                    //(DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
+    Intrepid2FSTools::integrate(worksetStiffMatrix,                    //(DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
                                        worksetHGBGradsWeighted,
-                                       worksetDiffusiveFlux, COMP_BLAS);
+                                       worksetDiffusiveFlux);
 
     /**********************************************************************************/
     /*                                   Compute RHS                                  */
@@ -2694,17 +2700,17 @@ void CreateLinearSystem(int numWorksets,
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Compute right-hand side")));
 
     // Transform basis values to physical frame:
-    IntrepidFSTools::HGRADtransformVALUE<double>(worksetHGBValues,              // clones basis values (u)
+    Intrepid2FSTools::HGRADtransformVALUE(worksetHGBValues,              // clones basis values (u)
                                                  HGBValues);
 
     // Multiply transformed (workset) values with weighted measure
-    IntrepidFSTools::multiplyMeasure<double>(worksetHGBValuesWeighted,          // (u)*J*w
+    Intrepid2FSTools::multiplyMeasure(worksetHGBValuesWeighted,          // (u)*J*w
                                              worksetCubWeights, worksetHGBValues);
 
     // Integrate worksetSourceTerm against weighted basis function set
-    IntrepidFSTools::integrate<double>(worksetRHS,                             // f.(u)*J*w
+    Intrepid2FSTools::integrate(worksetRHS,                             // f.(u)*J*w
                                        worksetSourceTerm,
-                                       worksetHGBValuesWeighted,  COMP_BLAS);
+                                       worksetHGBValuesWeighted);
 
     /**********************************************************************************/
     /***************************** STATISTICS (Part II) ******************************/
@@ -2830,7 +2836,7 @@ void CreateLinearSystem(int numWorksets,
   RCP<multivector_type> nCoord= rcp(new multivector_type(rowMap,2));
   {
     auto nCoordD = nCoord->get2dViewNonConst();
-    for (int inode=0; inode<nodeCoord.dimension(0); inode++) {
+    for (int inode=0; inode<nodeCoord.extent(0); inode++) {
       nCoordD[0][inode]=nodeCoord(inode,0);
       nCoordD[1][inode]=nodeCoord(inode,1);
     }
@@ -2884,7 +2890,7 @@ void CreateLinearSystem(int numWorksets,
 } //CreateLinearSystem
 
 /*********************************************************************************************************/
-void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNode,
+void GenerateIdentityCoarsening_pn_to_p1(const Intrepid2::ScalarView<int, memory_space> & Pn_elemToNode,
                       RCP<const driver_map_type> const & P1_map_aux, RCP<const driver_map_type> const &Pn_map,
                       RCP<crs_matrix_type> & P,
                       RCP<crs_matrix_type> & R) {
@@ -2900,12 +2906,12 @@ void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNo
   //We must keep track of the nodes already encountered.  Inserting more than once will cause
   //the values to be summed.  Using a hashtable would work -- we abuse std::map for this purpose.
   std::map<int,int> hashTable;
-  int Nelem=Pn_elemToNode.dimension(0);
+  int Nelem=Pn_elemToNode.extent(0);
   Array<scalar_type> vals1(1);
   vals1[0] = one;
   Array<global_ordinal_type> cols1(1);
   for(int i=0; i<Nelem; i++) {
-    for(int j=0; j<Pn_elemToNode.dimension(1); j++) {
+    for(int j=0; j<Pn_elemToNode.extent(1); j++) {
       int row = Pn_elemToNode(i,j);
       if (hashTable.find(row) == hashTable.end()) {
         //not found
@@ -2921,8 +2927,8 @@ void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNo
   //JJH FIXME no need to generate R ... it's the identity, stupid
   hashTable.clear();
   R = rcp(new crs_matrix_type(P1_map_aux,1));
-  Nelem = P1_elemToNode.dimension(0);
-  int nodesPerElem = P1_elemToNode.dimension(1);
+  Nelem = P1_elemToNode.extent(0);
+  int nodesPerElem = P1_elemToNode.extent(1);
   for(int i=0; i<Nelem; ++i) {
     for(int j=0; j<nodesPerElem; ++j) {
       int row = P1_elemToNode(i,j);
