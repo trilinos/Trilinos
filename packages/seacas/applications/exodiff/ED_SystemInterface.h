@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -125,6 +125,8 @@ public:
   bool doL1Norm{false};
   bool doL2Norm{false};
   bool pedantic{false}; // Be most picky on what is different (not fully picky yet)
+  bool allowPermutation{
+      false}; // Allow element connectivity to be permuted -- same nodes; different order.
 
   bool interpolating{false}; // Interpolate times on file2 to match times on file1;
   bool by_name{false};       // Match entities by name instead of by id.

@@ -19,6 +19,7 @@
 #include <map>
 
 #include "Akri_FieldRef.hpp"
+#include "Akri_PhasePartInfo.hpp"
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace diag { class Timer; } }
@@ -54,6 +55,34 @@ struct LS_Field
   const CDFEM_Inequality_Spec * deathPtr;
 };
 
+class DecompositionPackage
+{
+public:
+  unsigned size() const { return myDecompositions.size(); }
+  const stk::mesh::PartVector & get_blocks_to_decompose(unsigned i) const { return std::get<0>(myDecompositions[i]); }
+  const PhaseVec & get_phases(unsigned i) const { return std::get<1>(myDecompositions[i]); }
+  const Interface_Name_Generator & get_interface_name_generator(unsigned i) const { return *std::get<2>(myDecompositions[i]); }
+
+  void add_levelset_decomposition(const stk::mesh::PartVector & blocksToDecompose, const PhaseVec & namedPhases)
+  {
+    auto nameGenerator = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
+    add_decomposition_if_not_empty(blocksToDecompose, namedPhases, nameGenerator);
+  }
+  void add_death_decomposition(const stk::mesh::PartVector & blocksToDecompose, const PhaseVec & namedPhases, const std::string & deathName)
+  {
+    auto nameGenerator = std::shared_ptr<Interface_Name_Generator>(new Death_Name_Generator(deathName));
+    add_decomposition_if_not_empty(blocksToDecompose, namedPhases, nameGenerator);
+  }
+
+private:
+  void add_decomposition_if_not_empty(const stk::mesh::PartVector & blocksToDecompose, const PhaseVec & namedPhases, const std::shared_ptr<Interface_Name_Generator> & nameGenerator)
+  {
+    if (!blocksToDecompose.empty() && !namedPhases.empty())
+      myDecompositions.emplace_back(blocksToDecompose, namedPhases, nameGenerator);
+  }
+  std::vector<std::tuple<stk::mesh::PartVector, PhaseVec, std::shared_ptr<Interface_Name_Generator>>> myDecompositions;
+};
+
 class Phase_Support {
 public:
   Phase_Support (const Phase_Support&) = delete;
@@ -82,33 +111,35 @@ public:
   stk::mesh::Selector get_levelset_decomposed_blocks_selector(const Surface_Identifier levelSetIdentifier) const;
 
   void check_phase_parts() const;
+  bool phases_defined() const { return !myPhasePartInfo.empty(); }
   bool is_cdfem_use_case() const;
+  void force_cdfem_use_case_for_minimal_unit_tests();
 
-  bool phases_defined() const { return !my_phase_parts.empty(); }
-
-  void decompose_blocks(std::vector<std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets);
+  void decompose_blocks(const DecompositionPackage & decomps);
   std::vector<stk::mesh::Part*> get_blocks_decomposed_by_surface(const std::vector<unsigned> & surfacePhases) const;
   void setup_phases();
   void set_input_block_surface_connectivity(const Block_Surface_Connectivity & input_block_surface_info) { my_input_block_surface_connectivity = input_block_surface_info; }
   const Block_Surface_Connectivity & get_input_block_surface_connectivity() const {return my_input_block_surface_connectivity;}
   void build_decomposed_block_surface_connectivity();
 
-  bool is_nonconformal(const stk::mesh::Part * io_part) const;
-  bool is_conformal(const stk::mesh::Part * io_part) const;
-  bool is_interface(const stk::mesh::Part * io_part) const;
-  const stk::mesh::Part * find_conformal_io_part(const stk::mesh::Part & io_part, const PhaseTag & phase) const;
-  const stk::mesh::Part * find_nonconformal_part(const stk::mesh::Part & io_part) const;
-  const stk::mesh::Part * find_original_part(const stk::mesh::Part & io_part) const;
+  bool is_nonconformal(const stk::mesh::Part & io_part) const;
+  bool is_conformal(const stk::mesh::Part & io_part) const;
+  bool is_interface(const stk::mesh::Part & io_part) const;
+  stk::mesh::Part & debug_find_conformal_io_part(const stk::mesh::Part & io_part, const PhaseTag & phase) const;
+  stk::mesh::Part & find_conformal_io_part(const stk::mesh::Part & io_part, const PhaseTag & phase) const;
+  stk::mesh::Part & find_nonconformal_part(const stk::mesh::Part & io_part) const;
+  stk::mesh::Part & find_original_part(const stk::mesh::Part & part) const;
   const stk::mesh::Part * find_interface_part(const stk::mesh::Part & vol0, const stk::mesh::Part & vol1) const;
   const PhaseTag & get_iopart_phase(const stk::mesh::Part & io_part) const;
 
-  void add_decomposed_part(const stk::mesh::Part & part) { all_decomposed_blocks_selector |= part; }
+  void set_all_decomposed_blocks_selector();
   const stk::mesh::Selector & get_all_decomposed_blocks_selector() const { return all_decomposed_blocks_selector; }
+  bool is_decomposed(const stk::mesh::Part & part) const;
 
   void register_blocks_for_level_set(const Surface_Identifier levelSetIdentifier,
       const std::vector<stk::mesh::Part *> & blocks_decomposed_by_ls);
   void register_blocks_for_surface(const Surface_Identifier & surfID);
-  stk::mesh::Selector get_all_conformal_surfaces_selector() const;
+  stk::mesh::Selector get_all_interface_surfaces_selector() const;
 
   bool level_set_is_used_by_nonconformal_part(const Surface_Identifier levelSetIdentifier, const stk::mesh::Part * const ioPart) const;
 
@@ -122,8 +153,9 @@ public:
 
   stk::mesh::PartVector get_nonconformal_parts() const;
   stk::mesh::PartVector get_nonconformal_parts_of_rank(const stk::mesh::EntityRank rank) const;
-  stk::mesh::PartVector get_conformal_parts() const;
-  stk::mesh::PartVector get_conformal_parts_of_rank(const stk::mesh::EntityRank rank) const;
+  stk::mesh::PartVector get_conformal_parts(const bool includeInterfaceParts) const;
+  stk::mesh::PartVector get_conformal_parts_of_rank(const stk::mesh::EntityRank rank, const bool includeInterfaceParts) const;
+  stk::mesh::PartVector get_conformal_parts_of_rank(const stk::mesh::EntityRank rank) const; // Not allowed for side_rank
 
   void determine_block_phases(const std::set<std::string> & FEmodel_block_names);
   void determine_block_phases();
@@ -141,20 +173,31 @@ private:
   AuxMetaData & aux_meta() { STK_ThrowAssertMsg(myAuxMeta, "AuxMetaData not yet set on Phase_Support"); return *myAuxMeta; }
 
   void update_touching_parts_for_phase_part(const stk::mesh::Part & origPart, const stk::mesh::Part & phasePart, const PhaseTag & phase);
-  const PhasePartTag * find_conformal_phase_part(const stk::mesh::Part & conformal_part) const;
   void create_nonconformal_parts(const PartSet & decomposed_ioparts);
-  void addPhasePart(stk::mesh::Part & io_part, PhasePartSet & phase_parts, const NamedPhase & ls_phase);
+  void addPhasePart(stk::mesh::Part & io_part, const NamedPhase & ls_phase);
   void create_phase_parts(const PhaseVec& ls_phases, const PartSet& decomposed_ioparts);
   void subset_and_alias_surface_phase_parts(const PhaseVec& ls_phases, const PartSet& decomposed_ioparts);
   void create_interface_phase_parts(const PhaseVec& ls_phases, const PartSet& decomposed_ioparts, const Interface_Name_Generator& interface_name_gen);
   void get_iopart_roots(const stk::mesh::Part & iopart, std::vector<const stk::mesh::Part *> & subsets);
   void fill_nonconformal_level_set_maps() const;
 
+  void add_conforming_part(const stk::mesh::Part & conformingPart,
+      const stk::mesh::Part & nonconformingPart,
+      const stk::mesh::Part & originalPart,
+      const PhaseTag & phase);
+  void add_interface_part(const stk::mesh::Part & interfacePart,
+      const stk::mesh::Part & nonconformingPart,
+      const stk::mesh::Part & originalPart,
+      const PhaseTag & touchingPhase,
+      const PhaseTag & oppositePhase);
+  void add_interface_superset_part(const stk::mesh::Part & interfacePart,
+        const PhaseTag & touchingPhase,
+        const PhaseTag & oppositePhase);
+
 private:
   static std::map<std::string,std::unique_ptr<Phase_Support>> theModeltoPhaseSupportMap;
   stk::mesh::MetaData * myMeta;
   AuxMetaData * myAuxMeta;
-  PhasePartSet my_phase_parts;
   Block_Surface_Connectivity my_input_block_surface_connectivity;
   PartPhaseMap my_mesh_block_phases;
   std::map<Surface_Identifier, IOPartSet> lsUsedByParts_;
@@ -165,22 +208,15 @@ private:
 
   mutable std::map<const Surface_Identifier, IOPartSet> lsUsedByNonconformalParts_;
 
-  typedef std::map< const stk::mesh::Part *, bool, stk::mesh::PartLess> PartToBoolMap;
-  typedef std::map< const stk::mesh::Part *, const stk::mesh::Part *, stk::mesh::PartLess > PartToPartMap;
   typedef std::map<PhaseTag, const stk::mesh::Part *> PhaseTagToPartMap;
   typedef std::map<const stk::mesh::Part *, PhaseTagToPartMap, stk::mesh::PartLess> PartToPhaseTagToPartMap;
-  typedef std::map<const stk::mesh::Part *,PhaseTag, stk::mesh::PartLess> PartToPhaseTagMap;
   typedef std::map<std::pair<const stk::mesh::Part *, const stk::mesh::Part *>,
       const stk::mesh::Part *> VolumePartsToInterfacePartMap;
   mutable PartToPhaseTagToPartMap nonconformal_to_phase_conformal_map;
   VolumePartsToInterfacePartMap volume_to_interface_parts_map;
-  PartToBoolMap part_is_conformal_map;
-  PartToBoolMap part_is_nonconformal_map;
-  PartToPartMap part_to_nonconformal_part_map;
-  PartToPartMap nonconformal_to_original_part_map;
-  PartToPhaseTagMap part_to_phase_map;
 
   stk::mesh::Selector all_decomposed_blocks_selector;
+  PhasePartInfo myPhasePartInfo;
 };
 
 class CDFEM_Inequality_Spec {
@@ -199,13 +235,12 @@ public:
 
   static InequalityCriterionType int_to_inequality_criterion_type(const int inequality_criterion);
 
-  void add_element_volume_name(const std::string & a_element_volue_name);
+  void add_element_block(stk::mesh::Part * block);
   bool set_threshold_variable_name(const std::string & a_threshold_variable_name);
   bool set_threshold_value(const double a_threshold_value);
   bool set_criterion_compare_type(const InequalityCriterionType & a_criterion_compare_type);
 
-  void sanity_check(const std::vector<std::string> mesh_elem_blocks) const;
-  const std::vector<std::string> & get_element_volume_names() const { return my_element_volume_names; }
+  const std::vector<stk::mesh::Part*> & get_element_blocks() const { return myElementBlocks; }
   const std::string & get_threshold_variable_name () const { return my_threshold_variable_name; }
   double get_threshold_value () const { return my_threshold_value; }
   InequalityCriterionType get_criterion_compare_type() const { return my_criterion_compare_type; }
@@ -223,7 +258,7 @@ public:
   }
 protected:
   std::string my_name;
-  std::vector<std::string> my_element_volume_names;
+  std::vector<stk::mesh::Part *> myElementBlocks;
   std::string my_threshold_variable_name;
   double my_threshold_value;
   InequalityCriterionType my_criterion_compare_type;

@@ -137,20 +137,26 @@ constexpr bool operator==(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
   return lhs.bucket_id == rhs.bucket_id && lhs.bucket_ord == rhs.bucket_ord;
 }
 
-NAMED_PAIR(BucketInfo, unsigned, bucket_id, unsigned, num_entities_this_bucket)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
+struct STK_DEPRECATED BucketInfo
+{
+  unsigned bucket_id;
+  unsigned num_entities_this_bucket;
+};
 
-struct BucketIndices
+struct STK_DEPRECATED BucketIndices
 {
   std::vector<BucketInfo> bucket_info;
   std::vector<unsigned> ords;
 };
 
-typedef std::vector<BucketIndices> VolatileFastSharedCommMapOneRank;
+STK_DEPRECATED typedef std::vector<BucketIndices> VolatileFastSharedCommMapOneRank;
+STK_DEPRECATED typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
+#endif
 typedef stk::topology::rank_t EntityRank ;
 
 typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
 typedef std::map<Selector, BucketVector> SelectorBucketMap;
-typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
 
 typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
 

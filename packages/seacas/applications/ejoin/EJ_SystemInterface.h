@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -24,6 +24,7 @@ public:
   double tolerance() const { return tolerance_; }
   bool   match_node_ids() const { return matchNodeIds_; }
   bool   match_node_xyz() const { return matchNodeXYZ_; }
+  bool   match_nodeset_nodes() const { return !nsetMatch_.empty(); }
   bool   match_elem_ids() const { return matchElemIds_; }
   bool   omit_nodesets() const { return omitNodesets_; }
   bool   omit_sidesets() const { return omitSidesets_; }
@@ -61,6 +62,7 @@ public:
   const Omissions &nset_omissions() const { return nsetOmissions_; }
   const Omissions &sset_omissions() const { return ssetOmissions_; }
   const Omissions &assembly_omissions() const { return assemblyOmissions_; }
+  const Omissions &nset_match() const { return nsetMatch_; }
 
   const std::string &block_prefix() const { return blockPrefix_; }
 
@@ -122,6 +124,8 @@ private:
   Omissions assemblyOmissions_;
   Omissions nsetOmissions_;
   Omissions ssetOmissions_;
+
+  Omissions nsetMatch_;
 
   std::vector<int> nodesetConvertParts_;
   std::vector<int> infoRecordParts_;

@@ -8,4 +8,4 @@
 #pragma once
 #include <array>
 #include <string>
-static const std::array<std::string, 3> qainfo{"cpup", "0.98 beta", "2025/04/01"};
+static const std::array<std::string, 3> qainfo{"cpup", "0.99 beta", "2025/04/28"};

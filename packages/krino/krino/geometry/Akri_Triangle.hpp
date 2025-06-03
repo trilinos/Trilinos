@@ -118,9 +118,17 @@ class CalcTriangle3 {
   using ClosestPointLocation = ClosestPoint<stk::math::Vec<REAL,3>>;
   using ClosestPointLocationAndParametricCoords = ClosestPoint<const std::tuple<stk::math::Vec<REAL,3> &, stk::math::Vec<REAL,2> &>>;
 
+  // from 3 points
   static Vec3d normal(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return two_times_area_vector(p0,p1,p2).unit_vector(); } /// Unit vector
+  static Vec3d area_vector(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return 0.5*two_times_area_vector(p0,p1,p2); }
   static Vec3d two_times_area_vector(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return Cross(p1-p0,p2-p0); } /// Non-unit normal (faster)
   static REAL area(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2) { return 0.5*two_times_area_vector(p0,p1,p2).length(); }
+
+  // from 2 edges ( a little bit faster than 3 points for FAD versions )
+  static Vec3d normal(const Vec3d & edge0, const Vec3d & edge1) { return two_times_area_vector(edge0,edge1).unit_vector(); } /// Unit vector
+  static Vec3d two_times_area_vector(const Vec3d & edge0, const Vec3d & edge1) { return Cross(edge0,edge1); } /// Non-unit normal (faster)
+  static Vec3d area_vector(const Vec3d & edge0, const Vec3d & edge1) { return 0.5*two_times_area_vector(edge0,edge1); }
+  static REAL area(const Vec3d & edge0, const Vec3d & edge1) { return 0.5*two_times_area_vector(edge0,edge1).length(); }
 
   static Vec3d parametric_to_real_coords(const Vec3d & p0, const Vec3d & p1, const Vec3d & p2, const Vec2d & paramPt)
     {

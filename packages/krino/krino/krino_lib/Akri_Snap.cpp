@@ -111,7 +111,7 @@ static double estimate_quality_of_cutting_intersection_points(const stk::mesh::B
     const std::vector<stk::mesh::Entity> & elemNodes,
     const std::vector<stk::math::Vector3d> & elemNodeCoords,
     const std::vector<bool> & isElemNodeOnInterfaceOrIsOriginal,
-    const std::vector<size_t> intersectionPointIndices,
+    const std::vector<size_t> & intersectionPointIndices,
     const std::vector<IntersectionPoint> & intersectionPoints,
     const QualityMetric &qualityMetric,
     const double minIntPtWeightForEstimatingCutQuality)

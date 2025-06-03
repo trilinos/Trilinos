@@ -663,15 +663,6 @@ public:
   inline void set_global_id(stk::mesh::Entity entity, FmwkId id);
   void initialize_global_ids();
 
-  const RelationVector& aux_relations(Entity entity) const;
-  RelationVector& aux_relations(Entity entity); // Mod Mark
-  void reserve_relation(stk::mesh::Entity entity, const unsigned num); // Mod Mark
-  void erase_and_clear_if_empty(stk::mesh::Entity entity, RelationIterator rel_itr); // Mod Mark
-  void initialize_aux_relations();
-
-  RelationIterator internal_begin_relation(Entity entity, const RelationType relation_type) const;
-  RelationIterator internal_end_relation(Entity entity, const RelationType relation_type) const;
-  void compress_relation_capacity(Entity entity);
   bool add_fmwk_data() const { return m_add_fmwk_data; }
 #else
   bool add_fmwk_data() const { return false; }
@@ -1520,7 +1511,6 @@ protected: //data
 #ifdef SIERRA_MIGRATION
   bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
   std::vector<FmwkId> m_fmwk_global_ids;
-  mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
   inline bool should_sort_faces_by_node_ids() const { return m_shouldSortFacesByNodeIds; }
   bool m_shouldSortFacesByNodeIds;
 #else

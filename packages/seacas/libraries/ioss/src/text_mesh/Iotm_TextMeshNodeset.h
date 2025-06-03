@@ -83,7 +83,7 @@ namespace Iotm {
     private:
       void parse_option(std::string optionName, const std::string &optionValue)
       {
-        convert_to_lower_case(optionName);
+        convert_to_lowercase(optionName);
 
         if (optionName == "name") {
           parse_name(optionValue);

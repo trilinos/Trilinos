@@ -44,8 +44,8 @@ void EdgesOnFacesCreator::create_surface_edges()
       stk::mesh::Entity const* faceNodes = m_bulk.begin_nodes(face);
       for (unsigned int i=0; i < faceTopo.num_edges(); ++i)
       {
-        edgeNodes.clear();
-        faceTopo.edge_nodes(faceNodes, i, std::back_inserter(edgeNodes));
+        edgeNodes.resize(faceTopo.edge_topology(i).num_nodes());
+        faceTopo.edge_nodes(faceNodes, i, edgeNodes.data());
 
         stk::mesh::Entity edge = get_common_edge(edgeNodes[0], edgeNodes[1]);
         if (!m_bulk.is_valid(edge))

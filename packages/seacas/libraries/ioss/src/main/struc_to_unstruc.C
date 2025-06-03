@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -87,7 +87,7 @@ namespace {
 
 namespace {
   std::string codename;
-  std::string version = "5.01";
+  std::string version = "5.02 (2025-04-18)";
 } // namespace
 
 int main(int argc, char *argv[])
@@ -138,6 +138,8 @@ namespace {
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
+
+    dbi->set_lowercase_database_names(false);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
