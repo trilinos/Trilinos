@@ -76,7 +76,7 @@ Methods of CrsMatrix that start with "insert" actually change the
 structure of the sparse matrix.  Methods that start with "replace" or
 "sumInto" only modify existing values.
 
-\subsection Tpetra_Lesson03_Fill_fillComplete Calling \c fillComplete()
+\subsection Tpetra_Lesson03_Fill_fillComplete Calling fillComplete()
 
 Calling \c fillComplete() signals that you are done changing the
 structure (if allowed) or values of the sparse matrix.  This is an
