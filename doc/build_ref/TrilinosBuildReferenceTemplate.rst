@@ -134,7 +134,7 @@ Functionality                   CMake Cache Variable                     Kokkos 
 ============================    ======================================   ============================
 Device options:
 * Enable Cuda                   ``TPL_ENABLE_CUDA``                      ``Kokkos_ENABLE_CUDA``
-* Enable OpenMP                 ``Trilinos_ENABLE_OpenMP``               ``Kokkos_ENABLE_OpenMP``
+* Enable OpenMP                 ``Trilinos_ENABLE_OpenMP``               ``Kokkos_ENABLE_OPENMP``
 * Enable Pthread                ``TPL_ENABLE_PThread``                   ``Kokkos_ENABLE_THREADS``
 * Specify Serial                ``TPL_ENABLE_MPI=FALSE``                 ``Kokkos_ENABLE_SERIAL``
 ============================    ======================================   ============================
