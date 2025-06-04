@@ -120,7 +120,7 @@ and other stand-alone applications, use it to implement parallel algorithms.
 
 The Kokkos package is enabled with ``-DTrilinos_ENABLE_Kokkos=ON``), then
 the native configuration option of the Kokkos package are available such as
-``-D Kokkos_ENABLE_OpenMP`` or ``-D Kokkos_ENABLE_CUDA``. We recommend that
+``-DKokkos_ENABLE_OPENMP=ON`` or ``-DKokkos_ENABLE_CUDA=ON``. We recommend that
 you visit https://kokkos.org/kokkos-core-wiki/get-started/building-from-source.html
 and https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html
 for further information on how to select the various configuration options
