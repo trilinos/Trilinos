@@ -119,6 +119,16 @@ CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::Operator<Scalar, LocalOrdi
     userList.set<RCP<MultiVector> >("Nullspace", nullspace);
   }
 
+  if (userList.isParameter("BlockNumber")) {
+    RCP<Xpetra::MultiVector<LO, LO, GO, NO>> blockNumber = Teuchos::null;
+    try {
+      blockNumber = TpetraMultiVector_To_XpetraMultiVector<LO, LO, GO, NO>(userList.get<RCP<Tpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >("BlockNumber"));
+    } catch (Teuchos::Exceptions::InvalidParameterType&) {
+      blockNumber = userList.get<RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >("BlockNumber");
+    }
+    userList.set<RCP<Xpetra::MultiVector<LO, LO, GO, NO>> >("BlockNumber", blockNumber);
+  }
+
   RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC, LO, GO, NO>(A, inParamList);
   return rcp(new TpetraOperator<SC, LO, GO, NO>(H));
 }
