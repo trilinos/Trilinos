@@ -87,21 +87,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Tacho_SimpleSparseTest_File
 # > gtest library
 SET(INSTALL_GTEST OFF CACHE BOOL "Install GTest")
 
-TRIBITS_INCLUDE_DIRECTORIES(
-  "../unit-test/googletest"
-  CATEGORIES PERFORMANCE
-)
-TRIBITS_INCLUDE_DIRECTORIES(
-  "../unit-test/googletest/include"
-  CATEGORIES PERFORMANCE
-)
+TRIBITS_INCLUDE_DIRECTORIES("../unit-test/googletest")
+TRIBITS_INCLUDE_DIRECTORIES("../unit-test/googletest/include")
 
 TRIBITS_ADD_LIBRARY(
   tacho-gtest-perf
   SOURCES ../unit-test/googletest/src/gtest-all.cc
   TESTONLY
   NO_INSTALL_LIB_OR_HEADERS
-  CATEGORIES PERFORMANCE
 )
 
 # > Test Executable
