@@ -7,7 +7,6 @@
 SET(HAVE_EPETRA ON)
 SET(HAVE_ISORROPIA_ZOLTAN ON)
 SET(HAVE_EPETRAEXT ON)
-SET(HAVE_TPETRA ON)
 SET(ISORROPIA_HAVE_OMP ${${PROJECT_NAME}_ENABLE_OpenMP})
 TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
@@ -99,6 +98,8 @@ SET(SOURCES ${SOURCES}
   epetra/Isorropia_EpetraZoltanLib.cpp
   #epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
   )
+
+
 
 #
 # 2D partitioning

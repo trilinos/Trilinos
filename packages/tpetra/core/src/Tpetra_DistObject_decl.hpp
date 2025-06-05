@@ -965,7 +965,7 @@ namespace Tpetra {
                       const execution_space &space);
 
     //! The Map over which this object is distributed.
-    Teuchos::RCP<const map_type> map_; // EEP map_ member variable for Tpetra_MultiVector class
+    Teuchos::RCP<const map_type> map_;
 
   protected:
     std::unique_ptr<std::string>
