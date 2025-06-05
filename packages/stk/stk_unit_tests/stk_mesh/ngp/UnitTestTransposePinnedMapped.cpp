@@ -141,14 +141,15 @@ public:
 
   void setup_views(unsigned numBuckets)
   {
-    deviceFieldData = DeviceBucketRawDataCollectionType<stk::mesh::NgpMeshDefaultMemSpace>("deviceFieldDataCollection",
-                                                                                           numBuckets);
+    deviceFieldData = DeviceBucketRawDataCollectionType<stk::mesh::NgpMeshDefaultMemSpace>(
+          Kokkos::view_alloc("deviceFieldDataCollection", Kokkos::SequentialHostInit), numBuckets);
     for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
       deviceFieldData[bucketId] = DeviceBucketRawDataType<stk::mesh::NgpMeshDefaultMemSpace>(
             Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceFieldData"), bucketCapacity, numScalarsPerEntity);
     }
 
-    goldHostFieldData = HostBucketRawDataCollectionType("goldHostFieldDataCollection", numBuckets);
+    goldHostFieldData = HostBucketRawDataCollectionType(
+          Kokkos::view_alloc("goldHostFieldDataCollection", Kokkos::SequentialHostInit), numBuckets);
     for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
       goldHostFieldData[bucketId] = HostBucketRawDataType(
             Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceFieldData"), bucketCapacity, numScalarsPerEntity);
@@ -158,8 +159,8 @@ public:
     fill_host_field_data(numBuckets);
     fill_device_field_meta_data(numBuckets);
 
-    deviceBucketsMarkedModified = stk::mesh::DeviceBucketsModifiedArrayType<stk::mesh::NgpMeshDefaultMemSpace>(
-          Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketsMarkedModified"), numBuckets);
+    deviceBucketsMarkedModified = stk::mesh::DeviceBucketsModifiedCollectionType<stk::mesh::NgpMeshDefaultMemSpace>(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketsMarkedModified"), 1, numBuckets);
     hostBucketsMarkedModified = Kokkos::create_mirror_view(deviceBucketsMarkedModified);
     Kokkos::deep_copy(hostBucketsMarkedModified, true);
     Kokkos::deep_copy(deviceBucketsMarkedModified, hostBucketsMarkedModified);
@@ -208,8 +209,8 @@ protected:
   stk::mesh::DeviceFieldMetaDataArrayType<stk::mesh::NgpMeshDefaultMemSpace> deviceFieldMetaData;
   stk::mesh::DeviceFieldMetaDataArrayType<stk::mesh::NgpMeshDefaultMemSpace>::HostMirror hostFieldMetaData;
 
-  stk::mesh::DeviceBucketsModifiedArrayType<stk::mesh::NgpMeshDefaultMemSpace> deviceBucketsMarkedModified;
-  stk::mesh::DeviceBucketsModifiedArrayType<stk::mesh::NgpMeshDefaultMemSpace>::HostMirror hostBucketsMarkedModified;
+  stk::mesh::DeviceBucketsModifiedCollectionType<stk::mesh::NgpMeshDefaultMemSpace> deviceBucketsMarkedModified;
+  stk::mesh::DeviceBucketsModifiedCollectionType<stk::mesh::NgpMeshDefaultMemSpace>::HostMirror hostBucketsMarkedModified;
 };
 
 TEST_F(TestTranspose, transpose_from)
@@ -219,7 +220,8 @@ TEST_F(TestTranspose, transpose_from)
   const unsigned numBuckets = 3;
   setup_views(numBuckets);
   stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData);
+  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData,
+                                                                   stk::mesh::Layout::Right);
   check_device_field_data_values(numBuckets);
 }
 
@@ -230,8 +232,9 @@ TEST_F(TestTranspose, transpose_modified_buckets)
   const unsigned numBuckets = 4;
   setup_views(numBuckets);
   stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_modified_buckets_to_device<double>(execSpace, deviceFieldMetaData,
-                                                                deviceBucketsMarkedModified);
+  stk::mesh::impl::transpose_modified_buckets_to_device<double>(execSpace, deviceFieldMetaData, 0,
+                                                                deviceBucketsMarkedModified,
+                                                                stk::mesh::Layout::Right);
   check_device_field_data_values(numBuckets);
 }
 
@@ -242,8 +245,10 @@ TEST_F(TestTranspose, transpose_to)
   const unsigned numBuckets = 5;
   setup_views(numBuckets);
   stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData);
-  stk::mesh::impl::transpose_to_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData);
+  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData,
+                                                                   stk::mesh::Layout::Right);
+  stk::mesh::impl::transpose_to_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData,
+                                                                 stk::mesh::Layout::Right);
   check_host_field_data_values(numBuckets);
 }
 

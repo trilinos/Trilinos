@@ -174,13 +174,17 @@ class LinearPatch : public Patch<FILTER> {
   void construct_patch(stk::mesh::Entity seed)
   {
     stk::mesh::EntityRank rank = Patch<FILTER>::m_bulk.entity_rank(seed);
-    STK_ThrowRequireMsg(rank == stk::topology::NODE_RANK || rank == stk::topology::ELEM_RANK,
+    STK_ThrowRequireMsg(rank == stk::topology::NODE_RANK ||
+                        rank == stk::topology::FACE_RANK ||
+                        rank == stk::topology::ELEM_RANK,
                         "Input patch seed must be an element or node");
 
     Patch<FILTER>::m_patchSeed = seed;
 
+    stk::mesh::EntityRank patchRank = (rank == stk::topology::NODE_RANK) ? stk::topology::ELEM_RANK : rank;
+
     entity_patch_if(Patch<FILTER>::m_bulk, seed, Patch<FILTER>::m_filter, Patch<FILTER>::m_selector,
-                    Patch<FILTER>::m_patchElements, Patch<FILTER>::m_patchNodes, stk::topology::ELEMENT_RANK);
+                    Patch<FILTER>::m_patchElements, Patch<FILTER>::m_patchNodes, patchRank);
 
     STK_ThrowRequireMsg(!Patch<FILTER>::m_patchElements.empty(),
                         "Entity " << Patch<FILTER>::m_bulk.entity_key(seed) << " on processor '"
@@ -203,18 +207,22 @@ class CubicPatch : public Patch<FILTER> {
   void construct_patch(stk::mesh::Entity seed)
   {
     stk::mesh::EntityRank rank = Patch<FILTER>::m_bulk.entity_rank(seed);
-    STK_ThrowRequireMsg(rank == stk::topology::NODE_RANK || rank == stk::topology::ELEM_RANK,
+    STK_ThrowRequireMsg(rank == stk::topology::NODE_RANK ||
+                        rank == stk::topology::FACE_RANK ||
+                        rank == stk::topology::ELEM_RANK,
                         "Input patch seed must be an element or node");
 
     Patch<FILTER>::m_patchSeed = seed;
 
+    stk::mesh::EntityRank patchRank = (rank == stk::topology::NODE_RANK) ? stk::topology::ELEM_RANK : rank;
+
     entity_patch_if(Patch<FILTER>::m_bulk, seed, Patch<FILTER>::m_filter, Patch<FILTER>::m_selector,
-                    Patch<FILTER>::m_patchElements, Patch<FILTER>::m_patchNodes, stk::topology::ELEMENT_RANK);
+                    Patch<FILTER>::m_patchElements, Patch<FILTER>::m_patchNodes, patchRank);
 
     std::vector<stk::mesh::Entity> neighborPatchNodes = Patch<FILTER>::m_patchNodes;
 
     nodes_patch_if(Patch<FILTER>::m_bulk, neighborPatchNodes, Patch<FILTER>::m_filter, Patch<FILTER>::m_selector,
-                    Patch<FILTER>::m_patchElements, Patch<FILTER>::m_patchNodes, stk::topology::ELEMENT_RANK);
+                    Patch<FILTER>::m_patchElements, Patch<FILTER>::m_patchNodes, rank);
 
     STK_ThrowRequireMsg(!Patch<FILTER>::m_patchElements.empty(),
                         "Entity " << Patch<FILTER>::m_bulk.entity_key(seed) << " on processor '"

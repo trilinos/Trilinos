@@ -141,6 +141,8 @@ TEST_F(BalanceFromField, 6elems2procs_readLastTimeStepFromFile)
       EXPECT_DOUBLE_EQ(*fieldWeight, expectedFieldWeight);
     }
   }
+
+  clean_up_temporary_files();
 }
 
 TEST_F(BalanceFromField, 6elems2procs_checkGeometricDecomp)
@@ -165,6 +167,8 @@ TEST_F(BalanceFromField, 6elems2procs_checkGeometricDecomp)
   else {
     EXPECT_EQ(counts[stk::topology::ELEM_RANK], 2u);
   }
+
+  clean_up_temporary_files();
 }
 
 TEST_F(BalanceFromField, 6elems2procs_checkGraphDecomp)
@@ -189,6 +193,8 @@ TEST_F(BalanceFromField, 6elems2procs_checkGraphDecomp)
   else {
     EXPECT_EQ(counts[stk::topology::ELEM_RANK], 4u);
   }
+
+  clean_up_temporary_files();
 }
 
 }

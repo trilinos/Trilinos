@@ -34,9 +34,6 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include "UnitTestSearchUtils.hpp"
-#include "stk_unit_test_utils/BuildMesh.hpp"               // for build_mesh
-#include "stk_unit_test_utils/TextMesh.hpp"                // for get_full_t...
 #include <stk_io/FillMesh.hpp>                             // for fill_mesh
 #include "stk_io/WriteMesh.hpp"                            // for write_mesh
 #include <stk_mesh/base/EntityKey.hpp>
@@ -45,6 +42,9 @@
 #include "stk_search/FilterCoarseSearch.hpp"               // for ObjectOuts...
 #include "stk_search_util/MeshUtility.hpp"
 #include "stk_search_util/spmd/GeometricSearch.hpp"
+#include "stk_unit_test_utils/BuildMesh.hpp"               // for build_mesh
+#include "stk_unit_test_utils/TextMesh.hpp"                // for get_full_t...
+#include "stk_unit_test_utils/UnitTestSearchUtils.hpp"
 
 #include <gtest/gtest.h>
 #include "mpi.h"            // for MPI_COMM_WORLD
@@ -59,6 +59,7 @@
 #include <string>                                          // for string
 #include <utility>                                         // for pair
 #include <vector>                                          // for vector, swap
+
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -72,7 +73,7 @@ using STKElemFormatterBase = stk::search::InspectorOutputFormatterBase<stk::sear
 using STKElemFormatter = stk::search::InspectorOutputFormatter<stk::search::spmd::ElementSendMesh, stk::search::spmd::ElementRecvMesh>;
 using STKElemInspectorInfo = stk::search::InspectorInfo<stk::search::spmd::ElementSendMesh, stk::search::spmd::ElementRecvMesh>;
 
-inline std::ostream& operator<<(std::ostream& os, const Kokkos::pair<stk::mesh::EntityKey,int>& ekey)
+inline std::ostream& operator<<(std::ostream& os, const Kokkos::pair<stk::search::spmd::EntityKeyPair,int> ekey)
 {
   os << "{" << ekey.first << ", INDEX: " << ekey.second << "}";
   return os;
@@ -105,6 +106,15 @@ protected:
     os << std::endl;
   }
 };
+
+stk::search::spmd::EntityKeyPair make_spmd_key(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank rank, stk::mesh::EntityId id)
+{
+  return stk::search::spmd::make_entity_key_pair(bulk, stk::mesh::EntityKey(rank, id));
+}
+stk::search::spmd::EntityKeyPair make_spmd_key(stk::mesh::EntityRank rank, stk::mesh::EntityId id)
+{
+  return stk::search::spmd::EntityKeyPair(stk::mesh::Entity(), stk::mesh::EntityKey(rank, id));
+}
 
 template <typename SENDMESH, typename RECVMESH>
 void test_inspection(const std::string& fileName,
@@ -151,7 +161,7 @@ void setup_and_run_serial_mock_inspection(const std::string& fileName)
 
   search.initialize();
 
-  std::vector<stk::search::spmd::NodeRecvMesh::EntityKey> rangeKeys = { stk::mesh::EntityKey(stk::topology::NODE_RANK, 1) };
+  std::vector<stk::search::spmd::NodeRecvMesh::EntityKey> rangeKeys = { make_spmd_key(*recvBulk, stk::topology::NODE_RANK, 1) };
 
   search.register_inspector(fileName, rangeKeys);
   search.register_output_formatter(std::make_shared<MockOutputNodeFormatter>());
@@ -167,8 +177,8 @@ void test_serial_mock_inspection(const std::string& fileName)
 {
   MockOutputNodeFormatter formatter;
   STKNodeInspectorInfo expectedInfo;
-  expectedInfo.domainEntityKey = stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1);
-  expectedInfo.rangeEntityKey = stk::mesh::EntityKey(stk::topology::NODE_RANK, 1);
+  expectedInfo.domainEntityKey = make_spmd_key(stk::topology::ELEM_RANK, 1);
+  expectedInfo.rangeEntityKey = make_spmd_key(stk::topology::NODE_RANK, 1);
   expectedInfo.domainProc = 0;
   expectedInfo.rangeProc = 0;
   expectedInfo.domainParts = {"BLOCK_1"};
@@ -204,7 +214,7 @@ void create_search_and_run_parallel_inspection(const std::string& fileName,
                                                   stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2u)};
   RangeKeyVec rangeKeys;
 
-  destMesh->fill_element_entity_keys(inspectedElements, rangeKeys);
+  destMesh->fill_entity_keys(inspectedElements, rangeKeys);
 
   search.register_inspector(fileName, rangeKeys);
 
@@ -271,8 +281,8 @@ void test_parallel_inspection(const STKElemFormatter& formatter, const std::stri
     std::vector<STKElemInspectorInfo> expectedInfoVec;
 
     for(unsigned i=0; i<numEvalpoints; ++i) {
-      info.domainEntityKey = stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1u);
-      info.rangeEntityKey = Kokkos::make_pair(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1u), i);
+      info.domainEntityKey = make_spmd_key(stk::topology::ELEM_RANK, 1u);
+      info.rangeEntityKey = Kokkos::make_pair(make_spmd_key(stk::topology::ELEM_RANK, 1u), i);
       info.domainProc = 0;
       info.rangeProc = 0;
       info.domainParts = {"BLOCK_1"};
@@ -280,8 +290,8 @@ void test_parallel_inspection(const STKElemFormatter& formatter, const std::stri
     }
 
     for(unsigned i=0; i<numEvalpoints; ++i) {
-      info.domainEntityKey = stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2u);
-      info.rangeEntityKey = Kokkos::make_pair(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 2u), i);
+      info.domainEntityKey = make_spmd_key(stk::topology::ELEM_RANK, 2u);
+      info.rangeEntityKey = Kokkos::make_pair(make_spmd_key(stk::topology::ELEM_RANK, 2u), i);
       info.domainProc = 1;
       info.rangeProc = 1;
       info.domainParts = {"BLOCK_1"};

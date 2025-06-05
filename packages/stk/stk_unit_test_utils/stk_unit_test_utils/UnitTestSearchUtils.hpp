@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef STK_STK_UNIT_TESTS_STK_SEARCH_UTIL_UNITTESTSEARCHUTILS_HPP_
-#define STK_STK_UNIT_TESTS_STK_SEARCH_UTIL_UNITTESTSEARCHUTILS_HPP_
+#ifndef STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_UNITTESTSEARCHUTILS_HPP_
+#define STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_UNITTESTSEARCHUTILS_HPP_
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
@@ -49,7 +49,7 @@
 #include "stk_search/Sphere.hpp"                      // for Sphere
 #include "stk_topology/topology.hpp"                  // for topology
 #include "stk_unit_test_utils/BuildMesh.hpp"               // for build_mesh
-#include "stk_unit_test_utils/MockSearchHex8MasterElementProvider.hpp"
+#include "stk_unit_test_utils/MockMasterElementProvider.hpp"
 #include "stk_unit_test_utils/MockSearchMesh.hpp"
 #include "stk_unit_test_utils/TextMesh.hpp"                // for get_full_t...
 #include "stk_util/parallel/Parallel.hpp"             // for ParallelMachine
@@ -78,22 +78,26 @@ std::shared_ptr<stk::mesh::BulkData> build_single_point_bulk(double x, double y,
 
 std::shared_ptr<stk::search::spmd::ElementSendMesh>
 construct_hex_send_mesh(stk::mesh::BulkData& bulk, double parametricTolerance,
-                        const std::vector<std::string>& blocks = { "block_1" });
+                        const std::vector<std::string>& blocks = { "block_1" },
+                        const stk::mesh::Selector& activeSelector = stk::mesh::Selector().complement());
 
 std::shared_ptr<stk::search::spmd::NodeRecvMesh>
 construct_node_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, double geometricTolerance,
-                        const std::vector<std::string>& blocks = { "block_1" });
+                        const std::vector<std::string>& blocks = { "block_1" },
+                        const stk::mesh::Selector& activeSelector = stk::mesh::Selector().complement());
 
 std::shared_ptr<stk::search::spmd::ElementRecvMesh>
 construct_element_centroid_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, double geometricTolerance,
-                                     const std::vector<std::string>& blocks = { "block_1" });
+                                     const std::vector<std::string>& blocks = { "block_1" },
+                                     const stk::mesh::Selector& activeSelector = stk::mesh::Selector().complement());
 
 std::shared_ptr<stk::search::spmd::ElementRecvMesh>
 construct_hex_gauss_point_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, double geometricTolerance,
                                     unsigned integrationOrder = 0,
-                                    const std::vector<std::string>& blocks = { "block_1" });
+                                    const std::vector<std::string>& blocks = { "block_1" },
+                                    const stk::mesh::Selector& activeSelector = stk::mesh::Selector().complement());
 
 }
 }
 
-#endif /* STK_STK_UNIT_TESTS_STK_SEARCH_UTIL_UNITTESTSEARCHUTILS_HPP_ */
+#endif /* STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_UNITTESTSEARCHUTILS_HPP_ */
