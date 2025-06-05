@@ -15,9 +15,17 @@
 #include "Tacho_Driver.hpp"
 #include "Tacho_MatrixMarket.hpp"
 
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
+
 using ordinal_type = Tacho::ordinal_type;
 
 template <typename value_type> int driver(int argc, char *argv[]) {
+  using arith_traits = Tacho::ArithTraits<value_type>;
+  using mag_type = typename arith_traits::mag_type;
+  using Teuchos::TimeMonitor;
+  using Teuchos::StackedTimer;
+
   int nthreads = 1;
   bool verbose = false;
   bool sanitize = false;
@@ -209,29 +217,34 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     Kokkos::deep_copy(values_on_device, A.Values());
 
     /// inputs are used for graph reordering and analysis
-    if (m_graph > 0 && m_graph < A.NumRows())
-      solver.analyze(A.NumRows(), A.RowPtr(), A.Cols(), m_graph, ap_graph, aj_graph, aw_graph);
-    else if (dofs_per_node > 1) {
-      if (verbose) std::cout << " > DoFs / node = " << dofs_per_node << std::endl;
-      solver.analyze(A.NumRows(), dofs_per_node, A.RowPtr(), A.Cols());
-    } else
-      solver.analyze(A.NumRows(), A.RowPtr(), A.Cols());
+    Teuchos::RCP<Teuchos::StackedTimer> stackedTimer = Teuchos::rcp(new Teuchos::StackedTimer("Tacho_ExampleDriver"));
+    Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
+    {
+      Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Analize"));
+      if (m_graph > 0 && m_graph < A.NumRows())
+        solver.analyze(A.NumRows(), A.RowPtr(), A.Cols(), m_graph, ap_graph, aj_graph, aw_graph);
+      else if (dofs_per_node > 1) {
+        if (verbose) std::cout << " > DoFs / node = " << dofs_per_node << std::endl;
+        solver.analyze(A.NumRows(), dofs_per_node, A.RowPtr(), A.Cols());
+      } else
+        solver.analyze(A.NumRows(), A.RowPtr(), A.Cols());
+    }
 
     /// create numeric tools and levelset tools
-    Kokkos::Timer timer;
-    solver.initialize();
-    double initi_time = timer.seconds();
+    {
+      Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Initialize"));
+      solver.initialize();
+    }
 
     /// symbolic structure can be reused
     if (!no_warmup) {
       // warm-up
       solver.factorize(values_on_device);
     }
-    timer.reset();
     for (int i = 0; i < nfacts; ++i) {
+      Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Factorixze"));
       solver.factorize(values_on_device);
     }
-    double facto_time = timer.seconds();
 
     DenseMultiVectorType b("b", A.NumRows(), nrhs), // rhs multivector
         x("x", A.NumRows(), nrhs),                  // solution multivector
@@ -251,32 +264,48 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       }
     }
 
-    double solve_time = 0.0;
     if (!no_warmup) {
       // warm-up
-      timer.reset();
       solver.solve(x, b, t);
-      solve_time = timer.seconds();
       const double res = solver.computeRelativeResidual(values_on_device, x, b);
-      std::cout << "TachoSolver (warm-up): residual = " << res << " time " << solve_time << "\n";
     }
-    std::cout << std::endl;
 
-    solve_time = 0.0;
+    bool success = true;
+    mag_type tol = sqrt(arith_traits::epsilon()); // loose accuracy tol..
     for (int i = 0; i < nsolves; ++i) {
-      timer.reset();
-      solver.solve(x, b, t);
-      solve_time += timer.seconds();
-      const double res = solver.computeRelativeResidual(values_on_device, x, b);
+      {
+        Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Solve"));
+        solver.solve(x, b, t);
+      }
+      const mag_type res = solver.computeRelativeResidual(values_on_device, x, b);
+      if (res > tol) success = false;
       std::cout << "TachoSolver: residual = " << res << "\n";
     }
     std::cout << std::endl;
+    stackedTimer->stopBaseTimer();
 
+    Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::rcp(new Teuchos::SerialComm<int>());
+    if (success) {
+      std::string testBaseName = "Tacho_ExampleDriver_";
+      auto xmlOut = stackedTimer->reportWatchrXML(testBaseName + method_name + "_" + std::to_string(variant), comm);
+      if(xmlOut.length()) {
+        std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
+      } else {
+        std::cout << "\nFailed to create Watchr performance report " << xmlOut << '\n';
+      }
+    } else {
+      std::cerr << "\n Error: Some of the residual norms were too large\n\n";
+    }
     std::cout << std::endl;
-    std::cout << " Initi Time " << initi_time << std::endl;
-    std::cout << " > nnz = " << solver.getNumNonZerosU() << std::endl;
-    std::cout << " Facto Time " << facto_time / (double)nfacts << std::endl;
-    std::cout << " Solve Time " << solve_time / (double)nsolves << std::endl;
+    {
+      Teuchos::StackedTimer::OutputOptions options;
+      options.num_histogram=3;
+      options.print_warnings = false;
+      options.output_histogram = true;
+      options.output_fraction=true;
+      options.output_minmax = true;
+      stackedTimer->report(std::cout, comm, options);
+    }
     std::cout << std::endl;
     solver.release();
   } catch (const std::exception &e) {
