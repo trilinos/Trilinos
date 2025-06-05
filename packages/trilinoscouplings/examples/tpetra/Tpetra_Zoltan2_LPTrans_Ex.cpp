@@ -39,12 +39,6 @@
 void runExample() {
   std::cout << "Entering runExample()" << std::endl;
 
-#ifdef HAVE_TPETRA
-  std::cout << "In runExample(): HAVE_TPETRA = ON" << std::endl;
-#else
-  std::cout << "In runExample(): HAVE_TPETRA = OFF" << std::endl;
-#endif
-
   int numProcs(1);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
