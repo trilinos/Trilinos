@@ -51,7 +51,6 @@
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/DeviceFieldDataManagerFactory.hpp"
-#include "stk_mesh/base/FieldSyncDebugging.hpp"
 #include "stk_mesh/base/SharingInfo.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
@@ -202,6 +201,10 @@ public:
    *          each call to 'modification_end'.
    */
   size_t synchronized_count() const { return m_meshModification.synchronized_count() ; }
+
+  const DeviceSynchronizedCountType& device_synchronized_count() const {
+    return m_meshModification.device_synchronized_count();
+  }
 
   /** \brief  Begin a modification phase during which the mesh bulk data
    *          could become parallel inconsistent.  This is a parallel
@@ -851,8 +854,7 @@ public:
 
   bool is_mesh_consistency_check_on() const { return m_runConsistencyCheck; }
 
-  void confirm_host_mesh_is_synchronized_from_device(const char * fileName = HOST_DEBUG_FILE_NAME,
-                                      int lineNumber = HOST_DEBUG_LINE_NUMBER) const;
+  void confirm_host_mesh_is_synchronized_from_device(const char* file = STK_HOST_FILE, int line = STK_HOST_LINE) const;
 
   bool has_symmetric_ghost_info() const { return m_symmetricGhostInfo; }
 

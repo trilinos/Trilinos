@@ -40,6 +40,7 @@
 #include "stk_mesh/base/NgpFieldBase.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/Field.hpp"
+#include "stk_mesh/base/FieldData.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/NgpForEachEntity.hpp"
 #include "stk_mesh/base/NgpMesh.hpp"
@@ -61,24 +62,26 @@ class HostField : public NgpFieldBase
 
   HostField()
     : NgpFieldBase(),
-      m_hostBulk(nullptr),
-      m_hostField(nullptr),
-      synchronizedCount(0)
-  {
-  }
+      m_hostField(nullptr)
+  {}
 
-  HostField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f, [[maybe_unused]] bool isFromGetUpdatedNgpField = false)
+  HostField(const stk::mesh::BulkData& /*bulk*/, const stk::mesh::FieldBase& f,
+            [[maybe_unused]] bool isFromGetUpdatedNgpField = false)
     : NgpFieldBase(),
-      m_hostBulk(&b),
       m_hostField(&f),
-      synchronizedCount(0)
-  {
-  }
+      m_hostFieldData(m_hostField->data<T, Unsynchronized, stk::ngp::HostMemSpace>())
+  {}
 
-  HostField(const HostField<T, NgpMemSpace>&) = default;
-  HostField(HostField<T, NgpMemSpace>&&) = default;
-  HostField<T, NgpMemSpace>& operator=(const HostField<T, NgpMemSpace>&) = default;
-  HostField<T, NgpMemSpace>& operator=(HostField<T, NgpMemSpace>&&) = default;
+  HostField(const stk::mesh::FieldBase& f, [[maybe_unused]] bool isFromGetUpdatedNgpField = false)
+    : NgpFieldBase(),
+      m_hostField(&f),
+      m_hostFieldData(m_hostField->data<T, Unsynchronized, stk::ngp::HostMemSpace>())
+  {}
+
+  HostField(const HostField&) = default;
+  HostField(HostField&&) = default;
+  HostField& operator=(const HostField&) = default;
+  HostField& operator=(HostField&&) = default;
 
   void update_field(const ExecSpace& newExecSpace) override
   {
@@ -148,7 +151,7 @@ class HostField : public NgpFieldBase
     T *data = static_cast<T *>(stk::mesh::field_data(*m_hostField, index.bucket_id, index.bucket_ord));
     unsigned numScalars = stk::mesh::field_scalars_per_entity(*m_hostField, index.bucket_id);
     STK_ThrowAssert(data);
-    return EntityFieldData<T>(data, numScalars);
+    return EntityFieldData<T>(data, numScalars, 1);
   }
 
   void set_all(const HostMesh& ngpMesh, const T& value)
@@ -196,7 +199,7 @@ class HostField : public NgpFieldBase
   void sync_to_host(const ExecSpace& /*execSpace*/) override
   {
     if (need_sync_to_host()) {
-      copy_device_to_host();
+      m_hostField->increment_num_syncs_to_host();
       clear_device_sync_state();
     }
   }
@@ -204,7 +207,7 @@ class HostField : public NgpFieldBase
   void sync_to_host(ExecSpace&& /*execSpace*/) override
   {
     if (need_sync_to_host()) {
-      copy_device_to_host();
+      m_hostField->increment_num_syncs_to_host();
       clear_device_sync_state();
     }
   }
@@ -218,49 +221,36 @@ class HostField : public NgpFieldBase
   void sync_to_device(const ExecSpace& /*execSpace*/) override
   {
     if (need_sync_to_device()) {
-      if (m_hostBulk->synchronized_count() != synchronizedCount) {
-        update_field();
+      if (m_hostFieldData.needs_update()) {
+        m_hostFieldData.update(get_execution_space(), m_hostField->host_data_layout());
       }
-      copy_host_to_device();
+      m_hostField->increment_num_syncs_to_device();
       clear_host_sync_state();
     }
   }
 
-  void sync_to_device(ExecSpace&& /*execSpace*/) override
+  void sync_to_device(ExecSpace&& execSpace) override
   {
-    if (need_sync_to_device()) {
-      if (m_hostBulk->synchronized_count() != synchronizedCount) {
-        update_field();
-      }
-      copy_host_to_device();
-      clear_host_sync_state();
-    }
+    sync_to_device(execSpace);
   }
 
-  size_t synchronized_count() const override { return synchronizedCount; }
+  size_t synchronized_count() const override { return m_hostFieldData.field_data_synchronized_count(); }
 
   FieldState state() const { return m_hostField->state(); }
 
-  void update_host_bucket_pointers() override { }
+  stk::mesh::EntityRank get_rank() const { return m_hostFieldData.m_rank; }
 
-  void swap_field_views(NgpFieldBase * /*other*/) override { }
-  void swap(HostField<T> &/*other*/) { }
-
-  stk::mesh::EntityRank get_rank() const { return m_hostField ? m_hostField->entity_rank() : stk::topology::INVALID_RANK; }
-
-  unsigned get_ordinal() const { return m_hostField->mesh_meta_data_ordinal(); }
+  unsigned get_ordinal() const { return m_hostFieldData.m_ordinal; }
 
   const std::string& name() const { return m_hostField->name(); }
 
-  const BulkData& get_bulk() const { return *m_hostBulk; }
+  const BulkData& get_bulk() const { return m_hostFieldData.mesh(); }
 
   const FieldBase* get_field_base() const { return m_hostField; }
 
   bool need_sync_to_host() const override { return m_hostField->need_sync_to_host(); }
 
   bool need_sync_to_device() const override { return m_hostField->need_sync_to_device(); }
-
-  bool needs_update() const override { return false; }
 
  private:
   ExecSpace& get_execution_space() const { return m_hostField->get_execution_space(); }
@@ -276,17 +266,14 @@ class HostField : public NgpFieldBase
 
   void update_field()
   {
-    m_hostField->increment_num_syncs_to_device();
-    synchronizedCount = m_hostBulk->synchronized_count();
+    if (m_hostFieldData.needs_update()) {
+      m_hostFieldData.update(get_execution_space(), m_hostField->host_data_layout());
+      m_hostField->increment_num_syncs_to_device();
+    }
   }
 
   void set_modify_on_device() {
     m_hostField->modify_on_device();
-  }
-
-  void copy_host_to_device()
-  {
-    m_hostField->increment_num_syncs_to_device();
   }
 
   void copy_device_to_host()
@@ -294,10 +281,8 @@ class HostField : public NgpFieldBase
     m_hostField->increment_num_syncs_to_host();
   }
 
-  const BulkData* m_hostBulk;
   const stk::mesh::FieldBase* m_hostField;
-
-  size_t synchronizedCount;
+  FieldData<T, stk::ngp::HostMemSpace> m_hostFieldData;
 };
 
 }

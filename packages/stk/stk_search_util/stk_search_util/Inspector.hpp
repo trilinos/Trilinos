@@ -105,6 +105,9 @@ public:
    , m_recvMesh(meshb)
    {}
 
+  const std::shared_ptr<SENDMESH> send_mesh() const { return m_sendMesh; }
+  const std::shared_ptr<RECVMESH> recv_mesh() const { return m_recvMesh; }
+
 protected:
   void write_delimiter(std::ostream& os) const override
   {
@@ -224,7 +227,7 @@ InspectorInfo<SENDMESH, RECVMESH> Inspector<SENDMESH, RECVMESH>::extract_inspect
   info.rangeEntityKey = relation.first.id();
   info.domainProc = relation.second.proc();
   info.rangeProc = relation.first.proc();
-  info.domainParts = m_sendMesh->get_transfer_part_membership(info.domainEntityKey);
+  info.domainParts = m_sendMesh->get_part_membership(info.domainEntityKey);
 
   return info;
 }

@@ -34,9 +34,6 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include "UnitTestSearchUtils.hpp"
-#include "stk_unit_test_utils/BuildMesh.hpp"               // for build_mesh
-#include "stk_unit_test_utils/TextMesh.hpp"                // for get_full_t...
 #include <stk_io/FillMesh.hpp>                             // for fill_mesh
 #include "stk_io/WriteMesh.hpp"                            // for write_mesh
 #include <stk_mesh/base/BulkData.hpp>                      // for BulkData
@@ -45,6 +42,10 @@
 #include "stk_mesh/base/FieldBLAS.hpp"                     // for field_copy
 #include "stk_search/FilterCoarseSearch.hpp"               // for ObjectOuts...
 #include "stk_search_util/spmd/GeometricSearch.hpp"
+#include "stk_search_util/spmd/GeometricSearchDispatch.hpp"
+#include "stk_unit_test_utils/BuildMesh.hpp"               // for build_mesh
+#include "stk_unit_test_utils/TextMesh.hpp"                // for get_full_t...
+#include "stk_unit_test_utils/UnitTestSearchUtils.hpp"
 
 #include <gtest/gtest.h>
 #include "mpi.h"            // for MPI_COMM_WORLD
@@ -59,6 +60,7 @@
 #include <string>                                          // for string
 #include <utility>                                         // for pair
 #include <vector>                                          // for vector, swap
+
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -122,6 +124,49 @@ TEST(MockSearchTest, comparisonLessThan)
   EXPECT_FALSE(stk::search::less_than(d2, d1, epsilon));
 }
 
+TEST(MockSearchTest, createSearchDispatch)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  using STKMockSearch   = stk::search::spmd::GeometricSearch<stk::search::spmd::ElementSendMesh, stk::search::spmd::NodeRecvMesh>;
+  using STKMockDispatch = stk::search::spmd::GeometricSearchDispatch<stk::search::spmd::ElementSendMesh, stk::search::spmd::NodeRecvMesh>;
+
+  double parametricTolerance = 0.001;
+  double geometricTolerance = 0.1;
+  double expansionSum = geometricTolerance;
+  double expansionFactor = 0.0;
+  double slantHeight = 1.0;
+  const stk::search::SearchMethod search_method = stk::search::KDTREE;
+
+  std::shared_ptr<stk::mesh::BulkData> sendBulk = stk::unit_test_util::build_slanted_single_hex_bulk(slantHeight);
+  auto sendMesh = stk::unit_test_util::construct_hex_send_mesh(*sendBulk, parametricTolerance);
+
+  std::shared_ptr<stk::mesh::BulkData> recvBulk = stk::unit_test_util::build_single_point_bulk(0.5, 0.5, 0.5);
+  auto recvMesh = stk::unit_test_util::construct_node_recv_mesh(*recvBulk,
+                                                                parametricTolerance, geometricTolerance);
+
+  sendMesh->set_extrapolate_option(stk::search::ObjectOutsideDomainPolicy::ABORT);
+
+  auto searchObj = std::make_shared<STKMockSearch>(sendMesh, recvMesh, "searchObj",
+                                                   MPI_COMM_WORLD, expansionFactor,
+                                                   expansionSum, search_method);
+
+  auto searchDispatch = std::make_shared<STKMockDispatch>(searchObj);
+
+  searchDispatch->set_print_search_warnings(false);
+  searchDispatch->set_do_initial_search_expansion(false);
+  searchDispatch->set_output_stream(std::cerr);
+  searchDispatch->set_expansion_factor(0.1);
+
+  EXPECT_NO_THROW(searchObj->initialize());
+  EXPECT_NO_THROW(searchObj->coarse_search());
+
+  EXPECT_TRUE(searchObj->get_unpaired_recv_entities().empty());
+  EXPECT_EQ(1u, searchObj->get_range_to_domain().size());
+}
+
 TEST(MockSearchTest, unpairedEntities)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
@@ -134,10 +179,10 @@ TEST(MockSearchTest, unpairedEntities)
   double geometricTolerance = 0.1;
   double expansionSum = geometricTolerance;
   double expansionFactor = 0.0;
-  double slant = 1.0;
+  double slantHeight = 1.0;
   const stk::search::SearchMethod search_method = stk::search::KDTREE;
 
-  std::shared_ptr<stk::mesh::BulkData> sendBulk = stk::unit_test_util::build_slanted_single_hex_bulk(slant);
+  std::shared_ptr<stk::mesh::BulkData> sendBulk = stk::unit_test_util::build_slanted_single_hex_bulk(slantHeight);
   auto sendMesh = stk::unit_test_util::construct_hex_send_mesh(*sendBulk, parametricTolerance);
 
   std::shared_ptr<stk::mesh::BulkData> recvBulkInside = stk::unit_test_util::build_single_point_bulk(0.5, 0.5, 0.5);
@@ -203,13 +248,14 @@ TEST(MockSearchTest, filterToNearestWithAbort)
 
   auto sendMesh = stk::unit_test_util::construct_hex_send_mesh(*sendBulk, parametricTolerance);
   sendMesh->set_extrapolate_option(stk::search::ObjectOutsideDomainPolicy::ABORT);
+  sendMesh->set_name("sendMesh");
 
   std::shared_ptr<stk::mesh::BulkData> recvBulk = stk::unit_test_util::build_single_point_bulk(x, y, z);
   auto destMesh = stk::unit_test_util::construct_node_recv_mesh(*recvBulk, parametricTolerance, geometricTolerance);
+  destMesh->set_name("recvMesh");
 
   STKMockSearch search(sendMesh, destMesh, "mocktest", MPI_COMM_WORLD, expansionFactor, 0.0);
   search.set_print_search_warnings(false);
-  search.set_use_centroid_for_geometric_proximity(true); // Don't use projection since MockQuad4 is not implemented
   search.initialize();
 
   search.coarse_search();
@@ -234,7 +280,7 @@ TEST(MockSearchTest, centroidPointEvaluator)
   stk::mesh::Entity element = bulk->get_entity(stk::topology::ELEM_RANK, 1u);
   EXPECT_TRUE(bulk->is_valid(element));
 
-  stk::mesh::EntityKey elementKey = bulk->entity_key(element);
+  stk::search::spmd::EntityKeyPair elementKey(stk::search::spmd::make_entity_key_pair(bulk,element));
   stk::topology topo = bulk->bucket(element).topology();
   EXPECT_EQ(stk::topology::HEX_8, topo);
 
@@ -269,19 +315,19 @@ TEST(MockSearchTest, gaussPointEvaluator)
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::Hex8MasterElementProvider>();
+      std::make_shared<stk::unit_test_util::MasterElementProvider>(0);
   std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator =
       std::make_shared<stk::search::MasterElementGaussPointEvaluator>(*bulk, coords, masterElemProvider);
 
   stk::mesh::Entity element = bulk->get_entity(stk::topology::ELEM_RANK, 1u);
   EXPECT_TRUE(bulk->is_valid(element));
 
-  stk::mesh::EntityKey elementKey = bulk->entity_key(element);
+  stk::search::spmd::EntityKeyPair elementKey(stk::search::spmd::make_entity_key_pair(bulk,element));
   stk::topology topo = bulk->bucket(element).topology();
   EXPECT_EQ(stk::topology::HEX_8, topo);
 
-  stk::search::MasterElementTopology meTopo(topo, elementKey, bulk->bucket_ptr(element));
-  unsigned numGaussPts = masterElemProvider->num_integration_points(stk::search::MasterElementTopology(topo, elementKey, bulk->bucket_ptr(element)));
+  stk::search::SearchTopology meTopo(topo, elementKey, bulk->bucket_ptr(element));
+  unsigned numGaussPts = masterElemProvider->num_integration_points(meTopo);
   EXPECT_EQ(8u, numGaussPts);
 
   std::vector<double> gaussPoints;
@@ -335,12 +381,13 @@ TEST(MockSearchTest, findParametricCoordinates)
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::Hex8MasterElementProvider>();
+      std::make_shared<stk::unit_test_util::MasterElementProvider>(0);
   std::shared_ptr<stk::search::MasterElementParametricCoordsFinder> paramCoordsFinder =
       std::make_shared<stk::search::MasterElementParametricCoordsFinder>(*bulk, coords, masterElemProvider, parametricTolerance);
 
   stk::mesh::Entity element = bulk->get_entity(stk::topology::ELEM_RANK, 1u);
   EXPECT_TRUE(bulk->is_valid(element));
+  stk::search::spmd::EntityKeyPair elementKey(stk::search::spmd::make_entity_key_pair(bulk,element));
 
   bool isWithinParametricTolerance{false};
   double paramDistance{0.0};
@@ -349,7 +396,7 @@ TEST(MockSearchTest, findParametricCoordinates)
   stk::search::determine_centroid(3, element, *coords, elementCentroid);
 
   // Interval [-1,1] x [-1,1] x [-1,1] -> centroid: (xi,eta,zeta) = (0,0,0)
-  paramCoordsFinder->find_parametric_coords(bulk->entity_key(element), elementCentroid,
+  paramCoordsFinder->find_parametric_coords(elementKey, elementCentroid,
                                             paramCoords, paramDistance, isWithinParametricTolerance);
 
   EXPECT_TRUE(isWithinParametricTolerance);

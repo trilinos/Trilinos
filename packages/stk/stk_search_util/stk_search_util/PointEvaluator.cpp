@@ -32,7 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "stk_search_util/PointEvaluator.hpp"
@@ -64,9 +63,9 @@ MasterElementGaussPointEvaluator::MasterElementGaussPointEvaluator(
 {
 }
 
-size_t MasterElementGaussPointEvaluator::num_points(const stk::mesh::EntityKey k, stk::topology topo)
+size_t MasterElementGaussPointEvaluator::num_points(const spmd::EntityKeyPair& k, const stk::topology& topo)
 {
-  auto meTopo = MasterElementTopology(topo, k);
+  auto meTopo = SearchTopology(topo, k);
   return m_masterElemProvider->num_integration_points(meTopo);
 }
 
@@ -76,18 +75,19 @@ void MasterElementGaussPointEvaluator::gather_nodal_coordinates(const stk::mesh:
   unsigned numFieldComponents;
   unsigned numNodes;
 
-  m_masterElemProvider->nodal_field_data(entity, *m_coords, numFieldComponents, numNodes, m_elementCoords);
+  spmd::EntityKeyPair key(entity, m_bulk.entity_key(entity));
+  m_masterElemProvider->nodal_field_data(key, m_coords, numFieldComponents, numNodes, m_elementCoords);
 
-  STK_ThrowRequireMsg(numFieldComponents == m_spatialDimension, "Invalid coordinate field: " << m_coords->name());
-  STK_ThrowRequireMsg(numNodes == topo.num_nodes(), "Mismatch between key: " << m_bulk.entity_key(entity) << " and topology: " << topo.name());
+  STK_ThrowAssertMsg(numFieldComponents == m_spatialDimension, "Invalid coordinate field: " << m_coords.name());
+  STK_ThrowAssertMsg(numNodes == topo.num_nodes(), "Mismatch between key: " << m_bulk.entity_key(entity) << " and topology: " << topo.name());
 }
 
-void MasterElementGaussPointEvaluator::coordinates(const stk::mesh::EntityKey k, size_t pointIndex, std::vector<double>& coords)
+void MasterElementGaussPointEvaluator::coordinates(const spmd::EntityKeyPair& k, size_t pointIndex, std::vector<double>& coords)
 {
-  stk::mesh::Entity elem = m_bulk.get_entity(k);
+  stk::mesh::Entity elem = k;
   stk::mesh::Bucket& bucket = m_bulk.bucket(elem);
   stk::topology topo = bucket.topology();
-  auto meTopo = MasterElementTopology(topo, k, &bucket);
+  auto meTopo = SearchTopology(topo, k, &bucket);
   size_t numParCoor = m_masterElemProvider->num_parametric_coordinates(meTopo);
 
   m_masterElemProvider->integration_points(meTopo, m_coordVector);
@@ -103,22 +103,21 @@ void MasterElementGaussPointEvaluator::coordinates(const stk::mesh::EntityKey k,
 }
 
 CentroidEvaluator::CentroidEvaluator(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* coords)
-  : m_bulk(bulk),
-    m_coords(coords)
+  : m_coords(coords)
 {
   STK_ThrowRequireMsg(m_coords->entity_rank() == stk::topology::NODE_RANK ||
                       m_coords->entity_rank() == stk::topology::ELEM_RANK,
                       "Centroid evaluator coordinate field must be either NODE_RANK or ELEM_RANK");
 }
 
-size_t CentroidEvaluator::num_points(const stk::mesh::EntityKey k, stk::topology topo)
+size_t CentroidEvaluator::num_points(const spmd::EntityKeyPair& k, const stk::topology& topo)
 {
   return 1u;
 }
 
-void CentroidEvaluator::coordinates(const stk::mesh::EntityKey k, size_t pointIndex, std::vector<double>& coords)
+void CentroidEvaluator::coordinates(const spmd::EntityKeyPair& k, size_t pointIndex, std::vector<double>& coords)
 {
-  stk::mesh::Entity elem = m_bulk.get_entity(k);
+  stk::mesh::Entity elem = k;
   const unsigned nDim = m_coords->mesh_meta_data().spatial_dimension();
 
   if(m_coords->entity_rank() == stk::topology::NODE_RANK) {
@@ -128,6 +127,27 @@ void CentroidEvaluator::coordinates(const stk::mesh::EntityKey k, size_t pointIn
     const double* coor = static_cast<double*>(stk::mesh::field_data(*m_coords, elem));
     coords.assign(coor, coor+nDim);
   }
+}
+
+NodeEvaluator::NodeEvaluator(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* coords)
+  : m_coords(coords)
+{
+  STK_ThrowRequireMsg(m_coords->entity_rank() == stk::topology::NODE_RANK,
+                      "Centroid evaluator coordinate field must be NODE_RANK");
+}
+
+size_t NodeEvaluator::num_points(const spmd::EntityKeyPair& k, const stk::topology& topo)
+{
+  return 1u;
+}
+
+void NodeEvaluator::coordinates(const spmd::EntityKeyPair& k, size_t pointIndex, std::vector<double>& coords)
+{
+  stk::mesh::Entity node = k;
+  const unsigned nDim = m_coords->mesh_meta_data().spatial_dimension();
+
+  const double* coor = static_cast<double*>(stk::mesh::field_data(*m_coords, node));
+  coords.assign(coor, coor+nDim);
 }
 
 } // namespace search

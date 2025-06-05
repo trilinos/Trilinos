@@ -36,32 +36,48 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 FILE(GLOB HEADERS CONFIGURE_DEPENDS *.hpp)
+FILE(GLOB HEADERS_SPMD CONFIGURE_DEPENDS spmd/*.hpp)
 FILE(GLOB SOURCES CONFIGURE_DEPENDS *.cpp)
+FILE(GLOB SOURCES_SPMD CONFIGURE_DEPENDS spmd/*.cpp)
 
 if(HAVE_STK_Trilinos)
   TRIBITS_INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR})
 
   TRIBITS_ADD_LIBRARY(stk_transfer_util
-    NOINSTALLHEADERS ${HEADERS}
-    SOURCES ${SOURCES}
+    NOINSTALLHEADERS ${HEADERS} ${HEADERS_SPMD}
+    SOURCES ${SOURCES} ${SOURCES_SPMD}
   )
-  find_package(LAPACK REQUIRED)
-  target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
+
+  if (TPL_LAPACK_LIBRARIES)
+    message("STKTransferUtil: TPL_LAPACK_LIBRARIES already set, don't need to find_package.")
+    target_link_libraries(stk_transfer_util PUBLIC ${TPL_LAPACK_LIBRARIES})
+  else()
+    find_package(LAPACK REQUIRED)
+    if (TARGET LAPACK::LAPACK)
+      target_link_libraries(stk_transfer_util PUBLIC LAPACK::LAPACK)
+    else()
+      target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
+    endif()
+  endif()
 else()
-  add_library(stk_transfer_util ${SOURCES})
+  add_library(stk_transfer_util ${SOURCES} ${SOURCES_SPMD})
   target_link_libraries(stk_transfer_util PUBLIC stk_transfer_lib)
   target_link_libraries(stk_transfer_util PUBLIC stk_search_util)
   target_link_libraries(stk_transfer_util PUBLIC stk_io)
   target_link_libraries(stk_transfer_util PUBLIC stk_util_env)
   target_link_libraries(stk_transfer_util PUBLIC stk_util_command_line)
 
-  if(STK_BUILT_FOR_SIERRA)
-    find_package(SierraLapack REQUIRED)
-    target_link_libraries(stk_transfer_util PUBLIC SierraLapack::sierra_blas_lapack)
+  find_package(LAPACK REQUIRED)
+  if (TARGET LAPACK::LAPACK)
+    target_link_libraries(stk_transfer_util PUBLIC LAPACK::LAPACK)
   else()
-    find_package(LAPACK REQUIRED)
     target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
-    find_package(BLAS REQUIRED)
+  endif()
+
+  find_package(BLAS REQUIRED)
+  if (TARGET BLAS::BLAS)
+    target_link_libraries(stk_transfer_util PUBLIC BLAS::BLAS)
+  else()
     target_link_libraries(stk_transfer_util PUBLIC ${BLAS_LIBRARIES})
   endif()
 
@@ -74,5 +90,5 @@ endif()
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_transfer_util)
-
-
+INSTALL(FILES ${HEADERS_SPMD} DESTINATION
+    ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_transfer_util/spmd)

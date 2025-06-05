@@ -52,6 +52,7 @@
 #include "stk_mesh/base/FieldRestriction.hpp"     // for FieldRestriction
 #include "stk_mesh/base/MetaData.hpp"             // for get_field_by_name
 #include "stk_topology/topology.hpp"              // for topology
+#include "stk_transfer/TransferTypes.hpp"
 #include "stk_transfer_util/RecoverField.hpp"           // for RecoverField, Recov...
 #include "stk_transfer_util/EntityCentroidRecoverField.hpp"
 #include "stk_transfer_util/Patch.hpp"
@@ -65,8 +66,6 @@ namespace stk { namespace mesh { class Selector; } }
 namespace stk {
 namespace transfer {
 
-using FieldTransform = std::function<double(double)>;
-
 struct EntityInterpolationData {
   const stk::mesh::BulkData& sendBulk;
   const stk::mesh::FieldBase* sendField;
@@ -78,13 +77,15 @@ struct EntityInterpolationData {
   const stk::mesh::Selector* sendSelector;
   FieldTransform  preTransform;
   FieldTransform postTransform;
+  double defaultValue;
 
   EntityInterpolationData(const stk::mesh::BulkData& sendBulk_, const stk::mesh::FieldBase* sendField_,
                           const unsigned sendDataIndex_, const unsigned recvDataIndex_,
                           const stk::mesh::FieldBase* sendNodalCoordField_, stk::mesh::Entity sendEntity_,
                           const stk::mesh::Part* sendPart_, const stk::mesh::Selector* sendSelector_,
                           FieldTransform preTransform_ = [](double value) {return value;},
-                          FieldTransform postTransform_ = [](double value) {return value;})
+                          FieldTransform postTransform_ = [](double value) {return value;},
+                          double defaultValue_ = 0.0)
   : sendBulk(sendBulk_),
     sendField(sendField_),
     sendDataIndex(sendDataIndex_),
@@ -94,7 +95,8 @@ struct EntityInterpolationData {
     sendPart(sendPart_),
     sendSelector(sendSelector_),
     preTransform(preTransform_),
-    postTransform(postTransform_)
+    postTransform(postTransform_),
+    defaultValue(defaultValue_)
   { }
 
 private:
@@ -129,7 +131,7 @@ bool least_squares_linear_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
   const int numCoeff = basisSize * totalLength;
   STK_ThrowRequireMsg(totalLength == (unsigned)fieldInfo.total_recov_var_comp(), " Can only handle one variable at a time.");
 
-  std::vector<double> recoveredCoeff(2 * numCoeff, 0.0); // Include scratch space
+  std::vector<double> recoveredCoeff(2 * numCoeff, 0.0); // Include scratch space in latter half
 
   // Filter objects so that only those participating in the
   // transfer (if supplied) are included in the patch
@@ -160,6 +162,7 @@ bool least_squares_linear_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
     if(r || s) {
       STK_ThrowRequireMsg(r <= toFieldSize, "Error: Index too large for receiving field.");
       STK_ThrowRequireMsg(s <= totalLength, "Error: Index too large for sending field.");
+      std::fill(result, result + totalLength, interpData.defaultValue);
       const unsigned i = r ? r - 1 : 0;
       const unsigned j = s ? s - 1 : 0;
       if(solvable) {
@@ -170,10 +173,10 @@ bool least_squares_linear_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
         for(unsigned k = 0; k < basisSize; k++) {
           result[i] += coeff_comp[k] * basisEval[k];
         }
-        interpData.postTransform(result[i]);
+        result[i] = interpData.postTransform(result[i]);
       }
       else {
-        result[i] = 0;
+        result[i] = interpData.defaultValue;
       }
     }
     else {
@@ -186,12 +189,12 @@ bool least_squares_linear_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
           for(unsigned k = 0; k < basisSize; k++) {
             result[i_comp] += coeff_comp[k] * basisEval[k];
           }
-          interpData.postTransform(result[i_comp]);
+          result[i_comp] = interpData.postTransform(result[i_comp]);
         }
       }
       else {
         for(unsigned i_comp = 0; i_comp < totalLength; ++i_comp) {
-          result[i_comp] = 0;
+          result[i_comp] = interpData.defaultValue;
         }
       }
     }
@@ -260,6 +263,7 @@ bool least_squares_quadratic_interpolation(stk::transfer::Patch<PATCHTYPE>& patc
     if(r || s) {
       STK_ThrowRequireMsg(r <= toFieldSize, "Error: Index too large for receiving field.");
       STK_ThrowRequireMsg(s <= totalLength, "Error: Index too large for sending field.");
+      std::fill(result, result + totalLength, interpData.defaultValue);
       const unsigned i = r ? r - 1 : 0;
       const unsigned j = s ? s - 1 : 0;
       if(solvable) {
@@ -270,10 +274,10 @@ bool least_squares_quadratic_interpolation(stk::transfer::Patch<PATCHTYPE>& patc
         for(unsigned k = 0; k < basisSize; k++) {
           result[i] += coeff_comp[k] * basisEval[k];
         }
-        interpData.postTransform(result[i]);
+        result[i] = interpData.postTransform(result[i]);
       }
       else {
-        result[i] = 0;
+        result[i] = interpData.defaultValue;
       }
     }
     else {
@@ -286,12 +290,12 @@ bool least_squares_quadratic_interpolation(stk::transfer::Patch<PATCHTYPE>& patc
           for(unsigned k = 0; k < basisSize; k++) {
             result[i_comp] += coeff_comp[k] * basisEval[k];
           }
-          interpData.postTransform(result[i_comp]);
+          result[i_comp] = interpData.postTransform(result[i_comp]);
         }
       }
       else {
         for(unsigned i_comp = 0; i_comp < totalLength; ++i_comp) {
-          result[i_comp] = 0;
+          result[i_comp] = interpData.defaultValue;
         }
       }
     }
@@ -358,6 +362,7 @@ bool least_squares_cubic_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
     if(r || s) {
       STK_ThrowRequireMsg(r <= toFieldSize, "Error: Index too large for receiving field.");
       STK_ThrowRequireMsg(s <= totalLength, "Error: Index too large for sending field.");
+      std::fill(result, result + totalLength, interpData.defaultValue);
       const unsigned i = r ? r - 1 : 0;
       const unsigned j = s ? s - 1 : 0;
       if(solvable) {
@@ -368,10 +373,10 @@ bool least_squares_cubic_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
         for(unsigned k = 0; k < basisSize; k++) {
           result[i] += coeff_comp[k] * basisEval[k];
         }
-        interpData.postTransform(result[i]);
+        result[i] = interpData.postTransform(result[i]);
       }
       else {
-        result[i] = 0;
+        result[i] = interpData.defaultValue;
       }
     }
     else {
@@ -384,12 +389,12 @@ bool least_squares_cubic_interpolation(stk::transfer::Patch<PATCHTYPE>& patch,
           for(unsigned k = 0; k < basisSize; k++) {
             result[i_comp] += coeff_comp[k] * basisEval[k];
           }
-          interpData.postTransform(result[i_comp]);
+          result[i_comp] = interpData.postTransform(result[i_comp]);
         }
       }
       else {
         for(unsigned i_comp = 0; i_comp < totalLength; ++i_comp) {
-          result[i_comp] = 0;
+          result[i_comp] = interpData.defaultValue;
         }
       }
     }

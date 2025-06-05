@@ -44,10 +44,8 @@ std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager(cons
   return std::make_unique<DeviceFieldDataManager<MemSpace>>(bulk);
 }
 
-
-template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::MemSpace>(const BulkData& bulk);
-
 #if defined(STK_ENABLE_GPU)
+template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::MemSpace>(const BulkData& bulk);
 template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::UVMMemSpace>(const BulkData& bulk);
 template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::HostPinnedSpace>(const BulkData& bulk);
 #endif

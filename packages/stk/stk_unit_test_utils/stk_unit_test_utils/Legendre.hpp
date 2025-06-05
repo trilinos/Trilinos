@@ -53,10 +53,12 @@ std::vector<double> gauss_weights(int num_intg_points, const std::vector<double>
 std::vector<double> gauss_abscissas(int num_intg_points);
 
 //--------------------------------------------------------------------*
-//    PURPOSE: calculation of 3D tensor product Gauss-Legendre quadrature
+//    PURPOSE: calculation of tensor product Gauss-Legendre quadrature
 //             abscissas and weights for degree >= 1.
 //----------------------------------------------------------------------
-void gauss_legendre(unsigned q, std::vector<double>& points, std::vector<double>& weights);
+void gauss_legendre_1D(unsigned q, std::vector<double>& points, std::vector<double>& weights);
+void gauss_legendre_2D(unsigned q, std::vector<double>& points, std::vector<double>& weights);
+void gauss_legendre_3D(unsigned q, std::vector<double>& points, std::vector<double>& weights);
 
 }
 }

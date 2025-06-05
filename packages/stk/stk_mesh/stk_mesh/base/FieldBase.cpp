@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stk_mesh/base/FieldBase.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
@@ -99,10 +99,10 @@ std::pair<bool,bool> check_for_existing_subsets_or_supersets(FieldRestriction& t
   selectorI.get_parts(selectorI_parts);
   get_parts_and_all_subsets(selectorI_parts, selectorI_parts_and_subsets);
   const bool selectorI_is_all_unions = selectorI.is_all_unions();
-  
+
   const bool both_selectors_are_unions = arg_selector_is_all_unions && selectorI_is_all_unions;
   found_superset = both_selectors_are_unions ? is_subset(arg_selector_parts_and_subsets, selectorI_parts_and_subsets) : false;
-  
+
   found_subset = both_selectors_are_unions ? is_subset(selectorI_parts_and_subsets, arg_selector_parts_and_subsets) : false;
   if (found_subset) {
     *i = tmp;
@@ -168,9 +168,9 @@ void FieldBase::insert_restriction(const char     * arg_method,
     //maximum length for this field so that it can be used to initialize data
     //for all field-restrictions. For the parts on which the field is shorter,
     //a subset of the initial-value array will be used.
-    //  
+    //
     //We want to end up storing the longest arg_init_value array for this field.
-    //  
+    //
     //Thus, we call set_initial_value only if the current length is longer
     //than what's already been stored.
 
@@ -183,10 +183,10 @@ void FieldBase::insert_restriction(const char     * arg_method,
     size_t old_nbytes = 0;
     if (get_initial_value() != nullptr) {
       old_nbytes = get_initial_value_num_bytes();
-    }   
+    }
     if (nbytes > old_nbytes) {
       set_initial_value(arg_init_value, num_scalars, nbytes);
-    }   
+    }
   }
 
   {
@@ -286,9 +286,9 @@ void FieldBase::insert_restriction(const char     * arg_method,
     //maximum length for this field so that it can be used to initialize data
     //for all field-restrictions. For the parts on which the field is shorter,
     //a subset of the initial-value array will be used.
-    //  
+    //
     //We want to end up storing the longest arg_init_value array for this field.
-    //  
+    //
     //Thus, we call set_initial_value only if the current length is longer
     //than what's already been stored.
 
@@ -301,10 +301,10 @@ void FieldBase::insert_restriction(const char     * arg_method,
     size_t old_nbytes = 0;
     if (get_initial_value() != nullptr) {
       old_nbytes = get_initial_value_num_bytes();
-    }   
+    }
     if (nbytes > old_nbytes) {
       set_initial_value(arg_init_value, num_scalars, nbytes);
-    }   
+    }
   }
 
   {
@@ -317,7 +317,7 @@ void FieldBase::insert_restriction(const char     * arg_method,
 
     const bool new_restriction = ( ( restr == last_restriction ) || !(*restr == tmp) );
 
-    if ( new_restriction ) { 
+    if ( new_restriction ) {
       PartVector arg_selector_parts, selectorI_parts;
       OrdinalVector arg_selector_parts_and_subsets, selectorI_parts_and_subsets;
       arg_selector.get_parts(arg_selector_parts);
@@ -366,7 +366,7 @@ void FieldBase::insert_restriction(const char     * arg_method,
                           "Attempting to register Field '" << m_name << "' after MetaData is" << std::endl <<
                           "committed. If you are willing to accept the performance implications, call" << std::endl <<
                           "MetaData::enable_late_fields() before adding these Fields.");
-        }   
+        }
 
         bool addedToUnion = false;
         for(FieldRestriction& r : restrs) {
@@ -397,7 +397,7 @@ void FieldBase::insert_restriction(const char     * arg_method,
 void FieldBase::verify_and_clean_restrictions(const Part& superset, const Part& subset)
 {
   FieldRestrictionVector & restrs = restrictions();
-    
+
   //Check whether restriction contains subset part, if so, it may now be redundant
   //with another restriction.
   //If they are, make sure they are compatible and remove the subset restrictions.
@@ -406,15 +406,15 @@ void FieldBase::verify_and_clean_restrictions(const Part& superset, const Part& 
   std::vector<unsigned> scratch;
   for (size_t r = 0; r < restrs.size(); ++r) {
     FieldRestriction const& curr_restriction = restrData[r];
-      
+
     if (curr_restriction.selector()(subset)) {
       scratch.push_back(r);
     }
-  } 
-  
+  }
+
   for (size_t r = 0; r < scratch.size(); ++r) {
     FieldRestriction const& curr_restriction = restrData[scratch[r]];
-  
+
     bool delete_me = false;
     for (size_t i = 0, ie = scratch.size(); i < ie; ++i) {
       FieldRestriction const& check_restriction = restrData[scratch[i]];
@@ -440,6 +440,7 @@ void FieldBase::set_mesh(stk::mesh::BulkData* bulk)
 {
   if (m_mesh == nullptr || bulk == nullptr) {
     m_mesh = bulk;
+    m_hostFieldData->set_mesh(bulk);
   }
   else {
     STK_ThrowRequireMsg(bulk == m_mesh, "Internal Error: Trying to use field " << name() << " on more than one bulk data");
@@ -459,11 +460,11 @@ unsigned FieldBase::length(const stk::mesh::Part& part) const
 
 unsigned FieldBase::max_size() const
 {
-  FieldRestriction::size_type max = 0 ; 
+  FieldRestriction::size_type max = 0 ;
 
   for (const FieldRestriction& restriction : restrictions()) {
     max = std::max(max, restriction.num_scalars_per_entity());
-  }   
+  }
 
   return max ;
 }
@@ -503,7 +504,7 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
   if (numStates > 1 && StateNew == state()) {
     bool allStatesHaveNgpFields = true;
     for(int s = 0; s < numStates; ++s) {
-      if (field_state(static_cast<FieldState>(s))->get_ngp_field() == nullptr) {
+      if (not field_state(static_cast<FieldState>(s))->has_device_data()) {
         allStatesHaveNgpFields = false;
       }
     }
@@ -511,7 +512,9 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
     Kokkos::Profiling::pushRegion("field-meta-data swap");
     for (int s = 1; s < numStates; ++s) {
       FieldBase* sField = field_state(static_cast<FieldState>(s));
-      m_field_meta_data.swap(sField->m_field_meta_data);
+      m_hostFieldData->swap_field_data(*sField->m_hostFieldData);
+      update_cached_field_meta_data();
+      sField->update_cached_field_meta_data();
 
       std::swap(m_numSyncsToDevice, sField->m_numSyncsToDevice);
       std::swap(m_numSyncsToHost, sField->m_numSyncsToHost);
@@ -523,15 +526,21 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
     if (!(rotateNgpFieldViews && allStatesHaveNgpFields)) {
       Kokkos::Profiling::pushRegion("ngpField update_bucket_pointer_view");
       for(int s = 0; s < numStates; ++s) {
-        NgpFieldBase* ngpField = field_state(static_cast<FieldState>(s))->get_ngp_field();
-        if (ngpField != nullptr) {
-          if (ngpField->needs_update()) {
-            ngpField->update_field(Kokkos::DefaultExecutionSpace());
+        FieldBase* sField = field_state(static_cast<FieldState>(s));
+        FieldDataBase* deviceData = sField->get_device_data();
+        if (deviceData != nullptr) {
+          if (deviceData->needs_update()) {
+            deviceData->update(stk::ngp::ExecSpace(), host_data_layout());
+            if (sField->has_ngp_field()) {
+              // Since DeviceField holds a *copy* of the FieldData, force a reacquisition
+              sField->get_ngp_field()->update_field(stk::ngp::ExecSpace());
+            }
+            increment_num_syncs_to_device();
           }
           else {
-            ngpField->update_host_bucket_pointers();
+            deviceData->update_host_bucket_pointers();
           }
-          ngpField->fence();
+          deviceData->fence(stk::ngp::ExecSpace());
         }
       }
       Kokkos::Profiling::popRegion();
@@ -540,9 +549,21 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
     Kokkos::Profiling::pushRegion("ngpField swap");
     if (rotateNgpFieldViews && allStatesHaveNgpFields) {
       for (int s = 1; s < numStates; ++s) {
-        NgpFieldBase* ngpField_sminus1 = field_state(static_cast<FieldState>(s-1))->get_ngp_field();
-        NgpFieldBase* ngpField_s = field_state(static_cast<FieldState>(s))->get_ngp_field();
-        ngpField_s->swap_field_views(ngpField_sminus1);
+        FieldBase* field_sminus1 = field_state(static_cast<FieldState>(s-1));
+        FieldBase* field_s = field_state(static_cast<FieldState>(s));
+
+        FieldDataBase* deviceData_sminus1 = field_sminus1->get_device_data();
+        FieldDataBase* deviceData_s = field_s->get_device_data();
+        deviceData_s->swap_field_data(*deviceData_sminus1);
+
+        // Since DeviceField holds a *copy* of the FieldData, force a reacquisition
+        if (field_sminus1->has_ngp_field()) {
+          field_sminus1->get_ngp_field()->update_field(stk::ngp::ExecSpace());
+        }
+        if (field_s->has_ngp_field()) {
+          field_s->get_ngp_field()->update_field(stk::ngp::ExecSpace());
+        }
+
       }
     }
     Kokkos::Profiling::popRegion();
@@ -560,7 +581,7 @@ FieldBase::modify_on_host() const
 
 void
 FieldBase::modify_on_device() const
-{ 
+{
   STK_ThrowRequireMsg(m_modifiedOnHost == false,
                   "Modify on device called for Field: " << name() << " but it has an uncleared modified_on_host");
 
@@ -575,7 +596,7 @@ FieldBase::modify_on_host(const Selector& /*s*/) const
 
 void
 FieldBase::modify_on_device(const Selector& /*s*/) const
-{ 
+{
   modify_on_device();
 }
 
@@ -593,19 +614,17 @@ FieldBase::need_sync_to_host() const
 
 void
 FieldBase::sync_to_host() const
-{ 
-  if (m_ngpField != nullptr) {
-    m_ngpField->sync_to_host();
-  } else {
-    clear_device_sync_state();
-  }
+{
+  sync_to_host(stk::ngp::ExecSpace());
 }
 
-void FieldBase::sync_to_host(const stk::ngp::ExecSpace& exec_space) const
+void FieldBase::sync_to_host(const stk::ngp::ExecSpace& execSpace) const
 {
-  if (m_ngpField != nullptr) {
-    m_ngpField->sync_to_host(exec_space);
-  } else {
+  if (need_sync_to_host()) {
+    if (has_device_data()) {
+      m_deviceFieldData->sync_to_host(execSpace, host_data_layout());
+    }
+    increment_num_syncs_to_host();
     clear_device_sync_state();
   }
 }
@@ -613,18 +632,20 @@ void FieldBase::sync_to_host(const stk::ngp::ExecSpace& exec_space) const
 void
 FieldBase::sync_to_device() const
 {
-  if (m_ngpField != nullptr) {
-    m_ngpField->sync_to_device();
-  } else {
-    clear_host_sync_state();
-  }
+  sync_to_device(stk::ngp::ExecSpace());
 }
 
-void FieldBase::sync_to_device(const stk::ngp::ExecSpace& exec_space) const
+void FieldBase::sync_to_device(const stk::ngp::ExecSpace& execSpace) const
 {
-  if (m_ngpField != nullptr) {
-    m_ngpField->sync_to_device(exec_space);
-  } else {
+  if (need_sync_to_device()) {
+    if (has_device_data()) {
+      if (m_deviceFieldData->needs_update()) {
+        m_deviceFieldData->update(execSpace, host_data_layout());
+        increment_num_syncs_to_device();
+      }
+      m_deviceFieldData->sync_to_device(execSpace, host_data_layout());
+    }
+    increment_num_syncs_to_device();
     clear_host_sync_state();
   }
 }
@@ -659,8 +680,14 @@ FieldBase::set_ngp_field(NgpFieldBase * ngpField) const
 void
 FieldBase::fence() const
 {
-  if(m_ngpField != nullptr) {
-    m_ngpField->fence();
+  fence(stk::ngp::ExecSpace());
+}
+
+void
+FieldBase::fence(const stk::ngp::ExecSpace& execSpace) const
+{
+  if (has_device_data()) {
+    m_deviceFieldData->fence(execSpace);
   }
 }
 

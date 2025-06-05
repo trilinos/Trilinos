@@ -184,7 +184,7 @@ struct LinearFieldEvaluator : public FieldEvaluator {
 struct BoundedLinearFieldEvaluator : public LinearFieldEvaluator {
   void apply_bounds(const unsigned length, double* fieldData, const double lowerBound, const double upperBound) const
   {
-    if(std::numeric_limits<double>::min() != lowerBound) {
+    if(std::numeric_limits<double>::lowest() != lowerBound) {
       for(unsigned i(0); i < length; ++i) {
         if(fieldData[i] < lowerBound) {
           fieldData[i] = lowerBound;
@@ -222,7 +222,7 @@ struct BoundedLinearFieldEvaluator : public LinearFieldEvaluator {
   const BoundedLinearFieldEvaluator& operator()(const BoundedLinearFieldEvaluator&);
   BoundedLinearFieldEvaluator() {}
 
-  double m_lowerBound = std::numeric_limits<double>::min();
+  double m_lowerBound = std::numeric_limits<double>::lowest();
   double m_upperBound = std::numeric_limits<double>::max();
 };
 
@@ -382,9 +382,9 @@ inline void determine_centroid(const unsigned spatialDimension, stk::mesh::Entit
   determine_centroid(spatialDimension, entity, nodalCoordField, centroid.data());
 }
 
-inline void set_element_field(const stk::mesh::BulkData& bulk,
-                              const stk::mesh::FieldBase& stkField,
-                              const FieldEvaluator& eval)
+inline void set_entity_field(const stk::mesh::BulkData& bulk,
+                             const stk::mesh::FieldBase& stkField,
+                             const FieldEvaluator& eval)
 {
   stk::mesh::EntityRank rank = stkField.entity_rank();
   STK_ThrowRequireMsg(stk::topology::NODE_RANK != rank, "Input entity rank cannot be NODE_RANK");

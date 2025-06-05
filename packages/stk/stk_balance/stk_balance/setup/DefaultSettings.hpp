@@ -81,6 +81,7 @@ struct DefaultSettings {
   static constexpr bool smFixSpiders {false};
 
   static constexpr const char * vertexWeightBlockMultiplier {""};
+  static constexpr const char * cohesiveElements {""};
 
 };
 
