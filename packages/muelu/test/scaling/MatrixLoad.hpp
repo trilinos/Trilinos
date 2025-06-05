@@ -40,12 +40,14 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
                 const std::string& domainMapFile,
                 const std::string& rangeMapFile,
                 const std::string& coordFile,
-                const std::string& coordMapFile, const std::string& nullFile, const std::string& materialFile,
+                const std::string& coordMapFile, const std::string& nullFile,
+                const std::string& materialFile, const std::string& blockNumberFile,
                 Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                 Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                 Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> >& coordinates,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nullspace,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& material,
+                Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& blocknumber,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& B,
                 const int numVectors,
@@ -202,6 +204,12 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
   if (!materialFile.empty()) {
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1e - Read material")));
     material            = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVector(materialFile, map);
+    comm->barrier();
+  }
+
+  if (!blockNumberFile.empty()) {
+    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1f - Read block number")));
+    blocknumber         = Teuchos::rcp_dynamic_cast<LOVector>(Xpetra::IO<SC, LO, GO, Node>::ReadMultiVectorLO(blockNumberFile, map));
     comm->barrier();
   }
 
