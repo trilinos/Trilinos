@@ -177,7 +177,7 @@ RCP<CrsMatrix<ST, LO, GO, NT> > A = rcp (new CrsMatrix<ST, LO, GO, NT> (graph));
 \endcode
 Filling the CrsGraph works much like filling a CrsMatrix, except that
 you only specify structure, not values.  Furthermore, the same size
-hint apply to CrsGraph.
+hint applies to CrsGraph.
 
 \section Tpetra_Lesson04_local_vs_global Local vs. global indices
 
