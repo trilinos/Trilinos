@@ -239,6 +239,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("coordsmap", &coordMapFile, "coordinates map data file");
   std::string nullFile;
   clp.setOption("nullspace", &nullFile, "nullspace data file");
+  std::string blockNumberFile;
+  clp.setOption("blocknumber", &blockNumberFile, "block number data file");
   std::string materialFile;
   clp.setOption("material", &materialFile, "material data file");
   bool tensorMaterialCoefficient = true;
@@ -400,11 +402,12 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<RealValuedMultiVector> coordinates;
   RCP<Xpetra::MultiVector<SC, LO, GO, NO> > nullspace;
   RCP<Xpetra::MultiVector<SC, LO, GO, NO> > material;
+  RCP<Xpetra::Vector<LO, LO, GO, NO> > blocknumber;
   RCP<MultiVector> X;
   RCP<MultiVector> B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
+  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
   comm->barrier();
   tm = Teuchos::null;
 
@@ -474,6 +477,11 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         material = MultiVectorFactory::Build(map, 1);
         material->putScalar(2.0 * Teuchos::ScalarTraits<SC>::one());
       }
+    }
+
+    if (blocknumber.is_null()) {
+      blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(map);
+      blocknumber->putScalar(Teuchos::ScalarTraits<LO>::one());
     }
 
     // If doing user based block smoothing, read block information from file.
@@ -561,7 +569,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         if (solvePreconditioned) {
           MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
 
-          PreconditionerSetup(A, coordinates, nullspace, material, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
+          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
         }
         comm->barrier();
         tm = Teuchos::null;
