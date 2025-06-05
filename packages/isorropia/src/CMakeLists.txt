@@ -84,22 +84,6 @@ SET(SOURCES ${SOURCES}
   epetra/Isorropia_EpetraMatcher.cpp
   )
 
-#
-# src/tpetra
-#
-
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
-
-SET(HEADERS ${HEADERS}
-  tpetra/EEP_Isorropia_Tpetra.hpp
-  tpetra/EEP_Isorropia_TpetraCostDescriber.hpp
-  tpetra/EEP_Isorropia_TpetraLibrary.hpp
-  tpetra/EEP_Isorropia_TpetraOperator.hpp
-  tpetra/EEP_Isorropia_TpetraPartitioner.hpp
-  tpetra/EEP_Isorropia_TpetraRedistributor.hpp
-  tpetra/EEP_Isorropia_TpetraZoltanLib.hpp
-  )
-
 # zoltan
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra/zoltanLib)
@@ -114,12 +98,6 @@ SET(SOURCES ${SOURCES}
   epetra/zoltanLib/QueryObject.cpp
   epetra/Isorropia_EpetraZoltanLib.cpp
   #epetra/zoltanLib/Isorropia_Zoltan_Repartition.cpp
-  )
-
-TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra/zoltanLib)
-
-SET(HEADERS ${HEADERS}
-  tpetra/zoltanLib/EEP_QueryObject.hpp
   )
 
 #

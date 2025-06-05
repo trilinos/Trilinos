@@ -14,10 +14,6 @@
 // NOTE:  This is a modified version of the matrix_1.cpp example in Isorropia.
 //--------------------------------------------------------------------
 
-//#include <Isorropia_ConfigDefs.hpp> // AquiToDo
-
-#define EEP_EXAMPLE_USES_ZOLTAN2
-
 #ifdef HAVE_MPI
 
 #include <mpi.h>
@@ -27,25 +23,14 @@
 
 #include <Teuchos_DefaultSerialComm.hpp>
 
-#endif
+#endif // ifdef HAVE_MPI
 
 #include <Tpetra_Map_decl.hpp>
 #include <Tpetra_CrsMatrix_decl.hpp>
 #include <Tpetra_MultiVector_decl.hpp>
-#include <Tpetra_LinearProblem_decl.hpp>
-
-#ifdef EEP_EXAMPLE_USES_ZOLTAN2
 
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
-#include <Zoltan2_XpetraMultiVectorAdapter.hpp>
-
-#else
-
-#include <EEP_Tpetra_Isorropia_CrsGraph.hpp> // In 'packages/trilinoscouplings/src/tpetra/'
-#include <EEP_Tpetra_LPTrans_From_GraphTrans.hpp> // In 'packages/tpetra/core/src/'
-
-#endif // EEP_EXAMPLE_USES_ZOLTAN2
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
@@ -54,47 +39,17 @@
 void runExample() {
   std::cout << "Entering runExample()" << std::endl;
 
-#ifdef HAVE_EPETRA
-  std::cout << "In runExample(): HAVE_EPETRA = ON" << std::endl;
-#else
-  std::cout << "In runExample(): HAVE_EPETRA = OFF" << std::endl;
-#endif
-
 #ifdef HAVE_TPETRA
   std::cout << "In runExample(): HAVE_TPETRA = ON" << std::endl;
 #else
   std::cout << "In runExample(): HAVE_TPETRA = OFF" << std::endl;
 #endif
 
-#ifdef HAVE_ZOLTAN
-  std::cout << "In runExample(): HAVE_ZOLTAN = ON" << std::endl;
-#else
-  std::cout << "In runExample(): HAVE_ZOLTAN = OFF" << std::endl;
-#endif
-
-#ifdef HAVE_ISORROPIA_ZOLTAN
-  std::cout << "In runExample(): HAVE_ISORROPIA_ZOLTAN = ON" << std::endl;
-#else
-  std::cout << "In runExample(): HAVE_ISORROPIA_ZOLTAN = OFF" << std::endl;
-#endif
-
-#ifdef USE_UTILS
-  std::cout << "In runExample(): USE_UTILS = ON" << std::endl;
-#else
-  std::cout << "In runExample(): USE_UTILS = OFF" << std::endl;
-#endif
-
-#ifdef HAVE_ZOLTAN2
-  std::cout << "In runExample(): HAVE_ZOLTAN2 = ON" << std::endl;
-#else
-  std::cout << "In runExample(): HAVE_ZOLTAN2 = OFF" << std::endl;
-#endif
-
-  int numProcs = 1;
-  int localProc = 0;
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
+  int numProcs(1);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+  int localProc(0);
+  MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
 
   //Now create a balanced copy of the matrix using the Tpetra
   //transform interface to Isorropia.
@@ -108,88 +63,25 @@ void runExample() {
 
   Teuchos::ParameterList paramlist;
 
-  std::cout << "In main(), pos 000" << std::endl;
-
-#ifdef EEP_EXAMPLE_USES_ZOLTAN2
-
-  typedef Tpetra::Map<> Map_t;
+  using Map_t = Tpetra::Map<>;
   typedef Map_t::local_ordinal_type localId_t;
   typedef Map_t::global_ordinal_type globalId_t;
   typedef Tpetra::Details::DefaultTypes::scalar_type scalar_t;
   typedef Tpetra::CrsMatrix<scalar_t, localId_t, globalId_t> Matrix_t;
   Teuchos::RCP<Matrix_t> origMatrix;
 
+  std::string method("scotch");    // Partitioning method
+
   Teuchos::ParameterList param;
   param.set("partitioning_approach", "partition");
-
-#elif defined HAVE_ISORROPIA_ZOLTAN
-
-  // If Zoltan is available, we'll specify that the Zoltan package use
-  // graph-partitioning for the partitioning operation and specifically
-  // 1D hypergraph partitioning, by creating a parameter sublist named
-  // "Zoltan" and setting the appropriate values.
-  // (See Zoltan documentation for other valid parameters...)
-
-  //std::string partitioning_method_str("PARTITIONING METHOD"); // AquiToDo
-  //std::string partitioning_method =
-  //paramlist_.get(partitioning_method_str, "UNSPECIFIED");
-
-  std::cout << "In main(), pos 001" << std::endl;
-  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "HYPERGRAPH"); // AquiAquiToDo
-
-#else
-  //If Zoltan is not available, we don't need to set any parameters.
-#endif
-
-  std::cout << "In main(), pos 002" << std::endl;
-
-#ifdef EEP_EXAMPLE_USES_ZOLTAN2
-
-  // ToDo
-
-#else
-
-  // Create the object to generate the balanced graph.
-  Teuchos::RCP< Tpetra::Isorropia_CrsGraph< Tpetra::CrsMatrix<double>::local_ordinal_type
-                                          , Tpetra::CrsMatrix<double>::global_ordinal_type
-                                          , Tpetra::CrsMatrix<double>::node_type
-                                          > > Trans = Teuchos::rcp( new Tpetra::Isorropia_CrsGraph< Tpetra::CrsMatrix<double>::local_ordinal_type
-                                                                                                  , Tpetra::CrsMatrix<double>::global_ordinal_type
-                                                                                                  , Tpetra::CrsMatrix<double>::node_type
-                                                                                                  >( paramlist ) );
-
-  std::cout << "In main(), pos 003" << std::endl;
-  
-  // Create a linear problem transform interface.
-  Teuchos::RCP< Tpetra::LinearProblem_GraphTrans< double
-                                                , Tpetra::CrsMatrix<double>::local_ordinal_type
-                                                , Tpetra::CrsMatrix<double>::global_ordinal_type
-                                                , Tpetra::CrsMatrix<double>::node_type
-                                                > > LPTrans
-    = Teuchos::rcp( new Tpetra::LinearProblem_GraphTrans< double
-                                                        , Tpetra::CrsMatrix<double>::local_ordinal_type
-                                                        , Tpetra::CrsMatrix<double>::global_ordinal_type
-                                                        , Tpetra::CrsMatrix<double>::node_type
-                                                        >( *( dynamic_cast< Tpetra::StructuralSameTypeTransform< Tpetra::CrsGraph< Tpetra::CrsMatrix<double>::local_ordinal_type
-                                                                                                                                 , Tpetra::CrsMatrix<double>::global_ordinal_type
-                                                                                                                                 , Tpetra::CrsMatrix<double>::node_type
-                                                                                                                                 >
-                                                                                                               >*
-                                                                          >( Trans.get() )
-                                                            )
-                                                         )
-                  );
-
-#endif // EEP_EXAMPLE_USES_ZOLTAN2
-
-  std::cout << "In main(), pos 004" << std::endl;
+  param.set("algorithm", method);
 
   // Create a Tpetra::CrsMatrix with rows spread un-evenly over processors.
   if (localProc == 0) {
     std::cout << "Creating Tpetra::CrsMatrix with un-even distribution..."
               << std::endl;
   }
+  MPI_Barrier(MPI_COMM_WORLD);
 
   Teuchos::RCP< Teuchos::MpiComm<int> > comm = Teuchos::rcp( new Teuchos::MpiComm<int>(MPI_COMM_WORLD) );
   Tpetra::CrsMatrix<double>::local_ordinal_type local_num_rows = 200;
@@ -221,7 +113,7 @@ void runExample() {
   Teuchos::RCP< Tpetra::Map<> > rowmap = Teuchos::rcp( new Tpetra::Map<>(global_num_rows, local_num_rows, 0, comm) );
   Teuchos::RCP< Tpetra::CrsMatrix<double> > crsmatrix = Teuchos::rcp( new Tpetra::CrsMatrix<double>(rowmap, nnz_per_row) );
 
-  std::cout << "crsmatrix = " << crsmatrix << std::endl;
+  //std::cout << "crsmatrix = " << crsmatrix << std::endl;
 
   std::vector<Tpetra::CrsMatrix<double>::global_ordinal_type> indices(nnz_per_row);
   std::vector<double> coefs(nnz_per_row);
@@ -248,28 +140,21 @@ void runExample() {
 
   crsmatrix->fillComplete();
 
-  std::cout << "In main(), pos 005" << std::endl;
-
   // Create Tpetra::MultiVectors for the lhs and rhs of the linear problem.
   Teuchos::RCP< Tpetra::MultiVector<double> > lhs = Teuchos::rcp( new Tpetra::MultiVector<double>(crsmatrix->getMap(), 1) );
   Teuchos::RCP< Tpetra::MultiVector<double> > rhs = Teuchos::rcp( new Tpetra::MultiVector<double>(crsmatrix->getMap(), 1) );
   rhs->putScalar( 1.0 );
 
-  std::cout << "In main(), pos 006" << std::endl;
-
   // Create the linear problem with the original partitioning.
-  Tpetra::LinearProblem< double
-                       , Tpetra::CrsMatrix<double>::local_ordinal_type
-                       , Tpetra::CrsMatrix<double>::global_ordinal_type
-                       , Tpetra::CrsMatrix<double>::node_type
-                       > problem( crsmatrix, lhs, rhs );
-
-  std::cout << "In main(), pos 007" << std::endl;
+  //Tpetra::LinearProblem< double
+  //                     , Tpetra::CrsMatrix<double>::local_ordinal_type
+  //                     , Tpetra::CrsMatrix<double>::global_ordinal_type
+  //                     , Tpetra::CrsMatrix<double>::node_type
+  //                     > problem( crsmatrix, lhs, rhs );
 
   // Create the new linear problem and perform the balanced partitioning.
   // NOTE:  The balanced linear system will be in transformedProblem after fwd() is called.
   //        It is not necessary for the RCP to manage the transformed problem.
-#ifdef EEP_EXAMPLE_USES_ZOLTAN2
 
   typedef Zoltan2::XpetraCrsMatrixAdapter<Matrix_t> MatrixAdapter_t;
   MatrixAdapter_t adapter(crsmatrix);
@@ -281,28 +166,12 @@ void runExample() {
   adapter.applyPartitioningSolution(*crsmatrix, redistribMatrix,
                                     problem2.getSolution());
 
-#else
-
-  Teuchos::RCP< Tpetra::LinearProblem< double
-                                     , Tpetra::CrsMatrix<double>::local_ordinal_type
-                                     , Tpetra::CrsMatrix<double>::global_ordinal_type
-                                     , Tpetra::CrsMatrix<double>::node_type
-                                     > > transformedProblem = Teuchos::rcp( &((*LPTrans)( problem )), false );
-#if 1 // EEP___
-  std::cout << "In main(), pos 008" << std::endl;
-  LPTrans->fwd();
-  std::cout << "In main(), pos 009" << std::endl;
-#endif // EEP
-
-#endif // EEP_EXAMPLE_USES_ZOLTAN2
-
   Tpetra::CrsMatrix<double>::local_ordinal_type graphrows1 = crsmatrix->getLocalNumRows();
   Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_rows = redistribMatrix->getLocalNumRows();
   Tpetra::CrsMatrix<double>::local_ordinal_type graphnnz1 = crsmatrix->getLocalNumEntries();
   Tpetra::CrsMatrix<double>::local_ordinal_type bal_graph_nnz = redistribMatrix->getLocalNumEntries();
 
-  std::cout << "In main(), pos 010" << std::endl;
-
+  MPI_Barrier(MPI_COMM_WORLD);
   for (int p(0); p < numProcs; ++p) {
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -317,10 +186,11 @@ void runExample() {
               << ", local NNZ = " << bal_graph_nnz
               << std::endl;
   }
+  MPI_Barrier(MPI_COMM_WORLD);
 
   std::cout << "Leaving runExample()" << std::endl;
 }
-#endif
+#endif // ifdef HAVE_MPI
 
 int main(int argc, char** argv) {
 
@@ -329,7 +199,7 @@ int main(int argc, char** argv) {
   runExample();
   MPI_Finalize();
 #else
-  std::cout << "ERROR:  This MUST be and MPI build with Tpetra enabled!" << std::endl;
+  std::cout << "ERROR:  This MUST be a MPI build with Tpetra enabled!" << std::endl;
 #endif
 
   return(0);

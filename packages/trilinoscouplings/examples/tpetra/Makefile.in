@@ -56,13 +56,13 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/TrilinosCouplings_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_TPETRA_ZOLTAN_TRUE@am__EXEEXT_1 = tpetra_zoltan_lptrans_example$(EXEEXT)
+@BUILD_TPETRA_ZOLTAN_TRUE@am__EXEEXT_1 = tpetra_zoltan2_lptrans_example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_tpetra_zoltan_lptrans_example_OBJECTS = tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.$(OBJEXT)
-tpetra_zoltan_lptrans_example_OBJECTS =  \
-	$(am_tpetra_zoltan_lptrans_example_OBJECTS)
-tpetra_zoltan_lptrans_example_LINK = $(CXXLD) \
-	$(tpetra_zoltan_lptrans_example_CXXFLAGS) $(CXXFLAGS) \
+am_tpetra_zoltan2_lptrans_example_OBJECTS = tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.$(OBJEXT)
+tpetra_zoltan2_lptrans_example_OBJECTS =  \
+	$(am_tpetra_zoltan2_lptrans_example_OBJECTS)
+tpetra_zoltan2_lptrans_example_LINK = $(CXXLD) \
+	$(tpetra_zoltan2_lptrans_example_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -72,8 +72,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(tpetra_zoltan_lptrans_example_SOURCES)
-DIST_SOURCES = $(tpetra_zoltan_lptrans_example_SOURCES)
+SOURCES = $(tpetra_zoltan2_lptrans_example_SOURCES)
+DIST_SOURCES = $(tpetra_zoltan2_lptrans_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -191,11 +191,11 @@ top_srcdir = @top_srcdir@
 @BUILD_TPETRA_ZOLTAN_FALSE@ZOLTAN_EX = 
 
 # List the names of all exe's in this directory here
-@BUILD_TPETRA_ZOLTAN_TRUE@ZOLTAN_EX = tpetra_zoltan_lptrans_example
-tpetra_zoltan_lptrans_example_SOURCES = $(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp 
-tpetra_zoltan_lptrans_example_CXXFLAGS = $(TRILINOSCOUPLINGS_INCLUDES)
-tpetra_zoltan_lptrans_example_LDADD = $(TRILINOSCOUPLINGS_LIBS)
-tpetra_zoltan_lptrans_example_DEPENDENCIES = $(TRILINOSCOUPLINGS_LIBS)
+@BUILD_TPETRA_ZOLTAN_TRUE@ZOLTAN_EX = tpetra_zoltan2_lptrans_example
+tpetra_zoltan2_lptrans_example_SOURCES = $(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp 
+tpetra_zoltan2_lptrans_example_CXXFLAGS = $(TRILINOSCOUPLINGS_INCLUDES)
+tpetra_zoltan2_lptrans_example_LDADD = $(TRILINOSCOUPLINGS_LIBS)
+tpetra_zoltan2_lptrans_example_DEPENDENCIES = $(TRILINOSCOUPLINGS_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -232,9 +232,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-tpetra_zoltan_lptrans_example$(EXEEXT): $(tpetra_zoltan_lptrans_example_OBJECTS) $(tpetra_zoltan_lptrans_example_DEPENDENCIES) 
-	@rm -f tpetra_zoltan_lptrans_example$(EXEEXT)
-	$(tpetra_zoltan_lptrans_example_LINK) $(tpetra_zoltan_lptrans_example_OBJECTS) $(tpetra_zoltan_lptrans_example_LDADD) $(LIBS)
+tpetra_zoltan2_lptrans_example$(EXEEXT): $(tpetra_zoltan2_lptrans_example_OBJECTS) $(tpetra_zoltan2_lptrans_example_DEPENDENCIES) 
+	@rm -f tpetra_zoltan2_lptrans_example$(EXEEXT)
+	$(tpetra_zoltan2_lptrans_example_LINK) $(tpetra_zoltan2_lptrans_example_OBJECTS) $(tpetra_zoltan2_lptrans_example_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -242,7 +242,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -258,19 +258,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.o: $(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_zoltan_lptrans_example_CXXFLAGS) $(CXXFLAGS) -MT tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.o -MD -MP -MF $(DEPDIR)/tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.Tpo -c -o tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.o `test -f '$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp' || echo '$(srcdir)/'`$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.Tpo $(DEPDIR)/tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp' object='tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.o' libtool=no @AMDEPBACKSLASH@
+tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.o: $(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_zoltan2_lptrans_example_CXXFLAGS) $(CXXFLAGS) -MT tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.o -MD -MP -MF $(DEPDIR)/tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.Tpo -c -o tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.o `test -f '$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp' || echo '$(srcdir)/'`$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.Tpo $(DEPDIR)/tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp' object='tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_zoltan_lptrans_example_CXXFLAGS) $(CXXFLAGS) -c -o tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.o `test -f '$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp' || echo '$(srcdir)/'`$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_zoltan2_lptrans_example_CXXFLAGS) $(CXXFLAGS) -c -o tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.o `test -f '$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp' || echo '$(srcdir)/'`$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp
 
-tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.obj: $(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_zoltan_lptrans_example_CXXFLAGS) $(CXXFLAGS) -MT tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.obj -MD -MP -MF $(DEPDIR)/tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.Tpo -c -o tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.obj `if test -f '$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp'; then $(CYGPATH_W) '$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.Tpo $(DEPDIR)/tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp' object='tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.obj' libtool=no @AMDEPBACKSLASH@
+tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.obj: $(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_zoltan2_lptrans_example_CXXFLAGS) $(CXXFLAGS) -MT tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.obj -MD -MP -MF $(DEPDIR)/tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.Tpo -c -o tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.obj `if test -f '$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp'; then $(CYGPATH_W) '$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.Tpo $(DEPDIR)/tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp' object='tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_zoltan_lptrans_example_CXXFLAGS) $(CXXFLAGS) -c -o tpetra_zoltan_lptrans_example-EEP_Tpetra_Zoltan_LPTrans_Ex.obj `if test -f '$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp'; then $(CYGPATH_W) '$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EEP_Tpetra_Zoltan_LPTrans_Ex.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tpetra_zoltan2_lptrans_example_CXXFLAGS) $(CXXFLAGS) -c -o tpetra_zoltan2_lptrans_example-Tpetra_Zoltan2_LPTrans_Ex.obj `if test -f '$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp'; then $(CYGPATH_W) '$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tpetra_Zoltan2_LPTrans_Ex.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
