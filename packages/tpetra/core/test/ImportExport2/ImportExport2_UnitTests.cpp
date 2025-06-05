@@ -726,26 +726,11 @@ namespace {
           TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
         }
 
-        // When there are remote LIDs and they are contiguous, and
-        // MV::imports_ and MV::view_ have the same memory space, the
-        // imports_ view is aliased to the data view of the target MV.
-        if ((myImageID == collectRank) && (myImageID == 0)) {
-          if (std::is_same_v<typename mv_type::dual_view_type::t_dev::device_type, typename mv_type::dual_view_type::t_host::device_type>)
-            TEUCHOS_ASSERT(tgt_mv->importsAreAliased());
-          // else {
-          //   We do not know if copyAndPermute was run on host or device.
-          // }
-        }
-        else {
-          TEUCHOS_ASSERT(!tgt_mv->importsAreAliased());
-        }
-
         // produce a reference solution that uses the classical code path
         expertSetRemoteLIDsContiguous(importer, false);
         // Do the import
         tgt_mv_reference->doImport (*src_mv, importer, INSERT);
         TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
-        TEUCHOS_ASSERT(!tgt_mv_reference->importsAreAliased());
 
         // Loop through tgt_mv and make sure the import worked.
         if (tgt_num_local_elements != 0) {
@@ -796,26 +781,11 @@ namespace {
           TEUCHOS_ASSERT(!exporter.areExportLIDsContiguous());
         }
 
-        // When there are export LIDs and they are contiguous, and
-        // MV::imports_ and MV::view_ have the same memory space, the
-        // imports_ view is aliased to the data view of the target MV.
-        if ((myImageID == collectRank) && (myImageID == 0)) {
-          if (std::is_same_v<typename mv_type::dual_view_type::t_dev::device_type, typename mv_type::dual_view_type::t_host::device_type>)
-            TEUCHOS_ASSERT(tgt_mv->importsAreAliased());
-          // else {
-          //   We do not know if copyAndPermute was run on host or device.
-          // }
-        }
-        else {
-          TEUCHOS_ASSERT(!tgt_mv->importsAreAliased());
-        }
-
         // produce a reference solution that uses the classical code path
         expertSetExportLIDsContiguous(exporter, false);
         // Do the import
         tgt_mv_reference->doImport (*src_mv, exporter, INSERT);
         TEUCHOS_ASSERT(!exporter.areExportLIDsContiguous());
-        TEUCHOS_ASSERT(!tgt_mv_reference->importsAreAliased());
 
         // Loop through tgt_mv and make sure the import worked.
         if (tgt_num_local_elements != 0) {

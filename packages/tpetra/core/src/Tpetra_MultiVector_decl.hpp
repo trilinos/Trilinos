@@ -2343,6 +2343,10 @@ namespace Tpetra {
      size_t& constantNumPackets,
      const execution_space &space) override;
 
+    Teuchos::RCP<Kokkos::DualView<
+       impl_scalar_type*,
+       buffer_device_type>> exports_from_pool;
+
     virtual void
     packAndPrepare
     (const SrcDistObject& sourceObj,
@@ -2422,10 +2426,6 @@ namespace Tpetra {
   public:
     bool importsAreAliased();
 
-  protected:
-    Kokkos::DualView<impl_scalar_type*, buffer_device_type> unaliased_imports_;
-
-    //@}
   }; // class MultiVector
 
   template<class SC, class LO, class GO, class NT>
