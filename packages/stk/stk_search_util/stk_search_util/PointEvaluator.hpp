@@ -39,15 +39,13 @@
 // clang-format off
 #include "stk_search/SearchInterface.hpp"             // for EvaluatePointsI...
 #include "stk_search_util/MasterElementProvider.hpp"  // for StkProvideMaste...
-#include "stk_mesh/base/EntityKey.hpp"                // for EntityKey
+#include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include "stk_topology/topology.hpp"                  // for topology
 #include <cstddef>                                    // for size_t
 #include <memory>                                     // for shared_ptr
 #include <vector>                                     // for vector
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
-namespace stk { namespace mesh { struct Entity; } }
-namespace stk { namespace mesh { struct EntityKey; } }
 namespace stk { namespace mesh { class MetaData; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -55,21 +53,21 @@ namespace stk { namespace mesh { class MetaData; } }
 namespace stk {
 namespace search {
 
-using PointEvaluatorInterface = stk::search::EvaluatePointsInterface<stk::topology, stk::mesh::EntityKey>;
+using PointEvaluatorInterface = EvaluatePointsInterface<stk::topology, spmd::EntityKeyPair>;
 
 class MasterElementGaussPointEvaluator : public PointEvaluatorInterface {
  public:
   MasterElementGaussPointEvaluator(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* coords,
                                    std::shared_ptr<MasterElementProviderInterface> masterElemProvider);
 
-  size_t num_points(stk::mesh::EntityKey, stk::topology) override;
-  void coordinates(stk::mesh::EntityKey, size_t, std::vector<double>& coords) override;
+  size_t num_points(const spmd::EntityKeyPair&, const stk::topology&) override;
+  void coordinates(const spmd::EntityKeyPair&, size_t, std::vector<double>& coords) override;
 
   ~MasterElementGaussPointEvaluator() = default;
 
  private:
   stk::mesh::BulkData& m_bulk;
-  const stk::mesh::FieldBase* m_coords{nullptr};
+  const SearchField m_coords;
   std::shared_ptr<MasterElementProviderInterface> m_masterElemProvider;
   const unsigned m_spatialDimension{0};
 
@@ -84,13 +82,27 @@ class CentroidEvaluator : public PointEvaluatorInterface {
  public:
   CentroidEvaluator(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* coords);
 
-  size_t num_points(stk::mesh::EntityKey, stk::topology) override;
-  void coordinates(stk::mesh::EntityKey, size_t, std::vector<double>& coords) override;
+  size_t num_points(const spmd::EntityKeyPair&, const stk::topology&) override;
+  void coordinates(const spmd::EntityKeyPair&, size_t, std::vector<double>& coords) override;
 
   ~CentroidEvaluator() = default;
 
  private:
-  stk::mesh::BulkData& m_bulk;
+  const stk::mesh::FieldBase* m_coords{nullptr};
+
+  mutable std::vector<double> m_coordVector;
+};
+
+class NodeEvaluator : public PointEvaluatorInterface {
+ public:
+  NodeEvaluator(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* coords);
+
+  size_t num_points(const spmd::EntityKeyPair&, const stk::topology&) override;
+  void coordinates(const spmd::EntityKeyPair&, size_t, std::vector<double>& coords) override;
+
+  ~NodeEvaluator() = default;
+
+ private:
   const stk::mesh::FieldBase* m_coords{nullptr};
 
   mutable std::vector<double> m_coordVector;

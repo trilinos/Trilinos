@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_unit_test_utils/unittestMeshUtils.hpp>
@@ -344,7 +345,8 @@ class UsingZoltan2 : public stk::unit_test_util::MeshFixture
 protected:
   void run_decomp_with_method(const std::string& method, int nparts, stk::mesh::EntityRank primary_rank, stk::mesh::EntityRank secondary_rank)
   {
-    stk::io::write_mesh("junk.exo", get_bulk());
+    std::string filename = "junk.exo";
+    stk::io::write_mesh(filename, get_bulk());
     LearningZoltan2Adapter adapter(get_bulk(), primary_rank, secondary_rank);
     std::vector<int> elem2proc(adapter.getLocalNumOf(map_rank_to_mesh_entity_type(primary_rank)), get_bulk().parallel_rank());
     use_zoltan2_with_adapter(adapter, method, nparts, elem2proc);
@@ -356,6 +358,14 @@ protected:
     for(size_t i=0;i<entities.size();++i)
       os << get_bulk().entity_key(entities[i]) << " goes to processor " << elem2proc[i] << std::endl;
     std::cerr << os.str();
+
+    if (get_parallel_rank() == 0) {
+      unlink(filename.c_str());
+      for (int i = 0; i < get_parallel_size(); i++) {
+        std::string output_filename = filename + "." + std::to_string(get_parallel_size()) + "." + std::to_string(i);
+        unlink(output_filename.c_str());
+      }
+    }
   }
 
   void use_zoltan2_with_adapter(LearningZoltan2Adapter& adapter, const std::string &method, int nparts, std::vector<int> &elem2proc)

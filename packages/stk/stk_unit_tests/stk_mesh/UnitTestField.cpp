@@ -1863,14 +1863,32 @@ TEST_F(VariableCapacityBuckets, initialMeshConstruction_initialCapacity1_maxCapa
 }
 
 
-void create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
-                           const stk::mesh::Field<int> & field)
+stk::mesh::Entity delete_node(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId)
 {
   bulk.modification_begin();
-  const stk::mesh::Entity node = bulk.declare_node(nodeId);
+
+  stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
+  bulk.destroy_entity(node);
   bulk.modification_end();
 
-  *stk::mesh::field_data(field, node) = nodeId;
+  return node;
+}
+
+stk::mesh::Entity create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
+                                        const stk::mesh::Field<int> & field, const std::vector<int> & values)
+{
+  bulk.modification_begin();
+  stk::mesh::Entity node = bulk.declare_node(nodeId);
+  bulk.modification_end();
+
+  const unsigned fieldExtent = stk::mesh::field_extent0_per_entity(field, node);
+  STK_ThrowRequire(values.size() == fieldExtent);
+
+  for (unsigned i = 0; i < fieldExtent; ++i) {
+    stk::mesh::field_data(field, node)[i] = values[i];
+  }
+
+  return node;
 }
 
 void create_node_with_multistate_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
@@ -2067,7 +2085,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity1)
 
   {
     SCOPED_TRACE("Create Node 1");
-    create_node_with_data(*m_bulk, 1, field);
+    create_node_with_data(*m_bulk, 1, field, {1});
 
     check_num_buckets(*m_bulk, 1);
     check_expected_bytes_allocated(*m_bulk, field);
@@ -2076,7 +2094,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity1)
 
   {
     SCOPED_TRACE("Create Node 2");
-    create_node_with_data(*m_bulk, 2, field);
+    create_node_with_data(*m_bulk, 2, field, {2});
 
     check_num_buckets(*m_bulk, 2);
     check_expected_bytes_allocated(*m_bulk, field);
@@ -2085,7 +2103,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity1)
 
   {
     SCOPED_TRACE("Create Node 3");
-    create_node_with_data(*m_bulk, 3, field);
+    create_node_with_data(*m_bulk, 3, field, {3});
 
     check_num_buckets(*m_bulk, 3);
     check_expected_bytes_allocated(*m_bulk, field);
@@ -2104,7 +2122,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2)
 
   {
     SCOPED_TRACE("Create Node 1");
-    create_node_with_data(*m_bulk, 1, field);
+    create_node_with_data(*m_bulk, 1, field, {1});
 
     check_num_buckets(*m_bulk, 1);
     check_expected_bytes_allocated(*m_bulk, field);
@@ -2113,7 +2131,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2)
 
   {
     SCOPED_TRACE("Create Node 2");
-    create_node_with_data(*m_bulk, 2, field);
+    create_node_with_data(*m_bulk, 2, field, {2});
 
     check_num_buckets(*m_bulk, 1);
     check_expected_bytes_allocated(*m_bulk, field);
@@ -2122,7 +2140,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2)
 
   {
     SCOPED_TRACE("Create Node 3");
-    create_node_with_data(*m_bulk, 3, field);
+    create_node_with_data(*m_bulk, 3, field, {3});
 
     check_num_buckets(*m_bulk, 2);
     check_expected_bytes_allocated(*m_bulk, field);
@@ -2141,7 +2159,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2)
 
   {
     SCOPED_TRACE("Create Node 1");
-    create_node_with_data(*m_bulk, 1, field);
+    create_node_with_data(*m_bulk, 1, field, {1});
 
     check_num_buckets(*m_bulk, 1);
     check_expected_bytes_allocated(*m_bulk, field);
@@ -2150,7 +2168,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2)
 
   {
     SCOPED_TRACE("Create Node 2");
-    create_node_with_data(*m_bulk, 2, field);
+    create_node_with_data(*m_bulk, 2, field, {2});
 
     check_num_buckets(*m_bulk, 1);
     check_expected_bytes_allocated(*m_bulk, field);
@@ -2159,7 +2177,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2)
 
   {
     SCOPED_TRACE("Create Node 3");
-    create_node_with_data(*m_bulk, 3, field);
+    create_node_with_data(*m_bulk, 3, field, {3});
 
     check_num_buckets(*m_bulk, 2);
     check_expected_bytes_allocated(*m_bulk, field);
@@ -2241,6 +2259,44 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2_with
     check_field_value(*m_bulk, field2, 1, 101);
     check_field_value(*m_bulk, field1, 2, 102);  // Unflipped values written into new state layout
     check_field_value(*m_bulk, field2, 2, 202);
+  }
+}
+
+TEST_P(VariableCapacityFieldData, deleteNodes_initialCapacity1_maxCapacity1)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 1);
+
+  auto & field = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1");
+  stk::mesh::put_field_on_mesh(field, m_meta->universal_part(), nullptr);
+
+  {
+    SCOPED_TRACE("Create Nodes 1,2,3");
+    create_node_with_data(*m_bulk, 1, field, {1});
+    create_node_with_data(*m_bulk, 2, field, {2});
+    create_node_with_data(*m_bulk, 3, field, {3});
+    check_num_buckets(*m_bulk, 3);
+    check_expected_bytes_allocated(*m_bulk, field);
+    check_field_values(*m_bulk, field);
+  }
+
+  {
+    SCOPED_TRACE("Delete Node 1");
+    delete_node(*m_bulk, 1);
+
+    check_num_buckets(*m_bulk, 2);
+    check_expected_bytes_allocated(*m_bulk, field);
+    check_field_values(*m_bulk, field);
+  }
+
+  {
+    SCOPED_TRACE("Delete Node 3");
+    delete_node(*m_bulk, 3);
+
+    check_num_buckets(*m_bulk, 1);
+    check_expected_bytes_allocated(*m_bulk, field);
+    check_field_values(*m_bulk, field);
   }
 }
 
@@ -2420,5 +2476,4 @@ TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity1_maxCa
   }
 }
 
-} //namespace <anonymous>
-
+}

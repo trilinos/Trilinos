@@ -97,11 +97,6 @@ BucketRepository::~BucketRepository()
     m_partitions.clear();
     m_buckets.clear();
 
-    const FieldVector& fields = m_mesh.mesh_meta_data().get_fields();
-    for(size_t i=0; i<fields.size(); ++i) {
-      fields[i]->get_meta_data_for_field().clear();
-    }
-
   } catch(...) {}
 }
 

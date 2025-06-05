@@ -38,7 +38,9 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "Legendre.hpp"
-#include "MockSearchHex8Element.hpp"
+#include "MockMasterElementLine2.hpp"
+#include "MockMasterElementQuad4.hpp"
+#include "MockMasterElementHex8.hpp"
 #include "stk_search/Box.hpp"                         // for Box
 #include "stk_search/Point.hpp"                       // for Point
 #include "stk_search/Sphere.hpp"                      // for Sphere
@@ -55,77 +57,51 @@
 #include <utility>                                    // for pair
 #include <vector>                                     // for vector
 #include <cassert>                   // for assert
+
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
 namespace unit_test_util {
 
-/**
- * A 3D Gauss-Legendre quadrature rule (traditionally
- * called the Gauss quadrature) of arbitrary order q x q x q, on the
- * interval [-1,1] x [-1,1] x [-1,1].
- *
- */
-class Hex8GaussQuadrature {
-public:
-  Hex8GaussQuadrature(unsigned q)
-  : m_order(q)
-  , m_numIntgPoints(q * q * q)
-  , m_numParametricCoordinates(3)
-  , m_intgWeights(m_numIntgPoints)
-  , m_intgLocations(static_cast<size_t>(m_numParametricCoordinates) * m_numIntgPoints)
-  {
-    // initialize the points and weights
-    gauss_legendre(q, m_intgLocations, m_intgWeights);
-  }
-
-  ~Hex8GaussQuadrature() = default;
-
-  unsigned order() const { return m_order; }
-  unsigned num_intg_pts() const { return m_numIntgPoints; }
-  unsigned num_parametric_coordinates() const { return m_numParametricCoordinates; }
-  const std::vector<double>& intg_pt_weights() const { return m_intgWeights; }
-  const std::vector<double>& intg_pt_locations() const { return m_intgLocations; }
-
-private:
-  unsigned m_order;
-  unsigned m_numIntgPoints; // (num_intg_pts)
-  unsigned m_numParametricCoordinates;
-
-  std::vector<double> m_intgWeights; // array holding values of the weights
-  std::vector<double> m_intgLocations; // array holding locations of the pts
-};
-
-class Hex8MasterElementProvider : public stk::search::MasterElementProviderInterface {
+class MasterElementProvider : public stk::search::MasterElementProviderInterface {
  public:
-  Hex8MasterElementProvider(const unsigned integrationOrder)
-  : m_integrationOrder(get_integration_order(integrationOrder))
-  , m_quadrature(m_integrationOrder)
+  MasterElementProvider(const unsigned integrationOrder)
+  : m_integrationOrder(MasterElement::get_integration_order(integrationOrder))
   {
-
+    m_line2MasterElement = std::make_shared<MasterElementLine2>(m_integrationOrder);
+    m_quad4MasterElement = std::make_shared<MasterElementQuad4>(m_integrationOrder);
+    m_hex8MasterElement  = std::make_shared<MasterElementHex8>(m_integrationOrder);
   }
 
-  Hex8MasterElementProvider()
-  : m_integrationOrder(get_integration_order(0))
-  , m_quadrature(m_integrationOrder)
+  MasterElementProvider()
+  : m_integrationOrder(MasterElement::get_integration_order(0))
   {
-
+    m_line2MasterElement = std::make_shared<MasterElementLine2>(m_integrationOrder);
+    m_quad4MasterElement = std::make_shared<MasterElementQuad4>(m_integrationOrder);
+    m_hex8MasterElement  = std::make_shared<MasterElementHex8>(m_integrationOrder);
   }
 
-  unsigned num_integration_points(const stk::search::MasterElementTopology& meTopo) override;
+  unsigned num_integration_points(const stk::search::SearchTopology& meTopo) const override;
 
-  void integration_points(const stk::search::MasterElementTopology& meTopo, std::vector<double>& gaussPoints) override;
+  void integration_points(const stk::search::SearchTopology& meTopo, std::vector<double>& gaussPoints) const override;
 
   //: Interpolate the given nodal field onto the point inside the element,
   //: given the point's parametric coordinates.
   //  Assume the minimum of the master element is (xi,eta,zeta) = (-1,-1,-1);
   //  Assume the maximum of the master element is (xi,eta,zeta) = (+1,+1,+1);
-  void evaluate_field(const stk::search::MasterElementTopology& meTopo,
+  void evaluate_field(const stk::search::SearchTopology& meTopo,
                       const std::vector<double>& paramCoords,
                       const unsigned numFieldComponents,
                       const std::vector<double>& fieldData,
-                      std::vector<double>& result) override;
+                      std::vector<double>& result) const override;
+
+  void evaluate_field(const stk::search::SearchTopology& meTopo,
+                      const unsigned numEvalPoints,
+                      const std::vector<double>& paramCoords,
+                      const unsigned numFieldComponents,
+                      const std::vector<double>& fieldData,
+                      std::vector<double>& result) const override;
 
   /*--------------------------------------------------------------------*/
   /* Arrays are contiguous blocks of memory laid out in fortran order,  */
@@ -139,27 +115,16 @@ class Hex8MasterElementProvider : public stk::search::MasterElementProviderInter
   /*                            npe        number nodes per element     */
   /*              nelem  number of elements                             */
   /*--------------------------------------------------------------------*/
-  void nodal_field_data(const stk::mesh::Entity entity,
-                        const stk::mesh::FieldBase& field,
+  void nodal_field_data(const stk::search::spmd::EntityKeyPair& key,
+                        const stk::search::SearchField& field,
                         unsigned& numFieldComponents,
                         unsigned& numNodes,
-                        std::vector<double>& fieldData) override;
+                        std::vector<double>& fieldData) const override;
 
-  void nodal_field_data(const stk::mesh::EntityKey key,
-                        const stk::mesh::FieldBase& field,
+  void nodal_field_data(const std::vector<stk::search::spmd::EntityKeyPair>& nodeKeys,
+                        const stk::search::SearchField& field,
                         unsigned& numFieldComponents,
-                        unsigned& numNodes,
-                        std::vector<double>& fieldData) override;
-
-  void nodal_field_data(const std::vector<stk::mesh::Entity>& nodes,
-                        const stk::mesh::FieldBase& field,
-                        unsigned& numFieldComponents,
-                        std::vector<double>& fieldData) override;
-
-  void nodal_field_data(const std::vector<stk::mesh::EntityKey>& nodeKeys,
-                        const stk::mesh::FieldBase& field,
-                        unsigned& numFieldComponents,
-                        std::vector<double>& fieldData) override;
+                        std::vector<double>& fieldData) const override;
 
   //: Find the element parametric coordinates of a given point in space.
   //  Assume the minimum of the master element is (xi,eta,zeta) = (-1,-1,-1);
@@ -169,14 +134,14 @@ class Hex8MasterElementProvider : public stk::search::MasterElementProviderInter
   //    0 <=  d < 1 : the point is inside the element
   //    1 ==  d     : the point is one the element surface
   //    1 <   d     : the point is outside the element
-  void find_parametric_coordinates(const stk::search::MasterElementTopology& meTopo,
+  void find_parametric_coordinates(const stk::search::SearchTopology& meTopo,
                                    const unsigned numCoordComponents,
                                    const std::vector<double>& elementNodeCoords,
                                    const std::vector<double>& inputCoords,
                                    std::vector<double>& paramCoords,
-                                   double& paramDistance) override;
+                                   double& paramDistance) const override;
 
-  unsigned num_parametric_coordinates(const stk::search::MasterElementTopology& meTopo) override;
+  unsigned num_parametric_coordinates(const stk::search::SearchTopology& meTopo) const override;
 
   //: Return the logical center coordinate of the element.
   //  This is not necessarily the centroid.  The center coordinate
@@ -186,17 +151,19 @@ class Hex8MasterElementProvider : public stk::search::MasterElementProviderInter
   //  C and the parametric distance d for the parametric point X then:
   //            Y = (X-C)/d + C
   //  will define a point Y on the element parametric surface.
-  void coordinate_center(const stk::search::MasterElementTopology& meTopo, std::vector<double>& center) override;
+  void coordinate_center(const stk::search::SearchTopology& meTopo, std::vector<double>& center) const override;
 
-  ~Hex8MasterElementProvider() = default;
+  ~MasterElementProvider() = default;
 
  private:
   unsigned m_integrationOrder{2};
-  Hex8GaussQuadrature m_quadrature;
 
-  void check_consistent_topology(const stk::search::MasterElementTopology& meTopo);
+  std::shared_ptr<MasterElementLine2> m_line2MasterElement;
+  std::shared_ptr<MasterElementQuad4> m_quad4MasterElement;
+  std::shared_ptr<MasterElementHex8>  m_hex8MasterElement;
 
-  unsigned get_integration_order(const unsigned integrationOrder);
+  void check_consistent_topology(const stk::search::SearchTopology& meTopo) const;
+  const MasterElement* get_master_element(const stk::search::SearchTopology& meTopo) const;
 };
 
 }

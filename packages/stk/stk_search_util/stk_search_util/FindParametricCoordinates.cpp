@@ -64,31 +64,31 @@ MasterElementParametricCoordsFinder::MasterElementParametricCoordsFinder(
 {
 }
 
-void MasterElementParametricCoordsFinder::gather_nodal_coordinates(const stk::mesh::EntityKey key,
+void MasterElementParametricCoordsFinder::gather_nodal_coordinates(const spmd::EntityKeyPair& key,
                                                                    const stk::topology topo) const
 {
   unsigned numFieldComponents;
   unsigned numNodes;
 
-  m_masterElemProvider->nodal_field_data(key, *m_coords, numFieldComponents, numNodes, m_elementCoords);
+  m_masterElemProvider->nodal_field_data(key, m_coords, numFieldComponents, numNodes, m_elementCoords);
 
-  STK_ThrowRequireMsg(numFieldComponents == m_spatialDimension, "Invalid coordinate field: " << m_coords->name());
-  STK_ThrowRequireMsg(numNodes == topo.num_nodes(), "Mismatch between key: " << key << " and topology: " << topo.name());
+  STK_ThrowAssertMsg(numFieldComponents == m_spatialDimension, "Invalid coordinate field: " << m_coords.name());
+  STK_ThrowAssertMsg(numNodes == topo.num_nodes(), "Mismatch between key: " << key << " and topology: " << topo.name());
 }
 
 void
-MasterElementParametricCoordsFinder::find_parametric_coords(const stk::mesh::EntityKey k, const std::vector<double>& evalPoint,
+MasterElementParametricCoordsFinder::find_parametric_coords(const spmd::EntityKeyPair& k, const std::vector<double>& evalPoint,
                                                             std::vector<double>& paramCoords, double& paramDistance,
                                                             bool& isWithinParametricTolerance) const
 {
-  stk::mesh::Entity entity = m_bulk.get_entity(k);
+  stk::mesh::Entity entity = k;
 
   const stk::mesh::Bucket& bucket = m_bulk.bucket(entity);
   const stk::topology topo = bucket.topology();
 
   gather_nodal_coordinates(k, topo);
 
-  auto meTopo = stk::search::MasterElementTopology(topo, k, &bucket);
+  auto meTopo = SearchTopology(topo, k, &bucket);
   m_masterElemProvider->find_parametric_coordinates(meTopo, m_spatialDimension, m_elementCoords, evalPoint,
                                                     paramCoords, paramDistance);
 
@@ -96,53 +96,52 @@ MasterElementParametricCoordsFinder::find_parametric_coords(const stk::mesh::Ent
 }
 
 void
-MasterElementParametricCoordsFinder::evaluate_parametric_coords(const stk::mesh::EntityKey k,
+MasterElementParametricCoordsFinder::evaluate_parametric_coords(const spmd::EntityKeyPair& k,
                                                                 const std::vector<double>& paramCoords,
                                                                 std::vector<double>& evalPoint) const
 {
-  stk::mesh::Entity elem = m_bulk.get_entity(k);
+  stk::mesh::Entity elem = k;
 
   const stk::mesh::Bucket& bucket = m_bulk.bucket(elem);
   const stk::topology topo = bucket.topology();
 
   gather_nodal_coordinates(k, topo);
 
-  auto meTopo = stk::search::MasterElementTopology(topo, k, &bucket);
+  auto meTopo = SearchTopology(topo, k, &bucket);
   m_masterElemProvider->evaluate_field(meTopo, paramCoords, m_spatialDimension, m_elementCoords, evalPoint);
 }
 
 NodeParametricCoordsFinder::NodeParametricCoordsFinder(stk::mesh::BulkData& bulk, const stk::mesh::FieldBase* coords)
   : m_meta(bulk.mesh_meta_data())
-  , m_bulk(bulk)
   , m_coords(coords)
 {
 }
 
-void NodeParametricCoordsFinder::find_parametric_coords(const stk::mesh::EntityKey k, const std::vector<double>& toCoords,
+void NodeParametricCoordsFinder::find_parametric_coords(const spmd::EntityKeyPair& k, const std::vector<double>& toCoords,
                                                         std::vector<double>& paramCoords, double& paramDistance,
                                                         bool& isWithinParametricTolerance) const
 {
   STK_ThrowRequire(k.rank() == stk::topology::NODE_RANK);
 
-  stk::mesh::Entity theNode = m_bulk.get_entity(k);
+  stk::mesh::Entity theNode = k;
 
   const double* fromCoords = static_cast<const double *>(stk::mesh::field_data(*m_coords, theNode));
   unsigned nDim = m_meta.spatial_dimension();
 
   paramCoords.assign(nDim, 0.0);
 
-  paramDistance = stk::search::distance(nDim, fromCoords, toCoords.data());
+  paramDistance = distance(nDim, fromCoords, toCoords.data());
 
   isWithinParametricTolerance = true;
 }
 
-void NodeParametricCoordsFinder::evaluate_parametric_coords(const stk::mesh::EntityKey k,
+void NodeParametricCoordsFinder::evaluate_parametric_coords(const spmd::EntityKeyPair& k,
                                                             const std::vector<double>& paramCoords,
                                                             std::vector<double>& evalPoint) const
 {
   STK_ThrowRequire(k.rank() == stk::topology::NODE_RANK);
 
-  stk::mesh::Entity theNode = m_bulk.get_entity(k);
+  stk::mesh::Entity theNode = k;
 
   const double* fromCoords = static_cast<const double *>(stk::mesh::field_data(*m_coords, theNode));
   unsigned nDim = m_meta.spatial_dimension();

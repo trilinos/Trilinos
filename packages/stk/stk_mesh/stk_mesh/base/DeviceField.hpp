@@ -40,11 +40,11 @@
 #include "stk_mesh/base/NgpFieldBase.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
+#include "stk_mesh/base/FieldData.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/NgpForEachEntity.hpp"
 #include "stk_mesh/base/NgpProfilingBlock.hpp"
 #include "stk_mesh/base/EntityFieldData.hpp"
-#include "stk_mesh/baseImpl/NgpFieldAux.hpp"
 
 namespace stk::mesh {
 
@@ -69,30 +69,22 @@ public:
   KOKKOS_FUNCTION
   DeviceField()
     : NgpFieldBase(),
-      m_hostBulk(nullptr),
-      m_hostField(nullptr),
-      m_rank(stk::topology::INVALID_RANK),
-      m_ordinal(INVALID_ORDINAL),
-      m_synchronizedCount(0)
-  {
-  }
+      m_hostField(nullptr)
+  {}
 
-  DeviceField(const BulkData& bulk, const FieldBase &stkField, bool isFromGetUpdatedNgpField = false)
+  DeviceField(const FieldBase& stkField, bool isFromGetUpdatedNgpField = false)
     : NgpFieldBase(),
-      m_hostBulk(&bulk),
       m_hostField(&stkField),
-      m_rank(stkField.entity_rank()),
-      m_ordinal(stkField.mesh_meta_data_ordinal()),
-      m_synchronizedCount(0)
+      m_deviceFieldData(stkField.data<T, Unsynchronized, NgpMemSpace>())
   {
     STK_ThrowRequireMsg(isFromGetUpdatedNgpField, "NgpField must be obtained from get_updated_ngp_field()");
   }
 
-  KOKKOS_DEFAULTED_FUNCTION DeviceField(const DeviceField<T, NgpMemSpace>&) = default;
-  KOKKOS_DEFAULTED_FUNCTION DeviceField(DeviceField<T, NgpMemSpace>&&) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField(const DeviceField&) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField(DeviceField&&) = default;
   KOKKOS_FUNCTION ~DeviceField() {}
-  KOKKOS_DEFAULTED_FUNCTION DeviceField<T, NgpMemSpace>& operator=(const DeviceField<T, NgpMemSpace>&) = default;
-  KOKKOS_DEFAULTED_FUNCTION DeviceField<T, NgpMemSpace>& operator=(DeviceField<T, NgpMemSpace>&&) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField& operator=(const DeviceField&) = default;
+  KOKKOS_DEFAULTED_FUNCTION DeviceField& operator=(DeviceField&&) = default;
 
   void update_field(const ExecSpace& newExecSpace) override
   {
@@ -151,56 +143,59 @@ public:
 
   void sync_to_host() override
   {
-    reset_execution_space();
-    if (internal_sync_to_host()) {
-      Kokkos::fence();
-      reset_execution_space();
+    sync_to_host(stk::ngp::ExecSpace());
+  }
+
+  void sync_to_host(const ExecSpace& execSpace) override
+  {
+    if (m_hostField->need_sync_to_host()) {
+      set_execution_space(execSpace);
+      m_deviceFieldData.sync_to_host(get_execution_space(), m_hostField->host_data_layout());
+      m_hostField->increment_num_syncs_to_host();
+      m_hostField->clear_device_sync_state();
     }
   }
 
-  void sync_to_host(const ExecSpace& newExecSpace) override
+  void sync_to_host(ExecSpace&& execSpace) override
   {
-    set_execution_space(newExecSpace);
-    internal_sync_to_host();
-  }
-
-  void sync_to_host(ExecSpace&& newExecSpace) override
-  {
-    set_execution_space(std::forward<ExecSpace>(newExecSpace));
-    internal_sync_to_host();
+    sync_to_host(execSpace);
   }
 
   void sync_to_device() override
   {
-    reset_execution_space();
-    if (internal_sync_to_device()) {
-      Kokkos::fence();
-      reset_execution_space();
+    sync_to_device(stk::ngp::ExecSpace());
+  }
+
+  void sync_to_device(const ExecSpace& execSpace) override
+  {
+    if (m_hostField->need_sync_to_device()) {
+      set_execution_space(execSpace);
+      if (m_deviceFieldData.needs_update()) {
+        m_deviceFieldData.update(get_execution_space(), m_hostField->host_data_layout());
+      }
+      m_deviceFieldData.sync_to_device(get_execution_space(), m_hostField->host_data_layout());
+      m_hostField->increment_num_syncs_to_device();
+      m_hostField->clear_host_sync_state();
     }
   }
 
-  void sync_to_device(const ExecSpace& newExecSpace) override
+  void sync_to_device(ExecSpace&& execSpace) override
   {
-    set_execution_space(newExecSpace);
-    internal_sync_to_device();
+    sync_to_device(execSpace);
   }
 
-  void sync_to_device(ExecSpace&& newExecSpace) override
-  {
-    set_execution_space(std::forward<ExecSpace>(newExecSpace));
-    internal_sync_to_device();
+  size_t synchronized_count() const override {
+    return m_deviceFieldData.field_data_synchronized_count();
   }
-
-  size_t synchronized_count() const override { return m_synchronizedCount; }
 
   KOKKOS_FUNCTION
   unsigned get_component_stride(const FastMeshIndex& entityIndex) const
   {
     if constexpr (impl::is_on_host()) {
-      return m_hostBulk->buckets(m_rank)[entityIndex.bucket_id]->capacity();
+      return m_deviceFieldData.mesh().buckets(m_deviceFieldData.entity_rank())[entityIndex.bucket_id]->capacity();
     }
     else {
-      return m_deviceFieldMetaData(entityIndex.bucket_id).m_bucketCapacity;
+      return m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id).m_bucketCapacity;
     }
     return 0;  // Keep Nvidia compiler happy about always having return value
   }
@@ -209,10 +204,10 @@ public:
   unsigned get_component_stride(unsigned bucketId) const
   {
     if constexpr (impl::is_on_host()) {
-      return m_hostBulk->buckets(m_rank)[bucketId]->capacity();
+      return m_deviceFieldData.mesh().buckets(m_deviceFieldData.entity_rank())[bucketId]->capacity();
     }
     else {
-      return m_deviceFieldMetaData(bucketId).m_bucketCapacity;
+      return m_deviceFieldData.m_deviceFieldMetaData(bucketId).m_bucketCapacity;
     }
     return 0;  // Keep Nvidia compiler happy about always having return value
   }
@@ -229,31 +224,31 @@ public:
 
   KOKKOS_FUNCTION
   unsigned get_num_components_per_entity(const FastMeshIndex& entityIndex) const {
-    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldMetaData(entityIndex.bucket_id);
+    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id);
     return fieldMetaData.m_numComponentsPerEntity*fieldMetaData.m_numCopiesPerEntity;
   }
 
   KOKKOS_FUNCTION
   unsigned get_extent0_per_entity(const FastMeshIndex& entityIndex) const {
-    return m_deviceFieldMetaData(entityIndex.bucket_id).m_numComponentsPerEntity;
+    return m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id).m_numComponentsPerEntity;
   }
 
   KOKKOS_FUNCTION
   unsigned get_extent1_per_entity(const FastMeshIndex& entityIndex) const {
-    return m_deviceFieldMetaData(entityIndex.bucket_id).m_numCopiesPerEntity;
+    return m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id).m_numCopiesPerEntity;
   }
 
   KOKKOS_FUNCTION
   unsigned get_extent_per_entity(const FastMeshIndex& entityIndex, unsigned dimension) const {
     const unsigned bucketId = entityIndex.bucket_id;
     if (dimension == 0) {
-      return m_deviceFieldMetaData(bucketId).m_numComponentsPerEntity;
+      return m_deviceFieldData.m_deviceFieldMetaData(bucketId).m_numComponentsPerEntity;
     }
     else if (dimension == 1) {
-      return m_deviceFieldMetaData(entityIndex.bucket_id).m_numCopiesPerEntity;
+      return m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id).m_numCopiesPerEntity;
     }
     else {
-      const unsigned numComponents = m_deviceFieldMetaData(bucketId).m_numComponentsPerEntity;
+      const unsigned numComponents = m_deviceFieldData.m_deviceFieldMetaData(bucketId).m_numComponentsPerEntity;
       return (numComponents != 0) ? 1 : 0;
     }
   }
@@ -263,28 +258,28 @@ public:
   template <typename Mesh> KOKKOS_FUNCTION
   T& get(const Mesh& /*ngpMesh*/, Entity entity, int component) const
   {
-    FastMeshIndex fastMeshIndex = m_deviceFastMeshIndices[entity.local_offset()];
+    FastMeshIndex fastMeshIndex = m_deviceFieldData.m_deviceFastMeshIndices[entity.local_offset()];
     return get(fastMeshIndex, component);
   }
 
   KOKKOS_FUNCTION
   T& get(FastMeshIndex index, int component) const
   {
-    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldMetaData(index.bucket_id);
+    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData(index.bucket_id);
     return *(reinterpret_cast<T*>(fieldMetaData.m_data) + component*fieldMetaData.m_bucketCapacity + index.bucket_ord);
   }
 
   KOKKOS_FUNCTION
   T& operator()(const FastMeshIndex& index, int component) const
   {
-    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldMetaData(index.bucket_id);
+    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData(index.bucket_id);
     return *(reinterpret_cast<T*>(fieldMetaData.m_data) + component*fieldMetaData.m_bucketCapacity + index.bucket_ord);
   }
 
   KOKKOS_FUNCTION
   EntityFieldData<T> operator()(const FastMeshIndex& index) const
   {
-    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldMetaData(index.bucket_id);
+    const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData(index.bucket_id);
     T* entityPtr = reinterpret_cast<T*>(fieldMetaData.m_data) + index.bucket_ord;
     return EntityFieldData<T>(entityPtr, fieldMetaData.m_numComponentsPerEntity, fieldMetaData.m_bucketCapacity);
   }
@@ -293,64 +288,27 @@ public:
   void set_all(const Mesh& /*ngpMesh*/, const T& value)
   {
     clear_sync_state();
-    impl::fill_field_with_value<T>(get_execution_space(), m_deviceFieldMetaData, value);
+    impl::fill_field_with_value<T>(get_execution_space(), m_deviceFieldData.m_deviceFieldMetaData, value);
     modify_on_device();
   }
 
   KOKKOS_FUNCTION
-  EntityRank get_rank() const { return m_rank; }
+  EntityRank get_rank() const { return m_deviceFieldData.entity_rank(); }
 
   KOKKOS_FUNCTION
-  unsigned get_ordinal() const { return m_ordinal; }
+  unsigned get_ordinal() const { return m_deviceFieldData.field_ordinal(); }
 
   const std::string& name() const { return m_hostField->name(); }
 
-  const BulkData& get_bulk() const { return *m_hostBulk; }
+  const BulkData& get_bulk() const { return m_deviceFieldData.mesh(); }
 
   FieldState state() const { return m_hostField->state(); }
 
   const FieldBase* get_field_base() const { return m_hostField; }
 
-  void update_host_bucket_pointers() override
-  {
-    DeviceFieldDataManagerBase* deviceFieldDataManagerBase = m_hostBulk->get_device_field_data_manager<NgpMemSpace>();
-    STK_ThrowRequire(deviceFieldDataManagerBase != nullptr);
-
-    deviceFieldDataManagerBase->update_host_bucket_pointers(*m_hostField);
-  }
-
-  void swap_field_views(NgpFieldBase* otherDeviceField) override
-  {
-    DeviceField<T, NgpMemSpace>* otherDeviceFieldT = dynamic_cast<DeviceField<T, NgpMemSpace>*>(otherDeviceField);
-    STK_ThrowRequireMsg(otherDeviceFieldT != nullptr, "DeviceField::swap_field_views called with class that can't "
-                                                      "dynamic_cast to DeviceField<T>");
-
-    auto* deviceFieldDataManager =
-        static_cast<DeviceFieldDataManager<NgpMemSpace>*>(m_hostBulk->get_device_field_data_manager<NgpMemSpace>());
-    STK_ThrowRequire(deviceFieldDataManager != nullptr);
-
-    deviceFieldDataManager->swap_field_data(*m_hostField, *otherDeviceFieldT->m_hostField);
-
-    m_deviceFieldMetaData = deviceFieldDataManager->get_device_field_meta_data(m_ordinal);
-    otherDeviceFieldT->m_deviceFieldMetaData = deviceFieldDataManager->get_device_field_meta_data(otherDeviceFieldT->m_ordinal);
-  }
-
   void swap(DeviceField<T, NgpMemSpace>& otherDeviceField)
   {
-    auto* deviceFieldDataManager =
-        static_cast<DeviceFieldDataManager<NgpMemSpace>*>(m_hostBulk->get_device_field_data_manager<NgpMemSpace>());
-    STK_ThrowRequire(deviceFieldDataManager != nullptr);
-
-    deviceFieldDataManager->swap_field_data(*m_hostField, *otherDeviceField.m_hostField);
-
-    // Reset the host bucket pointers after the rotation, to mimic the previous behavior
-    // of only rotating the device field data and leaving the host bucket pointers alone.
-    // This is only called (in Sierra) after neglecting to rotate the host-side pointers.
-    deviceFieldDataManager->update_host_bucket_pointers(*m_hostField);
-    deviceFieldDataManager->update_host_bucket_pointers(*otherDeviceField.m_hostField);
-
-    m_deviceFieldMetaData = deviceFieldDataManager->get_device_field_meta_data(m_ordinal);
-    otherDeviceField.m_deviceFieldMetaData = deviceFieldDataManager->get_device_field_meta_data(otherDeviceField.m_ordinal);
+    m_deviceFieldData.incomplete_swap_field_data(otherDeviceField.m_deviceFieldData);
   }
 
   bool need_sync_to_host() const override
@@ -361,13 +319,6 @@ public:
   bool need_sync_to_device() const override
   {
     return m_hostField->need_sync_to_device();
-  }
-
-  bool needs_update() const override
-  {
-    STK_ThrowRequireMsg(m_synchronizedCount <= m_hostBulk->synchronized_count(),
-                        "Invalid sync state detected for NgpField: " << m_hostField->name());
-    return m_synchronizedCount != m_hostBulk->synchronized_count();
   }
 
 private:
@@ -395,94 +346,11 @@ private:
 
   void update_field()
   {
-    if (not needs_update()) {
-      return;
-    }
-
-    ProfilingBlock prof("update_field for " + m_hostField->name());
-
-    m_hostField->increment_num_syncs_to_device();
-    m_synchronizedCount = m_hostBulk->synchronized_count();
-
-    DeviceFieldDataManagerBase* deviceFieldDataManagerBase = m_hostBulk->get_device_field_data_manager<NgpMemSpace>();
-    STK_ThrowRequire(deviceFieldDataManagerBase != nullptr);
-
-    if (not deviceFieldDataManagerBase->update_all_bucket_allocations()) {
-      deviceFieldDataManagerBase->update_host_bucket_pointers(*m_hostField);
-    }
-
-    auto* deviceFieldDataManager = static_cast<DeviceFieldDataManager<NgpMemSpace>*>(deviceFieldDataManagerBase);
-    m_deviceFieldMetaData = deviceFieldDataManager->get_device_field_meta_data(m_hostField->mesh_meta_data_ordinal());
-
-    const DeviceBucketsModifiedArrayType<NgpMemSpace>& deviceBucketsModified =
-        deviceFieldDataManager->get_device_bucket_is_modified(m_rank, m_ordinal);
-    impl::transpose_modified_buckets_to_device<T>(get_execution_space(), m_deviceFieldMetaData, deviceBucketsModified);
-    get_execution_space().fence();
-    deviceFieldDataManager->clear_bucket_is_modified(m_rank, m_ordinal);
-
-    m_deviceFastMeshIndices = m_hostBulk->get_updated_fast_mesh_indices<NgpMemSpace>();
+    m_deviceFieldData = m_hostField->data<T, Unsynchronized, NgpMemSpace>();  // Reacquire current copy
   }
 
-  void copy_device_to_host()
-  {
-    if (m_hostField) {
-      impl::transpose_to_pinned_and_mapped_memory<T>(get_execution_space(), m_deviceFieldMetaData);
-      clear_device_sync_state();
-      m_hostField->increment_num_syncs_to_host();
-    }
-  }
-
-  bool internal_sync_to_host()
-  {
-    if (need_sync_to_host()) {
-      ProfilingBlock prof("copy_to_host for " + m_hostField->name());
-      copy_device_to_host();
-      return true;
-    }
-
-    return false;
-  }
-
-  void copy_host_to_device()
-  {
-    if (m_hostField) {
-      impl::transpose_from_pinned_and_mapped_memory<T>(get_execution_space(), m_deviceFieldMetaData);
-      clear_host_sync_state();
-      m_hostField->increment_num_syncs_to_device();
-    }
-  }
-
-  bool internal_sync_to_device()
-  {
-    if (need_sync_to_device()) {
-      ProfilingBlock prof("copy_to_device for " + m_hostField->name());
-      if (needs_update()) {
-        update_field();
-      }
-      copy_host_to_device();
-
-      return true;
-    }
-
-    return false;
-  }
-
-  template <typename ViewType>
-  KOKKOS_FUNCTION
-  void swap_views(ViewType & view1, ViewType & view2)
-  {
-    ViewType tmpView = view2;
-    view2 = view1;
-    view1 = tmpView;
-  }
-
-  const BulkData* m_hostBulk;
   const FieldBase* m_hostField;
-  EntityRank m_rank;
-  unsigned m_ordinal;
-  size_t m_synchronizedCount;
-  MeshIndexType<NgpMemSpace> m_deviceFastMeshIndices;
-  DeviceFieldMetaDataArrayType<NgpMemSpace> m_deviceFieldMetaData;
+  FieldData<T, NgpMemSpace> m_deviceFieldData;
 };
 
 }

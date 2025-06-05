@@ -38,10 +38,6 @@
 #include <stk_util/stk_config.h>
 #include "stk_util/util/Fortran.hpp"
 
-#ifdef STK_BUILT_FOR_SIERRA
-#include <sierra_blas_lapack.h>
-#endif
-
 extern "C"
 {
 void SIERRA_FORTRAN(daxpy)(const int *n, const double *dscale, const double x[], const int *incx, double y[],const int *incy); // y=y+dscale*x
@@ -72,7 +68,7 @@ void SIERRA_FORTRAN(dtrsm)(const char *side, const char *uplo, const char *trans
                            const int *m, const int *n, const double *alpha, const double *a, const int *lda,
                            double *b, const int *ldb);
 
-#if !defined(_MKL_LAPACK_H_) && !defined(STK_BUILT_FOR_SIERRA)
+#if !defined(_MKL_LAPACK_H_)
 
 void SIERRA_FORTRAN(dgels)(const char* trans, const int* m, const int* n,
                            const int* nrhs, double* a, const int* lda, double* b,
@@ -105,8 +101,6 @@ void SIERRA_FORTRAN(dgesvd)(const char* jobu, const char* jobvt, const int* m,
                             double* work, const int* lwork, int* info );
 
 void SIERRA_FORTRAN(dgeqp3)(int* m, int* n, double* A, int* lda, int* jpvt, double* tau, double* work, int* lwork, int* info);
-
-#elif !defined(_MKL_LAPACK_H_)
 
 void SIERRA_FORTRAN(dgeqp3)(int* m, int* n, double* A, int* lda, int* jpvt, double* tau, double* work, int* lwork, int* info);
 

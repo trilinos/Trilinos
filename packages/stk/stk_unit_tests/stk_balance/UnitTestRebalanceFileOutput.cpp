@@ -111,6 +111,18 @@ TEST_F(RebalanceFileOutput, CheckSharingInformation)
                                     nodeSharingInfo);
 
   verify_node_sharing_info(nodeSharingInfo, outputFilename);
+
+  clean_up_temporary_files();
+    
+  if (get_parallel_rank() == 0) {
+    for (int i = 0; i < get_parallel_size(); ++i) {
+      std::string suffix = "." + std::to_string(get_parallel_size()) + "." + std::to_string(i);
+      std::string filename = outputFilename + suffix;
+      std::string inputFilename = get_input_file_name() + suffix;
+      unlink(filename.c_str());
+      unlink(inputFilename.c_str());
+    }
+  }
 }
 
 }
