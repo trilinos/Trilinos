@@ -75,7 +75,6 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
     weights_(0),
     input_type_(inputType) 
 {
-  std::cout << "EEP ENtering QueryObject::constructor(1): input_type_ = " << input_type_ << std::endl;
   myProc_ = graph->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
@@ -123,7 +122,6 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
     weights_(0),
     input_type_(inputType) 
 {
-  std::cout << "EEP ENtering QueryObject::constructor(2): input_type_ = " << input_type_ << std::endl;
   myProc_ = matrix->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
@@ -169,7 +167,6 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_MultiVector> coords,
     costs_(0),
     weights_(weights)
 {
-  std::cout << "EEP ENtering QueryObject::constructor(3): input_type_ = " << input_type_ << std::endl;
   myProc_ = rowMap_->Comm().MyPID();
   base_ = rowMap_->IndexBase();
   input_type_ = geometric_input_;
@@ -189,7 +186,6 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_BlockMap> input_map,
     weights_(0),
     input_type_(inputType) 
 {
-  std::cout << "EEP ENtering QueryObject::constructor(4): input_type_ = " << input_type_ << std::endl;
   myProc_ = rowMap_->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 }
@@ -212,7 +208,6 @@ QueryObject::QueryObject(Teuchos::RCP<const Epetra_CrsGraph> graph,
   weights_(weights),
   input_type_(inputType) 
 {
-  std::cout << "EEP ENtering QueryObject::constructor(5): input_type_ = " << input_type_ << std::endl;
   myProc_ = graph->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
@@ -262,7 +257,6 @@ QueryObject::QueryObject(Teuchos::RCP<const Epetra_RowMatrix> matrix,
     colMap_((const Epetra_BlockMap*)&(matrix->RowMatrixColMap())),
     costs_(costs), weights_(weights), input_type_(inputType) 
 {
-  std::cout << "EEP ENtering QueryObject::constructor(6): input_type_ = " << input_type_ << std::endl;
   myProc_ = matrix->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
@@ -346,7 +340,6 @@ bool QueryObject::haveHypergraphEdgeWeights()
 
 int QueryObject::Number_Objects(void *data, int *ierr)
 {
-  std::cout << "EEP Entering QueryObject::Number_Objects()" << std::endl;
   int numObj = 0;
 
   QueryObject *zq = (QueryObject *)data;
@@ -358,7 +351,6 @@ int QueryObject::Number_Objects(void *data, int *ierr)
     *ierr = ZOLTAN_FATAL;
   }
 
-  std::cout << "EEP Leaving QueryObject::Number_Objects(): numObj = " << numObj << std::endl;
   return numObj;
 }
 void QueryObject::Object_List  ( void * data,
@@ -366,11 +358,6 @@ void QueryObject::Object_List  ( void * data,
 		   ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
 		   int weight_dim, float * object_weights, int * ierr )
 {
-  std::cout << "EEP Entering QueryObject::Object_List()"
-            << ": num_gid_entries = " << num_gid_entries
-            << ", num_lid_entries = " << num_lid_entries
-            << ", weight_dim = " << weight_dim
-            << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq)
@@ -383,9 +370,6 @@ void QueryObject::Object_List  ( void * data,
     *ierr = ZOLTAN_FATAL;
   }
 
-  std::cout << "EEP Leaving QueryObject::Object_List()"
-            << ": *ierr = " << *ierr
-            << std::endl;
   return;
 }
 void QueryObject::Number_Edges_Multi  ( void * data,
@@ -429,7 +413,6 @@ void QueryObject::Edge_List_Multi( void * data,
 void QueryObject::HG_Size_CS ( void * data,
 	 int* num_lists, int* num_pins, int* format, int * ierr )
 {
-  std::cout << "EEP Entering QueryObject::HG_Size_CS()" << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq)
@@ -440,24 +423,13 @@ void QueryObject::HG_Size_CS ( void * data,
   {
     *ierr = ZOLTAN_FATAL;
   }
-  std::cout << "EEP Leaving QueryObject::HG_Size_CS()"
-            << ": *num_lists = " << *num_lists
-            << ", *num_pins = " << *num_pins
-            << ", *format = " << *format
-            << ", *ierr = " << *ierr
-            << std::endl;
+
 }
 void QueryObject::HG_CS ( void * data,
 	    int num_gid_entries, int num_row_or_col, int num_pins, int format,
 	    ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
 				     int * ierr )
 {
-  std::cout << "EEP Entering QueryObject::HG_CS()"
-            << ": num_gid_entries = " << num_gid_entries
-            << ", num_row_or_col = " << num_row_or_col
-            << ", num_pins = " << num_pins
-            << ", format = " << format
-            << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
@@ -467,14 +439,10 @@ void QueryObject::HG_CS ( void * data,
   else{
     *ierr = ZOLTAN_FATAL;
   }
-  std::cout << "EEP Entering QueryObject::HG_CS()"
-            << ": *ierr = " << *ierr
-            << std::endl;
 }
 void QueryObject::HG_Size_Edge_Weights(void * data,
 			    int* num_edges, int* ierr)
 {
-  std::cout << "EEP Entering QueryObject::HG_Size_Edge_Weights()" << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
@@ -483,21 +451,11 @@ void QueryObject::HG_Size_Edge_Weights(void * data,
   else{
     *ierr = ZOLTAN_FATAL;
   }
-  std::cout << "EEP Leaving QueryObject::HG_Size_Edge_Weights()"
-            << ": num_edges = " << num_edges
-            << ", *ierr = " << *ierr
-            << std::endl;
 }
 void QueryObject::HG_Edge_Weights(void * data,
       int num_gid_entries, int num_lid_entries, int num_edges, int edge_weight_dim,
       ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float* edge_weights, int* ierr)
 {
-  std::cout << "EEP Entering QueryObject::HG_Edge_Weights()"
-            << ": num_gid_entries = " << num_gid_entries
-            << ", num_lid_entries = " << num_lid_entries
-            << ", num_edges = " << num_edges
-            << ", edge_weight_dim = " << edge_weight_dim
-            << std::endl;
   QueryObject *zq = (QueryObject *)data;
 
   if (zq){
@@ -507,9 +465,6 @@ void QueryObject::HG_Edge_Weights(void * data,
   else{
     *ierr = ZOLTAN_FATAL;
   }
-  std::cout << "EEP Entering QueryObject::HG_Edge_Weights()"
-            << ": *ierr = " << *ierr
-            << std::endl;
 }
 
 int QueryObject::Number_Geom(void *data, int *ierr)
@@ -661,9 +616,6 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
     return;
   } // fine-grain hypergraph case
 
-  std::cout << "EEP In QueryObject::My_Object_List(), pos 002"
-            << ": ngids = " << ngids
-            << std::endl;
 
   if (ngids < 1)
   {
@@ -674,7 +626,6 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
     local_ids[i] = (ZOLTAN_ID_TYPE)i;
   }
 
-  std::cout << "EEP In QueryObject::My_Object_List(): weight_dim = " << weight_dim << std::endl;
   if (weight_dim >= 1) // Note we only supply 1-D weights
   {          
     float *to_wgts = object_weights;
@@ -957,10 +908,6 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   {
     npins = graph_->NumMyNonzeros();
     maxrow = graph_->MaxNumIndices();
-    std::cout << "EEP In QueryObject::My_HG_CS(), pos 000"
-              << ": npins = " << npins
-              << ", maxrow = " << maxrow
-              << std::endl;
   }
   else
   {
@@ -1031,10 +978,6 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
     else{
       if (haveGraph_){
         rc = graph_->ExtractMyRowCopy(i, npins, num_indices,(int *)gids + pin_start_pos);
-        std::cout << "EEP In QueryObject::My_HG_CS(), pos 002"
-                  << ": i = " << i
-                  << ", num_indices = " << num_indices
-                  << std::endl;
       }
       else{
         rc = matrix_->ExtractMyRowCopy(i, npins, num_indices, tmp, (int *)gids + pin_start_pos);

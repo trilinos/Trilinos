@@ -374,10 +374,8 @@ repartition(const Epetra_BlockMap& input_map,
 Epetra_MultiVector * 
 createBalancedCopy(const Epetra_MultiVector &coords)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(1)..." << std::endl; 
   Teuchos::ParameterList paramlist;
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(1)" << std::endl; 
   return createBalancedCopy(coords, paramlist);
 }
 
@@ -385,7 +383,6 @@ Epetra_MultiVector *
 createBalancedCopy(const Epetra_MultiVector &coords,
 		   const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(2)..." << std::endl; 
   Teuchos::RCP<const Epetra_MultiVector> coordRcp = Teuchos::rcp(&coords, false);
 
   Teuchos::RCP<Partitioner> partitioner =
@@ -397,17 +394,14 @@ createBalancedCopy(const Epetra_MultiVector &coords,
 
   newVec.release();
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(2)" << std::endl; 
   return newVec.get();
 }
 
 Epetra_CrsGraph *
 createBalancedCopy(const Epetra_CrsGraph& input_graph)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(3)..." << std::endl; 
   Teuchos::ParameterList paramlist;
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(3)" << std::endl; 
   return createBalancedCopy(input_graph, paramlist);
 }
 
@@ -415,39 +409,27 @@ Epetra_CrsGraph *
 createBalancedCopy(const Epetra_CrsGraph& input_graph,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(4)..." << std::endl; 
   Teuchos::RCP<const Epetra_CrsGraph> rcp_input_graph =
     Teuchos::rcp(&(input_graph), false);
-
-  std::cout << "EEP In isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(4), pos 001" << std::endl; // Aqui
 
   Teuchos::RCP<Partitioner> partitioner =
     Teuchos::rcp(new Partitioner(rcp_input_graph, paramlist));
 
-  std::cout << "EEP In isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(4), pos 002" << std::endl; 
-
   Redistributor rd(partitioner);
-
-  std::cout << "EEP In isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(4), pos 003" << std::endl; 
 
   Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     rd.redistribute(input_graph);
 
-  std::cout << "EEP In isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(4), pos 004" << std::endl; 
-  
   balanced_graph.release();
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(4)" << std::endl; 
   return balanced_graph.get();
 }
 
 Epetra_CrsMatrix *
 createBalancedCopy(const Epetra_CrsMatrix& input_matrix)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(5)..." << std::endl; 
   Teuchos::ParameterList paramlist;
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(5)" << std::endl; 
   return createBalancedCopy(input_matrix, paramlist);
 }
 
@@ -455,7 +437,6 @@ Epetra_CrsMatrix *
 createBalancedCopy(const Epetra_CrsMatrix& input_matrix,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(6)..." << std::endl; 
   Teuchos::RCP<const Epetra_CrsGraph> input_graph =
     Teuchos::rcp(&(input_matrix.Graph()), false);
 
@@ -468,17 +449,14 @@ createBalancedCopy(const Epetra_CrsMatrix& input_matrix,
     rd.redistribute(input_matrix);
 
   balanced_matrix.release();
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(6)" << std::endl; 
   return balanced_matrix.get();
 }
 
 Epetra_LinearProblem *
 createBalancedCopy(const Epetra_LinearProblem& input_problem)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(7)..." << std::endl; 
   Teuchos::ParameterList paramlist;
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(7)" << std::endl; 
   return createBalancedCopy(input_problem, paramlist);
 }
 
@@ -486,7 +464,6 @@ Epetra_LinearProblem *
 createBalancedCopy(const Epetra_LinearProblem& input_problem,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(8)..." << std::endl; 
   Teuchos::RCP<const Epetra_RowMatrix> rowmat =
     Teuchos::rcp(input_problem.GetMatrix(), false);
 
@@ -514,7 +491,6 @@ createBalancedCopy(const Epetra_LinearProblem& input_problem,
 
   linprob.release();
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp createBalancedCopy(8)" << std::endl; 
   return linprob.get();
 }
 
@@ -525,14 +501,12 @@ createBalancedCopy(const Epetra_LinearProblem& input_problem,
 Teuchos::RCP<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(1)..." << std::endl; 
   CostDescriber costs;
   Teuchos::ParameterList paramlist;
 
   Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(1)" << std::endl; 
   return balanced_matrix;
 }
 
@@ -540,7 +514,6 @@ Teuchos::RCP<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      const Epetra_Vector &row_weights)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(2)..." << std::endl; 
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
@@ -551,7 +524,6 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
   Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(2)" << std::endl; 
   return balanced_matrix;
 }
 
@@ -559,13 +531,11 @@ Teuchos::RCP<Epetra_RowMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(3)..." << std::endl; 
   CostDescriber costs; 
 
   Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(3)" << std::endl; 
   return balanced_matrix;
 }
 
@@ -574,7 +544,6 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      CostDescriber &costs,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(4)..." << std::endl; 
   Teuchos::RCP<const Epetra_RowMatrix> matrixPtr=
     Teuchos::rcp(&(input_matrix), false);
 
@@ -589,21 +558,18 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
   Teuchos::RCP<Epetra_RowMatrix> balanced_matrix =
     rd.redistribute(input_matrix);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(4)" << std::endl; 
   return balanced_matrix;
 }
 
 Teuchos::RCP<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(5)..." << std::endl; 
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
   Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(5)" << std::endl; 
   return balanced_matrix;
 }
 
@@ -611,7 +577,6 @@ Teuchos::RCP<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                      const Epetra_Vector &row_weights)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(6)..." << std::endl; 
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
@@ -626,7 +591,6 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(6)" << std::endl; 
   return balanced_matrix;
 }
 
@@ -634,13 +598,11 @@ Teuchos::RCP<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(7)..." << std::endl; 
   CostDescriber costs; 
 
   Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
     create_balanced_copy(input_matrix, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(7)" << std::endl; 
   return balanced_matrix;
 }
 
@@ -649,7 +611,6 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                      CostDescriber &costs,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(8)..." << std::endl; 
   Teuchos::RCP<const Epetra_CrsGraph> input_graph =
     Teuchos::rcp(&(input_matrix.Graph()), false);
 
@@ -664,21 +625,18 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   Teuchos::RCP<Epetra_CrsMatrix> balanced_matrix =
     rd.redistribute(input_matrix);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(8)" << std::endl; 
   return balanced_matrix;
 }
 
 Teuchos::RCP<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(9)..." << std::endl; 
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
   Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     create_balanced_copy(input_graph, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(9)" << std::endl; 
   return balanced_graph;
 }
 
@@ -686,7 +644,6 @@ Teuchos::RCP<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      const Epetra_Vector &row_weights)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(10)..." << std::endl; 
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
@@ -701,7 +658,6 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     create_balanced_copy(input_graph, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(10)" << std::endl; 
   return balanced_graph;
 }
 
@@ -709,13 +665,11 @@ Teuchos::RCP<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(11)..." << std::endl; 
   CostDescriber costs; 
 
   Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     create_balanced_copy(input_graph, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(11)" << std::endl; 
   return balanced_graph;
 }
 
@@ -724,7 +678,6 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      CostDescriber &costs,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(12)..." << std::endl; 
   Teuchos::RCP<const Epetra_CrsGraph> graphPtr=
     Teuchos::rcp(&(input_graph), false);
 
@@ -739,21 +692,18 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   Teuchos::RCP<Epetra_CrsGraph> balanced_graph =
     rd.redistribute(input_graph);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(12)" << std::endl; 
   return balanced_graph;
 }
 
 Teuchos::RCP<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(13)..." << std::endl; 
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
   Teuchos::RCP<Epetra_LinearProblem> linprob =
     create_balanced_copy(input_problem, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(13)" << std::endl; 
   return linprob;
 }
 
@@ -761,7 +711,6 @@ Teuchos::RCP<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem,
                      const Epetra_Vector &row_weights)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(14)..." << std::endl; 
   CostDescriber costs; 
   Teuchos::ParameterList paramlist;
 
@@ -775,7 +724,6 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
   Teuchos::RCP<Epetra_LinearProblem> linprob =
     create_balanced_copy(input_problem, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(14)" << std::endl; 
   return linprob;
 }
 
@@ -783,13 +731,11 @@ Teuchos::RCP<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(15)..." << std::endl; 
   CostDescriber costs; 
 
   Teuchos::RCP<Epetra_LinearProblem> linprob =
     create_balanced_copy(input_problem, costs, paramlist);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(15)" << std::endl; 
   return linprob;
 }
 
@@ -798,7 +744,6 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
                      CostDescriber &costs,
 		     const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(16)..." << std::endl; 
   Teuchos::RCP<const Epetra_RowMatrix> rowmat =
     Teuchos::rcp(input_problem.GetMatrix(), false);
 
@@ -827,7 +772,6 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem,
   Teuchos::RCP<Epetra_LinearProblem> linprob =
     Teuchos::rcp(new Epetra_LinearProblem(balanced_matrix.get(), x.get(), balanced_rhs.get()));
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(16)" << std::endl; 
   return( linprob );
 }
 
@@ -835,11 +779,9 @@ Teuchos::RCP<Epetra_MultiVector>
 create_balanced_copy(const Epetra_MultiVector &coords,
 		   const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(17)..." << std::endl; 
   // TODO make sure weights list with 0 vectors doesn't cause something
   // to crash
   Epetra_MultiVector noWeights(coords.Map(), 0);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(17)" << std::endl; 
   return create_balanced_copy(coords, noWeights, paramlist);
 }
 
@@ -848,7 +790,6 @@ create_balanced_copy(const Epetra_MultiVector &coords,
                      const Epetra_MultiVector &weights,
 		   const Teuchos::ParameterList& paramlist)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(18)..." << std::endl; 
   Teuchos::RCP<const Epetra_MultiVector> coordRcp = Teuchos::rcp(&coords, false);
   Teuchos::RCP<const Epetra_MultiVector> weightRcp = Teuchos::rcp(&weights, false);
 
@@ -859,7 +800,6 @@ create_balanced_copy(const Epetra_MultiVector &coords,
 
   Teuchos::RCP<Epetra_MultiVector> newVec = rd.redistribute(coords);
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_Epetra.cpp create_balanced_copy(18)" << std::endl; 
   return newVec;
 }
 

@@ -178,7 +178,6 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_BlockMap> input_map,
 
 int ZoltanLibClass::precompute()
 {
-  std::cout << "EEP Entering ZontalLibClass::precompute(): input_type_ = " << input_type_ << std::endl;
   std::string str1("Isorropia::ZoltanLibClass::precompute ");
   MPI_Comm mpicomm = zoltan_get_global_comm();
 #ifdef HAVE_MPI
@@ -381,13 +380,6 @@ int ZoltanLibClass::precompute()
     zoltanParamList_.set(lb_approach_str, "PARTITION");
   }
 
-  std::cout << "EEP Entering ZontalLibClass::precompute()"
-            << ": input_type_ = " << input_type_
-            << ", queryObject_->haveVertexWeights() = " << queryObject_->haveVertexWeights()
-            << ", queryObject_->haveGraphEdgeWeights() = " << queryObject_->haveGraphEdgeWeights()
-            << ", queryObject_->haveHypergraphEdgeWeights() = " << queryObject_->haveHypergraphEdgeWeights()
-	    << std::endl;
-
     // For fine-grain hypergraph, we don't want obj or (hyper)edge weights
   if (input_type_ == hgraph2d_finegrain_input_)
   {
@@ -455,9 +447,7 @@ int ZoltanLibClass::precompute()
 
   int ierr;
   num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
-  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::precompute(), pos 002"
-            << ": num_obj_ = " << num_obj_
-	    << std::endl;
+
 
   if (input_type_ == hgraph2d_finegrain_input_)
   {
@@ -486,14 +476,11 @@ int ZoltanLibClass::precompute()
     zz_->Set_Geom_Multi_Fn(ZoltanLib::QueryObject::Geom_Multi, (void *)queryObject_.get());
   }
 
-  std::cout << "EEP Leaving ZontalLibClass::precompute(): input_type_ = " << input_type_ << std::endl;
-
   return (ierr);
 }
 
 void ZoltanLibClass::computeCost()
 {
-  std::cout << "EEP Entering isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::computeCost()" << std::endl;
   std::string str1("Isorropia::ZoltanLibClass::computeCost ");
   std::string str2;
 
@@ -536,13 +523,6 @@ void ZoltanLibClass::computeCost()
     globalNZ = input_graph_->NumGlobalNonzeros();
     globalSelfEdges = input_graph_->NumGlobalDiagonals();
     globalNumCols = input_graph_->NumGlobalCols();
-    std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::computeCost(), pos 000"
-              << ": myNZ = " << myNZ
-              << ", mySelfEdges = " << mySelfEdges
-              << ", globalNZ = " << globalNZ
-              << ", globalSelfEdges = " << globalSelfEdges
-              << ", globalNumCols = " << globalNumCols
-	      << std::endl;
   }
 
   if (costs_.get() != 0)
@@ -606,7 +586,6 @@ void ZoltanLibClass::computeCost()
   costs_->setNumGlobalVertexWeights(numVWeights);
   costs_->setNumGlobalGraphEdgeWeights(numGWeights);
   costs_->setNumGlobalHypergraphEdgeWeights(numHGWeights);
-  std::cout << "EEP Leaving isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::computeCost()" << std::endl;
 }
 
 
@@ -733,9 +712,6 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   precompute();
 
   // Set part sizes
-  std::cout << "EEP In ZoltanLibClass::repartition(), pos 003"
-            << ": this->numPartSizes = " << this->numPartSizes
-            << std::endl;
 
   if (numPartSizes > 0){
     int err;
@@ -756,15 +732,9 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   int * import_procs=NULL, * export_procs=NULL;
   int *import_to_part=NULL, *export_to_part=NULL;
 
-  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::repartition(), pos 005" << std::endl;
-
   int err = zz_->LB_Partition(changes, num_gid_entries, num_lid_entries,
    num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
    num_export, export_global_ids, export_local_ids, export_procs, export_to_part );
-
-  std::cout << "EEP In isorropia/src/tpetra/Isorropia_TpetraZoltanLib.hpp ZoltanLibClass<>::repartition(), pos 006"
-            << ": err = " << err
-	    << std::endl;
 
   if (err != ZOLTAN_OK){
     throw Isorropia::Exception("Error computing partitioning with Zoltan");
@@ -897,12 +867,10 @@ order(Teuchos::ParameterList& zoltanParamList,
 
 int ZoltanLibClass::postcompute()
 {
-  std::cout << "EEP Entering ZoltanLibClass::postcompute()" << std::endl;
   if (zz_)
     delete zz_;
   zz_ = NULL;
 
-  std::cout << "EEP Leaving ZoltanLibClass::postcompute()" << std::endl;
   return (0);
 }
 

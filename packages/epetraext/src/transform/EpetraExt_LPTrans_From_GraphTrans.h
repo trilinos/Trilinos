@@ -106,9 +106,7 @@ class LinearProblem_GraphTrans : public SameTypeTransform<Epetra_LinearProblem>
     NewMatrix_(0),
     NewLHS_(0),
     NewRHS_(0)
-  {
-    std::cout << "EEP Passing through LinearProblem_GraphTrans::constructor()..." << std::endl;
-  }
+  {}
 
   //! Constructs an Epetra_LinearProblem from the original using the same row transformation given by the Epetra_CrsGraph Transform
   /*! 

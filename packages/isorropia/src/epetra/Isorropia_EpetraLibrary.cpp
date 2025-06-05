@@ -114,9 +114,7 @@ Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
     costs_(costs),
     weights_(0)
 {
-  std::cout << "EEP Entering Epetra Library::constructor(), input_type_ = " << input_type_ << std::endl;
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-  std::cout << "EEP Leaving Epetra Library::constructor(), input_type_ = " << input_type_ << std::endl;
 }
 
 Library::
@@ -267,7 +265,6 @@ Library::~Library()
 
 int Library::precompute()
 {
-  std::cout << "EEP Entering Library::precompute(): input_type_ = " << input_type_ << std::endl;
   std::string str1("Isorropia::Epetra::Library::precompute ");
   std::string str2;
 
@@ -349,7 +346,6 @@ int Library::precompute()
       }
     }
   }
-  std::cout << "EEP Leaving Library::precompute(): input_type_ = " << input_type_ << std::endl;
   return (0);
 }
 

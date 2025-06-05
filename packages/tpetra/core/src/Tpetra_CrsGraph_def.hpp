@@ -312,9 +312,6 @@ namespace Tpetra {
     , rowMap_ (rowMap)
     , numAllocForAllRows_ (0)
   {
-    std::cout << "EEP Entering Tpetra_CrsGraph_def.hpp CrsGraph::constructor()"
-              << ": rangeMap_ = " << rangeMap_
-              << std::endl;
     const char tfecfFuncName[] =
       "CrsGraph(rowMap,numEntPerRow,params): ";
     staticAssertions ();
@@ -357,9 +354,6 @@ namespace Tpetra {
 
     resumeFill (params);
     checkInternalState ();
-    std::cout << "EEP Leaving Tpetra_CrsGraph_def.hpp CrsGraph::constructor()"
-              << ": rangeMap_ = " << rangeMap_
-	      << std::endl;
   }
 
 

@@ -431,8 +431,6 @@ Operator::elemsWithProperty(int property, int* elementList, int len) const
 void
 Operator::computeNumberOfProperties()
 {
-  std::cout << "EEP Entering Operator<>::computeNumberOfProperties()" << std::endl;
-
   std::vector<int>::const_iterator elemsIter;
   std::vector<int>::iterator numberIter;
   const Epetra_Comm& input_comm = input_map_->Comm();
@@ -456,19 +454,10 @@ Operator::computeNumberOfProperties()
   }
 
   input_comm.MaxAll(&max, &numberOfProperties_, 1);
-  std::cout << "EEP In Operator<>::computeNumberOfProperties()"
-            << ": max = " << max
-            << std::endl;
 
   numberOfProperties_ = numberOfProperties_ - base_ + 1;
 
   localNumberOfProperties_ = max - base_ + 1;
-
-  std::cout << "EEP Leaving Operator<>::computeNumberOfProperties()"
-            << ", base_ = " << base_
-            << ", numberOfProperties_ = " << numberOfProperties_
-            << ", localNumberOfProperties_ = " << localNumberOfProperties_
-	    << std::endl;
 }
 
 void Operator::stringToUpper(std::string &s, int &changed, bool rmUnderscore)

@@ -71,8 +71,6 @@ LinearProblem_GraphTrans::NewTypeRef
 LinearProblem_GraphTrans::
 operator()( OriginalTypeRef orig )
 {
-  std::cout << "EEP Entering epetraext/src/transform/EpetraExt_LPTrans_From_GraphTrans.cpp LinearProblem_GraphTrans::operator()..." << std::endl;
-  
   OldProblem_ = &orig;
   OldMatrix_ = dynamic_cast<Epetra_CrsMatrix*>( orig.GetMatrix() );
   OldGraph_ = const_cast<Epetra_CrsGraph*>(&OldMatrix_->Graph());
@@ -87,9 +85,7 @@ operator()( OriginalTypeRef orig )
   if( !OldRHS_ )    ierr = -3;
   if( !OldLHS_ )    ierr = -4;
 
-  std::cout << "EEP In epetraext/src/transform/EpetraExt_LPTrans_From_GraphTrans.cpp LinearProblem_GraphTrans::operator(), pos 001" << std::endl;
   Epetra_CrsGraph & NewGraph = graphTrans_( *OldGraph_ );
-  std::cout << "EEP In epetraext/src/transform/EpetraExt_LPTrans_From_GraphTrans.cpp LinearProblem_GraphTrans::operator(), pos 002" << std::endl;
   NewMatrix_ = new Epetra_CrsMatrix( Copy, NewGraph );
 
   Epetra_BlockMap & NewRowMap = const_cast<Epetra_BlockMap&>(NewGraph.RowMap());
@@ -101,11 +97,8 @@ operator()( OriginalTypeRef orig )
   VecExporter_ = new Epetra_Export( *OldRowMap_, NewRowMap );
   Importer_ = new Epetra_Import( *OldRowMap_, NewRowMap );
 
-  std::cout << "EEP In epetraext/src/transform/EpetraExt_LPTrans_From_GraphTrans.cpp LinearProblem_GraphTrans::operator(), pos 003" << std::endl;
   NewProblem_ = new Epetra_LinearProblem( NewMatrix_, NewLHS_, NewRHS_ );
-  std::cout << "EEP In epetraext/src/transform/EpetraExt_LPTrans_From_GraphTrans.cpp LinearProblem_GraphTrans::operator(), pos 003" << std::endl;
 
-  std::cout << "EEP Leaving epetraext/src/transform/EpetraExt_LPTrans_From_GraphTrans.cpp LinearProblem_GraphTrans::operator()" << std::endl;
   return *NewProblem_;
 }
 
@@ -113,18 +106,9 @@ bool
 LinearProblem_GraphTrans::
 fwd()
 {
-  std::cout << "Entering LinearProblem_GraphTrans::fwd()" << std::endl;
   NewLHS_->Export( *OldLHS_, *VecExporter_, Insert );
   NewRHS_->Export( *OldRHS_, *VecExporter_, Insert );
-  std::cout << "In LinearProblem_GraphTrans::fwd(), pos 001"
-            << ": *NewMatrix_ = " << *NewMatrix_
-            << ", *OldMatrix_ = " << *OldMatrix_
-            << ", *MatExporter_ = " << *MatExporter_
-	    << std::endl;
   NewMatrix_->Export( *OldMatrix_, *MatExporter_, Insert );
-  std::cout << "Leaving LinearProblem_GraphTrans<>::fwd()"
-            << ": *NewMatrix_ = " << *NewMatrix_
-	    << std::endl;
 
   return true;
 }

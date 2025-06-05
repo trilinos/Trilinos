@@ -80,10 +80,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   Operator (input_graph, paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(1)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(1)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -95,10 +93,8 @@ Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
   Operator (Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(2)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(2)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -111,10 +107,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   Operator (input_graph, costs, paramlist, 0) ,
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(3)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(3)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -128,10 +122,8 @@ Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
             Teuchos::RCP<CostDescriber>(costs,false), paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(4)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(4)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -143,10 +135,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   Operator (input_matrix, paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(5)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(5)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -158,10 +148,8 @@ Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
   Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(6)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(6)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -174,10 +162,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   Operator (input_matrix, costs, paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(7)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(7)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -191,10 +177,8 @@ Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
             Teuchos::RCP<CostDescriber>(costs,false), paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(8)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(8)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -206,10 +190,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
   Operator (coords, paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(9)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(9)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -221,10 +203,8 @@ Partitioner::Partitioner(const Epetra_MultiVector *coords,
   Operator (Teuchos::RCP<const Epetra_MultiVector>(coords,false), paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(10)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(10)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -237,10 +217,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
   Operator (coords, weights, paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(11)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(11)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -254,10 +232,8 @@ Partitioner::Partitioner(const Epetra_MultiVector *coords,
             Teuchos::RCP<const Epetra_MultiVector>(weights,false), paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(12)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(12)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -269,10 +245,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
   Operator (input_map, paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(13)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(13)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -284,10 +258,8 @@ Partitioner::Partitioner(const Epetra_BlockMap *input_map,
   Operator (Teuchos::RCP<const Epetra_BlockMap>(input_map,false), paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(14)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(14)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -300,10 +272,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   Operator (input_graph, coords, paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(15)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(15)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -317,10 +287,8 @@ Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
             Teuchos::RCP<const Epetra_MultiVector>(coords,false), paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(16)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(16)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -335,10 +303,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   Operator (input_graph, costs, coords, weights, paramlist, 0) ,
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(17)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(17)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -356,10 +322,8 @@ Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
             Teuchos::RCP<const Epetra_MultiVector>(weights,false), paramlist, 0) ,
   partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(18)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(18)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -372,10 +336,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   Operator (input_matrix, coords, paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(19)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(19)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -389,10 +351,8 @@ Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
             Teuchos::RCP<const Epetra_MultiVector>(coords,false), paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(20)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(20)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -407,10 +367,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   Operator (input_matrix, costs, coords, weights, paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(21)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(21)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -428,10 +386,8 @@ Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
             Teuchos::RCP<const Epetra_MultiVector>(weights,false), paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(22)..." << std::endl;
   if (compute_partitioning_now)
     partition(true);
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::constructor(22)" << std::endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -470,10 +426,9 @@ setPartSizes(int len, int *global_part_id, float *part_size)
 void Partitioner::
 partition(bool force_repartitioning)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Partitioner::partition()..." << std::endl;
   int input_type = Library::unspecified_input_;
 
-  std::string partitioning_method_str("PARTITIONING METHOD"); // Aqui
+  std::string partitioning_method_str("PARTITIONING METHOD");
   std::string partitioning_method =
     paramlist_.get(partitioning_method_str, "UNSPECIFIED");
 
@@ -483,16 +438,12 @@ partition(bool force_repartitioning)
     return;
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
-  std::cout << "EEP In Partitioner::partition(): pos 001"
-            << ", partitioning_method = " << partitioning_method
-	    << std::endl;
   if (partitioning_method == "SIMPLE_LINEAR") {
     throw Isorropia::Exception("Partitioner::partition - Only Zoltan Partitionner is now supported.");
   }
 
   if (input_graph_.get() != 0 && input_coords_.get() != 0)
   {
-    std::cout << "EEP In Partitioner::partition(): pos 001.1" << std::endl;
     if (weights_.get())
     {
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_,costs_,input_coords_, weights_));
@@ -504,7 +455,6 @@ partition(bool force_repartitioning)
   }
   else if (input_matrix_.get() != 0 && input_coords_.get() != 0)
   {
-    std::cout << "EEP In Partitioner::partition(): pos 001.2" << std::endl;
     if (weights_.get())
     {
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_,costs_,input_coords_, weights_));
@@ -514,17 +464,12 @@ partition(bool force_repartitioning)
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_,input_coords_));
     }
   }
-  else if (input_graph_.get() != 0) {
-    std::cout << "EEP In Partitioner::partition(): pos 001.3" << std::endl;
+  else if (input_graph_.get() != 0)
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
-  }
-  else if (input_matrix_.get() != 0) {
-    std::cout << "EEP In Partitioner::partition(): pos 001.4" << std::endl;
+  else if (input_matrix_.get() != 0)
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
-  }
   else if (input_coords_.get() != 0)
   {
-    std::cout << "EEP In Partitioner::partition(): pos 001.5" << std::endl;
     if (weights_.get())
     {
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_, weights_));
@@ -536,7 +481,6 @@ partition(bool force_repartitioning)
   }
   else if (input_map_.get() != 0)
   {
-    std::cout << "EEP In Partitioner::partition(): pos 001.6" << std::endl;
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_map_));
   }
   else
@@ -549,21 +493,18 @@ partition(bool force_repartitioning)
   lib_->partSizes = partSizes;
 
 #endif /* HAVE_ISORROPIA_ZOLTAN */
-  std::cout << "EEP In Partitioner::partition(): pos 002" << std::endl;
   Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
   // TODO: Add "block" and "random" partitioning.
 
-  if (partitioning_method == "UNSPECIFIED" && sublist.isParameter("LB_METHOD")) // AquiExceptioThrown
+  if (partitioning_method == "UNSPECIFIED" && sublist.isParameter("LB_METHOD")) 
   {
-    std::cout << "EEP In Partitioner::partition(): pos 003 temporarylly comenting out an exception" << std::endl;
-    //throw Isorropia::Exception("Isorropia \"PARTITIONING METHOD\" as to be set\n"
-    //                           "ZOLTAN/LB_METHOD is no longer supported.\n"
-    //                           "See readme and release notes for details.");
+    throw Isorropia::Exception("Isorropia \"PARTITIONING METHOD\" as to be set\n"
+			       "ZOLTAN/LB_METHOD is no longer supported.\n"
+                               "See readme and release notes for details.");
   }
 
   if (input_coords_.get() != 0)
   {
-    std::cout << "EEP In Partitioner::partition(): pos 004.1" << std::endl;
     if (partitioning_method == "UNSPECIFIED")
     {
       sublist.set("LB_METHOD", "RCB");
@@ -607,7 +548,6 @@ partition(bool force_repartitioning)
   }
   else if (input_graph_.get() != 0 || input_matrix_.get() != 0) // graph or matrix input
   {
-    std::cout << "EEP In Partitioner::partition(): pos 004.2" << std::endl;
     if (partitioning_method == "GRAPH")
     {
       input_type = Library::graph_input_;
@@ -638,16 +578,15 @@ partition(bool force_repartitioning)
       sublist.set("LB_METHOD", "HIER");
       input_type = Library::hgraph_graph_input_;
     }
+    
     else //Hypergraph by default
     {
-      std::cout << "EEP In Partitioner::partition(): pos 004.3" << std::endl;
       input_type = Library::hgraph_input_;
       sublist.set("LB_METHOD", "HYPERGRAPH");
     }
   }
   else  // BlockMap input
   {
-    std::cout << "EEP In Partitioner::partition(): pos 004.4" << std::endl;
     if (partitioning_method == "CYCLIC")
     {
       input_type = Library::simple_input_;
@@ -664,8 +603,6 @@ partition(bool force_repartitioning)
       sublist.set("LB_METHOD", "BLOCK");
     }
   }
-
-  std::cout << "EEP In Partitioner::partition(): pos 005" << std::endl;
 
   if (paramlist_.isParameter("NUM PARTS")) {
     sublist.set("NUM_GLOBAL_PARTS", paramlist_.get<std::string>("NUM PARTS"));
@@ -697,12 +634,8 @@ partition(bool force_repartitioning)
 
   lib_->input_type_ = input_type;
   lib_->repartition(sublist, properties_, exportsSize_, imports_);
-  std::cout << "EEP In Partitioner::partition(): pos 006"
-            << ", lib_->input_type_ = " << lib_->input_type_
-	    << std::endl;
   computeNumberOfProperties();
   operation_already_computed_ = true;
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.cpp Partitioner::partition()" << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -734,7 +667,6 @@ Partitioner::createNewMap()
 void
 Partitioner::createNewMap(Epetra_Map * &outputMap)
 {
-  std::cout << "EEP Entering isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap()" << std::endl;
   if (!alreadyComputed()) {
     partition();
   }
@@ -742,9 +674,6 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
   //Generate New Element List
   int myPID = input_map_->Comm().MyPID();
   int numMyElements = input_map_->NumMyElements();
-  std::cout << "EEP In isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap(), pos 000"
-            << ": numMyElements = " << numMyElements
-	    << std::endl;
   std::vector<int> elementList( numMyElements );
   if (numMyElements > 0)
     input_map_->MyGlobalElements( &elementList[0] );
@@ -752,14 +681,9 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
     input_map_->MyGlobalElements((int*)NULL); // disambiguate int/long long
 
   int newGIDSize = numMyElements - exportsSize_;
-  std::cout << "EEP In isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap(), pos 001"
-            << ": newGIDSize = " << newGIDSize
-	    << std::endl;
 
   std::vector<int> myNewGID;
 
-  size_t cnt1 = 0;
-  size_t cnt2 = 0;
   if (newGIDSize > 0){
     myNewGID.resize(newGIDSize);
     std::vector<int>::iterator newElemsIter;
@@ -767,25 +691,14 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
 
     for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
          elemsIter != properties_.end() ; elemsIter ++) {
-      cnt1 += 1;
       if ((*elemsIter) == myPID) {
-        cnt2 += 1;
         (*newElemsIter) = elementList[elemsIter - properties_.begin()];
         newElemsIter ++;
       }
     }
   }
-  std::cout << "EEP In isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap(), pos 002"
-            << ": cnt1 = " << cnt1
-            << ", cnt2 = " << cnt2
-            << ", myNewGID.size() = " << myNewGID.size()
-            << ", imports_->size() = " << this->imports_.size()
-	    << std::endl;
   //Add imports to end of list
   myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
-  std::cout << "EEP In isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap(), pos 003"
-            << ": myNewGID.size() = " << myNewGID.size()
-	    << std::endl;
 
   int *gidptr;
   if (myNewGID.size() > 0)
@@ -795,9 +708,6 @@ Partitioner::createNewMap(Epetra_Map * &outputMap)
 
   outputMap = new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm());
 
-  std::cout << "EEP Leaving isorropia/src/epetra/Isorropia_EpetraPartitioner.hpp Partitioner::createNewMap()"
-            << ": *outputMap = " << *outputMap
-	    << std::endl;
   return;
 }
 ////////////////////////////////////////////////////////////////////////////////
