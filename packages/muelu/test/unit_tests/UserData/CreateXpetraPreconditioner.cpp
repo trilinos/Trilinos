@@ -82,10 +82,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
   RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", Op->getRowMap(), galeriList);
   RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(Op->getDomainMap(), 1);
   nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
+  RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(Op->getDomainMap());
+  blocknumber->putScalar(Teuchos::ScalarTraits<LO>::one());
 
   // Add sublist "user data" to MueLu's parameter list
   const std::string userName            = "user data";
   Teuchos::ParameterList& userParamList = inParamList->sublist(userName);
+
+  userParamList.set("Coordinates", coordinates);
+  userParamList.set("Nullspace", nullspace);
+  userParamList.set("BlockNumber", blocknumber);
 
   // Create test variables to be stored on Level 0 of the Hierarchy
   SC myScalar = 3.14;
@@ -109,6 +115,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
   myArrayLO[3] = 2;
   myArrayLO[4] = 3;
   userParamList.set<Array<LO> >("Array<LO> myArray<LO>", myArrayLO);
+  Array<SC> myNormSC(1);
+  Array<LO> myNormLO(1);
 
   RCP<Hierarchy> xH = MueLu::CreateXpetraPreconditioner<SC, LO, GO, NO>(Op, *inParamList);
 
@@ -116,6 +124,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
   RCP<MueLu::Level> level0 = xH->GetLevel();
   bool result              = true;
   std::string errorMsg     = "";
+
+  level0->Get<RCP<MultiVector>>("Nullspace")->normInf(myNormSC);
+  if (!(myNormSC[0] == 1.0)) {
+    errorMsg += "nullspace does not have correct value on level 0.\n";
+    result = false;
+  }
+
+  level0->Get<RCP<LOVector>>("BlockNumber")->normInf(myNormLO);
+  if (!(myNormLO[0] == 1)) {
+    errorMsg += "BlockNumber does not have correct value on level 0.\n";
+    result = false;
+  }
 
   if (!(level0->Get<SC>("myScalar") == myScalar)) {
     errorMsg += "myScalar does not have correct value on level 0.\n";
