@@ -68,9 +68,18 @@ using enableIfConstData = std::enable_if_t<hasConstData<DualViewType>::value>;
 template <typename DualViewType>
 using enableIfNonConstData = std::enable_if_t<!hasConstData<DualViewType>::value>;
 
+/* sync_host functions */
+  
 template <typename DualViewType>
 enableIfNonConstData<DualViewType>
 sync_host(DualViewType dualView) {
+  // This will sync, but only if needed
+  dualView.sync_host();
+}
+
+template <typename DualViewType>
+enableIfNonConstData<DualViewType>
+sync_host(const typename DualViewType::t_host::execution_space& exec, DualViewType dualView) {
   // This will sync, but only if needed
   dualView.sync_host();
 }
@@ -80,16 +89,34 @@ enableIfConstData<DualViewType>
 sync_host(DualViewType dualView) { }
 
 template <typename DualViewType>
+enableIfConstData<DualViewType>
+sync_host(const typename DualViewType::t_host::execution_space& exec, DualViewType dualView) { } 
+  
+/* sync_device functions */
+
+template <typename DualViewType>
 enableIfNonConstData<DualViewType>
 sync_device(DualViewType dualView) {
   // This will sync, but only if needed
-    dualView.sync_device();
+  dualView.sync_device();
+}
+    
+template <typename DualViewType>
+enableIfNonConstData<DualViewType>
+sync_device(const typename DualViewType::t_dev::execution_space& exec, DualViewType dualView) {
+  // This will sync, but only if needed
+  dualView.sync_device(exec);
 }
 
 template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_device(DualViewType dualView) { }
 
+template <typename DualViewType>
+enableIfConstData<DualViewType>
+sync_device(const typename DualViewType::t_dev::execution_space& exec, DualViewType dualView) { }
+
+  
 }// end namespace Impl
 
 /// \brief Whether WrappedDualView reference count checking is enabled. Initially true.
@@ -290,6 +317,19 @@ public:
     }
     return getRawDeviceView();
   }
+  
+  typename t_dev::const_type
+  getDeviceView(const typename DualViewType::t_dev::execution_space& exec, Access::ReadOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) const
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadOnly");
+    if(needsSyncPath()) {
+      throwIfHostViewAlive();
+      impl::sync_device(exec, originalDualView);
+    }
+    return dualView.view_device();
+  }
 
   t_dev
   getDeviceView(Access::ReadWriteStruct
@@ -306,6 +346,23 @@ public:
     }
     return getRawDeviceView();
   }
+
+  t_dev
+  getDeviceView(const typename DualViewType::t_dev::execution_space& exec, Access::ReadWriteStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  )
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadWrite");
+    static_assert(dualViewHasNonConstData,
+        "ReadWrite views are not available for DualView with const data");
+    if(needsSyncPath()) {
+      throwIfHostViewAlive();
+      impl::sync_device(exec,originalDualView);
+      originalDualView.modify_device();
+    }
+    return dualView.view_device();
+  }
+  
 
   t_dev
   getDeviceView(Access::OverwriteAllStruct
@@ -326,6 +383,21 @@ public:
     }
     return getRawDeviceView();
   }
+
+
+  t_dev
+  getDeviceView(const typename DualViewType::t_dev::execution_space& exec, Access::OverwriteAllStruct s
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  )
+  {
+    // Since we're never syncing in this case, the execution_space is meaningless here
+#ifdef DEBUG_UVM_REMOVAL
+    return getDeviceView(s,callerstr,filestr,linnum);
+#else
+    return getDeviceView(s);
+#endif
+  }
+  
 
   template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type::const_type
@@ -351,7 +423,31 @@ public:
     return dualView.template view<TargetDeviceType>();
   }
 
+  template<class TargetDeviceType>
+  typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type::const_type
+  getView (const typename TargetDeviceType::execution_space & exec, Access::ReadOnlyStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
+    using ReturnViewType = typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type::const_type;
+    using ReturnDeviceType = typename ReturnViewType::device_type;
+    constexpr bool returnDevice = std::is_same<ReturnDeviceType, DeviceType>::value;
+    if(returnDevice) {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadOnly");
+      if(needsSyncPath()) {
+	throwIfHostViewAlive();
+	impl::sync_device(exec,originalDualView);
+      }
+    }
+    else {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadOnly");
+      if(needsSyncPath()) {
+	throwIfDeviceViewAlive();
+	impl::sync_host(exec,originalDualView);
+      }
+    }
 
+    return dualView.template view<TargetDeviceType>();
+  }
+
+  
   template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
   getView (Access::ReadWriteStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
@@ -383,6 +479,39 @@ public:
     return dualView.template view<TargetDeviceType>();
   }
 
+
+  template<class TargetDeviceType>
+  typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
+  getView (const typename TargetDeviceType::execution_space & exec,Access::ReadWriteStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
+    using ReturnViewType = typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type;
+    using ReturnDeviceType = typename ReturnViewType::device_type;
+    constexpr bool returnDevice = std::is_same<ReturnDeviceType, DeviceType>::value;
+
+    if(returnDevice) {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadWrite");
+      static_assert(dualViewHasNonConstData,
+                    "ReadWrite views are not available for DualView with const data");
+      if(needsSyncPath()) {
+	throwIfHostViewAlive();
+	impl::sync_device(exec,originalDualView);
+	originalDualView.modify_device();
+      }
+    }
+    else {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadWrite");
+      static_assert(dualViewHasNonConstData,
+                    "ReadWrite views are not available for DualView with const data");
+      if(needsSyncPath()) {
+	throwIfDeviceViewAlive();
+	impl::sync_host(exec,originalDualView);
+	originalDualView.modify_host();
+      }
+    }
+
+    return dualView.template view<TargetDeviceType>();
+  }
+
+  
 
   template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
@@ -419,6 +548,21 @@ public:
     return dualView.template view<TargetDeviceType>();
   }
 
+
+  template<class TargetDeviceType>
+  typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
+  getView (const typename TargetDeviceType::execution_space & exec, Access::OverwriteAllStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
+    using ReturnViewType = typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type;
+    using ReturnDeviceType = typename ReturnViewType::device_type;
+    // Since nothing syncs here, the ExecSpace is meaningless
+#ifdef DEBUG_UVM_REMOVAL
+    return getView<TargetDeviceType>(s,callerstr,filestr,linnum);
+#else
+    return getView<TargetDeviceType>(s);
+#endif
+      
+  }
+  
 
   typename t_host::const_type
   getHostSubview(int offset, int numEntries, Access::ReadOnlyStruct
@@ -473,6 +617,20 @@ public:
     return getSubview(getRawDeviceView(), offset, numEntries);
   }
 
+  typename t_dev::const_type
+  getDeviceSubview(const typename DualViewType::t_dev::execution_space& exec, int offset, int numEntries, Access::ReadOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) const
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadOnly");
+    if(needsSyncPath()) {
+      throwIfHostViewAlive();
+      impl::sync_device(exec,originalDualView);
+    }
+    return getSubview(dualView.view_device(), offset, numEntries);
+  }
+
+  
   t_dev
   getDeviceSubview(int offset, int numEntries, Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
@@ -490,6 +648,22 @@ public:
   }
 
   t_dev
+  getDeviceSubview(const typename DualViewType::t_dev::execution_space& exec, int offset, int numEntries, Access::ReadWriteStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  )
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadWrite");
+    static_assert(dualViewHasNonConstData,
+        "ReadWrite views are not available for DualView with const data");
+    if(needsSyncPath()) {
+      throwIfHostViewAlive();
+      impl::sync_device(exec, originalDualView);
+      originalDualView.modify_device();
+    }
+    return getSubview(dualView.view_device(), offset, numEntries);
+  }
+
+  t_dev
   getDeviceSubview(int offset, int numEntries, Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   )
@@ -500,6 +674,17 @@ public:
     return getDeviceSubview(offset, numEntries, Access::ReadWrite);
   }
 
+  t_dev
+  getDeviceSubview(const typename DualViewType::t_dev::execution_space& exec, int offset, int numEntries, Access::OverwriteAllStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  )
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewOverwriteAll");
+    static_assert(dualViewHasNonConstData,
+        "OverwriteAll views are not available for DualView with const data");
+    return getDeviceSubview(exec,offset, numEntries, Access::ReadWrite);
+  }
+  
 
   // Debugging functions to get copies of the view state
   typename t_host::HostMirror getHostCopy() const {
