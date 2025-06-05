@@ -472,7 +472,7 @@ int main(int argc, char *argv[]) {
   std::string filename(optMeshFile);
   int db_integer_size = 4;
   stk::io::HeartbeatType hb_type = stk::io::NONE;
-
+  stk::initialize(&argc, &argv);
   mesh_read_write(type, working_directory, filename, broker, db_integer_size, hb_type);
 
   stk::mesh::BulkData &bulkData = broker.bulk_data();

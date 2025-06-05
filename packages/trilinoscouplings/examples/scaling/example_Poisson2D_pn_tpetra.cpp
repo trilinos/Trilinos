@@ -487,7 +487,7 @@ int main(int argc, char *argv[]) {
       << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
       << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
       << "|                                                                             |\n" \
-      << "|  Intrepid2's website:   http://trilinos.sandia.gov/packages/intrepid2         |\n" \
+      << "|  Intrepid2's website:   http://trilinos.sandia.gov/packages/intrepid2       |\n" \
       << "|  Pamgen's website:     http://trilinos.sandia.gov/packages/pamgen           |\n" \
       << "|  ML's website:         http://trilinos.sandia.gov/packages/ml               |\n" \
       << "|  Isorropia's website:  http://trilinos.sandia.gov/packages/isorropia        |\n" \
