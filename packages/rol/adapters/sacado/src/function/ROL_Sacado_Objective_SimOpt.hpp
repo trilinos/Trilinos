@@ -14,7 +14,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 
-using namespace ROL;
+namespace ROL {
 
 template <class Real, template<class> class Obj>
 class Sacado_Objective_SimOpt : public Objective_SimOpt<Real> {
@@ -404,6 +404,6 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_22AD(Vector<ScalarT> &hv, const 
 
 }
 
-
+} // namespace ROL
 
 #endif
