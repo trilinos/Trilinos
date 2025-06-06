@@ -387,9 +387,12 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
     bucket_side.my_change_connected_nodes(bulk.bucket_ordinal(side), &new_nodes[0]);
     bucket_side.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(side), faces_element_offset, new_permutation);
 
+    size_t sizeBefore = bulk.bucket(elem).memory_size_in_bytes();
     stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
 
     bucket_elem.my_change_existing_permutation_for_connected_face(bulk.bucket_ordinal(elem), elements_face_offset, new_permutation);
+    size_t sizeAfter = bulk.bucket(elem).memory_size_in_bytes();
+    EXPECT_EQ(sizeBefore, sizeAfter);
 
     test_nodes_and_permutation(bulk, elem, side, new_nodes);
   }
@@ -472,7 +475,17 @@ void do_nonmodifying_debug_check(const stk::mesh::BulkData & bulk, const stk::me
 
   buckets[0]->check_size_invariant();
 
-  EXPECT_FALSE(buckets[0]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
+  EXPECT_FALSE(buckets[0]->ngp_field_bucket_is_modified());
+}
+
+size_t compute_node_bucket_memory(const stk::mesh::BulkData& bulk)
+{
+  size_t heapMemory = 0;
+  const stk::mesh::BucketVector & buckets = bulk.buckets(stk::topology::NODE_RANK);
+  for(const stk::mesh::Bucket* bptr : buckets) {
+    heapMemory += bptr->memory_size_in_bytes();
+  }
+  return heapMemory;
 }
 
 void do_modifying_entity_creation(stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & coordsField)
@@ -483,16 +496,21 @@ void do_modifying_entity_creation(stk::mesh::BulkData & bulk, const stk::mesh::F
     nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, face_node_ids[i]);
   }
 
+  const size_t nodeBucketHeapMemory_before = compute_node_bucket_memory(bulk);
+
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
   bulk.modification_begin();
   stk::unit_test_util::declare_element_side_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::QUAD_4));
   bulk.modification_end();
 
+  const size_t nodeBucketHeapMemory_after = compute_node_bucket_memory(bulk);
+  EXPECT_TRUE(nodeBucketHeapMemory_after > nodeBucketHeapMemory_before);
+
   const stk::mesh::BucketVector & buckets = bulk.buckets(stk::topology::NODE_RANK);
   ASSERT_EQ(buckets.size(), 2u);
-  EXPECT_TRUE(buckets[0]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
-  EXPECT_TRUE(buckets[1]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
+  EXPECT_TRUE(buckets[0]->ngp_field_bucket_is_modified());
+  EXPECT_TRUE(buckets[1]->ngp_field_bucket_is_modified());
 }
 
 TEST_F(BucketHex, checkModifiedStatus)

@@ -21,6 +21,8 @@
 
 #include "Shards_BasicTopologies.hpp"
 
+#include "stk_mesh/base/DumpMeshInfo.hpp"
+
 namespace panzer_stk {
 
 TEUCHOS_UNIT_TEST(tLineMeshFactory, defaults)
@@ -37,6 +39,9 @@ TEUCHOS_UNIT_TEST(tLineMeshFactory, defaults)
 
    if(mesh->isWritable())
       mesh->writeToExodus("Line.exo");
+
+   // Example of dumping mesh info files per mpi process for debugging
+   stk::mesh::impl::dump_mesh_per_proc(*mesh->getBulkData(),"Line.stk_mesh_info");
 
    // minimal requirements
    TEST_ASSERT(not mesh->isModifiable());

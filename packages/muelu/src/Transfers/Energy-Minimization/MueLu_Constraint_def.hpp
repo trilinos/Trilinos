@@ -30,8 +30,11 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const MultiVector& /* B */, const MultiVector& Bc, RCP<const CrsGraph> Ppattern) {
-  const size_t NSDim = Bc.getNumVectors();
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const RCP<MultiVector>& B, const RCP<MultiVector>& Bc, RCP<const CrsGraph> Ppattern) {
+  B_  = B;
+  Bc_ = Bc;
+
+  const size_t NSDim = Bc->getNumVectors();
 
   Ppattern_ = Ppattern;
 
@@ -42,9 +45,9 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const MultiVec
 
   X_ = MultiVectorFactory::Build(Ppattern_->getColMap(), NSDim);
   if (!importer.is_null())
-    X_->doImport(Bc, *importer, Xpetra::INSERT);
+    X_->doImport(*Bc, *importer, Xpetra::INSERT);
   else
-    *X_ = Bc;
+    *X_ = *Bc;
 
   std::vector<const SC*> Xval(NSDim);
   for (size_t j = 0; j < NSDim; j++)
@@ -93,6 +96,23 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const MultiVec
       lapack.GETRI(NSDim, XXtInv.values(), XXtInv.stride(), IPIV.get(), WORK.get(), lwork, &info);
     }
   }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ResidualNorm(const RCP<const Matrix> P) const {
+  const auto one = Teuchos::ScalarTraits<Scalar>::one();
+
+  auto residual = MultiVectorFactory::Build(B_->getMap(), B_->getNumVectors());
+  P->apply(*Bc_, *residual, Teuchos::NO_TRANS);
+  residual->update(one, *B_, -one);
+  Teuchos::Array<MagnitudeType> norms(B_->getNumVectors());
+  residual->norm2(norms);
+  MagnitudeType residualNorm = Teuchos::ScalarTraits<MagnitudeType>::zero();
+  for (size_t k = 0; k < B_->getNumVectors(); ++k) {
+    residualNorm += norms[k] * norms[k];
+  }
+  return Teuchos::ScalarTraits<MagnitudeType>::squareroot(residualNorm);
 }
 
 //! \note We assume that the graph of Projected is the same as Ppattern_

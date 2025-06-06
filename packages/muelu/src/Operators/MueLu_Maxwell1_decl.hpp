@@ -11,7 +11,7 @@
 #define MUELU_MAXWELL1_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
+#include "MueLu_VerboseObject.hpp"
 
 #include "MueLu_ReitzingerPFactory_fwd.hpp"
 
@@ -23,6 +23,7 @@
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
 
+#include "Xpetra_Operator.hpp"
 #include "Xpetra_Map_fwd.hpp"
 #include "Xpetra_Matrix_fwd.hpp"
 #include "Xpetra_MatrixFactory_fwd.hpp"
@@ -47,9 +48,9 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
 #include "MueLu_UseShortNames.hpp"
 
  public:
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinateType;
-  typedef typename Xpetra::MultiVector<coordinateType, LO, GO, NO> RealValuedMultiVector;
+  using magnitudeType         = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  using coordinateType        = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+  using RealValuedMultiVector = typename Xpetra::MultiVector<coordinateType, LO, GO, NO>;
 
   //! Constructor
   Maxwell1()
@@ -180,7 +181,7 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
   }
 
   //! Destructor.
-  virtual ~Maxwell1() {}
+  virtual ~Maxwell1() = default;
 
   //! Returns the Xpetra::Map object associated with the domain of this operator.
   const Teuchos::RCP<const Map> getDomainMap() const;

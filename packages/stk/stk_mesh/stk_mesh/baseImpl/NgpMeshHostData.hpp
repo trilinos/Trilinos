@@ -52,14 +52,15 @@ struct NgpMeshHostDataBase {
 template <typename NgpMemSpace>
 struct NgpMeshHostData : NgpMeshHostDataBase {
 
-  typename EntityKeyViewTypeT<NgpMemSpace>::HostMirror hostEntityKeys;
-  typename UnsignedViewTypeT<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
-  typename UnsignedViewTypeT<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMapNumShared[stk::topology::NUM_RANKS];
-  typename NgpCommMapIndicesT<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
+  typename EntityKeyViewType<NgpMemSpace>::HostMirror hostEntityKeys;
+  typename UnsignedViewType<NgpMemSpace>::HostMirror hostEntityLocalIds;
+  typename UnsignedViewType<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
+  typename UnsignedViewType<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMapNumShared[stk::topology::NUM_RANKS];
+  typename NgpCommMapIndices<NgpMemSpace>::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
   unsigned volatileFastSharedCommMapSyncCount = 0;
 
-  UnsignedViewType::HostMirror m_hostBufferOffsets;
-  Unsigned2dViewType::HostMirror m_hostMeshIndicesOffsets;
+  typename UnsignedViewType<NgpMemSpace>::HostMirror m_hostBufferOffsets;
+  typename UnsignedViewType<NgpMemSpace>::HostMirror m_hostMeshIndicesOffsets;
 };
 
 }  // namespace impl

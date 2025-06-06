@@ -212,11 +212,9 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
 }
 
 template<class MatrixType>
-bool
-OneLevelFactory<MatrixType>::isSupported (const std::string& precType) const
+std::vector<std::string>
+OneLevelFactory<MatrixType>::getSupportedNames () const
 {
-  // precTypeUpper is the upper-case version of precType.
-  std::string precTypeUpper = canonicalize(precType);
   std::vector<std::string> supportedNames = {
     "CHEBYSHEV", "DENSE", "LAPACK",
 #ifdef HAVE_IFPACK2_AMESOS2
@@ -240,6 +238,16 @@ OneLevelFactory<MatrixType>::isSupported (const std::string& precType) const
     "LOCAL SPARSE TRIANGULAR SOLVER", "LOCAL_SPARSE_TRIANGULAR_SOLVER", "LOCALSPARSETRIANGULARSOLVER", "SPARSE TRIANGULAR SOLVER", "SPARSE_TRIANGULAR_SOLVER", "SPARSETRIANGULARSOLVER",
     "HIPTMAIR"
   };
+  return supportedNames;
+}
+
+template<class MatrixType>
+bool
+OneLevelFactory<MatrixType>::isSupported (const std::string& precType) const
+{
+  // precTypeUpper is the upper-case version of precType.
+  std::string precTypeUpper = canonicalize(precType);
+  std::vector<std::string> supportedNames = getSupportedNames();
   // const size_t numSupportedNames = supportedNames.size();
   // const auto end = supportedNames + numSupportedNames;
   auto it = std::find(std::begin(supportedNames), std::end(supportedNames), precTypeUpper);

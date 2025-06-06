@@ -78,7 +78,7 @@ namespace Iocatalyst {
     if (props.exists(CATALYST_SCRIPT)) {
       catalystProps.catalystPythonFilename = props.get(CATALYST_SCRIPT).get_string();
     }
-    else {
+    else if (!catalystProps.catalystBlockJSON.empty()) {
       catalystProps.catalystPythonFilename = this->getCatalystPythonDriverPath();
     }
 
@@ -115,6 +115,21 @@ namespace Iocatalyst {
 
     catPipes[catalystProps.catalystPipelineID] = catalystProps;
     return catalystProps.catalystPipelineID;
+  }
+
+  std::string CatalystManager::getCatalystPythonDriverPath()
+  {
+    std::string driverPath;
+    if (const char *ts = std::getenv(PHACTORI_DRIVER_SCRIPT_PATH.c_str())) {
+      driverPath = ts;
+    }
+    else {
+      std::ostringstream errmsg;
+      errmsg << "Error: environment variable " << PHACTORI_DRIVER_SCRIPT_PATH
+             << " not set to the full path of PhactoriDriver.py";
+      IOSS_ERROR(errmsg);
+    }
+    return driverPath;
   }
 
   CatalystManager::CatalystProps &CatalystManager::getCatalystProps(CatalystPipelineID id)

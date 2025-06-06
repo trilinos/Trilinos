@@ -182,6 +182,7 @@ std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity ent
 std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool includeFields);
 std::string debug_entity_1line(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool omitSideRank = false);
 std::string debug_mesh(const stk::mesh::BulkData & mesh);
+std::string debug_part_changes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::PartVector & addParts, const stk::mesh::PartVector & removeParts);
 
 struct SideDescription
 {

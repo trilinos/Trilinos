@@ -60,7 +60,7 @@ namespace Tpetra {
 namespace { // (anonymous)
 
   template<class T, class BinaryFunction>
-  T atomic_binary_function_update (volatile T* const dest,
+  T atomic_binary_function_update (T* const dest,
                                    const T& inputVal,
                                    BinaryFunction f)
   {
@@ -2773,7 +2773,7 @@ namespace Tpetra {
             //const ST newVal = f (rowVals[offset], newVals[j]);
             //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-            volatile ST* const dest = &rowVals[offset];
+            ST* const dest = &rowVals[offset];
             (void) atomic_binary_function_update (dest, newVals[j], f);
           }
           else {
@@ -2817,7 +2817,7 @@ namespace Tpetra {
               //const ST newVal = f (rowVals[offset], newVals[j]);
               //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-              volatile ST* const dest = &rowVals[offset];
+              ST* const dest = &rowVals[offset];
               (void) atomic_binary_function_update (dest, newVals[j], f);
             }
             else {
@@ -2882,7 +2882,7 @@ namespace Tpetra {
             //const ST newVal = f (rowVals[offset], newVals[j]);
             //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-            volatile ST* const dest = &rowVals[offset];
+            ST* const dest = &rowVals[offset];
             (void) atomic_binary_function_update (dest, newVals[j], f);
           }
           else {
@@ -2925,7 +2925,7 @@ namespace Tpetra {
               //const ST newVal = f (rowVals[offset], newVals[j]);
               //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-              volatile ST* const dest = &rowVals[offset];
+              ST* const dest = &rowVals[offset];
               (void) atomic_binary_function_update (dest, newVals[j], f);
             }
             else {
@@ -8505,7 +8505,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       auto PermuteFromLIDs_d = PermuteFromLIDs.view_device();
 
       Details::unpackAndCombineIntoCrsArrays(
-                                     *this, 
+                                     *this,
                                      RemoteLIDs_d,
                                      destMat->imports_.view_device(),                //hostImports
                                      destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
@@ -8709,7 +8709,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::View<int*,device_type>    TargetPids_d;
   
       Details::unpackAndCombineIntoCrsArrays(
-                                     *this, 
+                                     *this,
                                      RemoteLIDs_d,
                                      destMat->imports_.view_device(),                //hostImports
                                      destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID

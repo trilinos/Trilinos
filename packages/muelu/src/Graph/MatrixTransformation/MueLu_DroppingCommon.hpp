@@ -304,8 +304,8 @@ class BlockDiagonalizeFunctor {
  public:
   BlockDiagonalizeFunctor(matrix_type& A_, block_indices_type& point_to_block_, block_indices_type& ghosted_point_to_block_, results_view& results_)
     : A(A_.getLocalMatrixDevice())
-    , point_to_block(point_to_block_.getDeviceLocalView(Xpetra::Access::ReadOnly))
-    , ghosted_point_to_block(ghosted_point_to_block_.getDeviceLocalView(Xpetra::Access::ReadOnly))
+    , point_to_block(point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
+    , ghosted_point_to_block(ghosted_point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
     , results(results_) {}
 
   KOKKOS_FORCEINLINE_FUNCTION
@@ -432,6 +432,30 @@ KOKKOS_INLINE_FUNCTION void serialHeapSort(view_type& v, comparator_type compara
     }
   }
 }
+
+/*! Type of strength measure that should be used
+ */
+enum StrengthMeasure : int {
+  /*
+  \f[
+  \frac{|A_{ij}|^2}{|A_{ii}| |A_{jj}|} \le \theta^2
+  \f]
+   */
+  SmoothedAggregationMeasure = 0,
+  /*
+  \f[
+  \frac{-\operatorname{Re}A_{ij}}{| max_j -A_{ij}|} \le \theta
+  \f]
+  */
+  SignedRugeStuebenMeasure = 1,
+
+  /*
+  \f[
+  \frac{-\operatorname{sign}(A_{ij}) |A_{ij}|^2}{|A_{ii}| |A_{jj}|} \le \theta^2
+  \f]
+  */
+  SignedSmoothedAggregationMeasure = 2
+};
 
 }  // namespace Misc
 

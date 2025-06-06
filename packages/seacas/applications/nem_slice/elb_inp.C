@@ -195,7 +195,7 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
       break;
 
     case 'C':
-      /* Specifiy (1-based) index of change set in mesh file */
+      /* Specify (1-based) index of change set in mesh file */
       if (optarg == nullptr) {
         prob->selected_change_set = 0;
       }

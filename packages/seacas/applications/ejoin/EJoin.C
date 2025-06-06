@@ -37,7 +37,7 @@
 #include "EJ_SystemInterface.h"
 #include "EJ_Version.h"
 #include "EJ_mapping.h"
-#include "EJ_match_xyz.h"
+#include "EJ_match.h"
 #include "EJ_vector3d.h"
 
 #ifdef SEACAS_HAVE_MPI
@@ -45,25 +45,26 @@
 #endif
 
 namespace {
-  std::string  tsFormat    = "[%H:%M:%S] ";
-  unsigned int debug_level = 0;
+  const std::string tsFormat    = "[%H:%M:%S] ";
+  unsigned int      debug_level = 0;
 
   bool valid_variable(const std::string &variable, size_t id, const StringIdVector &variable_list);
   bool check_variable_mismatch(const std::string &type, const StringIdVector &variable_list,
                                const Ioss::NameList &fields);
 
-  bool define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_global_fields(Ioss::Region &output_region, const RegionVector &part_mesh,
                             const StringIdVector &variable_list);
-  bool define_nodal_fields(Ioss::Region &output_region, RegionVector &part_mesh,
-                           const StringIdVector &variable_list, SystemInterface &interFace);
-  bool define_element_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_nodal_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
+                           const StringIdVector &variable_list, const SystemInterface &interFace);
+  bool define_element_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
                              const StringIdVector &variable_list);
-  bool define_nset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_nset_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
                           const StringIdVector &variable_list);
-  bool define_sset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_sset_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
                           const StringIdVector &variable_list);
-  void define_nodal_nodeset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
-                                   const StringIdVector &variable_list, SystemInterface &interFace);
+  void define_nodal_nodeset_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
+                                   const StringIdVector  &variable_list,
+                                   const SystemInterface &interFace);
 
   template <typename INT>
   void output_nodeblock(Ioss::Region &output_region, RegionVector &part_mesh,
@@ -127,12 +128,12 @@ namespace {
     }
   }
 
-  void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region,
+  void transfer_elementblock(const Ioss::Region &region, Ioss::Region &output_region,
                              bool create_assemblies, bool debug);
   void transfer_assembly(const Ioss::Region &region, Ioss::Region &output_region, bool debug);
-  void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
-  void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug);
-  void create_nodal_nodeset(Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_nodesets(const Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void transfer_sidesets(const Ioss::Region &region, Ioss::Region &output_region, bool debug);
+  void create_nodal_nodeset(const Ioss::Region &region, Ioss::Region &output_region, bool debug);
   void transfer_fields(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
                        Ioss::Field::RoleType role, const std::string &prefix = "");
 
@@ -214,6 +215,7 @@ int main(int argc, char *argv[])
       if (dbi[p]->int_byte_size_api() > int_byte_size) {
         int_byte_size = dbi[p]->int_byte_size_api();
       }
+      dbi[p]->set_lowercase_database_names(false);
     }
 
     for (size_t p = 0; p < interFace.inputFiles_.size(); p++) {
@@ -396,6 +398,10 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   }
   else if (interFace.match_node_xyz()) {
     match_node_xyz(part_mesh, interFace.tolerance(), global_node_map, local_node_map);
+  }
+  else if (interFace.match_nodeset_nodes()) {
+    match_nodeset_nodes(part_mesh, interFace.tolerance(), global_node_map, local_node_map,
+                        interFace);
   }
   else {
     // Eliminate all nodes that were only connected to the omitted element blocks (if any).
@@ -609,7 +615,7 @@ namespace {
     return omitted;
   }
 
-  void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region,
+  void transfer_elementblock(const Ioss::Region &region, Ioss::Region &output_region,
                              bool create_assemblies, bool debug)
   {
     static int         used_blocks = 0;
@@ -708,7 +714,7 @@ namespace {
     }
   }
 
-  void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  void transfer_sidesets(const Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
     const std::string &prefix = region.name();
 
@@ -752,7 +758,7 @@ namespace {
 
   // Create a nodeset on the output region consisting of all the nodes
   // in the input region.
-  void create_nodal_nodeset(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  void create_nodal_nodeset(const Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
     const std::string &prefix = region.name();
 
@@ -805,8 +811,9 @@ namespace {
     }
   }
 
-  void define_nodal_nodeset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
-                                   const StringIdVector &variable_list, SystemInterface &interFace)
+  void define_nodal_nodeset_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
+                                   const StringIdVector  &variable_list,
+                                   const SystemInterface &interFace)
   {
     // This routine does not check that all variables in `variable_list` have been
     // found since the checking has already been done in define_nodal_fields.
@@ -839,7 +846,7 @@ namespace {
     }
   }
 
-  void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
+  void transfer_nodesets(const Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
     bool               combine_similar = false;
     const std::string &prefix          = region.name();
@@ -1376,7 +1383,7 @@ namespace {
     oge->put_field_data(field_name, data);
   }
 
-  bool define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_global_fields(Ioss::Region &output_region, const RegionVector &part_mesh,
                             const StringIdVector &variable_list)
   {
     bool error = false;
@@ -1403,8 +1410,8 @@ namespace {
     return error;
   }
 
-  bool define_nodal_fields(Ioss::Region &output_region, RegionVector &part_mesh,
-                           const StringIdVector &variable_list, SystemInterface &interFace)
+  bool define_nodal_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
+                           const StringIdVector &variable_list, const SystemInterface &interFace)
   {
     bool error = false;
     if (!variable_list.empty() && variable_list[0].first == "none") {
@@ -1439,7 +1446,7 @@ namespace {
     return error;
   }
 
-  bool define_element_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_element_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
                              const StringIdVector &variable_list)
   {
     bool error = false;
@@ -1487,7 +1494,7 @@ namespace {
     return error;
   }
 
-  bool define_nset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_nset_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
                           const StringIdVector &variable_list)
   {
     bool error = false;
@@ -1536,7 +1543,7 @@ namespace {
     return error;
   }
 
-  bool define_sset_fields(Ioss::Region &output_region, RegionVector &part_mesh,
+  bool define_sset_fields(const Ioss::Region &output_region, const RegionVector &part_mesh,
                           const StringIdVector &variable_list)
   {
     bool error = false;
@@ -1622,9 +1629,9 @@ namespace {
       return false;
     }
 
-    for (const auto &var : variable_list) {
-      if (var.first == variable) {
-        if (id == 0 || id == var.second || var.second == 0) {
+    for (const auto &[var_name, var_id] : variable_list) {
+      if (var_name == variable) {
+        if (id == 0 || id == var_id || var_id == 0) {
           return true;
         }
       }

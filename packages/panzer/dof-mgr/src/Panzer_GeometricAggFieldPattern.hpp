@@ -55,7 +55,10 @@ public:
 
    virtual ~GeometricAggFieldPattern() {}
 
-   /** Construct the underlying data for this object.
+  Teuchos::RCP<panzer::FieldPattern> clone() const
+  {return Teuchos::rcp(new GeometricAggFieldPattern(*this));}
+
+  /** Construct the underlying data for this object.
      * Before calling this function getDimension(), 
      * getSubcellCount() and getSubcellIndices methods
      * will throw an exception.

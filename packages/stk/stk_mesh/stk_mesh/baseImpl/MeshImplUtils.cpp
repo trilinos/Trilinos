@@ -403,7 +403,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
   std::sort( ghosted_change.begin() , ghosted_change.end() , EntityLess(mesh) );
 }
 
-stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
+stk::mesh::EntityVector convert_keys_to_entities(const stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
 {
     stk::mesh::EntityVector nodes(node_keys.size());
     for (size_t i=0;i<nodes.size();++i)
@@ -2107,6 +2107,38 @@ void connect_element_to_existing_sides(BulkData & mesh, const Entity elem)
     }
     else {
       connect_element_to_existing_side(mesh, elem, ordinal);
+    }
+  }
+}
+
+void set_local_ids(BulkData& mesh)
+{
+  const MetaData& meta = mesh.mesh_meta_data();
+
+  Selector owned = meta.locally_owned_part();
+  Selector shared = meta.globally_shared_part();
+  Selector sharedNotOwned = shared & (!owned);
+  Selector ghost = (!owned) & (!shared);
+
+  const EntityRank endRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+
+  EntityVector entities;
+  const bool sortById = true;
+  for(EntityRank rank=stk::topology::NODE_RANK; rank<endRank; ++rank) {
+    get_entities(mesh, rank, owned, entities, sortById);
+    unsigned localId = 0;
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+
+    get_entities(mesh, rank, sharedNotOwned, entities, sortById);
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+
+    get_entities(mesh, rank, ghost, entities, sortById);
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
     }
   }
 }

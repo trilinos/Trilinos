@@ -109,11 +109,10 @@ void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh
 }
 
 template <typename Mesh, typename AlgorithmPerEntity, typename EXEC_SPACE>
-void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor, const EXEC_SPACE& execSpace)
+void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, stk::NgpVector<unsigned>& bucketIds, const AlgorithmPerEntity &functor, const EXEC_SPACE& execSpace)
 {
-  Kokkos::Profiling::pushRegion("for_each_entity_run with selector and EXEC_SPACE");
+  Kokkos::Profiling::pushRegion("for_each_entity_run with bucketIds and EXEC_SPACE");
 
-  stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
   unsigned numBuckets = bucketIds.size();
 
   using TeamHandleType = typename stk::ngp::TeamPolicy<EXEC_SPACE>::member_type;
@@ -129,6 +128,18 @@ void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh
       );
     }     
   );
+
+  Kokkos::Profiling::popRegion();
+}
+
+template <typename Mesh, typename AlgorithmPerEntity, typename EXEC_SPACE>
+void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor, const EXEC_SPACE& execSpace)
+{
+  Kokkos::Profiling::pushRegion("for_each_entity_run with selector and EXEC_SPACE");
+
+  stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
+
+  for_each_entity_run(mesh, rank, bucketIds, functor, execSpace);
 
   Kokkos::Profiling::popRegion();
 }

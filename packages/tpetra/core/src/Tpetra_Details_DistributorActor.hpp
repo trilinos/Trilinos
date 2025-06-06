@@ -449,7 +449,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   }
 #endif // HAVE_TPETRA_MPI
 
-  ProfilingRegion pr("Tpetra::Distributor: doPostRecvs");
+  ProfilingRegion pr("Tpetra::Distributor::doPostRecvs");
 
   const int myProcID = plan.getComm()->getRank ();
 
@@ -496,7 +496,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   // to the "unexpected queue" (of arrived messages not yet matched
   // with a receive).
   {
-    ProfilingRegion prr("Tpetra::Distributor: doPostRecvs recvs");
+    ProfilingRegion prr("Tpetra::Distributor::doPostRecvs MPI_Irecv");
 
     for (size_type i = 0; i < actualNumReceives; ++i) {
       size_t totalPacketsFrom_i = importLengths(Teuchos::as<size_t>(i));
@@ -581,7 +581,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
        "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
 #endif // KOKKOS_ENABLE_SYCL
 
-  ProfilingRegion ps("Tpetra::Distributor: doPostSends");
+  ProfilingRegion ps("Tpetra::Distributor::doPostSends");
 
   const int myRank = plan.getComm()->getRank ();
   // Run-time configurable parameters that come from the input
@@ -663,7 +663,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
     }
   }
 
-  ProfilingRegion pss("Tpetra::Distributor: doPostSends sends");
+  ProfilingRegion pss("Tpetra::Distributor::doPostSends sends");
 
   // setup scan through getProcsTo() list starting with higher numbered procs
   // (should help balance message traffic)
@@ -683,7 +683,9 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
   size_t selfIndex = 0;
 
   if (plan.getIndicesTo().is_null()) {
-    ProfilingRegion pssf("Tpetra::Distributor: doPostSends sends FAST");
+    const char isend_region[] = "Tpetra::Distributor::doPostSends MPI_Isend FAST";
+    const char send_region[] = "Tpetra::Distributor::doPostSends MPI_Send FAST";
+    ProfilingRegion pssf((sendType == Details::DISTRIBUTOR_ISEND) ? isend_region : send_region);
 
     // Data are already blocked (laid out) by process, so we don't
     // need a separate send buffer (besides the exports array).
@@ -735,7 +737,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
 
   }
   else { // data are not blocked by proc, use send buffer
-    ProfilingRegion psss("Tpetra::Distributor: doPostSends: sends SLOW");
+    ProfilingRegion psss("Tpetra::Distributor::doPostSends: MPI_Send SLOW");
 
     using Packet = typename ExpView::non_const_value_type;
     using Layout = typename ExpView::array_layout;

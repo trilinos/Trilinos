@@ -28,6 +28,7 @@
 
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_UnorderedMap.hpp>
+#include <KokkosSparse_StaticCrsGraph.hpp>
 
 #include <Kokkos_Timer.hpp>
 
@@ -67,9 +68,9 @@ struct DeviceConfig {
 template< typename ValueType , class Space >
 struct CrsMatrix {
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE // Don't remove this until Kokkos has removed the deprecated code path probably around September 2018
-  typedef Kokkos::StaticCrsGraph< unsigned , Space , void , unsigned >  StaticCrsGraphType ;
+  typedef KokkosSparse::StaticCrsGraph< unsigned , Space , void , unsigned >  StaticCrsGraphType ;
 #else
-  typedef Kokkos::StaticCrsGraph< unsigned , Space , void , void , unsigned >  StaticCrsGraphType ;
+  typedef KokkosSparse::StaticCrsGraph< unsigned , Space , void , void , unsigned >  StaticCrsGraphType ;
 #endif
   typedef View< ValueType * , Space > values_type ;
 

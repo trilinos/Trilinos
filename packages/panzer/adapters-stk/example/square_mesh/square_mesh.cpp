@@ -80,6 +80,8 @@ int main( int argc, char **argv )
      }
   }
 
+  mesh.reset();
+
   Kokkos::finalize();
 
   return 0;

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -17,7 +17,7 @@ template <typename INT> Edge_Block<INT>::Edge_Block() : Exo_Entity() {}
 template <typename INT>
 Edge_Block<INT>::Edge_Block(int file_id, size_t id) : Exo_Entity(file_id, id)
 {
-  SMART_ASSERT((int)id != EX_INVALID_ID);
+  SMART_ASSERT(static_cast<int>(id) != EX_INVALID_ID);
 }
 
 template <typename INT>

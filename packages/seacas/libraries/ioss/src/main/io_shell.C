@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -47,7 +47,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "7.0 (2024/11/08)";
+  std::string version = "7.2 (2025/05/08)";
 
   bool mem_stats = false;
 
@@ -59,6 +59,7 @@ namespace {
   {
     Ioss::MeshCopyOptions options{};
     options.selected_times       = interFace.selected_times;
+    options.selected_steps       = interFace.selected_steps;
     options.rel_tolerance        = interFace.rel_tolerance;
     options.abs_tolerance        = interFace.abs_tolerance;
     options.tol_floor            = interFace.tol_floor;
@@ -271,9 +272,11 @@ namespace {
       if (mem_stats) {
         dbi->progress("Database Creation");
       }
-      if (!interFace.lower_case_variable_names) {
-        dbi->set_lower_case_variable_names(false);
+      if (!interFace.lowercase_variable_names) {
+        dbi->set_lowercase_variable_names(false);
       }
+      dbi->set_lowercase_database_names(interFace.lowercase_database_names);
+
       if (interFace.outFiletype == "cgns") {
         // CGNS stores BCs (SideSets) on the zones which
         // correspond to element blocks.  If split input sideblocks
@@ -308,16 +311,6 @@ namespace {
         if (!success) {
           return success;
         }
-      }
-
-      if (region.mesh_type() == Ioss::MeshType::HYBRID) {
-        if (rank == 0) {
-          fmt::print(stderr,
-                     "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
-                     "'Structured' mesh is supported at this time.\n",
-                     region.mesh_type_string());
-        }
-        return success;
       }
 
       // Get length of longest name on input file...
@@ -564,9 +557,11 @@ namespace {
     if (mem_stats) {
       dbi1->progress("Database #1 Open");
     }
-    if (!interFace.lower_case_variable_names) {
-      dbi1->set_lower_case_variable_names(false);
+    if (!interFace.lowercase_variable_names) {
+      dbi1->set_lowercase_variable_names(false);
     }
+    dbi1->set_lowercase_database_names(interFace.lowercase_database_names);
+
     if (interFace.outFiletype == "cgns") {
       // CGNS stores BCs (SideSets) on the zones which
       // correspond to element blocks.  If split input sideblocks
@@ -586,14 +581,6 @@ namespace {
 
     // NOTE: 'input_region1' owns 'dbi1' pointer at this time...
     Ioss::Region input_region1(dbi1, "region_1");
-
-    if (input_region1.mesh_type() == Ioss::MeshType::HYBRID) {
-      fmt::print(stderr,
-                 "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
-                 "'Structured' mesh is supported at this time.\n",
-                 input_region1.mesh_type_string());
-      return false;
-    }
 
     // Get integer size being used on input file #1 and set it in
     // the interFace.
@@ -615,9 +602,11 @@ namespace {
     if (mem_stats) {
       dbi2->progress("Database #2 Open");
     }
-    if (!interFace.lower_case_variable_names) {
-      dbi2->set_lower_case_variable_names(false);
+    if (!interFace.lowercase_variable_names) {
+      dbi2->set_lowercase_variable_names(false);
     }
+    dbi2->set_lowercase_database_names(interFace.lowercase_database_names);
+
     if (interFace.outFiletype == "cgns") {
       // CGNS stores BCs (SideSets) on the zones which
       // correspond to element blocks.  If split input sideblocks
@@ -637,14 +626,6 @@ namespace {
 
     // NOTE: 'input_region2' owns 'dbi2' pointer at this time...
     Ioss::Region input_region2(dbi2, "region_2");
-
-    if (input_region2.mesh_type() == Ioss::MeshType::HYBRID) {
-      fmt::print(stderr,
-                 "\nERROR: io_shell does not support '{}' meshes. Only 'Unstructured' or "
-                 "'Structured' mesh is supported at this time.\n",
-                 input_region2.mesh_type_string());
-      return false;
-    }
 
     // Get integer size being used on input file #1 and set it in
     // the interFace.
@@ -694,10 +675,10 @@ namespace {
     }
 
     if (interFace.delete_qa) {
-      properties.add(Ioss::Property("IGNORE_QA_RECORDS", "YES"));
+      properties.add(Ioss::Property("OMIT_QA_RECORDS", "YES"));
     }
     if (interFace.delete_info) {
-      properties.add(Ioss::Property("IGNORE_INFO_RECORDS", "YES"));
+      properties.add(Ioss::Property("OMIT_INFO_RECORDS", "YES"));
     }
 
     if (interFace.compression_level > 0 || interFace.shuffle || interFace.szip || interFace.quant ||
@@ -800,6 +781,14 @@ namespace {
       }
     }
 
+    if (!interFace.decomp_omitted_block_ids.empty()) {
+      properties.add(
+          Ioss::Property("DECOMP_OMITTED_BLOCK_IDS", interFace.decomp_omitted_block_ids));
+    }
+    if (!interFace.decomp_omitted_block_names.empty()) {
+      properties.add(
+          Ioss::Property("DECOMP_OMITTED_BLOCK_NAMES", interFace.decomp_omitted_block_names));
+    }
     if (interFace.retain_empty_blocks) {
       properties.add(Ioss::Property("RETAIN_EMPTY_BLOCKS", "YES"));
     }

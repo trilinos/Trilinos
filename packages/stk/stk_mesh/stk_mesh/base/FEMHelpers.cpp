@@ -551,7 +551,8 @@ int get_entity_subcell_id(const BulkData& mesh,
     return INVALID_SIDE;
 }
 
-void get_parts_with_topology(stk::topology topology,
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
+STK_DEPRECATED void get_parts_with_topology(stk::topology topology,
                              stk::mesh::BulkData& mesh,
                              stk::mesh::PartVector& parts,
                              bool skip_topology_root_parts)
@@ -576,6 +577,7 @@ void get_parts_with_topology(stk::topology topology,
     }
   }
 }
+#endif
 
 stk::mesh::Entity get_side_entity_for_elem_side_pair_of_rank(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal, stk::mesh::EntityRank sideRank)
 {

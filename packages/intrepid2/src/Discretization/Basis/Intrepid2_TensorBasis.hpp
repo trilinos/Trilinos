@@ -1951,7 +1951,7 @@ struct OperatorTensorDecomposition
               {
                 for (int d=0; d<spaceDim; d++)
                 {
-                  output_(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal,d) * input2_(fieldOrdinal2,pointOrdinal) * input3_(fieldOrdinal3,pointOrdinal);
+                  output_.access(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal,d) * input2_(fieldOrdinal2,pointOrdinal) * input3_(fieldOrdinal3,pointOrdinal);
                 }
               }
             }
@@ -1968,7 +1968,7 @@ struct OperatorTensorDecomposition
               {
                 for (int d=0; d<spaceDim; d++)
                 {
-                  output_(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal,d) * input3_(fieldOrdinal3,pointOrdinal);
+                  output_.access(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal,d) * input3_(fieldOrdinal3,pointOrdinal);
                 }
               }
             }
@@ -1985,7 +1985,7 @@ struct OperatorTensorDecomposition
               {
                 for (int d=0; d<spaceDim; d++)
                 {
-                  output_(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal) * input3_(fieldOrdinal3,pointOrdinal,d);
+                  output_.access(fieldOrdinal,pointOrdinal,d) = weight_ * input1_(fieldOrdinal1,pointOrdinal) * input2_(fieldOrdinal2,pointOrdinal) * input3_(fieldOrdinal3,pointOrdinal,d);
                 }
               }
             }

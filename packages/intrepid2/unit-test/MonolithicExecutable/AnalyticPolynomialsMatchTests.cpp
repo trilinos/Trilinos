@@ -689,7 +689,7 @@ namespace
         // relationship between our H^1 basis and our L^2 (see the "Analytic" tests above for explicit polynomial expressions)
         // - nth derivative of H^1 fieldOrdinal i is one half of the (n-1)th derivative of L^2 fieldOrdinal i-1 (for i>=2)
         OutputScalar hgradValue = hgradOutputViewHost(fieldOrdinal,  pointOrdinal,0);
-        OutputScalar hvolValue  =  hvolOutputViewHost(fieldOrdinal-1,pointOrdinal,0);
+        OutputScalar hvolValue  =  hvolOutputViewHost.access(fieldOrdinal-1,pointOrdinal,0);
         
         OutputScalar actual = hgradValue;
         OutputScalar expected = OutputScalar(0.5 * hvolValue);

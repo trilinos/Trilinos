@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -8,7 +8,7 @@ C    See packages/seacas/LICENSE for details
      *    XG,XI,XINI,AJ,NNODES,NDIM,NQUAD,VOLMN,IELM,NELBLK,
      *    AXI,NUMNP)
 
-      DIMENSION CRD(NUMNP,*), IX(NNODES,*), MAT(6,*), MASS(*),
+      DIMENSION CRD(NUMNP,*), IX(NNODES,*), MAT(7,*), MASS(*),
      *    DENS(*), VOLM(*), CG(*), ZITOT(*),VOLMN(4,*),IELM(4,*),
      *    XXX(NDIM+1,NQUAD,*),XG(NDIM,*), XI(NDIM,*), XINI(*),
      *    AJ(2,*)

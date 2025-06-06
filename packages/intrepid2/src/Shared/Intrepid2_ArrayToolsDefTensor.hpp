@@ -55,8 +55,6 @@ namespace Intrepid2 {
                              _output.extent(1), 
                              iter );
 
-        auto result = ( _hasField ? Kokkos::subview(_output, cell, field, point, Kokkos::ALL()) :
-                                    Kokkos::subview(_output, cell,        point, Kokkos::ALL()));
 
         auto left   = Kokkos::subview(_leftInput, cell, point, Kokkos::ALL());
 
@@ -68,11 +66,14 @@ namespace Intrepid2 {
 
         // branch prediction is possible
         if (_isCrossProd3D) {
+          auto result = ( _hasField ? Kokkos::subview(_output, cell, field, point, Kokkos::ALL()) :
+                                      Kokkos::subview(_output, cell,        point, Kokkos::ALL()));
           result(0) = left(1)*right(2) - left(2)*right(1);
           result(1) = left(2)*right(0) - left(0)*right(2);
           result(2) = left(0)*right(1) - left(1)*right(0);
         } else {
-          result(0) = left(0)*right(1) - left(1)*right(0);
+          typename OutputViewType::reference_type result = _hasField ? _output(cell, field, point) : _output(cell, point);
+          result = left(0)*right(1) - left(1)*right(0);
         }
       }
     };

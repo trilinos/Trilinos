@@ -127,12 +127,12 @@ namespace Intrepid2 {
           for (size_type qp = 0; qp < npts; ++qp)
             for (ordinal_type i = 0; i < iend; ++i)
               for (ordinal_type j = 0; j < jend; ++j)
-                result() += field(qp, i, j) * data(qp, i, j);
+                result() += field.access(qp, i, j) * data.access(qp, i, j);
         else
           for (size_type qp = 0; qp < npts; ++qp)
             for (ordinal_type i = 0; i < iend; ++i)
               for (ordinal_type j = 0; j < jend; ++j)
-                result() += field(qp, i, j) * data(0, i, j);
+                result() += field.access(qp, i, j) * data.access(0, i, j);
       }
     };
     } //namespace
@@ -197,7 +197,7 @@ namespace Intrepid2 {
         for (size_type qp = 0; qp < npts; ++qp) 
           for (ordinal_type i = 0; i < iend; ++i) 
             for (ordinal_type j = 0; j < jend; ++j) 
-              result() += left(qp, i, j)*right(qp, i, j);
+              result() += left.access(qp, i, j)*right.access(qp, i, j);
       }
     };
     } //namespace

@@ -71,7 +71,7 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
 #endif
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
     reversePlan_(Teuchos::null),
-    sendType_(DISTRIBUTOR_SEND),
+    sendType_(static_cast<EDistributorSendType>(Behavior::defaultSendType())),
     sendMessageToSelf_(false),
     numSendsToOtherProcs_(0),
     maxSendLength_(0),
@@ -909,7 +909,7 @@ DistributorPlan::getValidParameters() const
   using Teuchos::setStringToIntegralParameter;
 
   Array<std::string> sendTypes = distributorSendTypes ();
-  const std::string defaultSendType ("Send");
+  const std::string defaultSendType (DistributorSendTypeEnumToString(static_cast<EDistributorSendType>(Behavior::defaultSendType())));
   Array<Details::EDistributorSendType> sendTypeEnums;
   sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
   sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);

@@ -24,7 +24,6 @@
 #include <functional>
 #include <stdexcept>
 #include <numeric>
-#include <strings.h>
 
 #include "Iotm_TextMeshFuncs.h"
 #include "Iotm_TextMeshDataTypes.h"
@@ -66,7 +65,7 @@ namespace Iotm {
       std::string get_string()
       {
         read_next_token();
-        return make_upper_case(m_oldToken);
+        return make_uppercase(m_oldToken);
       }
 
       void get_newline() { read_next_token(); }
@@ -121,7 +120,7 @@ namespace Iotm {
 
       char current_char() { return m_input[m_currentIndex]; }
 
-      std::string make_upper_case(std::string str)
+      std::string make_uppercase(std::string str)
       {
         std::transform(str.begin(), str.end(), str.begin(), ::toupper);
         return str;
@@ -299,7 +298,7 @@ namespace Iotm {
                                                  const std::set<std::string>     &entitySetNames)
       {
         std::string groupName = groupData.name;
-        convert_to_upper_case(groupName);
+        convert_to_uppercase(groupName);
 
         if (entitySetNames.count(groupName) > 0) {
           std::ostringstream errmsg;
@@ -523,7 +522,7 @@ namespace Iotm {
         for (size_t i = 1; i < optionGroups.size(); i++) {
           std::vector<std::string> optionGroup = get_tokens(optionGroups[i], ":");
           std::string              optionType  = optionGroup[0];
-          convert_to_lower_case(optionType);
+          convert_to_lowercase(optionType);
 
           if (optionType == "coordinates") {
             parse_coordinates_option(optionGroup);

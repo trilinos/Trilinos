@@ -159,8 +159,8 @@ static bool in_block_decomposed_by_ls(const stk::mesh::BulkData & mesh,
   {
     if (partPtr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
       stk::io::is_part_io_part(*partPtr) &&
-      !phaseSupport.is_nonconformal(partPtr) &&
-      phaseSupport.level_set_is_used_by_nonconformal_part(lsField.identifier, phaseSupport.find_nonconformal_part(*partPtr)))
+      !phaseSupport.is_nonconformal(*partPtr) &&
+      phaseSupport.level_set_is_used_by_nonconformal_part(lsField.identifier, &phaseSupport.find_nonconformal_part(*partPtr)))
       return true;
   }
   return false;
@@ -182,7 +182,7 @@ has_io_part_containing_phase(const Phase_Support & phase_support, const stk::mes
     const stk::mesh::Part * const part = *part_iter;
     if (part->primary_entity_rank() != stk::topology::ELEMENT_RANK || // limit ourselves to volume parts
         !(stk::io::is_part_io_part(*part) ||
-        phase_support.is_nonconformal(part)))
+        phase_support.is_nonconformal(*part)))
       continue;
 
     const PhaseTag & iopart_phase = phase_support.get_iopart_phase(*part);

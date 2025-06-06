@@ -378,7 +378,7 @@ bool on_interface_or_io_parts_have_changed(const CDMesh & mesh, const Phase_Supp
   if (newParts != oldParts)
     return true;
   for (auto && partOrdinal : newParts)
-    if (phaseSupport.is_interface(&mesh.stk_meta().get_part(partOrdinal)))
+    if (phaseSupport.is_interface(mesh.stk_meta().get_part(partOrdinal)))
       return true;
   return false;
 }
@@ -946,7 +946,7 @@ SubElement::determine_decomposed_elem_phase(const std::vector<Surface_Identifier
   }
   else
   {
-    const PhaseTag startPhase = my_phase.empty() ? my_owner->get_phase() : my_phase;
+    const PhaseTag & startPhase = my_phase.empty() ? my_owner->get_phase() : my_phase;
     my_phase = update_phase(surfaceIDs, startPhase, my_owner->get_sorted_cutting_interfaces(), myInterfaceSigns);
   }
 
@@ -2746,8 +2746,8 @@ SubElement::get_edges_with_children(const InterfaceID & interface) const
   // Iterate edges looking for any common children of the edge nodes
   const stk::topology Top = topology();
   const int num_edges = Top.num_edges();
-
   std::vector<int> edgesWithChildren;
+
   for ( int edge = 0; edge < num_edges; ++edge )
   {
     const unsigned * edge_node_ordinals = get_edge_node_ordinals(Top, edge);
@@ -2757,6 +2757,7 @@ SubElement::get_edges_with_children(const InterfaceID & interface) const
     const SubElementNode * child = SubElementNode::common_child({node0, node1});
     if( child )
     {
+      edgesWithChildren.reserve(num_edges);
       if(krinolog.shouldPrint(LOG_DEBUG))
       {
         krinolog << "Found hanging node on edge " << edge << " of element id=" << entityId() << "\n";

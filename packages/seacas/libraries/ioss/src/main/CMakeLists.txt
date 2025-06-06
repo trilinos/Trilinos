@@ -105,14 +105,17 @@ if (TPL_ENABLE_MPI)
     set(DECOMP_ARG --rcb)
     set(JOIN_ARG   --compose --netcdf4)
     set(PJOIN_ARG   --compose --netcdf5)
+    set(SERIALIZE_ARG "--serialize_io_size=2")
     set(NPROCS 4)
     set(NPROCS_BUG 1)
   else()
     set(COMPOSE_ARG )
+    set(SERIALIZE_ARG )
     set(NPROCS 1)
     set(NPROCS_BUG 1)
   endif()
 else()
+    set(SERIALIZE_ARG )
     set(COMPOSE_ARG )
     set(JOIN_ARG )
     set(PJOIN_ARG )
@@ -259,6 +262,36 @@ endif()
 
 if (TPL_ENABLE_MPI)
   IF (TPL_Netcdf_PARALLEL)
+    TRIBITS_ADD_ADVANCED_TEST(exodus_fpp_serialize
+       TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${SERIALIZE_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32-ser.g
+          NOEXEPREFIX NOEXESUFFIX
+          NUM_MPI_PROCS ${NPROCS}
+       TEST_1 EXEC io_shell ARGS ${JOIN_ARG} ${SERIALIZE_ARG} 8-block32-ser.g 8-block-32-serj.g
+          NOEXEPREFIX NOEXESUFFIX
+          NUM_MPI_PROCS ${NPROCS}
+       TEST_2 EXEC exodiff ARGS -map -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-32-serj.g
+          DIRECTORY ../../../../applications/exodiff
+          NOEXEPREFIX NOEXESUFFIX
+          NUM_MPI_PROCS 1
+    COMM mpi
+    XHOSTTYPE Windows
+    )
+
+  IF (TPL_Netcdf_Enables_PNetcdf)
+    TRIBITS_ADD_ADVANCED_TEST(omit_block
+       TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --compose --omit_blocks block_1,block_3,block_5,block_7 ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-omitted.g
+          NOEXEPREFIX NOEXESUFFIX
+          NUM_MPI_PROCS ${NPROCS}
+       TEST_1 EXEC exodiff ARGS -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block-omitted.g 8-block-omitted.g
+          DIRECTORY ../../../../applications/exodiff
+          NOEXEPREFIX NOEXESUFFIX
+          NUM_MPI_PROCS 1
+    COMM mpi
+    XHOSTTYPE Windows
+    )
+  endif()
+  endif()
+
   TRIBITS_ADD_ADVANCED_TEST(create_path_fpp
      TEST_0 CMND rm ARGS -rf create_path_test_directory
      TEST_1 EXEC io_shell ARGS --in_type generated 100x100x100 create_path_test_directory/1/2/3/4/5/tmp.g
@@ -350,7 +383,6 @@ IF (SEACASIoss_ENABLE_THREADSAFE)
     FINAL_PASS_REGULAR_EXPRESSION
   )
   endif()
-ENDIF()
 ENDIF()
 
 IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)

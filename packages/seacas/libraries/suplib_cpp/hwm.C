@@ -69,9 +69,9 @@ size_t get_hwm_memory_info()
   struct rusage rusage;
   getrusage(RUSAGE_SELF, &rusage);
 #if defined(__APPLE__) && defined(__MACH__)
-  memory_usage = (size_t)rusage.ru_maxrss;
+  memory_usage = static_cast<size_t>(rusage.ru_maxrss);
 #else
-  memory_usage = (size_t)(rusage.ru_maxrss * 1024L);
+  memory_usage = static_cast<size_t>(rusage.ru_maxrss * 1024L);
 #endif
 #endif
   return memory_usage;

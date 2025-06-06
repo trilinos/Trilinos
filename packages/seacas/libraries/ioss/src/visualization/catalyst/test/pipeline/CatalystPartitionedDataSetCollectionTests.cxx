@@ -5,7 +5,7 @@
 // See packages/seacas/LICENSE for details
 
 #include "CatalystTestFixture.h"
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE_METHOD(CatalystTestFixture, "CatalystCGNSVariableComponents",
                  "[catalyst partitioned data set collection]")

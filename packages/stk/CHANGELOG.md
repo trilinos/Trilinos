@@ -1,5 +1,43 @@
 # CHANGELOG
 
+5.25.2 (STK_VERSION 5250200) 6/6/2025
+  stk_transfer_util: fix Lapack detection (only call find_package
+                     if TPL_LAPACK_LIBRARIES is not already set.)
+  stk_mesh: added new Field data access APIs
+  stk_transfer_util: added SimpleTransfer and related classes
+
+5.25.1-02 (STK_VERSION 5250102) 5/27/2025
+  stk_mesh: add overload of for_each_entity_run(NgpMesh.. takes bucketIds
+  stk_mesh: misc cleanups, remove un-needed structure (fixed-elem-conn)
+            from Bucket, remove fmwk-aux-relation from BulkData.
+  stk_transfer_util: fix lapack dependency issue in cmake
+
+5.25.1-01 (STK_VERSION 5250101) 5/15/2025
+  stk_unit_test_utils: fix build error if STKSearchUtil is disabled.
+
+5.25.1 (STK_VERSION 5250100) 5/05/2025
+  stk_util: fix command-line-parser bug with partial flag matching
+  stk_tools: stk_block_extractor now preserves case in exodus variable/field names
+             stk_block_extractor also now preserves long name lengths
+  stk_balance: stk_balance now preserves name lengths
+  stk_mesh: Calling code must now initialize Kokkos before creating STK Mesh
+            and must not finalize Kokkos until after destroying STK Mesh.
+  stk_util: convenience functions stk::initialize and stk::finalize added
+            in stk_util/parallel/Parallel.hpp. These functions can be used to
+            initialize/finalize Kokkos and MPI.
+  stk_mesh: NgpMesh now has local_ids
+  stk_mesh: fix MacOS build error for BulkData::declare_entities
+  stk_mesh: NGP field-data is bucketized
+  stk_mesh: parallel_sum_including_ghosts can work on device or host
+
+5.23.8-03 (STK_VERSION 5230803) 4/22/2025
+  stk_tools: fix compiler error in pmesh lib when SEACASNemesis
+             is not enabled.
+  stk_transfer: Change from libstk_transfer.a to libstk_transfer_lib.a
+                In preparation for the coming-soon stk_transfer executable.
+                This is consistent with stk_balance_lib and stk_balance exe
+                and avoids duplicate target names.
+
 5.23.8-02 (STK_VERSION 5230802) 4/10/2025
   stk_util: CommSparse can switch underlying comm scheme to pre-post recvs
             instead of the default which is sends and probes. This can be

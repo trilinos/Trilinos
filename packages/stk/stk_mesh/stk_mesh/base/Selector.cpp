@@ -341,16 +341,9 @@ bool Selector::select_part_impl(Part const& part, SelectorNode const* root) cons
       return (root->part() == part.mesh_meta_data_ordinal()) ? true : ((root->part() != InvalidPartOrdinal) ? m_meta->get_part(root->part()).contains(part) : false);
   case SelectorNodeType::PART_UNION:
     {
-      if(stk::mesh::contains_ordinal(root->m_partOrds.begin(), root->m_partOrds.end(), part.mesh_meta_data_ordinal()) ||
-         stk::mesh::contains_ordinal(root->m_subsetPartOrds.begin(), root->m_subsetPartOrds.end(), part.mesh_meta_data_ordinal())) {
+      if(stk::mesh::contains_ordinal(root->m_partOrds, part.mesh_meta_data_ordinal()) ||
+         stk::mesh::contains_ordinal(root->m_subsetPartOrds, part.mesh_meta_data_ordinal())) {
         return true;
-      }
-      for(Ordinal ord : root->m_partOrds) {
-        if (ord != InvalidPartOrdinal) {
-          if (m_meta->get_part(ord).contains(part)) {
-            return true;
-          }
-        }
       }
       return false;
     }
@@ -436,7 +429,7 @@ bool Selector::select_bucket_impl(Bucket const& bucket, SelectorNode const* root
     //
     if(bucket.mesh().in_synchronized_state() &&
        bucket.entity_rank() == root->field()->entity_rank() &&
-       root->field()->get_meta_data_for_field().size() > bucket.bucket_id())
+       root->field()->get_meta_data_for_field().extent(0) > bucket.bucket_id())
     {
       return field_is_allocated_for_bucket(*root->field(), bucket);
     } else {
@@ -487,8 +480,9 @@ bool SelectorNode::operator==(SelectorNode const& arg_rhs) const
 }
 
 Selector::Selector(const FieldBase & field)
- : m_expr(1, impl::SelectorNode(&field))
- , m_meta(&field.mesh_meta_data())
+ : m_expr(1, impl::SelectorNode(&field)),
+   m_meta(&field.mesh_meta_data()),
+   m_modCount(0)
 {
   STK_ThrowAssertMsg(m_meta!=nullptr,"constructed Selector with field "<<field.name()<<" but m_meta==nullptr.");
 }
@@ -498,9 +492,26 @@ Selector::Selector(SelectorNodeType::node_type selectorNodeType, const MetaData*
  : m_expr(1, (partOrdinals.size()==1||(partOrdinals.size()>1&&partOrdinals[0]==0)?
                                     impl::SelectorNode(&metaPtr->get_part(partOrdinals[0]))
                                    :impl::SelectorNode(selectorNodeType, partOrdinals, subsetPartOrdinals))),
-   m_meta(metaPtr)
+   m_meta(metaPtr),
+   m_modCount(metaPtr!=nullptr?metaPtr->modification_count():0)
 {
   STK_ThrowAssertMsg(m_meta!=nullptr,"constructed Selector with metaPtr but m_meta==nullptr.");
+}
+
+void Selector::update_part_ords() const
+{
+  for(impl::SelectorNode& node : m_expr) {
+    if (node.m_type == SelectorNodeType::PART_UNION || node.m_type == SelectorNodeType::PART_INTERSECTION) {
+      for(Ordinal ord : node.m_partOrds) {
+        Part& part = m_meta->get_part(ord);
+        const PartVector& subsets = part.subsets();
+        for(const Part* subset : subsets) {
+          stk::util::insert_keep_sorted_and_unique(subset->mesh_meta_data_ordinal(), node.m_subsetPartOrds);
+        }
+      }
+    }
+  }
+  m_modCount = m_meta->modification_count();
 }
 
 bool Selector::operator()( const Part & part ) const
@@ -508,6 +519,9 @@ bool Selector::operator()( const Part & part ) const
   STK_ThrowAssert(m_meta == nullptr || m_meta == &part.mesh_meta_data());
   if (m_meta == nullptr) {
     m_meta = &part.mesh_meta_data();
+  }
+  if(m_modCount < m_meta->modification_count()) {
+    update_part_ords();
   }
   return select_part_impl(part, &m_expr.back());
 }

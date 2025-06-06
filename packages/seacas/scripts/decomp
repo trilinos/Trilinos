@@ -182,9 +182,6 @@ function execute_loadbalance {
     then
         change_set="-C $change_set_index"
     fi
-    date=$(date '+%m/%d/%y')
-    time=$(date '+%H:%M:%S')
-    prob_dir=$(pwd | sed "s/.*\///g")
 
     if [ -n "$input" ] && [ -e "$input" ]
     then
@@ -315,7 +312,6 @@ subdir="."
 suffix_spread=''
 spheres="-S"
 do_viz=""
-curdir=$(pwd)
 use64=""
 change_set_index='0'
 

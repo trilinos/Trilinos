@@ -38,6 +38,7 @@
 //----------------------------------------------------------------------
 
 #include <stk_mesh/base/FieldBase.hpp>
+#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
 #include <iomanip>
@@ -141,26 +142,27 @@ namespace mesh {
  * - TODO Describe relationship with Buckets
  */
 
-template <typename Scalar>
+template <typename T, Layout HostLayout>
 class Field : public FieldBase {
 public:
-  using value_type = Scalar;
+  using value_type = T;
+  static constexpr Layout host_layout = HostLayout;
+  static constexpr Layout device_layout = DefaultDeviceLayout;
 
-  Field(MetaData                   * arg_mesh_meta_data,
-        stk::topology::rank_t        arg_entity_rank,
-        unsigned                     arg_ordinal,
-        const std::string          & arg_name,
-        const DataTraits           & arg_traits,
-        unsigned                     arg_number_of_states,
-        FieldState                   arg_this_state)
-    : FieldBase(arg_mesh_meta_data,
-                arg_entity_rank,
-                arg_ordinal,
-                arg_name,
-                arg_traits,
-                arg_number_of_states,
-                arg_this_state)
-  {}
+  Field(MetaData* meta,
+        stk::topology::rank_t entityRank,
+        unsigned fieldOrdinal,
+        const std::string& name,
+        const DataTraits& dataTraits,
+        unsigned numberOfStates,
+        FieldState thisState)
+    : FieldBase(meta, entityRank, fieldOrdinal, name, dataTraits, numberOfStates, thisState,
+                new FieldData<T, stk::ngp::HostMemSpace, HostLayout>(entityRank, fieldOrdinal, name, dataTraits))
+  {
+    if constexpr (HostLayout != Layout::Right) {
+      std::cout << "WARNING: Host Fields with non-standard layout are not yet fully-supported by STK Mesh." << std::endl;
+    }
+  }
 
   /** \brief  Query this field for a given field state. */
   Field & field_of_state( FieldState input_state ) const {
@@ -173,17 +175,25 @@ public:
 
   virtual ~Field() = default;
 
+  virtual Layout host_data_layout() const override {
+    return host_layout;
+  }
+
+  virtual Layout device_data_layout() const override {
+    return device_layout;
+  }
+
   virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const override
   {
-    const unsigned num_scalar_values = size_per_entity / sizeof(Scalar);
-    Scalar* casted_data = reinterpret_cast<Scalar*>(data);
+    const unsigned num_scalar_values = size_per_entity / sizeof(T);
+    T* casted_data = reinterpret_cast<T*>(data);
     auto previousPrecision = out.precision();
-    constexpr auto thisPrecision = std::numeric_limits<Scalar>::digits10;
+    constexpr auto thisPrecision = std::numeric_limits<T>::digits10;
 
     out << "{";
     for (unsigned i = 0; i < num_scalar_values; ++i) {
-      if constexpr (sizeof(Scalar) == 1) {
-        if constexpr (std::is_signed_v<Scalar>) {
+      if constexpr (sizeof(T) == 1) {
+        if constexpr (std::is_signed_v<T>) {
           out << std::setprecision(thisPrecision) << static_cast<int>(casted_data[i]) << " ";
         }
         else {
@@ -258,6 +268,75 @@ public:
     return f[0];
   }
 
+  template <typename MemSpace, typename Enable = void>
+  struct LayoutSelector {
+    static constexpr Layout layout = device_layout;
+  };
+
+  template <typename Enable>
+  struct LayoutSelector<stk::ngp::HostMemSpace, Enable> {
+    static constexpr Layout layout = host_layout;
+  };
+
+
+  // Acquire a temporary copy of a FieldData object to access your data in the desired memory space.
+  // It is best to acquire it right before using it in a computational algorithm, and then let it go
+  // out of scope and be destroyed when you are finished with it.  The lifetime of this object cannot
+  // overlap with one for the same Field in the opposite memory space.  Lifetimes can overlap in the
+  // same memory space, but you must remember to always reacquire this object after a mesh modification.
+  // Debug builds will trap these errors.  The two template parameters are:
+  //
+  //   FieldAccessTag : Optional tag indicating how you will access the data.  Options are:
+
+  //     - stk::mesh::ReadWrite     : Sync data to memory space and mark modified; Allow modification [default]
+  //     - stk::mesh::ReadOnly      : Sync data to memory space and do not mark modified; Disallow modification
+  //     - stk::mesh::OverwriteAll  : Do not sync data and mark modified; Allow modification
+
+  //     - stk::mesh::Unsynchronized       : Do not sync data and do not mark modified; Allow modification
+  //     - stk::mesh::ConstUnsynchronized  : Do not sync data and do not mark modified; Disallow modification
+  //
+  //     This will control automatic synchronization between memory spaces so that you are guaranteed
+  //     to be using up-to-date data wherever accessed.  The Unsynchronized variants are intended for
+  //     users who must store persistent copies of their FieldData objects.  You must call the above
+  //     synchronize() function before running your algorithm that uses your persistent copy, with the
+  //     same access tag and memory space that you would otherwise have used, to get the data movement
+  //     correct.  Do not use the Unsynchronized access tags for normal workflows.
+  //
+  //   MemSpace : Optional Kokkos memory space of the data that you want to access.  It can be either
+  //     a Kokkos host space or a device space.  You can use the aliases "stk::ngp::HostMemSpace" and
+  //     "stk::ngp::MemSpace" as convenient shortcuts.  The HostMemSpace alias is always the host space
+  //     and the MemSpace alias is the default device space in a device build or the host space in
+  //     a host build.  The default is "stk::ngp::HostMemSpace".
+  //
+  // Some sample usage for a Field<double> instance:
+  //
+  //   auto fieldData = myField.data();                       <-- Read-write access to host data
+  //   auto fieldData = myField.data<stk::mesh::ReadOnly>();  <-- Read-only access to host access
+  //   auto fieldData = myField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>(); <-- Read-write access to device data
+  //   auto fieldData = myField.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();  <-- Read-only access to device data
+
+  template <FieldAccessTag FieldAccess = ReadWrite,
+            typename MemSpace = stk::ngp::HostMemSpace>
+  typename FieldDataHelper<T, FieldAccess, MemSpace, LayoutSelector<MemSpace>::layout>::FieldDataType
+  data() const
+  {
+    return FieldBase::data<T, FieldAccess, MemSpace, LayoutSelector<MemSpace>::layout>();
+  }
+
+
+  // This is the same as described above, except you can pass in a custom execution space argument
+  // that will be used to run any data syncing or updating after a mesh modification that may
+  // be necessary.  This is intended for asynchronous execution.
+
+  template <FieldAccessTag FieldAccess = ReadWrite,
+            typename MemSpace = stk::ngp::HostMemSpace,
+            typename ExecSpace = stk::ngp::ExecSpace>
+  typename AsyncFieldDataHelper<T, FieldAccess, MemSpace, LayoutSelector<MemSpace>::layout, ExecSpace>::FieldDataType
+  data(const ExecSpace& execSpace) const
+  {
+    return FieldBase::data<T, FieldAccess, MemSpace, LayoutSelector<MemSpace>::layout, ExecSpace>(execSpace);
+  }
+
 private:
 
 #ifndef DOXYGEN_COMPILE
@@ -265,6 +344,7 @@ private:
   Field( const Field & );
   Field & operator = ( const Field & );
 #endif /* DOXYGEN_COMPILE */
+
 };
 
 } // namespace mesh

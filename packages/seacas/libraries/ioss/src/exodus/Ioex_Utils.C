@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -16,7 +16,13 @@
 #include <fmt/ostream.h>
 #include <iosfwd>
 #include <netcdf.h>
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include <string.h>
+#define strcasecmp  _stricmp
+#define strncasecmp _strnicmp
+#else
 #include <strings.h>
+#endif
 #include <tokenize.h>
 
 #include "Ioss_BasisVariableType.h"
@@ -490,44 +496,6 @@ namespace Ioex {
     return true;
   }
 
-  void decode_surface_name(Ioex::SideSetMap &fs_map, Ioex::SideSetSet &fs_set,
-                           const std::string &name)
-  {
-    auto tokens = Ioss::tokenize(name, "_");
-    if (tokens.size() >= 4) {
-      // Name of form: "name_eltopo_sidetopo_id" or
-      // "name_block_id_sidetopo_id" "name" is typically "surface".
-      // The sideset containing this should then be called "name_id"
-
-      // Check whether the second-last token is a side topology and
-      // the third-last token is an element topology.
-      const Ioss::ElementTopology *side_topo =
-          Ioss::ElementTopology::factory(tokens[tokens.size() - 2], true);
-      if (side_topo != nullptr) {
-        const Ioss::ElementTopology *element_topo =
-            Ioss::ElementTopology::factory(tokens[tokens.size() - 3], true);
-        if (element_topo != nullptr || tokens[tokens.size() - 4] == "block") {
-          // The remainder of the tokens will be used to create
-          // a side set name and then this sideset will be
-          // a side block in that set.
-          std::string fs_name;
-          size_t      last_token = tokens.size() - 3;
-          if (element_topo == nullptr) {
-            last_token--;
-          }
-          for (size_t tok = 0; tok < last_token; tok++) {
-            fs_name += tokens[tok];
-          }
-          fs_name += "_";
-          fs_name += tokens[tokens.size() - 1]; // Add on the id.
-
-          fs_set.insert(fs_name);
-          fs_map.insert(Ioex::SideSetMap::value_type(name, fs_name));
-        }
-      }
-    }
-  }
-
   bool set_id(const Ioss::GroupingEntity *entity, Ioex::EntityIdSet *idset)
   {
     // See description of 'get_id' function.  This function just primes
@@ -690,7 +658,8 @@ namespace Ioex {
   }
 
   std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
-                              const std::string &basename, int length, bool &db_has_name)
+                              const std::string &basename, int length, bool lowercase_names,
+                              bool &db_has_name)
   {
     std::vector<char> buffer(length + 1);
     buffer[0] = '\0';
@@ -699,16 +668,18 @@ namespace Ioex {
       exodus_error(exoid, __LINE__, __func__, __FILE__);
     }
     if (buffer[0] != '\0') {
-      Ioss::Utils::fixup_name(Data(buffer));
+      std::string name{Data(buffer)};
+      if (lowercase_names) {
+        Ioss::Utils::fixup_name(name);
+      }
       // Filter out names of the form "basename_id" if the name
       // id doesn't match the id in the name...
-      size_t base_size = basename.size();
-      if (std::strncmp(basename.c_str(), Data(buffer), base_size) == 0) {
-        int64_t name_id = extract_id(Data(buffer));
+      if (Ioss::Utils::substr_equal(basename, name)) {
+        int64_t name_id = extract_id(name);
 
         // See if name is truly of form "basename_name_id" (e.g. "surface_{id}")
         std::string tmp_name = Ioss::Utils::encode_entity_name(basename, name_id);
-        if (tmp_name == Data(buffer)) {
+        if (tmp_name == name) {
           if (name_id > 0) {
             db_has_name = false;
             if (name_id != id) {
@@ -718,7 +689,7 @@ namespace Ioex {
                          "embedded id {}.\n"
                          "         This can cause issues later; the entity will be renamed to '{}' "
                          "(IOSS)\n\n",
-                         Data(buffer), id, name_id, new_name);
+                         name, id, name_id, new_name);
               return new_name;
             }
             return tmp_name;
@@ -726,7 +697,7 @@ namespace Ioex {
         }
       }
       db_has_name = true;
-      return {Data(buffer)};
+      return name;
     }
     db_has_name = false;
     return Ioss::Utils::encode_entity_name(basename, id);
@@ -839,6 +810,44 @@ namespace Ioex {
     }
     else {
       internal_add_coordinate_frames(exoid, region, 0);
+    }
+  }
+
+  std::vector<ex_assembly> get_exodus_assemblies(int exoid)
+  {
+    std::vector<ex_assembly> assemblies;
+    int                      nassem = ex_inquire_int(exoid, EX_INQ_ASSEMBLY);
+    if (nassem > 0) {
+      assemblies.resize(nassem);
+
+      int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+      for (auto &assembly : assemblies) {
+        assembly.name = new char[max_name_length + 1];
+      }
+
+      int ierr = ex_get_assemblies(exoid, Data(assemblies));
+      if (ierr < 0) {
+        Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
+      }
+
+      // Now allocate space for member list and get assemblies again...
+      for (auto &assembly : assemblies) {
+        assembly.entity_list = new int64_t[assembly.entity_count];
+      }
+
+      ierr = ex_get_assemblies(exoid, Data(assemblies));
+      if (ierr < 0) {
+        Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
+      }
+    }
+    return assemblies;
+  }
+
+  void cleanup_exodus_assembly_vector(std::vector<ex_assembly> &assemblies)
+  {
+    for (const auto &assembly : assemblies) {
+      delete[] assembly.entity_list;
+      delete[] assembly.name;
     }
   }
 

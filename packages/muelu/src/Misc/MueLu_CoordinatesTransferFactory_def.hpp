@@ -195,8 +195,8 @@ void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     auto aggGraph = aggregates->GetGraph();
     auto numAggs  = aggGraph.numRows();
 
-    auto fineCoordsView   = ghostedCoords->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    auto coarseCoordsView = coarseCoords->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+    auto fineCoordsView   = ghostedCoords->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    auto coarseCoordsView = coarseCoords->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
     // Fill in coarse coordinates
     {

@@ -47,6 +47,7 @@
 #include <cmath>
 #include <algorithm>
 
+#include "stk_search/ObjectOutsideDomainPolicy.hpp"
 #include "stk_search/DistanceComparison.hpp"
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/Parallel.hpp>
@@ -61,41 +62,6 @@ using FilterCoarseSearchProcRelation = std::pair<typename RECVMESH::EntityProc, 
 
 template <class SENDMESH, class RECVMESH>
 using FilterCoarseSearchProcRelationVec = std::vector<FilterCoarseSearchProcRelation<SENDMESH, RECVMESH>>;
-
-//BEGINObjectOutsideDomainPolicy 
-enum class ObjectOutsideDomainPolicy { IGNORE, EXTRAPOLATE, TRUNCATE, PROJECT, ABORT, UNDEFINED_OBJFLAG = 0xff };
-//ENDObjectOutsideDomainPolicy 
-
-inline ObjectOutsideDomainPolicy get_object_outside_domain_policy(const std::string& id)
-{
-  if(id == "IGNORE") return ObjectOutsideDomainPolicy::IGNORE;
-  if(id == "EXTRAPOLATE") return ObjectOutsideDomainPolicy::EXTRAPOLATE;
-  if(id == "TRUNCATE") return ObjectOutsideDomainPolicy::TRUNCATE;
-  if(id == "PROJECT") return ObjectOutsideDomainPolicy::PROJECT;
-  if(id == "ABORT") return ObjectOutsideDomainPolicy::ABORT;
-
-  return ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG;
-}
-
-inline std::string get_object_outside_domain_policy(const ObjectOutsideDomainPolicy id)
-{
-  switch(id) {
-  case ObjectOutsideDomainPolicy::IGNORE:
-    return "IGNORE";
-  case ObjectOutsideDomainPolicy::EXTRAPOLATE:
-    return "EXTRAPOLATE";
-  case ObjectOutsideDomainPolicy::TRUNCATE:
-    return "TRUNCATE";
-  case ObjectOutsideDomainPolicy::PROJECT:
-    return "PROJECT";
-  case ObjectOutsideDomainPolicy::ABORT:
-    return "ABORT";
-  case ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG:
-    return "UNDEFINED";
-  }
-
-  return std::string("");
-}
 
 //BEGINFilterCoarseSearchOptions
 struct FilterCoarseSearchOptions
@@ -240,15 +206,16 @@ struct FilterCoarseSearchStats
 
 template <class MESH>
 inline
-double get_distance_squared_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const double* toCoords)
+double get_distance_squared_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const std::vector<double>& toCoords)
 {
-  std::vector<double> centroid = mesh.centroid(k);
-  return stk::search::distance_sq(centroid.size(), centroid.data(), toCoords);
+  std::vector<double> centroid;
+  mesh.centroid(k, centroid);
+  return stk::search::distance_sq(centroid.size(), centroid.data(), toCoords.data());
 }
 
 template <class MESH>
 inline
-double get_distance_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const double* toCoords)
+double get_distance_from_centroid(MESH& mesh, const typename MESH::EntityKey k, const std::vector<double>& toCoords)
 {
   double distanceSquared = get_distance_squared_from_centroid<MESH>(mesh, k, toCoords);
   return std::sqrt(distanceSquared);
@@ -313,7 +280,7 @@ void accept_candidate(std::vector<double>& parametricCoords,
 
 template <class SENDMESH>
 void set_geometric_info(SENDMESH& sendMesh,
-                        const typename SENDMESH::EntityKey sendEntity, const double* tocoords,
+                        const typename SENDMESH::EntityKey sendEntity, const std::vector<double>& tocoords,
                         const double searchToleranceSquared, const bool useCentroidForGeometricProximity,
                         double& geometricDistanceSquared, bool& isWithinGeometricTolerance)
 {
@@ -354,6 +321,8 @@ FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRela
   double searchToleranceSquared = searchTolerance * searchTolerance;
 
   std::vector<double> parametricCoords;
+  std::vector<double> tocoords;
+  std::vector<double> fromcoords;
 
   while(current_key != rangeToDomain.end()) {
     FilterResult<SENDMESH, RECVMESH> bestCandidate;
@@ -365,7 +334,7 @@ FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRela
 
     const typename RECVMESH::EntityKey recvEntity = current_key->first.id();
 
-    const double* tocoords = recvMesh.coord(recvEntity);
+    recvMesh.coordinates(recvEntity, tocoords);
 
     std::pair<const_iterator, const_iterator> keys = std::make_pair(current_key, next_key);
     bestCandidate.nearest = keys.second;
@@ -382,7 +351,7 @@ FilterCoarseSearchStats filter_coarse_search_by_range(FilterCoarseSearchProcRela
                                                           geometricDistanceSquared, isWithinGeometricTolerance);
 
       if(useNearestNodeForClosestBoundingBox) {
-        const double* fromcoords = sendMesh.coord(sendEntity);
+        sendMesh.coordinates(sendEntity, fromcoords);
         double distance = recvMesh.get_distance_from_nearest_node(recvEntity, fromcoords);
         geometricDistanceSquared = std::pow(distance, 2);
         isWithinParametricTolerance = false;

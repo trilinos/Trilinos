@@ -66,6 +66,7 @@ namespace fixtures {
 class QuadShellFixture
 {
 public:
+  static std::string name() { return "QuadShellFixture"; }
   typedef double Scalar;
   typedef Field<Scalar> CoordFieldType;
 

@@ -376,6 +376,12 @@ namespace Ifpack2 {
                        const bool explicitConversion = false);
 
     void clearInternal();
+
+    // Decide whether the fused block Jacobi path can and should be used.
+    bool shouldUseFusedBlockJacobi(
+        const Teuchos::RCP<const row_matrix_type>& matrix,
+        const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
+        bool useSeqMethod);
   };
   
   ///

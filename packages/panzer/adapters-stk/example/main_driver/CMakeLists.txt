@@ -36,6 +36,12 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     periodic_wedge.xml
     periodic_wedge.pam
     energy-periodic-32bit-limit.xml
+    energy-ss-tp-multiblock-ic-bc-issue.xml
+    energy-ss-tp-multiblock-ic-bc-issue.jou
+    energy-ss-tp-multiblock-ic-bc-issue.gen
+    make-mesh.sh
+    do-runs-multiblock.sh
+    set_seacas_decomp.sh
   EXEDEPS main_driver
   )
 
@@ -105,6 +111,15 @@ TRIBITS_ADD_ADVANCED_TEST(
     ARGS  --i=energy-neumann.xml --flux-calc
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy-ss-tp-multiblock-ic-bc-issue
+  TEST_0 EXEC main_driver
+    ARGS  --i=energy-ss-tp-multiblock-ic-bc-issue.xml --time
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 2
+    ENVIRONMENT IOSS_PROPERTIES=DECOMPOSITION_METHOD=rib
   )
 
 IF(${PACKAGE_NAME}_ENABLE_Teko)

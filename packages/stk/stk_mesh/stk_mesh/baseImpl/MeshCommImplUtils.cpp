@@ -486,12 +486,12 @@ void fill_sorted_procs(PairIterEntityComm ec, std::vector<int>& procs)
   }
 }
 
-void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs)
+void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghostID, std::vector<int>& procs)
 {
   procs.clear();
   const int n = ec.size(); 
   for (int i=0; i<n; ++i) {
-    if (ghost_id == ec[i].ghost_id) {
+    if ((ghostID == ec[i].ghost_id) || (ec[i].ghost_id == (BulkData::SYMM_INFO+ghostID))) {
       procs.push_back( ec[i].proc );
     }
   }

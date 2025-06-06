@@ -117,6 +117,7 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   set_fix_mechanisms(settings);
   set_decomp_method(settings);
   set_vertex_weight_block_multiplier(settings);
+  set_cohesive_elements(settings);
   set_vertex_weight_method(settings);
   set_vertex_weight_field_name(settings);
   set_contact_search_edge_weight(settings);
@@ -199,6 +200,11 @@ void Parser::add_options_to_parser()
                            "comma-separated block_name:weight pairs to use for each element in "
                            "the block.  A multiplier of 1.0 is used for each unspecified block.\n"
                            " Syntax example: block_1:1.5,block_2:3"};
+  stk::CommandLineOption cohesiveElements{m_optionNames.cohesiveElements, "",
+                           "Specify a comma-separated list of blocks containing cohesive elements. "
+                           "The elements in these blocks will not appear on a partition boundary. "
+                           "This option requires parmetis as the decomp method\n"
+                           " Syntax example: block_1,block_2"};
   stk::CommandLineOption useNested{m_optionNames.useNestedDecomp, "",
                            "If doing a rebalance, nest the new decomposition completely "
                            "within the boundaries of the input decomposition.  The new number "
@@ -236,6 +242,7 @@ void Parser::add_options_to_parser()
   m_commandLineParser.add_optional(fixMechanisms, (DefaultSettings::fixMechanisms) ? "on" : "off");
   m_commandLineParser.add_optional(decompMethod, DefaultSettings::decompMethod);
   m_commandLineParser.add_optional(vertexWeightBlockMultiplier, DefaultSettings::vertexWeightBlockMultiplier);
+  m_commandLineParser.add_optional(cohesiveElements, DefaultSettings::cohesiveElements);
   m_commandLineParser.add_flag(useNested);
 
   m_commandLineParser.add_optional(vertexWeightMethod, vertex_weight_method_name(DefaultSettings::vertexWeightMethod));
@@ -403,6 +410,24 @@ void Parser::set_vertex_weight_block_multiplier(BalanceSettings& settings) const
       const std::string blockName = stk::trim_string(multiplierSegments[0]);
       const double multiplier = std::stod(stk::trim_string(multiplierSegments[1]));
       settings.setVertexWeightBlockMultiplier(blockName, multiplier);
+    }
+  }
+}
+
+void Parser::set_cohesive_elements(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.cohesiveElements)) {
+    const std::string blockString =
+        m_commandLineParser.get_option_value<std::string>(m_optionNames.cohesiveElements);
+    std::vector<std::string> blocks = stk::split_csv_string(blockString);
+    for (const std::string & block : blocks) {
+      const std::string blockName = stk::trim_string(block);
+      settings.setCohesiveElements(blockName);
+    }
+
+    if (m_commandLineParser.is_option_parsed(m_optionNames.decompMethod)) {
+      auto providedDecompMethod = m_commandLineParser.get_option_value<std::string>(m_optionNames.decompMethod);
+      STK_ThrowRequireMsg(providedDecompMethod == "parmetis", "Cohesive elements can only be used with parmetis decomp method. Method " << providedDecompMethod << " was supplied instead.");
     }
   }
 }

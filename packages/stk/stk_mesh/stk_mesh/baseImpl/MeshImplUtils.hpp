@@ -213,7 +213,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               std::vector<EntityProc> & shared_change ,
                                               std::vector<EntityProc> & ghosted_change );
 
-stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys);
+stk::mesh::EntityVector convert_keys_to_entities(const stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys);
 
 bool internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
@@ -476,6 +476,8 @@ void print_upward_connected_entities(stk::mesh::BulkData& bulk,
 
 std::vector<ConnectivityOrdinal> get_ordinals_without_connected_sides(BulkData & mesh, const Entity elem);
 void connect_element_to_existing_sides(BulkData & mesh, const Entity elem);
+
+void set_local_ids(BulkData& mesh);
 
 } // namespace impl
 } // namespace mesh
