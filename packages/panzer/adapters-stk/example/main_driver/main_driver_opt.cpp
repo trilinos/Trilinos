@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 
     {
       RCP<ParameterList> tempus_params = parameterList(input_params->sublist("Solution Control",true).sublist("Tempus",true));
-      auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,comm,objective_params,out);
+      auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,tempus_params,comm,objective_params,out);
 
       // Create target -- do forward integration with perturbed parameter values
       RCP<ROL::Vector<double>> p = objective->create_design_vector();
