@@ -28,6 +28,7 @@
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_EminPFactory_fwd.hpp"
+#include "MueLu_EdgeProlongatorPatternFactory_fwd.hpp"
 #include "MueLu_FacadeClassBase.hpp"
 #include "MueLu_FacadeClassFactory.hpp"
 #include "MueLu_FactoryFactory_fwd.hpp"
@@ -209,6 +210,8 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
                                        int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_Emin(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                  int levelID, std::vector<keep_pair>& keeps) const;
+  void UpdateFactoryManager_EminReitzinger(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                           int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_PG(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_Replicate(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,

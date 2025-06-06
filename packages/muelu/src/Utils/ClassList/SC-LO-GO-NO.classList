@@ -16,7 +16,6 @@ BlockedPFactory
 BlockedRAPFactory
 BrickAggregationFactory
 BraessSarazinSmoother
-CGSolver
 ClassicalMapFactory
 ClassicalPFactory
 CloneRepartitionInterface
@@ -30,8 +29,10 @@ ConstraintFactory
 CoordinatesTransferFactory
 CoupledRBMFactory
 DemoFactory
+DenseConstraint
 DirectSolver
 DropNegativeEntriesFactory
+EdgeProlongatorPatternFactory
 EminPFactory
 FacadeBGS2x2
 FacadeClassBase
@@ -42,11 +43,11 @@ FactoryManager
 FakeSmootherPrototype
 FilteredAFactory
 FineLevelInputDataFactory
+FlatOperator
 GeneralGeometricPFactory
 GenericRFactory
 GeometricInterpolationPFactory
 GeometricInterpolationPFactory_kokkos
-GMRESSolver
 Hierarchy
 HierarchyManager
 HierarchyFactory
@@ -77,6 +78,7 @@ PermutingSmoother
 PgPFactory
 PreDropFunctionBaseClass
 PreDropFunctionConstVal
+ProductOperator
 ProjectorSmoother
 RAPFactory
 RAPShiftFactory
@@ -108,8 +110,7 @@ SmootherBase
 SmootherFactory
 SmootherPrototype
 SmooVecCoalesceDropFactory
-SolverBase
-SteepestDescentSolver
+SparseConstraint
 StratimikosSmoother - #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 StructuredAggregationFactory
 StructuredLineDetectionFactory
