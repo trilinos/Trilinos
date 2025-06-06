@@ -51,7 +51,7 @@ namespace search {
 
 ExternalPointNoOpHandler::ExternalPointNoOpHandler(double tol) {}
 
-bool ExternalPointNoOpHandler::handle_point(const stk::mesh::EntityKey k,
+bool ExternalPointNoOpHandler::handle_point(const stk::search::spmd::EntityKeyPair& k,
                                             const std::vector<double>& toCoords,
                                             std::vector<double>& parametricCoords,
                                             double& geometricDistanceSquared,
@@ -74,12 +74,12 @@ MasterElementExternalPointProjection::MasterElementExternalPointProjection(
 {
 }
 
-bool MasterElementExternalPointProjection::handle_point(const stk::mesh::EntityKey k, const std::vector<double>& toCoords,
+bool MasterElementExternalPointProjection::handle_point(const stk::search::spmd::EntityKeyPair& k, const std::vector<double>& toCoords,
                                                         std::vector<double>& parametricCoords,
                                                         double& geometricDistanceSquared,
                                                         bool& isWithinGeometricTolerance) const
 {
-  stk::mesh::Entity elem = m_bulk.get_entity(k);
+  stk::mesh::Entity elem = k;
   project_point_to_element_boundary(elem, toCoords, parametricCoords, geometricDistanceSquared);
 
   isWithinGeometricTolerance = (geometricDistanceSquared <= m_geometricTol * m_geometricTol);
@@ -120,12 +120,12 @@ MasterElementExternalPointTruncation::MasterElementExternalPointTruncation(
 {
 }
 
-bool MasterElementExternalPointTruncation::handle_point(const stk::mesh::EntityKey k, const std::vector<double>& toCoords,
+bool MasterElementExternalPointTruncation::handle_point(const stk::search::spmd::EntityKeyPair& k, const std::vector<double>& toCoords,
                                                         std::vector<double>& parametricCoords,
                                                         double& geometricDistanceSquared,
                                                         bool& isWithinGeometricTolerance) const
 {
-  stk::mesh::Entity elem = m_bulk.get_entity(k);
+  stk::mesh::Entity elem = k;
   truncate_point_to_element_boundary(elem, toCoords, parametricCoords, geometricDistanceSquared);
 
   isWithinGeometricTolerance = (geometricDistanceSquared <= m_geometricTol * m_geometricTol);
@@ -144,5 +144,5 @@ void MasterElementExternalPointTruncation::truncate_point_to_element_boundary(st
   parametricCoords.swap(result.parametricCoords);
 }
 
-}
-} // namespace sierra
+} // namespace search
+} // namespace stk

@@ -182,7 +182,7 @@ public:
   /// average (it is not a proportion between max and average).
   ///
   /// If the "imbalance" of a local matrix is greater than this threshold,
-  /// a different algorithm may be used for some operations like 
+  /// a different algorithm may be used for some operations like
   /// sparse matrix-vector multiply, packAndPrepare, and
   /// unpackAndCombine.  You may control this at run time via the
   /// <tt>TPETRA_ROW_IMBALANCE_THRESHOLD</tt> environment variable.
@@ -212,7 +212,7 @@ public:
 
   /// \brief the threshold for transitioning from device to host
   ///
-  /// If the number of elements in the multivector does not exceed this 
+  /// If the number of elements in the multivector does not exceed this
   /// threshold and the data is on host, then run the calculation on
   /// host.  Otherwise, run on device.
   /// By default this is 10000, but may be altered by the environment
@@ -251,13 +251,25 @@ public:
   /// <tt>TPETRA_OVERLAP</tt> environment variable.
   static bool overlapCommunicationAndComputation();
 
+  /// \brief Speed up transfers by overlapping computation and communication.
+  ///
+  /// This is enabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_GRANULAR_TRANSFERS</tt> environment variable.
+  static bool enableGranularTransfers();
+
+  /// \brief Default send type
+  ///
+  /// This is defaults to "Send".  You may control this at run time via the
+  /// <tt>TPETRA_DEFAULT_SEND_TYPE</tt> environment variable.
+  static int defaultSendType();
+
   /// \brief Add Teuchos timers for all host calls to Kokkos::deep_copy().
   /// This is especially useful for identifying host/device data transfers
   ///
   /// This is disabled by default.  You may control this at run time via the
   /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY</tt> environment variable.
   static bool timeKokkosDeepCopy();
-  
+
   /// \brief Adds verbose output to Kokkos deep_copy timers
   /// by appending source and destination.
   /// This is especially useful for identifying host/device data transfers
@@ -266,7 +278,7 @@ public:
   /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE1</tt> environment variable.
   static bool timeKokkosDeepCopyVerbose1();
 
-  
+
   /// \brief Adds verbose output to Kokkos deep_copy timers
   /// by appending source, destination, and size.
   /// This is especially useful for identifying host/device data transfers
@@ -279,14 +291,14 @@ public:
   ///
   /// This is disabled by default.  You may control this at run time via the
   /// <tt>TPETRA_TIME_KOKKOS_FENCE</tt> environment variable.
-  static bool timeKokkosFence();  
+  static bool timeKokkosFence();
 
-  /// \brief Add Teuchos timers for all host calls to Kokkos::parallel_for(), 
+  /// \brief Add Teuchos timers for all host calls to Kokkos::parallel_for(),
   /// Kokkos::parallel_reduce() and Kokkos::parallel_scan().
   ///
   /// This is disabled by default.  You may control this at run time via the
   /// <tt>TPETRA_TIME_KOKKOS_FUNCTIONS</tt> environment variable.
-  static bool timeKokkosFunctions();  
+  static bool timeKokkosFunctions();
 
   /// \brief Warn if more than this many Kokkos spaces are accessed.
   ///

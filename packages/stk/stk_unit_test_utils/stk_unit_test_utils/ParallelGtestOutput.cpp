@@ -11,6 +11,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
+#include <stk_util/util/string_case_compare.hpp>
 #include <string>                   // for string
 #include "gtest/gtest-test-part.h"  // for TestPartResult
 
@@ -228,12 +229,33 @@ protected:
         printf("%s\n", message.c_str());
     }
 
+    bool user_requests_color()
+    {
+      std::string c = GTEST_FLAG(color);
+      // follows the convention from gtest itself
+      return stk::equal_case(c, "yes") || stk::equal_case(c, "true") || stk::equal_case(c, "t") ||
+             stk::equal_case(c, "1");
+    }
+
+    bool is_auto_color()
+    {
+      std::string c = GTEST_FLAG(color);
+      // follows the convention from gtest itself
+      return stk::equal_case(c, "auto");
+    }
+
+    bool is_terminal_output()
+    {
+      return isatty(fileno(stdout));
+    }
+
     void print_in_color_for_terminal(const std::string &message, const char *colorString)
     {
-        if (isatty(fileno(stdout)))
-            printf("%s%s%s", colorString, message.c_str(), colorDefault);
-        else
-            printf("%s", message.c_str());
+      if (user_requests_color() || (is_auto_color() && is_terminal_output())) {
+        printf("%s%s%s", colorString, message.c_str(), colorDefault);
+      } else {
+        printf("%s", message.c_str());
+      }
     }
 
     static constexpr const char *colorDefault = "\033[0m";

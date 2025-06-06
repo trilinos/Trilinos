@@ -38,101 +38,38 @@
 namespace stk {
 namespace search {
 
-/** Convert a single mesh object to a single point.
- * This is used in the case where a mesh object is
- * an element with many nodes.  Then something like
- * the element centroid can be used to define
- * a single coordinate point for it.
- * coor is the output coordinate and is assumed to
- * be large enough to hold a single coordinate.
- * Note the maximum needed in all cases is length 3.
- *
- * entity_coordinates is used to return the nodal coordinates
- * that compute_entity_centroid averages.  The return value is
- * the mesh objects from which the coordinates were obtained.
- * compute_entity_centroid returns a vector of vectors containing
- * the coordinates of the nodes that were used to compute the
- * centroid.
- */
-std::vector<stk::mesh::Entity>
-entity_coordinates(stk::mesh::Entity entity, const stk::mesh::FieldBase* stkField,
-                   std::vector<std::vector<double> >& coordinates)
+namespace impl {
+void determine_node_centroid(const unsigned spatialDimension, stk::mesh::Entity node,
+                             const stk::mesh::FieldBase& coordinateField, double* centroid)
 {
-  coordinates.clear();
-  std::vector<stk::mesh::Entity> meshNodes;
-  const unsigned ndim = stkField->mesh_meta_data().spatial_dimension();
+  const stk::mesh::BulkData& bulkData = coordinateField.get_mesh();
 
-  const stk::mesh::BulkData& meshBulk = stkField->get_mesh();
+  STK_ThrowRequireMsg(bulkData.entity_rank(node) == stk::topology::NODE_RANK, "Input entity must be a node");
 
-  const stk::mesh::EntityRank fieldType = stkField->entity_rank();
-  const stk::mesh::EntityRank objType = meshBulk.entity_rank(entity);
-  const bool fieldExistsOnEntity = (fieldType == objType);
-
-  if(objType == stk::topology::NODE_RANK || fieldExistsOnEntity) {
-    const double* coor = static_cast<const double *>(stk::mesh::field_data(*stkField, entity));
-    if(ndim) {
-      STK_ThrowRequireMsg(coor, " Error: The field does not exist, NULL pointer found.\n"
-                                << " Field Name:" << stkField->name() << "\n"
-                                << " Mesh Object number:" << meshBulk.identifier(entity) << "\n");
-      coordinates.emplace_back(coor, coor + ndim);
-      meshNodes.push_back(entity);
-    }
-  }
-  else {
-    // Loop over node relations in mesh object
-    stk::mesh::Entity const* nodes = meshBulk.begin_nodes(entity);
-    for(int i = 0, ie = meshBulk.num_nodes(entity); i < ie; ++i) {
-      stk::mesh::Entity node = nodes[i];
-      double* coor = (double*)stk::mesh::field_data(*stkField, node);
-
-      STK_ThrowRequireMsg(coor, " Error: The field does not exist, NULL pointer found.\n"
-                                << " Field Name:" << stkField->name() << "\n"
-                                << " Mesh Object number:" << meshBulk.identifier(entity) << "\n");
-
-      coordinates.emplace_back(coor, coor + ndim);
-      meshNodes.push_back(node);
-    }
-  }
-  return meshNodes;
-}
-
-void
-average_coordinates_for_centroid(const std::vector<std::vector<double> >& coordinates, std::vector<double>& centroid)
-{
-  const int ndim = coordinates.front().size();
-  const int num_nodes = coordinates.size();
-
-  centroid.assign(ndim, 0.0);
-
-  for(int j = 0; j < num_nodes; ++j) {
-    for(int i = 0; i < ndim; ++i) {
-      centroid[i] += coordinates[j][i];
-    }
-  }
-  if(1 != num_nodes) {
-    for(int i = 0; i < ndim; ++i) {
-      centroid[i] /= num_nodes;
-    }
+  double* coor = static_cast<double*>(stk::mesh::field_data(coordinateField, node));
+  STK_ThrowRequireMsg(coor != nullptr, "Input node " << bulkData.entity_key(node)
+                                                     << " has no data for coordinate field: "
+                                                     << coordinateField.name());
+  for(unsigned i = 0; i < spatialDimension; ++i) {
+    centroid[i] = coor[i];
   }
 }
 
-std::vector<std::vector<double> >
-compute_entity_centroid(stk::mesh::Entity entity, const stk::mesh::FieldBase& nodalCoorRef, std::vector<double>& centroid)
-{
-  std::vector<std::vector<double> > coordinates;
-  entity_coordinates(entity, &nodalCoorRef, coordinates);
-
-  average_coordinates_for_centroid(coordinates, centroid);
-  return coordinates;
 }
 
-
-void determine_centroid(const unsigned spatialDimension, stk::mesh::Entity element,
+void determine_centroid(const unsigned spatialDimension, stk::mesh::Entity entity,
                         const stk::mesh::FieldBase& coordinateField, double* centroid)
 {
-  const stk::mesh::BulkData& bulk_data = coordinateField.get_mesh();
-  const stk::mesh::Entity* const nodes = bulk_data.begin_nodes(element);
-  const unsigned numNodes = bulk_data.num_nodes(element);
+  const stk::mesh::BulkData& bulkData = coordinateField.get_mesh();
+
+  if(bulkData.entity_rank(entity) == stk::topology::NODE_RANK) {
+    impl::determine_node_centroid(spatialDimension, entity, coordinateField, centroid);
+    return;
+  }
+
+  const stk::mesh::Entity* const nodes = bulkData.begin_nodes(entity);
+  const unsigned numNodes = bulkData.num_nodes(entity);
+  STK_ThrowAssertMsg(numNodes != 0, "Input entity " << bulkData.entity_key(entity) << " has no connected nodes");
 
   for(unsigned i = 0; i < spatialDimension; ++i) {
     centroid[i] = 0.0;
@@ -141,8 +78,10 @@ void determine_centroid(const unsigned spatialDimension, stk::mesh::Entity eleme
   for(unsigned iNode = 0; iNode < numNodes; ++iNode) {
     stk::mesh::Entity node = nodes[iNode];
     double* coor = static_cast<double*>(stk::mesh::field_data(coordinateField, node));
-    STK_ThrowRequireMsg(coor != nullptr, "Entity " << bulk_data.entity_key(node)
-                                                   << " has no data for coordinate field: " << coordinateField.name());
+    STK_ThrowRequireMsg(coor != nullptr, "Node " << bulkData.entity_key(node)
+                                                 << " connected to input entity "
+                                                 << bulkData.entity_key(entity)
+                                                 << " has no data for coordinate field: " << coordinateField.name());
     for(unsigned i = 0; i < spatialDimension; ++i) {
       centroid[i] += coor[i];
     }
@@ -194,10 +133,69 @@ double distance_from_nearest_entity_node(const stk::mesh::BulkData& bulk, stk::m
   return minDistance;
 }
 
+double distance_squared_from_nearest_entity_node(const stk::mesh::BulkData& bulk, stk::mesh::Entity entity,
+                                                 const stk::mesh::FieldBase* coordinateField, const double* point)
+{
+  STK_ThrowRequireMsg(bulk.entity_rank(entity) > stk::topology::NODE_RANK,
+                      "Invalid entity rank for object: " << bulk.entity_rank(entity));
+
+  double minDistance = std::numeric_limits<double>::max();
+  const unsigned nDim = coordinateField->mesh_meta_data().spatial_dimension();
+
+  if(coordinateField->entity_rank() == stk::topology::NODE_RANK) {
+    const stk::mesh::Entity* const nodes = bulk.begin_nodes(entity);
+    const unsigned numNodes = bulk.num_nodes(entity);
+
+    for(unsigned i = 0; i < numNodes; ++i) {
+      double distance = 0.0;
+      double* coordinates = static_cast<double*>(stk::mesh::field_data(*coordinateField, nodes[i]));
+
+      for(unsigned j = 0; j < nDim; ++j) {
+        const double t = point[j] - coordinates[j];
+        distance += t * t;
+      }
+      if(distance < minDistance) minDistance = distance;
+    }
+  }
+  else if(coordinateField->entity_rank() == stk::topology::ELEM_RANK) {
+    const double* coor = static_cast<const double*>(stk::mesh::field_data(*coordinateField, entity));
+    minDistance = distance_sq(nDim, coor, point);
+  }
+
+  return minDistance;
+}
+
+void determine_gauss_points(const stk::mesh::BulkData& recvBulk, stk::mesh::Entity element,
+                            const MasterElementProviderInterface& masterElemProvider,
+                            const stk::mesh::FieldBase& coordinateField, std::vector<double>& location)
+{
+  std::vector<double> gaussPoints;
+  std::vector<double> fieldData;
+
+  unsigned numFieldComponents;
+  unsigned numNodes;
+
+  SearchField masterElementCoordField(&coordinateField);
+  SearchTopology topo(recvBulk.bucket(element).topology(), spmd::make_entity_key_pair(recvBulk,element));
+
+  unsigned numGaussPoints = masterElemProvider.num_integration_points(topo);
+
+  masterElemProvider.integration_points(topo, gaussPoints);
+  masterElemProvider.nodal_field_data(topo.get_key(), masterElementCoordField, numFieldComponents, numNodes, fieldData);
+
+  masterElemProvider.evaluate_field(topo, numGaussPoints, gaussPoints, numFieldComponents, fieldData, location);
+}
+
 double distance_from_nearest_entity_node(const stk::mesh::BulkData& bulk, stk::mesh::Entity entity,
                                          const stk::mesh::FieldBase* coordinateField, const std::vector<double>& point)
 {
   return distance_from_nearest_entity_node(bulk, entity, coordinateField, point.data());
+}
+
+double distance_squared_from_nearest_entity_node(const stk::mesh::BulkData& bulk, stk::mesh::Entity entity,
+                                                 const stk::mesh::FieldBase* coordinateField, const std::vector<double>& point)
+{
+  return distance_squared_from_nearest_entity_node(bulk, entity, coordinateField, point.data());
 }
 
 } // end namespace search

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "mpi.h"
 #include <stk_mesh/base/Comm.hpp>
+#include <unistd.h>
 #include <string>
 
 #include <stk_mesh/base/BulkData.hpp>
@@ -81,6 +82,7 @@ void read_mesh_and_verify_field_data_added_correctly(const std::string &outputFi
 
 TEST(Stk_Balance, read_and_write_stk_mesh_non_ioss_with_auto_decomp_and_compare_field_data)
 {
+  MPI_Comm comm = MPI_COMM_WORLD;
   std::string outputFilename = "output.e";
   std::string inputFilename = "generated:2x2x4";
   std::string fieldName = "nodal_test_data";
@@ -90,6 +92,15 @@ TEST(Stk_Balance, read_and_write_stk_mesh_non_ioss_with_auto_decomp_and_compare_
 
   read_and_write_mesh_with_added_field_data(inputFilename, outputFilename, fieldName, initialVal, timeForStep1);
   read_mesh_and_verify_field_data_added_correctly(outputFilename, fieldName, initialVal, timeForStep1);
+
+  if (stk::parallel_machine_rank(comm) == 0) {
+    unsigned numProcs = stk::parallel_machine_size(comm);
+    unlink(outputFilename.c_str());
+    for (unsigned i = 0; i < numProcs; i++) {
+      std::string output_filename = outputFilename + "." + std::to_string(numProcs) + "." + std::to_string(i);
+      unlink(output_filename.c_str());
+    }
+  }
 }
 
 size_t get_global_num_nodes_serial(const std::string& inputFilename)

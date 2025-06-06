@@ -35,14 +35,16 @@
 #ifndef STK_STK_SEARCH_UTIL_STK_SEARCH_UTIL_MESHUTILITY_HPP_
 #define STK_STK_SEARCH_UTIL_STK_SEARCH_UTIL_MESHUTILITY_HPP_
 
-#include "stk_search/Box.hpp"           // for Box
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, operator<<
 #include "stk_mesh/base/Part.hpp"
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, EntityId, PartVector
-#include <Kokkos_Core_fwd.hpp>
+#include "stk_search/Box.hpp"           // for Box
+#include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include "stk_topology/topology.hpp"    // for topology, topology::INVALID_RANK
+
+#include <Kokkos_Core_fwd.hpp>
 
 #include <ostream>                      // for operator<<, ostream, basic_os...
 #include <string>                       // for string
@@ -53,7 +55,6 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
-
 
 namespace stk {
 namespace search {
@@ -84,7 +85,25 @@ inline std::ostream& operator<<(std::ostream& os, std::pair<stk::mesh::EntityKey
   return os;
 }
 
-stk::search::Box<double> get_mesh_bounding_box(const stk::mesh::FieldBase* coords, stk::mesh::BulkData& bulk);
+inline stk::search::spmd::EntityKeyPair get_key(Kokkos::pair<stk::search::spmd::EntityKeyPair,int> ekey) { return ekey.first; }
+inline stk::mesh::EntityId get_id(Kokkos::pair<stk::search::spmd::EntityKeyPair,int> ekey) { return ekey.first.id(); }
+inline stk::mesh::EntityRank get_rank(Kokkos::pair<stk::search::spmd::EntityKeyPair,int> ekey) { return ekey.first.rank(); }
+inline std::ostream& operator<<(std::ostream& os, const Kokkos::pair<stk::search::spmd::EntityKeyPair,int> ekey)
+{
+  os << "{" << ekey.first << ", INDEX: " << ekey.second << "}";
+  return os;
+}
+
+inline stk::search::spmd::EntityKeyPair get_key(std::pair<stk::search::spmd::EntityKeyPair,int> ekey) { return ekey.first; }
+inline stk::mesh::EntityId get_id(std::pair<stk::search::spmd::EntityKeyPair,int> ekey) { return ekey.first.id(); }
+inline stk::mesh::EntityRank get_rank(std::pair<stk::search::spmd::EntityKeyPair,int> ekey) { return ekey.first.rank(); }
+inline std::ostream& operator<<(std::ostream& os, std::pair<stk::search::spmd::EntityKeyPair,int> ekey)
+{
+  os << "{" << ekey.first << ", INDEX: " << ekey.second << "}";
+  return os;
+}
+
+stk::search::Box<double> get_mesh_bounding_box(const stk::mesh::FieldBase* coords, const stk::mesh::BulkData& bulk);
 
 stk::mesh::EntityRank get_objects_rank(const stk::mesh::EntityRank objectType, const stk::mesh::PartVector& parts);
 
@@ -93,6 +112,8 @@ unsigned get_number_of_parametric_coordinates(stk::topology topo);
 bool is_valid_entity_rank(const stk::mesh::MetaData& meta, const stk::mesh::EntityRank rank);
 
 bool part_has_proper_entity_rank(const stk::mesh::Part* part);
+
+std::vector<std::string> get_part_membership(const stk::mesh::BulkData& bulk, const stk::mesh::Entity e, const stk::mesh::PartVector& parts);
 
 std::vector<std::string> get_part_membership(const stk::mesh::BulkData& bulk, const stk::mesh::EntityKey k, const stk::mesh::PartVector& parts);
 

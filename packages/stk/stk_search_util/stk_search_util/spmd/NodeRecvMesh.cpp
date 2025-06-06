@@ -145,9 +145,9 @@ void NodeRecvMesh::bounding_boxes(std::vector<NodeRecvMesh::BoundingBox>& v_box)
         center = Point(coords[0], coords[1], coords[2]);
       }
 
-      NodeRecvMesh::EntityKey key = m_bulk->entity_key(node);
-      NodeRecvMesh::EntityProc theIdent(key, m_bulk->parallel_rank());
-      NodeRecvMesh::BoundingBox theBox(Sphere(center, m_searchTolerance), theIdent);
+      EntityKey key(make_entity_key_pair(m_bulk,node));
+      EntityProc theIdent(key, m_bulk->parallel_rank());
+      BoundingBox theBox(Sphere(center, m_searchTolerance), theIdent);
       v_box.push_back(theBox);
     }
   }
@@ -155,26 +155,11 @@ void NodeRecvMesh::bounding_boxes(std::vector<NodeRecvMesh::BoundingBox>& v_box)
             [](const BoundingBox& a, const BoundingBox& b) { return a.second.id() < b.second.id(); });
 }
 
-stk::mesh::Entity NodeRecvMesh::get_entity(const EntityKey k) const
-{
-  stk::mesh::Entity node;
-  if (k == m_cachedKey) {
-    node = m_cachedNode;
-  }
-  else {
-    node = m_bulk->get_entity(k);
-    m_cachedNode = node;
-    m_cachedKey = k;
-  }
-
-  return node;
-}
-
-void NodeRecvMesh::coordinates(const EntityKey k, std::vector<double>& coords) const
+void NodeRecvMesh::coordinates(const EntityKey& k, std::vector<double>& coords) const
 {
   STK_ThrowAssert(m_isInitialized);
 
-  stk::mesh::Entity node = get_entity(k);
+  stk::mesh::Entity node = k;
   const double* data = static_cast<const double *>(stk::mesh::field_data(*m_coordinateField, node));
   const unsigned nDim = m_meta->spatial_dimension();
 
@@ -186,25 +171,44 @@ stk::mesh::EntityId NodeRecvMesh::id(const EntityKey& k) const
   return k.id();
 }
 
-double NodeRecvMesh::get_distance_from_nearest_node(const EntityKey k, const std::vector<double>& toCoords) const
+stk::mesh::Entity NodeRecvMesh::entity(const EntityKey& k) const
+{
+  STK_ThrowAssert(m_isInitialized);
+  stk::mesh::Entity e = k;
+  return e;
+}
+
+double NodeRecvMesh::get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& toCoords) const
 {
   STK_ThrowAssert(m_isInitialized);
   const unsigned nDim = m_meta->spatial_dimension();
 
-  stk::mesh::Entity node = get_entity(k);
+  stk::mesh::Entity node = k;
   const double* nodeCoordinates = static_cast<const double *>(stk::mesh::field_data(*m_coordinateField, node));
 
   return stk::search::distance(nDim, nodeCoordinates, toCoords.data());
 }
 
-void NodeRecvMesh::centroid(const EntityKey k, std::vector<double>& centroid) const
+void NodeRecvMesh::centroid(const EntityKey& k, std::vector<double>& centroid) const
 {
-  stk::mesh::Entity node = get_entity(k);
+  stk::mesh::Entity node = k;
   const double* centroidCoord = static_cast<const double *>(stk::mesh::field_data(*m_coordinateField, node));
   const unsigned nDim = m_meta->spatial_dimension();
   centroid.assign(centroidCoord, centroidCoord + nDim);
 }
 
+void NodeRecvMesh::fill_entity_keys(const stk::mesh::EntityKeyVector& rangeEntities,
+                                    std::vector<EntityKey>& elementEntityKeys)
+{
+  for(stk::mesh::EntityKey key : rangeEntities) {
+    stk::mesh::Entity node = m_bulk->get_entity(key);
+    if(!m_bulk->is_valid(node) || !m_bulk->bucket(node).owned()) {
+      continue;
+    }
+
+    elementEntityKeys.emplace_back(make_entity_key_pair(m_bulk,node));
+  }
+}
 
 } // namespace spmd
 } // namespace search

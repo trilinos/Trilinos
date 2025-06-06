@@ -96,5 +96,6 @@ constexpr double DefaultSettings::smFaceSearchEdgeWeight;
 constexpr bool DefaultSettings::smFixSpiders;
 
 constexpr const char * DefaultSettings::vertexWeightBlockMultiplier;
+constexpr const char * DefaultSettings::cohesiveElements;
 }
 }

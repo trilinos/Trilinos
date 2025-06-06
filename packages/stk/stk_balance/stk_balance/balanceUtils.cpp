@@ -162,6 +162,22 @@ BalanceSettings::getVertexWeightBlockMultipliers() const
   return m_vertexWeightBlockMultipliers;
 }
 
+void BalanceSettings::setCohesiveElements(const std::string & blockName)
+{
+  m_cohesiveElements.push_back(blockName);
+}
+
+const CohesiveElements &
+BalanceSettings::getCohesiveElements() const
+{
+  return m_cohesiveElements;
+}
+
+bool BalanceSettings::hasCohesiveElements() const
+{
+  return !m_cohesiveElements.empty();
+}
+
 bool BalanceSettings::isIncrementalRebalance() const
 {
   return false;

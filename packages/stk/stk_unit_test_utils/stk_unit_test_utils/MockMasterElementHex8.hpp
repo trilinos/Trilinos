@@ -32,8 +32,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef STK_DOC_TEST_SEARCH_HEX_8_HPP
-#define STK_DOC_TEST_SEARCH_HEX_8_HPP
+#ifndef STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_MOCKELEMENTHEX8_HPP_
+#define STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_MOCKELEMENTHEX8_HPP_
+
+#include "Legendre.hpp"
+#include "MockMasterElement.hpp"
 
 #include <math.h>  // for sqrt
 #include <stddef.h>
@@ -101,8 +104,8 @@ class Hex8
   }
 
   static double is_in_element(const double* elem_nodal_coor,  // (8,3)
-      const double* point_coor,                               // (3)
-      double* par_coor)
+                              const double* point_coor,       // (3)
+                              double* par_coor)
   {
     const double isInElemConverged = 1.0e-16;
     // Translate element so that (x,y,z) coordinates of the first node are (0,0,0)
@@ -335,11 +338,10 @@ class Hex8
     return C;
   }
 
-  static void interpolate_point(const int&  /*npar_coord*/, // (==3)
-      const double* par_coord, // (3)
-      const int& ncomp_field,
-      const double* field,  // (8,ncomp_field)
-      double* result)       // (ncomp_field)
+  static void interpolate_point(const double* par_coord, // (3)
+                                const int& ncomp_field,
+                                const double* field,  // (8,ncomp_field)
+                                double* result)       // (ncomp_field)
   {
     // 'field' is a flat array of dimension (8,ncomp_field) (Fortran ordering);
     double xi = par_coord[0];
@@ -359,6 +361,66 @@ class Hex8
                   0.125 * (1.0 + eta) * (1.0 + xi) * (1.0 + zeta) * field[b + 6] +
                   0.125 * (1.0 + eta) * (1.0 - xi) * (1.0 + zeta) * field[b + 7];
     }
+  }
+};
+
+/**
+ * A 3D Gauss-Legendre quadrature rule (traditionally
+ * called the Gauss quadrature) of arbitrary order q x q x q, on the
+ * interval [-1,1] x [-1,1] x [-1,1].
+ *
+ */
+class Hex8GaussQuadrature : public GaussQuadrature {
+public:
+  Hex8GaussQuadrature(unsigned q)
+  {
+    m_order = q;
+    m_numIntgPoints = q * q * q;
+    m_numParametricCoordinates = 3;
+
+    // initialize the points and weights
+    gauss_legendre_3D(q, m_intgLocations, m_intgWeights);
+  }
+
+  ~Hex8GaussQuadrature() = default;
+};
+
+class MasterElementHex8 : public MasterElement {
+ public:
+
+  MasterElementHex8(const unsigned integrationOrder)
+  : MasterElement(stk::topology::HEX_8)
+  {
+    m_name = "MasterElementHex8";
+    m_integrationOrder = get_integration_order(integrationOrder);
+    m_quadrature = std::make_shared<Hex8GaussQuadrature>(m_integrationOrder);
+  }
+
+  MasterElementHex8()
+  : MasterElement(stk::topology::HEX_8)
+  {
+    m_name = "MasterElementHex8";
+    m_integrationOrder = get_integration_order(0);
+    m_quadrature = std::make_shared<Hex8GaussQuadrature>(m_integrationOrder);
+  }
+
+  ~MasterElementHex8() override = default;
+
+  const std::vector<double>& coordinate_center() const override { return Hex8::coordinate_center(); }
+
+  double is_in_element(const double* elem_nodal_coor,
+                       const double* point_coor,
+                       double* par_coor) const override
+  {
+    return Hex8::is_in_element(elem_nodal_coor, point_coor, par_coor);
+  }
+
+  void interpolate_point(const double* par_coord,
+                         const int& ncomp_field,
+                         const double* field,
+                         double* result) const override
+  {
+    Hex8::interpolate_point(par_coord, ncomp_field, field, result);
   }
 };
 

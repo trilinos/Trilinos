@@ -1,5 +1,11 @@
 # CHANGELOG
 
+5.25.2 (STK_VERSION 5250200) 6/6/2025
+  stk_transfer_util: fix Lapack detection (only call find_package
+                     if TPL_LAPACK_LIBRARIES is not already set.)
+  stk_mesh: added new Field data access APIs
+  stk_transfer_util: added SimpleTransfer and related classes
+
 5.25.1-02 (STK_VERSION 5250102) 5/27/2025
   stk_mesh: add overload of for_each_entity_run(NgpMesh.. takes bucketIds
   stk_mesh: misc cleanups, remove un-needed structure (fixed-elem-conn)

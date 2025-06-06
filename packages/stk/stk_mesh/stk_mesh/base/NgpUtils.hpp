@@ -51,7 +51,7 @@ inline void ngp_field_fence(MetaData& meta)
   auto fields = meta.get_fields();
 
   for(auto field : fields) {
-    if(field->has_ngp_field()) {
+    if (field->has_device_data()) {
       field->fence();
     }
   }

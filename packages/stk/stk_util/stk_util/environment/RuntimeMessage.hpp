@@ -65,6 +65,7 @@ namespace stk {
  * pointer difference type which is an integral type by subtracting the zero pointer from it.
  */
 typedef ptrdiff_t MessageId;
+static constexpr MessageId s_baseMemLocation = 0;
 
 /**
  * @brief Enumeration <b>MessageType</b> declares the global message types.
@@ -153,7 +154,7 @@ struct MessageCode
    *
    */
   MessageCode(size_t throttle_cutoff = 5, int throttle_group = MSG_APPLICATION)
-    : m_id(&m_id - static_cast<MessageId *>(0)),
+    : m_id(&m_id - &s_baseMemLocation),
       m_throttle(throttle_cutoff, throttle_group)
   {}
 

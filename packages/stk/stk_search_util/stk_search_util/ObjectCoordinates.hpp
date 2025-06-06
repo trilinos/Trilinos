@@ -47,18 +47,11 @@
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_util/util/ReportHandler.hpp"    // for ThrowRequireMsg
+#include "stk_util/util/ReportHandler.hpp"           // for ThrowRequireMsg
+#include "stk_search_util/MasterElementProvider.hpp"
 
 namespace stk {
 namespace search {
-
-std::vector<stk::mesh::Entity> entity_coordinates(stk::mesh::Entity entity, const stk::mesh::FieldBase* stkField,
-                                                  std::vector<std::vector<double> >& coordinates);
-
-void average_coordinates_for_centroid(const std::vector<std::vector<double> >& coordinates, std::vector<double>& centroid);
-
-std::vector<std::vector<double> > compute_entity_centroid(stk::mesh::Entity entity, const stk::mesh::FieldBase& nodalCoorRef,
-                                                          std::vector<double>& centroid);
 
 void determine_centroid(const unsigned spatial_dim, stk::mesh::Entity element,
                         const stk::mesh::FieldBase& nodal_coord, double* real_loc);
@@ -66,11 +59,22 @@ void determine_centroid(const unsigned spatial_dim, stk::mesh::Entity element,
 void determine_centroid(const unsigned spatial_dim, stk::mesh::Entity element,
                         const stk::mesh::FieldBase& nodal_coord, std::vector<double>& real_loc);
 
+void determine_gauss_points(const stk::mesh::BulkData& recvBulk, stk::mesh::Entity element,
+                            const stk::search::MasterElementProviderInterface& masterElemProvider,
+                            const stk::mesh::FieldBase& coordinateField, std::vector<double>& location);
+
 double distance_from_nearest_entity_node(const stk::mesh::BulkData& bulk, stk::mesh::Entity entity,
                                          const stk::mesh::FieldBase* coord_field, const double* point);
 
 double distance_from_nearest_entity_node(const stk::mesh::BulkData& bulk, stk::mesh::Entity entity,
                                          const stk::mesh::FieldBase* coord_field, const std::vector<double>& point);
+
+
+double distance_squared_from_nearest_entity_node(const stk::mesh::BulkData& bulk, stk::mesh::Entity entity,
+                                                 const stk::mesh::FieldBase* coord_field, const double* point);
+
+double distance_squared_from_nearest_entity_node(const stk::mesh::BulkData& bulk, stk::mesh::Entity entity,
+                                                 const stk::mesh::FieldBase* coord_field, const std::vector<double>& point);
 
 } // end namespace search
 } // end namespace stk

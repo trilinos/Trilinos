@@ -166,7 +166,7 @@ namespace Tpetra {
     const bool debug = tpetraDistributorDebugDefault;
 
     Array<std::string> sendTypes = distributorSendTypes ();
-    const std::string defaultSendType ("Send");
+    const std::string defaultSendType (Details::DistributorSendTypeEnumToString(static_cast<Details::EDistributorSendType>(Details::Behavior::defaultSendType())));
     Array<Details::EDistributorSendType> sendTypeEnums;
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
     sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
