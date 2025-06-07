@@ -291,16 +291,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
 
   /* Allocate memory for the vertex to processor vector */
   if (problem->type == DecompType::ELEMENTAL) {
-    lb->vertex2proc =
-        reinterpret_cast<int *>(malloc(((problem->num_vertices) + sphere->num) * sizeof(int)));
+    lb->vertex2proc.resize(problem->num_vertices + sphere->num);
   }
   else {
-    lb->vertex2proc = reinterpret_cast<int *>(malloc(problem->num_vertices * sizeof(int)));
-  }
-
-  if (!(lb->vertex2proc)) {
-    Gen_Error(0, "fatal: insufficient memory");
-    return 0;
+    lb->vertex2proc.resize(problem->num_vertices);
   }
 
   if (machine->type == MachineType::HCUBE) {
@@ -402,8 +396,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     fmt::print("=======================Call Chaco===========================\n");
     time1 = get_time();
     if (lb->type == Balance::INFILE) {
-      flag =
-          input_assign(fp, const_cast<char *>(assignfile), problem->num_vertices, lb->vertex2proc);
+      flag = input_assign(fp, const_cast<char *>(assignfile), problem->num_vertices,
+                          Data(lb->vertex2proc));
     }
     if (lb->type == Balance::ZPINCH || lb->type == Balance::BRICK ||
         lb->type == Balance::ZOLTAN_RCB || lb->type == Balance::ZOLTAN_RIB ||
@@ -416,9 +410,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     else {
       flag = INTER_FACE(problem->num_vertices, (int *)Data(graph->start), (int *)Data(graph->adj),
                         Data(weight->vertices), Data(weight->edges), x_ptr, y_ptr, z_ptr,
-                        const_cast<char *>(assignfile), (char *)nullptr, lb->vertex2proc, tmp_arch,
-                        tmp_lev, dim, goal, glob_method, refine, (int)solve->rqi_flag, solve->vmax,
-                        lb->num_sects, solve->tolerance, seed);
+                        const_cast<char *>(assignfile), (char *)nullptr, Data(lb->vertex2proc),
+                        tmp_arch, tmp_lev, dim, goal, glob_method, refine, (int)solve->rqi_flag,
+                        solve->vmax, lb->num_sects, solve->tolerance, seed);
     }
 
     time2 = get_time();
@@ -645,7 +639,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         tmp_x   = x_ptr;
         tmp_y   = y_ptr;
         tmp_z   = z_ptr;
-        tmp_v2p = lb->vertex2proc;
+        tmp_v2p = Data(lb->vertex2proc);
 
         int upper = machine->num_dims > 3 ? 3 : machine->num_dims;
         for (int cnt = 0; cnt < upper; cnt++) {

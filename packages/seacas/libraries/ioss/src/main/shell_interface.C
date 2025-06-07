@@ -295,6 +295,10 @@ void IOShell::Interface::enroll_options()
   options_.enroll("time_offset", Ioss::GetLongOption::OptType::MandatoryValue,
                   "The output time = input_time * time_scale + time_offset", nullptr);
 
+  options_.enroll("sort_timesteps", Ioss::GetLongOption::OptType::NoValue,
+                  "The output database will have monotonically increasing timestep time values.",
+                  nullptr);
+
   options_.enroll("select_times", Ioss::GetLongOption::OptType::MandatoryValue,
                   "comma-separated list of times that should be transferred to output database",
                   nullptr);
@@ -416,6 +420,10 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("memory_statistics", Ioss::GetLongOption::OptType::NoValue,
                   "output memory usage throughout code execution", nullptr);
+
+  options_.enroll("Shuffle_timesteps", Ioss::GetLongOption::OptType::NoValue,
+                  "The output database will have randomly ordered timestep time values. (TEST)",
+                  nullptr);
 
   options_.enroll(
       "memory_read", Ioss::GetLongOption::OptType::NoValue,
@@ -700,6 +708,8 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   in_memory_read            = (options_.retrieve("memory_read") != nullptr);
   in_memory_write           = (options_.retrieve("memory_write") != nullptr);
   delete_timesteps          = (options_.retrieve("delete_timesteps") != nullptr);
+  sort_times                = (options_.retrieve("sort_timesteps") != nullptr);
+  shuffle_times             = (options_.retrieve("Shuffle_timesteps") != nullptr);
   lowercase_variable_names  = (options_.retrieve("lowercase_variable_names") != nullptr);
   lowercase_database_names  = (options_.retrieve("lowercase_database_names") != nullptr);
   lowercase_database_names  = (options_.retrieve("lower_case_database_names") != nullptr);
