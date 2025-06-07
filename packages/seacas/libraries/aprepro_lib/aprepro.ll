@@ -161,7 +161,7 @@ integer {D}+({E})?
     }
 
     /* Determine if the first token is a symbol or an explicit number... */
-    auto count = tokens[0];
+    const auto &count = tokens[0];
     bool all_dig = count.find_first_not_of("0123456789") == std::string::npos;
     int loop_iterations = 0;
     if (all_dig) {
@@ -819,7 +819,7 @@ integer {D}+({E})?
 
   Scanner::~Scanner() {
     while (aprepro.ap_file_list.size() > 1) {
-      auto kk = aprepro.ap_file_list.top();
+      const auto &kk = aprepro.ap_file_list.top();
       if (kk.name != "STDIN") {
         yyFlexLexer::yy_load_buffer_state();
         delete yyin;
