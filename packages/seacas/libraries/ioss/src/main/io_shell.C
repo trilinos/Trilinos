@@ -47,7 +47,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "7.2 (2025/05/08)";
+  std::string version = "7.3 (2025/06/03)";
 
   bool mem_stats = false;
 
@@ -69,6 +69,8 @@ namespace {
     options.debug                = interFace.debug;
     options.ints_64_bit          = interFace.ints_64_bit;
     options.delete_timesteps     = interFace.delete_timesteps;
+    options.sort_times           = interFace.sort_times;
+    options.shuffle_times        = interFace.shuffle_times;
     options.minimum_time         = interFace.minimum_time;
     options.maximum_time         = interFace.maximum_time;
     options.time_scale           = interFace.time_scale;
