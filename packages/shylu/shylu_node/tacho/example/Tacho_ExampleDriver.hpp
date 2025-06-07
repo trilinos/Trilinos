@@ -225,7 +225,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     /// inputs are used for graph reordering and analysis
     {
 #ifdef TACHO_HAVE_TEUCHOS
-      Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Analize"));
+      Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Analyze"));
 #endif
       if (m_graph > 0 && m_graph < A.NumRows())
         solver.analyze(A.NumRows(), A.RowPtr(), A.Cols(), m_graph, ap_graph, aj_graph, aw_graph);
@@ -255,7 +255,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     }
 #ifdef TACHO_HAVE_TEUCHOS
     for (int i = 0; i < nfacts; ++i) {
-      Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Factorixze"));
+      Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Factorize"));
       solver.factorize(values_on_device);
     }
 #else
