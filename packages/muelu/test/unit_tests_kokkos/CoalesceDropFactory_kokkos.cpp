@@ -926,32 +926,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedScaledCutCla
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.0 / 0.51));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.51));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("signed classical")));
   coalesceDropFact.SetParameter("aggregation: classical algo", Teuchos::ParameterEntry(std::string("scaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);
   fineLevel.Request("DofsPerNode", &coalesceDropFact);
 
-  TEST_THROW(coalesceDropFact.Build(fineLevel), MueLu::Exceptions::RuntimeError);
+  RCP<LWGraph_kokkos> graph_d = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
+  auto graph                  = graph_d->copyToHost();
+  LO myDofsPerNode            = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+  TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
 
-  //    RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &coalesceDropFact);
-  //    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
-  //    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
+  const RCP<const Map> myImportMap = graph->GetImportMap();  // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
+  const RCP<const Map> myDomainMap = graph->GetDomainMap();
 
-  //    const RCP<const Map> myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
-  //    const RCP<const Map> myDomainMap = graph->GetDomainMap();
+  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), 35);
+  TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(myImportMap->getMinLocalIndex(), 0);
+  TEST_EQUALITY(myImportMap->getGlobalNumElements(), Teuchos::as<size_t>(36 + (comm->getSize() - 1) * 2));
 
-  //    TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), 35);
-  //    TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
-  //    TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
-  //    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(36 + (comm->getSize()-1)*2));
+  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), 35);
+  TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(myDomainMap->getMinLocalIndex(), 0);
+  TEST_EQUALITY(myDomainMap->getGlobalNumElements(), 36);
 
-  //    TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), 35);
-  //    TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
-  //    TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
-  //    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),36);
-
-  //    TEST_EQUALITY(graph->GetGlobalNumEdges(),36);
+  TEST_EQUALITY(graph->GetGlobalNumEdges(), 106);
 
 }  // SignedScaledCutClassical
 
@@ -985,32 +984,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedUnscaledCutC
   // L_ij = -36
   // L_ii = 72
   // criterion for dropping is |L_ij|^2 <= tol^2 * |L_ii*L_jj|
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.0 / 0.51));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.51));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("signed classical")));
   coalesceDropFact.SetParameter("aggregation: classical algo", Teuchos::ParameterEntry(std::string("unscaled cut")));
   fineLevel.Request("Graph", &coalesceDropFact);
   fineLevel.Request("DofsPerNode", &coalesceDropFact);
 
-  TEST_THROW(coalesceDropFact.Build(fineLevel), MueLu::Exceptions::RuntimeError);
+  RCP<LWGraph_kokkos> graph_d = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
+  auto graph                  = graph_d->copyToHost();
+  LO myDofsPerNode            = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+  TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
 
-  //    RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &coalesceDropFact);
-  //    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
-  //    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
+  const RCP<const Map> myImportMap = graph->GetImportMap();  // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
+  const RCP<const Map> myDomainMap = graph->GetDomainMap();
 
-  //    const RCP<const Map> myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
-  //    const RCP<const Map> myDomainMap = graph->GetDomainMap();
+  TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), 35);
+  TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(myImportMap->getMinLocalIndex(), 0);
+  TEST_EQUALITY(myImportMap->getGlobalNumElements(), Teuchos::as<size_t>(36 + (comm->getSize() - 1) * 2));
 
-  //    TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), 35);
-  //    TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
-  //    TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
-  //    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(36 + (comm->getSize()-1)*2));
+  TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), 35);
+  TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(myDomainMap->getMinLocalIndex(), 0);
+  TEST_EQUALITY(myDomainMap->getGlobalNumElements(), 36);
 
-  //    TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), 35);
-  //    TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
-  //    TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
-  //    TEST_EQUALITY(myDomainMap->getGlobalNumElements(),36);
-
-  //    TEST_EQUALITY(graph->GetGlobalNumEdges(),36);
+  TEST_EQUALITY(graph->GetGlobalNumEdges(), 106);
 
 }  // SignedUnScaledCutClassical
 

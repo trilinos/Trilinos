@@ -149,6 +149,52 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+std::tuple<Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>, Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    GetBlockNumberMVs(Level& currentLevel) const {
+  RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+  RCP<LocalOrdinalVector> ghostedBlockNumber;
+  GetOStream(Statistics1) << "Using BlockDiagonal Graph before dropping (with provided blocking)" << std::endl;
+
+  // Ghost the column block numbers if we need to
+  auto A                     = Get<RCP<Matrix>>(currentLevel, "A");
+  RCP<const Import> importer = A->getCrsGraph()->getImporter();
+  if (!importer.is_null()) {
+    SubFactoryMonitor m1(*this, "Block Number import", currentLevel);
+    ghostedBlockNumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(importer->getTargetMap());
+    ghostedBlockNumber->doImport(*BlockNumber, *importer, Xpetra::INSERT);
+  } else {
+    ghostedBlockNumber = BlockNumber;
+  }
+  return std::make_tuple(BlockNumber, ghostedBlockNumber);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMaterial(Level& currentLevel, size_t spatialDim) const {
+  auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
+  if (material->getNumVectors() == 1) {
+    GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(spatialDim * spatialDim != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
+    {
+      std::stringstream ss;
+      ss << "material tensor mean =" << std::endl;
+      size_t k = 0;
+      for (size_t i = 0; i < spatialDim; ++i) {
+        ss << "   ";
+        for (size_t j = 0; j < spatialDim; ++j) {
+          ss << material->getVector(k)->meanValue() << " ";
+          ++k;
+        }
+        ss << std::endl;
+      }
+      GetOStream(Runtime0) << ss.str();
+    }
+  }
+  return material;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildScalar(Level& currentLevel) const {
   FactoryMonitor m(*this, "Build", currentLevel);
@@ -162,6 +208,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   using values_type       = typename local_matrix_type::values_type::non_const_type;
   using device_type       = typename Node::device_type;
   using memory_space      = typename device_type::memory_space;
+  using doubleMultiVector = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>;
 
   typedef Teuchos::ScalarTraits<SC> STS;
   typedef typename STS::magnitudeType MT;
@@ -179,7 +226,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   const LocalOrdinal dirichletNonzeroThreshold         = 1;
 
   // Dropping
-  const std::string algo               = pL.get<std::string>("aggregation: drop scheme");
+  std::string algo                     = pL.get<std::string>("aggregation: drop scheme");
   std::string classicalAlgoStr         = pL.get<std::string>("aggregation: classical algo");
   std::string distanceLaplacianAlgoStr = pL.get<std::string>("aggregation: distance laplacian algo");
   std::string distanceLaplacianMetric  = pL.get<std::string>("aggregation: distance laplacian metric");
@@ -200,6 +247,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   const bool useSpreadLumping = pL.get<bool>("filtered matrix: use spread lumping");
 
   const MT filteringDirichletThreshold = as<MT>(pL.get<double>("filtered matrix: Dirichlet threshold"));
+
+  // coloring graph
+  const bool localizeColoringGraph   = pL.get<bool>("aggregation: coloring: localize color graph");
+  const bool symmetrizeColoringGraph = true;
+
   TEUCHOS_ASSERT(!useRootStencil);
   TEUCHOS_ASSERT(!useSpreadLumping);
 
@@ -212,6 +264,86 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   if (((algo == "classical") && (classicalAlgoStr.find("scaled") != std::string::npos)) || ((algo == "distance laplacian") && (distanceLaplacianAlgoStr.find("scaled") != std::string::npos)))
     TEUCHOS_TEST_FOR_EXCEPTION(threshold > 1.0, Exceptions::RuntimeError, "For cut-drop algorithms, \"aggregation: drop tol\" = " << threshold << ", needs to be <= 1.0");
+
+  //////////////////////////////////////////////////////////////////////
+  // translate to new options
+
+  bool useBlocking                          = false;
+  std::string socUsesMatrix                 = "A";
+  std::set<std::string> validSocUsesMatrix  = {"A", "distance laplacian"};
+  std::string socUsesMeasure                = "smoothed aggregation";
+  std::set<std::string> validSocUsesMeasure = {"unscaled", "smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben"};
+  std::string droppingMethod                = "point-wise";
+  std::set<std::string> validDroppingMethod = {"point-wise", "cut-drop"};
+  bool symmetrizeDroppedGraph               = false;
+  bool generateColoringGraph                = false;
+
+  // Remove prefix "block diagonal" from algo
+  if (algo.find("block diagonal") == 0) {
+    useBlocking = true;
+    algo        = algo.substr(14);
+    if (algo != "") {
+      algo = algo.substr(1);
+    }
+  }
+
+  if ((algo == "classical") || (algo == "signed classical sa") || (algo == "signed classical") || (algo == "colored signed classical")) {
+    socUsesMatrix = "A";
+
+    if (algo == "classical") {
+      socUsesMeasure = "smoothed aggregation";
+    } else if (algo == "signed classical sa") {
+      socUsesMeasure = "signed smoothed aggregation";
+    } else if (algo == "signed classical") {
+      socUsesMeasure = "signed ruge-stueben";
+    } else if (algo == "colored signed classical") {
+      socUsesMeasure        = "signed ruge-stueben";
+      generateColoringGraph = true;
+    }
+
+    if (classicalAlgoStr == "default")
+      droppingMethod = "point-wise";
+    else if (classicalAlgoStr == "unscaled cut") {
+      socUsesMeasure = "unscaled";
+      droppingMethod = "cut-drop";
+    } else if (classicalAlgoStr == "scaled cut") {
+      droppingMethod = "cut-drop";
+    } else if (classicalAlgoStr == "scaled cut symmetric") {
+      droppingMethod         = "cut-drop";
+      symmetrizeDroppedGraph = true;
+    }
+  } else if ((algo == "distance laplacian") || (algo == "signed classical sa distance laplacian") || (algo == "signed classical distance laplacian")) {
+    socUsesMatrix = "distance laplacian";
+
+    if (algo == "distance laplacian") {
+      socUsesMeasure = "smoothed aggregation";
+    } else if (algo == "signed classical sa distance laplacian") {
+      socUsesMeasure = "signed smoothed aggregation";
+    } else if (algo == "signed classical distance laplacian") {
+      socUsesMeasure = "signed ruge-stueben";
+    }
+
+    if (distanceLaplacianAlgoStr == "default")
+      droppingMethod = "point-wise";
+    else if (distanceLaplacianAlgoStr == "unscaled cut") {
+      socUsesMeasure = "unscaled";
+      droppingMethod = "cut-drop";
+    } else if (distanceLaplacianAlgoStr == "scaled cut") {
+      droppingMethod = "cut-drop";
+    } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
+      droppingMethod         = "cut-drop";
+      symmetrizeDroppedGraph = true;
+    }
+  } else if (algo == "") {
+    // algo was "block diagonal", but we process and remove the "block diagonal" part
+    socUsesMatrix = "A";
+    threshold     = zero;
+  }
+  GetOStream(Runtime0) << "socUsesMatrix = \"" << socUsesMatrix << "\": socUsesMeasure = \"" << socUsesMeasure << "\", droppingMethod = \"" << droppingMethod << "\"" << std::endl;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(validSocUsesMatrix.find(socUsesMatrix) == validSocUsesMatrix.end(), Exceptions::RuntimeError, "Invalid option: " << socUsesMatrix);
+  TEUCHOS_TEST_FOR_EXCEPTION(validSocUsesMeasure.find(socUsesMeasure) == validSocUsesMeasure.end(), Exceptions::RuntimeError, "Invalid option: " << socUsesMeasure);
+  TEUCHOS_TEST_FOR_EXCEPTION(validDroppingMethod.find(droppingMethod) == validDroppingMethod.end(), Exceptions::RuntimeError, "Invalid option: " << droppingMethod);
 
   //////////////////////////////////////////////////////////////////////
   // We perform four sweeps over the rows of A:
@@ -285,6 +417,114 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //
   // For the block diagonal variants we first block diagonalized and then apply "blocksize = 1" algorithms.
 
+  // Macro that applies dropping functors.
+  // If HAVE_MUELU_DEBUG is true, this runs additional debug checks.
+#if !defined(HAVE_MUELU_DEBUG)
+#define MueLu_runDroppingFunctorsImpl(...)                                                                            \
+  {                                                                                                                   \
+    auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__); \
+    Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz_filtered);                 \
+  }
+#else
+#define MueLu_runDroppingFunctorsImpl(...)                                                                                   \
+  {                                                                                                                          \
+    auto debug           = Misc::DebugFunctor(lclA, results);                                                                \
+    auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__, debug); \
+    Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz_filtered);                        \
+  }
+#endif
+
+  // Macro that handles optional block diagonalization.
+  // Calls MueLu_runDroppingFunctorsImpl
+#define MueLu_runDroppingFunctors(...)                                                                                             \
+  {                                                                                                                                \
+    if (useBlocking) {                                                                                                             \
+      auto BlockNumbers      = GetBlockNumberMVs(currentLevel);                                                                    \
+      auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *std::get<0>(BlockNumbers), *std::get<1>(BlockNumbers), results); \
+      MueLu_runDroppingFunctorsImpl(block_diagonalize, __VA_ARGS__);                                                               \
+    } else                                                                                                                         \
+      MueLu_runDroppingFunctorsImpl(__VA_ARGS__);                                                                                  \
+  }
+
+  // Macro that runs dropping for SoC based on A itself, handling of droppingMethod.
+  // Calls MueLu_runDroppingFunctors
+#define MueLu_runDroppingFunctors_on_A(SoC)                                                                                                                                                                    \
+  {                                                                                                                                                                                                            \
+    if (droppingMethod == "point-wise") {                                                                                                                                                                      \
+      auto dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);                                                                                                                       \
+                                                                                                                                                                                                               \
+      if (aggregationMayCreateDirichlet) {                                                                                                                                                                     \
+        MueLu_runDroppingFunctors(dropping,                                                                                                                                                                    \
+                                  drop_boundaries,                                                                                                                                                             \
+                                  preserve_diagonals,                                                                                                                                                          \
+                                  mark_singletons_as_boundary);                                                                                                                                                \
+      } else {                                                                                                                                                                                                 \
+        MueLu_runDroppingFunctors(dropping,                                                                                                                                                                    \
+                                  drop_boundaries,                                                                                                                                                             \
+                                  preserve_diagonals);                                                                                                                                                         \
+      }                                                                                                                                                                                                        \
+    } else if (droppingMethod == "cut-drop") {                                                                                                                                                                 \
+      auto comparison = CutDrop::make_comparison_functor<SoC>(*A, results);                                                                                                                                    \
+      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                                                                        \
+                                                                                                                                                                                                               \
+      MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                                                               \
+                                preserve_diagonals,                                                                                                                                                            \
+                                cut_drop);                                                                                                                                                                     \
+    } else {                                                                                                                                                                                                   \
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << classicalAlgoStr << "\""); \
+    }                                                                                                                                                                                                          \
+  }
+
+  // Macro that runs on the distance Laplacian, handling of droppingMethod.
+  // Calls MueLu_runDroppingFunctors
+#define MueLu_runDroppingFunctors_on_dlap_inner(SoC)                                                                                                                                                                            \
+  {                                                                                                                                                                                                                             \
+    if (droppingMethod == "point-wise") {                                                                                                                                                                                       \
+      auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);                                                                                                                  \
+                                                                                                                                                                                                                                \
+      if (aggregationMayCreateDirichlet) {                                                                                                                                                                                      \
+        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                                                                                      \
+                                  drop_boundaries,                                                                                                                                                                              \
+                                  preserve_diagonals,                                                                                                                                                                           \
+                                  mark_singletons_as_boundary);                                                                                                                                                                 \
+      } else {                                                                                                                                                                                                                  \
+        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                                                                                      \
+                                  drop_boundaries,                                                                                                                                                                              \
+                                  preserve_diagonals);                                                                                                                                                                          \
+      }                                                                                                                                                                                                                         \
+    } else if (droppingMethod == "cut-drop") {                                                                                                                                                                                  \
+      auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(*A, dist2, results);                                                                                                                                         \
+      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                                                                                         \
+                                                                                                                                                                                                                                \
+      MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                                                                                \
+                                preserve_diagonals,                                                                                                                                                                             \
+                                cut_drop);                                                                                                                                                                                      \
+    } else {                                                                                                                                                                                                                    \
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\""); \
+    }                                                                                                                                                                                                                           \
+  }
+
+  // Macro that runs on the distance Laplacian, handling of distanceLaplacianMetric.
+  // Calls MueLu_runDroppingFunctors_on_dlap_inner
+#define MueLu_runDroppingFunctors_on_dlap(SoC)                                                                                                                                                  \
+  {                                                                                                                                                                                             \
+    if (distanceLaplacianMetric == "unweighted") {                                                                                                                                              \
+      auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);                                                                                                                    \
+      MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                                                             \
+    } else if (distanceLaplacianMetric == "material") {                                                                                                                                         \
+      auto material = GetMaterial(currentLevel, coords->getNumVectors());                                                                                                                       \
+      if (material->getNumVectors() == 1) {                                                                                                                                                     \
+        auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);                                                                                                    \
+        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                                                           \
+      } else {                                                                                                                                                                                  \
+        auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);                                                                                                    \
+        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                                                           \
+      }                                                                                                                                                                                         \
+    } else {                                                                                                                                                                                    \
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian metric\" must be one of (unweighted|material), not \"" << distanceLaplacianMetric << "\""); \
+    }                                                                                                                                                                                           \
+  }
+
   // rowptr of filtered A
   auto filtered_rowptr = rowptr_type("filtered_rowptr", lclA.numRows() + 1);
   // Number of nonzeros of filtered A
@@ -294,918 +534,33 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   {
     SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
 
-    std::string functorLabel = "MueLu::CoalesceDrop::CountEntries";
-
-    // macro that applied dropping functors
-#if !defined(HAVE_MUELU_DEBUG)
-#define MueLu_runDroppingFunctors(...)                                                                                \
-  {                                                                                                                   \
-    auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__); \
-    Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);                                        \
-  }
-#else
-#define MueLu_runDroppingFunctors(...)                                                                                       \
-  {                                                                                                                          \
-    auto debug           = Misc::DebugFunctor(lclA, results);                                                                \
-    auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__, debug); \
-    Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);                                               \
-  }
-#endif
-
     auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
 
     if (threshold != zero) {
       auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
       auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
 
-      if (algo == "classical" || algo == "block diagonal classical") {
-        const auto SoC = Misc::SmoothedAggregationMeasure;
-
-        if (algo == "block diagonal classical") {
-          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);
-
-          if (classicalAlgoStr == "default") {
-            auto classical_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
-
-            if (aggregationMayCreateDirichlet) {
-              MueLu_runDroppingFunctors(block_diagonalize,
-                                        classical_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals,
-                                        mark_singletons_as_boundary);
-            } else {
-              MueLu_runDroppingFunctors(block_diagonalize,
-                                        classical_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals);
-            }
-          } else if (classicalAlgoStr == "unscaled cut") {
-            auto comparison = CutDrop::UnscaledComparison(*A, results);
-            auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-            MueLu_runDroppingFunctors(block_diagonalize,
-                                      drop_boundaries,
-                                      preserve_diagonals,
-                                      cut_drop);
-          } else if (classicalAlgoStr == "scaled cut") {
-            auto comparison = CutDrop::make_scaled_comparison_functor<SoC>(*A, results);
-            auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-            MueLu_runDroppingFunctors(block_diagonalize,
-                                      drop_boundaries,
-                                      preserve_diagonals,
-                                      cut_drop);
-          } else if (classicalAlgoStr == "scaled cut symmetric") {
-            auto comparison = CutDrop::make_scaled_comparison_functor<SoC>(*A, results);
-            auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-            MueLu_runDroppingFunctors(block_diagonalize,
-                                      drop_boundaries,
-                                      preserve_diagonals,
-                                      cut_drop);
-
-            auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-
-            MueLu_runDroppingFunctors(symmetrize);
-
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << classicalAlgoStr << "\"");
-          }
-        } else {
-          if (classicalAlgoStr == "default") {
-            auto classical_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
-
-            if (aggregationMayCreateDirichlet) {
-              MueLu_runDroppingFunctors(classical_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals,
-                                        mark_singletons_as_boundary);
-            } else {
-              MueLu_runDroppingFunctors(classical_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals);
-            }
-          } else if (classicalAlgoStr == "unscaled cut") {
-            auto comparison = CutDrop::UnscaledComparison(*A, results);
-            auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-            MueLu_runDroppingFunctors(drop_boundaries,
-                                      preserve_diagonals,
-                                      cut_drop);
-          } else if (classicalAlgoStr == "scaled cut") {
-            auto comparison = CutDrop::make_scaled_comparison_functor<SoC>(*A, results);
-            auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-            MueLu_runDroppingFunctors(drop_boundaries,
-                                      preserve_diagonals,
-                                      cut_drop);
-          } else if (classicalAlgoStr == "scaled cut symmetric") {
-            auto comparison = CutDrop::make_scaled_comparison_functor<SoC>(*A, results);
-            auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-            MueLu_runDroppingFunctors(drop_boundaries,
-                                      preserve_diagonals,
-                                      cut_drop);
-
-            auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-
-            MueLu_runDroppingFunctors(symmetrize);
-
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << classicalAlgoStr << "\"");
-          }
+      if (socUsesMatrix == "A") {
+        if (socUsesMeasure == "unscaled") {
+          MueLu_runDroppingFunctors_on_A(Misc::UnscaledMeasure);
+        } else if (socUsesMeasure == "smoothed aggregation") {
+          MueLu_runDroppingFunctors_on_A(Misc::SmoothedAggregationMeasure);
+        } else if (socUsesMeasure == "signed ruge-stueben") {
+          MueLu_runDroppingFunctors_on_A(Misc::SignedRugeStuebenMeasure);
+        } else if (socUsesMeasure == "signed smoothed aggregation") {
+          MueLu_runDroppingFunctors_on_A(Misc::SignedSmoothedAggregationMeasure);
         }
-      } else if (algo == "signed classical" || algo == "block diagonal signed classical" || algo == "block diagonal colored signed classical") {
-        const auto SoC = Misc::SignedRugeStuebenMeasure;
-
-        auto signed_classical_rs_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
-
-        if (algo == "block diagonal signed classical" || algo == "block diagonal colored signed classical") {
-          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);
-
-          if (classicalAlgoStr == "default") {
-            if (aggregationMayCreateDirichlet) {
-              MueLu_runDroppingFunctors(block_diagonalize,
-                                        signed_classical_rs_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals,
-                                        mark_singletons_as_boundary);
-
-            } else {
-              MueLu_runDroppingFunctors(block_diagonalize,
-                                        signed_classical_rs_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals);
-            }
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be default, not \"" << classicalAlgoStr << "\"");
-          }
-        } else {
-          if (classicalAlgoStr == "default") {
-            if (aggregationMayCreateDirichlet) {
-              MueLu_runDroppingFunctors(signed_classical_rs_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals,
-                                        mark_singletons_as_boundary);
-
-            } else {
-              MueLu_runDroppingFunctors(signed_classical_rs_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals);
-            }
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be default, not \"" << classicalAlgoStr << "\"");
-          }
+      } else if (socUsesMatrix == "distance laplacian") {
+        auto coords = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
+        if (socUsesMeasure == "unscaled") {
+          MueLu_runDroppingFunctors_on_dlap(Misc::UnscaledMeasure);
+        } else if (socUsesMeasure == "smoothed aggregation") {
+          MueLu_runDroppingFunctors_on_dlap(Misc::SmoothedAggregationMeasure);
+        } else if (socUsesMeasure == "signed ruge-stueben") {
+          MueLu_runDroppingFunctors_on_dlap(Misc::SignedRugeStuebenMeasure);
+        } else if (socUsesMeasure == "signed smoothed aggregation") {
+          MueLu_runDroppingFunctors_on_dlap(Misc::SignedSmoothedAggregationMeasure);
         }
-      } else if (algo == "signed classical sa") {
-        const auto SoC = Misc::SignedSmoothedAggregationMeasure;
-        if (classicalAlgoStr == "default") {
-          auto signed_classical_sa_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
-
-          if (aggregationMayCreateDirichlet) {
-            MueLu_runDroppingFunctors(signed_classical_sa_dropping,
-                                      drop_boundaries,
-                                      preserve_diagonals,
-                                      mark_singletons_as_boundary);
-
-          } else {
-            MueLu_runDroppingFunctors(signed_classical_sa_dropping,
-                                      drop_boundaries,
-                                      preserve_diagonals);
-          }
-        } else {
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be default, not \"" << classicalAlgoStr << "\"");
-        }
-      } else if (algo == "distance laplacian" || algo == "block diagonal distance laplacian" || algo == "signed classical distance laplacian" || algo == "signed classical sa distance laplacian") {
-        using doubleMultiVector = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>;
-        auto coords             = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
-
-        if (algo == "block diagonal distance laplacian") {
-          const auto SoC = Misc::SmoothedAggregationMeasure;
-
-          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);
-
-          auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-
-          if (distanceLaplacianAlgoStr == "default") {
-            auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-            if (aggregationMayCreateDirichlet) {
-              MueLu_runDroppingFunctors(block_diagonalize,
-                                        dist_laplacian_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals,
-                                        mark_singletons_as_boundary);
-            } else {
-              MueLu_runDroppingFunctors(block_diagonalize,
-                                        dist_laplacian_dropping,
-                                        drop_boundaries,
-                                        preserve_diagonals);
-            }
-          } else if (distanceLaplacianAlgoStr == "unscaled cut") {
-            auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-            auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-            MueLu_runDroppingFunctors(block_diagonalize,
-                                      drop_boundaries,
-                                      preserve_diagonals,
-                                      cut_drop);
-          } else if (distanceLaplacianAlgoStr == "scaled cut") {
-            auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-            auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-            MueLu_runDroppingFunctors(block_diagonalize,
-                                      drop_boundaries,
-                                      preserve_diagonals,
-                                      cut_drop);
-          } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
-            auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-            auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-            MueLu_runDroppingFunctors(block_diagonalize,
-                                      drop_boundaries,
-                                      cut_drop,
-                                      preserve_diagonals);
-
-            auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-
-            MueLu_runDroppingFunctors(symmetrize);
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\"");
-          }
-        } else if (algo == "distance laplacian") {
-          const auto SoC = Misc::SmoothedAggregationMeasure;
-
-          if (distanceLaplacianAlgoStr == "default") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2                   = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-              if (aggregationMayCreateDirichlet) {
-                MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                          drop_boundaries,
-                                          preserve_diagonals,
-                                          mark_singletons_as_boundary);
-              } else {
-                MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                          drop_boundaries,
-                                          preserve_diagonals);
-              }
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2                   = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2                   = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
-              }
-            }
-
-          } else if (distanceLaplacianAlgoStr == "unscaled cut") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2      = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-              auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-              MueLu_runDroppingFunctors(drop_boundaries,
-                                        preserve_diagonals,
-                                        cut_drop);
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              }
-            }
-          } else if (distanceLaplacianAlgoStr == "scaled cut") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2      = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-              auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-              MueLu_runDroppingFunctors(drop_boundaries,
-                                        preserve_diagonals,
-                                        cut_drop);
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              }
-            }
-          } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2      = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-              auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-              MueLu_runDroppingFunctors(drop_boundaries,
-                                        preserve_diagonals,
-                                        cut_drop);
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              }
-            }
-
-            auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-
-            MueLu_runDroppingFunctors(symmetrize);
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\"");
-          }
-        } else if (algo == "signed classical distance laplacian") {
-          const auto SoC = Misc::SignedRugeStuebenMeasure;
-          if (distanceLaplacianAlgoStr == "default") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2                   = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-              if (aggregationMayCreateDirichlet) {
-                MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                          drop_boundaries,
-                                          preserve_diagonals,
-                                          mark_singletons_as_boundary);
-              } else {
-                MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                          drop_boundaries,
-                                          preserve_diagonals);
-              }
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2                   = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2                   = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
-              }
-            }
-
-          } else if (distanceLaplacianAlgoStr == "unscaled cut") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2      = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-              auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-              MueLu_runDroppingFunctors(drop_boundaries,
-                                        preserve_diagonals,
-                                        cut_drop);
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              }
-            }
-          } else if (distanceLaplacianAlgoStr == "scaled cut") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2      = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-              auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-              MueLu_runDroppingFunctors(drop_boundaries,
-                                        preserve_diagonals,
-                                        cut_drop);
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              }
-            }
-          } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2      = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-              auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-              MueLu_runDroppingFunctors(drop_boundaries,
-                                        preserve_diagonals,
-                                        cut_drop);
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              }
-            }
-
-            auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-
-            MueLu_runDroppingFunctors(symmetrize);
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\"");
-          }
-        } else if (algo == "signed classical sa distance laplacian") {
-          const auto SoC = Misc::SignedSmoothedAggregationMeasure;
-
-          if (distanceLaplacianAlgoStr == "default") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2                   = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-              if (aggregationMayCreateDirichlet) {
-                MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                          drop_boundaries,
-                                          preserve_diagonals,
-                                          mark_singletons_as_boundary);
-              } else {
-                MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                          drop_boundaries,
-                                          preserve_diagonals);
-              }
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2                   = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2                   = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
-              }
-            }
-
-          } else if (distanceLaplacianAlgoStr == "unscaled cut") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2      = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-              auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-              MueLu_runDroppingFunctors(drop_boundaries,
-                                        preserve_diagonals,
-                                        cut_drop);
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              }
-            }
-          } else if (distanceLaplacianAlgoStr == "scaled cut") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2      = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-              auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-              MueLu_runDroppingFunctors(drop_boundaries,
-                                        preserve_diagonals,
-                                        cut_drop);
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              }
-            }
-          } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2      = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
-              auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-              auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-              MueLu_runDroppingFunctors(drop_boundaries,
-                                        preserve_diagonals,
-                                        cut_drop);
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2      = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2      = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material);
-                auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);
-                auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-                MueLu_runDroppingFunctors(drop_boundaries,
-                                          preserve_diagonals,
-                                          cut_drop);
-              }
-            }
-
-            auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-
-            MueLu_runDroppingFunctors(symmetrize);
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\"");
-          }
-        }
-      } else if (algo == "block diagonal") {
-        auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-        auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);
-
-        MueLu_runDroppingFunctors(block_diagonalize);
-      } else {
-        TEUCHOS_ASSERT(false);
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
@@ -1214,7 +569,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
       MueLu_runDroppingFunctors(no_op);
     }
-#undef MueLu_runDroppingFunctors
+
+    if (symmetrizeDroppedGraph) {
+      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
+      MueLu_runDroppingFunctors(symmetrize);
+    }
   }
   GO numDropped = lclA.nnz() - nnz_filtered;
   // We now know the number of entries of filtered A and have the final rowptr.
@@ -1285,6 +644,34 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     graph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "amalgamated graph of A"));
     graph->SetBoundaryNodeMap(boundaryNodes);
   }
+
+  // Construct a second graph for coloring
+  if (generateColoringGraph) {
+    SubFactoryMonitor mColoringGraph(*this, "Construct coloring graph", currentLevel);
+
+    filtered_rowptr = rowptr_type("rowptr_coloring_graph", lclA.numRows() + 1);
+    if (localizeColoringGraph) {
+      auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
+      MueLu_runDroppingFunctors(drop_offrank);
+    }
+    if (symmetrizeColoringGraph) {
+      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
+      MueLu_runDroppingFunctors(symmetrize);
+    }
+    auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
+    auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
+    auto graphConstruction = MatrixConstruction::GraphConstruction<local_matrix_type, local_graph_type>(lclA, results, lclGraph);
+    Kokkos::parallel_for("MueLu::CoalesceDrop::Construct_coloring_graph", range, graphConstruction);
+
+    auto colorGraph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "coloring graph"));
+    Set(currentLevel, "Coloring Graph", colorGraph);
+  }
+
+#undef MueLu_runDroppingFunctors_on_A
+#undef MueLu_runDroppingFunctors_on_dlap_inner
+#undef MueLu_runDroppingFunctors_on_dlap
+#undef MueLu_runDroppingFunctors
+#undef MueLu_runDroppingFunctorsImpl
 
   LO dofsPerNode = 1;
   Set(currentLevel, "DofsPerNode", dofsPerNode);
@@ -1485,8 +872,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //   Mark diagonal as KEEP
   // - Misc::MarkSingletonFunctor
   //   Mark singletons after dropping as Dirichlet
-  // - Misc::BlockDiagonalizeVectorFunctor
-  //   Drop coupling between blocks
 
   // rowptr of filtered A
   auto filtered_rowptr = rowptr_type("rowptr", lclA.numRows() + 1);
@@ -1522,39 +907,21 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
       auto mark_singletons_as_boundary = Misc::MarkSingletonVectorFunctor(lclA, rowTranslation, boundaryNodes, results);
 
-      if (algo == "classical" || algo == "block diagonal classical") {
+      if (algo == "classical") {
         const auto SoC = Misc::SmoothedAggregationMeasure;
 
         if (classicalAlgoStr == "default") {
           auto classical_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
 
-          if (algo == "block diagonal classical") {
-            auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-            auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
-
-            if (aggregationMayCreateDirichlet) {
-              MueLu_runDroppingFunctors(block_diagonalize,
-                                        classical_dropping,
-                                        // drop_boundaries,
-                                        preserve_diagonals,
-                                        mark_singletons_as_boundary);
-            } else {
-              MueLu_runDroppingFunctors(block_diagonalize,
-                                        classical_dropping,
-                                        // drop_boundaries,
-                                        preserve_diagonals);
-            }
+          if (aggregationMayCreateDirichlet) {
+            MueLu_runDroppingFunctors(classical_dropping,
+                                      // drop_boundaries,
+                                      preserve_diagonals,
+                                      mark_singletons_as_boundary);
           } else {
-            if (aggregationMayCreateDirichlet) {
-              MueLu_runDroppingFunctors(classical_dropping,
-                                        // drop_boundaries,
-                                        preserve_diagonals,
-                                        mark_singletons_as_boundary);
-            } else {
-              MueLu_runDroppingFunctors(classical_dropping,
-                                        // drop_boundaries,
-                                        preserve_diagonals);
-            }
+            MueLu_runDroppingFunctors(classical_dropping,
+                                      // drop_boundaries,
+                                      preserve_diagonals);
           }
         } else if (classicalAlgoStr == "unscaled cut") {
           TEUCHOS_ASSERT(false);
@@ -1570,35 +937,16 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
         auto signed_classical_rs_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
 
-        if (algo == "block diagonal signed classical" || algo == "block diagonal colored signed classical") {
-          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-          auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
+        if (aggregationMayCreateDirichlet) {
+          MueLu_runDroppingFunctors(signed_classical_rs_dropping,
+                                    // drop_boundaries,
+                                    preserve_diagonals,
+                                    mark_singletons_as_boundary);
 
-          if (aggregationMayCreateDirichlet) {
-            MueLu_runDroppingFunctors(block_diagonalize,
-                                      signed_classical_rs_dropping,
-                                      // drop_boundaries,
-                                      preserve_diagonals,
-                                      mark_singletons_as_boundary);
-
-          } else {
-            MueLu_runDroppingFunctors(block_diagonalize,
-                                      signed_classical_rs_dropping,
-                                      // drop_boundaries,
-                                      preserve_diagonals);
-          }
         } else {
-          if (aggregationMayCreateDirichlet) {
-            MueLu_runDroppingFunctors(signed_classical_rs_dropping,
-                                      // drop_boundaries,
-                                      preserve_diagonals,
-                                      mark_singletons_as_boundary);
-
-          } else {
-            MueLu_runDroppingFunctors(signed_classical_rs_dropping,
-                                      // drop_boundaries,
-                                      preserve_diagonals);
-          }
+          MueLu_runDroppingFunctors(signed_classical_rs_dropping,
+                                    // drop_boundaries,
+                                    preserve_diagonals);
         }
       } else if (algo == "signed classical sa") {
         const auto SoC = Misc::SignedSmoothedAggregationMeasure;
@@ -1616,7 +964,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
                                     // drop_boundaries,
                                     preserve_diagonals);
         }
-      } else if (algo == "distance laplacian" || algo == "block diagonal distance laplacian") {
+      } else if (algo == "distance laplacian") {
         using doubleMultiVector = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>;
         auto coords             = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
 
@@ -1676,178 +1024,64 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           mergedA = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclMergedA, uniqueMap, nonUniqueMap, uniqueMap, uniqueMap);
         }
 
-        if (algo == "block diagonal distance laplacian") {
-          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-          auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
+        if (distanceLaplacianAlgoStr == "default") {
+          const auto SoC = Misc::SmoothedAggregationMeasure;
 
-          if (distanceLaplacianAlgoStr == "default") {
-            const auto SoC = Misc::SmoothedAggregationMeasure;
+          if (distanceLaplacianMetric == "unweighted") {
+            auto dist2                   = DistanceLaplacian::UnweightedDistanceFunctor(*mergedA, coords);
+            auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation);
 
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2                   = DistanceLaplacian::UnweightedDistanceFunctor(*mergedA, coords);
+            if (aggregationMayCreateDirichlet) {
+              MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                        // drop_boundaries,
+                                        preserve_diagonals,
+                                        mark_singletons_as_boundary);
+            } else {
+              MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                        // drop_boundaries,
+                                        preserve_diagonals);
+            }
+          } else if (distanceLaplacianMetric == "material") {
+            auto material = GetMaterial(currentLevel, coords->getNumVectors());
+            if (material->getNumVectors() == 1) {
+              auto dist2                   = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
               auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation);
 
               if (aggregationMayCreateDirichlet) {
-                MueLu_runDroppingFunctors(block_diagonalize,
-                                          dist_laplacian_dropping,
-                                          // drop_boundaries,
+                MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                          drop_boundaries,
                                           preserve_diagonals,
                                           mark_singletons_as_boundary);
               } else {
-                MueLu_runDroppingFunctors(block_diagonalize,
-                                          dist_laplacian_dropping,
-                                          // drop_boundaries,
+                MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                          drop_boundaries,
                                           preserve_diagonals);
               }
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
+            } else {
+              auto dist2                   = DistanceLaplacian::TensorMaterialDistanceFunctor(*mergedA, coords, material);
+              auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation);
 
-                auto dist2                   = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(block_diagonalize,
-                                            dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(block_diagonalize,
-                                            dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
+              if (aggregationMayCreateDirichlet) {
+                MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                          drop_boundaries,
+                                          preserve_diagonals,
+                                          mark_singletons_as_boundary);
               } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2                   = DistanceLaplacian::TensorMaterialDistanceFunctor(*mergedA, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(block_diagonalize,
-                                            dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(block_diagonalize,
-                                            dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
+                MueLu_runDroppingFunctors(dist_laplacian_dropping,
+                                          drop_boundaries,
+                                          preserve_diagonals);
               }
             }
-          } else if (distanceLaplacianAlgoStr == "unscaled cut") {
-            TEUCHOS_ASSERT(false);
-          } else if (distanceLaplacianAlgoStr == "scaled cut") {
-            TEUCHOS_ASSERT(false);
-          } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
-            TEUCHOS_ASSERT(false);
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\"");
           }
+        } else if (distanceLaplacianAlgoStr == "unscaled cut") {
+          TEUCHOS_ASSERT(false);
+        } else if (distanceLaplacianAlgoStr == "scaled cut") {
+          TEUCHOS_ASSERT(false);
+        } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
+          TEUCHOS_ASSERT(false);
         } else {
-          if (distanceLaplacianAlgoStr == "default") {
-            const auto SoC = Misc::SmoothedAggregationMeasure;
-
-            if (distanceLaplacianMetric == "unweighted") {
-              auto dist2                   = DistanceLaplacian::UnweightedDistanceFunctor(*mergedA, coords);
-              auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation);
-
-              if (aggregationMayCreateDirichlet) {
-                MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                          // drop_boundaries,
-                                          preserve_diagonals,
-                                          mark_singletons_as_boundary);
-              } else {
-                MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                          // drop_boundaries,
-                                          preserve_diagonals);
-              }
-            } else if (distanceLaplacianMetric == "material") {
-              auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-              if (material->getNumVectors() == 1) {
-                GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-
-                auto dist2                   = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
-              } else {
-                TEUCHOS_TEST_FOR_EXCEPTION(coords->getNumVectors() * coords->getNumVectors() != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-
-                {
-                  std::stringstream ss;
-                  ss << "material tensor mean =" << std::endl;
-                  size_t k = 0;
-                  for (size_t i = 0; i < coords->getNumVectors(); ++i) {
-                    ss << "   ";
-                    for (size_t j = 0; j < coords->getNumVectors(); ++j) {
-                      ss << material->getVector(k)->meanValue() << " ";
-                      ++k;
-                    }
-                    ss << std::endl;
-                  }
-                  GetOStream(Runtime0) << ss.str();
-                }
-
-                auto dist2                   = DistanceLaplacian::TensorMaterialDistanceFunctor(*mergedA, coords, material);
-                auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation);
-
-                if (aggregationMayCreateDirichlet) {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals,
-                                            mark_singletons_as_boundary);
-                } else {
-                  MueLu_runDroppingFunctors(dist_laplacian_dropping,
-                                            drop_boundaries,
-                                            preserve_diagonals);
-                }
-              }
-            }
-          } else if (distanceLaplacianAlgoStr == "unscaled cut") {
-            TEUCHOS_ASSERT(false);
-          } else if (distanceLaplacianAlgoStr == "scaled cut") {
-            TEUCHOS_ASSERT(false);
-          } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
-            TEUCHOS_ASSERT(false);
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\"");
-          }
+          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\"");
         }
-
-      } else if (algo == "block diagonal") {
-        auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-        auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
-
-        MueLu_runDroppingFunctors(block_diagonalize);
       } else {
         TEUCHOS_ASSERT(false);
       }

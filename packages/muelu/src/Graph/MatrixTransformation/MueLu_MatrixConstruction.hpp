@@ -1061,6 +1061,39 @@ class MergeFillFunctor {
   }
 };
 
+template <class local_matrix_type, class local_graph_type>
+class GraphConstruction {
+ private:
+  using scalar_type        = typename local_matrix_type::value_type;
+  using local_ordinal_type = typename local_matrix_type::ordinal_type;
+  using memory_space       = typename local_matrix_type::memory_space;
+  using results_view       = Kokkos::View<DecisionType*, memory_space>;
+
+  local_matrix_type A;
+  results_view results;
+  local_graph_type graph;
+
+ public:
+  GraphConstruction(local_matrix_type& A_, results_view& results_, local_graph_type& graph_)
+    : A(A_)
+    , results(results_)
+    , graph(graph_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const local_ordinal_type rlid) const {
+    auto rowA                       = A.row(rlid);
+    size_t row_start                = A.graph.row_map(rlid);
+    local_ordinal_type jj           = 0;
+    local_ordinal_type graph_offset = graph.row_map(rlid);
+    for (local_ordinal_type k = 0; k < rowA.length; ++k) {
+      if (results(row_start + k) == KEEP) {
+        graph.entries(graph_offset + jj) = rowA.colidx(k);
+        ++jj;
+      }
+    }
+  }
+};
+
 }  // namespace MueLu::MatrixConstruction
 
 #endif
