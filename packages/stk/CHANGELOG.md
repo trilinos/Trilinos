@@ -1,5 +1,10 @@
 # CHANGELOG
 
+5.25.3 (STK_VERSION 5250300) 6/10/2025
+  stk_unit_test_utils: fix cmake error, some files that depend on
+                      stk_search_util needed to be excluded
+                      if stk_search_util is disabled.
+
 5.25.2 (STK_VERSION 5250200) 6/6/2025
   stk_transfer_util: fix Lapack detection (only call find_package
                      if TPL_LAPACK_LIBRARIES is not already set.)

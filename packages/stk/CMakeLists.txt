@@ -50,7 +50,7 @@ IF(COMMAND TRIBITS_PACKAGE_DECL)
   message("*** Building STK as a Trilinos package. ***")
 ELSE()
   SET(HAVE_STK_Trilinos OFF)
-  project(STK CXX Fortran)
+  project(STK CXX)
 
   SET(PACKAGE_NAME "STK")
 

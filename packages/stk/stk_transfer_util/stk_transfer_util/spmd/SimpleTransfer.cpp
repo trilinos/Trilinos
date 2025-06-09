@@ -404,6 +404,47 @@ void SimpleTransfer::setup_copy_nearest_transfer(
                               masterElemProvider, masterElemProvider, extrapolateOption);
 }
 
+void SimpleTransfer::setup_sum_nearest_transfer(
+    stk::mesh::BulkData& sendBulk,
+    stk::mesh::BulkData& recvBulk,
+    stk::mesh::EntityRank sendRank,
+    stk::transfer::spmd::RecvMeshType recvType,
+    std::shared_ptr<stk::search::MasterElementProviderInterface> sendMasterElemProvider,
+    std::shared_ptr<stk::search::MasterElementProviderInterface> recvMasterElemProvider,
+    stk::search::ObjectOutsideDomainPolicy extrapolateOption)
+{
+  STK_ThrowRequireMsg(!m_committed, "Transfer named: " << m_transferName << " has already been committed");
+  STK_ThrowRequireMsg(sendMasterElemProvider, "NULL send master element provider for transfer named: " << m_transferName);
+  STK_ThrowRequireMsg(recvMasterElemProvider, "NULL recv master element provider for transfer named: " << m_transferName);
+
+  // Use default values for the rest
+  m_transferOptions = std::make_shared<stk::transfer::spmd::GeometricTransferOptions>(m_transferName, sendBulk, recvBulk);
+  m_transferOptions->set_interpolation_type(stk::transfer::spmd::InterpolationType::SUM);
+
+  if(m_hasParallelMachine) {
+    m_transferOptions->set_parallel_machine(m_parallelMachine);
+  }
+
+  set_send_mesh_transfer_options(sendBulk, sendRank, sendMasterElemProvider, extrapolateOption);
+  set_recv_mesh_transfer_options(recvBulk, recvType, recvMasterElemProvider);
+
+  std::tie(m_transfer, m_dispatch) = stk::transfer::spmd::create_transfer(*m_transferOptions);
+
+  m_committed = true;
+}
+
+void SimpleTransfer::setup_sum_nearest_transfer(
+    stk::mesh::BulkData& sendBulk,
+    stk::mesh::BulkData& recvBulk,
+    stk::mesh::EntityRank sendRank,
+    stk::transfer::spmd::RecvMeshType recvType,
+    std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider,
+    stk::search::ObjectOutsideDomainPolicy extrapolateOption)
+{
+  setup_sum_nearest_transfer(sendBulk, recvBulk, sendRank, recvType,
+                             masterElemProvider, masterElemProvider, extrapolateOption);
+}
+
 void SimpleTransfer::initialize_meshes()
 {
   STK_ThrowRequireMsg(m_dispatch, "Transfer dispatch not created");

@@ -135,6 +135,19 @@ public:
     );
   }
 
+  void check_field_values_on_host(stk::mesh::HostField<int>& hostField, int scaleFactor)
+  {
+    stk::mesh::HostMesh hostMesh(get_bulk());
+
+    stk::mesh::for_each_entity_run(hostMesh, stk::topology::NODE_RANK, get_meta().universal_part(),
+      KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& node) {
+        const stk::mesh::EntityId nodeId = hostMesh.identifier(hostMesh.get_entity(stk::topology::NODE_RANK, node));
+        const int& fieldValues = hostField(node, 0);
+        NGP_EXPECT_EQ(fieldValues, static_cast<int>(nodeId * scaleFactor));
+      }, stk::ngp::HostExecSpace()
+    );
+  }
+
 protected:
   stk::mesh::Field<int>* m_field;
 };
@@ -177,6 +190,36 @@ TEST_F(FieldDataSynchronization, mixedApiUsage)
   ngpField.modify_on_host();
   ngpField.sync_to_device();
   check_field_values_on_device(ngpField, 1);
+}
+
+TEST_F(FieldDataSynchronization, mixedApiUsage_HostField_syncToDevice)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+  build_two_element_mesh_with_nodal_field();
+
+  auto hostFieldData = m_field->data<stk::mesh::ReadWrite, stk::ngp::HostMemSpace>();
+  set_field_values_on_host(hostFieldData, 1);
+
+  auto ngpField = stk::mesh::get_updated_ngp_field<int>(*m_field);
+  ngpField.modify_on_host();
+  stk::mesh::HostField<int> hostField(*m_field);
+  hostField.sync_to_device();
+  check_field_values_on_device(ngpField, 1);
+}
+
+TEST_F(FieldDataSynchronization, mixedApiUsage_HostField_syncToHost)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+  build_two_element_mesh_with_nodal_field();
+
+  auto deviceFieldData = m_field->data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  set_field_values_on_device(deviceFieldData, 1);
+
+  auto ngpField = stk::mesh::get_updated_ngp_field<int>(*m_field);
+  ngpField.modify_on_device();
+  stk::mesh::HostField<int> hostField(*m_field);
+  hostField.sync_to_host();
+  check_field_values_on_host(hostField, 1);
 }
 
 TEST_F(FieldDataSynchronization, writeOnHost_readOnDevice_syncedToDevice)

@@ -190,43 +190,31 @@ class HostField : public NgpFieldBase
 
   void sync_to_host() override
   {
-    sync_to_host(Kokkos::DefaultExecutionSpace());
+    m_hostField->sync_to_host();
     if constexpr (!std::is_same_v<Kokkos::DefaultExecutionSpace,Kokkos::Serial>) {
       Kokkos::fence();
     }
   }
 
-  void sync_to_host(const ExecSpace& /*execSpace*/) override
+  void sync_to_host(const ExecSpace& execSpace) override
   {
-    if (need_sync_to_host()) {
-      m_hostField->increment_num_syncs_to_host();
-      clear_device_sync_state();
-    }
+    m_hostField->sync_to_host(execSpace);
   }
 
-  void sync_to_host(ExecSpace&& /*execSpace*/) override
+  void sync_to_host(ExecSpace&& execSpace) override
   {
-    if (need_sync_to_host()) {
-      m_hostField->increment_num_syncs_to_host();
-      clear_device_sync_state();
-    }
+    m_hostField->sync_to_host(execSpace);
   }
 
   void sync_to_device() override 
   {
-    sync_to_device(Kokkos::DefaultExecutionSpace());
+    m_hostField->sync_to_device();
     Kokkos::fence();
   }
 
-  void sync_to_device(const ExecSpace& /*execSpace*/) override
+  void sync_to_device(const ExecSpace& execSpace) override
   {
-    if (need_sync_to_device()) {
-      if (m_hostFieldData.needs_update()) {
-        m_hostFieldData.update(get_execution_space(), m_hostField->host_data_layout());
-      }
-      m_hostField->increment_num_syncs_to_device();
-      clear_host_sync_state();
-    }
+    m_hostField->sync_to_device(execSpace);
   }
 
   void sync_to_device(ExecSpace&& execSpace) override

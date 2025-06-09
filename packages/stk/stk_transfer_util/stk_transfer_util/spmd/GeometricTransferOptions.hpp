@@ -380,7 +380,7 @@ class TransferOptionHelper {
 
   stk::mesh::EntityRank m_elementMeshEntityRank{stk::topology::INVALID_RANK};
 
-  stk::ParallelMachine m_parallelMachine{MPI_COMM_WORLD};
+  stk::ParallelMachine m_parallelMachine{stk::parallel_machine_world()};
 
   bool m_verboseError{false};
 

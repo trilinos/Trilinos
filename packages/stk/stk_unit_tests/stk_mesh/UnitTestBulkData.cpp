@@ -2413,12 +2413,24 @@ std::string printGhostDataByRank(stk::mesh::BulkData & bulkData, stk::topology::
   return oss.str();
 }
 
-TEST(BulkData, EntityGhostData)
+TEST(BulkData, EntityGhostData_SEND_LOCALLY_OWNED)
 {
   std::string gold_result = "(Entity_lid=0, direction=SEND, processor=128, ghosting level=LOCALLY_OWNED)";
   stk::mesh::impl::EntityGhostData data;
   data.direction = stk::mesh::impl::EntityGhostData::SEND;
   data.ghostingLevel = stk::mesh::impl::EntityGhostData::LOCALLY_OWNED;
+  data.processor = 128;
+  std::ostringstream oss;
+  oss << data;
+  EXPECT_EQ( gold_result, oss.str());
+}
+
+TEST(BulkData, EntityGhostData_INVALID_CUSTOM)
+{
+  std::string gold_result = "(Entity_lid=0, direction=INVALID, processor=128, ghosting level=CUSTOM_1)";
+  stk::mesh::impl::EntityGhostData data;
+  data.direction = stk::mesh::impl::EntityGhostData::INVALID;
+  data.ghostingLevel = 2;
   data.processor = 128;
   std::ostringstream oss;
   oss << data;

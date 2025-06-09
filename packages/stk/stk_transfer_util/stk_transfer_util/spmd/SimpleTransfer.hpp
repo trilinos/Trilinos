@@ -145,6 +145,23 @@ class SimpleTransfer {
                                    stk::search::ObjectOutsideDomainPolicy extrapolateOption =
                                        stk::search::ObjectOutsideDomainPolicy::IGNORE);
 
+  void setup_sum_nearest_transfer(stk::mesh::BulkData& sendBulk,
+                                  stk::mesh::BulkData& recvBulk,
+                                  stk::mesh::EntityRank sendRank,
+                                  stk::transfer::spmd::RecvMeshType recvType,
+                                  MasterElementProvider masterElemProvider,
+                                  stk::search::ObjectOutsideDomainPolicy extrapolateOption =
+                                      stk::search::ObjectOutsideDomainPolicy::IGNORE);
+
+  void setup_sum_nearest_transfer(stk::mesh::BulkData& sendBulk,
+                                  stk::mesh::BulkData& recvBulk,
+                                  stk::mesh::EntityRank sendRank,
+                                  stk::transfer::spmd::RecvMeshType recvType,
+                                  MasterElementProvider sendMasterElemProvider,
+                                  MasterElementProvider recvMasterElemProvider,
+                                  stk::search::ObjectOutsideDomainPolicy extrapolateOption =
+                                      stk::search::ObjectOutsideDomainPolicy::IGNORE);
+
   void initialize(bool overrideParametricSearchWithGeometricClosestNodeToCentroid = false,
                   bool useCentroidForGeometricSearchProximity = true,
                   bool printSearchWarnings = true);
@@ -154,12 +171,14 @@ class SimpleTransfer {
   std::shared_ptr<stk::transfer::TransferBase> get_transfer() const { return m_transfer; }
   std::shared_ptr<stk::transfer::spmd::GeometricTransferDispatchBase> get_dispatch() const { return m_dispatch; }
 
+  void set_patch_recovery_evaluation_type(stk::transfer::PatchRecoveryEvaluationType evalType) { m_defaultPatchRecovery = evalType; }
+
  protected:
   bool m_committed{false};
   std::string m_transferName{"UN-INITIALIZED TRANSFER NAME"};
 
   bool m_hasParallelMachine{false};
-  stk::ParallelMachine m_parallelMachine{MPI_COMM_WORLD};
+  stk::ParallelMachine m_parallelMachine{stk::parallel_machine_world()};
 
   std::vector<stk::transfer::FieldSpec> m_sendFieldSpecs;
   std::vector<stk::transfer::FieldSpec> m_recvFieldSpecs;
