@@ -4,13 +4,10 @@
 
 \section Tpetra_Lesson05_Topics Lesson topics
 
-The Tpetra_Lesson02_Vector example introduces and describes <a
-href="http://trilinos.sandia.gov/packages/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html">
-Tpetra's Map class</a>, which is Tpetra's representation of a data
+The Tpetra_Lesson02_Vector example introduces and describes Tpetra::Map
+class, which is Tpetra's representation of a data
 distribution.  This example builds on that by showing how to use Maps
-and Tpetra's <a
-href="http://trilinos.sandia.gov/packages/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Export.html">
-Export class</a> to redistribute data.  In this case, we build a
+and Tpetra::Export class to redistribute data.  In this case, we build a
 sparse matrix on one MPI process, and redistribute it to a sparse
 matrix stored in block row fashion, with an equal number of rows per
 process.
@@ -23,9 +20,7 @@ distributed-memory parallel processes.  It "maps" global indices
 processes.  This ability to describe a data distribution calls for a
 <i>redistribution</i> capability, that is, to reorganize or remap data
 from one distribution to another.  Tpetra provides this capability
-through the
-<a href="http://trilinos.sandia.gov/packages/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Import.html"> Import </a> and
-<a href="http://trilinos.sandia.gov/packages/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Export.html"> Export </a> classes.
+through the Tpetra::Import and Tpetra::Export classes.
 
 Import redistributes from a uniquely owned (one-to-one) Map to a
 possibly not uniquely owned Map.  Export redistributes from a possibly
