@@ -68,11 +68,7 @@ else()
   target_link_libraries(stk_transfer_util PUBLIC stk_util_command_line)
 
   find_package(LAPACK REQUIRED)
-  if (TARGET LAPACK::LAPACK)
-    target_link_libraries(stk_transfer_util PUBLIC LAPACK::LAPACK)
-  else()
-    target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
-  endif()
+  target_link_libraries(stk_transfer_util PUBLIC ${LAPACK_LIBRARIES})
 
   find_package(BLAS REQUIRED)
   if (TARGET BLAS::BLAS)

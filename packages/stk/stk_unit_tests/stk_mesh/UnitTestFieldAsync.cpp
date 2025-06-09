@@ -37,7 +37,6 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
-#include <stk_unit_test_utils/PerformanceTester.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>

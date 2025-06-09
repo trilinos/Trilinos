@@ -216,7 +216,9 @@ class MockSimpleTransferTest : public ::testing::Test
     }
   }
 
-  void test_node_transfer(stk::unit_test_util::FieldEvaluator& eval, stk::mesh::EntityRank recvRank)
+  void test_node_transfer(stk::unit_test_util::FieldEvaluator& eval,
+                          stk::mesh::EntityRank recvRank,
+                          double tolerance = 1.0e-6)
   {
     stk::mesh::MetaData& recvMeta = m_recvBulk->mesh_meta_data();
     const stk::mesh::FieldBase* recvCoordinateField = recvMeta.coordinate_field();
@@ -229,7 +231,7 @@ class MockSimpleTransferTest : public ::testing::Test
 
     for(stk::mesh::Entity entity : entities) {
       const double* location = static_cast<const double *>(stk::mesh::field_data(*recvCoordinateField, entity));
-      test_expected_value_at_location(*m_recvBulk, m_recvField, m_spatialDim, 1, entity, eval, location);
+      test_expected_value_at_location(*m_recvBulk, m_recvField, m_spatialDim, 1, entity, eval, location, tolerance);
     }
   }
 
@@ -1639,5 +1641,205 @@ TEST_F(MockSimpleTransformTransferTest, elementSendMesh_copyToElement)
   test_centroid_transfer(goldEval, recvRank);
 }
 
+
+TEST_F(MockSimpleTransferTest, elementSendMesh_linearPatchRecoveryInterpolationToNode_mls)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  // Linear patch recovery in 3D requires a minimum mesh of 2x2x2
+  initialize_volume_transfer_variables(2,2,2);
+
+  stk::unit_test_util::LinearFieldEvaluator eval(m_spatialDim);
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
+
+  transfer.set_patch_recovery_evaluation_type(stk::transfer::PatchRecoveryEvaluationType::LINEAR_MOVING_LEAST_SQUARES);
+  transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_node_transfer(eval, recvRank);
+}
+
+TEST_F(MockSimpleTransferTest, elementSendMesh_quadraticPatchRecoveryInterpolationToNode)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  // Quadratic patch recovery in 3D requires a minimum send mesh of 3x3x3
+  // Create a 1x1x1 recv mesh centered in this send mesh so that interpolation
+  // is based on the central hex as the seed element
+  m_sendMeshSpec = "generated:3x3x3";
+  m_recvMeshSpec = "generated:1x1x1|bbox:1.05,1.05,1.05,1.95,1.95,1.95";
+
+  std::vector<double> xCoeffs{ 1.0, 1.0, 1.0 };
+  std::vector<double> yCoeffs{ 1.0, 1.0, 1.0 };
+  std::vector<double> zCoeffs{ 1.0, 1.0, 1.0 };
+  stk::unit_test_util::QuadraticFieldEvaluatorWithCoefficients eval(xCoeffs, yCoeffs, zCoeffs);
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
+
+  transfer.set_patch_recovery_evaluation_type(stk::transfer::PatchRecoveryEvaluationType::QUADRATIC_LEAST_SQUARES);
+  transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_node_transfer(eval, recvRank);
+}
+
+TEST_F(MockSimpleTransferTest, elementSendMesh_quadraticPatchRecoveryInterpolationToNode_mls)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  // Quadratic patch recovery in 3D requires a minimum send mesh of 3x3x3
+  // Create a 1x1x1 recv mesh centered in this send mesh so that interpolation
+  // is based on the central hex as the seed element
+  m_sendMeshSpec = "generated:3x3x3";
+  m_recvMeshSpec = "generated:1x1x1|bbox:1.05,1.05,1.05,1.95,1.95,1.95";
+
+  std::vector<double> xCoeffs{ 1.0, 1.0, 1.0 };
+  std::vector<double> yCoeffs{ 1.0, 1.0, 1.0 };
+  std::vector<double> zCoeffs{ 1.0, 1.0, 1.0 };
+  stk::unit_test_util::QuadraticFieldEvaluatorWithCoefficients eval(xCoeffs, yCoeffs, zCoeffs);
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
+
+  transfer.set_patch_recovery_evaluation_type(stk::transfer::PatchRecoveryEvaluationType::QUADRATIC_MOVING_LEAST_SQUARES);
+  transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_node_transfer(eval, recvRank);
+}
+
+TEST_F(MockSimpleTransferTest, elementSendMesh_cubicPatchRecoveryInterpolationToNode)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  // Cubic patch recovery in 3D requires a minimum send mesh of 4x4x4
+  // Create a 1x1x1 recv mesh centered in this send mesh so that interpolation
+  // is based on the central hex as the seed element
+  m_sendMeshSpec = "generated:5x5x5";
+  m_recvMeshSpec = "generated:1x1x1|bbox:2.05,2.05,2.05,2.95,2.95,2.95";
+
+  std::vector<double> xCoeffs{ 1.0, 1.0, 1.0, 1.0 };
+  std::vector<double> yCoeffs{ 1.0, 1.0, 1.0, 1.0 };
+  std::vector<double> zCoeffs{ 1.0, 1.0, 1.0, 1.0 };
+  stk::unit_test_util::CubicFieldEvaluatorWithCoefficients eval(xCoeffs, yCoeffs, zCoeffs);
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
+
+  transfer.set_patch_recovery_evaluation_type(stk::transfer::PatchRecoveryEvaluationType::CUBIC_LEAST_SQUARES);
+  transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  double tolerance = 1.0e-4;
+  test_node_transfer(eval, recvRank, tolerance);
+}
+
+TEST_F(MockSimpleTransferTest, elementSendMesh_cubicPatchRecoveryInterpolationToNode_mls)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  // Cubic patch recovery in 3D requires a minimum send mesh of 4x4x4
+  // Create a 1x1x1 recv mesh centered in this send mesh so that interpolation
+  // is based on the central hex as the seed element
+  m_sendMeshSpec = "generated:5x5x5";
+  m_recvMeshSpec = "generated:1x1x1|bbox:2.05,2.05,2.05,2.95,2.95,2.95";
+
+  std::vector<double> xCoeffs{ 1.0, 1.0, 1.0, 1.0 };
+  std::vector<double> yCoeffs{ 1.0, 1.0, 1.0, 1.0 };
+  std::vector<double> zCoeffs{ 1.0, 1.0, 1.0, 1.0 };
+  stk::unit_test_util::CubicFieldEvaluatorWithCoefficients eval(xCoeffs, yCoeffs, zCoeffs);
+
+  stk::mesh::EntityRank sendRank = stk::topology::ELEM_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest", m_comm);
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_entity_field(*m_sendBulk, *m_sendField, eval);
+
+  transfer.set_patch_recovery_evaluation_type(stk::transfer::PatchRecoveryEvaluationType::CUBIC_MOVING_LEAST_SQUARES);
+  transfer.setup_patch_recovery_transfer(*m_sendBulk, *m_recvBulk,
+                                         stk::topology::ELEMENT_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                         m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  double tolerance = 1.0e-4;
+  test_node_transfer(eval, recvRank, tolerance);
+}
+
+TEST_F(MockSimpleTransferTest, nodeSendMesh_sumToNode)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) {
+    GTEST_SKIP();
+  }
+
+  stk::unit_test_util::LinearFieldEvaluator     eval(m_spatialDim, 1.0, 1.0, 1.0, 1.0); // x1
+  stk::unit_test_util::LinearFieldEvaluator goldEval(m_spatialDim, 2.0, 2.0, 2.0, 2.0); // x2
+
+  stk::mesh::EntityRank sendRank = stk::topology::NODE_RANK;
+  stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
+
+  stk::transfer::spmd::SimpleTransfer transfer("TransferTest");
+
+  setup_transfer(transfer, sendRank, recvRank);
+  stk::unit_test_util::set_node_field(*m_sendBulk, *m_sendField, eval);
+
+  // Initialize recv mesh values to send mesh values so that sum results in a 2x
+  stk::unit_test_util::set_node_field(*m_recvBulk, *m_recvField, eval);
+
+  transfer.setup_sum_nearest_transfer(*m_sendBulk, *m_recvBulk,
+                                      stk::topology::NODE_RANK, stk::transfer::spmd::RecvMeshType::NODE,
+                                      m_masterElemProvider, m_extrapolateOption);
+  transfer.initialize();
+  transfer.apply();
+
+  test_node_transfer(goldEval, recvRank);
+}
 }
 
