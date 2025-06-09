@@ -75,17 +75,12 @@ SET(HEADERS_NEED_MESH_BUT_NOT_IO
   MeshFixture.hpp
   MeshFileFixture.hpp
   MeshUtilsForBoundingVolumes.hpp
-  MockMasterElementProvider.hpp
-  MockSearchMesh.hpp
   ParticleUtils.hpp
   unittestMeshUtils.hpp
-  UnitTestSearchUtils.hpp
   )
 SET(SOURCES_NEED_MESH_BUT_NOT_IO
-  MockMasterElementProvider.cpp
   ParticleUtils.cpp
   unittestMeshUtils.cpp
-  UnitTestSearchUtils.cpp
   )
 
 SET(HEADERS_NEED_MPI

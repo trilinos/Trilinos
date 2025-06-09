@@ -52,6 +52,25 @@
 
 namespace {
 
+TEST(FieldLayout, ostreamOperator)
+{
+  {
+    std::ostringstream os;
+    os<<stk::mesh::Layout::Left;
+    EXPECT_EQ(std::string("Layout::Left"), os.str());
+  }
+  {
+    std::ostringstream os;
+    os<<stk::mesh::Layout::Right;
+    EXPECT_EQ(std::string("Layout::Right"), os.str());
+  }
+  {
+    std::ostringstream os;
+    os<<static_cast<stk::mesh::Layout>(42);
+    EXPECT_EQ(std::string("Unknown Layout"), os.str());
+  }
+}
+
 //==============================================================================
 class FieldBytesAccess : public stk::unit_test_util::MeshFixture
 {

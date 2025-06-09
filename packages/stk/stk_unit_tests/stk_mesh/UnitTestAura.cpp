@@ -42,7 +42,7 @@
 #include <stk_mesh/base/ForEachEntity.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/GetEntities.hpp>
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include <stk_util/parallel/Parallel.hpp>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
@@ -54,6 +54,7 @@
 #include "stk_unit_test_utils/BuildMesh.hpp"
 #include "UnitTestTextMeshFixture.hpp"
 #include "TestElemElemGraphUtils.hpp"
+#include <stdlib.h>
 
 namespace stk { namespace mesh { class Part; } }
 
@@ -541,7 +542,7 @@ TEST(BulkDataTest, removeEdgeFromPartWithNodeSharedWithOneProcAndGhostedToAnothe
   }
 }
 
-void disconnect_elem1_on_proc0(stk::mesh::BulkData& bulk)
+void disconnect_elem1_on_proc0(stk::mesh::BulkData& bulk, bool badNodeSharing = false)
 {
   bulk.modification_begin();
 
@@ -560,7 +561,12 @@ void disconnect_elem1_on_proc0(stk::mesh::BulkData& bulk)
       stk::mesh::Entity newNode = bulk.declare_node(newNodeIds[n]);
       bulk.declare_relation(elem1, newNode, nodeOrds[n]);
     }
+    if (badNodeSharing) {
+      stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+      bulk.add_node_sharing(node1, 1);
+    }
   }
+
   bulk.modification_end();
 }
 
@@ -695,7 +701,7 @@ void test_aura_disconnect_elem_from_shared_owned_nodes(stk::mesh::BulkData& mesh
 {
   disconnect_elem1_on_proc0(mesh);
 
-  int thisProc = stk::parallel_machine_rank(mesh.parallel());
+  const int thisProc = stk::parallel_machine_rank(mesh.parallel());
   stk::mesh::EntityId auraElemId = 2;
   if (thisProc == 1) {
     auraElemId = 1;
@@ -877,6 +883,21 @@ TEST_F(Aura2Hex2Proc, disconnectElemFromSharedOwnedNodes)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
   test_aura_disconnect_elem_from_shared_owned_nodes(get_bulk());
   stk::unit_test::verify_no_graph_edges(get_bulk());
+}
+
+TEST_F(Aura2Hex2Proc, disconnectElemFromSharedOwnedNodes_badNodeSharing)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  reset_mesh();
+#ifdef NDEBUG
+  setenv("STK_MESH_RUN_CONSISTENCY_CHECK", "true", 1);
+#endif
+  setup_mesh("generated:1x1x2", stk::mesh::BulkData::AUTO_AURA);
+  constexpr bool badNodeSharing = true;
+  EXPECT_ANY_THROW(disconnect_elem1_on_proc0(get_bulk(), badNodeSharing));
+#ifdef NDEBUG
+  setenv("STK_MESH_RUN_CONSISTENCY_CHECK", "false", 1);
+#endif
 }
 
 TEST_F(Aura2Hex2Proc, partiallyDisconnectElemFromSharedOwnedNodes)
