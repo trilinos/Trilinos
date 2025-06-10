@@ -247,6 +247,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   const bool useSpreadLumping = pL.get<bool>("filtered matrix: use spread lumping");
 
   const MT filteringDirichletThreshold = as<MT>(pL.get<double>("filtered matrix: Dirichlet threshold"));
+
+  // coloring graph
+  const bool localizeColoringGraph   = pL.get<bool>("aggregation: coloring: localize color graph");
+  const bool symmetrizeColoringGraph = true;
+
   TEUCHOS_ASSERT(!useRootStencil);
   TEUCHOS_ASSERT(!useSpreadLumping);
 
@@ -260,92 +265,85 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   if (((algo == "classical") && (classicalAlgoStr.find("scaled") != std::string::npos)) || ((algo == "distance laplacian") && (distanceLaplacianAlgoStr.find("scaled") != std::string::npos)))
     TEUCHOS_TEST_FOR_EXCEPTION(threshold > 1.0, Exceptions::RuntimeError, "For cut-drop algorithms, \"aggregation: drop tol\" = " << threshold << ", needs to be <= 1.0");
 
-  bool useBlocking = false;
+  //////////////////////////////////////////////////////////////////////
+  // translate to new options
+
+  bool useBlocking                          = false;
+  std::string socUsesMatrix                 = "A";
+  std::set<std::string> validSocUsesMatrix  = {"A", "distance laplacian"};
+  std::string socUsesMeasure                = "smoothed aggregation";
+  std::set<std::string> validSocUsesMeasure = {"unscaled", "smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben"};
+  std::string droppingMethod                = "point-wise";
+  std::set<std::string> validDroppingMethod = {"point-wise", "cut-drop"};
+  bool symmetrizeDroppedGraph               = false;
+  bool generateColoringGraph                = false;
+
+  // Remove prefix "block diagonal" from algo
   if (algo.find("block diagonal") == 0) {
     useBlocking = true;
     algo        = algo.substr(14);
-    if (algo == "") {
-      // no-op
-    } else {
+    if (algo != "") {
       algo = algo.substr(1);
     }
   }
 
-  // // translate to new options
+  if ((algo == "classical") || (algo == "signed classical sa") || (algo == "signed classical") || (algo == "colored signed classical")) {
+    socUsesMatrix = "A";
 
-  // // soc = socMeasure(socMatrix)
-  // // dropped_graph = droppingCrit(socMeasure(socMatrix))
+    if (algo == "classical") {
+      socUsesMeasure = "smoothed aggregation";
+    } else if (algo == "signed classical sa") {
+      socUsesMeasure = "signed smoothed aggregation";
+    } else if (algo == "signed classical") {
+      socUsesMeasure = "signed ruge-stueben";
+    } else if (algo == "colored signed classical") {
+      socUsesMeasure        = "signed ruge-stueben";
+      generateColoringGraph = true;
+    }
 
-  // // none, blocknumber
-  // std::string blockingMethod;
+    if (classicalAlgoStr == "default")
+      droppingMethod = "point-wise";
+    else if (classicalAlgoStr == "unscaled cut") {
+      socUsesMeasure = "unscaled";
+      droppingMethod = "cut-drop";
+    } else if (classicalAlgoStr == "scaled cut") {
+      droppingMethod = "cut-drop";
+    } else if (classicalAlgoStr == "scaled cut symmetric") {
+      droppingMethod         = "cut-drop";
+      symmetrizeDroppedGraph = true;
+    }
+  } else if ((algo == "distance laplacian") || (algo == "signed classical sa distance laplacian") || (algo == "signed classical distance laplacian")) {
+    socUsesMatrix = "distance laplacian";
 
-  // // A, distance laplacian
-  // std::string socMatrix;
-  // // unweighted, material
-  // std::string dlapMetric;
-  // // COULD USE socMatrix = dlapMaterial instead
+    if (algo == "distance laplacian") {
+      socUsesMeasure = "smoothed aggregation";
+    } else if (algo == "signed classical sa distance laplacian") {
+      socUsesMeasure = "signed smoothed aggregation";
+    } else if (algo == "signed classical distance laplacian") {
+      socUsesMeasure = "signed ruge-stueben";
+    }
 
-  // // unscaled, sa, signed sa, signed rs
-  // std::string socMeasureString;
+    if (distanceLaplacianAlgoStr == "default")
+      droppingMethod = "point-wise";
+    else if (distanceLaplacianAlgoStr == "unscaled cut") {
+      socUsesMeasure = "unscaled";
+      droppingMethod = "cut-drop";
+    } else if (distanceLaplacianAlgoStr == "scaled cut") {
+      droppingMethod = "cut-drop";
+    } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
+      droppingMethod         = "cut-drop";
+      symmetrizeDroppedGraph = true;
+    }
+  } else if (algo == "") {
+    // algo was "block diagonal", but we process and remove the "block diagonal" part
+    socUsesMatrix = "A";
+    threshold     = zero;
+  }
+  GetOStream(Runtime0) << "socUsesMatrix = \"" << socUsesMatrix << "\": socUsesMeasure = \"" << socUsesMeasure << "\", droppingMethod = \"" << droppingMethod << "\"" << std::endl;
 
-  // // point-wise, cut-drop, symmetric cutdrop
-  // std::string droppingString;
-
-  // blockingMethod = "none";
-  // if (algo.find("block diagonal") == 0) {
-  //   blockingMethod = "blocknumber";
-  //   algo = algo.subst(10);
-  //   if (algo == "")
-  //     algo = "classical";
-  //   else
-  //     algo = algo.subst(1, );
-  // }
-
-  // if ((algo == "classical") || (algo == "signed classical sa") || (algo == "signed classical")) {
-
-  //   socMatrix = "A";
-
-  //   if (algo == "classical") {
-  //     socMeasureString = "sa";
-  //   } else if (algo == "signed classical sa") {
-  //     socMeasureString = "signed sa";
-  //   } else if (algo == "signed classical") {
-  //     socMeasureString = "signed rs";
-  //   }
-
-  //   if (classicalAlgoStr == "default")
-  //     droppingString = "point-wise";
-  //   else if (classicalAlgoStr == "unscaled cut") {
-  //     socMeasureString = "unscaled";
-  //     droppingString = "cut-drop";
-  //   } else if (classicalAlgoStr == "scaled cut") {
-  //     droppingString = "cut-drop";
-  //   } else if (classicalAlgoStr == "scaled cut symmetric") {
-  //     droppingString = "symmetric cut-drop";
-  //   }
-  // } else if ((algo == "distance laplacian") || (algo == "signed classical sa distance laplacian") || (algo == "signed classical distance laplacian")) {
-
-  //   socMatrix = "distance laplacian";
-
-  //   if (algo == "distance laplacian") {
-  //     socMeasureString = "sa";
-  //   } else if (algo == "signed classical sa distance laplacian") {
-  //     socMeasureString = "signed sa";
-  //   } else if (algo == "signed classical distance laplacian") {
-  //     socMeasureString = "signed rs";
-  //   }
-
-  //   if (distanceLaplacianAlgoStr == "default")
-  //     droppingString = "point-wise";
-  //   else if (distanceLaplacianAlgoStr == "unscaled cut") {
-  //     socMeasureString = "unscaled";
-  //     droppingString = "cut-drop";
-  //   } else if (distanceLaplacianAlgoStr == "scaled cut") {
-  //     droppingString = "cut-drop";
-  //   } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {
-  //     droppingString = "symmetric cut-drop";
-  //   }
-  // }
+  TEUCHOS_TEST_FOR_EXCEPTION(validSocUsesMatrix.find(socUsesMatrix) == validSocUsesMatrix.end(), Exceptions::RuntimeError, "Invalid option: " << socUsesMatrix);
+  TEUCHOS_TEST_FOR_EXCEPTION(validSocUsesMeasure.find(socUsesMeasure) == validSocUsesMeasure.end(), Exceptions::RuntimeError, "Invalid option: " << socUsesMeasure);
+  TEUCHOS_TEST_FOR_EXCEPTION(validDroppingMethod.find(droppingMethod) == validDroppingMethod.end(), Exceptions::RuntimeError, "Invalid option: " << droppingMethod);
 
   //////////////////////////////////////////////////////////////////////
   // We perform four sweeps over the rows of A:
@@ -419,34 +417,25 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //
   // For the block diagonal variants we first block diagonalized and then apply "blocksize = 1" algorithms.
 
-  // rowptr of filtered A
-  auto filtered_rowptr = rowptr_type("filtered_rowptr", lclA.numRows() + 1);
-  // Number of nonzeros of filtered A
-  LocalOrdinal nnz_filtered = 0;
-  // dropping decisions for each entry
-  auto results = Kokkos::View<DecisionType*, memory_space>("results", lclA.nnz());  // initialized to UNDECIDED
-  {
-    SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
-
-    std::string functorLabel = "MueLu::CoalesceDrop::CountEntries";
-
-    // macro that applies dropping functors
+  // Macro that applies dropping functors.
+  // If HAVE_MUELU_DEBUG is true, this runs additional debug checks.
 #if !defined(HAVE_MUELU_DEBUG)
 #define MueLu_runDroppingFunctorsImpl(...)                                                                            \
   {                                                                                                                   \
     auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__); \
-    Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);                                        \
+    Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz_filtered);                 \
   }
 #else
 #define MueLu_runDroppingFunctorsImpl(...)                                                                                   \
   {                                                                                                                          \
     auto debug           = Misc::DebugFunctor(lclA, results);                                                                \
     auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__, debug); \
-    Kokkos::parallel_scan(functorLabel, range, countingFunctor, nnz_filtered);                                               \
+    Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz_filtered);                        \
   }
 #endif
 
-    // macro that handles optional block diagonalization
+  // Macro that handles optional block diagonalization.
+  // Calls MueLu_runDroppingFunctorsImpl
 #define MueLu_runDroppingFunctors(...)                                                                                             \
   {                                                                                                                                \
     if (useBlocking) {                                                                                                             \
@@ -457,10 +446,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       MueLu_runDroppingFunctorsImpl(__VA_ARGS__);                                                                                  \
   }
 
-    // macro that runs dropping for SoC based on A itself
+  // Macro that runs dropping for SoC based on A itself, handling of droppingMethod.
+  // Calls MueLu_runDroppingFunctors
 #define MueLu_runDroppingFunctors_on_A(SoC)                                                                                                                                                                    \
   {                                                                                                                                                                                                            \
-    if (classicalAlgoStr == "default") {                                                                                                                                                                       \
+    if (droppingMethod == "point-wise") {                                                                                                                                                                      \
       auto dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);                                                                                                                       \
                                                                                                                                                                                                                \
       if (aggregationMayCreateDirichlet) {                                                                                                                                                                     \
@@ -473,40 +463,23 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
                                   drop_boundaries,                                                                                                                                                             \
                                   preserve_diagonals);                                                                                                                                                         \
       }                                                                                                                                                                                                        \
-    } else if (classicalAlgoStr == "unscaled cut") {                                                                                                                                                           \
-      auto comparison = CutDrop::UnscaledComparison(*A, results);                                                                                                                                              \
+    } else if (droppingMethod == "cut-drop") {                                                                                                                                                                 \
+      auto comparison = CutDrop::make_comparison_functor<SoC>(*A, results);                                                                                                                                    \
       auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                                                                        \
                                                                                                                                                                                                                \
       MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                                                               \
                                 preserve_diagonals,                                                                                                                                                            \
                                 cut_drop);                                                                                                                                                                     \
-    } else if (classicalAlgoStr == "scaled cut") {                                                                                                                                                             \
-      auto comparison = CutDrop::make_scaled_comparison_functor<SoC>(*A, results);                                                                                                                             \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                                                                        \
-                                                                                                                                                                                                               \
-      MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                                                               \
-                                preserve_diagonals,                                                                                                                                                            \
-                                cut_drop);                                                                                                                                                                     \
-    } else if (classicalAlgoStr == "scaled cut symmetric") {                                                                                                                                                   \
-      auto comparison = CutDrop::make_scaled_comparison_functor<SoC>(*A, results);                                                                                                                             \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                                                                        \
-                                                                                                                                                                                                               \
-      MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                                                               \
-                                preserve_diagonals,                                                                                                                                                            \
-                                cut_drop);                                                                                                                                                                     \
-                                                                                                                                                                                                               \
-      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);                                                                                                                                                \
-                                                                                                                                                                                                               \
-      MueLu_runDroppingFunctors(symmetrize);                                                                                                                                                                   \
     } else {                                                                                                                                                                                                   \
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: classical algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << classicalAlgoStr << "\""); \
     }                                                                                                                                                                                                          \
   }
 
-// macro that runs on the distance laplacian, handling of distanceLaplacianAlgoStr
+  // Macro that runs on the distance Laplacian, handling of droppingMethod.
+  // Calls MueLu_runDroppingFunctors
 #define MueLu_runDroppingFunctors_on_dlap_inner(SoC)                                                                                                                                                                            \
   {                                                                                                                                                                                                                             \
-    if (distanceLaplacianAlgoStr == "default") {                                                                                                                                                                                \
+    if (droppingMethod == "point-wise") {                                                                                                                                                                                       \
       auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results);                                                                                                                  \
                                                                                                                                                                                                                                 \
       if (aggregationMayCreateDirichlet) {                                                                                                                                                                                      \
@@ -519,37 +492,20 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
                                   drop_boundaries,                                                                                                                                                                              \
                                   preserve_diagonals);                                                                                                                                                                          \
       }                                                                                                                                                                                                                         \
-    } else if (distanceLaplacianAlgoStr == "unscaled cut") {                                                                                                                                                                    \
-      auto comparison = CutDrop::UnscaledDistanceLaplacianComparison(*A, dist2, results);                                                                                                                                       \
+    } else if (droppingMethod == "cut-drop") {                                                                                                                                                                                  \
+      auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(*A, dist2, results);                                                                                                                                         \
       auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                                                                                         \
                                                                                                                                                                                                                                 \
       MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                                                                                \
                                 preserve_diagonals,                                                                                                                                                                             \
                                 cut_drop);                                                                                                                                                                                      \
-    } else if (distanceLaplacianAlgoStr == "scaled cut") {                                                                                                                                                                      \
-      auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);                                                                                                                                  \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                                                                                         \
-                                                                                                                                                                                                                                \
-      MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                                                                                \
-                                preserve_diagonals,                                                                                                                                                                             \
-                                cut_drop);                                                                                                                                                                                      \
-    } else if (distanceLaplacianAlgoStr == "scaled cut symmetric") {                                                                                                                                                            \
-      auto comparison = CutDrop::make_scaled_dlap_comparison_functor<SoC>(*A, dist2, results);                                                                                                                                  \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                                                                                         \
-                                                                                                                                                                                                                                \
-      MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                                                                                \
-                                preserve_diagonals,                                                                                                                                                                             \
-                                cut_drop);                                                                                                                                                                                      \
-                                                                                                                                                                                                                                \
-      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);                                                                                                                                                                 \
-                                                                                                                                                                                                                                \
-      MueLu_runDroppingFunctors(symmetrize);                                                                                                                                                                                    \
     } else {                                                                                                                                                                                                                    \
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "\"aggregation: distance laplacian algo\" must be one of (default|unscaled cut|scaled cut|scaled cut symmetric), not \"" << distanceLaplacianAlgoStr << "\""); \
     }                                                                                                                                                                                                                           \
   }
 
-// macro that runs on the distance laplacian, handling of distanceLaplacianMetric
+  // Macro that runs on the distance Laplacian, handling of distanceLaplacianMetric.
+  // Calls MueLu_runDroppingFunctors_on_dlap_inner
 #define MueLu_runDroppingFunctors_on_dlap(SoC)                                                                                                                                                  \
   {                                                                                                                                                                                             \
     if (distanceLaplacianMetric == "unweighted") {                                                                                                                                              \
@@ -569,33 +525,42 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     }                                                                                                                                                                                           \
   }
 
+  // rowptr of filtered A
+  auto filtered_rowptr = rowptr_type("filtered_rowptr", lclA.numRows() + 1);
+  // Number of nonzeros of filtered A
+  LocalOrdinal nnz_filtered = 0;
+  // dropping decisions for each entry
+  auto results = Kokkos::View<DecisionType*, memory_space>("results", lclA.nnz());  // initialized to UNDECIDED
+  {
+    SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
+
     auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
 
     if (threshold != zero) {
       auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
       auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
 
-      if (algo == "classical") {
-        MueLu_runDroppingFunctors_on_A(Misc::SmoothedAggregationMeasure);
-      } else if (algo == "signed classical" || algo == "colored signed classical") {
-        MueLu_runDroppingFunctors_on_A(Misc::SignedRugeStuebenMeasure);
-      } else if (algo == "signed classical sa") {
-        MueLu_runDroppingFunctors_on_A(Misc::SignedSmoothedAggregationMeasure);
-      } else if (algo == "distance laplacian" || algo == "signed classical distance laplacian" || algo == "signed classical sa distance laplacian") {
+      if (socUsesMatrix == "A") {
+        if (socUsesMeasure == "unscaled") {
+          MueLu_runDroppingFunctors_on_A(Misc::UnscaledMeasure);
+        } else if (socUsesMeasure == "smoothed aggregation") {
+          MueLu_runDroppingFunctors_on_A(Misc::SmoothedAggregationMeasure);
+        } else if (socUsesMeasure == "signed ruge-stueben") {
+          MueLu_runDroppingFunctors_on_A(Misc::SignedRugeStuebenMeasure);
+        } else if (socUsesMeasure == "signed smoothed aggregation") {
+          MueLu_runDroppingFunctors_on_A(Misc::SignedSmoothedAggregationMeasure);
+        }
+      } else if (socUsesMatrix == "distance laplacian") {
         auto coords = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
-
-        if (algo == "distance laplacian") {
+        if (socUsesMeasure == "unscaled") {
+          MueLu_runDroppingFunctors_on_dlap(Misc::UnscaledMeasure);
+        } else if (socUsesMeasure == "smoothed aggregation") {
           MueLu_runDroppingFunctors_on_dlap(Misc::SmoothedAggregationMeasure);
-        } else if (algo == "signed classical distance laplacian") {
+        } else if (socUsesMeasure == "signed ruge-stueben") {
           MueLu_runDroppingFunctors_on_dlap(Misc::SignedRugeStuebenMeasure);
-        } else if (algo == "signed classical sa distance laplacian") {
+        } else if (socUsesMeasure == "signed smoothed aggregation") {
           MueLu_runDroppingFunctors_on_dlap(Misc::SignedSmoothedAggregationMeasure);
         }
-      } else if (algo == "") {
-        auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-        MueLu_runDroppingFunctors(no_op);
-      } else {
-        TEUCHOS_ASSERT(false);
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
@@ -605,11 +570,10 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       MueLu_runDroppingFunctors(no_op);
     }
 
-#undef MueLu_runDroppingFunctors_on_A
-#undef MueLu_runDroppingFunctors_on_dlap_inner
-#undef MueLu_runDroppingFunctors_on_dlap
-#undef MueLu_runDroppingFunctors
-#undef MueLu_runDroppingFunctorsImpl
+    if (symmetrizeDroppedGraph) {
+      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
+      MueLu_runDroppingFunctors(symmetrize);
+    }
   }
   GO numDropped = lclA.nnz() - nnz_filtered;
   // We now know the number of entries of filtered A and have the final rowptr.
@@ -680,6 +644,34 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     graph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "amalgamated graph of A"));
     graph->SetBoundaryNodeMap(boundaryNodes);
   }
+
+  // Construct a second graph for coloring
+  if (generateColoringGraph) {
+    SubFactoryMonitor mColoringGraph(*this, "Construct coloring graph", currentLevel);
+
+    filtered_rowptr = rowptr_type("rowptr_coloring_graph", lclA.numRows() + 1);
+    if (localizeColoringGraph) {
+      auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
+      MueLu_runDroppingFunctors(drop_offrank);
+    }
+    if (symmetrizeColoringGraph) {
+      auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
+      MueLu_runDroppingFunctors(symmetrize);
+    }
+    auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
+    auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
+    auto graphConstruction = MatrixConstruction::GraphConstruction<local_matrix_type, local_graph_type>(lclA, results, lclGraph);
+    Kokkos::parallel_for("MueLu::CoalesceDrop::Construct_coloring_graph", range, graphConstruction);
+
+    auto colorGraph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "coloring graph"));
+    Set(currentLevel, "Coloring Graph", colorGraph);
+  }
+
+#undef MueLu_runDroppingFunctors_on_A
+#undef MueLu_runDroppingFunctors_on_dlap_inner
+#undef MueLu_runDroppingFunctors_on_dlap
+#undef MueLu_runDroppingFunctors
+#undef MueLu_runDroppingFunctorsImpl
 
   LO dofsPerNode = 1;
   Set(currentLevel, "DofsPerNode", dofsPerNode);
