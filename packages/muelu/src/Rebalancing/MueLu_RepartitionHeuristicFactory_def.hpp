@@ -51,6 +51,7 @@ RCP<const ParameterList> RepartitionHeuristicFactory<Scalar, LocalOrdinal, Globa
   SET_VALID_ENTRY("repartition: min rows per thread");
   SET_VALID_ENTRY("repartition: target rows per thread");
   SET_VALID_ENTRY("repartition: max imbalance");
+  SET_VALID_ENTRY("repartition: put on single proc");
 #undef SET_VALID_ENTRY
 
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
@@ -92,9 +93,11 @@ void RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   LO targetRowsPerProcess       = pL.get<LO>("repartition: target rows per proc");
   LO minRowsPerThread           = pL.get<LO>("repartition: min rows per thread");
   LO targetRowsPerThread        = pL.get<LO>("repartition: target rows per thread");
+  LO putOnSingleProc            = pL.get<LO>("repartition: put on single proc");
   const double nonzeroImbalance = pL.get<double>("repartition: max imbalance");
   const bool useMap             = pL.get<bool>("repartition: use map");
 
+  std::cout<<"CMS: putOnSingleProc = "<<putOnSingleProc <<std::endl;
   int thread_per_mpi_rank = 1;
 #if defined(KOKKOS_ENABLE_OPENMP)
   using execution_space = typename Node::device_type::execution_space;
@@ -149,6 +152,9 @@ void RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   // NOTE: most tests include some global communication, which is why we currently only do tests until we make
   // a decision on whether to repartition. However, there is value in knowing how "close" we are to having to
   // rebalance an operator. So, it would probably be beneficial to do and report *all* tests.
+
+  // NOTE: We should probably consider merging all of these sumAll/minAll things at some point.
+
 
   // Test0: Should we do node repartitioning?
   if (currentLevel.GetLevelID() == nodeRepartLevel && map->getComm()->getSize() > 1) {
@@ -207,6 +213,16 @@ void RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
       Set(currentLevel, "number of partitions", 1);
       return;
     }
+  }
+
+  // Test 2.5: Repartition down to one rank if we're below "repatition: put on single proc"
+  // This is (mostly) an ML-compatibility thing
+  if (putOnSingleProc && map->getGlobalNumElements() < putOnSingleProc) {
+    GetOStream(Statistics1) << "Repartitioning? YES:"
+                            << "\n # rows is below the single-proc threshold = " << putOnSingleProc << std::endl;
+
+    Set(currentLevel, "number of partitions", 1);
+    return;
   }
 
   bool test3 = false, test4 = false;
