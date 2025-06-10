@@ -169,7 +169,11 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: phase 1 algorithm\" type=\"string\" value=\"Distance2\"/>"
+  "<Parameter name=\"aggregation: symmetrize graph after dropping\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: use blocking\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: strength-of-connection: matrix\" type=\"string\" value=\"A\"/>"
+  "<Parameter name=\"aggregation: strength-of-connection: measure\" type=\"string\" value=\"smoothed aggregation\"/>"
   "<Parameter name=\"aggregation: classical scheme\" type=\"string\" value=\"direct\"/>"
   "<Parameter name=\"aggregation: row sum drop tol\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"aggregation: block diagonal: interleaved blocksize\" type=\"int\" value=\"3\"/>"
@@ -609,7 +613,15 @@ namespace MueLu {
       
          ("aggregation: phase 1 algorithm","aggregation: phase 1 algorithm")
       
+         ("aggregation: symmetrize graph after dropping","aggregation: symmetrize graph after dropping")
+      
+         ("aggregation: use blocking","aggregation: use blocking")
+      
          ("aggregation: drop scheme","aggregation: drop scheme")
+      
+         ("aggregation: strength-of-connection: matrix","aggregation: strength-of-connection: matrix")
+      
+         ("aggregation: strength-of-connection: measure","aggregation: strength-of-connection: measure")
       
          ("aggregation: classical scheme","aggregation: classical scheme")
       
