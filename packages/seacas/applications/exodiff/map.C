@@ -146,7 +146,7 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, Exo_Re
       double mid_z = 0.0;
 
       for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
-        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= static_cast<INT>(num_nodes));
+        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= static_cast<INT>(num_nodes))(conn1[j])(num_nodes);
         mid_x += x1_f[conn1[j] - 1];
         if (dim > 1) {
           mid_y += y1_f[conn1[j] - 1];

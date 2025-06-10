@@ -499,7 +499,6 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
   }
 
   vec_free(lb.bor_nodes);
-  free(lb.vertex2proc);
 
 #ifdef USE_ZOLTAN
   MPI_Finalize();
