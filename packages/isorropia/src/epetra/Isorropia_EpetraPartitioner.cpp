@@ -499,7 +499,7 @@ partition(bool force_repartitioning)
   if (partitioning_method == "UNSPECIFIED" && sublist.isParameter("LB_METHOD")) 
   {
     throw Isorropia::Exception("Isorropia \"PARTITIONING METHOD\" as to be set\n"
-			       "ZOLTAN/LB_METHOD is no longer supported.\n"
+    			       "ZOLTAN/LB_METHOD is no longer supported.\n"
                                "See readme and release notes for details.");
   }
 

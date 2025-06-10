@@ -45,6 +45,9 @@
 /* Define if want to build trilinoscouplings-tests */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_TESTS
 
+/* Define if want trilinoscouplings examples use Isorropia+Zoltan */
+#cmakedefine TrilinosCouplings_ENABLE_Isorropia
+
 /* Define if want trilinoscouplings examples use Tpetra+Zoltan2 */
 #cmakedefine TrilinosCouplings_ENABLE_Zoltan2Core
 
