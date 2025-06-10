@@ -1656,6 +1656,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per thread", int, repartheurParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per thread", int, repartheurParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance", double, repartheurParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: put on single proc", int, repartheurParams);
     repartheurFactory->SetParameterList(repartheurParams);
     repartheurFactory->SetFactory("A", manager.GetFactory("A"));
     manager.SetFactory("number of partitions", repartheurFactory);
