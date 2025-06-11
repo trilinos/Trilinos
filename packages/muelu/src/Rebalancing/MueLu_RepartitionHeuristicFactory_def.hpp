@@ -154,7 +154,6 @@ void RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   // NOTE: We should probably consider merging all of these sumAll/minAll things at some point.
 
-
   // Test0: Should we do node repartitioning?
   if (currentLevel.GetLevelID() == nodeRepartLevel && map->getComm()->getSize() > 1) {
     RCP<const Teuchos::Comm<int> > NodeComm = Get<RCP<const Teuchos::Comm<int> > >(currentLevel, "Node Comm");

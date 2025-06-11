@@ -370,7 +370,6 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
     }   // if(validate)
   }     // scope
 
-
   {
     // Special handling of ML's aux aggregation
     //
@@ -580,7 +579,6 @@ int ML2MueLuParameterTranslator::SetDefaults(std::string ProblemType, Teuchos::P
               << "ERROR: <SA> / <DD> / <DD-ML> / <maxwell>" << std::endl;
   }
 
-
   // ML counts levels slightly differently than MueLu does so "repartition: start level" is off by one
   // ML defaults to "1" if we don't ask for anything else and that needs to map to "2"
   if (OverWrite || !List.isParameter("repartition: start level")) {
@@ -588,8 +586,8 @@ int ML2MueLuParameterTranslator::SetDefaults(std::string ProblemType, Teuchos::P
   }
 
   // ML sets this to 5000 regardless of more
-  if(OverWrite || !List.isParameter("repartition: put on single proc")) {
-    List.set("repartition: put on single proc",5000);
+  if (OverWrite || !List.isParameter("repartition: put on single proc")) {
+    List.set("repartition: put on single proc", 5000);
   }
   return (0);
 }
