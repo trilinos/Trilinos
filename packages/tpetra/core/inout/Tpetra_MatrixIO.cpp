@@ -84,23 +84,23 @@ void Tpetra::Utils::readHBHeader(std::ifstream &fin, Teuchos::ArrayRCP<char> &Ti
   const std::string errStr("Tpetra::Utils::readHBHeader(): Improperly formatted H/B file: ");
   /*  First line:   (A72,A8) */
   fin.getline(line,MAXLINE);
-  TEUCHOS_TEST_FOR_EXCEPTION( std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+  TEUCHOS_TEST_FOR_EXCEPTION( std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering first line.");
   (void)std::sscanf(line, "%72c%8[^\n]", Title.getRawPtr(), Key.getRawPtr());
   /*  Second line:  (5I14) or (4I14) */
   fin.getline(line,MAXLINE);
-  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering second line.");
   if ( std::sscanf(line,"%14d%14d%14d%14d%14d",&Totcrd,&Ptrcrd,&Indcrd,&Valcrd,&Rhscrd) != 5 ) {
     Rhscrd = 0;
     TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%14d%14d%14d%14d",&Totcrd,&Ptrcrd,&Indcrd,&Valcrd) != 4, std::runtime_error, errStr << "error reading pointers (line 2)");
   }
   /*  Third line:   (A3, 11X, 4I14) */
   fin.getline(line,MAXLINE);
-  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering third line.");
   TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line, "%3c%14i%14i%14i%14i", Type.getRawPtr(),&Nrow,&Ncol,&Nnzero,&Neltvl) != 5 , std::runtime_error, errStr << "error reading matrix meta-data (line 3)");
   std::transform(Type.begin(), Type.end(), Type.begin(), static_cast < int(*)(int) > (std::toupper));
   /*  Fourth line:  */
   fin.getline(line,MAXLINE);
-  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering fourth line.");
   if (Rhscrd != 0) {
     TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%16c%16c%20c%20c",Ptrfmt.getRawPtr(),Indfmt.getRawPtr(),Valfmt.getRawPtr(),Rhsfmt.getRawPtr()) != 4, std::runtime_error, errStr << "error reading formats (line 4)");
   }
@@ -111,7 +111,7 @@ void Tpetra::Utils::readHBHeader(std::ifstream &fin, Teuchos::ArrayRCP<char> &Ti
   if (Rhscrd != 0 ) {
     Rhstype.resize(3 + 1,'\0');
     fin.getline(line,MAXLINE);
-    TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering line.");
+    TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%*s") < 0, std::runtime_error, errStr << "error buffering fifth line.");
     TEUCHOS_TEST_FOR_EXCEPTION(std::sscanf(line,"%3c%14d%14d", Rhstype.getRawPtr(), &Nrhs, &Nrhsix) != 3, std::runtime_error, errStr << "error reading right-hand-side meta-data (line 5)");
   }
 }

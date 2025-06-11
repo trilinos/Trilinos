@@ -484,7 +484,7 @@ public:
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const local_graph_device_type& lclGraph,
-              const Teuchos::RCP<Teuchos::ParameterList>& params);
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column, domain and range maps, and a
     ///   local graph, which the resulting CrsGraph views.
