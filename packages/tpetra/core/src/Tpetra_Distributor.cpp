@@ -26,19 +26,13 @@ namespace Tpetra {
     const bool tpetraDistributorDebugDefault = false;
   } // namespace (anonymous)
 
+#if defined (TPETRA_ENABLE_DEPRECATED_CODE)
   Teuchos::Array<std::string>
   distributorSendTypes ()
   {
-    Teuchos::Array<std::string> sendTypes;
-    sendTypes.push_back ("Isend");
-    sendTypes.push_back ("Send");
-    sendTypes.push_back ("Alltoall");
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-    sendTypes.push_back ("MpiAdvanceAlltoall");
-    sendTypes.push_back ("MpiAdvanceNbralltoallv");
-#endif
-    return sendTypes;
+    return Details::distributorSendTypes();
   }
+#endif
 
   Distributor::
   Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
