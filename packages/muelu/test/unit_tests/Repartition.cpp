@@ -1045,8 +1045,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, NodePartition, Scalar, LocalOrdin
 
 }  // NodePartition
 
-
-
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, PutOnSingleProc, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
@@ -1057,23 +1055,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, PutOnSingleProc, Scalar, LocalOrd
 
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
   int numProcs                        = comm->getSize();
-  //int myRank                          = comm->getRank();
+  // int myRank                          = comm->getRank();
 
-  const GlobalOrdinal nx = 5, ny = 3*numProcs;
+  const GlobalOrdinal nx = 5, ny = 3 * numProcs;
 
   Teuchos::ParameterList matrixList;
   matrixList.set("nx", nx);
   matrixList.set("ny", ny);
   matrixList.set("keepBCs", false);
 
-  RCP<const Map> map =  Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, matrixList);
+  RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, matrixList);
   RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
-    Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Laplace2D", map, matrixList);
   RCP<Matrix> A = Pr->BuildMatrix();
 
   Level level;
   level.SetLevelID(2);
-  level.Set("A",A);
+  level.Set("A", A);
 
   // If put on single proc doesn't work we should get more than one rank out ofit
   RCP<RepartitionHeuristicFactory> repart = rcp(new RepartitionHeuristicFactory());
@@ -1088,10 +1086,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, PutOnSingleProc, Scalar, LocalOrd
 
   int num_partitions = level.Get<int>("number of partitions", repart.get());
 
-  TEST_EQUALITY(num_partitions,1);
+  TEST_EQUALITY(num_partitions, 1);
 
 }  // PutOnSingleProc
-
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                           \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Repartition, Constructor, Scalar, LO, GO, Node)                  \
