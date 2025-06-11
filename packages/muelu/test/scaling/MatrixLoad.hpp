@@ -209,7 +209,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
 
   if (!blockNumberFile.empty()) {
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1f - Read block number")));
-    blocknumber         = Teuchos::rcp_dynamic_cast<LOVector>(Xpetra::IO<SC, LO, GO, Node>::ReadMultiVectorLO(blockNumberFile, map));
+    blocknumber         = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVectorLO(blockNumberFile, map)->getVectorNonConst(0);
     comm->barrier();
   }
 
