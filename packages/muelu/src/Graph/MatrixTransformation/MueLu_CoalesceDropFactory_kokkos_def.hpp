@@ -978,21 +978,33 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   // Macro that runs on the distance Laplacian, handling of distanceLaplacianMetric.
   // Calls MueLu_runDroppingFunctors_on_dlap_inner
-#define MueLu_runDroppingFunctors_on_dlap(SoC)                                                     \
-  {                                                                                                \
-    if (distanceLaplacianMetric == "unweighted") {                                                 \
-      auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(*mergedA, coords);                 \
-      MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                \
-    } else if (distanceLaplacianMetric == "material") {                                            \
-      auto material = GetMaterial(currentLevel, coords->getNumVectors());                          \
-      if (material->getNumVectors() == 1) {                                                        \
-        auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(*mergedA, coords, material); \
-        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                              \
-      } else {                                                                                     \
-        auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(*mergedA, coords, material); \
-        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                              \
-      }                                                                                            \
-    }                                                                                              \
+#define MueLu_runDroppingFunctors_on_dlap(SoC)                                                                                                             \
+  {                                                                                                                                                        \
+    if (distanceLaplacianMetric == "unweighted") {                                                                                                         \
+      auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(*mergedA, coords);                                                                         \
+      MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                        \
+    } else if (distanceLaplacianMetric == "weighted") {                                                                                                    \
+      auto k_dlap_weights_host = Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(&dlap_weights[0], dlap_weights.size()); \
+      auto k_dlap_weights      = Kokkos::View<double*>("dlap_weights", k_dlap_weights_host.extent(0));                                                     \
+      Kokkos::deep_copy(k_dlap_weights, k_dlap_weights_host);                                                                                              \
+      auto dist2 = DistanceLaplacian::WeightedDistanceFunctor(*mergedA, coords, k_dlap_weights);                                                           \
+      MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                        \
+    } else if (distanceLaplacianMetric == "block weighted") {                                                                                              \
+      auto k_dlap_weights_host = Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(&dlap_weights[0], dlap_weights.size()); \
+      auto k_dlap_weights      = Kokkos::View<double*>("dlap_weights", k_dlap_weights_host.extent(0));                                                     \
+      Kokkos::deep_copy(k_dlap_weights, k_dlap_weights_host);                                                                                              \
+      auto dist2 = DistanceLaplacian::BlockWeightedDistanceFunctor(*mergedA, coords, k_dlap_weights, interleaved_blocksize);                               \
+      MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                        \
+    } else if (distanceLaplacianMetric == "material") {                                                                                                    \
+      auto material = GetMaterial(currentLevel, coords->getNumVectors());                                                                                  \
+      if (material->getNumVectors() == 1) {                                                                                                                \
+        auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(*mergedA, coords, material);                                                         \
+        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                      \
+      } else {                                                                                                                                             \
+        auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(*mergedA, coords, material);                                                         \
+        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                      \
+      }                                                                                                                                                    \
+    }                                                                                                                                                      \
   }
 
   // rowptr of filtered A
@@ -1025,11 +1037,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       } else if (socUsesMatrix == "distance laplacian") {
         auto coords = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
 
-        Array<double> dlap_weights = pL.get<Array<double>>("aggregation: distance laplacian directional weights");
-        enum { NO_WEIGHTS = 0,
-               SINGLE_WEIGHTS,
-               BLOCK_WEIGHTS };
-        int use_dlap_weights = NO_WEIGHTS;
+        Array<double> dlap_weights         = pL.get<Array<double>>("aggregation: distance laplacian directional weights");
+        LocalOrdinal interleaved_blocksize = as<LocalOrdinal>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
         if (socUsesMeasure == "distance laplacian") {
           LO dim = (LO)coords->getNumVectors();
           // If anything isn't 1.0 we need to turn on the weighting
@@ -1040,11 +1049,10 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
             }
           }
           if (non_unity) {
-            LO blocksize = useBlocking ? as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize")) : 1;
-            if ((LO)dlap_weights.size() == dim)
-              use_dlap_weights = SINGLE_WEIGHTS;
-            else if ((LO)dlap_weights.size() == blocksize * dim)
-              use_dlap_weights = BLOCK_WEIGHTS;
+            if ((LO)dlap_weights.size() == dim) {
+              distanceLaplacianMetric = "weighted";
+            } else if ((LO)dlap_weights.size() == interleaved_blocksize * dim)
+              distanceLaplacianMetric = "block weighted";
             else {
               TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError,
                                          "length of 'aggregation: distance laplacian directional weights' must equal the coordinate dimension OR the coordinate dimension times the blocksize");
@@ -1053,7 +1061,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
               GetOStream(Statistics1) << "Using distance laplacian weights: " << dlap_weights << std::endl;
           }
         }
-        TEUCHOS_TEST_FOR_EXCEPTION(use_dlap_weights != NO_WEIGHTS, Exceptions::RuntimeError, "Only the NO_WEIGHTS option is implemented for distance laplacian ");
 
         RCP<Matrix> mergedA;
         {
