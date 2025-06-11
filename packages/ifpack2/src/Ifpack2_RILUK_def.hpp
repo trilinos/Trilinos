@@ -103,7 +103,7 @@ RILUK<MatrixType>::~RILUK()
     }
   }
   else {
-    for (int i = 0; i < num_streams_; i++) {
+    for (size_t i = 0; i < KernelHandle_v_.size(); i++) {
       if (Teuchos::nonnull (KernelHandle_v_[i])) {
         KernelHandle_v_[i]->destroy_spiluk_handle();
       }
@@ -280,12 +280,9 @@ void RILUK<MatrixType>::allocate_L_and_U ()
       D_ = rcp (new vec_type (Graph_->getL_Graph ()->getRowMap ()));
     }
     else {
-      L_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >(num_streams_);
-      U_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >(num_streams_);
+      L_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >(num_streams_, null);
+      U_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >(num_streams_, null);
       for (int i = 0; i < num_streams_; i++) {
-        L_v_[i] = null;
-        U_v_[i] = null;
-
         L_v_[i] = rcp (new crs_matrix_type (Graph_v_[i]->getL_Graph ()));
         U_v_[i] = rcp (new crs_matrix_type (Graph_v_[i]->getU_Graph ()));
         L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
@@ -527,7 +524,7 @@ void RILUK<MatrixType>::initialize ()
 
     if (isKokkosKernelsStream_) {
       Graph_v_ = std::vector< Teuchos::RCP<iluk_graph_type> >(num_streams_);
-      A_local_diagblks = std::vector<local_matrix_device_type>(num_streams_);
+      A_local_diagblks_v_ = std::vector<local_matrix_device_type>(num_streams_);
       for (int i = 0; i < num_streams_; i++) {
         Graph_v_[i] = Teuchos::null;
       }
@@ -580,9 +577,9 @@ void RILUK<MatrixType>::initialize ()
 
         auto lclMtx = A_local_crs_->getLocalMatrixDevice();
         if (!hasStreamReordered_) {
-          KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks);
+          KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks_v_);
         } else {
-          perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks, true);
+          perm_v_ = KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks_v_, true);
           reverse_perm_v_.resize(perm_v_.size());
           for(size_t istream=0; istream < perm_v_.size(); ++istream) {
             using perm_type = typename lno_nonzero_view_t::non_const_type;
@@ -604,20 +601,20 @@ void RILUK<MatrixType>::initialize ()
         A_local_diagblks_values_v_  = std::vector<scalar_nonzero_view_t>(num_streams_);
 
         for(int i = 0; i < num_streams_; i++) {
-          A_local_diagblks_rowmap_v_[i]  = A_local_diagblks[i].graph.row_map;
-          A_local_diagblks_entries_v_[i] = A_local_diagblks[i].graph.entries;
-          A_local_diagblks_values_v_[i]  = A_local_diagblks[i].values;
+          A_local_diagblks_rowmap_v_[i]  = A_local_diagblks_v_[i].graph.row_map;
+          A_local_diagblks_entries_v_[i] = A_local_diagblks_v_[i].graph.entries;
+          A_local_diagblks_values_v_[i]  = A_local_diagblks_v_[i].values;
 
-          Teuchos::RCP<const crs_map_type> A_local_diagblks_RowMap = rcp (new crs_map_type(A_local_diagblks[i].numRows(),
-                                                                                           A_local_diagblks[i].numRows(),
+          Teuchos::RCP<const crs_map_type> A_local_diagblks_RowMap = rcp (new crs_map_type(A_local_diagblks_v_[i].numRows(),
+                                                                                           A_local_diagblks_v_[i].numRows(),
                                                                                            A_local_crs_->getRowMap()->getComm()));
-          Teuchos::RCP<const crs_map_type> A_local_diagblks_ColMap = rcp (new crs_map_type(A_local_diagblks[i].numCols(),
-                                                                                           A_local_diagblks[i].numCols(),
+          Teuchos::RCP<const crs_map_type> A_local_diagblks_ColMap = rcp (new crs_map_type(A_local_diagblks_v_[i].numCols(),
+                                                                                           A_local_diagblks_v_[i].numCols(),
                                                                                            A_local_crs_->getColMap()->getComm()));
-          Teuchos::RCP<crs_matrix_type> A_local_diagblks_ = rcp (new crs_matrix_type(A_local_diagblks_RowMap,
-                                                                                     A_local_diagblks_ColMap,
-                                                                                     A_local_diagblks[i]));
-          Graph_v_[i] = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (A_local_diagblks_->getCrsGraph(),
+          Teuchos::RCP<crs_matrix_type> A_local_diagblks = rcp (new crs_matrix_type(A_local_diagblks_RowMap,
+                                                                                    A_local_diagblks_ColMap,
+                                                                                    A_local_diagblks_v_[i]));
+          Graph_v_[i] = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (A_local_diagblks->getCrsGraph(),
                                                                                     LevelOfFill_, 0, Overalloc_));
         }
       }
@@ -637,9 +634,9 @@ void RILUK<MatrixType>::initialize ()
         for (int i = 0; i < num_streams_; i++) {
           KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
           KernelHandle_v_[i]->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
-                                                    A_local_diagblks[i].numRows(),
-                                                    2*A_local_diagblks[i].nnz()*(LevelOfFill_+1),
-                                                    2*A_local_diagblks[i].nnz()*(LevelOfFill_+1) );
+                                                    A_local_diagblks_v_[i].numRows(),
+                                                    2*A_local_diagblks_v_[i].nnz()*(LevelOfFill_+1),
+                                                    2*A_local_diagblks_v_[i].nnz()*(LevelOfFill_+1) );
           Graph_v_[i]->initialize (KernelHandle_v_[i]); // this calls spiluk_symbolic
         }
       }
@@ -1020,13 +1017,6 @@ void RILUK<MatrixType>::compute_kkspiluk()
 template<class MatrixType>
 void RILUK<MatrixType>::compute_kkspiluk_stream()
 {
-  for(int i = 0; i < num_streams_; i++) {
-    L_v_[i]->resumeFill ();
-    U_v_[i]->resumeFill ();
-
-    L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
-    U_v_[i]->setAllToScalar (STS::zero ());
-  }
   std::vector<lno_row_view_t>        L_rowmap_v(num_streams_);
   std::vector<lno_nonzero_view_t>    L_entries_v(num_streams_);
   std::vector<scalar_nonzero_view_t> L_values_v(num_streams_);
@@ -1035,6 +1025,12 @@ void RILUK<MatrixType>::compute_kkspiluk_stream()
   std::vector<scalar_nonzero_view_t> U_values_v(num_streams_);
   std::vector<kk_handle_type *>      KernelHandle_rawptr_v_(num_streams_);
   for(int i = 0; i < num_streams_; i++) {
+    L_v_[i]->resumeFill ();
+    U_v_[i]->resumeFill ();
+
+    L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+    U_v_[i]->setAllToScalar (STS::zero ());
+
     auto lclL = L_v_[i]->getLocalMatrixDevice();
     L_rowmap_v[i]  = lclL.graph.row_map;
     L_entries_v[i] = lclL.graph.entries;
@@ -1086,6 +1082,7 @@ void RILUK<MatrixType>::compute_kkspiluk_stream()
                                                       A_local_diagblks_rowmap_v_, A_local_diagblks_entries_v_, A_local_diagblks_values_v_,
                                                       L_rowmap_v, L_entries_v, L_values_v,
                                                       U_rowmap_v, U_entries_v, U_values_v );
+
   for(int i = 0; i < num_streams_; i++) {
     L_v_[i]->fillComplete ();
     U_v_[i]->fillComplete ();
