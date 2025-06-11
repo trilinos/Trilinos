@@ -51,11 +51,24 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<Matrix> Laplace1DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
+      bool keepBCs = false;
 
       if (nx == -1)
         nx = this->Map_->getGlobalNumElements();
 
-      this->A_ = TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, 2.0, -1.0, -1.0);
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+      using Node = typename Map::node_type;
+      using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        this->A_ = TriDiagKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, 2.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Laplace1D");
+      } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
+        this->A_ = TriDiagKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, 2.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Laplace1D");
+      }
+      else
+#endif
+      {
+        this->A_ = TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, 2.0, -1.0, -1.0);
+      }
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
@@ -131,7 +144,19 @@ namespace Galeri {
       Scalar south  = (Scalar) -one / (stretchy*stretchy);
       Scalar center = -(east + west + north + south);
 
-      this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs);
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+      using Node = typename Map::node_type;
+      using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        this->A_ = Cross2DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs, "Laplace2D");
+      } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
+        this->A_ = Cross2DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs, "Laplace2D");
+      }
+      else
+#endif
+      {
+        this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs);
+      }
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
@@ -327,7 +352,20 @@ namespace Galeri {
       Scalar down   = (Scalar) -one / (stretchz*stretchz);
       Scalar center = -(right + left + front + back + up + down);
 
-      this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+      using Node = typename Map::node_type;
+      using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        this->A_ = Cross3DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs, "Laplace3D");
+      } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
+        this->A_ = Cross3DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs, "Laplace3D");
+      }
+      else
+#endif
+      {
+        this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);
+      }
+
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
@@ -509,7 +547,24 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     Teuchos::RCP<Matrix> IdentityProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       Scalar a = this->list_.get("a", 1.0);
-      this->A_ = Identity<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, a);
+
+      GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal) -1);
+
+      if (nx == -1)
+        nx = this->Map_->getGlobalNumElements();
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+      using Node = typename Map::node_type;
+      using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        this->A_ = ScaledIdentityKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, a, "Identity");
+      } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
+        this->A_ = ScaledIdentityKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, a, "Identity");
+      }
+      else
+#endif
+      {
+        this->A_ = Identity<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, a);
+      }
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }

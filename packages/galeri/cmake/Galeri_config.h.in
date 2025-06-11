@@ -39,6 +39,8 @@
 /* Optional Deps */
 #cmakedefine HAVE_GALERI_XPETRA
 #cmakedefine HAVE_GALERI_TPETRA
+#cmakedefine HAVE_GALERI_KOKKOS
+#cmakedefine HAVE_GALERI_KOKKOSKERNELS
 
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
