@@ -487,6 +487,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: block diagonal: interleave</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Allow for a interleaved block-diagonalization. This assumes the PDE is interleaved</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: block diagonal: interleaved blocksize</name>
       <type>int</type>
       <default>3</default>

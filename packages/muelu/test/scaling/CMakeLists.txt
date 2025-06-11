@@ -81,7 +81,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     ) 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling_apex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml emin_with_dl_elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml recurMG.xml anisotropic.xml  comp_rotations.xml generalBlkSmoothing.xml GblkMap.dat GblkAmat.dat GblkRhs.dat Gblks.dat blkSmooEquivOlapSchwarz.xml oLapSchwarzEquivBlkSmoo.xml regularOverLap.dat zeroAggTest.xml blkDiag3x3And6x6.mat  coords2.mm aux1.mat aux2.mat  coords1.mat  coords2.mat  multiPhys4x4.mat multiPhys4x4.mat  null1.mat null2.mat comboP.xml material.xml material.mm
+    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling_apex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml emin_with_dl_elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml recurMG.xml anisotropic.xml  comp_rotations.xml generalBlkSmoothing.xml GblkMap.dat GblkAmat.dat GblkRhs.dat Gblks.dat blkSmooEquivOlapSchwarz.xml oLapSchwarzEquivBlkSmoo.xml regularOverLap.dat zeroAggTest.xml blkDiag3x3And6x6.mat  coords2.mm aux1.mat aux2.mat  coords1.mat  coords2.mat  multiPhys4x4.mat multiPhys4x4.mat  null1.mat null2.mat comboP.xml material.xml material.mm block_diagonal_drop.xml blocknumber.mm
     CATEGORIES BASIC PERFORMANCE
    )
 
@@ -376,6 +376,15 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     POSTFIX_AND_ARGS_0 "ConstantScalar" --linAlgebra=Tpetra --xml=material.xml --matrixType=Laplace2D --nx=1000 --ny=1000 --its=20 --scalarCoefficient
     POSTFIX_AND_ARGS_1 "ConstantTensor" --linAlgebra=Tpetra --xml=material.xml --matrixType=Laplace2D --nx=1000 --ny=1000 --its=20 --tensorCoefficient
     POSTFIX_AND_ARGS_2 "TensorFromFile" --linAlgebra=Tpetra --xml=material.xml --matrixType=Laplace2D --nx=100  --ny=100  --its=20 --material=material.mm
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "BlockDiagonalization"
+    ARGS "--linAlgebra=Tpetra --xml=block_diagonal_drop.xml --matrixType=Laplace2D --nx=100  --ny=100  --its=20 --blocknumber=blocknumber.mm"
     NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
     PASS_REGULAR_EXPRESSION "Belos converged"
