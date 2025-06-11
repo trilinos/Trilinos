@@ -49,7 +49,7 @@ using Thyra::LinearOpBase;
 using Thyra::LinearOpTester;
 using Thyra::VectorBase;
 
-void tBlockedTpetraOperator::buildBlockGIDs(std::vector<std::vector<GO> >& gids,
+void tBlockedTpetraOperator::buildBlockGIDs(std::vector<std::vector<GO>>& gids,
                                             const Tpetra::Map<LO, GO, NT>& map,
                                             bool singleBlock) const {
   LO numLocal = map.getLocalNumElements();
@@ -142,8 +142,8 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   bool status    = false;
   bool allPassed = true;
 
-  const Epetra_Comm& comm_epetra             = *GetComm();
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  const Epetra_Comm& comm_epetra            = *GetComm();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   TEST_MSG("\n   tBlockedTpetraOperator::test_vector_constr: "
            << "Running on " << comm_epetra.NumProc() << " processors");
@@ -160,7 +160,7 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   FGallery.Set("nx", nx);
   FGallery.Set("ny", ny);
   RCP<Epetra_CrsMatrix> epetraA = rcp(FGallery.GetMatrix(), false);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A =
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> A =
       Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(epetraA, comm_tpetra);
   ST beforeNorm = A->getFrobeniusNorm();
 
@@ -169,7 +169,7 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   Tpetra::MultiVector<ST, LO, GO, NT> ys(A->getRangeMap(), width);
   Tpetra::MultiVector<ST, LO, GO, NT> y(A->getRangeMap(), width);
 
-  std::vector<std::vector<GO> > vars;
+  std::vector<std::vector<GO>> vars;
   buildBlockGIDs(vars, *A->getRowMap(), false);
 
   Teko::TpetraHelpers::BlockedTpetraOperator shell(vars, A);
@@ -250,12 +250,73 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   return allPassed;
 }
 
+GO noncontig_id(GO contigId) { return 2 * contigId * contigId + 3; }
+
+RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> assemble_noncontig_matrix(
+    const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& contigMat) {
+  const auto contigRowMap        = contigMat->getRowMap();
+  const auto comm                = contigRowMap->getComm();
+  const auto contigGlobalIndices = contigRowMap->getMyGlobalIndices();
+
+  decltype(contigGlobalIndices)::non_const_type noncontigGlobalIndices(
+      "noncontig", contigGlobalIndices.extent(0));
+  for (auto i = 0U; i < contigGlobalIndices.extent(0); ++i) {
+    noncontigGlobalIndices(i) = noncontig_id(contigGlobalIndices(i));
+  }
+
+  const auto indexBase       = noncontig_id(contigRowMap->getIndexBase());
+  const auto invalid         = Teuchos::OrdinalTraits<GO>::invalid();
+  const auto noncontigRowMap = Teuchos::make_rcp<Tpetra::Map<LO, GO, NT>>(
+      invalid,
+      Teuchos::ArrayView<const GO>(noncontigGlobalIndices.data(), noncontigGlobalIndices.extent(0)),
+      indexBase, comm);
+
+  auto nrowsLocal = contigRowMap->getLocalNumElements();
+  std::vector<size_t> numEntPerRow(nrowsLocal);
+  for (size_t row = 0; row < nrowsLocal; ++row) {
+    numEntPerRow[row] = contigMat->getNumEntriesInLocalRow(row);
+  }
+
+  auto noncontigMat = Teuchos::make_rcp<Tpetra::CrsMatrix<ST, LO, GO, NT>>(
+      noncontigRowMap, Teuchos::ArrayView<const size_t>(numEntPerRow));
+
+  noncontigMat->resumeFill();
+
+  const auto globalMaxNumRowEntries = contigMat->getGlobalMaxNumRowEntries();
+  Tpetra::CrsMatrix<ST, LO, GO, NT>::nonconst_global_inds_host_view_type contigColumnIndices(
+      "contigColumnIndices", globalMaxNumRowEntries);
+  Tpetra::CrsMatrix<ST, LO, GO, NT>::nonconst_global_inds_host_view_type noncontigColumnIndices(
+      "noncontigColumnIndices", globalMaxNumRowEntries);
+  Tpetra::CrsMatrix<ST, LO, GO, NT>::nonconst_values_host_view_type columnValues(
+      "columnValues", globalMaxNumRowEntries);
+
+  for (size_t row = 0; row < nrowsLocal; ++row) {
+    const auto contigGlobalRow = contigRowMap->getGlobalElement(row);
+    size_t numEntries          = Teuchos::OrdinalTraits<size_t>::invalid();
+    contigMat->getGlobalRowCopy(contigGlobalRow, contigColumnIndices, columnValues, numEntries);
+
+    for (auto index = 0U; index < numEntries; ++index) {
+      auto localCol                 = contigRowMap->getLocalElement(contigGlobalIndices(index));
+      noncontigColumnIndices(index) = noncontigRowMap->getGlobalElement(localCol);
+    }
+
+    const auto noncontigGlobalRow = noncontigRowMap->getGlobalElement(row);
+    noncontigMat->insertGlobalValues(
+        noncontigGlobalRow, Teuchos::ArrayView<const GO>(noncontigColumnIndices.data(), numEntries),
+        Teuchos::ArrayView<ST>(columnValues.data(), numEntries));
+  }
+
+  noncontigMat->fillComplete(noncontigRowMap, noncontigRowMap);
+
+  return noncontigMat;
+}
+
 bool tBlockedTpetraOperator::test_single_block(int verbosity, std::ostream& os) {
   bool status    = false;
   bool allPassed = true;
 
-  const Epetra_Comm& comm_epetra             = *GetComm();
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  const Epetra_Comm& comm_epetra            = *GetComm();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   TEST_MSG("\n   tBlockedTpetraOperator::test_single_block: "
            << "Running on " << comm_epetra.NumProc() << " processors");
@@ -272,8 +333,11 @@ bool tBlockedTpetraOperator::test_single_block(int verbosity, std::ostream& os) 
   FGallery.Set("nx", nx);
   FGallery.Set("ny", ny);
   RCP<Epetra_CrsMatrix> epetraA = rcp(FGallery.GetMatrix(), false);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A =
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> contigA =
       Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(epetraA, comm_tpetra);
+
+  auto A = assemble_noncontig_matrix(contigA);
+
   ST beforeNorm = A->getFrobeniusNorm();
 
   int width = 3;
@@ -281,7 +345,7 @@ bool tBlockedTpetraOperator::test_single_block(int verbosity, std::ostream& os) 
   Tpetra::MultiVector<ST, LO, GO, NT> ys(A->getRangeMap(), width);
   Tpetra::MultiVector<ST, LO, GO, NT> y(A->getRangeMap(), width);
 
-  std::vector<std::vector<GO> > vars;
+  std::vector<std::vector<GO>> vars;
   buildBlockGIDs(vars, *A->getRowMap(), true);
 
   Teko::TpetraHelpers::BlockedTpetraOperator shell(vars, A);
@@ -366,8 +430,8 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   bool status    = false;
   bool allPassed = true;
 
-  const Epetra_Comm& comm_epetra             = *GetComm();
-  RCP<const Teuchos::Comm<int> > comm_tpetra = GetComm_tpetra();
+  const Epetra_Comm& comm_epetra            = *GetComm();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
 
   std::string tstr = total ? "(composite reorder)" : "(flat reorder)";
 
@@ -387,7 +451,7 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   FGallery.Set("nx", nx);
   FGallery.Set("ny", ny);
   RCP<Epetra_CrsMatrix> epetraA = rcp(FGallery.GetMatrix(), false);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A =
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> A =
       Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(epetraA, comm_tpetra);
 
   int width = 3;
@@ -395,7 +459,7 @@ bool tBlockedTpetraOperator::test_reorder(int verbosity, std::ostream& os, int t
   Tpetra::MultiVector<ST, LO, GO, NT> yf(A->getRangeMap(), width);
   Tpetra::MultiVector<ST, LO, GO, NT> yr(A->getRangeMap(), width);
 
-  std::vector<std::vector<GO> > vars;
+  std::vector<std::vector<GO>> vars;
   buildBlockGIDs(vars, *A->getRowMap(), false);
 
   Teko::TpetraHelpers::BlockedTpetraOperator flatShell(vars, A, "Af");
