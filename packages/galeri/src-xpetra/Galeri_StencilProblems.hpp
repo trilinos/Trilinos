@@ -131,7 +131,19 @@ namespace Galeri {
       Scalar south  = (Scalar) -one / (stretchy*stretchy);
       Scalar center = -(east + west + north + south);
 
-      this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs);
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+      using Node = typename Map::node_type;
+      using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        this->A_ = Cross2DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs);
+      } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
+        this->A_ = Cross2DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs);
+      }
+      else
+#endif
+      {
+        this->A_ = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs);
+      }
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
@@ -327,7 +339,20 @@ namespace Galeri {
       Scalar down   = (Scalar) -one / (stretchz*stretchz);
       Scalar center = -(right + left + front + back + up + down);
 
-      this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+      using Node = typename Map::node_type;
+      using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        this->A_ = Cross3DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);
+      } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
+        this->A_ = Cross3DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);
+      }
+      else
+#endif
+      {
+        this->A_ = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs);
+      }
+
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
