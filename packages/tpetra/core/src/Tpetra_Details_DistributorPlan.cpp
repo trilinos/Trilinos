@@ -56,6 +56,15 @@ DistributorSendTypeStringToEnum (const std::string_view s)
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string to convert to EDistributorSendType enum value: " << s);
 }
 
+/// \brief Valid enum values of distributor send types.
+const std::string &validSendTypeOrThrow(const std::string &s) {
+  const auto valids = distributorSendTypes();
+  if (std::find(valids.begin(), valids.end(), s) == valids.end()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string for EDistributorSendType enum value: " << s);
+  }
+  return s;
+}
+
 std::string
 DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
 {
@@ -936,10 +945,12 @@ DistributorPlan::getValidParameters() const
   Array<std::string> sendTypes = distributorSendTypes ();
   const Array<Details::EDistributorSendType> sendTypeEnums = distributorSendTypeEnums ();
 
+  const std::string validatedSendType = validSendTypeOrThrow(Behavior::defaultSendType());
+
   RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
 
   setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
-      Behavior::defaultSendType(), "When using MPI, the variant of send to use in "
+      validatedSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
   plist->set ("Timer Label","","Label for Time Monitor output");
 
