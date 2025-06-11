@@ -163,7 +163,7 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
       SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
       lambdaMax = A->GetMaxEigenvalueEstimate();
       if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
-        GetOStream(Statistics1) << "Calculating max eigenvalue estimate using power-method (max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
+        GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
         Coordinate stopTol = 1e-4;
         if (useAbsValueRowSum) {
           const bool returnReciprocal = true;
