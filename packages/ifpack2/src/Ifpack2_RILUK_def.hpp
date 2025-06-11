@@ -1020,13 +1020,6 @@ void RILUK<MatrixType>::compute_kkspiluk()
 template<class MatrixType>
 void RILUK<MatrixType>::compute_kkspiluk_stream()
 {
-  for(int i = 0; i < num_streams_; i++) {
-    L_v_[i]->resumeFill ();
-    U_v_[i]->resumeFill ();
-
-    L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
-    U_v_[i]->setAllToScalar (STS::zero ());
-  }
   std::vector<lno_row_view_t>        L_rowmap_v(num_streams_);
   std::vector<lno_nonzero_view_t>    L_entries_v(num_streams_);
   std::vector<scalar_nonzero_view_t> L_values_v(num_streams_);
@@ -1035,6 +1028,12 @@ void RILUK<MatrixType>::compute_kkspiluk_stream()
   std::vector<scalar_nonzero_view_t> U_values_v(num_streams_);
   std::vector<kk_handle_type *>      KernelHandle_rawptr_v_(num_streams_);
   for(int i = 0; i < num_streams_; i++) {
+    L_v_[i]->resumeFill ();
+    U_v_[i]->resumeFill ();
+
+    L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
+    U_v_[i]->setAllToScalar (STS::zero ());
+
     auto lclL = L_v_[i]->getLocalMatrixDevice();
     L_rowmap_v[i]  = lclL.graph.row_map;
     L_entries_v[i] = lclL.graph.entries;

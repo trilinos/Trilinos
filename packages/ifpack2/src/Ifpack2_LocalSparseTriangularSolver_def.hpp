@@ -1006,7 +1006,7 @@ localTriangularSolve (const MV& Y,
         val_v[i] = Alocal_i.values;
         stream_end = stream_begin + Alocal_i.numRows();
         x_v[i] = Kokkos::subview (X_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
-        y_v[i] = Kokkos::subview (Y_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);;
+        y_v[i] = Kokkos::subview (Y_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
         KernelHandle_rawptr_v_[i] = kh_v_[i].getRawPtr();
         stream_begin = stream_end;
       }
