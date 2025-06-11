@@ -77,7 +77,7 @@
 \cbb{aggregation: use blocking}{bool}{false}{Drop connections between different blocks. Blocks are given by a vector "BlockNumber" of scalar type LocalOrdinal that is passed via the "user data" list.}
         
 \cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in
-      aggregation. Possible values: "point-wise" and "cut-drop". "signed classical sa", "classical", "distance laplacian", "signed classical", "block diagonal", "block diagonal classical", "block diagonal distance laplacian", "block diagonal signed classical", "block diagonal colored signed classical", "signed classical distance laplacian", "signed classical sa distance laplacian" are also allowed, but discouraged. Instead, the corresponding combination of "aggregations: strength-of-connection: matrix", "aggregations: strength-of-connection: measure" and "aggregation: drop scheme" should be used.}
+      aggregation. Possible values: "point-wise" and "cut-drop". "signed classical sa", "classical", "distance laplacian", "signed classical", "block diagonal", "block diagonal classical", "block diagonal distance laplacian", "block diagonal signed classical", "block diagonal colored signed classical", "signed classical distance laplacian", "signed classical sa distance laplacian" are also allowed, but discouraged. Instead, the corresponding combination of "aggregation: strength-of-connection: matrix", "aggregation: strength-of-connection: measure" and "aggregation: drop scheme" should be used.}
         
 \cbb{aggregation: strength-of-connection: matrix}{string}{"A"}{The matrix that is used for constructing the graph used for aggregation. Possible values: "A" (meaning the level matrix itself) and "distance laplacian".}
         
