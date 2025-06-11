@@ -97,7 +97,6 @@ void RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   const double nonzeroImbalance = pL.get<double>("repartition: max imbalance");
   const bool useMap             = pL.get<bool>("repartition: use map");
 
-  std::cout<<"CMS: putOnSingleProc = "<<putOnSingleProc <<std::endl;
   int thread_per_mpi_rank = 1;
 #if defined(KOKKOS_ENABLE_OPENMP)
   using execution_space = typename Node::device_type::execution_space;

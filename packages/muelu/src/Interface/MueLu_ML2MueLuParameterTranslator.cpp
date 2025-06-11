@@ -338,16 +338,6 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
   }
 #endif  // HAVE_MUELU_ML && HAVE_ML_EPETRA && HAVE_ML_TEUCHOS
 
-
-  // ML counts levels slightly differently than MueLu does so "repartition: start level" is off by one
-  // ML defaults to "1" if we don't ask for anything else and that needs to map to "2"
-  {
-    if (paramList.isParameter("repartition: start level")) {
-      paramList.set("repartition: start level", paramList.get<int>("repartition: start level")+1);
-    }
-  }
-
-
   //
   // Move smoothers/aggregation/coarse parameters to sublists
   //
