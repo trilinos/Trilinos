@@ -43,6 +43,19 @@ DistributorSendTypeEnumToString (EDistributorSendType sendType)
   }
 }
 
+EDistributorSendType
+DistributorSendTypeStringToEnum (const std::string_view s)
+{
+  if (s == "Isend") return DISTRIBUTOR_ISEND;
+  if (s == "Send") return DISTRIBUTOR_SEND;
+  if (s == "Alltoall") return DISTRIBUTOR_ALLTOALL;
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  if (s == "MpiAdvanceAlltoall") return DISTRIBUTOR_MPIADVANCE_ALLTOALL;
+  if (s == "MpiAdvanceNbralltoallv") return DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV;
+#endif
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string to convert to EDistributorSendType enum value: " << s);
+}
+
 std::string
 DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
 {
@@ -71,7 +84,7 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
 #endif
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
     reversePlan_(Teuchos::null),
-    sendType_(static_cast<EDistributorSendType>(Behavior::defaultSendType())),
+    sendType_(DistributorSendTypeStringToEnum(Behavior::defaultSendType())),
     sendMessageToSelf_(false),
     numSendsToOtherProcs_(0),
     maxSendLength_(0),
@@ -899,6 +912,18 @@ Teuchos::Array<std::string> distributorSendTypes()
   return sendTypes;
 }
 
+Teuchos::Array<EDistributorSendType> distributorSendTypeEnums() {
+  Teuchos::Array<EDistributorSendType> res;
+  res.push_back (DISTRIBUTOR_ISEND);
+  res.push_back (DISTRIBUTOR_SEND);
+  res.push_back (DISTRIBUTOR_ALLTOALL);
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  res.push_back (DISTRIBUTOR_MPIADVANCE_ALLTOALL);
+  res.push_back (DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
+#endif
+  return res;
+}
+
 Teuchos::RCP<const Teuchos::ParameterList>
 DistributorPlan::getValidParameters() const
 {
@@ -909,20 +934,12 @@ DistributorPlan::getValidParameters() const
   using Teuchos::setStringToIntegralParameter;
 
   Array<std::string> sendTypes = distributorSendTypes ();
-  const std::string defaultSendType (DistributorSendTypeEnumToString(static_cast<EDistributorSendType>(Behavior::defaultSendType())));
-  Array<Details::EDistributorSendType> sendTypeEnums;
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
-#endif
+  const Array<Details::EDistributorSendType> sendTypeEnums = distributorSendTypeEnums ();
 
   RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
 
   setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
-      defaultSendType, "When using MPI, the variant of send to use in "
+      Behavior::defaultSendType(), "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
   plist->set ("Timer Label","","Label for Time Monitor output");
 
