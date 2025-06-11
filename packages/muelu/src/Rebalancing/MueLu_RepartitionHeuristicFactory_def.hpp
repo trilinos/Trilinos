@@ -215,7 +215,7 @@ void RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   // Test 2.5: Repartition down to one rank if we're below "repatition: put on single proc"
   // This is (mostly) an ML-compatibility thing
-  if (putOnSingleProc && map->getGlobalNumElements() < putOnSingleProc) {
+  if (putOnSingleProc && map->getGlobalNumElements() < (Xpetra::global_size_t) putOnSingleProc) {
     GetOStream(Statistics1) << "Repartitioning? YES:"
                             << "\n # rows is below the single-proc threshold = " << putOnSingleProc << std::endl;
 
