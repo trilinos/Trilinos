@@ -176,21 +176,19 @@ double distance2(const FC & coord, int n1, int n2) {
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-//Tpetra typedefs
-typedef Tpetra::Map<> Map;
-
-typedef Map::node_type::memory_space memory_space;
-typedef Map::node_type::device_type device_type;
-
 typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
+typedef Tpetra::Map<> Map;
+typedef Map::node_type::device_type device_type;
 typedef Intrepid2::FunctionSpaceTools<device_type>     Intrepid2FSTools;
 typedef Intrepid2::RealSpaceTools<device_type> Intrepid2RSTools;
 typedef Intrepid2::CellTools<device_type>      Intrepid2CTools;
+typedef Map::node_type::memory_space memory_space;
+//typedef ScalarView<int,memory_space> ScalarViewInt;
 
 typedef Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,NO>    operator_type;
 typedef Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,NO>   crs_graph_type;
@@ -229,22 +227,22 @@ double myDistance2(const multivector_type &v, int i0, int i1) {
 }
 
 // forward declarations
-void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const Intrepid2::ScalarView<int, memory_space> & P1_elemToNode, const Intrepid2::ScalarView<double, memory_space> & P1_nodeCoord, const Intrepid2::ScalarView<double, memory_space> & P1_edgeCoord,  const Intrepid2::ScalarView<int, memory_space> & P1_elemToEdge,  const Intrepid2::ScalarView<int, memory_space> & P1_elemToEdgeOrient, const Intrepid2::ScalarView<int, memory_space> & P1_nodeOnBoundary,
-                          Intrepid2::ScalarView<int, memory_space> & Pn_elemToNode, Intrepid2::ScalarView<double, memory_space> & Pn_nodeCoord,Intrepid2::ScalarView<int, memory_space> & Pn_nodeOnBoundary, std::vector<int> &Pn_edgeNodes, std::vector<int> &Pn_cellNodes);
+void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const ScalarView<int, memory_space> & P1_elemToNode, const ScalarView<double, memory_space> & P1_nodeCoord, const ScalarView<double, memory_space> & P1_edgeCoord,  const ScalarView<int, memory_space> & P1_elemToEdge,  const ScalarView<int, memory_space> & P1_elemToEdgeOrient, const ScalarView<int, memory_space> & P1_nodeOnBoundary,
+                          ScalarView<int, memory_space> & Pn_elemToNode, ScalarView<double, memory_space> & Pn_nodeCoord,ScalarView<int, memory_space> & Pn_nodeOnBoundary, std::vector<int> &Pn_edgeNodes, std::vector<int> &Pn_cellNodes);
 
-void GenerateEdgeEnumeration(const Intrepid2::ScalarView<int, memory_space> & elemToNode, const Intrepid2::ScalarView<double, memory_space> & nodeCoord, Intrepid2::ScalarView<int, memory_space> & elemToEdge, Intrepid2::ScalarView<int, memory_space> & elemToEdgeOrient, Intrepid2::ScalarView<int, memory_space> & edgeToNode, Intrepid2::ScalarView<double, memory_space> & edgeCoord);
+void GenerateEdgeEnumeration(const ScalarView<int, memory_space> & elemToNode, const ScalarView<double, memory_space> & nodeCoord, ScalarView<int, memory_space> & elemToEdge, ScalarView<int, memory_space> & elemToEdgeOrient, ScalarView<int, memory_space> & edgeToNode, ScalarView<double, memory_space> & edgeCoord);
 
-void CreateP1MeshFromPnMesh(const int degree, const Intrepid2::ScalarView<int, memory_space> & P2_elemToNode, Intrepid2::ScalarView<int, memory_space> &aux_P1_elemToNode);
+void CreateP1MeshFromPnMesh(const int degree, const ScalarView<int, memory_space> & P2_elemToNode, ScalarView<int, memory_space> &aux_P1_elemToNode);
 
 void CreateLinearSystem(int numWorkSets,
                         int desiredWorksetSize,
-                        Intrepid2::ScalarView<int, memory_space> const &elemToNode,
-                        Intrepid2::ScalarView<double, memory_space> const &nodeCoord,
-                        Intrepid2::ScalarView<double, memory_space> const &cubPoints,
-                        Intrepid2::ScalarView<double, memory_space> const &cubWeights,
+                        ScalarView<int, memory_space> const &elemToNode,
+                        ScalarView<double, memory_space> const &nodeCoord,
+                        ScalarView<double, memory_space> const &cubPoints,
+                        ScalarView<double, memory_space> const &cubWeights,
                         RCP<Basis<device_type,double,double> > const &myBasis_rcp,
-                        Intrepid2::ScalarView<double, memory_space> const &HGBGrads,
-                        Intrepid2::ScalarView<double, memory_space> const &HGBValues,
+                        ScalarView<double, memory_space> const &HGBGrads,
+                        ScalarView<double, memory_space> const &HGBValues,
                         std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
@@ -252,8 +250,8 @@ void CreateLinearSystem(int numWorkSets,
                         );
 
 
-void GenerateIdentityCoarsening_pn_to_p1(const Intrepid2::ScalarView<int, memory_space> & P2_elemToNode,
-                      //const Intrepid2::ScalarView<int, memory_space> & P1_elemToNode,
+void GenerateIdentityCoarsening_pn_to_p1(const ScalarView<int, memory_space> & P2_elemToNode,
+                      //const ScalarView<int, memory_space> & P1_elemToNode,
                       RCP<const driver_map_type> const & P1_map_aux, RCP<const driver_map_type> const &P2_map,
                       RCP<crs_matrix_type> & Interpolation,
                       RCP<crs_matrix_type> & Restriction);
@@ -580,7 +578,7 @@ int main(int argc, char *argv[]) {
 
 
   // Build reference element edge to node map
-  Intrepid2::ScalarView<int, memory_space> refEdgeToNode("refEdgeToNode", P1_numEdgesPerElem, P1_numNodesPerEdge);
+  ScalarView<int, memory_space> refEdgeToNode("refEdgeToNode", P1_numEdgesPerElem, P1_numNodesPerEdge);//error
   for (int i=0; i<P1_numEdgesPerElem; i++){
     refEdgeToNode(i,0)=P1_cellType.getNodeMap(1, i, 0);
     refEdgeToNode(i,1)=P1_cellType.getNodeMap(1, i, 1);
@@ -668,7 +666,7 @@ int main(int argc, char *argv[]) {
 
   // Get node-element connectivity
   int telct = 0;
-  Intrepid2::ScalarView<int, memory_space> P1_elemToNode("P1_elemToNode",numElems,P1_numNodesPerElem);
+  ScalarView<int, memory_space> P1_elemToNode("P1_elemToNode",numElems,P1_numNodesPerElem);
   for(long long b = 0; b < numElemBlk; b++){
     for(long long el = 0; el < elements[b]; el++){
       for (int j=0; j<P1_numNodesPerElem; j++) {
@@ -679,7 +677,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Read node coordinates and place in field container
-  Intrepid2::ScalarView<double, memory_space> P1_nodeCoord("P1_nodeCoord", numNodes,dim);
+  ScalarView<double, memory_space> P1_nodeCoord("P1_nodeCoord", numNodes,dim);
   double * nodeCoordx = new double [numNodes];
   double * nodeCoordy = new double [numNodes];
   im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,0);
@@ -758,7 +756,7 @@ int main(int argc, char *argv[]) {
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Boundary Conds")));
 
   // Container indicating whether a node is on the boundary (1-yes 0-no)
-  Intrepid2::ScalarView<int, memory_space> P1_nodeOnBoundary("P1_nodeOnBoundary", numNodes);
+  ScalarView<int, memory_space> P1_nodeOnBoundary("P1_nodeOnBoundary", numNodes);
 
   // Get boundary (side set) information
   long long * sideSetIds = new long long [numSideSets];
@@ -788,10 +786,10 @@ int main(int argc, char *argv[]) {
 
  // Enumerate edges
   // NOTE: Only correct in serial
-  Intrepid2::ScalarView<int, memory_space> P1_elemToEdge("P1_elemToEdge", numElems,4);// Because quads
-  Intrepid2::ScalarView<int, memory_space> P1_elemToEdgeOrient("P1_elemToEdgeOrient",numElems,4);
-  Intrepid2::ScalarView<double, memory_space> P1_edgeCoord("P1_edgeCoord",1,dim);//will be resized
-  Intrepid2::ScalarView<int, memory_space> P1_edgeToNode("P1_edgeToNode",1,2);//will be resized
+  ScalarView<int, memory_space> P1_elemToEdge("P1_elemToEdge", numElems,4);// Because quads
+  ScalarView<int, memory_space> P1_elemToEdgeOrient("P1_elemToEdgeOrient",numElems,4);
+  ScalarView<double, memory_space> P1_edgeCoord("P1_edgeCoord",1,dim);//will be resized
+  ScalarView<int, memory_space> P1_edgeToNode("P1_edgeToNode",1,2);//will be resized
   GenerateEdgeEnumeration(P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeToNode,P1_edgeCoord);
 
 
@@ -944,9 +942,9 @@ int main(int argc, char *argv[]) {
   // NOTE: Only correct in serial
   int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.extent(0) + (degree-1)*(degree-1)*numElems;
   int Pn_numNodesperElem = (degree+1)*(degree+1); // Quads
-  Intrepid2::ScalarView<int, memory_space>    elemToNode("elemToNode",numElems,Pn_numNodesperElem);
-  Intrepid2::ScalarView<double, memory_space> nodeCoord("nodeCoord",Pn_numNodes,dim);
-  Intrepid2::ScalarView<int, memory_space>   nodeOnBoundary("nodeOnBoundary", Pn_numNodes);
+  ScalarView<int, memory_space>    elemToNode("elemToNode",numElems,Pn_numNodesperElem);
+  ScalarView<double, memory_space> nodeCoord("nodeCoord",Pn_numNodes,dim);
+  ScalarView<int, memory_space>   nodeOnBoundary("nodeOnBoundary", Pn_numNodes);
   std::vector<int> Pn_edgeNodes;
   std::vector<int> Pn_cellNodes;
 
@@ -956,7 +954,7 @@ int main(int argc, char *argv[]) {
 
 
   long long numElems_aux = numElems*degree*degree;  //degree^2 P1 elements per Pn element in auxiliary mesh
-  Intrepid2::ScalarView<int, memory_space> aux_P1_elemToNode("aux_P1_elemToNode", numElems_aux,P1_numNodesPerElem); //4 P1 elements per Pn element
+  ScalarView<int, memory_space> aux_P1_elemToNode("aux_P1_elemToNode", numElems_aux,P1_numNodesPerElem); //4 P1 elements per Pn element
   CreateP1MeshFromPnMesh(degree, elemToNode, aux_P1_elemToNode);
 
   // Only works in serial
@@ -997,8 +995,8 @@ int main(int argc, char *argv[]) {
   int cubDim       = myCub->getDimension();
   int numCubPoints = myCub->getNumPoints();
 
-  Intrepid2::ScalarView<double, memory_space> cubPoints("cubPoints", numCubPoints, cubDim);
-  Intrepid2::ScalarView<double, memory_space> cubWeights("cubWeights", numCubPoints);
+  ScalarView<double, memory_space> cubPoints("cubPoints", numCubPoints, cubDim);
+  ScalarView<double, memory_space> cubWeights("cubWeights", numCubPoints);
 
   myCub->getCubature(cubPoints, cubWeights);
 
@@ -1012,7 +1010,7 @@ int main(int argc, char *argv[]) {
   // Define basis
   auto myHGradBasis = new Basis_HGRAD_QUAD_Cn_FEM<device_type, double, double>(degree,POINTTYPE_EQUISPACED);
   RCP<Basis_HGRAD_QUAD_Cn_FEM<device_type,double,double> > myHGradBasis_rcp = rcp(myHGradBasis, false);
-  //RCP<Basis_HGRAD_QUAD_Cn_FEM<double,Intrepid2::ScalarView<double, memory_space> > > myHGradBasisWithDofCoords_rcp = rcp(&myHGradBasis, false);
+  //RCP<Basis_HGRAD_QUAD_Cn_FEM<double,ScalarView<double, memory_space> > > myHGradBasisWithDofCoords_rcp = rcp(&myHGradBasis, false);
 
   // Auxillary p=1 basis
   auto myHGradBasis_aux = new Basis_HGRAD_QUAD_C1_FEM<device_type, double, double>();
@@ -1021,8 +1019,8 @@ int main(int argc, char *argv[]) {
 
   int numFieldsG = myHGradBasis->getCardinality();
 
-  Intrepid2::ScalarView<double, memory_space> HGBValues("HGBValues", numFieldsG, numCubPoints);
-  Intrepid2::ScalarView<double, memory_space> HGBGrads("HGBGrads", numFieldsG, numCubPoints, spaceDim);
+  ScalarView<double, memory_space> HGBValues("HGBValues", numFieldsG, numCubPoints);
+  ScalarView<double, memory_space> HGBGrads("HGBGrads", numFieldsG, numCubPoints, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
   myHGradBasis->getValues(HGBValues, cubPoints, OPERATOR_VALUE);
@@ -1032,9 +1030,9 @@ int main(int argc, char *argv[]) {
   //#define OUTPUT_REFERENCE_FUNCTIONS
 #ifdef OUTPUT_REFERENCE_FUNCTIONS
   // Evaluate basis values and gradients at DOF points
-  Intrepid2::ScalarView<double, memory_space> DofCoords("DofCoords",numFieldsG,spaceDim);
+  ScalarView<double, memory_space> DofCoords("DofCoords",numFieldsG,spaceDim);
   myHGradBasis.getDofCoords(DofCoords);
-  Intrepid2::ScalarView<double, memory_space> HGBValues_at_Dofs("HGBValues_at_Dofs",numFieldsG,numFieldsG);
+  ScalarView<double, memory_space> HGBValues_at_Dofs("HGBValues_at_Dofs",numFieldsG,numFieldsG);
   myHGradBasis->getValues(HGBValues_at_Dofs, DofCoords, OPERATOR_VALUE);
 
 
@@ -1286,8 +1284,8 @@ int main(int argc, char *argv[]) {
   int cubDim_aux       = myCub_aux->getDimension();
   int numCubPoints_aux = myCub_aux->getNumPoints();
 
-  Intrepid2::ScalarView<double, memory_space> cubPoints_aux("cubPoints_aux", numCubPoints_aux, cubDim_aux);
-  Intrepid2::ScalarView<double, memory_space> cubWeights_aux("cubWeights_aux", numCubPoints_aux);
+  ScalarView<double, memory_space> cubPoints_aux("cubPoints_aux", numCubPoints_aux, cubDim_aux);
+  ScalarView<double, memory_space> cubWeights_aux("cubWeights_aux", numCubPoints_aux);
   myCub_aux->getCubature(cubPoints_aux, cubWeights_aux);
 
   tm.reset();
@@ -1297,8 +1295,8 @@ int main(int argc, char *argv[]) {
 
   // Define basis
   int numFieldsG_aux = myHGradBasis_aux->getCardinality();
-  Intrepid2::ScalarView<double, memory_space> HGBValues_aux("HGBValues_aux", numFieldsG_aux, numCubPoints_aux);
-  Intrepid2::ScalarView<double, memory_space> HGBGrads_aux("HGBGrads_aux", numFieldsG_aux, numCubPoints_aux, spaceDim);
+  ScalarView<double, memory_space> HGBValues_aux("HGBValues_aux", numFieldsG_aux, numCubPoints_aux);
+  ScalarView<double, memory_space> HGBGrads_aux("HGBGrads_aux", numFieldsG_aux, numCubPoints_aux, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
   myHGradBasis_aux->getValues(HGBValues_aux, cubPoints_aux, OPERATOR_VALUE);
@@ -2160,7 +2158,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 /*********************************************************************************************************/
 
 
-void GenerateEdgeEnumeration(const Intrepid2::ScalarView<int, memory_space> & elemToNode, const Intrepid2::ScalarView<double, memory_space> & nodeCoord, Intrepid2::ScalarView<int, memory_space> & elemToEdge, Intrepid2::ScalarView<int, memory_space> & elemToEdgeOrient, Intrepid2::ScalarView<int, memory_space> & edgeToNode, Intrepid2::ScalarView<double, memory_space> & edgeCoord) {
+void GenerateEdgeEnumeration(const ScalarView<int, memory_space> & elemToNode, const ScalarView<double, memory_space> & nodeCoord, ScalarView<int, memory_space> & elemToEdge, ScalarView<int, memory_space> & elemToEdgeOrient, ScalarView<int, memory_space> & edgeToNode, ScalarView<double, memory_space> & edgeCoord) {
   // Not especially efficient, but effective... at least in serial!
 
   int numElems        = elemToNode.extent(0);
@@ -2241,15 +2239,15 @@ void GenerateEdgeEnumeration(const Intrepid2::ScalarView<int, memory_space> & el
 
 /*********************************************************************************************************/
 void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
-                 const Intrepid2::ScalarView<int, memory_space>    & P1_elemToNode,
-                 const Intrepid2::ScalarView<double, memory_space> & P1_nodeCoord,
-                 const Intrepid2::ScalarView<double, memory_space> & P1_edgeCoord,
-                 const Intrepid2::ScalarView<int, memory_space>    & P1_elemToEdge,
-                 const Intrepid2::ScalarView<int, memory_space>    & P1_elemToEdgeOrient,
-                 const Intrepid2::ScalarView<int, memory_space>    & P1_nodeOnBoundary,
-                 Intrepid2::ScalarView<int, memory_space>          & Pn_elemToNode,
-                 Intrepid2::ScalarView<double, memory_space>       & Pn_nodeCoord,
-                 Intrepid2::ScalarView<int, memory_space>          & Pn_nodeOnBoundary,
+                 const ScalarView<int, memory_space>    & P1_elemToNode,
+                 const ScalarView<double, memory_space> & P1_nodeCoord,
+                 const ScalarView<double, memory_space> & P1_edgeCoord,
+                 const ScalarView<int, memory_space>    & P1_elemToEdge,
+                 const ScalarView<int, memory_space>    & P1_elemToEdgeOrient,
+                 const ScalarView<int, memory_space>    & P1_nodeOnBoundary,
+                 ScalarView<int, memory_space>          & Pn_elemToNode,
+                 ScalarView<double, memory_space>       & Pn_nodeCoord,
+                 ScalarView<int, memory_space>          & Pn_nodeOnBoundary,
                  std::vector<int> & Pn_edgeNodes,
                  std::vector<int> & Pn_cellNodes) {
 //#define DEBUG_PROMOTE_MESH
@@ -2338,9 +2336,9 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   }
 
   // Get the p=n node locations
-  Intrepid2::ScalarView<double, memory_space> RefNodeCoords("RefNodeCoords", Pn_numNodesperElem,dim);
-  Intrepid2::ScalarView<double, memory_space> RefNodeCoords2("RefNodeCoords2",1,Pn_numNodesperElem,dim);
-  Intrepid2::ScalarView<double, memory_space> PhysNodeCoords("PhysNodeCoords",1,Pn_numNodesperElem,dim);
+  ScalarView<double, memory_space> RefNodeCoords("RefNodeCoords", Pn_numNodesperElem,dim);
+  ScalarView<double, memory_space> RefNodeCoords2("RefNodeCoords2",1,Pn_numNodesperElem,dim);
+  ScalarView<double, memory_space> PhysNodeCoords("PhysNodeCoords",1,Pn_numNodesperElem,dim);
   Basis_HGRAD_QUAD_Cn_FEM<device_type, double, double> BasisPn(degree,pointType);
   BasisPn.getDofCoords(RefNodeCoords);
 
@@ -2357,7 +2355,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   // Make the new coordinates (inefficient, but correct)
  for(int i=0; i<numElems; i++)  {
    // Get Element coords
-   Intrepid2::ScalarView<double, memory_space> my_p1_nodes("my_p1_nodes",1,P1_numNodesperElem,dim);
+   ScalarView<double, memory_space> my_p1_nodes("my_p1_nodes",1,P1_numNodesperElem,dim);
    for(int j=0; j<P1_numNodesperElem; j++) {
      int jj = P1_elemToNode(i,j);
      for(int k=0; k<dim; k++)
@@ -2442,8 +2440,8 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
 /*********************************************************************************************************/
 
 void CreateP1MeshFromPnMesh(int degree,
-                            Intrepid2::ScalarView<int, memory_space> const    & Pn_elemToNode,
-                            Intrepid2::ScalarView<int, memory_space>          & P1_elemToNode)
+                            ScalarView<int, memory_space> const    & Pn_elemToNode,
+                            ScalarView<int, memory_space>          & P1_elemToNode)
 {
 
   /*
@@ -2515,13 +2513,13 @@ void CreateP1MeshFromPnMesh(int degree,
 
 void CreateLinearSystem(int numWorksets,
                         int desiredWorksetSize,
-                        Intrepid2::ScalarView<int, memory_space>    const &elemToNode,
-                        Intrepid2::ScalarView<double, memory_space> const &nodeCoord,
-                        Intrepid2::ScalarView<double, memory_space> const &cubPoints,
-                        Intrepid2::ScalarView<double, memory_space> const &cubWeights,
+                        ScalarView<int, memory_space>    const &elemToNode,
+                        ScalarView<double, memory_space> const &nodeCoord,
+                        ScalarView<double, memory_space> const &cubPoints,
+                        ScalarView<double, memory_space> const &cubWeights,
                         RCP<Basis<device_type,double,double> > const &myBasis_rcp,
-                        Intrepid2::ScalarView<double, memory_space> const &HGBGrads,
-                        Intrepid2::ScalarView<double, memory_space> const &HGBValues,
+                        ScalarView<double, memory_space> const &HGBGrads,
+                        ScalarView<double, memory_space> const &HGBValues,
                         std::vector<global_ordinal_type>       const &globalNodeIds,
                         crs_matrix_type &StiffMatrix,
                         RCP<multivector_type> &rhsVector,
@@ -2569,7 +2567,7 @@ void CreateLinearSystem(int numWorksets,
     worksetSize  = worksetEnd - worksetBegin;
     //std::cout << "     cellWorkset: begin=" << worksetBegin << ", end=" << worksetEnd
     //          << ", size=" << worksetSize << std::endl;
-    Intrepid2::ScalarView<double, memory_space> cellWorkset("cellWorkset", worksetSize, numNodesPerElem, spaceDim);
+    ScalarView<double, memory_space> cellWorkset("cellWorkset", worksetSize, numNodesPerElem, spaceDim);
 
     // Copy coordinates into cell workset
     int cellCounter = 0;
@@ -2586,28 +2584,28 @@ void CreateLinearSystem(int numWorksets,
     /**********************************************************************************/
 
     // Containers for Jacobians, integration measure & cubature points in workset cells
-    Intrepid2::ScalarView<double, memory_space> worksetJacobian  ("worksetJacobian", worksetSize, numCubPoints, spaceDim, spaceDim);
-    Intrepid2::ScalarView<double, memory_space> worksetJacobInv  ("worksetJacobInv", worksetSize, numCubPoints, spaceDim, spaceDim);
-    Intrepid2::ScalarView<double, memory_space> worksetJacobDet  ("worksetJacobDet", worksetSize, numCubPoints);
-    Intrepid2::ScalarView<double, memory_space> worksetCubWeights("worksetCubWeights", worksetSize, numCubPoints);
-    Intrepid2::ScalarView<double, memory_space> worksetCubPoints ("worksetCubPoints", worksetSize, numCubPoints, cubDim);
+    ScalarView<double, memory_space> worksetJacobian  ("worksetJacobian", worksetSize, numCubPoints, spaceDim, spaceDim);
+    ScalarView<double, memory_space> worksetJacobInv  ("worksetJacobInv", worksetSize, numCubPoints, spaceDim, spaceDim);
+    ScalarView<double, memory_space> worksetJacobDet  ("worksetJacobDet", worksetSize, numCubPoints);
+    ScalarView<double, memory_space> worksetCubWeights("worksetCubWeights", worksetSize, numCubPoints);
+    ScalarView<double, memory_space> worksetCubPoints ("worksetCubPoints", worksetSize, numCubPoints, cubDim);
 
     // Containers for basis values transformed to workset cells and them multiplied by cubature weights
-    Intrepid2::ScalarView<double, memory_space> worksetHGBValues        ("worksetHGBValues", worksetSize, numFieldsG, numCubPoints);
-    Intrepid2::ScalarView<double, memory_space> worksetHGBValuesWeighted("worksetHGBValuesWeighted", worksetSize, numFieldsG, numCubPoints);
-    Intrepid2::ScalarView<double, memory_space> worksetHGBGrads         ("worksetHGBGrads", worksetSize, numFieldsG, numCubPoints, spaceDim);
-    Intrepid2::ScalarView<double, memory_space> worksetHGBGradsWeighted ("worksetHGBGradsWeighted", worksetSize, numFieldsG, numCubPoints, spaceDim);
+    ScalarView<double, memory_space> worksetHGBValues        ("worksetHGBValues", worksetSize, numFieldsG, numCubPoints);
+    ScalarView<double, memory_space> worksetHGBValuesWeighted("worksetHGBValuesWeighted", worksetSize, numFieldsG, numCubPoints);
+    ScalarView<double, memory_space> worksetHGBGrads         ("worksetHGBGrads", worksetSize, numFieldsG, numCubPoints, spaceDim);
+    ScalarView<double, memory_space> worksetHGBGradsWeighted ("worksetHGBGradsWeighted", worksetSize, numFieldsG, numCubPoints, spaceDim);
 
     // Containers for diffusive & advective fluxes & non-conservative adv. term and reactive terms
-    Intrepid2::ScalarView<double, memory_space> worksetDiffusiveFlux("worksetDiffusiveFlux", worksetSize, numFieldsG, numCubPoints, spaceDim);
+    ScalarView<double, memory_space> worksetDiffusiveFlux("worksetDiffusiveFlux", worksetSize, numFieldsG, numCubPoints, spaceDim);
 
     // Containers for material values and source term. Require user-defined functions
-    Intrepid2::ScalarView<double, memory_space> worksetMaterialVals ("worksetMaterialVals", worksetSize, numCubPoints, spaceDim, spaceDim);
-    Intrepid2::ScalarView<double, memory_space> worksetSourceTerm   ("worksetSourceTerm", worksetSize, numCubPoints);
+    ScalarView<double, memory_space> worksetMaterialVals ("worksetMaterialVals", worksetSize, numCubPoints, spaceDim, spaceDim);
+    ScalarView<double, memory_space> worksetSourceTerm   ("worksetSourceTerm", worksetSize, numCubPoints);
 
     // Containers for workset contributions to the discretization matrix and the right hand side
-    Intrepid2::ScalarView<double, memory_space> worksetStiffMatrix ("worksetStiffMatrix", worksetSize, numFieldsG, numFieldsG);
-    Intrepid2::ScalarView<double, memory_space> worksetRHS         ("worksetRHS", worksetSize, numFieldsG);
+    ScalarView<double, memory_space> worksetStiffMatrix ("worksetStiffMatrix", worksetSize, numFieldsG, numFieldsG);
+    ScalarView<double, memory_space> worksetRHS         ("worksetRHS", worksetSize, numFieldsG);
 
     tm.reset();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Calculate Jacobians")));
@@ -2890,7 +2888,7 @@ void CreateLinearSystem(int numWorksets,
 } //CreateLinearSystem
 
 /*********************************************************************************************************/
-void GenerateIdentityCoarsening_pn_to_p1(const Intrepid2::ScalarView<int, memory_space> & Pn_elemToNode,
+void GenerateIdentityCoarsening_pn_to_p1(const ScalarView<int, memory_space> & Pn_elemToNode,
                       RCP<const driver_map_type> const & P1_map_aux, RCP<const driver_map_type> const &Pn_map,
                       RCP<crs_matrix_type> & P,
                       RCP<crs_matrix_type> & R) {

@@ -1179,8 +1179,8 @@ int body(int argc, char *argv[]) {
   //Basis_HGRAD_HEX_C1_FEM<double, Intrepid2ScalarViewdouble > hexHGradBasis;
   auto hexHGradBasis = Intrepid2::getBasis<Intrepid2::DerivedNodalBasisFamily<device_type> >(cellType, Intrepid2::FUNCTION_SPACE_HGRAD, 1);
 
-  int numFieldsC = 1;//hexHCurlBasis.getCardinality();
-  int numFieldsG = 1;//hexHGradBasis.getCardinality();
+  int numFieldsC = hexHCurlBasis->getCardinality();
+  int numFieldsG = hexHGradBasis->getCardinality();
 
   // Evaluate basis at cubature points
   Intrepid2ScalarViewdouble HGVals("HGVals", numFieldsG, numCubPoints);
