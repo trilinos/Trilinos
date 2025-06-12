@@ -677,10 +677,10 @@ bool Behavior::overlapCommunicationAndComputation() {
       value_, initialized_, BehaviorDetails::OVERLAP, defaultValue);
 }
 
-int Behavior::defaultSendType() {
-  constexpr int defaultValue(1);
+std::string Behavior::defaultSendType() {
+  const std::string defaultValue("Send");
 
-  static int value_ = defaultValue;
+  static std::string value_ = defaultValue;
   static bool initialized_ = false;
   return idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::DEFAULT_SEND_TYPE, defaultValue);

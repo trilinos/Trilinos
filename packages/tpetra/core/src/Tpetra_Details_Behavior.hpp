@@ -11,6 +11,7 @@
 #define TPETRA_DETAILS_BEHAVIOR_HPP
 
 #include <stddef.h>
+#include <string>
 
 /// \file Tpetra_Details_Behavior.hpp
 /// \brief Declaration of Tpetra::Details::Behavior, a class that
@@ -261,7 +262,7 @@ public:
   ///
   /// This is defaults to "Send".  You may control this at run time via the
   /// <tt>TPETRA_DEFAULT_SEND_TYPE</tt> environment variable.
-  static int defaultSendType();
+  static std::string defaultSendType();
 
   /// \brief Add Teuchos timers for all host calls to Kokkos::deep_copy().
   /// This is especially useful for identifying host/device data transfers
