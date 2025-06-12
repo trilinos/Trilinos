@@ -57,8 +57,6 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA) {
   goldList.set("coarse: pre or post", "post");
   goldList.set("coarse: sweeps", 1);
   goldList.set("coarse: split communicator", false);
-  goldList.set("repartition: start level", 2);
-  goldList.set("repartition: put on single proc", 5000);
 
   TEST_EQUALITY(compareLists(List, goldList), true);
 }  // SA
@@ -101,8 +99,6 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
   goldList.set("refmaxwell: 22solver", "multilevel");
   goldList.set("refmaxwell: mode", "additive");
   goldList.set("zero starting solution", false);
-  goldList.set("repartition: start level", 2);
-  goldList.set("repartition: put on single proc", 5000);
   goldList.sublist("refmaxwell: 11list").set("default values", "SA");
   goldList.sublist("refmaxwell: 11list").set("max levels", 10);
   goldList.sublist("refmaxwell: 11list").set("prec type", "MGV");
@@ -121,8 +117,6 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
   goldList.sublist("refmaxwell: 11list").set("coarse: sweeps", 1);
   goldList.sublist("refmaxwell: 11list").set("coarse: split communicator", false);
   goldList.sublist("refmaxwell: 11list").set("cycle applications", 1);
-  goldList.sublist("refmaxwell: 11list").set("repartition: start level", 2);
-  goldList.sublist("refmaxwell: 11list").set("repartition: put on single proc", 5000);
   goldList.sublist("refmaxwell: 11list").set("aggregation: threshold", 0.01);
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("default values", "SA");
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("max levels", 10);
@@ -144,8 +138,6 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("cycle applications", 1);
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("aggregation: threshold", 0.01);
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("ML label", "coarse (1,1) block");
-  goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("repartition: start level", 2);
-  goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("repartition: put on single proc", 5000);
   goldList.sublist("refmaxwell: 22list").set("default values", "SA");
   goldList.sublist("refmaxwell: 22list").set("max levels", 10);
   goldList.sublist("refmaxwell: 22list").set("prec type", "MGV");
@@ -165,8 +157,6 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
   goldList.sublist("refmaxwell: 22list").set("coarse: split communicator", false);
   goldList.sublist("refmaxwell: 22list").set("cycle applications", 1);
   goldList.sublist("refmaxwell: 22list").set("aggregation: threshold", 0.01);
-  goldList.sublist("refmaxwell: 22list").set("repartition: start level", 2);
-  goldList.sublist("refmaxwell: 22list").set("repartition: put on single proc", 5000);
   goldList.sublist("refmaxwell: 22list").set("ML label", "(2,2) block");
 
   TEST_EQUALITY(compareLists(List, goldList), true);
