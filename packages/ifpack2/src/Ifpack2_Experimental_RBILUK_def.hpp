@@ -88,56 +88,59 @@ private:
 
 template <typename BsrMatrixType, typename CrsMatrixType>
 CrsMatrixType convertBsrToCrs(const BsrMatrixType& bsrMatrix) {
-  using Ordinal = typename BsrMatrixType::ordinal_type;
-  using RowMapType = typename BsrMatrixType::row_map_type::non_const_type;
+  using Ordinal     = typename BsrMatrixType::ordinal_type;
+  using RowMapType  = typename BsrMatrixType::row_map_type::non_const_type;
   using EntriesType = typename BsrMatrixType::index_type::non_const_type;
-  using ValuesType = typename BsrMatrixType::values_type::non_const_type;
+  using ValuesType  = typename BsrMatrixType::values_type::non_const_type;
 
-  const Ordinal blockSize = bsrMatrix.blockDim();
+  const Ordinal blockDim     = bsrMatrix.blockDim();
+  const Ordinal blockSize    = blockDim * blockDim;
   const Ordinal numBlockRows = bsrMatrix.numRows();
   const Ordinal numBlockCols = bsrMatrix.numCols();
 
-  const auto bsrRowMap = bsrMatrix.graph.row_map;
-  const auto bsrEntries = bsrMatrix.graph.entries;
-  const auto bsrValues = bsrMatrix.values;
+  const auto blockRowMap  = bsrMatrix.graph.row_map;
+  const auto blockEntries = bsrMatrix.graph.entries;
+  const auto blockValues  = bsrMatrix.values;
 
-  const Ordinal numRows = numBlockRows * blockSize;
-  const Ordinal numCols = numBlockCols * blockSize;
+  const Ordinal numRows = numBlockRows * blockDim;
+  const Ordinal numCols = numBlockCols * blockDim;
 
   // Allocate CrsMatrix row map
-  RowMapType crsRowMap("crsRowMap", numRows + 1);
-  EntriesType crsEntries("crsEntries", bsrEntries.extent(0) * blockSize * blockSize);
-  ValuesType crsValues("crsValues", bsrValues.extent(0) * blockSize * blockSize);
+  RowMapType crsRowMap  ("crsRowMap",  numRows + 1);
+  EntriesType crsEntries("crsEntries", blockEntries.extent(0) * blockSize);
+  ValuesType crsValues  ("crsValues",  blockValues.extent(0) * blockSize);
 
   // Fill CrsMatrix row map, entries, and values
   Kokkos::parallel_for("ConvertBsrToCrs", numBlockRows, KOKKOS_LAMBDA(const Ordinal blockRow) {
-    const Ordinal rowStart = bsrRowMap(blockRow);
-    const Ordinal rowEnd = bsrRowMap(blockRow + 1);
+    const Ordinal blockRowStart = blockRowMap(blockRow);
+    const Ordinal blockRowEnd   = blockRowMap(blockRow + 1);
+    const Ordinal blockRowCount = blockRowEnd - blockRowStart;
 
-    for (Ordinal blockRowOffset = 0; blockRowOffset < blockSize; ++blockRowOffset) {
-      const Ordinal crsRow = blockRow * blockSize + blockRowOffset;
-      crsRowMap(crsRow) = rowStart * blockSize * blockSize;
+    // Iterate over block entries in this row. This could use a teamRange parallel_for
+    for (Ordinal blockNnz = blockRowStart; blockNnz < blockRowEnd; ++blockNnz) {
+      const Ordinal blockCol = blockEntries(blockNnz);
+      const Ordinal blockNum = blockNnz - blockRowStart;
 
-      for (Ordinal blockEntryIdx = rowStart; blockEntryIdx < rowEnd; ++blockEntryIdx) {
-        const Ordinal blockCol = bsrEntries(blockEntryIdx);
+      // Iterate over block dim to get the unblocked rows
+      for (Ordinal blockRowOffset = 0; blockRowOffset < blockDim; ++blockRowOffset) {
+        const Ordinal crsRow = blockRow * blockDim + blockRowOffset;
+        // Each unblocked row has blockRowCount * blockDim items
+        const Ordinal crsRowStart = blockRowStart * blockSize + blockRowCount * blockDim * blockRowOffset;
+        crsRowMap(crsRow) = crsRowStart;
 
-        for (Ordinal blockColOffset = 0; blockColOffset < blockSize; ++blockColOffset) {
-          const Ordinal crsCol = blockCol * blockSize + blockColOffset;
-
-          for (Ordinal i = 0; i < blockSize; ++i) {
-            const Ordinal crsEntryIdx = blockEntryIdx * blockSize * blockSize + blockRowOffset * blockSize + blockColOffset;
-            crsEntries(crsEntryIdx) = crsCol;
-            crsValues(crsEntryIdx) = bsrValues(blockEntryIdx * blockSize * blockSize + blockRowOffset * blockSize + i);
-          }
+        // Iterate over block dim to get the unblocked cols
+        for (Ordinal blockColOffset = 0; blockColOffset < blockDim; ++blockColOffset) {
+          const Ordinal crsCol = blockCol * blockDim + blockColOffset;
+          const Ordinal crsNnz = crsRowStart + blockNum * blockDim + blockColOffset;
+          crsEntries(crsNnz) = crsCol;
+          crsValues (crsNnz) = blockValues(blockNnz * blockSize + blockRowOffset * blockDim + blockColOffset);
         }
       }
     }
   });
 
   // Finalize CrsMatrix row map
-  Kokkos::parallel_for("FinalizeCrsRowMap", numRows + 1, KOKKOS_LAMBDA(const Ordinal i) {
-    crsRowMap(i + 1) = crsRowMap(i);
-  });
+  crsRowMap(numRows) = blockRowMap(numBlockRows) * blockSize;
 
   // Construct CrsMatrix
   return CrsMatrixType("crsMatrix", numRows, numCols, crsEntries.extent(0), crsValues, crsRowMap, crsEntries);
@@ -274,7 +277,8 @@ void RBILUK<MatrixType>::allocate_L_and_U_blocks ()
       }
 
       // Allocate temp space for apply
-      const auto numRows = L_block_->getLocalNumRows();
+      auto lclMtx = A_local_bcrs_->getLocalMatrixDevice();
+      const auto numRows = lclMtx.numRows();
       tmp_ = view1d("RBILUK::tmp_", numRows * blockSize_);
     }
   }
@@ -479,7 +483,7 @@ void RBILUK<MatrixType>::initialize ()
                                                                                          A_block_local_diagblks_v_[i].numCols(),
                                                                                          A_local_bcrs_->getColMap()->getComm()));
 
-        Teuchos::RCP<const crs_graph_type> graph = rcp (new crs_graph_type(A_local_diagblks_RowMap, A_local_diagblks_ColMap, A_block_local_diagblks_rowmap_v_[i], A_block_local_diagblks_entries_v_[i]));
+        Teuchos::RCP<const crs_graph_type> graph = rcp (new crs_graph_type(A_local_diagblks_RowMap, A_local_diagblks_ColMap, A_block_local_diagblks_v_[i].graph));
         this->Graph_v_[i] = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (graph,
                                                                                         this->LevelOfFill_, 0));
       }
@@ -492,7 +496,7 @@ void RBILUK<MatrixType>::initialize ()
 
     if (this->isKokkosKernelsSpiluk_) {
       if (!this->isKokkosKernelsStream_) {
-        this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+        KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
         const auto numRows = this->A_local_->getLocalNumRows();
         KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
                                              numRows,
@@ -501,32 +505,34 @@ void RBILUK<MatrixType>::initialize ()
                                              blockSize_);
         this->Graph_->initialize(KernelHandle_); // this calls spiluk_symbolic
 
-        this->L_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
-        this->U_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+        L_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+        U_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
 
         KokkosSparse::Experimental::SPTRSVAlgorithm alg = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1;
 
-        this->L_Sptrsv_KernelHandle_->create_sptrsv_handle(alg, numRows, true /*lower*/, blockSize_);
-        this->U_Sptrsv_KernelHandle_->create_sptrsv_handle(alg, numRows, false /*upper*/, blockSize_);
+        L_Sptrsv_KernelHandle_->create_sptrsv_handle(alg, numRows, true /*lower*/, blockSize_);
+        U_Sptrsv_KernelHandle_->create_sptrsv_handle(alg, numRows, false /*upper*/, blockSize_);
       }
       else {
-        const auto numRows = this->A_local_->getLocalNumRows();
         KokkosSparse::Experimental::SPTRSVAlgorithm alg = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1;
         KernelHandle_v_ = std::vector< Teuchos::RCP<kk_handle_type> >(this->num_streams_);
+        L_Sptrsv_KernelHandle_v_ = std::vector<Teuchos::RCP<kk_handle_type> >(this->num_streams_);
+        U_Sptrsv_KernelHandle_v_ = std::vector<Teuchos::RCP<kk_handle_type> >(this->num_streams_);
         for (int i = 0; i < this->num_streams_; i++) {
+          const auto numRows = A_block_local_diagblks_v_[i].numRows();
           KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
-          KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
+          KernelHandle_v_[i]->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
                                                numRows,
                                                2*A_block_local_diagblks_v_[i].nnz()*(this->LevelOfFill_+1),
                                                2*A_block_local_diagblks_v_[i].nnz()*(this->LevelOfFill_+1),
                                                blockSize_);
-          this->Graph_v_[i]->initialize(KernelHandle_); // this calls spiluk_symbolic
+          this->Graph_v_[i]->initialize(KernelHandle_v_[i]); // this calls spiluk_symbolic
 
-          this->L_Sptrsv_KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
-          this->U_Sptrsv_KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
+          L_Sptrsv_KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
+          U_Sptrsv_KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
 
-          this->L_Sptrsv_KernelHandle_v_[i]->create_sptrsv_handle(alg, numRows, true /*lower*/, blockSize_);
-          this->U_Sptrsv_KernelHandle_v_[i]->create_sptrsv_handle(alg, numRows, false /*upper*/, blockSize_);
+          L_Sptrsv_KernelHandle_v_[i]->create_sptrsv_handle(alg, numRows, true /*lower*/, blockSize_);
+          U_Sptrsv_KernelHandle_v_[i]->create_sptrsv_handle(alg, numRows, false /*upper*/, blockSize_);
         }
       }
     }
@@ -1232,9 +1238,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
   const LO rowStride = blockSize_;
 
-  BMV yBlock (Y, * (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_);
-  const BMV xBlock (X, * (this->A_->getColMap ()), blockSize_);
-
   Teuchos::Array<scalar_type> lclarray(blockSize_);
   little_host_vec_type lclvec((typename little_host_vec_type::value_type*)&lclarray[0], blockSize_);
   const scalar_type one = STM::one ();
@@ -1245,6 +1248,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (!this->isKokkosKernelsSpiluk_) {
+      BMV yBlock (Y, * (this->Graph_->getA_Graph()->getDomainMap ()), blockSize_);
+      const BMV xBlock (X, * (this->A_->getColMap ()), blockSize_);
+
       if (alpha == one && beta == zero) {
         if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.
           // Start by solving L C = X for C.  C must have the same Map
