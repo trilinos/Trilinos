@@ -53,6 +53,17 @@ TpetraBlockedMappingStrategy::TpetraBlockedMappingStrategy(
 void TpetraBlockedMappingStrategy::copyTpetraIntoThyra(
     const Tpetra::MultiVector<ST, LO, GO, NT>& X,
     const Teuchos::Ptr<Thyra::MultiVectorBase<ST>>& thyra_X) const {
+  if (blockMaps_.empty()) {
+    auto prod_X = Teuchos::ptr_dynamic_cast<Thyra::ProductMultiVectorBase<ST>>(thyra_X);
+    auto vec    = rcp_dynamic_cast<Thyra::TpetraMultiVector<ST, LO, GO, NT>>(
+        prod_X->getNonconstMultiVectorBlock(0), true);
+
+    Teuchos::RCP<Tpetra::MultiVector<ST, LO, GO, NT>> X_rcp_nonconst =
+        Teuchos::rcp_const_cast<Tpetra::MultiVector<ST, LO, GO, NT>>(Teuchos::rcpFromRef(X));
+    fillDefaultSpmdMultiVector(vec, X_rcp_nonconst);
+    return;
+  }
+
   int count = X.getNumVectors();
 
   std::vector<RCP<Tpetra::MultiVector<ST, LO, GO, NT>>> subX;
@@ -87,6 +98,15 @@ void TpetraBlockedMappingStrategy::copyTpetraIntoThyra(
 void TpetraBlockedMappingStrategy::copyThyraIntoTpetra(
     const RCP<const Thyra::MultiVectorBase<ST>>& thyra_Y,
     Tpetra::MultiVector<ST, LO, GO, NT>& Y) const {
+  if (blockMaps_.empty()) {
+    auto prod_Y = rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<ST>>(thyra_Y);
+    auto tmv    = rcp_dynamic_cast<const Thyra::TpetraMultiVector<ST, LO, GO, NT>>(
+                   prod_Y->getMultiVectorBlock(0), true)
+                   ->getConstTpetraMultiVector();
+    Y.assign(*tmv);
+    return;
+  }
+
   std::vector<RCP<const Tpetra::MultiVector<ST, LO, GO, NT>>> subY;
   RCP<const Thyra::DefaultProductMultiVector<ST>> prod_Y =
       rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<ST>>(thyra_Y);
@@ -121,6 +141,8 @@ void TpetraBlockedMappingStrategy::copyThyraIntoTpetra(
 void TpetraBlockedMappingStrategy::buildBlockTransferData(
     const std::vector<std::vector<GO>>& vars,
     const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& baseMap, const Teuchos::Comm<int>& comm) {
+  if (vars.size() == 1) return;
+
   // build block for each vector
   for (std::size_t i = 0; i < vars.size(); i++) {
     // build maps and exporters/importers
@@ -147,21 +169,24 @@ const Teuchos::RCP<Thyra::BlockedLinearOpBase<ST>>
 TpetraBlockedMappingStrategy::buildBlockedThyraOp(
     const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& crsContent,
     const std::string& label) const {
-  int dim = blockMaps_.size();
-
-  if (dim == 1) {
+  if (blockMaps_.empty()) {
     RCP<Thyra::DefaultBlockedLinearOp<ST>> A = Thyra::defaultBlockedLinearOp<ST>();
 
-    A->beginBlockFill(dim, dim);
-    A->setBlock(
+    auto crsCopy = Teuchos::make_rcp<Tpetra::CrsMatrix<ST, LO, GO, NT>>(*crsContent,
+                                                                        Teuchos::DataAccess::View);
+
+    A->beginBlockFill(1, 1);
+    A->setNonconstBlock(
         0, 0,
-        Thyra::constTpetraLinearOp<ST, LO, GO, NT>(
-            Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crsContent->getRangeMap()),
-            Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crsContent->getDomainMap()), crsContent));
+        Thyra::tpetraLinearOp<ST, LO, GO, NT>(
+            Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crsCopy->getRangeMap()),
+            Thyra::tpetraVectorSpace<ST, LO, GO, NT>(crsCopy->getDomainMap()), crsCopy));
     A->endBlockFill();
 
     return A;
   }
+
+  int dim = blockMaps_.size();
 
   plocal2ContigGIDs.resize(dim);
   for (int j = 0; j < dim; j++) {
@@ -204,9 +229,20 @@ TpetraBlockedMappingStrategy::buildBlockedThyraOp(
 void TpetraBlockedMappingStrategy::rebuildBlockedThyraOp(
     const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& crsContent,
     const RCP<Thyra::BlockedLinearOpBase<ST>>& A) const {
-  int dim = blockMaps_.size();
+  if (blockMaps_.empty()) {
+    auto Aij  = A->getNonconstBlock(0, 0);
+    auto tAij = rcp_dynamic_cast<Thyra::TpetraLinearOp<ST, LO, GO, NT>>(Aij, true);
+    auto eAij =
+        rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tAij->getTpetraOperator(), true);
+    auto values_dest      = eAij->getLocalMatrixDevice().values;
+    const auto values_src = crsContent->getLocalMatrixDevice().values;
+    TEUCHOS_DEBUG(eAij->getCrsGraph()->isIdenticalTo(*crsContent->getCrsGraph()));
+    TEUCHOS_DEBUG(values_dest.extent(0) == values_src.extent(0));
+    Kokkos::deep_copy(values_dest, values_src);
+    return;
+  }
 
-  if (dim == 1) return;
+  int dim = blockMaps_.size();
 
   for (int i = 0; i < dim; i++) {
     for (int j = 0; j < dim; j++) {
