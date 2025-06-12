@@ -22,6 +22,7 @@
 #include <type_traits>
 #include "Amesos2_TpetraMultiVecAdapter_decl.hpp"
 #include "Amesos2_Kokkos_View_Copy_Assign.hpp"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 
 namespace Amesos2 {
@@ -76,7 +77,7 @@ namespace Amesos2 {
     return contig_local_view_1d.data();
   }
 
-  // TODO Proper type handling: 
+  // TODO Proper type handling:
   // Consider a MultiVectorTraits class
   // typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> multivector_type
   // NOTE: In this class, above already has a typedef multivec_t
@@ -145,7 +146,7 @@ namespace Amesos2 {
         // needs to keep the distribution Map, we have to make a copy of
         // the latter in order to ensure that it will stick around past
         // the scope of this function call.  (Ptr is not reference
-        // counted.)  
+        // counted.)
         distMap = rcp(new map_type(*distribution_map));
         // (Re)create the Export object.
         exporter_ = rcp (new export_type (this->getMap (), distMap));
@@ -248,6 +249,7 @@ namespace Amesos2 {
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Resolve handling for non-constant stride.");
+        TEUCHOS_UNREACHABLE_RETURN(false);
       }
     }
     else {
@@ -292,6 +294,7 @@ namespace Amesos2 {
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Kokkos adapter non-constant stride not imlemented.");
+          TEUCHOS_UNREACHABLE_RETURN(false);
         }
       }
     }
@@ -598,9 +601,11 @@ namespace Amesos2 {
     auto comm = this->mv_->getMap()->getComm();
     auto myRank = comm->getRank();
     if (myRank == 0) {
-      Kokkos::resize(kokkos_new_view, nRows, nCols);
+      if (kokkos_new_view.extent(0) != nRows || kokkos_new_view.extent(1) != nCols) {
+        Kokkos::resize(kokkos_new_view, nRows, nCols);
+      }
       if (perm_g2l.extent(0) == nRows) {
-        Kokkos::resize(this->buf_, nRows, 1);
+        if (this->buf_.extent(0) < nRows) Kokkos::resize(this->buf_, nRows, 1);
       } else {
         Kokkos::resize(this->buf_, 0, 1);
       }
@@ -618,7 +623,10 @@ namespace Amesos2 {
                                        recvbuf, recvCountRows.data(), recvDisplRows.data(),
                                        0, *comm);
         if (myRank == 0 && this->buf_.extent(0) > 0) {
-          for (global_size_t i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
+          //for (global_size_t i=0; i<nRows; i++) kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0);
+          typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+          Kokkos::parallel_for("Amesos2::TpetraMultiVecAdapter::gather", Kokkos::RangePolicy<HostExecSpaceType>(0, nRows),
+            [&](const int i) { kokkos_new_view(perm_g2l(i),j) = this->buf_(i,0); });
         }
       }
     }
@@ -648,7 +656,10 @@ namespace Amesos2 {
       auto lclMV = Kokkos::create_mirror_view(lclMV_d);
       for (size_t j=0; j<nCols; j++) {
         if (myRank == 0 && this->buf_.extent(0) > 0) {
-          for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
+          //for (global_size_t i=0; i<nRows; i++) this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j);
+          typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
+          Kokkos::parallel_for("Amesos2::TpetraMultiVecAdapter::scatter", Kokkos::RangePolicy<HostExecSpaceType>(0, nRows),
+            [&](const int i) { this->buf_(i, 0) = kokkos_new_view(perm_g2l(i),j); });
         }
         // lclMV with OverwriteAll
         Scalar * sendbuf = reinterpret_cast<Scalar*> (this->buf_.extent(0) > 0 || myRank != 0 ? this->buf_.data() : &kokkos_new_view(0,j));

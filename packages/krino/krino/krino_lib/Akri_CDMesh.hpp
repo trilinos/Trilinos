@@ -86,6 +86,9 @@ public:
 
   static CDMesh* get_new_mesh() { return the_new_mesh.get(); }
 
+  int decompose_mesh(const InterfaceGeometry & interfaceGeometry, const int stashStepCount);
+  static void reset_new_mesh() { the_new_mesh.reset(); }
+
   void snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
     NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
 
@@ -208,7 +211,6 @@ public:
 
 public: // for unit testing
   void update_adaptivity_parent_entities();
-  void determine_conformal_parts(stk::mesh::Entity entity, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
   void clear();
 
 private:
@@ -235,11 +237,7 @@ private:
 
   bool decomposition_has_changed(const InterfaceGeometry & interfaceGeometry);
   bool elem_io_part_changed(const ElementObj & elem) const;
-  void determine_nonconformal_parts(stk::mesh::Entity entity, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  void determine_conformal_parts(const stk::mesh::PartVector & current_parts, const stk::mesh::EntityRank entity_rank, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  void determine_child_conformal_parts(stk::topology topology, const stk::mesh::PartVector & parent_parts, const PhaseTag & phase, stk::mesh::PartVector & child_parts) const;
   void determine_element_side_parts(const stk::mesh::Entity side, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  bool element_side_should_be_active(const stk::mesh::Entity side) const;
   void stash_field_data(const int step_count) const;
   void stash_nodal_field_data() const;
   void stash_elemental_field_data() const;
@@ -276,7 +274,7 @@ private:
   double get_maximum_cdfem_displacement() const;
 
   void add_possible_interface_sides(std::vector<SideDescription> & sideRequests) const;
-  bool check_element_side_parts(const std::vector<stk::mesh::Entity> & side_nodes) const;
+  bool check_element_side_parts(const stk::mesh::Entity elem, const unsigned sideId) const;
   void update_element_side_parts();
 
   void parallel_communicate_elemental_death_fields() const;

@@ -166,7 +166,8 @@ StkMeshIoBroker::StkMeshIoBroker()
   m_enableEdgeIO(false),
   m_cacheEntityListForTransientSteps(false),
   m_throwOnMissingInputFields(false),
-  m_enableAllFaceSidesShellTopo(false)
+  m_enableAllFaceSidesShellTopo(false),
+  m_createEmptyBlockForOmittedBlock(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -181,7 +182,8 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
   m_enableEdgeIO(false),
   m_cacheEntityListForTransientSteps(false),
   m_throwOnMissingInputFields(false),
-  m_enableAllFaceSidesShellTopo(false)
+  m_enableAllFaceSidesShellTopo(false),
+  m_createEmptyBlockForOmittedBlock(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -294,7 +296,7 @@ void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bul
     m_bulkData = arg_bulk_data;
 
     if (m_metaData == nullptr) {
-        m_metaData = std::shared_ptr<stk::mesh::MetaData>(&(bulk_data().mesh_meta_data()), [](auto pointerWeWontDelete){});
+        m_metaData = std::shared_ptr<stk::mesh::MetaData>(&(bulk_data().mesh_meta_data()), [](auto /*pointerWeWontDelete*/){});
     }
 
     m_communicator = m_bulkData->parallel();
@@ -306,7 +308,7 @@ void StkMeshIoBroker::replace_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg
     STK_ThrowRequireMsg(m_bulkData, "There is  no BulkData to replace.");
     STK_ThrowRequireMsg(m_metaData, "MetaData must be non-null when calling StkMeshIoBroker::replace_bulk_data.");
 
-    std::shared_ptr<stk::mesh::MetaData> new_meta_data(&(arg_bulk_data->mesh_meta_data()), [](auto pointerWeWontDelete){});
+    std::shared_ptr<stk::mesh::MetaData> new_meta_data(&(arg_bulk_data->mesh_meta_data()), [](auto /*pointerWeWontDelete*/){});
     STK_ThrowErrorMsgIf(m_metaData.get() != new_meta_data.get(),
                         "MetaData for both new and old BulkData must be the same.");
 
@@ -522,11 +524,11 @@ void StkMeshIoBroker::create_input_mesh()
         throw std::runtime_error( msg.str() );
       };
     } else {
-      handler = [](stk::mesh::Part &part) { };
+      handler = [](stk::mesh::Part & /*part*/) { };
     }
 
     process_nodeblocks(*region,    meta_data());
-    process_elementblocks(*region, meta_data(), handler);
+    process_elementblocks(*region, meta_data(), handler, m_createEmptyBlockForOmittedBlock);
     process_sidesets(*region,      meta_data());
     process_face_blocks(*region,   meta_data(), handler);
     process_edge_blocks(*region,   meta_data(), handler);
@@ -1219,7 +1221,7 @@ bool StkMeshIoBroker::read_input_field(stk::io::MeshField &mf, stk::io::FieldRea
     readStatus.timeRead = mf.time_restored();
 
     double timeToRead = mf.get_read_time();
-    double lastTime = m_inputFiles[m_activeMeshIndex]->get_input_ioss_region()->get_max_time().second;
+    double lastTime = m_inputFiles[m_activeMeshIndex]->get_max_time();
 
     if(timeToRead > lastTime) {
       readStatus.possiblyCorrupt = true;

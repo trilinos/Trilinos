@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -46,17 +46,20 @@ namespace Ioss {
     }
     auto storage = fld.raw_storage()->name();
     if (storage == "scalar") {
-      fmt::print(os, "\tField: {}, Storage: {}\t{}\t{}\n", fld.get_name(),
+      fmt::print(os, "\tField: {}, Storage: {},\t{},\t{}\n", fld.get_name(),
                  fld.raw_storage()->name(), fld.type_string(), fld.role_string());
     }
     else {
+      auto suffix0 = fld.get_suffix_separator(0);
+      auto suffix1 = fld.get_suffix_separator(1);
+      suffix0      = suffix0 == 1 ? '_' : suffix0;
+      suffix1      = suffix1 == 1 ? '_' : suffix1;
       fmt::print(os,
                  "\tField: {}, Storage: {} ({}),\t{},\t{}, Sep1: '{}', Sep2: '{}'\n"
                  "\t\t\tComponents ({}): {}\n",
                  fld.get_name(), fld.raw_storage()->name(), fld.raw_storage()->type_string(),
-                 fld.type_string(), fld.role_string(), fld.get_suffix_separator(0),
-                 fld.get_suffix_separator(1), fld.get_component_count(Field::InOut::INPUT),
-                 fmt::join(components, ", "));
+                 fld.type_string(), fld.role_string(), suffix0, suffix1,
+                 fld.get_component_count(Field::InOut::INPUT), fmt::join(components, ", "));
     }
     return os;
   }
@@ -302,7 +305,7 @@ bool Ioss::Field::add_transform(Transform *my_transform)
     size_ = size;
   }
 
-  transforms_.push_back(my_transform);
+  transforms_.emplace_back(my_transform);
   return true;
 }
 
@@ -407,8 +410,8 @@ std::string Ioss::Field::type_string(Ioss::Field::BasicType type)
   case Ioss::Field::STRING: return {"string"};
   case Ioss::Field::CHARACTER: return {"char"};
   case Ioss::Field::INVALID: return {"invalid"};
-  default: return {"internal error"};
   }
+  return {"internal error"};
 }
 
 std::string Ioss::Field::role_string() const { return role_string(get_role()); }
@@ -417,14 +420,15 @@ std::string Ioss::Field::role_string(Ioss::Field::RoleType role)
 {
   switch (role) {
   case Ioss::Field::INTERNAL: return {"Internal"};
+  case Ioss::Field::MAP: return {"Map"};
   case Ioss::Field::MESH: return {"Mesh"};
   case Ioss::Field::ATTRIBUTE: return {"Attribute"};
   case Ioss::Field::COMMUNICATION: return {"Communication"};
   case Ioss::Field::MESH_REDUCTION: return {"Mesh Reduction"};
   case Ioss::Field::REDUCTION: return {"Reduction"};
   case Ioss::Field::TRANSIENT: return {"Transient"};
-  default: return {"internal error"};
   }
+  return {"internal error"};
 }
 
 namespace {

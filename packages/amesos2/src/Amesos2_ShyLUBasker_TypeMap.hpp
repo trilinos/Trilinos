@@ -63,8 +63,8 @@ struct TypeMap<ShyLUBasker,double>
 template <>
 struct TypeMap<ShyLUBasker,std::complex<float> >
 {
-  typedef std::complex<double> dtype;
-  typedef Kokkos::complex<double> type;
+  typedef std::complex<float> dtype;
+  typedef Kokkos::complex<float> type;
 };
 
 template <>
@@ -77,8 +77,8 @@ struct TypeMap<ShyLUBasker,std::complex<double> >
 template <>
 struct TypeMap<ShyLUBasker,Kokkos::complex<float> >
 {
-  typedef std::complex<double> dtype;
-  typedef Kokkos::complex<double> type;
+  typedef std::complex<float> dtype;
+  typedef Kokkos::complex<float> type;
 };
 
 template <>

@@ -16,161 +16,224 @@
 
 namespace krino {
 
-static stk::math::Vector3d compute_interface_velocity_at_point(const int dim, const double time, const stk::math::Vector3d & coords, const std::vector<String_Function_Expression> & interfaceVelocityExpr)
+ExtensionVelocityFunction build_extension_velocity_at_closest_point_using_string_expressions(const std::vector<String_Function_Expression> & interfaceVelocity)
 {
-  if (2 == dim)
-    return stk::math::Vector3d(interfaceVelocityExpr[0].evaluate(time, coords), interfaceVelocityExpr[1].evaluate(time, coords), 0.0);
-  return stk::math::Vector3d(interfaceVelocityExpr[0].evaluate(time, coords), interfaceVelocityExpr[1].evaluate(time, coords), interfaceVelocityExpr[2].evaluate(time, coords));
+  auto extv = [&](const double time, const stk::math::Vector3d & closestPt)
+  {
+    return evaluate_vector_at_location(time, closestPt, interfaceVelocity);
+  };
+  return extv;
 }
 
-static stk::math::Vector3d compute_semilagrangian_evaluation_point(const int dim,
+template <typename FACET>
+ExtensionVelocityFunction build_extension_velocity_at_closest_point_using_facets_with_velocity(const FacetedSurfaceBase & facets)
+{
+  const auto & facetsWithVelocity = facets.as_derived_type<FACET>();
+  auto extv = [&](const double time, const stk::math::Vector3d & closestPt)
+  {
+    const auto * nearest = facetsWithVelocity.get_closest_facet(closestPt);
+    return nearest->velocity_at_closest_point(closestPt);
+  };
+  return extv;
+}
+
+ExtensionVelocityFunction build_extension_velocity_at_closest_point_using_facets_with_velocity(const int dim, const FacetedSurfaceBase & facets)
+{
+  if (dim == 2)
+      return build_extension_velocity_at_closest_point_using_facets_with_velocity<FacetWithVelocity2d>(facets);
+  return build_extension_velocity_at_closest_point_using_facets_with_velocity<FacetWithVelocity3d>(facets);
+}
+
+ExtensionVelocityFunction build_extension_velocity_using_velocity_at_closest_point(const FacetedSurfaceBase & facets, const ExtensionVelocityFunction & velAtClosestPt)
+{
+  auto extv = [&](const double time, const stk::math::Vector3d & pt)
+  {
+    const stk::math::Vector3d closestPt = facets.closest_point(pt);
+    return velAtClosestPt(time, closestPt);
+  };
+  return extv;
+}
+
+template <typename FACET>
+double compute_max_facet_velocity_magnitude(const double time,
+    const std::vector<FACET> & facets,
+    const std::vector<String_Function_Expression> & interfaceVelocity)
+{
+  constexpr int NUMFACETNODES = FACET::DIM;
+  double maxSqrMag = 0.;
+  for (auto & facet : facets)
+  {
+    for (int n=0; n<NUMFACETNODES; ++n)
+    {
+      const double velSqrMag = (evaluate_vector_at_location(time, facet.facet_vertex(n), interfaceVelocity)).length_squared();
+      if (velSqrMag > maxSqrMag)
+        maxSqrMag = velSqrMag;
+    }
+  }
+  return std::sqrt(maxSqrMag);
+}
+
+template <typename FACET>
+double compute_max_facet_velocity_magnitude_for_facets_with_velocity(const FacetedSurfaceBase & facets)
+{
+  const auto & facetsWithVelocity = facets.as_derived_type<FACET>();
+  double maxSqrMag = 0.;
+  for (auto & facet : facetsWithVelocity.get_facets())
+  {
+    for (auto & vel : facet.get_velocity())
+    {
+      const double velSqrMag = vel.length_squared();
+      if (velSqrMag > maxSqrMag)
+        maxSqrMag = velSqrMag;
+    }
+  }
+  return std::sqrt(maxSqrMag);
+}
+
+static void pad_bounding_box_using_time_step_and_velocity_magnitude(BoundingBox & bbox, const double dt, const double velocityMagnitude)
+{
+  const double paddingFactorOfSafety = 1.5;
+  bbox.pad(paddingFactorOfSafety*velocityMagnitude*dt);  // Need something better?
+}
+
+BoundingBox compute_padded_node_bounding_box_for_semilagrangian_using_string_velocity_expressions(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & activeFieldSelector,
     const double timeN,
     const double timeNp1,
-    const FacetedSurfaceBase & facets,
+    const FieldRef coordsField,
+    const std::vector<String_Function_Expression> & interfaceVelocity,
+    const FacetedSurfaceBase & facets)
+{
+  BoundingBox nodeBBox = krino::compute_nodal_bbox(mesh, activeFieldSelector, coordsField);
+
+  const double timeMid = 0.5*(timeN+timeNp1);
+  const double velMag = (2==mesh.mesh_meta_data().spatial_dimension()) ?
+      compute_max_facet_velocity_magnitude(timeMid, facets.get_facets_2d(), interfaceVelocity) :
+      compute_max_facet_velocity_magnitude(timeMid, facets.get_facets_3d(), interfaceVelocity);
+  pad_bounding_box_using_time_step_and_velocity_magnitude(nodeBBox, timeNp1-timeN, velMag);
+  return nodeBBox;
+}
+
+BoundingBox compute_padded_node_bounding_box_for_semilagrangian_using_facets_with_velocity(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector & activeFieldSelector,
+    const double dt,
+    const FieldRef coordsField,
+    const FacetedSurfaceBase & facets)
+{
+  BoundingBox nodeBBox = krino::compute_nodal_bbox(mesh, activeFieldSelector, coordsField);
+
+  const double velMag = (2==mesh.mesh_meta_data().spatial_dimension()) ?
+      compute_max_facet_velocity_magnitude_for_facets_with_velocity<FacetWithVelocity2d>(facets) :
+      compute_max_facet_velocity_magnitude_for_facets_with_velocity<FacetWithVelocity3d>(facets);
+  pad_bounding_box_using_time_step_and_velocity_magnitude(nodeBBox, dt, velMag);
+  return nodeBBox;
+}
+
+static stk::math::Vector3d compute_semilagrangian_departure_point(const int dim,
+    const double timeN,
+    const double timeNp1,
     const stk::math::Vector3d & pt,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr)
+    const ExtensionVelocityFunction & extension_velocity)
 {
   const double dt = timeNp1 - timeN;
   const double tMid = 0.5*(timeN+timeNp1);
 
-#if 0
-  const stk::math::Vector3d closestPtN = facets.closest_point(pt);
-  const auto velN = compute_interface_velocity_at_point(dim, timeN, closestPtN, interfaceVelocityExpr);
-
-  const stk::math::Vector3d coords2 = pt - 0.5*dt*velN;
-  const stk::math::Vector3d closestPt2 = facets.closest_point(coords2);
-  const auto vel2 = compute_interface_velocity_at_point(dim, tMid, closestPt2, interfaceVelocityExpr);
-
-  const stk::math::Vector3d coords3 = pt - 0.5*dt*vel2;
-  const stk::math::Vector3d closestPt3 = facets.closest_point(coords3);
-  const auto vel3 = compute_interface_velocity_at_point(dim, tMid, closestPt3, interfaceVelocityExpr);
-
-  const stk::math::Vector3d coords4 = pt - dt*vel3;
-  const stk::math::Vector3d closestPt4 = facets.closest_point(coords4);
-  const auto vel4 = compute_interface_velocity_at_point(dim, timeNp1, closestPt4, interfaceVelocityExpr);
-
-  const stk::math::Vector3d coordsNp1 = pt - dt/6.*(velN + 2.*vel2 + 2.*vel3 + vel4);
-#endif
 #if 1
-  const stk::math::Vector3d closestPtN = facets.closest_point(pt);
-  const auto velN = compute_interface_velocity_at_point(dim, timeN, closestPtN, interfaceVelocityExpr);
+  // Midpoint
+  const auto velN = extension_velocity(timeN, pt);
 
   const stk::math::Vector3d coordsHalf = pt - 0.5*dt*velN;
-  const stk::math::Vector3d closestPtHalf = facets.closest_point(coordsHalf);
-  const auto velHalf = compute_interface_velocity_at_point(dim, tMid, closestPtHalf, interfaceVelocityExpr);
+  const auto velHalf = extension_velocity(tMid, coordsHalf);
 
   const stk::math::Vector3d coordsNp1 = pt - dt*velHalf;
 #endif
 #if 0
-// use local velocity instead of extension velocity
-  const auto velN = compute_interface_velocity_at_point(dim, timeN, pt, interfaceVelocityExpr);
-  const stk::math::Vector3d coordsHalf = pt - 0.5*dt*velN;
-  const auto velHalf = compute_interface_velocity_at_point(dim, tMid, coordsHalf, interfaceVelocityExpr);
-
-  const stk::math::Vector3d coordsNp1 = pt - dt*velHalf;
-#endif
-#if 0
-  const stk::math::Vector3d closestPtN = facets.closest_point(pt);
-  const auto velN = compute_interface_velocity_at_point(dim, timeN, closestPtN, interfaceVelocityExpr);
+  // Trapezoidal
+  const auto velN = extension_velocity(timeN, pt);
 
   const stk::math::Vector3d coordsPred = pt - dt*velN;
-  const stk::math::Vector3d closestPtPred = facets.closest_point(coordsPred);
-  const auto velPred = compute_interface_velocity_at_point(dim, tMid, closestPtPred, interfaceVelocityExpr);
+  const auto velPred = extension_velocity(timeNp1, coordsPred);
 
   const stk::math::Vector3d coordsNp1 = pt - 0.5*dt*(velN+velPred);
 #endif
 #if 0
-  const stk::math::Vector3d closestPtN = facets.closest_point(pt);
-  const auto velN = compute_interface_velocity_at_point(dim, timeN, closestPtN, interfaceVelocityExpr);
+  const auto velN = extension_velocity(timeN, pt);
+
+  const stk::math::Vector3d coords2 = pt - 0.5*dt*velN;
+  const auto vel2 = extension_velocity(tMid, coords2);
+
+  const stk::math::Vector3d coords3 = pt - 0.5*dt*vel2;
+  const auto vel3 = extension_velocity(tMid, coords3);
+
+  const stk::math::Vector3d coords4 = pt - dt*vel3;
+  const auto vel4 = extension_velocity(timeNp1, coords4);
+
+  const stk::math::Vector3d coordsNp1 = pt - dt/6.*(velN + 2.*vel2 + 2.*vel3 + vel4);
+#endif
+#if 0
+// use local velocity instead of extension velocity (20240916: This would now be accomplished using a different extension velocity)
+  const auto velN = evaluate_vector_at_location(dim, timeN, pt, interfaceVelocityExpr);
+  const stk::math::Vector3d coordsHalf = pt - 0.5*dt*velN;
+  const auto velHalf = evaluate_vector_at_location(dim, tMid, coordsHalf, interfaceVelocityExpr);
+
+  const stk::math::Vector3d coordsNp1 = pt - dt*velHalf;
+#endif
+#if 0
+  const auto velN = extension_velocity(timeN, pt);
 
   const stk::math::Vector3d coordsHalf = pt - 0.5*dt*velN;
-  const stk::math::Vector3d closestPtHalf = facets.closest_point(coordsHalf);
-  const auto velHalf = compute_interface_velocity_at_point(dim, tMid, closestPtHalf, interfaceVelocityExpr);
+  const auto velHalf = extension_velocity(tMid, coordsHalf);
 
   const stk::math::Vector3d coordsPred = pt - dt*velN;
-  const stk::math::Vector3d closestPtPred = facets.closest_point(coordsPred);
-  const auto velPred = compute_interface_velocity_at_point(dim, tMid, closestPtPred, interfaceVelocityExpr);
+  const auto velPred = extension_velocity(tMid, coordsPred);
 
   const stk::math::Vector3d coordsNp1 = pt - 0.25*dt*(velN+2*velHalf+velPred);
+#endif
+#if 0
+  //BFECC
+  const auto velN = extension_velocity(timeN, pt);
+  const stk::math::Vector3d coordsBack = pt - dt*velN;
+
+  const auto velBack = extension_velocity(timeNp1, coordsBack);
+  const stk::math::Vector3d coordsForth = coordsBack + dt*velBack;
+
+  const stk::math::Vector3d corrected = pt - 0.5*(coordsForth-pt);
+
+  const auto velCorr = extension_velocity(timeN, corrected);
+  const stk::math::Vector3d coordsNp1 = corrected - dt*velCorr;
 #endif
   return coordsNp1;
 }
 
-static double compute_semilagrangian_distance_at_point(const int dim,
+static stk::math::Vector3d compute_predicted_departure_point(const int dim,
     const double timeN,
     const double timeNp1,
-    const FacetedSurfaceBase & facets,
     const stk::math::Vector3d & pt,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
-    const double narrowBandSize,
-    const double farFieldValue)
-{
-  const auto prevCoords = compute_semilagrangian_evaluation_point(dim, timeN, timeNp1, facets, pt, interfaceVelocityExpr);
-  return facets.truncated_point_signed_distance(prevCoords, narrowBandSize, farFieldValue);
-}
-
-static stk::math::Vector3d compute_semilagrangian_predicted_evaluation_point(const int dim,
-    const double timeN,
-    const double timeNp1,
-    const FacetedSurfaceBase & facetsN,
-    const stk::math::Vector3d & pt,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr)
+    const ExtensionVelocityFunction & extension_velocity)
 {
   const double dt = timeNp1 - timeN;
-  const stk::math::Vector3d closestPtN = facetsN.closest_point(pt);
-  const auto velN = compute_interface_velocity_at_point(dim, timeN, closestPtN, interfaceVelocityExpr);
+  const auto velN = extension_velocity(timeN, pt);
   const stk::math::Vector3d coordsTilde = pt - dt*velN;
 
   return coordsTilde;
 }
 
-static stk::math::Vector3d compute_semilagrangian_corrected_evaluation_point(const int dim,
+static stk::math::Vector3d compute_corrected_departure_point(const int dim,
     const double timeN,
     const double timeNp1,
-    const FacetedSurfaceBase & facetsN,
-    const FacetedSurfaceBase & facetsPred,
     const stk::math::Vector3d & pt,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr)
+    const ExtensionVelocityFunction & extension_velocity_old,
+    const ExtensionVelocityFunction & extension_velocity_pred)
 {
   const double dt = timeNp1 - timeN;
-  const stk::math::Vector3d facetsNClosestPt = facetsN.closest_point(pt);
-  const auto velN = compute_interface_velocity_at_point(dim, timeN, facetsNClosestPt, interfaceVelocityExpr);
+  const auto velN = extension_velocity_old(timeN, pt);
   const stk::math::Vector3d coordsTilde = pt - dt*velN;
-  const stk::math::Vector3d facetsNClosestPtTilde = facetsN.closest_point(coordsTilde);
-  const auto vel1 = compute_interface_velocity_at_point(dim, timeN, facetsNClosestPtTilde, interfaceVelocityExpr);
-  const stk::math::Vector3d facetsPredClosestPt = facetsPred.closest_point(pt);
-  const auto vel2 = compute_interface_velocity_at_point(dim, timeNp1, facetsPredClosestPt, interfaceVelocityExpr);
+  const auto vel1 = extension_velocity_old(timeN, coordsTilde);
+  const auto vel2 = extension_velocity_pred(timeNp1, pt);
   const auto velCorr = 0.5*(vel1+vel2);
   const stk::math::Vector3d coordsCorr = pt - dt*velCorr;
 
   return coordsCorr;
-}
-
-static double compute_semilagrangian_distance_prediction_at_point(const int dim,
-    const double timeN,
-    const double timeNp1,
-    const FacetedSurfaceBase & facetsN,
-    const stk::math::Vector3d & pt,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
-    const double narrowBandSize,
-    const double farFieldValue)
-{
-  const stk::math::Vector3d coordsTilde = compute_semilagrangian_predicted_evaluation_point(dim, timeN, timeNp1, facetsN, pt, interfaceVelocityExpr);
-  return facetsN.truncated_point_signed_distance(coordsTilde, narrowBandSize, farFieldValue);
-}
-
-static double compute_semilagrangian_distance_correction_at_point(const int dim,
-    const double timeN,
-    const double timeNp1,
-    const FacetedSurfaceBase & facetsN,
-    const FacetedSurfaceBase & facetsPred,
-    const stk::math::Vector3d & pt,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
-    const double narrowBandSize,
-    const double farFieldValue)
-{
-  const stk::math::Vector3d coordsCorr = compute_semilagrangian_corrected_evaluation_point(dim, timeN, timeNp1, facetsN, facetsPred, pt, interfaceVelocityExpr);
-  return facetsN.truncated_point_signed_distance(coordsCorr, narrowBandSize, farFieldValue);
 }
 
 static std::function<double(const stk::math::Vector3d & pt)> build_initial_distance_at_point(const Composite_Surface & initSurfaces, const double narrowBandSize)
@@ -182,84 +245,69 @@ static std::function<double(const stk::math::Vector3d & pt)> build_initial_dista
   return fn;
 }
 
-static std::function<double(const stk::math::Vector3d & pt)> build_semilagrangian_distance_at_point(const int dim,
-    const double timeN,
-    const double timeNp1,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
-    const FacetedSurfaceBase & facets)
+static std::function<double(const stk::math::Vector3d & pt)> build_distance_at_departure_point(const FacetedSurfaceBase & facets)
 {
-  auto fn = [dim, timeN, timeNp1, &interfaceVelocityExpr, &facets](const stk::math::Vector3d & pt)
+  auto fn = [&facets](const stk::math::Vector3d & departurePt)
     {
       constexpr double zeroNarrowBandSize = 0.;
-      return compute_semilagrangian_distance_at_point(dim, timeN, timeNp1, facets, pt, interfaceVelocityExpr, zeroNarrowBandSize, zeroNarrowBandSize);
+      return facets.truncated_point_signed_distance(departurePt, zeroNarrowBandSize, zeroNarrowBandSize);
     };
   return fn;
 }
 
-static std::function<double(const stk::math::Vector3d & pt)> build_semilagrangian_distance_predictor_at_point(const int dim,
-    const double timeN,
-    const double timeNp1,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
-    const FacetedSurfaceBase & facets)
+static std::function<double(const stk::math::Vector3d & pt, const int sign)> build_narrow_band_distance_at_departure_point(const FacetedSurfaceBase & facets, const double narrowBandSize)
 {
-  auto fn = [dim, timeN, timeNp1, &interfaceVelocityExpr, &facets](const stk::math::Vector3d & pt)
+  auto fn = [&facets, narrowBandSize](const stk::math::Vector3d & departurePt, const int sign)
     {
-      constexpr double zeroNarrowBandSize = 0.;
-      return compute_semilagrangian_distance_prediction_at_point(dim, timeN, timeNp1, facets, pt, interfaceVelocityExpr, zeroNarrowBandSize, zeroNarrowBandSize);
+      return facets.truncated_point_signed_distance(departurePt, narrowBandSize, sign*narrowBandSize);
     };
   return fn;
 }
 
-static std::function<double(const stk::math::Vector3d & pt)> build_semilagrangian_distance_corrector_at_point(const int dim,
+static std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> build_semilagrangian_departure_point_at_point(const int dim,
     const double timeN,
     const double timeNp1,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
-    const FacetedSurfaceBase & facetsN,
-    const FacetedSurfaceBase & facetsPred)
+    const ExtensionVelocityFunction & extension_velocity)
 {
-  auto fn = [dim, timeN, timeNp1, &interfaceVelocityExpr, &facetsN, &facetsPred](const stk::math::Vector3d & pt)
+  auto fn = [dim, timeN, timeNp1, &extension_velocity](const stk::math::Vector3d & pt)
     {
-      constexpr double zeroNarrowBandSize = 0.;
-      return compute_semilagrangian_distance_correction_at_point(dim, timeN, timeNp1, facetsN, facetsPred, pt, interfaceVelocityExpr, zeroNarrowBandSize, zeroNarrowBandSize);
+      return compute_semilagrangian_departure_point(dim, timeN, timeNp1, pt, extension_velocity);
     };
   return fn;
 }
 
-template <typename FACET>
-double compute_max_facet_velocity_magnitude(const double time,
-    const std::vector<FACET> & facets,
-    const std::vector<String_Function_Expression> & interfaceVelocity)
-{
-  double maxSqrMag = 0.;
-  for (auto & facet : facets)
-  {
-    for (int n=0; n<FACET::DIM; ++n)
-    {
-      const double velSqrMag = (compute_interface_velocity_at_point(FACET::DIM, time, facet.facet_vertex(n), interfaceVelocity)).length_squared();
-      if (velSqrMag > maxSqrMag)
-        maxSqrMag = velSqrMag;
-    }
-  }
-  return std::sqrt(maxSqrMag);
-}
-
-BoundingBox compute_padded_node_bounding_box_for_semilagrangian(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Selector & activeFieldSelector,
+static std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> build_predicted_departure_point_at_point(const int dim,
     const double timeN,
     const double timeNp1,
-    const FieldRef coordsField,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
-    const FacetedSurfaceBase & facets)
+    const ExtensionVelocityFunction & extension_velocity)
 {
-  BoundingBox nodeBBox = krino::compute_nodal_bbox(mesh, activeFieldSelector, coordsField);
+  auto fn = [dim, timeN, timeNp1, &extension_velocity](const stk::math::Vector3d & pt)
+    {
+      return compute_predicted_departure_point(dim, timeN, timeNp1, pt, extension_velocity);
+    };
+  return fn;
+}
 
-  const double timeMid = 0.5*(timeN+timeNp1);
-  const double velMag = (2==mesh.mesh_meta_data().spatial_dimension()) ?
-      compute_max_facet_velocity_magnitude(timeMid, facets.get_facets_2d(), interfaceVelocityExpr) :
-      compute_max_facet_velocity_magnitude(timeMid, facets.get_facets_3d(), interfaceVelocityExpr);
-  const double paddingFactorOfSafety = 1.5;
-  nodeBBox.pad(paddingFactorOfSafety*velMag*(timeNp1-timeN));  // Need something better?
-  return nodeBBox;
+static std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> build_corrected_departure_point_at_point(const int dim,
+    const double timeN,
+    const double timeNp1,
+    const ExtensionVelocityFunction & extension_velocity_old,
+    const ExtensionVelocityFunction & extension_velocity_pred)
+{
+  auto fn = [dim, timeN, timeNp1, &extension_velocity_old, &extension_velocity_pred](const stk::math::Vector3d & pt)
+    {
+      return compute_corrected_departure_point(dim, timeN, timeNp1, pt, extension_velocity_old, extension_velocity_pred);
+    };
+  return fn;
+}
+
+static std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> build_departure_point_as_point()
+{
+  auto fn = [](const stk::math::Vector3d & pt)
+    {
+      return pt;
+    };
+  return fn;
 }
 
 void build_nonadaptive_facets(const stk::mesh::BulkData & mesh,
@@ -282,16 +330,13 @@ void build_nonadaptive_facets(const stk::mesh::BulkData & mesh,
   }
 }
 
-static void calc_single_step_semilagrangian_nodal_distance(const int dim,
+static void calc_semilagrangian_nodal_distance(const int dim,
     const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & activeFieldSelector,
-    const double timeN,
-    const double timeNp1,
     const FieldRef coordsField,
     const FieldRef distField,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
-    const double narrowBandSize,
-    const FacetedSurfaceBase & facetsN)
+    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> & departure_point_at_point,
+    const std::function<double(const stk::math::Vector3d & pt, const int sign)> & distance_at_departure_point)
 {
   for ( auto && bucketPtr : mesh.get_buckets(stk::topology::NODE_RANK, activeFieldSelector) )
   {
@@ -302,7 +347,7 @@ static void calc_single_step_semilagrangian_nodal_distance(const int dim,
     {
       const stk::math::Vector3d nodeCoords(coordsData+i*dim, dim);
       const int previousSign = sign(distData[i]);
-      distData[i] = compute_semilagrangian_distance_at_point(dim, timeN, timeNp1, facetsN, nodeCoords, interfaceVelocityExpr, narrowBandSize, previousSign*narrowBandSize);
+      distData[i] = distance_at_departure_point(departure_point_at_point(nodeCoords), previousSign);
     }
   }
 }
@@ -313,16 +358,36 @@ void calc_single_step_nonadaptive_semilagrangian_nodal_distance_and_build_facets
     const double timeNp1,
     const FieldRef coordsField,
     const FieldRef distField,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
+    const ExtensionVelocityFunction & extension_velocity,
     const double narrowBandSize,
     const double avgEdgeLength,
     const FacetedSurfaceBase & facetsN,
     FacetedSurfaceBase & facetsNp1)
 {
   const int dim = mesh.mesh_meta_data().spatial_dimension();
-  calc_single_step_semilagrangian_nodal_distance(dim, mesh, activeFieldSelector, timeN, timeNp1, coordsField, distField, interfaceVelocityExpr, narrowBandSize, facetsN);
 
+  const auto departure_point_at_point = build_semilagrangian_departure_point_at_point(dim, timeN, timeNp1, extension_velocity);
+  const auto distance_at_departure_point = build_distance_at_departure_point(facetsN);
+  const auto narrow_band_distance_at_departure_point = build_narrow_band_distance_at_departure_point(facetsN, narrowBandSize);
+
+  calc_semilagrangian_nodal_distance(dim, mesh, activeFieldSelector, coordsField, distField, departure_point_at_point, narrow_band_distance_at_departure_point);
   build_nonadaptive_facets(mesh, activeFieldSelector, coordsField, distField, avgEdgeLength, facetsNp1);
+}
+
+template <size_t NVERT>
+bool has_any_chance_of_cut_edge(const std::array<stk::math::Vector3d,NVERT> & coords,
+    const std::array<double,NVERT> & dist)
+{
+  for (size_t n1=0; n1<NVERT; ++n1)
+  {
+    for (size_t n2=n1; n2<NVERT; ++n2)
+    {
+      const double sqrLen = (coords[n1] - coords[n2]).length_squared();
+      if (dist[n1]*dist[n1] <= sqrLen || dist[n2]*dist[n2] <= sqrLen)
+        return true;
+    }
+  }
+  return false;
 }
 
 static void adaptively_append_facets_for_mesh_element_using_semilagrangian_distance(const int dim,
@@ -330,7 +395,8 @@ static void adaptively_append_facets_for_mesh_element_using_semilagrangian_dista
     const FieldRef coordsField,
     const FieldRef isoField,
     const stk::mesh::Entity elem,
-    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> & departure_point_at_point,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_departure_point,
     const double lengthScale,
     const int minDepth,
     const int maxDepth,
@@ -340,7 +406,12 @@ static void adaptively_append_facets_for_mesh_element_using_semilagrangian_dista
   const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
   const std::array<stk::math::Vector3d,3> nodeCoords = get_triangle_vector(mesh, coordsField, elemNodes, 2);
   const std::array<double,3> nodeDist = get_triangle_scalar(mesh, isoField, elemNodes);
-  adaptively_append_facets_for_tri_using_semilagrangian_distance(nodeCoords, nodeDist, distance_at_point, lengthScale, facets, 0, minDepth, maxDepth);
+
+  if (has_any_chance_of_cut_edge(nodeCoords, nodeDist))
+  {
+    const std::array<stk::math::Vector3d,3> nodalDepartureCoords = {departure_point_at_point(nodeCoords[0]), departure_point_at_point(nodeCoords[1]), departure_point_at_point(nodeCoords[2])};
+    adaptively_append_facets_for_tri_using_semilagrangian_distance(nodeCoords, nodalDepartureCoords, nodeDist, distance_at_departure_point, lengthScale, facets, 0, minDepth, maxDepth);
+  }
 }
 
 static void build_adaptive_facets_using_semilagrangian_distance(const int dim,
@@ -348,7 +419,8 @@ static void build_adaptive_facets_using_semilagrangian_distance(const int dim,
     const stk::mesh::Selector & activeFieldSelector,
     const FieldRef coordsField,
     const FieldRef distField,
-    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_point,
+    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> & departure_point_at_point,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_departure_point,
     const double avgEdgeLength,
     const int minDepth,
     const int maxDepth,
@@ -359,7 +431,7 @@ static void build_adaptive_facets_using_semilagrangian_distance(const int dim,
   {
     STK_ThrowRequireMsg(bucketPtr->topology() == stk::topology::TRIANGLE_3_2D, "Only Tri3d elements currently supported.");
     for (auto elem : *bucketPtr)
-      adaptively_append_facets_for_mesh_element_using_semilagrangian_distance(dim, mesh, coordsField, distField, elem, distance_at_point, avgEdgeLength, minDepth, maxDepth, facets);
+      adaptively_append_facets_for_mesh_element_using_semilagrangian_distance(dim, mesh, coordsField, distField, elem, departure_point_at_point, distance_at_departure_point, avgEdgeLength, minDepth, maxDepth, facets);
   }
 }
 
@@ -375,9 +447,12 @@ void build_initial_adaptive_facets_after_nodal_distance_is_initialized_from_init
   const int minDepth = 5;
   const int maxDepth = 5;
 
+  const int dim = mesh.mesh_meta_data().spatial_dimension();
+
+  const auto departure_point_at_point = build_departure_point_as_point();
   const auto initial_distance_at_point = build_initial_distance_at_point(initSurfaces, time);
 
-  build_adaptive_facets_using_semilagrangian_distance(mesh.mesh_meta_data().spatial_dimension(), mesh, activeFieldSelector, coordsField, distField, initial_distance_at_point, avgEdgeLength, minDepth, maxDepth, facets);
+  build_adaptive_facets_using_semilagrangian_distance(dim, mesh, activeFieldSelector, coordsField, distField, departure_point_at_point, initial_distance_at_point, avgEdgeLength, minDepth, maxDepth, facets);
 }
 
 void calc_single_step_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::BulkData & mesh,
@@ -386,7 +461,7 @@ void calc_single_step_semilagrangian_nodal_distance_and_build_facets(const stk::
     const double timeNp1,
     const FieldRef coordsField,
     const FieldRef distField,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
+    const ExtensionVelocityFunction & extension_velocity,
     const double narrowBandSize,
     const double avgEdgeLength,
     const FacetedSurfaceBase & facetsN,
@@ -396,11 +471,13 @@ void calc_single_step_semilagrangian_nodal_distance_and_build_facets(const stk::
   const int maxDepth = 5;
 
   const int dim = mesh.mesh_meta_data().spatial_dimension();
-  calc_single_step_semilagrangian_nodal_distance(dim, mesh, activeFieldSelector, timeN, timeNp1, coordsField, distField, interfaceVelocityExpr, narrowBandSize, facetsN);
 
-  const auto distance_at_point = build_semilagrangian_distance_at_point(dim, timeN, timeNp1, interfaceVelocityExpr, facetsN);
+  const auto distance_at_departure_point = build_distance_at_departure_point(facetsN);
+  const auto narrow_band_distance_at_departure_point = build_narrow_band_distance_at_departure_point(facetsN, narrowBandSize);
+  const auto departure_point_at_point = build_semilagrangian_departure_point_at_point(dim, timeN, timeNp1, extension_velocity);
 
-  build_adaptive_facets_using_semilagrangian_distance(dim, mesh, activeFieldSelector, coordsField, distField, distance_at_point, avgEdgeLength, minDepth, maxDepth, facetsNp1);
+  calc_semilagrangian_nodal_distance(dim, mesh, activeFieldSelector, coordsField, distField, departure_point_at_point, narrow_band_distance_at_departure_point);
+  build_adaptive_facets_using_semilagrangian_distance(dim, mesh, activeFieldSelector, coordsField, distField, departure_point_at_point, distance_at_departure_point, avgEdgeLength, minDepth, maxDepth, facetsNp1);
 }
 
 void predict_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::BulkData & mesh,
@@ -409,7 +486,7 @@ void predict_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::Bul
     const double timeNp1,
     const FieldRef coordsField,
     const FieldRef distField,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
+    const ExtensionVelocityFunction & extension_velocity,
     const double narrowBandSize,
     const double avgEdgeLength,
     const FacetedSurfaceBase & facetsN,
@@ -419,22 +496,13 @@ void predict_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::Bul
   const int maxDepth = 2;
 
   const int dim = mesh.mesh_meta_data().spatial_dimension();
-  for ( auto && bucketPtr : mesh.get_buckets(stk::topology::NODE_RANK, activeFieldSelector) )
-  {
-    const double * coordsData = field_data<double>(coordsField , *bucketPtr);
-    double * distData = field_data<double>(distField , *bucketPtr);
 
-    for (size_t i = 0; i < bucketPtr->size(); ++i)
-    {
-      const stk::math::Vector3d nodeCoords(coordsData+i*dim, dim);
-      const int previousSign = sign(distData[i]);
-      distData[i] = compute_semilagrangian_distance_prediction_at_point(dim, timeN, timeNp1, facetsN, nodeCoords, interfaceVelocityExpr, narrowBandSize, previousSign*narrowBandSize);
-    }
-  }
+  const auto distance_at_departure_point = build_distance_at_departure_point(facetsN);
+  const auto narrow_band_distance_at_departure_point = build_narrow_band_distance_at_departure_point(facetsN, narrowBandSize);
+  const auto predicted_departure_point_at_point = build_predicted_departure_point_at_point(dim, timeN, timeNp1, extension_velocity);
 
-  const auto predict_distance_at_point = build_semilagrangian_distance_predictor_at_point(dim, timeN, timeNp1, interfaceVelocityExpr, facetsN);
-
-  build_adaptive_facets_using_semilagrangian_distance(dim, mesh, activeFieldSelector, coordsField, distField, predict_distance_at_point, avgEdgeLength, minDepth, maxDepth, facetsPred);
+  calc_semilagrangian_nodal_distance(dim, mesh, activeFieldSelector, coordsField, distField, predicted_departure_point_at_point, narrow_band_distance_at_departure_point);
+  build_adaptive_facets_using_semilagrangian_distance(dim, mesh, activeFieldSelector, coordsField, distField, predicted_departure_point_at_point, distance_at_departure_point, avgEdgeLength, minDepth, maxDepth, facetsPred);
 }
 
 void correct_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::BulkData & mesh,
@@ -443,33 +511,24 @@ void correct_semilagrangian_nodal_distance_and_build_facets(const stk::mesh::Bul
     const double timeNp1,
     const FieldRef coordsField,
     const FieldRef distField,
-    const std::vector<String_Function_Expression> & interfaceVelocityExpr,
+    const ExtensionVelocityFunction & extension_velocity_old,
+    const ExtensionVelocityFunction & extension_velocity_pred,
     const double narrowBandSize,
     const double avgEdgeLength,
     const FacetedSurfaceBase & facetsN,
-    const FacetedSurfaceBase & facetsPred,
     FacetedSurfaceBase & facetsNp1)
 {
   const int minDepth = 2;
   const int maxDepth = 5;
 
   const int dim = mesh.mesh_meta_data().spatial_dimension();
-  for ( auto && bucketPtr : mesh.get_buckets(stk::topology::NODE_RANK, activeFieldSelector) )
-  {
-    const double * coordsData = field_data<double>(coordsField , *bucketPtr);
-    double * distData = field_data<double>(distField , *bucketPtr);
 
-    for (size_t i = 0; i < bucketPtr->size(); ++i)
-    {
-      const stk::math::Vector3d nodeCoords(coordsData+i*dim, dim);
-      const int previousSign = sign(distData[i]);
-      distData[i] = compute_semilagrangian_distance_correction_at_point(dim, timeN, timeNp1, facetsN, facetsPred, nodeCoords, interfaceVelocityExpr, narrowBandSize, previousSign*narrowBandSize);
-    }
-  }
+  const auto distance_at_departure_point = build_distance_at_departure_point(facetsN);
+  const auto narrow_band_distance_at_departure_point = build_narrow_band_distance_at_departure_point(facetsN, narrowBandSize);
+  const auto corrected_departure_point_at_point = build_corrected_departure_point_at_point(dim, timeN, timeNp1, extension_velocity_old, extension_velocity_pred);
 
-  const auto correct_distance_at_point = build_semilagrangian_distance_corrector_at_point(dim, timeN, timeNp1, interfaceVelocityExpr, facetsN, facetsPred);
-
-  build_adaptive_facets_using_semilagrangian_distance(dim, mesh, activeFieldSelector, coordsField, distField, correct_distance_at_point, avgEdgeLength, minDepth, maxDepth, facetsNp1);
+  calc_semilagrangian_nodal_distance(dim, mesh, activeFieldSelector, coordsField, distField, corrected_departure_point_at_point, narrow_band_distance_at_departure_point);
+  build_adaptive_facets_using_semilagrangian_distance(dim, mesh, activeFieldSelector, coordsField, distField, corrected_departure_point_at_point, distance_at_departure_point, avgEdgeLength, minDepth, maxDepth, facetsNp1);
 }
 
 }

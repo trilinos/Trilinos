@@ -80,16 +80,14 @@ void pack_induced_memberships_for_entities_less_than_element_rank(
                 CommBuffer & buf = comm.send_buffer(owner);
 
                 unsigned tmp = induced.size();
-
                 buf.pack<stk::mesh::EntityKey>(info.key);
                 buf.pack<unsigned>(tmp);
-
                 for(unsigned ord : induced) {
                     buf.pack<unsigned>(ord);
-                }    
+                }
             }    
         }    
-    }    
+    }
 }
 
 void append_parts_from_sharer_to_owner(const BulkData& bulk,
@@ -203,7 +201,6 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
         stk::mesh::EntityKey key;
         buf.unpack<stk::mesh::EntityKey>(key);
         STK_ThrowAssertMsg(key == expected_key, "Program error. Contact sierra-help@sandia.gov for support. Key mismatch!" << key << " not same as " << expected_key);
-
         buf.unpack<unsigned>(count);
         for(unsigned j = 0; j < count; ++j)
         {
@@ -358,7 +355,7 @@ void communicate_shared_entity_info(const BulkData &mesh,
   });
 }
 
-void communicateSharingInfoToProcsThatShareEntity(const int numProcs, const int myProcId, stk::CommSparse& commStage2, stk::mesh::EntityToDependentProcessorsMap &entityKeySharing)
+void communicateSharingInfoToProcsThatShareEntity(const int /*numProcs*/, const int myProcId, stk::CommSparse& commStage2, stk::mesh::EntityToDependentProcessorsMap &entityKeySharing)
 {
     for(int phase = 0; phase < 2; ++phase)
     {    
@@ -489,12 +486,12 @@ void fill_sorted_procs(PairIterEntityComm ec, std::vector<int>& procs)
   }
 }
 
-void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs)
+void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghostID, std::vector<int>& procs)
 {
   procs.clear();
   const int n = ec.size(); 
   for (int i=0; i<n; ++i) {
-    if (ghost_id == ec[i].ghost_id) {
+    if ((ghostID == ec[i].ghost_id) || (ec[i].ghost_id == (BulkData::SYMM_INFO+ghostID))) {
       procs.push_back( ec[i].proc );
     }
   }

@@ -106,6 +106,10 @@ py::object getPythonParameter(Teuchos::RCP<Teuchos::ParameterList> plist,
   // objects so that I can query the Teuchos::ParameterList without setting
   // the "used" flag to true.
   const Teuchos::ParameterEntry * entry = plist->getEntryPtr(name);
+
+  if (entry == NULL)
+    return py::none();
+
   // Boolean parameter values
   if (entry->isType< bool >())
   {

@@ -44,7 +44,7 @@ namespace stk {
 namespace tools {
 namespace impl {
 
-bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part)
+bool is_block(const stk::mesh::BulkData & /*bulk*/, stk::mesh::Part & part)
 {
   return ((part.primary_entity_rank() == stk::topology::ELEM_RANK) && stk::io::has_io_part_attribute(part));
 }
@@ -110,7 +110,7 @@ void insert_block_pair(stk::mesh::Part* block1, stk::mesh::Part* block2,
   stk::util::insert_keep_sorted_and_unique(blockPair, blockPairs, PartPairLess());
 }
 
-void populate_blocks_to_reconnect(const stk::mesh::BulkData& bulk, const BlockPairVector& orderedBlockPairsInMesh,
+void populate_blocks_to_reconnect(const stk::mesh::BulkData& /*bulk*/, const BlockPairVector& orderedBlockPairsInMesh,
                                   const BlockPairVector& blockPairsToDisconnect,
                                   BlockPairVector& blockPairsToReconnect)
 {

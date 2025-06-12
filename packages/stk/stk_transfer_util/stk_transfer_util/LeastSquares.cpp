@@ -184,7 +184,7 @@ void LeastSquares::resize_data(const unsigned ncomp, const unsigned nsamp, const
 }
 
 GeometricMovingLeastSquares::GeometricMovingLeastSquares(const unsigned ncomp, const unsigned nsamp,
-                                                         const unsigned nbasis, const stk::mesh::BulkData& bulk,
+                                                         const unsigned nbasis, const stk::mesh::BulkData& /*bulk*/,
                                                          const std::vector<stk::mesh::Entity>& patch,
                                                          const stk::mesh::FieldBase* coordField,
                                                          const std::vector<double>& evalPoint)
@@ -334,9 +334,12 @@ std::vector<double> GeometricMovingLeastSquares::compute_weights(double EPS)
   std::vector<double> weights;
   std::vector<std::vector<double> > samplePoints;
   std::vector<double> centroid;
+
+  const unsigned ndim = m_coordField->mesh_meta_data().spatial_dimension();
+
   for(stk::mesh::Entity entity : m_patch) {
     centroid.clear();
-    stk::search::compute_entity_centroid(entity, *m_coordField, centroid);
+    stk::search::determine_centroid(ndim, entity, *m_coordField, centroid);
 
     STK_ThrowRequireMsg(m_evalPoint.size() == centroid.size(), "Dimension of evalPoint does not match sample points");
     samplePoints.push_back(centroid);

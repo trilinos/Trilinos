@@ -160,7 +160,7 @@ void execute(Func func, int howmany = 1) {
 
 #define DEFINE_DEVICE_FUNCTION(function)        \
   void device_##function(int howmany = 1) {     \
-    execute(KOKKOS_LAMBDA(int i) {              \
+    execute(KOKKOS_LAMBDA(int /*i*/) {              \
         function();                             \
       }, howmany);                              \
   }

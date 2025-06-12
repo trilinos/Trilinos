@@ -498,7 +498,7 @@ bool ElementMeshClassifier::classify_third_vert(mesh::MeshEntityPtr el2, SetType
 
 // get all verts on mesh_in that are associated with edges
 // of the given element on mesh2
-void ElementMeshClassifier::get_verts_in(mesh::MeshEntityPtr el1, mesh::MeshEntityPtr el2,
+void ElementMeshClassifier::get_verts_in(mesh::MeshEntityPtr /*el1*/, mesh::MeshEntityPtr el2,
                                          SetType<mesh::MeshEntityPtr>& vertsIn)
 {
   auto& edges2ToFakeVertsIn    = *(m_relationalData->edges2ToFakeVertsIn);

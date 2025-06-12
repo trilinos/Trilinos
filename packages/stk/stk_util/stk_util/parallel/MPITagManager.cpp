@@ -150,7 +150,7 @@ void MPITagManager::erase_comm(MPI_Comm origComm)
 }
 
 
-void MPITagManager::check_same_value_on_all_procs_debug_only(MPI_Comm comm, int newVal)
+void MPITagManager::check_same_value_on_all_procs_debug_only([[maybe_unused]] MPI_Comm comm, [[maybe_unused]] int newVal)
 {
 #ifndef NDEBUG
   int commSize, myrank;

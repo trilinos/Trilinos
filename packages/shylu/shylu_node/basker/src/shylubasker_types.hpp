@@ -11,8 +11,9 @@
 #define SHYLUBASKER_TYPES_HPP
 
 #include <exception>
+#include "Teuchos_TestForException.hpp"
 
-#define BASKER_DEBUG
+//#define BASKER_DEBUG
 
 //MACRO TURN ON FUCNTIONS
 #define BASKER_KOKKOS         //Use Kokkos
@@ -120,7 +121,8 @@ enum BASKER_INCOMPLETE_CODE
 #else
 #define BASKER_ASSERT(a,s)      \
   {                             \
-    BASKER_NO_OP;               \
+    TEUCHOS_TEST_FOR_EXCEPTION(!(a), \
+      std::runtime_error, " ShyLUBasker:: error "+std::string(s)+"."); \
   }
 #endif
 

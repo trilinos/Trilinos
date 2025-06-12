@@ -19,7 +19,6 @@
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_CreateInterfaceGeometry.hpp>
@@ -96,6 +95,10 @@ void Region::commit()
 { /* %TRACE[ON]% */ Trace trace__("krino::Region::commit()"); /* %TRACE% */
 
   auto & meta = mesh_meta_data();
+
+  if (my_simulation.is_transient())
+    LevelSet::set_flag_is_transient(meta);
+
   LevelSet::setup(meta);
   CDFEM_Support & cdfem_support = CDFEM_Support::get(meta);
   RefinementSupport & refinementSupport = RefinementSupport::get(meta);
@@ -107,8 +110,8 @@ void Region::commit()
     if (cdfem_mesh_displacements_requested_in_results_fields(CDFEM_Support::cdfem_mesh_displacements_field_name(), my_results_options->get_nodal_fields()))
       cdfem_support.register_cdfem_mesh_displacements_field();
 
-    if (cdfem_support.get_num_initial_decomposition_cycles() > 1)
-      cdfem_support.register_parent_node_ids_field(); // Needed to use piecewise linear location on previously cut edges
+    if (cdfem_support.get_num_initial_decomposition_cycles() > 1 || my_simulation.is_transient())
+      cdfem_support.register_parent_node_ids_field(); // For non-transient simulations, still needed for piecewise linear location on previously cut edges
 
     cdfem_support.setup_fields();
   }
@@ -120,6 +123,7 @@ void Region::commit()
   {
     auto_aura_option = stk::mesh::BulkData::AUTO_AURA;
     cdfem_support.register_cdfem_snap_displacements_field();
+    cdfem_support.add_edge_interpolation_field(cdfem_support.get_cdfem_snap_displacements_field());
   }
 
   if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
@@ -135,7 +139,7 @@ void Region::commit()
     const Surface_Manager & surfaceManager = Surface_Manager::get(meta);
     for(auto&& ls : surfaceManager.get_levelsets())
     {
-      cdfem_support.add_interpolation_field(ls->get_distance_field());
+      cdfem_support.add_interpolation_field(ls->get_isovar_field());
     }
     cdfem_support.finalize_fields();
   }
@@ -387,7 +391,6 @@ void Region::initialize()
   const bool cdfem_is_active = krino::CDFEM_Support::is_active(mesh_meta_data());
   krino::CDFEM_Support & cdfem_support = krino::CDFEM_Support::get(mesh_meta_data());
   const RefinementSupport & refinementSupport = RefinementSupport::get(mesh_meta_data());
-  const Surface_Manager & surfaceManager = Surface_Manager::get(mesh_meta_data());
 
   auto & bulk = mesh_bulk_data();
   const auto & auxMeta = AuxMetaData::get(mesh_meta_data());
@@ -416,8 +419,8 @@ void Region::initialize()
     for (int icycle=0; icycle<num_init_decomp_cycles; ++icycle)
     {
       LevelSet::initialize(mesh_meta_data());
-      if (icycle >= num_init_decomp_cycles-1)
-        LevelSet::clear_initialization_data(mesh_meta_data()); // reclaim memory, harmless to call multiple times after we are done initializing
+      // initialize does not end with facets constructed so manually construct so they can be used for decomposition
+      LevelSet::build_initial_facets(mesh_meta_data());
       const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh_meta_data());
       krino::CDMesh::decompose_mesh(bulk, *interfaceGeometry, my_simulation.get_time_step_count(), {});
     }
@@ -429,40 +432,46 @@ void Region::initialize()
       if (stk::io::is_part_io_part(*part)) stk::io::remove_io_part_attribute(*part);
     }
   }
-  else
+
+  LevelSet::initialize(mesh_meta_data());
+
+  if (my_simulation.is_transient())
   {
-    for(auto&& ls : surfaceManager.get_levelsets())
-    {
-      ls->initialize(0.);
-      if (my_simulation.is_transient())
-      {
-        // initialize does not end with the facets constructed so manually construct them now
-        ls->build_initial_facets(0.);
-      }
-    }
+    // initialize does not end with the facets constructed so manually construct them now
+    LevelSet::build_initial_facets(mesh_meta_data());
   }
 
   LevelSet::clear_initialization_data(mesh_meta_data()); // reclaim memory, harmless to call multiple times after we are done initializing
 
   turn_off_output_for_empty_io_parts(mesh_bulk_data(), auxMeta.active_part());
 }
+
+static void unsnap_mesh(const CDFEM_Support & cdfemSupport)
+{
+  FieldRef cdfemSnapField = cdfemSupport.get_cdfem_snap_displacements_field();
+  if (cdfemSnapField.valid())
+  {
+    FieldRef coordsField = cdfemSupport.get_coords_field();
+    FieldRef oldSnapDisplacements = cdfemSnapField.field_state(stk::mesh::StateOld);
+    stk::mesh::field_axpby(-1.0, oldSnapDisplacements, +1.0, coordsField);
+    stk::mesh::field_fill(0., cdfemSnapField);
+  }
+}
+
 //--------------------------------------------------------------------------------
 
 void Region::execute()
 { /* %TRACE[ON]% */ Trace trace__("krino::Region::execute()"); /* %TRACE% */
   stk::diag::TimeBlock timer__(my_timerExecute);
 
-  // This is a hack for now to exit immediately when CDFEM is active
   if (krino::CDFEM_Support::is_active(mesh_meta_data()))
-  {
-    return;
-  }
+    unsnap_mesh(CDFEM_Support::get(mesh_meta_data()));
 
   const RefinementSupport & refinementSupport = RefinementSupport::get(mesh_meta_data());
   const bool doRefinement = refinementSupport.get_interface_maximum_refinement_level() > 0 ||
       refinementSupport.get_post_adapt_refinement_levels() > 0;
 
-  if (doRefinement)
+  if (doRefinement && !krino::CDFEM_Support::is_active(mesh_meta_data()))
   {
     const bool doInitializeLSDuringRefinement = false;
     auto & bulk = mesh_bulk_data();
@@ -479,7 +488,20 @@ void Region::execute()
   const Surface_Manager & surfaceManager = Surface_Manager::get(mesh_meta_data());
   for(auto&& ls : surfaceManager.get_levelsets())
   {
-    ls->advance_semilagrangian(timeN, timeNp1);
+    ls->advance_semilagrangian_using_velocity_string_expression(timeN, timeNp1);
+  }
+
+  if (krino::CDFEM_Support::is_active(mesh_meta_data()))
+  {
+    const std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_interface_geometry(mesh_meta_data());
+    if (refinementSupport.get_interface_maximum_refinement_level() > 0)
+    {
+      const auto & auxMeta = AuxMetaData::get(mesh_meta_data());
+      krino::CDMesh::nonconformal_adaptivity(mesh_bulk_data(), auxMeta.get_current_coordinates(), *interfaceGeometry);
+    }
+
+    krino::CDMesh::decompose_mesh(mesh_bulk_data(), *interfaceGeometry, my_simulation.get_time_step_count(), {});
+    mesh_topology_has_changed();
   }
 
   myPostProcessors.postprocess(mesh_bulk_data(), AuxMetaData::get(mesh_meta_data()).get_current_coordinates(), timeNp1);
@@ -509,6 +531,8 @@ void Region::create_output_mesh()
   if(!output_mesh) return;
 
   my_results_options->get_scheduler().set_termination_time(my_simulation.get_stop_time());
+
+  stkOutput().set_enable_all_face_sides_shell_topo(true);
 
   const std::string baseFileName = my_results_options->get_filename();
   Ioss::PropertyManager fileProperties(my_results_options->get_properties());
@@ -622,7 +646,7 @@ Region::associate_input_mesh(const std::string & model_name, bool assert_32bit_i
   }
   else
   {
-    myMesh = std::make_unique<MeshFromFile>(db_options->get_filename(), stk::EnvData::parallel_comm(), db_options->get_decomposition_method());
+    myMesh = std::make_unique<MeshFromFile>(db_options->get_filename(), stk::EnvData::parallel_comm(), db_options->get_decomposition_method(), db_options->get_use_all_sides_for_shells());
   }
 
   {

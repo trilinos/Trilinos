@@ -75,6 +75,8 @@ class Constraint : public BaseClass {
     @brief Class which contains the constraint space details
     */
 
+  using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+
   //! @name Setup methods.
   //@{
 
@@ -83,7 +85,9 @@ class Constraint : public BaseClass {
       \param Bc -- Coarse nullspace vectors
       \param Ppattern -- Nonzero sparsity pattern for the prolongator
    */
-  void Setup(const MultiVector& B, const MultiVector& Bc, RCP<const CrsGraph> Ppattern);
+  void Setup(const RCP<MultiVector>& B, const RCP<MultiVector>& Bc, RCP<const CrsGraph> Ppattern);
+
+  MagnitudeType ResidualNorm(const RCP<const Matrix> P) const;
 
   //@}
 
@@ -100,6 +104,8 @@ class Constraint : public BaseClass {
   }
 
  private:
+  RCP<MultiVector> B_;
+  RCP<MultiVector> Bc_;
   RCP<MultiVector> X_;                                    //!< Overlapped coarse nullspace
   RCP<const CrsGraph> Ppattern_;                          //!< Nonzero sparsity pattern
   ArrayRCP<Teuchos::SerialDenseMatrix<LO, SC> > XXtInv_;  //!< Array storing \f$(Q_i Q_i^H)^{-1}\f$

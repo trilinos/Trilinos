@@ -19,6 +19,7 @@
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 
 #include "MueLu_AmalgamationInfo_fwd.hpp"
+#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_LWGraph_kokkos_decl.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"

@@ -46,7 +46,6 @@
 
 #include "stk_search/FilterCoarseSearch.hpp"
 #include "stk_search/IdentProc.hpp"                   // for IdentProc
-#include "stk_util/diag/String.hpp"                   // for String
 #include "stk_util/parallel/Parallel.hpp"             // for parallel_machin...
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/parallel/ParallelReduceBool.hpp"
@@ -70,7 +69,7 @@ class SearchFilterTester : public ::testing::Test {
       return stk::search::ObjectOutsideDomainPolicy::EXTRAPOLATE;
     }
 
-    void find_parametric_coords(const EntityKey k, const double* coords, std::vector<double>& parametricCoords,
+    void find_parametric_coords(const EntityKey k, const std::vector<double>& /*coords*/, std::vector<double>& /*parametricCoords*/,
                                 double& parametricDistance, bool& isWithinParametricTolerance) const
     {
       // parametric tolerance applied here
@@ -78,19 +77,19 @@ class SearchFilterTester : public ::testing::Test {
       isWithinParametricTolerance = (parametricDistance <= 1.0 + m_owner.parametricTolerance);
     }
 
-    bool modify_search_outside_parametric_tolerance(const EntityKey k, const double* toCoords,
-                                                    std::vector<double>& parametricCoords,
-                                                    double& geometricDistanceSquared,
-                                                    bool& isWithinGeometricTolerance) const
+    bool modify_search_outside_parametric_tolerance(const EntityKey /*k*/, const std::vector<double>& /*toCoords*/,
+                                                    std::vector<double>& /*parametricCoords*/,
+                                                    double& /*geometricDistanceSquared*/,
+                                                    bool& /*isWithinGeometricTolerance*/) const
     {
       return false;
     }
 
-    const double* coord(const EntityKey k) const { return nullptr; }
+    void coordinates(const EntityKey /*k*/, std::vector<double>& /*coords*/) const { }
 
-    double get_closest_geometric_distance_squared(const EntityKey k, const double* coords) const { return m_owner.geometric_dist.at(k); }
+    double get_closest_geometric_distance_squared(const EntityKey k, const std::vector<double>& /*coords*/) const { return m_owner.geometric_dist.at(k); }
 
-    double get_distance_squared_from_centroid(const EntityKey k, const double* coords) const { return m_owner.geometric_dist.at(k); }
+    double get_distance_squared_from_centroid(const EntityKey k, const std::vector<double>& /*coords*/) const { return m_owner.geometric_dist.at(k); }
 
     SearchFilterTester& m_owner;
   };
@@ -102,16 +101,16 @@ class SearchFilterTester : public ::testing::Test {
     {
     }
 
-    typedef int EntityKey;
-    typedef stk::search::IdentProc<EntityKey, unsigned> EntityProc;
+    using EntityKey = int;
+    using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
 
     stk::ParallelMachine comm() const { return MPI_COMM_WORLD; }
 
     double get_search_tolerance() const { return m_owner.geometricTolerance; }
 
-    const double* coord(int id) const { return nullptr; }
+    void coordinates(int /*id*/, std::vector<double>& /*coords*/) const { }
 
-    double get_distance_from_nearest_node(int nodeId, const double* coords) { return 0.0; }
+    double get_distance_from_nearest_node(int /*nodeId*/, const std::vector<double>& /*coords*/) { return 0.0; }
 
     SearchFilterTester& m_owner;
   };

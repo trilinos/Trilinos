@@ -131,7 +131,7 @@ void check_wedge_6_on_device()
   stk::topology t = stk::topology::WEDGE_6;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::WEDGE_6>::num_nodes;
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -168,7 +168,7 @@ void check_wedge_6_on_device()
 
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
@@ -276,7 +276,7 @@ void check_wedge_12_on_device()
   stk::topology t = stk::topology::WEDGE_12;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::WEDGE_12>::num_nodes;
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -312,7 +312,7 @@ void check_wedge_12_on_device()
     check_face_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
 #if KOKKOS_VERSION < 40200
     printf("Reminder: we still need to enable permutation for wedge_12\n");
@@ -425,7 +425,7 @@ void check_wedge_15_on_device()
   stk::topology t = stk::topology::WEDGE_15;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::WEDGE_15>::num_nodes;
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -461,7 +461,7 @@ void check_wedge_15_on_device()
     check_face_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
@@ -566,7 +566,7 @@ void check_wedge_18_on_device()
   stk::topology t = stk::topology::WEDGE_18;
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::WEDGE_18>::num_nodes;
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -602,7 +602,7 @@ void check_wedge_18_on_device()
     check_face_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
     check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);

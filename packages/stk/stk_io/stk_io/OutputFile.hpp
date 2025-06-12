@@ -110,7 +110,7 @@ public:
         initialize_output_selectors();
     }
 
-    OutputFile(std::shared_ptr<Ioss::Region> ioss_output_region, MPI_Comm communicator,
+    OutputFile(std::shared_ptr<Ioss::Region> ioss_output_region, MPI_Comm /*communicator*/,
                DatabasePurpose db_type, const Ioss::Region *input_region)
     : m_currentOutputStep(-1),
       m_useNodesetForBlockNodesFields(false),

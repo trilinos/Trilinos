@@ -38,7 +38,7 @@
 namespace stk {
 namespace mesh {
 
-Permutation find_permutation(const BulkData& bulk,
+Permutation find_permutation(const BulkData& /*bulk*/,
                              const stk::topology& entityTopology,
                              const Entity* entityNodes,
                              const stk::topology& sideTopology,

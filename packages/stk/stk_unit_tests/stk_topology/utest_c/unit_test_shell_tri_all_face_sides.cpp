@@ -130,7 +130,7 @@ void check_shell_tri_3_all_face_sides_on_device()
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_TRI_3_ALL_FACE_SIDES>::num_nodes;
   EXPECT_EQ(3u, numNodes);
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -171,7 +171,7 @@ void check_shell_tri_3_all_face_sides_on_device()
     check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_face_node_ordinals_ngp<numNodes>(t, goldFaceNodeOrdinals);
     check_face_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
@@ -273,7 +273,7 @@ void check_shell_tri_4_all_face_sides_on_device()
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_TRI_4_ALL_FACE_SIDES>::num_nodes;
   EXPECT_EQ(4u, numNodes);
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -314,7 +314,7 @@ void check_shell_tri_4_all_face_sides_on_device()
     check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_face_node_ordinals_ngp<numNodes>(t, goldFaceNodeOrdinals);
     check_face_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
@@ -416,7 +416,7 @@ void check_shell_tri_6_all_face_sides_on_device()
   constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::SHELL_TRI_6_ALL_FACE_SIDES>::num_nodes;
   EXPECT_EQ(6u, numNodes);
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     NGP_EXPECT_TRUE(t.is_valid());
     NGP_EXPECT_FALSE(t.has_homogeneous_faces());
@@ -457,7 +457,7 @@ void check_shell_tri_6_all_face_sides_on_device()
     check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
   });
 
-  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int i)
+  Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1), KOKKOS_LAMBDA(const int /*i*/)
   {
     check_face_node_ordinals_ngp<numNodes>(t, goldFaceNodeOrdinals);
     check_face_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);

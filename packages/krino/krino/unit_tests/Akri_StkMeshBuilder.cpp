@@ -8,7 +8,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
-#include "../../../stk/stk_io/stk_io/StkMeshIoBroker.hpp"
+#include <stk_io/StkMeshIoBroker.hpp>
 
 namespace krino
 {
@@ -319,10 +319,6 @@ StkMeshBuilder<TOPO>::create_parallel_elements(const std::vector<std::array<unsi
 {
     const int proc = stk::parallel_machine_rank(mComm);
 
-    size_t numOwnedElements = 0;
-    for (int elemProc : elementProcOwners)
-      if (elemProc == proc) ++numOwnedElements;
-
     std::vector<stk::mesh::Entity> ownedElems;
     for (size_t iElem=0; iElem<elementConn.size(); ++iElem)
     {
@@ -492,8 +488,11 @@ void StkMeshBuilder<TOPO>::write_mesh(const std::string & fileName)
 // Explicit template instantiation
 template class StkMeshBuilder<stk::topology::BEAM_2>;
 template class StkMeshBuilder<stk::topology::TRIANGLE_3_2D>;
+template class StkMeshBuilder<stk::topology::TRIANGLE_6_2D>;
 template class StkMeshBuilder<stk::topology::TETRAHEDRON_4>;
+template class StkMeshBuilder<stk::topology::TETRAHEDRON_10>;
 template class StkMeshBuilder<stk::topology::QUADRILATERAL_4_2D>;
 template class StkMeshBuilder<stk::topology::HEXAHEDRON_8>;
+template class StkMeshBuilder<stk::topology::SHELL_TRIANGLE_3_ALL_FACE_SIDES>;
 
 }

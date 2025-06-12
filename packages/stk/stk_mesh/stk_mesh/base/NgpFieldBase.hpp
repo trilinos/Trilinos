@@ -19,8 +19,6 @@ public:
   KOKKOS_FUNCTION NgpFieldBase& operator=(const NgpFieldBase&) { return *this; }
   KOKKOS_FUNCTION NgpFieldBase& operator=(NgpFieldBase&&) { return *this; }
   KOKKOS_FUNCTION virtual ~NgpFieldBase() {}
-  virtual void update_bucket_pointer_view() = 0;
-  virtual void swap_field_views(NgpFieldBase*) = 0;
   virtual void modify_on_host() = 0;
   virtual void modify_on_host(const Selector& selector) = 0;
   virtual void modify_on_device() = 0;
@@ -43,14 +41,6 @@ public:
 
   virtual void update_field(const stk::ngp::ExecSpace& newExecSpace) = 0;
   virtual void update_field(stk::ngp::ExecSpace&& newExecSpace) = 0;
-  virtual void debug_initialize_debug_views() = 0;
-  virtual void debug_modification_begin() = 0;
-  virtual void debug_modification_end(size_t synchronizationCount) = 0;
-  virtual void debug_detect_device_field_modification() = 0;
-  virtual unsigned debug_get_bucket_offset(unsigned bucketOrdinal) const = 0;
-  virtual void notify_sync_debugger_clear_sync_state() = 0;
-  virtual void notify_sync_debugger_clear_host_sync_state() = 0;
-  virtual void notify_sync_debugger_clear_device_sync_state() = 0;
 };
 
 }

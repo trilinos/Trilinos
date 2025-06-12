@@ -168,7 +168,7 @@ public:
     }
   }
 
-  void get_to_points_coordinates(const EntityProcVec &to_entity_keys, ToPointsContainer &to_points)
+  void get_to_points_coordinates(const EntityProcVec & /*to_entity_keys*/, ToPointsContainer &to_points)
   {
     stk::mesh::EntityVector sides;
     stk::mesh::Selector ownedSurface = m_bulk->mesh_meta_data().locally_owned_part() & *m_surface;

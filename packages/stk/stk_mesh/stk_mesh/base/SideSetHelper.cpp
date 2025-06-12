@@ -208,7 +208,7 @@ void SideSetHelper::fill_coincident_sideset_entries_for_side_using_connectivity(
       for(unsigned j=i+1; j<numElements; ++j) {
         impl::fill_element_side_nodes_from_topology(mesh.bucket(elems[j]).topology(), mesh.begin_nodes(elems[j]), ordinals[j], sideNodes_j);
 
-        if(impl::is_coincident_connection(mesh, elems[i], sideNodes_i, ordinals[i], mesh.bucket(elems[j]).topology(), sideNodes_j)) {
+        if(impl::is_coincident_connection(mesh, elems[i], sideNodes_i, ordinals[i], mesh.bucket(elems[j]).topology(), sideNodes_j, ordinals[j])) {
           coincidentEdges.emplace_back(std::make_pair(SideSetEntry(elems[i], ordinals[i]), SideSetEntry(elems[j], ordinals[j])));
         }
       }
@@ -252,7 +252,7 @@ bool SideSetHelper::graph_edge_can_be_distinguished(const ElemElemGraph& eeGraph
   return false;
 }
 
-bool SideSetHelper::element_side_can_be_distinguished_using_elem_elem_graph(const Entity side, const Entity element,
+bool SideSetHelper::element_side_can_be_distinguished_using_elem_elem_graph(const Entity /*side*/, const Entity element,
                                                                             const ConnectivityOrdinal ordinal, const SideSetSelector& sideset)
 {
   if(mesh.entity_rank(element) == stk::topology::ELEM_RANK && mesh.bucket(element).owned()) {
@@ -361,7 +361,7 @@ bool SideSetHelper::element_side_has_remote_coincidence_using_elem_elem_graph(En
   return hasRemoteCoincidence;
 }
 
-bool SideSetHelper::element_side_has_coincidence_using_elem_elem_graph( Entity side,  Entity element,  ConnectivityOrdinal ordinal)
+bool SideSetHelper::element_side_has_coincidence_using_elem_elem_graph( Entity /*side*/,  Entity element,  ConnectivityOrdinal ordinal)
 {
   bool hasLocalCoincidence  = element_side_has_local_coincidence_using_elem_elem_graph(element, ordinal);
   bool hasRemoteCoincidence = element_side_has_remote_coincidence_using_elem_elem_graph(element, ordinal);
@@ -389,7 +389,7 @@ bool SideSetHelper::element_side_has_coincidence_using_connectivity(const Entity
       if(elems[i] != element) {
         impl::fill_element_side_nodes_from_topology(mesh.bucket(elems[i]).topology(), mesh.begin_nodes(elems[i]), ordinals[i], sideNodes);
 
-        if(impl::is_coincident_connection(mesh, element, inputSideNodes, ordinal, mesh.bucket(elems[i]).topology(), sideNodes)) {
+        if(impl::is_coincident_connection(mesh, element, inputSideNodes, ordinal, mesh.bucket(elems[i]).topology(), sideNodes, ordinals[i])) {
           return true;
         }
       }

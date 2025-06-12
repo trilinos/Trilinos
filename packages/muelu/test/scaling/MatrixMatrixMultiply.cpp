@@ -127,7 +127,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 
       if (comm->getRank() == 0) {
         std::cout << "case " << jj << " of " << optNmults - 1 << " : "
-                  << "seed = " << seed
+                  << "original seed = " << seed
                   << ", minEntriesPerRow = " << optMinEntriesPerRow
                   << ", maxEntriesPerRow = " << optMaxEntriesPerRow
                   << std::endl
@@ -164,8 +164,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
       // }
 
     }  // scope for multiply
-
-    seed = generateSeed(*comm);
 
   }  // for (int jj=0; jj<optNmults; ++jj)
 

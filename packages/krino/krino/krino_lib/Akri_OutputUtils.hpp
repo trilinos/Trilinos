@@ -15,6 +15,7 @@
 #include <stk_mesh/base/Types.hpp>
 
 namespace krino {
+class Facet3d;
 
 template<class FACET>
 class Faceted_Surface;
@@ -27,6 +28,8 @@ stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkDa
 
 template<class FACET>
 void write_facets( const std::vector<FACET> & facetedSurface, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm);
+
+void write_stl(const std::string &filename, const std::vector<const Facet3d *> & facets);
 
 }
 

@@ -11,6 +11,7 @@
 #define THYRA_TPETRA_LINEAR_OP_HPP
 
 #include "Thyra_TpetraLinearOp_decl.hpp"
+#include "Kokkos_Core.hpp"
 #include "Thyra_TpetraVectorSpace.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -264,7 +265,9 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
   // Apply the operator
 
   tpetraOperator_->apply(*tX, *tY, tTransp, alpha, beta);
-  Kokkos::fence();
+  // CAG: Commented out since the purpose seems unclear.
+  //      Tpetra apply should do all the necessary fencing.
+  // Kokkos::fence();
 }
 
 // Protected member functions overridden from ScaledLinearOpBase

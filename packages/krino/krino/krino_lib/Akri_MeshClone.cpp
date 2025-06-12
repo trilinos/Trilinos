@@ -8,7 +8,6 @@
 
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_tools/mesh_clone/ReplaceBulkData.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>

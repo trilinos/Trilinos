@@ -44,12 +44,17 @@
 
 namespace {
 
+typedef stk::search::Sphere<double> Sphere;
+typedef stk::search::Box<double> Box;
+typedef stk::search::Point<double> Point;
+typedef stk::search::Plane<double> Plane;
+typedef stk::math::Vector3d Vec;
+
 TEST( stk_search_bounding_box, Point)
 {
-  using namespace stk::search;
-  Point<double> p;
+  Point p;
 
-  static_assert(std::is_nothrow_move_constructible<Point<double>>::value , "Point<double> should be noexcept MoveConstructible");
+  static_assert(std::is_nothrow_move_constructible<Point>::value , "Point should be noexcept MoveConstructible");
 
   {
     std::ostringstream out;
@@ -57,16 +62,14 @@ TEST( stk_search_bounding_box, Point)
     EXPECT_EQ( out.str(), std::string("(0,0,0)"));
   }
 
-  p = Point<double>(1,2,3);
+  p = Point(1,2,3);
 
-  EXPECT_EQ(p, Point<double>(1,2,3));
-  EXPECT_NE(p, Point<double>());
+  EXPECT_EQ(p, Point(1,2,3));
+  EXPECT_NE(p, Point());
 }
 
 TEST( stk_search_bounding_box, Sphere)
 {
-  typedef stk::search::Sphere<double> Sphere;
-  typedef stk::search::Point<double> Point;
 
   using stk::search::is_valid;
 
@@ -88,11 +91,6 @@ TEST( stk_search_bounding_box, Sphere)
   EXPECT_EQ(s, Sphere(Point(1,2,3),4));
   EXPECT_NE(s, Sphere());
 }
-
-typedef stk::search::Sphere<double> Sphere;
-typedef stk::search::Box<double> Box;
-typedef stk::search::Point<double> Point;
-typedef stk::math::Vector3d Vec;
 
 bool is_coplanar(const Point& point, const std::vector<Point>& tri)
 {
@@ -222,8 +220,6 @@ TEST( stk_search_bounding_box, minimumSphereEnclosingLine)
 
 TEST( stk_search_bounding_box, Box)
 {
-  typedef stk::search::Box<double> Box;
-  typedef stk::search::Point<double> Point;
 
   using stk::search::is_valid;
 
@@ -249,9 +245,6 @@ TEST( stk_search_bounding_box, Box)
 
 TEST( stk_search_bounding_box, min_max_center)
 {
-  typedef stk::search::Sphere<double> Sphere;
-  typedef stk::search::Box<double> Box;
-  typedef stk::search::Point<double> Point;
 
   using stk::search::min_corner;
   using stk::search::max_corner;
@@ -283,9 +276,6 @@ void CheckIntersections(T1 obj1, T2 obj2, bool expectedResult) {
 
 TEST( stk_search_bounding_box, intersects_point_point)
 {
-  typedef stk::search::Point<double> Point;
-
-
   Point a(0,0,0);
   Point b(0,0,0);
   Point c(1,0,0);
@@ -295,9 +285,6 @@ TEST( stk_search_bounding_box, intersects_point_point)
 
 TEST( stk_search_bounding_box, intersects_point_sphere)
 {
-  typedef stk::search::Sphere<double> Sphere;
-  typedef stk::search::Point<double> Point;
-
   Point a(0,0,0);
   Sphere b(Point(0,0,0),1);
   Point c(2, 0, 0);
@@ -308,10 +295,6 @@ TEST( stk_search_bounding_box, intersects_point_sphere)
 
 TEST( stk_search_bounding_box, intersects_point_box)
 {
-  typedef stk::search::Box<double> Box;
-  typedef stk::search::Point<double> Point;
-
-
   Point a(0.5,0.5,0.5);
   Box b(Point(0,0,0),Point(1,1,1));
   Point c(2, 0, 0);
@@ -323,8 +306,6 @@ TEST( stk_search_bounding_box, intersects_point_box)
 
 TEST( stk_search_bounding_box, intersects_sphere_sphere)
 {
-  typedef stk::search::Sphere<double> Sphere;
-
   using stk::search::intersects;
 
   Sphere a(Point(0,0,0),2);
@@ -339,8 +320,6 @@ TEST( stk_search_bounding_box, intersects_sphere_sphere)
 
 TEST( stk_search_bounding_box, intersects_sphere_box)
 {
-  typedef stk::search::Sphere<double> Sphere;
-  typedef stk::search::Box<double> Box;
   using stk::search::intersects;
 
   Box unitBox(Point(1, 1, 1), Point(2, 2, 2));
@@ -389,7 +368,6 @@ TEST( stk_search_bounding_box, intersects_sphere_box)
 
 TEST( stk_search_bounding_box, intersects_box_box)
 {
-  typedef stk::search::Box<double> Box;
   using stk::search::intersects;
 
   Box unitBox(Point(1, 1, 1), Point(2, 2, 2));
@@ -445,8 +423,6 @@ TEST( stk_search_bounding_box, read_box_as_written) {
 
 TEST( stk_search_bounding_box, intersects_box_plane)
 {
-  typedef stk::search::Box<double> Box;
-  typedef stk::search::Plane<double> Plane;
   using stk::search::intersects;
 
   Box unitBox(Point(-0.5, -0.5, -0.5), Point(0.5, 0.5, 0.5));

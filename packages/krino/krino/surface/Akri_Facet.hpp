@@ -70,7 +70,7 @@ public:
 
   static constexpr int DIM=3;
   typedef CalcTriangle3<double> Calc;
-  static bool is_degenerate(const std::array<stk::math::Vector3d,3> & coords) { return Calc::normal_dir(coords).zero_length(); }
+  static bool is_degenerate(const std::array<stk::math::Vector3d,3> & coords) { return Calc::two_times_area_vector(coords).zero_length(); }
   static stk::math::Vector3d get_centroid(const Facet3d * facet) { return facet->centroid(); }
   static void insert_into_bounding_box(const Facet3d * facet, BoundingBox & bbox) { return facet->insert_into(bbox); }
 
@@ -80,6 +80,7 @@ public:
   virtual void pack_into_buffer(stk::CommBuffer & b) const;
   static void emplace_back_from_buffer( std::vector<Facet3d> & facets, stk::CommBuffer & b );
 
+  const std::array<stk::math::Vector3d,3> & facet_vertices() const { return myCoords; }
   virtual const stk::math::Vector3d & facet_vertex(const int i) const override { return myCoords[i]; }
   virtual stk::math::Vector3d & facet_vertex(const int i) override { return myCoords[i]; }
   virtual double facet_area() const override { return Calc::area(myCoords); }
@@ -92,7 +93,7 @@ public:
   virtual void closest_point( const stk::math::Vector3d & queryPt, stk::math::Vector3d & closestPt, stk::math::Vector2d & paramAtClosestPt ) const override
     { Calc::closest_point_and_parametric_coords( myCoords, queryPt, closestPt, paramAtClosestPt ); }
   virtual double facet_plane_signed_distance( const stk::math::Vector3d & x ) const override
-    { return Dot(Calc::normal_dir(myCoords),x-facet_vertex(0)); }
+    { return Dot(Calc::two_times_area_vector(myCoords),x-facet_vertex(0)); }
   virtual stk::math::Vector3d weights(const stk::math::Vector2d & parametric_coords) const override
     { return stk::math::Vector3d(1.0-parametric_coords[0]-parametric_coords[1],parametric_coords[0],parametric_coords[1]); }
   virtual stk::math::Vector3d centroid() const override
@@ -166,7 +167,7 @@ public:
   const std::array<stk::math::Vector3d,2> & get_velocity() const { return myVelocity; }
   stk::math::Vector3d velocity_at_closest_point( const stk::math::Vector3d & queryPt ) const;
 
-  virtual void pack_into_buffer(stk::CommBuffer & b) const;
+  virtual void pack_into_buffer(stk::CommBuffer & b) const override;
   static void emplace_back_from_buffer( std::vector<FacetWithVelocity2d> & facets, stk::CommBuffer & b );
 private:
   std::array<stk::math::Vector3d,2> myVelocity;
@@ -191,7 +192,7 @@ public:
   const std::array<stk::math::Vector3d,3> & get_velocity() const { return myVelocity; }
   stk::math::Vector3d velocity_at_closest_point( const stk::math::Vector3d & queryPt ) const;
 
-  virtual void pack_into_buffer(stk::CommBuffer & b) const;
+  virtual void pack_into_buffer(stk::CommBuffer & b) const override;
   static void emplace_back_from_buffer( std::vector<FacetWithVelocity3d> & facets, stk::CommBuffer & b );
 private:
   std::array<stk::math::Vector3d,3> myVelocity;

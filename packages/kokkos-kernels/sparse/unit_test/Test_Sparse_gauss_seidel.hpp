@@ -66,26 +66,31 @@ void run_gauss_seidel(Handle &kh, crsMat_t input_mat, vec_t x_vector, vec_t y_ve
   const size_t num_cols = input_mat.numCols();
   const int apply_count = 2;
 
-  gauss_seidel_symbolic(&kh, num_rows, num_cols, input_mat.graph.row_map, input_mat.graph.entries, is_symmetric_graph);
-  gauss_seidel_numeric(&kh, num_rows, num_cols, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values,
-                       is_symmetric_graph);
+  KokkosSparse::gauss_seidel_symbolic(&kh, num_rows, num_cols, input_mat.graph.row_map, input_mat.graph.entries,
+                                      is_symmetric_graph);
+  KokkosSparse::gauss_seidel_numeric(&kh, num_rows, num_cols, input_mat.graph.row_map, input_mat.graph.entries,
+                                     input_mat.values, is_symmetric_graph);
 
   switch (apply_type) {
     case 0:
-      symmetric_gauss_seidel_apply(&kh, num_rows, num_cols, input_mat.graph.row_map, input_mat.graph.entries,
-                                   input_mat.values, x_vector, y_vector, false, true, omega, apply_count);
+      KokkosSparse::symmetric_gauss_seidel_apply(&kh, num_rows, num_cols, input_mat.graph.row_map,
+                                                 input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
+                                                 true, omega, apply_count);
       break;
     case 1:
-      forward_sweep_gauss_seidel_apply(&kh, num_rows, num_cols, input_mat.graph.row_map, input_mat.graph.entries,
-                                       input_mat.values, x_vector, y_vector, false, true, omega, apply_count);
+      KokkosSparse::forward_sweep_gauss_seidel_apply(&kh, num_rows, num_cols, input_mat.graph.row_map,
+                                                     input_mat.graph.entries, input_mat.values, x_vector, y_vector,
+                                                     false, true, omega, apply_count);
       break;
     case 2:
-      backward_sweep_gauss_seidel_apply(&kh, num_rows, num_cols, input_mat.graph.row_map, input_mat.graph.entries,
-                                        input_mat.values, x_vector, y_vector, false, true, omega, apply_count);
+      KokkosSparse::backward_sweep_gauss_seidel_apply(&kh, num_rows, num_cols, input_mat.graph.row_map,
+                                                      input_mat.graph.entries, input_mat.values, x_vector, y_vector,
+                                                      false, true, omega, apply_count);
       break;
     default:
-      symmetric_gauss_seidel_apply(&kh, num_rows, num_cols, input_mat.graph.row_map, input_mat.graph.entries,
-                                   input_mat.values, x_vector, y_vector, false, true, omega, apply_count);
+      KokkosSparse::symmetric_gauss_seidel_apply(&kh, num_rows, num_cols, input_mat.graph.row_map,
+                                                 input_mat.graph.entries, input_mat.values, x_vector, y_vector, false,
+                                                 true, omega, apply_count);
       break;
   }
 }
@@ -137,35 +142,35 @@ void run_gauss_seidel_streams(std::vector<ExecSpace> &instances, std::vector<Han
                               int apply_type,  // 0 for symmetric, 1 for forward, 2 for backward.
                               int nstreams = 1) {
   for (int i = 0; i < nstreams; i++) {
-    gauss_seidel_symbolic(instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-                          input_mat[i].graph.row_map, input_mat[i].graph.entries, is_symmetric_graph);
-    gauss_seidel_numeric(instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-                         input_mat[i].graph.row_map, input_mat[i].graph.entries, input_mat[i].values,
-                         is_symmetric_graph);
+    KokkosSparse::gauss_seidel_symbolic(instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
+                                        input_mat[i].graph.row_map, input_mat[i].graph.entries, is_symmetric_graph);
+    KokkosSparse::gauss_seidel_numeric(instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
+                                       input_mat[i].graph.row_map, input_mat[i].graph.entries, input_mat[i].values,
+                                       is_symmetric_graph);
   }
 
   const int apply_count = 2;
   for (int i = 0; i < nstreams; i++) {
     switch (apply_type) {
       case 0:
-        symmetric_gauss_seidel_apply(instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-                                     input_mat[i].graph.row_map, input_mat[i].graph.entries, input_mat[i].values,
-                                     x_vector[i], y_vector[i], false, true, omega, apply_count);
+        KokkosSparse::symmetric_gauss_seidel_apply(
+            instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i], y_vector[i], false, true, omega, apply_count);
         break;
       case 1:
-        forward_sweep_gauss_seidel_apply(instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-                                         input_mat[i].graph.row_map, input_mat[i].graph.entries, input_mat[i].values,
-                                         x_vector[i], y_vector[i], false, true, omega, apply_count);
+        KokkosSparse::forward_sweep_gauss_seidel_apply(
+            instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i], y_vector[i], false, true, omega, apply_count);
         break;
       case 2:
-        backward_sweep_gauss_seidel_apply(instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-                                          input_mat[i].graph.row_map, input_mat[i].graph.entries, input_mat[i].values,
-                                          x_vector[i], y_vector[i], false, true, omega, apply_count);
+        KokkosSparse::backward_sweep_gauss_seidel_apply(
+            instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i], y_vector[i], false, true, omega, apply_count);
         break;
       default:
-        symmetric_gauss_seidel_apply(instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(),
-                                     input_mat[i].graph.row_map, input_mat[i].graph.entries, input_mat[i].values,
-                                     x_vector[i], y_vector[i], false, true, omega, apply_count);
+        KokkosSparse::symmetric_gauss_seidel_apply(
+            instances[i], &kh[i], input_mat[i].numRows(), input_mat[i].numCols(), input_mat[i].graph.row_map,
+            input_mat[i].graph.entries, input_mat[i].values, x_vector[i], y_vector[i], false, true, omega, apply_count);
         break;
     }
   }
@@ -484,12 +489,13 @@ void test_gauss_seidel_empty() {
       entries_type entries("Entries", 0);
       scalar_view_t values("Values", 0);
       // also, make sure graph symmetrization doesn't crash on zero rows
-      gauss_seidel_symbolic(&kh, nRows, nRows, rowmap, entries, false);
-      gauss_seidel_numeric(&kh, nRows, nRows, rowmap, entries, values, false);
+      KokkosSparse::gauss_seidel_symbolic(&kh, nRows, nRows, rowmap, entries, false);
+      KokkosSparse::gauss_seidel_numeric(&kh, nRows, nRows, rowmap, entries, values, false);
       scalar_view_t x("X", nRows);
       scalar_view_t y("Y", nRows);
       scalar_t omega(0.9);
-      symmetric_gauss_seidel_apply(&kh, nRows, nRows, rowmap, entries, values, x, y, false, true, omega, 3);
+      KokkosSparse::symmetric_gauss_seidel_apply(&kh, nRows, nRows, rowmap, entries, values, x, y, false, true, omega,
+                                                 3);
       kh.destroy_gs_handle();
     }
   }

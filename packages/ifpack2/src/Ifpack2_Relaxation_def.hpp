@@ -775,7 +775,7 @@ void Relaxation<MatrixType>::initialize ()
         mtKernelHandle_->set_gs_twostage_compact_form (CompactForm_);
       }
 
-      KokkosSparse::Experimental::gauss_seidel_symbolic(
+      KokkosSparse::gauss_seidel_symbolic(
           mtKernelHandle_.getRawPtr (),
           A_->getLocalNumRows (),
           A_->getLocalNumCols (),
@@ -1338,7 +1338,7 @@ void Relaxation<MatrixType>::compute ()
       //const-valued view for user-provided D^-1. OK for now, Diagonal_ is nonconst.
       auto diagView_2d = Diagonal_->getLocalViewDevice (Tpetra::Access::ReadWrite);
       scalar_view_t diagView_1d = Kokkos::subview (diagView_2d, Kokkos::ALL (), 0);
-      KokkosSparse::Experimental::gauss_seidel_numeric(
+      KokkosSparse::gauss_seidel_numeric(
           mtKernelHandle_.getRawPtr (),
           A_->getLocalNumRows (),
           A_->getLocalNumCols (),
@@ -2109,7 +2109,7 @@ ApplyInverseMTGS_CrsMatrix(
     }
 
     if (direction == Tpetra::Symmetric) {
-      KokkosSparse::Experimental::symmetric_gauss_seidel_apply
+      KokkosSparse::symmetric_gauss_seidel_apply
       (mtKernelHandle_.getRawPtr(), A_->getLocalNumRows(), A_->getLocalNumCols(),
           kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
           X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
@@ -2117,7 +2117,7 @@ ApplyInverseMTGS_CrsMatrix(
           zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
     else if (direction == Tpetra::Forward) {
-      KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply
+      KokkosSparse::forward_sweep_gauss_seidel_apply
       (mtKernelHandle_.getRawPtr(), A_->getLocalNumRows(), A_->getLocalNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
           X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
@@ -2125,7 +2125,7 @@ ApplyInverseMTGS_CrsMatrix(
           zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
     else if (direction == Tpetra::Backward) {
-      KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply
+      KokkosSparse::backward_sweep_gauss_seidel_apply
       (mtKernelHandle_.getRawPtr(), A_->getLocalNumRows(), A_->getLocalNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
           X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),

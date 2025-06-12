@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -29,8 +29,11 @@ inline std::string IOSS_VECTOR_2D() { return {"vector_2d"}; }
 inline std::string IOSS_VECTOR_3D() { return {"vector_3d"}; }
 inline std::string IOSS_SYM_TENSOR() { return {"sym_tensor_33"}; }
 
-#if defined(BUILT_IN_SIERRA)
-#define MAP_USE_SORTED_VECTOR
+#if __has_include("SEACASIoss_config.h")
+// This is a CMake build
+#include "SEACASIoss_config.h"
+#else
+// This is not a CMake build
 #define SEACAS_HAVE_MPI
 /* #undef IOSS_THREADSAFE */
 /* #undef SEACAS_HAVE_KOKKOS */
@@ -39,8 +42,6 @@ inline std::string IOSS_SYM_TENSOR() { return {"sym_tensor_33"}; }
 #define SEACAS_HAVE_CGNS
 /* #undef SEACAS_HAVE_FAODEL */
 #define SEACAS_HAVE_PAMGEN
-#else
-#include "SEACASIoss_config.h"
 #endif
 
 #if defined(IOSS_THREADSAFE)

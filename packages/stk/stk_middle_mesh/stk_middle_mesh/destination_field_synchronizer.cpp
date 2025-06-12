@@ -88,7 +88,7 @@ void DestinationFieldSynchronizer::unpack_remote_element_destinations(Exchanger&
   exchanger.complete_receives(f);
 }
 
-void DestinationFieldSynchronizer::unpack_buffer(int rank, int dim, stk::CommBuffer& buf, VariableSizeFieldPtr<int> fieldPtr)
+void DestinationFieldSynchronizer::unpack_buffer(int /*rank*/, int dim, stk::CommBuffer& buf, VariableSizeFieldPtr<int> fieldPtr)
 {
   auto& field = *fieldPtr;
   std::vector<int> destRanks;

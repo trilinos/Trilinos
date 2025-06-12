@@ -11,7 +11,6 @@
 // Testing of CoordinateModel
 //
 
-#include "Kokkos_StaticCrsGraph.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_BasicVectorAdapter.hpp>

@@ -1830,16 +1830,16 @@ class FastILUPrec
                 // setup L solve
                 khL.create_sptrsv_handle(algo, m_nRows, true);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx, m_lVal);
+                KokkosSparse::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx, m_lVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx);
+                KokkosSparse::sptrsv_symbolic(&khL, m_lRowMap, m_lColIdx);
                 #endif
                 // setup U solve
                 khU.create_sptrsv_handle(algo, m_nRows, false);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx, m_utVal);
+                KokkosSparse::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx, m_utVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx);
+                KokkosSparse::sptrsv_symbolic(&khU, m_utRowMap, m_utColIdx);
                 #endif
                 FASTILU_FENCE_REPORT_TIMER(Timer, ExecSpace(),
                   "  > sptrsv_symbolic : nnz(L)=" << m_lColIdx.extent(0) << " nnz(U)=" << m_utColIdx.extent(0));
@@ -2010,9 +2010,9 @@ class FastILUPrec
             if (m_sptrsv_algo == FastILU::SpTRSV::Standard) {
                 assert(m_blockCrsSize == 1); // Not yet supported for block crs
                 // solve with L
-                KokkosSparse::Experimental::sptrsv_solve(&khL, m_lRowMap, m_lColIdx, m_lVal, m_xTemp, y);
+                KokkosSparse::sptrsv_solve(&khL, m_lRowMap, m_lColIdx, m_lVal, m_xTemp, y);
                 // solve with U
-                KokkosSparse::Experimental::sptrsv_solve(&khU, m_utRowMap, m_utColIdx, m_utVal, y, m_xTemp);
+                KokkosSparse::sptrsv_solve(&khU, m_utRowMap, m_utColIdx, m_utVal, y, m_xTemp);
             } else {
                 // wrap x and y into 2D views
                 Scalar2dArray x2d (const_cast<Scalar*>(m_xTemp.data()), m_nRows, 1);

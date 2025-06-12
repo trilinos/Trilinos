@@ -13,7 +13,7 @@
 #include "ioss_export.h"
 
 namespace Ioss {
-  class IOSS_EXPORT Tet4 : public Ioss::ElementTopology
+  class IOSS_EXPORT Tet4 final : public Ioss::ElementTopology
   {
 
   public:

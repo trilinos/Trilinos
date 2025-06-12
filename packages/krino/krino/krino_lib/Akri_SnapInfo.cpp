@@ -61,8 +61,9 @@ bool SnapInfo::Comparator::does_first_win_priority_tie_with_second(const SnapInf
 
 std::ostream & operator<<(std::ostream & os, const SnapInfo& snapInfo)
 {
-    os << "  Owner: " << snapInfo.get_owner() << std::endl;
     os << "Snap Node: " << snapInfo.get_node_global_id() << std::endl;
+    os << "IntptId: " << snapInfo.get_intersection_point_index() << std::endl;
+    os << "Owner: " << snapInfo.get_owner() << std::endl;
     os << "ConflictingIds: " << to_string(snapInfo.get_conflicting_ids()) << std::endl;
     os << "SnapLocation: " << snapInfo.get_snap_location().to_string(16) << std::endl;
     os << "PostSnapWorstQuality: " << snapInfo.get_post_worst_quality() << std::endl;

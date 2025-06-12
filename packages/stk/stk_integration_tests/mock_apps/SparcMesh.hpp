@@ -123,7 +123,7 @@ public:
     }
   }
 
-  void get_to_points_coordinates(const EntityProcVec &to_entity_keys, ToPointsContainer &to_points)
+  void get_to_points_coordinates(const EntityProcVec & /*to_entity_keys*/, ToPointsContainer &to_points)
   {
     to_points.clear();
     for(const SparcSide& side : m_sides) {

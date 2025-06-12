@@ -36,10 +36,23 @@ namespace Galeri {
         hy_          = list.get("stretchy", 1.0);
         px_          = list.get("px", 1);
         py_          = list.get("py", 1);
-        nx_          = list.get("nx", -1);
-        ny_          = list.get("ny", -1);
-        mx_          = list.get("mx", 1);
-        my_          = list.get("my", 1);
+        if (list.isType<int>("nx"))
+          nx_ = Teuchos::as<GO>(list.get("nx", -1));
+        else
+          nx_ = list.get<GO>("nx", -1);
+        if (list.isType<int>("ny"))
+          ny_ = Teuchos::as<GO>(list.get("ny", -1));
+        else
+          ny_ = list.get<GO>("ny", -1);
+        if (list.isType<int>("mx"))
+          mx_ = Teuchos::as<GO>(list.get("mx", -1));
+        else
+          mx_ = list.get<GO>("mx", -1);
+        if (list.isType<int>("my"))
+          my_ = Teuchos::as<GO>(list.get("my", -1));
+        else
+          my_ = list.get<GO>("my", -1);
+
         omega_       = list.get("omega", 2.0*M_PI);
         shift_       = list.get("shift", 0.0);
         delta_       = list.get("delta", 2.0);

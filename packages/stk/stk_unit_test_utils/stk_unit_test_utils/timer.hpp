@@ -38,6 +38,7 @@
 #include <limits>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk {
@@ -114,7 +115,7 @@ public:
 
   void start_batch_timer()
   {
-    MPI_Barrier(communicator);
+    stk::parallel_machine_barrier(communicator);
     batchStartTime = stk::wall_time();
   }
 

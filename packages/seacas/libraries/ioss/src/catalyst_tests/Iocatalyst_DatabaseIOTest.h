@@ -31,7 +31,9 @@ protected:
 
   void runStructuredTest(const std::string &testName);
 
-  void runUnstructuredTest(const std::string &testName);
+  void
+  runUnstructuredTest(const std::string &testName, bool writeConnectivityRaw = false,
+                      const std::string &nodeBlockName = Iocatalyst::BlockMeshSet::NODE_BLOCK_NAME);
 
   Ioss::DatabaseIO *writeAndGetExodusDatabaseOnRead(const std::string    &testName,
                                                     Ioss::PropertyManager dbProps = {});

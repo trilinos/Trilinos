@@ -137,7 +137,7 @@ void disconnect_all_blocks(stk::mesh::BulkData & bulk, bool preserveOrphans)
   disconnect_all_blocks(bulk, info, preserveOrphans);
 }
 
-void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, bool preserveOrphans)
+void disconnect_all_blocks(stk::mesh::BulkData & bulk, impl::LinkInfo& info, bool /*preserveOrphans*/)
 {
   std::vector<BlockPair> blockPairsToDisconnect = impl::get_block_pairs_to_disconnect(bulk);
 
@@ -161,14 +161,6 @@ void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& bl
 
   // impl::print_timings(bulk, info);
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sep 2024
-void disconnect_user_blocks(stk::mesh::BulkData& bulk, const BlockPairVector& blockPairsToDisconnect,
-                            DisconnectBlocksOption options)
-{
-  disconnect_user_blocks(bulk, blockPairsToDisconnect, options.snipOption);
-}
-#endif
 
 }
 }

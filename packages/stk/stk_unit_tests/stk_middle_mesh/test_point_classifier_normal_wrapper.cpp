@@ -51,11 +51,11 @@ using testing::PointClassifierNormalWrapperTester;
 
 TEST_F(PointClassifierNormalWrapperTester, Triangle)
 {
-  auto mesh = mesh::make_empty_mesh();
-  auto v1   = mesh->create_vertex(0, 0);
-  auto v2   = mesh->create_vertex(1, 0);
-  auto v3   = mesh->create_vertex(0, 1);
-  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+  auto meshTest = mesh::make_empty_mesh();
+  auto v1       = meshTest->create_vertex(0, 0);
+  auto v2       = meshTest->create_vertex(1, 0);
+  auto v3       = meshTest->create_vertex(0, 1);
+  auto el       = meshTest->create_triangle_from_verts(v1, v2, v3);
 
   auto meshSrc = mesh::make_empty_mesh();
   auto v5      = meshSrc->create_vertex(0, 0);
@@ -156,11 +156,11 @@ TEST_F(PointClassifierNormalWrapperTester, Triangle)
 
 TEST_F(PointClassifierNormalWrapperTester, TriangleComputeXyzCoords)
 {
-  auto mesh = mesh::make_empty_mesh();
-  auto v1   = mesh->create_vertex(0, 0);
-  auto v2   = mesh->create_vertex(1, 0);
-  auto v3   = mesh->create_vertex(0, 1);
-  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+  auto meshTest = mesh::make_empty_mesh();
+  auto v1       = meshTest->create_vertex(0, 0);
+  auto v2       = meshTest->create_vertex(1, 0);
+  auto v3       = meshTest->create_vertex(0, 1);
+  auto el       = meshTest->create_triangle_from_verts(v1, v2, v3);
 
   auto meshSrc = mesh::make_empty_mesh();
   auto v5      = meshSrc->create_vertex(0, 0);
@@ -204,11 +204,11 @@ TEST_F(PointClassifierNormalWrapperTester, TriangleComputeXyzCoords)
 
 TEST_F(PointClassifierNormalWrapperTester, TriangleComputeXiCoords)
 {
-  auto mesh = mesh::make_empty_mesh();
-  auto v1   = mesh->create_vertex(0, 0);
-  auto v2   = mesh->create_vertex(1, 0);
-  auto v3   = mesh->create_vertex(0, 1);
-  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+  auto meshTest = mesh::make_empty_mesh();
+  auto v1       = meshTest->create_vertex(0, 0);
+  auto v2       = meshTest->create_vertex(1, 0);
+  auto v3       = meshTest->create_vertex(0, 1);
+  auto el       = meshTest->create_triangle_from_verts(v1, v2, v3);
 
   auto meshSrc = mesh::make_empty_mesh();
   auto v5      = meshSrc->create_vertex(0, 0);
@@ -255,11 +255,11 @@ TEST_F(PointClassifierNormalWrapperTester, TriangleComputeXiCoords)
 
 TEST_F(PointClassifierNormalWrapperTester, TriangleComputeOrthogonalDist)
 {
-  auto mesh = mesh::make_empty_mesh();
-  auto v1   = mesh->create_vertex(0, 0);
-  auto v2   = mesh->create_vertex(1, 0);
-  auto v3   = mesh->create_vertex(0, 1);
-  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+  auto meshTest = mesh::make_empty_mesh();
+  auto v1       = meshTest->create_vertex(0, 0);
+  auto v2       = meshTest->create_vertex(1, 0);
+  auto v3       = meshTest->create_vertex(0, 1);
+  auto el       = meshTest->create_triangle_from_verts(v1, v2, v3);
 
   auto meshSrc = mesh::make_empty_mesh();
   auto v5      = meshSrc->create_vertex(0, 0);
@@ -280,11 +280,11 @@ TEST_F(PointClassifierNormalWrapperTester, TriangleComputeOrthogonalDist)
 
 TEST_F(PointClassifierNormalWrapperTester, TriangleCreateRecord)
 {
-  auto mesh = mesh::make_empty_mesh();
-  auto v1   = mesh->create_vertex(0, 0);
-  auto v2   = mesh->create_vertex(1, 0);
-  auto v3   = mesh->create_vertex(0, 1);
-  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+  auto meshTest = mesh::make_empty_mesh();
+  auto v1       = meshTest->create_vertex(0, 0);
+  auto v2       = meshTest->create_vertex(1, 0);
+  auto v3       = meshTest->create_vertex(0, 1);
+  auto el       = meshTest->create_triangle_from_verts(v1, v2, v3);
 
   auto meshSrc = mesh::make_empty_mesh();
   predicates::impl::PointClassifierNormalWrapper c(meshSrc);
@@ -609,13 +609,13 @@ TEST_F(PointClassifierNormalWrapperTester, QuadCreateRecord)
 
 TEST_F(PointClassifierNormalWrapperTester, TriangleReverse)
 {
-  auto mesh = mesh::make_empty_mesh();
-  auto v1   = mesh->create_vertex(0, 0);
-  auto v2   = mesh->create_vertex(1, 0);
-  auto v3   = mesh->create_vertex(0, 1);
-  auto el   = mesh->create_triangle_from_verts(v1, v2, v3);
+  auto meshTest = mesh::make_empty_mesh();
+  auto v1       = meshTest->create_vertex(0, 0);
+  auto v2       = meshTest->create_vertex(1, 0);
+  auto v3       = meshTest->create_vertex(0, 1);
+  auto el       = meshTest->create_triangle_from_verts(v1, v2, v3);
 
-  predicates::impl::PointClassifierNormalWrapper c(mesh);
+  predicates::impl::PointClassifierNormalWrapper c(meshTest);
   utils::Point pt;
   predicates::impl::PointRecord r;
 

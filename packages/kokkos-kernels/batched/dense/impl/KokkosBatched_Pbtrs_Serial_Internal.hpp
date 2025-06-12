@@ -17,6 +17,7 @@
 #ifndef KOKKOSBATCHED_PBTRS_SERIAL_INTERNAL_HPP_
 #define KOKKOSBATCHED_PBTRS_SERIAL_INTERNAL_HPP_
 
+#include "KokkosBlas_util.hpp"
 #include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Tbsv_Serial_Internal.hpp"
 
@@ -50,8 +51,9 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrsInternalLower<Algo::Pbtrs::Unblocked>::inv
   SerialTbsvInternalLower<Algo::Tbsv::Unblocked>::invoke(false, an, A, as0, as1, x, xs0, kd);
 
   // Solve L**T *X = B, overwriting B with X.
-  constexpr bool do_conj = Kokkos::ArithTraits<ValueType>::is_complex;
-  SerialTbsvInternalLowerTranspose<Algo::Tbsv::Unblocked>::invoke(false, do_conj, an, A, as0, as1, x, xs0, kd);
+  using op =
+      std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj, KokkosBlas::Impl::OpID>;
+  SerialTbsvInternalLowerTranspose<Algo::Tbsv::Unblocked>::invoke(op(), false, an, A, as0, as1, x, xs0, kd);
 
   return 0;
 }
@@ -76,8 +78,9 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrsInternalUpper<Algo::Pbtrs::Unblocked>::inv
                                                                                     /**/ ValueType *KOKKOS_RESTRICT x,
                                                                                     const int xs0, const int kd) {
   // Solve U**T *X = B, overwriting B with X.
-  constexpr bool do_conj = Kokkos::ArithTraits<ValueType>::is_complex;
-  SerialTbsvInternalUpperTranspose<Algo::Tbsv::Unblocked>::invoke(false, do_conj, an, A, as0, as1, x, xs0, kd);
+  using op =
+      std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj, KokkosBlas::Impl::OpID>;
+  SerialTbsvInternalUpperTranspose<Algo::Tbsv::Unblocked>::invoke(op(), false, an, A, as0, as1, x, xs0, kd);
 
   // Solve U*X = B, overwriting B with X.
   SerialTbsvInternalUpper<Algo::Tbsv::Unblocked>::invoke(false, an, A, as0, as1, x, xs0, kd);

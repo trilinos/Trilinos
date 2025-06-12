@@ -16,6 +16,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <Akri_QualityMetric.hpp>
 #include "Akri_MOAB_TetRefiner.hpp"
 
 #include <cmath>
@@ -29,7 +30,99 @@
 #include <stk_util/util/ReportHandler.hpp>
 
 namespace krino {
+
+inline double SQR(const double x) { return x*x; }
+
+inline double compute_edge_length_squared(const double *c0, const double *c1)
+{
+  return SQR(c0[0]-c1[0]) + SQR(c0[1]-c1[1]) + SQR(c0[2]-c1[2]);
+}
+
+double MeanRatioMetricForTetRefinement::element_quality(const int *indices, const double *coords[10]) const
+{
+  const std::array<stk::math::Vector3d,4> nodeLocations{stk::math::Vector3d(coords[indices[0]]), stk::math::Vector3d(coords[indices[1]]), stk::math::Vector3d(coords[indices[2]]), stk::math::Vector3d(coords[indices[3]])};
+  return MeanRatioQualityMetric::tet_mean_ratio(nodeLocations);
+}
+
+double LengthRatioMetricForTetRefinement::element_quality(const int *indices, const double *coords[10]) const
+{
+  double edge_min=std::numeric_limits<double>::max();
+  double edge_max = 0;
+  for (int i=0; i < 3; i++)
+    {
+      for (int j=i+1; j < 4; j++)
+        {
+          const double el2 = compute_edge_length_squared(coords[indices[i]], coords[indices[j]]);
+          edge_min = std::min(edge_min, el2);
+          edge_max = std::max(edge_max, el2);
+        }
+    }
+  return std::sqrt(edge_max/edge_min);
+}
+
 namespace moab {
+
+template <size_t N>
+int * best_tets_if_lower_quality_is_better( const ElementMetricForTetRefinement & qualityMetric, int * templates, const std::array<int,N> & alternates, const double* coords[10] )
+{
+  // force better tets to be at least this factor better - helps with tie breaks for structured meshes
+  const double factor = 0.95;
+
+  double best_qual=0;
+  int * bestTemplate = nullptr;
+  for (size_t i=0; i<N; ++i)
+    {
+      int * current_template = templates + alternates[i];
+      // find worst quality element
+      double max_qual=0;
+      for (int j=0; j < current_template[0]; j++)
+        {
+          max_qual = std::max(max_qual, qualityMetric.element_quality(current_template + 1 + j*4, coords));
+        }
+      // find alternates with the best (min) worst quality
+      if (i == 0 || max_qual < best_qual*factor)
+        {
+          best_qual = max_qual;
+          bestTemplate = current_template;
+        }
+    }
+  return bestTemplate;
+}
+
+template <size_t N>
+int * best_tets_if_higher_quality_is_better( const ElementMetricForTetRefinement & qualityMetric, int * templates, const std::array<int,N> & alternates, const double* coords[10] )
+{
+  // force better tets to be at least this factor better - helps with tie breaks for structured meshes
+  const double factor = 1.01;
+
+  double best_qual=0;
+  int * bestTemplate = nullptr;
+  for (size_t i=0; i<N; ++i)
+    {
+      int * current_template = templates + alternates[i];
+      // find worst quality element
+      double min_qual=1.;
+      for (int j=0; j < current_template[0]; j++)
+        {
+          min_qual = std::min(min_qual, qualityMetric.element_quality(current_template + 1 + j*4, coords));
+        }
+      // find alternates with the best (min) worst quality
+      if (i == 0 || min_qual > best_qual*factor)
+        {
+          best_qual = min_qual;
+          bestTemplate = current_template;
+        }
+    }
+  return bestTemplate;
+}
+
+template <size_t N>
+int * best_tets( const ElementMetricForTetRefinement & qualityMetric, int * templates, const std::array<int,N> & alternates, const double* coords[10] )
+{
+  if (qualityMetric.is_higher_quality_better())
+    return best_tets_if_higher_quality_is_better(qualityMetric, templates, alternates, coords);
+  return best_tets_if_lower_quality_is_better(qualityMetric, templates, alternates, coords);
+}
 
 unsigned SimplexTemplateRefiner::determine_permuted_case_id_tet4(const unsigned caseId)
 {
@@ -85,77 +178,6 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
   //p   * Edge 0-1, Edge 1-2, Edge 2-0, Edge 0-3, Edge 1-3, Edge 2-3,
   int tet_edges[6][2] = {{0,1}, {1,2}, {2,0}, {0,3}, {1,3}, {2,3}};
 
-  double compute_edge_length_squared(const double *c0, const double *c1)
-  {
-    return
-      (c0[0]-c1[0])*(c0[0]-c1[0])+
-      (c0[1]-c1[1])*(c0[1]-c1[1])+
-      (c0[2]-c1[2])*(c0[2]-c1[2]);
-  }
-
-  inline double SQR(const double x) { return x*x; }
-
-  /// returns tet quality:
-  ///   if use_best_quality, then return max edge len/min - 1.0 is ideal, smaller quality is better
-  ///   else, return the max edge length (consistent with standard practice heuristics of choosing
-  ///      the octagon's shortest diagonal)
-  inline double quality(const int *indices, const double *coords[14])
-  {
-    double edge_min=std::numeric_limits<double>::max();
-    double edge_max = 0;
-    for (int i=0; i < 3; i++)
-      {
-        for (int j=i+1; j < 4; j++)
-          {
-            const double *ci = coords[indices[i]];
-            const double *cj = coords[indices[j]];
-            const double el2 = SQR(ci[0]-cj[0]) + SQR(ci[1]-cj[1]) + SQR(ci[2]-cj[2]) ;
-            edge_min = std::min(edge_min, el2);
-            edge_max = std::max(edge_max, el2);
-          }
-      }
-    return std::sqrt(edge_max/edge_min);
-  }
-
-  int SimplexTemplateRefiner::best_tets( const int* alternates, const double* coords[14], int, int )
-  {
-    // force better tets to be at least this factor better - helps with tie breaks for structured meshes
-    const double factor = 0.95;
-    int nalt = -1;
-    for (int i=0; i < 100; i++)
-      {
-        if (alternates[i] < 0) {
-          nalt = i;
-          break;
-        }
-      }
-    if (nalt < 0) throw std::runtime_error("SimplexTemplateRefiner::best_tets");
-    double best_qual=0;
-    int iqual=-1;
-    for (int i=0; i < nalt; i++)
-      {
-        int * current_template = SimplexTemplateRefiner::templates + alternates[i];
-        // find worst quality element
-        double max_qual=0;
-        for (int j=0; j < current_template[0]; j++)
-          {
-            max_qual = std::max(max_qual, quality(current_template + 1 + j*4, coords));
-          }
-        // find alternates with the best (min) worst quality
-        if (i == 0)
-          {
-            best_qual = max_qual;
-            iqual = 0;
-          }
-        else if (max_qual < best_qual*factor)
-          {
-            best_qual = max_qual;
-            iqual = i;
-          }
-      }
-    return alternates[iqual];
-  }
-
   static int determine_tet_side_from_side_nodes(const std::array<int,3> & sideNodes)
   {
     static const std::array<std::vector<int>,10> sortedSidesByNode{{ {0,2,3}, {0,1,3}, {1,2,3}, {0,1,2}, {0,3} ,{1,3}, {2,3}, {0,2}, {0,1}, {1,2} }};
@@ -175,7 +197,6 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
         std::set_intersection(workingSet.begin(),workingSet.end(),nodeSides.begin(),nodeSides.end(),std::back_inserter(nodeSideIntersection));
       }
     }
-
 
     if (!nodeSideIntersection.empty())
     {
@@ -199,9 +220,13 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
     return tetSides;
   }
 
-  std::vector<SimplexTemplateRefiner::TetDescription> SimplexTemplateRefiner::refinement_child_nodes_and_sides_tet4(const unsigned encodedEdgesToRefine, const std::array<stk::math::Vector3d,4> & elementNodeCoords, const std::array<int,4> & elementNodeScore, const bool needSides)
+  std::vector<SimplexTemplateRefiner::TetDescription> SimplexTemplateRefiner::refinement_child_nodes_and_sides_tet4(const ElementMetricForTetRefinement & qualityMetric,
+      const unsigned encodedEdgesToRefine,
+      const std::array<stk::math::Vector3d,10> & elementNodeCoords,
+      const std::array<int,4> & elementNodeScore,
+      const bool needSides)
   {
-    const std::vector<std::array<int,4>> newTetNodes = moab::SimplexTemplateRefiner::refinement_child_nodes_tet4(encodedEdgesToRefine, elementNodeCoords, elementNodeScore );
+    const std::vector<std::array<int,4>> newTetNodes = moab::SimplexTemplateRefiner::refinement_child_nodes_tet4(qualityMetric, encodedEdgesToRefine, elementNodeCoords, elementNodeScore);
 
     const unsigned numTets = newTetNodes.size();
 
@@ -221,7 +246,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       else
       {
         for (int iSide=0; iSide<4; ++iSide)
-          newTets[iTet].sideIds[iSide] = -1; // -1 indices side is not on any parent side
+          newTets[iTet].sideIds[iSide] = -1; // -1 indicates side is not on any parent side
       }
     }
 
@@ -231,50 +256,10 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
   /**\brief Refine a tetrahedron.
 
    */
-  std::vector<TetTupleInt> SimplexTemplateRefiner::refinement_child_nodes_tet4(const unsigned edge_code, const std::array<stk::math::Vector3d,4> & elementNodeCoords, const std::array<int,4> & elementNodeScore )
+  std::vector<TetTupleInt> SimplexTemplateRefiner::refinement_child_nodes_tet4(const ElementMetricForTetRefinement & qualityMetric, const unsigned edge_code, const std::array<stk::math::Vector3d,10> & elementNodeCoords, const std::array<int,4> & elementNodeScore )
   {  // refine_3_simplex
 
-    const double* v0 = elementNodeCoords[0].data();
-    const double* v1 = elementNodeCoords[1].data();
-    const double* v2 = elementNodeCoords[2].data();
-    const double* v3 = elementNodeCoords[3].data();
-    const EntityHandle h0 = elementNodeScore[0];
-    const EntityHandle h1 = elementNodeScore[1];
-    const EntityHandle h2 = elementNodeScore[2];
-    const EntityHandle h3 = elementNodeScore[3];
-
     std::vector<TetTupleInt> new_tets;
-
-    double s_midpt0c[3]={0,0,0};
-    double s_midpt1c[3]={0,0,0};
-    double s_midpt2c[3]={0,0,0};
-    double s_midpt3c[3]={0,0,0};
-    double s_midpt4c[3]={0,0,0};
-    double s_midpt5c[3]={0,0,0};
-
-    double* midpt0c=&s_midpt0c[0];
-    double* midpt1c=&s_midpt1c[0];
-    double* midpt2c=&s_midpt2c[0];
-    double* midpt3c=&s_midpt3c[0];
-    double* midpt4c=&s_midpt4c[0];
-    double* midpt5c=&s_midpt5c[0];
-
-    EntityHandle midpt0h=0;
-    EntityHandle midpt1h=0;
-    EntityHandle midpt2h=0;
-    EntityHandle midpt3h=0;
-    EntityHandle midpt4h=0;
-    EntityHandle midpt5h=0;
-
-    for ( int i = 0; i < 3; ++ i )
-      {
-        midpt0c[i] = ( v0[i] + v1[i] ) * .5;
-        midpt1c[i] = ( v1[i] + v2[i] ) * .5;
-        midpt2c[i] = ( v2[i] + v0[i] ) * .5;
-        midpt3c[i] = ( v0[i] + v3[i] ) * .5;
-        midpt4c[i] = ( v1[i] + v3[i] ) * .5;
-        midpt5c[i] = ( v2[i] + v3[i] ) * .5;
-      }
 
     if ( ! edge_code )
       {
@@ -282,45 +267,28 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
         return new_tets;
       }
 
-    double facept0c[3]={0,0,0};
-    double facept1c[3]={0,0,0};
-    double facept2c[3]={0,0,0};
-    double facept3c[3]={0,0,0};
-
-    const double* vertex_coords[14] = {
-      v0, v1, v2, v3,
-      midpt0c, midpt1c, midpt2c,
-      midpt3c, midpt4c, midpt5c,
-      facept0c, facept1c, facept2c, facept3c
-    };
-
-    EntityHandle vertex_hash[14] = {
-      h0, h1, h2, h3,
-      midpt0h, midpt1h, midpt2h,
-      midpt3h, midpt4h, midpt5h,
-      0, 0, 0, 0
-    };
-
     // Generate tetrahedra that are compatible except when edge
     // lengths are equal on indeterminately subdivided faces.
-    const double* permuted_coords[14];
-    EntityHandle permuted_hash[14];
-    int permuted_local_ids[14];   // this is just a copy of permutations_from_index, for readability
+    const double* permuted_coords[10];
+    EntityHandle permuted_hash[4];
+    int permuted_local_ids[10];   // this is just a copy of permutations_from_index, for readability
     double permlen[6]; // permuted edge lengths
     int C = SimplexTemplateRefiner::template_index[edge_code][0];
     int P = SimplexTemplateRefiner::template_index[edge_code][1];
 
     // 1. Permute the tetrahedron into our canonical configuration
-    for ( int i = 0; i < 14; ++ i )
+    for ( int i = 0; i < 4; ++ i )
+      {
+        permuted_hash[i] = elementNodeScore[SimplexTemplateRefiner::permutations_from_index[P][i]];
+      }
+    for ( int i = 0; i < 10; ++ i )
       {
         permuted_local_ids[i] = SimplexTemplateRefiner::permutations_from_index[P][i];
-        permuted_coords[i] = vertex_coords[SimplexTemplateRefiner::permutations_from_index[P][i]];
-        permuted_hash[i] = vertex_hash[SimplexTemplateRefiner::permutations_from_index[P][i]];
+        permuted_coords[i] = elementNodeCoords[SimplexTemplateRefiner::permutations_from_index[P][i]].data();
       }
 
     for (int i = 0; i < 6; i++)
       {
-
         const double *c0 = permuted_coords[tet_edges[i][0]];
         const double *c1 = permuted_coords[tet_edges[i][1]];
         if (permuted_hash[tet_edges[i][0]] > permuted_hash[tet_edges[i][1]])
@@ -391,7 +359,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
           }
         break;
       case 3: // Ruprecht-Muller Case 2b
-        output_tets.push( SimplexTemplateRefiner::templates + 40 );
+        output_tets.push( SimplexTemplateRefiner::templates + 23 );
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
         output_sign.push( 1 );
         break;
@@ -429,7 +397,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
               comparison_bits |= 32;
           }
 
-        output_tets.push( SimplexTemplateRefiner::templates + 57 );
+        output_tets.push( SimplexTemplateRefiner::templates + 40 );
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
         output_sign.push( 1 );
 
@@ -437,32 +405,32 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
         switch ( comparison_bits )
           {
           case 42: // 0>2>3<0
-            output_tets.push( SimplexTemplateRefiner::templates + 62 );
+            output_tets.push( SimplexTemplateRefiner::templates + 45 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
             break;
           case 25: // 2>3>0<2
-            output_tets.push( SimplexTemplateRefiner::templates + 62 );
+            output_tets.push( SimplexTemplateRefiner::templates + 45 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[11] );
             output_sign.push( 1 );
             break;
           case 37: // 3>0>2<3
-            output_tets.push( SimplexTemplateRefiner::templates + 62 );
+            output_tets.push( SimplexTemplateRefiner::templates + 45 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[3] );
             output_sign.push( 1 );
             break;
           case 21: // 3>2>0<3
-            output_tets.push( SimplexTemplateRefiner::templates + 62 );
+            output_tets.push( SimplexTemplateRefiner::templates + 45 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[22] );
             output_sign.push( -1 );
             break;
           case 26: // 2>0>3<2
-            output_tets.push( SimplexTemplateRefiner::templates + 62 );
+            output_tets.push( SimplexTemplateRefiner::templates + 45 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[12] );
             output_sign.push( -1 );
             break;
           case 38: // 0>3>2<0
-            output_tets.push( SimplexTemplateRefiner::templates + 62 );
+            output_tets.push( SimplexTemplateRefiner::templates + 45 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[15] );
             output_sign.push( -1 );
             break;
@@ -471,7 +439,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
           }
         break;
       case 5: // Ruprecht-Muller Case 3b
-        output_tets.push( SimplexTemplateRefiner::templates + 162 );
+        output_tets.push( SimplexTemplateRefiner::templates + 58 );
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
         output_sign.push( 1 );
         break;
@@ -499,22 +467,22 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
         switch ( comparison_bits )
           {
           case 10: // 0>1,0>3
-            output_tets.push( SimplexTemplateRefiner::templates + 179 );
+            output_tets.push( SimplexTemplateRefiner::templates + 75 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
             break;
           case 5: // 1>0,3>0
-            output_tets.push( SimplexTemplateRefiner::templates + 200 );
+            output_tets.push( SimplexTemplateRefiner::templates + 96 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
             break;
           case 6: // 0>1,3>0
-            output_tets.push( SimplexTemplateRefiner::templates + 221 );
+            output_tets.push( SimplexTemplateRefiner::templates + 117 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
             break;
           case 9: // 1>0,0>3
-            output_tets.push( SimplexTemplateRefiner::templates + 242 );
+            output_tets.push( SimplexTemplateRefiner::templates + 138 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
             break;
@@ -547,25 +515,25 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
         switch ( comparison_bits )
           {
           case 10: // 0>4,0>2
-            output_tets.push( SimplexTemplateRefiner::templates + 362 );
+            output_tets.push( SimplexTemplateRefiner::templates + 159 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
 
             break;
           case 5: // 4>0,2>0
-            output_tets.push( SimplexTemplateRefiner::templates + 383 );
+            output_tets.push( SimplexTemplateRefiner::templates + 180 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
 
             break;
           case 9: // 0>4,2>0
-            output_tets.push( SimplexTemplateRefiner::templates + 404 );
+            output_tets.push( SimplexTemplateRefiner::templates + 201 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
 
             break;
           case 6: // 4>0,0>2
-            output_tets.push( SimplexTemplateRefiner::templates + 425 );
+            output_tets.push( SimplexTemplateRefiner::templates + 222 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
 
@@ -596,32 +564,32 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
               comparison_bits |= 8;
           }
 
-        output_tets.push( SimplexTemplateRefiner::templates + 545 );
+        output_tets.push( SimplexTemplateRefiner::templates + 243 );
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
         output_sign.push( 1 );
 
         switch ( comparison_bits )
           {
           case 5: // 5>4>3
-            output_tets.push( SimplexTemplateRefiner::templates + 554 );
+            output_tets.push( SimplexTemplateRefiner::templates + 252 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
 
             break;
           case 10: // 3>4>5
-            output_tets.push( SimplexTemplateRefiner::templates + 554 );
+            output_tets.push( SimplexTemplateRefiner::templates + 252 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[13] );
             output_sign.push( -1 );
 
             break;
           case 6: // 3<4>5
-            output_tets.push( SimplexTemplateRefiner::templates + 571 );
+            output_tets.push( SimplexTemplateRefiner::templates + 269 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
 
             break;
           case 9: // 3>4<5
-            output_tets.push( SimplexTemplateRefiner::templates + 588 );
+            output_tets.push( SimplexTemplateRefiner::templates + 286 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
 
@@ -673,84 +641,84 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
         switch ( comparison_bits )
           {
           case 85: // 2>1,3>2,4>3,4>1
-            output_tets.push( SimplexTemplateRefiner::templates + 688 );
+            output_tets.push( SimplexTemplateRefiner::templates + 303 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
             break;
           case 102: // 1>2,3>2,3>4,4>1
-            output_tets.push( SimplexTemplateRefiner::templates + 688 );
+            output_tets.push( SimplexTemplateRefiner::templates + 303 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[14] );
             output_sign.push( -1 );
             break;
           case 170: // 1>2,2>3,3>4,1>4
-            output_tets.push( SimplexTemplateRefiner::templates + 688 );
+            output_tets.push( SimplexTemplateRefiner::templates + 303 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[15] );
             output_sign.push( -1 );
             break;
           case 153: // 2>1,2>3,4>3,1>4
-            output_tets.push( SimplexTemplateRefiner::templates + 688 );
+            output_tets.push( SimplexTemplateRefiner::templates + 303 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[5] );
             output_sign.push( 1 );
             break;
           case 90: // 1>2,2>3,4>3,4>1
-            output_tets.push( SimplexTemplateRefiner::templates + 688 );
+            output_tets.push( SimplexTemplateRefiner::templates + 303 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[9] );
             output_sign.push( 1 );
             break;
           case 105: // 2>1,2>3,3>4,4>1
-            output_tets.push( SimplexTemplateRefiner::templates + 688 );
+            output_tets.push( SimplexTemplateRefiner::templates + 303 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[7] );
             output_sign.push( 1 );
             break;
           case 165: // 2>1,3>2,3>4,1>4
-            output_tets.push( SimplexTemplateRefiner::templates + 688 );
+            output_tets.push( SimplexTemplateRefiner::templates + 303 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[19] );
             output_sign.push( -1 );
             break;
           case 150: // 1>2,3>2,4>3,1>4
-            output_tets.push( SimplexTemplateRefiner::templates + 688 );
+            output_tets.push( SimplexTemplateRefiner::templates + 303 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[23] );
             output_sign.push( -1 );
             break;
           case 101: // 2>1,3>2,3>4,4>1
             {
-              int alternates[] = { 713, 738, -1 };
-              output_tets.push( SimplexTemplateRefiner::templates + best_tets( alternates, permuted_coords, 0, 1 ) );
+              static constexpr std::array<int,2> alternates{ 328, 353 };
+              output_tets.push( best_tets( qualityMetric, SimplexTemplateRefiner::templates, alternates, permuted_coords ) );
             }
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
             break;
           case 86: // 1>2,3>2,4>3,4>1
             {
-              int alternates[] = {713, 738, -1 };
-              output_tets.push( SimplexTemplateRefiner::templates + best_tets( alternates, permuted_coords, 14, -1 ) );
+              static constexpr std::array<int,2> alternates{ 328, 353 };
+              output_tets.push( best_tets( qualityMetric, SimplexTemplateRefiner::templates, alternates, permuted_coords ) );
             }
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[14] );
             output_sign.push( -1 );
             break;
           case 154: // 1>2,2>3,4>3,1>4
             {
-              int alternates[] = {713, 738, -1 };
-              output_tets.push( SimplexTemplateRefiner::templates + best_tets( alternates, permuted_coords, 5, 1 ) );
+              static constexpr std::array<int,2> alternates{ 328, 353 };
+              output_tets.push( best_tets( qualityMetric, SimplexTemplateRefiner::templates, alternates, permuted_coords ) );
             }
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[5] );
             output_sign.push( 1 );
             break;
           case 169: // 2>1,2>3,3>4,1>4
             {
-              int alternates[] = {713, 738, -1 };
-              output_tets.push( SimplexTemplateRefiner::templates + best_tets( alternates, permuted_coords, 15, -1 ) );
+              static constexpr std::array<int,2> alternates{ 328, 353 };
+              output_tets.push( best_tets( qualityMetric, SimplexTemplateRefiner::templates, alternates, permuted_coords ) );
             }
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[15] );
             output_sign.push( -1 );
             break;
           case 89: // 2>1,2>3,4>3,4>1
-            output_tets.push( SimplexTemplateRefiner::templates + 763 );
+            output_tets.push( SimplexTemplateRefiner::templates + 378 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
             break;
           case 166: // 1>2,3>2,3>4,1>4
-            output_tets.push( SimplexTemplateRefiner::templates + 763 );
+            output_tets.push( SimplexTemplateRefiner::templates + 378 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[15] );
             output_sign.push( -1 );
             break;
@@ -780,28 +748,28 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
               comparison_bits |= 8;
           }
 
-        output_tets.push( SimplexTemplateRefiner::templates + 1107 );
+        output_tets.push( SimplexTemplateRefiner::templates + 403 );
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
         output_sign.push( 1 );
 
         switch ( comparison_bits )
           {
           case 10: // 1>2,3>4
-            output_tets.push( SimplexTemplateRefiner::templates + 1116 );
+            output_tets.push( SimplexTemplateRefiner::templates + 412 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
 
             break;
           case 5: // 2>1,4>3
-            output_tets.push( SimplexTemplateRefiner::templates + 1116 );
+            output_tets.push( SimplexTemplateRefiner::templates + 412 );
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[14] );
             output_sign.push( -1 );
 
             break;
           case 6: // 1>2,4>3
             {
-              int alternates[] = { 1137, 1158, -1 };
-              output_tets.push( SimplexTemplateRefiner::templates + best_tets( alternates, permuted_coords, 0, 1 ) );
+              static constexpr std::array<int,2> alternates{ 433, 454 };
+              output_tets.push( best_tets( qualityMetric, SimplexTemplateRefiner::templates, alternates, permuted_coords ) );
             }
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
             output_sign.push( 1 );
@@ -809,8 +777,8 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
             break;
           case 9: // 2>1,3>4
             {
-              int alternates[] = {1137, 1158, -1 };
-              output_tets.push( SimplexTemplateRefiner::templates + best_tets( alternates, permuted_coords, 14, -1 ) );
+              static constexpr std::array<int,2> alternates{ 433, 454 };
+              output_tets.push( best_tets( qualityMetric, SimplexTemplateRefiner::templates, alternates, permuted_coords ) );
             }
             output_perm.push( SimplexTemplateRefiner::permutations_from_index[14] );
             output_sign.push( -1 );
@@ -821,13 +789,13 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
           }
         break;
       case 11: // Ruprecht-Muller Case 6
-        output_tets.push( SimplexTemplateRefiner::templates + 1319 );
+        output_tets.push( SimplexTemplateRefiner::templates + 475 );
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
         output_sign.push( 1 );
 
         {
-          int alternates[] = { 1336, 1353, 1370, -1 };
-          output_tets.push( SimplexTemplateRefiner::templates + best_tets( alternates, permuted_coords, 0, 1 ) );
+          static constexpr std::array<int,3> alternates{ 492, 509, 526 };
+          output_tets.push( best_tets( qualityMetric, SimplexTemplateRefiner::templates, alternates, permuted_coords ) );
         }
         output_perm.push( SimplexTemplateRefiner::permutations_from_index[0] );
         output_sign.push( 1 );
@@ -867,7 +835,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
           }
         else
           {
-            // we have an inverted tet... reverse the first 2 vertices
+            // we have tets that were specified with a negative permutation... reverse the first 2 vertices
             // so the orientation is positive.
             for ( t = 0; t < ntets; ++t )
               {
@@ -1005,53 +973,51 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
   /*
    * The array below is a list of all the _positive_
    * permutations of Tetrahedron 0-1-2-3. Given a
-   * permutation index, it returns a row of 14 values:
+   * permutation index, it returns a row of 10 values:
    * these are the vertex numbers of the permuted
    * tetrahedron. The first 4 values are the permuted
    * corner indices, the next 6 values are the
-   * permuted edge midpoint indices, and the final
-   * entries reference mid-face points inserted
-   * to maintain a compatible tetrahedralization.
+   * permuted edge midpoint indices.
    *
    * There are 24 entries, 6 for each of the 4 faces of
    * the tetrahedron.
    */
-  int SimplexTemplateRefiner::permutations_from_index[24][14] =
+  int SimplexTemplateRefiner::permutations_from_index[24][10] =
     {
       /* corners      midpoints          face points   */
       /* POSITIVE ARRANGEMENTS                         */
-      { 0, 1, 2, 3,   4, 5, 6, 7, 8, 9,  10, 11, 12, 13 }, /* Face 0-1-2 */
-      { 1, 2, 0, 3,   5, 6, 4, 8, 9, 7,  10, 12, 13, 11 },
-      { 2, 0, 1, 3,   6, 4, 5, 9, 7, 8,  10, 13, 11, 12 },
+      { 0, 1, 2, 3,   4, 5, 6, 7, 8, 9 }, /* Face 0-1-2 */
+      { 1, 2, 0, 3,   5, 6, 4, 8, 9, 7 },
+      { 2, 0, 1, 3,   6, 4, 5, 9, 7, 8 },
 
-      { 0, 3, 1, 2,   7, 8, 4, 6, 9, 5,  11, 13, 12, 10 }, /* Face 0-3-1 */
-      { 3, 1, 0, 2,   8, 4, 7, 9, 5, 6,  11, 12, 10, 13 },
-      { 1, 0, 3, 2,   4, 7, 8, 5, 6, 9,  11, 10, 13, 12 },
+      { 0, 3, 1, 2,   7, 8, 4, 6, 9, 5 }, /* Face 0-3-1 */
+      { 3, 1, 0, 2,   8, 4, 7, 9, 5, 6 },
+      { 1, 0, 3, 2,   4, 7, 8, 5, 6, 9 },
 
-      { 1, 3, 2, 0,   8, 9, 5, 4, 7, 6,  12, 11, 13, 10 }, /* Face 1-3-2 */
-      { 3, 2, 1, 0,   9, 5, 8, 7, 6, 4,  12, 13, 10, 11 },
-      { 2, 1, 3, 0,   5, 8, 9, 6, 4, 7,  12, 10, 11, 13 },
+      { 1, 3, 2, 0,   8, 9, 5, 4, 7, 6 }, /* Face 1-3-2 */
+      { 3, 2, 1, 0,   9, 5, 8, 7, 6, 4 },
+      { 2, 1, 3, 0,   5, 8, 9, 6, 4, 7 },
 
-      { 2, 3, 0, 1,   9, 7, 6, 5, 8, 4,  13, 12, 11, 10 }, /* Face 2-3-0 */
-      { 3, 0, 2, 1,   7, 6, 9, 8, 4, 5,  13, 11, 10, 12 },
-      { 0, 2, 3, 1,   6, 9, 7, 4, 5, 8,  13, 10, 12, 11 },
+      { 2, 3, 0, 1,   9, 7, 6, 5, 8, 4 }, /* Face 2-3-0 */
+      { 3, 0, 2, 1,   7, 6, 9, 8, 4, 5 },
+      { 0, 2, 3, 1,   6, 9, 7, 4, 5, 8 },
 
       /* NEGATIVE ARRANGEMENTS                         */
-      { 0, 2, 1, 3,   6, 5, 4, 7, 9, 8,  10, 13, 12, 11 }, /* Face 0-1-2 */
-      { 2, 1, 0, 3,   5, 4, 6, 9, 8, 7,  10, 12, 11, 13 },
-      { 1, 0, 2, 3,   4, 6, 5, 8, 7, 9,  10, 11, 13, 12 },
+      { 0, 2, 1, 3,   6, 5, 4, 7, 9, 8 }, /* Face 0-1-2 */
+      { 2, 1, 0, 3,   5, 4, 6, 9, 8, 7 },
+      { 1, 0, 2, 3,   4, 6, 5, 8, 7, 9 },
 
-      { 0, 1, 3, 2,   4, 8, 7, 6, 5, 9,  11, 10, 12, 13 }, /* Face 0-3-1 */
-      { 1, 3, 0, 2,   8, 7, 4, 5, 9, 6,  11, 12, 13, 10 },
-      { 3, 0, 1, 2,   7, 4, 8, 9, 6, 5,  11, 13, 10, 12 },
+      { 0, 1, 3, 2,   4, 8, 7, 6, 5, 9 }, /* Face 0-3-1 */
+      { 1, 3, 0, 2,   8, 7, 4, 5, 9, 6 },
+      { 3, 0, 1, 2,   7, 4, 8, 9, 6, 5 },
 
-      { 1, 2, 3, 0,   5, 9, 8, 4, 6, 7,  12, 10, 13, 11 }, /* Face 1-3-2 */
-      { 2, 3, 1, 0,   9, 8, 5, 6, 7, 4,  12, 13, 11, 10 },
-      { 3, 1, 2, 0,   8, 5, 9, 7, 4, 6,  12, 11, 10, 13 },
+      { 1, 2, 3, 0,   5, 9, 8, 4, 6, 7 }, /* Face 1-3-2 */
+      { 2, 3, 1, 0,   9, 8, 5, 6, 7, 4 },
+      { 3, 1, 2, 0,   8, 5, 9, 7, 4, 6 },
 
-      { 2, 0, 3, 1,   6, 7, 9, 5, 4, 8,  13, 10, 11, 12 }, /* Face 2-3-0 */
-      { 0, 3, 2, 1,   7, 9, 6, 4, 8, 5,  13, 11, 12, 10 },
-      { 3, 2, 0, 1,   9, 6, 7, 8, 5, 4,  13, 12, 10, 11 }
+      { 2, 0, 3, 1,   6, 7, 9, 5, 4, 8 }, /* Face 2-3-0 */
+      { 0, 3, 2, 1,   7, 9, 6, 4, 8, 5 },
+      { 3, 2, 0, 1,   9, 6, 7, 8, 5, 4 }
     };
 
   /*
@@ -1074,82 +1040,45 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
 
   int SimplexTemplateRefiner::templates[] =
     {
-      // case 1_0
+      // case 1_0, orig start 0, new start 0
       2,
       0,  4,  2,  3,
       4,  1,  2,  3,
 
-      // case 2a_0
+      // case 2a_0, orig start 9, new start 9
       1,
       3,  4,  5,  1,
 
-      // case 2a, 0>1
+      // case 2a, 0>1, orig start 14, new start 14
       2,
       0,  4,  2,  3,
       4,  5,  2,  3,
 
-      // case 2a, 0=1
-      4,
-      10,  3,  0,  4,
-      10,  3,  4,  5,
-      10,  3,  5,  2,
-      10,  3,  2,  0,
-
-      // case 2b_0
+      // case 2b_0, orig start 40, new start 23
       4,
       0,  4,  9,  3,
       4,  1,  9,  3,
       0,  4,  2,  9,
       4,  1,  2,  9,
 
-      // case 3a_0
+      // case 3a_0, orig start 57, new start 40
       1,
       4,  7,  6,  0,
 
-      // case 3a, 0>2>3<0
+      // case 3a, 0>2>3<0, orig start 62, new start 45
       3,
       1,  3,  2,  4,
       4,  6,  3,  2,
       4,  6,  7,  3,
 
-      // case 3a, 0=2>3<0
-      5,
-      4,  6,  7,  3,
-      10,  1,  2,  3,
-      10,  2,  6,  3,
-      10,  6,  4,  3,
-      10,  4,  1,  3,
-
-      // case 3a, 3>0=2<3
-      5,
-      1,  3,  2,  7,
-      10,  1,  2,  7,
-      10,  2,  6,  7,
-      10,  6,  4,  7,
-      10,  4,  1,  7,
-
-      // case 3a, 0=2=3=0
-      11,
-      2,  6, 10, 13,
-      3,  7, 13, 11,
-      4,  1, 10, 11,
-      11,  6, 10,  4,
-      11,  6, 13, 10,
-      11,  6,  7, 13,
-      11,  6,  4,  7,
-      2, 10, 11, 13,
-      1, 10, 11,  2,
-      2, 11,  3, 13,
-      3,  2,  1, 11,
-
-      // case 3b_0
+      // case 3b_0, orig start 162, new start 58
       4,
       0,  7,  4,  2,
       4,  7,  8,  2,
       4,  8,  1,  2,
       7,  3,  8,  2,
 
-      // case 3c, 0>1,0>3
+      // case 3c, 0>1,0>3, orig start 179, new start 75
       5,
       4,  2,  7,  5,
       4,  2,  0,  7,
@@ -1157,7 +1086,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       4,  3,  5,  7,
       3,  5,  7,  2,
 
-      // case 3c, 1>0,3>0
+      // case 3c, 1>0,3>0, orig start 200, new start 96
       5,
       0,  5,  2,  7,
       0,  5,  7,  4,
@@ -1165,7 +1094,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       7,  1,  5,  3,
       3,  5,  7,  2,
 
-      // case 3c, 0>1,3>0
+      // case 3c, 0>1,3>0, orig start 221, new start 117
       5,
       4,  2,  7,  5,
       4,  2,  0,  7,
@@ -1173,7 +1102,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       7,  1,  5,  3,
       3,  5,  7,  2,
 
-      // case 3c, 1>0,0>3
+      // case 3c, 1>0,0>3, orig start 242, new start 138
       5,
       0,  5,  2,  7,
       0,  5,  7,  4,
@@ -1181,40 +1110,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       4,  3,  5,  7,
       3,  5,  7,  2,
 
-      // case 3c, 0=1,0>3
-      7,
-      4,  1,  5,  3,
-      10,  0,  4,  7,
-      10,  2,  0,  7,
-      10,  7,  4,  3,
-      10,  2,  7,  3,
-      10,  5,  2,  3,
-      10,  4,  5,  3,
-
-      // case 3c, 3>0,0=1
-      7,
-      7,  1,  5,  3,
-      7,  5,  2,  3,
-      10,  0,  4,  7,
-      10,  2,  0,  7,
-      10,  5,  2,  7,
-      10,  4,  5,  7,
-      1,  5,  4,  7,
-
-      // case 3c, 0=1,0=3
-      10,
-      4,  1,  5, 11,
-      11,  1,  5,  3,
-      10,  0,  4,  7,
-      10,  2,  0,  7,
-      10,  5,  2,  3,
-      10,  2,  7,  3,
-      10,  7,  4, 11,
-      10,  7, 11,  3,
-      10,  4,  5, 11,
-      10, 11,  5,  3,
-
-      // case 3d, 0>4,0>2
+      // case 3d, 0>4,0>2, orig start 362, new start 159
       5,
       4,  3,  6,  0,
       4,  3,  8,  6,
@@ -1222,7 +1118,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       4,  2,  6,  8,
       2,  3,  6,  8,
 
-      // case 3d, 4>0,2>0
+      // case 3d, 4>0,2>0, orig start 383, new start 180
       5,
       8,  0,  6,  4,
       8,  0,  3,  6,
@@ -1230,7 +1126,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       6,  1,  2,  8,
       2,  3,  6,  8,
 
-      // case 3d, 0>4,2>0
+      // case 3d, 0>4,2>0, orig start 404, new start 201
       5,
       4,  3,  6,  0,
       4,  3,  8,  6,
@@ -1238,7 +1134,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       6,  1,  2,  8,
       2,  3,  6,  8,
 
-      // case 3d, 4>0,0>2
+      // case 3d, 4>0,0>2, orig start 425, new start 222
       5,
       8,  0,  6,  4,
       8,  0,  3,  6,
@@ -1246,95 +1142,33 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       4,  2,  6,  8,
       2,  3,  6,  8,
 
-      // case 3d, 0=4,0>2
-      7,
-      4,  1,  2,  8,
-      11,  4,  0,  6,
-      11,  0,  3,  6,
-      11,  2,  4,  6,
-      11,  3,  2,  6,
-      11,  3,  8,  2,
-      11,  8,  4,  2,
-
-      // case 3d, 2>0,0=4
-      7,
-      6,  2,  8,  1,
-      6,  8,  2,  3,
-      11,  4,  0,  6,
-      11,  0,  3,  6,
-      8, 11,  3,  6,
-      8,  4, 11,  6,
-      1,  6,  4,  8,
-
-      // case 3d, 0=4,0=2
-      10,
-      4,  1, 10,  8,
-      10,  2,  8,  1,
-      11,  4,  0,  6,
-      11,  0,  3,  6,
-      11,  3,  8,  2,
-      11,  3,  2,  6,
-      11, 10,  4,  6,
-      11, 10,  6,  2,
-      8,  4, 11, 10,
-      11, 10,  2,  8,
-
-      // case 4a_0
+      // case 4a_0, orig start 545, new start 243
       2,
       7,  8,  9,  3,
       7,  9,  8,  6,
 
-      // case 4a, 5>4>3
+      // case 4a, 5>4>3, orig start 554, new start 252
       4,
       8,  0,  6,  1,
       8,  0,  7,  6,
       9,  1,  6,  2,
       9,  1,  8,  6,
 
-      // case 4a, 3<4>5
+      // case 4a, 3<4>5, orig start 571, new start 269
       4,
       8,  0,  6,  1,
       8,  0,  7,  6,
       8,  2,  6,  9,
       8,  2,  1,  6,
 
-      // case 4a, 3>4<5
+      // case 4a, 3>4<5, orig start 588, new start 286
       4,
       6,  9,  8,  1,
       6,  9,  1,  2,
       6,  7,  0,  1,
       6,  7,  1,  8,
 
-      // case 4a, 3=4>5
-      6,
-      6,  7,  0, 11,
-      6,  0,  1, 11,
-      6,  7, 11,  8,
-      6, 11,  1,  8,
-      1,  2,  6,  8,
-      2,  6,  8,  9,
-
-      // case 4a, 5>4,3=4
-      6,
-      6,  7,  0, 11,
-      6,  0,  1, 11,
-      6,  7, 11,  8,
-      6, 11,  1,  8,
-      1,  2,  6,  9,
-      1,  6,  8,  9,
-
-      // case 4a, 3=4=5
-      8,
-      6,  7,  0, 11,
-      6,  0,  1, 11,
-      6,  7, 11,  8,
-      6, 11,  1,  8,
-      6,  1,  2, 12,
-      6,  2,  9, 12,
-      6,  9,  8, 12,
-      6,  8,  1, 12,
-
-      // case 4b, 2>1,3>2,4>3,4>1
+      // case 4b, 2>1,3>2,4>3,4>1, orig start 688, new start 303
       6,
       6,  8,  1,  5,
       6,  8,  0,  1,
@@ -1343,7 +1177,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       7,  8,  2,  3,
       6,  8,  5,  2,
 
-      // case 4b, 2>1,3>2,3>4,4>1
+      // case 4b, 2>1,3>2,3>4,4>1, orig start 713, new start 328
       6,
       6,  8,  1,  5,
       6,  8,  7,  1,
@@ -1352,7 +1186,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       6,  8,  5,  2,
       6,  8,  2,  7,
 
-      // case 4b, 2>1,3>2,3>4,4>1, a
+      // case 4b, 2>1,3>2,3>4,4>1, a, orig start 738, new start 353
       6,
       7,  8,  1,  5,
       6,  5,  7,  1,
@@ -1361,7 +1195,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       7,  8,  5,  2,
       6,  5,  2,  7,
 
-      // case 4b, 2>1,2>3,4>3,4>1
+      // case 4b, 2>1,2>3,4>3,4>1, orig start 763, new start 378
       6,
       6,  8,  5,  2,
       6,  8,  2,  3,
@@ -1370,111 +1204,12 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       6,  8,  0,  1,
       6,  8,  1,  5,
 
-      // case 4b, 1=2,3>2,3>4,4>1
-      9,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1,  7,
-      10,  7,  1,  8,
-      6,  7, 10,  8,
-      6, 10,  5,  8,
-      6,  2,  7,  8,
-      6,  5,  2,  8,
-      7,  8,  2,  3,
-
-      // case 4b, 1=2,2>3,4>3,1>4
-      9,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1,  8,
-      10,  7,  0,  8,
-      6,  7, 10,  8,
-      6, 10,  5,  8,
-      6,  3,  7,  8,
-      6,  5,  3,  8,
-      6,  5,  2,  3,
-
-      // case 4b, 1=2,2>3,4>3,4>1
-      9,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1,  8,
-      10,  7,  0,  8,
-      6,  7, 10,  8,
-      6, 10,  5,  8,
-      6,  3,  7,  8,
-      6,  5,  2,  8,
-      6,  2,  3,  8,
-
-      // case 4b, 1=2,3>2,3=4,4>1
-      11,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1, 11,
-      10, 11,  1,  8,
-      10,  0, 11,  7,
-      10,  7, 11,  8,
-      6,  7, 10,  8,
-      6, 10,  5,  8,
-      6,  2,  7,  8,
-      6,  5,  2,  8,
-      7,  8,  2,  3,
-
-      // case 4b, 4>1=2=3,4>3
-      12,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1,  8,
-      10,  7,  0,  8,
-      13,  6,  2,  5,
-      13,  3,  7,  8,
-      13,  2,  3,  8,
-      13,  2,  8,  5,
-      6,  7, 10,  8,
-      6, 10,  5,  8,
-      6, 13,  7,  8,
-      6,  5, 13,  8,
-
-      // case 4b, 1=2=3>4,1>4
-      12,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1,  7,
-      10,  7,  1,  8,
-      13,  6,  2,  5,
-      13,  3,  7,  8,
-      13,  2,  3,  5,
-      13,  3,  8,  5,
-      6,  7, 10,  8,
-      6, 10,  5,  8,
-      6, 13,  7,  8,
-      6,  5, 13,  8,
-
-      // case 4b, 1=2=3=4=1
-      16,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1, 11,
-      10, 11,  1,  8,
-      10,  0, 11,  7,
-      10,  7, 11,  8,
-      13,  6,  2,  5,
-      13,  3,  7,  8,
-      13,  2,  3, 12,
-      13,  2, 12,  5,
-      13, 12,  3,  8,
-      13, 12,  5,  8,
-      6,  7, 10,  8,
-      6, 10,  5,  8,
-      6,  5, 13,  8,
-      6, 13,  7,  8,
-
-      // case 5_0
+      // case 5_0, orig start 1107, new start 403
       2,
       7,  8,  9,  3,
       6,  5,  2,  9,
 
-      // case 5, 1>2,3>4
+      // case 5, 1>2,3>4, orig start 1116, new start 412
       5,
       5,  7,  1,  8,
       5,  7,  0,  1,
@@ -1482,7 +1217,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       5,  7,  9,  6,
       5,  7,  8,  9,
 
-      // case 5, 1>2,4>3
+      // case 5, 1>2,4>3, orig start 1137, new start 433
       5,
       0,  5,  6,  7,
       0,  5,  7,  8,
@@ -1490,7 +1225,7 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       5,  7,  9,  6,
       5,  7,  8,  9,
 
-      // case 5, 1>2,4>3, a
+      // case 5, 1>2,4>3, a, orig start 1158, new start 454
       5,
       0,  5,  6,  8,
       0,  6,  7,  8,
@@ -1498,74 +1233,28 @@ unsigned SimplexTemplateRefiner::num_new_child_elements_tet4(const int caseId)
       5,  8,  9,  6,
       6,  7,  8,  9,
 
-      // case 5, 1=2,3>4
-      8,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1,  7,
-      10,  7,  1,  8,
-      10,  8,  5,  9,
-      10,  6,  7,  9,
-      10,  7,  8,  9,
-      10,  5,  6,  9,
-
-      // case 5, 1=2,3>4, a
-      8,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1,  7,
-      10,  7,  1,  8,
-      7,  8,  5,  9,
-      10,  6,  7,  5,
-      10,  7,  8,  5,
-      5,  9,  6,  7,
-
-      // case 5, 1=2,3>4, b
-      8,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1,  7,
-      10,  7,  1,  8,
-      6,  8,  5,  9,
-      10,  6,  7,  8,
-      10,  6,  8,  5,
-      8,  9,  6,  7,
-
-      // case 5, 1=2,3=4
-      10,
-      10,  6,  0,  7,
-      10,  1,  5,  8,
-      10,  0,  1, 11,
-      10, 11,  1,  8,
-      10,  0, 11,  7,
-      10,  7, 11,  8,
-      10,  8,  5,  9,
-      10,  6,  7,  9,
-      10,  7,  8,  9,
-      10,  5,  6,  9,
-
-      // case 6_0
+      // case 6_0, orig start 1319, new start 475
       4,
       7,  8,  9,  3,
       6,  5,  2,  9,
       4,  1,  5,  8,
       0,  4,  6,  7,
 
-      // case 6_1
+      // case 6_1, orig start 1336, new start 492
       4,
       6,  4,  5,  8,
       6,  5,  9,  8,
       6,  9,  7,  8,
       6,  7,  4,  8,
 
-      // case 6_1, a
+      // case 6_1, a, orig start 1353, new start 509
       4,
       5,  8,  9,  7,
       5,  9,  6,  7,
       5,  6,  4,  7,
       5,  4,  8,  7,
 
-      // case 6_1, b
+      // case 6_1, b, orig start 1370, new start 526
       4,
       4,  5,  6,  9,
       4,  6,  7,  9,

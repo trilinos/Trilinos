@@ -449,7 +449,7 @@ TEST_F(MeshClone, copyMeshWithOrphanNodesOnOwnedSide)
 TEST(MetaDataSize, sizeChanges_needToUpdateCopyMesh)
 {
   stk::mesh::MetaData meta;
-  EXPECT_GE(632u, sizeof(meta)) << "Size of MetaData changed.  Does mesh copying capability need to be updated?";
+  EXPECT_GE(648u, sizeof(meta)) << "Size of MetaData changed.  Does mesh copying capability need to be updated?";
 }
 #endif
 

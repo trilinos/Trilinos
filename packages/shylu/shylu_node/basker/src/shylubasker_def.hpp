@@ -2048,10 +2048,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Solve(Entry *b, Entry *x, bool transpose)
   {
-    #ifdef BASKER_TIMER 
     Kokkos::Timer timer;
-    double time = 0.0;
-    #endif
 
     if(Options.verbose == BASKER_TRUE)
     {
@@ -2073,13 +2070,10 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Solve Done \n");
+      double time = timer.seconds();
+      std::cout << "Basker Solve Done (total time: " << time << ")" << std::endl;
     }
 
-    #ifdef BASKER_TIMER
-    time += timer.seconds();
-    std::cout << "Basker Solve total time: " << time << std::endl;
-    #endif
 
     return 0;
   }//Solve(Entry *, Entry *);
@@ -2089,10 +2083,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::Solve(Int _nrhs, Entry *b, Entry *x, bool transpose)
   {
-    #ifdef BASKER_TIMER 
     Kokkos::Timer timer;
-    double time = 0.0;
-    #endif
 
     if(Options.verbose == BASKER_TRUE)
     {
@@ -2114,13 +2105,9 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Multisolve Done \n");
+      double time = timer.seconds();
+      std::cout << "Basker MV Solve Done (total time: " << time << ")" << std::endl;
     }
-    
-    #ifdef BASKER_TIMER
-    time += timer.seconds();
-    std::cout << "Basker Solve total time: " << time << std::endl;
-    #endif
 
     return 0;
   }
@@ -2163,8 +2150,7 @@ namespace BaskerNS
   {
     //Need to test if power of nparts
     //TODO: hard-coded to be two. It is also hard-coded in shylubasker_structs.hpp
-    double nparts = 2.0;
-    if (pow(nparts, log((double)nthreads)/log(nparts)) != nthreads)
+    if (pow(2, log2(nthreads)) != nthreads)
     {
       BASKER_ASSERT(0==1, "Basker SetThreads Assert: Number of thread error - not a power of 2");
       //Set default 1

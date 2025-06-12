@@ -175,7 +175,7 @@ test_mean_multiply(const OrdinalType order,
   // Generate matrix
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   scalar_matrix_values_type scalar_matrix_values =
     scalar_matrix_values_type(Kokkos::ViewAllocateWithoutInitializing("scalar matrix"), graph_length);

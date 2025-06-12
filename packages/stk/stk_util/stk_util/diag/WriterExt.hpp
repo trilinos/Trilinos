@@ -35,7 +35,6 @@
 #ifndef STK_UTIL_DIAG_WRITEREXT_HPP
 #define STK_UTIL_DIAG_WRITEREXT_HPP
 
-#include "stk_util/diag/String.hpp"      // for String, Identifier
 #include "stk_util/diag/StringUtil.hpp"  // for demangle
 #include "stk_util/parallel/MPI.hpp"     // for Loc
 #include "stk_util/stk_config.h"         // for STK_HAS_MPI
@@ -483,32 +482,6 @@ Writer &operator<<(Writer &dout, const std::set<Key, L> &t) {
   return dump(dout, t);
 }
 
-/**
- * @brief Function <b>operator<<</b> writes a sierra String object to the diagnostic
- * writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the sierra string to.
- *
- * @param s		a <b>sierra::String</b> const reference to the sierra string to write.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-Writer &operator<<(Writer &dout, const sierra::String &s);
-
-/**
- * @brief Function <b>operator<<</b> writes a sierra Identifier object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the sierra identifier to.
- *
- * @param s		a <b>sierra::String</b> const reference to the sierra identifier to write.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-Writer &operator<<(Writer &dout, const sierra::Identifier &s);
-
 #if defined ( STK_HAS_MPI )
 /**
  * @brief Function <b>operator<<</b> writes the MPI::Loc<int> type to the output stream.
@@ -562,8 +535,8 @@ Writer &operator<<(Writer &dout, const sierra::MPI::Loc<float> &loc);
  *			pointer to name();
  */
 template <class T>
-c_ptr_func_<T, const sierra::String &> c_ptr_name(const T *t) {
-  return c_ptr_func_<T, const sierra::String &>(t, &T::name);
+c_ptr_func_<T, const std::string &> c_ptr_name(const T *t) {
+  return c_ptr_func_<T, const std::string &>(t, &T::name);
 }
 
 template< class ElementType,

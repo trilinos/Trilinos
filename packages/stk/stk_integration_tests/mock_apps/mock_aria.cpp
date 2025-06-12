@@ -52,10 +52,7 @@ public:
     m_recvFieldName2()
   {}
 
-  ~MockAria()
-  {
-    stk::parallel_machine_finalize();
-  }
+  ~MockAria() = default;
 
   double calculate_time_step()
   {
@@ -64,7 +61,7 @@ public:
 
   void read_input_and_setup_split_comms(int argc, char** argv)
   {
-    MPI_Comm commWorld = stk::parallel_machine_init(&argc, &argv);
+    MPI_Comm commWorld = stk::initialize(&argc, &argv);
     int myWorldRank = stk::parallel_machine_rank(commWorld);
     int numWorldRanks = stk::parallel_machine_size(commWorld);
 
@@ -369,25 +366,28 @@ private:
 
 int main(int argc, char** argv)
 {
-  MockAria app;
-  app.read_input_and_setup_split_comms(argc, argv);
-  if (app.get_number_of_other_coupled_apps() != 1) {
-    return 0;
+  {
+    MockAria app;
+    app.read_input_and_setup_split_comms(argc, argv);
+
+    if (app.get_number_of_other_coupled_apps() == 1) {
+      app.communicate_initial_setup();
+      app.setup_fields_and_transfers();
+
+      do {
+        app.communicate_time_step_info();
+        if (app.time_to_stop()) break;
+
+        app.perform_transfers();
+        app.do_physics_solve();
+        app.update_current_time();
+      } while (!app.time_to_stop());
+
+      app.communicate_finish();
+    }
   }
 
-  app.communicate_initial_setup();
-  app.setup_fields_and_transfers();
-
-  do {
-    app.communicate_time_step_info();
-    if (app.time_to_stop()) break;
-
-    app.perform_transfers();
-    app.do_physics_solve();
-    app.update_current_time();
-  } while (!app.time_to_stop());
-
-  app.communicate_finish();
+  stk::finalize();
 
   return 0;
 }

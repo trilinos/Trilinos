@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -22,8 +22,8 @@ namespace {
     case Ioss::Property::STRING: return {"string"};
     case Ioss::Property::VEC_INTEGER: return {"vector<int>"};
     case Ioss::Property::VEC_DOUBLE: return {"vector<double>"};
-    default: return {"internal error"};
     }
+    return {"internal error"};
   }
 
   void error_message(const Ioss::Property &property, const std::string &requested_type)

@@ -451,7 +451,7 @@ namespace io {
 
   bool verify_field_request(const Ioss::Region& region,  const stk::mesh::MetaData& meta,
                             const DatabasePurpose dbPurpose, const std::vector<std::string>& multiStateSuffixes,
-                            const stk::io::MeshField &meshField, bool printWarning)
+                            const stk::io::MeshField &meshField, bool /*printWarning*/)
   {
     stk::io::InputQuery iq(region, meta, dbPurpose, (multiStateSuffixes.empty() ? nullptr : &multiStateSuffixes));
 

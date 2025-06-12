@@ -844,7 +844,7 @@ bool has_decomp_work_in_this_comm(const stk::mesh::BulkData & bulk,
 
 void store_diagnostic_element_weights(const stk::mesh::BulkData & bulk,
                                       const BalanceSettings & balanceSettings,
-                                      const stk::mesh::Selector & selector,
+                                      const stk::mesh::Selector & /*selector*/,
                                       const Vertices & vertices)
 {
   if (stk::balance::get_diagnostic<TotalElementWeightDiagnostic>()) {

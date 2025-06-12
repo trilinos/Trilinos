@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -32,7 +32,7 @@ C   --
       NONQUD = .FALSE.
       IELNK = 0
 
-      DO 100 NELB = NELBS, NELBE
+      DO NELB = NELBS, NELBE
          IELB = NELB-NELBS+1
 
          ISLNK = IELNK + 1
@@ -40,7 +40,7 @@ C   --
 
          CALL DBMIR1 (IDELB(IELB), NUMELB(IELB),
      *     NUMLNK(IELB), LINK(ISLNK), BLKTYP(IELB), NDIM, NONQUD)
-  100 CONTINUE
+      END DO
 
       RETURN
       END

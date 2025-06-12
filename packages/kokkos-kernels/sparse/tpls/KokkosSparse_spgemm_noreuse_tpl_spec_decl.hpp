@@ -55,53 +55,56 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
   typename Matrix::row_map_type::non_const_type row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C rowmap"),
                                                          m + 1);
 
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_createDescr(&spgemmDescr));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_createDescr(&spgemmDescr));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
       &descr_A, m, n, A.graph.entries.extent(0), (void *)A.graph.row_map.data(), (void *)A.graph.entries.data(),
       (void *)A.values.data(), CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, cudaScalarType));
 
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(
       &descr_B, n, k, B.graph.entries.extent(0), (void *)B.graph.row_map.data(), (void *)B.graph.entries.data(),
       (void *)B.values.data(), CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, cudaScalarType));
 
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&descr_C, m, k, 0, (void *)row_mapC.data(), nullptr, nullptr,
-                                              CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
-                                              cudaScalarType));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&descr_C, m, k, 0, (void *)row_mapC.data(), nullptr, nullptr,
+                                                         CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                                                         CUSPARSE_INDEX_BASE_ZERO, cudaScalarType));
 
   //----------------------------------------------------------------------
   // query workEstimation buffer size, allocate, then call again with buffer.
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta,
-                                                          descr_C, cudaScalarType, alg, spgemmDescr, &bufferSize1,
-                                                          nullptr));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(cusparseHandle, op, op, &alpha, descr_A, descr_B,
+                                                                     &beta, descr_C, cudaScalarType, alg, spgemmDescr,
+                                                                     &bufferSize1, nullptr));
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer1, bufferSize1));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta,
-                                                          descr_C, cudaScalarType, alg, spgemmDescr, &bufferSize1,
-                                                          buffer1));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_workEstimation(cusparseHandle, op, op, &alpha, descr_A, descr_B,
+                                                                     &beta, descr_C, cudaScalarType, alg, spgemmDescr,
+                                                                     &bufferSize1, buffer1));
 
   //----------------------------------------------------------------------
   // query compute buffer size, allocate, then call again with buffer.
 
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta, descr_C,
-                                                   cudaScalarType, alg, spgemmDescr, &bufferSize2, nullptr));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta,
+                                                              descr_C, cudaScalarType, alg, spgemmDescr, &bufferSize2,
+                                                              nullptr));
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc((void **)&buffer2, bufferSize2));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta, descr_C,
-                                                   cudaScalarType, alg, spgemmDescr, &bufferSize2, buffer2));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta,
+                                                              descr_C, cudaScalarType, alg, spgemmDescr, &bufferSize2,
+                                                              buffer2));
   int64_t unused1, unused2, c_nnz;
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMatGetSize(descr_C, &unused1, &unused2, &c_nnz));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpMatGetSize(descr_C, &unused1, &unused2, &c_nnz));
 
   typename Matrix::index_type entriesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C entries"), c_nnz);
   typename Matrix::values_type valuesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C values"), c_nnz);
 
-  KOKKOS_CUSPARSE_SAFE_CALL(
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
       cusparseCsrSetPointers(descr_C, (void *)row_mapC.data(), (void *)entriesC.data(), (void *)valuesC.data()));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta, descr_C,
-                                                   cudaScalarType, alg, spgemmDescr, &bufferSize2, buffer2));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_copy(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta, descr_C,
-                                                cudaScalarType, alg, spgemmDescr));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_A));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_B));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_C));
-  KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpGEMM_destroyDescr(spgemmDescr));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_compute(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta,
+                                                              descr_C, cudaScalarType, alg, spgemmDescr, &bufferSize2,
+                                                              buffer2));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_copy(cusparseHandle, op, op, &alpha, descr_A, descr_B, &beta,
+                                                           descr_C, cudaScalarType, alg, spgemmDescr));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_A));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_B));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(descr_C));
+  KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpGEMM_destroyDescr(spgemmDescr));
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer1));
   KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer2));
   return Matrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);

@@ -24,7 +24,9 @@ class QualityMetric;
 typedef std::map<stk::mesh::Entity, std::vector<std::pair<size_t,bool>>> mapFromEntityToIntPtIndexAndSnapAllowed;
 
 NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Selector & elementSelector,
+    const stk::mesh::Selector & potentialParentElementSelector,
+    const stk::mesh::Selector & decomposedParentElementSelector,
+    const FieldRef coordsField,
     const FieldSet & interpolationFields,
     const InterfaceGeometry & geometry,
     const bool globalIDsAreParallelConsistent,
@@ -34,6 +36,8 @@ NodeToCapturedDomainsMap snap_as_much_as_possible_while_maintaining_quality(cons
 
 void undo_previous_snaps_using_interpolation(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField, const FieldSet & snapFields);
 void snap_fields_using_interpolation(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField, const FieldSet & interpFields);
+void fill_interplation_nodes_and_weights_at_location(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, const stk::mesh::Entity node,
+    const stk::math::Vector3d & location, std::vector<stk::mesh::Entity> & interpNodes, std::vector<double> & interpWeights);
 
 stk::math::Vector3d compute_intersection_point_location(const int dim, const FieldRef coordsField, const IntersectionPoint & intersectionPoint);
 
@@ -51,13 +55,6 @@ std::map<std::vector<int>, std::map<stk::mesh::EntityId,double>> determine_quali
     const double minIntPtWeightForEstimatingCutQuality,
     const bool globalIDsAreParallelConsistent);
 
-double compute_quality_if_node_is_snapped_terminating_early_if_below_threshold(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Selector & elementSelector,
-    const FieldRef coordsField,
-    stk::mesh::Entity node,
-    const stk::math::Vector3d & snapLocation,
-    const QualityMetric &qualityMetric,
-    const double qualityThreshold);
 }
 
 

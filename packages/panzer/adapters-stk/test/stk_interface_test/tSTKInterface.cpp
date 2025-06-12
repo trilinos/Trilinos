@@ -475,20 +475,18 @@ TEUCHOS_UNIT_TEST(tSTKInterface, globalVariables)
   vector<string> globalNames;
   stkIo.get_global_variable_names(globalNames);
 
-  // Ensure that we have the right global variable names.  Note that
-  // get_global_variable_names() transforms the strings such that they're
-  // lowercased and spaces are replaced with underscores.
+  // Ensure that we have the right global variable names.
   TEST_EQUALITY(globalNames.size(), 4)
   int found(0);
   for (const auto& name : globalNames)
   {
-    if (name == "answer")
+    if (name == "Answer")
       found |= 1;
-    else if (name == "perfection")
+    else if (name == "Perfection")
       found |= 2;
-    else if (name == "spiral_encoding")
+    else if (name == "Spiral Encoding")
       found |= 4;
-    else if (name == "physics_favorites")
+    else if (name == "Physics Favorites")
       found |= 8;
   } // end loop over globalNames
   TEST_EQUALITY(found, 1 | 2 | 4 | 8)
@@ -500,13 +498,13 @@ TEUCHOS_UNIT_TEST(tSTKInterface, globalVariables)
   vector<double> physicsFavoritesFromFile;
   for (const auto& name : globalNames)
   {
-    if (name == "answer")
+    if (name == "Answer")
       stkIo.get_global(name, answerFromFile);
-    else if (name == "perfection")
+    else if (name == "Perfection")
       stkIo.get_global(name, perfectionFromFile);
-    else if (name == "spiral_encoding")
+    else if (name == "Spiral Encoding")
       stkIo.get_global(name, spiralEncodingFromFile);
-    else if (name == "physics_favorites")
+    else if (name == "Physics Favorites")
       stkIo.get_global(name, physicsFavoritesFromFile);
   } // end loop over globalNames
 

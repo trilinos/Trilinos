@@ -231,7 +231,7 @@ namespace Intrepid2 {
       if(subCellDim == 1) {
         return Teuchos::rcp(new
           Basis_HGRAD_LINE_C1_FEM<DeviceType, outputValueType, pointValueType>());
-      } else if(subCellDim == 1) {
+      } else if(subCellDim == 2) {
         return Teuchos::rcp(new
           Basis_HGRAD_TRI_C1_FEM<DeviceType, outputValueType, pointValueType>());
       }

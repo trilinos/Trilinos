@@ -76,7 +76,7 @@ class BulkDataTester : public stk::mesh::BulkData
 public:
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm)
-      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
+      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}),
                             comm,
                             stk::mesh::BulkData::AUTO_AURA)
     {
@@ -84,7 +84,7 @@ public:
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
-      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
+      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}),
                             comm,
                             auto_aura_option)
     {
@@ -97,7 +97,7 @@ public:
                    std::unique_ptr<stk::mesh::FieldDataManager> field_data_manager = std::unique_ptr<stk::mesh::FieldDataManager>(),
                    unsigned initial_bucket_capacity = stk::mesh::get_default_initial_bucket_capacity(),
                    unsigned maximum_bucket_capacity = stk::mesh::get_default_maximum_bucket_capacity())
-      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}),
+      : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}),
                             comm,
                             auto_aura_option,
 #ifdef SIERRA_MIGRATION
@@ -142,7 +142,7 @@ public:
         this->set_entity_key(entity, key);
     }
 
-    void my_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, bool regenerate_aura = true, stk::mesh::ModEndOptimizationFlag mod_optimization = stk::mesh::ModEndOptimizationFlag::MOD_END_SORT )
+    void my_internal_change_entity_owner( const std::vector<stk::mesh::EntityProc> & arg_change, [[maybe_unused]] bool regenerate_aura = true, stk::mesh::ModEndOptimizationFlag mod_optimization = stk::mesh::ModEndOptimizationFlag::MOD_END_SORT )
     {
         this->m_meshModification.internal_change_entity_owner(arg_change,mod_optimization);
     }
@@ -383,7 +383,7 @@ public:
     virtual void check_if_entity_from_other_proc_exists_on_this_proc_and_update_info_if_shared(std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc,
             int proc_id, const stk::mesh::shared_entity_type &shared_entity_other_proc) override;
 
-    virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes) override {}
+    virtual void sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& /*nodes*/) override {}
 
     stk::mesh::EntityRank side_rank() const { return mesh_meta_data().side_rank(); }
     stk::mesh::Part &get_topology_root_part(stk::topology topology) const

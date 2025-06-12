@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -132,14 +132,17 @@ namespace Ioss {
     void generate_block_faces(const ElementBlockContainer &ebs, INT /*dummy*/,
                               bool                         local_ids = false);
 
-    FaceUnorderedSet &faces(const std::string &name = "ALL") { return faces_[name]; }
-    FaceUnorderedSet &faces(const ElementBlock *block);
+    IOSS_NODISCARD FaceUnorderedSet &faces(const std::string &name = "ALL") { return faces_[name]; }
+    IOSS_NODISCARD FaceUnorderedSet &faces(const ElementBlock *block);
 
     void clear(const std::string &name) { faces_[name].clear(); }
     void clear(const ElementBlock *block);
 
     //! Given a local node id (0-based), return the hashed value.
-    size_t node_id_hash(size_t local_node_id) const { return hashIds_[local_node_id]; }
+    IOSS_NODISCARD size_t node_id_hash(size_t local_node_id) const
+    {
+      return hashIds_[local_node_id];
+    }
 
     void progress(const std::string &output) const;
 

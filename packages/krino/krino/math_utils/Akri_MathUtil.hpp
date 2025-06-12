@@ -16,7 +16,8 @@ namespace krino {
 
 double compute_parametric_square_distance(const stk::math::Vector3d childPCoords);
 
-stk::math::Vector3d get_parametric_coordinates_of_point(const std::vector<stk::math::Vector3d> & nodeCoords, const stk::math::Vector3d & pt);
+template<typename NODECOORDCONTAINER>
+stk::math::Vector3d get_parametric_coordinates_of_point(const NODECOORDCONTAINER & nodeCoords, const stk::math::Vector3d & pt);
 
 std::pair<bool, double> find_root( const std::function<double(const double)> & f,
     const double xa,

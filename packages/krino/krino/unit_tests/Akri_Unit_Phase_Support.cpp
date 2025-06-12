@@ -145,49 +145,33 @@ TEST_F(Part_Decomposition_Fixture, find_conformal_io_part)
 
   stk::mesh::Part * block_1 = findPart("block_1");
   performDecomposition({block_1}, block_surface_info, false, 2);
-  const Surface_Identifier id0(0);
-  const Surface_Identifier id1(1);
-  LS_SideTag p0(id0,1);
-  LS_SideTag p1(id1,1);
-  LS_SideTag n0(id0,-1);
-  LS_SideTag n1(id1,-1);
-  PhaseTag pp, nn, pn, np;
-  pp.add(p0); pp.add(p1); // "A"
-  nn.add(n0); nn.add(n1); // "B"
-  pn.add(p0); pn.add(n1); // "C"
-  np.add(n0); np.add(p1); // "D"
 
   // Test volume conformal io part lookup
-  Phase_Support & phase_support = Phase_Support::get(get_meta_data());
-  const stk::mesh::Part * block_1_A = phase_support.find_conformal_io_part(*block_1, pp);
-  ASSERT_TRUE( block_1_A != NULL );
-  EXPECT_EQ( "block_1_A", block_1_A->name() );
+  const stk::mesh::Part & block_1_A = phase_support().find_conformal_io_part(*block_1, get_phase_A());
+  EXPECT_EQ( "block_1_A", block_1_A.name() );
 
-  const stk::mesh::Part * block_1_B = phase_support.find_conformal_io_part(*block_1, nn);
-  ASSERT_TRUE( block_1_B != NULL );
-  EXPECT_EQ( "block_1_B", block_1_B->name() );
+  const stk::mesh::Part & block_1_B = phase_support().find_conformal_io_part(*block_1, get_phase_B());
+  EXPECT_EQ( "block_1_B", block_1_B.name() );
 
-  const stk::mesh::Part * block_1_C = phase_support.find_conformal_io_part(*block_1, pn);
-  ASSERT_TRUE( block_1_C != NULL );
-  EXPECT_EQ( "block_1_C", block_1_C->name() );
+  const stk::mesh::Part & block_1_C = phase_support().find_conformal_io_part(*block_1, get_phase_C());
+  EXPECT_EQ( "block_1_C", block_1_C.name() );
 
-  const stk::mesh::Part * block_1_D = phase_support.find_conformal_io_part(*block_1, np);
-  ASSERT_TRUE( block_1_D != NULL );
-  EXPECT_EQ( "block_1_D", block_1_D->name() );
+  const stk::mesh::Part & block_1_D = phase_support().find_conformal_io_part(*block_1, get_phase_D());
+  EXPECT_EQ( "block_1_D", block_1_D.name() );
 
-  const stk::mesh::Part * surface_block_1_A_B = phase_support.find_interface_part(*block_1_A, *block_1_B);
+  const stk::mesh::Part * surface_block_1_A_B = phase_support().find_interface_part(block_1_A, block_1_B);
   ASSERT_TRUE( surface_block_1_A_B != NULL );
   EXPECT_EQ( "surface_block_1_A_B", surface_block_1_A_B->name() );
 
-  const stk::mesh::Part * surface_block_1_A_C = phase_support.find_interface_part(*block_1_A, *block_1_C);
+  const stk::mesh::Part * surface_block_1_A_C = phase_support().find_interface_part(block_1_A, block_1_C);
   ASSERT_TRUE( surface_block_1_A_C != NULL );
   EXPECT_EQ( "surface_block_1_A_C", surface_block_1_A_C->name() );
 
-  const stk::mesh::Part * surface_block_1_A_D = phase_support.find_interface_part(*block_1_A, *block_1_D);
+  const stk::mesh::Part * surface_block_1_A_D = phase_support().find_interface_part(block_1_A, block_1_D);
   ASSERT_TRUE( surface_block_1_A_D != NULL );
   EXPECT_EQ( "surface_block_1_A_D", surface_block_1_A_D->name() );
 
-  const stk::mesh::Part * surface_block_1_C_D = phase_support.find_interface_part(*block_1_C, *block_1_D);
+  const stk::mesh::Part * surface_block_1_C_D = phase_support().find_interface_part(block_1_C, block_1_D);
   ASSERT_TRUE( surface_block_1_C_D != NULL );
   EXPECT_EQ( "surface_block_1_C_D", surface_block_1_C_D->name() );
 }
@@ -199,26 +183,26 @@ TEST_F(Part_Decomposition_Fixture, get_blocks_touching_surface)
 
   std::vector<const stk::mesh::Part*> blocks;
 
-  blocks = get_meta_data().get_blocks_touching_surface(get_meta_data().get_part("surface_1_A"));
+  blocks = meta_data().get_blocks_touching_surface(meta_data().get_part("surface_1_A"));
   EXPECT_EQ( 2u, blocks.size() );
-  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_1_A")));
-  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_2")));
+  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), meta_data().get_part("block_1_A")));
+  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), meta_data().get_part("block_2")));
 
-  blocks = get_meta_data().get_blocks_touching_surface(get_meta_data().get_part("surface_1_A_block_1_A_tri3"));
+  blocks = meta_data().get_blocks_touching_surface(meta_data().get_part("surface_1_A_block_1_A_tri3"));
   EXPECT_EQ( 1u, blocks.size() );
-  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_1_A")));
+  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), meta_data().get_part("block_1_A")));
 
-  blocks = get_meta_data().get_blocks_touching_surface(get_meta_data().get_part("surface_1_A_block_2_tri3"));
+  blocks = meta_data().get_blocks_touching_surface(meta_data().get_part("surface_1_A_block_2_tri3"));
   EXPECT_EQ( 1u, blocks.size() );
-  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_2")));
+  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), meta_data().get_part("block_2")));
 
-  blocks = get_meta_data().get_blocks_touching_surface(get_meta_data().get_part("surface_block_1_A_B"));
+  blocks = meta_data().get_blocks_touching_surface(meta_data().get_part("surface_block_1_A_B"));
   EXPECT_EQ( 1u, blocks.size() );
-  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_1_A")));
+  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), meta_data().get_part("block_1_A")));
 
-  blocks = get_meta_data().get_blocks_touching_surface(get_meta_data().get_part("surface_block_1_B_A"));
+  blocks = meta_data().get_blocks_touching_surface(meta_data().get_part("surface_block_1_B_A"));
   EXPECT_EQ( 1u, blocks.size() );
-  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_1_B")));
+  EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), meta_data().get_part("block_1_B")));
 
 }
 

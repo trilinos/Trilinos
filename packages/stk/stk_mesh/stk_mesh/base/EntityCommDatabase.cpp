@@ -302,7 +302,7 @@ void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
 }
 
 bool unpack_field_values(const BulkData& mesh,
-                         CommBuffer & buf , Entity entity , std::ostream & error_msg )
+                         CommBuffer & buf , Entity entity , [[maybe_unused]] std::ostream & error_msg )
 {
     if (!mesh.is_field_updating_active()) {
         return true;
@@ -472,15 +472,15 @@ bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & va
   return result ;
 }
 
-
-bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
+bool EntityCommDatabase::erase(unsigned entityCommIndex, const EntityKey& key, unsigned ghostID)
 {
-  if (!cached_find(key)) return false;
-
-  int entityCommIndex = m_last_lookup->second;
+  const bool deletingSymmInfo = ghostID == BulkData::SYMM_INFO;
 
   bool result = m_entityCommInfo.remove_items_if(entityCommIndex, [&](const EntityCommInfo& info) {
-    if (info.ghost_id == ghost.ordinal()) {
+    const bool shouldRemove = (info.ghost_id == ghostID) ||
+                              (deletingSymmInfo && info.ghost_id >= BulkData::SYMM_INFO) ||
+                              (info.ghost_id == BulkData::SYMM_INFO+ghostID);
+    if (shouldRemove) {
       if (m_comm_map_change_listener != nullptr) {
         m_comm_map_change_listener->removedGhost(key, info.ghost_id, info.proc);
       }
@@ -491,6 +491,7 @@ bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
 
   if ( result ) {
     if (comm(entityCommIndex).empty()) {
+      cached_find(key);
       m_last_lookup = m_comm_map.erase(m_last_lookup);
       m_removedEntityCommIndices.push_back(entityCommIndex);
 
@@ -501,6 +502,20 @@ bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
   }
 
   return result ;
+}
+
+bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
+{
+  return erase(key, ghost.ordinal());
+}
+
+bool EntityCommDatabase::erase( const EntityKey & key, unsigned ghostID )
+{
+  if (!cached_find(key)) return false;
+
+  int entityCommIndex = m_last_lookup->second;
+
+  return erase(entityCommIndex, key, ghostID);
 }
 
 

@@ -24,6 +24,8 @@
 #include "Panzer_FaceFieldPattern.hpp"
 #include "Panzer_ElemFieldPattern.hpp"
 
+#include "Teuchos_TimeMonitor.hpp"
+
 #include <vector>
 #include <set>
 #include <string>
@@ -95,21 +97,18 @@ initialize(panzer::ConnManager & conn,
   int nprocs = comm->getSize();
 #endif
 
+  if ( dimension == 1 ) {
+    panzer::EdgeFieldPattern edge_pattern(ebt[0]);
+    conn.buildConnectivity(edge_pattern);
+  } else if ( dimension == 2 ){
+    panzer::FaceFieldPattern face_pattern(ebt[0]);
+    conn.buildConnectivity(face_pattern);
+  } else {
+    panzer::ElemFieldPattern elem_pattern(ebt[0]);
+    conn.buildConnectivity(elem_pattern);
+  }
   std::vector<GlobalOrdinal> element_GIDS;
   for (size_t iblk = 0 ; iblk < block_ids.size(); ++iblk) {
-    // The connectivity takes in a shards class, therefore, it has to be build block by block?
-    // This seems odd, but o.k, moving forward.
-    if ( dimension == 1 ) {
-      panzer::EdgeFieldPattern edge_pattern(ebt[iblk]);
-      conn.buildConnectivity(edge_pattern);
-    } else if ( dimension == 2 ){
-      panzer::FaceFieldPattern face_pattern(ebt[iblk]);
-      conn.buildConnectivity(face_pattern);
-    } else {
-      panzer::ElemFieldPattern elem_pattern(ebt[iblk]);
-      conn.buildConnectivity(elem_pattern);
-    }
-    //const std::vector<GlobalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
     const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
     for (size_t i=0; i<block_elems.size(); ++i) {
       const auto * connectivity = conn.getConnectivity(block_elems[i]);
@@ -121,23 +120,20 @@ initialize(panzer::ConnManager & conn,
 
   // Now we need to create the face owned and owned/shared maps.
   Teuchos::RCP<const Map> face_map,owned_face_map;
+  if ( dimension == 1 ) {
+    panzer::NodalFieldPattern edge_pattern(ebt[0]);
+    conn.buildConnectivity(edge_pattern);
+  } else if ( dimension == 2 ){
+    panzer::EdgeFieldPattern face_pattern(ebt[0]);
+    conn.buildConnectivity(face_pattern);
+  } else {
+    panzer::FaceFieldPattern elem_pattern(ebt[0]);
+    conn.buildConnectivity(elem_pattern);
+  }
   {
     std::vector<GlobalOrdinal> face_GIDS;
     std::set<GlobalOrdinal> set_of_face_GIDS;
     for (size_t iblk = 0 ; iblk < block_ids.size(); ++iblk) {
-      // The connectivity takes in a shards class, therefore, it has to be build block by block?
-      // This seems odd, but o.k, moving forward.
-      if ( dimension == 1 ) {
-        panzer::NodalFieldPattern edge_pattern(ebt[iblk]);
-        conn.buildConnectivity(edge_pattern);
-      } else if ( dimension == 2 ){
-        panzer::EdgeFieldPattern face_pattern(ebt[iblk]);
-        conn.buildConnectivity(face_pattern);
-      } else {
-        panzer::FaceFieldPattern elem_pattern(ebt[iblk]);
-        conn.buildConnectivity(elem_pattern);
-      }
-      //const std::vector<GlobalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
       const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
       for (size_t i=0; i<block_elems.size(); ++i) {
         int n_conn = conn.getConnectivitySize(block_elems[i]);
@@ -172,19 +168,6 @@ initialize(panzer::ConnManager & conn,
     // Now loop once again over the blocks
     GlobalOrdinal my_elem = 0;
     for (size_t iblk = 0 ; iblk < block_ids.size(); ++iblk) {
-      // The connectivity takes in a shards class, therefore, it has to be build block by block?
-      // This seems odd, but o.k, moving forward.
-      if ( dimension == 1 ) {
-        panzer::NodalFieldPattern edge_pattern(ebt[iblk]);
-        conn.buildConnectivity(edge_pattern);
-      } else if ( dimension == 2 ){
-        panzer::EdgeFieldPattern face_pattern(ebt[iblk]);
-        conn.buildConnectivity(face_pattern);
-      } else {
-        panzer::FaceFieldPattern elem_pattern(ebt[iblk]);
-        conn.buildConnectivity(elem_pattern);
-      }
-      //const std::vector<GlobalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
       const std::vector<LocalOrdinal> &block_elems = conn.getElementBlock(block_ids[iblk]);
       for (size_t i=0; i<block_elems.size(); ++i) {
         int n_conn = conn.getConnectivitySize(block_elems[i]);

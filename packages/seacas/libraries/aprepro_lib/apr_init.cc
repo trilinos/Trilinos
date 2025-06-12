@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -134,6 +134,9 @@ namespace SEAMS {
                                             {nullptr, nullptr, nullptr, nullptr}};
 
   const str_init string_fncts[] = {
+      {"use_legacy_output_format", do_use_legacy_output_format, "use_legacy_output_format()",
+       "Use the output format of `%.10g` which was the default before the full-precision output "
+       "became the default."},
       {"DUMP", do_dumpsym, "DUMP()",
        "Output a list of all user-defined variables and their value."},
       {"DUMP_JSON", do_dumpsym_json, "DUMP_JSON()",
@@ -210,13 +213,9 @@ namespace SEAMS {
        "systems:\n\t\t\t'si', 'cgs', 'cgs-ev', 'shock', 'swap', "
        "'ft-lbf-s', 'ft-lbm-s', 'in-lbf-s'"},
       {"delete", do_delete, "delete(var_name)", "Delete the variable with name 'var_name'."},
-      {"if", do_str_if, "if(x)",
+      {"_if", do_str_if, "if(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"If", do_str_if, "If(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"elseif", do_str_elseif, "elseif(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"Elseif", do_str_elseif, "Elseif(x)",
+      {"_elseif", do_str_elseif, "elseif(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
       {"_ifdef", do_str_if, "ifdef(x)",
        "Handles the if statements. x can be any valid expression; "
@@ -228,6 +227,18 @@ namespace SEAMS {
       {"exodus_meta", do_exodus_meta, "exodus_meta(filename)",
        "Creates several variables and arrays related to the exodus metadata in the specified "
        "file. "},
+      {"exodus_query_change_sets", do_exodus_query_change_sets,
+       "exodus_query_change_sets(filename)",
+       "Open the file and determine whether there are any change sets on the file."
+       "It will define the `ex_change_set_count`, and `ex_change_set_names` variables."},
+#endif
+      {nullptr, nullptr, nullptr, nullptr}};
+
+  const str_cd_init string_cd_fncts[] = {
+#if defined(EXODUS_SUPPORT)
+      {"exodus_meta", do_exodus_meta_cd, "exodus_meta(filename, cs_index)",
+       "Creates several variables and arrays related to the exodus metadata in the `cs_indexth` "
+       "change set in file. "},
 #endif
       {nullptr, nullptr, nullptr, nullptr}};
 
@@ -237,13 +248,9 @@ namespace SEAMS {
        "Returns a string representation of the numerical variable x. The variable x is unchanged."},
       {"tostring", do_tostring, "tostring(x)",
        "Returns a string representation of the numerical variable x. The variable x is unchanged."},
-      {"if", do_if, "if(x)",
+      {"_if", do_if, "if(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"If", do_if, "If(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"elseif", do_elseif, "elseif(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"Elseif", do_elseif, "Elseif(x)",
+      {"_elseif", do_elseif, "elseif(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
       {"_ifdef", do_if, "ifdef(x)",
        "Handles the if statements. x can be any valid expression; "
@@ -369,7 +376,7 @@ namespace SEAMS {
   };
   // clang-format on
 
-  const svar_init svariables[] = {{"_FORMAT", "%.10g"}, /* Default output format */
+  const svar_init svariables[] = {{"_FORMAT", ""}, /* Default output format if full-precision */
                                   {"_UNITS_SYSTEM", "none"},
                                   {nullptr, nullptr}};
   /* NOTE: The current comment is stored in "_C_"
@@ -407,6 +414,7 @@ namespace SEAMS {
     internal_init_table(string_fncts,       strfnct,        SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_c_fncts,     strfnct_c,      SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_d_fncts,     strfnct_d,      SYMBOL_TYPE::STRING_FUNCTION);
+    internal_init_table(string_cd_fncts,    strfnct_cd,     SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_dc_fncts,    strfnct_dc,     SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_dcc_fncts,   strfnct_dcc,    SYMBOL_TYPE::STRING_FUNCTION);
     internal_init_table(string_ccc_fncts,   strfnct_ccc,    SYMBOL_TYPE::STRING_FUNCTION);

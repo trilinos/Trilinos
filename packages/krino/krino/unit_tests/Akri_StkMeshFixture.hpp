@@ -36,6 +36,7 @@ public:
     std::vector<stk::mesh::EntityId> get_ids_of_nodes_with_given_indices(const std::vector<unsigned> & nodeIndices) const { return mBuilder.get_ids_of_nodes_with_given_indices(nodeIndices); }
     const std::vector<stk::mesh::Entity> & get_owned_elements() const { return mBuilder.get_owned_elements(); }
     stk::math::Vector3d get_node_coordinates(const stk::mesh::Entity node) const { return mBuilder.get_node_coordinates(node); }
+    void set_node_coordinates(const stk::mesh::Entity node, const stk::math::Vector3d &newLoc) { mBuilder.set_node_coordinates(node, newLoc); }
     const stk::mesh::FieldBase & get_coordinates_field() const { return mBuilder.get_coordinates_field(); }
 
     template <typename MeshSpecType>
@@ -83,7 +84,9 @@ protected:
 
 typedef StkMeshFixture<stk::topology::BEAM_2> StkMeshBeamFixture;
 typedef StkMeshFixture<stk::topology::TETRAHEDRON_4> StkMeshTetFixture;
+typedef StkMeshFixture<stk::topology::TETRAHEDRON_10> StkMeshTet10Fixture;
 typedef StkMeshFixture<stk::topology::TRIANGLE_3_2D> StkMeshTriFixture;
+typedef StkMeshFixture<stk::topology::TRIANGLE_6_2D> StkMeshTri6Fixture;
 typedef StkMeshFixture<stk::topology::QUADRILATERAL_4_2D> StkMeshQuadFixture;
 typedef StkMeshFixture<stk::topology::HEXAHEDRON_8> StkMeshHexFixture;
 typedef StkMeshAndBuilder<stk::topology::TETRAHEDRON_4> StkTetMeshAndBuilder;

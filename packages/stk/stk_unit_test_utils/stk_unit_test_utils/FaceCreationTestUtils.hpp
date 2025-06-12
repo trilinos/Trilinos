@@ -159,7 +159,7 @@ inline void expect_all_sides_connected_as_specified_in_test_case(stk::mesh::Bulk
 
 inline void expect_all_boundary_sides_connected_as_specified_in_test_case(stk::mesh::BulkData& bulkData,
                                                                  const SideTestUtil::TestCase& testCase,
-                                                                 stk::mesh::Selector skinnedThings,
+                                                                 stk::mesh::Selector /*skinnedThings*/,
                                                                  stk::mesh::Part &skinnedPart)
 {
     SideTestUtil::expect_global_num_sides_in_part(bulkData, testCase.globalNumSides, skinnedPart);

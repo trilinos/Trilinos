@@ -76,12 +76,12 @@ class ExactSolutionPoly : public ExactSolution
       }
     }
 
-    double get_exact_solution_xx(double x, double y) const override
+    double get_exact_solution_xx(double x, double /*y*/) const override
     {
       return get_Uxx(x);
     }
 
-    double get_exact_solution_yy(double x, double y) const override
+    double get_exact_solution_yy(double /*x*/, double y) const override
     {
       return get_Uxx(y);
     }
@@ -117,12 +117,12 @@ class ExactSolutionPeriodic : public ExactSolution
       return std::sin(m_betaX * x) + std::sin(m_betaY * y);
     }
 
-    double get_exact_solution_xx(double x, double y) const override
+    double get_exact_solution_xx(double /*x*/, double /*y*/) const override
     {
       throw std::runtime_error("unsupported function");
     }
 
-    double get_exact_solution_yy(double x, double y) const override
+    double get_exact_solution_yy(double /*x*/, double /*y*/) const override
     {
       throw std::runtime_error("unsupported function");
     }
@@ -1203,7 +1203,7 @@ TEST(HeatEquationHaloTest, Exactness)
     double yMin = 0;
     double yMax = 1;
 
-    RunConfig config{MPI_COMM_WORLD, nptsPerDirection, nghost, stencilSize, exSol, xMin, xMax, yMin, yMax};
+    RunConfig config{MPI_COMM_WORLD, nptsPerDirection, nghost, stencilSize, exSol, xMin, xMax, yMin, yMax, 0.0};
 
     HeatEquationHaloSerial tester(config);
 

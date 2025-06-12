@@ -49,7 +49,7 @@ struct Entity;
 namespace stk {
 namespace transfer {
 
-constexpr unsigned col_major_index(unsigned i, unsigned j, unsigned nx, unsigned ny) { return (i + j * nx); }
+constexpr unsigned col_major_index(unsigned i, unsigned j, unsigned nx, unsigned /*ny*/) { return (i + j * nx); }
 
 static constexpr int INT_ONE = 1;
 static constexpr double REAL_ONE = 1.0;
@@ -62,6 +62,8 @@ enum PatchRecoveryEvaluationType {
   LINEAR_MOVING_LEAST_SQUARES,
   QUADRATIC_LEAST_SQUARES,
   QUADRATIC_MOVING_LEAST_SQUARES,
+  CUBIC_LEAST_SQUARES,
+  CUBIC_MOVING_LEAST_SQUARES,
   UNDEFINED_PATCH_RECOVERY_EVALUATION_TYPE = 0xff
 };
 

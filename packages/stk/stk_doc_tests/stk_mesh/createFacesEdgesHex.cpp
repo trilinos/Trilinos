@@ -34,7 +34,8 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/CreateFaces.hpp> // for create_faces
+#include <stk_mesh/base/SkinBoundary.hpp> // for create_all_sides
+#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
 #include <stk_mesh/base/CreateEdges.hpp> // for create_edges
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
@@ -74,14 +75,14 @@ TEST(StkMeshHowTo, CreateFacesEdgesHex)
   // ============================================================
   //+ EXAMPLE
   //+ Create the faces..
-  stk::mesh::create_faces(stkIo.bulk_data());
+  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
+  stk::mesh::create_all_sides(stkIo.bulk_data(), allEntities);
 
   //+ Create the edges..
   stk::mesh::create_edges(stkIo.bulk_data());
 
   // ==================================================
   // VERIFICATION
-  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
   std::vector<size_t> entityCounts;
   stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
   EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
@@ -122,17 +123,18 @@ TEST(StkMeshHowTo, CreateEdgesFacesHex)
   stk::mesh::create_edges(stkIo.bulk_data());
 
   //+ Create the faces..
-  stk::mesh::create_faces(stkIo.bulk_data(), true);
+  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
+  const bool connectFacesToEdges = true;
+  stk::mesh::create_all_sides(stkIo.bulk_data(), allEntities, stk::mesh::PartVector{}, connectFacesToEdges);
   // ==================================================
   // VERIFICATION
-  stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
   std::vector<size_t> entityCounts;
   stk::mesh::count_entities(allEntities, stkIo.bulk_data(), entityCounts);
   EXPECT_EQ( 512u, entityCounts[stk::topology::ELEMENT_RANK]);
   EXPECT_EQ(1728u, entityCounts[stk::topology::FACE_RANK]);
   EXPECT_EQ(1944u, entityCounts[stk::topology::EDGE_RANK]);
-  // MAKE SURE FACES ARE HOOKED TO EDGES
-  // this should happen if create_faces is called before create_edges
+  // MAKE SURE FACES ARE CONNECTED TO EDGES
+  // this should happen if create_all_sides is called after create_edges
   stk::mesh::BucketVector const & face_buckets = stkIo.bulk_data().buckets(stk::topology::FACE_RANK);
   for (size_t bucket_count=0, bucket_end=face_buckets.size(); bucket_count < bucket_end; ++bucket_count) {
     stk::mesh::Bucket & bucket = *face_buckets[bucket_count];
@@ -145,9 +147,7 @@ TEST(StkMeshHowTo, CreateEdgesFacesHex)
   }
 }
 
-//for now, this is just a copy of above with a different order of create_edges and create_faces and false
-//passed in to create_faces for connect_faces_to_edges so we don't connect them together
-TEST(StkMeshHowTo, CreateEdgesFacesHexNoConnect)
+TEST(StkMeshHowTo, CreateEdgesFacesHexNoConnectEdges)
 {
   // ============================================================
   // INITIALIZATION
@@ -166,7 +166,8 @@ TEST(StkMeshHowTo, CreateEdgesFacesHexNoConnect)
   stk::mesh::create_edges(stkIo.bulk_data());
 
   //+ Create the faces..
-  stk::mesh::create_faces(stkIo.bulk_data(), false); //false means don't connect faces to edges
+  const bool connectFacesToEdges = false;
+  stk::mesh::create_faces(stkIo.bulk_data(), connectFacesToEdges);
   // ==================================================
   // VERIFICATION
   stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
@@ -360,7 +361,7 @@ void writeExodusFile(Iogn::GeneratedMesh *generatedMesh, const std::string &exod
 
   Ioss::Region* io_region = new Ioss::Region(database);
   stk::io::StkMeshIoBroker meshData;
-  std::shared_ptr<Ioss::Region> junk(io_region, [](auto pointerWeWontDelete){});
+  std::shared_ptr<Ioss::Region> junk(io_region, [](auto /*pointerWeWontDelete*/){});
   meshData.add_mesh_database(junk);
   meshData.create_input_mesh();
   meshData.populate_bulk_data();

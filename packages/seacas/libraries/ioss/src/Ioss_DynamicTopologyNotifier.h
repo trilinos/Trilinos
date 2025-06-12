@@ -1,4 +1,4 @@
-// Copyright(C) 2024 National Technology & Engineering Solutions
+// Copyright(C) 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,14 +32,18 @@ namespace Ioss {
 
     virtual ~DynamicTopologyNotifier() = default;
 
-    std::string name() const { return m_modelName; }
+    IOSS_NODISCARD std::string name() const { return m_modelName; }
 
-    const std::vector<std::shared_ptr<DynamicTopologyObserver>> &get_observers() const
+    IOSS_NODISCARD const std::vector<std::shared_ptr<DynamicTopologyObserver>>                      &
+    get_observers() const
     {
       return m_observers;
     }
 
-    std::vector<std::shared_ptr<DynamicTopologyObserver>> &get_observers() { return m_observers; }
+    IOSS_NODISCARD std::vector<std::shared_ptr<DynamicTopologyObserver>> &get_observers()
+    {
+      return m_observers;
+    }
 
     void register_observer(std::shared_ptr<DynamicTopologyObserver> observer);
 

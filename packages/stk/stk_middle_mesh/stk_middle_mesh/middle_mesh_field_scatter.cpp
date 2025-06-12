@@ -123,7 +123,7 @@ void MiddleMeshFieldScatter::unpack_recv_bufs(Exchanger& exchanger)
 
   exchanger.start_nonblocking();
 
-  auto unpacker = [&](int rank, stk::CommBuffer& buf)
+  auto unpacker = [&](int /*rank*/, stk::CommBuffer& buf)
   {
     auto& mesh2Classification = *m_meshInClassificationOnMesh2;
 

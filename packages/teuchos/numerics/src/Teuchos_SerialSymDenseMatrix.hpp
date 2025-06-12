@@ -397,10 +397,7 @@ class SerialSymDenseMatrix : public CompObject, public BLAS<OrdinalType,ScalarTy
                  const OrdinalType numCols)
   {
     const size_t size = size_t(numRows) * size_t(numCols);
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvla"
     return new ScalarType[size];
-#pragma GCC diagnostic pop
   }
 
   OrdinalType numRowCols_ = 0;

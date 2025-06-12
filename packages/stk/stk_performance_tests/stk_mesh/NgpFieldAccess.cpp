@@ -39,7 +39,6 @@
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
-#include <stk_unit_test_utils/PerformanceTester.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
@@ -99,7 +98,7 @@ protected:
     }
   }
 
-  void verify_averaged_centroids_are_center_of_mesh(int elemsPerDim, const stk::mesh::Selector& selector)
+  void verify_averaged_centroids_are_center_of_mesh(int /*elemsPerDim*/, const stk::mesh::Selector& selector)
   {
     std::vector<double> hostAverage = stk::performance_tests::get_centroid_average_from_host(get_bulk(), *centroid, selector);
     std::vector<double> deviceAverage = stk::performance_tests::get_centroid_average_from_device(get_bulk(), *centroid, selector);
@@ -108,7 +107,7 @@ protected:
     }
   }
 
-  void compare_and_verify_average_centroids(int elemsPerDim, const stk::mesh::Selector& selector)
+  void compare_and_verify_average_centroids(int /*elemsPerDim*/, const stk::mesh::Selector& selector)
   {
     std::vector<double> centroidAverage = stk::performance_tests::get_centroid_average_from_host(get_bulk(), *centroid, selector);
     std::vector<double> hostCentroidAverage = stk::performance_tests::get_centroid_average_from_host(get_bulk(), *hostCentroid, selector);

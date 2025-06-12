@@ -84,21 +84,21 @@ namespace Impl {
       auto &cuspHandle = KokkosKernels::Impl::CusparseSingleton::singleton().cusparseHandle;                           \
       cusparsePointerMode_t oldPtrMode;                                                                                \
                                                                                                                        \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(cuspHandle, exec.cuda_stream()));                                    \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseGetPointerMode(cuspHandle, &oldPtrMode));                                      \
-      KOKKOS_CUSPARSE_SAFE_CALL(                                                                                       \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(cuspHandle, exec.cuda_stream()));                         \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseGetPointerMode(cuspHandle, &oldPtrMode));                           \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(                                                                            \
           cusparseSetPointerMode(cuspHandle, CUSPARSE_POINTER_MODE_HOST)); /* alpha, beta on host*/                    \
       OFFSET_TYPE nnzA = colidxA.extent(0);                                                                            \
       OFFSET_TYPE nnzB = colidxB.extent(0);                                                                            \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparse##TOKEN##csrgeam2(                                                             \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparse##TOKEN##csrgeam2(                                                  \
           cuspHandle, m, n, reinterpret_cast<const TPL_SCALAR_TYPE *>(&alpha), cuspData.descrA, nnzA,                  \
           reinterpret_cast<const TPL_SCALAR_TYPE *>(valuesA.data()), rowmapA.data(), colidxA.data(),                   \
           reinterpret_cast<const TPL_SCALAR_TYPE *>(&beta), cuspData.descrB, nnzB,                                     \
           reinterpret_cast<const TPL_SCALAR_TYPE *>(valuesB.data()), rowmapB.data(), colidxB.data(), cuspData.descrC,  \
           reinterpret_cast<TPL_SCALAR_TYPE *>(valuesC.data()), const_cast<OFFSET_TYPE *>(rowmapC.data()),              \
           colidxC.data(), cuspData.workspace));                                                                        \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(cuspHandle, oldPtrMode));                                       \
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetStream(cuspHandle, NULL));                                                  \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(cuspHandle, oldPtrMode));                            \
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetStream(cuspHandle, NULL));                                       \
                                                                                                                        \
       Kokkos::Profiling::popRegion();                                                                                  \
     }                                                                                                                  \

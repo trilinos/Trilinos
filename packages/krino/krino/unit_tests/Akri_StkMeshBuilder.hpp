@@ -68,6 +68,7 @@ public:
     stk::mesh::Entity get_side_with_nodes(const std::vector<stk::mesh::Entity> &nodesOfSide) const;
     void create_block_parts(const std::vector<unsigned> &elementBlockIDs);
     stk::math::Vector3d get_node_coordinates(const stk::mesh::Entity node) const;
+    void set_node_coordinates(const stk::mesh::Entity node, const stk::math::Vector3d &newLoc);
     const stk::mesh::FieldBase & get_coordinates_field() const;
     const stk::mesh::PartVector & get_block_parts() const { return mBlockParts; }
     const stk::mesh::Part & get_sideset_part(const unsigned sidesetId);
@@ -88,7 +89,6 @@ private:
     void create_boundary_sides();
     void create_block_boundary_sides();
 
-    void set_node_coordinates(const stk::mesh::Entity node, const stk::math::Vector3d &newLoc);
     stk::mesh::Entity create_node(const stk::math::Vector3d &loc, const std::vector<int> &sharingProcs, stk::mesh::EntityId nodeId);
     stk::mesh::Entity create_element(const std::vector<stk::mesh::Entity> &nodes, stk::mesh::EntityId elementId, unsigned blockId);
 

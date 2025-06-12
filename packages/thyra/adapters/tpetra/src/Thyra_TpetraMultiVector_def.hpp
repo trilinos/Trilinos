@@ -14,6 +14,7 @@
 #include "Thyra_TpetraVectorSpace.hpp"
 #include "Thyra_TpetraVector.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Kokkos_Core.hpp"
 
 
 namespace Thyra {

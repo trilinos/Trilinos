@@ -14,7 +14,7 @@
 #include <utility>
 #include "Mesh.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
+#include "KokkosSparse_StaticCrsGraph.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 

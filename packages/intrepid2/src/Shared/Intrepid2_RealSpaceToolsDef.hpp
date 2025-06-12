@@ -454,7 +454,7 @@ namespace Intrepid2 {
         auto vec = ( _inVecs.rank() == 2 ? Kokkos::subview(_inVecs, i,    Kokkos::ALL()) :
                                            Kokkos::subview(_inVecs, i, j, Kokkos::ALL()) );
 
-        _normArray(i, j) = RealSpaceTools<>::Serial::vectorNorm(vec, _normType);
+        _normArray.access(i, j) = RealSpaceTools<>::Serial::vectorNorm(vec, _normType);
       }
     };
   }
@@ -1190,7 +1190,7 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
         auto vec2 = ( r == 2 ? Kokkos::subview(_inVecs2, i,    Kokkos::ALL()) :
                                Kokkos::subview(_inVecs2, i, j, Kokkos::ALL()) );
 
-        _dotArray(i,j) = RealSpaceTools<>::Serial::dot(vec1, vec2);
+        _dotArray.access(i,j) = RealSpaceTools<>::Serial::dot(vec1, vec2);
       }
     };
   }

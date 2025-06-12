@@ -133,6 +133,26 @@ private:
   const stk::mesh::FieldBase * my_field;
 };
 
+class CoordinatesFieldRef : public FieldRef
+{
+public:
+  CoordinatesFieldRef() = delete;
+
+  CoordinatesFieldRef(const CoordinatesFieldRef &) = default;
+  CoordinatesFieldRef & operator= (const CoordinatesFieldRef &) = default;
+
+  CoordinatesFieldRef(const stk::mesh::FieldBase * fieldBase, const unsigned spatialDim)
+  : FieldRef(fieldBase), mySpatialDim(spatialDim) {}
+
+  CoordinatesFieldRef(const stk::mesh::FieldBase & fieldBase, const unsigned spatialDim)
+  : FieldRef(fieldBase), mySpatialDim(spatialDim) {}
+
+  unsigned dim() const { return mySpatialDim; }
+
+private:
+  unsigned mySpatialDim;
+};
+
 typedef std::set<FieldRef> FieldSet;
 
 inline std::ostream & operator << (std::ostream & os, const FieldRef & field_ref)

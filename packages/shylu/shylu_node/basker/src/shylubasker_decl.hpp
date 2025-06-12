@@ -1225,7 +1225,13 @@ namespace BaskerNS
     int serial_forward_solve(ENTRY_1DARRAY &, ENTRY_1DARRAY &);
 
     BASKER_INLINE
+    int parallel_forward_solve(ENTRY_1DARRAY &, ENTRY_1DARRAY &);
+
+    BASKER_INLINE
     int serial_backward_solve(ENTRY_1DARRAY &, ENTRY_1DARRAY &);
+
+    BASKER_INLINE
+    int parallel_backward_solve(ENTRY_1DARRAY &, ENTRY_1DARRAY &);
 
     BASKER_INLINE
     int serial_btf_solve(ENTRY_1DARRAY &, ENTRY_1DARRAY &);
@@ -1314,7 +1320,8 @@ namespace BaskerNS
                  ENTRY_1DARRAY &y,
                  bool full = true);
 
-
+    BASKER_INLINE
+    int compute_post2downtop_map(INT_1DARRAY & post2downtop);
 
     //basker_stats.hpp
     BASKER_INLINE

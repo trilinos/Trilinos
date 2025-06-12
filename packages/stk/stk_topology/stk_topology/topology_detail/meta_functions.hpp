@@ -157,6 +157,27 @@ constexpr topology::rank_t side_rank_()
   return Topology::side_rank;
 }
 
+template <typename Topology>
+STK_INLINE_FUNCTION
+constexpr unsigned num_side_ranks_() {
+  if constexpr (Topology::has_mixed_rank_sides) {
+    return 2u;
+  }
+  return (Topology::side_rank != topology::INVALID_RANK ? 1u : 0u);
+}
+
+template <typename Topology, typename SideRankOutputIterator>
+STK_INLINE_FUNCTION
+constexpr void side_ranks_( SideRankOutputIterator output_ranks )
+{
+  if constexpr (num_side_ranks_<Topology>() == 2) {
+    *output_ranks = topology::FACE_RANK; ++output_ranks;
+    *output_ranks = topology::EDGE_RANK;
+  } else if constexpr (num_side_ranks_<Topology>() == 1) {
+    *output_ranks = Topology::side_rank;
+  }
+}
+
 //------------------------------------------------------------------------------
 template <typename Topology, typename OrdinalOutputFunctor, unsigned EdgeOrdinal, unsigned NumNodes, unsigned CurrentNode = 0>
 struct edge_node_ordinals_impl_ {
@@ -170,7 +191,7 @@ struct edge_node_ordinals_impl_ {
 template <typename Topology, typename OrdinalOutputFunctor, unsigned EdgeOrdinal, unsigned NumNodes>
 struct edge_node_ordinals_impl_<Topology, OrdinalOutputFunctor, EdgeOrdinal, NumNodes, NumNodes> {
   STK_INLINE_FUNCTION
-  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+  constexpr static int execute(OrdinalOutputFunctor /*fillOutput*/) {
     return 0;
   }
 };
@@ -200,7 +221,7 @@ struct face_node_ordinals_impl_ {
 template <typename Topology, typename OrdinalOutputFunctor, unsigned FaceOrdinal, unsigned NumNodes>
 struct face_node_ordinals_impl_<Topology, OrdinalOutputFunctor, FaceOrdinal, NumNodes, NumNodes> {
   STK_INLINE_FUNCTION
-  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+  constexpr static int execute(OrdinalOutputFunctor /*fillOutput*/) {
     return 0;
   }
 };
@@ -230,7 +251,7 @@ struct permutation_node_ordinals_impl_ {
 template <typename Topology, typename OrdinalOutputFunctor, unsigned PermutationOrdinal, unsigned NumNodes>
 struct permutation_node_ordinals_impl_<Topology, OrdinalOutputFunctor, PermutationOrdinal, NumNodes, NumNodes> {
   STK_INLINE_FUNCTION
-  constexpr static int execute(OrdinalOutputFunctor fillOutput) {
+  constexpr static int execute(OrdinalOutputFunctor /*fillOutput*/) {
     return 0;
   }
 };

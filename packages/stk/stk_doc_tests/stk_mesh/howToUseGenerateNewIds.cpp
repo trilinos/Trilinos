@@ -15,7 +15,7 @@ void test_that_ids_are_unique(const stk::mesh::BulkData &bulkData, stk::mesh::En
 {
   std::vector<stk::mesh::EntityId> ids_in_use;
   stk::mesh::for_each_entity_run(bulkData, rank, bulkData.mesh_meta_data().locally_owned_part(),
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity entity) {
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity entity) {
       ids_in_use.push_back(bulkData.identifier(entity));
     });
 

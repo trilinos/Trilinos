@@ -864,11 +864,11 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   values_type valuesC;
 
   // Symbolic multiplication
-  KokkosSparse::Experimental::spgemm_symbolic(&kh, A.numRows(),
-                                              B.numRows(), B.numCols(),
-                                              A.graph.row_map, A.graph.entries, false,
-                                              B.graph.row_map, B.graph.entries, false,
-                                              rowPtrC);
+  KokkosSparse::spgemm_symbolic(&kh, A.numRows(),
+                                B.numRows(), B.numCols(),
+                                A.graph.row_map, A.graph.entries, false,
+                                B.graph.row_map, B.graph.entries, false,
+                                rowPtrC);
 
   // allocate column indices and values of AP
   size_t nnzC = kh.get_spgemm_handle()->get_c_nnz();
@@ -878,11 +878,11 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   // Numeric multiplication
-  KokkosSparse::Experimental::spgemm_numeric(&kh, A.numRows(),
-                                             B.numRows(), B.numCols(),
-                                             A.graph.row_map, A.graph.entries, A.values, false,
-                                             B.graph.row_map, B.graph.entries, B.values, false,
-                                             rowPtrC, colIndC, valuesC);
+  KokkosSparse::spgemm_numeric(&kh, A.numRows(),
+                               B.numRows(), B.numCols(),
+                               A.graph.row_map, A.graph.entries, A.values, false,
+                               B.graph.row_map, B.graph.entries, B.values, false,
+                               rowPtrC, colIndC, valuesC);
   kh.destroy_spgemm_handle();
 
   C = local_matrix_type(matrixLabel, A.numRows(), B.numCols(), nnzC, valuesC, rowPtrC, colIndC);

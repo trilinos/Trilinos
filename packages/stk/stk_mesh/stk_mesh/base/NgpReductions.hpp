@@ -94,7 +94,7 @@ T reduction_value_from_field_value(const T& i, const stk::mesh::EntityId, const 
 
 template<typename T>
 KOKKOS_FUNCTION
-Kokkos::MinMaxScalar<T> reduction_value_from_field_value(const T& i, const stk::mesh::EntityId id, const Kokkos::MinMaxScalar<T>&)
+Kokkos::MinMaxScalar<T> reduction_value_from_field_value(const T& i, const stk::mesh::EntityId, const Kokkos::MinMaxScalar<T>&)
 {
   return {i,i};
 }
@@ -237,7 +237,7 @@ void get_field_reduction(Mesh &mesh, Field field, const stk::mesh::Selector &sel
 
 //Precondition: Field is synced to device if necessary
 template <typename Mesh, typename Field, typename ReductionOp, typename Modifier>
-void get_field_reduction(Mesh &mesh, Field field, const stk::mesh::Selector &selector, ReductionOp& reduction, Modifier fm, const int & component = -1)
+void get_field_reduction(Mesh &mesh, Field field, const stk::mesh::Selector &selector, ReductionOp& reduction, Modifier /*fm*/, const int & component = -1)
 {
   for_each_entity_reduce(mesh, field.get_rank(), selector, reduction, FieldThreadReductionFunctor < Mesh, Field,
       ReductionOp, Modifier>(mesh, field, reduction, component));

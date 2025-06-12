@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -11,7 +11,7 @@ C    See packages/seacas/LICENSE for details
       CHARACTER*16 LABMAT(*)
       CHARACTER*16 ENGNOT, ENG1
       REAL MASS(*), DENS(*), VOLM(*), CG(*), ZI(*)
-      DIMENSION MAT(6,*), VOLMN(4,*), IELM(4,*)
+      DIMENSION MAT(7,*), VOLMN(4,*), IELM(4,*)
       LOGICAL AXI, FIRST
       CHARACTER*6 LABEL(3)
       DATA LABEL/'      ',' Area ','Volume'/
@@ -57,7 +57,7 @@ C    See packages/seacas/LICENSE for details
          IF (NDIM .EQ. 2 .AND. .NOT. AXI) THEN
             WRITE (IO, 90) ZI(4)
    90       FORMAT (5X,'Ixy = ',1PE15.8/)
-         ELSE IF (NDIM .EQ. 3) THEN
+         ELSE IF (NDIM .EQ. 3 .and. MAT(7,1) .EQ. 8) THEN
             WRITE (IO, 100) (ZI(I),I=4,6)
   100       FORMAT (5X,'Ixy = ',1PE15.8,'  Ixz = ',1PE15.8,
      *         '  Iyz = ',1PE15.8/)

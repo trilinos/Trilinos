@@ -32,7 +32,8 @@ macro(submit_by_parts arg_parts_value)
                      RETRY_COUNT ${ctest_submit_retry_count}
                      RETRY_DELAY ${ctest_submit_retry_delay}
                      BUILD_ID    cdash_build_id
-                     RETURN_VALUE ctest_submit_error)
+                     RETURN_VALUE ctest_submit_error
+                     CAPTURE_CMAKE_ERROR ctest_submit_error)
 
         if(ctest_submit_error EQUAL 0)
             message(">>> ${arg_parts_value} submit: OK")
@@ -50,36 +51,10 @@ endmacro()
 
 
 
-macro(submit_single_submit)
-    banner("submit_single_submit() START")
-    if(NOT skip_single_submit)
-        message(">>> ctest_submit(RETRY_COUNT  ${ctest_submit_retry_count}")
-        message("                 RETRY_DELAY  ${ctest_submit_retry_delay}")
-        message("                 RETURN_VALUE error_code)")
-
-        ctest_submit(RETRY_COUNT ${ctest_submit_retry_count}
-                     RETRY_DELAY ${ctest_submit_retry_delay}
-                     RETURN_VALUE error_code)
-
-        if(error_code EQUAL 0)
-            message(">>> Single submit: OK")
-        else()
-            message(">>> Single submit: FAILED")
-            message(">>> - The ERROR code is ${error_code}")
-        endif()
-    else()
-        message(">>> SKIPPED")
-        message(">>> skip_single_submit : ${skip_single_submit}")
-    endif()
-    banner("submit_single_submit() FINISH")
-endmacro()
-
-
-
 macro(submit_upload_config_files)
     banner("submit_upload_config_files() START")
     if( NOT skip_upload_config_files )
-        if( NOT (skip_single_submit AND skip_by_parts_submit) )
+        if( NOT (skip_by_parts_submit) )
             message(">>> ctest_upload(FILES ${configure_command_file}")
             message("                 ${configure_file}")
             message("                 ${package_enables_file}")
@@ -88,7 +63,8 @@ macro(submit_upload_config_files)
             ctest_upload(FILES ${configure_command_file}
                                ${configure_file}
                                ${package_enables_file}
-                               ${genconfig_build_name_file})
+                               ${genconfig_build_name_file}
+                         CAPTURE_CMAKE_ERROR file_upload_error)
 
             message(">>> ctest_submit(PARTS upload")
             message("                 RETRY_COUNT  ${ctest_submit_retry_count}")
@@ -98,7 +74,8 @@ macro(submit_upload_config_files)
             ctest_submit(PARTS Upload
                          RETRY_COUNT ${ctest_submit_retry_count}
                          RETRY_DELAY ${ctest_submit_retry_delay}
-                         RETURN_VALUE file_upload_error)
+                         RETURN_VALUE file_upload_error
+                         CAPTURE_CMAKE_ERROR file_upload_error)
 
             if(file_upload_error EQUAL 0)
                 message(">>> Config Files Upload: OK")
@@ -108,7 +85,6 @@ macro(submit_upload_config_files)
             endif()
         else()
             message(">>> SKIPPED")
-            message(">>> skip_single_submit   : ${skip_single_submit}")
             message(">>> skip_by_parts_submit : ${skip_by_parts_submit}")
         endif()
     else()
@@ -126,7 +102,6 @@ macro(print_options_list)
     message(">>> PARALLEL_LEVEL           = ${PARALLEL_LEVEL}")
     message(">>> TEST_PARALLEL_LEVEL      = ${TEST_PARALLEL_LEVEL}")
     message(">>> skip_by_parts_submit     = ${skip_by_parts_submit}")
-    message(">>> skip_single_submit       = ${skip_single_submit}")
     message(">>> skip_update_step         = ${skip_update_step}")
     message(">>> skip_upload_config_files = ${skip_upload_config_files}")
     message(">>> skip_clean_build_dir     = ${skip_clean_build_dir}")

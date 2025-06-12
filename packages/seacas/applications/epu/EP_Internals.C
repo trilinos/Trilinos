@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024,  National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025,  National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -132,11 +132,11 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
                                           const std::vector<FaceBlock<INT>> &faceblocks,
                                           const CommunicationMetaData       &comm)
 {
-  SMART_ASSERT((int)blocks.size() == mesh.blockCount);
-  SMART_ASSERT((int)nodesets.size() == mesh.nodesetCount);
-  SMART_ASSERT((int)sidesets.size() == mesh.sidesetCount);
-  SMART_ASSERT((int)edgeblocks.size() == mesh.edgeBlockCount);
-  SMART_ASSERT((int)faceblocks.size() == mesh.faceBlockCount);
+  SMART_ASSERT(static_cast<int>(blocks.size()) == mesh.blockCount);
+  SMART_ASSERT(static_cast<int>(nodesets.size()) == mesh.nodesetCount);
+  SMART_ASSERT(static_cast<int>(sidesets.size()) == mesh.sidesetCount);
+  SMART_ASSERT(static_cast<int>(edgeblocks.size()) == mesh.edgeBlockCount);
+  SMART_ASSERT(static_cast<int>(faceblocks.size()) == mesh.faceBlockCount);
 
   // May need to reorder the element blocks based on the 'offset_'
   // member. An element block contains the elements from 'offset_+1'
@@ -281,7 +281,8 @@ int Excn::Internals<INT>::write_meta_data(const Mesh &mesh, const std::vector<Bl
 
       for (int i = 0; i < mesh.blockCount; i++) {
         if (blocks[i].attributeCount > 0) {
-          SMART_ASSERT((size_t)blocks[i].attributeCount == blocks[i].attributeNames.size());
+          SMART_ASSERT(static_cast<size_t>(blocks[i].attributeCount) ==
+                       blocks[i].attributeNames.size());
           for (int j = 0; j < blocks[i].attributeCount; j++) {
             std::memset(names[j], '\0', name_size + 1);
             if (!blocks[i].attributeNames[j].empty()) {
@@ -422,41 +423,47 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh, const CommunicationMeta
   int map_type = get_type(exodusFilePtr, EX_MAPS_INT64_DB);
 
   std::string errmsg;
+  int         status;
 
-  // define some attributes...
-  int status = nc_put_att_text(exodusFilePtr, NC_GLOBAL, ATT_TITLE, mesh.title.length() + 1,
-                               mesh.title.c_str());
-  if (status != NC_NOERR) {
-    errmsg = fmt::format("Error: failed to define title attribute to file id {}", exodusFilePtr);
-    ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
-    return EX_FATAL;
-  }
+  if (changeSetNumber <= 1) {
+    // define some attributes...
+    int rootid = exodusFilePtr & EX_FILE_ID_MASK;
 
-  // For use later to help readers know how much memory to allocate
-  // for name storage, we define an attribute containing the maximum
-  // size of any name.
-  {
-    int current_len = 0;
-    status = nc_put_att_int(exodusFilePtr, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &current_len);
+    status =
+        nc_put_att_text(rootid, NC_GLOBAL, ATT_TITLE, mesh.title.length() + 1, mesh.title.c_str());
     if (status != NC_NOERR) {
-      ex_opts(EX_VERBOSE);
-      errmsg = fmt::format("Error: failed to define ATT_MAX_NAME_LENGTH attribute to file id {}",
-                           exodusFilePtr);
+      errmsg = fmt::format("Error: failed to define title attribute to file id {}", exodusFilePtr);
       ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
       return EX_FATAL;
     }
-  }
 
-  // create name string length dimension
-  if (maximumNameLength < 32) {
-    maximumNameLength = 32;
-  }
-  status = nc_def_dim(exodusFilePtr, DIM_STR_NAME, maximumNameLength + 1, &namestrdim);
-  if (status != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    errmsg = fmt::format("Error: failed to define name string length in file id {}", exodusFilePtr);
-    ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
-    return EX_FATAL;
+    // For use later to help readers know how much memory to allocate
+    // for name storage, we define an attribute containing the maximum
+    // size of any name.
+    {
+      int current_len = 0;
+      status = nc_put_att_int(rootid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &current_len);
+      if (status != NC_NOERR) {
+        ex_opts(EX_VERBOSE);
+        errmsg = fmt::format("Error: failed to define ATT_MAX_NAME_LENGTH attribute to file id {}",
+                             exodusFilePtr);
+        ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+        return EX_FATAL;
+      }
+    }
+
+    // create name string length dimension
+    if (maximumNameLength < 32) {
+      maximumNameLength = 32;
+    }
+    status = nc_def_dim(rootid, DIM_STR_NAME, maximumNameLength + 1, &namestrdim);
+    if (status != NC_NOERR) {
+      ex_opts(EX_VERBOSE);
+      errmsg =
+          fmt::format("Error: failed to define name string length in file id {}", exodusFilePtr);
+      ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+      return EX_FATAL;
+    }
   }
 
   // ...and some dimensions..
@@ -846,7 +853,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<NodeSet<INT>> &nodesets
     //  NOTE: exi_inc_file_item is used to find the number of node sets
     // for a specific file and returns that value incremented.
     int cur_num_node_sets =
-        (int)exi_inc_file_item(exodusFilePtr, exi_get_counter_list(EX_NODE_SET));
+        static_cast<int>(exi_inc_file_item(exodusFilePtr, exi_get_counter_list(EX_NODE_SET)));
 
     if (nodesets[i].nodeCount == 0) {
       continue;
@@ -997,7 +1004,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<SideSet<INT>> &sidesets
     //  NOTE: exi_inc_file_item is used to find the number of side sets
     // for a specific file and returns that value incremented.
     int cur_num_side_sets =
-        (int)exi_inc_file_item(exodusFilePtr, exi_get_counter_list(EX_SIDE_SET));
+        static_cast<int>(exi_inc_file_item(exodusFilePtr, exi_get_counter_list(EX_SIDE_SET)));
 
     if (sidesets[i].sideCount == 0) {
       continue;
@@ -1112,7 +1119,7 @@ int Excn::Internals<INT>::put_non_define_data(const std::vector<SideSet<INT>> &s
   }
 
   // Output sideset ids...
-  int                       num_sidesets = (int)sidesets.size();
+  int                       num_sidesets = static_cast<int>(sidesets.size());
   std::vector<ex_entity_id> sideset_id(num_sidesets);
   for (int i = 0; i < num_sidesets; i++) {
     sideset_id[i] = sidesets[i].id;
@@ -1174,7 +1181,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<EdgeBlock<INT>> &edgebl
     //  NOTE: exi_inc_file_item is used to find the number of edge blocks
     // for a specific file and returns that value incremented.
     int cur_num_edge_blocks =
-        (int)exi_inc_file_item(exodusFilePtr, exi_get_counter_list(EX_EDGE_BLOCK));
+        static_cast<int>(exi_inc_file_item(exodusFilePtr, exi_get_counter_list(EX_EDGE_BLOCK)));
 
     if (edgeblocks[i].edgeCount == 0) {
       continue;
@@ -1249,7 +1256,7 @@ int Excn::Internals<INT>::put_non_define_data(const std::vector<EdgeBlock<INT>> 
   }
 
   // Output edgeblock ids...
-  int                       num_edgeblocks = (int)edgeblocks.size();
+  int                       num_edgeblocks = static_cast<int>(edgeblocks.size());
   std::vector<ex_entity_id> edgeblock_id(num_edgeblocks);
   for (int i = 0; i < num_edgeblocks; i++) {
     edgeblock_id[i] = edgeblocks[i].id;
@@ -1311,7 +1318,7 @@ int Excn::Internals<INT>::put_metadata(const std::vector<FaceBlock<INT>> &facebl
     //  NOTE: exi_inc_file_item is used to find the number of face blocks
     // for a specific file and returns that value incremented.
     int cur_num_face_blocks =
-        (int)exi_inc_file_item(exodusFilePtr, exi_get_counter_list(EX_FACE_BLOCK));
+        static_cast<int>(exi_inc_file_item(exodusFilePtr, exi_get_counter_list(EX_FACE_BLOCK)));
 
     if (faceblocks[i].faceCount == 0) {
       continue;
@@ -1387,7 +1394,7 @@ int Excn::Internals<INT>::put_non_define_data(const std::vector<FaceBlock<INT>> 
   }
 
   // Output faceblock ids...
-  int                       num_faceblocks = (int)faceblocks.size();
+  int                       num_faceblocks = static_cast<int>(faceblocks.size());
   std::vector<ex_entity_id> faceblock_id(num_faceblocks);
   for (int i = 0; i < num_faceblocks; i++) {
     faceblock_id[i] = faceblocks[i].id;

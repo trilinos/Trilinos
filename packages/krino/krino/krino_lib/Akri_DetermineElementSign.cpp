@@ -3,6 +3,7 @@
 #include <Akri_Edge.hpp>
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_Sign.hpp>
 #include <Akri_Surface.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
@@ -233,6 +234,36 @@ void assign_elements_on_either_side_of_surface(const stk::mesh::BulkData & mesh,
   }
 }
 
+static int surface_sign_for_node(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const Surface & surface, const stk::mesh::Entity node)
+{
+  const double phi = surface.point_signed_distance(get_vector_field(mesh, coordsField, node, mesh.mesh_meta_data().spatial_dimension()));
+  return sign(phi);
+}
+
+static int surface_sign_for_uncrossed_element(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const Surface & surface, const stk::mesh::Entity elem)
+{
+  return surface_sign_for_node(mesh, coordsField, surface, *mesh.begin_nodes(elem));
+}
+
+
+void assign_signs_for_interfaces_without_crossings(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const std::vector<stk::mesh::Selector> & perSurfaceElementSelector,
+    const std::vector<const Surface*> & surfaces,
+    ElementToSignsMap & elementsToSigns)
+{
+  for (auto & [elem, signs] : elementsToSigns)
+  {
+    for (size_t iSurf=0; iSurf<surfaces.size(); ++iSurf)
+    {
+      if (signs[iSurf] == -2 && perSurfaceElementSelector[iSurf](mesh.bucket(elem)))
+      {
+        signs[iSurf] = surface_sign_for_uncrossed_element(mesh, coordsField, *surfaces[iSurf], elem);
+      }
+    }
+  }
+}
+
 ElementToSignsMap determine_element_signs(const stk::mesh::BulkData & mesh,
     const FieldRef coordsField,
     const stk::mesh::Selector & elementSelector,
@@ -249,6 +280,8 @@ ElementToSignsMap determine_element_signs(const stk::mesh::BulkData & mesh,
     check_edge_intersections_to_assign_crossed_elements_and_find_nodes_on_either_side_of_surface(mesh, coordsField, elemSurfSelector, surfIndex, *surfaces[surfIndex], elementsToSigns, nodesAndSigns);
     assign_elements_on_either_side_of_surface(mesh, elemSurfSelector, surfIndex, elementsToSigns, nodesAndSigns);
   }
+
+  assign_signs_for_interfaces_without_crossings(mesh, coordsField, perSurfaceElementSelector, surfaces, elementsToSigns);
 
   return elementsToSigns;
 }

@@ -153,6 +153,20 @@ create (const std::string& precType,
 
 
 template<class SC, class LO, class GO, class NT>
+std::vector<std::string>
+Factory<SC, LO, GO, NT>::
+getSupportedNames () const
+{
+  Details::OneLevelFactory<row_matrix_type> factory;
+  std::vector<std::string> supportedNames = factory.getSupportedNames();
+  supportedNames.push_back("SCHWARZ");
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+  supportedNames.push_back("SUPPORTGRAPH");
+#endif
+  return supportedNames;
+}
+
+template<class SC, class LO, class GO, class NT>
 bool
 Factory<SC, LO, GO, NT>::
 isSupported (const std::string& precType)
@@ -160,20 +174,9 @@ isSupported (const std::string& precType)
   // precTypeUpper is the upper-case version of precType.
   std::string precTypeUpper = canonicalize(precType);
 
-  std::vector<std::string> supportedNames = {
-    "SCHWARZ",
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
-    "SUPPORTGRAPH"
-#endif
-  };
+  std::vector<std::string> supportedNames = getSupportedNames();
   auto it = std::find(std::begin(supportedNames), std::end(supportedNames), precTypeUpper);
-
-  if (it != std::end(supportedNames)) {
-    return true;
-  } else {
-    Details::OneLevelFactory<row_matrix_type> factory;
-    return factory.isSupported (precType);
-  }
+  return it != std::end(supportedNames);
 }
 
 } // namespace Details

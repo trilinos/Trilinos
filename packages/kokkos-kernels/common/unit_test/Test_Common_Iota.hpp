@@ -26,22 +26,22 @@ void test_iota_constructor() {
   // empty iota
   {
     Iota<T, Size> i;
-    EXPECT_EQ(i.size(), 0);
+    EXPECT_EQ(i.size(), size_t(0));
   }
 
   // basic iota
   {
     Iota<T, Size> ten(10);
-    EXPECT_EQ(ten.size(), 10);
+    EXPECT_EQ(ten.size(), size_t(10));
     for (size_t i = 0; i < ten.size(); ++i) {
-      EXPECT_EQ(ten(i), i);
+      EXPECT_EQ(ten(i), T(i));
     }
   }
 
   // iota with negative offset
   if constexpr (std::is_signed_v<T>) {
     Iota<T, Size> three(3, -7);
-    EXPECT_EQ(three.size(), 3);
+    EXPECT_EQ(three.size(), size_t(3));
     for (size_t i = 0; i < three.size(); ++i) {
       EXPECT_EQ(three(i), T(i) - T(7));
     }
@@ -50,9 +50,9 @@ void test_iota_constructor() {
   // iota with positive offset
   {
     Iota<T, Size> three(3, 2);
-    EXPECT_EQ(three.size(), 3);
+    EXPECT_EQ(three.size(), size_t(3));
     for (size_t i = 0; i < three.size(); ++i) {
-      EXPECT_EQ(three(i), i + 2);
+      EXPECT_EQ(three(i), T(i + 2));
     }
   }
 
@@ -60,11 +60,11 @@ void test_iota_constructor() {
   if constexpr (std::is_signed_v<Size>) {
     {
       Iota<T, Size> i(-7);
-      EXPECT_EQ(i.size(), 0);
+      EXPECT_EQ(i.size(), size_t(0));
     }
     {
       Iota<T, Size> i(-1, 2);
-      EXPECT_EQ(i.size(), 0);
+      EXPECT_EQ(i.size(), size_t(0));
     }
   }
 }
@@ -89,9 +89,9 @@ void test_iota_subview() {
   Iota<T, Size> ten(10, 1);                    // 1..<11
   Iota<T, Size> sub(ten, Kokkos::pair{7, 9});  // 8, 9
 
-  EXPECT_EQ(sub.size(), 2);
-  EXPECT_EQ(sub(0), 8);
-  EXPECT_EQ(sub(1), 9);
+  EXPECT_EQ(sub.size(), size_t(2));
+  EXPECT_EQ(sub(0), T(8));
+  EXPECT_EQ(sub(1), T(9));
 }
 
 template <typename T, typename Size>

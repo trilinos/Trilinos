@@ -35,6 +35,9 @@ public:
    //! Do nothing destructor
    virtual ~EdgeFieldPattern() {}
 
+  Teuchos::RCP<panzer::FieldPattern> clone() const
+  {return Teuchos::rcp(new EdgeFieldPattern(*this));}
+
    //! Set the cell topology for this field pattern
    void setCellTopology(const shards::CellTopology & ct);
 
@@ -48,11 +51,11 @@ public:
      * \returns Number of sub cells of dimension <code>dim</code>
      */
    virtual int getSubcellCount(int dim) const;
- 
+
    /** Get the local indices associated with a particular sub cell.
      * The sub cell is specified through its dimension and cell index.
      * A vector is returned that gives the indices.
-     * 
+     *
      * \param[in] dim Dimension of the sub cell of interest
      * \param[in] cellIndex Index of the sub cell (must be lest than
      *                      <code>getSubcellCount(dim)</code> and greater

@@ -148,24 +148,19 @@ void fill_face_nodes_and_parent_edges(const stk::topology & elementTopology,
   }
 }
 
-bool is_cdfem_use_case(const Phase_Support & phaseSupport)
-{
-  return !(phaseSupport.get_all_decomposed_blocks_selector() == stk::mesh::Selector());
-}
-
 static bool in_block_decomposed_by_ls(const stk::mesh::BulkData & mesh,
     const Phase_Support & phaseSupport,
     const stk::mesh::Entity node_or_elem,
     const LS_Field & lsField )
 {
-  STK_ThrowAssert(is_cdfem_use_case(phaseSupport));
+  STK_ThrowAssert(phaseSupport.is_cdfem_use_case());
 
   for(auto * partPtr : mesh.bucket(node_or_elem).supersets())
   {
     if (partPtr->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
       stk::io::is_part_io_part(*partPtr) &&
-      !phaseSupport.is_nonconformal(partPtr) &&
-      phaseSupport.level_set_is_used_by_nonconformal_part(lsField.identifier, phaseSupport.find_nonconformal_part(*partPtr)))
+      !phaseSupport.is_nonconformal(*partPtr) &&
+      phaseSupport.level_set_is_used_by_nonconformal_part(lsField.identifier, &phaseSupport.find_nonconformal_part(*partPtr)))
       return true;
   }
   return false;
@@ -187,7 +182,7 @@ has_io_part_containing_phase(const Phase_Support & phase_support, const stk::mes
     const stk::mesh::Part * const part = *part_iter;
     if (part->primary_entity_rank() != stk::topology::ELEMENT_RANK || // limit ourselves to volume parts
         !(stk::io::is_part_io_part(*part) ||
-        phase_support.is_nonconformal(part)))
+        phase_support.is_nonconformal(*part)))
       continue;
 
     const PhaseTag & iopart_phase = phase_support.get_iopart_phase(*part);
@@ -235,7 +230,7 @@ static bool node_has_real_ls_value(const stk::mesh::BulkData & mesh,
       !node_touches_alive_block(mesh, phaseSupport, node, lsField) )
     return false;
 
-  return (is_cdfem_use_case(phaseSupport)) ?
+  return (phaseSupport.is_cdfem_use_case()) ?
       in_block_decomposed_by_ls(mesh, phaseSupport, node, lsField) :
       has_levelset_registered(mesh, node, lsField);
 }
@@ -383,13 +378,22 @@ static void find_parent_edge_crossings(const stk::mesh::BulkData & mesh,
   if(krinolog.shouldPrint(LOG_DEBUG)) krinolog << stk::diag::dendl;
 }
 
-stk::mesh::Selector get_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
+stk::mesh::Selector get_decomposed_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport)
 {
   stk::mesh::Selector parentElementSelector =
       (cdfemSupport.get_parent_part() | (activePart & !cdfemSupport.get_child_part())) &
       phaseSupport.get_all_decomposed_blocks_selector();
+
+  return parentElementSelector;
+}
+
+stk::mesh::Selector get_potential_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
+    const CDFEM_Support & cdfemSupport)
+{
+  stk::mesh::Selector parentElementSelector =
+      (cdfemSupport.get_parent_part() | (activePart & !cdfemSupport.get_child_part()));;
 
   return parentElementSelector;
 }

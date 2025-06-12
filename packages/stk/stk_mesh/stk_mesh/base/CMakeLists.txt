@@ -61,14 +61,13 @@ else()
   target_link_libraries(stk_mesh_base stk_util_env)
   target_link_libraries(stk_mesh_base stk_util_parallel)
 
-  if(STK_BUILT_FOR_SIERRA)
-    find_package(SierraLapack REQUIRED)
-    target_link_libraries(stk_util_util PUBLIC SierraLapack::sierra_blas_lapack)
-  else()
-    find_package(BLAS REQUIRED)
+  find_package(BLAS REQUIRED)
+  if(TARGET BLAS::BLAS)
     target_link_libraries(stk_util_util PUBLIC BLAS::BLAS)
+  else()
+    target_link_libraries(stk_util_util PUBLIC ${BLAS_LIBRARIES})
   endif()
-    
+
 endif()
 
 target_include_directories(stk_mesh_base PUBLIC

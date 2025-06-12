@@ -64,7 +64,6 @@
 #include "stk_unit_test_utils/MeshFixture.hpp"        // for MeshFixtureNoTest
 #include "stk_unit_test_utils/TextMesh.hpp"           // for setup_text_mesh
 #include "stk_unit_test_utils/getOption.h"            // for get_command_lin...
-#include "stk_util/diag/String.hpp"                   // for String
 #include "stk_util/parallel/Parallel.hpp"             // for parallel_machin...
 #include "stk_util/util/ReportHandler.hpp"            // for ThrowRequireMsg
 #include <stk_transfer_util/EntityCentroidRecoverField.hpp>
@@ -208,7 +207,7 @@ class LeastSquaresTester : public stk::unit_test_util::MeshFixtureNoTest, public
   void finish_extrapolation_setup(stk::unit_test_util::FieldEvaluator& eval,
       stk::transfer::RecoverField::RecoveryType recoveryType)
   {
-    stk::unit_test_util::set_element_field(get_bulk(), *m_field, eval);
+    stk::unit_test_util::set_entity_field(get_bulk(), *m_field, eval);
 
     double delta = 0.05;
     m_evalPoint = get_default_evaluation_point();

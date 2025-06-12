@@ -75,7 +75,7 @@ void replace_bulk_data(const stk::mesh::BulkData & inMesh, T & outMesh, std::fun
 template<typename T>
 void replace_bulk_data(const stk::mesh::BulkData & inMesh, T & outMesh)
 {
-  std::function<void(T& outMesh_)> op  = [](T& outMesh_) {};
+  std::function<void(T& outMesh_)> op  = [](T& /*outMesh_*/) {};
   replace_bulk_data(inMesh, outMesh, op);
 }
 

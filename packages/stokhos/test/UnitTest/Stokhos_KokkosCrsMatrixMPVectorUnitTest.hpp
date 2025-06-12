@@ -151,7 +151,7 @@ buildDiagonalMatrix(typename MatrixType::ordinal_type nrow,
   ordinal_type graph_length = nrow;
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>("graph", graph);
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>("graph", graph);
   matrix_values_type matrix_values =
     matrix_values_type("values", graph_length, mp_vector_size);
 
@@ -471,7 +471,7 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   // Generate block matrix
 
   matrix_graph_type matrix_graph =
-    Kokkos::create_staticcrsgraph<matrix_graph_type>(
+    KokkosSparse::create_staticcrsgraph<matrix_graph_type>(
       std::string("test crs graph"), fem_graph);
   // FIXME:
   // matrix_values_type matrix_values =

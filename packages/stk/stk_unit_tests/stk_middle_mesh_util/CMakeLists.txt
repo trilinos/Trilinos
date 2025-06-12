@@ -27,7 +27,8 @@ else()
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
     add_test(NAME "stk_middle_mesh_util_utest_np${NUMPROCS}" 
              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS} 
-             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_middle_mesh_util_utest)
+             COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_middle_mesh_util_utest 
+             --gtest_filter=-*externalFile)
     set_property(TEST "stk_middle_mesh_util_utest_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
   ENDFOREACH()
 

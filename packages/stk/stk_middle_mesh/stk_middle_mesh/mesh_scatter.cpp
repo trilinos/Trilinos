@@ -183,7 +183,7 @@ void MeshScatter::unpack_verts_and_pack_sharing(EntityExchanger& entityExchanger
 
   // don't unpack data as it comes in because that would make the vertex ordering
   // nondeterministic      
-  auto unpackVerts = [&](int rank, stk::CommBuffer& buf) {};
+  auto unpackVerts = [&](int /*rank*/, stk::CommBuffer& /*buf*/) {};
   entityExchanger.complete_receives(unpackVerts);
 
   for (int rank=0; rank < utils::impl::comm_size(m_unionComm); ++rank)
@@ -358,7 +358,7 @@ void MeshScatter::unpack_edges(EntityExchanger& entityExchanger, EntityIdExchang
 {
   // dont process the buffers as they arrive because that would make
   // the edge ids non-deterministic
-  auto f = [&](int rank, stk::CommBuffer& buf) {};
+  auto f = [&](int /*rank*/, stk::CommBuffer& /*buf*/) {};
   entityExchanger.start_nonblocking();
   entityExchanger.post_nonblocking_receives();
   entityExchanger.complete_receives(f);
@@ -457,7 +457,7 @@ void MeshScatter::unpack_elements(EntityExchanger& exchanger, EntityIdExchanger&
 {
   exchanger.start_nonblocking();
   exchanger.post_nonblocking_receives();
-  auto f = [&](int rank, stk::CommBuffer& buf) {};
+  auto f = [&](int /*rank*/, stk::CommBuffer& /*buf*/) {};
 
   exchanger.complete_receives(f);
   for (int rank=0; rank < utils::impl::comm_size(m_unionComm); ++rank)

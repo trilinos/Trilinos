@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,6 +12,7 @@
 #include "exodusII.h"   // for ex_init_params, ex_opts, etc
 #include "face_block.h" // for Face_Block
 #include "fmt/ostream.h"
+#include "fmt/ranges.h"
 #include "node_set.h"     // for Node_Set
 #include "side_set.h"     // for Side_Set
 #include "smart_assert.h" // for SMART_ASSERT, Assert, etc
@@ -28,13 +29,120 @@
 #include <vector> // for vector
 
 namespace {
-  void read_vars(int file_id, EXOTYPE flag, const char *type, int num_vars,
-                 std::vector<std::string> &varlist);
+  void read_vars(int file_id, EXOTYPE flag, const char *type, int num_vars, NameList &varlist);
+  void query_change_sets(int file_id, NameList &names, bool return_full_names);
 } // namespace
 
-template <typename INT> Exo_Read<INT>::Exo_Read() = default;
+template <typename INT> Exo_Read<INT>::Exo_Read(std::string fname) : file_name(std::move(fname))
+{
+  if (!file_name.empty()) {
+    int   ws = 0, comp_ws = 8;
+    float dumb = 0.0;
+    int   mode = EX_READ;
+    if (sizeof(INT) == 8) {
+      mode |= EX_ALL_INT64_API;
+    }
+    auto old_opt = ex_opts(EX_VERBOSE);
+    int  err     = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dumb);
+    ex_opts(old_opt);
+    if (err < 0) {
+      std::ostringstream oss;
+      fmt::print(oss, "Couldn't open file \"{}\".", file_name);
 
-template <typename INT> Exo_Read<INT>::Exo_Read(std::string fname) : file_name(std::move(fname)) {}
+      // ExodusII library could not open file.  See if a file (exodusII
+      // or not) exists with the specified name.
+      FILE *fid = fopen(file_name.c_str(), "r");
+      if (fid != nullptr) {
+        fmt::print(oss, " File exists, but library could not open.");
+        fclose(fid);
+      }
+      else {
+        fmt::print(oss, " File does not exist.");
+      }
+      throw std::runtime_error(oss.str());
+    }
+    file_id      = err;
+    io_word_size = ws;
+
+    // See if file contains change sets... If it does, open the first child change set (assumes all
+    // valid data are in change sets...)
+    num_change_sets = ex_inquire_int(file_id, EX_INQ_NUM_CHILD_GROUPS);
+    if (num_change_sets > 0) {
+      change_set_ids.resize(num_change_sets);
+      ex_get_group_ids(file_id, nullptr, change_set_ids.data());
+
+      query_change_sets(file_id, change_set_names, false);
+
+      //    current_change_set_index = 0;
+      //    file_id = change_set_ids[current_change_set_index];
+    }
+  }
+}
+
+template <typename INT> void Exo_Read<INT>::Reset_Meta_Data()
+{
+  delete[] eblocks;
+  eblocks = nullptr;
+  delete[] nsets;
+  nsets = nullptr;
+  delete[] ssets;
+  ssets = nullptr;
+  delete[] nodes;
+  nodes = nullptr;
+  delete[] edge_blocks;
+  edge_blocks = nullptr;
+  delete[] face_blocks;
+  face_blocks = nullptr;
+  delete[] assemblies;
+  assemblies = nullptr;
+
+#if 1
+  if (results) {
+    for (unsigned i = 0; i < nodal_vars.size(); ++i) {
+      if (results[i]) {
+        delete[] results[i];
+        results[i] = nullptr;
+      }
+    }
+    delete[] results;
+    results = nullptr;
+  }
+  nodal_vars.clear();
+#endif
+
+  delete[] global_vals;
+  global_vals = nullptr;
+  delete[] global_vals2;
+  global_vals2 = nullptr;
+  delete[] node_map;
+  node_map = nullptr;
+  delete[] elmt_map;
+  elmt_map = nullptr;
+
+  num_nodes       = 0;
+  dimension       = 0;
+  num_elmts       = 0;
+  num_faces       = 0;
+  num_edges       = 0;
+  num_elmt_blocks = 0;
+  num_node_sets   = 0;
+  num_side_sets   = 0;
+  num_edge_blocks = 0;
+  num_face_blocks = 0;
+  num_assemblies  = 0;
+
+  global_vars.clear();
+  nodal_vars.clear();
+  elmt_vars.clear();
+  elmt_atts.clear();
+  ns_vars.clear();
+  ss_vars.clear();
+  eb_vars.clear();
+  fb_vars.clear();
+
+  times.clear();
+  cur_time = 0;
+}
 
 template <typename INT> Exo_Read<INT>::~Exo_Read()
 {
@@ -47,25 +155,7 @@ template <typename INT> Exo_Read<INT>::~Exo_Read()
         Error(fmt::format("Exo_Read destructor(): closing file: \"{}\"\n", err));
       }
     }
-
-    delete[] eblocks;
-    delete[] nsets;
-    delete[] ssets;
-    delete[] nodes;
-    delete[] edge_blocks;
-    delete[] face_blocks;
-    delete[] assemblies;
-
-    if (results) {
-      for (unsigned i = 0; i < nodal_vars.size(); ++i) {
-        delete[] results[i];
-      }
-      delete[] results;
-    }
-    delete[] global_vals;
-    delete[] global_vals2;
-    delete[] node_map;
-    delete[] elmt_map;
+    Reset_Meta_Data();
   }
   catch (...) {
   }
@@ -99,59 +189,59 @@ template <typename INT> double Exo_Read<INT>::Time(int time_num) const
   return times[time_num - 1];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::Global_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::Global_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < global_vars.size());
+  SMART_ASSERT(index < global_vars.size());
   return global_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::Nodal_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::Nodal_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < nodal_vars.size());
+  SMART_ASSERT(index < nodal_vars.size());
   return nodal_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::Element_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::Element_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < elmt_vars.size());
+  SMART_ASSERT(index < elmt_vars.size());
   return elmt_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::Element_Att_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::Element_Att_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < elmt_atts.size());
+  SMART_ASSERT(index < elmt_atts.size());
   return elmt_atts[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::NS_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::NS_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < ns_vars.size());
+  SMART_ASSERT(index < ns_vars.size());
   return ns_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::SS_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::SS_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < ss_vars.size());
+  SMART_ASSERT(index < ss_vars.size());
   return ss_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::EB_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::EB_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < eb_vars.size());
+  SMART_ASSERT(index < eb_vars.size());
   return eb_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::FB_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::FB_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < fb_vars.size());
+  SMART_ASSERT(index < fb_vars.size());
   return fb_vars[index];
 }
 
@@ -612,19 +702,21 @@ template <typename INT> void Exo_Read<INT>::Free_Nodal_Coordinates()
 }
 
 template <typename INT>
-std::string Exo_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
+std::string Exo_Read<INT>::Load_Nodal_Results(int time_step_num, size_t var_index)
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(time_step_num > 0 && time_step_num <= Num_Times());
-  SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
+  SMART_ASSERT(var_index < nodal_vars.size());
 
   if (!Open()) {
     return "WARNING:  File not open!";
   }
   if (cur_time != time_step_num) {
     for (unsigned i = 0; i < nodal_vars.size(); ++i) {
-      delete[] results[i];
-      results[i] = nullptr;
+      if (results[i]) {
+        delete[] results[i];
+        results[i] = nullptr;
+      }
     }
     cur_time = time_step_num;
   }
@@ -639,12 +731,14 @@ std::string Exo_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
             "nodal variable values!  Aborting...\n");
     }
     else if (err > 0) {
-      delete[] results[var_index];
-      results[var_index] = nullptr;
-      return fmt::format("Exo_Read::Load_Nodal_Results(): WARNING:  "
-                         "Exodus issued warning \"{}\" on call to ex_get_var()!"
-                         "  I'm not going to keep what it gave me for values.",
-                         err);
+      if (results[var_index]) {
+        delete[] results[var_index];
+        results[var_index] = nullptr;
+        return fmt::format("Exo_Read::Load_Nodal_Results(): WARNING:  "
+                           "Exodus issued warning \"{}\" on call to ex_get_var()!"
+                           "  I'm not going to keep what it gave me for values.",
+                           err);
+      }
     }
   }
   else {
@@ -655,7 +749,7 @@ std::string Exo_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
 
 template <typename INT>
 const double *Exo_Read<INT>::Get_Nodal_Results(int t1, int t2, double proportion,
-                                               int var_index) const // Interpolated results.
+                                               size_t var_index) const // Interpolated results.
 {
   static std::vector<double> st_results;
   static std::vector<double> st_results2;
@@ -663,16 +757,13 @@ const double *Exo_Read<INT>::Get_Nodal_Results(int t1, int t2, double proportion
   SMART_ASSERT(Check_State());
   SMART_ASSERT(t1 > 0 && t1 <= Num_Times());
   SMART_ASSERT(t2 > 0 && t2 <= Num_Times());
-  SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
+  SMART_ASSERT(var_index < nodal_vars.size());
 
   if (!Open()) {
     return nullptr;
   }
 
-  if (st_results.empty()) {
-    st_results.resize(num_nodes);
-  }
-
+  st_results.resize(num_nodes);
   int err = ex_get_var(file_id, t1, EX_NODAL, var_index + 1, 0, num_nodes, st_results.data());
   if (err < 0) {
     Error("Exo_Read::Get_Nodal_Results(): Failed to get "
@@ -680,10 +771,7 @@ const double *Exo_Read<INT>::Get_Nodal_Results(int t1, int t2, double proportion
   }
 
   if (t1 != t2) {
-    if (st_results2.empty()) {
-      st_results2.resize(num_nodes);
-    }
-
+    st_results2.resize(num_nodes);
     err = ex_get_var(file_id, t2, EX_NODAL, var_index + 1, 0, num_nodes, st_results2.data());
     if (err < 0) {
       Error("Exo_Read::Load_Nodal_Results(): Failed to get "
@@ -703,13 +791,15 @@ template <typename INT> void Exo_Read<INT>::Free_Nodal_Results()
   SMART_ASSERT(Check_State());
   if (results) {
     for (unsigned i = 0; i < nodal_vars.size(); ++i) {
-      delete[] results[i];
-      results[i] = nullptr;
+      if (results[i]) {
+        delete[] results[i];
+        results[i] = nullptr;
+      }
     }
   }
 }
 
-template <typename INT> void Exo_Read<INT>::Free_Nodal_Results(int var_index)
+template <typename INT> void Exo_Read<INT>::Free_Nodal_Results(size_t var_index)
 {
   SMART_ASSERT(Check_State());
   if (results) {
@@ -720,13 +810,13 @@ template <typename INT> void Exo_Read<INT>::Free_Nodal_Results(int var_index)
   }
 }
 
-template <typename INT> const double *Exo_Read<INT>::Get_Nodal_Results(int var_index) const
+template <typename INT> const double *Exo_Read<INT>::Get_Nodal_Results(size_t var_index) const
 {
   SMART_ASSERT(Check_State());
   if (cur_time == 0) {
     return nullptr;
   }
-  SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
+  SMART_ASSERT(var_index < nodal_vars.size());
 
   return results[var_index];
 }
@@ -892,8 +982,6 @@ std::pair<int, size_t> Exo_Read<INT>::Global_to_Block_Local(size_t global_elmt_n
 template <typename INT> int Exo_Read<INT>::Check_State() const
 {
   SMART_ASSERT(file_id >= -1);
-  SMART_ASSERT(db_version >= 0.0);
-  SMART_ASSERT(api_version >= 0.0);
   SMART_ASSERT(io_word_size == 0 || io_word_size == 4 || io_word_size == 8);
 
   SMART_ASSERT(!(file_id >= 0 && io_word_size == 0));
@@ -914,69 +1002,49 @@ template <typename INT> int Exo_Read<INT>::Check_State() const
   return 1;
 }
 
-template <typename INT> std::string Exo_Read<INT>::File_Name(const char *fname)
+template <typename INT> std::string Exo_Read<INT>::Open_Change_Set(const std::string &name)
 {
   SMART_ASSERT(Check_State());
 
-  if (Open()) {
-    return "exodiff: ERROR: File is already open!";
+  if (no_case_equals(name, "root") || no_case_equals(name, "/")) {
+    return Open_Change_Set(0);
   }
-  if ((fname == nullptr) || std::strlen(fname) == 0) {
-    return "exodiff: ERROR: File name is empty!";
+
+  const auto &names = Change_Set_Names();
+  for (size_t i = 0; i < names.size(); i++) {
+    if (no_case_equals(name, names[i])) {
+      return Open_Change_Set(i + 1);
+    }
   }
-  file_name = fname;
+  return fmt::format(
+      "Could not find a match for the change set named {}.\nValid change set names are: {}\n", name,
+      fmt::join(names, ", "));
+}
+
+template <typename INT> std::string Exo_Read<INT>::Open_Change_Set(int index)
+{
+  SMART_ASSERT(Check_State());
+
+  if (index >= 0) {
+    if (index == current_change_set_index) {
+      return "";
+    }
+
+    if (index >= num_change_sets) {
+      return fmt::format("exodiff: ERROR: Index {} is out of range. Valid range: 0 <= index < {}",
+                         index, num_change_sets);
+    }
+
+    Reset_Meta_Data();
+    current_change_set_index = index;
+    file_id                  = change_set_ids[index];
+  }
+  Get_Meta_Data();
 
   return "";
 }
 
-template <typename INT> std::string Exo_Read<INT>::Open_File(const char *fname)
-{
-  SMART_ASSERT(Check_State());
-
-  if (Open()) {
-    return "exodiff: ERROR: File already open!";
-  }
-  if ((fname != nullptr) && std::strlen(fname) > 0) {
-    file_name = fname;
-  }
-  else if (file_name.empty()) {
-    return "No file name to open!";
-  }
-  int   ws = 0, comp_ws = 8;
-  float dumb = 0.0;
-  int   mode = EX_READ;
-  if (sizeof(INT) == 8) {
-    mode |= EX_ALL_INT64_API;
-  }
-  auto old_opt = ex_opts(EX_VERBOSE);
-  int  err     = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dumb);
-  ex_opts(old_opt);
-  if (err < 0) {
-    std::ostringstream oss;
-    fmt::print(oss, "Couldn't open file \"{}\".", file_name);
-
-    // ExodusII library could not open file.  See if a file (exodusII
-    // or not) exists with the specified name.
-    FILE *fid = fopen(file_name.c_str(), "r");
-    if (fid != nullptr) {
-      fmt::print(oss, " File exists, but library could not open.");
-      fclose(fid);
-    }
-    else {
-      fmt::print(oss, " File does not exist.");
-    }
-    return oss.str();
-  }
-
-  file_id      = err;
-  io_word_size = ws;
-
-  Get_Init_Data();
-
-  return "";
-}
-
-template <typename INT> void Exo_Read<INT>::Get_Init_Data()
+template <typename INT> void Exo_Read<INT>::Get_Meta_Data()
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(file_id >= 0);
@@ -1337,6 +1405,46 @@ template <typename INT> void Exo_Read<INT>::Get_Init_Data()
 } // End of EXODIFF
 
 namespace {
+  void query_change_sets(int file_id, NameList &names, bool return_full_names)
+  {
+    int   idum;
+    float rdum;
+
+    int               group_name_length = ex_inquire_int(file_id, EX_INQ_GROUP_NAME_LEN);
+    std::vector<char> group_name(group_name_length + 1, '\0');
+
+    // Get name of this group...
+    int ierr = ex_inquire(file_id, EX_INQ_GROUP_NAME, &idum, &rdum, group_name.data());
+    if (ierr < 0) {
+      Error("Unable to query group name.\n");
+    }
+
+    if (group_name[0] != '/') {
+      if (return_full_names) {
+        std::fill(group_name.begin(), group_name.end(), '\0');
+        ierr = ex_inquire(file_id, EX_INQ_FULL_GROUP_NAME, &idum, &rdum, group_name.data());
+        if (ierr < 0) {
+          Error("Unable to query full group name.\n");
+        }
+        names.push_back(std::string(group_name.data()));
+      }
+      else {
+        names.push_back(std::string(group_name.data()));
+      }
+    }
+
+    int              num_children = ex_inquire_int(file_id, EX_INQ_NUM_CHILD_GROUPS);
+    std::vector<int> children(num_children);
+    ierr = ex_get_group_ids(file_id, nullptr, Data(children));
+    if (ierr < 0) {
+      Error("Unable to query group ids.\n");
+    }
+
+    for (int i = 0; i < num_children; i++) {
+      query_change_sets(children[i], names, return_full_names);
+    }
+  }
+
   void read_vars(int file_id, EXOTYPE flag, const char *type, int num_vars, NameList &varlist)
   {
     if (num_vars != 0) {

@@ -277,6 +277,7 @@ public:
         return m_accumulatedLap;
     }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
     /**
      * Member function <b>dump</b> prints the value of the Metric to the
      * diagnostic writer.
@@ -287,7 +288,8 @@ public:
      * @return      a <b>Writer</b> reference to the diagnostic
      *        writer.
      */
-    Writer &dump(Writer &dout) const;
+STK_DEPRECATED    Writer &dump(Writer &dout) const;
+#endif
 
     typename MetricTraits<T>::Type    m_lapStart;    ///< Most recent start time/count
     typename MetricTraits<T>::Type    m_lapStop;    ///< Most recent stop or lap time/count
@@ -457,6 +459,7 @@ public:
    */
   void checkpoint() const;
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
   /**
    * Member function <b>dump</b> writes the timer to the specified
    * diagnostic writer.
@@ -465,7 +468,8 @@ public:
    *
    * @return      a <b>Writer</b> reference to <i>dout</i>.
    */
-  Writer &dump(Writer& dout) const;
+  STK_DEPRECATED Writer &dump(Writer& dout) const;
+#endif
 
 private:
   TimerImpl *    m_timerImpl;      ///< Reference to the actual timer
@@ -488,6 +492,7 @@ inline Marshal &operator<<(Marshal &mout, const Timer &t) {
   return mout;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
 /**
  * @brief Function <b>operator<<</b> writes a timer to the diagnostic stream.
  *
@@ -500,7 +505,7 @@ inline Marshal &operator<<(Marshal &mout, const Timer &t) {
  * @return      a <b>Writer</b> reference to <b>dout</b>.
  */
 template <class T>
-inline Writer &operator<<(Writer &dout, const Timer::Metric<T> &timer) {
+STK_DEPRECATED inline Writer &operator<<(Writer &dout, const Timer::Metric<T> &timer) {
   return timer.dump(dout);
 }
 
@@ -515,9 +520,10 @@ inline Writer &operator<<(Writer &dout, const Timer::Metric<T> &timer) {
  *
  * @return      a <b>Writer</b> reference to <b>dout</b>.
  */
-inline Writer &operator<<(Writer &dout, const Timer &timer) {
+STK_DEPRECATED inline Writer &operator<<(Writer &dout, const Timer &timer) {
   return timer.dump(dout);
 }
+#endif
 
 
 /**

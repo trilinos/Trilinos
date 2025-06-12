@@ -11,7 +11,6 @@
 #include <stk_math/StkVector.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
@@ -25,6 +24,7 @@
 #include <Akri_FieldRef.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <Akri_ReportHandler.hpp>
+#include <stk_mesh/base/FindPermutation.hpp>
 
 namespace krino{
 
@@ -51,6 +51,24 @@ void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector
   parentNodeIds.clear();
   for (auto parent : parentNodes)
     parentNodeIds.push_back(mesh.identifier(parent));
+}
+
+void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::topology elemTopology, const stk::topology sideTopology, const stk::mesh::Entity * elemNodes, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes)
+{
+  const unsigned numSideNodes = sideTopology.num_nodes();
+  sideNodes.resize(numSideNodes);
+  elemTopology.side_nodes(elemNodes, sideId, sideNodes.data());
+}
+
+void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::topology elemTopology, const stk::mesh::Entity * elemNodes, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes)
+{
+  fill_side_nodes(mesh, elemTopology, elemTopology.side_topology(sideId), elemNodes, sideId, sideNodes);
+}
+
+void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity elem, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes)
+{
+  const stk::topology elemTopology = mesh.bucket(elem).topology();
+  fill_side_nodes(mesh, elemTopology, elemTopology.side_topology(sideId), mesh.begin_nodes(elem), sideId, sideNodes);
 }
 
 stk::mesh::PartVector get_all_block_parts(const stk::mesh::MetaData & meta)
@@ -89,9 +107,7 @@ std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::me
   nbrs.reserve(numSides);
   for (unsigned iside=0; iside<numSides; ++iside)
   {
-    stk::topology sideTopology = elemTopology.side_topology(iside);
-    elemSideNodes.resize(sideTopology.num_nodes());
-    elemTopology.side_nodes(elemNodes, iside, elemSideNodes.data());
+    fill_side_nodes(mesh, elemTopology, elemNodes, iside, elemSideNodes);
 
     stk::mesh::get_entities_through_relations(mesh, elemSideNodes, stk::topology::ELEMENT_RANK, elemNbrs);
     for (auto nbr : elemNbrs)
@@ -165,6 +181,17 @@ size_t get_global_num_entities(const stk::mesh::BulkData& mesh, const stk::mesh:
   return numEntities;
 }
 
+unsigned get_entity_node_ordinal(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity node)
+{
+  const auto * entityNodes = mesh.begin_nodes(entity);
+  const unsigned numNodes = mesh.num_nodes(entity);
+  for (unsigned n=0; n<numNodes; ++n)
+    if (entityNodes[n] == node)
+      return n;
+  STK_ThrowRequire(false);
+  return numNodes;
+}
+
 template <class CONTAINER>
 class ContainerResizer
 {
@@ -223,6 +250,20 @@ void fill_procs_owning_or_sharing_or_ghosting_node(const stk::mesh::BulkData& bu
     procsOwningSharingOrGhostingNode.push_back(bulkData.parallel_rank());
 }
 
+void fill_nodes_attached_to_node(const stk::mesh::BulkData& mesh, const stk::mesh::Entity node, std::vector<stk::mesh::Entity> &nbrNodes)
+{
+  StkMeshEntities nodeElems{mesh.begin_elements(node), mesh.end_elements(node)};
+  nbrNodes.clear();
+  nbrNodes.reserve(3 * nodeElems.size()); // Reserve size for tets.  A bit overkill for tris.
+  for(const auto elem : nodeElems)
+  {
+    for(const auto elemNode : StkMeshEntities{mesh.begin_nodes(elem), mesh.end_nodes(elem)})
+      if(elemNode != node)
+        nbrNodes.push_back(elemNode);
+  }
+  stk::util::sort_and_unique(nbrNodes);
+}
+
 //--------------------------------------------------------------------------------
 
 template<int DIM, class CONTAINER>
@@ -250,12 +291,14 @@ void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::
 void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField, std::vector<stk::math::Vector3d> & elementNodeCoords)
 {
   const int dim = mesh.mesh_meta_data().spatial_dimension();
+  const StkMeshEntities elemNodes{mesh.begin_nodes(element), mesh.end_nodes(element)};
   elementNodeCoords.clear();
-  for (auto node : StkMeshEntities{mesh.begin_nodes(element), mesh.end_nodes(element)})
+  elementNodeCoords.reserve(elemNodes.size());
+  for (auto node : elemNodes)
     elementNodeCoords.emplace_back(field_data<double>(coordsField, node), dim);
 }
 
-static std::array<stk::math::Vector3d,4> gather_tet_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
+std::array<stk::math::Vector3d,4> gather_tet_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
 {
   STK_ThrowAssert(mesh.bucket(element).topology() == stk::topology::TETRAHEDRON_4);
   std::array<stk::math::Vector3d,4> elementNodeCoords;
@@ -263,7 +306,7 @@ static std::array<stk::math::Vector3d,4> gather_tet_coordinates(const stk::mesh:
   return elementNodeCoords;
 }
 
-static std::array<stk::math::Vector3d,3> gather_tri_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
+std::array<stk::math::Vector3d,3> gather_tri_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
 {
   STK_ThrowAssert(mesh.bucket(element).topology() == stk::topology::TRIANGLE_3_2D);
   std::array<stk::math::Vector3d,3> elementNodeCoords;
@@ -690,17 +733,17 @@ void get_nodes_of_element_side(const stk::mesh::BulkData & bulk,
   get_nodes_of_subentity(bulk, element, bulk.mesh_meta_data().side_rank(), elementSideOrdinal, elementSideNodes);
 }
 
-bool does_element_side_exist(stk::mesh::BulkData& mesh, stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side_ordinal)
+static bool does_element_side_exist(stk::mesh::BulkData& mesh, const stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal sideOrdinal)
 {
   stk::mesh::Entity side = stk::mesh::Entity();
-  stk::mesh::EntityRank side_rank = mesh.mesh_meta_data().side_rank();
 
-  unsigned elem_num_sides = mesh.num_connectivity(element, side_rank);
-  const stk::mesh::Entity * elem_sides = mesh.begin(element, side_rank);
-  const stk::mesh::ConnectivityOrdinal * elem_ord_it = mesh.begin_ordinals(element, side_rank);
+  const stk::mesh::EntityRank sideRank = mesh.bucket(element).topology().side_rank(sideOrdinal);
+  unsigned elem_num_sides = mesh.num_connectivity(element, sideRank);
+  const stk::mesh::Entity * elem_sides = mesh.begin(element, sideRank);
+  const stk::mesh::ConnectivityOrdinal * elem_ord_it = mesh.begin_ordinals(element, sideRank);
   for (unsigned i=0 ; i<elem_num_sides ; ++i)
   {
-    if (elem_ord_it[i] == side_ordinal)
+    if (elem_ord_it[i] == sideOrdinal)
     {
       side = elem_sides[i];
       break;
@@ -727,7 +770,9 @@ batch_create_sides(stk::mesh::BulkData & mesh, const std::vector<SideDescription
     {
       STK_ThrowAssertMsg(mesh.bucket(sideDescription.element).owned(), "Expecting owned entity");
       if (!does_element_side_exist(mesh, sideDescription.element, sideDescription.elementSideOrdinal))
-          mesh.declare_element_side(sideDescription.element, sideDescription.elementSideOrdinal, sideDescription.sideParts);
+      {
+        mesh.declare_element_side(sideDescription.element, sideDescription.elementSideOrdinal, sideDescription.sideParts);
+      }
     }
   }
   mesh.modification_end();
@@ -922,6 +967,56 @@ debug_entity_1line(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, c
 {
   std::ostringstream out;
   debug_entity_1line(out, mesh, entity, omitSideRank);
+  return out.str();
+}
+
+std::string
+debug_mesh(const stk::mesh::BulkData & mesh)
+{
+  std::ostringstream out;
+  for (stk::mesh::EntityRank entityRank = stk::topology::EDGE_RANK; entityRank <= stk::topology::ELEMENT_RANK; ++entityRank)
+  {
+    for (auto * bucketPtr : mesh.buckets(entityRank))
+    {
+      for (auto entity : *bucketPtr)
+      {
+        out << debug_entity_1line(mesh, entity) << "\n";
+        for (auto & node : StkMeshEntities{mesh.begin_nodes(entity), mesh.end_nodes(entity)})
+          out << "  " << debug_entity_1line(mesh, node) << "\n";
+      }
+    }
+  }
+  return out.str();
+}
+
+std::string debug_part_changes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::PartVector & addParts, const stk::mesh::PartVector & removeParts)
+{
+  std::ostringstream out;
+  out << "Part changes for entity  " << debug_entity_1line(mesh, entity) << "\n";
+  const stk::mesh::PartVector & currentParts = mesh.bucket(entity).supersets();
+  std::vector<std::string> partNames;
+  for (auto * part : addParts)
+  {
+    if (std::find(currentParts.begin(), currentParts.end(), part) == currentParts.end())
+      partNames.push_back(part->name());
+  }
+  stk::util::sort_and_unique(partNames);
+
+  out << "Add Parts: ";
+  for(auto & partName : partNames) out << partName << " ";
+
+  partNames.clear();
+  for (auto * part : removeParts)
+  {
+    if (std::find(currentParts.begin(), currentParts.end(), part) != currentParts.end() &&
+        std::find(addParts.begin(), addParts.end(), part) == addParts.end())
+      partNames.push_back(part->name());
+  }
+  stk::util::sort_and_unique(partNames);
+
+  out << "\nRemove Parts: ";
+  for(auto & partName : partNames) out << partName << " ";
+  out << "\n";
   return out.str();
 }
 
@@ -1400,6 +1495,15 @@ check_face_and_edge_relations(const stk::mesh::BulkData & mesh)
   return success;
 }
 
+bool does_first_entity_have_all_nodes_of_second(const stk::mesh::BulkData & mesh, const stk::mesh::Entity first, const stk::mesh::Entity second)
+{
+  StkMeshEntities firstNodes{mesh.begin_nodes(first), mesh.end_nodes(first)};
+  for (auto && secondNode : StkMeshEntities{mesh.begin_nodes(second), mesh.end_nodes(second)})
+    if (std::find(firstNodes.begin(), firstNodes.end(), secondNode) == firstNodes.end())
+      return false;
+  return true;
+}
+
 void
 attach_sides_to_elements(stk::mesh::BulkData & mesh)
 {
@@ -1416,8 +1520,9 @@ attach_sides_to_elements(stk::mesh::BulkData & mesh)
   mesh.modification_end();
 }
 
-static bool is_entity_attached_to_element(const stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Entity entity, const stk::mesh::Entity element)
+static bool is_entity_attached_to_element(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity element)
 {
+  const stk::mesh::EntityRank entityRank = mesh.bucket(entity).topology().rank();
   for (auto && elemEntity : StkMeshEntities{mesh.begin(element, entityRank), mesh.end(element, entityRank)})
     if (elemEntity == entity)
       return true;
@@ -1425,20 +1530,24 @@ static bool is_entity_attached_to_element(const stk::mesh::BulkData & mesh, cons
 }
 
 void
-attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Entity entity, const stk::mesh::Entity element)
+attach_entity_to_element_if_not_already_attached(stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity element)
+{
+  if (!is_entity_attached_to_element(mesh, entity, element))
+    attach_entity_to_element(mesh, entity, element);
+}
+
+void
+attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity element)
 {
   //Sorry! Passing these scratch vectors into stk's declare_relation function is
   //a performance improvement (fewer allocations). But stk will try to clean up
   //this ugliness soon. (i.e., find a better way to get the performance.)
   stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
 
-  //const auto & [ordinal, permutation] = determine_ordinal_and_permutation(mesh, element, entity);
-  const auto & ordinalAndPermutations = determine_ordinal_and_permutation(mesh, element, entity);
-  const auto & ordinal = ordinalAndPermutations.first;
-  const auto & permutation = ordinalAndPermutations.second;
+  const auto & [ordinal, permutation] = determine_ordinal_and_permutation(mesh, element, entity);
 
   mesh.declare_relation( element, entity, ordinal, permutation, scratch1, scratch2, scratch3 );
-  STK_ThrowRequireMsg(is_entity_attached_to_element(mesh, entityRank, entity, element),  "Could not attach " << debug_entity_1line(mesh,entity) << "  to element " << debug_entity_1line(mesh,element));
+  STK_ThrowRequireMsg(is_entity_attached_to_element(mesh, entity, element),  "Could not attach " << debug_entity_1line(mesh,entity) << "  to element " << debug_entity_1line(mesh,element));
 }
 
 void
@@ -1475,7 +1584,7 @@ attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity)
     {
       continue;
     }
-    const bool alreadyAttached = is_entity_attached_to_element(mesh, entity_rank, entity, elem);
+    const bool alreadyAttached = is_entity_attached_to_element(mesh, entity, elem);
     if (!alreadyAttached)
     {
       std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> relationship(stk::mesh::INVALID_CONNECTIVITY_ORDINAL, stk::mesh::INVALID_PERMUTATION);
@@ -1939,9 +2048,8 @@ get_partially_and_fully_coincident_elements(const stk::mesh::BulkData & mesh, st
   const unsigned num_sides = elem_topology.num_sides();
   for (unsigned iside=0; iside<num_sides; ++iside)
   {
+    fill_side_nodes(mesh, elem_topology, elem_nodes, iside, elem_side_nodes);
     stk::topology side_topology = elem_topology.side_topology(iside);
-    elem_side_nodes.resize(side_topology.num_nodes());
-    elem_topology.side_nodes(elem_nodes, iside, elem_side_nodes.data());
 
     std::vector<stk::mesh::Entity> sorted_elem_side_nodes = elem_side_nodes;
     std::sort(sorted_elem_side_nodes.begin(), sorted_elem_side_nodes.end(), stk::mesh::EntityLess(mesh));
@@ -1967,8 +2075,7 @@ get_partially_and_fully_coincident_elements(const stk::mesh::BulkData & mesh, st
           // maybe that will be needed eventually too.
           continue;
         }
-        nbr_side_nodes.resize(side_topology.num_nodes());
-        nbr_topology.side_nodes(nbr_nodes, inbr_side, nbr_side_nodes.data());
+        fill_side_nodes(mesh, nbr_topology, nbr_nodes, inbr_side, nbr_side_nodes);
 
         stk::EquivalentPermutation result = side_topology.is_equivalent(nbr_side_nodes.data(), elem_side_nodes.data());
         if (result.is_equivalent && side_topology.is_positive_polarity(result.permutation_number))
@@ -1979,6 +2086,35 @@ get_partially_and_fully_coincident_elements(const stk::mesh::BulkData & mesh, st
       }
     }
   }
+}
+
+void fill_sides_using_side_nodes(const stk::mesh::BulkData & mesh,
+    const stk::mesh::EntityRank sideRank,
+    const std::vector<stk::mesh::Entity> & sideNodes,
+    const bool doFilterEntitiesThatDontHaveNumSideNodes,
+    std::vector<stk::mesh::Entity> & sides)
+{
+  stk::mesh::get_entities_through_relations(mesh, sideNodes, sideRank, sides);
+
+  if(doFilterEntitiesThatDontHaveNumSideNodes)
+  {
+    const unsigned numSideNodes = sideNodes.size();
+    auto it = std::remove_if(sides.begin(), sides.end(), [&](stk::mesh::Entity side) {return mesh.num_nodes(side) != numSideNodes;});
+    sides.erase(it, sides.end());
+  }
+}
+
+void fill_existing_sides_using_nodes_of_side_of_element(const stk::mesh::BulkData & mesh,
+    const stk::topology elemTopology,
+    const stk::mesh::Entity * elemNodes,
+    const unsigned sideId,
+    std::vector<stk::mesh::Entity> & existingSides)
+{
+  std::vector<stk::mesh::Entity> sideNodes;
+  fill_side_nodes(mesh, elemTopology, elemNodes, sideId, sideNodes);
+
+  const bool doFilterEntitiesThatDontHaveNumSideNodes = elemTopology.is_shell();
+  fill_sides_using_side_nodes(mesh, elemTopology.side_rank(sideId), sideNodes, doFilterEntitiesThatDontHaveNumSideNodes, existingSides);
 }
 
 bool connectivity_of_side_with_nodes_is_good(const stk::mesh::BulkData & mesh,
@@ -1992,7 +2128,8 @@ bool connectivity_of_side_with_nodes_is_good(const stk::mesh::BulkData & mesh,
 
   activeSideElements.clear();
   for (auto && sideElement : sideEntities)
-    if (mesh.bucket(sideElement).member(active_part) && !mesh.bucket(sideElement).topology().is_shell())
+    if (mesh.bucket(sideElement).member(active_part) &&
+        mesh.num_nodes(sideElement) > sideNodes.size()) // Don't consider shells with same number of nodes as side, but do consider shell "edge sides"
       activeSideElements.push_back(sideElement);
 
   if (activeSideElements.size() != 2)
@@ -2004,7 +2141,8 @@ bool connectivity_of_side_with_nodes_is_good(const stk::mesh::BulkData & mesh,
     for (auto && side_node : sideNodes) krinolog << mesh.identifier(side_node) << " ";
     krinolog << stk::diag::dendl;
 
-    stk::mesh::get_entities_through_relations(mesh, sideNodes, mesh.mesh_meta_data().side_rank(), sideEntities);
+    const bool doFilterEntitiesThatDontHaveNumSideNodes = true; // In case element is a shell with an "edge side"
+    fill_sides_using_side_nodes(mesh, mesh.mesh_meta_data().side_rank(), sideNodes, doFilterEntitiesThatDontHaveNumSideNodes, sideEntities);
     if (!sideEntities.empty())
     {
       krinolog << "  Sides using side nodes: " << stk::diag::dendl;
@@ -2047,12 +2185,12 @@ check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk::mes
   std::vector<stk::mesh::Entity> activeSideElements;
 
   const stk::mesh::BucketVector & elemBuckets = mesh.get_buckets( stk::topology::ELEMENT_RANK, active_part & mesh.mesh_meta_data().locally_owned_part() );
+  const bool useWorkroundForMissingExteriorBoundaryPartOnShellSides = true;
 
   for ( auto && bucket : elemBuckets )
   {
-    stk::topology element_topology = bucket->topology();
-    if (element_topology.is_shell()) continue;
-    const unsigned num_sides = element_topology.num_sides();
+    stk::topology elementTopology = bucket->topology();
+    const unsigned num_sides = elementTopology.num_sides();
 
     for ( auto && element : *bucket )
     {
@@ -2060,14 +2198,13 @@ check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk::mes
       for (unsigned iside=0; iside<num_sides; ++iside)
       {
         stk::mesh::Entity existing_element_side = find_entity_by_ordinal(mesh, element, mesh.mesh_meta_data().side_rank(), iside);
-        if (mesh.is_valid(existing_element_side) && mesh.bucket(existing_element_side).member(exterior_boundary_part))
+        if ((mesh.is_valid(existing_element_side) && mesh.bucket(existing_element_side).member(exterior_boundary_part)) ||
+            (useWorkroundForMissingExteriorBoundaryPartOnShellSides && mesh.is_valid(existing_element_side) && mesh.bucket(existing_element_side).topology().is_shell()))
         {
           continue;
         }
 
-        stk::topology side_topology = element_topology.side_topology(iside);
-        sideNodes.resize(side_topology.num_nodes());
-        element_topology.side_nodes(elementNodes, iside, sideNodes.data());
+        fill_side_nodes(mesh, elementTopology, elementNodes.data(), iside, sideNodes);
 
         if (!connectivity_of_side_with_nodes_is_good(mesh, active_part, sideNodes, sideEntities, activeSideElements))
           found_mismatched_side = true;
@@ -2081,6 +2218,8 @@ check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk::mes
   {
     for ( auto && side : *bucket )
     {
+      if (useWorkroundForMissingExteriorBoundaryPartOnShellSides && mesh.bucket(side).topology().is_shell())
+        continue;
       sideNodes.assign(mesh.begin_nodes(side), mesh.end_nodes(side));
       if (!connectivity_of_side_with_nodes_is_good(mesh, active_part, sideNodes, sideEntities, activeSideElements))
         found_mismatched_side = true;
@@ -2604,48 +2743,98 @@ determine_shell_side_ordinal_and_permutation(const stk::mesh::BulkData & mesh, s
 stk::mesh::Permutation
 determine_permutation(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity relative, const stk::mesh::ConnectivityOrdinal ordinal)
 {
-  const stk::mesh::EntityRank relative_rank = mesh.entity_rank(relative);
-  STK_ThrowAssert(mesh.entity_rank(entity) > relative_rank);
+  const stk::mesh::Permutation perm = stk::mesh::find_permutation(mesh, mesh.bucket(entity).topology(), mesh.begin_nodes(entity), mesh.bucket(relative).topology(), mesh.begin_nodes(relative), ordinal);
+  STK_ThrowAssert(stk::mesh::INVALID_PERMUTATION != perm);
+  return perm;
+}
 
-  const stk::mesh::Entity * relative_nodes = mesh.begin_nodes(relative);
-
-  const stk::EquivalentPermutation equiv = stk::mesh::sub_rank_equivalent(mesh, entity, ordinal, relative_rank, relative_nodes);
-  if(!equiv.is_equivalent)
-  {
-    STK_ThrowErrorMsg("Could not find connection between " << mesh.entity_key(entity) <<" and "
-        << mesh.entity_key(relative) << " with ordinal " << ordinal
-        << debug_entity(mesh, entity) << debug_entity(mesh, relative));
-  }
-
-  return static_cast<stk::mesh::Permutation>(equiv.permutation_number);
+static std::pair<bool,bool> shell_relationship(const stk::topology entityTopology, const stk::topology relativeTopology)
+{
+  // A "coincident side" of a shell is one that has all the same nodes as the shell (with possibly differing order)
+  const bool isCoincidentShellSide = (entityTopology.is_shell() && entityTopology.num_nodes() == relativeTopology.num_nodes());
+  const bool isEdgeRankRelativeOfShell = (entityTopology.is_shell() && relativeTopology.rank() == stk::topology::EDGE_RANK);
+  return std::make_pair(isCoincidentShellSide, isEdgeRankRelativeOfShell);
 }
 
 std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation>
 determine_ordinal_and_permutation(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity relative)
 {
-  const stk::mesh::EntityRank relative_rank = mesh.entity_rank(relative);
-  STK_ThrowAssert(mesh.entity_rank(entity) > relative_rank);
-  stk::topology relative_topology = mesh.bucket(relative).topology();
-  STK_ThrowAssert(relative_topology.num_nodes() == mesh.num_nodes(relative));
+  const stk::mesh::EntityRank relativeRank = mesh.entity_rank(relative);
+  STK_ThrowAssert(mesh.entity_rank(entity) > relativeRank);
+  stk::topology relativeTopology = mesh.bucket(relative).topology();
+  STK_ThrowAssert(relativeTopology.num_nodes() == mesh.num_nodes(relative));
 
   const stk::mesh::Entity * relative_nodes = mesh.begin_nodes(relative);
 
-  stk::topology entity_topology = mesh.bucket(entity).topology();
-  const bool looking_for_shell_side = entity_topology.is_shell() && relative_rank == mesh.mesh_meta_data().side_rank();
+  stk::topology entityTopology = mesh.bucket(entity).topology();
+  const auto & [isCoincidentShellSide, isEdgeRankRelativeOfShell] = shell_relationship(entityTopology, relativeTopology);
 
-  for(size_t i = 0; i < entity_topology.num_sub_topology(relative_rank); ++i)
+  for(size_t i = 0; i < entityTopology.num_sub_topology(relativeRank); ++i)
   {
-    if (entity_topology.sub_topology(relative_rank, i) == relative_topology)
+    if (entityTopology.sub_topology(relativeRank, i) == relativeTopology)
     {
-      const stk::EquivalentPermutation equiv = stk::mesh::sub_rank_equivalent(mesh, entity, stk::mesh::ConnectivityOrdinal(i), relative_rank, relative_nodes);
-      const bool match = equiv.is_equivalent && (!looking_for_shell_side || equiv.permutation_number < relative_topology.num_positive_permutations());
+      const stk::EquivalentPermutation equiv = stk::mesh::sub_rank_equivalent(mesh, entity, stk::mesh::ConnectivityOrdinal(i), relativeRank, relative_nodes);
+      const bool match = equiv.is_equivalent && (!isCoincidentShellSide || equiv.permutation_number < relativeTopology.num_positive_permutations());
       if(match)
       {
-        return std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation>(static_cast<stk::mesh::ConnectivityOrdinal>(i), static_cast<stk::mesh::Permutation>(equiv.permutation_number));
+        const stk::mesh::ConnectivityOrdinal ordinal = isEdgeRankRelativeOfShell ? (i+2) : i;
+        return std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation>(ordinal, static_cast<stk::mesh::Permutation>(equiv.permutation_number));
       }
     }
   }
-  ThrowRuntimeError("Could not find connection between " << mesh.entity_key(entity) << " and " << mesh.entity_key(relative) << debug_entity(mesh, entity) << debug_entity(mesh, relative));
+  ThrowRuntimeError("Could not find connection between " << mesh.entity_key(entity) << " and " << mesh.entity_key(relative) << "\n" << debug_entity(mesh, entity) << debug_entity(mesh, relative));
+}
+
+stk::mesh::Entity find_any_element_using_edge(const stk::mesh::BulkData & mesh, const std::array<stk::mesh::Entity,2> & edgeNodes)
+{
+  // More complicated (but likely faster) than just using get_entities_through_relations find elements with the edge nodes as vertex nodes (even for higher order element)
+  const unsigned numNode0Elems = mesh.num_elements(edgeNodes[0]);
+  const unsigned numNode1Elems = mesh.num_elements(edgeNodes[1]);
+  const stk::mesh::Entity * node0Elems = mesh.begin_elements(edgeNodes[0]);
+  const stk::mesh::Entity * node1Elems = mesh.begin_elements(edgeNodes[1]);
+  const stk::mesh::ConnectivityOrdinal * node0ElemOrds = mesh.begin_element_ordinals(edgeNodes[0]);
+  const stk::mesh::ConnectivityOrdinal * node1ElemOrds = mesh.begin_element_ordinals(edgeNodes[1]);
+  for (unsigned i0=0; i0<numNode0Elems; ++i0)
+  {
+    const stk::mesh::Entity node0Elem = node0Elems[i0];
+    const unsigned numElem0BaseTopoNodes = mesh.bucket(node0Elem).topology().base().num_nodes();
+    if (node0ElemOrds[i0] < numElem0BaseTopoNodes)
+    {
+      for (unsigned i1=0; i1<numNode1Elems; ++i1)
+      {
+        const stk::mesh::Entity node1Elem = node1Elems[i1];
+        if (node1Elem == node0Elem)
+        {
+          const unsigned numElem1BaseTopoNodes = mesh.bucket(node1Elem).topology().base().num_nodes();
+          if (node1ElemOrds[i1] < numElem1BaseTopoNodes)
+            return node0Elem;
+        }
+      }
+    }
+  }
+  return stk::mesh::Entity::InvalidEntity;
+}
+
+stk::mesh::Entity find_edge_midnode(const stk::mesh::BulkData & mesh, const std::array<stk::mesh::Entity,2> & edgeNodes, const stk::mesh::Entity elementUsingEdge)
+{
+  std::array<stk::mesh::Entity,3> elemEdgeNodes;
+
+  const stk::topology elemTopology = mesh.bucket(elementUsingEdge).topology();
+  STK_ThrowAssert(elemTopology != elemTopology.base());
+  const unsigned numEdges = elemTopology.num_edges();
+
+  const stk::mesh::Entity * elemNodes = mesh.begin_nodes(elementUsingEdge);
+
+  for (unsigned iEdge = 0; iEdge < numEdges; ++iEdge)
+  {
+    elemTopology.edge_nodes(elemNodes, iEdge, elemEdgeNodes.data());
+    if ((elemEdgeNodes[0] == edgeNodes[0] && elemEdgeNodes[1] == edgeNodes[1]) ||
+        (elemEdgeNodes[1] == edgeNodes[0] && elemEdgeNodes[0] == edgeNodes[1]))
+    {
+      return elemEdgeNodes[2];
+    }
+  }
+  return stk::mesh::Entity::InvalidEntity;
 }
 
 static
@@ -2855,6 +3044,27 @@ void batch_convert_elements_and_their_sides(stk::mesh::BulkData & mesh, const st
     append_part_changes_to_convert_element_and_sides(mesh, partOrdinalMapping, elem, entitiesToChange, addParts, removeParts);
 
   mesh.batch_change_entity_parts(entitiesToChange, addParts, removeParts);
+}
+
+void parallel_sync_fields(const stk::mesh::BulkData & mesh, const std::vector<const stk::mesh::FieldBase *> & fields)
+{
+  for (auto && f : fields)
+  {
+    f->sync_to_host();
+    f->modify_on_host();
+  }
+  stk::mesh::communicate_field_data(mesh, fields);
+}
+
+void parallel_sync_fields(const stk::mesh::BulkData & mesh, const stk::mesh::FieldVector & fields)
+{
+  const std::vector<const stk::mesh::FieldBase *> constFields(fields.begin(), fields.end());
+  parallel_sync_fields(mesh, constFields);
+}
+
+void parallel_sync_all_fields(const stk::mesh::BulkData & mesh)
+{
+  parallel_sync_fields(mesh, mesh.mesh_meta_data().get_fields());
 }
 
 } // namespace krino

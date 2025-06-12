@@ -264,6 +264,8 @@ private:
     if (computeResidualNorm) {
       computeResidual (r, b, A, x);
       return r.norm2 ();
+    } else {
+      return -Teuchos::ScalarTraits<MT>::one();
     }
   }
 };
@@ -580,7 +582,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   A->apply (x, r, Teuchos::NO_TRANS, -one, one);
   r.norm2 (norms ());
   maxResNormIfpack2 = *std::max_element (norms.begin (), norms.end ());
-  
+
   // Run Ifpack2's 4th-kind Chebyshev.
   x.putScalar (zero); // Reset the initial guess(es).
   params.set ("chebyshev: algorithm", "fourth");
@@ -833,5 +835,3 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   os2 << endl;
   myCheby.print (os2);
 }
-
-

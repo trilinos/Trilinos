@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -167,6 +167,44 @@ namespace Ioss {
     }
 #endif
     return false;
+  }
+
+  std::string_view FileInfo::filesystem_type() const
+  {
+#if !defined(__IOSS_WINDOWS__)
+    auto tmp_path = pathname();
+    if (tmp_path.empty()) {
+      char *current_cwd = getcwd(nullptr, 0);
+      tmp_path          = std::string(current_cwd);
+      free(current_cwd);
+    }
+    char *path = ::realpath(tmp_path.c_str(), nullptr);
+    if (path != nullptr) {
+
+      struct statfs stat_fs;
+      // We want to run `statfs` on the path; not the filename since it might not exist.
+      if (statfs(path, &stat_fs) == -1) {
+        free(path);
+        std::ostringstream errmsg;
+        errmsg << "ERROR: Could not run statfs on '" << filename_ << "'.\n";
+        IOSS_ERROR(errmsg);
+      }
+      free(path);
+
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+      return stat_fs.f_fstypename;
+#else
+      /* linux statfs defines that 0x6969 is NFS filesystem */
+      if (stat_fs.f_type == 0x0BD00BD0)
+        return "lustre";
+      if (stat_fs.f_type == 0x47504653)
+        return "gpfs";
+      if (stat_fs.f_type == 0x6969)
+        return "nfs";
+#endif
+    }
+#endif
+    return "unknown";
   }
 
   //: Return TRUE if file is on an NFS filesystem...

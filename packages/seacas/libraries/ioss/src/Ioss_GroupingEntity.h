@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -257,7 +257,8 @@ namespace Ioss {
 
     IOSS_NODISCARD unsigned int hash() const { return hash_; }
 
-    IOSS_NODISCARD int64_t entity_count() const { return get_property("entity_count").get_int(); }
+    IOSS_NODISCARD int64_t entity_count() const;
+    int64_t                reset_entity_count(int64_t new_entity_count) const;
 
     // COMPARE GroupingEntities
     IOSS_NODISCARD bool operator!=(const GroupingEntity &rhs) const;
@@ -298,8 +299,6 @@ namespace Ioss {
     virtual int64_t internal_get_zc_field_data(const Field &field, void **data,
                                                size_t *data_size) const = 0;
 
-    int64_t entityCount = 0;
-
 #if defined(IOSS_THREADSAFE)
     mutable std::mutex m_;
 #endif
@@ -313,6 +312,7 @@ namespace Ioss {
 
     DatabaseIO *database_ = nullptr;
 
+    mutable int64_t entityCount    = 0;
     mutable int64_t attributeCount = 0;
     State           entityState    = STATE_CLOSED;
     unsigned int    hash_          = 0;
@@ -372,6 +372,15 @@ Ioss::GroupingEntity::get_optional_property(const std::string &property_name,
                                             const std::string &optional_value) const
 {
   return properties.get_optional(property_name, optional_value);
+}
+
+inline int64_t Ioss::GroupingEntity::entity_count() const { return entityCount; }
+
+inline int64_t Ioss::GroupingEntity::reset_entity_count(int64_t new_entity_count) const
+{
+  int64_t save_entity_count = entityCount;
+  entityCount               = new_entity_count;
+  return save_entity_count;
 }
 
 /** \brief Get the names of all properties in the property manager for this entity.

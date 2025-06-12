@@ -145,7 +145,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, GetMatrixDiagonal, Scalar, L
 
   auto A        = MueLu_TestHelper_Factory::Build1DPoisson(100);
   auto diag     = Utils::GetMatrixDiagonal(*A);
-  auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
+  auto diagView = diag->getLocalViewHost(Xpetra::Access::ReadOnly);
 
   TEST_EQUALITY(diagView.extent(0), A->getLocalNumRows());
 
@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, GetMatrixDiagonalInverse, Sc
 
   auto A        = MueLu_TestHelper_Factory::Build1DPoisson(100);
   auto diag     = Utils::GetMatrixDiagonalInverse(*A);
-  auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
+  auto diagView = diag->getLocalViewHost(Xpetra::Access::ReadOnly);
 
   TEST_EQUALITY(diagView.extent(0), A->getLocalNumRows());
 
@@ -186,7 +186,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, GetMatrixOverlappedDiagonal,
 
   auto A        = MueLu_TestHelper_Factory::Build1DPoisson(100);
   auto diag     = Utils::GetMatrixOverlappedDiagonal(*A);
-  auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
+  auto diagView = diag->getLocalViewHost(Xpetra::Access::ReadOnly);
 
   for (size_t idx = 0; idx < diagView.extent(0); ++idx) {
     TEST_EQUALITY(diagView(idx, 0), Scalar(2));
@@ -206,14 +206,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, FindNonZeros, Scalar, LocalO
   auto A          = MueLu_TestHelper_Factory::Build1DPoisson(100);
   auto map        = A->getMap();
   auto vector     = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
-  auto vectorView = vector->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  auto vectorView = vector->getLocalViewDevice(Xpetra::Access::ReadOnly);
 
   Kokkos::View<bool *, typename Node::device_type> nonZeros("", vectorView.extent(0));
   unsigned int result = 0;
 
   // Zero-ed out Vector
   {
-    Utils::FindNonZeros(vector->getDeviceLocalView(Xpetra::Access::ReadOnly), nonZeros);
+    Utils::FindNonZeros(vector->getLocalViewDevice(Xpetra::Access::ReadOnly), nonZeros);
 
     Kokkos::parallel_reduce(
         "", RangeType(0, nonZeros.extent(0)),
@@ -226,7 +226,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, FindNonZeros, Scalar, LocalO
   {
     vector->putScalar(TST::one());
 
-    Utils::FindNonZeros(vector->getDeviceLocalView(Xpetra::Access::ReadOnly), nonZeros);
+    Utils::FindNonZeros(vector->getLocalViewDevice(Xpetra::Access::ReadOnly), nonZeros);
 
     Kokkos::parallel_reduce(
         "", RangeType(0, nonZeros.extent(0)),
@@ -306,7 +306,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, ZeroDirichletRows, Scalar, L
     const auto zeroVal = Scalar(0.25);
     Utils::ZeroDirichletRows(vector, dcols, zeroVal);
 
-    auto vecView = vector->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto vecView = vector->getLocalViewHost(Xpetra::Access::ReadOnly);
 
     for (size_t idx = 0; idx < vecView.extent(0); ++idx) {
       TEST_EQUALITY(vecView(localRowToZero, idx), zeroVal);

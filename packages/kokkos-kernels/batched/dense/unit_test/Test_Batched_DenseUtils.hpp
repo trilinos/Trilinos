@@ -146,13 +146,13 @@ void create_diagonal_matrix(InViewType& in, OutViewType& out, int k = 0) {
 }
 
 /// \brief Creates a positive definite symmetric (PDS) matrix.
-/// Takes a full random matrix and converts it to a full pds matrix.
+/// Takes a dense random matrix and converts it to a dense pds matrix.
 ///
 /// \tparam InViewType: Input type for the matrix, needs to be a 3D view
 /// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
 ///
-/// \param in [in]: Input batched banded matrix, a rank 3 view
-/// \param out [out]: Output batched full matrix, a rank 3 view
+/// \param in [in]: Input batched dense matrix, a rank 3 view
+/// \param out [out]: Output batched dense matrix, a rank 3 view
 ///
 template <typename InViewType, typename OutViewType>
 void random_to_pds(InViewType& in, OutViewType& out) {
@@ -198,15 +198,15 @@ void random_to_pds(InViewType& in, OutViewType& out) {
 }
 
 /// \brief Creates a banded positive definite symmetric (PDS) matrix.
-/// Takes a full diagonal dominant matrix and converts it to a banded pds matrix either
-/// in banded or full storage.
+/// Takes a dense diagonal dominant matrix and converts it to a banded pds matrix either
+/// in banded or conventional storage.
 ///
 /// \tparam InViewType: Input type for the matrix, needs to be a 3D view
 /// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
 /// \tparam UploType: Type indicating whether the matrix is upper or lower triangular
 ///
 /// \param in [in]: Input batched banded matrix, a rank 3 view
-/// \param out [out]: Output batched full matrix, a rank 3 view
+/// \param out [out]: Output batched dense matrix, a rank 3 view
 /// \param k [in]: Number of sub/super-diagonals for lower/upper triangular (default is 1)
 /// \param band_storage [in]: Boolean flag indicating whether the output should be in banded storage format (default is
 /// true)
@@ -268,19 +268,20 @@ void create_banded_pds_matrix(InViewType& in, OutViewType& out, int k = 1, bool 
   Kokkos::deep_copy(out, h_out);
 }
 
-/// \brief Converts a banded matrix to a full matrix.
-/// Takes a banded matrix in banded storage and converts it to a full matrix.
+/// \brief Converts a tridiagonal matrix from band storage to conventional storage.
+/// Takes a upper/lower triangular banded matrix in banded storage
+/// and converts it to a conventional storage
 ///
 /// \tparam InViewType: Input type for the matrix, needs to be a 3D view
 /// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
 /// \tparam UploType: Type indicating whether the matrix is upper or lower triangular
 ///
 /// \param in [in]: Input batched banded matrix, a rank 3 view
-/// \param out [out]: Output batched full matrix, a rank 3 view
+/// \param out [out]: Output batched dense matrix, a rank 3 view
 /// \param k [in]: Number of sub/super-diagonals for lower/upper triangular (default is 1)
 ///
 template <typename InViewType, typename OutViewType, typename UploType>
-void banded_to_full(InViewType& in, OutViewType& out, int k = 1) {
+void banded_to_dense(InViewType& in, OutViewType& out, int k = 1) {
   auto h_in   = Kokkos::create_mirror_view(in);
   auto h_out  = Kokkos::create_mirror_view(out);
   const int N = in.extent(0), BlkSize = in.extent(2);
@@ -303,6 +304,119 @@ void banded_to_full(InViewType& in, OutViewType& out, int k = 1) {
         for (int i2 = 0; i2 < BlkSize - i1; i2++) {
           h_out(i0, i2 + i1, i2) = h_in(i0, i1, i2);
         }
+      }
+    }
+  }
+  Kokkos::deep_copy(out, h_out);
+}
+
+/// \brief Converts a matrix from band storage to conventional storage.
+/// Takes a banded matrix in banded storage and converts it to a conventional storage.
+///
+/// \tparam InViewType: Input type for the matrix, needs to be a 3D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
+///
+/// \param in [in]: Input batched banded matrix, a rank 3 view
+/// \param out [out]: Output batched dense matrix, a rank 3 view
+/// \param kl [in]: Number of subdiagonals for within the band of A (default is 1)
+/// \param ku [in]: Number of superdiagonals for within the band of A (default is 1)
+///
+template <typename InViewType, typename OutViewType>
+void banded_to_dense(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
+  auto h_in    = Kokkos::create_mirror_view(in);
+  auto h_out   = Kokkos::create_mirror_view(out);
+  const int Nb = out.extent(0), m = out.extent(1), n = out.extent(2);
+
+  Kokkos::deep_copy(h_in, in);
+  assert(in.extent(0) == out.extent(0));
+  assert(in.extent(1) == static_cast<std::size_t>(2 * kl + ku + 1));
+  assert(in.extent(2) == out.extent(2));
+
+  for (int i0 = 0; i0 < Nb; i0++) {
+    for (int i1 = 0; i1 < m; i1++) {
+      for (int i2 = Kokkos::max(0, i1 - ku); i2 < Kokkos::min(n, i1 + kl + ku + 1); i2++) {
+        auto row_in_banded = kl + ku + i1 - i2;
+        h_out(i0, i1, i2)  = h_in(i0, row_in_banded, i2);
+      }
+    }
+  }
+  Kokkos::deep_copy(out, h_out);
+}
+
+/// \brief Converts a matrix from conventional storage to band storage
+/// Takes a band matrix in conventional storage and converts it to a banded storage.
+///
+/// \tparam InViewType: Input type for the matrix, needs to be a 3D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
+///
+/// \param in [in]: Input batched dense matrix, a rank 3 view
+/// \param out [out]: Output batched banded matrix, a rank 3 view
+/// \param kl [in]: Number of subdiagonals for within the band of A (default is 1)
+/// \param ku [in]: Number of superdiagonals for within the band of A (default is 1)
+///
+template <typename InViewType, typename OutViewType>
+void dense_to_banded(InViewType& in, OutViewType& out, int kl = 1, int ku = 1) {
+  auto h_in    = Kokkos::create_mirror_view(in);
+  auto h_out   = Kokkos::create_mirror_view(out);
+  const int Nb = in.extent(0), m = in.extent(1), n = in.extent(2);
+
+  Kokkos::deep_copy(h_in, in);
+  assert(out.extent(0) == in.extent(0));
+  assert(out.extent(1) == static_cast<std::size_t>(2 * kl + ku + 1));
+  assert(out.extent(2) == in.extent(2));
+
+  for (int i0 = 0; i0 < Nb; i0++) {
+    for (int i1 = 0; i1 < m; i1++) {
+      for (int i2 = Kokkos::max(0, i1 - ku); i2 < Kokkos::min(n, i1 + kl + 1); i2++) {
+        // Do not use the element from the dense matrix if it is outside the band
+        auto row_in_banded           = kl + ku + i1 - i2;
+        h_out(i0, row_in_banded, i2) = h_in(i0, i1, i2);
+      }
+    }
+  }
+  Kokkos::deep_copy(out, h_out);
+}
+
+/// \brief Create a triangular matrix from an input matrix:
+/// Copies the input matrix into the upper/lower triangular of the output matrix specified
+/// by the parameter k. Zero out elements below/above the k-th diagonal.
+///
+/// \tparam InViewType: Input type for the matrix, needs to be a 3D view
+/// \tparam OutViewType: Output type for the matrix, needs to be a 3D view
+/// \tparam UploType: Type indicating whether the matrix is upper or lower triangular
+/// \tparam DiagType: Type indicating whether the matrix is unit or non-unit diagonal
+///
+/// \param in [in]: Input batched matrix, a rank 3 view
+/// \param out [out]: Output batched matrix, where the upper or lower
+/// triangular components are kept, a rank 3 view
+/// \param k [in]: The diagonal offset to be zero out (default is 0).
+///
+template <typename InViewType, typename OutViewType, typename UploType, typename DiagType>
+void create_triangular_matrix(InViewType& in, OutViewType& out, int k = 0) {
+  auto h_in    = Kokkos::create_mirror_view(in);
+  auto h_out   = Kokkos::create_mirror_view(out);
+  const int Nb = in.extent(0), m = in.extent(1), n = in.extent(2);
+
+  Kokkos::deep_copy(h_in, in);
+  Kokkos::deep_copy(h_out, 0.0);
+  for (int i0 = 0; i0 < Nb; i0++) {
+    for (int i1 = 0; i1 < m; i1++) {
+      for (int i2 = 0; i2 < n; i2++) {
+        if constexpr (std::is_same_v<UploType, KokkosBatched::Uplo::Upper>) {
+          // Upper
+          // Zero out elements below the k-th diagonal
+          h_out(i0, i1, i2) = i2 < i1 + k ? 0.0 : h_in(i0, i1, i2);
+        } else {
+          // Lower
+          // Zero out elements above the k-th diagonal
+          h_out(i0, i1, i2) = i2 > i1 + k ? 0.0 : h_in(i0, i1, i2);
+        }
+      }
+    }
+    for (int i1 = 0; i1 < Kokkos::min(m, n); i1++) {
+      if constexpr (std::is_same_v<DiagType, KokkosBatched::Diag::Unit>) {
+        // Unit diagonal
+        h_out(i0, i1, i1) = 1.0;
       }
     }
   }

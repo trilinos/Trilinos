@@ -28,7 +28,7 @@ namespace Impl {
   /// \brief Kokkos::parallel_reduce functor for counting the local
   ///   number of diagonal entries in a sparse graph.
   ///
-  /// \tparam LocalGraphType Kokkos::StaticCrsGraph specialization
+  /// \tparam LocalGraphType KokkosSparse::StaticCrsGraph specialization
   /// \tparam LocalMapType Result of Tpetra::CrsGraph::getLocalGraph*()
   template<class LocalGraphType, class LocalMapType>
   class CountLocalNumDiags {

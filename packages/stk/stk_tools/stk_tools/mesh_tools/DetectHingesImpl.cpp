@@ -300,7 +300,19 @@ HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh
   return hingeNodes;
 }
 
-stk::mesh::EntityVector get_mesh_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocks)
+bool is_connected_to_solid_element(const stk::mesh::BulkData& bulk, stk::mesh::Entity node)
+{
+  stk::mesh::ConnectedEntities elems = bulk.get_connected_entities(node, stk::topology::ELEM_RANK);
+  for(unsigned i=0; i<elems.size(); ++i) {
+    if (stk::is_solid_element(bulk.bucket(elems[i]).topology())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+stk::mesh::EntityVector get_mesh_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocks, bool onlyIfConnectedToSolidElements = false)
 {
   stk::mesh::EntityVector nodes;
   stk::mesh::Selector selector;
@@ -326,6 +338,13 @@ stk::mesh::EntityVector get_mesh_nodes(const stk::mesh::BulkData& bulk, const st
 
   stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, selector, nodes);
 
+  if (onlyIfConnectedToSolidElements) {
+    stk::mesh::EntityVector::iterator newEnd =
+      std::remove_if(nodes.begin(), nodes.end(),
+        [&](stk::mesh::Entity node) { return !is_connected_to_solid_element(bulk, node); });
+    nodes.erase(newEnd, nodes.end());
+  }
+
   return nodes;
 }
 
@@ -339,9 +358,9 @@ HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk)
   return hingeNodes;
 }
 
-HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect)
+HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, bool onlyIfConnectedToSolidElements)
 {
-  stk::mesh::EntityVector nodes = get_mesh_nodes(bulk, blocksToDetect);
+  stk::mesh::EntityVector nodes = get_mesh_nodes(bulk, blocksToDetect, onlyIfConnectedToSolidElements);
 
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
 
@@ -447,15 +466,15 @@ void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::st
   hingeNodes = get_hinge_nodes(bulk, blocksToDetect);
 }
 
-void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges)
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges, bool onlyIfConnectedToSolidElements)
 {
   std::vector<std::string> blocksToDetect;
-  fill_mesh_hinges( bulk,  blocksToDetect, hingeNodes, hingeEdges);
+  fill_mesh_hinges( bulk,  blocksToDetect, hingeNodes, hingeEdges, onlyIfConnectedToSolidElements);
 }
 
-void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges)
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, const std::vector<std::string>& blocksToDetect, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges, bool onlyIfConnectedToSolidElements)
 {
-  hingeNodes = get_hinge_nodes(bulk, blocksToDetect);
+  hingeNodes = get_hinge_nodes(bulk, blocksToDetect, onlyIfConnectedToSolidElements);
 
   if(hingeNodes.size() != 0) {
     hingeEdges = get_hinge_edges(bulk, hingeNodes);
@@ -574,7 +593,7 @@ void insert_into_group(const PairwiseSideInfoVector& infoVec, HingeGroupVector& 
   }
 }
 
-void insert_into_group(const PairwiseSideInfoVector& node1InfoVec, const PairwiseSideInfoVector& node2InfoVec,
+void insert_into_group(const PairwiseSideInfoVector& node1InfoVec, const PairwiseSideInfoVector& /*node2InfoVec*/,
                        const stk::mesh::EntityVector& commonElem, HingeGroupVector& groupVec)
 {
   for(const PairwiseSideInfo& info : node1InfoVec) {
@@ -785,7 +804,7 @@ HingeNodeVector get_cyclic_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNod
   return cyclicHingeNodes;
 }
 
-void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, const HingeNodeVector& prunedHingeNodes)
+void prune_hinge_nodes(const stk::mesh::BulkData& /*bulk*/, HingeNodeVector& hingeNodes, const HingeNodeVector& prunedHingeNodes)
 {
   for(auto node : prunedHingeNodes) {
     auto it = std::find(hingeNodes.begin(), hingeNodes.end(), node);

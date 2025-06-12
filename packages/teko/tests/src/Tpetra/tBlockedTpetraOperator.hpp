@@ -33,11 +33,12 @@ class tBlockedTpetraOperator : public UnitTest {
   virtual bool isParallel() const { return true; }
 
   bool test_vector_constr(int verbosity, std::ostream& os);
+  bool test_single_block(int verbosity, std::ostream& os);
   bool test_reorder(int verbosity, std::ostream& os, int total);
 
  protected:
-  void buildBlockGIDs(std::vector<std::vector<GO> >& blocks,
-                      const Tpetra::Map<LO, GO, NT>& map) const;
+  void buildBlockGIDs(std::vector<std::vector<GO> >& blocks, const Tpetra::Map<LO, GO, NT>& map,
+                      bool singleBlock) const;
 
   ST tolerance_;
 };

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -228,44 +228,6 @@ namespace Ioexnl {
       }
     }
     return true;
-  }
-
-  void decode_surface_name(Ioexnl::SideSetMap &fs_map, Ioexnl::SideSetSet &fs_set,
-                           const std::string &name)
-  {
-    auto tokens = Ioss::tokenize(name, "_");
-    if (tokens.size() >= 4) {
-      // Name of form: "name_eltopo_sidetopo_id" or
-      // "name_block_id_sidetopo_id" "name" is typically "surface".
-      // The sideset containing this should then be called "name_id"
-
-      // Check whether the second-last token is a side topology and
-      // the third-last token is an element topology.
-      const Ioss::ElementTopology *side_topo =
-          Ioss::ElementTopology::factory(tokens[tokens.size() - 2], true);
-      if (side_topo != nullptr) {
-        const Ioss::ElementTopology *element_topo =
-            Ioss::ElementTopology::factory(tokens[tokens.size() - 3], true);
-        if (element_topo != nullptr || tokens[tokens.size() - 4] == "block") {
-          // The remainder of the tokens will be used to create
-          // a side set name and then this sideset will be
-          // a side block in that set.
-          std::string fs_name;
-          size_t      last_token = tokens.size() - 3;
-          if (element_topo == nullptr) {
-            last_token--;
-          }
-          for (size_t tok = 0; tok < last_token; tok++) {
-            fs_name += tokens[tok];
-          }
-          fs_name += "_";
-          fs_name += tokens[tokens.size() - 1]; // Add on the id.
-
-          fs_set.insert(fs_name);
-          fs_map.insert(Ioexnl::SideSetMap::value_type(name, fs_name));
-        }
-      }
-    }
   }
 
   bool set_id(const Ioss::GroupingEntity *entity, Ioexnl::EntityIdSet *idset)

@@ -40,6 +40,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "GraphTypes.hpp"
 
@@ -107,7 +108,7 @@ struct ParallelInfo
 public:
     ParallelInfo(int proc, int perm, stk::topology other_elem_topology) :
         m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
-    ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology) :
+    ParallelInfo(int proc, int perm, stk::mesh::EntityId /*chosen_face_id*/, stk::topology other_elem_topology) :
         m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
     ParallelInfo() :
         m_permutation(INVALID_PERMUTATION), m_remote_element_topology(stk::topology::INVALID_TOPOLOGY), remoteElementData(-1) {}
@@ -219,7 +220,7 @@ struct ParallelElementData
 
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
-    stk::mesh::EntityId m_suggestedFaceId;
+    stk::mesh::EntityId m_suggestedFaceId{0u};
 
 private:
     RemoteElementData remoteElementData;
@@ -390,10 +391,15 @@ struct GraphEdgeLessByElem1 {
         {
             return a_side2 < b_side2;
         }
-        else
+
+        int a_side1 = a.side1();
+        int b_side1 = b.side1();
+        if(a_side1 == b_side1)
         {
-            return a.side1() < b.side1();
+          return a.elem2() < b.elem2();
         }
+
+        return a_side1 < b_side1;
     }
 };
 
@@ -524,12 +530,27 @@ std::vector<GraphEdgeProc> communicate_killed_entities(stk::ParallelMachine comm
 
 void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<GraphEdgeProc>& elements_to_comm);
 
-void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
-        stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
-        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
+bool can_add_side_into_exposed_boundary(const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, int side_id,
+                                        const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                                        const stk::mesh::Part& activePart);
 
-void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
-        stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id);
+void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
+        stk::mesh::Entity local_element, int side_id, const stk::mesh::PartVector& parts_for_creating_side,
+        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+        const stk::mesh::Part& activePart, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
+
+int get_number_of_connected_active_elements(const stk::mesh::BulkData& bulkData,
+                                            stk::mesh::Entity localElement,
+                                            int localOrdinal,
+                                            const stk::mesh::Part& activePart,
+                                            const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector);
+
+bool is_exposed_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element, int side_id,
+                     const stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                     const stk::mesh::Part& activePart);
+
+bool remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
+        stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector);
 
 stk::mesh::ConstPartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
 
@@ -567,6 +588,11 @@ inline bool is_shell_or_beam2(stk::topology top)
     //return top.is_shell() || top == stk::topology::BEAM_2;
 }
 
+inline bool is_shell_face_side(stk::topology elemTopology, unsigned sideIndex)
+{
+  return elemTopology.is_shell() && (sideIndex == 0 || elemTopology.side_topology(sideIndex) == elemTopology.side_topology(0));
+}
+
 struct TopologyChecker
 {
     bool are_both_shells() const
@@ -581,6 +607,159 @@ struct TopologyChecker
 
     stk::topology localTopology;
     stk::topology remoteTopology;
+};
+
+template<typename Key, typename Value>
+struct ComparePairByKey {
+
+  inline bool operator()(const std::pair<Key, Value>& lhs, const std::pair<Key, Value>& rhs) const
+  {
+    return lhs.first < rhs.first;
+  }
+
+  inline bool operator()(const std::pair<Key, Value>& lhs, const Key& rhs) const
+  {
+    return lhs.first < rhs;
+  }
+
+  inline bool operator()(const Key& lhs, const std::pair<Key, Value>& rhs) const
+  {
+    return lhs < rhs.first;
+  }
+
+  inline bool operator()(const Key& lhs, const Key& rhs) const
+  {
+    return lhs < rhs;
+  }
+};
+
+template<typename T>
+class SortedKeyBoolPairVector {
+public:
+  SortedKeyBoolPairVector() = default;
+  ~SortedKeyBoolPairVector() = default;
+
+  bool set_if_not_already_set(const T& key, bool value)
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      m_values.insert(iter, std::make_pair(key, value));
+      return true;
+    }
+
+    return false;
+  }
+
+  bool set(const T& key, bool value)
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      m_values.insert(iter, std::make_pair(key, value));
+    }
+
+    iter->second = value;
+    return true;
+  }
+
+  bool get(const T& key) const
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      return false;
+    }
+
+    return iter->second;
+  }
+
+  void clear()
+  {
+    m_values.clear();
+  }
+
+private:
+  std::vector<std::pair<T, bool>> m_values;
+  ComparePairByKey<T, bool> m_compare;
+};
+
+// Implementation of above using maps ... which is better to use?
+template<typename T>
+class SortedKeyBoolPairMap {
+public:
+  SortedKeyBoolPairMap() = default;
+  ~SortedKeyBoolPairMap() = default;
+
+  bool set_if_not_already_set(const T& key, bool value)
+  {
+    if(m_values.find(key) == m_values.end()) {
+      m_values[key] = value;
+      return true;
+    }
+
+    return false;
+  }
+
+  bool set(const T& key, bool value)
+  {
+    m_values[key] = value;
+    return true;
+  }
+
+  bool get(const T& key)
+  {
+    return m_values[key];
+  }
+
+  void clear()
+  {
+    m_values.clear();
+  }
+private:
+  std::map<T, bool> m_values;
+};
+
+////////////////////////////////////////////////////////////
+
+template<typename T>
+class SortedKeyIntVectorPairVector {
+public:
+  SortedKeyIntVectorPairVector() = default;
+  ~SortedKeyIntVectorPairVector() = default;
+
+  bool add(const T& key, int value)
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      m_values.insert(iter, std::make_pair(key, std::vector<int>{value}));
+      return true;
+    }
+
+    return stk::util::insert_keep_sorted_and_unique(value, iter->second);
+  }
+
+  const std::vector<int>& get(const T& key) const
+  {
+    auto iter = std::lower_bound(m_values.begin(), m_values.end(), key, m_compare);
+
+    if (iter == m_values.end() || iter->first != key) {
+      return m_emptyVector;
+    }
+
+    return iter->second;
+  }
+
+  void clear()
+  {
+    m_values.clear();
+  }
+
+private:
+  std::vector<int> m_emptyVector;
+  std::vector<std::pair<T, std::vector<int>>> m_values;
+  ComparePairByKey<T, std::vector<int>> m_compare;
 };
 
 }}} // end namespaces stk mesh

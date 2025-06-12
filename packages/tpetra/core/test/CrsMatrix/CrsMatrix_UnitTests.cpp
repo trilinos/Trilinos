@@ -394,7 +394,6 @@ namespace { // (anonymous)
     if constexpr(!ST::isOrdinal) {
       typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> MAT;
       typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-      typedef Tpetra::Vector<Scalar,LO,GO,Node> V;
       typedef typename ST::magnitudeType Mag;
       typedef Teuchos::ScalarTraits<Mag> MT;
       const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();

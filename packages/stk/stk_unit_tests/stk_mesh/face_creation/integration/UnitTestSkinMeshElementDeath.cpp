@@ -30,7 +30,7 @@ class BulkDataTester : public stk::mesh::BulkData
 {
 public:
   BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-    stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm)
+    stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto /*pointerWeWontDelete*/){}), comm)
   {
   }
 

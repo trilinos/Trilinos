@@ -245,23 +245,24 @@ parallel_comm()
 }
 
 MPI_Comm
-parallel_intercomm()
-{
-  return stk::EnvData::instance().m_interComm;
-}
-
-MPI_Comm
 parallel_world_comm()
 {
   return stk::EnvData::instance().m_worldComm;
 }
 
-int peer_group() 
+MPI_Comm
+parallel_intercomm()
+{
+  return stk::EnvData::instance().m_interComm;
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after July 2025
+STK_DEPRECATED int peer_group() 
 {
   return stk::EnvData::instance().m_execMap[EXEC_TYPE_PEER].m_rootProcessor;
 }
 
-bool
+STK_DEPRECATED bool
 is_comm_valid()
 {
   stk::EnvData &env_data = stk::EnvData::instance();
@@ -270,6 +271,7 @@ is_comm_valid()
   }
   return true;
 }
+#endif
 
 void
 output_flush()
@@ -362,7 +364,7 @@ get_param(
 void
 set_param(
   const char *          option,
-  const std::string &   value) {
+  const std::string &   /*value*/) {
 
   int argc = 1;
   const char *s = std::strcpy(new char[std::strlen(option) + 1], option);

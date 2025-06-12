@@ -28,6 +28,8 @@
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 #include <stdlib.h>
 
+#include <MueLu_KokkosTuningInterface.hpp>
+
 namespace MueLu {
 
 /*!
@@ -67,12 +69,35 @@ CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
   } else
     label = op->getObjectLabel();
 
+  RCP<Teuchos::Time> tm;
   std::string timerName;
+
+  // Do Kokkos tuning, if requested
+  if (paramList.isSublist("kokkos tuning: muelu parameter mapping") &&
+      paramList.sublist("kokkos tuning: muelu parameter mapping").isParameter("kokkos context id")) {
+    // Time tuning separately
+    if (label != "")
+      timerName = "MueLu tuning time (" + label + ")";
+    else
+      timerName = "MueLu tuning time";
+    tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+    tm->start();
+
+    MueLu::KokkosTuningInterface KokkosTuner(op->getMap()->getComm());
+    KokkosTuner.SetParameterList(paramList);
+    KokkosTuner.SetMueLuParameters(paramList);
+    tm->stop();
+    tm->incrementNumCalls();
+    tm = Teuchos::null;
+  }
+
+  // Setup Timer
   if (label != "")
     timerName = "MueLu setup time (" + label + ")";
   else
     timerName = "MueLu setup time";
-  RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+
+  tm = Teuchos::TimeMonitor::getNewTimer(timerName);
   tm->start();
 
   std::string syntaxStr = "parameterlist: syntax";

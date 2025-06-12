@@ -43,6 +43,28 @@ DistributorSendTypeEnumToString (EDistributorSendType sendType)
   }
 }
 
+EDistributorSendType
+DistributorSendTypeStringToEnum (const std::string_view s)
+{
+  if (s == "Isend") return DISTRIBUTOR_ISEND;
+  if (s == "Send") return DISTRIBUTOR_SEND;
+  if (s == "Alltoall") return DISTRIBUTOR_ALLTOALL;
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  if (s == "MpiAdvanceAlltoall") return DISTRIBUTOR_MPIADVANCE_ALLTOALL;
+  if (s == "MpiAdvanceNbralltoallv") return DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV;
+#endif
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string to convert to EDistributorSendType enum value: " << s);
+}
+
+/// \brief Valid enum values of distributor send types.
+const std::string &validSendTypeOrThrow(const std::string &s) {
+  const auto valids = distributorSendTypes();
+  if (std::find(valids.begin(), valids.end(), s) == valids.end()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string for EDistributorSendType enum value: " << s);
+  }
+  return s;
+}
+
 std::string
 DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
 {
@@ -71,7 +93,7 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
 #endif
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
     reversePlan_(Teuchos::null),
-    sendType_(DISTRIBUTOR_SEND),
+    sendType_(DistributorSendTypeStringToEnum(Behavior::defaultSendType())),
     sendMessageToSelf_(false),
     numSendsToOtherProcs_(0),
     maxSendLength_(0),
@@ -187,7 +209,7 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // numActive is the number of sends that are not Null
   size_t numActive = 0;
   int needSendBuff = 0; // Boolean
-  
+
   for (size_t i = 0; i < numExports; ++i) {
     const int exportID = exportProcIDs[i];
     if (exportID >= 0) {
@@ -391,7 +413,6 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
 
 void DistributorPlan::createFromRecvs(const Teuchos::ArrayView<const int>& remoteProcIDs)
 {
-  createFromSends(remoteProcIDs);
   *this = *getReversePlan();
   howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
 }
@@ -578,7 +599,7 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
   totalReceiveLength_ = remoteProcIDs.size();
   indicesFrom_.clear ();
   numReceives_-=sendMessageToSelf_;
-  
+
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   initializeMpiAdvance();
 #endif
@@ -900,6 +921,18 @@ Teuchos::Array<std::string> distributorSendTypes()
   return sendTypes;
 }
 
+Teuchos::Array<EDistributorSendType> distributorSendTypeEnums() {
+  Teuchos::Array<EDistributorSendType> res;
+  res.push_back (DISTRIBUTOR_ISEND);
+  res.push_back (DISTRIBUTOR_SEND);
+  res.push_back (DISTRIBUTOR_ALLTOALL);
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  res.push_back (DISTRIBUTOR_MPIADVANCE_ALLTOALL);
+  res.push_back (DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
+#endif
+  return res;
+}
+
 Teuchos::RCP<const Teuchos::ParameterList>
 DistributorPlan::getValidParameters() const
 {
@@ -910,20 +943,14 @@ DistributorPlan::getValidParameters() const
   using Teuchos::setStringToIntegralParameter;
 
   Array<std::string> sendTypes = distributorSendTypes ();
-  const std::string defaultSendType ("Send");
-  Array<Details::EDistributorSendType> sendTypeEnums;
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
-#endif
+  const Array<Details::EDistributorSendType> sendTypeEnums = distributorSendTypeEnums ();
+
+  const std::string validatedSendType = validSendTypeOrThrow(Behavior::defaultSendType());
 
   RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
 
   setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
-      defaultSendType, "When using MPI, the variant of send to use in "
+      validatedSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
   plist->set ("Timer Label","","Label for Time Monitor output");
 
@@ -959,7 +986,7 @@ void DistributorPlan::initializeMpiAdvance() {
   else if (sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
     int numRecvs = (int)(numReceives_ + (sendMessageToSelf_ ? 1 : 0));
     int *sourceRanks = procsFrom_.data();
-    
+
     // int *sourceWeights = static_cast<int*>(lengthsFrom_.data());// lengthsFrom_ may not be int
     const int *sourceWeights = MPI_UNWEIGHTED;
     int numSends = (int)(numSendsToOtherProcs_ + (sendMessageToSelf_ ? 1 : 0));
@@ -979,6 +1006,99 @@ void DistributorPlan::initializeMpiAdvance() {
   TEUCHOS_ASSERT(err == 0);
 }
 #endif
+
+
+  DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(size_t numPackets) const {
+    const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);
+
+    IndexView importStarts(actualNumReceives);
+    IndexView importLengths(actualNumReceives);
+
+    size_t offset = 0;
+    for (size_t i = 0; i < actualNumReceives; ++i) {
+      importStarts[i] = offset;
+      offset += getLengthsFrom()[i] * numPackets;
+      importLengths[i] = getLengthsFrom()[i] * numPackets;
+    }
+    return std::make_pair(importStarts, importLengths);
+  }
+
+  DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(const Teuchos::ArrayView<const size_t> &numImportPacketsPerLID) const {
+
+    const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);
+
+    IndexView importStarts(actualNumReceives);
+    IndexView importLengths(actualNumReceives);
+
+    size_t offset = 0;
+    size_t curLIDoffset = 0;
+    for (size_t i = 0; i < actualNumReceives; ++i) {
+      size_t totalPacketsFrom_i = 0;
+      for (size_t j = 0; j < getLengthsFrom()[i]; ++j) {
+        totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset + j];
+      }
+      curLIDoffset += getLengthsFrom()[i];
+      importStarts[i] = offset;
+      offset += totalPacketsFrom_i;
+      importLengths[i] = totalPacketsFrom_i;
+    }
+    return std::make_pair(importStarts, importLengths);
+  }
+
+
+  DistributorPlan::SubViewLimits DistributorPlan::getExportViewLimits(size_t numPackets) const {
+    if (getIndicesTo().is_null()) {
+
+      const size_t actualNumSends = getNumSends() + (hasSelfMessage() ? 1 : 0);
+      IndexView exportStarts(actualNumSends);
+      IndexView exportLengths(actualNumSends);
+      for (size_t pp = 0; pp < actualNumSends; ++pp) {
+        exportStarts[pp] = getStartsTo()[pp] * numPackets;
+        exportLengths[pp] = getLengthsTo()[pp] * numPackets;
+      }
+      return std::make_pair(exportStarts, exportLengths);
+    } else {
+      const size_t numIndices = getIndicesTo().size();
+      IndexView exportStarts(numIndices);
+      IndexView exportLengths(numIndices);
+      for (size_t j = 0; j < numIndices; ++j) {
+        exportStarts[j] = getIndicesTo()[j]*numPackets;
+        exportLengths[j] = numPackets;
+      }
+      return std::make_pair(exportStarts, exportLengths);
+    }
+  }
+
+  DistributorPlan::SubViewLimits DistributorPlan::getExportViewLimits(const Teuchos::ArrayView<const size_t> &numExportPacketsPerLID) const {
+    if (getIndicesTo().is_null()) {
+      const size_t actualNumSends = getNumSends() + (hasSelfMessage() ? 1 : 0);
+      IndexView exportStarts(actualNumSends);
+      IndexView exportLengths(actualNumSends);
+      size_t offset = 0;
+      for (size_t pp = 0; pp < actualNumSends; ++pp) {
+        size_t numPackets = 0;
+        for (size_t j = getStartsTo()[pp];
+             j < getStartsTo()[pp] + getLengthsTo()[pp]; ++j) {
+          numPackets += numExportPacketsPerLID[j];
+        }
+        exportStarts[pp] = offset;
+        offset += numPackets;
+        exportLengths[pp] = numPackets;
+      }
+      return std::make_pair(exportStarts, exportLengths);
+    } else {
+      const size_t numIndices = getIndicesTo().size();
+      IndexView exportStarts(numIndices);
+      IndexView exportLengths(numIndices);
+      size_t offset = 0;
+      for (size_t j = 0; j < numIndices; ++j) {
+        exportStarts[j] = offset;
+        offset += numExportPacketsPerLID[j];
+        exportLengths[j] = numExportPacketsPerLID[j];
+      }
+      return std::make_pair(exportStarts, exportLengths);
+    }
+  }
 
 }
 }

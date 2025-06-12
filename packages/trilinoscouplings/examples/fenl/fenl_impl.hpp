@@ -22,7 +22,6 @@
 // Kokkos libraries' headers:
 
 #include <Kokkos_UnorderedMap.hpp>
-#include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <Kokkos_Timer.hpp>
 #include <Kokkos_ArithTraits.hpp>

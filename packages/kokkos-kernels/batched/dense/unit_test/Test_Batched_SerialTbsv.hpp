@@ -22,8 +22,6 @@
 #include "KokkosBatched_Tbsv.hpp"
 #include "Test_Batched_DenseUtils.hpp"
 
-using namespace KokkosBatched;
-
 namespace Test {
 namespace Tbsv {
 
@@ -38,22 +36,22 @@ template <typename DeviceType, typename AViewType, typename BViewType, typename 
           typename AlgoTagType>
 struct Functor_BatchedSerialTrsv {
   using execution_space = typename DeviceType::execution_space;
-  AViewType _a;
-  BViewType _b;
+  AViewType m_a;
+  BViewType m_b;
 
-  ScalarType _alpha;
+  ScalarType m_alpha;
 
   KOKKOS_INLINE_FUNCTION
   Functor_BatchedSerialTrsv(const ScalarType alpha, const AViewType &a, const BViewType &b)
-      : _a(a), _b(b), _alpha(alpha) {}
+      : m_a(a), m_b(b), m_alpha(alpha) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ParamTagType &, const int k) const {
-    auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-    auto bb = Kokkos::subview(_b, k, Kokkos::ALL());
+    auto aa = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
+    auto bb = Kokkos::subview(m_b, k, Kokkos::ALL());
 
     KokkosBatched::SerialTrsv<typename ParamTagType::uplo, typename ParamTagType::trans, typename ParamTagType::diag,
-                              AlgoTagType>::invoke(_alpha, aa, bb);
+                              AlgoTagType>::invoke(m_alpha, aa, bb);
   }
 
   inline void run() {
@@ -61,7 +59,7 @@ struct Functor_BatchedSerialTrsv {
     std::string name_region("KokkosBatched::Test::SerialTbsv");
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
-    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _b.extent(0));
+    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, m_b.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
   }
 };
@@ -69,20 +67,20 @@ struct Functor_BatchedSerialTrsv {
 template <typename DeviceType, typename AViewType, typename BViewType, typename ParamTagType, typename AlgoTagType>
 struct Functor_BatchedSerialTbsv {
   using execution_space = typename DeviceType::execution_space;
-  AViewType _a;
-  BViewType _b;
-  int _k;
+  AViewType m_a;
+  BViewType m_b;
+  int m_k;
 
   KOKKOS_INLINE_FUNCTION
-  Functor_BatchedSerialTbsv(const AViewType &a, const BViewType &b, const int k) : _a(a), _b(b), _k(k) {}
+  Functor_BatchedSerialTbsv(const AViewType &a, const BViewType &b, const int k) : m_a(a), m_b(b), m_k(k) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ParamTagType &, const int k) const {
-    auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-    auto bb = Kokkos::subview(_b, k, Kokkos::ALL());
+    auto aa = Kokkos::subview(m_a, k, Kokkos::ALL(), Kokkos::ALL());
+    auto bb = Kokkos::subview(m_b, k, Kokkos::ALL());
 
     KokkosBatched::SerialTbsv<typename ParamTagType::uplo, typename ParamTagType::trans, typename ParamTagType::diag,
-                              AlgoTagType>::invoke(aa, bb, _k);
+                              AlgoTagType>::invoke(aa, bb, m_k);
   }
 
   inline void run() {
@@ -91,7 +89,7 @@ struct Functor_BatchedSerialTbsv {
     const std::string name_value_type = Test::value_type_name<value_type>();
     std::string name                  = name_region + name_value_type;
     Kokkos::Profiling::pushRegion(name.c_str());
-    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, _b.extent(0));
+    Kokkos::RangePolicy<execution_space, ParamTagType> policy(0, m_b.extent(0));
     Kokkos::parallel_for(name.c_str(), policy, *this);
     Kokkos::Profiling::popRegion();
   }
@@ -126,8 +124,8 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   create_banded_triangular_matrix<View3DType, View3DType, typename ParamTagType::uplo>(Ref, Ab, k, true);
 
   // Reference trsv
-  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType, Algo::Trsv::Unblocked>(1.0, A,
-                                                                                                                 x0)
+  Functor_BatchedSerialTrsv<DeviceType, View3DType, View2DType, ScalarType, ParamTagType,
+                            KokkosBatched::Algo::Trsv::Unblocked>(1.0, A, x0)
       .run();
 
   // tbsv
@@ -145,7 +143,7 @@ void impl_test_batched_tbsv(const int N, const int k, const int BlkSize) {
   auto h_x1 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x1);
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < BlkSize; j++) {
-      EXPECT_NEAR_KK(h_x0(i, j), h_x1(i, j), eps);
+      Test::EXPECT_NEAR_KK_REL(h_x0(i, j), h_x1(i, j), eps);
     }
   }
 }
@@ -185,8 +183,8 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
         }
 
         if (std::is_same_v<typename ParamTagType::uplo, KokkosBatched::Uplo::Upper>) {
-          if (std::is_same_v<typename ParamTagType::trans, Trans::NoTranspose>) {
-            if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
+          if (std::is_same_v<typename ParamTagType::trans, KokkosBatched::Trans::NoTranspose>) {
+            if (std::is_same_v<typename ParamTagType::diag, KokkosBatched::Diag::NonUnit>) {
               x_ref(ib, 0) = 1.0 / 2.0;
               x_ref(ib, 1) = 1.0 / 6.0;
               x_ref(ib, 2) = 1.0 / 3.0;
@@ -196,7 +194,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
               x_ref(ib, 2) = 1.0;
             }
           } else {
-            if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
+            if (std::is_same_v<typename ParamTagType::diag, KokkosBatched::Diag::NonUnit>) {
               x_ref(ib, 0) = 1.0;
               x_ref(ib, 1) = 0.0;
               x_ref(ib, 2) = 0.0;
@@ -207,8 +205,8 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
             }
           }
         } else {
-          if (std::is_same_v<typename ParamTagType::trans, Trans::NoTranspose>) {
-            if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
+          if (std::is_same_v<typename ParamTagType::trans, KokkosBatched::Trans::NoTranspose>) {
+            if (std::is_same_v<typename ParamTagType::diag, KokkosBatched::Diag::NonUnit>) {
               x_ref(ib, 0) = 1.0;
               x_ref(ib, 1) = -1.0 / 2.0;
               x_ref(ib, 2) = -1.0 / 6.0;
@@ -218,7 +216,7 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
               x_ref(ib, 2) = 1.0;
             }
           } else {
-            if (std::is_same_v<typename ParamTagType::diag, Diag::NonUnit>) {
+            if (std::is_same_v<typename ParamTagType::diag, KokkosBatched::Diag::NonUnit>) {
               x_ref(ib, 0) = 0.0;
               x_ref(ib, 1) = 0.0;
               x_ref(ib, 2) = 1.0 / 3.0;
@@ -245,37 +243,25 @@ void impl_test_batched_tbsv_analytical(const std::size_t N) {
 
   Kokkos::fence();
 
-  // Check x0 = x_ref and x1 = x_ref
-  // Firstly, prepare contiguous views on host
-  auto h_x0 = Kokkos::create_mirror_view(x0);
-  auto h_x1 = Kokkos::create_mirror_view(x0);
-
-  Kokkos::deep_copy(h_x0, x0);
-
-  // Pack x1 into x0 for contiguous storage
-  Kokkos::parallel_for(
-      "KokkosBatched::Test::SerialTbsv::Copy", policy, KOKKOS_LAMBDA(const std::size_t ib) {
-        for (std::size_t j = 0; j < BlkSize; j++) {
-          x0(ib, j) = x1(ib, j);
-        }
-      });
-
-  Kokkos::fence();
-  Kokkos::deep_copy(h_x1, x0);
-
-  // this eps is about 10^-14
+  // Check x0 = x_ref
   using ats      = typename Kokkos::ArithTraits<ScalarType>;
   using mag_type = typename ats::mag_type;
   mag_type eps   = 1.0e3 * ats::epsilon();
 
+  auto h_x0    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x0);
   auto h_x_ref = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x_ref);
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t j = 0; j < BlkSize; j++) {
-      // Check x0 = x_ref
       EXPECT_NEAR_KK(h_x0(ib, j), h_x_ref(ib, j), eps);
+    }
+  }
 
-      // Check x1 = x_ref
-      EXPECT_NEAR_KK(h_x1(ib, j), h_x_ref(ib, j), eps);
+  // Testing for strided views x1, reusing x0
+  Kokkos::deep_copy(x0, x1);
+  Kokkos::deep_copy(h_x0, x0);
+  for (std::size_t ib = 0; ib < N; ib++) {
+    for (std::size_t j = 0; j < BlkSize; j++) {
+      EXPECT_NEAR_KK(h_x0(ib, j), h_x_ref(ib, j), eps);
     }
   }
 }
@@ -293,6 +279,7 @@ int test_batched_tbsv() {
     Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0, 1, 10);
     for (int i = 0; i < 10; i++) {
       Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1, 1, i);
+      Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(2, 1, i);
     }
   }
 #endif
@@ -304,6 +291,7 @@ int test_batched_tbsv() {
     Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(0, 1, 10);
     for (int i = 0; i < 10; i++) {
       Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(1, 1, i);
+      Test::Tbsv::impl_test_batched_tbsv<DeviceType, ScalarType, LayoutType, ParamTagType, AlgoTagType>(2, 1, i);
     }
   }
 #endif

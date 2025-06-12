@@ -47,7 +47,7 @@ namespace stk {
   //
   //  MPI operation to compute the sum and max of a value simultaneously
   //
-  void MpiSumMax(uint64_t* in, uint64_t* inout, int* len, MPI_Datatype * dptr) {
+  void MpiSumMax(uint64_t* in, uint64_t* inout, int* len, MPI_Datatype * /*dptr*/) {
     if(*len != 2) {
       std::ostringstream msg;
       msg << "MpiSumMax MPI operation can only be given two arguements \n";

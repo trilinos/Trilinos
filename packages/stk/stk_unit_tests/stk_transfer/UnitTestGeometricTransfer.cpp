@@ -44,8 +44,20 @@ public:
   typedef TrivialTestKey Key;
   typedef stk::search::IdentProc<Key, int> EntityProc;
   typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
-  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  void bounding_boxes(std::vector<BoundingBox>& /*boxes*/) const
   { /* empty to test coarse_search_impl with empty domain */ }
+};
+
+class NonTrivialTestSrcMesh {
+public:
+  typedef TrivialTestKey Key;
+  typedef stk::search::IdentProc<Key, int> EntityProc;
+  typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
+  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  {
+    boxes.clear();
+    boxes.push_back(BoundingBox(stk::search::Box<double>(),EntityProc(0,0)));
+  }
 };
 
 class TrivialTestDestMesh {
@@ -60,26 +72,56 @@ public:
   }
 };
 
+class NonTrivialTestDestMesh {
+public:
+  typedef TrivialTestKey Key;
+  typedef stk::search::IdentProc<Key, int> EntityProc;
+  typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
+  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  {
+    boxes.clear();
+    boxes.push_back(BoundingBox(stk::search::Box<double>({0,0,0}, {1,1,1}),EntityProc(0,0)));
+  }
+};
+
+template <typename SrcMeshType, typename DestMeshType>
 class TrivialTestInterp {
 public:
-  typedef TrivialTestSrcMesh MeshA;
-  typedef TrivialTestDestMesh MeshB;
-  typedef MeshA::EntityProc EntityProcA;
-  typedef MeshB::EntityProc EntityProcB;
+  typedef SrcMeshType MeshA;
+  typedef DestMeshType MeshB;
+  typedef typename MeshA::EntityProc EntityProcA;
+  typedef typename MeshB::EntityProc EntityProcB;
   typedef std::pair<EntityProcA, EntityProcB> EntityProcRelation;
   typedef std::vector<EntityProcRelation> EntityProcRelationVec;
 };
 
 TEST(GeomXferImpl, coarseSearchImpl_emptyDomain)
 {
-  TrivialTestInterp::EntityProcRelationVec entProcRelVec;
+  using Interp = TrivialTestInterp<TrivialTestSrcMesh, TrivialTestDestMesh>;
+
+  Interp::EntityProcRelationVec entProcRelVec;
   TrivialTestSrcMesh empty_meshA;
   TrivialTestDestMesh meshB;
-  const double expansionFactor = 1.1; // >1 so coarse_search_impl will try
-                                    //to expand boxes to find range entries
-  EXPECT_NO_THROW(stk::transfer::impl::coarse_search_impl<TrivialTestInterp>
-                  (entProcRelVec, MPI_COMM_WORLD, &empty_meshA, &meshB,
-                  stk::search::KDTREE, expansionFactor));
+  const double expansionFactor = 1.1;  // >1 so coarse_search_impl will try
+                                       // to expand boxes to find range entries
+  EXPECT_NO_THROW(stk::transfer::impl::coarse_search_impl<Interp>(
+      entProcRelVec, MPI_COMM_WORLD, &empty_meshA, &meshB, stk::search::KDTREE, expansionFactor));
+  EXPECT_TRUE(entProcRelVec.empty());
+}
+
+TEST(GeomXferImpl, coarseSearchImpl_expansionLimitThrow)
+{
+  using Interp = TrivialTestInterp<NonTrivialTestSrcMesh, NonTrivialTestDestMesh>;
+
+  Interp::EntityProcRelationVec entProcRelVec;
+  NonTrivialTestSrcMesh meshA;
+  NonTrivialTestDestMesh meshB;
+  const double expansionFactor = 1.1;  // >1 so coarse_search_impl will try
+                                       // to expand boxes to find range entries
+
+  //dest mesh has an expanding box, will throw when this box length scale hits 3.0 (arbitrary)                                       
+  EXPECT_ANY_THROW(stk::transfer::impl::coarse_search_impl<Interp>(
+      entProcRelVec, MPI_COMM_WORLD, &meshA, &meshB, stk::search::KDTREE, expansionFactor, 3.0));
   EXPECT_TRUE(entProcRelVec.empty());
 }
 
@@ -257,7 +299,7 @@ public:
     }
   }
 
-  void get_to_points_coordinates(const EntityProcVec &to_entity_keys, ToPointsContainer &to_points)
+  void get_to_points_coordinates(const EntityProcVec & /*to_entity_keys*/, ToPointsContainer &to_points)
   {
     to_points.push_back(get_point());
   }
@@ -271,7 +313,7 @@ public:
   using MeshB = SinglePointMockMeshB;
   static unsigned filterSize;
   static int fromCount;
-  static void filter_to_nearest(EntityKeyMap & local_range_to_domain, const MeshA & mesha, const MeshB & meshb)
+  static void filter_to_nearest(EntityKeyMap & /*local_range_to_domain*/, const MeshA & /*mesha*/, const MeshB & /*meshb*/)
   {
     //no filtering needed since map is one-to-one
   }
@@ -284,8 +326,8 @@ public:
 
   //Specific to single point case right now
   void obtain_parametric_coords(typename MeshA::EntityProcVec entities_to_copy_from,
-      MeshA &FromElem,
-      const typename MeshB::ToPointsContainer & to_points_on_from_mesh,
+      MeshA & /*FromElem*/,
+      const typename MeshB::ToPointsContainer & /*to_points_on_from_mesh*/,
       typename MeshB::ToPointsDistanceContainer & to_points_distance_on_from_mesh)
   {
     for (unsigned i = 0; i < entities_to_copy_from.size(); ++i)
@@ -302,7 +344,7 @@ public:
     fromCount = from_count;
   }
 
-  static void apply(const MeshB & meshb, const MeshA & mesha, EntityKeyMap & local_range_to_domain)
+  static void apply(const MeshB & meshb, const MeshA & /*mesha*/, EntityKeyMap & local_range_to_domain)
   {
     if (stk::parallel_machine_rank(meshb.m_comm) == meshb.owning_rank())
     {
@@ -567,14 +609,14 @@ public:
   using MeshA = TwoElemMockMeshA;
   using MeshB = TwoPointMockMeshB;
 
-  static void filter_to_nearest(EntityKeyMap & local_range_to_domain, const MeshA & mesha, const MeshB & meshb)
+  static void filter_to_nearest(EntityKeyMap & /*local_range_to_domain*/, const MeshA & /*mesha*/, const MeshB & /*meshb*/)
   {
     //don't need to filter in this case
   }
 
   void obtain_parametric_coords(typename MeshA::EntityProcVec entities_to_copy_from,
-      MeshA &FromElem,
-      const typename MeshB::ToPointsContainer & to_points_on_from_mesh,
+      MeshA & /*FromElem*/,
+      const typename MeshB::ToPointsContainer & /*to_points_on_from_mesh*/,
       typename MeshB::ToPointsDistanceContainer & to_points_distance_on_from_mesh)
   {
     for (unsigned i = 0; i < entities_to_copy_from.size(); ++i)
@@ -583,11 +625,11 @@ public:
     }
   }
 
-  void mask_parametric_coords(const std::vector<int> & filter_mask_from, int from_count)
+  void mask_parametric_coords(const std::vector<int> & /*filter_mask_from*/, int /*from_count*/)
   {
   }
 
-  static void apply(const MeshB & meshb, const MeshA & mesha, EntityKeyMap & local_range_to_domain)
+  static void apply(const MeshB & meshb, const MeshA & /*mesha*/, EntityKeyMap & local_range_to_domain)
   {
     const int localRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
     const unsigned numLocallyOwned = count_locally_owned(localRank, meshb.owning_ranks());
@@ -608,7 +650,7 @@ public:
       MeshA * FromElem,
       const typename MeshB::EntityProcVec & to_entity_keys_masked,
       const typename MeshA::EntityProcVec & from_entity_keys_masked,
-      const ReducedDependencyCommData & comm_data)
+      const ReducedDependencyCommData & /*comm_data*/)
   {
     if (FromElem)
     {
@@ -678,7 +720,7 @@ public:
   //Specific to single point case right now
   void obtain_parametric_coords(typename MeshA::EntityProcVec entities_to_copy_from,
       MeshA &FromElem,
-      const typename MeshB::ToPointsContainer & to_points_on_from_mesh,
+      const typename MeshB::ToPointsContainer & /*to_points_on_from_mesh*/,
       typename MeshB::ToPointsDistanceContainer & to_points_distance_on_from_mesh)
   {
     for (unsigned i = 0; i < entities_to_copy_from.size(); ++i)
@@ -691,7 +733,7 @@ public:
     }
   }
 
-  void mask_parametric_coords(const std::vector<int> & filter_mask_from, int from_count)
+  void mask_parametric_coords(const std::vector<int> & /*filter_mask_from*/, int /*from_count*/)
   {
   }
 
@@ -722,7 +764,7 @@ public:
       MeshA * FromElem,
       const typename MeshB::EntityProcVec & to_entity_keys_masked,
       const typename MeshA::EntityProcVec & from_entity_keys_masked,
-      const ReducedDependencyCommData & comm_data)
+      const ReducedDependencyCommData & /*comm_data*/)
   {
     if (FromElem)
     {

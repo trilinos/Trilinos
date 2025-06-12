@@ -112,17 +112,13 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix HIPWrapper")))));
-#endif
   // Node-specific code
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
   std::string nodename("HIP");
 
   // Lots and lots of typedefs
   using Teuchos::RCP;
+  using Teuchos::rcp;
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
@@ -132,6 +128,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
   //typedef typename graph_t::row_map_type::const_type lno_view_t_const;
+
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix HIPWrapper"));
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
@@ -171,9 +169,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   // Merge the B and Bimport matrices
   const KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getLocalNumElements());
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix HIPCore"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix HIP Core"));
 
   // Do the multiply on whatever we've got
   typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
@@ -186,8 +182,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   scalar_view_t   valuesC;
 
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-  const bool useIntRowptrs = 
-     irph.shouldUseIntRowptrs() && 
+  const bool useIntRowptrs =
+     irph.shouldUseIntRowptrs() &&
      Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
   if (useIntRowptrs) {
@@ -199,14 +195,19 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
 
     auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
     auto Bint = irph.getIntRowptrMatrix(Bmerged);
-    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,false,Bint.graph.row_map,Bint.graph.entries,false, int_row_mapC);
+
+     {
+       Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic int");
+       KokkosSparse::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,false,Bint.graph.row_map,Bint.graph.entries,false, int_row_mapC);
+     }
+     Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric int");
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
       entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
-    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,Aint.values,false,Bint.graph.row_map,Bint.graph.entries,Bint.values,false,int_row_mapC,entriesC,valuesC);
+    KokkosSparse::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,Aint.values,false,Bint.graph.row_map,Bint.graph.entries,Bint.values,false,int_row_mapC,entriesC,valuesC);
     // transfer the integer rowptrs back to the correct rowptr type
     Kokkos::parallel_for(int_row_mapC.size(), KOKKOS_LAMBDA(int i){ row_mapC(i) = int_row_mapC(i);});
     kh.destroy_spgemm_handle();
@@ -215,7 +216,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
     kh.create_spgemm_handle(alg_enum);
     kh.set_team_work_size(team_work_size);
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels symbolic non-int");
+      KokkosSparse::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
+    }
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
@@ -223,22 +227,21 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
 
-    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,Amat.values,false,Bmerged.graph.row_map,Bmerged.graph.entries,Bmerged.values,false,row_mapC,entriesC,valuesC);
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: Newmatrix KokkosKernels numeric non-int");
+    KokkosSparse::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,Amat.values,false,Bmerged.graph.row_map,Bmerged.graph.entries,Bmerged.values,false,row_mapC,entriesC,valuesC);
     kh.destroy_spgemm_handle();
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix HIPSort"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix HIP Sort"));
 
   // Sort & set values
   if (params.is_null() || params->get("sort entries",true))
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC,entriesC,valuesC);
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix HIPESFC"))));
-#endif
+
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix HIP ESFC"));
+
 
   // Final Fillcomplete
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
@@ -267,16 +270,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
 
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse SerialCore"))));
-  Teuchos::RCP<Teuchos::TimeMonitor> MM2;
-#endif
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Reuse SerialCore"));
 
   // Lots and lots of typedefs
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
@@ -339,9 +336,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
     Ivals   = lclB.values;
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = Teuchos::null; MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore - Compare"))));
-#endif
+  auto MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: Newmatrix SerialCore - Compare"));
 
   // Classic csr assembly (low memory edition)
   // mfh 27 Sep 2016: The c_status array is an implementation detail
@@ -427,11 +422,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-    using Teuchos::TimeMonitor;
-    Teuchos::RCP<TimeMonitor> MM;
-#endif
+
 
   // Node-specific code
   using Teuchos::RCP;
@@ -454,9 +445,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi newmatrix unknown kernel");
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix HIPESFC"))));
-#endif
+  Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC");
 
   // Final Fillcomplete
   RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
@@ -494,14 +483,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   // FIXME: Right now, this is a cut-and-paste of the serial kernel
   typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse HIPCore"))));
-  Teuchos::RCP<Teuchos::TimeMonitor> MM2;
-#endif
   using Teuchos::RCP;
   using Teuchos::rcp;
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore"));
 
   // Lots and lots of typedefs
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
@@ -566,9 +550,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   auto Dvals =
        Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = Teuchos::null; MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse HIPCore - Compare"))));
-#endif
+  RCP<Tpetra::Details::ProfilingRegion> MM2 = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse HIPCore - Compare"));
 
   // The status array will contain the index into colind where this entry was last deposited.
   //   c_status[i] <  CSR_ip - not in the row yet
@@ -645,10 +627,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     }
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2= Teuchos::null;
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse ESFC"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Reuse ESFC"));
 
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 
@@ -672,11 +651,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
 												const std::string& label,
 												const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> MM;
-#endif
+
 
   // Check if the diagonal entries exist in debug mode
   const bool debug = Tpetra::Details::Behavior::debug();
@@ -696,6 +671,10 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
 				 "KokkosKernels Jacobi-fused SpGEMM requires nonzero diagonal entries in A" << std::endl);
     }
   }
+
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix KokkosKernels"));
 
   // Usings
   using device_t = typename Tpetra::KokkosCompat::KokkosHIPWrapperNode::device_type;
@@ -755,8 +734,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-  const bool useIntRowptrs = 
-    irph.shouldUseIntRowptrs() && 
+  const bool useIntRowptrs =
+    irph.shouldUseIntRowptrs() &&
     Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
   if (useIntRowptrs) {
@@ -768,11 +747,16 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
 
     auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
     auto Bint = irph.getIntRowptrMatrix(Bmerged);
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels symbolic int");
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
-                  Aint.graph.row_map, Aint.graph.entries, false,
-                  Bint.graph.row_map, Bint.graph.entries, false,
-                  int_row_mapC);
+      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                                                  Aint.graph.row_map, Aint.graph.entries, false,
+                                                  Bint.graph.row_map, Bint.graph.entries, false,
+                                                  int_row_mapC);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels numeric int");
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
@@ -795,10 +779,16 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     kh.create_spgemm_handle(alg_enum);
     kh.set_team_work_size(team_work_size);
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
-                  Amat.graph.row_map, Amat.graph.entries, false,
-                  Bmerged.graph.row_map, Bmerged.graph.entries, false,
-                  row_mapC);
+    {
+      Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels symbolic non-int");
+
+      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                                                  Amat.graph.row_map, Amat.graph.entries, false,
+                                                  Bmerged.graph.row_map, Bmerged.graph.entries, false,
+                                                  row_mapC);
+    }
+
+    Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Newmatrix KokkosKernels numeric non-int");
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
@@ -813,18 +803,14 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     kh.destroy_spgemm_handle();
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix HIPSort"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPSort"));
 
   // Sort & set values
   if (params.is_null() || params->get("sort entries",true))
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   C.setAllValues(row_mapC,entriesC,valuesC);
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix HIPESFC"))));
-#endif
+  MM = Teuchos::null; MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: Jacobi: Newmatrix HIPESFC"));
 
   // Final Fillcomplete
   Teuchos::RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);

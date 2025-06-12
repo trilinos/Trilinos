@@ -32,6 +32,7 @@ private:
 };
 
 void initialize_expression_vector(const std::vector<std::string> & stringVec, std::vector<String_Function_Expression> & exprVec);
+stk::math::Vector3d evaluate_vector_at_location(const double time, const stk::math::Vector3d & coords, const std::vector<String_Function_Expression> & vecExpr);
 
 }
 

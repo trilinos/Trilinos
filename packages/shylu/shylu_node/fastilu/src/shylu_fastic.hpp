@@ -824,16 +824,16 @@ class FastICPrec
                 // setup L solve
                 khL.create_sptrsv_handle(algo, nRows, true);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx, lVal);
+                KokkosSparse::sptrsv_symbolic(&khL, lRowMap, lColIdx, lVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx);
+                KokkosSparse::sptrsv_symbolic(&khL, lRowMap, lColIdx);
                 #endif
                 // setup Lt solve
                 khLt.create_sptrsv_handle(algo, nRows, false);
                 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-                KokkosSparse::Experimental::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx, ltVal);
+                KokkosSparse::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx, ltVal);
                 #else
-                KokkosSparse::Experimental::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx);
+                KokkosSparse::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx);
                 #endif
             }
         }
@@ -849,9 +849,9 @@ class FastICPrec
             applyD(x, xTemp);
             if (standard_sptrsv) {
                 // solve with L
-                KokkosSparse::Experimental::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
+                KokkosSparse::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
                 // solve with Lt
-                KokkosSparse::Experimental::sptrsv_solve(&khLt, ltRowMap, ltColIdx, ltVal, y, xTemp);
+                KokkosSparse::sptrsv_solve(&khLt, ltRowMap, ltColIdx, ltVal, y, xTemp);
             } else {
                 applyLIC(xTemp, y);
                 //applyDD(y, xTemp);

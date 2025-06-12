@@ -40,7 +40,6 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "stk_util/diag/String.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for source_relative_path, set_report_handler, report
 
 namespace {
@@ -95,7 +94,7 @@ TEST(UnitTestReportHandler, UnitTest)
 namespace
 {
 template <typename T>
-bool condition_test(const T& val)
+bool condition_test(const T& /*val*/)
 {
   return stk::impl::is_valid_throw_condition<T>::value;
 }
@@ -109,7 +108,6 @@ TEST(UnitTestReportHandler, ConditionType)
 
   EXPECT_FALSE(condition_test("test"));
   EXPECT_FALSE(condition_test(std::string("test")));
-  EXPECT_FALSE(condition_test(sierra::String("test")));
 
   {
     const char* test = "test";

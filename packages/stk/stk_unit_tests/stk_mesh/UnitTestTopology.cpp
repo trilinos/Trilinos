@@ -43,7 +43,7 @@
 #include <gtest/gtest.h>
 #include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
+#include <stk_mesh/base/SkinBoundary.hpp>  // for create_all_sides
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
@@ -484,7 +484,7 @@ TEST (stkTopologyFunctions, use_permutations_Hex_2x1x1)
     fixture.generate_mesh();
 
     stk::mesh::BulkData &mesh = fixture.m_bulk_data;
-    stk::mesh::create_faces(mesh);
+    stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part());
 
     const std::vector<stk::mesh::Bucket *> &elem_buckets =
         mesh.get_buckets(stk::topology::ELEMENT_RANK, fixture.m_meta.universal_part());
@@ -913,7 +913,7 @@ protected:
     create_sides(superSide, sideParts, s);
   }
 
-  void create_sides(stk::topology superSide, const stk::mesh::PartVector& parts, const SuperTopologySideData &s)
+  void create_sides(stk::topology /*superSide*/, const stk::mesh::PartVector& parts, const SuperTopologySideData &s)
   {
     get_bulk().modification_begin();
     stk::mesh::Entity side = get_bulk().declare_solo_side(s.sharedFaceId, parts);

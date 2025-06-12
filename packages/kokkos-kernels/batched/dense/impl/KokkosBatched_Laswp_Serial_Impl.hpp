@@ -83,7 +83,7 @@ struct SerialLaswp<Direct::Forward> {
 template <>
 struct SerialLaswp<Direct::Backward> {
   template <typename PivViewType, typename AViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const PivViewType piv, const AViewType &A) {
+  KOKKOS_INLINE_FUNCTION static int invoke(const PivViewType &piv, const AViewType &A) {
     auto info = KokkosBatched::Impl::checkLaswpInput(piv, A);
     if (info) return info;
 

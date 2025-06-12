@@ -69,7 +69,7 @@ class GaussNewton
 
   private:
 
-    bool is_converged(const Matrix<double>& jac, const std::vector<double>& residuals)
+    bool is_converged(const Matrix<double>& jac, const std::vector<double>& /*residuals*/)
     {        
       matvec(1, jac, m_residuals.data(), 0, m_jacTransposeTimesResiduals.data(), BlasTrans::Trans);
 

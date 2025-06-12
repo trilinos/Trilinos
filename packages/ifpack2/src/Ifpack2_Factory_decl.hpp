@@ -159,6 +159,20 @@ public:
 
   template<class MatrixType>
   static
+  std::vector<std::string>
+  getSupportedNames ()
+  {
+    using SC = typename MatrixType::scalar_type;
+    using LO = typename MatrixType::local_ordinal_type;
+    using GO = typename MatrixType::global_ordinal_type;
+    using NT = typename MatrixType::node_type;
+
+    Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
+    return factory.getSupportedNames();
+  }
+
+  template<class MatrixType>
+  static
   bool
   isSupported (const std::string& precType)
   {

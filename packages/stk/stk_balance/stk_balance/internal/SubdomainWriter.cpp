@@ -67,6 +67,14 @@ SubdomainWriter::setup_output_file(const std::string& fileName, unsigned subdoma
   }
 
   Ioss::DatabaseIO *dbo = stk::io::create_database_for_subdomain(fileName, subdomain, numSubdomains, use64Bit);
+
+  const size_t inputFileIndex = m_inputBroker.get_active_mesh();
+  const Ioss::DatabaseIO* inputDBIO = m_inputBroker.get_input_database(inputFileIndex);
+  const int maxSymbolLength = inputDBIO->maximum_symbol_length();
+  if (maxSymbolLength > 0) {
+    dbo->set_maximum_symbol_length(maxSymbolLength);
+  }
+
   m_outRegion = new Ioss::Region(dbo, fileName);
   stk::io::OutputParams params(*m_outRegion, *m_bulk);
   stk::io::add_properties_for_subdomain(params, subdomain, numSubdomains, globalNumNodes, globalNumElems);
@@ -106,7 +114,7 @@ SubdomainWriter::add_global_variables()
   std::vector<std::string> globalVariableNames;
   m_inputBroker.get_global_variable_names(globalVariableNames);
   
-  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto pointerWeWontDelete){});
+  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto /*pointerWeWontDelete*/){});
 
   for (const std::string& globalVariableName : globalVariableNames) {
     size_t length = m_inputBroker.get_global_variable_length(globalVariableName);
@@ -134,7 +142,7 @@ SubdomainWriter::write_global_variables(int step)
   std::vector<std::string> globalVariableNames;
   m_inputBroker.get_global_variable_names(globalVariableNames);
 
-  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto pointerWeWontDelete){});
+  std::shared_ptr<Ioss::Region> region(m_outRegion, [](auto /*pointerWeWontDelete*/){});
 
   std::vector<double> globalVariable;
   for (const std::string& globalVariableName : globalVariableNames) {

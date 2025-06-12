@@ -66,6 +66,7 @@ namespace fixtures {
 class QuadShellFixture
 {
 public:
+  static std::string name() { return "QuadShellFixture"; }
   typedef double Scalar;
   typedef Field<Scalar> CoordFieldType;
 
@@ -84,7 +85,7 @@ public:
 
   QuadShellFixture( MetaData& meta, BulkData& bulk, unsigned nx , unsigned ny, unsigned nid_start, unsigned eid_start );
 
-  QuadShellFixture( MetaData& meta, BulkData& bulk, unsigned nx , unsigned ny, unsigned nz, unsigned nid_start, unsigned eid_start )
+  QuadShellFixture( MetaData& meta, BulkData& bulk, unsigned nx , unsigned ny, unsigned /*nz*/, unsigned nid_start, unsigned eid_start )
   : QuadShellFixture(meta, bulk, nx, ny, nid_start, eid_start) {}
 
   ~QuadShellFixture();

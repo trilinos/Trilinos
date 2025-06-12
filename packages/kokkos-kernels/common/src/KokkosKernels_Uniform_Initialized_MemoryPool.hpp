@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSKERNELS_MEMPOOL_HPP
-#define _KOKKOSKERNELS_MEMPOOL_HPP
+#ifndef KOKKOSKERNELS_MEMPOOL_HPP
+#define KOKKOSKERNELS_MEMPOOL_HPP
 
 #include <Kokkos_Core.hpp>
 #include "KokkosKernels_Utils.hpp"

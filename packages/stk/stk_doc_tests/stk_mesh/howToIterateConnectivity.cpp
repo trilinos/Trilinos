@@ -75,7 +75,7 @@ TEST(StkMeshHowTo, iterateElemNodeConnectivity_ForEachEntityWithNodes)
   stk::mesh::Selector all = stkMesh->mesh_meta_data().universal_part();
 
   stk::mesh::for_each_entity_run_with_nodes(*stkMesh, stk::topology::ELEM_RANK, all,
-    [&](stk::mesh::Entity elem, const stk::mesh::Entity* nodes, size_t numNodesPerEntity) {
+    [&](stk::mesh::Entity /*elem*/, const stk::mesh::Entity* nodes, size_t numNodesPerEntity) {
       EXPECT_EQ(numNodesPerEntity, nodesPerHex);
       for (unsigned inode = 0; inode < numNodesPerEntity; ++inode) {
         const double *coords = stk::mesh::field_data(coord_field, nodes[inode]);
@@ -113,7 +113,7 @@ TEST(StkMeshHowTo, iterateConnectivity_General_BulkData)
     {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN} };
 
   stk::mesh::for_each_entity_run(*stkMesh, stk::topology::ELEM_RANK,
-    [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity elem) {
+    [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity elem) {
       const stk::mesh::ConnectedEntities nodes = stkMesh->get_connected_entities(elem, stk::topology::NODE_RANK);
       EXPECT_EQ(nodes.size(), nodesPerHex);
 

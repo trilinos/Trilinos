@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-#include "Kokkos_StaticCrsGraph.hpp"
+#include "KokkosSparse_StaticCrsGraph.hpp"
 
 #include <Tpetra_Details_WrappedDualView.hpp>
 #include <Tpetra_Map.hpp>

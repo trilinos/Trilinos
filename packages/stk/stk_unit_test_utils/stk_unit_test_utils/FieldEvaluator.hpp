@@ -72,8 +72,8 @@ struct FieldEvaluator {
 };
 
 struct ConstantFieldEvaluator : public FieldEvaluator {
-  double operator()(stk::mesh::Entity entity, const double x, const double y, const double z,
-                    const unsigned index = InvalidIndex) const
+  double operator()(stk::mesh::Entity /*entity*/, const double /*x*/, const double /*y*/, const double /*z*/,
+                    [[maybe_unused]] const unsigned index = InvalidIndex) const
   {
     return value;
   }
@@ -91,7 +91,7 @@ struct ConstantFieldEvaluator : public FieldEvaluator {
 };
 
 struct ConstantFieldIndexEvaluator : public FieldEvaluator {
-  double operator()(stk::mesh::Entity entity, const double x, const double y, const double z,
+  double operator()(stk::mesh::Entity /*entity*/, const double /*x*/, const double /*y*/, const double /*z*/,
                     const unsigned index = InvalidIndex) const
   {
     if(fieldIndex == 0 || index == fieldIndex) {
@@ -116,8 +116,8 @@ struct ConstantFieldIndexEvaluator : public FieldEvaluator {
 };
 
 struct PlanarLinearFieldEvaluator : public FieldEvaluator {
-  virtual double operator()(stk::mesh::Entity entity, const double x, const double y, const double z,
-                            const unsigned index = InvalidIndex) const
+  virtual double operator()(stk::mesh::Entity /*entity*/, const double /*x*/, const double y, const double z,
+                            [[maybe_unused]] const unsigned index = InvalidIndex) const
   {
     return m_spatialDimension == 2 ? linear_function(m_coeffC, m_coeffX, m_coeffY, m_coeffZ, 0, y, 0)
                                    : linear_function(m_coeffC, m_coeffX, m_coeffY, m_coeffZ, 0, y, z);
@@ -149,8 +149,8 @@ struct PlanarLinearFieldEvaluator : public FieldEvaluator {
 };
 
 struct LinearFieldEvaluator : public FieldEvaluator {
-  virtual double operator()(stk::mesh::Entity entity, const double x, const double y, const double z,
-                            const unsigned index = InvalidIndex) const
+  virtual double operator()(stk::mesh::Entity /*entity*/, const double /*x*/, const double y, const double z,
+                            [[maybe_unused]] const unsigned index = InvalidIndex) const
   {
     return 2 == m_spatialDimension ? linear_function(m_coeffC, m_coeffX, m_coeffY, m_coeffZ, 0, y, 0)
                                    : linear_function(m_coeffC, m_coeffX, m_coeffY, m_coeffZ, 0, y, z);
@@ -184,7 +184,7 @@ struct LinearFieldEvaluator : public FieldEvaluator {
 struct BoundedLinearFieldEvaluator : public LinearFieldEvaluator {
   void apply_bounds(const unsigned length, double* fieldData, const double lowerBound, const double upperBound) const
   {
-    if(std::numeric_limits<double>::min() != lowerBound) {
+    if(std::numeric_limits<double>::lowest() != lowerBound) {
       for(unsigned i(0); i < length; ++i) {
         if(fieldData[i] < lowerBound) {
           fieldData[i] = lowerBound;
@@ -201,7 +201,7 @@ struct BoundedLinearFieldEvaluator : public LinearFieldEvaluator {
   }
 
   double operator()(stk::mesh::Entity entity, const double x, const double y, const double z,
-                    const unsigned index = InvalidIndex) const
+                    [[maybe_unused]] const unsigned index = InvalidIndex) const
   {
     double value = LinearFieldEvaluator::operator()(entity, x, y, z);
     apply_bounds(1u, &value, m_lowerBound, m_upperBound);
@@ -222,13 +222,13 @@ struct BoundedLinearFieldEvaluator : public LinearFieldEvaluator {
   const BoundedLinearFieldEvaluator& operator()(const BoundedLinearFieldEvaluator&);
   BoundedLinearFieldEvaluator() {}
 
-  double m_lowerBound = std::numeric_limits<double>::min();
+  double m_lowerBound = std::numeric_limits<double>::lowest();
   double m_upperBound = std::numeric_limits<double>::max();
 };
 
 struct EntityIdFieldEvaluator : public FieldEvaluator {
-  double operator()(stk::mesh::Entity entity, const double x, const double y, const double z,
-                    const unsigned index = InvalidIndex) const override
+  double operator()(stk::mesh::Entity entity, const double /*x*/, const double /*y*/, const double /*z*/,
+                    [[maybe_unused]] const unsigned index = InvalidIndex) const override
   {
     return static_cast<double>(m_bulk.identifier(entity));
   }
@@ -257,8 +257,8 @@ struct TriPolynomialFieldEvaluator : public FieldEvaluator {
     return value;
   }
 
-  double operator()(stk::mesh::Entity entity, const double x, const double y, const double z,
-                    const unsigned index = InvalidIndex) const override
+  double operator()(stk::mesh::Entity /*entity*/, const double x, const double y, const double z,
+                    [[maybe_unused]] const unsigned index = InvalidIndex) const override
   {
     double xValue = evaluate_polynomial(x, m_xcoeffs);
     double yValue = evaluate_polynomial(y, m_ycoeffs);
@@ -382,9 +382,9 @@ inline void determine_centroid(const unsigned spatialDimension, stk::mesh::Entit
   determine_centroid(spatialDimension, entity, nodalCoordField, centroid.data());
 }
 
-inline void set_element_field(const stk::mesh::BulkData& bulk,
-                              const stk::mesh::FieldBase& stkField,
-                              const FieldEvaluator& eval)
+inline void set_entity_field(const stk::mesh::BulkData& bulk,
+                             const stk::mesh::FieldBase& stkField,
+                             const FieldEvaluator& eval)
 {
   stk::mesh::EntityRank rank = stkField.entity_rank();
   STK_ThrowRequireMsg(stk::topology::NODE_RANK != rank, "Input entity rank cannot be NODE_RANK");

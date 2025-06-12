@@ -5,6 +5,7 @@
 #include "stk_middle_mesh_util/create_stk_mesh.hpp"
 #include "stk_middle_mesh_util/exodus_writer.hpp"
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
+#include "stk_util/parallel/Parallel.hpp"
 
 
 
@@ -55,7 +56,7 @@ std::function<double(const utils::Point&)> function_factory(const std::string& f
 {
   if (functionName == "constant")
   {
-    return [](const utils::Point& pt) { return 1; };  
+    return [](const utils::Point& /*pt*/) { return 1; };  
   } else if (functionName == "linear")
   {
     return [](const utils::Point& pt) { return pt.x + 2*pt.y + 3*pt.z; };
@@ -94,7 +95,7 @@ void write_output(mesh::FieldPtr<double> field1, mesh::FieldPtr<double> field2, 
 
 int main(int argc, char* argv[])
 {
-  stk::parallel_machine_init(&argc, &argv);
+  stk::initialize(&argc, &argv);
 
   if (utils::impl::comm_size(MPI_COMM_WORLD) != 1)
     throw std::runtime_error("mock app only works on 1 process");
@@ -158,5 +159,5 @@ int main(int argc, char* argv[])
     write_output(functionVals1, functionVals2, functionName);
   }
 
-  stk::parallel_machine_finalize();
+  stk::finalize();
 }

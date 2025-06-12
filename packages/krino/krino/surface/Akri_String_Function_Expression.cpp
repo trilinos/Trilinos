@@ -82,4 +82,12 @@ void initialize_expression_vector(const std::vector<std::string> & stringVec, st
     exprVec.emplace_back(component);
 }
 
+stk::math::Vector3d evaluate_vector_at_location(const double time, const stk::math::Vector3d & coords, const std::vector<String_Function_Expression> & vecExpr)
+{
+  if (2 == vecExpr.size())
+    return stk::math::Vector3d(vecExpr[0].evaluate(time, coords), vecExpr[1].evaluate(time, coords), 0.0);
+  return stk::math::Vector3d(vecExpr[0].evaluate(time, coords), vecExpr[1].evaluate(time, coords), vecExpr[2].evaluate(time, coords));
+}
+
+
 }

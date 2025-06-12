@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,9 +60,11 @@ void inertial3d(struct vtx_data **graph,        /* graph data structure */
     }
   }
 
-  xcm /= vwgt_sum;
-  ycm /= vwgt_sum;
-  zcm /= vwgt_sum;
+  if (vwgt_sum != 0.0) {
+    xcm /= vwgt_sum;
+    ycm /= vwgt_sum;
+    zcm /= vwgt_sum;
+  }
 
   /* Generate 6 elements of Inertial tensor. */
   xx = yy = zz = xy = xz = yz = 0.0;

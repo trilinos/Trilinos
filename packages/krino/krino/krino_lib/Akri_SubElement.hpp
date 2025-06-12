@@ -56,7 +56,7 @@ public:
   virtual void fix_hanging_children(CDMesh & mesh, const InterfaceID & interface, const std::vector<int> & edges_with_children) {}
 
   virtual void build_quadratic_subelements(CDMesh & mesh);
-  virtual void cut_face_interior_intersection_points(CDMesh & mesh, const InterfaceID & interface1, const InterfaceID & interface2, int level = 0);
+  virtual void cut_face_interior_intersection_points(CDMesh & mesh, int level = 0);
 
   static void get_edge_position(const SubElementNode * n0, const SubElementNode * n1, const SubElementNode * n2, double & position );
 
@@ -156,7 +156,7 @@ public:
   virtual void decompose_edges(CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void fix_hanging_children(CDMesh & mesh, const InterfaceID & interface, const std::vector<int> & edges_with_children) override;
   virtual void build_quadratic_subelements(CDMesh & mesh) override;
-  virtual void cut_face_interior_intersection_points(CDMesh & mesh, const InterfaceID & interface1, const InterfaceID & interface2, int level = 0) override;
+  virtual void cut_face_interior_intersection_points(CDMesh & mesh, int level = 0) override;
 
   virtual void determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key) override;

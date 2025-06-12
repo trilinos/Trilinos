@@ -12,10 +12,10 @@
 namespace stk {
 namespace balance {
 
-double ConstantFaceSearchTolerance::compute(const stk::mesh::BulkData & mesh,
-                                            const stk::mesh::FieldBase & coordField,
-                                            const stk::mesh::Entity * faceNodes,
-                                            const unsigned numFaceNodes) const
+double ConstantFaceSearchTolerance::compute(const stk::mesh::BulkData & /*mesh*/,
+                                            const stk::mesh::FieldBase & /*coordField*/,
+                                            const stk::mesh::Entity * /*faceNodes*/,
+                                            const unsigned /*numFaceNodes*/) const
 {
     return m_tolerance;
 }

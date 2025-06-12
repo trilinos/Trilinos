@@ -562,7 +562,7 @@ namespace Tpetra {
     dev_row_view_t new_rowmap("new_rowmap", nrows+1);
     const auto blocks_per_row = nrows / blockSize; // assumes square matrix
     dev_row_view_t active_block_row_map("active_block_row_map", blocks_per_row + 1);
-    const int max_threads = execution_space::concurrency();
+    const int max_threads = execution_space().concurrency();
     assert(blockSize > 1);
     assert(nrows % blockSize == 0);
     const int mem_level = 1;

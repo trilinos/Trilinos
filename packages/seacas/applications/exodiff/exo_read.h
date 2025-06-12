@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,17 +33,23 @@ template <typename INT> class Assembly;
 template <typename INT> class Exo_Read
 {
 public:
-  Exo_Read();
+  Exo_Read() = delete;
   explicit Exo_Read(std::string fname);
-  virtual ~Exo_Read();
+  ~Exo_Read();
   const Exo_Read &operator=(const Exo_Read &) = delete;
   Exo_Read(const Exo_Read &)                  = delete;
 
   // File operations:
 
-  std::string File_Name(const char * /*fname*/);
-  virtual std::string
-              Open_File(const char             */*fname*/ = nullptr); // Default opens current file name.
+  std::string        Open_Change_Set(const std::string &name);
+  std::string        Open_Change_Set(int index);
+  void               Get_Meta_Data(); // Reads metadata
+  int                Get_Change_Set_Index() const { return current_change_set_index; }
+  const std::string &Get_Change_Set_Name() const
+  {
+    return change_set_names[current_change_set_index];
+  }
+
   std::string Close_File();
   std::string File_Name() const { return file_name; }
   int         Open() const { return (file_id >= 0); }
@@ -54,8 +60,8 @@ public:
     time_scale  = scale;
     time_offset = offset;
   }
-  // Global data:
 
+  // Global data:
   const std::string &Title() const { return title; }
   int                Dimension() const { return dimension; }
   size_t             Num_Nodes() const { return num_nodes; }
@@ -69,8 +75,13 @@ public:
   size_t             Num_Assembly() const { return num_assemblies; }
 
   // Times:
-  int    Num_Times() const { return (int)times.size(); }
+  int    Num_Times() const { return static_cast<int>(times.size()); }
   double Time(int time_num) const;
+
+  // Change Sets:
+  int                     Num_Change_Sets() const { return num_change_sets; }
+  const NameList         &Change_Set_Names() const { return change_set_names; }
+  const std::vector<int> &Change_Set_Ids() const { return change_set_ids; }
 
   // Variables:
 
@@ -91,14 +102,14 @@ public:
   const NameList &EB_Var_Names() const { return eb_vars; }
   const NameList &FB_Var_Names() const { return fb_vars; }
 
-  const std::string &Global_Var_Name(int index) const;
-  const std::string &Nodal_Var_Name(int index) const;
-  const std::string &Element_Var_Name(int index) const;
-  const std::string &Element_Att_Name(int index) const;
-  const std::string &NS_Var_Name(int index) const;
-  const std::string &SS_Var_Name(int index) const;
-  const std::string &EB_Var_Name(int index) const;
-  const std::string &FB_Var_Name(int index) const;
+  const std::string &Global_Var_Name(size_t index) const;
+  const std::string &Nodal_Var_Name(size_t index) const;
+  const std::string &Element_Var_Name(size_t index) const;
+  const std::string &Element_Att_Name(size_t index) const;
+  const std::string &NS_Var_Name(size_t index) const;
+  const std::string &SS_Var_Name(size_t index) const;
+  const std::string &EB_Var_Name(size_t index) const;
+  const std::string &FB_Var_Name(size_t index) const;
 
   // Element blocks:
   size_t Num_Element_Blocks() const { return num_elmt_blocks; }
@@ -139,12 +150,12 @@ public:
   void Free_Nodal_Coordinates();
 
   // (First time step = 1.)
-  std::string   Load_Nodal_Results(int time_step_num, int var_index);
-  const double *Get_Nodal_Results(int var_index) const;
+  std::string   Load_Nodal_Results(int time_step_num, size_t var_index);
+  const double *Get_Nodal_Results(size_t var_index) const;
   const double *Get_Nodal_Results(int t1, int t2, double proportion,
-                                  int var_index) const; // Interpolated results
+                                  size_t var_index) const; // Interpolated results
   void          Free_Nodal_Results();
-  void          Free_Nodal_Results(int var_index);
+  void          Free_Nodal_Results(size_t var_index);
 
   // Global data:  (NOTE:  Global and Nodal data are always stored at the same
   //                       time step.  Therefore, if current time step number
@@ -187,11 +198,11 @@ public:
 
   // Misc functions:
 
-  virtual int            Check_State() const;                // Checks state of obj (not the file).
+  int                    Check_State() const;                // Checks state of obj (not the file).
   int                    File_ID() const { return file_id; } // This is temporary.
   std::pair<int, size_t> Global_to_Block_Local(size_t global_elmt_num) const;
 
-protected:
+private:
   std::string file_name{};
   int         file_id{-1}; // Exodus file id; also used to determine if file is open.
 
@@ -210,8 +221,8 @@ protected:
   size_t      num_edge_blocks{0};
   size_t      num_face_blocks{0};
   size_t      num_assemblies{0};
-  float       db_version{0.0};
-  float       api_version{0.0};
+  int         num_change_sets{0};
+  int         current_change_set_index{-2};
   int         io_word_size{0}; // Note: The "compute word size" is always 8.
 
   Exo_Block<INT>  *eblocks{nullptr};     // Array.
@@ -253,8 +264,7 @@ protected:
   double *global_vals2{nullptr}; // Array of global variables used if interpolating.
 
   // Internal methods:
-
-  void Get_Init_Data(); // Gets bunch of initial data.
+  void Reset_Meta_Data();
 };
 
 template <typename INT> inline INT Exo_Read<INT>::Node_Map(size_t node_num) const

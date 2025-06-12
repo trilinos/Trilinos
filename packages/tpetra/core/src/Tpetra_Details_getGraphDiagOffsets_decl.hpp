@@ -17,7 +17,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_StaticCrsGraph.hpp"
+#include "KokkosSparse_StaticCrsGraph.hpp"
 #include "Tpetra_Details_LocalMap.hpp"
 #include <type_traits>
 
@@ -30,7 +30,7 @@ namespace Impl {
 ///   implementation detail of Tpetra::CrsGraph.
 ///
 /// FIXME (mfh 12 Mar 2016) There's currently no way to make a
-/// MemoryUnmanaged Kokkos::StaticCrsGraph.  Thus, we have to do this
+/// MemoryUnmanaged KokkosSparse::StaticCrsGraph.  Thus, we have to do this
 /// separately for its column indices.  We want the column indices to
 /// be unmanaged because we need to take subviews in this kernel.
 /// Taking a subview of a managed View updates the reference count,
@@ -49,10 +49,9 @@ public:
   typedef ::Kokkos::View<diag_offset_type*,
                          device_type,
                          ::Kokkos::MemoryUnmanaged> diag_offsets_type;
-  typedef ::Kokkos::StaticCrsGraph<LO,
-                                   ::Kokkos::LayoutLeft,
-                                   device_type,
-                                   void, size_t> local_graph_device_type;
+  using local_graph_device_type = ::KokkosSparse::StaticCrsGraph<LO,
+                                  ::Kokkos::LayoutLeft,
+                                  device_type, void, size_t>;
   typedef ::Tpetra::Details::LocalMap<LO, GO, device_type> local_map_type;
   typedef ::Kokkos::View<const typename local_graph_device_type::size_type*,
                          ::Kokkos::LayoutLeft,

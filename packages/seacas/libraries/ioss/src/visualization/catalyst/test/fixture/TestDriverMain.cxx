@@ -5,7 +5,7 @@
 // See packages/seacas/LICENSE for details
 
 #define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include <catch2/catch_session.hpp>
 #include <mpi.h>
 
 int main( int argc, char* argv[] ) {

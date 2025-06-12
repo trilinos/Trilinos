@@ -194,8 +194,18 @@ public:
    void beginModification();
 
    /** Take the bulk data manager out of modification mode.
+
+       @param find_and_set_shared_nodes_in_stk (bool) If set to true,
+       this performs a geometric search to figure out which nodes are
+       shared entities and marks them as shared in stk. This is very
+       inefficient and communication intensive. Set this to false for
+       exodus as the sharing is already known. Must be true for inline
+       meshes. We should fix the inline mesh factories to mark sharing
+       at node construction time to eliminate the need for searching
+       for shared nodes. Defaults to true to maintain backwards
+       compatibility.
      */
-   void endModification();
+   void endModification(const bool find_and_set_shared_nodes_in_stk=true);
 
    /** Add a node to the mesh with a specific set of coordinates to the mesh.
      *
@@ -455,6 +465,13 @@ public:
    */
   void
   setupExodusFile(const std::string& filename,
+                  const bool append = false,
+                  const bool append_after_restart_time = false,
+                  const double restart_time = 0.0);
+
+  void
+  setupExodusFile(const std::string& filename,
+                  const std::vector<Ioss::Property>& ioss_properties,
                   const bool append = false,
                   const bool append_after_restart_time = false,
                   const double restart_time = 0.0);

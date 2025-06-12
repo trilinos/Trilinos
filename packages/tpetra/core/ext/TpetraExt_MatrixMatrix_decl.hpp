@@ -79,7 +79,7 @@ void Multiply(
 /// Given BlockCrsMatrix instances A and B, compute the product C = A*B.
 ///
 /// \pre Both A and B must have uniquely owned row Maps.
-/// \pre On input, C must be null. 
+/// \pre On input, C must be null.
 /// \pre A and B must be fill complete.
 ///
 /// \param A [in] fill-complete BlockCrsMatrix.
@@ -592,24 +592,24 @@ void setMaxNumEntriesPerRow(
 
   // This only merges matrices that look like B & Bimport, aka, they have no overlapping rows
   template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalOrdinalViewType>
-  inline const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type 
+  inline const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type
   merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
                  const LocalOrdinalViewType & Acol2Brow,
                  const LocalOrdinalViewType & Acol2Irow,
                  const LocalOrdinalViewType & Bcol2Ccol,
-                 const LocalOrdinalViewType & Icol2Ccol,  
+                 const LocalOrdinalViewType & Icol2Ccol,
                  const size_t mergedNodeNumCols);
 
   // This only merges matrices that look like B & Bimport, aka, they have no overlapping rows
   template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalOrdinalViewType>
-  inline const typename Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type 
+  inline const typename Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type
   merge_matrices(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                  BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
                  const LocalOrdinalViewType & Acol2Brow,
                  const LocalOrdinalViewType & Acol2Irow,
                  const LocalOrdinalViewType & Bcol2Ccol,
-                 const LocalOrdinalViewType & Icol2Ccol,  
+                 const LocalOrdinalViewType & Icol2Ccol,
                  const size_t mergedNodeNumCols);
 
 
@@ -661,9 +661,7 @@ struct AddKernels
     const row_ptrs_array_const& Browptrs,
     const col_inds_array& Bcolinds,
     const impl_scalar_type scalarB,
-#if KOKKOSKERNELS_VERSION >= 40299
     GlobalOrdinal numGlobalCols,
-#endif
     values_array& Cvals,
     row_ptrs_array& Crowptrs,
     col_inds_array& Ccolinds);
@@ -724,4 +722,3 @@ struct AddKernels
 } // end of Tpetra namespace
 
 #endif // TPETRA_MATRIXMATRIX_DECL_HPP
-

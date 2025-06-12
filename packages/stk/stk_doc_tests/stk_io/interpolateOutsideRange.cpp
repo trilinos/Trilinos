@@ -143,7 +143,7 @@ TEST(StkMeshIoBrokerHowTo, interpolateOutsideRange)
         expected_value = 2.0;
 
       stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
-        [&](const stk::mesh::BulkData& bulk, stk::mesh::Entity node) {
+        [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
           const double *fieldData = stk::mesh::field_data(temperature, node);
           EXPECT_DOUBLE_EQ(expected_value, *fieldData);
       });

@@ -33,8 +33,11 @@ namespace KokkosBatched {
 /// L is lower triangular.
 /// This is the unblocked version of the algorithm, calling Level 2 BLAS.
 ///
-/// \tparam ABViewType: Input type for a banded matrix, needs to be a 2D
-/// view
+/// \tparam ArgUplo: Type indicating whether A is the upper (Uplo::Upper) or lower (Uplo::Lower) triangular matrix
+/// \tparam ArgAlgo: Type indicating the blocked (KokkosBatched::Algo::Pbtrf::Blocked) or unblocked
+/// (KokkosBatched::Algo::Pbtrf::Unblocked) algorithm to be used
+///
+/// \tparam ABViewType: Input type for a banded matrix, needs to be a 2D view
 ///
 /// \param ab [inout]: ab is a ldab by n banded matrix, with ( kd + 1 ) diagonals
 ///
@@ -43,6 +46,10 @@ namespace KokkosBatched {
 
 template <typename ArgUplo, typename ArgAlgo>
 struct SerialPbtrf {
+  static_assert(
+      std::is_same_v<ArgUplo, Uplo::Upper> || std::is_same_v<ArgUplo, Uplo::Lower>,
+      "KokkosBatched::pbtrf: Use Uplo::Upper for upper triangular matrix or Uplo::Lower for lower triangular matrix");
+  static_assert(std::is_same_v<ArgAlgo, Algo::Pbtrf::Unblocked>, "KokkosBatched::pbtrf: Use Algo::Pbtrf::Unblocked");
   template <typename ABViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ABViewType &ab);
 };

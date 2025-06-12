@@ -60,6 +60,9 @@ public:
     : m_value(p,i)
   {}
 
+  KOKKOS_FORCEINLINE_FUNCTION ident_type & id()  {return m_value.second; }
+  KOKKOS_FORCEINLINE_FUNCTION proc_type & proc()  {return m_value.first; }
+
   KOKKOS_FORCEINLINE_FUNCTION ident_type const& id() const {return m_value.second; }
   KOKKOS_FORCEINLINE_FUNCTION proc_type const& proc() const {return m_value.first; }
 
@@ -89,7 +92,7 @@ template <typename T>
 struct get_proc
 {
   KOKKOS_FORCEINLINE_FUNCTION 
-  int operator()(T const& id) const
+  int operator()(T const& /*id*/) const
   {
     std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
     std::abort();
@@ -100,7 +103,7 @@ template <typename T>
 struct get_proc<std::pair<T, int> >
 {
   KOKKOS_FORCEINLINE_FUNCTION 
-  int operator()(std::pair<T, int> const& id) const
+  int operator()(std::pair<T, int> const& /*id*/) const
   {
     std::cerr << "get_proc::operator()(..) called on unsupported type." << std::endl;
     std::abort();

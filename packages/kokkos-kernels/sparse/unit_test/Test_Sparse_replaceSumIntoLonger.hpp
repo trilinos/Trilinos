@@ -41,8 +41,8 @@ class ModifyEntries {
   // The type of the reduction result.
   typedef ordinal_type value_type;
 
-  ModifyEntries(const CrsMatrixType& A, const bool replace, const bool sorted, const bool /*atomic*/)
-      : A_(A), replace_(replace), sorted_(sorted) {}
+  ModifyEntries(const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic)
+      : A_(A), replace_(replace), sorted_(sorted), atomic_(atomic) {}
 
   KOKKOS_FUNCTION void operator()(const ordinal_type& lclRow, ordinal_type& numModified) const {
     typedef Kokkos::ArithTraits<scalar_type> KAT;

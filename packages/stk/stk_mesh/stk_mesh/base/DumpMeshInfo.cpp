@@ -144,7 +144,7 @@ void print_entity_connectivity(const BulkData & mesh, const MeshIndex & meshInde
   }
 }
 
-void print_bucket_parts(const BulkData & mesh, const Bucket * bucket, std::ostream & out)
+void print_bucket_parts(const BulkData & /*mesh*/, const Bucket * bucket, std::ostream & out)
 {
   out << "    bucket " << bucket->bucket_id() << " parts: { ";
   const PartVector & supersets = bucket->supersets();

@@ -12,7 +12,7 @@
 #include "Ioss_ElementTopology.h" // for ElementTopology
 
 namespace Ioss {
-  class IOSS_EXPORT Edge2D2 : public Ioss::ElementTopology
+  class IOSS_EXPORT Edge2D2 final : public Ioss::ElementTopology
   {
 
   public:

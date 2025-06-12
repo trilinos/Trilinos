@@ -106,7 +106,7 @@ public:
     stk::mesh::communicate_field_data(*m_bulk, commFields);
   }
 
-  void interpolate_fields(const std::array<double, 3> & parametricCoords,
+  void interpolate_fields(const std::array<double, 3> & /*parametricCoords*/,
                           EntityKey entityKey, double * interpValues) const
   {
     // This is where the actual application-specific shape function interpolation
@@ -305,8 +305,8 @@ public:
 
   void obtain_parametric_coords(
       const typename MeshA::EntityProcVec & elemsToInterpolateFrom,
-      const MeshA & sendAdapter,
-      const typename MeshB::ToPointsContainer & pointsToInterpolateTo,
+      const MeshA & /*sendAdapter*/,
+      const typename MeshB::ToPointsContainer & /*pointsToInterpolateTo*/,
       typename MeshB::ToPointsDistanceContainer & distanceToInterpolationPoints)
   {
     for (unsigned i = 0; i < elemsToInterpolateFrom.size(); ++i) {
@@ -315,7 +315,7 @@ public:
     }
   }
 
-  void mask_parametric_coords(const std::vector<int> & filterMaskFrom, int fromCount)
+  void mask_parametric_coords(const std::vector<int> & filterMaskFrom, int /*fromCount*/)
   {
     for (unsigned i = 0; i < filterMaskFrom.size(); ++i) {
       if (filterMaskFrom[i]) {
@@ -384,8 +384,8 @@ public:
 
   void obtain_parametric_coords(
       const typename MeshA::EntityProcVec & elemsToInterpolateFrom,
-      const MeshA & sendAdapter,
-      const typename MeshB::ToPointsContainer & pointsToInterpolateTo,
+      const MeshA & /*sendAdapter*/,
+      const typename MeshB::ToPointsContainer & /*pointsToInterpolateTo*/,
       typename MeshB::ToPointsDistanceContainer & distanceToInterpolationPoints)
   {
     for (unsigned i = 0; i < elemsToInterpolateFrom.size(); ++i) {
@@ -394,7 +394,7 @@ public:
     }
   }
 
-  void mask_parametric_coords(const std::vector<int> & filterMaskFrom, int fromCount)
+  void mask_parametric_coords(const std::vector<int> & filterMaskFrom, int /*fromCount*/)
   {
     for (unsigned i = 0; i < filterMaskFrom.size(); ++i) {
       if (filterMaskFrom[i]) {

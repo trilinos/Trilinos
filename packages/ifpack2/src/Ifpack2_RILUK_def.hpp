@@ -1006,7 +1006,7 @@ void RILUK<MatrixType>::compute_kkspiluk()
   auto U_values  = lclU.values;
 
   auto lclMtx = A_local_crs_->getLocalMatrixDevice();
-  KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_,
+  KokkosSparse::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_,
                                               lclMtx.graph.row_map, lclMtx.graph.entries, lclMtx.values,
                                               L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
 

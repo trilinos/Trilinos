@@ -74,15 +74,15 @@ class ColoringSettings : public stk::balance::BalanceSettings
 public:
   ColoringSettings() {}
 
-  virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
+  virtual size_t getNumNodesRequiredForConnection(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const
   {
     return 1;
   }
-  virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
+  virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const
   {
     return 1.0;
   }
-  virtual int getGraphVertexWeight(stk::topology type) const
+  virtual int getGraphVertexWeight(stk::topology /*type*/) const
   {
     return 1;
   }
@@ -481,8 +481,8 @@ TEST(LoadBalance, DISABLED_createGraphEdgesUsingNodeConnectivity)
 
     Zoltan2ParallelGraph myGraph;
 
-    size_t numElements = 0;
-    std::vector<stk::balance::GraphEdge> graphEdges;
+    constexpr size_t numElements = 2u;
+    std::vector<stk::balance::GraphEdge> graphEdges(3);
     stk::balance::GraphCreationSettings graphSettings;
     std::vector<int> adjacencyProcs;
 
@@ -1025,10 +1025,6 @@ TEST(LoadBalance, testGraphCreationUsingSearchForContact)
     loadBalanceSettings.setToleranceForFaceSearch(options.getToleranceForFaceSearch());
     loadBalanceSettings.setToleranceForParticleSearch(options.getToleranceForParticleSearch());
 
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
-
-    std::vector<double> vertexWeights(numElements, 1);
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
     unsigned numEdgesCreated = 2;
@@ -1147,9 +1143,6 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticles)
 
     loadBalanceSettings.setToleranceForParticleSearch(2.01);
 
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
-    std::vector<double> vertexWeights(numElements, 1);
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
     unsigned numEdgesCreated = 2;
@@ -1204,10 +1197,6 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticlesAndSkin)
     loadBalanceSettings.setToleranceForFaceSearch(0.21);
     loadBalanceSettings.setToleranceForParticleSearch(2.01);
 
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
-
-    std::vector<double> vertexWeights(numElements, 1);
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
     unsigned numEdgesCreated = 12;
@@ -1452,7 +1441,7 @@ void writeParFiles(stk::io::StkMeshIoBroker &ioBroker, const std::string &output
   ioBroker.end_output_step(index);
 }
 
-void fillIoBroker(MPI_Comm communicator, const std::string &generatedMeshSpec, stk::io::StkMeshIoBroker &ioBroker)
+void fillIoBroker(MPI_Comm /*communicator*/, const std::string &generatedMeshSpec, stk::io::StkMeshIoBroker &ioBroker)
 {
   std::string doDecomp = stk::unit_test_util::get_option("-decomp", "no");
 

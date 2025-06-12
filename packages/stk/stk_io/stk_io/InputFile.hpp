@@ -118,7 +118,7 @@ class Part;
           return Ioss::SPLIT_INVALID;
       }
 
-      std::shared_ptr<Ioss::DatabaseIO> get_ioss_input_database()
+      std::shared_ptr<Ioss::DatabaseIO> get_ioss_input_database() const
       {
 	      return m_database;
       }
@@ -148,6 +148,13 @@ class Part;
       DatabasePurpose get_database_purpose() const { return m_db_purpose; }
 
       void initialize_input_fields();
+
+      // Query the database for the maximum time. If useCache is true, then it will
+      // return the cached value. The only exception to this is if the database was
+      // opened in APPEND mode where it is possible to open the file for both read
+      // and write with possibly changing max times. In this case, ignore useCache
+      // and always query the database
+      double get_max_time(bool useCache = true);
 
     private:
 
@@ -206,6 +213,7 @@ class Part;
   /** See InputFile::startupTime */
   double m_stopTime;
   /** See InputFile::startupTime */
+  double m_maxTime;
   PeriodType m_periodType;
 
   /*@}*/
@@ -216,6 +224,7 @@ public:
 private:
   bool m_haveCachedEntityList = false;
   std::vector<std::string>* m_multiStateSuffixes = nullptr;
+
 
 private:
   InputFile(const InputFile &);

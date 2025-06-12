@@ -177,13 +177,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Distributor_Timings
-  HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-  "Enable the timings for the Distributor"
-  OFF
-)
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_MMM_Statistics
   HAVE_TPETRA_MMM_STATISTICS
   "Enable statistics for the MMM kernels.  Warning: This involves extra communication and should only be enabled for diagnostic purposes."

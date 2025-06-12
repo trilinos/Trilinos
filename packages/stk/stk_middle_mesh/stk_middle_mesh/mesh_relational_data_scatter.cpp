@@ -141,7 +141,7 @@ void MeshRelationalDataScatter::unpack_mesh1_vert_fields(Exchanger& exchanger)
 
   // don't unpack data as it comes in: this would give the 
   // fakeVertIds a non-deterministic order
-  auto f = [](int rank, stk::CommBuffer& buf) {};
+  auto f = [](int /*rank*/, stk::CommBuffer& /*buf*/) {};
   exchanger.complete_receives(f);
 
   if (m_mesh1)
@@ -381,7 +381,7 @@ void MeshRelationalDataScatter::unpack_mesh2_vert_fields(ExchangerUnknown& excha
   exchanger.post_nonblocking_receives();
   // Don't unpack data as it arrives because that would lead to non-deterministic
   // assignment of FakeVert ids
-  auto f = [](int rank, stk::CommBuffer& buf) {};
+  auto f = [](int /*rank*/, stk::CommBuffer& /*buf*/) {};
   exchanger.complete_receives(f);
 
   if (m_mesh2ScatteredToMesh1)
@@ -504,7 +504,7 @@ void MeshRelationalDataScatter::unpack_mesh1_edge_fields(ExchangerUnknown& excha
 {
   exchanger.start_nonblocking();
   exchanger.post_nonblocking_receives();
-  auto f = [](int rank, stk::CommBuffer& buf) {};
+  auto f = [](int /*rank*/, stk::CommBuffer& /*buf*/) {};
   exchanger.complete_receives(f);
 
   if (m_mesh1)
@@ -595,7 +595,7 @@ void MeshRelationalDataScatter::unpack_mesh2_edge_fields(ExchangerUnknown& excha
 {
   exchanger.start_nonblocking();
   exchanger.post_nonblocking_receives();
-  auto f = [](int rank, stk::CommBuffer& buf) {};
+  auto f = [](int /*rank*/, stk::CommBuffer& /*buf*/) {};
   exchanger.complete_receives(f);
 
   if (m_mesh2ScatteredToMesh1)

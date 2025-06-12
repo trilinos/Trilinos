@@ -83,7 +83,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
     // Parameters
     Teuchos::CommandLineProcessor clp(false);
     std::string node = "";
-    clp.setOption("node", &node, "node type (serial | openmp | cuda | hip)");
+    clp.setOption("node", &node, "node type (serial | openmp | cuda | hip | sycl)");
     bool config = false;
     clp.setOption("config", "noconfig", &config, "display kokkos configuration");
 #ifdef HAVE_TEUCHOS_STACKTRACE

@@ -29,7 +29,7 @@ public:
   PointGeometry(const stk::math::Vector3d & n);
   ~PointGeometry() override = default;
 
-  const stk::math::Vector3d & node(int index) const override
+  const stk::math::Vector3d & node([[maybe_unused]] int index) const override
   {
     STK_ThrowAssert(index==0);
     return m_nodeData;

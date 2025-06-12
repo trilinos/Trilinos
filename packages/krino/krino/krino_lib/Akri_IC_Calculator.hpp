@@ -38,7 +38,7 @@ public:
   virtual ~IC_Binder() {}
 
   // compute signed distance for all nodes with LevelSet defined
-  void compute_signed_distance(const LevelSet &ls) const;
+  void compute_signed_distance(const LevelSet &ls) const override;
 private:
   double my_interface_size;
   double my_smooth_bridge_size;

@@ -213,31 +213,33 @@ struct create_face_impl
 } //namespace
 
 namespace experimental {
-void create_faces( BulkData & mesh )
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2025
+STK_DEPRECATED void create_faces( BulkData & mesh )
 {
     stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), stk::mesh::PartVector(), false);
 }
 
-void create_faces( BulkData & mesh, const Selector & element_selector )
+STK_DEPRECATED void create_faces( BulkData & mesh, const Selector & element_selector )
 {
     stk::mesh::create_all_sides(mesh, element_selector, stk::mesh::PartVector(), false);
 }
 
-void create_faces( BulkData & mesh, const Selector & element_selector, Part *part_to_insert_new_faces)
+STK_DEPRECATED void create_faces( BulkData & mesh, const Selector & element_selector, Part *part_to_insert_new_faces)
 {
     stk::mesh::PartVector parts = {part_to_insert_new_faces};
     stk::mesh::create_all_sides(mesh, element_selector, parts, false);
 }
 
-void create_faces( BulkData & mesh, bool connect_faces_to_edges)
+STK_DEPRECATED void create_faces( BulkData & mesh, bool connect_faces_to_edges)
 {
     stk::mesh::create_all_sides(mesh, mesh.mesh_meta_data().universal_part(), stk::mesh::PartVector(), connect_faces_to_edges);
 }
 
-void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges)
+STK_DEPRECATED void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges)
 {
     stk::mesh::create_all_sides(mesh, element_selector, stk::mesh::PartVector(), connect_faces_to_edges);
 }
+#endif
 }
 
 

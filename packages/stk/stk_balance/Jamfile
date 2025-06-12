@@ -167,7 +167,6 @@ lib stk_balance_lib
       [ glob 
              $(stk_balance-root)/stk_balance/*.cpp 
              $(stk_balance-root)/stk_balance/internal/*.cpp 
-             $(stk_balance-root)/stk_balance/m2n/*.cpp 
              $(stk_balance-root)/stk_balance/mesh/*.cpp
              $(stk_balance-root)/stk_balance/io/*.cpp
              $(stk_balance-root)/stk_balance/setup/*.cpp
@@ -178,10 +177,7 @@ lib stk_balance_lib
     /sierra/stk_io//stk_io
     /sierra/stk_mesh//stk_mesh_base
     /tpl/trilinos//zoltan2
-    # /tpl/trilinos//teuchoscomm
-    # /tpl/trilinos//tpetracore
-    # /tpl/trilinos//zoltan
-    /sierra/stk_tools//stk_transfer_utils_lib
+    /sierra/stk_transfer_util//stk_transfer_util
     /sierra/stk_search//stk_search
     /sierra/stk_tools//stk_tools_lib
     /sierra/stk_util//stk_util_command_line

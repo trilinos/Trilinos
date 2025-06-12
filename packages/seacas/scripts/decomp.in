@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+# Copyright(C) 1999-2020, 2023, 2025 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -46,7 +46,12 @@ Decomposition methods: Default is @DECOMP_DEFAULT@. [0..3] = speed ranking 0=fas
        For example "--multikl" is the same as "-l multikl"
 
 Other options:
+--change_set <#>    Read from the specified (1-based) change set index.
 --help              Print this message (-h)
+--launch <cmd>      Prefix nem_slice call with this command to run it.
+                    The cmd argument must be quoted if it contains options
+                    for cmd. (Usually only for parallel build)
+--nolaunch          Prevent decomp from searching for launch script.
 --noop              Only echo the nem_slice and nem_spread commands.
 --nodal             Nodal Decomposition (-N)
 --elemental         Elemental Decomposition (default, -E)
@@ -98,6 +103,7 @@ Decomposition methods: Default is @DECOMP_DEFAULT@. [0..3] = speed ranking 0=fas
  -l zpinch     [-] special decomposition method; not useful for general use.
 
 Other options:
+-C <#>      Read from the specified (1-based) change set index.
 -N          Nodal Decomposition
 -E          Elemental Decomposition (default)
 -n options  Specify nem_slice options
@@ -150,8 +156,10 @@ function execute_loadbalance {
     nem_slice_flag=$4
     NEM_SLICE=$5
     input=$6
-    decomp_type=$7
-    weighting=$8
+    LAUNCH=$7
+    decomp_type=$8
+    weighting=$9
+    change_set_index=${10}
 
     nemesis=$basename.$suffix_mesh.nem
     genesis=$basename.$suffix_mesh
@@ -169,20 +177,26 @@ function execute_loadbalance {
         return -1
     fi
 
+    change_set=""
+    if [ "$change_set_index" != "0" ]
+    then
+        change_set="-C $change_set_index"
+    fi
+
     if [ -n "$input" ] && [ -e "$input" ]
     then
         echo ${txtblu}
         echo "Executing:"
-        echo "   $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
+        echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag $change_set -o $nemesis -m mesh=$processors -a $input $genesis"
         echo ${txtrst}
-        (${NOOP:+echo }$NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis)
+        (${NOOP:+echo }$LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag $change_set -o $nemesis -m mesh=$processors -a $input $genesis)
         load_rc=$?
     else
         echo ${txtblu}
         echo "Executing:"
-        echo "   $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
+        echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag $change_set -o $nemesis -m mesh=$processors $genesis"
         echo ${txtrst}
-        (${NOOP:+echo }$NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag -o $nemesis -m mesh=$processors $genesis)
+        (${NOOP:+echo }$LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $weighting $nem_slice_flag $change_set -o $nemesis -m mesh=$processors $genesis)
         load_rc=$?
     fi
     return $load_rc
@@ -195,7 +209,8 @@ function execute_spread {
     rootdir=$2
     subdir=$3
     numproc=$4
-    NEM_SPREAD=$5
+    change_set_index=$5
+    NEM_SPREAD=$6
 
     nemesis=$basename.$suffix_mesh.nem
     genesis=$basename.$suffix_mesh
@@ -224,6 +239,12 @@ function execute_spread {
         fi
     fi
 
+    change_set=""
+    if [ "$change_set_index" != "0" ]
+    then
+        change_set="-C $change_set_index"
+    fi
+
     if [ -e $pexsh ]
     then
         /bin/rm -rf $pexsh
@@ -246,9 +267,9 @@ function execute_spread {
 
     echo ${txtblu}
     echo "Executing:"
-    echo "   $NEM_SPREAD $use64 $pexsh"
+    echo "   $NEM_SPREAD $use64 $change_set $pexsh"
     echo ${txtrst}
-    ${NOOP:+echo }$NEM_SPREAD $use64 $pexsh
+    ${NOOP:+echo }$NEM_SPREAD $use64 $change_set $pexsh
 }
 
 ########################################################################
@@ -292,6 +313,7 @@ suffix_spread=''
 spheres="-S"
 do_viz=""
 use64=""
+change_set_index='0'
 
 NOOP=
 
@@ -345,12 +367,15 @@ fi
 ########################################################################
 # decomp options:
 if [ $OLDGETOPT -eq 1 ] ; then
-   TEMP=$(getopt Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: "$@")
+   TEMP=$(getopt Hh6C:ENn:i:o:p:j:r:R:S:X:sl:vVd: "$@")
 else
-   TEMP=$(getopt -o Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd:w: -a \
+   TEMP=$(getopt -o Hh6C:ENn:i:o:p:j:r:R:S:X:sl:vVd:w: -a \
        --long input: \
+       --long launch: \
+       --long nolaunch \
        --long noop \
        --long help \
+       --long change_set: \
        --long nem_slice_flag \
        --long 64 \
        --long processors: \
@@ -393,6 +418,8 @@ while true ; do
         do_viz="-y" ; shift ;;
     (-d|--debug)
         debug_level="$2" ; shift 2 ;;
+    (-C|--change_set)
+	change_set_index="$2" ; shift 2 ;;
     (-n|--nem_slice_flag)
         nem_slice_flag="$2" ; shift 2 ;;
     (-N|--nodal)
@@ -417,6 +444,10 @@ while true ; do
         use64="-64" ; shift ;;
     (--noop)
         NOOP="--noop" ; shift ;;
+    (--launch)
+        LAUNCH="$2" ; shift 2 ;;
+    (--nolaunch)
+        LAUNCH="nolaunch" ; shift ;;
     (-l)
         decomp_method="-l $2" ; shift 2 ;;
 
@@ -437,6 +468,47 @@ while true ; do
     (*) echo "${txtred}ERROR: unrecognized option $1${txtrst}" ; shift ;;
     esac
 done
+
+# Figure out how to run nem_slice where we are.
+if [ "${LAUNCH:-}" == "nolaunch" ]
+then
+    # Ensure launch is NOT used --nolaunch was passed.
+    LAUNCH=
+else
+    # If a specific launch script was passed and runs on the node we are on, use it.
+    # If not, if Sierra launch command is in path and runs on the node we are on
+    # we will try to use that.
+    # If not we will run nem_slice directly (ie, w/o launch).
+    if [ -z "${LAUNCH:-}" ]
+    then
+        LAUNCH=$(command -v launch) 
+    fi
+    if [ -n "${LAUNCH}" ]
+    then
+        if [ $(basename $LAUNCH) == launch ]
+        then
+            # If 'launch' was found or passed,
+            # Always run nem_slice with -n 1
+            LAUNCH="$LAUNCH -n 1"
+        fi
+        # If the launch script doesn't work to run something simple, don't use it.
+        $LAUNCH >/dev/null 2>&1 true || LAUNCH=
+
+        if [ -z "$PBS_JOBID" -a -z "$LSB_JOBID" -a -z "$SLURM_JOB_ID" ]
+        then
+            # Unset these if we we are NOT in an allocation.
+            unset OMPI_MCA_btl_openib_ib_retry_count
+            unset OMPI_MCA_btl_openib_ib_timeout
+            export OMPI_MCA_mtl=^psm
+            export OMPI_MCA_pml=^cm
+            export OMPI_MCA_btl=tcp,vader,self
+            if [ -n "${SIERRA_LIBRARY_PATH}" ]
+            then
+                export DYLD_LIBRARY_PATH=$SIERRA_LIBRARY_PATH
+            fi
+        fi
+    fi
+fi
 
 ########################################################################
 if [ $# -eq 0 ] ; then
@@ -509,7 +581,7 @@ then
 fi
 
 ########################################################################
-execute_loadbalance "$basename" "$processors" "$decomp_method" "$nem_slice_flag" "$NEM_SLICE" "$input" "$decomp_type" "$weighting"
+execute_loadbalance "$basename" "$processors" "$decomp_method" "$nem_slice_flag" "$NEM_SLICE" "$input" "$LAUNCH" "$decomp_type" "$weighting" "$change_set_index"
 if [ $? -ne 0 ]
 then
     echo ${txtred}
@@ -525,7 +597,7 @@ else
 fi
 
 ########################################################################
-execute_spread "$basename" "$rootdir" "$subdir" "$processors" "$NEM_SPREAD"
+execute_spread "$basename" "$rootdir" "$subdir" "$processors" "$change_set_index" "$NEM_SPREAD"
 if [ $? -ne 0 ]
 then
     echo ${txtred}

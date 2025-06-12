@@ -223,7 +223,7 @@ extern "C" {
     void *		invec,
     void *		inoutvec,
     int *		len,
-    MPI_Datatype *	datatype)
+    MPI_Datatype *	/*datatype*/)
   {
     std::complex<double> *complex_in = static_cast<std::complex<double> *>(invec);
     std::complex<double> *complex_inout = static_cast<std::complex<double> *>(inoutvec);
@@ -348,9 +348,9 @@ ReduceSet::size() const {
   }
 
   ReduceCheck *reduce_check = static_cast<ReduceCheck *>(m_reduceVector.front());
-  reduce_check->setSize(reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0));
+  reduce_check->setSize(reinterpret_cast<size_t>(buffer_end));
 
-  return reinterpret_cast<char *>(buffer_end) - static_cast<char*>(0);
+  return reinterpret_cast<size_t>(buffer_end);
 }
 
 void

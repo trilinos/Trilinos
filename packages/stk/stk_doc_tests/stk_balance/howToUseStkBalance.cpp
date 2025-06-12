@@ -228,9 +228,9 @@ public:
 
     virtual ~FieldVertexWeightSettings() = default;
 
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override { return 1.0; }
+    virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const override { return 1.0; }
 
-    virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+    virtual int getGraphVertexWeight(stk::topology /*type*/) const override { return 1; }
     virtual double getImbalanceTolerance() const override { return 1.0001; }
     virtual std::string getDecompMethod() const override { return "rcb"; }
 
@@ -329,7 +329,6 @@ void verify_mesh_balanced_wrt_selectors(const stk::mesh::BulkData& bulk, const s
     std::vector<size_t> counts;
     for(const stk::mesh::Selector & sel : selectors)
     {
-        stk::mesh::EntityVector elements;
         size_t num_elements = stk::mesh::count_selected_entities(sel, bulk.buckets(stk::topology::ELEM_RANK));
         counts.clear();
         stk::mesh::comm_mesh_counts(bulk, counts, &sel);

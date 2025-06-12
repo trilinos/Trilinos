@@ -167,6 +167,25 @@ struct topology
   STK_INLINE_FUNCTION
   rank_t side_rank(unsigned ord = 0) const;
 
+  /// what is the number of side ranks of this topology
+  STK_INLINE_FUNCTION
+  unsigned num_side_ranks() const;
+
+  /// fill the output ranks with the possible side ranks of this topology
+  template <typename SideRankOutputIterator>
+  STK_INLINE_FUNCTION
+  void side_ranks(SideRankOutputIterator output_ranks) const;
+
+  // For mixed side rank elements, convert a ranked side ordinal with associated rank into a side ordinal
+  // e.g for SHELL_QUAD_4: (0, FACE_RANK) -> 0, (1, FACE_RANK) -> 1, (0, EDGE_RANK) -> 2 ... etc
+  STK_INLINE_FUNCTION
+  unsigned side_ordinal(unsigned ranked_side_ordinal, rank_t rank) const;
+
+  // For mixed side rank elements, convert a side ordinal into a ranked side ordinal and associated rank
+  // e.g for SHELL_QUAD_4: 0 -> (0, FACE_RANK), 1 -> (1, FACE_RANK), 2 -> (0, EDGE_RANK) ... etc
+  STK_INLINE_FUNCTION
+  void ranked_side_ordinal(unsigned side_ordinal, unsigned& ranked_side_ordinal, rank_t& rank) const;
+
   /// what is the topological dimension of this topology
   STK_INLINE_FUNCTION
   unsigned dimension() const;

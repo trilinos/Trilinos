@@ -37,14 +37,14 @@
 
 //----------------------------------------------------------------------
 
-#include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint64_t
-#include <limits>                       // for numeric_limits
 #include <stk_util/stk_config.h>
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/NamedPair.hpp>  // for NAMED_PAIR
 #include <stk_util/util/PairIter.hpp>   // for PairIter
+#include <cstddef>
+#include <cstdint>
+#include <limits>                       // for numeric_limits
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
 #include <set>
@@ -83,7 +83,36 @@ typedef std::vector< unsigned >     PermutationIndexVector;
 typedef std::vector<Entity>         EntityVector;
 typedef std::vector<EntityKey>      EntityKeyVector;
 
-template <typename Scalar = void>
+enum class Layout : uint8_t
+{
+  Left,    // Adjacent Entities in memory
+  Right    // Adjacent components in memory
+};
+
+inline std::ostream& operator<<(std::ostream& os, Layout layout) {
+    switch (layout) {
+        case Layout::Left:
+            os << "Layout::Left";
+            break;
+        case Layout::Right:
+            os << "Layout::Right";
+            break;
+        default:
+            os << "Unknown Layout";
+            break;
+    }
+    return os;
+}
+
+#ifdef STK_UNIFIED_MEMORY
+constexpr Layout DefaultHostLayout = Layout::Left;
+#else
+constexpr Layout DefaultHostLayout = Layout::Right;
+#endif
+
+constexpr Layout DefaultDeviceLayout = Layout::Left;
+
+template <typename Scalar = void, Layout HostLayout = DefaultHostLayout>
 class Field;
 
 enum class Operation
@@ -93,6 +122,46 @@ enum class Operation
   MAX
 };
 
+enum FieldAccessTag : uint8_t
+{
+  ReadWrite    = 0, // Sync values to memory space and mark as modified; Allow modification
+  ReadOnly     = 1, // Sync values to memory space and do not mark as modified; Disallow modification
+  OverwriteAll = 2, // Do not sync values to memory space and mark as modified; Allow modification
+
+  Unsynchronized,      // Do not sync values to memory space and do not mark as modified; Allow modification
+  ConstUnsynchronized, // Do not sync values to memory space and do not mark as modified; Disallow modification
+
+  InvalidAccess,
+};
+
+constexpr int NumTrackedFieldAccessTags = 3;
+
+inline std::ostream& operator<<(std::ostream& os, FieldAccessTag accessTag) {
+    switch (accessTag) {
+        case ReadWrite:
+            os << "ReadWrite";
+            break;
+        case ReadOnly:
+            os << "ReadOnly";
+            break;
+        case OverwriteAll:
+            os << "OverwriteAll";
+            break;
+        case Unsynchronized:
+            os << "Unsynchronized";
+            break;
+        case ConstUnsynchronized:
+            os << "ConstUnsynchronized";
+            break;
+        case InvalidAccess:
+            os << "InvalidAccess";
+            break;
+        default:
+            os << "Unknown Access Tag";
+            break;
+    }
+    return os;
+}
 
 /** \} */
 
@@ -137,20 +206,26 @@ constexpr bool operator==(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
   return lhs.bucket_id == rhs.bucket_id && lhs.bucket_ord == rhs.bucket_ord;
 }
 
-NAMED_PAIR(BucketInfo, unsigned, bucket_id, unsigned, num_entities_this_bucket)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
+struct STK_DEPRECATED BucketInfo
+{
+  unsigned bucket_id;
+  unsigned num_entities_this_bucket;
+};
 
-struct BucketIndices
+struct STK_DEPRECATED BucketIndices
 {
   std::vector<BucketInfo> bucket_info;
   std::vector<unsigned> ords;
 };
 
-typedef std::vector<BucketIndices> VolatileFastSharedCommMapOneRank;
+STK_DEPRECATED typedef std::vector<BucketIndices> VolatileFastSharedCommMapOneRank;
+STK_DEPRECATED typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
+#endif
 typedef stk::topology::rank_t EntityRank ;
 
 typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
 typedef std::map<Selector, BucketVector> SelectorBucketMap;
-typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
 
 typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
 
@@ -239,27 +314,6 @@ typedef PairIter<const EntityCommInfo*>  PairIterEntityComm ;
 /** \} */
 
 //----------------------------------------------------------------------
-/** \ingroup stk_mesh_relations
- *  \brief  A relation stencil maps entity relationships to ordinals.
- *
- *  A relation stencil function is the inverse mapping of a contiguous
- *  span of non-negative integers to a template of entity relations.
- *  For example, a triangle-to-vertex relation stencil would map:
- *  -  0 = relation_stencil( Element , Node , 0 )
- *  -  1 = relation_stencil( Element , Node , 1 )
- *  -  2 = relation_stencil( Element , Node , 2 )
- *
- *  If the input entity relationship is within the stencil then
- *  a stencil function returns a non-negative integer;
- *  otherwise a stencil function returns a negative value.
- */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after July 31 2024
-STK_DEPRECATED typedef int ( * relation_stencil_ptr )( EntityRank  from_type ,
-                                        EntityRank  to_type ,
-                                        unsigned  identifier );
-#endif
-
-//----------------------------------------------------------------------
 /** \brief  Span of a sorted relations for a given domain entity.
  *
  *  The span is sorted by
@@ -282,7 +336,8 @@ enum ConnectivityType
   INVALID_CONNECTIVITY_TYPE
 };
 
-constexpr unsigned INVALID_BUCKET_ID = std::numeric_limits<unsigned>::max();
+constexpr unsigned INVALID_BUCKET_ID = std::numeric_limits<int>::max();
+constexpr unsigned INVALID_PARTITION_ID = std::numeric_limits<int>::max();
 
 #define STK_16BIT_CONNECTIVITY_ORDINAL
 #ifdef STK_16BIT_CONNECTIVITY_ORDINAL
@@ -305,6 +360,26 @@ enum Permutation : unsigned char
 {
   DEFAULT_PERMUTATION = 0,
   INVALID_PERMUTATION = 128
+};
+
+struct FieldMetaData
+{
+  std::byte* m_data {};
+  int m_bytesPerEntity {};
+  int m_numComponentsPerEntity {};
+  int m_numCopiesPerEntity {};
+  int m_bucketSize {};
+  int m_bucketCapacity {};
+};
+
+struct DeviceFieldMetaData
+{
+  std::byte* m_data {};
+  std::byte* m_hostData {};
+  int m_numComponentsPerEntity {};
+  int m_numCopiesPerEntity {};
+  int m_bucketSize {};
+  int m_bucketCapacity {};
 };
 
 } // namespace mesh

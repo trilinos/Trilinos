@@ -62,8 +62,12 @@ std::array<double,3> get_triangle_scalar(const stk::mesh::BulkData & mesh, const
   return {{ get_scalar_field(mesh, field, triangleNodes[0]), get_scalar_field(mesh, field, triangleNodes[1]), get_scalar_field(mesh, field, triangleNodes[2]) }};
 }
 
+void fill_nodes_attached_to_node(const stk::mesh::BulkData& mesh, const stk::mesh::Entity node, std::vector<stk::mesh::Entity> &nbrNodes);
 void populate_stk_local_ids(stk::mesh::BulkData & mesh);
 void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & parentNodes, std::vector<stk::mesh::EntityId> & parentNodeIds);
+void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::topology elemTopology, const stk::topology sideTopology, const stk::mesh::Entity * elemNodes, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes);
+void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::topology elemTopology, const stk::mesh::Entity * elemNodes, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes);
+void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity elem, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes);
 stk::mesh::PartVector get_all_block_parts(const stk::mesh::MetaData & meta);
 double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity);
 double & get_scalar_field(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity);
@@ -72,6 +76,7 @@ stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const Fiel
 bool is_less_than_in_x_then_y_then_z(const stk::math::Vector3d& A, const stk::math::Vector3d &B);
 size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank entityRank);
 size_t get_global_num_entities(const stk::mesh::BulkData& mesh, const stk::mesh::Part & part);
+unsigned get_entity_node_ordinal(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity node);
 double compute_tri_volume(const std::array<stk::math::Vector2d,3> & elementNodeCoords);
 double compute_tri_volume(const std::array<stk::math::Vector3d,3> & elementNodeCoords);
 double compute_tri_volume(const stk::math::Vector3d * elementNodeCoords);
@@ -79,6 +84,8 @@ double compute_tet_volume(const std::array<stk::math::Vector3d,4> & elementNodeC
 double compute_tet_volume(const stk::math::Vector3d * elementNodeCoords);
 double compute_tri_or_tet_volume(const std::vector<stk::math::Vector3d> & elementNodeCoords);
 stk::math::Vector3d get_side_normal(const stk::mesh::BulkData& mesh, const FieldRef coordsField, stk::mesh::Entity side);
+std::array<stk::math::Vector3d,4> gather_tet_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField);
+std::array<stk::math::Vector3d,3> gather_tri_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField);
 void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField, std::vector<stk::math::Vector3d> & elementNodeCoords);
 void fill_procs_owning_or_sharing_or_ghosting_node(const stk::mesh::BulkData& bulkData, stk::mesh::Entity node, std::vector<int> & procsOwningSharingOrGhostingNode);
 double compute_maximum_element_size(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector);
@@ -90,8 +97,10 @@ void delete_all_entities_using_nodes_with_nodal_volume_below_threshold(stk::mesh
 std::vector<unsigned> get_side_permutation(stk::topology topology, stk::mesh::Permutation node_permutation);
 const stk::mesh::Part & find_element_part(const stk::mesh::BulkData& mesh, stk::mesh::Entity elem);
 bool check_induced_parts(const stk::mesh::BulkData & mesh);
+bool does_first_entity_have_all_nodes_of_second(const stk::mesh::BulkData & mesh, const stk::mesh::Entity first, const stk::mesh::Entity second);
 void attach_sides_to_elements(stk::mesh::BulkData & mesh);
-void attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::EntityRank entityRank, const stk::mesh::Entity entity, const stk::mesh::Entity element);
+void attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity element);
+void attach_entity_to_element_if_not_already_attached(stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity element);
 void attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::mesh::BulkData &mesh, const stk::mesh::Selector & elementSelector, const stk::mesh::Entity elem);
 void unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
@@ -104,6 +113,8 @@ bool has_upward_connectivity(const stk::mesh::BulkData &mesh, const stk::mesh::E
 void debug_print_selector_parts(const stk::mesh::Selector & selector);
 stk::mesh::PartVector filter_non_io_parts(const stk::mesh::PartVector & all_parts);
 void get_partially_and_fully_coincident_elements(const stk::mesh::BulkData & mesh, stk::mesh::Entity elem, std::vector<stk::mesh::Entity> & coincident_elems);
+void fill_sides_using_side_nodes(const stk::mesh::BulkData & mesh, const stk::mesh::EntityRank sideRank, const std::vector<stk::mesh::Entity> & sideNodes, const bool doFilterEntitiesThatDontHaveNumSideNodes, std::vector<stk::mesh::Entity> & sides);
+void fill_existing_sides_using_nodes_of_side_of_element(const stk::mesh::BulkData & mesh, const stk::topology elemTopology, const stk::mesh::Entity * elemNodes, const unsigned sideId, std::vector<stk::mesh::Entity> & existingSides);
 bool check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk::mesh::Part & exterior_boundary_part, const stk::mesh::Part & active_part);
 bool check_coincident_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Part & active_part);
 bool fix_coincident_element_ownership(stk::mesh::BulkData & mesh);
@@ -170,6 +181,8 @@ const unsigned * get_edge_node_ordinals(stk::topology topology, unsigned edge_or
 std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool includeFields);
 std::string debug_entity_1line(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool omitSideRank = false);
+std::string debug_mesh(const stk::mesh::BulkData & mesh);
+std::string debug_part_changes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::PartVector & addParts, const stk::mesh::PartVector & removeParts);
 
 struct SideDescription
 {
@@ -190,6 +203,9 @@ void communicate_shared_nodes_to_sharing_procs(const stk::mesh::BulkData & mesh,
 void communicate_shared_nodes_to_sharing_procs_and_sort_and_unique(const stk::mesh::BulkData & mesh, std::vector<stk::mesh::Entity> & nodes);
 
 double compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Entity element, const stk::mesh::Field<double> * const coords_field);
+
+stk::mesh::Entity find_any_element_using_edge(const stk::mesh::BulkData & mesh, const std::array<stk::mesh::Entity,2> & edgeNodes);
+stk::mesh::Entity find_edge_midnode(const stk::mesh::BulkData & mesh, const std::array<stk::mesh::Entity,2> & edgeNodes, const stk::mesh::Entity elementUsingEdge);
 
 // Temporary method for manually correcting the relation permutation
 void set_relation_permutation(stk::mesh::BulkData & mesh, stk::mesh::Entity from, stk::mesh::Entity to, stk::mesh::ConnectivityOrdinal to_ord, stk::mesh::Permutation to_permutation);
@@ -243,6 +259,10 @@ std::vector<T> create_vector_indexable_by_entity_offset(const stk::mesh::BulkDat
 }
 
 void batch_convert_elements_and_their_sides(stk::mesh::BulkData & mesh, const std::map<int,int> & partOrdinalMapping, const std::vector<stk::mesh::Entity> & elements);
+
+void parallel_sync_fields(const stk::mesh::BulkData & mesh, const std::vector<const stk::mesh::FieldBase *> & fields);
+void parallel_sync_fields(const stk::mesh::BulkData & mesh, const stk::mesh::FieldVector & fields);
+void parallel_sync_all_fields(const stk::mesh::BulkData & mesh);
 
 } // namespace krino
 

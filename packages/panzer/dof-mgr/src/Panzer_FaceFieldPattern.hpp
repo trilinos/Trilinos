@@ -35,6 +35,9 @@ public:
    //! Do nothing destructor
    virtual ~FaceFieldPattern() {}
 
+  Teuchos::RCP<panzer::FieldPattern> clone() const
+  {return Teuchos::rcp(new FaceFieldPattern(*this));}
+
    //! Set the cell topology for this field pattern
    void setCellTopology(const shards::CellTopology & ct);
 

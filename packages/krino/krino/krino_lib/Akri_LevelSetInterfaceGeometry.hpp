@@ -39,12 +39,12 @@ public:
     { std::vector<InterfaceID> interfaces; myElementInterfaceCutter->fill_interfaces_with_cutting_surface(interfaces); return interfaces; }
   virtual std::vector<int> get_interface_signs_based_on_crossings(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains) const override;
-  virtual void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes,
-    const InterfaceID & interface1,
-    const InterfaceID & interface2,
+  virtual void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodesParamCoords,
     const ElementIntersectionPointFilter & intersectionPointFilter,
-    std::vector<ElementIntersection> & intersections) const override
-    { myElementInterfaceCutter->fill_tetrahedron_face_interior_intersections(faceNodes, interface1, interface2, intersectionPointFilter, intersections); }
+    std::vector<ElementIntersection> & faceIntersections) const override;
+  virtual void fill_tetrahedron_face_interior_intersections(const std::array<int,3> & faceNodeOrdinals,
+      const ElementIntersectionPointFilter & intersectionPointFilter,
+      std::vector<ElementIntersection> & faceIntersections) const override;
   virtual std::string visualize(const stk::mesh::BulkData & mesh) const override;
   virtual int interface_sign_for_uncrossed_element(const InterfaceID interface, const std::vector<stk::math::Vector3d> & elemNodesCoords) const override;
   virtual std::pair<int, double> interface_edge_crossing_sign_and_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;

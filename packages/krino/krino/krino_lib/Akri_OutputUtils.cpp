@@ -238,6 +238,40 @@ stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkDa
   return emptyParts;
 }
 
+void write_stl(const std::string &filename, const std::vector<const Facet3d *> & facets)
+{
+    std::string header_info = "solid " + filename + "-output";
+    char head[80];
+    std::strncpy(head, header_info.c_str(), sizeof(head) - 1);
+
+    std::ofstream myfile;
+    myfile.open(filename.c_str(), std::ios::out | std::ios::binary);
+    myfile.write(head, sizeof(head));
+
+    unsigned long numTris = facets.size();
+    myfile.write((char*) &numTris, 4);
+    uint16_t volAttribute = 1;
+
+    for(const auto & facet : facets)
+    {
+        const std::array<stk::math::Float3d, 3> facetNodeLocs {facet->facet_vertex(0).data(), facet->facet_vertex(1).data(),
+                                                               facet->facet_vertex(2).data()};
+        const stk::math::Float3d normal(facet->facet_normal().data());
+
+        myfile.write((char*) &normal[0], 4);
+        myfile.write((char*) &normal[1], 4);
+        myfile.write((char*) &normal[2], 4);
+        for(const stk::math::Float3d &nodeLoc : facetNodeLocs)
+        {
+            myfile.write((char*) &nodeLoc[0], 4);
+            myfile.write((char*) &nodeLoc[1], 4);
+            myfile.write((char*) &nodeLoc[2], 4);
+        }
+        myfile.write((char*) &volAttribute, 2);
+    }
+    myfile.close();
+}
+
 // Explicit template instantiation
 
 template void write_facets<Facet2d>( const std::vector<Facet2d> & facets, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm);

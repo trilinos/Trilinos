@@ -221,7 +221,7 @@ inline std::ostream & operator<<(std::ostream & os, const TempLoc & loc)
 
 template<class T, class CompareOp, class IdType>
 inline
-void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * datatype)
+void mpi_loc_global(void * invec, void * inoutvec, int * len, MPI_Datatype * /*datatype*/)
 {
   CompareOp op;
   Loc<T, IdType> *Loc_in = static_cast<Loc<T, IdType> *>(invec);
@@ -609,10 +609,10 @@ T *align_cast(void *p)
   enum {mask = alignment - 1};
 
   char * c = reinterpret_cast<char *>(p);
-  size_t front_misalign = (c - static_cast<char*>(0)) & mask;
+  size_t front_misalign = (reinterpret_cast<size_t>(c)) & mask;
   if (front_misalign > 0) {
     size_t correction = alignment - front_misalign;
-    T *q = reinterpret_cast<T *>((c - static_cast<char*>(0)) + correction);
+    T *q = reinterpret_cast<T *>((reinterpret_cast<size_t>(c)) + correction);
     return q;
   }
 

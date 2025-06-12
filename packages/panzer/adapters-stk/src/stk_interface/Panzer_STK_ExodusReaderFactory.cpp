@@ -244,8 +244,12 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
       mesh.buildLocalFaceIDs();
       addFaceBlocks(mesh);
    }
-   mesh.endModification();
 
+   {
+     const bool find_and_set_shared_nodes_in_stk = false;
+     mesh.endModification(find_and_set_shared_nodes_in_stk);
+   }
+   
    if (userMeshScaling_) {
      stk::mesh::Field<double>* coord_field = metaData.get_field<double>(stk::topology::NODE_RANK, "coordinates");
      std::vector< const stk::mesh::FieldBase *> fields;
@@ -614,7 +618,10 @@ void STK_ExodusReaderFactory::addEdgeBlocks(STK_Interface & mesh) const
 
    /* For each element block, iterate over it's edge topologies.
     * For each edge topology, get the matching edge block and
-    * add all edges of that topology to the edge block.
+    * add all edges of that topology to the edge block. Make sure to include
+    * aura values - when they are marked shared, the part membership
+    * gets updated, if only ghosted the part memberships are not
+    * automatically updated.
     */
    for (auto iter : elemBlockUniqueEdgeTopologies_) {
       std::string elemBlockName = iter.first;
@@ -627,14 +634,11 @@ void STK_ExodusReaderFactory::addEdgeBlocks(STK_Interface & mesh) const
          stk::mesh::Selector owned_block;
          owned_block  = *elemBlockPart;
          owned_block &= edgeTopoPart;
-         owned_block &= metaData->locally_owned_part();
 
          std::string edge_block_name = mkBlockName(panzer_stk::STK_Interface::edgeBlockString, topo.name());
          stk::mesh::Part * edge_block = mesh.getEdgeBlock(edge_block_name);
 
-         std::vector<stk::mesh::Entity> all_edges_for_topo;
-         bulkData->get_entities(mesh.getEdgeRank(),owned_block,all_edges_for_topo);
-         mesh.addEntitiesToEdgeBlock(all_edges_for_topo, edge_block);
+         bulkData->change_entity_parts(owned_block, mesh.getEdgeRank(), stk::mesh::PartVector{edge_block});
       }
    }
 }
@@ -646,9 +650,12 @@ void STK_ExodusReaderFactory::addFaceBlocks(STK_Interface & mesh) const
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
 
-   /* For each element block, iterate over it's face topologies.
-    * For each face topology, get the matching face block and
-    * add all faces of that topology to the face block.
+   /* For each element block, iterate over it's face topologies.  For
+    * each face topology, get the matching face block and add all
+    * faces of that topology to the face block. Make sure to include
+    * aura values - when they are marked shared, the part membership
+    * gets updated, if only ghosted the part memberships are not
+    * automatically updated.
     */
    for (auto iter : elemBlockUniqueFaceTopologies_) {
       std::string elemBlockName = iter.first;
@@ -661,14 +668,11 @@ void STK_ExodusReaderFactory::addFaceBlocks(STK_Interface & mesh) const
          stk::mesh::Selector owned_block;
          owned_block  = *elemBlockPart;
          owned_block &= faceTopoPart;
-         owned_block &= metaData->locally_owned_part();
 
          std::string face_block_name = mkBlockName(panzer_stk::STK_Interface::faceBlockString, topo.name());
          stk::mesh::Part * face_block = mesh.getFaceBlock(face_block_name);
 
-         std::vector<stk::mesh::Entity> all_faces_for_topo;
-         bulkData->get_entities(mesh.getFaceRank(),owned_block,all_faces_for_topo);
-         mesh.addEntitiesToFaceBlock(all_faces_for_topo, face_block);
+         bulkData->change_entity_parts(owned_block, mesh.getFaceRank(), stk::mesh::PartVector{face_block});
       }
    }
 }

@@ -41,7 +41,7 @@ PointGeometry::centroid() const
 }
 
 stk::math::Vector3d
-PointGeometry::closest_proj_on_face(const stk::math::Vector3d & p) const
+PointGeometry::closest_proj_on_face(const stk::math::Vector3d & /*p*/) const
 {
   return node(0);
 }

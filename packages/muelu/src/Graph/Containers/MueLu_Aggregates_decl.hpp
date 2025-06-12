@@ -12,8 +12,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include <Kokkos_StaticCrsGraph.hpp>
-
 #include "MueLu_Aggregates_fwd.hpp"
 
 #include <Xpetra_Map_fwd.hpp>

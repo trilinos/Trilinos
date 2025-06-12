@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -47,7 +47,7 @@ C      AR = E2/F3        SKEW = SIN(A)            TAPER Y
 C=======================================================================
 
       REAL   CRD(NUMNP, NDIM), ASPECT(*), SKEW(*), TAPER(*), AREA(*)
-      INTEGER  IX(NNODES, NUMEL), MAT(6, NELBLK), ISUMRY(2,4,NELBLK)
+      INTEGER  IX(NNODES, NUMEL), MAT(7, NELBLK), ISUMRY(2,4,NELBLK)
       REAL   SUMRY(4,4,NELBLK)
       LOGICAL  SELECT(*), DEBUG, ISABRT
       include 'nu_io.blk'

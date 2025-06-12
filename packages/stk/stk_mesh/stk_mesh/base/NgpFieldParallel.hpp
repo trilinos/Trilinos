@@ -69,6 +69,31 @@ void parallel_sum(const stk::mesh::BulkData & bulk, const std::vector<stk::mesh:
 }
 
 template <typename T>
+void parallel_sum_including_ghosts(const stk::mesh::BulkData & bulk,
+                                   const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
+                                   bool doFinalSyncBackToDevice = true)
+{
+  const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+  const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
+
+  std::vector<const stk::mesh::FieldBase *> stkFields;
+  for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
+    stkFields.push_back(allStkFields[ngpField->get_ordinal()]);
+    ngpField->sync_to_host();
+  }
+
+  stk::mesh::parallel_sum_including_ghosts(bulk, stkFields);
+
+  for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
+    ngpField->modify_on_host();
+
+    if (doFinalSyncBackToDevice) {
+      ngpField->sync_to_device();
+    }
+  }
+}
+
+template <typename T>
 void do_final_sync_to_device(const std::vector<NgpField<T>*>& ngpFields)
 {
   for(auto ngpField : ngpFields) {
@@ -145,7 +170,7 @@ void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vecto
     ngpField->sync_to_device();
   }
 
-  ParallelSumDataExchangeSymPackUnpackHandler<T> exchangeHandler(ngpMesh, ngpFields);
+  ParallelSumDataExchangeSymPackUnpackHandler<stk::mesh::NgpMesh,stk::mesh::NgpField<T>> exchangeHandler(ngpMesh, ngpFields);
 
   stk::mesh::EntityRank first_field_rank = ngpFields[0]->get_rank();
   std::vector<int> comm_procs = bulk.all_sharing_procs(first_field_rank);
@@ -154,14 +179,70 @@ void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vecto
     STK_ThrowRequireMsg(f->get_rank() == first_field_rank, "parallel_sum_device_mpi requires all fields to have the same rank.");
   }
 
+  const bool includeGhosts = false;
   const bool deterministic = false;
   stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<double>(bulk.parallel(),
                                                                 comm_procs,
                                                                 exchangeHandler,
+                                                                includeGhosts,
                                                                 deterministic);
 
   for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
     ngpField->modify_on_device();
+  }
+}
+
+template <typename NGPMESH, typename NGPFIELD>
+void parallel_sum_including_ghosts_device_mpi(const NGPMESH& ngpMesh,
+                                  const std::vector<NGPFIELD*> & ngpFields)
+{
+  const stk::mesh::BulkData& bulk = ngpMesh.get_bulk_on_host();
+
+  STK_ThrowRequireMsg(bulk.has_symmetric_ghost_info() && bulk.in_synchronized_state(),
+     "parallel_sym_including_ghosts_device_mpi requires symmetric ghost info, and the mesh also can not be in a modifiable state.");
+
+  using ThisExecSpace = typename NGPMESH::MeshExecSpace;
+  constexpr bool onDevice = !Kokkos::SpaceAccessibility<ThisExecSpace, stk::ngp::HostMemSpace>::accessible;
+  for (NGPFIELD * ngpField : ngpFields) {
+    if constexpr (onDevice) {
+      ngpField->sync_to_device();
+    }
+    else {
+      ngpField->sync_to_host();
+    }
+  }
+
+  using ExchangeHandler = ParallelSumDataExchangeSymPackUnpackHandler<NGPMESH,NGPFIELD>;
+  ExchangeHandler exchangeHandler(ngpMesh, ngpFields);
+
+  stk::mesh::EntityRank first_field_rank = ngpFields[0]->get_rank();
+  for (size_t i = 1; i < ngpFields.size(); ++i) {
+    const NGPFIELD * f = ngpFields[i];
+    STK_ThrowRequireMsg(f->get_rank() == first_field_rank, "parallel_sum_including_ghosts_device_mpi requires all fields to have the same rank.");
+  }
+
+  const bool includeGhosts = true;
+  std::vector<int> comm_procs;
+  for(int p=0; p<bulk.parallel_size(); ++p) {
+    if (bulk.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(first_field_rank, p, includeGhosts).extent(0) > 0) {
+      comm_procs.push_back(p);
+    }
+  }
+
+  using T = typename NGPFIELD::value_type;
+  const bool deterministic = false;
+  stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<T,ExchangeHandler>(bulk.parallel(),
+                                                                           comm_procs,
+                                                                           exchangeHandler,
+                                                                           includeGhosts,
+                                                                           deterministic);
+  for (NGPFIELD * ngpField : ngpFields) {
+    if constexpr (onDevice) {
+      ngpField->modify_on_device();
+    }
+    else {
+      ngpField->modify_on_host();
+    }
   }
 }
 
@@ -174,6 +255,14 @@ void parallel_sum(NgpMesh const& ngpMesh, std::vector<NgpField*> const& ngpField
   } else {
     parallel_sum(ngpMesh.get_bulk_on_host(), ngpFields, doFinalSyncBackToDevice);
   }
+}
+
+template <typename NGPMESH, typename NGPFIELD, typename MemSpace = stk::ngp::MemSpace>
+void parallel_sum_including_ghosts(NGPMESH const& ngpMesh, std::vector<NGPFIELD*> const& ngpFields, [[maybe_unused]] bool doFinalSyncBackToDevice = true)
+{
+  STK_ThrowRequireMsg((Kokkos::SpaceAccessibility<typename NGPMESH::MeshExecSpace, MemSpace>::accessible), "parallel_sum_including_ghosts MemSpace not accessible from NGPMESH::MeshExecSpace");
+
+  parallel_sum_including_ghosts_device_mpi(ngpMesh, ngpFields);
 }
 
 }

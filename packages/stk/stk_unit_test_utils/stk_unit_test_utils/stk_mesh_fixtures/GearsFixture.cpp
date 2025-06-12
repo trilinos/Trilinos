@@ -274,7 +274,7 @@ void scale_p_rank(unsigned & p_rank, unsigned p_size)
   }
 }
 
-unsigned destination_processor(const Gear & gear, double rad, double angle, double height, unsigned p_rank, unsigned p_size)
+unsigned destination_processor(const Gear & /*gear*/, double /*rad*/, double angle, double /*height*/, unsigned /*p_rank*/, unsigned p_size)
 {
   unsigned result = 0;
   // Distribute elements across angles: (not working perfectly yet)

@@ -17,93 +17,6 @@
 
 namespace krino {
 
-static bool element_topology_has_refined_centroid_node(const stk::topology elemTopology)
-{
-  return (elemTopology == stk::topology::QUAD_4_2D ||
-      elemTopology == stk::topology::HEXAHEDRON_8);
-}
-
-static bool element_topology_has_refined_face_nodes(const stk::topology elemTopology)
-{
-  return (elemTopology == stk::topology::HEXAHEDRON_8);
-}
-
-UniformEdgeMarker::UniformEdgeMarker(const stk::mesh::BulkData & mesh, Refinement & refinement)
-: myMesh(mesh), myRefinement(refinement)
-{
-}
-
-void UniformEdgeMarker::locally_mark_edges_of_non_parent_elements(NodeRefiner & nodeRefiner) const
-{
-  const stk::mesh::Selector selector = myMesh.mesh_meta_data().locally_owned_part() & !myRefinement.parent_part();
-  std::vector<Edge> edgesToRefineForElement;
-  std::vector<QuadFace> facesToRefineForElement;
-
-  for(const auto * bucketPtr : myMesh.get_buckets(stk::topology::ELEMENT_RANK, selector))
-  {
-    const bool elemHasRefinedCentroidNode = element_topology_has_refined_centroid_node(bucketPtr->topology());
-    const bool elemHasRefinedFaceNodes = element_topology_has_refined_face_nodes(bucketPtr->topology());
-    for(const auto & elem : *bucketPtr)
-    {
-      fill_entity_edges(myMesh, elem, edgesToRefineForElement);
-      for (auto && edgeToRefineForElement : edgesToRefineForElement)
-        nodeRefiner.mark_edge_for_refinement(edgeToRefineForElement);
-      if (elemHasRefinedCentroidNode)
-        nodeRefiner.mark_element_with_child_centroid_node_for_refinement(elem);
-      if (elemHasRefinedFaceNodes)
-      {
-        fill_entity_quad_faces(myMesh, elem, facesToRefineForElement);
-        for (auto && faceToRefineForElement : facesToRefineForElement)
-          nodeRefiner.mark_quad_face_for_refinement(faceToRefineForElement);
-      }
-    }
-  }
-}
-
-void UniformEdgeMarker::mark_edges_to_be_refined(NodeRefiner & nodeRefiner) const
-{
-  nodeRefiner.clear_entities_to_refine();
-  locally_mark_edges_of_non_parent_elements(nodeRefiner);
-  nodeRefiner.sync_shared_edges_from_other_procs_to_refine(myMesh);
-}
-
-bool UniformEdgeMarker::is_element_a_candidate_for_adaptation(const stk::mesh::Entity elem, const bool doingRefinement) const
-{
-  return doingRefinement && !myRefinement.is_parent(elem);
-}
-
-void UniformEdgeMarker::fill_adaptation_caseIds_and_refined_edge_nodes_if_changed(const NodeRefiner & nodeRefiner,
-    const stk::mesh::Entity elem,
-    const stk::topology & elemTopology,
-    const bool doingRefinement,
-    ElementEdgeCaseIds & elementEdgeCaseIds,
-    std::vector<stk::mesh::Entity> & elemEdgeChildNodes) const
-{
-  elementEdgeCaseIds.clear();
-
-  if (doingRefinement)
-  {
-    const unsigned elemNumEdges = elemTopology.num_edges();
-    const stk::mesh::Entity * elemNodes = myMesh.begin_nodes(elem);
-    std::array<stk::mesh::Entity,3> edgeNodes;
-    elemEdgeChildNodes.resize(elemNumEdges);
-
-    int postRefineCaseId = 0;
-    for (unsigned iEdge = 0; iEdge < elemNumEdges; ++iEdge)
-    {
-      elemTopology.edge_nodes(elemNodes, iEdge, edgeNodes.data());
-      const Edge edge = edge_from_edge_nodes(myMesh, edgeNodes[0], edgeNodes[1]);
-      const stk::mesh::Entity refinedEdgeNode = nodeRefiner.get_edge_child_node(edge);
-      elemEdgeChildNodes[iEdge] = refinedEdgeNode;
-      if (elemEdgeChildNodes[iEdge] != stk::mesh::Entity::InvalidEntity)
-        postRefineCaseId += 1<<iEdge;
-    }
-
-    const int preRefineCaseId = 0;
-    elementEdgeCaseIds.set(preRefineCaseId, postRefineCaseId);
-  }
-}
-
 ElementBasedEdgeMarker::ElementBasedEdgeMarker(const stk::mesh::BulkData & mesh,
     Refinement & refinement,
     const std::string & elementMarkerFieldName)
@@ -119,6 +32,12 @@ const std::string & ElementBasedEdgeMarker::get_marker_field_name() const
   return myElementMarkerField->name();
 }
 
+void ElementBasedEdgeMarker::set_marker_field(stk::mesh::Field<int> * field)
+{
+  STK_ThrowAssert(field);
+  myElementMarkerField = field;
+}
+
 const stk::mesh::Field<int> & ElementBasedEdgeMarker::get_marker_field_and_sync_to_host() const
 {
   STK_ThrowAssert(myElementMarkerField);
@@ -129,54 +48,8 @@ const stk::mesh::Field<int> & ElementBasedEdgeMarker::get_marker_field_and_sync_
 TransitionElementEdgeMarker::TransitionElementEdgeMarker(const stk::mesh::BulkData & mesh,
     Refinement & refinement,
     const std::string & elementMarkerFieldName)
-    : ElementBasedEdgeMarker(mesh, refinement, elementMarkerFieldName),
-      myMesh(mesh),
-      myRefinement(refinement)
+    : ElementBasedEdgeMarker(mesh, refinement, elementMarkerFieldName)
 {
-}
-
-
-static bool node_is_parent_node(const StkMeshEntities & parentNodes, const stk::mesh::Entity node)
-{
-  return (std::find(parentNodes.begin(), parentNodes.end(), node) != parentNodes.end());
-}
-
-static void keep_child_nodes_that_are_not_parent_nodes(const StkMeshEntities & parentNodes, std::vector<stk::mesh::Entity> & childNodesThatAreNotParentNodes)
-{
-  size_t numKeep = 0;
-  for (size_t iChild=0; iChild<childNodesThatAreNotParentNodes.size(); ++iChild)
-    if (!node_is_parent_node(parentNodes, childNodesThatAreNotParentNodes[iChild]))
-      childNodesThatAreNotParentNodes[numKeep++] = childNodesThatAreNotParentNodes[iChild];
-  childNodesThatAreNotParentNodes.resize(numKeep);
-}
-
-std::vector<stk::mesh::Entity> TransitionElementEdgeMarker::get_child_nodes_that_are_not_parent_nodes(
-    const stk::mesh::Entity parentElem,
-    const std::vector<stk::mesh::Entity> & childElems) const
-{
-  std::vector<stk::mesh::Entity> childNodesThatAreNotParentNodes;
-  if (!childElems.empty())
-  {
-    const StkMeshEntities parentNodes {myMesh.begin_nodes(parentElem), myMesh.end_nodes(parentElem)};
-    childNodesThatAreNotParentNodes.reserve(parentNodes.size()*childElems.size());
-    for (auto && childElem : childElems)
-    {
-      STK_ThrowAssertMsg(myMesh.is_valid(childElem), "All child elements must by valid.  Should this element really be considered for adaptation?");
-      StkMeshEntities childNodes{myMesh.begin_nodes(childElem), myMesh.end_nodes(childElem)};
-      childNodesThatAreNotParentNodes.insert(childNodesThatAreNotParentNodes.end(), childNodes.begin(), childNodes.end());
-    }
-    stk::util::sort_and_unique(childNodesThatAreNotParentNodes);
-
-    keep_child_nodes_that_are_not_parent_nodes(parentNodes, childNodesThatAreNotParentNodes);
-  }
-  return childNodesThatAreNotParentNodes;
-}
-
-std::vector<stk::mesh::Entity> TransitionElementEdgeMarker::get_child_nodes_that_are_not_parent_nodes(
-    const stk::mesh::Entity parentElem) const
-{
-  const std::vector<stk::mesh::Entity> childElems = myRefinement.get_children(parentElem);
-  return get_child_nodes_that_are_not_parent_nodes(parentElem, childElems);
 }
 
 bool TransitionElementEdgeMarker::is_transition(const stk::mesh::Entity elem) const
@@ -209,77 +82,14 @@ TransitionElementEdgeMarker::get_parent_edges_for_given_refined_edge_nodes(const
   return edges;
 }
 
-std::vector<std::array<stk::mesh::EntityId,2>>
-TransitionElementEdgeMarker::get_parent_edge_node_ids_for_given_refined_edge_nodes(const std::vector<stk::mesh::Entity> & refinedEdgeNodes) const
-{
-  std::vector<std::array<stk::mesh::EntityId,2>> refinedEdgeParentNodeIds;
-  refinedEdgeParentNodeIds.reserve(refinedEdgeNodes.size());
-  for (auto && refinedEdgeNode : refinedEdgeNodes)
-  {
-    const std::array<stk::mesh::EntityId,2> edgeParentNodeIds = myRefinement.get_edge_parent_node_ids(refinedEdgeNode);
-    refinedEdgeParentNodeIds.push_back(edgeParentNodeIds);
-  }
-  return refinedEdgeParentNodeIds;
-}
-
-void TransitionElementEdgeMarker::fill_are_edge_nodes_being_unrefined(const std::vector<stk::mesh::Entity> & sortedOwnedOrSharedNodesToBeRemovedByUnrefinement,
-    const std::vector<stk::mesh::Entity> & refinedEdgeNodes,
-    std::vector<bool> & areEdgeNodesBeingUnrefined,
-    bool & areAnyEdgeNodesBeingUnrefined) const
-{
-  areAnyEdgeNodesBeingUnrefined = false;
-  areEdgeNodesBeingUnrefined.assign(refinedEdgeNodes.size(), false);
-  for (size_t iNode=0; iNode<refinedEdgeNodes.size(); ++iNode)
-  {
-    const auto iter = std::lower_bound(sortedOwnedOrSharedNodesToBeRemovedByUnrefinement.begin(), sortedOwnedOrSharedNodesToBeRemovedByUnrefinement.end(), refinedEdgeNodes[iNode]);
-    if (iter != sortedOwnedOrSharedNodesToBeRemovedByUnrefinement.end() && *iter == refinedEdgeNodes[iNode])
-    {
-      areAnyEdgeNodesBeingUnrefined = true;
-      areEdgeNodesBeingUnrefined[iNode] = true;
-    }
-  }
-}
-
-static std::array<stk::mesh::EntityId,2> get_sorted_edge_node_ids(const stk::mesh::BulkData & mesh, const stk::mesh::Entity edgeNode0, const stk::mesh::Entity edgeNode1)
-{
-  const stk::mesh::EntityId edgeNode0Id = mesh.identifier(edgeNode0);
-  const stk::mesh::EntityId edgeNode1Id = mesh.identifier(edgeNode1);
-  return (edgeNode0Id<edgeNode1Id) ? std::array<stk::mesh::EntityId,2>{{edgeNode0Id, edgeNode1Id}} : std::array<stk::mesh::EntityId,2>{{edgeNode1Id, edgeNode0Id}};
-}
-
-void TransitionElementEdgeMarker::fill_post_unrefinement_edge_nodes_and_caseIds(const stk::mesh::Entity elem,
+void TransitionElementEdgeMarker::fill_refinement_caseIds_and_refined_edge_nodes_if_changed(const NodeRefiner & nodeRefiner,
+    const stk::mesh::Entity elem,
     const stk::topology & elemTopology,
-    const std::vector<stk::mesh::Entity> & refinedEdgeNodes,
-    const std::vector<bool> & areEdgeNodesBeingUnrefined,
-    std::vector<stk::mesh::Entity> & elemEdgeChildNodes,
-    ElementEdgeCaseIds & elementEdgeCaseIds) const
+    ElementEdgeCaseIds & elementEdgeCaseIds,
+    std::vector<stk::mesh::Entity> & elemEdgeChildNodes) const
 {
-  const std::vector<std::array<stk::mesh::EntityId,2>> refinedEdgeParentNodeIds = get_parent_edge_node_ids_for_given_refined_edge_nodes(refinedEdgeNodes);
-
-  int preAdaptCaseId = 0;
-  int postAdaptCaseId = 0;
-  const unsigned elemNumEdges = elemTopology.num_edges();
-  elemEdgeChildNodes.assign(elemNumEdges, stk::mesh::Entity());
-
-  const stk::mesh::Entity * entityNodes = myMesh.begin_nodes(elem);
-  for (unsigned iEdge = 0; iEdge < elemNumEdges; ++iEdge)
-  {
-    const unsigned * edgeNodeOrdinals = get_edge_node_ordinals(elemTopology, iEdge);
-    const std::array<stk::mesh::EntityId,2> edgeNodeIds = get_sorted_edge_node_ids(myMesh, entityNodes[edgeNodeOrdinals[0]], entityNodes[edgeNodeOrdinals[1]]);
-    const auto iter = std::find(refinedEdgeParentNodeIds.begin(), refinedEdgeParentNodeIds.end(), edgeNodeIds);
-    if (iter != refinedEdgeParentNodeIds.end())
-    {
-      preAdaptCaseId += 1<<iEdge;
-      const size_t index = std::distance(refinedEdgeParentNodeIds.begin(), iter);
-      if (!areEdgeNodesBeingUnrefined[index])
-      {
-        postAdaptCaseId += 1<<iEdge;
-        elemEdgeChildNodes[iEdge] = refinedEdgeNodes[index];
-      }
-    }
-  }
-
-  elementEdgeCaseIds.set(preAdaptCaseId, postAdaptCaseId);
+  const bool isElemCandidateForRefinement = !myRefinement.is_parent(elem) || myRefinement.is_this_parent_element_partially_refined(elem);
+  EdgeMarkerUtils::fill_refinement_caseIds_and_refined_edge_nodes_if_changed(myMesh, myRefinement, nodeRefiner, elem, isElemCandidateForRefinement, elemTopology, elementEdgeCaseIds, elemEdgeChildNodes);
 }
 
 void TransitionElementEdgeMarker::fill_unrefinement_caseIds_and_refined_edge_nodes_if_changed(const NodeRefiner & nodeRefiner,
@@ -288,98 +98,8 @@ void TransitionElementEdgeMarker::fill_unrefinement_caseIds_and_refined_edge_nod
     ElementEdgeCaseIds & elementEdgeCaseIds,
     std::vector<stk::mesh::Entity> & elemEdgeChildNodes) const
 {
-  elementEdgeCaseIds.clear();
-  elemEdgeChildNodes.clear();
-  if (myRefinement.is_parent(elem))
-  {
-    const std::vector<stk::mesh::Entity> refinedEdgeNodes = get_child_nodes_that_are_not_parent_nodes(elem);
-    const std::vector<stk::mesh::Entity> & sortedOwnedOrSharedNodesToBeRemovedByUnrefinement = nodeRefiner.get_sorted_edge_nodes_that_will_be_removed_by_unrefinement();
-    std::vector<bool> areEdgeNodesBeingUnrefined;
-    bool areAnyEdgeNodesBeingUnrefined = false;
-    fill_are_edge_nodes_being_unrefined(sortedOwnedOrSharedNodesToBeRemovedByUnrefinement, refinedEdgeNodes, areEdgeNodesBeingUnrefined, areAnyEdgeNodesBeingUnrefined);
-
-    if (areAnyEdgeNodesBeingUnrefined)
-      fill_post_unrefinement_edge_nodes_and_caseIds(elem, elemTopology, refinedEdgeNodes, areEdgeNodesBeingUnrefined, elemEdgeChildNodes, elementEdgeCaseIds);
-  }
-}
-
-void TransitionElementEdgeMarker::fill_refined_edge_nodes_for_marked_edges(const NodeRefiner & nodeRefiner,
-    const stk::mesh::Entity elem,
-    const stk::topology & elemTopology,
-    std::vector<stk::mesh::Entity> & elemEdgeChildNodes,
-    bool & areAnyEdgesMarked) const
-{
-  areAnyEdgesMarked = false;
-  const unsigned elemNumEdges = elemTopology.num_edges();
-  elemEdgeChildNodes.assign(elemNumEdges, stk::mesh::Entity());
-
-  const stk::mesh::Entity * entityNodes = myMesh.begin_nodes(elem);
-  for (unsigned iEdge = 0; iEdge < elemNumEdges; ++iEdge)
-  {
-    const unsigned * edgeNodeOrdinals = get_edge_node_ordinals(elemTopology, iEdge);
-    const Edge edge = edge_from_edge_nodes(myMesh, entityNodes[edgeNodeOrdinals[0]], entityNodes[edgeNodeOrdinals[1]]);
-    const stk::mesh::Entity refinedEdgeNode = nodeRefiner.get_edge_child_node(edge);
-    if (myMesh.is_valid(refinedEdgeNode))
-    {
-      areAnyEdgesMarked = true;
-      elemEdgeChildNodes[iEdge] = refinedEdgeNode;
-    }
-  }
-}
-
-void TransitionElementEdgeMarker::fill_in_existing_refined_edge_nodes_and_caseIds(const stk::mesh::Entity elem,
-    const stk::topology & elemTopology,
-    std::vector<stk::mesh::Entity> & elemEdgeChildNodes,
-    ElementEdgeCaseIds & elementEdgeCaseIds) const
-{
-  const unsigned elemNumEdges = elemTopology.num_edges();
-
-  int preAdaptCaseId = 0;
-  int postAdaptCaseId = 0;
-
-  if (myRefinement.is_parent(elem))
-  {
-    const std::vector<stk::mesh::Entity> refinedEdgeNodes = get_child_nodes_that_are_not_parent_nodes(elem);
-    const std::vector<std::array<stk::mesh::EntityId,2>> refinedEdgeParentNodeIds = get_parent_edge_node_ids_for_given_refined_edge_nodes(refinedEdgeNodes);
-
-    const stk::mesh::Entity * entityNodes = myMesh.begin_nodes(elem);
-    for (unsigned iEdge = 0; iEdge < elemNumEdges; ++iEdge)
-    {
-      const unsigned * edgeNodeOrdinals = get_edge_node_ordinals(elemTopology, iEdge);
-      const std::array<stk::mesh::EntityId,2> edgeNodeIds = get_sorted_edge_node_ids(myMesh, entityNodes[edgeNodeOrdinals[0]], entityNodes[edgeNodeOrdinals[1]]);
-      const auto iter = std::find(refinedEdgeParentNodeIds.begin(), refinedEdgeParentNodeIds.end(), edgeNodeIds);
-      if (iter != refinedEdgeParentNodeIds.end())
-      {
-        preAdaptCaseId += 1<<iEdge;
-        elemEdgeChildNodes[iEdge] = refinedEdgeNodes[std::distance(refinedEdgeParentNodeIds.begin(), iter)];
-      }
-    }
-  }
-
-  for (unsigned iEdge = 0; iEdge < elemNumEdges; ++iEdge)
-    if (elemEdgeChildNodes[iEdge] != stk::mesh::Entity::InvalidEntity)
-      postAdaptCaseId += 1<<iEdge;
-
-  elementEdgeCaseIds.set(preAdaptCaseId, postAdaptCaseId);
-}
-
-void TransitionElementEdgeMarker::fill_refinement_caseIds_and_refined_edge_nodes_if_changed(const NodeRefiner & nodeRefiner,
-    const stk::mesh::Entity elem,
-    const stk::topology & elemTopology,
-    ElementEdgeCaseIds & elementEdgeCaseIds,
-    std::vector<stk::mesh::Entity> & elemEdgeChildNodes) const
-{
-  elementEdgeCaseIds.clear();
-
-  if (!myRefinement.is_parent(elem) || myRefinement.is_this_parent_element_partially_refined(elem))
-  {
-    bool areAnyEdgesMarked = false;
-    fill_refined_edge_nodes_for_marked_edges(nodeRefiner, elem, elemTopology, elemEdgeChildNodes, areAnyEdgesMarked);
-    if (areAnyEdgesMarked)
-      fill_in_existing_refined_edge_nodes_and_caseIds(elem, elemTopology, elemEdgeChildNodes, elementEdgeCaseIds);
-    else
-      elemEdgeChildNodes.clear();
-  }
+  const bool isElemCandidateForUnrefinement = myRefinement.is_parent(elem);
+  EdgeMarkerUtils::fill_unrefinement_caseIds_and_refined_edge_nodes_if_changed(myMesh, myRefinement, nodeRefiner, elem, isElemCandidateForUnrefinement, elemTopology, elementEdgeCaseIds, elemEdgeChildNodes);
 }
 
 void TransitionElementEdgeMarker::fill_adaptation_caseIds_and_refined_edge_nodes_if_changed(const NodeRefiner & nodeRefiner,
@@ -395,22 +115,9 @@ void TransitionElementEdgeMarker::fill_adaptation_caseIds_and_refined_edge_nodes
     fill_unrefinement_caseIds_and_refined_edge_nodes_if_changed(nodeRefiner, elem, elemTopology, elementEdgeCaseIds, elemEdgeChildNodes);
 }
 
-static bool is_any_child_invalid_or_a_parent(const stk::mesh::BulkData & mesh, const Refinement & refinement, const std::vector<stk::mesh::Entity> & childElements)
-{
-  for (auto && childElem : childElements)
-    if (!mesh.is_valid(childElem) || refinement.is_parent(childElem))
-      return true;
-  return false;
-}
-
 bool TransitionElementEdgeMarker::is_element_a_candidate_for_unrefinement(const stk::mesh::Entity elem) const
 {
-  if (myRefinement.is_parent(elem))
-  {
-    const std::vector<stk::mesh::Entity> childElems = myRefinement.get_children(elem);
-    return !is_any_child_invalid_or_a_parent(myMesh, myRefinement, childElems);
-  }
-  return false;
+  return EdgeMarkerUtils::is_element_a_parent_but_not_a_grandparent(myMesh, myRefinement, elem);
 }
 
 bool TransitionElementEdgeMarker::is_element_a_candidate_for_refinement(const stk::mesh::Entity elem) const
@@ -452,7 +159,7 @@ void TransitionElementEdgeMarker::mark_unrefined_edges_of_partially_refined_pare
     NodeRefiner & nodeRefiner,
     bool & wasAnyEdgeMarked) const
 {
-  const std::vector<stk::mesh::Entity> refinedEdgeNodes = get_child_nodes_that_are_not_parent_nodes(parentElem, childTransitionElements);
+  const std::vector<stk::mesh::Entity> refinedEdgeNodes = EdgeMarkerUtils::get_child_nodes_that_are_not_parent_nodes(myMesh, parentElem, childTransitionElements);
   const std::vector<Edge> refinedEdges = get_parent_edges_for_given_refined_edge_nodes(refinedEdgeNodes);
   fill_entity_edges(myMesh, parentElem, elemEdgesWorkspace);
   for (auto && elemEdge : elemEdgesWorkspace)
@@ -486,8 +193,8 @@ void TransitionElementEdgeMarker::locally_mark_edges_of_partially_refined_parent
 
 static bool edge_is_parent_edge(const StkMeshEntities & parentNodes, const stk::mesh::Entity * edgeNodes)
 {
-  return node_is_parent_node(parentNodes, edgeNodes[0]) &&
-         node_is_parent_node(parentNodes, edgeNodes[1]);
+  return EdgeMarkerUtils::node_is_parent_node(parentNodes, edgeNodes[0]) &&
+         EdgeMarkerUtils::node_is_parent_node(parentNodes, edgeNodes[1]);
 }
 
 bool does_child_element_have_marked_edge_that_is_not_parent_edge(const stk::mesh::BulkData & mesh, const StkMeshEntities & parentNodes, const stk::mesh::Entity childElem, const NodeRefiner & nodeRefiner)
@@ -566,7 +273,7 @@ void TransitionElementEdgeMarker::locally_mark_edges_of_marked_non_transition_el
   }
 }
 
-void TransitionElementEdgeMarker::mark_edges_to_be_refined(NodeRefiner & nodeRefiner) const
+void TransitionElementEdgeMarker::mark_entities_to_be_refined(NodeRefiner & nodeRefiner) const
 {
 //     Template Refinement algorithm
 //     1. Mark all edges of marked, non-transition, leaf elements - one iter only
@@ -590,7 +297,7 @@ void TransitionElementEdgeMarker::mark_edges_to_be_refined(NodeRefiner & nodeRef
   }
 }
 
-void TransitionElementEdgeMarker::mark_edges_to_be_unrefined(NodeRefiner & nodeRefiner) const
+void TransitionElementEdgeMarker::mark_entities_to_be_unrefined(NodeRefiner & nodeRefiner) const
 {
   nodeRefiner.set_sorted_edge_nodes_that_will_be_removed_by_unrefinement(find_sorted_edge_nodes_that_will_be_removed_by_unrefinement());
 }
@@ -701,10 +408,10 @@ bool TransitionElementEdgeMarker::is_parent_element_modified_by_unrefinement(con
     const std::vector<stk::mesh::Entity> & childElements,
     const std::vector<stk::mesh::Entity> & sortedOwnedOrSharedNodesToBeRemovedByUnrefinement) const
 {
-  if (is_any_child_invalid_or_a_parent(myMesh, myRefinement, childElements))
+  if (EdgeMarkerUtils::is_any_child_invalid_or_a_parent(myMesh, myRefinement, childElements))
     return false;
 
-  const std::vector<stk::mesh::Entity> refinedEdgeNodes = get_child_nodes_that_are_not_parent_nodes(parentElem);
+  const std::vector<stk::mesh::Entity> refinedEdgeNodes = EdgeMarkerUtils::get_child_nodes_that_are_not_parent_nodes(myMesh, myRefinement, parentElem);
 
   const bool isParentModifiedByUnrefinement = is_any_in_second_vec_in_first_sorted_vec(sortedOwnedOrSharedNodesToBeRemovedByUnrefinement, refinedEdgeNodes);
 

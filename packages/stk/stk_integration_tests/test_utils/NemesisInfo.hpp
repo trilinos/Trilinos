@@ -119,7 +119,7 @@ struct NemesisInfo
         ex_get_id_map(exoid, EX_ELEM_MAP, elem_num_map.data());
     }
 
-    void add_nemesis_info_to_exodus_file(int exoid, stk::mesh::Part* this_subdomain, int which_proc, int num_total_procs)
+    void add_nemesis_info_to_exodus_file(int exoid, stk::mesh::Part* /*this_subdomain*/, int which_proc, int num_total_procs)
     {
         ne_put_init_global(exoid, globalNumberNodes, globalNumberElements, globalNumberElementBlocks, globalNumberNodeSets, globalNumberSideSets);
         ne_put_init_info(exoid, num_total_procs, 1, get_nemesis_file_type());

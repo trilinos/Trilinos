@@ -611,11 +611,13 @@ namespace phalanx_test {
     KOKKOS_INLINE_FUNCTION
     void operator () (const int i) const
     {
-      a_[i].val() = static_cast<double>(i);
-      a_[i].fastAccessDx(0) = 1.;
-      b_[i].val() = 1.0;
-      b_[i].fastAccessDx(0) = 1.;
-      c_[i] = a_[i]*b_[i];
+      for (size_t j=0; j < a_.extent(1); ++j) {
+        a_(i,j).val() = static_cast<double>(i + j);
+        a_(i,j).fastAccessDx(0) = 1.;
+        b_(i,j).val() = 1.0;
+        b_(i,j).fastAccessDx(0) = 1.;
+        c_(i,j) = a_(i,j)*b_(i,j);
+      }
     }
   };
 
@@ -637,7 +639,7 @@ namespace phalanx_test {
       TEST_EQUALITY(b.rank(),2);
       TEST_EQUALITY(c.rank(),2);
 
-      Kokkos::parallel_for(a.size(), AssignFad<Kokkos::DynRankView<FadType,PHX::Device>>(a,b,c));
+      Kokkos::parallel_for(a.extent(0), AssignFad<Kokkos::DynRankView<FadType,PHX::Device>>(a,b,c));
       Kokkos::fence();
       auto host_c = Kokkos::create_mirror_view(c);
       Kokkos::deep_copy(host_c,c);
@@ -646,12 +648,13 @@ namespace phalanx_test {
       TEST_EQUALITY(Kokkos::dimension_scalar(c),2);
       TEST_EQUALITY(c.impl_map().dimension_scalar(),2);
 
-      // verify for bracket access
       double tol = std::numeric_limits<double>::epsilon() * 100.0;
-      for (int i = 0; i < num_cells*num_ip; ++i) {
-      	out << "i=" << i << ",val=" << host_c[i].val() << ",fad=" << host_c[i].fastAccessDx(1) << std::endl;
-      	TEST_FLOATING_EQUALITY(host_c[i].val(),static_cast<double>(i),tol);
-      	TEST_FLOATING_EQUALITY(host_c[i].fastAccessDx(0),static_cast<double>(i+1),tol);
+      for (int i = 0; i < num_cells; ++i) {
+        for (int j = 0; j < num_ip; ++j) {
+          out << "(" << i << "," << j << ") val=" << host_c[i].val() << ",fad=" << host_c[i].fastAccessDx(1) << std::endl;
+          TEST_FLOATING_EQUALITY(host_c(i,j).val(),static_cast<double>(i+j),tol);
+          TEST_FLOATING_EQUALITY(host_c(i,j).fastAccessDx(0),static_cast<double>(i+j+1),tol);
+        }
       }
     }
   }

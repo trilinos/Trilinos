@@ -99,13 +99,13 @@ void test_bsplines(T f)
 
 TEST(BSplinePatch, Zero)
 {
-  auto f = [](const utils::Point& pt) { return 0; };
+  auto f = [](const utils::Point& /*pt*/) { return 0; };
   test_bsplines(f);
 }
 
 TEST(BSplinePatch, Constant)
 {
-  auto f = [](const utils::Point& pt) { return 2; };
+  auto f = [](const utils::Point& /*pt*/) { return 2; };
   test_bsplines(f);
 }
 

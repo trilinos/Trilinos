@@ -126,9 +126,9 @@ class SPTRSVHandle {
     void *pBuffer{nullptr};
 
     cuSparseHandleType(bool transpose_, bool /*is_lower*/) {
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreate(&handle));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreate(&handle));
 
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSetPointerMode(handle, CUSPARSE_POINTER_MODE_HOST));
 
       if (transpose_) {
         transpose = CUSPARSE_OPERATION_TRANSPOSE;
@@ -136,7 +136,7 @@ class SPTRSVHandle {
         transpose = CUSPARSE_OPERATION_NON_TRANSPOSE;
       }
 
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_createDescr(&spsvDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpSV_createDescr(&spsvDescr));
     }
 
     ~cuSparseHandleType() {
@@ -144,9 +144,9 @@ class SPTRSVHandle {
         KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(pBuffer));
         pBuffer = nullptr;
       }
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(matDescr));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpSV_destroyDescr(spsvDescr));
-      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroy(handle));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(matDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpSV_destroyDescr(spsvDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroy(handle));
     }
   };
 #else  // CUDA_VERSION < 11030
@@ -959,68 +959,25 @@ class SPTRSVHandle {
   int get_num_chain_entries() const { return this->num_chain_entries; }
   void set_num_chain_entries(const int nce) { this->num_chain_entries = nce; }
 
-  void print_algorithm() {
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_RP) std::cout << "SEQLVLSCHD_RP" << std::endl;
-    ;
-
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1) std::cout << "SEQLVLSCHD_TP1" << std::endl;
-    ;
-    /*
-        if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 ) {
-          std::cout << "SEQLVLSCHED_TP2" << std::endl;;
-          std::cout << "WARNING: With CUDA this is currently only reliable with
-       int-int ordinal-offset pair" << std::endl;
-        }
-    */
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) std::cout << "SEQLVLSCHD_TP1CHAIN" << std::endl;
-    ;
-
-    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE) std::cout << "SPTRSV_CUSPARSE" << std::endl;
-    ;
-
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_NAIVE) std::cout << "SUPERNODAL_NAIVE" << std::endl;
-
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_ETREE) std::cout << "SUPERNODAL_ETREE" << std::endl;
-
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_DAG) std::cout << "SUPERNODAL_DAG" << std::endl;
-
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_SPMV) std::cout << "SUPERNODAL_SPMV" << std::endl;
-
-    if (algm == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) std::cout << "SUPERNODAL_SPMV_DAG" << std::endl;
-  }
+  inline void print_algorithm() { std::cout << return_algorithm_string() << std::endl; }
 
   std::string return_algorithm_string() {
     std::string ret_string;
 
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_RP) ret_string = "SEQLVLSCHD_RP";
-
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1) ret_string = "SEQLVLSCHD_TP1";
-    /*
-        if ( algm == SPTRSVAlgorithm::SEQLVLSCHED_TP2 )
-          ret_string = "SEQLVLSCHED_TP2";
-    */
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN) ret_string = "SEQLVLSCHD_TP1CHAIN";
-
-    if (algm == SPTRSVAlgorithm::SPTRSV_CUSPARSE) ret_string = "SPTRSV_CUSPARSE";
+    switch (algm) {
+      case SPTRSVAlgorithm::SEQLVLSCHD_RP: ret_string = "SEQLVLSCHD_RP"; break;
+      case SPTRSVAlgorithm::SEQLVLSCHD_TP1: ret_string = "SEQLVLSCHD_TP1"; break;
+      case SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN: ret_string = "SEQLVLSCHD_TP1CHAIN"; break;
+      case SPTRSVAlgorithm::SPTRSV_CUSPARSE: ret_string = "SPTRSV_CUSPARSE"; break;
+      case SPTRSVAlgorithm::SUPERNODAL_NAIVE: ret_string = "SUPERNODAL_NAIVE"; break;
+      case SPTRSVAlgorithm::SUPERNODAL_ETREE: ret_string = "SUPERNODAL_ETREE"; break;
+      case SPTRSVAlgorithm::SUPERNODAL_DAG: ret_string = "SUPERNODAL_DAG"; break;
+      case SPTRSVAlgorithm::SUPERNODAL_SPMV: ret_string = "SUPERNODAL_SPMV"; break;
+      case SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG: ret_string = "SUPERNODAL_SPMV_DAG"; break;
+      default: KK_REQUIRE_MSG(false, "Unhandled sptrsv algorithm: " << static_cast<int>(algm));
+    }
 
     return ret_string;
-  }
-
-  inline SPTRSVAlgorithm StringToSPTRSVAlgorithm(std::string &name) {
-    if (name == "SPTRSV_DEFAULT")
-      return SPTRSVAlgorithm::SEQLVLSCHD_RP;
-    else if (name == "SPTRSV_RANGEPOLICY")
-      return SPTRSVAlgorithm::SEQLVLSCHD_RP;
-    else if (name == "SPTRSV_TEAMPOLICY1")
-      return SPTRSVAlgorithm::SEQLVLSCHD_TP1;
-    /*else if(name=="SPTRSV_TEAMPOLICY2")       return
-     * SPTRSVAlgorithm::SEQLVLSCHED_TP2;*/
-    else if (name == "SPTRSV_TEAMPOLICY1CHAIN")
-      return SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN;
-    else if (name == "SPTRSV_CUSPARSE")
-      return SPTRSVAlgorithm::SPTRSV_CUSPARSE;
-    else
-      throw std::runtime_error("Invalid SPTRSVAlgorithm name");
   }
 };
 

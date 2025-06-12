@@ -29,9 +29,10 @@ public:
   virtual std::vector<InterfaceID> get_sorted_cutting_interfaces() const = 0;
   virtual std::vector<int> get_interface_signs_based_on_crossings(const std::vector<stk::math::Vector3d> & elemNodesCoords,
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains) const = 0;
+  virtual void fill_tetrahedron_face_interior_intersections(const std::array<int,3> & faceNodeOrdinals,
+    const ElementIntersectionPointFilter & intersectionPointFilter,
+    std::vector<ElementIntersection> & faceIntersections) const = 0;
   virtual void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodes,
-    const InterfaceID & interface1,
-    const InterfaceID & interface2,
     const ElementIntersectionPointFilter & intersectionPointFilter,
     std::vector<ElementIntersection> & intersections) const = 0;
   virtual bool might_have_interior_or_face_intersections() const = 0;

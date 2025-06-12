@@ -872,6 +872,18 @@ namespace Intrepid2
               fieldOrdinalOffset++;
             }
           }
+          
+          // transform from ESEAS H(div) space to Intrepid2 space
+          // (what's in output_ to this point is in ESEAS space)
+          for (ordinal_type fieldOrdinal=0; fieldOrdinal<numFields_; fieldOrdinal++)
+          {
+            OutputScalar & xcomp = output_(fieldOrdinal,pointOrdinal,0);
+            OutputScalar & ycomp = output_(fieldOrdinal,pointOrdinal,1);
+            OutputScalar & zcomp = output_(fieldOrdinal,pointOrdinal,2);
+            
+            transformHDIVFromESEASPyramidValue(xcomp,ycomp,zcomp,
+                                               xcomp,ycomp,zcomp);
+          }
         } // end OPERATOR_VALUE
           break;
         case OPERATOR_DIV:
@@ -1178,6 +1190,15 @@ namespace Intrepid2
             
           } // end interior function block
           
+          // transform from ESEAS H(div) space to Intrepid2 space
+          // (what's in output_ to this point is in ESEAS space)
+          for (ordinal_type fieldOrdinal=0; fieldOrdinal<numFields_; fieldOrdinal++)
+          {
+            OutputScalar & div = output_(fieldOrdinal,pointOrdinal);
+            
+            transformHDIVFromESEASPyramidDIV(div,
+                                             div);
+          }
         } // end OPERATOR_DIV block
           break;
         case OPERATOR_GRAD:

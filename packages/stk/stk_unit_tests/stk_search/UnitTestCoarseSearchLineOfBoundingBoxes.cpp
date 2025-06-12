@@ -133,7 +133,7 @@ void device_runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum 
 
   if (procId % 2 == 0) {
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(const unsigned & i) {
+      KOKKOS_LAMBDA(const unsigned & /*i*/) {
         switch(axis) 
         {
         case xDim:
@@ -151,7 +151,7 @@ void device_runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum 
 
   else {
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
-      KOKKOS_LAMBDA(const unsigned & i) {
+      KOKKOS_LAMBDA(const unsigned & /*i*/) {
         switch(axis) 
         {
         case xDim:

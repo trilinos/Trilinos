@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -271,6 +271,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
       exit(1);
     }
   }
+  mesh_exoid += selected_change_set;
 
   auto max_name_length = ex_inquire_int(mesh_exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   ex_set_max_name_length(mesh_exoid, max_name_length);

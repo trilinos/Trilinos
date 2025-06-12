@@ -121,7 +121,7 @@ OptionMaskParser::parse(
 void
 OptionMaskParser::parseArg(
   const std::string &  name,
-  const std::string &  arg) const
+  const std::string &  /*arg*/) const
 {
   OptionMaskNameMap::const_iterator mask_entry = m_optionMaskNameMap.find(name);
 

@@ -318,37 +318,8 @@ public:
 
   void decompose_mesh()
   {
-    NodeToCapturedDomainsMap nodesToSnappedDomains;
     std::unique_ptr<InterfaceGeometry> interfaceGeometry = create_levelset_geometry(fixture.meta_data().spatial_dimension(), krino_mesh->get_active_part(), cdfemSupport, Phase_Support::get(fixture.meta_data()), levelset_fields());
-    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-    {
-      const double minIntPtWeightForEstimatingCutQuality = cdfemSupport.get_snapper().get_edge_tolerance();
-      nodesToSnappedDomains = snap_as_much_as_possible_while_maintaining_quality(krino_mesh->stk_bulk(),
-          krino_mesh->get_active_part(),
-          cdfemSupport.get_snap_fields(),
-          *interfaceGeometry,
-          cdfemSupport.get_global_ids_are_parallel_consistent(),
-          cdfemSupport.get_snapping_sharp_feature_angle_in_degrees(),
-          minIntPtWeightForEstimatingCutQuality,
-          cdfemSupport.get_max_edge_snap());
-    }
-    interfaceGeometry->prepare_to_decompose_elements(krino_mesh->stk_bulk(), nodesToSnappedDomains);
-
-    krino_mesh->generate_nonconformal_elements();
-    if (cdfemSupport.get_cdfem_edge_degeneracy_handling() ==
-        SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
-      krino_mesh->snap_nearby_intersections_to_nodes(*interfaceGeometry, nodesToSnappedDomains);
-    krino_mesh->set_phase_of_uncut_elements(*interfaceGeometry);
-    krino_mesh->triangulate(*interfaceGeometry);
-    krino_mesh->decompose(*interfaceGeometry);
-    krino_mesh->stash_field_data(-1);
-    krino_mesh->modify_mesh();
-    krino_mesh->prolongation();
-
-    if (krinolog.shouldPrint(LOG_DEBUG))
-    {
-      krino_mesh->debug_output();
-    }
+    krino_mesh->decompose_mesh(*interfaceGeometry, -1);
   }
 
   void debug_output() { krino_mesh->debug_output(); }
@@ -941,7 +912,7 @@ TEST_F(TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture, onlyCut
   attempt_decompose_mesh();
 
   const ScaledJacobianQualityMetric qualityMetric;
-  const double qualityAfterCut = compute_mesh_quality(mMesh, get_aux_meta().active_part(), qualityMetric);
+  const double qualityAfterCut = compute_mesh_quality(mMesh, get_aux_meta().active_part(), get_coordinates_field(), qualityMetric);
   EXPECT_LT(0.07, qualityAfterCut);
 
   //write_mesh("test.e");
@@ -1743,7 +1714,7 @@ TEST_F(CDMeshTests3DLSPerInterface, OneTet4_CutBasedOnNearestEdgeCut)
 
   // regression test
   const ScaledJacobianQualityMetric qualityMetric;
-  const double quality = compute_mesh_quality(mesh, krino_mesh->get_active_part(), qualityMetric);
+  const double quality = compute_mesh_quality(mesh, krino_mesh->get_active_part(), cdfemSupport.get_coords_field(), qualityMetric);
   const double goldQuality = 0.21;
   EXPECT_GT(quality, goldQuality);
 }

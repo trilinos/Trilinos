@@ -48,13 +48,13 @@ public:
 
   using stk::balance::GraphCreationSettings::getToleranceForFaceSearch;
 
-  virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override { return 1.0; }
+  virtual double getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const override { return 1.0; }
   virtual bool includeSearchResultsInGraph() const override { return true; }
   virtual bool getEdgesForParticlesUsingSearch() const override { return true; }
   virtual bool setVertexWeightsBasedOnNumberAdjacencies() const override { return false; }
   virtual double getToleranceForParticleSearch() const override { return 1.5; }
   virtual double getToleranceForFaceSearch() const { return 0.005; }
-  virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+  virtual int getGraphVertexWeight(stk::topology /*type*/) const override { return 1; }
   virtual double getImbalanceTolerance() const override { return 1.05; }
   virtual void setDecompMethod(const std::string& input_method) override { m_method = input_method;}
   virtual std::string getDecompMethod() const override { return m_method; }
@@ -359,10 +359,10 @@ protected:
 
   size_t count_global_non_particle_elements()
   {
-    size_t numGlobalElements;
+    size_t numGlobalElems;
     size_t num_local_elements = stk::mesh::count_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part() & !get_meta().get_topology_root_part(stk::topology::PARTICLE));
-    stk::all_reduce_sum(get_comm(), &num_local_elements, &numGlobalElements, 1);
-    return numGlobalElements;
+    stk::all_reduce_sum(get_comm(), &num_local_elements, &numGlobalElems, 1);
+    return numGlobalElems;
   }
 
   double count_average_global_moved_elements(size_t localMovedElements)
@@ -521,7 +521,7 @@ protected:
     writer.end_output_step(outputHandle);
   }
 
-  void incrementally_convert_elements_to_particles(std::string meshFile, std::string decompMethod, double hexWeight, double center[3], double deltaR, int numParticlesPerElement, double particleWeight, int maxIters)
+  void incrementally_convert_elements_to_particles(std::string meshFile, std::string decompMethod, double /*hexWeight*/, double center[3], double deltaR, int numParticlesPerElement, double particleWeight, int maxIters)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     setup_io_parts();

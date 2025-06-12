@@ -64,6 +64,27 @@ public:
     mutable stk::diag::Timer fixFaceEdgeOwnership;
   };
 
+  struct ChildSideDescription
+  {
+      stk::mesh::Entity child;
+      unsigned childSideOrdinal;
+      stk::mesh::Entity parentSide;
+
+      ChildSideDescription(stk::mesh::Entity inChild, unsigned inChildSideOrdinal, stk::mesh::Entity inParentSide)
+          : child(inChild), childSideOrdinal(inChildSideOrdinal), parentSide(inParentSide) {}
+  };
+  struct ChildSidesInfo
+  {
+      std::vector<ChildSideDescription> newChildrenAndTheirParentSides;
+      std::vector<stk::mesh::Entity> existingChildSidesThatShouldBeAttachedToNewChildren;
+  };
+
+  struct EdgeMidNodeInfo
+  {
+      std::vector<Edge> edgesThatNeedMidNodes;
+      std::vector<stk::mesh::Entity> childElemsThatNeedEdgeMidNodes;
+  };
+
   Refinement(stk::mesh::MetaData & meta,
       stk::mesh::Part * activePart,
       const bool force64Bit,
@@ -128,7 +149,9 @@ private:
   typedef std::tuple<stk::topology,stk::mesh::PartVector,stk::mesh::EntityVector> BucketData;
   typedef std::pair<stk::mesh::Entity, stk::mesh::EntityId> ParentAndChildId;
 
+  void attach_children_to_existing_sides_and_find_sides_to_create(ChildSidesInfo & childSidesInfo, std::vector<SideDescription> & sideRequests);
   size_t count_new_child_elements(const EdgeMarkerInterface & edgeMarker, const std::vector<BucketData> & bucketsData, const bool doingRefinement) const;
+  void create_midnodes_and_add_to_child_elements(const EdgeMidNodeInfo & edgeMidNodeInfo);
   void adapt_elements_and_store_sides_to_create(const EdgeMarkerInterface & edgeMarker,
       const std::vector<BucketData> & bucketsData,
       const bool doingRefinement,
@@ -148,14 +171,13 @@ private:
   stk::mesh::EntityId * get_child_element_ids(const unsigned numChildWhenFullyRefined, const stk::mesh::Bucket & bucket) const;
   stk::math::Vector3d get_coordinates(const stk::mesh::Entity node, const int dim=3) const;
 
+  bool does_mesh_have_only_vertex_elements() const;
   void check_leaf_children_have_parents_on_same_proc() const;
   bool locally_have_any_hanging_refined_nodes() const;
   void adapt_elements_and_sides(const EdgeMarkerInterface & edgeMarker, const bool doingRefinement);
   bool unrefine_elements(const EdgeMarkerInterface & edgeMarker);
   bool refine_elements(const EdgeMarkerInterface & edgeMarker);
   void finalize();
-  void mark_already_refined_edges();
-  void mark_already_refined_edges_that_will_be_retained(const std::vector<stk::mesh::Entity> & sortedEdgeNodesThatWillBeUnrefined);
   void destroy_custom_ghostings();
 
   stk::mesh::EntityId get_parent_id(const stk::mesh::Entity elem) const;
@@ -169,15 +191,48 @@ private:
       const std::vector<stk::mesh::Entity> & elemChildEdgeNodes,
       const int preCaseId,
       const int postCaseId,
-      std::vector<SideDescription> & sideRequests,
+      ChildSidesInfo & childSidesInfo,
+      EdgeMidNodeInfo & edgeMidNodeInfo,
       std::vector<stk::mesh::Entity> & elementsToDelete,
       std::vector<stk::mesh::Entity> & elementsThatAreNoLongerParents);
-  void refine_beam_2_and_append_sides_to_create(const stk::mesh::PartVector & childParts, const stk::mesh::Entity parentElem, const std::vector<stk::mesh::Entity> & elemChildEdgeNodes, const int caseId, std::vector<SideDescription> & sideRequests);
-  void refine_tri_3_and_append_sides_to_create(const stk::mesh::PartVector & childParts, const stk::mesh::Entity parentElem, const std::vector<stk::mesh::Entity> & elemChildEdgeNodes, const int caseId, std::vector<SideDescription> & sideRequests);
-  void refine_tet_4_and_append_sides_to_create(const stk::mesh::PartVector & childParts, const stk::mesh::Entity parentElem, const std::vector<stk::mesh::Entity> & elemChildEdgeNodes, const int caseId, std::vector<SideDescription> & sideRequests);
-  void refine_quad_4_and_append_sides_to_create(const stk::mesh::PartVector & childParts, const stk::mesh::Entity parentElem, const std::vector<stk::mesh::Entity> & elemChildEdgeNodes, const int caseId, std::vector<SideDescription> & sideRequests);
-  void refine_hex_8_and_append_sides_to_create(const stk::mesh::PartVector & childParts, const stk::mesh::Entity parentElem, const std::vector<stk::mesh::Entity> & elemChildEdgeNodes, const int caseId, std::vector<SideDescription> & sideRequests);
+  template <size_t NUMREFINEDNODES>
+  std::array<stk::math::Vector3d,NUMREFINEDNODES> calculate_refined_simplex_vertex_coordinates(const stk::topology elemTopology, const stk::topology refinedTopology, const std::array<stk::mesh::Entity,NUMREFINEDNODES> parentElemNodes) const;
+  void refine_beam_2_and_append_sides_to_create(const stk::mesh::PartVector & childParts,
+      const stk::topology elemTopology,
+      const stk::mesh::Entity parentElem,
+      const std::vector<stk::mesh::Entity> & elemChildEdgeNodes,
+      const int caseId,
+      std::vector<ChildSideDescription> & childSides);
+  void refine_tri_3_or_6_and_append_sides_to_create(const stk::mesh::PartVector & childParts,
+      const stk::topology elemTopology,
+      const stk::mesh::Entity parentElem,
+      const std::vector<stk::mesh::Entity> & elemChildEdgeNodes,
+      const std::vector<stk::mesh::Entity> & existingChildren,
+      const int caseId,
+      std::vector<ChildSideDescription> & childSides,
+      EdgeMidNodeInfo & edgeMidNodeInfo);
+  void refine_tet_4_or_10_and_append_sides_to_create(const stk::mesh::PartVector & childParts,
+      const stk::topology elemTopology,
+      const stk::mesh::Entity parentElem,
+      const std::vector<stk::mesh::Entity> & elemChildEdgeNodes,
+      const std::vector<stk::mesh::Entity> & existingChildren,
+      const int caseId,
+      std::vector<ChildSideDescription> & childSides,
+      EdgeMidNodeInfo & edgeMidNodeInfo);
+  void refine_quad_4_and_append_sides_to_create(const stk::mesh::PartVector & childParts,
+      const stk::topology elemTopology,
+      const stk::mesh::Entity parentElem,
+      const std::vector<stk::mesh::Entity> & elemChildEdgeNodes,
+      const int caseId,
+      std::vector<ChildSideDescription> & childSides);
+  void refine_hex_8_and_append_sides_to_create(const stk::mesh::PartVector & childParts,
+      const stk::topology elemTopology,
+      const stk::mesh::Entity parentElem,
+      const std::vector<stk::mesh::Entity> & elemChildEdgeNodes,
+      const int caseId,
+      std::vector<ChildSideDescription> & childSides);
   stk::mesh::PartVector get_parts_for_new_refined_edge_nodes() const;
+  stk::mesh::PartVector get_parts_for_new_refined_edge_midnodes() const;
   stk::mesh::PartVector get_parts_for_new_refined_element_centroid_nodes() const;
   stk::mesh::PartVector get_parts_for_new_refined_quad_face_nodes() const;
   void remove_parent_parts(const std::vector<stk::mesh::Entity> & elements);

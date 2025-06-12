@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSKERNELS_BLOCKUTILS_HPP
-#define _KOKKOSKERNELS_BLOCKUTILS_HPP
+#ifndef KOKKOSKERNELS_BLOCKUTILS_HPP
+#define KOKKOSKERNELS_BLOCKUTILS_HPP
 
 // #include <Kokkos_Atomic.hpp>
 // #include <atomic>
@@ -52,13 +52,13 @@ KOKKOS_INLINE_FUNCTION void kk_block_add(const size_type block_dim, value_type *
 // Note: block is assumed to be row-major, dense matrix (no extra padding)
 // Note: set clear=true to set C = 0 before increment
 template <typename size_type, typename value_type,
-          typename DGEMM = KokkosBatched::SerialGemmInternal<KokkosBatched::Algo::Gemm::Unblocked>>
+          typename DGEMM = KokkosBatched::Impl::SerialGemmInternal<KokkosBatched::Algo::Gemm::Unblocked>>
 KOKKOS_INLINE_FUNCTION void kk_block_dgemm(const size_type block_dim, value_type *dst, const value_type *valA,
                                            const value_type *valB, const bool clear = false) {
   const auto ZERO = static_cast<value_type>(0);
   const auto ONE  = static_cast<value_type>(1);
-  DGEMM::invoke(block_dim, block_dim, block_dim, ONE, valA, block_dim, 1, valB, block_dim, 1, clear ? ZERO : ONE, dst,
-                block_dim, 1);
+  DGEMM::invoke(KokkosBlas::Impl::OpID(), KokkosBlas::Impl::OpID(), block_dim, block_dim, block_dim, ONE, valA,
+                block_dim, 1, valB, block_dim, 1, clear ? ZERO : ONE, dst, block_dim, 1);
 }
 
 // dgemm: C = A * B
@@ -98,4 +98,4 @@ KOKKOS_INLINE_FUNCTION void kk_vector_block_add_mul(const size_type block_dim, v
 }  // namespace Impl
 }  // namespace KokkosSparse
 
-#endif  //  _KOKKOSKERNELS_BLOCKUTILS_HPP
+#endif  //  KOKKOSKERNELS_BLOCKUTILS_HPP

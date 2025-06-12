@@ -34,12 +34,13 @@ namespace Galeri {
                  double Kxx = 1.0, double Kxy = 0.0, double Kyy = 1.0, double dt = 1.0, const std::string& meshType = "tri",
                  double h = 1.0, double delta = 0.0,
                  int PMLXL = 0, int PMLXR = 0, int PMLYL = 0, int PMLYR = 0, int PMLZL = 0, int PMLZR = 0,
-                 double omega = 2.0*M_PI, double shift = 0.5, GO mx = -1, GO my = -1, GO mz = -1, int model = 0)
+                 double omega = 2.0*M_PI, double shift = 0.5, GO mx = -1, GO my = -1, GO mz = -1, int model = 0,
+                 double lx = 1., double ly = 1., double conv = 1., double diff = 1.)
 	: nx_(nx), ny_(ny), nz_(nz), mx_(mx), my_(my), mz_(mz), stretchx_(stretchx), stretchy_(stretchy), stretchz_(stretchz),
           Kxx_(Kxx), Kxy_(Kxy), Kyy_(Kyy), dt_(dt), meshType_(meshType),
           matrixType_(matrixType), keepBCs_(keepBCs),
       h_(h), delta_(delta), PMLx_left(PMLXL), PMLx_right(PMLXR), PMLy_left(PMLYL), PMLy_right(PMLYR), PMLz_left(PMLZL), PMLz_right(PMLZR),
-      omega_(omega), shift_(shift), model_(model) {
+      omega_(omega), shift_(shift), model_(model), lx_(lx), ly_(ly), conv_(conv), diff_(diff) {
         clp.setOption("nx",         &nx_,           "mesh points in x-direction.");
         clp.setOption("ny",         &ny_,           "mesh points in y-direction.");
         clp.setOption("nz",         &nz_,           "mesh points in z-direction.");
@@ -70,6 +71,10 @@ namespace Galeri {
         clp.setOption("my",         &my_,           "processors in y-direction.");
         clp.setOption("mz",         &mz_,           "processors in z-direction.");
         clp.setOption("model",      &model_,        "velocity model");
+        clp.setOption("lx",         &lx_,           "length in x-direction");
+        clp.setOption("ly",         &ly_,           "length in y-direction");
+        clp.setOption("convection", &conv_,         "convection coefficient");
+        clp.setOption("diffusion",  &diff_,         "diffusion coefficient");
       }
 
       GO GetNumGlobalElements() const {
@@ -99,7 +104,8 @@ namespace Galeri {
                  matrixType == "BigStar2D"    ||
                  matrixType == "AnisotropicDiffusion" ||
                  matrixType == "Elasticity2D" ||
-                 matrixType == "Helmholtz2D")
+                 matrixType == "Helmholtz2D" ||
+                 matrixType == "Recirc2D")
           numGlobalElements = nx*ny;
 
         else if (matrixType == "Laplace3D"    ||
@@ -155,6 +161,10 @@ namespace Galeri {
         paramList_->set("PMLz_right",  PMLz_right);
         paramList_->set("omega",       omega_);
         paramList_->set("shift",       shift_);
+        paramList_->set("lx",       lx_);
+        paramList_->set("ly",       ly_);
+        paramList_->set("convection",       conv_);
+        paramList_->set("diffusion",       diff_);
 
         check();
 
@@ -245,6 +255,11 @@ namespace Galeri {
       mutable double    omega_;
       mutable double    shift_;
       mutable int       model_;
+
+      mutable double    lx_;
+      mutable double    ly_;
+      mutable double    conv_;
+      mutable double    diff_;
 
       // There is a major assumption here:
       // As soon as somebody call GetParameterList(), we freeze all other variables into the list,

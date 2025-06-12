@@ -63,7 +63,6 @@
 #include "stk_unit_test_utils/MeshFixture.hpp"        // for MeshFixtureNoTest
 #include "stk_unit_test_utils/TextMesh.hpp"           // for setup_text_mesh
 #include "stk_unit_test_utils/getOption.h"            // for get_command_lin...
-#include "stk_util/diag/String.hpp"                   // for String
 #include "stk_util/parallel/Parallel.hpp"             // for parallel_machin...
 #include "stk_util/util/ReportHandler.hpp"            // for ThrowRequireMsg
 #include <stk_transfer_util/Patch.hpp>

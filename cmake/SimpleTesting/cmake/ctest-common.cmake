@@ -64,10 +64,6 @@ if( NOT DEFINED skip_clean_build_dir )
     set( skip_clean_build_dir ON )
 endif()
 
-if( NOT DEFINED skip_single_submit )
-    set( skip_single_submit ON )
-endif()
-
 if( NOT DEFINED skip_update_step )
     set( skip_update_step OFF )
 endif()
@@ -173,6 +169,8 @@ endif()
 cmake_host_system_information(RESULT HOSTNAME QUERY HOSTNAME)
 
 set(CTEST_SITE "${HOSTNAME}")
+
+set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS 500)
 
 # See: https://cmake.org/cmake/help/latest/command/site_name.html#command:site_name
 site_name(${CTEST_SITE})

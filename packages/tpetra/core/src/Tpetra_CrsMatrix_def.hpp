@@ -59,7 +59,7 @@ namespace Tpetra {
 namespace { // (anonymous)
 
   template<class T, class BinaryFunction>
-  T atomic_binary_function_update (volatile T* const dest,
+  T atomic_binary_function_update (T* const dest,
                                    const T& inputVal,
                                    BinaryFunction f)
   {
@@ -2772,7 +2772,7 @@ namespace Tpetra {
             //const ST newVal = f (rowVals[offset], newVals[j]);
             //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-            volatile ST* const dest = &rowVals[offset];
+            ST* const dest = &rowVals[offset];
             (void) atomic_binary_function_update (dest, newVals[j], f);
           }
           else {
@@ -2816,7 +2816,7 @@ namespace Tpetra {
               //const ST newVal = f (rowVals[offset], newVals[j]);
               //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-              volatile ST* const dest = &rowVals[offset];
+              ST* const dest = &rowVals[offset];
               (void) atomic_binary_function_update (dest, newVals[j], f);
             }
             else {
@@ -2881,7 +2881,7 @@ namespace Tpetra {
             //const ST newVal = f (rowVals[offset], newVals[j]);
             //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-            volatile ST* const dest = &rowVals[offset];
+            ST* const dest = &rowVals[offset];
             (void) atomic_binary_function_update (dest, newVals[j], f);
           }
           else {
@@ -2924,7 +2924,7 @@ namespace Tpetra {
               //const ST newVal = f (rowVals[offset], newVals[j]);
               //Kokkos::atomic_assign (&rowVals[offset], newVal);
 
-              volatile ST* const dest = &rowVals[offset];
+              ST* const dest = &rowVals[offset];
               (void) atomic_binary_function_update (dest, newVals[j], f);
             }
             else {
@@ -3602,23 +3602,17 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       "diag.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
 
-    if (this->isFillComplete ()) {
-      const auto D_lcl = diag.getLocalViewDevice(Access::OverwriteAll);
-      // 1-D subview of the first (and only) column of D_lcl.
-      const auto D_lcl_1d =
-        Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
+    const auto D_lcl = diag.getLocalViewDevice(Access::OverwriteAll);
+    // 1-D subview of the first (and only) column of D_lcl.
+    const auto D_lcl_1d =
+      Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
 
-      const auto lclRowMap = rowMap.getLocalMap ();
-      const auto lclColMap = colMap.getLocalMap ();
-      using ::Tpetra::Details::getDiagCopyWithoutOffsets;
-      (void) getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
-                                        lclColMap,
-                                        getLocalMatrixDevice ());
-    }
-    else {
-      using ::Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete;
-      (void) getLocalDiagCopyWithoutOffsetsNotFillComplete (diag, *this);
-    }
+    const auto lclRowMap = rowMap.getLocalMap ();
+    const auto lclColMap = colMap.getLocalMap ();
+    using ::Tpetra::Details::getDiagCopyWithoutOffsets;
+    (void) getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
+				      lclColMap,
+				      getLocalMatrixDevice ());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -8519,7 +8513,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       auto PermuteFromLIDs_d = PermuteFromLIDs.view_device();
 
       Details::unpackAndCombineIntoCrsArrays(
-                                     *this, 
+                                     *this,
                                      RemoteLIDs_d,
                                      destMat->imports_.view_device(),                //hostImports
                                      destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID
@@ -8723,7 +8717,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::View<int*,device_type>    TargetPids_d;
   
       Details::unpackAndCombineIntoCrsArrays(
-                                     *this, 
+                                     *this,
                                      RemoteLIDs_d,
                                      destMat->imports_.view_device(),                //hostImports
                                      destMat->numImportPacketsPerLID_.view_device(), //numImportPacketsPerLID

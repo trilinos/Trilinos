@@ -122,6 +122,9 @@ public:
   create (const std::string& precType,
           const Teuchos::RCP<const row_matrix_type>& matrix) const;
 
+  std::vector<std::string>
+  getSupportedNames () const;
+
   bool
   isSupported (const std::string& precType) const;
 };

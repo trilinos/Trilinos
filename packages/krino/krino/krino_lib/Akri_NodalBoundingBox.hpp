@@ -5,7 +5,7 @@
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Selector; } }
-namespace stk { namespace mesh { class Entity; } }
+namespace stk { namespace mesh { struct Entity; } }
 
 namespace krino {
 

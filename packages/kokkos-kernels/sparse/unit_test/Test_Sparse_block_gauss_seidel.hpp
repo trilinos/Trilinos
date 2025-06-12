@@ -35,8 +35,6 @@
 using kokkos_complex_double = Kokkos::complex<double>;
 using kokkos_complex_float  = Kokkos::complex<float>;
 
-namespace KSExp = KokkosSparse::Experimental;
-
 namespace Test {
 
 enum GSApplyType {
@@ -97,29 +95,29 @@ int run_block_gauss_seidel_1(
   const int apply_count   = 100;
 
   if (!skip_symbolic) {
-    KSExp::block_gauss_seidel_symbolic(&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
-                                       input_mat.graph.entries, is_symmetric_graph);
+    KokkosSparse::block_gauss_seidel_symbolic(&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
+                                              input_mat.graph.entries, is_symmetric_graph);
   }
 
   if (!skip_numeric) {
-    KSExp::block_gauss_seidel_numeric<format>(&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
-                                              input_mat.graph.entries, input_mat.values, is_symmetric_graph);
+    KokkosSparse::block_gauss_seidel_numeric<format>(&kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map,
+                                                     input_mat.graph.entries, input_mat.values, is_symmetric_graph);
   }
 
   switch (apply_type) {
     case Test::forward_sweep:
-      KSExp::forward_sweep_block_gauss_seidel_apply<format>(
+      KokkosSparse::forward_sweep_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values,
           x_vector, y_vector, false, true, omega, apply_count);
       break;
     case Test::backward_sweep:
-      KSExp::backward_sweep_block_gauss_seidel_apply<format>(
+      KokkosSparse::backward_sweep_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values,
           x_vector, y_vector, false, true, omega, apply_count);
       break;
     case Test::symmetric:
     default:
-      KSExp::symmetric_block_gauss_seidel_apply<format>(
+      KokkosSparse::symmetric_block_gauss_seidel_apply<format>(
           &kh, num_rows_1, num_cols_1, block_size, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values,
           x_vector, y_vector, false, true, omega, apply_count);
       break;
@@ -331,13 +329,14 @@ void test_block_gauss_seidel_empty() {
     entries_type entries("Entries", 0);
     scalar_view_t values("Values", 0);
     // also, make sure graph symmetrization doesn't crash on zero rows
-    KSExp::block_gauss_seidel_symbolic(&kh, num_rows, num_rows, block_size, rowmap, entries, false);
-    KSExp::block_gauss_seidel_numeric<mtx_format>(&kh, num_rows, num_rows, block_size, rowmap, entries, values, false);
+    KokkosSparse::block_gauss_seidel_symbolic(&kh, num_rows, num_rows, block_size, rowmap, entries, false);
+    KokkosSparse::block_gauss_seidel_numeric<mtx_format>(&kh, num_rows, num_rows, block_size, rowmap, entries, values,
+                                                         false);
     scalar_view_t x("X", num_rows);
     scalar_view_t y("Y", num_rows);
     scalar_t omega(0.9);
-    KSExp::symmetric_block_gauss_seidel_apply<mtx_format>(&kh, num_rows, num_rows, block_size, rowmap, entries, values,
-                                                          x, y, false, true, omega, 3);
+    KokkosSparse::symmetric_block_gauss_seidel_apply<mtx_format>(&kh, num_rows, num_rows, block_size, rowmap, entries,
+                                                                 values, x, y, false, true, omega, 3);
     kh.destroy_gs_handle();
   }
 }

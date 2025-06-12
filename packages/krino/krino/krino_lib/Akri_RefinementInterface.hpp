@@ -13,7 +13,7 @@
 #include "Akri_Refinement.hpp"
 #include "stk_util/diag/Timer.hpp"
 
-namespace stk { namespace mesh { class Entity; } }
+namespace stk { namespace mesh { struct Entity; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace diag { class Timer; } }

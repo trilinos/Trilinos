@@ -39,7 +39,13 @@ std::unique_ptr<InterfaceGeometry> create_bounding_surface_geometry(Surface_Mana
 {
   std::unique_ptr<AnalyticSurfaceInterfaceGeometry> geom = std::make_unique<AnalyticSurfaceInterfaceGeometry>(activePart, cdfemSupport, phaseSupport);
   for (auto && boundingSurface : manager.get_bounding_surfaces())
-    geom->add_surface(manager.get_identifier(boundingSurface->name()), boundingSurface->surface());
+  {
+    const Surface_Identifier surfId = manager.get_identifier(boundingSurface->name());
+    const stk::mesh::Selector surfElemSelector = phaseSupport.is_cdfem_use_case() ?
+        phaseSupport.get_levelset_decomposed_blocks_selector(surfId) :
+        stk::mesh::Selector(activePart);
+    geom->add_surface(surfId, boundingSurface->surface(), surfElemSelector);
+  }
   return geom;
 }
 

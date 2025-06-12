@@ -47,19 +47,19 @@ extern int Zoltan_RIB_Build_Structure(ZZ *, int *, int *, int, double, int,int);
 
 /* function prototypes */
 
-extern int Zoltan_RIB_inertial1d(struct Dot_Struct *, int *, int, int, double *, double *,
+extern int Zoltan_RIB_inertial1d(struct Dot_Struct *, int *, int, int, double[3], double[3],
                          double *);
-extern int Zoltan_RIB_inertial2d(int, struct Dot_Struct *, int *, int, int, double *,
-                         double *, double *, MPI_Comm, int, int, int);
-extern int Zoltan_RIB_inertial3d(int, struct Dot_Struct *, int *, int, int, double *,
-                         double *, double *, MPI_Comm, int, int, int);
+extern int Zoltan_RIB_inertial2d(int, struct Dot_Struct *, int *, int, int, double[3],
+                         double[3], double *, MPI_Comm, int, int, int);
+extern int Zoltan_RIB_inertial3d(int, struct Dot_Struct *, int *, int, int, double[3],
+                         double[3], double *, MPI_Comm, int, int, int);
 extern void Zoltan_RIB_reduce_double(double *, double *, int, MPI_Comm, int, int, int,
                              int);
 
 extern void Zoltan_RIB_min_max(double *, double *, int, int, int, MPI_Comm);
 
 extern void Zoltan_RIB_inertial3d_all( int, double *,
-     int, double *cm, double (*evec)[3], 
+     int, double *cm, double (*evec)[3],
      MPI_Comm , int , int , int );
 
 #ifdef __cplusplus

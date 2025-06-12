@@ -1,5 +1,69 @@
 # CHANGELOG
 
+5.25.3 (STK_VERSION 5250300) 6/10/2025
+  stk_unit_test_utils: fix cmake error, some files that depend on
+                      stk_search_util needed to be excluded
+                      if stk_search_util is disabled.
+
+5.25.2 (STK_VERSION 5250200) 6/6/2025
+  stk_transfer_util: fix Lapack detection (only call find_package
+                     if TPL_LAPACK_LIBRARIES is not already set.)
+  stk_mesh: added new Field data access APIs
+  stk_transfer_util: added SimpleTransfer and related classes
+
+5.25.1-02 (STK_VERSION 5250102) 5/27/2025
+  stk_mesh: add overload of for_each_entity_run(NgpMesh.. takes bucketIds
+  stk_mesh: misc cleanups, remove un-needed structure (fixed-elem-conn)
+            from Bucket, remove fmwk-aux-relation from BulkData.
+  stk_transfer_util: fix lapack dependency issue in cmake
+
+5.25.1-01 (STK_VERSION 5250101) 5/15/2025
+  stk_unit_test_utils: fix build error if STKSearchUtil is disabled.
+
+5.25.1 (STK_VERSION 5250100) 5/05/2025
+  stk_util: fix command-line-parser bug with partial flag matching
+  stk_tools: stk_block_extractor now preserves case in exodus variable/field names
+             stk_block_extractor also now preserves long name lengths
+  stk_balance: stk_balance now preserves name lengths
+  stk_mesh: Calling code must now initialize Kokkos before creating STK Mesh
+            and must not finalize Kokkos until after destroying STK Mesh.
+  stk_util: convenience functions stk::initialize and stk::finalize added
+            in stk_util/parallel/Parallel.hpp. These functions can be used to
+            initialize/finalize Kokkos and MPI.
+  stk_mesh: NgpMesh now has local_ids
+  stk_mesh: fix MacOS build error for BulkData::declare_entities
+  stk_mesh: NGP field-data is bucketized
+  stk_mesh: parallel_sum_including_ghosts can work on device or host
+
+5.23.8-03 (STK_VERSION 5230803) 4/22/2025
+  stk_tools: fix compiler error in pmesh lib when SEACASNemesis
+             is not enabled.
+  stk_transfer: Change from libstk_transfer.a to libstk_transfer_lib.a
+                In preparation for the coming-soon stk_transfer executable.
+                This is consistent with stk_balance_lib and stk_balance exe
+                and avoids duplicate target names.
+
+5.23.8-02 (STK_VERSION 5230802) 4/10/2025
+  stk_util: CommSparse can switch underlying comm scheme to pre-post recvs
+            instead of the default which is sends and probes. This can be
+            set at run-time with an environment variable:
+                export STK_UNKNOWN_PATTERN_EXCHANGER=Prepost
+  stk_mesh: Ghost comm info is now symmetric. This produces a change in
+            the procs returned from BulkData::comm_procs(entity, procs). Now
+            the ghost-receiver procs know about each other. Previously they
+            only knew about the entity owner.
+
+5.23.8-01 (STK_VERSION 5230801) 3/27/2025
+  stk_util: Remove unused diag/Resource2.h, diag/String.hpp
+  stk_util: Fix size_t issue by including <cstddef> in parallel/ReceiveCounter.hpp
+  stk_util: Fix FP err-handling issue for MacOS
+  stk_balance: Deprecate stk_balance_m2n executable. (Functionality is available
+               in stk_balance executable.)
+
+5.23.8 (STK_VERSION 5230800) 3/10/2025
+  stk_mesh: Contains reversion of bucketized NGP fields.
+  stk_topology: Fix incorrect deprecation macro.
+
 5.23.5 (STK_VERSION 5230500) 2/11/2025
   stk_mesh: fix calls to member template 'volatile_fast_shared_comm_map' to use '.template ...' syntax
   stk_util: make CommSparse work with messages > 2 GB with newer coupling versions

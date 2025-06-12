@@ -453,11 +453,10 @@ static unsigned determine_parent_element_part_ordinal_based_on_child_element_par
   STK_ThrowRequire(!childElemPartOrdinals.empty());
   const stk::mesh::Part & firstChildElementPart = mesh.mesh_meta_data().get_part(*childElemPartOrdinals.begin());
 
-  if (childElemPartOrdinals.size() > 1 || phaseSupport.is_nonconformal(&firstChildElementPart))
+  if (childElemPartOrdinals.size() > 1 || phaseSupport.is_nonconformal(firstChildElementPart))
   {
-    const stk::mesh::Part * parentElementPart = phaseSupport.find_nonconformal_part(firstChildElementPart);
-    STK_ThrowAssert(nullptr != parentElementPart);
-    return parentElementPart->mesh_meta_data_ordinal();
+    stk::mesh::Part & parentElementPart = phaseSupport.find_nonconformal_part(firstChildElementPart);
+    return parentElementPart.mesh_meta_data_ordinal();
   }
   return firstChildElementPart.mesh_meta_data_ordinal();
 }

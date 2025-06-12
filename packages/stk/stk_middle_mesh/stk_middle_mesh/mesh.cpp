@@ -735,7 +735,7 @@ void check_remotes_symmetric(std::shared_ptr<Mesh> mesh)
     exchanger.start_nonblocking();
     exchanger.post_nonblocking_receives();
 
-    auto f = [](int rank, const std::vector<RemoteData>& buf) {};
+    auto f = [](int /*rank*/, const std::vector<RemoteData>& /*buf*/) {};
     exchanger.complete_receives(f);
     exchanger.complete_sends();
 
@@ -1193,7 +1193,7 @@ void compute_lagrange_vals(const double xi, double vals[2])
   vals[1] = xi;
 }
 
-void compute_lagrange_derivs(const double xi, double derivs[2])
+void compute_lagrange_derivs(const double /*xi*/, double derivs[2])
 {
   derivs[0] = -1;
   derivs[1] = 1;

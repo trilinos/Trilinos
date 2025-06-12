@@ -18,7 +18,7 @@ class CDFEM_Support;
 class Phase_Support;
 class InterfaceID;
 class ParentsToChildMapper;
-class LS_Field;
+struct LS_Field;
 
 typedef OrderedIdPair ParentEdgeKey;
 typedef std::map<ParentEdgeKey,CDFEM_Parent_Edge> ParentEdgeMap;
@@ -61,11 +61,12 @@ void fill_face_nodes_and_parent_edges(const stk::topology & elementTopology,
     std::vector<const CDFEM_Parent_Edge *> & faceParentEdges,
     std::vector<bool> & areParentEdgesOrientedSameAsFaceEdges);
 
-bool is_cdfem_use_case(const Phase_Support & phaseSupport);
-
-stk::mesh::Selector get_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
+stk::mesh::Selector get_decomposed_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport);
+
+stk::mesh::Selector get_potential_cdfem_parent_element_selector(const stk::mesh::Part & activePart,
+    const CDFEM_Support & cdfemSupport);
 
 std::vector<stk::mesh::Entity> get_owned_parent_elements(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector & parentElementSelector);

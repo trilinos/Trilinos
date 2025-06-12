@@ -127,6 +127,14 @@ TEST( UnitTestMetaData, testMetaData )
   part_vector.push_back(& pc);
   part_vector.push_back(& pd);
 
+  size_t modCount = metadata.modification_count();
+
+  Part& paSub = metadata.declare_part("asub", node_rank);
+  metadata.declare_part_subset(pa, paSub);
+  size_t newModCount = metadata.modification_count();
+
+  EXPECT_GT(newModCount, modCount);
+
   //Test declare_part_subset
   ASSERT_THROW(  metadata.declare_part_subset( pe, pe), std::runtime_error);
 
@@ -622,11 +630,9 @@ TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNumberOfStates)
     meta.declare_field<double>(stk::topology::NODE_RANK, "field_1", 2);
   }
 
-  if (not meta.is_field_sync_debugger_enabled()) { // Picks up on lastModLocation Fields in an indeterminate order
-    STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1,
-                         "[p1] Field field_1 number of states (2) does not match Field field_1 number of states (1) on root processor\n"
-                         "[p1] Have extra Field (field_1_STKFS_OLD) that does not exist on root processor\n");
-  }
+  STK_EXPECT_THROW_MSG(bulk.modification_begin(), bulk.parallel_rank(), 1,
+                       "[p1] Field field_1 number of states (2) does not match Field field_1 number of states (1) on root processor\n"
+                       "[p1] Have extra Field (field_1_STKFS_OLD) that does not exist on root processor\n");
 }
 
 TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooFew)
