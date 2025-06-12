@@ -236,8 +236,8 @@ void TpetraBlockedMappingStrategy::rebuildBlockedThyraOp(
         rcp_dynamic_cast<Tpetra::CrsMatrix<ST, LO, GO, NT>>(tAij->getTpetraOperator(), true);
     auto values_dest      = eAij->getLocalMatrixDevice().values;
     const auto values_src = crsContent->getLocalMatrixDevice().values;
-    TEUCHOS_DEBUG(eAij->getCrsGraph()->isIdenticalTo(*crsContent->getCrsGraph()));
-    TEUCHOS_DEBUG(values_dest.extent(0) == values_src.extent(0));
+    TEUCHOS_DEBUG_ASSERT(eAij->getCrsGraph()->isIdenticalTo(*crsContent->getCrsGraph()));
+    TEUCHOS_DEBUG_ASSERT(values_dest.extent(0) == values_src.extent(0));
     Kokkos::deep_copy(values_dest, values_src);
     return;
   }
