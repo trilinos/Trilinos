@@ -13,6 +13,7 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include <stk_transfer_util/RecoverField.hpp>  // for RecoverField, RecoverField::...
+#include "stk_transfer/TransferTypes.hpp"
 #include <vector>                        // for vector
 #include <functional>
 #include "stk_mesh/base/Bucket.hpp"      // for Bucket
@@ -28,8 +29,6 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace transfer {
-
-using FieldTransform = std::function<double(double)>;
 
 class EntityCentroidLinearRecoverField : public RecoverField {
  public:
@@ -48,6 +47,7 @@ class EntityCentroidLinearRecoverField : public RecoverField {
   std::vector<const stk::mesh::FieldBase*> m_recoverVars;
   const stk::mesh::FieldBase& m_nodeVar;
   FieldTransform  m_transform;
+  mutable std::vector<double> m_scratchSpace;
 };
 
 class EntityCentroidQuadraticRecoverField : public RecoverField {
@@ -67,6 +67,7 @@ class EntityCentroidQuadraticRecoverField : public RecoverField {
   std::vector<const stk::mesh::FieldBase*> m_recoverVars;
   const stk::mesh::FieldBase& m_nodeVar;
   FieldTransform  m_transform;
+  mutable std::vector<double> m_scratchSpace;
 };
 
 class EntityCentroidCubicRecoverField : public RecoverField {
@@ -86,11 +87,23 @@ class EntityCentroidCubicRecoverField : public RecoverField {
   std::vector<const stk::mesh::FieldBase*> m_recoverVars;
   const stk::mesh::FieldBase& m_nodeVar;
   FieldTransform  m_transform;
+  mutable std::vector<double> m_scratchSpace;
 };
 
 struct EntityPatchFilter {
-  EntityPatchFilter(const stk::mesh::Part* part, const stk::mesh::Selector* selector = nullptr)
+  EntityPatchFilter(const stk::mesh::Part* part,
+                    const stk::mesh::FieldBase* field = nullptr,
+                    const stk::mesh::Selector* selector = nullptr)
     : m_meshPart(part)
+    , m_field(field)
+    , m_selector(selector)
+  {
+  }
+
+  EntityPatchFilter(const stk::mesh::Part* part,
+                    const stk::mesh::Selector* selector = nullptr)
+    : m_meshPart(part)
+    , m_field(nullptr)
     , m_selector(selector)
   {
   }
@@ -105,15 +118,37 @@ struct EntityPatchFilter {
       isContainedInMeshPart = bulkData.bucket(entity).member(*m_meshPart);
     }
 
-    if(isContainedInMeshPart && m_selector) {
+    if(isContainedInMeshPart && (nullptr != m_field)) {
+      double* result = static_cast<double *>(stk::mesh::field_data(*m_field, entity));
+      isContainedInMeshPart = (nullptr != result) ? true : false;
+    }
+
+    if(isContainedInMeshPart && (nullptr != m_selector)) {
       isContainedInMeshPart = (*m_selector)(bulkData.bucket(entity));
     }
 
     return isContainedInMeshPart;
   }
 
+  void initialize(const stk::mesh::Part* part,
+                  const stk::mesh::FieldBase* field = nullptr,
+                  const stk::mesh::Selector* selector = nullptr)
+  {
+    m_meshPart = part;
+    m_field = field;
+    m_selector = selector;
+  }
+
+  void initialize(const stk::mesh::Part* part,
+                  const stk::mesh::Selector* selector = nullptr)
+  {
+    m_meshPart = part;
+    m_selector = selector;
+  }
+
  private:
   const stk::mesh::Part* m_meshPart{nullptr};
+  const stk::mesh::FieldBase* m_field{nullptr};
   const stk::mesh::Selector* m_selector{nullptr};
 };
 

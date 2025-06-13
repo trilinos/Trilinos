@@ -81,7 +81,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint, Scalar, Loc
     galeriList.set("ny", ny);
     galeriList.set("nz", nz);
 
-    auto [A, nullSpace, coordinates, DofsPerNode] = test_factory::BuildMatrixCoordsNullspace(galeriList);
+    auto [A, coordinates, nullSpace, DofsPerNode] = test_factory::BuildMatrixCoordsNullspace(galeriList);
 
     fineLevel.Request("A");
     fineLevel.Set("A", A);

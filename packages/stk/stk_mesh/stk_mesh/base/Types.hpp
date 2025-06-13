@@ -83,7 +83,36 @@ typedef std::vector< unsigned >     PermutationIndexVector;
 typedef std::vector<Entity>         EntityVector;
 typedef std::vector<EntityKey>      EntityKeyVector;
 
-template <typename Scalar = void>
+enum class Layout : uint8_t
+{
+  Left,    // Adjacent Entities in memory
+  Right    // Adjacent components in memory
+};
+
+inline std::ostream& operator<<(std::ostream& os, Layout layout) {
+    switch (layout) {
+        case Layout::Left:
+            os << "Layout::Left";
+            break;
+        case Layout::Right:
+            os << "Layout::Right";
+            break;
+        default:
+            os << "Unknown Layout";
+            break;
+    }
+    return os;
+}
+
+#ifdef STK_UNIFIED_MEMORY
+constexpr Layout DefaultHostLayout = Layout::Left;
+#else
+constexpr Layout DefaultHostLayout = Layout::Right;
+#endif
+
+constexpr Layout DefaultDeviceLayout = Layout::Left;
+
+template <typename Scalar = void, Layout HostLayout = DefaultHostLayout>
 class Field;
 
 enum class Operation
@@ -93,6 +122,46 @@ enum class Operation
   MAX
 };
 
+enum FieldAccessTag : uint8_t
+{
+  ReadWrite    = 0, // Sync values to memory space and mark as modified; Allow modification
+  ReadOnly     = 1, // Sync values to memory space and do not mark as modified; Disallow modification
+  OverwriteAll = 2, // Do not sync values to memory space and mark as modified; Allow modification
+
+  Unsynchronized,      // Do not sync values to memory space and do not mark as modified; Allow modification
+  ConstUnsynchronized, // Do not sync values to memory space and do not mark as modified; Disallow modification
+
+  InvalidAccess,
+};
+
+constexpr int NumTrackedFieldAccessTags = 3;
+
+inline std::ostream& operator<<(std::ostream& os, FieldAccessTag accessTag) {
+    switch (accessTag) {
+        case ReadWrite:
+            os << "ReadWrite";
+            break;
+        case ReadOnly:
+            os << "ReadOnly";
+            break;
+        case OverwriteAll:
+            os << "OverwriteAll";
+            break;
+        case Unsynchronized:
+            os << "Unsynchronized";
+            break;
+        case ConstUnsynchronized:
+            os << "ConstUnsynchronized";
+            break;
+        case InvalidAccess:
+            os << "InvalidAccess";
+            break;
+        default:
+            os << "Unknown Access Tag";
+            break;
+    }
+    return os;
+}
 
 /** \} */
 

@@ -675,6 +675,7 @@ void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string
                      "The field named '" << globalVarName << "' does not exist "
                      "on output region "  << output_region->name());
     size_t comp_count = output_region->get_fieldref(globalVarName).raw_storage()->component_count();
+    (void)comp_count;
     STK_ThrowErrorMsgIf (comp_count != globalVarData.size(),
                      "On output region "  << output_region->name() <<
                      ", the field named '" << globalVarName << "' was registered with size "

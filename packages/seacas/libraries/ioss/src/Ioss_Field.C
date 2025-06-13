@@ -305,7 +305,7 @@ bool Ioss::Field::add_transform(Transform *my_transform)
     size_ = size;
   }
 
-  transforms_.push_back(my_transform);
+  transforms_.emplace_back(my_transform);
   return true;
 }
 

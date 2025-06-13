@@ -1399,7 +1399,7 @@ TEST_F(NgpFieldFixture, ModifyAndSync)
   EXPECT_EQ(expectedSyncsToHost, stkIntField.num_syncs_to_host());
 
   stk::mesh::NgpField<int>& deviceNgpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
-  stk::mesh::HostField<int> hostNgpIntField(get_bulk(), stkIntField);
+  stk::mesh::HostField<int> hostNgpIntField(stkIntField);
 
   EXPECT_EQ(expectedSyncsToDevice, deviceNgpIntField.num_syncs_to_device());
   EXPECT_EQ(expectedSyncsToDevice, hostNgpIntField.num_syncs_to_device());
@@ -1436,7 +1436,7 @@ TEST_F(NgpFieldFixture, UpdateNgpFieldAfterMeshMod_WithMostCurrentDataOnHost)
   EXPECT_EQ(expectedSyncsToHost, stkIntField.num_syncs_to_host());
 
   stk::mesh::NgpField<int>& deviceNgpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
-  stk::mesh::HostField<int> hostNgpIntField(get_bulk(), stkIntField);
+  stk::mesh::HostField<int> hostNgpIntField(stkIntField);
 
   EXPECT_EQ(expectedSyncsToDevice, deviceNgpIntField.num_syncs_to_device());
   EXPECT_EQ(expectedSyncsToDevice, hostNgpIntField.num_syncs_to_device());
@@ -1942,9 +1942,53 @@ TEST_F(ModifyBySelectorFixture, hostToDevice_partialField_byReference)
 
 TEST(DeviceField, checkSizeof)
 {
-  size_t expectedNumBytes = 96;
+#ifdef STK_USE_DEVICE_MESH
+  #ifdef NDEBUG
+    size_t expectedNumBytes = 128;  // Release build on device architecture
+  #else
+    size_t expectedNumBytes = 200;  // Debug build on device architecture
+  #endif
+#else
+  #ifdef NDEBUG
+    size_t expectedNumBytes = 112;  // Release build on host architecture
+  #else
+    size_t expectedNumBytes = 160;  // Debug build on host architecture
+  #endif
+#endif
   std::cout << "sizeof(stk::mesh::DeviceField<double>): " << sizeof(stk::mesh::DeviceField<double>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::DeviceField<double>) <= expectedNumBytes);
+}
+
+TEST(DeviceFieldData, checkSizeof)
+{
+#ifdef STK_USE_DEVICE_MESH
+  #ifdef NDEBUG
+    size_t expectedNumBytes = 112;  // Release build on device architecture
+  #else
+    size_t expectedNumBytes = 184;  // Debug build on device architecture
+  #endif
+#else
+  #ifdef NDEBUG
+    size_t expectedNumBytes = 96;   // Release build on host architecture
+  #else
+    size_t expectedNumBytes = 144;  // Debug build on host architecture
+  #endif
+#endif
+  std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::MemSpace>): "
+            << sizeof(stk::mesh::FieldData<double, stk::ngp::MemSpace>) << std::endl;
+  EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::MemSpace>) <= expectedNumBytes);
+}
+
+TEST(HostFieldData, checkSizeof)
+{
+#ifdef NDEBUG
+  size_t expectedNumBytes = 96;   // Release build
+#else
+  size_t expectedNumBytes = 144;  // Debug build
+#endif
+  std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::HostMemSpace>): "
+            << sizeof(stk::mesh::FieldData<double, stk::ngp::HostMemSpace>) << std::endl;
+  EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::HostMemSpace>) <= expectedNumBytes);
 }
 
 

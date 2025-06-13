@@ -171,6 +171,9 @@ TEST_F(RebalanceSpiders, notASpider_EnoughLegsNoVolumeElements_PartitionedNormal
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 4), 1},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 5), 3},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 6), 3}});
+
+  clean_up_temporary_files();
+  clean_up_temporary_input_files(); 
 }
 
 
@@ -242,6 +245,9 @@ TEST_F(RebalanceSpiders, notASpider_NotEnoughLegs_PartitionedNormally)
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 11), 1},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 12), 1},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 13), 1}});
+
+  clean_up_temporary_files();
+  clean_up_temporary_input_files(); 
 }
 
 
@@ -314,6 +320,9 @@ TEST_F(RebalanceSpiders, oneSpider_NoBodyElement)
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 12), 0},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 13), 1},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 14), 1}});
+
+  clean_up_temporary_files();
+  clean_up_temporary_input_files(); 
 }
 
 
@@ -386,6 +395,9 @@ TEST_F(RebalanceSpiders, oneSpider_ParticleBody)
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 12), 0},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 13), 1},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 14), 1}});
+
+  clean_up_temporary_files();
+  clean_up_temporary_input_files(); 
 }
 
 
@@ -459,6 +471,9 @@ TEST_F(RebalanceSpiders, oneSpider_BeamBody)
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 12), 0},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 13), 1},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 14), 1}});
+
+  clean_up_temporary_files();
+  clean_up_temporary_input_files(); 
 }
 
 
@@ -539,6 +554,9 @@ TEST_F(RebalanceSpiders, compoundSpider_BeamBody)
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 18), 2},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 19), 3},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 20), 3}});
+
+  clean_up_temporary_files();
+  clean_up_temporary_input_files(); 
 }
 
 
@@ -621,6 +639,9 @@ TEST_F(RebalanceSpiders, twoSpiders_ParticleBody)
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 19), 2},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 20), 3},
                                {stk::mesh::EntityKey(stk::topology::ELEM_RANK, 21), 3}});
+
+  clean_up_temporary_files();
+  clean_up_temporary_input_files(); 
 }
 
 }

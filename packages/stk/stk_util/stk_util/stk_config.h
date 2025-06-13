@@ -85,6 +85,10 @@
 #  endif
 #endif
 
+#ifndef NDEBUG
+#define STK_FIELD_BOUNDS_CHECK
+#endif
+
 //----------------------------------------------------------------------
 
 // Use macro below to deprecate:

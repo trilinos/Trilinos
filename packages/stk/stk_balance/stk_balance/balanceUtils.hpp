@@ -53,6 +53,7 @@ class FaceSearchTolerance;
 using ElementDecomposition = std::vector<int>;
 using DoubleFieldType =  stk::mesh::Field<double>;
 using BlockWeightMultipliers =  std::map<std::string, double>;
+using CohesiveElements =  std::vector<std::string>;
 
 class DecompositionChangeList
 {
@@ -139,6 +140,9 @@ public:
 
   virtual void setVertexWeightBlockMultiplier(const std::string & blockName, double multiplier);
   virtual const BlockWeightMultipliers & getVertexWeightBlockMultipliers() const;
+  virtual void setCohesiveElements(const std::string & blockName);
+  virtual const CohesiveElements & getCohesiveElements() const;
+  virtual bool hasCohesiveElements() const;
 
   virtual bool isIncrementalRebalance() const;
   virtual bool isMultiCriteriaRebalance() const;
@@ -226,6 +230,7 @@ private:
   double m_defaultFieldWeight;
   std::vector<std::string> m_vertexWeightFieldNames;
   BlockWeightMultipliers m_vertexWeightBlockMultipliers;
+  CohesiveElements m_cohesiveElements;
   bool m_useNestedDecomp;
   bool m_shouldPrintDiagnostics;
   mutable const stk::mesh::Field<double> * m_diagnosticElementWeightsField;

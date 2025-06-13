@@ -43,6 +43,7 @@
 #include <stk_mesh/base/BucketConnectivity.hpp>  // for BucketConnectivity
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Part.hpp>       // for contains_ordinal, Part
+#include <stk_mesh/base/FieldIndexTypes.hpp>
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/util/ReportHandler.hpp>  // for STK_ThrowAssert, etc
 #include <string>                       // for string
@@ -153,6 +154,9 @@ public:
   /** \brief  Number of entities associated with this bucket */
   KOKKOS_FUNCTION
   size_type size() const { return m_size ; }
+
+  int num_entities() const { return m_size; }
+  EntityIdxProxy entities() const { return EntityIdxProxy(m_size); }
 
   size_t memory_size_in_bytes() const;
 

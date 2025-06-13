@@ -173,7 +173,7 @@ class TestFactory {
   }  // BuildMatrix()
 
   // Create a matrix as specified by parameter list options
-  static std::tuple<RCP<Matrix>, RCP<MultiVector>, RCP<RealValuedMultiVector>, int> BuildMatrixCoordsNullspace(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) {
+  static std::tuple<RCP<Matrix>, RCP<RealValuedMultiVector>, RCP<MultiVector>, int> BuildMatrixCoordsNullspace(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) {
     RCP<const Teuchos::Comm<int>> comm = TestHelpers::Parameters::getDefaultComm();
 
     if (lib == Xpetra::NotSpecified)
@@ -232,7 +232,7 @@ class TestFactory {
       TEUCHOS_ASSERT(Coords->getMap()->getGlobalNumElements() * DofsPerNode == Op->getDomainMap()->getGlobalNumElements());
     }
 
-    return std::make_tuple(Op, Nullspace, Coords, DofsPerNode);
+    return std::make_tuple(Op, Coords, Nullspace, DofsPerNode);
   }  // BuildMatrixCoordsNullspace()
 
   // Create a tridiagonal matrix (stencil = [b,a,c]) with the specified number of rows

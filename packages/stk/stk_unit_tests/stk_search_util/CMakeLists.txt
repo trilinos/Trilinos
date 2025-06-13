@@ -7,7 +7,6 @@ SET(SOURCES
 SET(SOURCES_NEED_IO
   UnitTestMockSearch.cpp
   UnitTestMockSearchInspector.cpp
-  UnitTestSearchUtils.cpp
 )
 
 if(${PROJECT_NAME}_ENABLE_STKIO)

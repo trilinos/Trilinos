@@ -45,13 +45,14 @@
 #include "stk_mesh/base/Types.hpp"              // for EntityRank, PartVector
 #include "stk_search_util/PointEvaluator.hpp"   // for EvaluatePointsInte...
 #include "stk_search_util/MeshUtility.hpp"
+#include "stk_search_util/CachedEntity.hpp"
 #include "stk_search/Point.hpp"                 // for Point
 #include "stk_search/IdentProc.hpp"             // for IdentProc
 #include "stk_search/Box.hpp"                   // for Box
 #include "stk_search/Sphere.hpp"                // for Sphere
 #include "stk_search/SearchInterface.hpp"
 #include "stk_util/parallel/Parallel.hpp"       // for ParallelMachine
-
+#include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include <Kokkos_Core_fwd.hpp>
 
 #include <memory>                               // for shared_ptr
@@ -75,8 +76,7 @@ template <>
 struct MeshTraits<spmd::ElementRecvMesh> {
   using Entity = stk::mesh::Entity;
   using EntityVec = std::vector<Entity>;
-  using EntityKey = Kokkos::pair<stk::mesh::EntityKey, int>;
-  using EntityKeySet = std::set<EntityKey>;
+  using EntityKey = Kokkos::pair<stk::search::spmd::EntityKeyPair, int>;
   using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
   using EntityProcVec = std::vector<EntityProc>;
   using Point = stk::search::Point<double>;
@@ -87,8 +87,12 @@ struct MeshTraits<spmd::ElementRecvMesh> {
 
 namespace spmd {
 
-class ElementRecvMesh : public stk::search::DestinationMeshInterface<ElementRecvMesh> {
+using ElementRecvMeshSearchBaseClass = stk::search::DestinationMeshInterface<ElementRecvMesh>;
+
+class ElementRecvMesh : public ElementRecvMeshSearchBaseClass {
  public:
+  using BaseClass = ElementRecvMeshSearchBaseClass;
+
   ElementRecvMesh(stk::mesh::BulkData* recvBulk,
                   const stk::mesh::FieldBase* coordinateField,
                   const stk::mesh::EntityRank searchEntityRank,
@@ -117,26 +121,31 @@ class ElementRecvMesh : public stk::search::DestinationMeshInterface<ElementRecv
 
   virtual void bounding_boxes(std::vector<BoundingBox>& v) const override;
 
-  virtual void coordinates(const EntityKey k, std::vector<double>& coords) const override;
+  virtual void coordinates(const EntityKey& k, std::vector<double>& coords) const override;
 
-  virtual std::string name() const override { return "<UNKNOWN RECV ELEMENT MESH>"; }
+  virtual std::string name() const override { return m_name; }
 
-  virtual double get_distance_from_nearest_node(const EntityKey k, const std::vector<double>& toCoords) const override;
+  virtual void set_name(const std::string& meshName) override { m_name = meshName; }
 
-  virtual void centroid(const EntityKey k, std::vector<double>& centroid) const override;
+  virtual double get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& toCoords) const override;
+
+  virtual void centroid(const EntityKey& k, std::vector<double>& centroid) const override;
+
+  virtual void initialize() override;
 
 
   stk::mesh::EntityId id(const EntityKey& k) const;
 
   Entity entity(const EntityKey& k) const;
 
-  void fill_element_entity_keys(const stk::mesh::EntityKeyVector& rangeEntities, std::vector<EntityKey>& elementEntityKeys);
+  void fill_entity_keys(const stk::mesh::EntityKeyVector& rangeEntities, std::vector<EntityKey>& elementEntityKeys);
 
   void initialize(stk::mesh::BulkData* recvBulk);
 
-  virtual void initialize();
-
   virtual std::string get_inspector_delimiter() const { return stk::search::get_time_stamp(); }
+
+  const stk::mesh::BulkData* get_bulk() const { return m_bulk; }
+  const stk::mesh::MetaData* get_meta() const { return m_meta; }
 
  protected:
   stk::mesh::BulkData* m_bulk{nullptr};
@@ -155,14 +164,13 @@ class ElementRecvMesh : public stk::search::DestinationMeshInterface<ElementRecv
 
   bool m_isInitialized{false};
 
-  mutable Entity m_cachedEntity;
-  mutable EntityKey m_cachedKey;
+  void consistency_check();
+
+ private:
+  std::string m_name{"<UNKNOWN RECV ELEMENT SEARCH MESH>"};
 
   ElementRecvMesh(const ElementRecvMesh&) = delete;
   const ElementRecvMesh& operator()(const ElementRecvMesh&) = delete;
-
-  void consistency_check();
-  Entity get_entity(const EntityKey k) const;
 };
 
 } // namespace spmd
