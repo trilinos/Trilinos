@@ -740,8 +740,8 @@ namespace {
     Tpetra::Details::DistributorActor actor;
 
     // Perform communication steps
-    actor.doPostRecvs(plan, 1, imports);
-    actor.doPostSends(plan, myExportsConst, 1, imports);
+    actor.doPostRecvs(plan, (size_t) 1, imports);
+    actor.doPostSends(plan, myExportsConst, (size_t) 1, imports);
     actor.doWaitsRecv(plan);
     actor.doWaitsSend(plan);
 
@@ -858,8 +858,8 @@ namespace {
       Tpetra::Details::DistributorActor actor;
 
       // Perform communication steps
-      actor.doPostRecvs(plan, 1, imports);
-      actor.doPostSends(plan, myExportsConst, 1, imports);
+      actor.doPostRecvs(plan, (size_t) 1, imports);
+      actor.doPostSends(plan, myExportsConst, (size_t) 1, imports);
       actor.doWaitsRecv(plan);
       actor.doWaitsSend(plan);
 
