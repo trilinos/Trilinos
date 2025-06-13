@@ -26,7 +26,7 @@
 namespace MueLu::DistanceLaplacian {
 
 /*!
-@class DistanceFunctor
+@class UnweightedDistanceFunctor
 @brief Computes the unscaled distance Laplacian.
 */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -72,6 +72,126 @@ class UnweightedDistanceFunctor {
     for (size_t j = 0; j < coords.extent(1); ++j) {
       s = coords(row, j) - ghostedCoords(col, j);
       d += s * s;
+    }
+    return d;
+  }
+};
+
+/*!
+@class WeightedDistanceFunctor
+@brief Computes the weighted distance Laplacian.
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class weight_type>
+class WeightedDistanceFunctor {
+ private:
+  using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using scalar_type        = typename local_matrix_type::value_type;
+  using local_ordinal_type = LocalOrdinal;
+  using ATS                = Kokkos::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using magATS             = Kokkos::ArithTraits<magnitudeType>;
+  using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
+
+  Teuchos::RCP<coords_type> coordsMV;
+  Teuchos::RCP<coords_type> ghostedCoordsMV;
+
+  local_coords_type coords;
+  local_coords_type ghostedCoords;
+
+  weight_type weight;
+
+ public:
+  WeightedDistanceFunctor(matrix_type& A, Teuchos::RCP<coords_type>& coords_, weight_type weight_) {
+    coordsMV      = coords_;
+    auto importer = A.getCrsGraph()->getImporter();
+    if (!importer.is_null()) {
+      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
+      ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    } else {
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghostedCoords = coords;
+    }
+    weight = weight_;
+    TEUCHOS_ASSERT(weight.extent(0) == coordsMV->getNumVectors());
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  magnitudeType distance2(const local_ordinal_type row, const local_ordinal_type col) const {
+    magnitudeType d = magATS::zero();
+    magnitudeType w;
+    magnitudeType s;
+    for (size_t j = 0; j < coords.extent(1); ++j) {
+      s = coords(row, j) - ghostedCoords(col, j);
+      w = weight(j);
+      d += w * s * s;
+    }
+    return d;
+  }
+};
+
+/*!
+@class BlockWeightedDistanceFunctor
+@brief Computes the weighted distance Laplacian.
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class weight_type>
+class BlockWeightedDistanceFunctor {
+ private:
+  using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using scalar_type        = typename local_matrix_type::value_type;
+  using local_ordinal_type = LocalOrdinal;
+  using ATS                = Kokkos::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using magATS             = Kokkos::ArithTraits<magnitudeType>;
+  using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
+
+  Teuchos::RCP<coords_type> coordsMV;
+  Teuchos::RCP<coords_type> ghostedCoordsMV;
+
+  local_coords_type coords;
+  local_coords_type ghostedCoords;
+
+  weight_type weight;
+  local_ordinal_type interleaved_blocksize;
+
+ public:
+  BlockWeightedDistanceFunctor(matrix_type& A, Teuchos::RCP<coords_type>& coords_, weight_type weight_, local_ordinal_type interleaved_blocksize_) {
+    coordsMV      = coords_;
+    auto importer = A.getCrsGraph()->getImporter();
+    if (!importer.is_null()) {
+      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
+      ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    } else {
+      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghostedCoords = coords;
+    }
+    weight                = weight_;
+    interleaved_blocksize = interleaved_blocksize_;
+    TEUCHOS_ASSERT(weight.extent(0) == coordsMV->getNumVectors());
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  magnitudeType distance2(const local_ordinal_type row, const local_ordinal_type col) const {
+    magnitudeType d = magATS::zero();
+    magnitudeType w;
+    magnitudeType s;
+    local_ordinal_type block_id    = row % interleaved_blocksize;
+    local_ordinal_type block_start = block_id * interleaved_blocksize;
+    for (size_t j = 0; j < coords.extent(1); ++j) {
+      s = coords(row, j) - ghostedCoords(col, j);
+      w = weight(block_start + j);
+      d += w * s * s;
     }
     return d;
   }
