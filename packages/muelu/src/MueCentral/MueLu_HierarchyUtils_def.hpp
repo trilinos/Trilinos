@@ -188,6 +188,9 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
         } else if (name == "Material") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<MultiVector>>(levelListEntry->second), NoFactory::get());
+        } else if (name == "BlockNumber") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<LocalOrdinalVector>>(levelListEntry->second), NoFactory::get());
         } else if (name == "Coordinates")  // Scalar of Coordinates MV is always double
         {
           RCP<realvaluedmultivector_type> vec;
@@ -297,7 +300,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
                                        name != "M1" && name != "Ms" && name != "M0inv" &&
                                        name != "NodeMatrix" &&
                                        name != "Nullspace" && name != "Coordinates" && name != "Material" &&
-                                       name != "pcoarsen: element to node map" &&
+                                       name != "BlockNumber" && name != "pcoarsen: element to node map" &&
                                        name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                        name != "dropMap1" && name != "dropMap2" &&
                                        name != "output stream" &&
@@ -324,6 +327,9 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
         } else if (name == "Material") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<MultiVector>>(userListEntry->second), NoFactory::get());
+        } else if (name =="BlockNumber") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<LocalOrdinalVector>>(userListEntry->second), NoFactory::get());
         } else if (name == "Coordinates") {  // Scalar of Coordinates MV is always double
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<realvaluedmultivector_type>>(userListEntry->second), NoFactory::get());
