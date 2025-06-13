@@ -273,7 +273,8 @@ then
     test_cmd_options+=( "--use-explicit-cachefile ")
 fi
 
-if [[ ${GENCONFIG_BUILD_NAME} == *"framework"* ]]
+if [[ ${GENCONFIG_BUILD_NAME} == *"framework"*
+    || ${GENCONFIG_BUILD_NAME} == *"compsim"* ]]
 then
     test_cmd_options+=( "--skip-create-packageenables ")
 fi
