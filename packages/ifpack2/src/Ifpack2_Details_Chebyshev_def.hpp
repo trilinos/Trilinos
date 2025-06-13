@@ -303,7 +303,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   chebyshevAlgorithm_("first"),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
-  ckUseNativeSpMV_(false),
+  ckUseNativeSpMV_(true),
   debug_ (false)
 {
   checkConstructorInput ();
@@ -336,7 +336,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   chebyshevAlgorithm_("first"),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
-  ckUseNativeSpMV_(false),
+  ckUseNativeSpMV_(true),
   debug_ (false)
 {
   checkConstructorInput ();
@@ -383,7 +383,7 @@ setParameters (Teuchos::ParameterList& plist)
   const std::string defaultChebyshevAlgorithm = "first";
   const bool defaultComputeMaxResNorm = false;
   const bool defaultComputeSpectralRadius = true;
-  const bool defaultCkUseNativeSpMV = false;
+  const bool defaultCkUseNativeSpMV = true;
   const bool defaultDebug = false;
 
   // We'll set the instance data transactionally, after all reads
