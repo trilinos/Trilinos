@@ -266,16 +266,19 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 
     {
       if (rhs_file.length() > 0) {
-        if(Tacho::MatrixMarket<value_type>::readDenseVectors(rhs_file, b) != 0) {
+        if(Tacho::MatrixMarket<value_type>::readDenseVectors(rhs_file, b, verbose) != 0) {
           return -1;
         }
       } else if (onesRHS) {
+        if (verbose) std::cout << std::endl << " > RHS = ones" << std::endl << std::endl;
         const value_type one(1.0);
         Kokkos::deep_copy (b, one);
       } else if (randomRHS) {
+        if (verbose) std::cout << std::endl << " > RHS = rands" << std::endl << std::endl;
         Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
         Kokkos::fill_random(b, random, value_type(1));
       } else {
+        if (verbose) std::cout << std::endl << " > RHS = A*ones" << std::endl << std::endl;
         const value_type one(1.0);
         Kokkos::deep_copy (x, one);
         solver.computeSpMV(values_on_device, x, b);

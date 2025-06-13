@@ -125,7 +125,9 @@ template <typename ValueType> struct MatrixMarket {
     if (file.good()) {
       std::cout << "Read matrix from  " << filename << std::endl;
     } else {
-      std::cout << "Failed to open the matrix file: " << filename << std::endl;
+      std::cout << std::endl
+                << "Failed to open the matrix file: " << filename 
+                << std::endl << std::endl;
       return -1;
     }
 
@@ -322,7 +324,7 @@ template <typename ValueType> struct MatrixMarket {
 
   /// \brief dense vector read
   template <typename DenseMultiVectorType>
-  static int readDenseVectors(const std::string &filename, DenseMultiVectorType &B) {
+  static int readDenseVectors(const std::string &filename, DenseMultiVectorType &B, const ordinal_type verbose = 0) {
 
     std::ifstream file;
     file.open(filename);
@@ -333,15 +335,47 @@ template <typename ValueType> struct MatrixMarket {
       return -1;
     }
 
+    // reading mm header
     ordinal_type m = B.extent(0), n = B.extent(1);
+    {
+      std::string header;
+      std::getline(file, header);
+      while (file.good()) {
+        char c = file.peek();
+        if (c == '%' || c == '\n') {
+          file.ignore(256, '\n');
+          continue;
+        }
+        break;
+      }
+      file >> m >> n;
+      if ( m != ordinal_type(B.extent(0))) {
+        std::cout << std::endl
+                  << "ERROR: expected the RHS of length(m = " << B.extent(0) << ")" 
+                  << std::endl << std::endl;
+        return -1;
+      }
+      Kokkos::resize(B, m, n);
+    }
 
+    // reading numerical values
     ValueType val;
     auto hB = Kokkos::create_mirror_view(B);
-    for (ordinal_type i = 0; i < m; i++) {
-        file >> val;
-        hB(i,0) = val;
+    for (ordinal_type j = 0; j < n; j++) {
+        for (ordinal_type i = 0; i < m; i++) {
+            file >> val;
+            hB(i,j) = val;
+        }
     }
     Kokkos::deep_copy(B, hB);
+    if (verbose) {
+      printf("Summary: MatrixMarket\n");
+      printf("=====================\n");
+      printf("  File:      %s\n", filename.c_str());
+      printf("             number of rows:                                  %10d\n", m);
+      printf("             number of cols:                                  %10d\n", n);
+      printf("\n");
+    }
     return 0;
   }
 };
