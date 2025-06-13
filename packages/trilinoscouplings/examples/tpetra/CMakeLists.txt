@@ -1,0 +1,17 @@
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+
+IF (${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+
+  TRIBITS_ADD_EXECUTABLE(
+    Tpetra_Zoltan2_LPTrans_Ex
+    SOURCES Tpetra_Zoltan2_LPTrans_Ex.cpp
+    COMM mpi
+  )
+
+ENDIF()
+
+ENDIF()
