@@ -138,7 +138,6 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("cycle applications", 1);
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("aggregation: threshold", 0.01);
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("ML label", "coarse (1,1) block");
-
   goldList.sublist("refmaxwell: 22list").set("default values", "SA");
   goldList.sublist("refmaxwell: 22list").set("max levels", 10);
   goldList.sublist("refmaxwell: 22list").set("prec type", "MGV");

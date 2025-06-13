@@ -338,6 +338,19 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
   }
 #endif  // HAVE_MUELU_ML && HAVE_ML_EPETRA && HAVE_ML_TEUCHOS
 
+  // ML counts levels slightly differently than MueLu does so "repartition: start level" is off by one
+  // ML defaults to "1" if we don't ask for anything else and that needs to map to "2"
+  if (paramList.isParameter("repartition: start level")) {
+    paramList.set("repartition: start level", paramList.get<int>("repartition: start level") + 1);
+  } else {
+    paramList.set("repartition: start level", 2);
+  }
+
+  // ML sets this to 5000
+  if (paramList.isParameter("repartition: put on single proc")) {
+    paramList.set("repartition: put on single proc", 5000);
+  }
+
   //
   // Move smoothers/aggregation/coarse parameters to sublists
   //
@@ -578,7 +591,6 @@ int ML2MueLuParameterTranslator::SetDefaults(std::string ProblemType, Teuchos::P
               << ProblemType << "). Should be: " << std::endl
               << "ERROR: <SA> / <DD> / <DD-ML> / <maxwell>" << std::endl;
   }
-
   return (0);
 }
 
