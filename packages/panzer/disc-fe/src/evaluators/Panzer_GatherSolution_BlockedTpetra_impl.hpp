@@ -157,6 +157,7 @@ void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,
 preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
+   std::cout << " GDK " << globalDataKey_ << " " << Teuchos::typeName(*(d.gedc->getDataObject(globalDataKey_))) << std::endl;
    blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
 }
 
@@ -381,6 +382,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     const PHX::View<ScalarT**> fieldValues = gatherFields_[fieldIndex].get_static_view();        
 
     if (has_tangent_fields_) { 
+      std::cout << " TAN GATHER " << this->getName() << " " << globalDataKey_ << std::endl; 
       const int numTangents = tangentFields_[fieldIndex].size();
       const auto tangentFieldsDevice = tangentFieldsVoV_.getViewDevice();
       const auto kokkosTangents = Kokkos::subview(tangentFieldsDevice,fieldIndex,Kokkos::ALL());
@@ -394,6 +396,7 @@ evaluateFields(typename TRAITS::EvalData workset)
         }
       });
     } else {
+      std::cout << " ELSE " << this->getName() << std::endl;
       Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
         for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
           const int rowLID = worksetLIDs(cell,fieldOffsets(basis));

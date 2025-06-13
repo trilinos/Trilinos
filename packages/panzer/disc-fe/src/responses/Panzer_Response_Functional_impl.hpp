@@ -98,10 +98,15 @@ template < >
 void Response_Functional<panzer::Traits::Tangent>::
 scatterResponse()
 {
+  std::cout << " BEGIN " << this->getName() << std::endl;
+  return;
   const int n = value.size();
+  std::cout << " VALUE " << std::endl;
   const int num_deriv = this->numDeriv();
+  std::cout << " DERIV " << std::endl;
   TEUCHOS_ASSERT(n == 0 || n == num_deriv);
   ScalarT glbValue = ScalarT(num_deriv, 0.0);
+    std::cout << " I AM TOP" << std::endl;
 
   // do global summation -- it is possible to do the reduceAll() on the Fad's directly, but it is somewhat
   // complicated for DFad (due to temporaries that might get created).  Since this is just a sum, it is
@@ -111,6 +116,7 @@ scatterResponse()
     Teuchos::reduceAll(*this->getComm(), Teuchos::REDUCE_SUM, Thyra::Ordinal(n), value.dx(),  &glbValue.fastAccessDx(0));
 
   value = glbValue;
+    std::cout << " I AM REDUCE" << std::endl;
 
   // copy data in vectors
 #ifdef PANZER_HAVE_EPETRA_STACK
@@ -126,6 +132,7 @@ scatterResponse()
     // use thyra
     TEUCHOS_ASSERT(this->useThyra());
     Thyra::ArrayRCP< Thyra::ArrayRCP<double> > deriv = this->getThyraMultiVector();
+    std::cout << " I AM HERE" << std::endl;
     for (int i=0; i<num_deriv; ++i)
       deriv[i][0] = glbValue.dx(i);
   }
@@ -135,6 +142,14 @@ scatterResponse()
 template <typename EvalT>
 void Response_Functional<EvalT>::
 setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & /* soln_vs */) { }
+
+// derivatives are required for
+//template < >
+//void Response_Functional<panzer::Traits::Tangent>::
+//setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs)
+//{
+//  setDerivativeVectorSpace(soln_vs);
+//}
 
 // derivatives are required for
 template < >

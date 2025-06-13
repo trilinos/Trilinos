@@ -33,6 +33,7 @@ public:
 
   TransientReducedObjective(
     const Teuchos::RCP<Teuchos::ParameterList>& input_params,
+    const Teuchos::RCP<Teuchos::ParameterList>& tempus_params,
     const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
     const Teuchos::RCP<Teuchos::ParameterList>& objective_params,
     const Teuchos::RCP<std::ostream>& os);
