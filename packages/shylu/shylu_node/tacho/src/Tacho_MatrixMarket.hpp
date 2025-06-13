@@ -111,8 +111,8 @@ template <typename ValueType> struct MatrixMarket {
 
   /// \brief matrix market reader
   template <typename DeviceType>
-  static void read(const std::string &filename, CrsMatrixBase<ValueType, DeviceType> &A,
-                   const ordinal_type sanitize = 0, const ordinal_type verbose = 0) {
+  static int read(const std::string &filename, CrsMatrixBase<ValueType, DeviceType> &A,
+                  const ordinal_type sanitize = 0, const ordinal_type verbose = 0) {
     static_assert(Kokkos::Impl::MemorySpaceAccess<Kokkos::HostSpace, typename DeviceType::memory_space>::assignable,
                   "DeviceType is not assignable from HostSpace");
 
@@ -122,6 +122,14 @@ template <typename ValueType> struct MatrixMarket {
 
     std::ifstream file;
     file.open(filename);
+    if (file.good()) {
+      std::cout << "Read matrix from  " << filename << std::endl;
+    } else {
+      std::cout << std::endl
+                << "Failed to open the matrix file: " << filename 
+                << std::endl << std::endl;
+      return -1;
+    }
 
     // reading mm header
     ordinal_type m, n;
@@ -234,7 +242,6 @@ template <typename ValueType> struct MatrixMarket {
 
     const double t = timer.seconds();
     if (verbose) {
-
       printf("Summary: MatrixMarket\n");
       printf("=====================\n");
       printf("  File:      %s\n", filename.c_str());
@@ -248,6 +255,8 @@ template <typename ValueType> struct MatrixMarket {
       printf("             number of nonzeros after sanitized:              %10d\n", ordinal_type(nnz));
       printf("\n");
     }
+
+    return 0;
   }
 
   /// \brief matrix marker writer
@@ -311,6 +320,63 @@ template <typename ValueType> struct MatrixMarket {
 
     file.unsetf(std::ios::scientific);
     file.precision(prec);
+  }
+
+  /// \brief dense vector read
+  template <typename DenseMultiVectorType>
+  static int readDenseVectors(const std::string &filename, DenseMultiVectorType &B, const ordinal_type verbose = 0) {
+
+    std::ifstream file;
+    file.open(filename);
+    if (file.good()) {
+      std::cout << "Read RHS from  " << filename << std::endl;
+    } else {
+      std::cout << "Failed to open the RHS file: " << filename << std::endl;
+      return -1;
+    }
+
+    // reading mm header
+    ordinal_type m = B.extent(0), n = B.extent(1);
+    {
+      std::string header;
+      std::getline(file, header);
+      while (file.good()) {
+        char c = file.peek();
+        if (c == '%' || c == '\n') {
+          file.ignore(256, '\n');
+          continue;
+        }
+        break;
+      }
+      file >> m >> n;
+      if ( m != ordinal_type(B.extent(0))) {
+        std::cout << std::endl
+                  << "ERROR: expected the RHS of length(m = " << B.extent(0) << ")" 
+                  << std::endl << std::endl;
+        return -1;
+      }
+      Kokkos::resize(B, m, n);
+    }
+
+    // reading numerical values
+    ValueType val;
+    auto hB = Kokkos::create_mirror_view(B);
+    for (ordinal_type j = 0; j < n; j++) {
+        for (ordinal_type i = 0; i < m; i++) {
+            file >> val;
+            hB(i,j) = val;
+        }
+    }
+    Kokkos::deep_copy(B, hB);
+    if (verbose) {
+      printf("Summary: MatrixMarket\n");
+      printf("=====================\n");
+      printf("  File:      %s\n", filename.c_str());
+      printf("             number of rows:                                  %10d\n", m);
+      printf("             number of cols:                                  %10d\n", n);
+      printf("\n");
+    }
+    return 0;
   }
 };
 
