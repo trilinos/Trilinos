@@ -25,6 +25,7 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
+#include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_HashUtils.hpp" // for pair_hash
@@ -49,6 +50,7 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 class BlockedTpetraLinearObjFactory : public LinearObjFactory<Traits>
                                     , public ThyraObjFactory<double> {
 public:
+   typedef TpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> TLOC;
    typedef BlockedTpetraLinearObjContainer<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> BTLOC;
    typedef Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> VectorType;
    typedef Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> CrsMatrixType;
@@ -133,32 +135,62 @@ public:
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
-   { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+   {
+      if(gidProviders_.front()->containsBlockedDOFManager()) {
+         return Teuchos::rcp(new ScatterResidual_BlockedTpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGlobalIndexer()));
+      }
+      return Teuchos::rcp(new ScatterResidual_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(getRangeGlobalIndexer()));
+   }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
-   { return Teuchos::rcp(new GatherSolution_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+   {
+      if(gidProviders_.front()->containsBlockedDOFManager()) {
+         return Teuchos::rcp(new GatherSolution_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGlobalIndexer()));
+      }
+      return Teuchos::rcp(new GatherSolution_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(getRangeGlobalIndexer()));
+   }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherTangent() const
-   { return Teuchos::rcp(new GatherTangent_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+   {
+      if(gidProviders_.front()->containsBlockedDOFManager()) {
+         return Teuchos::rcp(new GatherTangent_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGlobalIndexer()));
+      }
+      return Teuchos::rcp(new GatherTangent_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(getRangeGlobalIndexer()));
+   }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherDomain() const
-   { return Teuchos::rcp(new GatherSolution_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+   {
+      if(gidProviders_.back()->containsBlockedDOFManager()) {
+         return Teuchos::rcp(new GatherSolution_BlockedTpetra<EvalT,Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getDomainBlockedIndexer()));
+      }
+      return Teuchos::rcp(new GatherSolution_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(getDomainGlobalIndexer()));
+   }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
-   { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT>(nc2c_vector(blockedDOFManager_->getFieldDOFManagers()))); }
+   {
+      if(gidProviders_.front()->containsBlockedDOFManager()) {
+         return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT>(nc2c_vector(getGlobalIndexer()->getFieldDOFManagers())));
+      }
+      return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT>(getRangeGlobalIndexer()));
+   }
 
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
-   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(blockedDOFManager_)); }
+   {
+      if(gidProviders_.front()->containsBlockedDOFManager()) {
+         return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(getGlobalIndexer()));
+      }
+      return Teuchos::rcp(new ScatterDirichletResidual_Tpetra<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT,NodeT>(getRangeGlobalIndexer()));
+   }
 
 /*************** Generic helper functions for container setup *******************/
 
@@ -234,9 +266,11 @@ public:
 
    //! get the map from the matrix
    virtual Teuchos::RCP<const MapType> getMap(int i) const;
+   virtual Teuchos::RCP<const MapType> getColMap(int i) const;
 
    //! get the ghosted map from the matrix
    virtual Teuchos::RCP<const MapType> getGhostedMap(int i) const;
+   virtual Teuchos::RCP<const MapType> getColGhostedMap(int i) const;
 
    //! get the graph of the crs matrix
    virtual Teuchos::RCP<const CrsGraphType> getGraph(int i,int j) const;
@@ -246,9 +280,11 @@ public:
 
    //! get importer for converting an overalapped object to a "normal" object
    virtual Teuchos::RCP<const ImportType> getGhostedImport(int i) const;
+   virtual Teuchos::RCP<const ImportType> getColGhostedImport(int i) const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual Teuchos::RCP<const ExportType> getGhostedExport(int j) const;
+   virtual Teuchos::RCP<const ExportType> getColGhostedExport(int j) const;
 
    Teuchos::RCP<CrsMatrixType> getTpetraMatrix(int i,int j) const;
    Teuchos::RCP<CrsMatrixType> getGhostedTpetraMatrix(int i,int j) const;
@@ -275,28 +311,134 @@ public:
    virtual void endFill(LinearObjContainer & loc) const;
 
    Teuchos::RCP<const panzer::BlockedDOFManager> getGlobalIndexer() const
-   { return blockedDOFManager_; }
+   {
+      TEUCHOS_ASSERT(!gidProviders_.empty());
+      return gidProviders_.front()->getBlockedIndexer();
+   }
 
    //! Get the domain unique global indexer this factory was created with.
    Teuchos::RCP<const panzer::GlobalIndexer> getDomainGlobalIndexer() const
-   { return blockProvider_; }
+   {
+      TEUCHOS_ASSERT(!gidProviders_.empty());
+      return gidProviders_.back()->getGlobalIndexer();
+   }
+
+   //! Get the domain unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::BlockedDOFManager> getDomainBlockedIndexer() const
+   {
+      TEUCHOS_ASSERT(!gidProviders_.empty());
+      return gidProviders_.back()->getBlockedIndexer();
+   }
 
    //! Get the range unique global indexer this factory was created with.
    Teuchos::RCP<const panzer::GlobalIndexer> getRangeGlobalIndexer() const
-   { return blockProvider_; }
+   {
+      TEUCHOS_ASSERT(!gidProviders_.empty());
+      return gidProviders_.front()->getGlobalIndexer();
+   }
 
 protected:
+   /*************** Utility class for handling blocked and nonblocked DOF managers *******************/
+
+   /** This classes is mean to abstract away the different global indexer types and hide
+    * if this is a blocked data structure or a unblocked one.
+    */
+   class DOFManagerContainer
+   {
+   public:
+      DOFManagerContainer() {}
+      DOFManagerContainer(const Teuchos::RCP<const GlobalIndexer> &ugi)
+      {
+         setGlobalIndexer(ugi);
+      }
+
+      void setGlobalIndexer(const Teuchos::RCP<const GlobalIndexer> &ugi)
+      {
+         using Teuchos::RCP;
+         using Teuchos::rcp_dynamic_cast;
+
+         auto blockedDOFManager = rcp_dynamic_cast<const BlockedDOFManager>(ugi);
+         auto flatDOFManager = rcp_dynamic_cast<const GlobalIndexer>(ugi);
+
+         if (blockedDOFManager != Teuchos::null)
+         {
+            // set BlockedDOFManager
+            blockedDOFManager_ = blockedDOFManager;
+
+            // get all GID providers
+            auto dofManagers = blockedDOFManager_->getFieldDOFManagers();
+            for (auto itr = dofManagers.begin(); itr != dofManagers.end(); ++itr)
+               gidProviders_.push_back(*itr);
+         }
+         else if (flatDOFManager != Teuchos::null)
+         {
+            // for absolute clarity, nullify the blockedDOFManager_
+            blockedDOFManager_ = Teuchos::null;
+
+            // you have only a single GID provider
+            gidProviders_.push_back(flatDOFManager);
+         }
+         else
+         {
+            TEUCHOS_ASSERT(false);
+         }
+      }
+
+      //! Get the number of global indexers (not including the blocked one) contained.
+      int getFieldBlocks() const
+      {
+         return Teuchos::as<int>(gidProviders_.size());
+      }
+
+      /** Return true if this contains a blocked DOFManager as opposed to only a single DOFManager.
+       * If this returns true then <code>getGlobalIndexer</code> will return a <code>BlockedDOFManager<int,GO></code>,
+       * other wise it will return a <code>GlobalIndexer<int,GO></code>.
+       */
+      bool containsBlockedDOFManager() const
+      {
+         return blockedDOFManager_ != Teuchos::null;
+      }
+
+      //! Get the "parent" global indexer (if <code>containsBlockedDOFManager()==false</code> this will throw)
+      Teuchos::RCP<const BlockedDOFManager> getBlockedIndexer() const
+      {
+         TEUCHOS_ASSERT(containsBlockedDOFManager());
+         return blockedDOFManager_;
+      }
+
+      //! Get the "parent" global indexer (if <code>getFieldBlocks()>1</code> this will be blocked, otherwise it may be either)
+      Teuchos::RCP<const GlobalIndexer> getGlobalIndexer() const
+      {
+         if (blockedDOFManager_ != Teuchos::null)
+            return blockedDOFManager_;
+
+         TEUCHOS_ASSERT(gidProviders_.size() == 1);
+         return gidProviders_[0];
+      }
+
+      //! Get DOFManagers associated with the blocks
+      const std::vector<Teuchos::RCP<const GlobalIndexer>> &getFieldDOFManagers() const
+      {
+         return gidProviders_;
+      }
+
+   private:
+      Teuchos::RCP<const BlockedDOFManager> blockedDOFManager_;
+      std::vector<Teuchos::RCP<const GlobalIndexer>> gidProviders_;
+   };
+
 /*************** Generic methods/members *******************/
 
    // Get the global indexer associated with a particular block
    Teuchos::RCP<const GlobalIndexer> getGlobalIndexer(int i) const;
+   Teuchos::RCP<const GlobalIndexer> getColGlobalIndexer(int i) const;
 
    //! Allocate the space in the std::vector objects so we can fill with appropriate Tpetra data
-   void makeRoomForBlocks(std::size_t blockCnt);
+   void makeRoomForBlocks(std::size_t blockCnt, std::size_t colBlockCnt = 0);
 
-   Teuchos::RCP<const GlobalIndexer> blockProvider_;
-   Teuchos::RCP<const BlockedDOFManager> blockedDOFManager_;
-   std::vector<Teuchos::RCP<const GlobalIndexer> > gidProviders_;
+   std::vector<Teuchos::RCP<const DOFManagerContainer> > gidProviders_;
+
+   bool useColGidProviders_;
 
    // which block entries are ignored
   std::unordered_set<std::pair<int,int>,panzer::pair_hash> excludedPairs_;
@@ -304,10 +446,10 @@ protected:
 /*************** Thyra based methods/members *******************/
 
    void ghostToGlobalThyraVector(const Teuchos::RCP<const Thyra::VectorBase<ScalarT> > & in,
-                                 const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & out) const;
+                                 const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & out, bool col) const;
    void ghostToGlobalThyraMatrix(const Thyra::LinearOpBase<ScalarT> & in,Thyra::LinearOpBase<ScalarT> & out) const;
    void globalToGhostThyraVector(const Teuchos::RCP<const Thyra::VectorBase<ScalarT> > & in,
-                                 const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & out) const;
+                                 const Teuchos::RCP<Thyra::VectorBase<ScalarT> > & out, bool col) const;
 
    mutable Teuchos::RCP<Thyra::ProductVectorSpaceBase<ScalarT> > rangeSpace_;
    mutable Teuchos::RCP<Thyra::ProductVectorSpaceBase<ScalarT> > domainSpace_;
@@ -323,13 +465,16 @@ protected:
                                      const Teuchos::Ptr<CrsMatrixType> & A,
                                      bool zeroVectorRows) const;
 
-   void ghostToGlobalTpetraVector(int i,const VectorType & in,VectorType & out) const;
+   void ghostToGlobalTpetraVector(int i,const VectorType & in,VectorType & out, bool col) const;
    void ghostToGlobalTpetraMatrix(int blockRow,const CrsMatrixType & in,CrsMatrixType & out) const;
-   void globalToGhostTpetraVector(int i,const VectorType & in,VectorType & out) const;
+   void globalToGhostTpetraVector(int i,const VectorType & in,VectorType & out, bool col) const;
 
    // get the map from the matrix
    virtual Teuchos::RCP<const MapType> buildTpetraMap(int i) const;
+   virtual Teuchos::RCP<const MapType> buildColTpetraMap(int i) const;
+
    virtual Teuchos::RCP<const MapType> buildTpetraGhostedMap(int i) const;
+   virtual Teuchos::RCP<const MapType> buildColTpetraGhostedMap(int i) const;
 
    // get the graph of the crs matrix
    virtual Teuchos::RCP<const CrsGraphType> buildTpetraGraph(int i,int j) const;
@@ -338,12 +483,22 @@ protected:
    // storage for Tpetra graphs and maps
    Teuchos::RCP<const Teuchos::MpiComm<int> > comm_;
    mutable std::vector<Teuchos::RCP<const MapType> > maps_;
+   mutable std::vector<Teuchos::RCP<const MapType> > colMaps_;
+
    mutable std::vector<Teuchos::RCP<const MapType> > ghostedMaps_;
+   mutable std::vector<Teuchos::RCP<const MapType> > colGhostedMaps_;
+
    mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType>,panzer::pair_hash> graphs_ ;
+   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType>,panzer::pair_hash> colGraphs_ ;
+
    mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType>,panzer::pair_hash> ghostedGraphs_;
+   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<const CrsGraphType>,panzer::pair_hash> colGhostedGraphs_;
 
    mutable std::vector<Teuchos::RCP<const ImportType> > importers_;
+   mutable std::vector<Teuchos::RCP<const ImportType> > colImporters_;
+
    mutable std::vector<Teuchos::RCP<const ExportType> > exporters_;
+   mutable std::vector<Teuchos::RCP<const ExportType> > colExporters_;
 };
 
 }
