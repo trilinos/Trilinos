@@ -45,7 +45,7 @@ void getValidParameters(Teuchos::ParameterList &params) {
   // params.set("chebyshev: operator inv diagonal",Teuchos::null);
   params.set("chebyshev: min diagonal value", STS::eps());
   params.set("chebyshev: zero starting solution", true);
-  params.set("chebyshev: use native spmv", false);
+  params.set("chebyshev: use native spmv", true);
   params.set("chebyshev: algorithm", "first");
 
   // Ifpack2_Amesos.cpp
