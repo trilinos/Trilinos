@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
 
   bool success = false;
   bool verbose = false;
+  bool debug = false;
   try {
     bool proc_verbose = false;
     int frequency = -1;  // how often residuals are printed by solver
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]) {
 
     CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("debug","no-debug",&debug,"Print debug messages.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by GCRODR solver.");
@@ -121,9 +123,20 @@ int main(int argc, char *argv[]) {
     ParameterList belosList;
     belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails + Belos::TimingDetails);
     belosList.set( "Num Blocks", numBlocks );
     belosList.set( "Num Recycled Blocks", numRecycledBlocks );
+    if (verbose) {
+      int verbosity = Belos::Errors + Belos::Warnings +
+          Belos::TimingDetails + Belos::StatusTestDetails;
+      if (debug)
+        verbosity += Belos::OrthoDetails + Belos::Debug;
+      belosList.set( "Verbosity", verbosity );
+      if (frequency > 0)
+        belosList.set( "Output Frequency", frequency );
+    }
+    else
+      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
+
     // Construct the right-hand side and solution multivectors.
     // NOTE:  The right-hand side will be constructed such that the solution is
     // a vectors of one.
