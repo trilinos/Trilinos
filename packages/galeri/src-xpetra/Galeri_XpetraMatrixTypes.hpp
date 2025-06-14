@@ -18,9 +18,12 @@
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include "Galeri_MapTraits.hpp"
 #include "Galeri_config.h"
 #include "Galeri_MatrixTraits.hpp"
 #include "Galeri_Problem.hpp"
+#include "KokkosSparse_SortCrs.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 
 namespace Galeri {
 
@@ -49,6 +52,31 @@ namespace Galeri {
                                   GlobalOrdinal& left,   GlobalOrdinal& right,
                                   GlobalOrdinal& front,  GlobalOrdinal& back,
                                   GlobalOrdinal& bottom, GlobalOrdinal& top);
+
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+    template  <typename GlobalOrdinal>
+    KOKKOS_FORCEINLINE_FUNCTION
+    bool IsBoundary2dKokkos(const GlobalOrdinal i, const GlobalOrdinal nx, const GlobalOrdinal ny);
+    template  <typename GlobalOrdinal>
+    KOKKOS_FORCEINLINE_FUNCTION
+    bool IsBoundary3dKokkos(const GlobalOrdinal i, const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz);
+
+    template <typename GlobalOrdinal>
+    KOKKOS_FORCEINLINE_FUNCTION
+    void GetNeighboursCartesian2dKokkos(const GlobalOrdinal i,
+                                        const GlobalOrdinal nx, const GlobalOrdinal ny,
+                                        GlobalOrdinal& left,  GlobalOrdinal& right,
+                                        GlobalOrdinal& lower, GlobalOrdinal& upper);
+
+    template <typename GlobalOrdinal>
+    KOKKOS_FORCEINLINE_FUNCTION
+    void GetNeighboursCartesian3dKokkos(const GlobalOrdinal i,
+                                        const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
+                                        GlobalOrdinal& left,   GlobalOrdinal& right,
+                                        GlobalOrdinal& front,  GlobalOrdinal& back,
+                                        GlobalOrdinal& bottom, GlobalOrdinal& top);
+#endif
+
 
     template <typename GlobalOrdinal, typename Scalar>
     void Fill9PointStencil(const GlobalOrdinal center,
@@ -131,7 +159,7 @@ namespace Galeri {
             Indices[0] = 1 + indexBase;
             Values [0] = c;
             NumEntries = 1;
-            
+
           } else if (MyGlobalElements[i] == NumGlobalElements + indexBase - 1) {
             // off-diagonal for last row
             Indices[0] = NumGlobalElements - 2 + indexBase;
@@ -159,7 +187,7 @@ namespace Galeri {
                                   Teuchos::tuple<Scalar>(a));
         }
       }
-      
+
       {
         Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Laplace 1D fillComplete")));
         mtx->fillComplete();
@@ -182,7 +210,7 @@ namespace Galeri {
       using Teuchos::TimeMonitor;
       using Teuchos::RCP;
       using Teuchos::rcp;
-      
+
       LocalOrdinal nnz = 5;
 
       RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, nnz);
@@ -276,10 +304,10 @@ namespace Galeri {
 
       LocalOrdinal nnz=5;
       RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, nnz);
-    
+
       LocalOrdinal  numMyElements = map->getLocalNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = map->getLocalElementList();
-    
+
       GlobalOrdinal left, right, lower, upper;
       std::vector<Scalar> Values(nnz);
       std::vector<GlobalOrdinal> Indices(nnz);
@@ -289,13 +317,13 @@ namespace Galeri {
       auto Cdata = C->getData(0);
       auto Ddata = D->getData(0);
       auto Edata = E->getData(0);
-    
+
       RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Recirc 2D Generation")));
       for (int i = 0 ; i < numMyElements ; i++)
       {
         int NumEntries = 0;
         GetNeighboursCartesian2d(myGlobalElements[i], nx, ny, left, right, lower, upper);
-    
+
         if (left != -1)
         {
           Indices[NumEntries] = left;
@@ -320,17 +348,17 @@ namespace Galeri {
           Values[NumEntries] = Edata[i];
           ++NumEntries;
         }
-    
+
         Indices[NumEntries] = myGlobalElements[i];
         Values[NumEntries] = Adata[i];
         ++NumEntries;
-    
+
         Teuchos::ArrayView<GlobalOrdinal> inds(Indices.data(), NumEntries);
         Teuchos::ArrayView<Scalar>        vals(Values.data(), NumEntries);
         mtx->insertGlobalValues(myGlobalElements[i], inds, vals);
       }
       tm = Teuchos::null;
-    
+
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Recirc2D FillComplete")));
       mtx->fillComplete();
       tm = Teuchos::null;
@@ -379,7 +407,7 @@ namespace Galeri {
 
         for (LocalOrdinal i = 0; i < numMyElements; ++i) {
           size_t n = 0;
-          
+
           center = myGlobalElements[i] - indexBase;
           GetNeighboursCartesian2d(center, nx, ny, left, right, lower, upper);
 
@@ -625,6 +653,342 @@ namespace Galeri {
       return mtx;
     }
 
+ #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+
+#define processEntry(entry)                                                    \
+  {                                                                            \
+    if (entry != -1) {                                                         \
+      ++partial_nnz;                                                           \
+      if (is_final) {                                                          \
+        if (lclMap.getLocalElement(entry) == invalid) {                        \
+          off_rank_indices.insert(entry);                                      \
+        }                                                                      \
+      }                                                                        \
+    }                                                                          \
+  }
+
+#define enterOffDiagonalValue(column_index, value)                             \
+  {                                                                            \
+    if (column_index != -1) {                                                  \
+      colidx(rowptr(i + 1)) = lclColMap.getLocalElement(column_index);         \
+      values(rowptr(i + 1)) = value;                                           \
+      offDiagonalSum += values(rowptr(i + 1));                                 \
+      ++rowptr(i + 1);                                                         \
+    }                                                                          \
+  }
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
+    Teuchos::RCP<Matrix>
+    Cross2DKokkos(const Teuchos::RCP<const Map>& map,
+                  const GlobalOrdinal nx, const GlobalOrdinal ny,
+                  const Scalar a, const Scalar b, const Scalar c,
+                  const Scalar d, const Scalar e,
+                  const DirBC DirichletBC = 0, const bool keepBCs = false)
+    {
+      using Teuchos::TimeMonitor;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using local_matrix_type = typename ::Tpetra::CrsMatrix<typename Matrix::scalar_type, typename Matrix::local_ordinal_type, typename Matrix::global_ordinal_type, typename Matrix::node_type>::local_matrix_device_type;
+      using rowptr_type = typename local_matrix_type::row_map_type::non_const_type;
+      using colidx_type = typename local_matrix_type::index_type::non_const_type;
+      using values_type = typename local_matrix_type::values_type::non_const_type;
+      using ATS                = Kokkos::ArithTraits<Scalar>;
+      using impl_scalar_type   = typename ATS::val_type;
+      using Node = typename Map::node_type;
+      using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+      using exec_space = typename Node::execution_space;
+      using memory_space = typename Node::memory_space;
+      using range_type  = Kokkos::RangePolicy<LocalOrdinal, exec_space>;
+
+      const auto invalid = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+      const auto one = Kokkos::ArithTraits<impl_scalar_type>::one();
+      const auto zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
+
+      impl_scalar_type impl_a = a;
+      impl_scalar_type impl_b = b;
+      impl_scalar_type impl_c = c;
+      impl_scalar_type impl_d = d;
+      impl_scalar_type impl_e = e;
+
+      LocalOrdinal  numMyElements = map->getLocalNumElements();
+
+      Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Laplace 2D generation")));
+
+      auto lclMap = map->getLocalMap();
+      auto rowptr = rowptr_type("rowptr", numMyElements+1);
+
+      Kokkos::UnorderedMap<GlobalOrdinal, void, exec_space> off_rank_indices(numMyElements);
+      LocalOrdinal myNNZ;
+
+      Kokkos::parallel_scan("Galeri::Cross2DKokkos::Graph", range_type(0, numMyElements), KOKKOS_LAMBDA(const LocalOrdinal i, LocalOrdinal &partial_nnz, const bool is_final) {
+        GlobalOrdinal center, left, right, bottom, top;
+
+        center = lclMap.getGlobalElement(i);
+        GetNeighboursCartesian2dKokkos(center, nx, ny,
+                                       left, right, bottom, top);
+
+        bool isDirichlet = (left   == -1 && (DirichletBC & DIR_LEFT))   ||
+                           (right  == -1 && (DirichletBC & DIR_RIGHT))  ||
+                           (bottom == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                           (top    == -1 && (DirichletBC & DIR_TOP));
+
+        if (isDirichlet && keepBCs) {
+          // Dirichlet unknown we want to keep
+          ++partial_nnz;
+        } else {
+          processEntry(left);
+          processEntry(right);
+          processEntry(bottom);
+          processEntry(top);
+
+          // diagonal
+          ++partial_nnz;
+        }
+        if (is_final) {
+          if (i+2<numMyElements+1)
+            rowptr(i+2) = partial_nnz;
+        }
+      }, myNNZ);
+
+      TEUCHOS_ASSERT(!off_rank_indices.failed_insert());
+      auto columnMap_entries = Kokkos::View<GlobalOrdinal*, memory_space>("columnMap_entries", numMyElements+off_rank_indices.size());
+      Kokkos::deep_copy(Kokkos::subview(columnMap_entries, Kokkos::make_pair(0, numMyElements)),
+                        map->getMyGlobalIndicesDevice());
+      Kokkos::parallel_scan(range_type(0, off_rank_indices.capacity()), KOKKOS_LAMBDA (const LocalOrdinal i, size_t &pos, const bool is_final) {
+        if( off_rank_indices.valid_at(i) ) {
+          if (is_final) {
+            auto key   = off_rank_indices.key_at(i);
+            columnMap_entries(numMyElements+pos) = key;
+          }
+          ++pos;
+        }
+      });
+
+      RCP<Map> ghosted_map;
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        ghosted_map = rcp(new Map(map->getGlobalNumElements(),
+                                  columnMap_entries,
+                                  map->getIndexBase(),
+                                  map->getComm()));
+      } else {
+        ghosted_map = ::Xpetra::MapFactory<typename Matrix::local_ordinal_type, typename Matrix::global_ordinal_type, typename Matrix::node_type>::Build(map->lib(),
+                                                                                                                                                         map->getGlobalNumElements(),
+                                                                                                                                                         columnMap_entries,
+                                                                                                                                                         map->getIndexBase(),
+                                                                                                                                                         map->getComm());
+      }
+      auto colidx = colidx_type("colidx", myNNZ);
+      auto values = values_type("values", myNNZ);
+      auto lclColMap = ghosted_map->getLocalMap();
+
+      Kokkos::parallel_for("Galeri::Cross2DKokkos::fill", range_type(0, numMyElements), KOKKOS_LAMBDA(const LocalOrdinal i) {
+        GlobalOrdinal center, left, right, bottom, top;
+
+        center = lclMap.getGlobalElement(i);
+        GetNeighboursCartesian2dKokkos(center, nx, ny,
+                                       left, right, bottom, top);
+
+        bool isDirichlet = (left   == -1 && (DirichletBC & DIR_LEFT))   ||
+                           (right  == -1 && (DirichletBC & DIR_RIGHT))  ||
+                           (bottom == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                           (top    == -1 && (DirichletBC & DIR_TOP));
+
+        if (isDirichlet && keepBCs) {
+          // Dirichlet unknown we want to keep
+          colidx(rowptr(i+1)) = lclColMap.getLocalElement(center);
+          values(rowptr(i+1)) = one;
+          ++rowptr(i+1);
+        } else {
+          impl_scalar_type offDiagonalSum = zero;
+          enterOffDiagonalValue(left, impl_b);
+          enterOffDiagonalValue(right, impl_c);
+          enterOffDiagonalValue(bottom, impl_d);
+          enterOffDiagonalValue(top, impl_e);
+
+          // diagonal
+          colidx(rowptr(i+1)) = lclColMap.getLocalElement(center);
+          if (IsBoundary2dKokkos(center, nx, ny) && !isDirichlet) {
+            values(rowptr(i+1)) = -offDiagonalSum;
+          } else {
+            values(rowptr(i+1)) = impl_a;
+          }
+          ++rowptr(i+1);
+        }
+      });
+
+      auto lclA = local_matrix_type("Laplace2D", numMyElements, ghosted_map->getLocalNumElements(), myNNZ, values, rowptr, colidx);
+      ::KokkosSparse::sort_crs_matrix(lclA);
+      auto mtx = MatrixTraits<Map,Matrix>::Build(lclA, map, ghosted_map, map, map);
+
+      return mtx;
+    }
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
+    Teuchos::RCP<Matrix>
+    Cross3DKokkos(const Teuchos::RCP<const Map>& map,
+                  const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
+                  const Scalar a, const Scalar b, const Scalar c,
+                  const Scalar d, const Scalar e,
+                  const Scalar f, const Scalar g,
+                  const DirBC DirichletBC = 0, const bool keepBCs = false) {
+      using Teuchos::TimeMonitor;
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+      using local_matrix_type = typename ::Xpetra::Matrix<typename Matrix::scalar_type, typename Matrix::local_ordinal_type, typename Matrix::global_ordinal_type, typename Matrix::node_type>::local_matrix_type;
+      using rowptr_type = typename local_matrix_type::row_map_type::non_const_type;
+      using colidx_type = typename local_matrix_type::index_type::non_const_type;
+      using values_type = typename local_matrix_type::values_type::non_const_type;
+      using ATS                = Kokkos::ArithTraits<Scalar>;
+      using impl_scalar_type   = typename ATS::val_type;
+      using Node = typename Map::node_type;
+      using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+      using exec_space = typename Node::execution_space;
+      using memory_space = typename Node::memory_space;
+      using range_type  = Kokkos::RangePolicy<LocalOrdinal, exec_space>;
+
+      const auto invalid = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+      const auto one = Kokkos::ArithTraits<impl_scalar_type>::one();
+      const auto zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
+
+      LocalOrdinal  numMyElements = map->getLocalNumElements();
+
+      //    e
+      //  b a c
+      //    d
+      // + f bottom and g top
+
+      impl_scalar_type impl_a = a;
+      impl_scalar_type impl_b = b;
+      impl_scalar_type impl_c = c;
+      impl_scalar_type impl_d = d;
+      impl_scalar_type impl_e = e;
+      impl_scalar_type impl_f = f;
+      impl_scalar_type impl_g = g;
+
+      Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: Laplace 3D generation")));
+
+      auto lclMap = map->getLocalMap();
+      auto rowptr = rowptr_type("rowptr", numMyElements+1);
+
+      Kokkos::UnorderedMap<GlobalOrdinal, void, exec_space> off_rank_indices(numMyElements);
+      LocalOrdinal myNNZ;
+      Kokkos::parallel_scan("Galeri::Cross3DKokkos::Graph", range_type(0, numMyElements), KOKKOS_LAMBDA(const LocalOrdinal i, LocalOrdinal &partial_nnz, const bool is_final) {
+        GlobalOrdinal center, left, right, bottom, top, front, back;
+
+        center = lclMap.getGlobalElement(i);
+        GetNeighboursCartesian3dKokkos(center, nx, ny, nz,
+                                       left, right, front, back, bottom, top);
+
+        bool isDirichlet = (left   == -1 && (DirichletBC & DIR_LEFT))   ||
+                           (right  == -1 && (DirichletBC & DIR_RIGHT))  ||
+                           (bottom == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                           (top    == -1 && (DirichletBC & DIR_TOP))    ||
+                           (front  == -1 && (DirichletBC & DIR_FRONT))  ||
+                           (back   == -1 && (DirichletBC & DIR_BACK));
+
+        if (isDirichlet && keepBCs) {
+          // Dirichlet unknown we want to keep
+          ++partial_nnz;
+        } else {
+          processEntry(left);
+          processEntry(right);
+          processEntry(front);
+          processEntry(back);
+          processEntry(bottom);
+          processEntry(top);
+
+          // diagonal
+          ++partial_nnz;
+        }
+        if (is_final) {
+          if (i+2<numMyElements+1)
+            rowptr(i+2) = partial_nnz;
+        }
+      }, myNNZ);
+
+      TEUCHOS_ASSERT(!off_rank_indices.failed_insert());
+      auto columnMap_entries = Kokkos::View<GlobalOrdinal*, memory_space>("columnMap_entries", numMyElements+off_rank_indices.size());
+      Kokkos::deep_copy(Kokkos::subview(columnMap_entries, Kokkos::make_pair(0, numMyElements)),
+                        map->getMyGlobalIndicesDevice());
+      Kokkos::parallel_scan(range_type(0, off_rank_indices.capacity()), KOKKOS_LAMBDA (const LocalOrdinal i, size_t &pos, const bool is_final) {
+        if( off_rank_indices.valid_at(i) ) {
+          if (is_final) {
+            auto key   = off_rank_indices.key_at(i);
+            columnMap_entries(numMyElements+pos) = key;
+          }
+          ++pos;
+        }
+      });
+
+      RCP<Map> ghosted_map;
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        ghosted_map = rcp(new Map(map->getGlobalNumElements(),
+                                  columnMap_entries,
+                                  map->getIndexBase(),
+                                  map->getComm()));
+      } else {
+        ghosted_map = ::Xpetra::MapFactory<typename Matrix::local_ordinal_type, typename Matrix::global_ordinal_type, typename Matrix::node_type>::Build(map->lib(),
+                                                                                                                                                         map->getGlobalNumElements(),
+                                                                                                                                                         columnMap_entries,
+                                                                                                                                                         map->getIndexBase(),
+                                                                                                                                                         map->getComm());
+      }
+
+      auto colidx = colidx_type("colidx", myNNZ);
+      auto values = values_type("values", myNNZ);
+      auto lclColMap = ghosted_map->getLocalMap();
+
+      Kokkos::parallel_for("Galeri::Cross3DKokkos::fill", range_type(0, numMyElements), KOKKOS_LAMBDA(const LocalOrdinal i) {
+        GlobalOrdinal center, left, right, bottom, top, front, back;
+
+        center = lclMap.getGlobalElement(i);
+        GetNeighboursCartesian3dKokkos(center, nx, ny, nz,
+                                       left, right, front, back, bottom, top);
+
+        bool isDirichlet = (left   == -1 && (DirichletBC & DIR_LEFT))   ||
+                           (right  == -1 && (DirichletBC & DIR_RIGHT))  ||
+                           (bottom == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                           (top    == -1 && (DirichletBC & DIR_TOP))    ||
+                           (front  == -1 && (DirichletBC & DIR_FRONT))  ||
+                           (back   == -1 && (DirichletBC & DIR_BACK));
+
+        if (isDirichlet && keepBCs) {
+          // Dirichlet unknown we want to keep
+          colidx(rowptr(i+1)) = lclColMap.getLocalElement(center);
+          values(rowptr(i+1)) = one;
+          ++rowptr(i+1);
+        } else {
+          impl_scalar_type offDiagonalSum = zero;
+          // See comments about weird in Cross2D
+          enterOffDiagonalValue(left, impl_b);
+          enterOffDiagonalValue(right, impl_c);
+          enterOffDiagonalValue(front, impl_d);
+          enterOffDiagonalValue(back, impl_e);
+          enterOffDiagonalValue(bottom, impl_f);
+          enterOffDiagonalValue(top, impl_g);
+
+          // diagonal
+          colidx(rowptr(i+1)) = lclColMap.getLocalElement(center);
+          if (IsBoundary3dKokkos(center, nx, ny, nz) && !isDirichlet) {
+            values(rowptr(i+1)) = -offDiagonalSum;
+          } else {
+            values(rowptr(i+1)) = impl_a;
+          }
+          ++rowptr(i+1);
+        }
+      });
+
+      auto lclA = local_matrix_type("Laplace3D", numMyElements, ghosted_map->getLocalNumElements(), myNNZ, values, rowptr, colidx);
+      ::KokkosSparse::sort_crs_matrix(lclA);
+      auto mtx = MatrixTraits<Map,Matrix>::Build(lclA, map, ghosted_map, map, map);
+
+      return mtx;
+    }
+
+#undef processEntry
+#undef enterOffDiagonalValue
+#endif
+
     /* ****************************************************************************************************** *
      *    3D 27-point stencil
      * ****************************************************************************************************** */
@@ -841,6 +1205,79 @@ namespace Galeri {
       if (front != -1) front += iz * (nx * ny);
       if (back  != -1) back  += iz * (nx * ny);
     }
+
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+    /* GetNeighboursCartesian2d */
+    template <typename GlobalOrdinal>
+    KOKKOS_FORCEINLINE_FUNCTION
+    void GetNeighboursCartesian2dKokkos(const GlobalOrdinal i, const GlobalOrdinal nx, const GlobalOrdinal ny,
+                                        GlobalOrdinal& left,  GlobalOrdinal& right,
+                                        GlobalOrdinal& lower, GlobalOrdinal& upper)
+    {
+      GlobalOrdinal ix, iy;
+      ix = i % nx;
+      iy = (i - ix) / nx;
+
+      if (ix == 0)      left  = -1;
+      else              left  = i - 1;
+      if (ix == nx - 1) right = -1;
+      else              right = i + 1;
+      if (iy == 0)      lower = -1;
+      else              lower = i - nx;
+      if (iy == ny - 1) upper = -1;
+      else              upper = i + nx;
+    }
+
+    /* GetNeighboursCartesian3d */
+    template <typename GlobalOrdinal>
+    KOKKOS_FORCEINLINE_FUNCTION
+    void GetNeighboursCartesian3dKokkos(const GlobalOrdinal i,
+                                        const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
+                                        GlobalOrdinal& left,   GlobalOrdinal& right,
+                                        GlobalOrdinal& front,  GlobalOrdinal& back,
+                                        GlobalOrdinal& bottom, GlobalOrdinal& top)
+    {
+      GlobalOrdinal ixy, iz;
+      ixy = i % (nx * ny);
+
+      iz = (i - ixy) / (nx * ny);
+
+      if (iz == 0)      bottom = -1;
+      else              bottom = i - nx * ny;
+      if (iz == nz - 1) top    = -1;
+      else              top    = i + nx * ny;
+
+      GetNeighboursCartesian2dKokkos(ixy, nx, ny, left, right, front, back);
+
+      if (left  != -1) left  += iz * (nx * ny);
+      if (right != -1) right += iz * (nx * ny);
+      if (front != -1) front += iz * (nx * ny);
+      if (back  != -1) back  += iz * (nx * ny);
+    }
+
+    template  <typename GlobalOrdinal>
+    KOKKOS_FORCEINLINE_FUNCTION
+    bool IsBoundary2dKokkos(const GlobalOrdinal i, const GlobalOrdinal nx, const GlobalOrdinal ny) {
+      GlobalOrdinal ix, iy;
+      ix = i % nx;
+      iy = (i - ix) / nx;
+
+      return (ix == 0 || ix == nx-1 || iy == 0 || iy == ny-1);
+    }
+
+    template  <typename GlobalOrdinal>
+    KOKKOS_FORCEINLINE_FUNCTION
+    bool IsBoundary3dKokkos(const GlobalOrdinal i, const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz) {
+      GlobalOrdinal ix, iy, ixy, iz;
+      ix  = i % nx;
+      ixy = i % (nx * ny);
+      iy  = (ixy - ix) / nx;
+      iz  = (i - ixy) / (nx * ny);
+
+      return (ix == 0 || ix == nx-1 || iy == 0 || iy == ny-1 || iz == 0 || iz == nz-1);
+    }
+
+#endif
 
     /* Fill9PointStencil */
     template <typename GlobalOrdinal, typename Scalar>
