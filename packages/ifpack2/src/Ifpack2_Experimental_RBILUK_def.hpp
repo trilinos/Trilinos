@@ -92,6 +92,7 @@ CrsMatrixType convertBsrToCrs(const BsrMatrixType& bsrMatrix) {
   using RowMapType  = typename BsrMatrixType::row_map_type::non_const_type;
   using EntriesType = typename BsrMatrixType::index_type::non_const_type;
   using ValuesType  = typename BsrMatrixType::values_type::non_const_type;
+  using ExeSpace    = typename BsrMatrixType::execution_space;
 
   const Ordinal blockDim     = bsrMatrix.blockDim();
   const Ordinal blockSize    = blockDim * blockDim;
@@ -110,8 +111,10 @@ CrsMatrixType convertBsrToCrs(const BsrMatrixType& bsrMatrix) {
   EntriesType crsEntries("crsEntries", blockEntries.extent(0) * blockSize);
   ValuesType crsValues  ("crsValues",  blockValues.extent(0) * blockSize);
 
+  Kokkos::RangePolicy<ExeSpace> policy(0, numBlockRows);
+
   // Fill CrsMatrix row map, entries, and values
-  Kokkos::parallel_for("ConvertBsrToCrs", numBlockRows, KOKKOS_LAMBDA(const Ordinal blockRow) {
+  Kokkos::parallel_for("ConvertBsrToCrs", policy, KOKKOS_LAMBDA(const Ordinal blockRow) {
     const Ordinal blockRowStart = blockRowMap(blockRow);
     const Ordinal blockRowEnd   = blockRowMap(blockRow + 1);
     const Ordinal blockRowCount = blockRowEnd - blockRowStart;

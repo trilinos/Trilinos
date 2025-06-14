@@ -537,6 +537,8 @@ initialize ()
     }
   }
   else {
+    bool prev_ambiguous = false;
+    bool all_ambiguous = true;
     for (int i = 0; i < num_streams_; i++) {
       TEUCHOS_TEST_FOR_EXCEPTION
         (A_crs_v_[i].is_null (), std::runtime_error, prefix << "You must call "
@@ -571,18 +573,28 @@ initialize ()
       const bool could_be_lower = lclTriStruct.couldBeLowerTriangular;
       const bool could_be_upper = lclTriStruct.couldBeUpperTriangular;
       if (could_be_lower && could_be_upper) {
-        // ambiguous
+        // Ambiguous, but that's OK if at least one stream is unabiguous
         this->uplo_ = prev_uplo;
+        prev_ambiguous = true;
       }
       else {
         this->uplo_ = could_be_lower ? "L" : (could_be_upper ? "U" : "N");
+        if (this->uplo_ != "N" && prev_uplo == "N" && prev_ambiguous) {
+          prev_uplo = this->uplo_;
+        }
+        prev_ambiguous = false;
       }
+      all_ambiguous &= prev_ambiguous;
       if (i > 0) {
         TEUCHOS_TEST_FOR_EXCEPTION
           ((this->diag_ != prev_diag) || (this->uplo_ != prev_uplo),
            std::logic_error, prefix << "A_crs_'s structures in streams "
            "are different. Please report this bug to the Ifpack2 developers.");
       }
+    }
+    // If all streams were ambiguous, just call it "L"
+    if (all_ambiguous) {
+      this->uplo_ = "L";
     }
   }
 
