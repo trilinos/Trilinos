@@ -327,11 +327,11 @@ private:
   template <typename X, typename Y>
   void stream_apply_impl(const X& X_views, Y& Y_views, const bool use_temp_x, const bool use_temp_y, const std::vector<Teuchos::RCP<block_crs_matrix_type> >& LU_block_v, const std::vector<Teuchos::RCP<kk_handle_type> >& LU_sptrsv_handle_v, const LO numVecs) const;
 
-  Teuchos::RCP<kk_handle_type> KernelHandle_;
+  Teuchos::RCP<kk_handle_type> KernelHandle_block_;
   Teuchos::RCP<kk_handle_type> L_Sptrsv_KernelHandle_;
   Teuchos::RCP<kk_handle_type> U_Sptrsv_KernelHandle_;
 
-  std::vector<Teuchos::RCP<kk_handle_type> > KernelHandle_v_;
+  std::vector<Teuchos::RCP<kk_handle_type> > KernelHandle_block_v_;
   std::vector<Teuchos::RCP<kk_handle_type> > L_Sptrsv_KernelHandle_v_;
   std::vector<Teuchos::RCP<kk_handle_type> > U_Sptrsv_KernelHandle_v_;
 

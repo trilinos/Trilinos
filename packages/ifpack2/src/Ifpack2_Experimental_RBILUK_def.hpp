@@ -494,14 +494,14 @@ void RBILUK<MatrixType>::initialize ()
 
     if (this->isKokkosKernelsSpiluk_) {
       if (!this->isKokkosKernelsStream_) {
-        KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
+        KernelHandle_block_ = Teuchos::rcp (new kk_handle_type ());
         const auto numRows = this->A_local_->getLocalNumRows();
-        KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
+        KernelHandle_block_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
                                              numRows,
                                              2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
                                              2*this->A_local_->getLocalNumEntries()*(this->LevelOfFill_+1),
                                              blockSize_);
-        this->Graph_->initialize(KernelHandle_); // this calls spiluk_symbolic
+        this->Graph_->initialize(KernelHandle_block_); // this calls spiluk_symbolic
 
         L_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
         U_Sptrsv_KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
@@ -513,18 +513,18 @@ void RBILUK<MatrixType>::initialize ()
       }
       else {
         KokkosSparse::Experimental::SPTRSVAlgorithm alg = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1;
-        KernelHandle_v_ = std::vector< Teuchos::RCP<kk_handle_type> >(this->num_streams_);
+        KernelHandle_block_v_ = std::vector< Teuchos::RCP<kk_handle_type> >(this->num_streams_);
         L_Sptrsv_KernelHandle_v_ = std::vector<Teuchos::RCP<kk_handle_type> >(this->num_streams_);
         U_Sptrsv_KernelHandle_v_ = std::vector<Teuchos::RCP<kk_handle_type> >(this->num_streams_);
         for (int i = 0; i < this->num_streams_; i++) {
           const auto numRows = A_block_local_diagblks_v_[i].numRows();
-          KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
-          KernelHandle_v_[i]->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
+          KernelHandle_block_v_[i] = Teuchos::rcp (new kk_handle_type ());
+          KernelHandle_block_v_[i]->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1,
                                                numRows,
                                                2*A_block_local_diagblks_v_[i].nnz()*(this->LevelOfFill_+1),
                                                2*A_block_local_diagblks_v_[i].nnz()*(this->LevelOfFill_+1),
                                                blockSize_);
-          this->Graph_v_[i]->initialize(KernelHandle_v_[i]); // this calls spiluk_symbolic
+          this->Graph_v_[i]->initialize(KernelHandle_block_v_[i]); // this calls spiluk_symbolic
 
           L_Sptrsv_KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
           U_Sptrsv_KernelHandle_v_[i] = Teuchos::rcp (new kk_handle_type ());
@@ -1082,7 +1082,7 @@ void RBILUK<MatrixType>::compute ()
         auto U_entries = lclU.graph.entries;
         auto U_values  = lclU.values;
 
-        KokkosSparse::spiluk_numeric( KernelHandle_.getRawPtr(), this->LevelOfFill_,
+        KokkosSparse::spiluk_numeric( KernelHandle_block_.getRawPtr(), this->LevelOfFill_,
                                       A_local_rowmap, A_local_entries, A_local_values,
                                       L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
 
@@ -1112,7 +1112,7 @@ void RBILUK<MatrixType>::compute ()
           U_rowmap_v[i]  = lclU.graph.row_map;
           U_entries_v[i] = lclU.graph.entries;
           U_values_v[i]  = lclU.values;
-          KernelHandle_rawptr_v_[i] = KernelHandle_v_[i].getRawPtr();
+          KernelHandle_rawptr_v_[i] = KernelHandle_block_v_[i].getRawPtr();
         }
 
         // L_block_->resumeFill ();

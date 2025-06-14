@@ -1,5 +1,5 @@
 <ParameterList name="test_params">
-  <Parameter name="hb_file" type="string" value="nos1.rsa"/>
+  <Parameter name="hb_file" type="string" value="nos2.rsa"/>
 
   <Parameter name="solver_type" type="string" value="Block Gmres"/>
   <ParameterList name="Belos">
@@ -13,7 +13,7 @@
   <ParameterList name="Ifpack2">
     <Parameter name="fact: iluk level-of-fill" type="int" value="2"/>
     <Parameter name="fact: type" type="string" value="KSPILUK"/>
-    <Parameter name="fact: block size" type="int" value="3"/>
+    <Parameter name="fact: block size" type="int" value="7"/>
     <Parameter name="fact: kspiluk number-of-streams" type="int" value="2"/>
     <Parameter name="trisolver: type" type="string" value="KSPTRSV"/>
   </ParameterList>

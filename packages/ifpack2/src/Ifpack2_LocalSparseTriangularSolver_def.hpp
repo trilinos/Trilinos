@@ -556,8 +556,8 @@ initialize ()
 
       // mfh 30 Apr 2018: See GitHub Issue #2658.
       constexpr bool ignoreMapsForTriStructure = true;
-      std::string prev_uplo_ = this->uplo_;
-      std::string prev_diag_ = this->diag_;
+      std::string prev_uplo = this->uplo_;
+      std::string prev_diag = this->diag_;
       auto lclMatrix = A_crs_v_[i]->getLocalMatrixDevice ();
       auto lclRowMap = A_crs_v_[i]->getRowMap ()->getLocalMap ();
       auto lclColMap = A_crs_v_[i]->getColMap ()->getLocalMap ();
@@ -571,14 +571,15 @@ initialize ()
       const bool could_be_lower = lclTriStruct.couldBeLowerTriangular;
       const bool could_be_upper = lclTriStruct.couldBeUpperTriangular;
       if (could_be_lower && could_be_upper) {
-        this->uplo_ = prev_uplo_;
+        // ambiguous
+        this->uplo_ = prev_uplo;
       }
       else {
         this->uplo_ = could_be_lower ? "L" : (could_be_upper ? "U" : "N");
       }
       if (i > 0) {
         TEUCHOS_TEST_FOR_EXCEPTION
-          ((this->diag_ != prev_diag_) || (this->uplo_ != prev_uplo_),
+          ((this->diag_ != prev_diag) || (this->uplo_ != prev_uplo),
            std::logic_error, prefix << "A_crs_'s structures in streams "
            "are different. Please report this bug to the Ifpack2 developers.");
       }
