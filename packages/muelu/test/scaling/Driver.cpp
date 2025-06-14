@@ -323,7 +323,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   if (yamlFileName != "") {
     Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   } else {
-    if (inst == Xpetra::COMPLEX_INT_INT)
+    if (Node::is_gpu)
+      xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-gpu.xml");
+    else if (inst == Xpetra::COMPLEX_INT_INT)
       xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-complex.xml");
     else
       xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
