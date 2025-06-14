@@ -262,8 +262,6 @@ void RBILUK<MatrixType>::allocate_L_and_U_blocks ()
       }
     }
     else {
-      this->L_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >();
-      this->U_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >();
       this->D_   = null;
       D_block_   = null;
 
@@ -1179,7 +1177,7 @@ stream_apply_impl(const X& X_views, Y& Y_views, const bool use_temp_x, const boo
       ptr_v[i] = LUlocal_i.graph.row_map;
       ind_v[i] = LUlocal_i.graph.entries;
       val_v[i] = LUlocal_i.values;
-      stream_end = stream_begin + LUlocal_i.numRows();
+      stream_end = stream_begin + LUlocal_i.numRows() * blockSize_;
       if (use_temp_x) {
         x_v[i] = Kokkos::subview (tmp_, Kokkos::make_pair(stream_begin, stream_end));
       }

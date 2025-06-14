@@ -344,7 +344,7 @@ LocalSparseTriangularSolver<MatrixType>::
     }
   }
   else {
-    for (int i = 0; i < num_streams_; i++) {
+    for (int i = 0; i < num_streams_ && i < kh_v_.size(); i++) {
       if (Teuchos::nonnull (kh_v_[i])) {
         kh_v_[i]->destroy_sptrsv_handle();
       }
@@ -568,8 +568,14 @@ initialize ()
                                            ignoreMapsForTriStructure);
       const LO lclNumRows = lclRowMap.getLocalNumElements ();
       this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
-      this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
-        (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
+      const bool could_be_lower = lclTriStruct.couldBeLowerTriangular;
+      const bool could_be_upper = lclTriStruct.couldBeUpperTriangular;
+      if (could_be_lower && could_be_upper) {
+        this->uplo_ = prev_uplo_;
+      }
+      else {
+        this->uplo_ = could_be_lower ? "L" : (could_be_upper ? "U" : "N");
+      }
       if (i > 0) {
         TEUCHOS_TEST_FOR_EXCEPTION
           ((this->diag_ != prev_diag_) || (this->uplo_ != prev_uplo_),

@@ -280,12 +280,9 @@ void RILUK<MatrixType>::allocate_L_and_U ()
       D_ = rcp (new vec_type (Graph_->getL_Graph ()->getRowMap ()));
     }
     else {
-      L_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >(num_streams_);
-      U_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >(num_streams_);
+      L_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >(num_streams_, null);
+      U_v_ = std::vector< Teuchos::RCP<crs_matrix_type> >(num_streams_, null);
       for (int i = 0; i < num_streams_; i++) {
-        L_v_[i] = null;
-        U_v_[i] = null;
-
         L_v_[i] = rcp (new crs_matrix_type (Graph_v_[i]->getL_Graph ()));
         U_v_[i] = rcp (new crs_matrix_type (Graph_v_[i]->getU_Graph ()));
         L_v_[i]->setAllToScalar (STS::zero ()); // Zero out L and U matrices
@@ -1085,6 +1082,7 @@ void RILUK<MatrixType>::compute_kkspiluk_stream()
                                                       A_local_diagblks_rowmap_v_, A_local_diagblks_entries_v_, A_local_diagblks_values_v_,
                                                       L_rowmap_v, L_entries_v, L_values_v,
                                                       U_rowmap_v, U_entries_v, U_values_v );
+
   for(int i = 0; i < num_streams_; i++) {
     L_v_[i]->fillComplete ();
     U_v_[i]->fillComplete ();
