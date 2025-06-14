@@ -344,7 +344,7 @@ LocalSparseTriangularSolver<MatrixType>::
     }
   }
   else {
-    for (int i = 0; i < num_streams_ && i < kh_v_.size(); i++) {
+    for (size_t i = 0; i < kh_v_.size(); i++) {
       if (Teuchos::nonnull (kh_v_[i])) {
         kh_v_[i]->destroy_sptrsv_handle();
       }

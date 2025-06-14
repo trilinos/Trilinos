@@ -103,7 +103,7 @@ RILUK<MatrixType>::~RILUK()
     }
   }
   else {
-    for (int i = 0; i < num_streams_ && i < KernelHandle_v_.size(); i++) {
+    for (size_t i = 0; i < KernelHandle_v_.size(); i++) {
       if (Teuchos::nonnull (KernelHandle_v_[i])) {
         KernelHandle_v_[i]->destroy_spiluk_handle();
       }
