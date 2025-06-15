@@ -324,6 +324,83 @@ class BlockDiagonalizeFunctor {
 };
 
 /*!
+@class BlockDiagonalizeVectorFunctor
+@brief Functor that drops all entries that are not on the block diagonal.
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class BlockDiagonalizeVectorFunctor {
+ private:
+  using matrix_type       = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type = typename matrix_type::local_matrix_type;
+
+  using scalar_type        = typename local_matrix_type::value_type;
+  using local_ordinal_type = typename local_matrix_type::ordinal_type;
+  using memory_space       = typename local_matrix_type::memory_space;
+  using results_view       = Kokkos::View<DecisionType*, memory_space>;
+
+  using block_indices_type            = Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_block_indices_view_type = typename block_indices_type::dual_view_type_const::t_dev;
+  using id_translation_type           = Kokkos::View<local_ordinal_type*, memory_space>;
+  using map_type                      = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+
+  local_matrix_type A;
+  local_block_indices_view_type point_to_block;
+  local_block_indices_view_type ghosted_point_to_block;
+  results_view results;
+  id_translation_type row_translation;
+  id_translation_type col_translation;
+
+ public:
+  BlockDiagonalizeVectorFunctor(matrix_type& A_, block_indices_type& point_to_block_, Teuchos::RCP<const map_type> non_unique_map_, results_view& results_, id_translation_type row_translation_, id_translation_type col_translation_)
+    : A(A_.getLocalMatrixDevice())
+    , point_to_block(point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
+    , results(results_)
+    , row_translation(row_translation_)
+    , col_translation(col_translation_) {
+    auto importer = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(point_to_block_.getMap(), non_unique_map_);
+
+    if (!importer.is_null()) {
+      auto ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
+      ghosted_point_to_blockMV->doImport(point_to_block_, *importer, Xpetra::INSERT);
+      ghosted_point_to_block = ghosted_point_to_blockMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    } else
+      ghosted_point_to_block = point_to_block;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()(local_ordinal_type rlid) const {
+    auto row            = A.rowConst(rlid);
+    const size_t offset = A.graph.row_map(rlid);
+    auto brlid          = row_translation(rlid);
+    for (local_ordinal_type k = 0; k < row.length; ++k) {
+      auto clid  = row.colidx(k);
+      auto bclid = col_translation(clid);
+      /*auto print_view = [](const Kokkos::View<local_ordinal_type*, memory_space>& view, const std::string& label = "") {
+        auto host_view = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), view);
+        std::cout << label << " [size=" << host_view.extent(0) << "]: ";
+        for (size_t i = 0; i < host_view.extent(0); ++i)
+          std::cout << host_view(i) << " ";
+        std::cout << std::endl;
+      };//#
+      std::cout<<"print_view(row_translation)\n";
+      print_view(row_translation);
+      std::cout<<"print_view(col_translation)\n";
+      print_view(col_translation);*/
+
+      /*std::cout << "rlid=" << rlid << ",brlid=" << brlid << ",clid=" << clid << ",bclid=" << bclid <<"\n"<<
+      "\t"<<"point_to_block(brlid, 0)="<<point_to_block(brlid, 0)<<", ghosted_point_to_block(bclid, 0)="<<ghosted_point_to_block(bclid, 0)<<std::endl;*/
+      if (point_to_block(brlid, 0) == ghosted_point_to_block(bclid, 0)) {
+        results(offset + k) = Kokkos::max(KEEP, results(offset + k));
+        // std::cout<<"\tKEEP"<<std::endl;
+      } else {
+        results(offset + k) = Kokkos::max(DROP, results(offset + k));
+        // std::cout<<"\tDROP"<<std::endl;
+      }
+    }
+  }
+};
+
+/*!
 @class DebugFunctor
 @brief Functor that checks that all entries have been marked.
 */
