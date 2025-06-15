@@ -20,6 +20,8 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 
+#include "MueLu_AmalgamationInfo.hpp"  //#
+
 #include <Galeri_XpetraParameters.hpp>
 
 namespace MueLuTests {
@@ -1253,6 +1255,222 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonal, Sca
   RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
   LO myDofsPerNode          = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
   TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalAllVector, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  typedef Teuchos::ScalarTraits<SC> STS;
+  typedef typename STS::magnitudeType real_type;
+  typedef Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
+  typedef Teuchos::ScalarTraits<LO> STL;
+  LO zero = STL::zero(), one = STL::one();
+
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  out << "version: " << MueLu::Version() << std::endl;
+
+  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers_kokkos::Parameters::getLib();
+
+  // block diagonal - dof per node > 1
+  {
+    auto runAndCheck = [&](const RCP<Matrix> &A, const RCP<LOVector> &blocknumber, LO ndofn, const std::string &algo, const RCP<RealValuedMultiVector> &coords = Teuchos::null) {
+      Level fineLevel;
+      fineLevel.Set("A", A);
+      fineLevel.Set("BlockNumber", blocknumber);
+
+      ///#Teuchos::ParameterList ibList;
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      CoalesceDropFactory_kokkos coalesceDropFact;
+      coalesceDropFact.SetFactory("UnAmalgamationInfo", amalgFact);
+      coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(algo));
+      coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.0001));
+      if (coords != Teuchos::null) {
+        std::cout << "line1287" << std::endl;
+        fineLevel.Set("Coordinates", coords);
+      }
+
+      coalesceDropFact.SetDefaultVerbLevel(MueLu::Extreme);
+
+      fineLevel.Request("Graph", &coalesceDropFact);
+      fineLevel.Request("A", &coalesceDropFact);
+      fineLevel.Request("DofsPerNode", &coalesceDropFact);
+
+      fineLevel.Request("UnAmalgamationInfo", amalgFact.get());
+      RCP<AmalgamationInfo> unAmalgInfo = fineLevel.Get<RCP<AmalgamationInfo>>("UnAmalgamationInfo", amalgFact.get());
+      std::cout << "unAmalgInfo->print();" << std::endl;
+      unAmalgInfo->print(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)), MueLu::Extreme);
+      //#std::get<0>(BlockNumbers)->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+
+      LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+      TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == ndofn, true);
+
+      RCP<LWGraph_kokkos> graph_d = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
+
+      auto graph_h            = graph_d->copyToHost();
+      auto crsGraph           = graph_h->GetCrsGraph();
+      auto numGlobalEdges     = graph_h->GetGlobalNumEdges();
+      auto fullNumGlobalEdges = A->getCrsGraph()->getGlobalNumEntries();
+
+      std::cout << "crsGraph->describe()" << std::endl;
+      crsGraph->describe(*Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+
+      // test if there are any edges between dofs which do not belong to the same block
+      /*bool testEmptyBlockDiagonals = true;
+      for (LO i = 0; i < crsGraph->getLocalNumRows(); ++i) {
+        Teuchos::ArrayView<const LO> rowEntries;
+        crsGraph->getLocalRowView(i, rowEntries);
+        std::unordered_set<LO> rowSet(rowEntries.begin(), rowEntries.end());
+
+        // due to symmetry, we can just check only the lower left triangular
+        for (LO j = 0; j < i; ++j)
+          if (blocknumber->getData(0)[i] != blocknumber->getData(0)[j])
+            if (rowSet.find(j) != rowSet.end()) {
+              std::cout<<"i,j = "<<i<<","<<j<<"\n\t"<<
+              "blocknumber->getData(0)[i],blocknumber->getData(0)[j] = "<<blocknumber->getData(0)[i]<<","<<blocknumber->getData(0)[j]<<std::endl;
+              testEmptyBlockDiagonals = false;
+            }
+      }*/
+
+      RCP<LOVector> blocknumberGhosted;
+      const RCP<const Map> uniqueMap    = unAmalgInfo->getNodeRowMap();
+      const RCP<const Map> nonUniqueMap = unAmalgInfo->getNodeColMap();
+      auto importer                     = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(blocknumber->getMap(), nonUniqueMap);
+      if (!importer.is_null()) {
+        std::cout << "test line1341" << std::endl;
+        blocknumberGhosted = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
+        blocknumberGhosted->doImport(*blocknumber, *importer, Xpetra::INSERT);
+      } else {
+        std::cout << "test line1346" << std::endl;
+        blocknumberGhosted = blocknumber;
+      }
+
+      bool testEmptyBlockDiagonals = true;
+      auto blockNums               = blocknumber->getData(0);
+      auto blockNumsGhosted        = blocknumberGhosted->getData(0);
+
+      std::cout << "------------------------" << std::endl;
+
+      std::cout << "blockNums = [" << std::endl;
+      for (int i = 0; i < blocknumber->getLocalLength(); ++i)
+        std::cout << blockNums[i] << " ";
+      std::cout << "]" << std::endl;
+
+      std::cout << "blockNumsGhosted = [" << std::endl;
+      for (int i = 0; i < blocknumberGhosted->getLocalLength(); ++i)
+        std::cout << blockNumsGhosted[i] << " ";
+      std::cout << "]" << std::endl;
+
+      for (LO i = 0; i < crsGraph->getLocalNumRows(); ++i) {
+        Teuchos::ArrayView<const LO> rowEntries;
+        crsGraph->getLocalRowView(i, rowEntries);
+
+        for (LO k = 0; k < rowEntries.size(); ++k) {
+          LO j = rowEntries[k];
+
+          // Check only lower triangle if graph is symmetric
+          if (blockNums[i] != blockNumsGhosted[j]) {
+            std::cout << "i,j = " << i << "," << j << "\n\t"
+                      << "blockNums[i], blockNums[j] = " << blockNums[i] << "," << blockNums[j] << std::endl;
+            testEmptyBlockDiagonals = false;
+          }
+        }
+      }
+
+      TEST_EQUALITY(testEmptyBlockDiagonals, true);
+    };
+
+    // Elasticity3D, contiguous blocknumber
+    {
+      constexpr LO ndofn = 3;
+
+      // unrelated to 3 dofs per node; just the smallest matrix that isn't nonzero everywhere in serial
+      GO n = 3 * comm->getSize();
+
+      Teuchos::ParameterList galeriList;
+      galeriList.set("nx", Teuchos::as<GlobalOrdinal>(n));
+      galeriList.set("ny", Teuchos::as<GlobalOrdinal>(n));
+      galeriList.set("nz", Teuchos::as<GlobalOrdinal>(n));
+
+      // node map
+      auto map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
+
+      RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(map);
+      for (size_t row = 0; row < blocknumber->getLocalLength(); row++) {
+        GO global_row = map->getGlobalElement(row);
+
+        if (global_row < 0.5 * n * n * n) {
+          // lower part of domain get's 0
+          blocknumber->replaceLocalValue(row, zero);
+        } else {
+          // upper part of domain get's 1
+          blocknumber->replaceLocalValue(row, one);
+        }
+      }
+
+      // dof map
+      map = Xpetra::MapFactory<LO, GO, Node>::Build(map, ndofn);
+
+      RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
+          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity3D", map, galeriList);
+
+      RCP<Matrix> A = Pr->BuildMatrix();
+      A->SetFixedBlockSize(ndofn);
+
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal");
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal signed classical");
+
+      // all
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal");
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal signed classical");
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");
+
+      RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("3D", A->getRowMap(), galeriList);
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal distance laplacian", coordinates);
+    }
+
+    // Elasticity2D, non-contiguous blocknumber
+    {
+      constexpr LO ndofn = 2;
+
+      GO n = 5 * comm->getSize();
+
+      Teuchos::ParameterList galeriList;
+      galeriList.set("nx", Teuchos::as<GlobalOrdinal>(n));
+      galeriList.set("ny", Teuchos::as<GlobalOrdinal>(n));
+
+      // node map
+      auto map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
+      // dof map
+      map = Xpetra::MapFactory<LO, GO, Node>::Build(map, ndofn);
+
+      // 3 non-contiguous blocks/domains
+      RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(map);
+      for (size_t row = 0; row < blocknumber->getLocalLength(); row++) {
+        GO global_row = map->getGlobalElement(row);
+        blocknumber->replaceLocalValue(row, Teuchos::as<SC>(global_row % 3));
+      }
+
+      RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
+          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
+
+      RCP<Matrix> A = Pr->BuildMatrix();
+      A->SetFixedBlockSize(ndofn);
+
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");
+
+      // all
+      runAndCheck(A, blocknumber, ndofn, "block diagonal");
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal signed classical");
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");
+
+      RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("2D", A->getRowMap(), galeriList);
+      // runAndCheck(A, blocknumber, ndofn, "block diagonal distance laplacian");
+    }
+  }  // end block diagonal - dof per node > 1
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalClassical, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -2615,6 +2833,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalSAD
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, BlockDiagonalNoColoredSignedClassical, SC, LO, GO, NO)  \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, BlockDiagonalSignedClassical, SC, LO, GO, NO)           \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, BlockDiagonal, SC, LO, GO, NO)                          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, BlockDiagonalAllVector, SC, LO, GO, NO)                 \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, BlockDiagonalDistanceLaplacian, SC, LO, GO, NO)         \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, BlockDiagonalDistanceLaplacianWeighted, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, DistanceLaplacianWeighted, SC, LO, GO, NO)              \
