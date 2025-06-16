@@ -509,6 +509,229 @@ namespace Galeri {
       }
     };
 
+    template <class Scalar, class Map, bool keepBCs>
+    class Brick3DStencil {
+      // lower plane
+      //   e  d  e
+      //   d  b  d
+      //   e  d  e
+
+      // middle plane
+      //   c  b  c
+      //   b  a  b
+      //   c  b  c
+
+      // upper plane
+      //   e  d  e
+      //   d  b  d
+      //   e  d  e
+
+      using ATS                = Kokkos::ArithTraits<Scalar>;
+      using impl_scalar_type   = typename ATS::val_type;
+      using LocalOrdinal = typename Map::local_ordinal_type;
+      using GlobalOrdinal = typename Map::global_ordinal_type;
+      using Node = typename Map::node_type;
+      using local_map_type = typename Map::local_map_type;
+      using local_matrix_type = typename ::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+      using rowptr_type = typename local_matrix_type::row_map_type::non_const_type;
+      using colidx_type = typename local_matrix_type::index_type::non_const_type;
+      using values_type = typename local_matrix_type::values_type::non_const_type;
+      using exec_space = typename Node::execution_space;
+      using memory_space = typename Node::memory_space;
+      using hashmap_type = typename Kokkos::UnorderedMap<GlobalOrdinal, void, exec_space>;
+
+      GlobalOrdinal nx, ny, nz;
+      impl_scalar_type a, b, c, d, e, f, g;
+      DirBC DirichletBC;
+      local_map_type lclMap;
+
+      const impl_scalar_type one = Kokkos::ArithTraits<impl_scalar_type>::one();
+      const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
+      const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+
+      Kokkos::View<GlobalOrdinal[27], memory_space> stencil_indices;
+      Kokkos::View<impl_scalar_type[27], memory_space> stencil_entries;
+
+    public:
+
+      const std::string name = "Brick3D";
+      hashmap_type off_rank_indices;
+      local_map_type lclColMap;
+      colidx_type colidx;
+      values_type values;
+
+      Brick3DStencil(const Map& map, GlobalOrdinal nx_, GlobalOrdinal ny_, GlobalOrdinal nz_, Scalar a_, Scalar b_, Scalar c_, Scalar d_, Scalar e_, Scalar f_, Scalar g_, DirBC DirichletBC_)
+          : nx(nx_) , ny(ny_), nz(nz_)
+          , a(a_) , b(b_) , c(c_) , d(d_) , e(e_), f(f_), g(g_)
+          , DirichletBC(DirichletBC_) {
+        lclMap = map.getLocalMap();
+
+        stencil_indices = Kokkos::View<GlobalOrdinal[27], memory_space>("stencil_indices");
+        stencil_entries = Kokkos::View<impl_scalar_type[27], memory_space>("stencil_entries");
+        auto stencil_entries_h = Kokkos::create_mirror_view(stencil_entries);
+
+        // lower plane
+        stencil_entries_h(0) = e;
+        stencil_entries_h(1) = d;
+        stencil_entries_h(2) = e;
+        stencil_entries_h(3) = d;
+        stencil_entries_h(4) = b;
+        stencil_entries_h(5) = d;
+        stencil_entries_h(6) = e;
+        stencil_entries_h(7) = d;
+        stencil_entries_h(8) = e;
+
+        // middle plane
+        stencil_entries_h(9) = c;
+        stencil_entries_h(10) = b;
+        stencil_entries_h(11) = c;
+        stencil_entries_h(12) = b;
+        stencil_entries_h(13) = a;
+        stencil_entries_h(14) = b;
+        stencil_entries_h(15) = c;
+        stencil_entries_h(16) = b;
+        stencil_entries_h(17) = c;
+
+        // upper plane
+        stencil_entries_h(18) = e;
+        stencil_entries_h(19) = d;
+        stencil_entries_h(20) = e;
+        stencil_entries_h(21) = d;
+        stencil_entries_h(22) = b;
+        stencil_entries_h(23) = d;
+        stencil_entries_h(24) = e;
+        stencil_entries_h(25) = d;
+        stencil_entries_h(26) = e;
+
+        Kokkos::deep_copy(stencil_entries, stencil_entries_h);
+      }
+
+      KOKKOS_FORCEINLINE_FUNCTION
+      void GetNeighbours(const GlobalOrdinal i,
+                         bool& isDirichlet) const {
+
+        GlobalOrdinal& below = stencil_indices(4);
+
+        GlobalOrdinal& front = stencil_indices(10);
+        GlobalOrdinal& left = stencil_indices(12);
+        stencil_indices(13) = i;
+        GlobalOrdinal& right = stencil_indices(14);
+        GlobalOrdinal& back = stencil_indices(16);
+
+        GlobalOrdinal& above = stencil_indices(22);
+
+        GetNeighboursCartesian3dKokkos(i, nx, ny, nz, left, right, front, back, below, above);
+
+        // 0 1 2
+        // 3 4 5
+        // 6 7 8
+
+        //  9 10 11
+        // 12 13 14
+        // 15 16 17
+
+        // 18 19 20
+        // 21 22 23
+        // 24 25 26
+
+        stencil_indices(0) = below-nx-1;
+        stencil_indices(1) = below-nx;
+        stencil_indices(2) = below-nx+1;
+        stencil_indices(3) = below-1;
+        stencil_indices(5) = below+1;
+        stencil_indices(6) = below+nx-1;
+        stencil_indices(7) = below+nx;
+        stencil_indices(8) = below+nx+1;
+
+        stencil_indices(9) = front-1;
+        stencil_indices(11) = front+1;
+
+        stencil_indices(15) = back-1;
+        stencil_indices(17) = back+1;
+
+        stencil_indices(18) = above-nx-1;
+        stencil_indices(19) = above-nx;
+        stencil_indices(20) = above-nx+1;
+        stencil_indices(21) = above-1;
+        stencil_indices(23) = above+1;
+        stencil_indices(24) = above+nx-1;
+        stencil_indices(25) = above+nx;
+        stencil_indices(26) = above+nx+1;
+
+        if (left == INVALID) {
+          stencil_indices(0) = stencil_indices(3) = stencil_indices(6) = stencil_indices(9) = stencil_indices(15) = stencil_indices(18) = stencil_indices(21) = stencil_indices(24) = INVALID;
+        }
+        if (right == INVALID) {
+          stencil_indices(2) = stencil_indices(5) = stencil_indices(8) = stencil_indices(11) = stencil_indices(17) = stencil_indices(20) = stencil_indices(23) = stencil_indices(26) = INVALID;
+        }
+        if (front == INVALID) {
+          stencil_indices(0) = stencil_indices(1) = stencil_indices(2) = stencil_indices(9) = stencil_indices(11) = stencil_indices(18) = stencil_indices(19) = stencil_indices(20) = INVALID;
+        }
+        if (back == INVALID) {
+          stencil_indices(6) = stencil_indices(7) = stencil_indices(8) = stencil_indices(15) = stencil_indices(17) = stencil_indices(24) = stencil_indices(25) = stencil_indices(26) = INVALID;
+        }
+        if (below == INVALID) {
+          stencil_indices(0) = stencil_indices(1) = stencil_indices(2) = stencil_indices(3) = stencil_indices(5) = stencil_indices(6) = stencil_indices(7) = stencil_indices(8) = INVALID;
+        }
+        if (above == INVALID) {
+          stencil_indices(18) = stencil_indices(19) = stencil_indices(20) = stencil_indices(21) = stencil_indices(23) = stencil_indices(24) = stencil_indices(25) = stencil_indices(26) = INVALID;
+        }
+
+        isDirichlet = (left == INVALID && (DirichletBC & DIR_LEFT)) ||
+                      (right == INVALID && (DirichletBC & DIR_RIGHT)) ||
+                      (below == INVALID && (DirichletBC & DIR_BOTTOM)) ||
+                      (above == INVALID && (DirichletBC & DIR_TOP)) ||
+                      (front == INVALID && (DirichletBC & DIR_FRONT)) ||
+                      (back == INVALID && (DirichletBC & DIR_BACK));
+      }
+
+      KOKKOS_FORCEINLINE_FUNCTION
+      bool IsBoundary(const GlobalOrdinal i) const {
+        GlobalOrdinal ix  = i % nx;
+        GlobalOrdinal ixy = i % (nx * ny);
+        GlobalOrdinal iy  = (ixy - ix) / nx;
+        GlobalOrdinal iz  = (i - ixy) / (nx * ny);
+        return (ix == 0 || ix == nx-1 || iy == 0 || iy == ny-1 || iz == 0 || iz == nz-1);
+      }
+
+      KOKKOS_FORCEINLINE_FUNCTION
+      void CountRowNNZ(const GlobalOrdinal i, LocalOrdinal& partial_nnz, const bool is_final) const {
+        GlobalOrdinal center;
+        bool isDirichlet;
+
+        center = lclMap.getGlobalElement(i);
+        GetNeighbours(center, isDirichlet);
+
+        if (isDirichlet && keepBCs) {
+          // Dirichlet unknown we want to keep
+          Galeri_processEntry(center);
+        } else {
+          for (size_t k = 0; k<27; ++k)
+            Galeri_processEntry(stencil_indices(k));
+        }
+      }
+
+      KOKKOS_FORCEINLINE_FUNCTION
+      void EnterValues(const LocalOrdinal i, typename rowptr_type::value_type& entryPtr) const {
+        GlobalOrdinal center;
+        bool isDirichlet;
+
+        center = lclMap.getGlobalElement(i);
+        GetNeighbours(center, isDirichlet);
+
+        impl_scalar_type offDiagonalSum = zero;
+        if (isDirichlet && keepBCs) {
+          // Dirichlet unknown we want to keep
+          Galeri_enterValue(center, one);
+        } else {
+          for (size_t k = 0; k < 27; ++k)
+            if (k != 13)
+              Galeri_enterValue(stencil_indices(k), stencil_entries(k));
+          Galeri_enterValue(center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : stencil_entries(13));
+        }
+      }
+    };
+
 #undef Galeri_processEntry
 #undef Galeri_enterValue
 #endif
@@ -1307,6 +1530,33 @@ namespace Galeri {
         return StencilMatrixKokkos<Matrix>(map, stencil, label);
       } else {
         Cross3DStencil<Scalar, Map, false> stencil(*map,
+                                                   nx, ny, nz,
+                                                   a, b, c, d, e, f, g,
+                                                   DirichletBC);
+        return StencilMatrixKokkos<Matrix>(map, stencil, label);
+      }
+    }
+
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
+    Teuchos::RCP<Matrix>
+    Brick3DKokkos(const Teuchos::RCP<const Map>& map,
+                  const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
+                  const Scalar a, const Scalar b, const Scalar c,
+                  const Scalar d, const Scalar e,
+                  const Scalar f, const Scalar g,
+                  const DirBC DirichletBC = 0,
+                  const bool keepBCs = false,
+                  const std::string& label = "")
+    {
+      using Node = typename Map::node_type;
+      if (keepBCs) {
+        Brick3DStencil<Scalar, Map, true> stencil(*map,
+                                                  nx, ny, nz,
+                                                  a, b, c, d, e, f, g,
+                                                  DirichletBC);
+        return StencilMatrixKokkos<Matrix>(map, stencil, label);
+      } else {
+        Brick3DStencil<Scalar, Map, false> stencil(*map,
                                                    nx, ny, nz,
                                                    a, b, c, d, e, f, g,
                                                    DirichletBC);
