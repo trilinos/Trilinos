@@ -1,4 +1,4 @@
-
+INCLUDE(CombinedOption)
 
 #
 # A) Define the package
