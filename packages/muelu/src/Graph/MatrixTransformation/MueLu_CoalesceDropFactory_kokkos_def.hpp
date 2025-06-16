@@ -149,26 +149,6 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-std::tuple<Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>, Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GetBlockNumberMVs(Level& currentLevel) const {
-  RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-  RCP<LocalOrdinalVector> ghostedBlockNumber;
-  GetOStream(Statistics1) << "Using BlockDiagonal Graph before dropping (with provided blocking)" << std::endl;
-
-  // Ghost the column block numbers if we need to
-  auto A                     = Get<RCP<Matrix>>(currentLevel, "A");
-  RCP<const Import> importer = A->getCrsGraph()->getImporter();
-  if (!importer.is_null()) {
-    SubFactoryMonitor m1(*this, "Block Number import", currentLevel);
-    ghostedBlockNumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(importer->getTargetMap());
-    ghostedBlockNumber->doImport(*BlockNumber, *importer, Xpetra::INSERT);
-  } else {
-    ghostedBlockNumber = BlockNumber;
-  }
-  return std::make_tuple(BlockNumber, ghostedBlockNumber);
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildScalar(Level& currentLevel) const {
   FactoryMonitor m(*this, "Build", currentLevel);
@@ -342,8 +322,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         const auto SoC = Misc::SmoothedAggregationMeasure;
 
         if (algo == "block diagonal classical") {
-          auto BlockNumbers      = GetBlockNumberMVs(currentLevel);
-          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *std::get<0>(BlockNumbers), *std::get<1>(BlockNumbers), results);
+          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);
 
           if (classicalAlgoStr == "default") {
             auto classical_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
@@ -442,8 +422,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         auto signed_classical_rs_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
 
         if (algo == "block diagonal signed classical" || algo == "block diagonal colored signed classical") {
-          auto BlockNumbers      = GetBlockNumberMVs(currentLevel);
-          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *std::get<0>(BlockNumbers), *std::get<1>(BlockNumbers), results);
+          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);
 
           if (classicalAlgoStr == "default") {
             if (aggregationMayCreateDirichlet) {
@@ -505,8 +485,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         if (algo == "block diagonal distance laplacian") {
           const auto SoC = Misc::SmoothedAggregationMeasure;
 
-          auto BlockNumbers      = GetBlockNumberMVs(currentLevel);
-          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *std::get<0>(BlockNumbers), *std::get<1>(BlockNumbers), results);
+          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);
 
           auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);
 
@@ -1220,8 +1200,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           }
         }
       } else if (algo == "block diagonal") {
-        auto BlockNumbers      = GetBlockNumberMVs(currentLevel);
-        auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *std::get<0>(BlockNumbers), *std::get<1>(BlockNumbers), results);
+        auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+        auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);
 
         MueLu_runDroppingFunctors(block_diagonalize);
       } else {
@@ -1549,8 +1529,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           auto classical_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
 
           if (algo == "block diagonal classical") {
-            RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-            auto block_diagonalize              = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
+            auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+            auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
 
             if (aggregationMayCreateDirichlet) {
               MueLu_runDroppingFunctors(block_diagonalize,
@@ -1591,8 +1571,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         auto signed_classical_rs_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
 
         if (algo == "block diagonal signed classical" || algo == "block diagonal colored signed classical") {
-          RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-          auto block_diagonalize              = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
+          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+          auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
 
           if (aggregationMayCreateDirichlet) {
             MueLu_runDroppingFunctors(block_diagonalize,
@@ -1697,8 +1677,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         }
 
         if (algo == "block diagonal distance laplacian") {
-          RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-          auto block_diagonalize              = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
+          auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+          auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
 
           if (distanceLaplacianAlgoStr == "default") {
             const auto SoC = Misc::SmoothedAggregationMeasure;
@@ -1864,8 +1844,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         }
 
       } else if (algo == "block diagonal") {
-        RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-        auto block_diagonalize              = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
+        auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+        auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
 
         MueLu_runDroppingFunctors(block_diagonalize);
       } else {

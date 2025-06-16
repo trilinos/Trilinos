@@ -302,11 +302,19 @@ class BlockDiagonalizeFunctor {
   results_view results;
 
  public:
-  BlockDiagonalizeFunctor(matrix_type& A_, block_indices_type& point_to_block_, block_indices_type& ghosted_point_to_block_, results_view& results_)
+  BlockDiagonalizeFunctor(matrix_type& A_, block_indices_type& point_to_block_, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , point_to_block(point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
-    , ghosted_point_to_block(ghosted_point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
-    , results(results_) {}
+    , results(results_) {
+    auto importer = A_.getCrsGraph()->getImporter();
+
+    if (!importer.is_null()) {
+      auto ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
+      ghosted_point_to_blockMV->doImport(point_to_block_, *importer, Xpetra::INSERT);
+      ghosted_point_to_block = ghosted_point_to_blockMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    } else
+      ghosted_point_to_block = point_to_block;
+  }
 
   KOKKOS_FORCEINLINE_FUNCTION
   void operator()(local_ordinal_type rlid) const {
