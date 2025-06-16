@@ -1505,6 +1505,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //   Mark diagonal as KEEP
   // - Misc::MarkSingletonFunctor
   //   Mark singletons after dropping as Dirichlet
+  // - Misc::BlockDiagonalizeVectorFunctor
+  //   Drop coupling between blocks
 
   // rowptr of filtered A
   auto filtered_rowptr = rowptr_type("rowptr", lclA.numRows() + 1);
@@ -1591,7 +1593,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         if (algo == "block diagonal signed classical" || algo == "block diagonal colored signed classical") {
           RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
           auto block_diagonalize              = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
-          std::cout << "fact line1594" << std::endl;
 
           if (aggregationMayCreateDirichlet) {
             MueLu_runDroppingFunctors(block_diagonalize,
@@ -1865,8 +1866,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       } else if (algo == "block diagonal") {
         RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
         auto block_diagonalize              = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
-
-        std::cout << "fact line1870" << std::endl;
 
         MueLu_runDroppingFunctors(block_diagonalize);
       } else {
