@@ -1404,7 +1404,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalVecto
       // 3 non-contiguous blocks
       for (size_t row = 0; row < blocknumber->getLocalLength(); row++) {
         GO global_row = map->getGlobalElement(row);
-        blocknumber->replaceLocalValue(row, Teuchos::as<SC>(global_row / 4 % 3));
+        blocknumber->replaceLocalValue(row, Teuchos::as<LO>(global_row / 4 % 3));
       }
 
       // dof map
