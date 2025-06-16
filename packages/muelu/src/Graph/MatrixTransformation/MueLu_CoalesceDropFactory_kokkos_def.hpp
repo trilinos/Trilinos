@@ -1589,8 +1589,9 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         auto signed_classical_rs_dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);
 
         if (algo == "block diagonal signed classical" || algo == "block diagonal colored signed classical") {
-          auto BlockNumbers      = GetBlockNumberMVs(currentLevel);
-          auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *std::get<0>(BlockNumbers), *std::get<1>(BlockNumbers), results);
+          RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
+          auto block_diagonalize              = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation);
+          std::cout << "fact line1594" << std::endl;
 
           if (aggregationMayCreateDirichlet) {
             MueLu_runDroppingFunctors(block_diagonalize,
