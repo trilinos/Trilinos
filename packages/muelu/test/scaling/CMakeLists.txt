@@ -71,10 +71,10 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
   # This an artifact to reproduce the old 4-rank test that is weak scaled by only adding guys in (x,y)
   TRIBITS_ADD_TEST(
       Driver
-      NAME SetupSolve_Performance_4
+      NAME SetupSolve_Performance
       COMM mpi
       ARGS "--stacked-timer --nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
-      NUM_MPI_PROCS ${NP}
+      NUM_MPI_PROCS 4
       PASS_REGULAR_EXPRESSION "Belos converged"
       RUN_SERIAL
       CATEGORIES PERFORMANCE
