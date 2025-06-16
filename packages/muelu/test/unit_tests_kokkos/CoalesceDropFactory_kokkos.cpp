@@ -1351,16 +1351,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalAllVe
 
       std::cout << "------------------------" << std::endl;
 
-      std::cout << "blockNums = [" << std::endl;
+      std::cout << "blockNums = [";
       for (int i = 0; i < blocknumber->getLocalLength(); ++i)
         std::cout << blockNums[i] << " ";
       std::cout << "]" << std::endl;
 
-      std::cout << "blockNumsGhosted = [" << std::endl;
+      std::cout << "blockNumsGhosted = [";
       for (int i = 0; i < blocknumberGhosted->getLocalLength(); ++i)
         std::cout << blockNumsGhosted[i] << " ";
       std::cout << "]" << std::endl;
 
+      std::cout << "crsGraph->getLocalNumRows()\t" << crsGraph->getLocalNumRows() << "\n";
       for (LO i = 0; i < crsGraph->getLocalNumRows(); ++i) {
         Teuchos::ArrayView<const LO> rowEntries;
         crsGraph->getLocalRowView(i, rowEntries);
@@ -1371,10 +1372,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalAllVe
           // Check only lower triangle if graph is symmetric
           if (blockNums[i] != blockNumsGhosted[j]) {
             std::cout << "i,j = " << i << "," << j << "\n\t"
-                      << "blockNums[i], blockNums[j] = " << blockNums[i] << "," << blockNums[j] << std::endl;
+                      << "blockNums[i], blockNums[j] = " << blockNums[i] << "," << blockNumsGhosted[j] << std::endl;
             testEmptyBlockDiagonals = false;
           }
         }
+
+        /*
+        // or try this
+        auto row            = crsGraph->rowConst(i);
+        const size_t offset = crsGraph->row_map(i);
+        ///auto brlid          = row_translation(i);
+        for (local_ordinal_type k = 0; k < row.length; ++k) {
+          auto clid  = row.colidx(k);
+          ///auto bclid = col_translation(clid);
+          if (blockNums[i] != blockNumsGhosted[clid]) {
+            std::cout << "i,clid = " << i << "," << clid << "\n\t"
+                      << "blockNums[i], blockNums[clid] = " << blockNums[i] << "," << blockNumsGhosted[bclid] << std::endl;
+            testEmptyBlockDiagonals = false;
+          }
+          }
+        }*/
+      }
+
+      if (Teuchos::as<int>(myDofsPerNode) == ndofn && testEmptyBlockDiagonals) {
+        std::cout << "ALL TRUE " << algo << "\n";
       }
 
       TEST_EQUALITY(testEmptyBlockDiagonals, true);
@@ -1417,17 +1438,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalAllVe
       RCP<Matrix> A = Pr->BuildMatrix();
       A->SetFixedBlockSize(ndofn);
 
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal");
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal signed classical");
+      runAndCheck(A, blocknumber, ndofn, "block diagonal");
+      runAndCheck(A, blocknumber, ndofn, "block diagonal signed classical");
+      runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
+      runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");
 
-      // all
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal");
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal signed classical");
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");
+      /// RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("3D", A->getRowMap(), galeriList);
+      auto coordinates                          = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type, LO, GO, Map, RealValuedMultiVector>("3D", map, galeriList);
+      RCP<RealValuedMultiVector> newcoordinates = Pr->BuildCoords();
 
-      RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("3D", A->getRowMap(), galeriList);
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal distance laplacian", coordinates);
+      // Galeri makes multiple copies of coordinates to deal with
+      // some issues when Ndofs != Nmeshnodes
+      for (size_t kkk = 0; kkk < coordinates->getNumVectors(); kkk++) {
+        Teuchos::ArrayRCP<real_type> old     = coordinates->getDataNonConst(kkk);
+        Teuchos::ArrayRCP<real_type> newvals = newcoordinates->getDataNonConst(kkk);
+        int numCopies                        = newvals.size() / old.size();
+        for (int jj = 0; jj < old.size(); jj++) old[jj] = newvals[numCopies * (Teuchos_Ordinal)jj];
+      }
+
+      runAndCheck(A, blocknumber, ndofn, "block diagonal distance laplacian", coordinates);
     }
 
     // Elasticity2D, non-contiguous blocknumber
@@ -1442,15 +1471,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalAllVe
 
       // node map
       auto map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-      // dof map
-      map = Xpetra::MapFactory<LO, GO, Node>::Build(map, ndofn);
 
-      // 3 non-contiguous blocks/domains
+      // 3 blocks/domains
       RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(map);
       for (size_t row = 0; row < blocknumber->getLocalLength(); row++) {
         GO global_row = map->getGlobalElement(row);
         blocknumber->replaceLocalValue(row, Teuchos::as<SC>(global_row % 3));
+        if (global_row < 0.25 * n * n) {
+          blocknumber->replaceLocalValue(row, zero);
+        } else if (global_row < 0.5 * n * n) {
+          blocknumber->replaceLocalValue(row, one);
+        } else {
+          blocknumber->replaceLocalValue(row, one + one);
+        }
       }
+
+      // dof map
+      map = Xpetra::MapFactory<LO, GO, Node>::Build(map, ndofn);
 
       RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
           Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
@@ -1458,19 +1495,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalAllVe
       RCP<Matrix> A = Pr->BuildMatrix();
       A->SetFixedBlockSize(ndofn);
 
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");
-
-      // all
       runAndCheck(A, blocknumber, ndofn, "block diagonal");
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal signed classical");
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
-      // runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");
+      runAndCheck(A, blocknumber, ndofn, "block diagonal signed classical");
+      runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
+      runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");
 
       RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("2D", A->getRowMap(), galeriList);
       // runAndCheck(A, blocknumber, ndofn, "block diagonal distance laplacian");
     }
-  }  // end block diagonal - dof per node > 1
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalClassical, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
