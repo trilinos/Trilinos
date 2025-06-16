@@ -375,26 +375,10 @@ class BlockDiagonalizeVectorFunctor {
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid  = row.colidx(k);
       auto bclid = col_translation(clid);
-      /*auto print_view = [](const Kokkos::View<local_ordinal_type*, memory_space>& view, const std::string& label = "") {
-        auto host_view = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), view);
-        std::cout << label << " [size=" << host_view.extent(0) << "]: ";
-        for (size_t i = 0; i < host_view.extent(0); ++i)
-          std::cout << host_view(i) << " ";
-        std::cout << std::endl;
-      };//#
-      std::cout<<"print_view(row_translation)\n";
-      print_view(row_translation);
-      std::cout<<"print_view(col_translation)\n";
-      print_view(col_translation);*/
-
-      /*std::cout << "rlid=" << rlid << ",brlid=" << brlid << ",clid=" << clid << ",bclid=" << bclid <<"\n"<<
-      "\t"<<"point_to_block(brlid, 0)="<<point_to_block(brlid, 0)<<", ghosted_point_to_block(bclid, 0)="<<ghosted_point_to_block(bclid, 0)<<std::endl;*/
       if (point_to_block(brlid, 0) == ghosted_point_to_block(bclid, 0)) {
         results(offset + k) = Kokkos::max(KEEP, results(offset + k));
-        // std::cout<<"\tKEEP"<<std::endl;
       } else {
         results(offset + k) = Kokkos::max(DROP, results(offset + k));
-        // std::cout<<"\tDROP"<<std::endl;
       }
     }
   }
