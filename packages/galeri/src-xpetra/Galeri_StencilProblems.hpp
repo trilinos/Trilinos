@@ -518,7 +518,19 @@ namespace Galeri {
 
       bool keepBCs = this->list_.get("keepBCs", false);
 
-      this->A_ = Brick3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs);
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+      using Node = typename Map::node_type;
+      using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        this->A_ = Brick3DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Brick3D");
+      } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
+        this->A_ = Brick3DKokkos<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Brick3D");
+      }
+      else
+#endif
+      {
+        this->A_ = Brick3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs);
+      }
       this->A_->setObjectLabel(this->getObjectLabel());
       return this->A_;
     }
