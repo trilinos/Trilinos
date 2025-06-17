@@ -136,16 +136,10 @@ Device options:
 * Enable Cuda                   ``TPL_ENABLE_CUDA``                      ``Kokkos_ENABLE_CUDA``
 * Enable OpenMP                 ``Trilinos_ENABLE_OpenMP``               ``Kokkos_ENABLE_OPENMP``
 * Enable Pthread                ``TPL_ENABLE_PThread``                   ``Kokkos_ENABLE_THREADS``
-* Specify Serial                ``TPL_ENABLE_MPI=FALSE``                 ``Kokkos_ENABLE_SERIAL``
 ============================    ======================================   ============================
 
-If the cache var ``KOKKOS_ARCH`` is not set (or is set to ``None``) then
-the Kokkos settings are not used and the default Trilinos CMake configuration
-is used as described below.
-
-If ``KOKKOS_ARCH != None`` is set, then the correct compiler flags for
-OpenMP are selected by the Kokkos system and the value of the cache
-var ``OpenMP_CXX_FLAGS`` set by the user will be ignored.
+Note: Trilinos always turns on the Kokkos Serial backend even if it was disabled
+explicitly using ``-D Kokkos_ENABLE_SERIAL=OFF``.
 
 To see more documentation for each of these options, run a configure with
 ``-DTrilinos_ENABLE_Kokkos=ON`` and then look in the ``CMakeCache.txt`` file
