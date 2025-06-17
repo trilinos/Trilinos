@@ -57,12 +57,12 @@ namespace Galeri {
 #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
 
     template <typename GlobalOrdinal>
-    KOKKOS_FORCEINLINE_FUNCTION
-    void GetNeighboursCartesian1dKokkos(const GlobalOrdinal i,
-                                        const GlobalOrdinal nx,
-                                        GlobalOrdinal& left,  GlobalOrdinal& right)
+    KOKKOS_FORCEINLINE_FUNCTION void
+    GetNeighboursCartesian1dKokkos(const GlobalOrdinal i,
+                                   const GlobalOrdinal nx, GlobalOrdinal &left,
+                                   GlobalOrdinal &right,
+                                   const GlobalOrdinal INVALID)
     {
-      const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
       if (i == 0)      left  = INVALID;
       else             left  = i - 1;
       if (i == nx - 1) right = INVALID;
@@ -74,9 +74,9 @@ namespace Galeri {
     void GetNeighboursCartesian2dKokkos(const GlobalOrdinal i,
                                         const GlobalOrdinal nx, const GlobalOrdinal ny,
                                         GlobalOrdinal& left,  GlobalOrdinal& right,
-                                        GlobalOrdinal& lower, GlobalOrdinal& upper)
+                                        GlobalOrdinal& lower, GlobalOrdinal& upper,
+                                        const GlobalOrdinal INVALID)
     {
-      const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
       GlobalOrdinal ix, iy;
       ix = i % nx;
       iy = (i - ix) / nx;
@@ -97,9 +97,9 @@ namespace Galeri {
                                         const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
                                         GlobalOrdinal& left,   GlobalOrdinal& right,
                                         GlobalOrdinal& front,  GlobalOrdinal& back,
-                                        GlobalOrdinal& bottom, GlobalOrdinal& top)
+                                        GlobalOrdinal& bottom, GlobalOrdinal& top,
+                                        const GlobalOrdinal INVALID)
     {
-      const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
       GlobalOrdinal ixy, iz;
       ixy = i % (nx * ny);
 
@@ -110,7 +110,7 @@ namespace Galeri {
       if (iz == nz - 1) top    = INVALID;
       else              top    = i + nx * ny;
 
-      GetNeighboursCartesian2dKokkos(ixy, nx, ny, left, right, front, back);
+      GetNeighboursCartesian2dKokkos(ixy, nx, ny, left, right, front, back, INVALID);
 
       if (left  != INVALID) left  += iz * (nx * ny);
       if (right != INVALID) right += iz * (nx * ny);
@@ -243,7 +243,7 @@ namespace Galeri {
       KOKKOS_FORCEINLINE_FUNCTION
       void GetNeighbours(const GlobalOrdinal i,
                          GlobalOrdinal& left,  GlobalOrdinal& right, bool& isDirichlet) const {
-        GetNeighboursCartesian1dKokkos(i, nx, left, right);
+        GetNeighboursCartesian1dKokkos(i, nx, left, right, INVALID);
         isDirichlet = (left  == INVALID && (DirichletBC & DIR_LEFT))   ||
                       (right == INVALID && (DirichletBC & DIR_RIGHT));
       }
@@ -339,7 +339,7 @@ namespace Galeri {
       void GetNeighbours(const GlobalOrdinal i,
                          GlobalOrdinal& left,  GlobalOrdinal& right,
                          GlobalOrdinal& lower, GlobalOrdinal& upper, bool& isDirichlet) const {
-        GetNeighboursCartesian2dKokkos(i, nx, ny, left, right, lower, upper);
+        GetNeighboursCartesian2dKokkos(i, nx, ny, left, right, lower, upper, INVALID);
         isDirichlet = (left  == INVALID && (DirichletBC & DIR_LEFT))   ||
                       (right == INVALID && (DirichletBC & DIR_RIGHT))  ||
                       (lower == INVALID && (DirichletBC & DIR_BOTTOM)) ||
@@ -445,7 +445,7 @@ namespace Galeri {
                          GlobalOrdinal& left,   GlobalOrdinal& right,
                          GlobalOrdinal& front,  GlobalOrdinal& back,
                          GlobalOrdinal& bottom, GlobalOrdinal& top, bool& isDirichlet) const {
-        GetNeighboursCartesian3dKokkos(i, nx, ny, nz, left, right, front, back, bottom, top);
+        GetNeighboursCartesian3dKokkos(i, nx, ny, nz, left, right, front, back, bottom, top, INVALID);
         isDirichlet = (left   == INVALID && (DirichletBC & DIR_LEFT))   ||
                       (right  == INVALID && (DirichletBC & DIR_RIGHT))  ||
                       (bottom == INVALID && (DirichletBC & DIR_BOTTOM)) ||
@@ -620,7 +620,7 @@ namespace Galeri {
 
         GlobalOrdinal& above = stencil_indices(22);
 
-        GetNeighboursCartesian3dKokkos(i, nx, ny, nz, left, right, front, back, below, above);
+        GetNeighboursCartesian3dKokkos(i, nx, ny, nz, left, right, front, back, below, above, INVALID);
 
         // 0 1 2
         // 3 4 5
