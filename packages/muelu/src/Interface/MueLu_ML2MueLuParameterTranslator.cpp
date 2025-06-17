@@ -348,7 +348,7 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
   }
 
   // ML sets this to 5000
-  if (paramList.isParameter("repartition: put on single proc")) {
+  if (!paramList.isParameter("repartition: put on single proc")) {
     paramList.set("repartition: put on single proc", 5000);
   }
 
