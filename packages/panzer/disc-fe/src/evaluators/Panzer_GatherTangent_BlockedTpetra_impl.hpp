@@ -119,22 +119,17 @@ preEvaluate(typename TRAITS::PreEvalData d)
   if (d.gedc->containsDataObject(globalDataKey_)) {
     // TODO BWR HERE HERE HERE - should we even be calling this for residual type?
     // TODO BWR HERE HERE HERE - should this already be set up earlier?
-    std::cout << " GDK " << globalDataKey_ << " " << Teuchos::typeName(*(d.gedc->getDataObject(globalDataKey_))) << std::endl;
     Teuchos::RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
     Teuchos::RCP<LOCPair_GlobalEvaluationData> loc_pair =
       Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
 
     if(loc_pair!=Teuchos::null) {
       Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
-      std::cout << " YES " << std::endl;
       blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(loc,true);
-      std::cout << " NO " << std::endl;
     }
 
     if(blockedContainer_==Teuchos::null) {
-      std::cout << " OK " << std::endl;
-      //blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(ged,true);
-      std::cout << " NOT SO GOOD " << std::endl;
+      blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(ged,true);
     }
   }
 }
