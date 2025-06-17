@@ -339,6 +339,7 @@ private:
   local_ordinal_type blockSize_;
 
   Teuchos::RCP<const block_crs_matrix_type> A_local_bcrs_;
+  Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
 
   //! Vectors for streams
   std::vector<local_matrix_device_type> A_block_local_diagblks_v_;
