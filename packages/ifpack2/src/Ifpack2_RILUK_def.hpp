@@ -1134,13 +1134,9 @@ void RILUK<MatrixType>::compute ()
   else {
     //Make sure values in A is picked up even in case of pattern reuse
     if(!A_local_crs_nc_.is_null()) {
+      // copy entries into A_local_crs
       A_local_crs_nc_->resumeFill();
       local_ordinal_type numRows = A_local_->getLocalNumRows();
-      Array<size_t> entriesPerRow(numRows);
-      for(local_ordinal_type i = 0; i < numRows; i++) {
-        entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
-      }
-      // copy entries into A_local_crs
       nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
       nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
       for(local_ordinal_type i = 0; i < numRows; i++) {

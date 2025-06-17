@@ -421,7 +421,7 @@ void RBILUK<MatrixType>::initialize ()
           for(local_ordinal_type i = 0; i < numRows; i++) {
             entriesPerRow[i] = this->A_local_->getNumEntriesInLocalRow(i);
           }
-          RCP<crs_matrix_type> A_local_crs_nc =
+          A_local_crs_nc_ =
             rcp (new crs_matrix_type (this->A_local_->getRowMap (),
                                       this->A_local_->getColMap (),
                                       entriesPerRow()));
@@ -431,10 +431,10 @@ void RBILUK<MatrixType>::initialize ()
           for(local_ordinal_type i = 0; i < numRows; i++) {
             size_t numEntries = 0;
             this->A_local_->getLocalRowCopy(i, indices, values, numEntries);
-            A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
+            A_local_crs_nc_->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
           }
-          A_local_crs_nc->fillComplete (this->A_local_->getDomainMap (), this->A_local_->getRangeMap ());
-          A_local_crs = Teuchos::rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+          A_local_crs_nc_->fillComplete (this->A_local_->getDomainMap (), this->A_local_->getRangeMap ());
+          A_local_crs = Teuchos::rcp_const_cast<const crs_matrix_type> (A_local_crs_nc_);
         }
         // Create bcrs from crs
         // We can skip fillLogicalBlocks if we know the input is already filled
@@ -1062,6 +1062,51 @@ void RBILUK<MatrixType>::compute ()
       }
     } // !this->isKokkosKernelsSpiluk_
     else {
+      // If we are not using A_local_ directly, we must copy values in case of pattern reuse. Due
+      // to having to deal with filling logical blocks and converting back and forth between CRS and
+      // BSR, this is not very performant and a lot of computation has to be repeated.
+      auto A_local_bcrs_temp = Details::getBcrsMatrix(this->A_local_);
+      auto A_local_crs_temp  = Details::getCrsMatrix(this->A_local_);
+      if (A_local_bcrs_temp.is_null()) {
+        if (A_local_crs_temp.is_null()) {
+          // copy entries into A_local_crs_nc
+          local_ordinal_type numRows = this->A_local_->getLocalNumRows();
+          A_local_crs_nc_->resumeFill();
+          nonconst_local_inds_host_view_type indices("indices",this->A_local_->getLocalMaxNumRowEntries());
+          nonconst_values_host_view_type values("values",this->A_local_->getLocalMaxNumRowEntries());
+          for(local_ordinal_type i = 0; i < numRows; i++) {
+            size_t numEntries = 0;
+            this->A_local_->getLocalRowCopy(i, indices, values, numEntries);
+            A_local_crs_nc_->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
+          }
+          A_local_crs_nc_->fillComplete (this->A_local_->getDomainMap (), this->A_local_->getRangeMap ());
+        }
+
+        if (blockSize_ > 1) {
+          auto crs_matrix_block_filled = Tpetra::fillLogicalBlocks(*A_local_crs_nc_, blockSize_);
+          Kokkos::deep_copy(A_local_bcrs_->getLocalMatrixDevice().values,
+                            crs_matrix_block_filled->getLocalMatrixDevice().values);
+        }
+        else {
+          Kokkos::deep_copy(A_local_bcrs_->getLocalMatrixDevice().values,
+                            A_local_crs_nc_->getLocalMatrixDevice().values);
+        }
+
+        if (this->isKokkosKernelsStream_) {
+          assert(!this->hasStreamReordered_);
+          auto lclMtx = A_local_bcrs_->getLocalMatrixDevice();
+          auto lclCrsMtx = convertBsrToCrs<local_matrix_device_type, local_crs_matrix_device_type>(lclMtx);
+          std::vector<local_crs_matrix_device_type> A_crs_local_diagblks_v(this->num_streams_);
+          KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclCrsMtx, A_crs_local_diagblks_v);
+
+          for (int i = 0; i < this->num_streams_; i++) {
+            A_block_local_diagblks_v_[i] = local_matrix_device_type(A_crs_local_diagblks_v[i], blockSize_);
+            // rowmap and entries should be the same, but not values
+            A_block_local_diagblks_values_v_[i] = A_block_local_diagblks_v_[i].values;
+          }
+        }
+      }
+
       if (!this->isKokkosKernelsStream_) {
         auto lclMtx = A_local_bcrs_->getLocalMatrixDevice();
         auto A_local_rowmap  = lclMtx.graph.row_map;
