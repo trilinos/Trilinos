@@ -77,7 +77,8 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate) {
   std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(List, "");
   List                 = *Teuchos::getParametersFromXmlString(paramXML);
 
-  std::cout <<"\n-----------------------\n" << List << std::endl;
+  std::cout << "\n-----------------------\n"
+            << List << std::endl;
 
   // gold list
   goldList.set("aggregation: match ML phase1", true);
@@ -91,6 +92,7 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate) {
   goldList.set("smoother: type", "RELAXATION");
   goldList.set("smoother: pre or post", "both");
   goldList.set("repartition: start level", 2);
+  goldList.set("repartition: put on single proc", 5000);
   goldList.set("coarse: type", "klu");
   goldList.set("coarse: max size", 128);
   goldList.sublist("smoother: params").set("relaxation: type", "Symmetric Gauss-Seidel");
@@ -98,7 +100,8 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate) {
   goldList.sublist("smoother: params").set("relaxation: damping factor", 1.0);
   goldList.set("coarse: params", dummy);
 
-  std::cout <<"\n-----------------------\n" << goldList << std::endl;
+  std::cout << "\n-----------------------\n"
+            << goldList << std::endl;
 
   TEST_EQUALITY(compareLists(List, goldList), true);
 
