@@ -80,3 +80,16 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Tacho_SimpleSparseTest_File
         NOEXEPREFIX
 )
 
+
+#
+# Performance Test
+#
+TRIBITS_ADD_TEST(
+  Tacho_ExampleDriverDouble.x
+  ARGS "--method=chol --variant=3"
+  NAME "Tacho_ExampleDriverDouble_Chol_v0"
+  NOEXESUFFIX
+  NOEXEPREFIX
+  NUM_MPI_PROCS 1
+  CATEGORIES PERFORMANCE
+)

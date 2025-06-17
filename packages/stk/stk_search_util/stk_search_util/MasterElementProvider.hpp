@@ -38,7 +38,10 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "stk_search/SearchInterface.hpp"  // for ProvideMasterElementInterface
+#include "stk_search_util/SearchField.hpp"
+#include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include <stk_mesh/base/EntityKey.hpp>     // for EntityKey
+#include <stk_mesh/base/FieldBase.hpp>     // for FieldBase
 #include "stk_topology/topology.hpp"       // for topology
 #include <map>                             // for map, map<>::value_compare
 #include <vector>                          // for vector
@@ -46,37 +49,38 @@
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
-namespace stk { namespace mesh { class FieldBase; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
 namespace search {
 
-class MasterElementTopology
+class SearchTopology
 {
 public:
-  MasterElementTopology(stk::topology topology,
-                        stk::mesh::EntityKey key = stk::mesh::EntityKey(),
-                        const stk::mesh::Bucket* bucket = nullptr)
+  SearchTopology(stk::topology topology,
+                 spmd::EntityKeyPair key = spmd::EntityKeyPair(),
+                 const stk::mesh::Bucket* bucket = nullptr)
   : m_topology(topology),
     m_key(key),
     m_bucket(bucket) {}
 
   stk::topology get_topology() const {return m_topology;}
-  stk::mesh::EntityKey get_key() const {return m_key;}
+  spmd::EntityKeyPair get_key() const {return m_key;}
   const stk::mesh::Bucket* get_bucket() const {return m_bucket;}
+
+  operator stk::topology() const { return m_topology; }
 
 private:
   stk::topology m_topology;
-  stk::mesh::EntityKey m_key;
+  spmd::EntityKeyPair m_key;
   const stk::mesh::Bucket* m_bucket{nullptr};
 
-  MasterElementTopology() = delete;
+  SearchTopology() = delete;
 };
 
 using MasterElementProviderInterface =
-    stk::search::ProvideMasterElementInterface<MasterElementTopology, stk::mesh::EntityKey, stk::mesh::Entity, stk::mesh::FieldBase>;
+    ProvideMasterElementInterface<SearchTopology, spmd::EntityKeyPair, SearchField>;
 
 
 } // namespace stk

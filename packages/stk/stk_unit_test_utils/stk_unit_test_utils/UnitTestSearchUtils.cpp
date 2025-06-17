@@ -44,7 +44,9 @@ namespace unit_test_util {
 
 namespace impl {
 std::shared_ptr<stk::search::spmd::ElementSendMesh>
-construct_send_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, const std::vector<std::string>& blocks)
+construct_send_mesh(stk::mesh::BulkData& bulk, double parametricTolerance,
+                    const std::vector<std::string>& blocks,
+                    const stk::mesh::Selector& activeSelector = stk::mesh::Selector().complement())
 {
   STK_ThrowRequireMsg(blocks.size() > 0, "Input block list is empty");
 
@@ -53,14 +55,14 @@ construct_send_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, const
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::Hex8MasterElementProvider>();
+      std::make_shared<stk::unit_test_util::MasterElementProvider>();
   std::shared_ptr<stk::search::MasterElementParametricCoordsFinder> paramCoordsFinder =
       std::make_shared<stk::search::MasterElementParametricCoordsFinder>(bulk, coords, masterElemProvider, parametricTolerance);
-  std::shared_ptr<stk::search::ExternalPointHandlerInterface<stk::mesh::EntityKey>> externalPointHandler =
+  std::shared_ptr<stk::search::HandleExternalPointInterface> externalPointHandler =
       std::make_shared<stk::search::ExternalPointNoOpHandler>(parametricTolerance);
   std::shared_ptr<stk::search::spmd::ElementSendMesh> mesh =
-      std::make_shared<stk::search::spmd::ElementSendMesh>(&bulk, coords, parts[0]->primary_entity_rank(), parts, bulk.parallel(),
-                                                           paramCoordsFinder, externalPointHandler, masterElemProvider);
+      std::make_shared<stk::search::spmd::ElementSendMesh>(&bulk, coords, parts[0]->primary_entity_rank(), parts, activeSelector,
+                                                           bulk.parallel(), paramCoordsFinder, externalPointHandler, masterElemProvider);
 
   mesh->initialize();
 
@@ -68,8 +70,9 @@ construct_send_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, const
 }
 
 std::shared_ptr<stk::search::spmd::NodeRecvMesh>
-construct_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, double geometricTolerance,
-                    const std::vector<std::string>& blocks)
+construct_node_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, double geometricTolerance,
+                         const std::vector<std::string>& blocks,
+                         const stk::mesh::Selector& activeSelector = stk::mesh::Selector().complement())
 {
   STK_ThrowRequireMsg(blocks.size() > 0, "Input block list is empty");
 
@@ -78,16 +81,17 @@ construct_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, doubl
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::spmd::NodeRecvMesh> mesh = std::make_shared<stk::search::spmd::NodeRecvMesh>(
-      &bulk, coords, parts, bulk.parallel(), parametricTolerance, geometricTolerance);
+      &bulk, coords, parts, activeSelector, bulk.parallel(), parametricTolerance, geometricTolerance);
 
   return mesh;
 }
 
 std::shared_ptr<stk::search::spmd::ElementRecvMesh>
-construct_recv_mesh(stk::mesh::BulkData& bulk,
-                    std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator,
-                    double parametricTolerance, double geometricTolerance,
-                    const std::vector<std::string>& blocks)
+construct_elem_recv_mesh(stk::mesh::BulkData& bulk,
+                         std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator,
+                         double parametricTolerance, double geometricTolerance,
+                         const std::vector<std::string>& blocks,
+                         const stk::mesh::Selector& activeSelector = stk::mesh::Selector().complement())
 {
   STK_ThrowRequireMsg(blocks.size() > 0, "Input block list is empty");
 
@@ -96,12 +100,12 @@ construct_recv_mesh(stk::mesh::BulkData& bulk,
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::Hex8MasterElementProvider>();
+      std::make_shared<stk::unit_test_util::MasterElementProvider>();
 
   std::shared_ptr<stk::search::spmd::ElementRecvMesh> mesh =
       std::make_shared<stk::search::spmd::ElementRecvMesh>(&bulk, coords, parts[0]->primary_entity_rank(), parts,
-                                                           bulk.parallel(), pointEvaluator, parametricTolerance,
-                                                           geometricTolerance);
+                                                           activeSelector, bulk.parallel(), pointEvaluator,
+                                                           parametricTolerance, geometricTolerance);
 
   return mesh;
 }
@@ -138,9 +142,7 @@ std::shared_ptr<stk::mesh::BulkData> build_slanted_single_hex_bulk(double slant)
   assert(slant > 0);
 
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::unit_test_util::build_mesh(3u, MPI_COMM_WORLD);
-
   std::string meshSpec = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1";
-
   std::vector<double> coords{ 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,slant, 1,1,slant, 0,1,1 };
 
   stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshSpec, coords));
@@ -153,51 +155,51 @@ std::shared_ptr<stk::mesh::BulkData> build_single_point_bulk(double x, double y,
   std::shared_ptr<stk::mesh::BulkData> bulk = stk::unit_test_util::build_mesh(3u, MPI_COMM_WORLD);
 
   std::string meshSpec = "0,1,PARTICLE,1,block_1";
-
   std::vector<double> coords{ x, y, z };
-
   stk::unit_test_util::setup_text_mesh(*bulk, stk::unit_test_util::get_full_text_mesh_desc(meshSpec, coords));
 
   return bulk;
 }
 
 std::shared_ptr<stk::search::spmd::ElementSendMesh>
-construct_hex_send_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, const std::vector<std::string>& blocks)
+construct_hex_send_mesh(stk::mesh::BulkData& bulk, double parametricTolerance,
+                        const std::vector<std::string>& blocks, const stk::mesh::Selector& activeSelector)
 {
-  return impl::construct_send_mesh(bulk, parametricTolerance, blocks);
+  return impl::construct_send_mesh(bulk, parametricTolerance, blocks, activeSelector);
 }
 
 std::shared_ptr<stk::search::spmd::NodeRecvMesh>
 construct_node_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, double geometricTolerance,
-                        const std::vector<std::string>& blocks)
+                        const std::vector<std::string>& blocks, const stk::mesh::Selector& activeSelector)
 {
-  return impl::construct_recv_mesh(bulk, parametricTolerance, geometricTolerance, blocks);
+  return impl::construct_node_recv_mesh(bulk, parametricTolerance, geometricTolerance, blocks, activeSelector);
 }
 
 std::shared_ptr<stk::search::spmd::ElementRecvMesh>
 construct_element_centroid_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, double geometricTolerance,
-                                     const std::vector<std::string>& blocks)
+                                     const std::vector<std::string>& blocks, const stk::mesh::Selector& activeSelector)
 {
   const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
 
   std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator =
       std::make_shared<stk::search::CentroidEvaluator>(bulk, coords);
-  return impl::construct_recv_mesh(bulk, pointEvaluator, parametricTolerance, geometricTolerance, blocks);
+  return impl::construct_elem_recv_mesh(bulk, pointEvaluator, parametricTolerance, geometricTolerance, blocks, activeSelector);
 }
 
 std::shared_ptr<stk::search::spmd::ElementRecvMesh>
 construct_hex_gauss_point_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, double geometricTolerance,
-                                    unsigned integrationOrder, const std::vector<std::string>& blocks)
+                                    unsigned integrationOrder, const std::vector<std::string>& blocks,
+                                    const stk::mesh::Selector& activeSelector)
 {
   const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
 
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::Hex8MasterElementProvider>();
+      std::make_shared<stk::unit_test_util::MasterElementProvider>();
   std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator =
       std::make_shared<stk::search::MasterElementGaussPointEvaluator>(bulk, coords, masterElemProvider);
-  return impl::construct_recv_mesh(bulk, pointEvaluator, parametricTolerance, geometricTolerance, blocks);
+  return impl::construct_elem_recv_mesh(bulk, pointEvaluator, parametricTolerance, geometricTolerance, blocks, activeSelector);
 }
 
 }

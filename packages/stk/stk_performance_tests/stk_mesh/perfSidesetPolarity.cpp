@@ -159,6 +159,10 @@ protected:
     // Get polarity results with util wrapper code
     std::pair<bool,bool> expectedPolarity(true, true);
     int numLoops = get_num_loops();
+    std::string perfCheck = stk::unit_test_util::get_option("-perf_check", "PERF_CHECK");
+    if (perfCheck == "NO_PERF_CHECK") {
+      numLoops = 100;
+    }
 
     for(int i=0; i<numLoops; i++) {
       std::pair<bool,bool> polarity1 = m_helper.is_positive_sideset_polarity(*m_sidesetParts[1], m_face, m_sideset);
@@ -189,6 +193,11 @@ protected:
     // Get polarity results with util wrapper code
     std::pair<bool,bool> expectedPolarity(true, true);
     int numLoops = get_num_loops();
+    std::string perfCheck = stk::unit_test_util::get_option("-perf_check", "PERF_CHECK");
+    if (perfCheck == "NO_PERF_CHECK") {
+      numLoops = 100;
+    }
+
     stk::mesh::Part& activePart = m_bulk.mesh_meta_data().universal_part();
 
     for(int i=0; i<numLoops; i++) {
@@ -248,7 +257,4 @@ TEST_F(PolarityPerformanceTest, freePolarityTestNoAura)
 }
 
 }
-
-
-
 

@@ -131,6 +131,8 @@ namespace IOShell {
     bool delete_qa{false};
     bool delete_info{false};
     bool line_decomp{false};
+    bool sort_times{false};
+    bool shuffle_times{false};
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell

@@ -6,5 +6,5 @@
 
 #pragma once
 namespace Ioss {
-  inline const char *Version() { return "2025-05-22"; }
+  inline const char *Version() { return "2025-06-07"; }
 } // namespace Ioss

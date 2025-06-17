@@ -28,20 +28,14 @@ namespace {
   }
 
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
-  void parse_offset(const char *tokens, vector3d *offset);
+  void parse_offset(const char *tokens, std::vector<vector3d> &offset, bool is_offset);
   void parse_integer_list(const char *tokens, std::vector<int> *list);
   void parse_part_list(const char *tokens, std::vector<int> *list);
   void parse_omissions(const char *tokens, Omissions *omissions, const std::string &basename,
                        bool require_ids);
 } // namespace
 
-SystemInterface::SystemInterface()
-{
-  offset_.x = 0.0;
-  offset_.y = 0.0;
-  offset_.z = 0.0;
-  enroll_options();
-}
+SystemInterface::SystemInterface() { enroll_options(); }
 
 void SystemInterface::enroll_options()
 {
@@ -113,14 +107,48 @@ void SystemInterface::enroll_options()
                   "Combine nodes if they are within tolerance distance of each other.", nullptr);
 
   options_.enroll("match_nodeset_nodes", GetLongOption::MandatoryValue,
-                  "Combine nodes in the specified nodeset(s) if they are within `tolerance` "
-                  "distance of each other.\n"
+                  "Combine nodes in the specified nodeset(s) if they are within\n"
+                  "\t\t`tolerance` distance of each other.\n"
                   "\t\tSpecify nodesets in each part as p#:id1:id2,p#:id2,id4...",
                   nullptr);
 
   options_.enroll("tolerance", GetLongOption::MandatoryValue,
                   "Maximum distance between two nodes to be considered colocated.", nullptr,
                   nullptr, true);
+
+  options_.enroll(
+      "combine_nodesets", GetLongOption::NoValue,
+      "Input nodesets with the same name will be combined into a single nodeset on output.",
+      nullptr);
+  options_.enroll("combine_sidesets", GetLongOption::NoValue,
+                  "Input sidesets with the same name will be combined into a "
+                  "single sideset on output.",
+                  nullptr);
+  options_.enroll("combine_element_blocks", GetLongOption::NoValue,
+                  "Element blocks with the same name and topology will be "
+                  "combined into a\n"
+                  "\t\tsingle element block on output.",
+                  nullptr);
+
+  options_.enroll(
+      "nodeset_combines", GetLongOption::MandatoryValue,
+      "List of names of output nodesets and the input nodesets which will be combined into that "
+      "output.\n"
+      "\t\tSyntax: out1:in1,in2,..,inX;out2:inA,inB,...,inZ\n"
+      "\t\t        Nodeset 'out1' will contain input nodesets 'in1', 'in2', ..., 'inX'\n"
+      "\t\t       Out name separated by ':' from comma-separated list of input.  Multiple outs "
+      "separated by ';'",
+      nullptr);
+  options_.enroll("sideset_combines", GetLongOption::MandatoryValue,
+                  "List of names of output sidesets and the input sidesets which will be combined "
+                  "into that output.\n"
+                  "\t\t See `nodeset_combines` for syntax.",
+                  nullptr);
+  options_.enroll(
+      "element_block_combines", GetLongOption::MandatoryValue,
+      "List of names of output element blocks and the input element blocks which will be\n"
+      "\t\tcombined into that output. See `nodeset_combines` for syntax.",
+      nullptr, nullptr, true);
 
 #if 0
   options_.enroll("match_elem_ids", GetLongOption::NoValue,
@@ -142,8 +170,23 @@ void SystemInterface::enroll_options()
 
   options_.enroll("offset", GetLongOption::MandatoryValue,
                   "Comma-separated x,y,z offset for coordinates of second and subsequent meshes.\n"
-                  "\t\tThe offset will be multiplied by the part number-1 so:\n"
-                  "\t\tP1: no offset; P2: 1x, 1y, 1z; P3: 2x, 2y, 2z; P(n+1): nx, ny, nz",
+                  "\t\tIf there are only 3 values specified, then The offset will be multiplied by "
+                  "the part number-1 so:\n"
+                  "\t\tP1: no offset; P2: 1x, 1y, 1z; P3: 2x, 2y, 2z; P(n+1): nx, ny, nz\n"
+                  "\t\tYou can also specify the offset of specific parts using the syntax:\n"
+                  "\t\tpn:xn,yn,zn:pm:xm,ym,zm:pk:xk,yk,zk. (note ':', ',')  For example: `-offset "
+                  "p1:1.1,2.2,3.3:p3:2.2,1.0,3.0`\n"
+                  "\t\tThe final coordinates are `scale * orig + offset`",
+                  nullptr, nullptr, true);
+
+  options_.enroll("scale", GetLongOption::MandatoryValue,
+                  "Comma-separated x,y,z scale for coordinates of second and subsequent meshes.\n"
+                  "\t\tIf there are only 3 values specified, then The same scale will be used by "
+                  "all parts (including the first)\n"
+                  "\t\tYou can also specify the scale of specific parts using the syntax:\n"
+                  "\t\tpn:xn,yn,zn:pm:xm,ym,zm:pk:xk,yk,zk. (note ':', ',')  For example: `-scale "
+                  "p1:1.1,2.2,3.3:p3:2.2,1.0,3.0`\n"
+                  "\t\tThe final coordinates are `scale * orig + offset`",
                   nullptr, nullptr, true);
 
   options_.enroll("steps", GetLongOption::MandatoryValue,
@@ -220,7 +263,8 @@ void SystemInterface::enroll_options()
                   nullptr);
 
   options_.enroll("quantize_nsd", GetLongOption::MandatoryValue,
-                  "Use the lossy quantize compression method.  Value specifies number of digits to "
+                  "Use the lossy quantize compression method.\n"
+                  "\t\tValue specifies number of digits to "
                   "retain (1..15) [exodus only]",
                   nullptr, nullptr, true);
 
@@ -276,10 +320,12 @@ bool SystemInterface::parse_options(int argc, char **argv)
   size_t part_count = inputFiles_.size();
   blockOmissions_.resize(part_count);
   blockInclusions_.resize(part_count);
-  nsetOmissions_.resize(part_count);
-  ssetOmissions_.resize(part_count);
+  nodesetOmissions_.resize(part_count);
+  sidesetOmissions_.resize(part_count);
   assemblyOmissions_.resize(part_count);
-  nsetMatch_.resize(part_count);
+  nodesetMatch_.resize(part_count);
+  offset_.resize(part_count);
+  scale_.resize(part_count, {1.0, 1.0, 1.0});
 
   // Get options from environment variable also...
   char *options = getenv("EJOIN_OPTIONS");
@@ -298,7 +344,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("offset");
     if (temp != nullptr) {
-      parse_offset(temp, &offset_);
+      parse_offset(temp, offset_, true);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("scale");
+    if (temp != nullptr) {
+      parse_offset(temp, scale_, false);
     }
   }
 
@@ -349,10 +402,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("omit_part_assemblies") != nullptr) {
-    createAssemblies_ = false;
-  }
-
   {
     const char *temp = options_.retrieve("extract_blocks");
     if (temp != nullptr) {
@@ -363,7 +412,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("match_nodeset_nodes");
     if (temp != nullptr) {
-      parse_omissions(temp, &nsetMatch_, "nodelist", true);
+      parse_omissions(temp, &nodesetMatch_, "nodelist", true);
     }
   }
 
@@ -374,7 +423,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         omitNodesets_ = true;
       }
       else {
-        parse_omissions(temp, &nsetOmissions_, "nodelist", false);
+        parse_omissions(temp, &nodesetOmissions_, "nodelist", false);
       }
     }
     else {
@@ -389,7 +438,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         omitSidesets_ = true;
       }
       else {
-        parse_omissions(temp, &ssetOmissions_, "surface", false);
+        parse_omissions(temp, &sidesetOmissions_, "surface", false);
       }
     }
     else {
@@ -421,23 +470,45 @@ bool SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("nsetvar");
     if (temp != nullptr) {
-      parse_variable_names(temp, &nsetVarNames_);
+      parse_variable_names(temp, &nodesetVarNames_);
     }
   }
 
   {
     const char *temp = options_.retrieve("ssetvar");
     if (temp != nullptr) {
-      parse_variable_names(temp, &ssetVarNames_);
+      parse_variable_names(temp, &sidesetVarNames_);
     }
   }
 
+  createAssemblies_        = options_.retrieve("omit_part_assemblies") != nullptr;
   disableFieldRecognition_ = options_.retrieve("disable_field_recognition") != nullptr;
   useNetcdf4_              = options_.retrieve("netcdf4") != nullptr;
   ignoreElementIds_        = options_.retrieve("ignore_element_ids") != nullptr;
+  combineNodesets_         = options_.retrieve("combine_nodesets") != nullptr;
+  combineSidesets_         = options_.retrieve("combine_sidesets") != nullptr;
+  combineElementBlocks_    = options_.retrieve("combine_element_blocks") != nullptr;
+  ints64bit_               = options_.retrieve("64-bit") != nullptr;
 
-  if (options_.retrieve("64-bit") != nullptr) {
-    ints64bit_ = true;
+  {
+    const char *temp = options_.retrieve("nodeset_combines");
+    if (temp != nullptr) {
+      nodesetCombines_ = temp;
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("sideset_combines");
+    if (temp != nullptr) {
+      sidesetCombines_ = temp;
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("element_block_combines");
+    if (temp != nullptr) {
+      elementBlockCombines_ = temp;
+    }
   }
 
   zlib_ = (options_.retrieve("zlib") != nullptr);
@@ -660,32 +731,82 @@ namespace {
     }
   }
 
-  void parse_offset(const char *tokens, vector3d *offset)
+  void parse_offset(const char *tokens, std::vector<vector3d> &offset, bool is_offset)
   {
+    // Sets the `offset` or `scale`
     // Break into tokens separated by ","
     if (tokens != nullptr) {
-      std::string  token_string(tokens);
-      StringVector var_list = SLIB::tokenize(token_string, ",");
+      std::string token_string(tokens);
+      if (token_string.find(':') == std::string::npos) {
+        // This is specifying just 3 values which are applied to all parts
+        StringVector var_list = SLIB::tokenize(token_string, ",");
 
-      // At this point, var_list should contain 1,2,or 3 strings
-      // corresponding to the x, y, and z coordinate offsets.
-      if (var_list.size() != 3) {
-        fmt::print(stderr,
-                   "ERROR: Incorrect number of offset components specified--3 required.\n\n");
-        offset->x = offset->y = offset->z = 0.0;
-        return;
+        // At this point, var_list should contain 3 strings
+        // corresponding to the x, y, and z coordinate offsets/scales.
+        if (var_list.size() != 3) {
+          fmt::print(stderr,
+                     "ERROR: Incorrect number of offset components specified--3 required.\n\n");
+          return;
+        }
+
+        std::string offx = var_list[0];
+        std::string offy = var_list[1];
+        std::string offz = var_list[2];
+        double      x    = std::stod(offx);
+        double      y    = std::stod(offy);
+        double      z    = std::stod(offz);
+
+        for (size_t i = 0; i < offset.size(); i++) {
+          double di = is_offset ? (double)i : 1.0;
+          offset[i] = {di * x, di * y, di * z};
+        }
       }
+      else {
+        // Tokens specify explicit offset/scale(s) for 1 or more parts...
+        // Form is:  `p1:x1,y1,z1:p3:x3,y3,z3:pN:xN,yN,zN`
+        // colon separates part from comma-separated. x,y,z
+        // colon also separates the part groups.
+        auto groups = SLIB::tokenize(token_string, ":");
+        if (groups.size() % 2 != 0) {
+          fmt::print(
+              stderr,
+              "ERROR: Invalid syntax for offset/scale.  Make sure parts are surrounded by ':'\n");
+          exit(EXIT_FAILURE);
+        }
+        for (size_t i = 0; i < groups.size(); i += 2) {
+          auto &part_string = groups[i];
+          auto &off_string  = groups[i + 1];
 
-      std::string offx = var_list[0];
-      std::string offy = var_list[1];
-      std::string offz = var_list[2];
-      double      x    = std::stod(offx);
-      double      y    = std::stod(offy);
-      double      z    = std::stod(offz);
+          int part_num = -1;
+          if (part_string[0] == 'p' || part_string[0] == 'P') {
+            part_num = std::stoi(part_string.substr(1));
+            if ((size_t)part_num > offset.size()) {
+              fmt::print(
+                  stderr,
+                  "ERROR: Part number too large in offset/scale command ({} must be less or equal "
+                  "to {})\n",
+                  part_num, offset.size());
+              exit(EXIT_FAILURE);
+            }
+          }
+          else {
+            fmt::print(stderr,
+                       "ERROR: Bad syntax ({}) specifying part number. Use 'p'+ part_number\n"
+                       "       For example -offset p1:0,1,2\n",
+                       part_string);
+            exit(EXIT_FAILURE);
+          }
 
-      offset->x = x;
-      offset->y = y;
-      offset->z = z;
+          auto        soff     = SLIB::tokenize(off_string, ",");
+          std::string offx     = soff[0];
+          std::string offy     = soff[1];
+          std::string offz     = soff[2];
+          double      x        = std::stod(offx);
+          double      y        = std::stod(offy);
+          double      z        = std::stod(offz);
+          offset[part_num - 1] = {x, y, z};
+        }
+      }
     }
   }
 

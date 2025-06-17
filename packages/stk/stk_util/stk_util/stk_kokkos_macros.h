@@ -22,8 +22,46 @@
 #define STK_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION
 #define STK_FUNCTION KOKKOS_FUNCTION
 
-#if defined(KOKKOS_ARCH_AMD_GFX942_APU)
-#define STK_UNIFIED_MEMORY
+
+// Until we can use the C++20 std::source_location capability, we must instead fall back
+// on compiler extensions.  Detect what we have available.
+
+#ifndef __has_builtin
+  #define __has_builtin(x) 0  // Compatibility with non-LLVM-based compilers.
+#endif
+
+// GCC has the location built-ins
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
+  #define HAS_GCC_LOCATION_BUILTINS
+#endif
+
+// Clang and the newer LLVM-based Intel compiler have the location build-ins
+#if (defined(__clang__) || defined(__INTEL_LLVM_COMPILER)) && __has_builtin(__builtin_LINE)
+  #define HAS_LLVM_LOCATION_BUILTINS
+#endif
+
+#if defined(HAS_GCC_LOCATION_BUILTINS) || defined(HAS_LLVM_LOCATION_BUILTINS)
+  #define HAS_LOCATION_BUILTINS
+#endif
+
+
+#if defined(HAS_LOCATION_BUILTINS)
+  #define STK_HOST_USE_LOCATION_BUILTINS
+  #define STK_HOST_FILE __builtin_FILE()
+  #define STK_HOST_LINE __builtin_LINE()
+#else
+  #define STK_HOST_FILE ""
+  #define STK_HOST_LINE -1
+#endif
+
+// None of this is compatible with Clang or ROCm builds, so disable if we are doing a GPU-based device build
+#if defined(HAS_LOCATION_BUILTINS) && !defined(STK_ENABLE_GPU)
+  #define STK_DEVICE_USE_LOCATION_BUILTINS
+  #define STK_DEVICE_FILE __builtin_FILE()
+  #define STK_DEVICE_LINE __builtin_LINE()
+#else
+  #define STK_DEVICE_FILE ""
+  #define STK_DEVICE_LINE -1
 #endif
 
 #endif

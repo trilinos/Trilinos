@@ -67,76 +67,89 @@ void gather_nodal_coordinates(const ProjectionData& data, stk::mesh::Entity enti
   unsigned numFieldComponents;
   unsigned numNodes;
 
-  data.masterElemProvider->nodal_field_data(entity, data.sourceCoordinateField, numFieldComponents, numNodes, coords);
+  spmd::EntityKeyPair key(entity, data.bulk.entity_key(entity));
+  data.masterElemProvider->nodal_field_data(key, data.projectedCoordinateField, numFieldComponents, numNodes, coords);
 
   const unsigned spatialDimension = data.bulk.mesh_meta_data().spatial_dimension();
-  STK_ThrowRequireMsg(numFieldComponents == spatialDimension, "Invalid coordinate field: " << data.sourceCoordinateField.name());
+  STK_ThrowRequireMsg(numFieldComponents == spatialDimension, "Invalid coordinate field: " << data.coordinateField.name());
 }
 
-void gather_nodal_coordinates(const ProjectionData& data, stk::mesh::EntityKey key, std::vector<double>& coords)
+void gather_nodal_coordinates(const ProjectionData& data, const spmd::EntityKeyPair& key, std::vector<double>& coords)
 {
   unsigned numFieldComponents;
   unsigned numNodes;
 
-  data.masterElemProvider->nodal_field_data(key, data.sourceCoordinateField, numFieldComponents, numNodes, coords);
+  data.masterElemProvider->nodal_field_data(key, data.projectedCoordinateField, numFieldComponents, numNodes, coords);
 
   const unsigned spatialDimension = data.bulk.mesh_meta_data().spatial_dimension();
-  STK_ThrowRequireMsg(numFieldComponents == spatialDimension, "Invalid coordinate field: " << data.sourceCoordinateField.name());
+  STK_ThrowRequireMsg(numFieldComponents == spatialDimension, "Invalid coordinate field: " << data.coordinateField.name());
 }
 
 void gather_nodal_coordinates(const ProjectionData& data, stk::mesh::EntityVector& sideNodes, std::vector<double>& coords)
 {
   unsigned numFieldComponents;
+  unsigned numNodes = sideNodes.size();
 
-  data.masterElemProvider->nodal_field_data(sideNodes, data.sourceCoordinateField, numFieldComponents, coords);
+  data.scratchKeySpace.resize(numNodes);
+  for(unsigned i=0; i<numNodes; i++) {
+    data.scratchKeySpace[i] = spmd::EntityKeyPair(sideNodes[i], data.bulk.entity_key(sideNodes[i]));
+  }
+  data.masterElemProvider->nodal_field_data(data.scratchKeySpace, data.projectedCoordinateField, numFieldComponents, coords);
 
   const unsigned spatialDimension = data.bulk.mesh_meta_data().spatial_dimension();
-  STK_ThrowRequireMsg(numFieldComponents == spatialDimension, "Invalid coordinate field: " << data.sourceCoordinateField.name());
+  STK_ThrowRequireMsg(numFieldComponents == spatialDimension, "Invalid coordinate field: " << data.coordinateField.name());
 }
 
-void fill_projected_side_location(const ProjectionData& data, stk::mesh::Entity side,
+bool fill_projected_side_location(const ProjectionData& data, stk::mesh::Entity side,
                                   stk::mesh::EntityVector& sideNodes, stk::topology sideTopology,
                                   std::vector<double>& evaluatedLocation)
 {
   const stk::mesh::BulkData& bulk = data.bulk;
-  const stk::mesh::EntityKey key = bulk.entity_key(side);
+  const spmd::EntityKeyPair key(side, bulk.entity_key(side));
   const unsigned spatialDimension = bulk.mesh_meta_data().spatial_dimension();
 
   const unsigned numParametricCoordinates = get_number_of_parametric_coordinates(sideTopology);
   std::vector<double> parametricCoordinates(numParametricCoordinates);
-
   std::vector<double> sideCoordinates;
 
   gather_nodal_coordinates(data, sideNodes, sideCoordinates);
 
-  double paramericDistance;
-  auto meTopo = MasterElementTopology(sideTopology, key, bulk.bucket_ptr(side));
+  double parametricDistance;
+  auto meTopo = SearchTopology(sideTopology, key, bulk.bucket_ptr(side));
   data.masterElemProvider->find_parametric_coordinates(meTopo, spatialDimension, sideCoordinates,
-                                                       data.targetCoordinates, parametricCoordinates, paramericDistance);
+                                                       data.evalPoint, parametricCoordinates, parametricDistance);
+
+  if(parametricDistance == std::numeric_limits<double>::max()) {
+   // Convergence issues
+    evaluatedLocation = data.evalPoint;
+    return false;
+  }
 
   data.masterElemProvider->evaluate_field(meTopo, parametricCoordinates, spatialDimension, sideCoordinates, evaluatedLocation);
 
   data.masterElemProvider->find_parametric_coordinates(meTopo, spatialDimension, sideCoordinates,
-                                                       evaluatedLocation, parametricCoordinates, paramericDistance);
+                                                       evaluatedLocation, parametricCoordinates, parametricDistance);
 
-  if(1 < paramericDistance) {
+  if(1 < parametricDistance) {
     std::vector<double> center;
     data.masterElemProvider->coordinate_center(meTopo, center);
 
     for(size_t j = 0; j < numParametricCoordinates; ++j) {
-      parametricCoordinates[j] = ((parametricCoordinates[j] - center[j]) / paramericDistance) + center[j];
+      parametricCoordinates[j] = ((parametricCoordinates[j] - center[j]) / parametricDistance) + center[j];
     }
 
     data.masterElemProvider->evaluate_field(meTopo, parametricCoordinates, spatialDimension, sideCoordinates, evaluatedLocation);
   }
+
+  return true;
 }
 
-void fill_projected_side_location(const ProjectionData& data, stk::mesh::Entity side, std::vector<double>& evaluatedLocation)
+bool fill_projected_side_location(const ProjectionData& data, stk::mesh::Entity side, std::vector<double>& evaluatedLocation)
 {
   const stk::mesh::BulkData& send_mesh = data.bulk;
   stk::topology sideTopology = send_mesh.bucket(side).topology();
   stk::mesh::EntityVector sideNodes(send_mesh.begin_nodes(side), send_mesh.end_nodes(side));
-  fill_projected_side_location(data, side, sideNodes, sideTopology, evaluatedLocation);
+  return fill_projected_side_location(data, side, sideNodes, sideTopology, evaluatedLocation);
 }
 
 stk::mesh::EntityVector
@@ -161,13 +174,13 @@ double fill_projected_object_location(const ProjectionData& data, stk::mesh::Ent
 
   stk::mesh::Bucket& bucket = bulk.bucket(entity);
   stk::topology objTopology = bucket.topology();
-  const stk::mesh::EntityKey key = bulk.entity_key(entity);
+  const spmd::EntityKeyPair key(entity, bulk.entity_key(entity));
   std::vector<double> coordinates;
 
   impl::gather_nodal_coordinates(data, entity, coordinates);
 
   double parametricDistance;
-  auto meTopo = MasterElementTopology(objTopology, key, &bucket);
+  auto meTopo = SearchTopology(objTopology, key, &bucket);
   data.masterElemProvider->find_parametric_coordinates(meTopo, spatialDimension, coordinates,
                                                        location, evaluatedParametricCoordinates, parametricDistance);
 
@@ -186,7 +199,7 @@ void project_to_entity(const ProjectionData& data, stk::mesh::Entity entity, Pro
   double parametricDistance = fill_projected_object_location(data, entity, location, parametricCoordinates);
 
   const double projectedDistanceSquared =
-      distance_sq(data.targetCoordinates.size(), location.data(), data.targetCoordinates.data());
+      distance_sq(data.evalPoint.size(), location.data(), data.evalPoint.data());
 
   result.parametricCoords.swap(parametricCoordinates);
   result.geometricDistanceSquared = projectedDistanceSquared;
@@ -206,6 +219,8 @@ void project_to_closest_side(const ProjectionData& data, stk::mesh::Entity entit
   STK_ThrowRequireMsg(entityRank == stk::topology::ELEM_RANK || entityRank == meta.side_rank(),
                   "Send object rank: " << entityRank);
 
+  result.geometricDistanceSquared = std::numeric_limits<double>::max();
+  result.parametricDistance = std::numeric_limits<double>::max();
   result.doneProjection = false;
 
   if(objTopology.num_sub_topology(subTopologyRank) == 0) {
@@ -226,18 +241,19 @@ void project_to_closest_side(const ProjectionData& data, stk::mesh::Entity entit
     sideNodes = impl::get_nodes_from_side_ordinal(bulk, entity, ordinal, subTopologyRank);
     stk::topology sideTopology = objTopology.sub_topology(subTopologyRank, ordinal);
 
-    impl::fill_projected_side_location(data, stk::mesh::Entity(), sideNodes, sideTopology, location);
-    double distance = fill_projected_object_location(data, entity, location, parametricCoordinates);
+    if(impl::fill_projected_side_location(data, stk::mesh::Entity(), sideNodes, sideTopology, location)) {
+      double distance = fill_projected_object_location(data, entity, location, parametricCoordinates);
 
-    const double projectedDistanceSquared = distance_sq(data.targetCoordinates.size(),
-                                                        location.data(),
-                                                        data.targetCoordinates.data());
-    if(projectedDistanceSquared < closestProjectedDistanceSquared) {
-      closestProjectedDistanceSquared = projectedDistanceSquared;
-      result.parametricCoords.swap(parametricCoordinates);
-      result.geometricDistanceSquared = closestProjectedDistanceSquared;
-      result.parametricDistance = distance;
-      result.doneProjection = true;
+      const double projectedDistanceSquared = distance_sq(data.evalPoint.size(),
+                                                          location.data(),
+                                                          data.evalPoint.data());
+      if(projectedDistanceSquared < closestProjectedDistanceSquared) {
+        closestProjectedDistanceSquared = projectedDistanceSquared;
+        result.parametricCoords.swap(parametricCoordinates);
+        result.geometricDistanceSquared = closestProjectedDistanceSquared;
+        result.parametricDistance = distance;
+        result.doneProjection = true;
+      }
     }
   }
 }
@@ -258,9 +274,9 @@ void project_to_closest_face(const ProjectionData& data, stk::mesh::Entity entit
 
     double parametricDistance = fill_projected_object_location(data, entity, location, parametricCoordinates);
 
-    const double projectedDistanceSquared = distance_sq(data.targetCoordinates.size(),
+    const double projectedDistanceSquared = distance_sq(data.evalPoint.size(),
                                                         location.data(),
-                                                        data.targetCoordinates.data());
+                                                        data.evalPoint.data());
     if(projectedDistanceSquared < closestProjectedDistanceSquared) {
       closestProjectedDistanceSquared = projectedDistanceSquared;
       result.parametricCoords.swap(parametricCoordinates);
@@ -283,9 +299,9 @@ void truncate_to_entity(const ProjectionData& data, stk::mesh::Entity entity, Pr
 
   double parametricDistance = fill_projected_object_location(data, entity, location, parametricCoordinates);
 
-  const double truncatedDistanceSquared = distance_sq(data.targetCoordinates.size(),
+  const double truncatedDistanceSquared = distance_sq(data.evalPoint.size(),
                                                       location.data(),
-                                                      data.targetCoordinates.data());
+                                                      data.evalPoint.data());
   result.parametricCoords.swap(parametricCoordinates);
   result.geometricDistanceSquared = truncatedDistanceSquared;
   result.parametricDistance = parametricDistance;
@@ -306,13 +322,13 @@ double compute_parametric_distance(const ProjectionData& data, stk::mesh::Entity
   STK_ThrowRequireMsg(numParametricCoordinates <= parametricCoordinates.size(),
                       "Size of input parametric coordinate does not match topology = " << objTopology << ".");
 
-  const stk::mesh::EntityKey key = bulk.entity_key(entity);
+  const spmd::EntityKeyPair key(entity, bulk.entity_key(entity));
   std::vector<double> coordinates;
 
   impl::gather_nodal_coordinates(data, entity, coordinates);
 
   evaluatedLocation.resize(spatialDimension);
-  auto meTopo = MasterElementTopology(objTopology, key, &bucket);
+  auto meTopo = SearchTopology(objTopology, key, &bucket);
   data.masterElemProvider->evaluate_field(meTopo, parametricCoordinates,
                                           spatialDimension, coordinates, evaluatedLocation);
 
