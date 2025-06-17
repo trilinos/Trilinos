@@ -11,6 +11,7 @@
 #ifndef __Panzer_Response_Probe_impl_hpp__
 #define __Panzer_Response_Probe_impl_hpp__
 
+#include "Panzer_ResponseBase.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_dyn_cast.hpp"
@@ -127,13 +128,13 @@ template < >
 void Response_Probe<panzer::Traits::Tangent>::
 scatterResponse()
 {
-  std::cout << "HERE?" << std::endl;
   const int n = value.size();
   const int num_deriv = this->numDeriv();
   TEUCHOS_ASSERT(n == 0 || n == num_deriv);
   if (n == 0)
     value.resize(num_deriv);
-  std::cout << " NUM " << num_deriv << std::endl;
+
+  std::cout << " HAVE PROBE " << have_probe << std::endl;
 
   // find the minimum processor who has the probe value
   if (num_deriv > 0) {
