@@ -623,7 +623,7 @@ int ML2MueLuParameterTranslator::SetDefaultsSA(ParameterList &inList,
   List.set("coarse: split communicator", false);
 
   // Make sure we know this follows the ML defaults
-  List.set("parameterlist: syntax","ml");
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -664,8 +664,7 @@ int ML2MueLuParameterTranslator::SetDefaultsDD(ParameterList &inList,
   List.set("coarse: sweeps", 1);
 
   // Make sure we know this follows the ML defaults
-  List.set("parameterlist: syntax","ml");
-
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -708,7 +707,7 @@ int ML2MueLuParameterTranslator::SetDefaultsDD_3Levels(ParameterList &inList,
   List.set("coarse: sweeps", 1);
 
   // Make sure we know this follows the ML defaults
-  List.set("parameterlist: syntax","ml");
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -750,7 +749,7 @@ int ML2MueLuParameterTranslator::SetDefaultsMaxwell(ParameterList &inList,
   List.set("coarse: sweeps", 1);
 
   // Make sure we know this follows the ML defaults
-  List.set("parameterlist: syntax","ml");
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -784,7 +783,7 @@ int ML2MueLuParameterTranslator::SetDefaultsNSSA(ParameterList &inList,
   List.set("coarse: sweeps", 1);
 
   // Make sure we know this follows the ML defaults
-  List.set("parameterlist: syntax","ml");
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -826,7 +825,7 @@ int ML2MueLuParameterTranslator::SetDefaultsDD_LU(ParameterList &inList,
   List.set("coarse: sweeps", 1);
 
   // Make sure we know this follows the ML defaults
-  List.set("parameterlist: syntax","ml");
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -890,7 +889,7 @@ int ML2MueLuParameterTranslator::SetDefaultsClassicalAMG(ParameterList &inList,
   List.set("coarse: sweeps", 1);
 
   // Make sure we know this follows the ML defaults
-  List.set("parameterlist: syntax","ml");
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -951,8 +950,7 @@ int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &i
   ListRF.set("zero starting solution", false);
 
   // Make sure we know this follows the ML defaults
-  ListRF.set("parameterlist: syntax","ml");
-
+  ListRF.set("parameterlist: syntax", "ml");
 
   UpdateList(ListRF, inList, OverWrite);
 
