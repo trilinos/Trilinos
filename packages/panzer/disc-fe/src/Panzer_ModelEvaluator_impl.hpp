@@ -46,6 +46,7 @@
 #include "Thyra_TpetraVector.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "lof/Panzer_LinearObjContainer.hpp"
 
 // Constructors/Initializers/Accessors
 
@@ -598,11 +599,15 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
         int numParams(parameters_[i]->scalar_value.size());
         for (int j(0); j < numParams; ++j)
         {
-          RCP<ROVGED> dxdpContainer = lof_->buildReadOnlyDomainContainer();
-          dxdpContainer->setOwnedVector(dxdpBlock->getNonconstVectorBlock(j));
+          //RCP<ROVGED> dxdpContainer = lof_->buildReadOnlyDomainContainer();
+          auto dxdpContainer = lof_->buildGhostedLinearObjContainer();
+          lof_->initializeGhostedContainer(panzer::LinearObjContainer::X,*dxdpContainer);
+          //dxdpContainer->setOwnedVector(dxdpBlock->getNonconstVectorBlock(j));
+          auto thContainer = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar>>(dxdpContainer);
+          thContainer->set_x_th(rcp_dynamic_cast<Thyra::VectorBase<Scalar>>(dxdpBlock->getNonconstVectorBlock(j)));
+
           string name("X TANGENT GATHER CONTAINER: " +
             (*parameters_[i]->names)[j]);
-            std::cout << name << std::endl;
           ae_inargs.addGlobalEvaluationData(name, dxdpContainer);
         } // end loop over the parameters
       } // end if (not dxdp.is_null())
@@ -619,9 +624,13 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
           int numParams(parameters_[i]->scalar_value.size());
           for (int j(0); j < numParams; ++j)
           {
-            RCP<ROVGED> dxdotdpContainer = lof_->buildReadOnlyDomainContainer();
-            dxdotdpContainer->setOwnedVector(
-              dxdotdpBlock->getNonconstVectorBlock(j));
+            //RCP<ROVGED> dxdotdpContainer = lof_->buildReadOnlyDomainContainer();
+            //dxdotdpContainer->setOwnedVector(
+            //  dxdotdpBlock->getNonconstVectorBlock(j));
+            auto dxdotdpContainer = lof_->buildGhostedLinearObjContainer();
+            lof_->initializeGhostedContainer(panzer::LinearObjContainer::X,*dxdotdpContainer);
+            auto thContainer = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar>>(dxdotdpContainer);
+            thContainer->set_dxdt_th(rcp_dynamic_cast<Thyra::VectorBase<Scalar>>(dxdotdpBlock->getNonconstVectorBlock(j)));
             string name("DXDT TANGENT GATHER CONTAINER: " +
               (*parameters_[i]->names)[j]);
             ae_inargs.addGlobalEvaluationData(name, dxdotdpContainer);
@@ -685,7 +694,6 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
             = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
         if(respTanBase!=Teuchos::null) {
           std::cout << " TAN RESPONSE " << responses_[i]->name << std::endl;
-          // cast is guranteed to succeed because of check in addResponse
           Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
              = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respTanBase);
 
@@ -1786,6 +1794,11 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     bool is_active = false;
     for(std::size_t i=0;i<responses_.size(); i++) {
 
+      // TODO BWR NEEDED? the check above only sees if there are ANY dgdp to eval
+      // TODO BWR so that can fail if we only want some tangents
+      // TODO BWR need to check this more broadly
+      if (outArgs.supports(MEB::OUT_ARG_DgDp,i,j).none())
+        continue;
       MEB::Derivative<Scalar> deriv = outArgs.get_DgDp(i,j);
       if(deriv.isEmpty())
         continue;
@@ -1866,6 +1879,7 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     // TODO BWR there is some foo in user_app to set up tempus for FD path
 
     std::cout << " CALL EVAL RESP " << std::endl;
+    responseLibrary_->print(std::cout);
     responseLibrary_->addResponsesToInArgs<Traits::Tangent>(ae_inargs);
     responseLibrary_->evaluate<Traits::Tangent>(ae_inargs);
   }
