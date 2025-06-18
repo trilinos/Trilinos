@@ -170,26 +170,6 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-std::tuple<Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>, Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GetBlockNumberMVs(Level& currentLevel) const {
-  RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");
-  RCP<LocalOrdinalVector> ghostedBlockNumber;
-  GetOStream(Statistics1) << "Using BlockDiagonal Graph before dropping (with provided blocking)" << std::endl;
-
-  // Ghost the column block numbers if we need to
-  auto A                     = Get<RCP<Matrix>>(currentLevel, "A");
-  RCP<const Import> importer = A->getCrsGraph()->getImporter();
-  if (!importer.is_null()) {
-    SubFactoryMonitor m1(*this, "Block Number import", currentLevel);
-    ghostedBlockNumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(importer->getTargetMap());
-    ghostedBlockNumber->doImport(*BlockNumber, *importer, Xpetra::INSERT);
-  } else {
-    ghostedBlockNumber = BlockNumber;
-  }
-  return std::make_tuple(BlockNumber, ghostedBlockNumber);
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMaterial(Level& currentLevel, size_t spatialDim) const {
   auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
@@ -363,7 +343,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     ss << "dropping scheme = \"" << droppingMethod << "\", strength-of-connection measure = \"" << socUsesMeasure << "\", strength-of-connection matrix = \"" << socUsesMatrix << "\", ";
     if (socUsesMatrix == "distance laplacian")
       ss << "distance laplacian metric = \"" << distanceLaplacianMetric << "\", ";
-    ss << "threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+    ss << "threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << ", useBlocking = " << useBlocking << std::endl;
 
     GetOStream(Runtime0) << ss.str();
   }
@@ -464,14 +444,14 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   // Macro that handles optional block diagonalization.
   // Calls MueLu_runDroppingFunctorsImpl
-#define MueLu_runDroppingFunctors(...)                                                                                             \
-  {                                                                                                                                \
-    if (useBlocking) {                                                                                                             \
-      auto BlockNumbers      = GetBlockNumberMVs(currentLevel);                                                                    \
-      auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *std::get<0>(BlockNumbers), *std::get<1>(BlockNumbers), results); \
-      MueLu_runDroppingFunctorsImpl(block_diagonalize, __VA_ARGS__);                                                               \
-    } else                                                                                                                         \
-      MueLu_runDroppingFunctorsImpl(__VA_ARGS__);                                                                                  \
+#define MueLu_runDroppingFunctors(...)                                                    \
+  {                                                                                       \
+    if (useBlocking) {                                                                    \
+      auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber"); \
+      auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);  \
+      MueLu_runDroppingFunctorsImpl(block_diagonalize, __VA_ARGS__);                      \
+    } else                                                                                \
+      MueLu_runDroppingFunctorsImpl(__VA_ARGS__);                                         \
   }
 
   // Macro that runs dropping for SoC based on A itself, handling of droppingMethod.
@@ -838,7 +818,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     ss << "dropping scheme = \"" << droppingMethod << "\", strength-of-connection measure = \"" << socUsesMeasure << "\", strength-of-connection matrix = \"" << socUsesMatrix << "\", ";
     if (socUsesMatrix == "distance laplacian")
       ss << "distance laplacian metric = \"" << distanceLaplacianMetric << "\", ";
-    ss << "threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << std::endl;
+    ss << "threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << ", useBlocking = " << useBlocking << std::endl;
 
     GetOStream(Runtime0) << ss.str();
   }
@@ -912,19 +892,31 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //   Mark singletons after dropping as Dirichlet
 
 #if !defined(HAVE_MUELU_DEBUG)
-#define MueLu_runDroppingFunctors(...)                                                                                                                        \
+#define MueLu_runDroppingFunctorsImpl(...)                                                                                                                    \
   {                                                                                                                                                           \
     auto countingFunctor = MatrixConstruction::VectorCountingFunctor(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, __VA_ARGS__); \
     Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz);                                                                  \
   }
 #else
-#define MueLu_runDroppingFunctors(...)                                                                                                                               \
+#define MueLu_runDroppingFunctorsImpl(...)                                                                                                                           \
   {                                                                                                                                                                  \
     auto debug           = Misc::DebugFunctor(lclA, results);                                                                                                        \
     auto countingFunctor = MatrixConstruction::VectorCountingFunctor(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, __VA_ARGS__, debug); \
     Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz);                                                                         \
   }
 #endif
+
+  // Macro that handles optional block diagonalization.
+  // Calls MueLu_runDroppingFunctorsImpl
+#define MueLu_runDroppingFunctors(...)                                                                                                       \
+  {                                                                                                                                          \
+    if (useBlocking) {                                                                                                                       \
+      auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");                                                    \
+      auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation); \
+      MueLu_runDroppingFunctorsImpl(block_diagonalize, __VA_ARGS__);                                                                         \
+    } else                                                                                                                                   \
+      MueLu_runDroppingFunctorsImpl(__VA_ARGS__);                                                                                            \
+  }
 
   // Macro that runs dropping for SoC based on A itself, handling of droppingMethod.
   // Calls MueLu_runDroppingFunctors
@@ -1183,6 +1175,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     SubFactoryMonitor mColoringGraph(*this, "Construct coloring graph", currentLevel);
 
     filtered_rowptr = rowptr_type("rowptr_coloring_graph", lclA.numRows() + 1);
+    graph_rowptr    = rowptr_type("rowptr", numNodes + 1);
     if (localizeColoringGraph) {
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
       MueLu_runDroppingFunctors(drop_offrank);
@@ -1204,6 +1197,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 #undef MueLu_runDroppingFunctors_on_dlap_inner
 #undef MueLu_runDroppingFunctors_on_A
 #undef MueLu_runDroppingFunctors
+#undef MueLu_runDroppingFunctorsImpl
 
   LO dofsPerNode = blkSize;
 
