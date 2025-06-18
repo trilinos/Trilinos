@@ -357,6 +357,7 @@ class BlockDiagonalizeVectorFunctor {
   results_view results;
   id_translation_type row_translation;
   id_translation_type col_translation;
+  Teuchos::RCP<block_indices_type> ghosted_point_to_blockMV;
 
  public:
   BlockDiagonalizeVectorFunctor(matrix_type& A_, block_indices_type& point_to_block_, Teuchos::RCP<const map_type> non_unique_map_, results_view& results_, id_translation_type row_translation_, id_translation_type col_translation_)
@@ -368,7 +369,7 @@ class BlockDiagonalizeVectorFunctor {
     auto importer = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(point_to_block_.getMap(), non_unique_map_);
 
     if (!importer.is_null()) {
-      auto ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
+      ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
       ghosted_point_to_blockMV->doImport(point_to_block_, *importer, Xpetra::INSERT);
       ghosted_point_to_block = ghosted_point_to_blockMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
     } else
