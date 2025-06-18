@@ -384,15 +384,15 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 
 
 
-// Copy field containers
-template<class FC1, class FC2>
-void CopyFieldContainer2D(const FC1 & c1, FC2 & c2) {
-  Kokkos::resize(c2,c1.extent(0),c1.extent(1));
-  auto c2_h = Kokkos::create_mirror_view(c2);
-  for(size_t i=0; i<(size_t)c1.extent(0); i++)
-    for(size_t j=0; j<(size_t)c1.extent(1); j++)
-      c2_h(i,j) = c1(i,j);
-  Kokkos::deep_copy(c2, c2_h);
+// Copy scalar view
+template<class SV1, class SV2>
+void CopyScalarView2D(const SV1 & v1, SV2 & v2) {
+  Kokkos::resize(v2,v1.extent(0),v1.extent(1));
+  auto v2_h = Kokkos::create_mirror_view(v2);
+  for(size_t i=0; i<(size_t)v1.extent(0); i++)
+    for(size_t j=0; j<(size_t)v1.extent(1); j++)
+      v2_h(i,j) = v1(i,j);
+  Kokkos::deep_copy(v2, v2_h);
 }
 
 
@@ -988,9 +988,9 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Get numerical integration points and weights
-  Intrepid2::DefaultCubatureFactory  cubFactory;
+  DefaultCubatureFactory  cubFactory;
   int cubDegree = 2*degree;
-  RCP<Intrepid2::Cubature<device_type> > myCub = cubFactory.create<device_type>(Pn_cellType, cubDegree);
+  RCP<Cubature<device_type> > myCub = cubFactory.create<device_type>(Pn_cellType, cubDegree);
 
   int cubDim       = myCub->getDimension();
   int numCubPoints = myCub->getNumPoints();
@@ -1151,7 +1151,7 @@ int main(int argc, char *argv[]) {
   // Genetrate Pn-to-P1 coarsening.
   Kokkos::DynRankView<local_ordinal_type,typename NO::device_type>  elemToNodeI2;
 
-  CopyFieldContainer2D(elemToNode,elemToNodeI2);
+  CopyScalarView2D(elemToNode,elemToNodeI2);
 
   if (inputSolverList.isParameter("aux P1") && inputSolverList.isParameter("linear P1"))
     throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
@@ -1279,7 +1279,7 @@ int main(int argc, char *argv[]) {
 
   // Get numerical integration points and weights
   int cubDegree_aux = 2; //TODO  This was 3 for P=2.  I think this should be 2 now .... Ask Chris.
-  RCP<Intrepid2::Cubature<device_type> > myCub_aux = cubFactory.create<device_type>(P1_cellType, cubDegree_aux);
+  RCP<Cubature<device_type> > myCub_aux = cubFactory.create<device_type>(P1_cellType, cubDegree_aux);
 
   int cubDim_aux       = myCub_aux->getDimension();
   int numCubPoints_aux = myCub_aux->getNumPoints();
