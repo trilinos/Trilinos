@@ -182,12 +182,12 @@ using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
-typedef Tpetra::Map<> Map;
-typedef Map::node_type::device_type device_type;
+//typedef Tpetra::Map<> Map;
+typedef NO::device_type device_type;
 typedef Intrepid2::FunctionSpaceTools<device_type>     Intrepid2FSTools;
 typedef Intrepid2::RealSpaceTools<device_type> Intrepid2RSTools;
 typedef Intrepid2::CellTools<device_type>      Intrepid2CTools;
-typedef Map::node_type::memory_space memory_space;
+typedef NO::memory_space memory_space;
 //typedef ScalarView<int,memory_space> ScalarViewInt;
 
 typedef Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,NO>    operator_type;
