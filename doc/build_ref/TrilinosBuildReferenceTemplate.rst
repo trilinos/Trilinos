@@ -120,11 +120,10 @@ and other stand-alone applications, use it to implement parallel algorithms.
 
 The Kokkos package is enabled with ``-DTrilinos_ENABLE_Kokkos=ON``), then
 the native configuration option of the Kokkos package are available such as
-``-DKokkos_ENABLE_OPENMP=ON`` or ``-DKokkos_ENABLE_CUDA=ON``. We recommend that
-you visit https://kokkos.org/kokkos-core-wiki/get-started/building-from-source.html
-and https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html
-for further information on how to select the various configuration options
-for your build with Kokkos.
+``-DKokkos_ENABLE_OPENMP=ON`` or ``-DKokkos_ENABLE_CUDA=ON``.
+For comprehensive information on how to configure Kokkos for your specific build,
+including details on selecting various parallel backends and optimizing performance,
+please refer to the official Kokkos documentation from the Kokkos website (https://kokkos.org).
 
 The following Trilinos variables will pass their value to the equivalent
 Kokkos variable
