@@ -22,6 +22,7 @@ ADD_SUBDIRECTORIES(
   ImportExport
   ImportExport2
   inout
+  KokkosComm
   LinearProblem
   Map
   MatrixMatrix

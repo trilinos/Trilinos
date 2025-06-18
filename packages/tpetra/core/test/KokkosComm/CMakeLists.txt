@@ -1,0 +1,12 @@
+TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+IF (${PACKAGE_NAME}_ENABLE_KokkosComm)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    KokkosComm_include
+    SOURCES
+      KokkosComm_include.cpp
+    STANDARD_PASS_OUTPUT
+    )
+
+ENDIF()

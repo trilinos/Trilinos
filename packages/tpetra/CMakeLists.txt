@@ -817,6 +817,21 @@ ENDIF ()
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_mpi_advance)
 
 # ============================================================
+# Kokkos Comm
+# ============================================================
+
+IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_KokkosComm)
+  IF (DEFINED TpetraCore_ENABLE_KokkosComm)
+    SET (${PACKAGE_NAME}_ENABLE_KokkosComm "${TpetraCore_ENABLE_KokkosComm}")
+  ELSEIF (DEFINED TPL_ENABLE_KokkosComm)
+    SET (${PACKAGE_NAME}_ENABLE_KokkosComm "${TPL_ENABLE_KokkosComm}")
+  ELSE ()
+    SET (${PACKAGE_NAME}_ENABLE_KokkosComm OFF)
+  ENDIF ()
+ENDIF ()
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_KokkosComm)
+
+# ============================================================
 # Scalar types
 # ============================================================
 
