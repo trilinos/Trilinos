@@ -1151,6 +1151,13 @@ void RILUK<MatrixType>::compute ()
       compute_kkspiluk();
     }
     else {
+      // If streams are on, we potentially have to refresh A_local_diagblks_values_v_
+      auto lclMtx = A_local_crs_->getLocalMatrixDevice();
+      KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclMtx, A_local_diagblks_v_, hasStreamReordered_);
+      for(int i = 0; i < num_streams_; i++) {
+        A_local_diagblks_values_v_[i]  = A_local_diagblks_v_[i].values;
+      }
+
       compute_kkspiluk_stream();
     }
   }
