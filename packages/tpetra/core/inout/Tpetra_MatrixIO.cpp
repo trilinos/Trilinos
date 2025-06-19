@@ -123,6 +123,7 @@ void Tpetra::Utils::readHBInfo(const std::string &filename, int &M, int &N, int 
   Teuchos::ArrayRCP<char> Title, Key, Rhstype, Ptrfmt, Indfmt, Valfmt, Rhsfmt;
   try {
     fin.open(filename.c_str(),std::ifstream::in);
+    TEUCHOS_TEST_FOR_EXCEPTION(!fin, std::runtime_error, "Tpetra::Utils::readHBInfo(): H/B file does not exist or cannot be opened");
     Tpetra::Utils::readHBHeader(fin, Title, Key, Type, M, N, nz, Nrhs,
                                 Ptrfmt, Indfmt, Valfmt, Rhsfmt,
                                 Ptrcrd, Indcrd, Valcrd, Rhscrd, Rhstype);
@@ -150,6 +151,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
     char valFlag;
     //
     fin.open(filename.c_str(),std::ifstream::in);
+    TEUCHOS_TEST_FOR_EXCEPTION(!fin, std::runtime_error, "Tpetra::Utils::readHBMatDouble(): H/B file does not exist or cannot be opened");
     {
       // we don't care about RHS-related stuff, so declare those vars in an expiring scope
       int Nrhs, rhsCrd;
