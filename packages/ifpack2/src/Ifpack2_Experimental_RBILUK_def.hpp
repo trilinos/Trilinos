@@ -1064,7 +1064,8 @@ void RBILUK<MatrixType>::compute ()
     else {
       // If we are not using A_local_ directly, we must copy values in case of pattern reuse. Due
       // to having to deal with filling logical blocks and converting back and forth between CRS and
-      // BSR, this is not very performant and a lot of computation has to be repeated.
+      // BSR, this is not very performant and a lot of computation has to be repeated. If you are going
+      // to do patten reuse, I recommend having A_local be a BSR.
       auto A_local_bcrs_temp = Details::getBcrsMatrix(this->A_local_);
       auto A_local_crs_temp  = Details::getCrsMatrix(this->A_local_);
       if (A_local_bcrs_temp.is_null()) {
@@ -1090,20 +1091,6 @@ void RBILUK<MatrixType>::compute ()
         else {
           Kokkos::deep_copy(A_local_bcrs_->getLocalMatrixDevice().values,
                             A_local_crs_nc_->getLocalMatrixDevice().values);
-        }
-
-        if (this->isKokkosKernelsStream_) {
-          assert(!this->hasStreamReordered_);
-          auto lclMtx = A_local_bcrs_->getLocalMatrixDevice();
-          auto lclCrsMtx = convertBsrToCrs<local_matrix_device_type, local_crs_matrix_device_type>(lclMtx);
-          std::vector<local_crs_matrix_device_type> A_crs_local_diagblks_v(this->num_streams_);
-          KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclCrsMtx, A_crs_local_diagblks_v);
-
-          for (int i = 0; i < this->num_streams_; i++) {
-            A_block_local_diagblks_v_[i] = local_matrix_device_type(A_crs_local_diagblks_v[i], blockSize_);
-            // rowmap and entries should be the same, but not values
-            A_block_local_diagblks_values_v_[i] = A_block_local_diagblks_v_[i].values;
-          }
         }
       }
 
@@ -1142,6 +1129,19 @@ void RBILUK<MatrixType>::compute ()
         KokkosSparse::sptrsv_symbolic(U_Sptrsv_KernelHandle_.getRawPtr(), U_rowmap, U_entries, U_values);
       }
       else {
+        // Due to A_block_local_diagblks_values_v_, we must always refresh when streams are on
+        assert(!this->hasStreamReordered_);
+        auto lclMtx = A_local_bcrs_->getLocalMatrixDevice();
+        auto lclCrsMtx = convertBsrToCrs<local_matrix_device_type, local_crs_matrix_device_type>(lclMtx);
+        std::vector<local_crs_matrix_device_type> A_crs_local_diagblks_v(this->num_streams_);
+        KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_sequential(lclCrsMtx, A_crs_local_diagblks_v);
+
+        for (int i = 0; i < this->num_streams_; i++) {
+          A_block_local_diagblks_v_[i] = local_matrix_device_type(A_crs_local_diagblks_v[i], blockSize_);
+          // rowmap and entries should be the same, but not values
+          A_block_local_diagblks_values_v_[i] = A_block_local_diagblks_v_[i].values;
+        }
+
         std::vector<lno_row_view_t>        L_rowmap_v(this->num_streams_);
         std::vector<lno_nonzero_view_t>    L_entries_v(this->num_streams_);
         std::vector<scalar_nonzero_view_t> L_values_v(this->num_streams_);
