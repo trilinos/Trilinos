@@ -119,7 +119,7 @@ cross-platform shared-memory parallel programming model. Many Trilinos packages,
 and other stand-alone applications, use it to implement parallel algorithms.
 
 The Kokkos package is enabled with ``-DTrilinos_ENABLE_Kokkos=ON``), then
-the native configuration option of the Kokkos package are available such as
+the native configuration options of the Kokkos package are available such as
 ``-DKokkos_ENABLE_OPENMP=ON`` or ``-DKokkos_ENABLE_CUDA=ON``.
 For comprehensive information on how to configure Kokkos for your specific build,
 including details on selecting various parallel backends and optimizing performance,
