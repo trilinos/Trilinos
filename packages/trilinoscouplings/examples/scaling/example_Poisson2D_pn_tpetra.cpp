@@ -180,32 +180,31 @@ typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
-typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType NO;
+//typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
-//typedef Tpetra::Map<> Map;
-typedef NO::device_type device_type;
+typedef Tpetra::Map<>::node_type node_type;
+typedef node_type::device_type device_type;
 typedef Intrepid2::FunctionSpaceTools<device_type>     Intrepid2FSTools;
 typedef Intrepid2::RealSpaceTools<device_type> Intrepid2RSTools;
 typedef Intrepid2::CellTools<device_type>      Intrepid2CTools;
-typedef NO::memory_space memory_space;
-//typedef ScalarView<int,memory_space> ScalarViewInt;
+typedef node_type::memory_space memory_space;
 
-typedef Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,NO>    operator_type;
-typedef Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,NO>   crs_graph_type;
-typedef Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>   crs_matrix_type;
-typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,NO>      vector_type;
-typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO> multivector_type;
-typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,NO>            driver_map_type;
+typedef Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>    operator_type;
+typedef Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type>   crs_graph_type;
+typedef Tpetra::CrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>   crs_matrix_type;
+typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>      vector_type;
+typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> multivector_type;
+typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type>            driver_map_type;
 Tpetra::global_size_t INVALID_GO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 Tpetra::global_size_t INVALID_LO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
 
-typedef Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO> xpetra_crs_matrix_type;
-typedef Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO> xpetra_multivector_type;
+typedef Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> xpetra_crs_matrix_type;
+typedef Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> xpetra_multivector_type;
 
 typedef Belos::LinearProblem<scalar_type, multivector_type, operator_type> linear_problem_type;
 
-typedef MueLu::TpetraOperator<scalar_type,local_ordinal_type,global_ordinal_type,NO> muelu_tpetra_operator;
+typedef MueLu::TpetraOperator<scalar_type,local_ordinal_type,global_ordinal_type,node_type> muelu_tpetra_operator;
 
 //typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
 
@@ -1149,7 +1148,7 @@ int main(int argc, char *argv[]) {
   RCP<driver_map_type> P1_globalMap = rcp(new driver_map_type(INVALID_GO,&P1_ownedGIDs[0],P1_ownedNodes,0,Comm));
 
   // Genetrate Pn-to-P1 coarsening.
-  Kokkos::DynRankView<local_ordinal_type,typename NO::device_type>  elemToNodeI2;
+  Kokkos::DynRankView<local_ordinal_type,typename node_type::device_type>  elemToNodeI2;
 
   CopyScalarView2D(elemToNode,elemToNodeI2);
 
@@ -1567,8 +1566,8 @@ int main(int argc, char *argv[]) {
   RCP<crs_matrix_type> interpolationMatrix, restrictionMatrix;
   if (P_identity != Teuchos::null) {
     Teuchos::ParameterList & level1 = amgList.sublist("level 1");
-    RCP<xpetra_crs_matrix_type> xA1 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(rcpFromRef(StiffMatrix_aux));
-    RCP<xpetra_crs_matrix_type> xP = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(P_identity);
+    RCP<xpetra_crs_matrix_type> xA1 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(rcpFromRef(StiffMatrix_aux));
+    RCP<xpetra_crs_matrix_type> xP = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(P_identity);
     level1.set("A",xA1);
     level1.set("P",xP);
     amgList.set("transpose: use implicit",true);
@@ -1577,7 +1576,7 @@ int main(int argc, char *argv[]) {
     ArrayRCP<scalar_type> data = nullspace->getDataNonConst(0);
     for (int i=0; i<data.size(); ++i)
       data[i] = 1.0;
-    RCP<xpetra_multivector_type> xnullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>(nullspace);
+    RCP<xpetra_multivector_type> xnullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(nullspace);
     level1.set("Nullspace",xnullspace);
   }
 
@@ -1619,7 +1618,7 @@ int main(int argc, char *argv[]) {
   // Import solution onto current processor
   //int numNodesGlobal = globalMapG.NumGlobalElements();
   RCP<driver_map_type>  solnMap = rcp(new driver_map_type(static_cast<Tpetra::global_size_t>(numNodesGlobal), static_cast<size_t>(numNodesGlobal), 0, Comm));
-  Tpetra::Import<local_ordinal_type, global_ordinal_type, NO> solnImporter(globalMapG,solnMap);
+  Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> solnImporter(globalMapG,solnMap);
   multivector_type  uCoeff(solnMap,1);
   uCoeff.doImport(*femCoefficients, solnImporter, Tpetra::INSERT);
 
@@ -2068,7 +2067,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     // Multigrid Hierarchy, the easy way
     RCP<operator_type> A0op = A0;
     amgList.sublist("user data").set("Coordinates",nCoord);
-    Teuchos::RCP<muelu_tpetra_operator> M = MueLu::CreateTpetraPreconditioner<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0op, amgList);
+    Teuchos::RCP<muelu_tpetra_operator> M = MueLu::CreateTpetraPreconditioner<scalar_type,local_ordinal_type,global_ordinal_type,node_type>(A0op, amgList);
     Problem.setRightPrec(M);
 
     bool set = Problem.setProblem();
