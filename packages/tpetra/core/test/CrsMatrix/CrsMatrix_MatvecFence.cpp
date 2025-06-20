@@ -184,21 +184,21 @@ namespace {
 #endif
       {
         if (Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
-          expectedGlobalCount = iter_num;
+          expectedGlobalCount = 7*iter_num;
         } else {
-          expectedGlobalCount = 0;
+          expectedGlobalCount = 6*iter_num;
         }
         if (Tpetra::Details::Behavior::debug()) {
-          expectedInstanceCount = 3*iter_num;
+          expectedInstanceCount = 15*iter_num;
         } else {
-          expectedInstanceCount = 2*iter_num;
+          expectedInstanceCount = 14*iter_num;
         }
       }
 #ifdef HAVE_TPETRA_INST_OPENMP
       // Serial in a OpenMP+Serial build
       else if (Node::is_serial) {
         // Did not test the case of Serial node in build with Serial and OpenMP and GPU-aware
-        expectedGlobalCount = iter_num;
+        expectedGlobalCount = 7*iter_num;
         if (Tpetra::Details::Behavior::debug()) {
 #if KOKKOS_VERSION >= 40499
           expectedInstanceCount = 3*iter_num;
@@ -216,7 +216,7 @@ namespace {
 #endif
       else {
         if (Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
-          expectedGlobalCount = iter_num;
+          expectedGlobalCount = 7 * iter_num;
         } else {
           expectedGlobalCount = 6 * iter_num;
         }
