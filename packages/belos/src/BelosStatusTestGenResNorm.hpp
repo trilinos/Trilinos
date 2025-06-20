@@ -43,8 +43,8 @@
 
 namespace Belos {
 
-template <class ScalarType, class MV, class OP>
-class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP,DM> {
 
  public:
 
@@ -150,7 +150,7 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 
     \return StatusType: Passed, Failed, or Undefined.
   */
-  StatusType checkStatus(Iteration<ScalarType,MV,OP>* iSolver);
+  StatusType checkStatus(Iteration<ScalarType,MV,OP,DM>* iSolver);
 
   //! Return the result of the most recent CheckStatus call.
   StatusType getStatus() const {return(status_);};
@@ -219,7 +219,7 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
    * After this function is called <tt>getScaledNormValue()</tt> can be called
    * to get the scaling std::vector.
    */
-  StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP>* iSolver);
+  StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP,DM>* iSolver);
   //@}
 
   /** \name Overridden from Teuchos::Describable */
@@ -350,8 +350,8 @@ class StatusTestGenResNorm: public StatusTestResNorm<ScalarType,MV,OP> {
 
 };
 
-template <class ScalarType, class MV, class OP>
-StatusTestGenResNorm<ScalarType,MV,OP>::
+template <class ScalarType, class MV, class OP, class DM>
+StatusTestGenResNorm<ScalarType,MV,OP,DM>::
 StatusTestGenResNorm (MagnitudeType Tolerance, int quorum, bool showMaxResNormOnly)
   : tolerance_(Tolerance),
     quorum_(quorum),
@@ -374,12 +374,12 @@ StatusTestGenResNorm (MagnitudeType Tolerance, int quorum, bool showMaxResNormOn
   // the implicit residual std::vector.
 }
 
-template <class ScalarType, class MV, class OP>
-StatusTestGenResNorm<ScalarType,MV,OP>::~StatusTestGenResNorm()
+template <class ScalarType, class MV, class OP, class DM>
+StatusTestGenResNorm<ScalarType,MV,OP,DM>::~StatusTestGenResNorm()
 {}
 
-template <class ScalarType, class MV, class OP>
-void StatusTestGenResNorm<ScalarType,MV,OP>::reset()
+template <class ScalarType, class MV, class OP, class DM>
+void StatusTestGenResNorm<ScalarType,MV,OP,DM>::reset()
 {
   status_ = Undefined;
   curBlksz_ = 0;
@@ -391,8 +391,8 @@ void StatusTestGenResNorm<ScalarType,MV,OP>::reset()
   curSoln_ = Teuchos::null;
 }
 
-template <class ScalarType, class MV, class OP>
-int StatusTestGenResNorm<ScalarType,MV,OP>::defineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
+template <class ScalarType, class MV, class OP, class DM>
+int StatusTestGenResNorm<ScalarType,MV,OP,DM>::defineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineResForm_==false,StatusTestError,
         "StatusTestGenResNorm::defineResForm(): The residual form has already been defined.");
@@ -404,8 +404,8 @@ int StatusTestGenResNorm<ScalarType,MV,OP>::defineResForm( ResType TypeOfResidua
   return(0);
 }
 
-template <class ScalarType, class MV, class OP>
-int StatusTestGenResNorm<ScalarType,MV,OP>::defineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
+template <class ScalarType, class MV, class OP, class DM>
+int StatusTestGenResNorm<ScalarType,MV,OP,DM>::defineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
                                                          MagnitudeType ScaleValue )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(firstcallDefineScaleForm_==false,StatusTestError,
@@ -419,8 +419,8 @@ int StatusTestGenResNorm<ScalarType,MV,OP>::defineScaleForm(ScaleType TypeOfScal
   return(0);
 }
 
-template <class ScalarType, class MV, class OP>
-StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarType,MV,OP>* iSolver )
+template <class ScalarType, class MV, class OP, class DM>
+StatusType StatusTestGenResNorm<ScalarType,MV,OP,DM>::checkStatus( Iteration<ScalarType,MV,OP,DM>* iSolver )
 {
   MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
   const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem();
@@ -551,8 +551,8 @@ StatusType StatusTestGenResNorm<ScalarType,MV,OP>::checkStatus( Iteration<Scalar
   return status_;
 }
 
-template <class ScalarType, class MV, class OP>
-void StatusTestGenResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent) const
+template <class ScalarType, class MV, class OP, class DM>
+void StatusTestGenResNorm<ScalarType,MV,OP,DM>::print(std::ostream& os, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     os << ' ';
@@ -583,8 +583,8 @@ void StatusTestGenResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent)
   os << std::endl;
 }
 
-template <class ScalarType, class MV, class OP>
-void StatusTestGenResNorm<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusType type) const
+template <class ScalarType, class MV, class OP, class DM>
+void StatusTestGenResNorm<ScalarType,MV,OP,DM>::printStatus(std::ostream& os, StatusType type) const
 {
   os << std::left << std::setw(13) << std::setfill('.');
   switch (type) {
@@ -603,8 +603,8 @@ void StatusTestGenResNorm<ScalarType,MV,OP>::printStatus(std::ostream& os, Statu
     return;
 }
 
-template <class ScalarType, class MV, class OP>
-StatusType StatusTestGenResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Iteration<ScalarType,MV,OP>* iSolver )
+template <class ScalarType, class MV, class OP, class DM>
+StatusType StatusTestGenResNorm<ScalarType,MV,OP,DM>::firstCallCheckStatusSetup( Iteration<ScalarType,MV,OP,DM>* iSolver )
 {
   int i;
   MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
