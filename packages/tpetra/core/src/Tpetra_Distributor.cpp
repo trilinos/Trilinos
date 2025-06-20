@@ -159,7 +159,7 @@ namespace Tpetra {
 
     const bool debug = tpetraDistributorDebugDefault;
 
-    Array<std::string> sendTypes = distributorSendTypes ();
+    Array<std::string> sendTypes = Details::distributorSendTypes ();
     const Array<Details::EDistributorSendType> sendTypeEnums = Details::distributorSendTypeEnums ();
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");

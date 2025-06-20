@@ -415,8 +415,13 @@ namespace Ifpack2 {
       void createExecutionSpaceInstances() {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
         //The following line creates 8 streams:
+#if KOKKOS_VERSION >= 40699
+        exec_instances =
+          Kokkos::Experimental::partition_space(execution_space(), std::vector<int>(8, 1));
+#else
         exec_instances =
           Kokkos::Experimental::partition_space(execution_space(), 1, 1, 1, 1, 1, 1, 1, 1);
+#endif
 #endif
       }
 
