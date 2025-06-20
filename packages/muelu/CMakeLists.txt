@@ -64,6 +64,14 @@ IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS)
   MESSAGE(STATUS "MueLu: Enabling deprecated tests")
 ENDIF ()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_COALESCEDROP_ALLOW_OLD_PARAMETERS
+  HAVE_${PACKAGE_NAME_UC}_COALESCEDROP_ALLOW_OLD_PARAMETERS
+  "Whether MueLu allows old parameters as input for CoalesceDropFactory_kokkos. Default is ON (old parameters are allowed).  If OFF, use of old parameter values will lead to runtime errors."
+  YES
+)
+
+
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
   MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
 ENDIF()
