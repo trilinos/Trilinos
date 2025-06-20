@@ -104,6 +104,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     clp.setOption("coordsmap", &coordMapFile, "coordinates map data file");
     std::string nullFile;
     clp.setOption("nullspace", &nullFile, "nullspace data file");
+    std::string blockNumberFile;
+    clp.setOption("blocknumber", &blockNumberFile, "block number data file");
     std::string materialFile;
     clp.setOption("material", &materialFile, "material data file");
     int numVectors = 1;
@@ -146,10 +148,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<RealValuedMultiVector> coordinates;
     RCP<MultiVector> nullspace;
     RCP<MultiVector> material;
+    RCP<LOVector> blocknumber;
     RCP<MultiVector> X, B;
 
     std::ostringstream galeriStream;
-    MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, X, B, numVectors, matrixParameters, xpetraParameters, galeriStream);
+    MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, matrixParameters, xpetraParameters, galeriStream);
     out << galeriStream.str();
     X->putScalar(0);
 
