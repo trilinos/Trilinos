@@ -210,6 +210,7 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
       subSmootherType = paramList.get<std::string>("smoother: subsmoother type");
 
     std::string subSmootherIfpackType;
+
     if (subSmootherType == "Chebyshev")
       subSmootherIfpackType = "CHEBYSHEV";
     else if (subSmootherType == "Jacobi" || subSmootherType == "Gauss-Seidel" || subSmootherType == "symmetric Gauss-Seidel") {
@@ -337,6 +338,19 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
     *out << "Warning: MueLu_ENABLE_ML=OFF, ML_ENABLE_Epetra=OFF or ML_ENABLE_TEUCHOS=OFF. No ML default values available." << std::endl;
   }
 #endif  // HAVE_MUELU_ML && HAVE_ML_EPETRA && HAVE_ML_TEUCHOS
+
+  // ML counts levels slightly differently than MueLu does so "repartition: start level" is off by one
+  // ML defaults to "1" if we don't ask for anything else and that needs to map to "2"
+  if (paramList.isParameter("repartition: start level")) {
+    paramList.set("repartition: start level", paramList.get<int>("repartition: start level") + 1);
+  } else {
+    paramList.set("repartition: start level", 2);
+  }
+
+  // ML sets this to 5000
+  if (!paramList.isParameter("repartition: put on single proc")) {
+    paramList.set("repartition: put on single proc", 5000);
+  }
 
   //
   // Move smoothers/aggregation/coarse parameters to sublists
@@ -578,7 +592,6 @@ int ML2MueLuParameterTranslator::SetDefaults(std::string ProblemType, Teuchos::P
               << ProblemType << "). Should be: " << std::endl
               << "ERROR: <SA> / <DD> / <DD-ML> / <maxwell>" << std::endl;
   }
-
   return (0);
 }
 
@@ -587,7 +600,6 @@ int ML2MueLuParameterTranslator::SetDefaultsSA(ParameterList &inList,
                                                Teuchos::RCP<std::vector<double> > & /* params */,
                                                bool OverWrite) {
   ParameterList List;
-
   inList.setName("SA default values");
   List.set("default values", "SA");
   List.set("max levels", 10);
@@ -609,6 +621,9 @@ int ML2MueLuParameterTranslator::SetDefaultsSA(ParameterList &inList,
   List.set("coarse: pre or post", "post");
   List.set("coarse: sweeps", 1);
   List.set("coarse: split communicator", false);
+
+  // Make sure we know this follows the ML defaults
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -647,6 +662,9 @@ int ML2MueLuParameterTranslator::SetDefaultsDD(ParameterList &inList,
   List.set("coarse: max size", 128);
   List.set("coarse: pre or post", "post");
   List.set("coarse: sweeps", 1);
+
+  // Make sure we know this follows the ML defaults
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -688,6 +706,9 @@ int ML2MueLuParameterTranslator::SetDefaultsDD_3Levels(ParameterList &inList,
   List.set("coarse: pre or post", "post");
   List.set("coarse: sweeps", 1);
 
+  // Make sure we know this follows the ML defaults
+  List.set("parameterlist: syntax", "ml");
+
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsDD_3Levels()
@@ -727,6 +748,9 @@ int ML2MueLuParameterTranslator::SetDefaultsMaxwell(ParameterList &inList,
   List.set("coarse: pre or post", "post");
   List.set("coarse: sweeps", 1);
 
+  // Make sure we know this follows the ML defaults
+  List.set("parameterlist: syntax", "ml");
+
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsMaxwell()
@@ -757,6 +781,9 @@ int ML2MueLuParameterTranslator::SetDefaultsNSSA(ParameterList &inList,
   List.set("coarse: max size", 256);
   List.set("coarse: pre or post", "post");
   List.set("coarse: sweeps", 1);
+
+  // Make sure we know this follows the ML defaults
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -796,6 +823,9 @@ int ML2MueLuParameterTranslator::SetDefaultsDD_LU(ParameterList &inList,
   List.set("coarse: max size", 128);
   List.set("coarse: pre or post", "post");
   List.set("coarse: sweeps", 1);
+
+  // Make sure we know this follows the ML defaults
+  List.set("parameterlist: syntax", "ml");
 
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
@@ -858,6 +888,9 @@ int ML2MueLuParameterTranslator::SetDefaultsClassicalAMG(ParameterList &inList,
   List.set("coarse: pre or post", "post");
   List.set("coarse: sweeps", 1);
 
+  // Make sure we know this follows the ML defaults
+  List.set("parameterlist: syntax", "ml");
+
   ML_OverwriteDefaults(inList, List, OverWrite);
   return 0;
 }  // ML2MueLuParameterTranslator::SetDefaultsClassicalAMG()
@@ -871,6 +904,7 @@ int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &i
 
   /* Build Teuchos List: (1,1) coarse */
   SetDefaults("SA", List11c);
+  List11c.remove("parameterlist: syntax");
   List11c.set("cycle applications", 1);
   List11c.set("smoother: type", "Chebyshev");
   List11c.set("aggregation: threshold", .01);
@@ -880,6 +914,7 @@ int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &i
 
   /* Build Teuchos List: (1,1) */
   SetDefaults("SA", List11);
+  List11.remove("parameterlist: syntax");
   List11.set("cycle applications", 1);
   List11.set("aggregation: type", "Uncoupled");
   List11.set("smoother: sweeps", 0);
@@ -890,6 +925,7 @@ int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &i
 
   /* Build Teuchos List: (2,2) */
   SetDefaults("SA", List22);
+  List22.remove("parameterlist: syntax");
   List22.set("cycle applications", 1);
   List22.set("smoother: type", "Chebyshev");
   List22.set("aggregation: type", "Uncoupled");
@@ -912,6 +948,9 @@ int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &i
   ListRF.set("refmaxwell: mode", "additive");
   ListRF.set("default values", "RefMaxwell");
   ListRF.set("zero starting solution", false);
+
+  // Make sure we know this follows the ML defaults
+  ListRF.set("parameterlist: syntax", "ml");
 
   UpdateList(ListRF, inList, OverWrite);
 
