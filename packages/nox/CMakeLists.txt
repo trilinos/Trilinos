@@ -88,6 +88,12 @@ ENDIF()
 ###################################################
 
 ###################################################
+# Explicit template instantiation
+###################################################
+
+TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+
+###################################################
 # Concrete implementations of NOX::Abstract Classes
 ###################################################
 
@@ -146,6 +152,15 @@ COMBINED_OPTION( NOX_ENABLE_KOKKOS_SOLVER_STACK
     " otherwise defaults to OFF."
   )
 MESSAGE(STATUS "Kokkos Solver Stack: ${NOX_ENABLE_KOKKOS_SOLVER_STACK}")
+
+# Tpetra
+COMBINED_OPTION(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_TPETRA
+  DEP_OPTIONS_NAMES NOX_ENABLE_Tpetra
+  DOCSTR "Enables support for Tpetra implementation of Abstract Group"
+    " and Vector classes.  Defaults to ON if Tpetra is enabled,"
+    " otherwise defaults to OFF"
+  )
+MESSAGE(STATUS "Tpetra Abstractions: ${NOX_ENABLE_ABSTRACT_IMPLEMENTATION_TPETRA}")
 
 # PETSc
 COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
