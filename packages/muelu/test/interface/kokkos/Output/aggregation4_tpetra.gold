@@ -11,7 +11,7 @@ smoother ->
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
-dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0.05, blocksize = 1, useBlocking = 0
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0.05, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.05
 aggregation: drop scheme = distance laplacian
 Build (MueLu::TentativePFactory_kokkos)
@@ -49,7 +49,7 @@ smoother ->
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
-dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0.05, blocksize = 1, useBlocking = 0
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "distance laplacian", distance laplacian metric = "unweighted", threshold = 0.05, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.05
 aggregation: drop scheme = distance laplacian
 Build (MueLu::TentativePFactory_kokkos)

@@ -12,7 +12,7 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
-dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.02
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
@@ -64,7 +64,7 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
-dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.02
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
@@ -140,7 +140,7 @@ Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
-dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.02
 matrixmatrix: kernel params -> 
  [empty list]
@@ -174,7 +174,7 @@ Level 2
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
 Build (MueLu::CoalesceDropFactory_kokkos)
-dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.02
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
