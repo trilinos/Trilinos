@@ -1262,18 +1262,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonal, Sca
   {
     GO n = 10 * comm->getSize();
 
-    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build2DPoisson(n);
+    RCP<Matrix> A             = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build2DPoisson(n);
     RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(A->getDomainMap());
 
     for (size_t row = 0; row < A->getLocalNumRows(); row++) {
-
       GO global_row = A->getRowMap()->getGlobalElement(row);
 
-      if(global_row < 0.5*n*n) {
+      if (global_row < 0.5 * n * n) {
         // lower part of domain get's 0
         blocknumber->replaceLocalValue(row, zero);
-      }
-      else {
+      } else {
         // upper part of domain get's 1
         blocknumber->replaceLocalValue(row, one);
       }
@@ -1297,11 +1295,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonal, Sca
 
     RCP<LWGraph_kokkos> graph_d = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
     auto graph                  = graph_d->copyToHost();
-	auto numGlobalEdges       	= graph->GetGlobalNumEdges();
-    auto fullNumGlobalEdges   	= A->getCrsGraph()->getGlobalNumEntries();
+    auto numGlobalEdges         = graph->GetGlobalNumEdges();
+    auto fullNumGlobalEdges     = A->getCrsGraph()->getGlobalNumEntries();
 
     // we drop exactly two off-diagonal blocks each of entry size n
-    TEST_EQUALITY(Teuchos::as<GO>(fullNumGlobalEdges-numGlobalEdges) == 2*n, true);
+    TEST_EQUALITY(Teuchos::as<GO>(fullNumGlobalEdges - numGlobalEdges) == 2 * n, true);
   }
 }
 

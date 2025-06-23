@@ -48,8 +48,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
 
   using Teuchos::RCP;
 
-  Xpetra::UnderlyingLib lib           = TestHelpers::Parameters::getLib();
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers::Parameters::getLib();
+  RCP<const Teuchos::Comm<int>> comm = TestHelpers::Parameters::getDefaultComm();
 
   GO nx = 1000;
 
@@ -107,14 +107,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
   myArrayGO[1] = 4;
   myArrayGO[2] = 5;
   myArrayGO[3] = 0;
-  userParamList.set<Array<GO> >("Array<GO> myArray<GO>", myArrayGO);
+  userParamList.set<Array<GO>>("Array<GO> myArray<GO>", myArrayGO);
   Array<LO> myArrayLO(5);
   myArrayLO[0] = 8;
   myArrayLO[1] = 7;
   myArrayLO[2] = 1;
   myArrayLO[3] = 2;
   myArrayLO[4] = 3;
-  userParamList.set<Array<LO> >("Array<LO> myArray<LO>", myArrayLO);
+  userParamList.set<Array<LO>>("Array<LO> myArray<LO>", myArrayLO);
   Array<SC> myNormSC(1);
   Array<LO> myNormLO(1);
 
@@ -157,12 +157,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
     result = false;
   }
 
-  if (!(level0->Get<Array<GO> >("myArray<GO>") == myArrayGO)) {
+  if (!(level0->Get<Array<GO>>("myArray<GO>") == myArrayGO)) {
     errorMsg += "myArray<GO> does not have correct value on level 0.\n";
     result = false;
   }
 
-  if (!(level0->Get<Array<LO> >("myArray<LO>") == myArrayLO)) {
+  if (!(level0->Get<Array<LO>>("myArray<LO>") == myArrayLO)) {
     errorMsg += "myArray<LO> does not have correct value on level 0.\n";
     result = false;
   }

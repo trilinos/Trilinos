@@ -31,8 +31,8 @@ RCP<const ParameterList> InitialBlockNumberFactory<Scalar, LocalOrdinal, GlobalO
   SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
 #undef SET_VALID_ENTRY
 
-  validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A");
-  validParamList->set<RCP<const FactoryBase> >("BlockNumber", Teuchos::null, "Generating factory of the BlockNumber vector");
+  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
+  validParamList->set<RCP<const FactoryBase>>("BlockNumber", Teuchos::null, "Generating factory of the BlockNumber vector");
 
   return validParamList;
 }
@@ -58,12 +58,12 @@ void InitialBlockNumberFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build
     GetOStream(Statistics1) << "Use user-given blocknumber with length=" << BlockNumber->getGlobalLength() << std::endl;
   } else {
     // Creating interleaved BlockNumber from scratch
-    RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, "A");
+    RCP<Matrix> A = Get<RCP<Matrix>>(currentLevel, "A");
     LO blocksize  = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
 
     GetOStream(Statistics1) << "Generating new interleaved blocking with " << blocksize << " equations" << std::endl;
-    BlockNumber = LocalOrdinalVectorFactory::Build(A->getRowMap(), false);
-    Teuchos::ArrayRCP<LO> bn_data       = BlockNumber->getDataNonConst(0);
+    BlockNumber                   = LocalOrdinalVectorFactory::Build(A->getRowMap(), false);
+    Teuchos::ArrayRCP<LO> bn_data = BlockNumber->getDataNonConst(0);
     for (LO i = 0; i < (LO)A->getRowMap()->getLocalNumElements(); i++)
       bn_data[i] = i % blocksize;
   }
