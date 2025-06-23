@@ -176,7 +176,6 @@ namespace MueLu {
   "<Parameter name=\"aggregation: strength-of-connection: measure\" type=\"string\" value=\"smoothed aggregation\"/>"
   "<Parameter name=\"aggregation: classical scheme\" type=\"string\" value=\"direct\"/>"
   "<Parameter name=\"aggregation: row sum drop tol\" type=\"double\" value=\"-1.0\"/>"
-  "<Parameter name=\"aggregation: block diagonal: interleave\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: block diagonal: interleaved blocksize\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"aggregation: number of random vectors\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"aggregation: number of times to pre or post smooth\" type=\"int\" value=\"10\"/>"
@@ -627,8 +626,6 @@ namespace MueLu {
          ("aggregation: classical scheme","aggregation: classical scheme")
       
          ("aggregation: row sum drop tol","aggregation: row sum drop tol")
-      
-         ("aggregation: block diagonal: interleave","aggregation: block diagonal: interleave")
       
          ("aggregation: block diagonal: interleaved blocksize","aggregation: block diagonal: interleaved blocksize")
       

@@ -479,11 +479,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       }
     }
 
-    if (blocknumber.is_null()) {
-      blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(map);
-      blocknumber->putScalar(Teuchos::ScalarTraits<LO>::one());
-    }
-
     // If doing user based block smoothing, read block information from file.
     // Must do this for both smoothers and coarse solvers
 
