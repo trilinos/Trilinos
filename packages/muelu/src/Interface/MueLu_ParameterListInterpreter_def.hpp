@@ -1500,7 +1500,6 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   if (useBlockNumber_) {
     ParameterList myParams;
     RCP<Factory> fact = rcp(new InitialBlockNumberFactory());
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleave", bool, myParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleaved blocksize", int, myParams);
     fact->SetParameterList(myParams);
     manager.SetFactory("BlockNumber", fact);
