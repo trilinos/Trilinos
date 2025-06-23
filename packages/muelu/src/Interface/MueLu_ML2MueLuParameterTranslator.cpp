@@ -376,14 +376,13 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
 
   // loop over all ML parameters in provided parameter list
   for (ParameterList::ConstIterator param = paramListWithSubList.begin(); param != paramListWithSubList.end(); ++param) {
-
     // extract ML parameter name
     const std::string &pname = paramListWithSubList.name(param);
 
     // Short circuit the "parameterlist: syntax" parameter
     // We want to remove this to make sure that createXpetraPreconditioner doesn't re-call translate()
     if (pname == "parameterlist: syntax") {
-      //mueluss << "<Parameter name=\"parameterlist: syntax\"      type=\"string\"     value=\"ml\"/>" << std::endl;
+      // mueluss << "<Parameter name=\"parameterlist: syntax\"      type=\"string\"     value=\"ml\"/>" << std::endl;
       continue;
     }
 
