@@ -101,7 +101,7 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
 
   } else {
     // TODO error message
-    std::cout << "error in " << __FILE__ << ":" << __LINE__ << " could not find valid smoother/solver" << std::endl;
+    std::cout << "error in " << __FILE__ << ":" << __LINE__ << " could not find valid smoother/solver: " << valuestr << std::endl;
   }
 
   // set smoother: pre or post parameter
@@ -314,31 +314,6 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
   Teuchos::ParameterList paramList = paramList_in;
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));  // TODO: use internal out (GetOStream())
-
-#if defined(HAVE_MUELU_ML) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
-
-  // TODO alternative with standard parameterlist from ML user guide?
-
-  if (defaultVals != "") {
-    TEUCHOS_TEST_FOR_EXCEPTION(defaultVals != "SA" && defaultVals != "NSSA" && defaultVals != "refmaxwell" && defaultVals != "Maxwell", Exceptions::RuntimeError,
-                               "MueLu::MLParameterListInterpreter: only \"SA\", \"NSSA\", \"refmaxwell\" and \"Maxwell\" allowed as options for ML default parameters.");
-    Teuchos::ParameterList ML_defaultlist;
-    if (defaultVals == "refmaxwell")
-      ML_Epetra::SetDefaultsRefMaxwell(ML_defaultlist);
-    else
-      ML_Epetra::SetDefaults(defaultVals, ML_defaultlist);
-
-    // merge user parameters with default parameters
-    MueLu::MergeParameterList(paramList_in, ML_defaultlist, true);
-    paramList = ML_defaultlist;
-  }
-#else
-  if (defaultVals != "") {
-    // If no validator available: issue a warning and set parameter value to false in the output list
-    *out << "Warning: MueLu_ENABLE_ML=OFF, ML_ENABLE_Epetra=OFF or ML_ENABLE_TEUCHOS=OFF. No ML default values available." << std::endl;
-  }
-#endif  // HAVE_MUELU_ML && HAVE_ML_EPETRA && HAVE_ML_TEUCHOS
-
   // ML counts levels slightly differently than MueLu does so "repartition: start level" is off by one
   // ML defaults to "1" if we don't ask for anything else and that needs to map to "2"
   if (paramList.isParameter("repartition: start level")) {
@@ -363,26 +338,6 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
 
   paramList                                = paramListWithSubList;  // swap
   Teuchos::ParameterList adaptingParamList = paramList;             // copy of paramList which is used to removed already interpreted parameters
-
-  //
-  // Validate parameter list
-  //
-  {
-    bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
-    if (validate && defaultVals != "refmaxwell") {
-#if defined(HAVE_MUELU_ML) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
-      // Validate parameter list using ML validator
-      int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
-      TEUCHOS_TEST_FOR_EXCEPTION(!ML_Epetra::ValidateMLPParameters(paramList, depth), Exceptions::RuntimeError,
-                                 "ERROR: ML's Teuchos::ParameterList contains incorrect parameter!");
-#else
-      // If no validator available: issue a warning and set parameter value to false in the output list
-      *out << "Warning: MueLu_ENABLE_ML=OFF, ML_ENABLE_Epetra=OFF or ML_ENABLE_TEUCHOS=OFF. The parameter list cannot be validated." << std::endl;
-      paramList.set("ML validate parameter list", false);
-
-#endif  // HAVE_MUELU_ML && HAVE_ML_EPETRA && HAVE_ML_TEUCHOS
-    }   // if(validate)
-  }     // scope
 
   {
     // Special handling of ML's aux aggregation
@@ -421,8 +376,16 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
 
   // loop over all ML parameters in provided parameter list
   for (ParameterList::ConstIterator param = paramListWithSubList.begin(); param != paramListWithSubList.end(); ++param) {
+
     // extract ML parameter name
     const std::string &pname = paramListWithSubList.name(param);
+
+    // Short circuit the "parameterlist: syntax" parameter
+    // We want to remove this to make sure that createXpetraPreconditioner doesn't re-call translate()
+    if (pname == "parameterlist: syntax") {
+      //mueluss << "<Parameter name=\"parameterlist: syntax\"      type=\"string\"     value=\"ml\"/>" << std::endl;
+      continue;
+    }
 
     // extract corresponding (ML) value
     // remove ParameterList specific information from result string
