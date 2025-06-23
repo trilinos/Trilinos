@@ -343,7 +343,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     ss << "dropping scheme = \"" << droppingMethod << "\", strength-of-connection measure = \"" << socUsesMeasure << "\", strength-of-connection matrix = \"" << socUsesMatrix << "\", ";
     if (socUsesMatrix == "distance laplacian")
       ss << "distance laplacian metric = \"" << distanceLaplacianMetric << "\", ";
-    ss << "threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << ", useBlocking = " << useBlocking << std::endl;
+    ss << "threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << ", useBlocking = " << useBlocking;
+    ss << ", symmetrizeDroppedGraph = " << symmetrizeDroppedGraph << std::endl;
 
     GetOStream(Runtime0) << ss.str();
   }
@@ -818,7 +819,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     ss << "dropping scheme = \"" << droppingMethod << "\", strength-of-connection measure = \"" << socUsesMeasure << "\", strength-of-connection matrix = \"" << socUsesMatrix << "\", ";
     if (socUsesMatrix == "distance laplacian")
       ss << "distance laplacian metric = \"" << distanceLaplacianMetric << "\", ";
-    ss << "threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << ", useBlocking = " << useBlocking << std::endl;
+    ss << "threshold = " << threshold << ", blocksize = " << A->GetFixedBlockSize() << ", useBlocking = " << useBlocking;
+    ss << ", symmetrizeDroppedGraph = " << symmetrizeDroppedGraph << std::endl;
 
     GetOStream(Runtime0) << ss.str();
   }
