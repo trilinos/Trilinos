@@ -17,31 +17,13 @@ namespace Tpetra::Details {
     : mpiTag_(DEFAULT_MPI_TAG) {}
 
   void DistributorActor::doWaits(const DistributorPlan& plan) {
-    if (requestsRecv_.size() > 0) {
-      ProfilingRegion wr("Tpetra::Distributor: doWaitsRecv[via doWaits]");
-
-      Teuchos::waitAll(*plan.getComm(), requestsRecv_());
-
-      // Restore the invariant that requests_.size() is the number of
-      // outstanding nonblocking communication requests.
-      requestsRecv_.resize(0);
-    }
-
-    if (requestsSend_.size() > 0) {
-      ProfilingRegion ws("Tpetra::Distributor: doWaitsSend[via doWaits]");
-
-      Teuchos::waitAll(*plan.getComm(), requestsSend_());
-
-      // Restore the invariant that requests_.size() is the number of
-      // outstanding nonblocking communication requests.
-      requestsSend_.resize(0);
-    }
+    doWaitsRecv(plan);
+    doWaitsSend(plan);
 
     {
       ProfilingRegion ws("Tpetra::Distributor: doWaitsIalltofewv[via doWaits]");
       doWaitsIalltofewv(plan);
     }
-
   }
 
   void DistributorActor::doWaitsRecv(const DistributorPlan& plan) {
