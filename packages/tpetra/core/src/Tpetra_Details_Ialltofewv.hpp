@@ -93,5 +93,4 @@ private:
     Cache cache_;
 
 }; // struct Ialltofewv
-
 } // namespace Tpetra::Details
