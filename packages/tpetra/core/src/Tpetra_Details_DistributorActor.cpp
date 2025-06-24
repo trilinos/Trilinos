@@ -19,11 +19,6 @@ namespace Tpetra::Details {
   void DistributorActor::doWaits(const DistributorPlan& plan) {
     doWaitsRecv(plan);
     doWaitsSend(plan);
-
-    {
-      ProfilingRegion ws("Tpetra::Distributor: doWaitsIalltofewv[via doWaits]");
-      doWaitsIalltofewv(plan);
-    }
   }
 
   void DistributorActor::doWaitsRecv(const DistributorPlan& plan) {
