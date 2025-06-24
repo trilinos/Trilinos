@@ -55,6 +55,9 @@ DistributorSendTypeStringToEnum (const std::string_view s)
   if (s == "Isend") return DISTRIBUTOR_ISEND;
   if (s == "Send") return DISTRIBUTOR_SEND;
   if (s == "Alltoall") return DISTRIBUTOR_ALLTOALL;
+#if defined(HAVE_TPETRA_MPI)
+  if (s == "Ialltofewv") return DISTRIBUTOR_IALLTOFEWV;
+#endif
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   if (s == "MpiAdvanceAlltoall") return DISTRIBUTOR_MPIADVANCE_ALLTOALL;
   if (s == "MpiAdvanceNbralltoallv") return DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV;
