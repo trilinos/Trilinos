@@ -1028,8 +1028,9 @@ void DistributorPlan::initializeMpiAdvance() {
   // FIXME: probably need to rename this function since it might change the sendType
   void DistributorPlan::maybeInitializeRoots() {
 
-    // some collective send types need to know the roots
+    // Only IALLTOFEWV needs to know the roots
     if (DISTRIBUTOR_IALLTOFEWV != sendType_) {
+      roots_.clear();
       return;
     }
 
@@ -1078,11 +1079,11 @@ void DistributorPlan::initializeMpiAdvance() {
     if (roots_.size() * roots_.size() >= size_t(comm_->getSize())) {
       if (Tpetra::Details::Behavior::verbose()) {
         std::stringstream ss;
-        ss << __FILE__ << ":" << __LINE__ << " " << comm_->getRank() << ": WARNING (Ialltoallv send type): too many roots (" << roots_.size() << ") for " << comm_->getSize() << " ranks. Setting send-type to default" << std::endl;
+        ss << __FILE__ << ":" << __LINE__ << " " << comm_->getRank() << ": WARNING (Ialltoallv send type): too many roots (" << roots_.size() << ") for " << comm_->getSize() << " ranks. Setting send-type to \"Send\"" << std::endl;
         std::cerr << ss.str();
       }
       roots_.clear();
-      sendType_ = DistributorSendTypeStringToEnum(Behavior::defaultSendType());
+      sendType_ = DISTRIBUTOR_SEND;
     }
   }
 #endif // HAVE_TPETRA_MPI
