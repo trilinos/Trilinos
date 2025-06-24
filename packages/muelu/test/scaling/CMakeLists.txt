@@ -67,7 +67,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     )
     math(EXPR COUNTER "${COUNTER} + 1")
   ENDWHILE()
-  
+
   # This an artifact to reproduce the old 4-rank test that is weak scaled by only adding guys in (x,y)
   TRIBITS_ADD_TEST(
       Driver
@@ -78,7 +78,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
       PASS_REGULAR_EXPRESSION "Belos converged"
       RUN_SERIAL
       CATEGORIES PERFORMANCE
-    ) 
+    )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
     SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling_apex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml emin_with_dl_elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml recurMG.xml anisotropic.xml  comp_rotations.xml generalBlkSmoothing.xml GblkMap.dat GblkAmat.dat GblkRhs.dat Gblks.dat blkSmooEquivOlapSchwarz.xml oLapSchwarzEquivBlkSmoo.xml regularOverLap.dat zeroAggTest.xml blkDiag3x3And6x6.mat  coords2.mm aux1.mat aux2.mat  coords1.mat  coords2.mat  multiPhys4x4.mat multiPhys4x4.mat  null1.mat null2.mat comboP.xml material.xml material.mm block_diagonal_drop.xml blocknumber.mm
@@ -625,7 +625,7 @@ TRIBITS_ADD_EXECUTABLE(
   SpMVPerformance
   SOURCES SpMVPerformance.cpp
   COMM mpi
-  CATEGORIES PERFORMANCE
+  CATEGORIES BASIC PERFORMANCE
 )
 
 IF(Tpetra_INST_SERIAL)
