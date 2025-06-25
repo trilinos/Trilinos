@@ -32,7 +32,7 @@ gcc:
     - pushd build
     - pr_number=$(echo ${CI_COMMIT_BRANCH} | cut -f 1 -d "_" | sed 's/[^0-9]*//g')
     - bash -l -c "../commonTools/framework/get-changed-trilinos-packages.sh $(git rev-list -n 1 --parents HEAD~1 | cut -f 2,3 -d ' ') packageEnables.cmake package_subproject_list.cmake"
-    - bash -l -c "cmake -G Ninja -C packageEnables.cmake -DCTEST_DROP_SITE=my.cdash.org -DCTEST_BUILD_NAME=${pr_number}_gcc-8.3.0 -DTrilinos_ENABLE_TESTS=ON .."
+    - bash -l -c "cmake -G Ninja -C packageEnables.cmake -DCTEST_DROP_SITE=my.cdash.org -DCTEST_BUILD_NAME=${pr_number}_gcc-8.3.0 -DTRIBITS_2ND_CTEST_DROP_SITE="" -DTrilinos_ENABLE_TESTS=ON .."
     - bash -l -c "ninja dashboard"
   rules:
     - if: $CI_PIPELINE_SOURCE != "schedule"
@@ -47,7 +47,7 @@ rocm:
     - pushd build
     - pr_number=$(echo ${CI_COMMIT_BRANCH} | cut -f 1 -d "_" | sed 's/[^0-9]*//g')
     - bash -l -c "../commonTools/framework/get-changed-trilinos-packages.sh $(git rev-list -n 1 --parents HEAD~1 | cut -f 2,3 -d ' ') packageEnables.cmake package_subproject_list.cmake"
-    - bash -l -c "cmake -G Ninja -C packageEnables.cmake -DCTEST_DROP_SITE=my.cdash.org -DCTEST_BUILD_NAME=${pr_number}_rocm-6.2.1 -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_C_COMPILER=mpicc -DTPL_ENABLE_MPI=ON -DTrilinos_ENABLE_Fortran=OFF -DTrilinos_ENABLE_TESTS=ON -DCMAKE_PREFIX_PATH=\"$(ls -d /usr/local/ci/pkgs/openblas*);/opt/rocm\" -DKokkos_ENABLE_HIP=ON -DKokkos_ARCH_AMD_GFX942=ON -DTpetra_INST_HIP=ON -DTPL_ENABLE_ROCSPARSE=ON -DTPL_ENABLE_ROCBLAS=ON -DTPL_ENABLE_ROCSOLVER=ON .."
+    - bash -l -c "cmake -G Ninja -C packageEnables.cmake -DCTEST_DROP_SITE=my.cdash.org -DCTEST_BUILD_NAME=${pr_number}_rocm-6.2.1 -DTRIBITS_2ND_CTEST_DROP_SITE="" -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_C_COMPILER=mpicc -DTPL_ENABLE_MPI=ON -DTrilinos_ENABLE_Fortran=OFF -DTrilinos_ENABLE_TESTS=ON -DCMAKE_PREFIX_PATH=\"$(ls -d /usr/local/ci/pkgs/openblas*);/opt/rocm\" -DKokkos_ENABLE_HIP=ON -DKokkos_ARCH_AMD_GFX942=ON -DTpetra_INST_HIP=ON -DTPL_ENABLE_ROCSPARSE=ON -DTPL_ENABLE_ROCBLAS=ON -DTPL_ENABLE_ROCSOLVER=ON .."
     - bash -l -c "ninja dashboard"
   rules:
     - if: $CI_PIPELINE_SOURCE != "schedule"
