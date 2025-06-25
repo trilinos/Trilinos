@@ -689,7 +689,7 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
       {
         typedef panzer::Traits::Tangent RespEvalT;
 
-        // check dg/dx and add it in if appropriate
+        // check dg/dp and add it in if appropriate
         Teuchos::RCP<panzer::ResponseBase> respTanBase
             = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
         if(respTanBase!=Teuchos::null) {
@@ -702,6 +702,8 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
           //  outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
 
 
+          // TODO BWR should these match dfdp below?
+          // TODO BWR not sure what to pick here
             for(std::size_t p=0;p<parameters_.size();p++) {
               if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
                 outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
@@ -1879,7 +1881,6 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     // TODO BWR there is some foo in user_app to set up tempus for FD path
 
     std::cout << " CALL EVAL RESP " << std::endl;
-    responseLibrary_->print(std::cout);
     responseLibrary_->addResponsesToInArgs<Traits::Tangent>(ae_inargs);
     responseLibrary_->evaluate<Traits::Tangent>(ae_inargs);
   }
