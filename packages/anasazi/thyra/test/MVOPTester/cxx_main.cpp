@@ -29,12 +29,10 @@
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-#ifdef HAVE_EPETRA_THYRA
 #include "AnasaziThyraAdapter.hpp"
 #include "AnasaziThyraDebugAdapter.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
-#endif
 
 int runTest(
 int argc,
@@ -69,14 +67,6 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
   if (verbose) {
     MyOM->setVerbosity( Anasazi::Warnings );
   }
-
-#ifndef HAVE_EPETRA_THYRA
-  MyOM->stream(Anasazi::Warnings)
-    << "Please configure Anasazi with:" << endl
-    << "--enable-epetra-thyra" << endl
-    << "--enable-anasazi-thyra" << endl;
-  return -1;
-#endif
 
   // Construct a Map that puts approximately the same number of
   // equations on each processor.
@@ -147,7 +137,6 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
   Teuchos::RCP<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(*Map, blockSize) );
   ivec->Random();
 
-#ifdef HAVE_EPETRA_THYRA
   typedef Thyra::MultiVectorBase<double> TMVB;
   typedef Thyra::LinearOpBase<double>    TLOB;
   typedef Anasazi::MultiVec<double>      AMV;
@@ -209,7 +198,6 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
   }
 
   Teuchos::TimeMonitor::summarize(MyOM->stream(Anasazi::Warnings));
-#endif
 
   if (gerr == false) {
     MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");

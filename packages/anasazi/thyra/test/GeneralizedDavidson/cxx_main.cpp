@@ -33,11 +33,9 @@
 
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#ifdef HAVE_EPETRA_THYRA
 #include "AnasaziThyraAdapter.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
-#endif
 
 #include "ModeLaplace1DQ1.h"
 #include "BlockPCGSolver.h"

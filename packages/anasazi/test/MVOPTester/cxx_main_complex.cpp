@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
 #ifndef HAVE_ANASAZI_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
   MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");

@@ -36,9 +36,6 @@
 /* Define if want to build with triutils enabled */
 #cmakedefine HAVE_ANASAZI_TRIUTILS
 
-/* Define if want to build with epetra enabled */
-#cmakedefine HAVE_EPETRA_THYRA @HAVE_EPETRA_THYRA@
-
 /* Define if want to build anasazi-examples */
 #cmakedefine HAVE_ANASAZI_EXAMPLES
 

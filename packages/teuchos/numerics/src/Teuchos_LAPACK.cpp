@@ -1674,7 +1674,7 @@ namespace Teuchos
   // END INT, COMPLEX<DOUBLE> SPECIALIZATION IMPLEMENTATION //
 
   // BEGIN INT, KOKKOS::COMPLEX<DOUBLE> SPECIALIZATION IMPLEMENTATION //
-
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
   void LAPACK<int, Kokkos::complex<double> >::PTTRF(const int& n, double* d, Kokkos::complex<double>* e, int* info) const
   {
     ZPTTRF_F77(&n, d, reinterpret_cast<std::complex<double>*>(e), info);
@@ -2078,7 +2078,7 @@ namespace Teuchos
     unsigned int name_length = temp_NAME.length();
     return ilaenv_wrapper(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4);
   }
-
+#endif
   // END INT, KOKKOS::COMPLEX<DOUBLE> SPECIALIZATION IMPLEMENTATION //
 
 #endif // HAVE_TEUCHOS_COMPLEX

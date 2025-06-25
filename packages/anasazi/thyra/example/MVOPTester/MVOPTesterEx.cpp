@@ -28,11 +28,9 @@
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-#ifdef HAVE_EPETRA_THYRA
 #include "AnasaziThyraAdapter.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -65,17 +63,6 @@ int main(int argc, char *argv[])
   if (verbose) {
     MyOM->setVerbosity( Anasazi::Warnings );
   }
-
-#ifndef HAVE_EPETRA_THYRA
-  MyOM->stream(Anasazi::Warnings) 
-    << "Please configure Anasazi with:" << std::endl
-    << "--enable-epetra-thyra" << std::endl
-    << "--enable-anasazi-thyra" << std::endl;
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return -1;
-#endif
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
@@ -138,7 +125,6 @@ int main(int argc, char *argv[])
   ierr = A->FillComplete();
   assert(ierr==0);
 
-#ifdef HAVE_EPETRA_THYRA
   typedef Thyra::MultiVectorBase<double> TMVB;
   typedef Thyra::LinearOpBase<double>    TLOB;
 
@@ -170,7 +156,6 @@ int main(int argc, char *argv[])
   else {
     MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestOperatorTraits() ***" << std::endl << std::endl;
   }
-#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize();
