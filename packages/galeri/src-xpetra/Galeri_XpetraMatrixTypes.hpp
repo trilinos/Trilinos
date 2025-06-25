@@ -1367,10 +1367,15 @@ namespace Galeri {
       // We loop over the rows and over the stencil.
       // We count entries of row i using rowptr(i+2) and accumulate the results.
       //
-      // E.g if we have two row with 5 entries each, rowptr will look like
-      // [0 0 5]
-      // and myNNZ = 10.
-      // Note that this is not the final rowptr.
+      // E.g if we have a matrix with three rows with 2, 3 and 4 entries respectively, rowptr will look like
+      // [0 0 2 5]
+      // and myNNZ = 2+3+4 = 9.
+      //
+      // Note that this is not yet the correct rowptr for the matrix which looks like
+      // [0 2 5 9]
+      //
+      // The reason why we are not constructing the correct rowptr right away is that we will use
+      // rowptr(i+1) as the offset for filling the colidx and values views.
       LocalOrdinal myNNZ = 0;  // The number of nonzero entries on this rank.
       Kokkos::parallel_scan(
           "Galeri::" + matLabel + "::Graph", range_type(0, numMyElements),
@@ -1435,7 +1440,7 @@ namespace Galeri {
       // To enter values in row i we use rowptr(i+1) as offset.
       //
       // Using the same example as above, after this step rowptr is
-      // [0 5 10]
+      // [0 2 5 9]
       Kokkos::parallel_for(
           "Galeri::" + matLabel + "::fill", range_type(0, numMyElements),
           KOKKOS_LAMBDA(const LocalOrdinal i) {
