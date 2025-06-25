@@ -56,6 +56,8 @@ namespace Galeri {
       if (nx == -1)
         nx = this->Map_->getGlobalNumElements();
 
+      // The Kokkos code path does not work for Epetra.
+      // Once Epetra has been removed this logic should be simplified.
 #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
       using Node = typename Map::node_type;
       using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -144,6 +146,8 @@ namespace Galeri {
       Scalar south  = (Scalar) -one / (stretchy*stretchy);
       Scalar center = -(east + west + north + south);
 
+      // The Kokkos code path does not work for Epetra.
+      // Once Epetra has been removed this logic should be simplified.
 #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
       using Node = typename Map::node_type;
       using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -352,6 +356,8 @@ namespace Galeri {
       Scalar down   = (Scalar) -one / (stretchz*stretchz);
       Scalar center = -(right + left + front + back + up + down);
 
+      // The Kokkos code path does not work for Epetra.
+      // Once Epetra has been removed this logic should be simplified.
 #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
       using Node = typename Map::node_type;
       using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -518,6 +524,8 @@ namespace Galeri {
 
       bool keepBCs = this->list_.get("keepBCs", false);
 
+      // The Kokkos code path does not work for Epetra.
+      // Once Epetra has been removed this logic should be simplified.
 #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
       using Node = typename Map::node_type;
       using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -564,6 +572,9 @@ namespace Galeri {
 
       if (nx == -1)
         nx = this->Map_->getGlobalNumElements();
+
+      // The Kokkos code path does not work for Epetra.
+      // Once Epetra has been removed this logic should be simplified.
 #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
       using Node = typename Map::node_type;
       using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;

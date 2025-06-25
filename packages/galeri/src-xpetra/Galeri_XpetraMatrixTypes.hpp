@@ -172,7 +172,6 @@ namespace Galeri {
 
     public:
 
-      const std::string name = "ScaledIdentity";
       hashmap_type off_rank_indices;
       local_map_type lclColMap;
       colidx_type colidx;
@@ -227,7 +226,6 @@ namespace Galeri {
 
     public:
 
-      const std::string name = "TriDiag";
       hashmap_type off_rank_indices;
       local_map_type lclColMap;
       colidx_type colidx;
@@ -322,7 +320,6 @@ namespace Galeri {
 
     public:
 
-      const std::string name = "Cross2D";
       hashmap_type off_rank_indices;
       local_map_type lclColMap;
       colidx_type colidx;
@@ -427,7 +424,6 @@ namespace Galeri {
 
     public:
 
-      const std::string name = "Cross3D";
       hashmap_type off_rank_indices;
       local_map_type lclColMap;
       colidx_type colidx;
@@ -539,6 +535,7 @@ namespace Galeri {
       using exec_space = typename Node::execution_space;
       using memory_space = typename Node::memory_space;
       using hashmap_type = typename Kokkos::UnorderedMap<GlobalOrdinal, void, exec_space>;
+      using StencilIndices = GlobalOrdinal[3][3][3];
 
       GlobalOrdinal nx, ny, nz;
       impl_scalar_type a, b, c, d, e, f, g;
@@ -547,14 +544,16 @@ namespace Galeri {
 
       const impl_scalar_type one = Kokkos::ArithTraits<impl_scalar_type>::one();
       const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
-      const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+      GlobalOrdinal INVALID;
 
-      Kokkos::View<GlobalOrdinal[27], memory_space> stencil_indices;
-      Kokkos::View<impl_scalar_type[27], memory_space> stencil_entries;
+      Kokkos::View<impl_scalar_type[3][3][3], memory_space> stencil_entries;
+
+      const size_t LOW = 0;
+      const size_t MID = 1;
+      const size_t HIGH = 2;
 
     public:
 
-      const std::string name = "Brick3D";
       hashmap_type off_rank_indices;
       local_map_type lclColMap;
       colidx_type colidx;
@@ -565,116 +564,120 @@ namespace Galeri {
           , a(a_) , b(b_) , c(c_) , d(d_) , e(e_), f(f_), g(g_)
           , DirichletBC(DirichletBC_) {
         lclMap = map.getLocalMap();
+        INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
 
-        stencil_indices = Kokkos::View<GlobalOrdinal[27], memory_space>("stencil_indices");
-        stencil_entries = Kokkos::View<impl_scalar_type[27], memory_space>("stencil_entries");
+        stencil_entries = Kokkos::View<impl_scalar_type[3][3][3], memory_space>("stencil_entries");
         auto stencil_entries_h = Kokkos::create_mirror_view(stencil_entries);
 
         // lower plane
-        stencil_entries_h(0) = e;
-        stencil_entries_h(1) = d;
-        stencil_entries_h(2) = e;
-        stencil_entries_h(3) = d;
-        stencil_entries_h(4) = b;
-        stencil_entries_h(5) = d;
-        stencil_entries_h(6) = e;
-        stencil_entries_h(7) = d;
-        stencil_entries_h(8) = e;
+        stencil_entries_h(LOW, LOW, LOW) = e;
+        stencil_entries_h(LOW, LOW, MID) = d;
+        stencil_entries_h(LOW, LOW, HIGH) = e;
+        stencil_entries_h(LOW, MID, LOW) = d;
+        stencil_entries_h(LOW, MID, MID) = b;
+        stencil_entries_h(LOW, MID, HIGH) = d;
+        stencil_entries_h(LOW, HIGH, LOW) = e;
+        stencil_entries_h(LOW, HIGH, MID) = d;
+        stencil_entries_h(LOW, HIGH, HIGH) = e;
 
         // middle plane
-        stencil_entries_h(9) = c;
-        stencil_entries_h(10) = b;
-        stencil_entries_h(11) = c;
-        stencil_entries_h(12) = b;
-        stencil_entries_h(13) = a;
-        stencil_entries_h(14) = b;
-        stencil_entries_h(15) = c;
-        stencil_entries_h(16) = b;
-        stencil_entries_h(17) = c;
+        stencil_entries_h(MID, LOW, LOW) = c;
+        stencil_entries_h(MID, LOW, MID) = b;
+        stencil_entries_h(MID, LOW, HIGH) = c;
+        stencil_entries_h(MID, MID, LOW) = b;
+        stencil_entries_h(MID, MID, MID) = a;
+        stencil_entries_h(MID, MID, HIGH) = b;
+        stencil_entries_h(MID, HIGH, LOW) = c;
+        stencil_entries_h(MID, HIGH, MID) = b;
+        stencil_entries_h(MID, HIGH, HIGH) = c;
 
         // upper plane
-        stencil_entries_h(18) = e;
-        stencil_entries_h(19) = d;
-        stencil_entries_h(20) = e;
-        stencil_entries_h(21) = d;
-        stencil_entries_h(22) = b;
-        stencil_entries_h(23) = d;
-        stencil_entries_h(24) = e;
-        stencil_entries_h(25) = d;
-        stencil_entries_h(26) = e;
+        stencil_entries_h(HIGH, LOW, LOW) = e;
+        stencil_entries_h(HIGH, LOW, MID) = d;
+        stencil_entries_h(HIGH, LOW, HIGH) = e;
+        stencil_entries_h(HIGH, MID, LOW) = d;
+        stencil_entries_h(HIGH, MID, MID) = b;
+        stencil_entries_h(HIGH, MID, HIGH) = d;
+        stencil_entries_h(HIGH, HIGH, LOW) = e;
+        stencil_entries_h(HIGH, HIGH, MID) = d;
+        stencil_entries_h(HIGH, HIGH, HIGH) = e;
 
         Kokkos::deep_copy(stencil_entries, stencil_entries_h);
       }
 
       KOKKOS_FORCEINLINE_FUNCTION
       void GetNeighbours(const GlobalOrdinal i,
+                         StencilIndices stencil_indices,
                          bool& isDirichlet) const {
 
-        GlobalOrdinal& below = stencil_indices(4);
-
-        GlobalOrdinal& front = stencil_indices(10);
-        GlobalOrdinal& left = stencil_indices(12);
-        stencil_indices(13) = i;
-        GlobalOrdinal& right = stencil_indices(14);
-        GlobalOrdinal& back = stencil_indices(16);
-
-        GlobalOrdinal& above = stencil_indices(22);
+        GlobalOrdinal &below = stencil_indices[LOW][MID][MID];
+        GlobalOrdinal &front = stencil_indices[MID][LOW][MID];
+        GlobalOrdinal &left = stencil_indices[MID][MID][LOW];
+        GlobalOrdinal &right = stencil_indices[MID][MID][HIGH];
+        GlobalOrdinal &back = stencil_indices[MID][HIGH][MID];
+        GlobalOrdinal &above = stencil_indices[HIGH][MID][MID];
 
         GetNeighboursCartesian3dKokkos(i, nx, ny, nz, left, right, front, back, below, above, INVALID);
 
-        // 0 1 2
-        // 3 4 5
-        // 6 7 8
+        stencil_indices[LOW][LOW][LOW] = below-nx-1;
+        stencil_indices[LOW][LOW][MID] = below-nx;
+        stencil_indices[LOW][LOW][HIGH] = below-nx+1;
+        stencil_indices[LOW][MID][LOW] = below-1;
+        stencil_indices[LOW][MID][MID] = below;
+        stencil_indices[LOW][MID][HIGH] = below+1;
+        stencil_indices[LOW][HIGH][LOW] = below+nx-1;
+        stencil_indices[LOW][HIGH][MID] = below+nx;
+        stencil_indices[LOW][HIGH][HIGH] = below+nx+1;
 
-        //  9 10 11
-        // 12 13 14
-        // 15 16 17
+        stencil_indices[MID][LOW][LOW] = front-1;
+        stencil_indices[MID][LOW][MID] = front;
+        stencil_indices[MID][LOW][HIGH] = front+1;
+        stencil_indices[MID][MID][LOW] = left;
+        stencil_indices[MID][MID][MID] = i;
+        stencil_indices[MID][MID][HIGH] = right;
+        stencil_indices[MID][HIGH][LOW] = back-1;
+        stencil_indices[MID][HIGH][MID] = back;
+        stencil_indices[MID][HIGH][HIGH] = back+1;
 
-        // 18 19 20
-        // 21 22 23
-        // 24 25 26
-
-        stencil_indices(0) = below-nx-1;
-        stencil_indices(1) = below-nx;
-        stencil_indices(2) = below-nx+1;
-        stencil_indices(3) = below-1;
-        stencil_indices(5) = below+1;
-        stencil_indices(6) = below+nx-1;
-        stencil_indices(7) = below+nx;
-        stencil_indices(8) = below+nx+1;
-
-        stencil_indices(9) = front-1;
-        stencil_indices(11) = front+1;
-
-        stencil_indices(15) = back-1;
-        stencil_indices(17) = back+1;
-
-        stencil_indices(18) = above-nx-1;
-        stencil_indices(19) = above-nx;
-        stencil_indices(20) = above-nx+1;
-        stencil_indices(21) = above-1;
-        stencil_indices(23) = above+1;
-        stencil_indices(24) = above+nx-1;
-        stencil_indices(25) = above+nx;
-        stencil_indices(26) = above+nx+1;
+        stencil_indices[HIGH][LOW][LOW] = above-nx-1;
+        stencil_indices[HIGH][LOW][MID] = above-nx;
+        stencil_indices[HIGH][LOW][HIGH] = above-nx+1;
+        stencil_indices[HIGH][MID][LOW] = above-1;
+        stencil_indices[HIGH][MID][MID] = above;
+        stencil_indices[HIGH][MID][HIGH] = above+1;
+        stencil_indices[HIGH][HIGH][LOW] = above+nx-1;
+        stencil_indices[HIGH][HIGH][MID] = above+nx;
+        stencil_indices[HIGH][HIGH][HIGH] = above+nx+1;
 
         if (left == INVALID) {
-          stencil_indices(0) = stencil_indices(3) = stencil_indices(6) = stencil_indices(9) = stencil_indices(15) = stencil_indices(18) = stencil_indices(21) = stencil_indices(24) = INVALID;
+          for (size_t k0 = 0; k0<3; ++k0)
+            for (size_t k1 = 0; k1<3; ++k1)
+              stencil_indices[k0][k1][LOW] = INVALID;
         }
         if (right == INVALID) {
-          stencil_indices(2) = stencil_indices(5) = stencil_indices(8) = stencil_indices(11) = stencil_indices(17) = stencil_indices(20) = stencil_indices(23) = stencil_indices(26) = INVALID;
+          for (size_t k0 = 0; k0<3; ++k0)
+            for (size_t k1 = 0; k1<3; ++k1)
+              stencil_indices[k0][k1][HIGH] = INVALID;
         }
         if (front == INVALID) {
-          stencil_indices(0) = stencil_indices(1) = stencil_indices(2) = stencil_indices(9) = stencil_indices(11) = stencil_indices(18) = stencil_indices(19) = stencil_indices(20) = INVALID;
+          for (size_t k0 = 0; k0<3; ++k0)
+            for (size_t k2 = 0; k2<3; ++k2)
+              stencil_indices[k0][LOW][k2] = INVALID;
         }
         if (back == INVALID) {
-          stencil_indices(6) = stencil_indices(7) = stencil_indices(8) = stencil_indices(15) = stencil_indices(17) = stencil_indices(24) = stencil_indices(25) = stencil_indices(26) = INVALID;
+          for (size_t k0 = 0; k0<3; ++k0)
+            for (size_t k2 = 0; k2<3; ++k2)
+              stencil_indices[k0][HIGH][k2] = INVALID;
         }
         if (below == INVALID) {
-          stencil_indices(0) = stencil_indices(1) = stencil_indices(2) = stencil_indices(3) = stencil_indices(5) = stencil_indices(6) = stencil_indices(7) = stencil_indices(8) = INVALID;
+          for (size_t k1 = 0; k1<3; ++k1)
+            for (size_t k2 = 0; k2<3; ++k2)
+              stencil_indices[LOW][k1][k2] = INVALID;
         }
         if (above == INVALID) {
-          stencil_indices(18) = stencil_indices(19) = stencil_indices(20) = stencil_indices(21) = stencil_indices(23) = stencil_indices(24) = stencil_indices(25) = stencil_indices(26) = INVALID;
+          for (size_t k1 = 0; k1<3; ++k1)
+            for (size_t k2 = 0; k2<3; ++k2)
+              stencil_indices[HIGH][k1][k2] = INVALID;
         }
 
         isDirichlet = (left == INVALID && (DirichletBC & DIR_LEFT)) ||
@@ -697,37 +700,43 @@ namespace Galeri {
       KOKKOS_FORCEINLINE_FUNCTION
       void CountRowNNZ(const GlobalOrdinal i, LocalOrdinal& partial_nnz, const bool is_final) const {
         GlobalOrdinal center;
+        StencilIndices stencil_indices;
         bool isDirichlet;
 
         center = lclMap.getGlobalElement(i);
-        GetNeighbours(center, isDirichlet);
+        GetNeighbours(center, stencil_indices, isDirichlet);
 
         if (isDirichlet && keepBCs) {
           // Dirichlet unknown we want to keep
           Galeri_processEntry(center);
         } else {
-          for (size_t k = 0; k<27; ++k)
-            Galeri_processEntry(stencil_indices(k));
+          for (size_t k0 = 0; k0<3; ++k0)
+            for (size_t k1 = 0; k1<3; ++k1)
+              for (size_t k2 = 0; k2<3; ++k2)
+                Galeri_processEntry(stencil_indices[k0][k1][k2]);
         }
       }
 
       KOKKOS_FORCEINLINE_FUNCTION
       void EnterValues(const LocalOrdinal i, typename rowptr_type::value_type& entryPtr) const {
         GlobalOrdinal center;
+        StencilIndices stencil_indices;
         bool isDirichlet;
 
         center = lclMap.getGlobalElement(i);
-        GetNeighbours(center, isDirichlet);
+        GetNeighbours(center, stencil_indices, isDirichlet);
 
         impl_scalar_type offDiagonalSum = zero;
         if (isDirichlet && keepBCs) {
           // Dirichlet unknown we want to keep
           Galeri_enterValue(center, one);
         } else {
-          for (size_t k = 0; k < 27; ++k)
-            if (k != 13)
-              Galeri_enterValue(stencil_indices(k), stencil_entries(k));
-          Galeri_enterValue(center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : stencil_entries(13));
+          for (size_t k0 = 0; k0<3; ++k0)
+            for (size_t k1 = 0; k1<3; ++k1)
+              for (size_t k2 = 0; k2<3; ++k2)
+                if ((k0 != MID) || (k1 != MID) || (k2 != MID))
+                  Galeri_enterValue(stencil_indices[k0][k1][k2], stencil_entries(k0, k1, k2));
+          Galeri_enterValue(center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : stencil_entries(MID, MID, MID));
         }
       }
     };
@@ -1317,7 +1326,7 @@ namespace Galeri {
     Teuchos::RCP<Matrix>
     StencilMatrixKokkos(const Teuchos::RCP<const Map>& map,
                         Stencil &stencil,
-                        const std::string &label = "")
+                        const std::string &matLabel)
     {
       using Teuchos::TimeMonitor;
       using Teuchos::RCP;
@@ -1340,13 +1349,6 @@ namespace Galeri {
       // 1) We count the number of entries per row and collect the off-rank entries in a hashmap.
       // 2) We construct the column map from the row map and the hashmap.
       // 3)_We allocate indices and values and enter the values.
-
-      // The label that is used for parallel regions and views.
-      std::string matLabel;
-      if (label.empty())
-        matLabel = stencil.name;
-      else
-        matLabel = label;
 
       Teuchos::RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Galeri: "+matLabel+" generation")));
 
@@ -1410,7 +1412,7 @@ namespace Galeri {
 
       RCP<Map> ghosted_map;
       if constexpr (std::is_same_v<Map, tpetra_map>) {
-        ghosted_map = rcp(new Map(map->getGlobalNumElements(),
+        ghosted_map = rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
                                   columnMap_entries,
                                   map->getIndexBase(),
                                   map->getComm()));
@@ -1452,7 +1454,7 @@ namespace Galeri {
     ScaledIdentityKokkos(const Teuchos::RCP<const Map> & map,
                          const GlobalOrdinal nx,
                          const Scalar a,
-                         const std::string& label = "") {
+                         const std::string& label = "ScaledIdentity") {
       using Node = typename Map::node_type;
       ScaledIdentityStencil<Scalar, Map> stencil(*map,
                                                  nx,
@@ -1467,7 +1469,7 @@ namespace Galeri {
                   const Scalar a, const Scalar b, const Scalar c,
                   const DirBC DirichletBC = 0,
                   const bool keepBCs = false,
-                  const std::string& label = "") {
+                  const std::string& label = "TriDiag") {
       using Node = typename Map::node_type;
       if (keepBCs) {
         TriDiagStencil<Scalar, Map, true> stencil(*map,
@@ -1492,7 +1494,7 @@ namespace Galeri {
                   const Scalar d, const Scalar e,
                   const DirBC DirichletBC = 0,
                   const bool keepBCs = false,
-                  const std::string& label = "")
+                  const std::string& label = "Cross2D")
     {
       using Node = typename Map::node_type;
       if (keepBCs) {
@@ -1519,7 +1521,7 @@ namespace Galeri {
                   const Scalar f, const Scalar g,
                   const DirBC DirichletBC = 0,
                   const bool keepBCs = false,
-                  const std::string& label = "")
+                  const std::string& label = "Cross3D")
     {
       using Node = typename Map::node_type;
       if (keepBCs) {
@@ -1546,7 +1548,7 @@ namespace Galeri {
                   const Scalar f, const Scalar g,
                   const DirBC DirichletBC = 0,
                   const bool keepBCs = false,
-                  const std::string& label = "")
+                  const std::string& label = "Brick3D")
     {
       using Node = typename Map::node_type;
       if (keepBCs) {
