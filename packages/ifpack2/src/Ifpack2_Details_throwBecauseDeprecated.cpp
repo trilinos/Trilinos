@@ -14,13 +14,9 @@
 namespace Ifpack2 {
 namespace Details {
 
-void
-throwBecauseDeprecated (const char functionName[])
-{
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "\"" << functionName
-     << "\" is DEPRECATED and will be removed soon!");
+void throwBecauseDeprecated(const char functionName[]) {
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "\"" << functionName << "\" is DEPRECATED and will be removed soon!");
 }
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2

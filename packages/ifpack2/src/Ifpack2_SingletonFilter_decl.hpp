@@ -19,7 +19,6 @@
 #include <type_traits>
 #include <vector>
 
-
 namespace Ifpack2 {
 
 /// \class SingletonFilter
@@ -27,10 +26,9 @@ namespace Ifpack2 {
 /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// \warning This is an implementation detail of Ifpack2.
-template<class MatrixType>
-class SingletonFilter :
-    virtual public Ifpack2::Details::RowMatrix<MatrixType> {
-public:
+template <class MatrixType>
+class SingletonFilter : virtual public Ifpack2::Details::RowMatrix<MatrixType> {
+ public:
   typedef typename MatrixType::scalar_type Scalar;
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
   typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
@@ -53,7 +51,7 @@ public:
   //@{
 
   //! Constructor.
-  explicit SingletonFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
+  explicit SingletonFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Matrix);
 
   //! Destructor.
   virtual ~SingletonFilter();
@@ -66,21 +64,20 @@ public:
   //! Returns the communicator.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRowMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const;
 
   //! \brief Returns the Map that describes the range distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const;
 
   //! Returns the RowGraph associated with this matrix.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
+  virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal, GlobalOrdinal, Node> > getGraph() const;
 
   //! Returns the number of global rows in this matrix.
   virtual global_size_t getGlobalNumRows() const;
@@ -112,7 +109,7 @@ public:
   virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
 
   //! The number of degrees of freedom per mesh point.
-  virtual LocalOrdinal getBlockSize () const;
+  virtual LocalOrdinal getBlockSize() const;
 
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   virtual size_t getGlobalMaxNumRowEntries() const;
@@ -152,9 +149,9 @@ public:
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
   virtual void
-  getGlobalRowCopy (GlobalOrdinal GlobalRow,
-                   nonconst_global_inds_host_view_type &Indices,
-                   nonconst_values_host_view_type &Values,
+  getGlobalRowCopy(GlobalOrdinal GlobalRow,
+                   nonconst_global_inds_host_view_type& Indices,
+                   nonconst_values_host_view_type& Values,
                    size_t& NumEntries) const;
 
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
@@ -169,10 +166,10 @@ public:
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
   virtual void
-  getLocalRowCopy (LocalOrdinal LocalRow,
-                   nonconst_local_inds_host_view_type &Indices,
-                   nonconst_values_host_view_type &Values,
-                   size_t& NumEntries) const;
+  getLocalRowCopy(LocalOrdinal LocalRow,
+                  nonconst_local_inds_host_view_type& Indices,
+                  nonconst_values_host_view_type& Values,
+                  size_t& NumEntries) const;
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -185,9 +182,9 @@ public:
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
   virtual void
-  getGlobalRowView (GlobalOrdinal GlobalRow,
-                    global_inds_host_view_type &indices,
-                    values_host_view_type &values) const;
+  getGlobalRowView(GlobalOrdinal GlobalRow,
+                   global_inds_host_view_type& indices,
+                   values_host_view_type& values) const;
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
@@ -200,14 +197,14 @@ public:
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
   virtual void
-  getLocalRowView (LocalOrdinal LocalRow,
-                   local_inds_host_view_type & indices,
-                   values_host_view_type & values) const;
+  getLocalRowView(LocalOrdinal LocalRow,
+                  local_inds_host_view_type& indices,
+                  values_host_view_type& values) const;
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
-  virtual void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
+  virtual void getLocalDiagCopy(Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& diag) const;
 
   //@}
 
@@ -248,51 +245,49 @@ public:
     - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
     - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
   */
-  virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+  virtual void apply(const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+                     Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Y,
                      Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+                     Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
+                     Scalar beta           = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
   //! Indicates whether this operator supports applying the adjoint operator.
   virtual bool hasTransposeApply() const;
 
   //! Solve the singleton components of the linear system
-  virtual void SolveSingletons(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS,
-                      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS);
+  virtual void SolveSingletons(const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& RHS,
+                               Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& LHS);
 
   template <class DomainScalar, class RangeScalar>
-  void SolveSingletonsTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& RHS,
-                            Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS);
+  void SolveSingletonsTempl(const Tpetra::MultiVector<DomainScalar, LocalOrdinal, GlobalOrdinal, Node>& RHS,
+                            Tpetra::MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal, Node>& LHS);
 
   //! Creates a RHS for the reduced singleton-free system
-  virtual void CreateReducedRHS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS,
-                       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS,
-                       Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS);
+  virtual void CreateReducedRHS(const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& LHS,
+                                const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& RHS,
+                                Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& ReducedRHS);
 
   template <class DomainScalar, class RangeScalar>
-  void CreateReducedRHSTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS,
-                             const Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& RHS,
-                             Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS);
+  void CreateReducedRHSTempl(const Tpetra::MultiVector<DomainScalar, LocalOrdinal, GlobalOrdinal, Node>& LHS,
+                             const Tpetra::MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal, Node>& RHS,
+                             Tpetra::MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal, Node>& ReducedRHS);
 
   //! Updates a full LHS from a reduces LHS
-  virtual void UpdateLHS(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedLHS,
-                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS);
+  virtual void UpdateLHS(const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& ReducedLHS,
+                         Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& LHS);
 
   template <class DomainScalar, class RangeScalar>
-  void UpdateLHSTempl(const Tpetra::MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedLHS,
-                      Tpetra::MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& LHS);
-
+  void UpdateLHSTempl(const Tpetra::MultiVector<DomainScalar, LocalOrdinal, GlobalOrdinal, Node>& ReducedLHS,
+                      Tpetra::MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal, Node>& LHS);
 
   //@}
-private:
-
+ private:
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
+  Teuchos::RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A_;
   //! Map containing the non-singleton rows only.
   Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ReducedMap_;
   //! Reduced diagonal
-  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Diagonal_;
+  Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Diagonal_;
   //! Number of Singletons
   size_t NumSingletons_;
   //! Indices of the singletons
@@ -315,8 +310,8 @@ private:
   mutable nonconst_local_inds_host_view_type Indices_;
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
   mutable nonconst_values_host_view_type Values_;
-};// class SingletonFilter
+};  // class SingletonFilter
 
-}// namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif /* IFPACK2_SINGLETONFILTER_DECL_HPP */

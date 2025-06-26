@@ -14,7 +14,6 @@
 // DMD.
 //------------------------------------------------------
 
-
 #ifndef IFPACK2_BORDEREDOPERATOR_DECL_HPP
 #define IFPACK2_BORDEREDOPERATOR_DECL_HPP
 
@@ -48,15 +47,14 @@ the bordered operator.
 <b>Title of Method Description</b>
 */
 
-template<class Scalar,
-         class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
-         class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-         class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-class BorderedOperator :
-    virtual public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node > {
-public:
+template <class Scalar,
+          class LocalOrdinal  = typename Tpetra::Operator<Scalar>::local_ordinal_type,
+          class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node          = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class BorderedOperator : virtual public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+ public:
   //! Constructor with Tpetra::Operator input.
-  BorderedOperator (const Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A);
+  BorderedOperator(const Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &A);
 
   //! Destructor.
   virtual ~BorderedOperator() {}
@@ -65,28 +63,28 @@ public:
   //@{
 
   //! The domain Map of this operator.  It must be compatible with X.getMap().
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const;
 
   //! The range Map of this operator.  It must be compatible with Y.getMap().
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const;
 
   //! Whether this operator can apply the transpose or conjugate transpose.
   bool hasTransposeApply() const;
 
   //! Apply the bordered operator.
   void
-  apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  apply(const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X,
+        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
+        Scalar beta           = Teuchos::ScalarTraits<Scalar>::zero()) const;
   //@}
 
-private:
+ private:
   //! The Operator with which this instance was constructed.
-  Teuchos::RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
+  Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A_;
 };
 
-}//namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_BORDEREDOPERATOR_DECL_HPP
+#endif  // IFPACK2_BORDEREDOPERATOR_DECL_HPP
