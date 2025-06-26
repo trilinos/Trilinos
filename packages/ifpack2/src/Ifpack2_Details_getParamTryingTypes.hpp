@@ -17,69 +17,62 @@
 namespace Ifpack2 {
 namespace Details {
 
-template<class ... CandidateTypes>
+template <class... CandidateTypes>
 struct GetParamTryingTypes {
-  template<class ResultType>
+  template <class ResultType>
   static void
-  get (ResultType& result,
-       const Teuchos::ParameterEntry& ent,
-       const std::string& paramName,
-       const char prefix[]);
+  get(ResultType& result,
+      const Teuchos::ParameterEntry& ent,
+      const std::string& paramName,
+      const char prefix[]);
 };
 
-template<>
+template <>
 struct GetParamTryingTypes<> {
-  template<class ResultType>
+  template <class ResultType>
   static void
-  get (ResultType& /* result */,
-       const Teuchos::ParameterEntry& /* ent */,
-       const std::string& paramName,
-       const char prefix[])
-  {
+  get(ResultType& /* result */,
+      const Teuchos::ParameterEntry& /* ent */,
+      const std::string& paramName,
+      const char prefix[]) {
     using Teuchos::TypeNameTraits;
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::invalid_argument, prefix << "\"" << paramName
-       << "\" parameter exists in input ParameterList, but does not "
-       "have the right type.  The proper type is "
-       << TypeNameTraits<ResultType>::name () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, prefix << "\"" << paramName << "\" parameter exists in input ParameterList, but does not "
+                                                                                           "have the right type.  The proper type is "
+                                                                   << TypeNameTraits<ResultType>::name() << ".");
   }
 };
 
-template<class First, class ... Rest>
+template <class First, class... Rest>
 struct GetParamTryingTypes<First, Rest...> {
-  template<class ResultType>
+  template <class ResultType>
   static void
-  get (ResultType& result,
-       const Teuchos::ParameterEntry& ent,
-       const std::string& paramName,
-       const char prefix[])
-  {
-    if (ent.template isType<First> ()) {
-      result = static_cast<ResultType> (Teuchos::getValue<First> (ent));
-    }
-    else {
+  get(ResultType& result,
+      const Teuchos::ParameterEntry& ent,
+      const std::string& paramName,
+      const char prefix[]) {
+    if (ent.template isType<First>()) {
+      result = static_cast<ResultType>(Teuchos::getValue<First>(ent));
+    } else {
       using rest_type = GetParamTryingTypes<Rest...>;
-      rest_type::template get<ResultType> (result, ent, paramName, prefix);
+      rest_type::template get<ResultType>(result, ent, paramName, prefix);
     }
   }
 };
 
-template<class ResultType, class ... CandidateTypes>
-void
-getParamTryingTypes (ResultType& result,
-                     const Teuchos::ParameterList& params,
-                     const std::string& paramName,
-                     const char prefix[])
-{
+template <class ResultType, class... CandidateTypes>
+void getParamTryingTypes(ResultType& result,
+                         const Teuchos::ParameterList& params,
+                         const std::string& paramName,
+                         const char prefix[]) {
   using Teuchos::ParameterEntry;
-  const ParameterEntry* ent = params.getEntryPtr (paramName);
+  const ParameterEntry* ent = params.getEntryPtr(paramName);
   if (ent != nullptr) {
     using impl_type = GetParamTryingTypes<CandidateTypes...>;
-    impl_type::template get<ResultType> (result, *ent, paramName, prefix);
+    impl_type::template get<ResultType>(result, *ent, paramName, prefix);
   }
 }
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_GETPARAMTRYINGTYPES_HPP
+#endif  // IFPACK2_DETAILS_GETPARAMTRYINGTYPES_HPP

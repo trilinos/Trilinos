@@ -1,0 +1,13 @@
+#Official Tool: clang-format version 14.0.0
+#Kokkos options
+BasedOnStyle: google
+SortIncludes: false
+AlignConsecutiveAssignments: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+#MueLu-specific options
+ColumnLimit: 0
+BreakConstructorInitializersBeforeComma: true
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+ConstructorInitializerIndentWidth: 2

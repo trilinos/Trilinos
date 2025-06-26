@@ -48,9 +48,9 @@ namespace Details {
 /// makes sense to implement "local gather / scatter" as a separate
 /// class that uses the public interface of Tpetra::MultiVector,
 /// rather than an instance method (which would have to be templated).
-template<class MV_in, class MV_out>
+template <class MV_in, class MV_out>
 class MultiVectorLocalGatherScatter {
-public:
+ public:
   typedef typename MV_in::scalar_type InScalar;
   typedef typename MV_out::scalar_type OutScalar;
   typedef typename MV_in::local_ordinal_type LO;
@@ -61,42 +61,40 @@ public:
   /* MV <==> MV */
   /**************/
   void
-  gather (MV_out& X_out,
-          const MV_in& X_in,
-          const Teuchos::ArrayView<const LO> perm) const
-  {
+  gather(MV_out& X_out,
+         const MV_in& X_in,
+         const Teuchos::ArrayView<const LO> perm) const {
     using Teuchos::ArrayRCP;
-    const size_t numRows = X_out.getLocalLength ();
-    const size_t numVecs = X_in.getNumVectors ();
+    const size_t numRows = X_out.getLocalLength();
+    const size_t numVecs = X_in.getNumVectors();
     Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
-      ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
+      ArrayRCP<OutScalar> X_out_j     = X_out.getDataNonConst(j);
       for (size_t i = 0; i < numRows; ++i) {
         const size_t i_perm = perm[i];
-        X_out_j[i] = X_in_j[i_perm];
+        X_out_j[i]          = X_in_j[i_perm];
       }
     }
     X_out.modify_host();
   }
 
-  //Gather blocks (contiguous groups of blockSize rows)
-  //X_out and X_in are point indexed, but perm uses block indices.
-  //So X_out.getLocalLength() / blockSize gives the number of blocks.
+  // Gather blocks (contiguous groups of blockSize rows)
+  // X_out and X_in are point indexed, but perm uses block indices.
+  // So X_out.getLocalLength() / blockSize gives the number of blocks.
   void
-  gatherBlock (
-        MV_out& X_out,
-        const MV_in& X_in,
-        const Teuchos::ArrayView<const LO> perm,
-        LO blockSize) const
-  {
+  gatherBlock(
+      MV_out& X_out,
+      const MV_in& X_in,
+      const Teuchos::ArrayView<const LO> perm,
+      LO blockSize) const {
     using Teuchos::ArrayRCP;
     const size_t numBlocks = X_out.getLocalLength() / blockSize;
-    const size_t numVecs = X_in.getNumVectors ();
+    const size_t numVecs   = X_in.getNumVectors();
     Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
-      ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
+      ArrayRCP<OutScalar> X_out_j     = X_out.getDataNonConst(j);
       for (size_t i = 0; i < numBlocks; ++i) {
         const size_t i_perm = perm[i];
         for (LO k = 0; k < blockSize; k++) {
@@ -108,43 +106,41 @@ public:
   }
 
   void
-  scatter (MV_in& X_in,
-           const MV_out& X_out,
-           const Teuchos::ArrayView<const LO> perm) const
-  {
+  scatter(MV_in& X_in,
+          const MV_out& X_out,
+          const Teuchos::ArrayView<const LO> perm) const {
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength();
     const size_t numVecs = X_in.getNumVectors();
     Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
-      ArrayRCP<InScalar> X_in_j = X_in.getDataNonConst(j);
+      ArrayRCP<InScalar> X_in_j         = X_in.getDataNonConst(j);
       ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
       for (size_t i = 0; i < numRows; ++i) {
         const size_t i_perm = perm[i];
-        X_in_j[i_perm] = X_out_j[i];
+        X_in_j[i_perm]      = X_out_j[i];
       }
     }
     X_out.modify_host();
   }
 
   void
-  scatterBlock (
-        MV_in& X_in,
-        const MV_out& X_out,
-        const Teuchos::ArrayView<const LO> perm,
-        LO blockSize) const
-  {
+  scatterBlock(
+      MV_in& X_in,
+      const MV_out& X_out,
+      const Teuchos::ArrayView<const LO> perm,
+      LO blockSize) const {
     using Teuchos::ArrayRCP;
     const size_t numBlocks = X_out.getLocalLength() / blockSize;
-    const size_t numVecs = X_in.getNumVectors ();
+    const size_t numVecs   = X_in.getNumVectors();
     Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
-      ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
+      ArrayRCP<OutScalar> X_out_j     = X_out.getDataNonConst(j);
       for (size_t i = 0; i < numBlocks; ++i) {
         const size_t i_perm = perm[i];
         for (LO k = 0; k < blockSize; k++) {
-           X_in_j[i_perm * blockSize + k] = X_out_j[i * blockSize + k];
+          X_in_j[i_perm * blockSize + k] = X_out_j[i * blockSize + k];
         }
       }
     }
@@ -154,67 +150,63 @@ public:
   /******************/
   /* View <==> View */
   /******************/
-  template<typename InView, typename OutView>
+  template <typename InView, typename OutView>
   void gatherViewToView(OutView X_out,
                         const InView X_in,
-                        const Teuchos::ArrayView<const LO> perm) const
-  {
-    //note: j is col, i is row
-    Kokkos::fence(); // demonstrated via unit test failure
-    for(size_t j = 0; j < X_out.extent(1); ++j) {
-      for(size_t i = 0; i < X_out.extent(0); ++i) {
+                        const Teuchos::ArrayView<const LO> perm) const {
+    // note: j is col, i is row
+    Kokkos::fence();  // demonstrated via unit test failure
+    for (size_t j = 0; j < X_out.extent(1); ++j) {
+      for (size_t i = 0; i < X_out.extent(0); ++i) {
         const LO i_perm = perm[i];
-        X_out(i, j) = X_in(i_perm, j);
+        X_out(i, j)     = X_in(i_perm, j);
       }
     }
   }
 
-  template<typename InView, typename OutView>
+  template <typename InView, typename OutView>
   void scatterViewToView(InView X_in,
                          const OutView X_out,
-                         const Teuchos::ArrayView<const LO> perm) const
-  {
+                         const Teuchos::ArrayView<const LO> perm) const {
     Kokkos::fence();
-    for(size_t j = 0; j < X_out.extent(1); ++j) {
-      for(size_t i = 0; i < X_out.extent(0); ++i) {
+    for (size_t j = 0; j < X_out.extent(1); ++j) {
+      for (size_t i = 0; i < X_out.extent(0); ++i) {
         const LO i_perm = perm[i];
         X_in(i_perm, j) = X_out(i, j);
       }
     }
   }
 
-  template<typename InView, typename OutView>
+  template <typename InView, typename OutView>
   void gatherViewToViewBlock(OutView X_out,
                              const InView X_in,
                              const Teuchos::ArrayView<const LO> perm,
-                             LO blockSize) const
-  {
-    //note: j is col, i is row
+                             LO blockSize) const {
+    // note: j is col, i is row
     Kokkos::fence();
     size_t numBlocks = X_out.extent(0) / blockSize;
-    for(size_t j = 0; j < X_out.extent(1); ++j) {
-      for(size_t i = 0; i < numBlocks; ++i) {
+    for (size_t j = 0; j < X_out.extent(1); ++j) {
+      for (size_t i = 0; i < numBlocks; ++i) {
         const LO i_perm = perm[i];
-        for(LO k = 0; k < blockSize; k++) {
+        for (LO k = 0; k < blockSize; k++) {
           X_out(i * blockSize + k, j) = X_in(i_perm * blockSize + k, j);
         }
       }
     }
   }
 
-  template<typename InView, typename OutView>
+  template <typename InView, typename OutView>
   void scatterViewToViewBlock(InView X_in,
                               const OutView X_out,
                               const Teuchos::ArrayView<const LO> perm,
-                              LO blockSize) const
-  {
-    //note: j is col, i is row
+                              LO blockSize) const {
+    // note: j is col, i is row
     Kokkos::fence();
     size_t numBlocks = X_out.extent(0) / blockSize;
-    for(size_t j = 0; j < X_out.extent(1); ++j) {
-      for(size_t i = 0; i < numBlocks; ++i) {
+    for (size_t j = 0; j < X_out.extent(1); ++j) {
+      for (size_t i = 0; i < numBlocks; ++i) {
         const LO i_perm = perm[i];
-        for(LO k = 0; k < blockSize; k++) {
+        for (LO k = 0; k < blockSize; k++) {
           X_in(i_perm * blockSize + k, j) = X_out(i * blockSize + k, j);
         }
       }
@@ -224,72 +216,68 @@ public:
   /*******************************/
   /* MV <==> View specialization */
   /*******************************/
-  template<typename InView>
+  template <typename InView>
   void gatherMVtoView(MV_out X_out,
                       InView X_in,
-                      const Teuchos::ArrayView<const LO> perm) const
-  {
-    //note: j is col, i is row
+                      const Teuchos::ArrayView<const LO> perm) const {
+    // note: j is col, i is row
     Kokkos::fence();
     size_t numRows = X_out.getLocalLength();
-    for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
+    for (size_t j = 0; j < X_out.getNumVectors(); ++j) {
       Teuchos::ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
-      for(size_t i = 0; i < numRows; ++i) {
+      for (size_t i = 0; i < numRows; ++i) {
         const LO i_perm = perm[i];
-        X_out_j[i] = X_in(i_perm, j);
+        X_out_j[i]      = X_in(i_perm, j);
       }
     }
   }
 
-  template<typename InView>
+  template <typename InView>
   void scatterMVtoView(InView X_in,
                        MV_out X_out,
-                       const Teuchos::ArrayView<const LO> perm) const
-  {
-    size_t numRows = X_out.getLocalLength(); 
+                       const Teuchos::ArrayView<const LO> perm) const {
+    size_t numRows = X_out.getLocalLength();
     Kokkos::fence();
-    for(size_t j = 0; j < X_in.extent(1); ++j) {
+    for (size_t j = 0; j < X_in.extent(1); ++j) {
       Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
-      for(size_t i = 0; i < numRows; ++i) {
+      for (size_t i = 0; i < numRows; ++i) {
         const LO i_perm = perm[i];
         X_in(i_perm, j) = X_out_j[i];
       }
     }
   }
 
-  template<typename InView>
+  template <typename InView>
   void gatherMVtoViewBlock(MV_out X_out,
                            InView X_in,
                            const Teuchos::ArrayView<const LO> perm,
-                           LO blockSize) const
-  {
-    //note: j is col, i is row
+                           LO blockSize) const {
+    // note: j is col, i is row
     size_t numBlocks = X_out.getLocalLength() / blockSize;
     Kokkos::fence();
-    for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
+    for (size_t j = 0; j < X_out.getNumVectors(); ++j) {
       Teuchos::ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
-      for(size_t i = 0; i < numBlocks; ++i) {
+      for (size_t i = 0; i < numBlocks; ++i) {
         const LO i_perm = perm[i];
-        for(LO k = 0; k < blockSize; k++) {
+        for (LO k = 0; k < blockSize; k++) {
           X_out_j[i * blockSize + k] = X_in(i_perm * blockSize + k, j);
         }
       }
     }
   }
 
-  template<typename InView>
+  template <typename InView>
   void scatterMVtoViewBlock(InView X_in,
                             MV_out X_out,
                             const Teuchos::ArrayView<const LO> perm,
-                            LO blockSize) const
-  {
+                            LO blockSize) const {
     size_t numBlocks = X_out.getLocalLength() / blockSize;
     Kokkos::fence();
-    for(size_t j = 0; j < X_in.extent(1); ++j) {
+    for (size_t j = 0; j < X_in.extent(1); ++j) {
       Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
-      for(size_t i = 0; i < numBlocks; ++i) {
+      for (size_t i = 0; i < numBlocks; ++i) {
         const LO i_perm = perm[i];
-        for(LO k = 0; k < blockSize; k++) {
+        for (LO k = 0; k < blockSize; k++) {
           X_in(i_perm * blockSize + k, j) = X_out_j[i * blockSize + k];
         }
       }
@@ -297,7 +285,7 @@ public:
   }
 };
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_MULTIVECTORLOCALGATHERSCATTER_HPP
+#endif  // IFPACK2_DETAILS_MULTIVECTORLOCALGATHERSCATTER_HPP

@@ -22,9 +22,8 @@ void getValidParameters(Teuchos::ParameterList& params);
 /** If the specified name does not name a parameter in the list, then 'value' is
   not referenced.
 */
-template<typename T>
-void getParameter(const Teuchos::ParameterList& params, const std::string& name, T& value)
-{
+template <typename T>
+void getParameter(const Teuchos::ParameterList& params, const std::string& name, T& value) {
   if (params.isParameter(name)) {
     if (params.isType<T>(name)) {
       value = params.get<T>(name);
@@ -32,6 +31,6 @@ void getParameter(const Teuchos::ParameterList& params, const std::string& name,
   }
 }
 
-}//namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif

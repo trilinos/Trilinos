@@ -16,10 +16,9 @@
 namespace Ifpack2 {
 namespace Details {
 
-
-template<class SC, class LO, class GO, class NT>
+template <class SC, class LO, class GO, class NT>
 class Factory {
-public:
+ public:
   typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
   typedef ::Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;
 
@@ -33,8 +32,8 @@ public:
   /// does not exist.  Otherwise, return a newly created
   /// preconditioner object.
   Teuchos::RCP<prec_type>
-  create (const std::string& precType,
-          const Teuchos::RCP<const row_matrix_type>& matrix);
+  create(const std::string& precType,
+         const Teuchos::RCP<const row_matrix_type>& matrix);
 
   /** \brief Create an instance of Ifpack2::Preconditioner given the
    *   string name of the preconditioner type.
@@ -52,18 +51,18 @@ public:
    * object.
    */
   Teuchos::RCP<prec_type>
-  create (const std::string& precType,
-          const Teuchos::RCP<const row_matrix_type>& matrix,
-          const int overlap);
+  create(const std::string& precType,
+         const Teuchos::RCP<const row_matrix_type>& matrix,
+         const int overlap);
 
   std::vector<std::string>
-  getSupportedNames () const;
+  getSupportedNames() const;
 
   bool
-  isSupported (const std::string& precType);
+  isSupported(const std::string& precType);
 };
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_FACTORY_DECL_HPP
+#endif  // IFPACK2_DETAILS_FACTORY_DECL_HPP

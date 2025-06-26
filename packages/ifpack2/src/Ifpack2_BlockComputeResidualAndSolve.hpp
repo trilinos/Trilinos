@@ -102,20 +102,20 @@ struct ComputeResidualAndSolve_1Pass {
                                 const impl_scalar_type_1d_view& W_,
                                 const local_ordinal_type& blocksize_requested_,
                                 const impl_scalar_type& damping_factor_)
-      : tpetra_values(amd.tpetra_values),
-        blocksize_requested(blocksize_requested_),
-        A_x_offsets(amd.A_x_offsets),
-        A_x_offsets_remote(amd.A_x_offsets_remote),
-        d_inv(d_inv_),
-        W(W_),
-        damping_factor(damping_factor_) {}
+    : tpetra_values(amd.tpetra_values)
+    , blocksize_requested(blocksize_requested_)
+    , A_x_offsets(amd.A_x_offsets)
+    , A_x_offsets_remote(amd.A_x_offsets_remote)
+    , d_inv(d_inv_)
+    , W(W_)
+    , damping_factor(damping_factor_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type& member) const {
-    const local_ordinal_type blocksize   = (B == 0 ? blocksize_requested : B);
-    const local_ordinal_type rowidx      = member.league_rank();
-    const local_ordinal_type row         = rowidx * blocksize;
-    const local_ordinal_type num_vectors = b.extent(1);
+    const local_ordinal_type blocksize      = (B == 0 ? blocksize_requested : B);
+    const local_ordinal_type rowidx         = member.league_rank();
+    const local_ordinal_type row            = rowidx * blocksize;
+    const local_ordinal_type num_vectors    = b.extent(1);
     const local_ordinal_type num_local_rows = d_inv.extent(0);
 
     const impl_scalar_type* xx;
@@ -139,7 +139,7 @@ struct ComputeResidualAndSolve_1Pass {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, blocksize),
                            [&](const local_ordinal_type& i) {
                              local_Dinv_residual[i] = 0;
-                             local_residual[i]     = b(row + i, col);
+                             local_residual[i]      = b(row + i, col);
                            });
       member.team_barrier();
 
@@ -195,12 +195,11 @@ struct ComputeResidualAndSolve_1Pass {
             // entry.
             impl_scalar_type old_y    = x(row + k, col);
             impl_scalar_type y_update = local_Dinv_residual[k] - old_y;
-            if constexpr(Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
+            if constexpr (Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
               magnitude_type ydiff =
                   Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
               update += ydiff * ydiff;
-            }
-            else {
+            } else {
               update += y_update * y_update;
             }
             y(row + k, col) = old_y + damping_factor * y_update;
@@ -315,13 +314,13 @@ struct ComputeResidualAndSolve_2Pass {
                                 const impl_scalar_type_1d_view& W_,
                                 const local_ordinal_type& blocksize_requested_,
                                 const impl_scalar_type& damping_factor_)
-      : tpetra_values(amd.tpetra_values),
-        blocksize_requested(blocksize_requested_),
-        A_x_offsets(amd.A_x_offsets),
-        A_x_offsets_remote(amd.A_x_offsets_remote),
-        d_inv(d_inv_),
-        W(W_),
-        damping_factor(damping_factor_) {}
+    : tpetra_values(amd.tpetra_values)
+    , blocksize_requested(blocksize_requested_)
+    , A_x_offsets(amd.A_x_offsets)
+    , A_x_offsets_remote(amd.A_x_offsets_remote)
+    , d_inv(d_inv_)
+    , W(W_)
+    , damping_factor(damping_factor_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const OwnedTag, const member_type& member) const {
@@ -411,7 +410,7 @@ struct ComputeResidualAndSolve_2Pass {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, blocksize),
                            [&](const local_ordinal_type& i) {
                              local_Dinv_residual[i] = 0;
-                             local_residual[i]     = y(row + i, col);
+                             local_residual[i]      = y(row + i, col);
                            });
       member.team_barrier();
 
@@ -462,12 +461,11 @@ struct ComputeResidualAndSolve_2Pass {
             // entry.
             impl_scalar_type old_y    = x(row + k, col);
             impl_scalar_type y_update = local_Dinv_residual[k] - old_y;
-            if constexpr(Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
+            if constexpr (Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
               magnitude_type ydiff =
                   Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
               update += ydiff * ydiff;
-            }
-            else {
+            } else {
               update += y_update * y_update;
             }
             y(row + k, col) = old_y + damping_factor * y_update;
@@ -530,8 +528,8 @@ struct ComputeResidualAndSolve_2Pass {
 
     const local_ordinal_type team_size   = 8;
     const local_ordinal_type vector_size = 8;
-    const size_t shmem_team_size   = 2 * blocksize * sizeof(impl_scalar_type);
-    const size_t shmem_thread_size = blocksize * sizeof(impl_scalar_type);
+    const size_t shmem_team_size         = 2 * blocksize * sizeof(impl_scalar_type);
+    const size_t shmem_thread_size       = blocksize * sizeof(impl_scalar_type);
     Kokkos::TeamPolicy<execution_space, NonownedTag> policy(nrows, team_size,
                                                             vector_size);
     policy.set_scratch_size(0, Kokkos::PerTeam(shmem_team_size),
@@ -605,13 +603,13 @@ struct ComputeResidualAndSolve_SolveOnly {
       const impl_scalar_type_1d_view& W_,
       const local_ordinal_type& blocksize_requested_,
       const impl_scalar_type& damping_factor_)
-      : tpetra_values(amd.tpetra_values),
-        blocksize_requested(blocksize_requested_),
-        A_x_offsets(amd.A_x_offsets),
-        A_x_offsets_remote(amd.A_x_offsets_remote),
-        d_inv(d_inv_),
-        W(W_),
-        damping_factor(damping_factor_) {}
+    : tpetra_values(amd.tpetra_values)
+    , blocksize_requested(blocksize_requested_)
+    , A_x_offsets(amd.A_x_offsets)
+    , A_x_offsets_remote(amd.A_x_offsets_remote)
+    , d_inv(d_inv_)
+    , W(W_)
+    , damping_factor(damping_factor_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type& member) const {
@@ -648,12 +646,11 @@ struct ComputeResidualAndSolve_SolveOnly {
             // Compute the change in y (assuming damping_factor == 1) for this
             // entry.
             impl_scalar_type y_update = local_Dinv_residual[k];
-            if constexpr(Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
+            if constexpr (Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
               magnitude_type ydiff =
                   Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
               update += ydiff * ydiff;
-            }
-            else {
+            } else {
               update += y_update * y_update;
             }
             y(row + k, col) = damping_factor * y_update;
