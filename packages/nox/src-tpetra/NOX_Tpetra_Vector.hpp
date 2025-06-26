@@ -35,7 +35,7 @@ class Vector : public Abstract::Vector,
                public NOX::Abstract::ImplicitWeighting
 {
 public:
-    //! The type of the wrapped @ref ::Tpetra::Vector.
+    //! Type of the wrapped @ref ::Tpetra::Vector.
     using vector_type = ::Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
