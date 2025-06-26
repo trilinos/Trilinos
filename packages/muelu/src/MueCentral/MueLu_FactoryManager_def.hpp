@@ -124,7 +124,7 @@ const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal,
       auto fact = rcp(new MultiVectorTransferFactory());
       Teuchos::ParameterList pl;
       pl.set("Vector name", "Material");
-      pl.set("Transfer name", "Ptent");
+      pl.set("Transfer name", "Aggregates");
       pl.set("Normalize", true);
       fact->SetParameterList(pl);
       return fact;
