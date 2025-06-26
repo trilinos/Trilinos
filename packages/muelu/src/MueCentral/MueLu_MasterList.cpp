@@ -76,57 +76,57 @@ namespace MueLu {
     // put in auto-generated code here
 
 
-    if (name == "output filename") { ss << "<Parameter name=\"output filename\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "W cycle start level") { ss << "<Parameter name=\"W cycle start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "fuse prolongation and update") { ss << "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "number of vectors") { ss << "<Parameter name=\"number of vectors\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: use filtered matrix") { ss << "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: eigen-analysis type") { ss << "<Parameter name=\"sa: eigen-analysis type\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: use rowsumabs diagonal scaling") { ss << "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: enforce constraints") { ss << "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: max eigenvalue") { ss << "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: rowsumabs diagonal replacement tolerance") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: rowsumabs use automatic diagonal tolerance") { ss << "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: rowsumabs diagonal replacement value") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "sa: rowsumabs replace single entry row with zero") { ss << "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "replicate: npdes") { ss << "<Parameter name=\"replicate: npdes\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "combine: numBlks") { ss << "<Parameter name=\"combine: numBlks\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "pcoarsen: element") { ss << "<Parameter name=\"pcoarsen: element\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "pcoarsen: schedule") { ss << "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "pcoarsen: hi basis") { ss << "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "pcoarsen: lo basis") { ss << "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "smoother: neighborhood type") { ss << "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "tentative: calculate qr") { ss << "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "tentative: constant column sums") { ss << "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: use map") { ss << "<Parameter name=\"repartition: use map\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: use subcommunicators in place") { ss << "<Parameter name=\"repartition: use subcommunicators in place\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: node repartition level") { ss << "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    if (name == "repartition: put on single proc") { ss << "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }
-    if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "maxwell1: dump matrices") { ss << "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: disable addon") { ss << "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: use as preconditioner") { ss << "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: dump matrices") { ss << "<Parameter name=\"refmaxwell: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: subsolves on subcommunicators") { ss << "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: enable reuse") { ss << "<Parameter name=\"refmaxwell: enable reuse\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: skip first (1,1) level") { ss << "<Parameter name=\"refmaxwell: skip first (1,1) level\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
-    if (name == "refmaxwell: normalize nullspace") { ss << "<Parameter name=\"refmaxwell: normalize nullspace\" type=\"bool\" value=" << value << "/>"; return ss.str(); }
+    if (name == "output filename") { ss << "<Parameter name=\"output filename\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "W cycle start level") { ss << "<Parameter name=\"W cycle start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "coarse grid correction scaling factor") { ss << "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "fuse prolongation and update") { ss << "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "number of vectors") { ss << "<Parameter name=\"number of vectors\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: use filtered matrix") { ss << "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: eigen-analysis type") { ss << "<Parameter name=\"sa: eigen-analysis type\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: use rowsumabs diagonal scaling") { ss << "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: enforce constraints") { ss << "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: max eigenvalue") { ss << "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs diagonal replacement tolerance") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs use automatic diagonal tolerance") { ss << "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs diagonal replacement value") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs replace single entry row with zero") { ss << "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "replicate: npdes") { ss << "<Parameter name=\"replicate: npdes\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "combine: numBlks") { ss << "<Parameter name=\"combine: numBlks\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: element") { ss << "<Parameter name=\"pcoarsen: element\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: schedule") { ss << "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: hi basis") { ss << "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "pcoarsen: lo basis") { ss << "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "smoother: neighborhood type") { ss << "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "tentative: calculate qr") { ss << "<Parameter name=\"tentative: calculate qr\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "tentative: constant column sums") { ss << "<Parameter name=\"tentative: constant column sums\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: use map") { ss << "<Parameter name=\"repartition: use map\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: use subcommunicators in place") { ss << "<Parameter name=\"repartition: use subcommunicators in place\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: node repartition level") { ss << "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: put on single proc") { ss << "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "maxwell1: dump matrices") { ss << "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: disable addon") { ss << "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: use as preconditioner") { ss << "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: dump matrices") { ss << "<Parameter name=\"refmaxwell: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: subsolves on subcommunicators") { ss << "<Parameter name=\"refmaxwell: subsolves on subcommunicators\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: enable reuse") { ss << "<Parameter name=\"refmaxwell: enable reuse\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: skip first (1,1) level") { ss << "<Parameter name=\"refmaxwell: skip first (1,1) level\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "refmaxwell: normalize nullspace") { ss << "<Parameter name=\"refmaxwell: normalize nullspace\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     return "";
   }
 
@@ -367,635 +367,636 @@ namespace MueLu {
 ("Poisson-2D",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
-
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-
+          
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-
+          
     "</ParameterList>"
   )
 ("Poisson-2D-complex",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
-
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
-
+          
     "<ParameterList name=\"smoother: params\">"
-
+    
         "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
-
+        
     "</ParameterList>"
-
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-
+          
     "</ParameterList>"
   )
 ("Poisson-3D",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
-
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-
+          
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-
+          
     "</ParameterList>"
   )
 ("Poisson-3D-complex",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
-
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
-
+          
     "<ParameterList name=\"smoother: params\">"
-
+    
         "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
-
+        
     "</ParameterList>"
-
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-
+          
     "</ParameterList>"
   )
 ("Elasticity-2D",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"number of equations\" type=\"int\" value=\"2\"/>"
-
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-
+          
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-
+          
     "</ParameterList>"
   )
 ("Elasticity-2D-complex",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"number of equations\" type=\"int\" value=\"2\"/>"
-
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
-
+          
     "<ParameterList name=\"smoother: params\">"
-
+    
         "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
-
+        
     "</ParameterList>"
-
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-
+          
     "</ParameterList>"
   )
 ("Elasticity-3D",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
-
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"CHEBYSHEV\"/>"
-
+          
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-
+          
     "</ParameterList>"
   )
 ("Elasticity-3D-complex",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"number of equations\" type=\"int\" value=\"3\"/>"
-
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
-
+          
     "<ParameterList name=\"smoother: params\">"
-
+    
         "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>"
-
+        
     "</ParameterList>"
-
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
-
+          
     "</ParameterList>"
   )
 ("MHD",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"SCHWARZ\"/>"
-
+          
     "<ParameterList name=\"smoother: params\">"
-
+    
         "<Parameter name=\"schwarz: overlap level\" type=\"int\" value=\"1\"/>"
-
+        
         "<Parameter name=\"schwarz: combine mode\" type=\"string\" value=\"Zero\"/>"
-
+        
         "<Parameter name=\"schwarz: use reordering\" type=\"bool\" value=\"false\"/>"
-
+        
         "<Parameter name=\"subdomain solver name\" type=\"string\" value=\"RILUK\"/>"
-
+        
     "<ParameterList name=\"subdomain solver parameters\">"
-
+    
         "<Parameter name=\"fact: iluk level-of-fill\" type=\"int\" value=\"0\"/>"
-
+        
         "<Parameter name=\"fact: absolute threshold\" type=\"double\" value=\"0.\"/>"
-
+        
         "<Parameter name=\"fact: relative threshold\" type=\"double\" value=\"1.\"/>"
-
+        
         "<Parameter name=\"fact: relax value\" type=\"double\" value=\"0.\"/>"
-
+        
     "</ParameterList>"
-
+  
     "</ParameterList>"
-
+  
             "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"true\"/>"
-
+          
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"unsmoothed\"/>"
-
+          
     "</ParameterList>"
   )
 ("ConvectionDiffusion",
 
     "<ParameterList name=\"MueLu\">"
-
+    
             "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"false\"/>"
-
+          
             "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
-
+          
     "<ParameterList name=\"smoother: params\">"
-
+    
         "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Gauss-Seidel\"/>"
-
+        
     "</ParameterList>"
-
+  
             "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"pg\"/>"
-
+          
             "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
-
+          
             "<Parameter name=\"emin: use filtered matrix\" type=\"bool\" value=\"true\"/>"
-
+          
     "</ParameterList>"
   )
 ;
   std::map<std::string,std::string> MasterList::ML2MueLuLists_ = DefaultProblemStrings<std::string,std::string>
 
          ("default values","problem: type")
-
+      
          ("ML output","verbosity")
-
+      
          ("output filename","output filename")
-
+      
          ("PDE equations","number of equations")
-
+      
          ("max levels","max levels")
-
+      
          ("prec type","cycle type")
-
+      
          ("W cycle start level","W cycle start level")
-
+      
          ("coarse grid correction scaling factor","coarse grid correction scaling factor")
-
+      
          ("fuse prolongation and update","fuse prolongation and update")
-
+      
          ("number of vectors","number of vectors")
-
+      
          ("problem: symmetric","problem: symmetric")
-
+      
          ("xml parameter file","xml parameter file")
-
+      
          ("parameterlist: syntax","parameterlist: syntax")
-
+      
          ("ML label","hierarchy label")
-
+      
          ("matvec params","matvec params")
-
+      
          ("half precision","half precision")
-
+      
          ("smoother: pre or post","smoother: pre or post")
-
+      
          ("smoother: type","smoother: type")
-
+      
          ("smoother: pre type","smoother: pre type")
-
+      
          ("smoother: post type","smoother: post type")
-
+      
          ("smoother: params","smoother: params")
-
+      
          ("smoother: pre params","smoother: pre params")
-
+      
          ("smoother: post params","smoother: post params")
-
+      
          ("smoother: overlap","smoother: overlap")
-
+      
          ("smoother: pre overlap","smoother: pre overlap")
-
+      
          ("smoother: post overlap","smoother: post overlap")
-
+      
          ("max size","coarse: max size")
-
+      
          ("coarse: type","coarse: type")
-
+      
          ("coarse: params","coarse: params")
-
+      
          ("coarse: overlap","coarse: overlap")
-
+      
          ("aggregation: backend","aggregation: backend")
-
+      
          ("aggregation: type","aggregation: type")
-
+      
          ("aggregation: mode","aggregation: mode")
-
+      
          ("aggregation: ordering","aggregation: ordering")
-
+      
          ("aggregation: phase 1 algorithm","aggregation: phase 1 algorithm")
-
+      
          ("aggregation: symmetrize graph after dropping","aggregation: symmetrize graph after dropping")
-
+      
          ("aggregation: use blocking","aggregation: use blocking")
-
+      
          ("aggregation: drop scheme","aggregation: drop scheme")
-
+      
          ("aggregation: strength-of-connection: matrix","aggregation: strength-of-connection: matrix")
-
+      
          ("aggregation: strength-of-connection: measure","aggregation: strength-of-connection: measure")
-
+      
          ("aggregation: classical scheme","aggregation: classical scheme")
-
+      
          ("aggregation: row sum drop tol","aggregation: row sum drop tol")
-
+      
          ("aggregation: block diagonal: interleaved blocksize","aggregation: block diagonal: interleaved blocksize")
-
+      
          ("aggregation: number of random vectors","aggregation: number of random vectors")
-
+      
          ("aggregation: number of times to pre or post smooth","aggregation: number of times to pre or post smooth")
-
+      
          ("aggregation: penalty parameters","aggregation: penalty parameters")
-
+      
          ("aggregation: distance laplacian directional weights","aggregation: distance laplacian directional weights")
-
+      
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
-
+      
          ("aggregation: distance laplacian metric","aggregation: distance laplacian metric")
-
+      
          ("aggregation: classical algo","aggregation: classical algo")
-
+      
          ("aggregation: threshold","aggregation: drop tol")
-
+      
          ("aggregation: use ml scaling of drop tol","aggregation: use ml scaling of drop tol")
-
+      
          ("aggregation: min agg size","aggregation: min agg size")
-
+      
          ("aggregation: max agg size","aggregation: max agg size")
-
+      
          ("aggregation: compute aggregate qualities","aggregation: compute aggregate qualities")
-
+      
          ("aggregation: brick x size","aggregation: brick x size")
-
+      
          ("aggregation: brick y size","aggregation: brick y size")
-
+      
          ("aggregation: brick z size","aggregation: brick z size")
-
+      
          ("aggregation: brick x Dirichlet","aggregation: brick x Dirichlet")
-
+      
          ("aggregation: brick y Dirichlet","aggregation: brick y Dirichlet")
-
+      
          ("aggregation: brick z Dirichlet","aggregation: brick z Dirichlet")
-
+      
          ("aggregation: max selected neighbors","aggregation: max selected neighbors")
-
+      
          ("aggregation: Dirichlet threshold","aggregation: Dirichlet threshold")
-
+      
          ("aggregation: greedy Dirichlet","aggregation: greedy Dirichlet")
-
+      
          ("aggregation: deterministic","aggregation: deterministic")
-
+      
          ("aggregation: coloring algorithm","aggregation: coloring algorithm")
-
+      
          ("aggregation: coloring: use color graph","aggregation: coloring: use color graph")
-
+      
          ("aggregation: coloring: localize color graph","aggregation: coloring: localize color graph")
-
+      
          ("aggregation: enable phase 1","aggregation: enable phase 1")
-
+      
          ("aggregation: enable phase 2a","aggregation: enable phase 2a")
-
+      
          ("aggregation: enable phase 2b","aggregation: enable phase 2b")
-
+      
          ("aggregation: enable phase 3","aggregation: enable phase 3")
-
+      
          ("aggregation: match ML phase1","aggregation: match ML phase1")
-
+      
          ("aggregation: match ML phase2a","aggregation: match ML phase2a")
-
+      
          ("aggregation: match ML phase2b","aggregation: match ML phase2b")
-
+      
          ("aggregation: phase2a agg factor","aggregation: phase2a agg factor")
-
+      
          ("aggregation: error on nodes with no on-rank neighbors","aggregation: error on nodes with no on-rank neighbors")
-
+      
          ("aggregation: phase3 avoid singletons","aggregation: phase3 avoid singletons")
-
+      
          ("aggregation: allow empty prolongator columns","aggregation: allow empty prolongator columns")
-
+      
          ("aggregation: preserve Dirichlet points","aggregation: preserve Dirichlet points")
-
+      
          ("aggregation: dropping may create Dirichlet","aggregation: dropping may create Dirichlet")
-
+      
          ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
-
+      
          ("aggregation: use interface aggregation","aggregation: use interface aggregation")
-
+      
          ("aggregation: export visualization data","aggregation: export visualization data")
-
+      
          ("aggregation: output filename","aggregation: output filename")
-
+      
          ("aggregation: output file: time step","aggregation: output file: time step")
-
+      
          ("aggregation: output file: iter","aggregation: output file: iter")
-
+      
          ("aggregation: output file: agg style","aggregation: output file: agg style")
-
+      
          ("aggregation: output file: fine graph edges","aggregation: output file: fine graph edges")
-
+      
          ("aggregation: output file: coarse graph edges","aggregation: output file: coarse graph edges")
-
+      
          ("aggregation: output file: build colormap","aggregation: output file: build colormap")
-
+      
          ("aggregation: output file: aggregate qualities","aggregation: output file: aggregate qualities")
-
+      
          ("aggregation: output file: material","aggregation: output file: material")
-
+      
          ("aggregation: params","aggregation: params")
-
+      
          ("strength-of-connection: params","strength-of-connection: params")
-
+      
          ("aggregation: mesh layout","aggregation: mesh layout")
-
+      
          ("aggregation: output type","aggregation: output type")
-
+      
          ("aggregation: coarsening rate","aggregation: coarsening rate")
-
+      
          ("aggregation: number of spatial dimensions","aggregation: number of spatial dimensions")
-
+      
          ("aggregation: coarsening order","aggregation: coarsening order")
-
+      
          ("aggregation: pairwise: size","aggregation: pairwise: size")
-
+      
          ("aggregation: pairwise: tie threshold","aggregation: pairwise: tie threshold")
-
+      
          ("aggregate qualities: check symmetry","aggregate qualities: check symmetry")
-
+      
          ("aggregate qualities: good aggregate threshold","aggregate qualities: good aggregate threshold")
-
+      
          ("aggregate qualities: file output","aggregate qualities: file output")
-
+      
          ("aggregate qualities: file base","aggregate qualities: file base")
-
+      
          ("aggregate qualities: algorithm","aggregate qualities: algorithm")
-
+      
          ("aggregate qualities: zero threshold","aggregate qualities: zero threshold")
-
+      
          ("aggregate qualities: percentiles","aggregate qualities: percentiles")
-
+      
          ("aggregate qualities: mode","aggregate qualities: mode")
-
+      
          ("export data","export data")
-
+      
          ("keep data","keep data")
-
+      
          ("ML print initial list","print initial parameters")
-
+      
          ("print unused","print unused parameters")
-
+      
          ("transpose: use implicit","transpose: use implicit")
-
+      
          ("transfers: half precision","transfers: half precision")
-
+      
          ("nullspace: calculate rotations","nullspace: calculate rotations")
-
+      
          ("nullspace: suppress dimension check","nullspace: suppress dimension check")
-
+      
          ("restriction: scale nullspace","restriction: scale nullspace")
-
+      
          ("use kokkos refactor","use kokkos refactor")
-
+      
          ("synchronize factory timers","synchronize factory timers")
-
+      
          ("rap: triple product","rap: triple product")
-
+      
          ("energy minimization: enable","multigrid algorithm")
-
+      
          ("toggle: mode","toggle: mode")
-
+      
          ("semicoarsen: coarsen rate","semicoarsen: coarsen rate")
-
+      
          ("semicoarsen: piecewise constant","semicoarsen: piecewise constant")
-
+      
          ("semicoarsen: piecewise linear","semicoarsen: piecewise linear")
-
+      
          ("semicoarsen: calculate nonsym restriction","semicoarsen: calculate nonsym restriction")
-
+      
          ("semicoarsen: number of levels","semicoarsen: number of levels")
-
+      
          ("linedetection: orientation","linedetection: orientation")
-
+      
          ("linedetection: num layers","linedetection: num layers")
-
+      
          ("aggregation: damping factor","sa: damping factor")
-
+      
          ("aggregation aux: enable","sa: use filtered matrix")
-
+      
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
-
+      
          ("sa: eigen-analysis type","sa: eigen-analysis type")
-
+      
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
-
+      
          ("not supported by ML","sa: use rowsumabs diagonal scaling")
-
+      
          ("not supported by ML","sa: enforce constraints")
-
+      
          ("not supported by ML","sa: max eigenvalue")
-
+      
          ("not supported by ML","sa: rowsumabs diagonal replacement tolerance")
-
+      
          ("not supported by ML","sa: rowsumabs use automatic diagonal tolerance")
-
+      
          ("not supported by ML","sa: rowsumabs diagonal replacement value")
-
+      
          ("not supported by ML","sa: rowsumabs replace single entry row with zero")
-
+      
          ("not supported by ML","replicate: npdes")
-
+      
          ("not supported by ML","combine: numBlks")
-
+      
          ("interp: build coarse coordinates","interp: build coarse coordinates")
-
+      
          ("transfer: params","transfer: params")
-
+      
          ("pcoarsen: element","pcoarsen: element")
-
+      
          ("pcoarsen: schedule","pcoarsen: schedule")
-
+      
          ("pcoarsen: hi basis","pcoarsen: hi basis")
-
+      
          ("pcoarsen: lo basis","pcoarsen: lo basis")
-
+      
          ("smoother: neighborhood type","smoother: neighborhood type")
-
+      
          ("filtered matrix: use lumping","filtered matrix: use lumping")
-
+      
          ("filtered matrix: use spread lumping","filtered matrix: use spread lumping")
-
+      
          ("filtered matrix: spread lumping diag dom growth factor","filtered matrix: spread lumping diag dom growth factor")
-
+      
          ("filtered matrix: spread lumping diag dom cap","filtered matrix: spread lumping diag dom cap")
-
+      
          ("filtered matrix: use root stencil","filtered matrix: use root stencil")
-
+      
          ("filtered matrix: Dirichlet threshold","filtered matrix: Dirichlet threshold")
-
+      
          ("filtered matrix: reuse eigenvalue","filtered matrix: reuse eigenvalue")
-
+      
          ("filtered matrix: reuse graph","filtered matrix: reuse graph")
-
+      
          ("matrix: compute analysis","matrix: compute analysis")
-
+      
          ("emin: iterative method","emin: iterative method")
-
+      
          ("emin: num iterations","emin: num iterations")
-
+      
          ("emin: num reuse iterations","emin: num reuse iterations")
-
+      
          ("emin: pattern","emin: pattern")
-
+      
          ("emin: pattern order","emin: pattern order")
-
+      
          ("emin: use filtered matrix","emin: use filtered matrix")
-
+      
          ("tentative: calculate qr","tentative: calculate qr")
-
+      
          ("tentative: constant column sums","tentative: constant column sums")
-
+      
          ("tentative: build coarse coordinates","tentative: build coarse coordinates")
-
+      
          ("repartition: enable","repartition: enable")
-
+      
          ("repartition: partitioner","repartition: partitioner")
-
+      
          ("repartition: params","repartition: params")
-
+      
          ("repartition: start level","repartition: start level")
-
+      
          ("repartition: use map","repartition: use map")
-
+      
          ("repartition: use subcommunicators in place","repartition: use subcommunicators in place")
-
+      
          ("repartition: node repartition level","repartition: node repartition level")
-
+      
          ("repartition: node id","repartition: node id")
-
+      
          ("repartition: min per proc","repartition: min rows per proc")
-
+      
          ("repartition: target rows per proc","repartition: target rows per proc")
-
+      
          ("repartition: min rows per thread","repartition: min rows per thread")
-
+      
          ("repartition: target rows per thread","repartition: target rows per thread")
-
+      
          ("repartition: max min ratio","repartition: max imbalance")
-
+      
          ("repartition: remap parts","repartition: remap parts")
-
+      
          ("repartition: remap num values","repartition: remap num values")
-
+      
          ("repartition: remap accept partition","repartition: remap accept partition")
-
+      
          ("repartition: print partition distribution","repartition: print partition distribution")
-
+      
          ("repartition: rebalance P and R","repartition: rebalance P and R")
-
+      
          ("repartition: explicit via new copy rebalance P and R","repartition: explicit via new copy rebalance P and R")
-
+      
          ("repartition: rebalance Nullspace","repartition: rebalance Nullspace")
-
+      
          ("repartition: use subcommunicators","repartition: use subcommunicators")
-
+      
          ("repartition: save importer","repartition: save importer")
-
+      
          ("repartition: put on single proc","repartition: put on single proc")
-
+      
          ("rap: relative diagonal floor","rap: relative diagonal floor")
-
+      
          ("rap: fix zero diagonals","rap: fix zero diagonals")
-
+      
          ("rap: fix zero diagonals threshold","rap: fix zero diagonals threshold")
-
+      
          ("rap: fix zero diagonals replacement","rap: fix zero diagonals replacement")
-
+      
          ("rap: shift","rap: shift")
-
+      
          ("rap: shift diagonal M","rap: shift diagonal M")
-
+      
          ("rap: shift low storage","rap: shift low storage")
-
+      
          ("rap: shift array","rap: shift array")
-
+      
          ("rap: cfl array","rap: cfl array")
-
+      
          ("rap: algorithm","rap: algorithm")
-
+      
          ("matrixmatrix: kernel params","matrixmatrix: kernel params")
-
+      
          ("matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount ","matrixmatrix: kernel params:MM_TAFC_OptimizationCoreCount ")
-
+      
          ("isMatrixMatrix_TransferAndFillComplete ","isMatrixMatrix_TransferAndFillComplete ")
-
+      
          ("reuse: type","reuse: type")
-
+      
          ("use external multigrid package","use external multigrid package")
-
+      
          ("amgx:params","amgx:params")
-
+      
          ("kokkos tuning: muelu parameter mapping","kokkos tuning: muelu parameter mapping")
-
+      
          ("debug: graph level","debug: graph level")
-
+      
          ("maxwell1: mode","maxwell1: mode")
-
+      
          ("maxwell1: 11list","maxwell1: 11list")
-
+      
          ("maxwell1: 22list","maxwell1: 22list")
-
+      
          ("maxwell1: dump matrices","maxwell1: dump matrices")
-
+      
          ("maxwell1: nodal smoother fix zero diagonal threshold","maxwell1: nodal smoother fix zero diagonal threshold")
-
+      
          ("refmaxwell: mode","refmaxwell: mode")
-
+      
          ("refmaxwell: disable addon","refmaxwell: disable addon")
-
+      
          ("refmaxwell: 11list","refmaxwell: 11list")
-
+      
          ("refmaxwell: 22list","refmaxwell: 22list")
-
+      
          ("zero starting solution","refmaxwell: use as preconditioner")
-
+      
          ("refmaxwell: dump matrices","refmaxwell: dump matrices")
-
+      
          ("refmaxwell: subsolves on subcommunicators","refmaxwell: subsolves on subcommunicators")
-
+      
          ("refmaxwell: enable reuse","refmaxwell: enable reuse")
-
+      
          ("refmaxwell: skip first (1,1) level","refmaxwell: skip first (1,1) level")
-
+      
          ("refmaxwell: normalize nullspace","refmaxwell: normalize nullspace")
       ;
 
 }
+
