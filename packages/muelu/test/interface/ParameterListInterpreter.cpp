@@ -59,7 +59,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   bool runHeavyTests       = false;
   std::string xmlForceFile = "";
   bool useKokkos           = false;
-  bool outputToScreen = false;
+  bool outputToScreen      = false;
 
   if (lib == Xpetra::UseTpetra) {
     useKokkos = !Node::is_serial;
@@ -69,7 +69,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("heavytests", "noheavytests", &runHeavyTests, "whether to exercise tests that take a long time to run");
   clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
   clp.setOption("compareWithGold", "skipCompareWithGold", &compareWithGold, "compare runs against gold files");
-  clp.setOption("outputToScreen","noOutputToScreen",&outputToScreen,"output to screen rather than static output files");
+  clp.setOption("outputToScreen", "noOutputToScreen", &outputToScreen, "output to screen rather than static output files");
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
@@ -79,8 +79,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   }
 
   // If we ask for screen output, we can't compare w/ the gold files
-  if(outputToScreen)
-    compareWithGold=false;
+  if (outputToScreen)
+    compareWithGold = false;
 
   // =========================================================================
   // Problem construction
@@ -174,7 +174,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       if (myRank == 0)
         std::cout << "Testing: " << xmlFile << std::endl;
 
-
       baseFile             = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
       std::ifstream f(goldFile.c_str());
@@ -201,7 +200,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         paramList.sublist("Hierarchy").set("verbosity", "InterfaceTest");
       else if (dirList[k] == prefix + "MLParameterListInterpreter/" || dirList[k] == prefix + "MLParameterListInterpreter2/")
         paramList.set("ML output", 666);
-
 
       try {
         timer.start();
@@ -277,7 +275,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           if (!outputToScreen) {
             std::ostream actual_cout(oldbuffer);
             std::string logStr = buffer.str();
-            actual_cout<<logStr<<std::endl;
+            actual_cout << logStr << std::endl;
           }
         }
 
@@ -295,26 +293,25 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       if (!outputToScreen) {
         std::cout.rdbuf(oldbuffer);
 #ifdef HAVE_MPI
-      std::string logStr = buffer.str();
-      if (myRank == 0)
-        remove((baseFile + ".out").c_str());
-      RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm)->getRawMpiComm();
-      MPI_File logfile;
-      comm->barrier();
-      MPI_File_open((*mpiComm)(), (baseFile + ".out").c_str(), MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &logfile);
-      MPI_File_set_atomicity(logfile, true);
-      const char* msg = logStr.c_str();
-      int err         = MPI_File_write_ordered(logfile, msg, logStr.size(), MPI_CHAR, MPI_STATUS_IGNORE);
-      TEUCHOS_ASSERT(err == MPI_SUCCESS);
-      MPI_File_close(&logfile);
+        std::string logStr = buffer.str();
+        if (myRank == 0)
+          remove((baseFile + ".out").c_str());
+        RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm)->getRawMpiComm();
+        MPI_File logfile;
+        comm->barrier();
+        MPI_File_open((*mpiComm)(), (baseFile + ".out").c_str(), MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &logfile);
+        MPI_File_set_atomicity(logfile, true);
+        const char* msg = logStr.c_str();
+        int err         = MPI_File_write_ordered(logfile, msg, logStr.size(), MPI_CHAR, MPI_STATUS_IGNORE);
+        TEUCHOS_ASSERT(err == MPI_SUCCESS);
+        MPI_File_close(&logfile);
 #else
-      std::ofstream outStream;
-      outStream.open((baseFile + ".out").c_str(), std::ofstream::out);
-      outStream << buffer.str();
-      outStream.close();
+        std::ofstream outStream;
+        outStream.open((baseFile + ".out").c_str(), std::ofstream::out);
+        outStream << buffer.str();
+        outStream.close();
 #endif
       }
-
 
       std::string cmd;
       if (myRank == 0) {
