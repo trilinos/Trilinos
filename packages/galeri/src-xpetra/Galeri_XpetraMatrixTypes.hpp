@@ -24,7 +24,12 @@
 #include "Galeri_Problem.hpp"
 #include "KokkosSparse_SortCrs.hpp"
 #include "Kokkos_UnorderedMap.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+#include "Xpetra_TpetraCrsMatrix.hpp"
+#include "Tpetra_Distributor.hpp"
+#endif
 
 namespace Galeri {
 
@@ -236,6 +241,7 @@ namespace Galeri {
           , a(a_), b(b_), c(c_)
           , DirichletBC(DirichletBC_) {
         lclMap = map.getLocalMap();
+        TEUCHOS_ASSERT((GlobalOrdinal)map.getGlobalNumElements() == nx);
       }
 
       KOKKOS_FORCEINLINE_FUNCTION
@@ -1415,6 +1421,30 @@ namespace Galeri {
       stencil.off_rank_indices.clear();
       stencil.off_rank_indices.rehash(0);
 
+      {
+        // Sort the off-rank entries by PID
+        auto remoteGIDs = Kokkos::subview(columnMap_entries, Kokkos::make_pair(numMyElements, columnMap_entries.extent_int(0)));
+        auto remotePIDs = Kokkos::View<int*, memory_space>("remotePIDs", remoteGIDs.extent(0));
+        {
+          auto remoteGIDs_h = Kokkos::create_mirror_view(remoteGIDs);
+          auto remotePIDs_h = Kokkos::create_mirror_view(remotePIDs);
+          Kokkos::deep_copy(remoteGIDs_h, remoteGIDs);
+          Teuchos::ArrayView<GlobalOrdinal> remoteGIDs_av(remoteGIDs_h.data(), remoteGIDs_h.extent(0));
+          Teuchos::ArrayView<int> remotePIDs_av(remotePIDs_h.data(), remotePIDs_h.extent(0));
+          auto ret = map->getRemoteIndexList(remoteGIDs_av, remotePIDs_av);
+          if constexpr (std::is_same_v<Map, tpetra_map>) {
+            TEUCHOS_ASSERT(ret == Tpetra::AllIDsPresent);
+          } else {
+            TEUCHOS_ASSERT(ret == ::Xpetra::AllIDsPresent);
+          }
+          Kokkos::deep_copy(remotePIDs, remotePIDs_h);
+        }
+        {
+          typename decltype(remoteGIDs)::execution_space exec;
+          Kokkos::Experimental::sort_by_key(exec, remotePIDs, remoteGIDs);
+        }
+      }
+
       RCP<Map> ghosted_map;
       if constexpr (std::is_same_v<Map, tpetra_map>) {
         ghosted_map = rcp(new Map(Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
@@ -1451,6 +1481,48 @@ namespace Galeri {
       ::KokkosSparse::sort_crs_matrix(lclA);
       auto mtx = MatrixTraits<Map,Matrix>::Build(lclA, map, ghosted_map, map, map);
 
+#ifdef HAVE_GALERI_DEBUG
+      // Checks to run in debug mode:
+      // - local CRS graph is sorted by row
+      // - imports can be aliased to target MV
+      // - remote entries of column map are sorted by PID so that transfers are faster
+
+      TEUCHOS_ASSERT(::KokkosSparse::isCrsGraphSorted(lclA.graph.row_map,
+                                                      lclA.graph.entries));
+
+      if constexpr (std::is_same_v<Map, tpetra_map>) {
+        auto import = mtx->getCrsGraph()->getImporter();
+        if (!import.is_null()) {
+          TEUCHOS_ASSERT(import->areRemoteLIDsContiguous());
+
+          auto distor = import->getDistributor();
+          TEUCHOS_ASSERT(distor.getPlan().getIndicesTo().is_null());
+        }
+      } else if constexpr (std::is_same_v<Matrix,::Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>) {
+        auto import = mtx->getCrsGraph()->getImporter();
+        if (!import.is_null()) {
+          auto xp_tp_import = Teuchos::rcp_dynamic_cast<const ::Xpetra::TpetraImport<LocalOrdinal, GlobalOrdinal, Node>>(import, true);
+          auto tp_import = xp_tp_import->getTpetra_Import();
+          TEUCHOS_ASSERT(tp_import->areRemoteLIDsContiguous());
+
+          auto distor = tp_import->getDistributor();
+          TEUCHOS_ASSERT(distor.getPlan().getIndicesTo().is_null());
+        }
+      } else {
+        auto import = mtx->getCrsMatrix()->getCrsGraph()->getImporter();
+        if (!import.is_null()) {
+          auto xp_tp_import = Teuchos::rcp_dynamic_cast<const ::Xpetra::TpetraImport<LocalOrdinal, GlobalOrdinal, Node>>(import, true);
+          auto tp_import = xp_tp_import->getTpetra_Import();
+          const bool areRemoteLIDsContiguous = tp_import->areRemoteLIDsContiguous();
+          TEUCHOS_ASSERT(areRemoteLIDsContiguous);
+
+          auto distor = tp_import->getDistributor();
+          const bool fastPath = distor.getPlan().getIndicesTo().is_null();
+          TEUCHOS_ASSERT(fastPath);
+        }
+      }
+#endif  // HAVE_GALERI_DEBUG
+
       return mtx;
     }
 
@@ -1460,7 +1532,6 @@ namespace Galeri {
                          const GlobalOrdinal nx,
                          const Scalar a,
                          const std::string& label = "ScaledIdentity") {
-      using Node = typename Map::node_type;
       ScaledIdentityStencil<Scalar, Map> stencil(*map,
                                                  nx,
                                                  a);
@@ -1475,7 +1546,6 @@ namespace Galeri {
                   const DirBC DirichletBC = 0,
                   const bool keepBCs = false,
                   const std::string& label = "TriDiag") {
-      using Node = typename Map::node_type;
       if (keepBCs) {
         TriDiagStencil<Scalar, Map, true> stencil(*map,
                                                   nx,
@@ -1501,7 +1571,6 @@ namespace Galeri {
                   const bool keepBCs = false,
                   const std::string& label = "Cross2D")
     {
-      using Node = typename Map::node_type;
       if (keepBCs) {
         Cross2DStencil<Scalar, Map, true> stencil(*map,
                                                   nx, ny,
@@ -1528,7 +1597,6 @@ namespace Galeri {
                   const bool keepBCs = false,
                   const std::string& label = "Cross3D")
     {
-      using Node = typename Map::node_type;
       if (keepBCs) {
         Cross3DStencil<Scalar, Map, true> stencil(*map,
                                                   nx, ny, nz,
@@ -1555,7 +1623,6 @@ namespace Galeri {
                   const bool keepBCs = false,
                   const std::string& label = "Brick3D")
     {
-      using Node = typename Map::node_type;
       if (keepBCs) {
         Brick3DStencil<Scalar, Map, true> stencil(*map,
                                                   nx, ny, nz,
