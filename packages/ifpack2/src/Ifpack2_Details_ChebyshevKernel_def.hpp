@@ -270,7 +270,7 @@ template<class TpetraOperatorType>
 ChebyshevKernel<TpetraOperatorType>::
 ChebyshevKernel (const Teuchos::RCP<const operator_type>& A,
 		 const bool useNativeSpMV):
-  useNativeSpMV_(useNativeSpMV && KokkosKernels::Impl::is_gpu_exec_space_v<typename TpetraOperatorType::node_type::device_type::execution_space>)
+  useNativeSpMV_(useNativeSpMV)
 {
   setMatrix (A);
 }
