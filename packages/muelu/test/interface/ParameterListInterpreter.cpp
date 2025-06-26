@@ -59,6 +59,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   bool runHeavyTests       = false;
   std::string xmlForceFile = "";
   bool useKokkos           = false;
+  bool outputToScreen = false;
+
   if (lib == Xpetra::UseTpetra) {
     useKokkos = !Node::is_serial;
   }
@@ -67,6 +69,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("heavytests", "noheavytests", &runHeavyTests, "whether to exercise tests that take a long time to run");
   clp.setOption("xml", &xmlForceFile, "xml input file (useful for debugging)");
   clp.setOption("compareWithGold", "skipCompareWithGold", &compareWithGold, "compare runs against gold files");
+  clp.setOption("outputToScreen","noOutputToScreen",&outputToScreen,"output to screen rather than static output files");
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
@@ -74,6 +77,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
+
+  // If we ask for screen output, we can't compare w/ the gold files
+  if(outputToScreen)
+    compareWithGold=false;
 
   // =========================================================================
   // Problem construction
@@ -167,6 +174,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       if (myRank == 0)
         std::cout << "Testing: " << xmlFile << std::endl;
 
+
       baseFile             = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
       std::string goldFile = baseFile + ".gold";
       std::ifstream f(goldFile.c_str());
@@ -179,7 +187,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       std::stringbuf buffer;
       std::streambuf* oldbuffer = NULL;
       //   // Redirect output
-      oldbuffer = std::cout.rdbuf(&buffer);
+      if (!outputToScreen) {
+        oldbuffer = std::cout.rdbuf(&buffer);
+      }
 
       // NOTE: we cannot use ParameterListInterpreter(xmlFile, comm), because we want to update the ParameterList
       // first to include "test" verbosity
@@ -191,6 +201,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         paramList.sublist("Hierarchy").set("verbosity", "InterfaceTest");
       else if (dirList[k] == prefix + "MLParameterListInterpreter/" || dirList[k] == prefix + "MLParameterListInterpreter2/")
         paramList.set("ML output", 666);
+
 
       try {
         timer.start();
@@ -213,6 +224,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         } else if (dirList[k] == prefix + "MLParameterListInterpreter/") {
           if (paramList.isParameter("parameter list: syntax"))
             paramList.remove("parameter list: syntax");
+
           RCP<Teuchos::ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList, "SA"));
           mueluParamList->set("multigrid algorithm", "sa");
           mueluParamList->set("use kokkos refactor", useKokkos);
@@ -256,12 +268,18 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
         timer.stop();
 
-      } catch (Teuchos::ExceptionBase& e) {
+      } catch (std::logic_error& e) {
         std::string msg = e.what();
         msg             = msg.substr(msg.find_last_of('\n') + 1);
 
-        if (myRank == 0)
+        if (myRank == 0) {
           std::cout << "Caught exception: " << msg << std::endl;
+          if (!outputToScreen) {
+            std::ostream actual_cout(oldbuffer);
+            std::string logStr = buffer.str();
+            actual_cout<<logStr<<std::endl;
+          }
+        }
 
         if (msg == "Zoltan interface is not available" ||
             msg == "Zoltan2 interface is not available" ||
@@ -274,7 +292,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       }
 
       // Redirect output back
-      std::cout.rdbuf(oldbuffer);
+      if (!outputToScreen) {
+        std::cout.rdbuf(oldbuffer);
 #ifdef HAVE_MPI
       std::string logStr = buffer.str();
       if (myRank == 0)
@@ -294,6 +313,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       outStream << buffer.str();
       outStream.close();
 #endif
+      }
+
 
       std::string cmd;
       if (myRank == 0) {

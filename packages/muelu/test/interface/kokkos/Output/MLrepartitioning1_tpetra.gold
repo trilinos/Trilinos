@@ -43,8 +43,6 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
-repartition: start level = 2
-repartition: put on single proc = 5000
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
@@ -96,8 +94,6 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
-repartition: start level = 2
-repartition: put on single proc = 5000
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
@@ -149,8 +145,6 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
-repartition: start level = 2
-repartition: put on single proc = 5000
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
@@ -202,8 +196,6 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
-repartition: start level = 2
-repartition: put on single proc = 5000
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
@@ -255,8 +247,6 @@ Transferring coordinates
 matrixmatrix: kernel params -> 
  [empty list]
 Build (MueLu::RepartitionHeuristicFactory)
-repartition: start level = 2
-repartition: put on single proc = 5000
 Build (MueLu::Zoltan2Interface)
 ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
 No repartitioning necessary: partitions were left unchanged by the repartitioner
