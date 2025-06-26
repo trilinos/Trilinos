@@ -98,7 +98,6 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
                                "MueLu::MLParameterListInterpreter: unknown smoother type. '" << solverType << "' not supported.");
 
     mueluss << "<Parameter name=\"" << pname << "\" type=\"string\" value=\"" << solverType << "\"/>" << std::endl;
-
   } else {
     // TODO error message
     std::cout << "error in " << __FILE__ << ":" << __LINE__ << " could not find valid smoother/solver: " << valuestr << std::endl;
@@ -136,7 +135,6 @@ std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::Param
       mueluss << "<Parameter name=\"relaxation: type\" type=\"string\" value=\"Symmetric Gauss-Seidel\"/>" << std::endl;
       adaptingParamList.remove("relaxation: type", false);
     }
-
     if (paramList.isParameter("smoother: sweeps")) {
       mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("smoother: sweeps") << "\"/>" << std::endl;
       adaptingParamList.remove("smoother: sweeps", false);
@@ -327,6 +325,21 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
     paramList.set("repartition: put on single proc", 5000);
   }
 
+  // Set the default values
+  if (defaultVals != "") {
+    TEUCHOS_TEST_FOR_EXCEPTION(defaultVals != "SA" && defaultVals != "NSSA" && defaultVals != "refmaxwell" && defaultVals != "Maxwell", Exceptions::RuntimeError,
+                               "MueLu::ML2MueLuParameterTranslator: only \"SA\", \"NSSA\", \"refmaxwell\" and \"Maxwell\" allowed as options for ML default parameters.");
+    Teuchos::ParameterList ML_defaultlist;
+    if (defaultVals == "refmaxwell")
+      SetDefaultsRefMaxwell(ML_defaultlist);
+    else
+      SetDefaults(defaultVals, ML_defaultlist);
+
+    // merge user parameters with default parameters
+    MueLu::MergeParameterList(paramList_in, ML_defaultlist, true);
+    paramList = ML_defaultlist;
+  }
+
   //
   // Move smoothers/aggregation/coarse parameters to sublists
   //
@@ -335,7 +348,6 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
   // See also: ML Guide section 6.4.1, MueLu::CreateSublists, ML_CreateSublists
   ParameterList paramListWithSubList;
   MueLu::CreateSublists(paramList, paramListWithSubList);
-
   paramList                                = paramListWithSubList;  // swap
   Teuchos::ParameterList adaptingParamList = paramList;             // copy of paramList which is used to removed already interpreted parameters
 
@@ -358,7 +370,6 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
 
   // stringstream for concatenating xml parameter strings.
   std::stringstream mueluss;
-
   // create surrounding MueLu parameter list
   mueluss << "<ParameterList name=\"MueLu\">" << std::endl;
 
@@ -382,7 +393,6 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
     // Short circuit the "parameterlist: syntax" parameter
     // We want to remove this to make sure that createXpetraPreconditioner doesn't re-call translate()
     if (pname == "parameterlist: syntax") {
-      // mueluss << "<Parameter name=\"parameterlist: syntax\"      type=\"string\"     value=\"ml\"/>" << std::endl;
       continue;
     }
 
@@ -468,18 +478,23 @@ std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::Paramet
         mueluss << "</ParameterList>" << std::endl;
       }
     }
-
     // special handling for coarse level
     TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("coarse: type"), Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): The parameter \"coarse: type\" should not exist but being stored in \"coarse: list\" instead.");
+
     if (pname == "coarse: list") {
       // interpret smoother/coarse solver data.
       // Note, that we inspect the "coarse: list" sublist to define the "coarse" smoother/solver
       // Be aware, that MueLu::CreateSublists renames the prefix of the parameters in the "coarse: list" from "coarse" to "smoother".
       // Therefore, we have to check the values of the "smoother" parameters
-      mueluss << GetSmootherFactory(paramList.sublist("coarse: list"), adaptingParamList.sublist("coarse: list"), "coarse: type", paramList.sublist("coarse: list").get<std::string>("smoother: type"));
+
+      // DO we have a coarse list / smoother type?  If not, assume KLU
+      std::string coarse_smoother = "Amesos-KLU";
+      if (paramList.sublist("coarse: list").isParameter("smoother: type"))
+        coarse_smoother = paramList.sublist("coarse: list").get<std::string>("smoother: type");
+
+      mueluss << GetSmootherFactory(paramList.sublist("coarse: list"), adaptingParamList.sublist("coarse: list"), "coarse: type", coarse_smoother);
     }
   }  // for
-
   mueluss << "</ParameterList>" << std::endl;
 
   return mueluss.str();
