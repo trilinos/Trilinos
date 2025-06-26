@@ -45,12 +45,12 @@ namespace Details {
 /// If you need to register Ifpack2's LinearSolverFactory for a set of
 /// template parameters that is <i>not</i> enabled, see
 /// Ifpack2_Details_LinearSolverFactory.hpp (in this directory).
-void registerLinearSolverFactory ();
+void registerLinearSolverFactory();
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-namespace { // (anonymous)
+namespace {  // (anonymous)
 
 // \class RegisterLinearSolverFactory
 // \brief Register Ifpack2's solver factory/ies with the central registry.
@@ -65,9 +65,9 @@ namespace { // (anonymous)
 // <tt>__attribute__((constructor))</tt>, without actually requiring
 // the syntax extension.)
 class RegisterLinearSolverFactory {
-public:
-  RegisterLinearSolverFactory () {
-    Ifpack2::Details::registerLinearSolverFactory ();
+ public:
+  RegisterLinearSolverFactory() {
+    Ifpack2::Details::registerLinearSolverFactory();
   }
 };
 
@@ -76,6 +76,6 @@ public:
 // Ifpack2::Details::registerLinearSolverFactory().
 RegisterLinearSolverFactory registerIt;
 
-} // namespace (anonymous)
+}  // namespace
 
-#endif // IFPACK2_DETAILS_REGISTERLINEARSOLVERFACTORY_HPP
+#endif  // IFPACK2_DETAILS_REGISTERLINEARSOLVERFACTORY_HPP

@@ -22,14 +22,11 @@ This is essentially a fusion of LocalFilter, AdditiveSchwarzFilter and Singleton
 #include "Ifpack2_Details_RowMatrix.hpp"
 #include "Ifpack2_OverlappingRowMatrix.hpp"
 
-namespace Ifpack2
-{
-namespace Details
-{
-  template<typename MatrixType>
-  class AdditiveSchwarzFilter :
-    public Ifpack2::Details::RowMatrix<MatrixType> {
-public:
+namespace Ifpack2 {
+namespace Details {
+template <typename MatrixType>
+class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
+ public:
   typedef typename MatrixType::scalar_type scalar_type;
   typedef typename Kokkos::ArithTraits<scalar_type>::val_type impl_scalar_type;
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
@@ -47,15 +44,18 @@ public:
   typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
-                            node_type> row_matrix_type;
+                            node_type>
+      row_matrix_type;
   typedef Tpetra::CrsMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
-                            node_type> crs_matrix_type;
+                            node_type>
+      crs_matrix_type;
   typedef Tpetra::MultiVector<scalar_type,
                               local_ordinal_type,
                               global_ordinal_type,
-                              node_type> mv_type;
+                              node_type>
+      mv_type;
   typedef typename crs_matrix_type::device_type device_type;
   typedef typename crs_matrix_type::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space> policy_type;
@@ -75,7 +75,8 @@ public:
 
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
-                      node_type> map_type;
+                      node_type>
+      map_type;
 
   typedef typename row_matrix_type::mag_type mag_type;
 
@@ -100,9 +101,9 @@ public:
   /// the OLD ordering.  Note that perm is actually the "inverse
   /// permutation," in Zoltan2 terms.
   AdditiveSchwarzFilter(const Teuchos::RCP<const row_matrix_type>& A,
-                 const Teuchos::ArrayRCP<local_ordinal_type>& perm,
-                 const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm,
-                 bool filterSingletons);
+                        const Teuchos::ArrayRCP<local_ordinal_type>& perm,
+                        const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm,
+                        bool filterSingletons);
 
   //! Update the filtered matrix in response to A's values changing (A's structure isn't allowed to change, though)
   void updateMatrixValues();
@@ -110,14 +111,14 @@ public:
   Teuchos::RCP<const crs_matrix_type> getFilteredMatrix() const;
 
   //! Destructor.
-  virtual ~AdditiveSchwarzFilter ();
+  virtual ~AdditiveSchwarzFilter();
 
   //@}
   //! \name Matrix query methods
   //@{
 
   //! The matrix's communicator.
-  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+  virtual Teuchos::RCP<const Teuchos::Comm<int>> getComm() const;
 
   //! Returns the Map that describes the row distribution in this matrix.
   virtual Teuchos::RCP<const map_type> getRowMap() const;
@@ -132,7 +133,7 @@ public:
   virtual Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! Returns the RowGraph associated with this matrix.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > getGraph() const;
+  virtual Teuchos::RCP<const Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type>> getGraph() const;
 
   //! The number of degrees of freedom per mesh point.
   virtual local_ordinal_type getBlockSize() const;
@@ -164,7 +165,7 @@ public:
   /// \return The number of entries, or
   ///   Teuchos::OrdinalTraits<size_t>::invalid() if the specified row
   ///   is not owned by the calling process.
-  virtual size_t getNumEntriesInGlobalRow (global_ordinal_type globalRow) const;
+  virtual size_t getNumEntriesInGlobalRow(global_ordinal_type globalRow) const;
 
   /// \brief The current number of entries in this matrix, stored on
   ///   the calling process, in the row whose local index is \c globalRow.
@@ -172,7 +173,7 @@ public:
   /// \return The number of entries, or
   ///   Teuchos::OrdinalTraits<size_t>::invalid() if the specified row
   ///   is not owned by the calling process.
-  virtual size_t getNumEntriesInLocalRow (local_ordinal_type localRow) const;
+  virtual size_t getNumEntriesInLocalRow(local_ordinal_type localRow) const;
 
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   virtual size_t getGlobalMaxNumRowEntries() const;
@@ -212,9 +213,9 @@ public:
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
   virtual void
-  getGlobalRowCopy (global_ordinal_type GlobalRow,
-                   nonconst_global_inds_host_view_type &Indices,
-                   nonconst_values_host_view_type &Values,
+  getGlobalRowCopy(global_ordinal_type GlobalRow,
+                   nonconst_global_inds_host_view_type& Indices,
+                   nonconst_values_host_view_type& Values,
                    size_t& NumEntries) const;
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
@@ -228,10 +229,10 @@ public:
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
   virtual void
-  getLocalRowCopy (local_ordinal_type LocalRow,
-                   nonconst_local_inds_host_view_type &Indices,
-                   nonconst_values_host_view_type &Values,
-                   size_t& NumEntries) const;
+  getLocalRowCopy(local_ordinal_type LocalRow,
+                  nonconst_local_inds_host_view_type& Indices,
+                  nonconst_values_host_view_type& Values,
+                  size_t& NumEntries) const;
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -243,9 +244,9 @@ public:
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
   virtual void
-  getGlobalRowView (global_ordinal_type GlobalRow,
-                    global_inds_host_view_type &indices,
-                    values_host_view_type &values) const;
+  getGlobalRowView(global_ordinal_type GlobalRow,
+                   global_inds_host_view_type& indices,
+                   values_host_view_type& values) const;
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
@@ -257,13 +258,13 @@ public:
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
   virtual void
-  getLocalRowView (local_ordinal_type LocalRow,
-                   local_inds_host_view_type & indices,
-                   values_host_view_type & values) const;
+  getLocalRowView(local_ordinal_type LocalRow,
+                  local_inds_host_view_type& indices,
+                  values_host_view_type& values) const;
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
-  virtual void getLocalDiagCopy(Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &diag) const;
+  virtual void getLocalDiagCopy(Tpetra::Vector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& diag) const;
 
   //@}
 
@@ -320,30 +321,30 @@ public:
   ///   - mode = Teuchos::CONJ_TRANS: Op(A) is reordered version of
   ///     the conjugate transpose of A.
   virtual void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Whether apply() can apply the transpose or conjugate transpose.
   virtual bool hasTransposeApply() const;
 
   //! Solve singleton rows of OverlappingY, then filter and permute OverlappingB to get the reduced B.
   void CreateReducedProblem(
-      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& OverlappingB,
-      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>&       OverlappingY,
-      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>&       ReducedReorderedB) const;
+      const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& OverlappingB,
+      Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& OverlappingY,
+      Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& ReducedReorderedB) const;
 
   //! Scatter ReducedY back to non-singleton rows of OverlappingY, according to the reordering.
   void UpdateLHS(
-      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& ReducedReorderedY,
-      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>&       OverlappingY) const;
+      const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& ReducedReorderedY,
+      Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& OverlappingY) const;
 
   void setup(const Teuchos::RCP<const row_matrix_type>& A_unfiltered,
-      const Teuchos::ArrayRCP<local_ordinal_type>& perm,
-      const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm,
-      bool filterSingletons);
+             const Teuchos::ArrayRCP<local_ordinal_type>& perm,
+             const Teuchos::ArrayRCP<local_ordinal_type>& reverseperm,
+             bool filterSingletons);
 
   /// \brief Fill the entries/values in the local matrix, and from that construct A_.
   ///
@@ -353,8 +354,7 @@ public:
 
   //@}
 
-private:
-
+ private:
   /// \brief Whether map1 is fitted to map2.
   ///
   /// \param map1 [in] The first map.
@@ -368,7 +368,7 @@ private:
   /// map2?" is <i>not</i> symmetric.  For example, map2 may have more
   /// entries than map1.
   static bool
-  mapPairIsFitted (const map_type& map1, const map_type& map2);
+  mapPairIsFitted(const map_type& map1, const map_type& map2);
 
   /// \brief Whether the domain Map of A is fitted to its column Map,
   ///   and the range Map of A is fitted to its row Map.
@@ -376,7 +376,7 @@ private:
   // If both pairs of Maps of the original matrix A are fitted on this
   // process, then this process can use a fast "view" implementation.
   static bool
-  mapPairsAreFitted (const row_matrix_type& A);
+  mapPairsAreFitted(const row_matrix_type& A);
 
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const row_matrix_type> A_unfiltered_;
@@ -400,6 +400,7 @@ private:
   Teuchos::RCP<const map_type> localMap_;
 };
 
-}}  //namespace Ifpack2::Details
+}  // namespace Details
+}  // namespace Ifpack2
 
 #endif
