@@ -1988,6 +1988,29 @@ DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::createPrefix(
   return Details::createPrefix(comm.getRawPtr(), className, methodName);
 }
 
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::getSizeOfImports() const {
+  return this->imports_parentView_.view_device().extent(0);
+}
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::getSizeOfExports() const {
+  return this->exports_.view_device().extent(0);
+}
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::clearImports() {
+  this->imports_parentView_.realloc(0);
+  this->imports_ = this->imports_parentView_;
+}
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::clearExports() {
+  this->exports_.realloc(0);
+}
+
+
 template <class DistObjectType>
 void removeEmptyProcessesInPlace(
     Teuchos::RCP<DistObjectType> &input,

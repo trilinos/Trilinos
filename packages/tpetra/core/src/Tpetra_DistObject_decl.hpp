@@ -981,6 +981,21 @@ namespace Tpetra {
     // \brief Parent View for imports_ to avoid reallocation
     Kokkos::DualView<packet_type*, buffer_device_type> imports_parentView_;
 
+  public:
+    /// \brief Size of the imports_parentView_ allocation
+    size_t getSizeOfImports() const;
+
+    /// \brief Size of the exports_ allocation
+    size_t getSizeOfExports() const;
+
+    /// \brief Resets the size of the imports_/imports_parentView_ allocation to zero
+    void clearImports();
+
+    /// \brief Resets the size of the exports_ allocation to zero
+    void clearExports();
+
+  protected:
+
     /// \brief Reallocate imports_ if needed.
     ///
     /// This unfortunately must be declared protected, for the same
