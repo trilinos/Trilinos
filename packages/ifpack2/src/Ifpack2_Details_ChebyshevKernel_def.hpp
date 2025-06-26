@@ -269,7 +269,7 @@ chebyshev_kernel_vector
 template<class TpetraOperatorType>
 ChebyshevKernel<TpetraOperatorType>::
 ChebyshevKernel (const Teuchos::RCP<const operator_type>& A,
-                   const bool useNativeSpMV):
+		 const bool useNativeSpMV):
   useNativeSpMV_(useNativeSpMV)
 {
   setMatrix (A);
