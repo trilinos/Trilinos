@@ -311,8 +311,37 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       // This line must be after the Get call
       SubFactoryMonitor subM(*this, "Rebalancing material", coarseLevel);
 
-      RCP<MultiVector> permutedMaterial = MultiVectorFactory::Build(importer->getTargetMap(), material->getNumVectors());
-      permutedMaterial->doImport(*material, *importer, Xpetra::INSERT);
+      LO nodeNumElts = material->getMap()->getLocalNumElements();
+
+      // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
+      LO myBlkSize = 0, blkSize = 0;
+      if (nodeNumElts > 0)
+        myBlkSize = importer->getSourceMap()->getLocalNumElements() / nodeNumElts;
+      MueLu_maxAll(material->getMap()->getComm(), myBlkSize, blkSize);
+
+      RCP<const Import> materialImporter;
+      if (blkSize == 1) {
+        materialImporter = importer;
+
+      } else {
+        // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
+        // Proper fix would require using decomposition similar to how we construct importer in the
+        // RepartitionFactory
+        RCP<const Map> origMap = material->getMap();
+        GO indexBase           = origMap->getIndexBase();
+
+        ArrayView<const GO> OEntries = importer->getTargetMap()->getLocalElementList();
+        LO numEntries                = OEntries.size() / blkSize;
+        ArrayRCP<GO> Entries(numEntries);
+        for (LO i = 0; i < numEntries; i++)
+          Entries[i] = (OEntries[i * blkSize] - indexBase) / blkSize + indexBase;
+
+        RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
+        materialImporter         = ImportFactory::Build(origMap, targetMap);
+      }
+
+      RCP<MultiVector> permutedMaterial = MultiVectorFactory::Build(materialImporter->getTargetMap(), material->getNumVectors());
+      permutedMaterial->doImport(*material, *materialImporter, Xpetra::INSERT);
 
       if (pL.get<bool>("repartition: use subcommunicators") == true)
         permutedMaterial->replaceMap(permutedMaterial->getMap()->removeEmptyProcesses());
