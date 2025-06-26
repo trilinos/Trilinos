@@ -88,6 +88,7 @@ int main (int argc, char *argv[])
     //note: base timer was already stopped by executeInsertGlobalIndices...()
     StackedTimer::OutputOptions timeReportOpts;
     timeReportOpts.print_warnings = false;
+    timeReportOpts.output_fraction = timeReportOpts.output_histogram = timeReportOpts.output_minmax = true;
     timer->report(std::cout, comm, timeReportOpts);
     auto xmlOut = timer->reportWatchrXML("Tpetra FE Assembly " + std::to_string(comm->getSize()) + " ranks", comm);
     if(xmlOut.length())
