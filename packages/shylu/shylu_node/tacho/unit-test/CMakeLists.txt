@@ -24,6 +24,7 @@ TRIBITS_ADD_LIBRARY(
   TESTONLY
   NO_INSTALL_LIB_OR_HEADERS
 )
+target_compile_definitions(tacho-gtest PRIVATE GTEST_HAS_PTHREAD=0)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tacho_TestSolver.x
