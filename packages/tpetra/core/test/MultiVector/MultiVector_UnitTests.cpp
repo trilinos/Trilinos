@@ -853,8 +853,8 @@ namespace {
       {
         tmv2x2.multiply(NO_TRANS,CONJ_TRANS,S1,tmv2x3,tmv2x3,S0);
         sdm2x2.multiply(NO_TRANS,CONJ_TRANS,S1,sdm2x3,sdm2x3,S0);
-        { 
-          auto tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols()); 
+        {
+          auto tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
           TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
         }
       }
@@ -868,8 +868,8 @@ namespace {
         tmv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,tmv3x2,tmv3x2,S0);
         Kokkos::fence ();
         sdm2x2.multiply(CONJ_TRANS,NO_TRANS,S1,sdm3x2,sdm3x2,S0);
-        { 
-          auto tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols()); 
+        {
+          auto tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
           TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
         }
       }
@@ -883,8 +883,8 @@ namespace {
         tmv3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,tmv2x3,tmv3x2,S0);
         Kokkos::fence ();
         sdm3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,sdm2x3,sdm3x2,S0);
-        { 
-          auto tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols()); 
+        {
+          auto tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
           TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
         }
       }
@@ -2854,7 +2854,7 @@ namespace {
               bjview[i] *= as<Scalar>(2);
             }
           }
-          
+
           lclSuccess = success ? 1 : 0;
           gblSuccess = 0; // output argument
           reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -4317,10 +4317,10 @@ namespace {
     const size_t numLclRows = 10;
     const size_t numVecs = 3;
 
-    /// KJ : release local object, this workflow is problematic. 
-    ///      a user create a device view and hand it to tpetra. 
+    /// KJ : release local object, this workflow is problematic.
+    ///      a user create a device view and hand it to tpetra.
     ///      tpetra now has unmatched referecne count for host and device view
-    ///      as the local device view is alive. this is the case that we do not want 
+    ///      as the local device view is alive. this is the case that we do not want
     ///      to encourage users.
     typename dual_view_type::t_dev X_lcl ("X_lcl", numLclRows, numVecs);
 
@@ -4346,13 +4346,13 @@ namespace {
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLclRows, indexBase, comm));
 
-    /// KJ : release local object, this workflow is problematic. 
-    ///      a user create a device view and hand it to tpetra. 
+    /// KJ : release local object, this workflow is problematic.
+    ///      a user create a device view and hand it to tpetra.
     ///      tpetra now has unmatched referecne count for host and device view
-    ///      as the local device view is alive. this is the case that we do not want 
+    ///      as the local device view is alive. this is the case that we do not want
     ///      to encourage users.
     MV X_gbl (map, X_lcl);
-    
+
     {
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
@@ -4438,7 +4438,7 @@ namespace {
     // We modified on device above, and we're about to modify on host
     // now, so we need to sync to host first.
     auto X_host = X_gbl.getLocalViewHost(Tpetra::Access::ReadWrite);
-    
+
     {
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
@@ -4451,7 +4451,7 @@ namespace {
       os << "Proc " << comm->getRank () << ": checkpoint 5" << std::endl;
       std::cerr << os.str ();
     }
-    
+
     Kokkos::deep_copy (X_host, THREE);
     {
       lclSuccess = success ? 1 : 0;
@@ -5184,7 +5184,7 @@ namespace {
 
     const device_view x_d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-    host_view y_h = create_mirror_view(x_d);  
+    host_view y_h = create_mirror_view(x_d);
 
     size_t correct_count;
     // Check to see if we'll be deep_copy-ing between memory spaces
@@ -5196,42 +5196,42 @@ namespace {
     }
 
 
-    // Stop / Start  (reset first to clear counts from previous unit test calls)   
-    Tpetra::Details::DeepCopyCounter::reset();   
+    // Stop / Start  (reset first to clear counts from previous unit test calls)
+    Tpetra::Details::DeepCopyCounter::reset();
     Tpetra::Details::DeepCopyCounter::start();
     Kokkos::deep_copy(y_h,x_d);
-    Tpetra::Details::DeepCopyCounter::stop();   
-    size_t count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    Tpetra::Details::DeepCopyCounter::stop();
+    size_t count = Tpetra::Details::DeepCopyCounter::get_count_different_space();
     TEST_EQUALITY(count,correct_count);
 
 
     // Reset / get_count (should be zero now)
-    Tpetra::Details::DeepCopyCounter::reset();   
-    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    Tpetra::Details::DeepCopyCounter::reset();
+    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();
     TEST_EQUALITY(count,0);
 
 
     // Second  Stop / Start (should have the original count)
     Tpetra::Details::DeepCopyCounter::start();
     Kokkos::deep_copy(y_h,x_d);
-    Tpetra::Details::DeepCopyCounter::stop();   
-    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    Tpetra::Details::DeepCopyCounter::stop();
+    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();
     TEST_EQUALITY(count,correct_count);
 
 
     // This guy should not get counted, since the counter is stopped
     Kokkos::deep_copy(y_h,x_d);
-    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();
     TEST_EQUALITY(count,correct_count);
 
 
     // Third Second  Stop / Start (should have double the original count)
     Tpetra::Details::DeepCopyCounter::start();
     Kokkos::deep_copy(y_h,x_d);
-    Tpetra::Details::DeepCopyCounter::stop();   
-    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();   
+    Tpetra::Details::DeepCopyCounter::stop();
+    count = Tpetra::Details::DeepCopyCounter::get_count_different_space();
     TEST_EQUALITY(count,2*correct_count);
-          
+
   }
 
 
@@ -5244,45 +5244,45 @@ namespace {
     // Global fences
     size_t global_correct_count=1;
 
-    // Stop / Start  (reset first to clear counts from previous unit test calls)   
-    Tpetra::Details::FenceCounter::reset();   
+    // Stop / Start  (reset first to clear counts from previous unit test calls)
+    Tpetra::Details::FenceCounter::reset();
     Tpetra::Details::FenceCounter::start();
     Kokkos::fence();
-    Tpetra::Details::FenceCounter::stop();   
-    size_t global_count = Tpetra::Details::FenceCounter::get_count_global(space);   
-    size_t instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    Tpetra::Details::FenceCounter::stop();
+    size_t global_count = Tpetra::Details::FenceCounter::get_count_global(space);
+    size_t instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,global_correct_count);
     TEST_EQUALITY(instance_count,0);
 
     // Reset / get_count (should be zero now)
-    Tpetra::Details::FenceCounter::reset();   
-    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
-    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    Tpetra::Details::FenceCounter::reset();
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,0);
     TEST_EQUALITY(instance_count,0);
 
     // Second  Stop / Start (should have the original count)
     Tpetra::Details::FenceCounter::start();
     Kokkos::fence();
-    Tpetra::Details::FenceCounter::stop();   
-    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
-    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    Tpetra::Details::FenceCounter::stop();
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,global_correct_count);
     TEST_EQUALITY(instance_count,0);
 
     // This guy should not get counted, since the counter is stopped
     Kokkos::fence();
-    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
-    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,global_correct_count);
     TEST_EQUALITY(instance_count,0);
 
     // Third Second  Stop / Start (should have double the original count)
     Tpetra::Details::FenceCounter::start();
     Kokkos::fence();
-    Tpetra::Details::FenceCounter::stop();   
-    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
-    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    Tpetra::Details::FenceCounter::stop();
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,2*global_correct_count);
     TEST_EQUALITY(instance_count,0);
 
@@ -5290,49 +5290,124 @@ namespace {
     // Instance Fences
     size_t instance_correct_count = 1;
 
-    // Stop / Start  (reset first to clear counts from previous unit test calls)   
-    Tpetra::Details::FenceCounter::reset();   
+    // Stop / Start  (reset first to clear counts from previous unit test calls)
+    Tpetra::Details::FenceCounter::reset();
     Tpetra::Details::FenceCounter::start();
     exec_space.fence();
-    Tpetra::Details::FenceCounter::stop();   
-    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
-    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    Tpetra::Details::FenceCounter::stop();
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,0);
     TEST_EQUALITY(instance_count,instance_correct_count);
 
     // Reset / get_count (should be zero now)
-    Tpetra::Details::FenceCounter::reset();   
-    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
-    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    Tpetra::Details::FenceCounter::reset();
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,0);
     TEST_EQUALITY(instance_count,0);
 
     // Second  Stop / Start (should have the original count)
     Tpetra::Details::FenceCounter::start();
-    exec_space.fence();    
-    Tpetra::Details::FenceCounter::stop();   
-    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
-    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    exec_space.fence();
+    Tpetra::Details::FenceCounter::stop();
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,0);
     TEST_EQUALITY(instance_count,instance_correct_count);
 
     // This guy should not get counted, since the counter is stopped
-    exec_space.fence();        
-    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
-    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    exec_space.fence();
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,0);
     TEST_EQUALITY(instance_count,instance_correct_count);
 
     // Third Second  Stop / Start (should have double the original count)
     Tpetra::Details::FenceCounter::start();
-    exec_space.fence();        
-    Tpetra::Details::FenceCounter::stop();   
-    global_count =Tpetra::Details::FenceCounter::get_count_global(space);   
-    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);   
+    exec_space.fence();
+    Tpetra::Details::FenceCounter::stop();
+    global_count =Tpetra::Details::FenceCounter::get_count_global(space);
+    instance_count = Tpetra::Details::FenceCounter::get_count_instance(space);
     TEST_EQUALITY(global_count,0);
-    TEST_EQUALITY(instance_count,2*instance_correct_count);      
+    TEST_EQUALITY(instance_count,2*instance_correct_count);
   }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DistObject_ImportExport, LO , GO , Scalar , Node ) {
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    const Tpetra::global_size_t N_global = 100;
+    // Forward map
+    RCP<const map_type> f_map = rcp (new map_type (N_global, 0, comm));
+    size_t  N_local = f_map->getLocalNumElements();
+    MV forward(f_map, 1);
+    forward.putScalar(one);
+
+    // Shifted map & import/export objects
+    Teuchos::Array<GO> shifted_indices(N_local);
+    for (size_t i = 0; i < N_local; i++)
+      shifted_indices[i] = (f_map->getGlobalElement(i) + 2) % N_global;
+    RCP<const map_type> s_map = rcp (new map_type(N_global,shifted_indices(),0,comm));
+    MV shifted(s_map,1);
+    Tpetra::Import<LO,GO,Node> importer(f_map,s_map);
+    Tpetra::Export<LO,GO,Node> exporter(f_map,s_map);
+    size_t buffer_size;
+
+    // Forward mode for import
+    shifted.doImport(forward,importer,Tpetra::ADD);
+
+    // Check the export buffers before and after clearing
+    buffer_size = shifted.getSizeOfExports();
+    TEST_EQUALITY(buffer_size, (comm->getSize() == 1 ? 0 : 2));
+    shifted.clearExports();
+    buffer_size = shifted.getSizeOfExports();
+    TEST_EQUALITY(buffer_size,0);
+
+    // Reverse mode for export
+    forward.doExport(shifted,importer,Tpetra::ADD);
+
+    // Check the export buffers after clearing
+    buffer_size = forward.getSizeOfExports();
+    TEST_EQUALITY(buffer_size, (comm->getSize() == 1 ? 0 : 2));
+    forward.clearExports();
+    buffer_size = forward.getSizeOfExports();
+    TEST_EQUALITY(buffer_size,0);
+
+    // Forward mode for export
+    forward.doExport(shifted,exporter,Tpetra::ADD);
+
+    // Check the export buffers before and after clearing
+    buffer_size = forward.getSizeOfExports();
+    TEST_EQUALITY(buffer_size, (comm->getSize() == 1 ? 0 : 2));
+    forward.clearExports();
+    buffer_size = forward.getSizeOfExports();
+    TEST_EQUALITY(buffer_size,0);
+
+    // Reverse mode for export
+    forward.doExport(shifted,importer,Tpetra::ADD);
+
+    // Check the export buffers before and after clearing
+    buffer_size = forward.getSizeOfExports();
+    TEST_EQUALITY(buffer_size, (comm->getSize() == 1 ? 0 : 2));
+    forward.clearExports();
+    buffer_size = forward.getSizeOfExports();
+    TEST_EQUALITY(buffer_size,0);
+
+    // Reverse mode for import
+    shifted.doImport(forward,exporter,Tpetra::ADD);
+
+    // Check the export buffers before and after clearing
+    buffer_size = shifted.getSizeOfExports();
+    TEST_EQUALITY(buffer_size, (comm->getSize() == 1 ? 0 : 2));
+    shifted.clearExports();
+    buffer_size = shifted.getSizeOfExports();
+    TEST_EQUALITY(buffer_size,0);
+
+}
 
 
 
@@ -5411,7 +5486,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyCounterCheck, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, FenceCounterCheck, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, FenceCounterCheck, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DistObject_ImportExport, LO, GO, SCALAR, NODE )
 
 #ifdef KOKKOS_ENABLE_OPENMP
   // Add special test for OpenMP
