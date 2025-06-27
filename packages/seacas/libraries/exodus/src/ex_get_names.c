@@ -136,7 +136,7 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
   }
   }
 
-  if (status == NC_NOERR) {
+  if (status == EX_NOERR) {
     if ((status = exi_get_names(exoid, varid, num_entity, names, obj_type, "ex_get_names")) !=
         EX_NOERR) {
       EX_FUNC_LEAVE(status);

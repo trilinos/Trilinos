@@ -93,7 +93,7 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
     EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: number of attributes not defined for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
@@ -101,7 +101,7 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
     EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
-  if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
@@ -127,7 +127,7 @@ int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, c
     EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate %s attribute names for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), ex_name_of_object(blk_type), blk_id, exoid);

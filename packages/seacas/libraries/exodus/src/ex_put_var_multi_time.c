@@ -68,23 +68,23 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex
   }
 
   if ((status = nc_inq_varid(exoid, exi_name_var_of_object(var_type, var_index, obj_id_ndx),
-                             varid)) != NC_NOERR) {
+                             varid)) != EX_NOERR) {
     if (status == NC_ENOTVAR) { /* variable doesn't exist, create it! */
       /* check for the existence of an TNAME variable truth table */
-      if (nc_inq_varid(exoid, VOBJTAB, varid) == NC_NOERR) {
+      if (nc_inq_varid(exoid, VOBJTAB, varid) == EX_NOERR) {
         /* find out number of TNAMEs and TNAME variables */
         size_t num_obj     = 0;
         size_t num_obj_var = 0;
 
         status = exi_get_dimension(exoid, DNUMOBJ, ex_name_of_object(var_type), &num_obj, &dimid,
                                    __func__);
-        if (status != NC_NOERR) {
+        if (status != EX_NOERR) {
           return status;
         }
 
         status = exi_get_dimension(exoid, DNUMOBJVAR, ex_name_of_object(var_type), &num_obj_var,
                                    &dimid, __func__);
-        if (status != NC_NOERR) {
+        if (status != EX_NOERR) {
           return status;
         }
 
@@ -98,7 +98,7 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex
         }
 
         /*   read in the TNAME variable truth table */
-        if ((status = nc_get_var_int(exoid, *varid, obj_var_truth_tab)) != NC_NOERR) {
+        if ((status = nc_get_var_int(exoid, *varid, obj_var_truth_tab)) != EX_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get truth table from file id %d",
                    exoid);
           ex_err_fn(exoid, __func__, errmsg, status);
@@ -116,7 +116,7 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex
         free(obj_var_truth_tab);
       }
 
-      if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
+      if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d",
                  exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -128,7 +128,7 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex
                         ex_name_of_object(var_type), &num_entity, &numobjdim, __func__);
 
       /*    variable doesn't exist so put file into define mode  */
-      if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
+      if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
         return EX_FATAL;
@@ -138,7 +138,7 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex
       dims[0] = time_dim;
       dims[1] = numobjdim;
       if ((status = nc_def_var(exoid, exi_name_var_of_object(var_type, var_index, obj_id_ndx),
-                               nc_flt_code(exoid), 2, dims, varid)) != NC_NOERR) {
+                               nc_flt_code(exoid), 2, dims, varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s variable %d in file id %d",
                  ex_name_of_object(var_type), var_index, exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -147,7 +147,7 @@ static int exi_look_up_var(int exoid, ex_entity_type var_type, int var_index, ex
       exi_compress_variable(exoid, *varid, 2);
 
       /*    leave define mode  */
-      if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+      if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
         return EX_FATAL;
       }
     }
@@ -263,7 +263,7 @@ int ex_put_var_multi_time(int exoid, ex_entity_type var_type, int var_index, ex_
     }
 
     /* inquire previously defined variable */
-    if ((status = nc_inq_varid(exoid, VAR_GLO_VAR, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_GLO_VAR, &varid)) != EX_NOERR) {
       if (status == NC_ENOTVAR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no global variables defined in file id %d", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -354,7 +354,7 @@ int ex_put_var_multi_time(int exoid, ex_entity_type var_type, int var_index, ex_
     status = nc_put_vara_double(exoid, varid, start, count, var_vals);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store %s %" PRId64 " variable %d at steps %d to %d in file id %d",
              ex_name_of_object(var_type), obj_id, var_index, beg_time_step, end_time_step, exoid);

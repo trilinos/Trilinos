@@ -34,7 +34,7 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
   else if (group_name[0] != '/') {
     /* Local child */
     int status = nc_inq_grp_ncid(parent_id, group_name, group_id);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: Failed to locate group with name %s as child "
                "group in file id %d",
@@ -48,7 +48,7 @@ int ex_get_group_id(int parent_id, const char *group_name, int *group_id)
     /* Full path name */
     int rootid = parent_id & EX_FILE_ID_MASK;
     int status = nc_inq_grp_full_ncid(rootid, group_name, group_id);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: Failed to locate group with full path name %s in file id %d", group_name,
                parent_id);
