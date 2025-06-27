@@ -1180,7 +1180,9 @@ namespace {
         if (nodes_consolidated) {
           count = 0;
           for (const auto &[ins, offset] : ons_inputs) {
-            count += ins->entity_count();
+            if (ins != nullptr) {
+              count += ins->entity_count();
+            }
           }
         }
 
@@ -1407,9 +1409,14 @@ namespace {
         const auto &[key, ons_inputs] = *itr;
         int64_t count                 = 0;
         for (const auto &[ins, offset] : ons_inputs) {
-          count += ins->entity_count();
+          if (ins != nullptr) {
+            count += ins->entity_count();
+          }
         }
 
+        if (count == 0) {
+          continue;
+        }
         if (count == ons->entity_count()) {
           output_entity_fields(ons);
         }
@@ -1422,28 +1429,30 @@ namespace {
           }
 
           // Get the mapping of the input nodelist node position to the output position...
+          // If this is the `nodal_nodeset`, then it will not be found in `nodeset_in_out_map`
           const auto &ns_itr = nodeset_in_out_map.find(ons);
-          SMART_ASSERT(ns_itr != nodeset_in_out_map.end());
-          const auto &[ns_key, map] = *ns_itr;
-          SMART_ASSERT(ns_key == ons);
-          SMART_ASSERT(map.size() == (size_t)ons->entity_count());
+          if (ns_itr != nodeset_in_out_map.end()) {
+            const auto &[ns_key, map] = *ns_itr;
+            SMART_ASSERT(ns_key == ons);
+            SMART_ASSERT(map.size() == (size_t)ons->entity_count());
 
-          // Now get each field, map to correct output position and output...
-          for (const auto &field_name : fields) {
-            size_t comp_count = ons->get_field(field_name).raw_storage()->component_count();
-            std::vector<double> field_data(count * comp_count);
+            // Now get each field, map to correct output position and output...
+            for (const auto &field_name : fields) {
+              size_t comp_count = ons->get_field(field_name).raw_storage()->component_count();
+              std::vector<double> field_data(count * comp_count);
 
-            for (const auto &[ins, offset] : ons_inputs) {
-              if (ins != nullptr && ins->field_exists(field_name)) {
-                ins->get_field_data(field_name, &field_data[comp_count * offset], -1);
+              for (const auto &[ins, offset] : ons_inputs) {
+                if (ins != nullptr && ins->field_exists(field_name)) {
+                  ins->get_field_data(field_name, &field_data[comp_count * offset], -1);
+                }
               }
-            }
-            for (int64_t i = 0; i < ons->entity_count(); i++) {
-              for (size_t j = 0; j < comp_count; j++) {
-                field_data[comp_count * i + j] = field_data[comp_count * map[i] + j];
+              for (int64_t i = 0; i < ons->entity_count(); i++) {
+                for (size_t j = 0; j < comp_count; j++) {
+                  field_data[comp_count * i + j] = field_data[comp_count * map[i] + j];
+                }
               }
+              ons->put_field_data(field_name, field_data);
             }
-            ons->put_field_data(field_name, field_data);
           }
         }
       }

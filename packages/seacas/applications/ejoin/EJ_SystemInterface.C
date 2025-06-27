@@ -5,19 +5,19 @@
 // See packages/seacas/LICENSE for details
 
 #include "EJ_SystemInterface.h"
-#include "EJ_Version.h"  // for qainfo
-#include "EJ_vector3d.h" // for vector3d
-#include <SL_tokenize.h> // for tokenize
-#include <algorithm>     // for sort, find, transform
-#include <cctype>        // for tolower
+#include "EJ_Version.h"
+#include "EJ_vector3d.h"
+#include <SL_tokenize.h>
+#include <algorithm>
+#include <cctype>
 #include <copyright.h>
-#include <cstddef> // for size_t
-#include <cstdlib> // for exit, strtod, strtoul, abs, etc
-#include <cstring> // for strchr, strlen
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #include <fmt/format.h>
-#include <iosfwd>  // for ostream
-#include <utility> // for pair, make_pair
-#include <vector>  // for vector
+#include <iosfwd>
+#include <utility>
+#include <vector>
 
 namespace {
   bool str_equal(const std::string &s1, const std::string &s2)
