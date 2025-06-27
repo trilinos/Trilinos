@@ -394,6 +394,8 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         numGlobalAggregatedPrev = numGlobalAggregated;
         numGlobalAggsPrev       = numGlobalAggs;
       }
+      if (numNonAggregatedNodes == 0)
+        break;
     }
   }
 
