@@ -390,6 +390,15 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "DriverTpetra_Rerun"
+    POSTFIX_AND_ARGS_0 "InputDeck" --linAlgebra=Tpetra --xml=scaling-with-rerun.xml
+    POSTFIX_AND_ARGS_1 "Repeat"    --linAlgebra=Tpetra --reruns=3 --stacked-timer
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
@@ -400,14 +409,6 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         Driver
         NAME "DriverTpetra"
         ARGS "--linAlgebra=Tpetra --xml=scaling-complex.xml"
-        NUM_MPI_PROCS 4
-        COMM mpi # HAVE_MPI required
-        )
-
-      TRIBITS_ADD_TEST(
-        Driver
-        NAME "DriverTpetra_Rerun"
-        ARGS "--linAlgebra=Tpetra --xml=scaling-with-rerun.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         )

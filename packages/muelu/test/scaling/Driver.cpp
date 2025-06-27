@@ -649,6 +649,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
           if (xmlOut.length())
             std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
+          if (rerunCount < numReruns) {
+            stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+            Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+          }
         } else {
           std::ios_base::fmtflags ff(out2.flags());
           if (timingsFormat == "table-fixed")
