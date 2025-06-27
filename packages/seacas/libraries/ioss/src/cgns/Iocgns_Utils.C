@@ -692,7 +692,6 @@ namespace {
     // 3 int[3] transform; (values range from -3 to +3 (could store as single int)
     // CGNS_MAX_NAME_LENGTH characters + 17 ints / connection.
 
-    IOSS_PAR_UNUSED(region);
 #if CG_BUILD_PARALLEL
     const int BYTE_PER_NAME = CGNS_MAX_NAME_LENGTH;
     const int INT_PER_ZGC   = 17;
