@@ -69,7 +69,7 @@ namespace Ionull {
     IOSS_NODISCARD bool ok_nl(bool, std::string *, int *) const override { return true; }
 
   private:
-    // Input only database -- these will never be called...
+    // Output only database -- these will never be called...
     IOSS_NOOP_GFI(Ioss::Region)
     IOSS_NOOP_GFI(Ioss::NodeBlock)
     IOSS_NOOP_GFI(Ioss::EdgeBlock)
