@@ -5,12 +5,12 @@
 // See packages/seacas/LICENSE for details
 #pragma once
 
-#include "EJ_CodeTypes.h" // for StringIdVector, Omissions, etc
-#include "EJ_vector3d.h"  // for vector3d
-#include "GetLongOpt.h"   // for GetLongOption
-#include <climits>        // for INT_MAX
-#include <string>         // for string
-#include <vector>         // for vector
+#include "EJ_CodeTypes.h"
+#include "EJ_vector3d.h"
+#include "GetLongOpt.h"
+#include <climits>
+#include <string>
+#include <vector>
 
 class SystemInterface
 {
