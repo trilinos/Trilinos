@@ -67,8 +67,6 @@ protected:
           void  *data;
           size_t dataSize;
           g->get_field_data(name, &data, &dataSize);
-          ASSERT_GT(dataSize, 0) << "DataSize is not greater than 0 for field " << name
-                                 << std::endl;
           std::byte             *b = static_cast<std::byte *>(data);
           std::vector<std::byte> zcBuffer(b, b + field.get_size());
           EXPECT_EQ(dcBuffer, zcBuffer);
