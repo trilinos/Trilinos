@@ -27,12 +27,12 @@
  */
 
 /* Enable this block to eliminate the building of deprecated functions in library */
-#if 0
+#if 1
 #define SEACAS_HIDE_DEPRECATED_CODE
 #endif
 
 /* Enable this block to enable warnings if any deprecated functions are used */
-#if 0
+#if 1
 #ifndef SEACAS_DEPRECATED
 #if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 #define SEACAS_DEPRECATED __attribute__((__deprecated__))

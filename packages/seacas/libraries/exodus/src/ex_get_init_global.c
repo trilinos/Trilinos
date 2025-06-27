@@ -37,14 +37,14 @@ static int ex_get_dim_value(int exoid, const char *name, const char *dimension_n
                             size_t *value)
 {
 
-  if (nc_inq_dimid(exoid, dimension_name, &dimension) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dimension_name, &dimension) != EX_NOERR) {
     /* optional and default to zero. */
     *value = 0;
   }
   else {
     size_t tmp;
     int    status;
-    if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s in file id %d", name,
                exoid);

@@ -44,13 +44,13 @@ int ex_get_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
 
   /* inquire id's of previously defined dimensions  */
 
-  if (nc_inq_dimid(exoid, DIM_NUM_NODES, &numnoddim) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_NODES, &numnoddim) != EX_NOERR) {
     /* If not found, then this file is storing 0 nodes.
        Return immediately */
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
-  if ((status = nc_inq_dimlen(exoid, numnoddim, &num_nod)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, numnoddim, &num_nod)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of nodes in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -67,7 +67,7 @@ int ex_get_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
   }
 
   if (exi_get_dimension(exoid, DIM_NUM_DIM, "dimensions", &num_dim, &ndimdim, __func__) !=
-      NC_NOERR) {
+      EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -82,7 +82,7 @@ int ex_get_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
 
   /* read in the coordinates  */
   if (ex_large_model(exoid) == 0) {
-    if ((status = nc_inq_varid(exoid, VAR_COORD, &coordid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_COORD, &coordid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate nodal coordinates in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -106,7 +106,7 @@ int ex_get_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
         status = nc_get_vara_double(exoid, coordid, start, count, coor);
       }
 
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %c coord array in file id %d",
                  which[component], exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -124,7 +124,7 @@ int ex_get_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
         start[0] = 0;
       }
 
-      if ((status = nc_inq_varid(exoid, comp[component], &coordid)) != NC_NOERR) {
+      if ((status = nc_inq_varid(exoid, comp[component], &coordid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to locate %c nodal coordinates in file id %d", which[component],
                  exoid);
@@ -139,7 +139,7 @@ int ex_get_partial_coord_component(int exoid, int64_t start_node_num, int64_t nu
         status = nc_get_vara_double(exoid, coordid, start, count, coor);
       }
 
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %c coord array in file id %d",
                  which[component], exoid);
         ex_err_fn(exoid, __func__, errmsg, status);

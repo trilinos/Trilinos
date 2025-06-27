@@ -68,7 +68,7 @@ int ex_put_time(int exoid, int time_step, const void *time_value)
   varid = file->time_varid;
   if (varid < 0) {
     /* inquire previously defined variable */
-    if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time variable in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -87,7 +87,7 @@ int ex_put_time(int exoid, int time_step, const void *time_value)
     status = nc_put_var1_double(exoid, varid, start, time_value);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store time value in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
