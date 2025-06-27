@@ -64,9 +64,9 @@ Teuchos::RCP<Matrix> Laplace1DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, 
   using Node       = typename Map::node_type;
   using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   if constexpr (std::is_same_v<Map, tpetra_map>) {
-    this->A_ = TriDiagKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, 2.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Laplace1D");
+    this->A_ = TriDiagKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, 2.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Laplace 1D");
   } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
-    this->A_ = TriDiagKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, 2.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Laplace1D");
+    this->A_ = TriDiagKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, 2.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Laplace 1D");
   } else
 #endif
   {
@@ -152,9 +152,9 @@ Teuchos::RCP<Matrix> Laplace2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, 
   using Node       = typename Map::node_type;
   using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   if constexpr (std::is_same_v<Map, tpetra_map>) {
-    this->A_ = Cross2DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs, "Laplace2D");
+    this->A_ = Cross2DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs, "Laplace 2D");
   } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
-    this->A_ = Cross2DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs, "Laplace2D");
+    this->A_ = Cross2DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, center, west, east, south, north, this->DirichletBC_, keepBCs, "Laplace 2D");
   } else
 #endif
   {
@@ -362,9 +362,9 @@ Teuchos::RCP<Matrix> Laplace3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, 
   using Node       = typename Map::node_type;
   using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   if constexpr (std::is_same_v<Map, tpetra_map>) {
-    this->A_ = Cross3DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs, "Laplace3D");
+    this->A_ = Cross3DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs, "Laplace 3D");
   } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
-    this->A_ = Cross3DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs, "Laplace3D");
+    this->A_ = Cross3DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz, center, left, right, front, back, down, up, this->DirichletBC_, keepBCs, "Laplace 3D");
   } else
 #endif
   {
@@ -531,9 +531,9 @@ Teuchos::RCP<Matrix> Brick3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Ma
   using Node       = typename Map::node_type;
   using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   if constexpr (std::is_same_v<Map, tpetra_map>) {
-    this->A_ = Brick3DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Brick3D");
+    this->A_ = Brick3DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "3D 27 point stencil");
   } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
-    this->A_ = Brick3DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "Brick3D");
+    this->A_ = Brick3DKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, this->DirichletBC_, keepBCs, "3D 27 point stencil");
   } else
 #endif
   {
@@ -578,9 +578,9 @@ Teuchos::RCP<Matrix> IdentityProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, M
   using Node       = typename Map::node_type;
   using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   if constexpr (std::is_same_v<Map, tpetra_map>) {
-    this->A_ = ScaledIdentityKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, a, "Identity");
+    this->A_ = ScaledIdentityKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, a, "Scaled Identity");
   } else if (this->Map_->lib() == ::Xpetra::UseTpetra) {
-    this->A_ = ScaledIdentityKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, a, "Identity");
+    this->A_ = ScaledIdentityKokkos<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix>(this->Map_, nx, a, "Scaled Identity");
   } else
 #endif
   {
