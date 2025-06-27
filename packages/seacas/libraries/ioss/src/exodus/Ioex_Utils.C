@@ -116,9 +116,9 @@ namespace Ioex {
     int    rootid = static_cast<unsigned>(exodusFilePtr) & EX_FILE_ID_MASK;
     int    status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
 
-    if (status == NC_NOERR && value > tmp) {
+    if (status == EX_NOERR && value > tmp) {
       status = nc_put_att_double(rootid, NC_GLOBAL, "last_written_time", NC_DOUBLE, 1, &value);
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         ex_opts(EX_VERBOSE);
         auto errmsg = fmt::format(
             "Error: failed to define 'last_written_time' attribute to file id {}", exodusFilePtr);
@@ -409,11 +409,11 @@ namespace Ioex {
     nc_type att_type = NC_NAT;
     size_t  att_len  = 0;
     int     status   = nc_inq_att(rootid, NC_GLOBAL, "last_written_time", &att_type, &att_len);
-    if (status == NC_NOERR && att_type == NC_DOUBLE) {
+    if (status == EX_NOERR && att_type == NC_DOUBLE) {
       // Attribute exists on this database, read it...
       double tmp = 0.0;
       status     = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
-      if (status == NC_NOERR) {
+      if (status == EX_NOERR) {
         *value = tmp;
         found  = true;
       }
@@ -445,12 +445,12 @@ namespace Ioex {
     nc_type att_type = NC_NAT;
     size_t  att_len  = 0;
     int     status   = nc_inq_att(exodusFilePtr, NC_GLOBAL, "processor_info", &att_type, &att_len);
-    if (status == NC_NOERR && att_type == NC_INT) {
+    if (status == EX_NOERR && att_type == NC_INT) {
       // Attribute exists on this database, read it and check that the information
       // matches the current processor count and processor id.
       int proc_info[2];
       status = nc_get_att_int(exodusFilePtr, NC_GLOBAL, "processor_info", proc_info);
-      if (status == NC_NOERR) {
+      if (status == EX_NOERR) {
         if (proc_info[0] != processor_count && proc_info[0] > 1) {
           fmt::print(Ioss::WarnOut(),
                      "Processor decomposition count in file ({}) does not match current "
