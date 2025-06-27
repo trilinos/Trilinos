@@ -18,7 +18,6 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesDeterministic (Phase 1 (main))
 BuildAggregatesDeterministic (Phase 2a (secondary))
 BuildAggregatesDeterministic (Phase 2b (expansion))
-BuildAggregatesDeterministic (Phase 3 (cleanup))
 aggregation: deterministic = 1   [unused]
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -52,7 +51,6 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesDeterministic (Phase 1 (main))
 BuildAggregatesDeterministic (Phase 2a (secondary))
 BuildAggregatesDeterministic (Phase 2b (expansion))
-BuildAggregatesDeterministic (Phase 3 (cleanup))
 aggregation: deterministic = 1   [unused]
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -86,7 +84,6 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesDeterministic (Phase 1 (main))
 BuildAggregatesDeterministic (Phase 2a (secondary))
 BuildAggregatesDeterministic (Phase 2b (expansion))
-BuildAggregatesDeterministic (Phase 3 (cleanup))
 aggregation: deterministic = 1   [unused]
 Build (MueLu::AmalgamationFactory)
 [empty list]
