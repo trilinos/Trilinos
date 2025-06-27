@@ -339,7 +339,7 @@ namespace Ioss {
     bool begin(Ioss::State state)
     {
       IOSS_FUNC_ENTER(m_);
-      progress(__func__);
+      progress("Ioss::DatabaseIO::begin(Ioss::State state)");
       return begin_nl(state);
     }
 
@@ -356,7 +356,7 @@ namespace Ioss {
     bool end(Ioss::State state)
     {
       IOSS_FUNC_ENTER(m_);
-      progress(__func__);
+      progress("Ioss::DatabaseIO::end(Ioss::State state)");
       return end_nl(state);
     }
 

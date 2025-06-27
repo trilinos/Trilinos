@@ -4920,9 +4920,7 @@ namespace Ioex {
 
     if (metaDataWritten) {
       const Ioss::NodeBlockContainer &node_blocks = get_region()->get_node_blocks();
-      if (node_blocks.empty()) {
-        return;
-      }
+      assert(!node_blocks.empty());
       assert(node_blocks[0]->property_exists("_processor_offset"));
       assert(node_blocks[0]->property_exists("locally_owned_count"));
       size_t processor_offset    = node_blocks[0]->get_property("_processor_offset").get_int();

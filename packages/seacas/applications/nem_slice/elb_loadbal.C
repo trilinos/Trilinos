@@ -475,14 +475,14 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       elem_map.resize(problem->num_vertices);
     }
     if (!weight->vertices.empty()) {
-      tmp_vwgts = reinterpret_cast<int *>(malloc(max_adj * sizeof(int)));
+      tmp_vwgts = reinterpret_cast<int *>(calloc(max_adj, sizeof(int)));
       if (!tmp_vwgts) {
         Gen_Error(0, "fatal: insufficient memory");
         goto cleanup;
       }
     }
     if (!weight->edges.empty()) {
-      tmp_ewgts = reinterpret_cast<float *>(malloc(max_adj * sizeof(float)));
+      tmp_ewgts = reinterpret_cast<float *>(calloc(max_adj, sizeof(float)));
       if (!tmp_ewgts) {
         Gen_Error(0, "fatal: insufficient memory");
         goto cleanup;

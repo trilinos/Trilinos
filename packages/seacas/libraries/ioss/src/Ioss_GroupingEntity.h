@@ -130,8 +130,6 @@ namespace Ioss {
      */
     virtual void block_membership(Ioss::NameList & /* block_members */) {}
 
-    IOSS_NODISCARD std::string get_filename() const;
-
     /** \brief Get the name of the particular type of entity.
      *
      *  \returns The name of the particular type of entity.
