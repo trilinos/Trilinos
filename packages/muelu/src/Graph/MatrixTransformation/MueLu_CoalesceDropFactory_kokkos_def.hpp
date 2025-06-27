@@ -142,8 +142,7 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GlobalOrdinal numDropped = std::get<0>(results);
     auto boundaryNodes       = std::get<1>(results);
 
-    GO numLocalBoundaryNodes  = 0;
-    GO numGlobalBoundaryNodes = 0;
+    GO numLocalBoundaryNodes = 0;
 
     Kokkos::parallel_reduce(
         "MueLu:CoalesceDropF:Build:bnd", range_type(0, boundaryNodes.extent(0)),
@@ -153,18 +152,23 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         },
         numLocalBoundaryNodes);
 
-    auto comm = A->getRowMap()->getComm();
-    MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+    if (IsPrint(Statistics1)) {
+      auto comm = A->getRowMap()->getComm();
 
-    GO numGlobalTotal = A->getGlobalNumEntries();
-    GO numGlobalDropped;
-    MueLu_sumAll(comm, numDropped, numGlobalDropped);
+      std::vector<GlobalOrdinal> localStats = {numLocalBoundaryNodes, numDropped};
+      std::vector<GlobalOrdinal> globalStats(2);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 2, localStats.data(), globalStats.data());
 
-    GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
-    if (numGlobalTotal != 0) {
-      GetOStream(Statistics1) << "Number of dropped entries: "
-                              << numGlobalDropped << "/" << numGlobalTotal
-                              << " (" << 100 * Teuchos::as<double>(numGlobalDropped) / Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
+      GO numGlobalTotal         = A->getGlobalNumEntries();
+      GO numGlobalBoundaryNodes = globalStats[0];
+      GO numGlobalDropped       = globalStats[1];
+
+      GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+      if (numGlobalTotal != 0) {
+        GetOStream(Statistics1) << "Number of dropped entries: "
+                                << numGlobalDropped << "/" << numGlobalTotal
+                                << " (" << 100 * Teuchos::as<double>(numGlobalDropped) / Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
+      }
     }
   }
 }
