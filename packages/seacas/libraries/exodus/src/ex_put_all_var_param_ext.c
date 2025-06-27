@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -253,57 +253,57 @@ int ex_put_all_var_param_ext(int exoid, const ex_var_params *vp)
   /* leave define mode  */
 
   in_define = 0;
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     goto error_ret;
   }
 
   /* write out the variable truth tables */
-  if (vp->num_edge > 0) {
-    if (put_truth_table(exoid, edblk_varid, vp->edge_var_tab, "edge") != NC_NOERR) {
+  if (vp->num_edge > 0 && vp->edge_var_tab != NULL) {
+    if (put_truth_table(exoid, edblk_varid, vp->edge_var_tab, "edge") != EX_NOERR) {
       goto error_ret;
     }
   }
 
-  if (vp->num_face > 0) {
-    if (put_truth_table(exoid, fablk_varid, vp->face_var_tab, "face") != NC_NOERR) {
+  if (vp->num_face > 0 && vp->face_var_tab != NULL) {
+    if (put_truth_table(exoid, fablk_varid, vp->face_var_tab, "face") != EX_NOERR) {
       goto error_ret;
     }
   }
 
-  if (vp->num_elem > 0) {
-    if (put_truth_table(exoid, eblk_varid, vp->elem_var_tab, "element") != NC_NOERR) {
+  if (vp->num_elem > 0 && vp->elem_var_tab != NULL) {
+    if (put_truth_table(exoid, eblk_varid, vp->elem_var_tab, "element") != EX_NOERR) {
       goto error_ret;
     }
   }
 
-  if (vp->num_nset > 0) {
-    if (put_truth_table(exoid, nset_varid, vp->nset_var_tab, "nodeset") != NC_NOERR) {
+  if (vp->num_nset > 0 && vp->nset_var_tab != NULL) {
+    if (put_truth_table(exoid, nset_varid, vp->nset_var_tab, "nodeset") != EX_NOERR) {
       goto error_ret;
     }
   }
 
-  if (vp->num_eset > 0) {
-    if (put_truth_table(exoid, eset_varid, vp->eset_var_tab, "edgeset") != NC_NOERR) {
+  if (vp->num_eset > 0 && vp->eset_var_tab != NULL) {
+    if (put_truth_table(exoid, eset_varid, vp->eset_var_tab, "edgeset") != EX_NOERR) {
       goto error_ret;
     }
   }
 
-  if (vp->num_fset > 0) {
-    if (put_truth_table(exoid, fset_varid, vp->fset_var_tab, "faceset") != NC_NOERR) {
+  if (vp->num_fset > 0 && vp->fset_var_tab != NULL) {
+    if (put_truth_table(exoid, fset_varid, vp->fset_var_tab, "faceset") != EX_NOERR) {
       goto error_ret;
     }
   }
 
-  if (vp->num_sset > 0) {
-    if (put_truth_table(exoid, sset_varid, vp->sset_var_tab, "sideset") != NC_NOERR) {
+  if (vp->num_sset > 0 && vp->sset_var_tab != NULL) {
+    if (put_truth_table(exoid, sset_varid, vp->sset_var_tab, "sideset") != EX_NOERR) {
       goto error_ret;
     }
   }
 
-  if (vp->num_elset > 0) {
-    if (put_truth_table(exoid, elset_varid, vp->elset_var_tab, "elemset") != NC_NOERR) {
+  if (vp->num_elset > 0 && vp->elset_var_tab != NULL) {
+    if (put_truth_table(exoid, elset_varid, vp->elset_var_tab, "elemset") != EX_NOERR) {
       goto error_ret;
     }
   }
@@ -526,38 +526,40 @@ static int exi_define_vars(int exoid, ex_entity_type obj_type, const char *entit
 {
   if (numvar > 0) {
     int status;
-    if ((status = define_dimension(exoid, DNAME, numvar, entity_name, &dimid2)) != NC_NOERR) {
+    if ((status = define_dimension(exoid, DNAME, numvar, entity_name, &dimid2)) != EX_NOERR) {
       return status;
     }
 
     /* Now define entity_name variable name variable */
-    if ((status = define_variable_name_variable(exoid, VNOV, dimid2, entity_name)) != NC_NOERR) {
+    if ((status = define_variable_name_variable(exoid, VNOV, dimid2, entity_name)) != EX_NOERR) {
       return status;
     }
 
-    if ((status = define_truth_table(obj_type, exoid, DVAL, numvar, truth_table, *status_var,
-                                     *entity_ids, entity_blk_name)) != NC_NOERR) {
-      return status;
-    }
+    if (truth_table != NULL) {
+      if ((status = define_truth_table(obj_type, exoid, DVAL, numvar, truth_table, *status_var,
+                                       *entity_ids, entity_blk_name)) != EX_NOERR) {
+        return status;
+      }
 
+      /* create a variable array in which to store the entity_name variable truth
+       * table
+       */
+
+      int dims[] = {dimid1, dimid2};
+      if ((status = nc_def_var(exoid, VTV, NC_INT, 2, dims, truth_table_var)) != EX_NOERR) {
+        char errmsg[MAX_ERR_LENGTH];
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to define %s variable truth table in file id %d", entity_name,
+                 exoid);
+        ex_err_fn(exoid, __func__, errmsg, status);
+        return status;
+      }
+      exi_set_compact_storage(exoid, *truth_table_var);
+    }
     free(*status_var);
     *status_var = NULL;
     free(*entity_ids);
     *entity_ids = NULL;
-
-    /* create a variable array in which to store the entity_name variable truth
-     * table
-     */
-
-    int dims[] = {dimid1, dimid2};
-    if ((status = nc_def_var(exoid, VTV, NC_INT, 2, dims, truth_table_var)) != NC_NOERR) {
-      char errmsg[MAX_ERR_LENGTH];
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to define %s variable truth table in file id %d", entity_name, exoid);
-      ex_err_fn(exoid, __func__, errmsg, status);
-      return status;
-    }
-    exi_set_compact_storage(exoid, *truth_table_var);
   }
-  return NC_NOERR;
+  return EX_NOERR;
 }
