@@ -16,6 +16,7 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <sstream>
 
 #include "MueLu_UncoupledAggregationFactory_decl.hpp"
 
@@ -358,28 +359,41 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       }
     }
 
-    GO numGlobalRows           = 0;
-    GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
-    if (IsPrint(Statistics1))
-      MueLu_sumAll(comm, as<GO>(numRows), numGlobalRows);
+    std::vector<GO> localStats;
+    if (IsPrint(Statistics1)) {
+      localStats    = std::vector<GO>(1 + 2 * algos_.size());
+      localStats[0] = numRows;
+    }
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
-      SubFactoryMonitor sfm2(*this, "Algo \"" + phase + "\"", currentLevel);
 
+      SubFactoryMonitor sfm2(*this, "Algo \"" + phase + "\"" + (numNonAggregatedNodes == 0 ? " [skipped since no nodes are left to aggregate]" : ""), currentLevel);
       int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
-      if (runOnHost)
-        algos_[a]->BuildAggregatesNonKokkos(pL, *graph, *aggregates, aggStatHost, numNonAggregatedNodes);
-      else
-        algos_[a]->BuildAggregates(pL, *graph_kokkos, *aggregates, aggStat, numNonAggregatedNodes);
+      if (numNonAggregatedNodes > 0) {
+        if (runOnHost)
+          algos_[a]->BuildAggregatesNonKokkos(pL, *graph, *aggregates, aggStatHost, numNonAggregatedNodes);
+        else
+          algos_[a]->BuildAggregates(pL, *graph_kokkos, *aggregates, aggStat, numNonAggregatedNodes);
+      }
       algos_[a]->SetProcRankVerbose(oldRank);
 
       if (IsPrint(Statistics1)) {
-        GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
-        GO numLocalAggs = aggregates->GetNumAggregates(), numGlobalAggs = 0;
-        MueLu_sumAll(comm, numLocalAggregated, numGlobalAggregated);
-        MueLu_sumAll(comm, numLocalAggs, numGlobalAggs);
-
-        double aggPercent = 100 * as<double>(numGlobalAggregated) / as<double>(numGlobalRows);
+        localStats[2 * a + 1] = numRows - numNonAggregatedNodes;  // num local aggregated nodes
+        localStats[2 * a + 2] = aggregates->GetNumAggregates();   // num local aggregates
+      }
+    }
+    if (IsPrint(Statistics1)) {
+      std::vector<GO> globalStats(1 + 2 * algos_.size());
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, (int)localStats.size(), localStats.data(), globalStats.data());
+      GO numGlobalRows           = globalStats[0];
+      GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
+      std::stringstream ss;
+      for (size_t a = 0; a < algos_.size(); a++) {
+        std::string phase              = algos_[a]->description();
+        GO numGlobalAggregated         = globalStats[2 * a + 1];
+        GO numGlobalAggs               = globalStats[2 * a + 2];
+        GO numGlobalNonAggregatedNodes = numGlobalRows - numGlobalAggregatedPrev;
+        double aggPercent              = 100 * as<double>(numGlobalAggregated) / as<double>(numGlobalRows);
         if (aggPercent > 99.99 && aggPercent < 100.00) {
           // Due to round off (for instance, for 140465733/140466897), we could
           // get 100.00% display even if there are some remaining nodes. This
@@ -387,15 +401,16 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           // it to display 99.99%.
           aggPercent = 99.99;
         }
-        GetOStream(Statistics1) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
-                                << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
-                                << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
-                                << "  aggregates : " << numGlobalAggs - numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
+
+        ss << "Algo \"" + phase + "\"" + (numGlobalNonAggregatedNodes == 0 ? " [skipped since no nodes are left to aggregate]" : "") << std::endl
+           << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
+           << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
+           << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
+           << "  aggregates : " << numGlobalAggs - numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
         numGlobalAggregatedPrev = numGlobalAggregated;
         numGlobalAggsPrev       = numGlobalAggs;
       }
-      if (numNonAggregatedNodes == 0)
-        break;
+      GetOStream(Statistics1) << ss.str();
     }
   }
 
