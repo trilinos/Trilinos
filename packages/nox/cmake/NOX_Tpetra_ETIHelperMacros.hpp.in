@@ -1,0 +1,17 @@
+// @HEADER
+// *****************************************************************************
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//
+// Copyright 2002 NTESS and the NOX contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#ifndef NOX_TPETRA_ETIHELPERMACROS_HPP
+#define NOX_TPETRA_ETIHELPERMACROS_HPP
+
+#include "Tpetra_ETIHelperMacros.h"
+
+@NOX_TPETRA_ETIMACRO_SLGN@
+
+#endif // NOX_TPETRA_ETIHELPERMACROS_HPP
