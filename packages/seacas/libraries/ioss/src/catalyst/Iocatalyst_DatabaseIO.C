@@ -372,7 +372,7 @@ namespace Iocatalyst {
       const auto groupName      = getName(entityGroup);
       const auto num_to_get     = field.verify(data_size);
       const auto num_components = field.raw_storage()->component_count();
-      if (num_to_get > 0) {
+      if (num_to_get >= 0) {
         auto &&node = this->DBNode[getFieldPath(containerName, groupName, field.get_name())];
         node[detail::ROLE].set(static_cast<std::int8_t>(field.get_role()));
         node[detail::TYPE].set(static_cast<std::int8_t>(field.get_type()));
@@ -772,11 +772,7 @@ namespace Iocatalyst {
     bool addProperties(conduit_cpp::Node parent, GroupingEntityT *entityGroup)
     {
       Ioss::NameList names;
-      // skip implicit properties.
-      entityGroup->property_describe(Ioss::Property::INTERNAL, &names);
-      entityGroup->property_describe(Ioss::Property::EXTERNAL, &names);
-      entityGroup->property_describe(Ioss::Property::ATTRIBUTE, &names);
-      entityGroup->property_describe(Ioss::Property::IMPLICIT, &names);
+      entityGroup->property_describe(&names);
 
       auto &&propertiesNode = parent[detail::PROPERTIES];
       for (const auto &name : names) {
@@ -802,9 +798,11 @@ namespace Iocatalyst {
           node[detail::VALUE].set(property.get_vec_double());
           break;
 
-        case Ioss::Property::BasicType::POINTER:
-        case Ioss::Property::BasicType::INVALID:
-        default: return false;
+        case Ioss::Property::BasicType::POINTER: break;
+
+        case Ioss::Property::BasicType::INVALID: break;
+
+        default: break;
         }
       }
       return true;
@@ -1162,12 +1160,7 @@ namespace Iocatalyst {
       auto &&child = parent[idx];
       auto block = detail::createEntityGroup<Ioss::StructuredBlock>(child, region->get_database());
       region->add(block);
-      auto parent = block->get_node_block().get_property(detail::IOSSCONTAINEDIN);
       this->readProperties(child[detail::PROPERTIES], block);
-      this->readProperties(
-          child[getName(&block->get_node_block()) + detail::FS + detail::PROPERTIES],
-          &block->get_node_block());
-      block->get_node_block().property_add(parent);
 
       // read fields (meta-data only)
       this->readFields(child[detail::FIELDS], block);
