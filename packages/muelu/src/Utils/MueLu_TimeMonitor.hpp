@@ -30,12 +30,16 @@ namespace MueLu {
     @brief Integrates Teuchos::TimeMonitor with MueLu verbosity system.
 */
 class TimeMonitor : public BaseClass {
- public:
+
+
+
+
+public:
   TimeMonitor(const BaseClass& object, const std::string& msg, MsgType timerLevel = Timings0);
 
   ~TimeMonitor();
 
- protected:
+    protected:
   TimeMonitor();
 
  private:
