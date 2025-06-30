@@ -13,19 +13,19 @@
 #define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
-  if ((funcall) != NC_NOERR) {                                                                     \
+  if ((funcall) != EX_NOERR) {                                                                     \
     fprintf(stderr, "Error calling %s\n", TOSTRING(funcall));                                      \
     EX_FUNC_LEAVE(EX_FATAL);                                                                       \
   }
 
 #define EXCHECKI(funcall)                                                                          \
-  if ((funcall) != NC_NOERR) {                                                                     \
+  if ((funcall) != EX_NOERR) {                                                                     \
     fprintf(stderr, "Error calling %s\n", TOSTRING(funcall));                                      \
     return EX_FATAL;                                                                               \
   }
 
 #define EXCHECKF(funcall)                                                                          \
-  if ((funcall) != NC_NOERR) {                                                                     \
+  if ((funcall) != EX_NOERR) {                                                                     \
     fprintf(stderr, "Error calling %s\n", TOSTRING(funcall));                                      \
     goto err_ret;                                                                                  \
   }
@@ -120,7 +120,7 @@ static int ex_copy_internal(int in_exoid, int out_exoid, int mesh_only)
   EXCHECK(cpy_variables(in_exoid, out_exoid, in_large, mesh_only));
 
   /* take the output file out of define mode */
-  if (exi_leavedef(out_exoid, __func__) != NC_NOERR) {
+  if (exi_leavedef(out_exoid, __func__) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -296,14 +296,14 @@ static int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
       /* See if the dimension has already been defined */
       int status = nc_inq_dimid(out_exoid, dim_nm, &dim_out_id);
 
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         if (dimid != recdimid) {
           status = nc_def_dim(out_exoid, dim_nm, dim_sz, &dim_out_id);
         }
         else {
           status = nc_def_dim(out_exoid, dim_nm, NC_UNLIMITED, &dim_out_id);
         }
-        if (status != NC_NOERR) {
+        if (status != EX_NOERR) {
           char errmsg[MAX_ERR_LENGTH];
           snprintf_nowarn(errmsg, MAX_ERR_LENGTH,
                           "ERROR: failed to define %s dimension in file id %d", dim_nm, out_exoid);
@@ -319,17 +319,17 @@ static int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
    * the target...
    */
   int status = nc_inq_dimid(in_exoid, DIM_STR_NAME, &dim_out_id);
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     /*
      * See if it already exists in the output file
      * (ex_put_init_ext may have been called on the
      * output file prior to calling ex_copy)
      */
     status = nc_inq_dimid(out_exoid, DIM_STR_NAME, &dim_out_id);
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       /* Not found; set to default value of 32+1. */
 
-      if ((status = nc_def_dim(out_exoid, DIM_STR_NAME, 33, &dim_out_id)) != NC_NOERR) {
+      if ((status = nc_def_dim(out_exoid, DIM_STR_NAME, 33, &dim_out_id)) != EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf_nowarn(errmsg, MAX_ERR_LENGTH,
                         "ERROR: failed to define string name dimension in file id %d", out_exoid);
@@ -359,7 +359,7 @@ static int cpy_global_att(int in_exoid, int out_exoid)
      * word size, I/O word size etc. are global attributes stored when
      * file is created with ex_create;  we don't want to overwrite those
      */
-    if (nc_inq_att(out_exoid, NC_GLOBAL, att.name, &att.type, &att.len) != NC_NOERR) {
+    if (nc_inq_att(out_exoid, NC_GLOBAL, att.name, &att.type, &att.len) != EX_NOERR) {
 
       /* The "last_written_time" attribute is a special attribute used
          by the IOSS library to determine whether a timestep has been
@@ -383,7 +383,7 @@ static int cpy_global_att(int in_exoid, int out_exoid)
     nc_type att_type = NC_NAT;
     size_t  att_len  = 0;
     int     status   = nc_inq_att(in_exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
-    if (status == NC_NOERR) {
+    if (status == EX_NOERR) {
       EXCHECKI(nc_copy_att(in_exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, out_exoid, NC_GLOBAL));
     }
   }
@@ -448,8 +448,8 @@ static int cpy_coord_def(int in_id, int out_id, int rec_dim_id, char *var_nm, in
     int status2 = nc_inq_varid(out_id, VAR_COORD_Y, &var_out_idy);
     int status3 = nc_inq_varid(out_id, VAR_COORD_Y, &var_out_idz);
 
-    if (status1 == NC_NOERR && status2 == NC_NOERR && (spatial_dim == 2 || status3 == NC_NOERR)) {
-      return NC_NOERR; /* already defined in output file */ /* OK */
+    if (status1 == EX_NOERR && status2 == EX_NOERR && (spatial_dim == 2 || status3 == EX_NOERR)) {
+      return EX_NOERR; /* already defined in output file */ /* OK */
     }
   }
 
@@ -489,7 +489,7 @@ static int cpy_var_def(int in_id, int out_id, int rec_dim_id, char *var_nm)
   /* See if the requested variable is already in the output file. */
   int var_out_id;
   int status = nc_inq_varid(out_id, var_nm, &var_out_id);
-  if (status == NC_NOERR) {
+  if (status == EX_NOERR) {
     return var_out_id; /* OK */
   }
 
@@ -523,7 +523,7 @@ static int cpy_var_def(int in_id, int out_id, int rec_dim_id, char *var_nm)
     status = nc_inq_dimid(out_id, dim_nm, &dim_out_id[idx]);
 
     /* If the dimension hasn't been defined, copy it */
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       if (dim_in_id[idx] != rec_dim_id) {
         EXCHECKI(nc_def_dim(out_id, dim_nm, dim_sz, &dim_out_id[idx]));
       }

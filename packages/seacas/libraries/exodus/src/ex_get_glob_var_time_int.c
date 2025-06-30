@@ -129,7 +129,7 @@ int exi_get_glob_var_time(int exoid, int glob_var_index, int beg_time_step, int 
   count[1] = 1;
 
   /* inquire previously defined variable */
-  if ((status = nc_inq_varid(exoid, VAR_GLO_VAR, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_GLO_VAR, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate global variables in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -143,7 +143,7 @@ int exi_get_glob_var_time(int exoid, int glob_var_index, int beg_time_step, int 
     status = nc_get_vara_double(exoid, varid, start, count, glob_var_vals);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get global variable %d values from file id %d", glob_var_index,
              exoid);

@@ -32,8 +32,8 @@ static int ex_put_var_names_int(int exoid, ex_entity_type obj_type, int num_vars
   int status;
   int dimid;
 
-  if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != NC_NOERR) {
-    if (status != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != EX_NOERR) {
+    if (status != EX_NOERR) {
       /* ex_put_reduction_variable_param was not called.  Call it now */
       EX_FUNC_UNLOCK();
       ex_put_reduction_variable_param(exoid, obj_type, num_vars);
@@ -41,7 +41,7 @@ static int ex_put_var_names_int(int exoid, ex_entity_type obj_type, int num_vars
     }
   }
 
-  if ((status = nc_inq_varid(exoid, vnames, varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vnames, varid)) != EX_NOERR) {
     if (status == NC_ENOTVAR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s variable names defined in file id %d", tname,

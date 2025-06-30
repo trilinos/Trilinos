@@ -5,16 +5,16 @@
 // See packages/seacas/LICENSE for details
 #include "EJ_CodeTypes.h"
 #include "EJ_SystemInterface.h"
-#include "EJ_index_sort.h"  // for index_coord_sort
-#include "EJ_mapping.h"     // for eliminate_omitted_nodes
-#include "EJ_vector3d.h"    // for vector3d
-#include "Ioss_NodeBlock.h" // for NodeBlock
-#include "Ioss_Property.h"  // for Property
-#include "Ioss_Region.h"    // for Region, NodeBlockContainer
+#include "EJ_index_sort.h"
+#include "EJ_mapping.h"
+#include "EJ_vector3d.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
 #include "Ioss_SmartAssert.h"
-#include <algorithm> // for max, min
-#include <cfloat>    // for FLT_MAX
-#include <cstddef>   // for size_t
+#include <algorithm>
+#include <cfloat>
+#include <cstddef>
 #include <fmt/format.h>
 
 namespace {

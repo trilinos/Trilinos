@@ -61,7 +61,7 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
 
   /* inquire id's of previously defined dimensions  */
 
-  if (nc_inq_dimid(exoid, DIM_NUM_NODES, &numnoddim) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_NODES, &numnoddim) != EX_NOERR) {
     /* If not found, then this file is storing 0 nodes.
        Return immediately */
     EX_FUNC_LEAVE(EX_NOERR);
@@ -69,7 +69,7 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
 
   {
     size_t tmp;
-    if ((status = nc_inq_dimlen(exoid, numnoddim, &tmp)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, numnoddim, &tmp)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: inquire failed to return number of nodes in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -78,14 +78,14 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
     num_nod = tmp;
   }
 
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of dimensions in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of dimensions in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -104,7 +104,7 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
 
   /* write out the coordinates  */
   if (num_dim > 0) {
-    if ((status = nc_inq_varid(exoid, VAR_COORD_X, &coordidx)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_COORD_X, &coordidx)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate x nodal coordinates in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -115,7 +115,7 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
     coordidx = -1;
   }
   if (num_dim > 1) {
-    if ((status = nc_inq_varid(exoid, VAR_COORD_Y, &coordidy)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_COORD_Y, &coordidy)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate y nodal coordinates in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -126,7 +126,7 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
     coordidy = -1;
   }
   if (num_dim > 2) {
-    if ((status = nc_inq_varid(exoid, VAR_COORD_Z, &coordidz)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_COORD_Z, &coordidz)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate z nodal coordinates in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -172,7 +172,7 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
         status = nc_put_vara_double(exoid, coordid, start, count, coor);
       }
 
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put %s coord array in file id %d", which,
                  exoid);
         ex_err_fn(exoid, __func__, errmsg, status);

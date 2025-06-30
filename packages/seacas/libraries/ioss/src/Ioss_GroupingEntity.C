@@ -98,20 +98,6 @@ Ioss::DatabaseIO *Ioss::GroupingEntity::get_database() const
   return database_;
 }
 
-/** \brief Get the file name associated with the database containing this entity.
- *
- *  \returns The file name.
- */
-std::string Ioss::GroupingEntity::get_filename() const
-{
-  // Ok for database_ to be nullptr at this point.
-  if (database_ == nullptr) {
-    return {};
-  }
-
-  return database_->get_filename();
-}
-
 void Ioss::GroupingEntity::set_database(Ioss::DatabaseIO *io_database)
 {
   assert(database_ == nullptr);   // Must be unset if we are setting it.

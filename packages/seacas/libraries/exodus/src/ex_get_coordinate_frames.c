@@ -113,7 +113,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
   /* get the dimensions */
   assert(nframes != NULL);
   status = nc_inq_dimid(exoid, DIM_NUM_CFRAMES, &dimid);
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     *nframes = 0;
     EX_FUNC_LEAVE(EX_NOERR);
   }
@@ -126,7 +126,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
   }
 
   if (cf_ids) {
-    if ((status = nc_inq_varid(exoid, VAR_FRAME_IDS, &varids)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_FRAME_IDS, &varids)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate ids from file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -140,7 +140,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
       status = nc_get_var_int(exoid, varids, cf_ids);
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to read coordinate frame ids from file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -149,8 +149,8 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
   }
 
   if (tags) {
-    if ((status = nc_inq_varid(exoid, VAR_FRAME_TAGS, &varids)) != NC_NOERR ||
-        (nc_get_vara_text(exoid, varids, &start, &count, tags) != NC_NOERR)) {
+    if ((status = nc_inq_varid(exoid, VAR_FRAME_TAGS, &varids)) != EX_NOERR ||
+        (nc_get_vara_text(exoid, varids, &start, &count, tags) != EX_NOERR)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate tags from file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -159,7 +159,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
   }
 
   if (pt_coordinates) {
-    if ((status = nc_inq_varid(exoid, VAR_FRAME_COORDS, &varids)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_FRAME_COORDS, &varids)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate tags from file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -173,7 +173,7 @@ int ex_get_coordinate_frames(int exoid, int *nframes, void_int *cf_ids, void *pt
       status = nc_get_var_double(exoid, varids, pt_coordinates);
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to read number coordinate tags from file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
