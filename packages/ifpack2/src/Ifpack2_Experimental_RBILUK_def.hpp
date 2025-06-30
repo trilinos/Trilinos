@@ -1245,6 +1245,7 @@ stream_apply_impl(const X& X_views, Y& Y_views, const bool use_temp_x, const boo
       stream_begin = stream_end;
     }
 
+    Kokkos::fence();
     KokkosSparse::Experimental::sptrsv_solve_streams(this->exec_space_instances_, KernelHandle_rawptr_v, ptr_v, ind_v, val_v, x_v, y_v);
     Kokkos::fence();
   }
