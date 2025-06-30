@@ -138,7 +138,7 @@ stk::math::Vector3d compute_quadratic_edge_crossing(const std::array<stk::math::
 
 void append_facets_for_converged_tri(const std::array<stk::math::Vector3d,3> & coords,
   const std::array<double,6> & tri6Dist,
-  const double lengthScale,
+  const double /*lengthScale*/,
   FacetedSurfaceBase & facets)
 {
   const int caseId = compute_node_caseId(tri6Dist[0]) + 3*compute_node_caseId(tri6Dist[1]) + 9*compute_node_caseId(tri6Dist[2]);

@@ -151,7 +151,7 @@ std::vector<stk::math::Vector3d> get_parent_node_coordinates_for_sensitivitiy(co
 }
 
 void test_sensitivity_for_sphere_at_origin(const krino::LevelSetShapeSensitivity & sens, stk::mesh::BulkData & bulk, 
-  krino::FieldRef isovar)
+  krino::FieldRef /*isovar*/)
 {
   static constexpr int DIM = 3;
   ASSERT_EQ(sens.parentNodeIds.size() , 2u);
@@ -233,9 +233,11 @@ stk::mesh::Selector build_output_selector(const stk::mesh::MetaData & meta, cons
   return activePart & stk::mesh::selectUnion(outputParts);
 }
 
-void output_mesh(const stk::mesh::BulkData & mesh, const std::string & fileName, int step, double time)
+void output_mesh(stk::mesh::BulkData & mesh, const std::string & fileName, int step, double time)
 {
   stk::mesh::Selector outputSelector = build_output_selector(mesh.mesh_meta_data(), krino::AuxMetaData::get(mesh.mesh_meta_data()).active_part());
+  krino::fix_face_and_edge_ownership_to_assure_selected_owned_element(mesh, outputSelector);
+  krino::fix_node_ownership_to_assure_selected_owned_element(mesh, outputSelector);
   krino::output_composed_mesh_with_fields(mesh, outputSelector, fileName, step, time);
 }
 
@@ -717,4 +719,29 @@ TEST(DecomposeMeshAndComputeSensitivities, readMeshInitializeDecomposeAndMoveVol
   const std::string islandPhaseName = "disconnected";
   auto island_removal_method = [=](stk::mesh::BulkData& mesh){ move_elements_not_in_largest_group_to_phase(mesh, islandPhaseName); };
   test_moving_islands_to_separate_phase(island_removal_method, islandPhaseName);
+}
+
+
+TEST(WriteMesh, decompWithProcBoundarySuchThatOwnedNodeHasNoOwnedElementsSelectedForOutput_noThrowOrHang)
+{
+  krino::BoundingBoxMesh bboxMesh(stk::topology::TETRAHEDRON_4, MPI_COMM_WORLD);
+
+  const std::vector<krino::LS_Field> lsFields = krino::LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(bboxMesh.meta_data(), 1);
+  setup_fields_for_conforming_decomposition(bboxMesh.meta_data());
+
+  generate_bounding_box_mesh(bboxMesh, {0.,0.,0.}, {1.,1.,1.}, 0.2);
+  stk::mesh::BulkData & mesh = bboxMesh.bulk_data();
+  krino::activate_all_entities(mesh, krino::AuxMetaData::get(mesh.mesh_meta_data()).active_part());
+
+  const std::vector<std::pair<stk::math::Vector3d,double>> spheres =
+    {
+        {{0.484677, 0.54141, 0.384676},  0.318623},
+        {{0.384887, 0.468925, 0.590703}, 0.331504},
+    };
+
+  compute_nodal_distance_from_spheres(mesh, mesh.mesh_meta_data().coordinate_field(), lsFields[0].isovar, spheres);
+
+  decompose_mesh_to_conform_to_levelsets(mesh, lsFields);
+
+  EXPECT_NO_THROW(output_mesh(mesh, "output.e", 1, 0.0));
 }

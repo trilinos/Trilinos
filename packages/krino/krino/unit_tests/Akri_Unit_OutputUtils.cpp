@@ -11,7 +11,7 @@
 #include <stk_topology/topology.hpp>
 #include <stk_util/environment/EnvData.hpp>
 
-void put_node_with_id_into_nodeset(stk::mesh::BulkData & mesh, stk::mesh::Part & nodeset, const stk::mesh::EntityId id)
+void put_node_with_id_into_nodeset(stk::mesh::BulkData & mesh, stk::mesh::Part & nodeset, const stk::mesh::EntityId /*id*/)
 {
   const stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, 1);
   mesh.modification_begin();
