@@ -2,7 +2,7 @@ Clearing old data (if any)
 
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
-smoother -> 
+smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
@@ -24,7 +24,7 @@ Build (MueLu::AmalgamationFactory)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
-matrixmatrix: kernel params -> 
+matrixmatrix: kernel params ->
  [empty list]
 Constraint (MueLu::ConstraintFactory)
 Ppattern (MueLu::PatternFactory)
@@ -34,13 +34,13 @@ GMRES iterations
 emin: num iterations = 1
 emin: iterative method = gmres
 Transpose P (MueLu::TransPFactory)
-matrixmatrix: kernel params -> 
+matrixmatrix: kernel params ->
  [empty list]
 Computing Ac (MueLu::RAPFactory)
-matrixmatrix: kernel params -> 
+matrixmatrix: kernel params ->
  [empty list]
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
-smoother -> 
+smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
@@ -62,7 +62,7 @@ Build (MueLu::AmalgamationFactory)
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
-matrixmatrix: kernel params -> 
+matrixmatrix: kernel params ->
  [empty list]
 Constraint (MueLu::ConstraintFactory)
 Ppattern (MueLu::PatternFactory)
@@ -72,15 +72,15 @@ GMRES iterations
 emin: num iterations = 1
 emin: iterative method = gmres
 Transpose P (MueLu::TransPFactory)
-matrixmatrix: kernel params -> 
+matrixmatrix: kernel params ->
  [empty list]
 Computing Ac (MueLu::RAPFactory)
-matrixmatrix: kernel params -> 
+matrixmatrix: kernel params ->
  [empty list]
 Max coarse size (<= 2000) achieved
 Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
-presmoother -> 
- Amesos2 -> 
+presmoother ->
+ Amesos2 ->
   [empty list]
 
 --------------------------------------------------------------------------------
@@ -92,9 +92,9 @@ Smoother complexity = <ignored>
 Cycle type          = V
 
 level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
+  0  9999  29995  3.00                  1
+  1  3333  9997   3.00     3.00         1
+  2  1111  3331   3.00     3.00         1
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
@@ -102,4 +102,3 @@ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
-

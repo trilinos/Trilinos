@@ -1858,6 +1858,17 @@ Only used when tentative: calculate qr is set to false.</description>
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>repartition: put on single proc</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Number of rows below which we always repartition to a single rank</description>
+      <name-ML>repartition: put on single proc</name-ML>
+      <default-ML>5000</default-ML>
+      <visible>false</visible>
+      <description-ML>Number of rows below which we always repartition to a single rank</description-ML>
+    </parameter>
+
 
   </rebalancing>
 
