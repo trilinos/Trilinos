@@ -148,13 +148,16 @@ computeLocalRowOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, NT>& A)
   equib_info_type result (lclNumRows, lclNumCols, assumeSymmetric);
   auto result_h = result.createMirrorView ();
 
+  const auto val_zero = KAV::zero();
+  const auto mag_zero = KAM::zero();
+
   forEachLocalRowMatrixRow<SC, LO, GO, NT> (A,
     [&] (const LO lclRow,
          const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type& ind,
          const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type& val,
          std::size_t numEnt) {
-      mag_type rowNorm {0.0};
-      val_type diagVal {0.0};
+      mag_type rowNorm = mag_zero;
+      val_type diagVal = val_zero;
       const GO gblRow = rowMap.getGlobalElement (lclRow);
       // OK if invalid(); then we simply won't find the diagonal entry.
       const GO lclDiagColInd = colMap.getLocalElement (gblRow);
@@ -218,13 +221,16 @@ computeLocalRowAndColumnOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, 
     (lclNumRows, lclNumCols, assumeSymmetric);
   auto result_h = result.createMirrorView ();
 
+  const auto val_zero = KAV::zero();
+  const auto mag_zero = KAM::zero();
+
   forEachLocalRowMatrixRow<SC, LO, GO, NT> (A,
     [&] (const LO lclRow,
          const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type& ind,
          const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type& val,
          std::size_t numEnt) {
-      mag_type rowNorm {0.0};
-      val_type diagVal {0.0};
+      mag_type rowNorm = mag_zero;
+      val_type diagVal = val_zero;
       const GO gblRow = rowMap.getGlobalElement (lclRow);
       // OK if invalid(); then we simply won't find the diagonal entry.
       const GO lclDiagColInd = colMap.getLocalElement (gblRow);
@@ -425,8 +431,11 @@ public:
     const auto curRow = A_lcl_.rowConst (lclRow);
     const LO numEnt = curRow.length;
 
-    mag_type rowNorm {0.0};
-    val_type diagVal {0.0};
+    const auto val_zero = KAT::zero();
+    const auto mag_zero = KAM::zero();
+
+    mag_type rowNorm = mag_zero;
+    val_type diagVal = val_zero;
     value_type dstThread {0};
 
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, numEnt), [&](const LO k, mag_type &normContrib, val_type& diagContrib, value_type& dstContrib) {
@@ -524,8 +533,11 @@ public:
     const auto curRow = A_lcl_.rowConst (lclRow);
     const LO numEnt = curRow.length;
 
-    mag_type rowNorm {0.0};
-    val_type diagVal {0.0};
+    const auto val_zero = KAT::zero();
+    const auto mag_zero = KAM::zero();
+
+    mag_type rowNorm = mag_zero;
+    val_type diagVal = val_zero;
     value_type dstThread {0};
 
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, numEnt), [&](const LO k, mag_type &normContrib, val_type& diagContrib, value_type& dstContrib) {
@@ -717,7 +729,7 @@ auto getLocalView_1d_readOnly (
                             Kokkos::ALL (), 0);
   }
 }
- 
+
 template<class SC, class LO, class GO, class NT>
 auto getLocalView_1d_writeOnly (
   Tpetra::MultiVector<SC, LO, GO, NT>& X,
@@ -735,7 +747,7 @@ auto getLocalView_1d_writeOnly (
                            Kokkos::ALL (), 0);
   }
 }
- 
+
 template<class SC, class LO, class GO, class NT, class ViewValueType>
 void
 copy1DViewIntoMultiVectorColumn (

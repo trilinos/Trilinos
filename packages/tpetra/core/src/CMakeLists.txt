@@ -700,7 +700,7 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     MESSAGE(STATUS "Tpetra: Using Full ETI")
     SET (CrsMatrix_ETI_SCALARS ${MultiVector_ETI_SCALARS})
   ENDIF()
-    
+
   # Generate ETI .cpp files for Tpetra::CrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "CrsMatrix" "CRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${CRSMATRIX_OUTPUT_FILES})
@@ -785,7 +785,7 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Generate ETI .cpp files for Tpetra::computeRowAndColumnOneNorms.
   # Do this only for non-integer Scalar types, since we really only
   # need this function for linear solvers.
-  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(COMPUTEROWANDCOLUMNONENORMS_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "computeRowAndColumnOneNorms" "COMPUTEROWANDCOLUMNONENORMS" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(COMPUTEROWANDCOLUMNONENORMS_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "computeRowAndColumnOneNorms" "COMPUTEROWANDCOLUMNONENORMS" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${COMPUTEROWANDCOLUMNONENORMS_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::replaceDiagonalCrsMatrix.
@@ -955,4 +955,3 @@ SET_PROPERTY(
 # that running "make" will also rerun CMake in order to regenerate Makefiles.
 #
 # Here's another change.  Again.
-
