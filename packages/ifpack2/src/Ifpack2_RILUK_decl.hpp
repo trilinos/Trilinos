@@ -581,9 +581,9 @@ protected:
   Teuchos::RCP<const crs_matrix_type> A_local_crs_;
   Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
   std::vector<local_matrix_device_type> A_local_diagblks_v_;
-  std::vector< lno_row_view_t > A_local_diagblks_rowmap_v_;
-  std::vector< lno_nonzero_view_t > A_local_diagblks_entries_v_;
-  std::vector< scalar_nonzero_view_t > A_local_diagblks_values_v_;
+  std::vector<lno_row_view_t> A_local_diagblks_rowmap_v_;
+  std::vector<lno_nonzero_view_t> A_local_diagblks_entries_v_;
+  std::vector<scalar_nonzero_view_t> A_local_diagblks_values_v_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;

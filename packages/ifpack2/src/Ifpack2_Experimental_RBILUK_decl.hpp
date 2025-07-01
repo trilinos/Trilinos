@@ -161,9 +161,9 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
   typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
   typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
-      <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
-      HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
+                                                                    HandleExecSpace, TemporaryMemorySpace, PersistentMemorySpace>
+      kk_handle_type;
 
   //@}
 
@@ -319,7 +319,7 @@ private:
   using values_host_view_type     = typename block_crs_matrix_type::values_host_view_type;
   using local_inds_device_view_type = typename block_crs_matrix_type::local_inds_device_view_type;
   using values_device_view_type     = typename block_crs_matrix_type::values_device_view_type;
-  using view1d = Kokkos::View<impl_scalar_type*, typename values_device_view_type::device_type>;
+  using view1d                      = Kokkos::View<impl_scalar_type*, typename values_device_view_type::device_type>;
 
   void allocate_L_and_U_blocks();
   void initAllValues ();
@@ -343,9 +343,9 @@ private:
 
   //! Vectors for streams
   std::vector<local_matrix_device_type> A_block_local_diagblks_v_;
-  std::vector<lno_row_view_t>           A_block_local_diagblks_rowmap_v_;
-  std::vector<lno_nonzero_view_t>       A_block_local_diagblks_entries_v_;
-  std::vector<scalar_nonzero_view_t>    A_block_local_diagblks_values_v_;
+  std::vector<lno_row_view_t> A_block_local_diagblks_rowmap_v_;
+  std::vector<lno_nonzero_view_t> A_block_local_diagblks_entries_v_;
+  std::vector<scalar_nonzero_view_t> A_block_local_diagblks_values_v_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<block_crs_matrix_type> L_block_;
