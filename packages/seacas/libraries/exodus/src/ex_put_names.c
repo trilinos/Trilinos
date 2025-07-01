@@ -85,7 +85,7 @@ int ex_put_names(int exoid, ex_entity_type obj_type, char *const names[])
   exi_get_dimension(exoid, exi_dim_num_objects(obj_type), ex_name_of_object(obj_type), &num_entity,
                     &varid, __func__);
 
-  if ((status = nc_inq_varid(exoid, vname, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vname, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s names in file id %d",
              ex_name_of_object(obj_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

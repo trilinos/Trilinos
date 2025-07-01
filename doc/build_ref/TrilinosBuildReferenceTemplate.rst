@@ -118,68 +118,27 @@ Kokkos (https://github.com/kokkos/kokkos) is a C++ implementation of a
 cross-platform shared-memory parallel programming model. Many Trilinos packages,
 and other stand-alone applications, use it to implement parallel algorithms.
 
-If the Kokkos package is enabled (e.g. ``-DTrilinos_ENABLE_Kokkos=ON``), then
-the following CMake cache variables can be used to get the included Kokkos
-configuration system to select compiler and other build related flags for the
-target machine.  These build-related flags are selected to create correct and
-perforamnt code and for C++ software that uses Kokkos.
+The Kokkos package is enabled with ``-DTrilinos_ENABLE_Kokkos=ON``), then
+the native configuration options of the Kokkos package are available such as
+``-DKokkos_ENABLE_OPENMP=ON`` or ``-DKokkos_ENABLE_CUDA=ON``.
+For comprehensive information on how to configure Kokkos for your specific build,
+including details on selecting various parallel backends and optimizing performance,
+please refer to the official Kokkos documentation from the Kokkos website (https://kokkos.org).
 
-============================    ======================================
-Functionality                   CMake Cache Variable
-============================    ======================================
-Specify architecture            ``KOKKOS_ARCH``
-Debug builds                    ``KOKKOS_DEBUG``
+The following Trilinos variables will pass their value to the equivalent
+Kokkos variable
+
+============================    ======================================   ============================
+Functionality                   CMake Cache Variable                     Kokkos Variable
+============================    ======================================   ============================
 Device options:
-* Enable Cuda                   ``TPL_ENABLE_CUDA``
-* Enable OpenMP                 ``Trilinos_ENABLE_OpenMP``
-* Enable Pthread                ``TPL_ENABLE_PThread``
-* Specify Serial                ``TPL_ENABLE_MPI=FALSE``
-Advanced options:
-* Enable compiler warnings      ``KOKKOS_ENABLE_COMPILER_WARNINGS``
-* Aggressive Vectorization      ``KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION``
-* Profiling                     ``KOKKOS_ENABLE_PROFILING``
-* Enable profile load print     ``KOKKOS_ENABLE_PROFILE_LOAD_PRINT``
-* Enable dualview modify chk    ``KOKKOS_ENABLE_DUALVIEW_MODIFY_CHECK``
-Kokkos TPLs:                 
-* Use hwloc library             ``TPL_ENABLE_HWLOC``
-* Use librt                     ``KOKKOS_ENABLE_LIBRT``
-CUDA Options:                
-* Enable CUDA LDG               ``KOKKOS_ENABLE_CUDA_LDG_INTRINSIC`` (global mem load)
-* Enable CUDA UVM               ``KOKKOS_ENABLE_CUDA_UVM`` (unified virtual mem)
-* Enable CUDA RDC               ``KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE``
-* Enable CUDA LAMBDA            ``KOKKOS_ENABLE_CUDA_LAMBDA``
-============================    ======================================
+* Enable Cuda                   ``TPL_ENABLE_CUDA``                      ``Kokkos_ENABLE_CUDA``
+* Enable OpenMP                 ``Trilinos_ENABLE_OpenMP``               ``Kokkos_ENABLE_OPENMP``
+* Enable Pthread                ``TPL_ENABLE_PThread``                   ``Kokkos_ENABLE_THREADS``
+============================    ======================================   ============================
 
-If the cache var ``KOKKOS_ARCH`` is not set (or is set to ``None``) then
-the Kokkos settings are not used and the default Trilinos CMake configuration
-is used as described below.
-
-If ``KOKKOS_ARCH != None`` is set, then the correct compiler flags for
-OpenMP are selected by the Kokkos system and the value of the cache
-var ``OpenMP_CXX_FLAGS`` set by the user will be ignored.
-
-``KOKKOS_ARCH`` can be set to a list of entries with different values for the
-host code and the device code using semi-colons as::
-
-  -DKOKKOS_ARCH="<arch0>;<arch1>"
-
-or as a list of entries separated using comas as::
-
-  -DKOKKOS_ARCH=<arch0>,<arch1>
-
-(Using commas is more robust since it will not get accidentally interpreted as
-a shell command separator or with CMake code that is trying to handle an array
-of entries which include one being ``${KOKKOS_ARCH}`` (which itself is an
-array of values).)
-
-The order of the ``<archi>>`` values is not significant.  Each ``<archi>>``
-value is interpreted on its own as the list is read.  Some of these
-``<archi>>`` values apply to host code (e.g. ``HSW``, ``BDW``, and ``Power9``)
-and other values apply to device code (like for a specific GPU like
-``Kepler35`` or ``Kepler37``).  If multiple ``<archi>>`` values conflict
-(e.g. ``-DKOKKOS_ARCH=BDW,Power8``) then the behavior is undefined (so be
-careful not to do that).  Error-checking for conflicting values may be added
-in the future.
+Note: Trilinos always turns on the Kokkos Serial backend even if it was disabled
+explicitly using ``-D Kokkos_ENABLE_SERIAL=OFF``.
 
 To see more documentation for each of these options, run a configure with
 ``-DTrilinos_ENABLE_Kokkos=ON`` and then look in the ``CMakeCache.txt`` file

@@ -132,7 +132,7 @@ class CoalesceDropFactory_kokkos
 
   void Build(Level& currentLevel) const;
 
-  std::tuple<RCP<LocalOrdinalVector>, RCP<LocalOrdinalVector> > GetBlockNumberMVs(Level& currentLevel) const;
+  Teuchos::RCP<MultiVector> GetMaterial(Level& currentLevel, size_t spatialDim) const;
 
   std::tuple<GlobalOrdinal, boundary_nodes_type> BuildScalar(Level& currentLevel) const;
 

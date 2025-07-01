@@ -25,8 +25,7 @@
 
 using namespace Galeri;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -41,15 +40,14 @@ int main(int argc, char *argv[])
   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
   std::string mapType = "Cartesian2D";
-  auto mapParameters = Teuchos::ParameterList("Tpetra::Map");
+  auto mapParameters  = Teuchos::ParameterList("Tpetra::Map");
   // here we specify the global dimension of the problem
   int nx = 5 * comm->getSize();
   int ny = 5 * comm->getSize();
   mapParameters.set("nx", nx);
   mapParameters.set("ny", ny);
 
-  try
-  {
+  try {
     // Creation of the map
     auto map = RCP{Galeri::Xpetra::CreateMap<Scalar, GO, Tpetra_Map>(mapType, comm, mapParameters)};
 
@@ -59,11 +57,8 @@ int main(int argc, char *argv[])
     // print out the matrix
     auto out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     matrix->describe(*out, Teuchos::EVerbosityLevel::VERB_EXTREME);
-  }
-  catch (Exception &rhs)
-  {
-    if (comm->getRank() == 0)
-    {
+  } catch (Exception &rhs) {
+    if (comm->getRank() == 0) {
       cerr << "Caught exception: ";
       rhs.Print();
 

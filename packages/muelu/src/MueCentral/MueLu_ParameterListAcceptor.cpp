@@ -70,6 +70,10 @@ const Teuchos::ParameterList& ParameterListAcceptorImpl::GetParameterList() cons
   return paramList_;
 }
 
+const Teuchos::ParameterList& ParameterListAcceptorImpl::GetParameterListWithoutValidation() const {
+  return paramList_;
+}
+
 void ParameterListAcceptorImpl::SetParameter(const std::string& name, const ParameterEntry& entry) {
   Teuchos::ParameterList paramList;
   paramList.setEntry(name, entry);

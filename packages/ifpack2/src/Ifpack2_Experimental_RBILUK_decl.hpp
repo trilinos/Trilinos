@@ -91,18 +91,16 @@ the details of diagonal perturbations.
 </ul>
 
 */
-template<class MatrixType>
-class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename MatrixType::scalar_type,
-  typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
-{
+template <class MatrixType>
+class RBILUK : virtual public Ifpack2::RILUK<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                               typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> > {
  public:
-
   //! @name Public type definitions.
   //@{
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
 
-  //typedef typename MatrixType::impl_scalar_type impl_scalar_type;
+  // typedef typename MatrixType::impl_scalar_type impl_scalar_type;
   typedef typename Kokkos::ArithTraits<typename MatrixType::scalar_type>::val_type impl_scalar_type;
 
   //! The type of local indices in the input MatrixType.
@@ -123,26 +121,30 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 
   //! Tpetra::RowMatrix specialization used by this class.
   typedef Tpetra::RowMatrix<scalar_type,
-      local_ordinal_type,
-      global_ordinal_type,
-      node_type> row_matrix_type;
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type>
+      row_matrix_type;
 
   //! Tpetra::CrsMatrix specialization used by this class for representing L and U.
   typedef Tpetra::CrsMatrix<scalar_type,
-      local_ordinal_type,
-      global_ordinal_type,
-      node_type> crs_matrix_type;
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type>
+      crs_matrix_type;
 
   using crs_graph_type = Tpetra::CrsGraph<local_ordinal_type,
                                           global_ordinal_type,
                                           node_type>;
 
   typedef Tpetra::BlockCrsMatrix<scalar_type,
-                            local_ordinal_type,
-                            global_ordinal_type,
-                            node_type> block_crs_matrix_type;
+                                 local_ordinal_type,
+                                 global_ordinal_type,
+                                 node_type>
+      block_crs_matrix_type;
 
-  template <class NewMatrixType> friend class RBILUK;
+  template <class NewMatrixType>
+  friend class RBILUK;
 
   typedef typename block_crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
   typedef typename block_crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
@@ -172,26 +174,25 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   /// \brief Constructor that takes a Tpetra::RowMatrix
   ///
   /// \param A_in [in] The input matrix.
-  RBILUK (const Teuchos::RCP<const row_matrix_type>& A_in);
+  RBILUK(const Teuchos::RCP<const row_matrix_type>& A_in);
 
   /// \brief Constructor that takes a Tpetra::BlockCrsMatrix
   ///
   /// \param A_in [in] The input matrix.
-  RBILUK (const Teuchos::RCP<const block_crs_matrix_type>& A_in);
+  RBILUK(const Teuchos::RCP<const block_crs_matrix_type>& A_in);
 
  private:
   /// \brief Copy constructor: declared private but not defined, so
   ///   that calling it is syntactically forbidden.
-  RBILUK (const RBILUK<MatrixType> & src);
+  RBILUK(const RBILUK<MatrixType>& src);
 
  public:
-
   //! Destructor (declared virtual for memory safety).
-  virtual ~RBILUK ();
+  virtual ~RBILUK();
   //@}
 
   //! Initialize by computing the symbolic incomplete factorization.
-  void initialize ();
+  void initialize();
 
   /// \brief Compute the (numeric) incomplete factorization.
   ///
@@ -201,7 +202,7 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   /// - Value for the a priori diagonal threshold values.
   ///
   /// initialize() must be called first, before this method may be called.
-  void compute ();
+  void compute();
 
   //! \name Implementation of Ifpack2::Details::CanChangeMatrix
   //@{
@@ -241,14 +242,14 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   /// The new matrix A need not necessarily have the same Maps or even
   /// the same communicator as the original matrix.
   void
-  setMatrix (const Teuchos::RCP<const block_crs_matrix_type>& A);
+  setMatrix(const Teuchos::RCP<const block_crs_matrix_type>& A);
 
   //@}
   //! @name Implementation of Teuchos::Describable interface
   //@{
 
   //! A one-line description of this object.
-  std::string description () const;
+  std::string description() const;
 
   //@}
   //! \name Implementation of Tpetra::Operator
@@ -284,29 +285,28 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   ///
   /// \param beta [in] Scaling factor for the initial value of Y.
   void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
   //@}
 
-public:
-
+ public:
   //! Get the input matrix.
-  Teuchos::RCP<const block_crs_matrix_type> getBlockMatrix () const;
+  Teuchos::RCP<const block_crs_matrix_type> getBlockMatrix() const;
 
   //! Return the L factor of the ILU factorization.
-  const block_crs_matrix_type& getLBlock () const;
+  const block_crs_matrix_type& getLBlock() const;
 
   //! Return the diagonal entries of the ILU factorization.
-  const block_crs_matrix_type& getDBlock () const;
+  const block_crs_matrix_type& getDBlock() const;
 
   //! Return the U factor of the ILU factorization.
-  const block_crs_matrix_type& getUBlock () const;
+  const block_crs_matrix_type& getUBlock() const;
 
-private:
-  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
+ private:
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Teuchos::ScalarTraits<impl_scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef typename block_crs_matrix_type::little_block_type little_block_type;
@@ -315,14 +315,14 @@ private:
   typedef typename block_crs_matrix_type::little_host_vec_type little_host_vec_type;
   typedef typename block_crs_matrix_type::const_host_little_vec_type const_host_little_vec_type;
 
-  using local_inds_host_view_type = typename block_crs_matrix_type::local_inds_host_view_type;
-  using values_host_view_type     = typename block_crs_matrix_type::values_host_view_type;
+  using local_inds_host_view_type   = typename block_crs_matrix_type::local_inds_host_view_type;
+  using values_host_view_type       = typename block_crs_matrix_type::values_host_view_type;
   using local_inds_device_view_type = typename block_crs_matrix_type::local_inds_device_view_type;
   using values_device_view_type     = typename block_crs_matrix_type::values_device_view_type;
   using view1d = Kokkos::View<impl_scalar_type*, typename values_device_view_type::device_type>;
 
   void allocate_L_and_U_blocks();
-  void initAllValues ();
+  void initAllValues();
 
   template <typename X, typename Y>
   void stream_apply_impl(const X& X_views, Y& Y_views, const bool use_temp_x, const bool use_temp_y, const std::vector<Teuchos::RCP<block_crs_matrix_type> >& LU_block_v, const std::vector<Teuchos::RCP<kk_handle_type> >& LU_sptrsv_handle_v, const LO numVecs) const;
@@ -362,9 +362,8 @@ private:
   view1d tmp_;
 };
 
+}  // namespace Experimental
 
-} // namepsace Experimental
-
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif /* IFPACK2_EXPERIMENTALCRSRBILUK_DECL_HPP */

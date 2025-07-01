@@ -109,6 +109,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   clp.setOption("coordsmap", &coordMapFile, "coordinates map data file");
   std::string nullFile;
   clp.setOption("nullspace", &nullFile, "nullspace data file");
+  std::string blockNumberFile;
+  clp.setOption("blocknumber", &blockNumberFile, "block number data file");
   std::string materialFile;
   clp.setOption("material", &materialFile, "material data file");
   int maxIts = 200;
@@ -172,10 +174,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<RealValuedMultiVector> coordinates;
   RCP<MultiVector> nullspace;
   RCP<MultiVector> material;
+  RCP<LOVector> blocknumber;
   RCP<MultiVector> X, B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
+  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
   comm->barrier();
   tm = Teuchos::null;
   out << galeriStream.str();
@@ -193,7 +196,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   {
     comm->barrier();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
-    PreconditionerSetup(A, coordinates, nullspace, material, paramList, false, false, useML, false, 0, H, Prec);
+    PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, paramList, false, false, useML, false, 0, H, Prec);
     comm->barrier();
     tm = Teuchos::null;
   }

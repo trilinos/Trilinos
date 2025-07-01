@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -418,8 +418,6 @@ namespace Iovs {
   void Utils::broadCastString(IOSS_MAYBE_UNUSED std::string        &s,
                               IOSS_MAYBE_UNUSED const DatabaseInfo &dbinfo)
   {
-    IOSS_PAR_UNUSED(s);
-    IOSS_PAR_UNUSED(dbinfo);
 #ifdef SEACAS_HAVE_MPI
     int size = s.size();
     dbinfo.parallelUtils->broadcast(size);
@@ -433,8 +431,6 @@ namespace Iovs {
   void Utils::broadCastStatusCode(IOSS_MAYBE_UNUSED bool               &statusCode,
                                   IOSS_MAYBE_UNUSED const DatabaseInfo &dbinfo)
   {
-    IOSS_PAR_UNUSED(statusCode);
-    IOSS_PAR_UNUSED(dbinfo);
 #ifdef SEACAS_HAVE_MPI
 
     int code = statusCode;

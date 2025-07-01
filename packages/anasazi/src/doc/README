@@ -1,4 +1,0 @@
-*.org files in this directory are plain text files.  Emacs uses the "org-mode"
-plugin to format them nicely and fold / unfold sublists of bullet points.  You
-may edit them using any text editor, but using Emacs' org-mode will preserve
-the markup that allows org-mode to display them nicely.

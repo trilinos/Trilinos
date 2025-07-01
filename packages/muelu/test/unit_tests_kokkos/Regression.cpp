@@ -98,12 +98,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Regression, H2D, Scalar, LocalOrdinal, GlobalO
   }
 #ifdef KOKKOS_HAS_SHARED_SPACE
   else {
-    size_t targetNumDeepCopies = kkNativeDeepCopies + (std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 17 : 32);
+    size_t targetNumDeepCopies = kkNativeDeepCopies + (std::is_same_v<typename Node::memory_space, Kokkos::SharedSpace> ? 19 : 34);
     TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), targetNumDeepCopies);
   }
 #else
   else {
-    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), kkNativeDeepCopies + 32);
+    TEST_EQUALITY(Tpetra::Details::DeepCopyCounter::get_count_different_space(), kkNativeDeepCopies + 34);
   }
 #endif  // KOKKOS_HAS_SHARED_SPACE
 

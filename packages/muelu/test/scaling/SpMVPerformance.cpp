@@ -151,9 +151,9 @@ class SystemLoader {
     MatrixLoad<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
         comm, system.lib,
         binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile,
-        domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile,
+        domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile,
         map, system.A,
-        coordinates, nullspace, material,
+        coordinates, nullspace, material, blockNumber,
         system.X, system.B, system.numVectors,
         galeriParameters, xpetraParameters,
         galeriStream);
@@ -166,21 +166,23 @@ class SystemLoader {
   Xpetra::Parameters xpetraParameters;
 
   bool binaryFormat;
-  std::string matrixFile    = "";
-  std::string rhsFile       = "";
-  std::string rowMapFile    = "";
-  std::string colMapFile    = "";
-  std::string domainMapFile = "";
-  std::string rangeMapFile  = "";
-  std::string coordFile     = "";
-  std::string coordMapFile  = "";
-  std::string nullFile      = "";
-  std::string materialFile  = "";
+  std::string matrixFile      = "";
+  std::string rhsFile         = "";
+  std::string rowMapFile      = "";
+  std::string colMapFile      = "";
+  std::string domainMapFile   = "";
+  std::string rangeMapFile    = "";
+  std::string coordFile       = "";
+  std::string coordMapFile    = "";
+  std::string nullFile        = "";
+  std::string materialFile    = "";
+  std::string blockNumberFile = "";
 
   Teuchos::RCP<const Map> map;
   Teuchos::RCP<RealValuedMultiVector> coordinates;
   Teuchos::RCP<MultiVector> nullspace;
   Teuchos::RCP<MultiVector> material;
+  Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> blockNumber;
   std::ostringstream galeriStream;
 };
 

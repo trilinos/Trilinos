@@ -12,16 +12,16 @@
 namespace Ifpack2 {
 namespace Details {
 
-  std::string canonicalize(const std::string& precType) {
-    // precTypeUpper is the upper-case version of precType.
-    std::string precTypeUpper (precType);
-    if (precTypeUpper.size () > 0) {
-      for (size_t k = 0; k < precTypeUpper.size (); ++k) {
-        precTypeUpper[k] = ::toupper(precTypeUpper[k]);
-      }
+std::string canonicalize(const std::string& precType) {
+  // precTypeUpper is the upper-case version of precType.
+  std::string precTypeUpper(precType);
+  if (precTypeUpper.size() > 0) {
+    for (size_t k = 0; k < precTypeUpper.size(); ++k) {
+      precTypeUpper[k] = ::toupper(precTypeUpper[k]);
     }
-    return precTypeUpper;
   }
+  return precTypeUpper;
+}
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2

@@ -66,7 +66,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
     }
   }
   /* first check if any sets are specified */
-  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss stored in file id %d",
              ex_name_of_object(set_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -115,7 +115,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
 
   /* inquire values of dimension for number of entities in set */
   if (exi_get_dimension(exoid, numentryptr, "entries", &lnum_entry_in_set, &dimid, __func__) !=
-      NC_NOERR) {
+      EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -137,7 +137,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
      count will be the same as the number of nodes in the set. */
 
   if (set_type == EX_NODE_SET) {
-    if ((status = nc_inq_varid(exoid, VAR_FACT_NS(set_id_ndx), &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_FACT_NS(set_id_ndx), &varid)) != EX_NOERR) {
       if (status == NC_ENOTVAR) {
         EX_FUNC_LEAVE(EX_NOERR);
       }
@@ -160,7 +160,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
     }
   }
   else { /* all other set types */
-    if ((status = nc_inq_dimid(exoid, numdfptr, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, numdfptr, &dimid)) != EX_NOERR) {
       if (status == NC_EBADDIM) {
         EX_FUNC_LEAVE(EX_NOERR);
       }
@@ -172,7 +172,7 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_inq_dimlen(exoid, dimid, &lnum_dist_fact_in_set)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &lnum_dist_fact_in_set)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of dist factors in %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1591,10 +1591,6 @@ namespace {
                                   IOSS_MAYBE_UNUSED const std::string &filename,
                                   IOSS_MAYBE_UNUSED const Ioss::ParallelUtils &util)
   {
-    IOSS_PAR_UNUSED(exo_params);
-    IOSS_PAR_UNUSED(my_processor);
-    IOSS_PAR_UNUSED(filename);
-    IOSS_PAR_UNUSED(util);
 #ifdef SEACAS_HAVE_MPI
     const int        num_types = 10;
     std::vector<int> var_counts(num_types);

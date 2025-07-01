@@ -60,9 +60,16 @@
           
 \cbb{aggregation: phase 1 algorithm}{string}{"Distance2"}{Look at distance2 hops when aggregating.}
           
+\cbb{aggregation: symmetrize graph after dropping}{bool}{false}{Symmetrize the graph used for aggregation.}
+          
+\cbb{aggregation: use blocking}{bool}{false}{Drop connections between different blocks. Blocks are given by a vector "BlockNumber" of scalar type LocalOrdinal that is passed via the "user data" list.}
+          
 \cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in
-      aggregation. Possible values: "classical", "distance laplacian",
-      "unsupported vector smoothing"}
+      aggregation. Possible values: "point-wise" and "cut-drop". "signed classical sa", "classical", "distance laplacian", "signed classical", "block diagonal", "block diagonal classical", "block diagonal distance laplacian", "block diagonal signed classical", "block diagonal colored signed classical", "signed classical distance laplacian", "signed classical sa distance laplacian" are also allowed, but discouraged. Instead, the corresponding combination of "aggregation: strength-of-connection: matrix", "aggregation: strength-of-connection: measure" and "aggregation: drop scheme" should be used.}
+          
+\cbb{aggregation: strength-of-connection: matrix}{string}{"A"}{The matrix that is used for constructing the graph used for aggregation. Possible values: "A" (meaning the level matrix itself) and "distance laplacian".}
+          
+\cbb{aggregation: strength-of-connection: measure}{string}{"smoothed aggregation"}{The strength measure used for constructing the graph. Possible values: "smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben", "unscaled".}
           
 \cbb{aggregation: distance laplacian metric}{string}{unweighted}{Metric used to compute the distance Laplacian. Possible values: "unweighted", "material"}
           
