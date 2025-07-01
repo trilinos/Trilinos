@@ -334,10 +334,9 @@ LocalSparseTriangularSolver<MatrixType>::
     if (Teuchos::nonnull(kh_)) {
       kh_->destroy_sptrsv_handle();
     }
-  }
-  else {
+  } else {
     for (size_t i = 0; i < kh_v_.size(); i++) {
-      if (Teuchos::nonnull (kh_v_[i])) {
+      if (Teuchos::nonnull(kh_v_[i])) {
         kh_v_[i]->destroy_sptrsv_handle();
       }
     }
@@ -517,10 +516,9 @@ void LocalSparseTriangularSolver<MatrixType>::
       this->diag_            = (newLclTriStructure.diagCount < newLclNumRows) ? "U" : "N";
       this->uplo_            = newLclTriStructure.couldBeLowerTriangular ? "L" : (newLclTriStructure.couldBeUpperTriangular ? "U" : "N");
     }
-  }
-  else {
+  } else {
     bool prev_ambiguous = false;
-    bool all_ambiguous = true;
+    bool all_ambiguous  = true;
     for (int i = 0; i < num_streams_; i++) {
       TEUCHOS_TEST_FOR_EXCEPTION(A_crs_v_[i].is_null(), std::runtime_error, prefix << "You must call "
                                                                                       "setMatrix() with a nonnull input matrix before you may call "
@@ -538,26 +536,25 @@ void LocalSparseTriangularSolver<MatrixType>::
 
       // mfh 30 Apr 2018: See GitHub Issue #2658.
       constexpr bool ignoreMapsForTriStructure = true;
-      std::string prev_uplo = this->uplo_;
-      std::string prev_diag = this->diag_;
-      auto lclMatrix = A_crs_v_[i]->getLocalMatrixDevice ();
-      auto lclRowMap = A_crs_v_[i]->getRowMap ()->getLocalMap ();
-      auto lclColMap = A_crs_v_[i]->getColMap ()->getLocalMap ();
+      std::string prev_uplo                    = this->uplo_;
+      std::string prev_diag                    = this->diag_;
+      auto lclMatrix                           = A_crs_v_[i]->getLocalMatrixDevice();
+      auto lclRowMap                           = A_crs_v_[i]->getRowMap()->getLocalMap();
+      auto lclColMap                           = A_crs_v_[i]->getColMap()->getLocalMap();
       auto lclTriStruct =
-        determineLocalTriangularStructure (lclMatrix.graph,
-                                           lclRowMap,
-                                           lclColMap,
-                                           ignoreMapsForTriStructure);
-      const LO lclNumRows = lclRowMap.getLocalNumElements ();
-      this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
+          determineLocalTriangularStructure(lclMatrix.graph,
+                                            lclRowMap,
+                                            lclColMap,
+                                            ignoreMapsForTriStructure);
+      const LO lclNumRows       = lclRowMap.getLocalNumElements();
+      this->diag_               = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
       const bool could_be_lower = lclTriStruct.couldBeLowerTriangular;
       const bool could_be_upper = lclTriStruct.couldBeUpperTriangular;
       if (could_be_lower && could_be_upper) {
         // Ambiguous, but that's OK if at least one stream is unabiguous
-        this->uplo_ = prev_uplo;
+        this->uplo_    = prev_uplo;
         prev_ambiguous = true;
-      }
-      else {
+      } else {
         this->uplo_ = could_be_lower ? "L" : (could_be_upper ? "U" : "N");
         if (this->uplo_ != "N" && prev_uplo == "N" && prev_ambiguous) {
           prev_uplo = this->uplo_;
@@ -566,10 +563,9 @@ void LocalSparseTriangularSolver<MatrixType>::
       }
       all_ambiguous &= prev_ambiguous;
       if (i > 0) {
-        TEUCHOS_TEST_FOR_EXCEPTION
-          ((this->diag_ != prev_diag) || (this->uplo_ != prev_uplo),
-           std::logic_error, prefix << "A_crs_'s structures in streams "
-           "are different. Please report this bug to the Ifpack2 developers.");
+        TEUCHOS_TEST_FOR_EXCEPTION((this->diag_ != prev_diag) || (this->uplo_ != prev_uplo),
+                                   std::logic_error, prefix << "A_crs_'s structures in streams "
+                                                               "are different. Please report this bug to the Ifpack2 developers.");
       }
     }
     // If all streams were ambiguous, just call it "L"
@@ -958,14 +954,14 @@ void LocalSparseTriangularSolver<MatrixType>::
       local_ordinal_type stream_begin = 0;
       local_ordinal_type stream_end;
       for (int i = 0; i < num_streams_; i++) {
-        auto A_crs_i  = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_crs_v_[i]);
-        auto Alocal_i = A_crs_i->getLocalMatrixDevice();
-        ptr_v[i] = Alocal_i.graph.row_map;
-        ind_v[i] = Alocal_i.graph.entries;
-        val_v[i] = Alocal_i.values;
-        stream_end = stream_begin + Alocal_i.numRows();
-        x_v[i] = Kokkos::subview (X_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
-        y_v[i] = Kokkos::subview (Y_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+        auto A_crs_i              = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_crs_v_[i]);
+        auto Alocal_i             = A_crs_i->getLocalMatrixDevice();
+        ptr_v[i]                  = Alocal_i.graph.row_map;
+        ind_v[i]                  = Alocal_i.graph.entries;
+        val_v[i]                  = Alocal_i.values;
+        stream_end                = stream_begin + Alocal_i.numRows();
+        x_v[i]                    = Kokkos::subview(X_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
+        y_v[i]                    = Kokkos::subview(Y_lcl, Kokkos::make_pair(stream_begin, stream_end), 0);
         KernelHandle_rawptr_v_[i] = kh_v_[i].getRawPtr();
         stream_begin              = stream_end;
       }
