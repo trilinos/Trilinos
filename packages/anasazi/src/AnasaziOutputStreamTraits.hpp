@@ -20,7 +20,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #include "AnasaziGlobalComm.hpp"
 #endif
@@ -46,7 +46,7 @@ struct OutputStreamTraits {
   {
     Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     // The default implementation will output on processor 0, if parallel.
     int myRank = 0;
     int numProcs = 1;
