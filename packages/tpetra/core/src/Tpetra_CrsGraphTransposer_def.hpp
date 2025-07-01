@@ -263,9 +263,7 @@ namespace Tpetra {
 
       KokkosSparse::spadd_symbolic
         (&handle,
-#if KOKKOSKERNELS_VERSION >= 40299
          nrows, graph->getGlobalNumCols(),
-#endif
          rowptrs, colindsConverted, rowptrsT, colindsTConverted, rowptrsSym);
       globalColindsSym = global_col_inds_array(Kokkos::ViewAllocateWithoutInitializing("global colinds sym"), addHandle->get_c_nnz());
 
@@ -298,9 +296,7 @@ namespace Tpetra {
 
       KokkosSparse::spadd_symbolic
         (&handle,
-#if KOKKOSKERNELS_VERSION >= 40299
          nrows, graph->getGlobalNumCols(),
-#endif
          rowptrs, colinds, rowptrsT, colindsT, rowptrsSym);
       colindsSym = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 

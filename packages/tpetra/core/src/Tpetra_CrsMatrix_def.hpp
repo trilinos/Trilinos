@@ -1002,43 +1002,6 @@ namespace Tpetra {
                                 staticGraph_->getLocalGraphHost());
   }
 
-#if KOKKOSKERNELS_VERSION < 40299
-// KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::shared_ptr<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_multiply_op_type>
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalMultiplyOperator () const
-  {
-    auto localMatrix = getLocalMatrixDevice();
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) || defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-    if(this->getLocalNumEntries() <= size_t(Teuchos::OrdinalTraits<LocalOrdinal>::max()))
-    {
-      if(this->ordinalRowptrs.data() == nullptr)
-      {
-        auto originalRowptrs = localMatrix.graph.row_map;
-        //create LocalOrdinal-typed copy of the local graph's rowptrs.
-        //This enables the LocalCrsMatrixOperator to use cuSPARSE SpMV.
-        this->ordinalRowptrs = ordinal_rowptrs_type(
-            Kokkos::ViewAllocateWithoutInitializing("CrsMatrix::ordinalRowptrs"), originalRowptrs.extent(0));
-        auto ordinalRowptrs_ = this->ordinalRowptrs;  //don't want to capture 'this'
-        Kokkos::parallel_for("CrsMatrix::getLocalMultiplyOperator::convertRowptrs",
-            Kokkos::RangePolicy<execution_space>(0, originalRowptrs.extent(0)),
-            KOKKOS_LAMBDA(LocalOrdinal i)
-            {
-              ordinalRowptrs_(i) = originalRowptrs(i);
-            });
-      }
-      //return local operator using ordinalRowptrs
-      return std::make_shared<local_multiply_op_type>(
-          std::make_shared<local_matrix_device_type>(localMatrix), this->ordinalRowptrs);
-    }
-#endif
-// KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
-    return std::make_shared<local_multiply_op_type>(
-                           std::make_shared<local_matrix_device_type>(localMatrix));
-  }
-#endif
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4313,10 +4276,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (! isStaticGraph ()) { // Don't resume fill of a nonowned graph.
       myGraph_->resumeFill (params);
     }
-#if KOKKOSKERNELS_VERSION >= 40299
     // Delete the apply helper (if it exists)
     applyHelper.reset();
-#endif
     fillComplete_ = false;
   }
 
@@ -5091,7 +5052,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          std::runtime_error, "X and Y may not alias one another.");
     }
 
-#if KOKKOSKERNELS_VERSION >= 40299
     auto A_lcl = getLocalMatrixDevice();
 
     if(!applyHelper.get()) {
@@ -5145,18 +5105,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           &applyHelper->handle, modeKK,
           impl_scalar_type(alpha), A_lcl, X_lcl, impl_scalar_type(beta), Y_lcl);
     }
-#else
-    LocalOrdinal nrows = getLocalNumRows();
-    LocalOrdinal maxRowImbalance = 0;
-    if(nrows != 0)
-      maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
-
-    auto matrix_lcl = getLocalMultiplyOperator();
-    if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
-      matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
-    else
-      matrix_lcl->apply (X_lcl, Y_lcl, mode, alpha, beta);
-#endif
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
