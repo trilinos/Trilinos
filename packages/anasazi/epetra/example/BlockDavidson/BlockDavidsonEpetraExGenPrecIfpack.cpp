@@ -18,7 +18,7 @@
 // Include header for Ifpack incomplete Cholesky preconditioner
 #include "Ifpack.h"
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -37,13 +37,13 @@ using namespace Anasazi;
 //*****************************************************************************
 int main(int argc, char *argv[]) {
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
 #endif
 
   // Create an Epetra communicator
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("prec_dropTol",&prec_dropTol,"Preconditioner: drop tolerance.");
   cmdp.setOption("prec_lofill",&prec_lofill,"Preconditioner: level of fill.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
     printer.print(Errors,"Anasazi::BasicEigenproblem::setProblem() returned an error.\n");
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
   os<<"------------------------------------------------------"<<std::endl;
   printer.print(Errors,os.str());
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
   return 0;

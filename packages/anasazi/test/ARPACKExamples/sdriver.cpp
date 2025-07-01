@@ -21,7 +21,7 @@
 #include "AnasaziMVOPTester.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #endif
 
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 {
   int info = 0;
 
-#ifdef HAVE_MPI 
+#ifdef HAVE_ANASAZI_MPI 
   // Initialize MPI
   MPI_Init(&argc,&argv);
 #endif
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("problem",&problem,"Problem to solve.");
   cmdp.setOption("solver",&solver,"Eigensolver to use (LOBPCG, BKS, BD, auto)");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     MyOM->stream(Anasazi::Warning)
       << "Invalid driver name. Try something like ""ndrv3"" or ""sdrv2""." << endl
       << "End Result: TEST FAILED" << endl;	
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
     MyOM->stream(Anasazi::Warning)
       << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl
       << "End Result: TEST FAILED" << endl;	
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
     MyOM->stream(Anasazi::Warning)
       << "Invalid solver: " << solver << endl
       << "End Result: TEST FAILED" << endl;	
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
   }
 
   // Exit
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize() ;
 #endif
 

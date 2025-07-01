@@ -27,7 +27,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -243,7 +243,7 @@ main (int argc, char *argv[])
   typedef Epetra_Operator                    OP;
   typedef MultiVecTraits<ScalarType,MV>     MVT;
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -259,7 +259,7 @@ main (int argc, char *argv[])
   cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
   cmdp.setOption ("debug", "nodebug", &debug, "Print debugging output from iteration.");
   if (cmdp.parse (argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize ();
 #endif
     return -1;
@@ -315,7 +315,7 @@ main (int argc, char *argv[])
       printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
                               << "End Result: TEST FAILED" << std::endl;
     }
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -511,7 +511,7 @@ main (int argc, char *argv[])
     testFailed = true;
   }
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 

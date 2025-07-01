@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     cmdp.setOption("sizeX1",&sizeX1,"Controls the width of the first basis.");
     cmdp.setOption("sizeX2",&sizeX2,"Controls the width of the second basis.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
       MPI_Finalize();
 #endif
       return -1;
