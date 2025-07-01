@@ -5,7 +5,7 @@ SIERRA=/path/sierra/code TRILINOS=/path/trilinos trilinos_snapshot.sh
 
 For my current setup, 
 SIERRA=/fgs/drnoble/projects/code
-TRILINOS=/fgs/drnoble/project/Trilinos
+TRILINOS=/fgs/drnoble/projects/Trilinos
 
 I think these are the defaults, so you can just run:
 cd /fgs/drnoble/projects/code
