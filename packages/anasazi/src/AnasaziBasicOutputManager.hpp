@@ -18,7 +18,7 @@
 #include "AnasaziOutputManager.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #include "AnasaziGlobalComm.hpp"
 #endif
@@ -73,7 +73,7 @@ namespace Anasazi {
   BasicOutputManager<ScalarType>::BasicOutputManager(int vb, int rootRank)
   : OutputManager<ScalarType>(vb)
   {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     // The OutputManger constructor will create fos_ that outputs to std::cout
     // This class will query MPI to print on processor 0, if parallel.
     int myRank = 0;

@@ -19,7 +19,7 @@
 #include "AnasaziFactory.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #endif
 
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
   int MyPID = 0;
   bool boolret;
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
            << "End Result: TEST FAILED" << endl;	
     }
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 
   }
   
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize() ;
 #endif
 

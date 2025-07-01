@@ -20,7 +20,7 @@
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBlockDavidsonSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
   bool boolret;
   int MyPID;
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   cmdp.setOption("rblocks",&rblocks,"Number of blocks after restart.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
       std::cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
            << "End Result: TEST FAILED" << std::endl;	
     }
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
 
   }
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 

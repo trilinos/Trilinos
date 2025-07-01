@@ -11,9 +11,14 @@
 //  to Epetra and Thyra.
 //
 
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziMVOPTester.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziBasicOutputManager.hpp"
+
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #endif
@@ -23,16 +28,11 @@
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 
-#include "AnasaziConfigDefs.hpp"
-#include "AnasaziMVOPTester.hpp"
-#include "AnasaziEpetraAdapter.hpp"
-#include "AnasaziBasicOutputManager.hpp"
-
 #include "Teuchos_StandardCatchMacros.hpp"
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
   Teuchos::RCP<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
 

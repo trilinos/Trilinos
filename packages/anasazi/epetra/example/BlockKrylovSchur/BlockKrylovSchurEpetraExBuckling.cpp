@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
     if (MyPID == 0) {
       std::cout << "EpetraExt::MatrixMatrix::Add returned with error: " << addErr << std::endl;
     }
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
     if (MyPID == 0) {
       std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
     return -1;

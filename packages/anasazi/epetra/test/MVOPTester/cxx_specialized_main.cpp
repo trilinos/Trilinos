@@ -11,9 +11,14 @@
 //  to Epetra and Thyra.
 //
 
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziMVOPTester.hpp"
+#include "AnasaziSpecializedEpetraAdapter.hpp"
+#include "AnasaziBasicOutputManager.hpp"
+
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #endif
@@ -23,18 +28,13 @@
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 
-#include "AnasaziConfigDefs.hpp"
-#include "AnasaziMVOPTester.hpp"
-#include "AnasaziSpecializedEpetraAdapter.hpp"
-#include "AnasaziBasicOutputManager.hpp"
-
 int main(int argc, char *argv[])
 {
   int i;
   bool ierr, gerr;
   gerr = true;
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
   Teuchos::RCP<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     MyOM->print(Anasazi::Warnings,"*** EpetraSpecializedAdapter FAILED TestMultiVecTraits() ***\n\n");
   }
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
 

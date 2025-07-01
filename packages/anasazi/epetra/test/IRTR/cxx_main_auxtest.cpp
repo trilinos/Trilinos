@@ -26,7 +26,7 @@
 #include "AnasaziRTRSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
   bool boolret;
   int MyPID;
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
     cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
     cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
       MPI_Finalize();
 #endif
       return -1;
@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cout,success);
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
