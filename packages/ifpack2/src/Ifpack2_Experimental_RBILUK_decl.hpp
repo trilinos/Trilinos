@@ -114,6 +114,8 @@ class RBILUK : virtual public Ifpack2::RILUK<Tpetra::RowMatrix<typename MatrixTy
   //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
+  typedef typename node_type::execution_space execution_space;
+
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
@@ -154,6 +156,7 @@ class RBILUK : virtual public Ifpack2::RILUK<Tpetra::RowMatrix<typename MatrixTy
 
   typedef typename block_crs_matrix_type::local_matrix_device_type local_matrix_device_type;
   typedef typename block_crs_matrix_type::local_matrix_host_type local_matrix_host_type;
+  typedef typename crs_matrix_type::local_matrix_device_type local_crs_matrix_device_type;
   typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
   typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
   typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;
@@ -163,12 +166,6 @@ class RBILUK : virtual public Ifpack2::RILUK<Tpetra::RowMatrix<typename MatrixTy
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
                                                                     HandleExecSpace, TemporaryMemorySpace, PersistentMemorySpace>
       kk_handle_type;
-  // typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
-  //     <typename lno_row_view_t::non_const_value_type, typename lno_nonzero_view_t::non_const_value_type, typename scalar_nonzero_view_t::value_type,
-  //     HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;//test
-  Teuchos::RCP<kk_handle_type> KernelHandle_;
-  Teuchos::RCP<kk_handle_type> L_Sptrsv_KernelHandle_;
-  Teuchos::RCP<kk_handle_type> U_Sptrsv_KernelHandle_;
 
   //@}
 
@@ -322,24 +319,47 @@ class RBILUK : virtual public Ifpack2::RILUK<Tpetra::RowMatrix<typename MatrixTy
   using values_host_view_type       = typename block_crs_matrix_type::values_host_view_type;
   using local_inds_device_view_type = typename block_crs_matrix_type::local_inds_device_view_type;
   using values_device_view_type     = typename block_crs_matrix_type::values_device_view_type;
+  using view1d                      = Kokkos::View<impl_scalar_type*, typename values_device_view_type::device_type>;
 
   void allocate_L_and_U_blocks();
   void initAllValues();
 
+  template <typename X, typename Y>
+  void stream_apply_impl(const X& X_views, Y& Y_views, const bool use_temp_x, const bool use_temp_y, const std::vector<Teuchos::RCP<block_crs_matrix_type> >& LU_block_v, const std::vector<Teuchos::RCP<kk_handle_type> >& LU_sptrsv_handle_v, const LO numVecs) const;
+
+  Teuchos::RCP<kk_handle_type> KernelHandle_block_;
+  Teuchos::RCP<kk_handle_type> L_Sptrsv_KernelHandle_;
+  Teuchos::RCP<kk_handle_type> U_Sptrsv_KernelHandle_;
+
+  std::vector<Teuchos::RCP<kk_handle_type> > KernelHandle_block_v_;
+  std::vector<Teuchos::RCP<kk_handle_type> > L_Sptrsv_KernelHandle_v_;
+  std::vector<Teuchos::RCP<kk_handle_type> > U_Sptrsv_KernelHandle_v_;
+
   //! The block size of the input matrix.
   local_ordinal_type blockSize_;
 
+  Teuchos::RCP<const block_crs_matrix_type> A_local_bcrs_;
+  Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
+
+  //! Vectors for streams
+  std::vector<local_matrix_device_type> A_block_local_diagblks_v_;
+  std::vector<lno_row_view_t> A_block_local_diagblks_rowmap_v_;
+  std::vector<lno_nonzero_view_t> A_block_local_diagblks_entries_v_;
+  std::vector<scalar_nonzero_view_t> A_block_local_diagblks_values_v_;
+
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<block_crs_matrix_type> L_block_;
+  std::vector<Teuchos::RCP<block_crs_matrix_type> > L_block_v_;
   //! The U (upper triangular) factor of ILU(k).
   Teuchos::RCP<block_crs_matrix_type> U_block_;
+  std::vector<Teuchos::RCP<block_crs_matrix_type> > U_block_v_;
   //! The diagonal entries of the ILU(k) factorization.
   Teuchos::RCP<block_crs_matrix_type> D_block_;
 
   //! The inverse of the diagonal
   Teuchos::RCP<block_crs_matrix_type> D_block_inverse_;
 
-  Kokkos::View<impl_scalar_type*, typename values_device_view_type::device_type> tmp_;
+  view1d tmp_;
 };
 
 }  // namespace Experimental

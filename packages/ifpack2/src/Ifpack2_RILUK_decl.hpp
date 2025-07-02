@@ -579,7 +579,7 @@ class RILUK : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar
   Teuchos::RCP<const row_matrix_type> A_local_;
   Teuchos::RCP<const crs_matrix_type> A_local_crs_;
   Teuchos::RCP<crs_matrix_type> A_local_crs_nc_;
-  std::vector<local_matrix_device_type> A_local_diagblks;
+  std::vector<local_matrix_device_type> A_local_diagblks_v_;
   std::vector<lno_row_view_t> A_local_diagblks_rowmap_v_;
   std::vector<lno_nonzero_view_t> A_local_diagblks_entries_v_;
   std::vector<scalar_nonzero_view_t> A_local_diagblks_values_v_;
