@@ -316,6 +316,9 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     }
     std::cout << std::endl;
 
+    if (verbose) {
+      solver.printParameters();
+    }
 #ifdef TACHO_HAVE_TEUCHOS
     stackedTimer->stopBaseTimer();
     Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::rcp(new Teuchos::SerialComm<int>());
@@ -323,12 +326,12 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       std::cerr << "\n Error: Some of the residual norms were too large\n\n";
       stackedTimer = Teuchos::rcp(new Teuchos::StackedTimer("Tacho_ExampleDriver"));
     }
-    std::string testBaseName = "Tacho_ExampleDriver_";
-    auto xmlOut = stackedTimer->reportWatchrXML(testBaseName + method_name + "_" + std::to_string(variant), comm);
+    std::string testName = "Tacho_ExampleDriver_" + method_name + "_" + std::to_string(variant);
+    auto xmlOut = stackedTimer->reportWatchrXML(testName, comm);
     if(xmlOut.length()) {
-      std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
+      std::cout << "\nAlso created Watchr performance report (" << testName << ") in " << xmlOut << '\n';
     } else {
-      std::cout << "\nFailed to create Watchr performance report " << xmlOut << '\n';
+      std::cout << "\nFailed to create Watchr performance report (" << testName << ") in " << xmlOut << '\n';
     }
     std::cout << std::endl;
     {
