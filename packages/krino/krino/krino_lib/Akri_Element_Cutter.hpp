@@ -86,7 +86,7 @@ public:
     const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
     std::set<InterfaceID> & interfacesWithUncapturedCrossings) const override;
 private:
-  virtual bool intersection_point_is_real(const stk::math::Vector3d & intersection, const std::vector<int> & sortedDomains) const override { return true; }
+  virtual bool intersection_point_is_real(const stk::math::Vector3d & /*intersection*/, const std::vector<int> & /*sortedDomains*/) const override { return true; }
   static std::vector<Edge_Crossing> build_cut_edges(const InterfaceID & interface,
     const std::vector<const CDFEM_Parent_Edge *> & parentEdges,
     const std::vector<bool> & parentEdgeIsOrientedSameAsElementEdge);

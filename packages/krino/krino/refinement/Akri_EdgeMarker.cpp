@@ -156,12 +156,12 @@ bool EdgeBasedEdgeMarker::is_edge_marked_for_refinement(const Edge & edge) const
   return myLocallyMarkedEdges.find(edge) != myLocallyMarkedEdges.end();
 }
 
-void EdgeBasedEdgeMarker::mark_entities_to_be_unrefined(NodeRefiner & nodeRefiner) const
+void EdgeBasedEdgeMarker::mark_entities_to_be_unrefined(NodeRefiner & /*nodeRefiner*/) const
 {
   // Not supporting unrefinement yet
 }
 
-std::vector<stk::mesh::Entity> EdgeBasedEdgeMarker::get_parent_elements_that_will_be_modified_by_unrefinement(const NodeRefiner & nodeRefiner) const
+std::vector<stk::mesh::Entity> EdgeBasedEdgeMarker::get_parent_elements_that_will_be_modified_by_unrefinement(const NodeRefiner & /*nodeRefiner*/) const
 {
   // Not supporting unrefinement yet
   std::vector<stk::mesh::Entity> tmp;

@@ -29,7 +29,7 @@ static std::function<bool(const std::array<unsigned,4> &)>
 build_always_false_diagonal_picker()
 {
   auto diagonalPicker =
-  [](const std::array<unsigned,4> & faceNodes)
+  [](const std::array<unsigned,4> & /*faceNodes*/)
   {
     return false;
   };

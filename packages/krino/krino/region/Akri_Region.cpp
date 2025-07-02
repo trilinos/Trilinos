@@ -39,8 +39,8 @@
 #include <Akri_MeshFromFile.hpp>
 #include <Akri_OutputUtils.hpp>
 #include <Akri_PostProcess.hpp>
+#include <Akri_RefinementManager.hpp>
 #include <Akri_Surface_Manager.hpp>
-#include <Akri_RefinementInterface.hpp>
 #include <Akri_RefinementSupport.hpp>
 #include <Ioss_GroupingEntity.h>
 
@@ -129,7 +129,7 @@ void Region::commit()
   if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
       (krino::CDFEM_Support::is_active(meta) && cdfem_support.get_post_cdfem_refinement_levels() > 0))
   {
-    RefinementInterface & refinement = KrinoRefinement::create(meta);
+    RefinementManager & refinement = RefinementManager::create(meta);
     refinementSupport.set_non_interface_conforming_refinement(refinement);
   }
 
@@ -190,7 +190,7 @@ void zero_error_indicator(stk::mesh::BulkData & mesh)
   }
 }
 
-static void refine_elements_near_interface(RefinementInterface & refinement,
+static void refine_elements_near_interface(RefinementManager & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
     const int numRefinementSteps,
@@ -216,7 +216,7 @@ static void refine_elements_near_interface(RefinementInterface & refinement,
   perform_multilevel_adaptivity(refinement, mesh, mark_elements_near_interface, refinementSupport.get_do_not_refine_or_unrefine_selector());
 }
 
-static void refine_interface_elements(RefinementInterface & refinement,
+static void refine_interface_elements(RefinementManager & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
     const int numRefinementSteps,
@@ -239,7 +239,7 @@ static void refine_interface_elements(RefinementInterface & refinement,
   perform_multilevel_adaptivity(refinement, mesh, marker_function, refinementSupport.get_do_not_refine_or_unrefine_selector());
 }
 
-static void refine_elements_that_intersect_interval(RefinementInterface & refinement,
+static void refine_elements_that_intersect_interval(RefinementManager & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh)
 {
@@ -265,7 +265,7 @@ static void refine_elements_that_intersect_interval(RefinementInterface & refine
   perform_multilevel_adaptivity(refinement, mesh, mark_elements_that_intersect_interval, refinementSupport.get_do_not_refine_or_unrefine_selector());
 }
 
-static void refine_based_on_indicator_field(RefinementInterface & refinement,
+static void refine_based_on_indicator_field(RefinementManager & refinement,
     const krino::RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
     const int targetCount,
@@ -319,7 +319,7 @@ void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, 
   }
 }
 
-void do_post_adapt_uniform_refinement(const Simulation & simulation, const RefinementSupport & refinementSupport, const AuxMetaData  & auxMeta, stk::mesh::BulkData & mesh)
+void do_post_adapt_uniform_refinement(const Simulation & simulation, const RefinementSupport & refinementSupport, const AuxMetaData  & /*auxMeta*/, stk::mesh::BulkData & mesh)
 {
   if ( refinementSupport.get_post_adapt_refinement_levels() > 0 )
   {
@@ -353,7 +353,7 @@ void do_post_adapt_uniform_refinement(const Simulation & simulation, const Refin
   }
 }
 
-void do_post_cdfem_uniform_refinement(const Simulation & simulation, const CDFEM_Support & cdfemSupport, const RefinementSupport & refinementSupport, const AuxMetaData  & auxMeta, stk::mesh::BulkData & mesh)
+void do_post_cdfem_uniform_refinement(const Simulation & simulation, const CDFEM_Support & cdfemSupport, const RefinementSupport & refinementSupport, const AuxMetaData  & /*auxMeta*/, stk::mesh::BulkData & mesh)
 {
   if ( cdfemSupport.get_post_cdfem_refinement_levels() > 0 )
   {

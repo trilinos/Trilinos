@@ -174,7 +174,7 @@ bool PartAndFieldCollections::have_field_collection(const FieldCollection & fiel
   return iter != myFieldCollections.end() && *iter == fieldCollection;
 }
 
-int PartAndFieldCollections::get_part_collection_id(const stk::mesh::BulkData& mesh, const stk::mesh::Bucket & bucket) const
+int PartAndFieldCollections::get_part_collection_id(const stk::mesh::BulkData& /*mesh*/, const stk::mesh::Bucket & bucket) const
 {
   std::vector<unsigned> parts = determine_io_parts(bucket);
   PartCollection partCollection(parts);
@@ -651,7 +651,7 @@ void pack_nodes_that_need_to_be_communicated_to_sharers(const stk::mesh::BulkDat
 }
 
 static
-void pack_facet_prolong_nodes(const stk::mesh::BulkData & mesh, const ProlongFacetVec & proc_prolong_facets, const std::vector<BoundingBox> & proc_target_bboxes, stk::CommSparse &commSparse)
+void pack_facet_prolong_nodes(const stk::mesh::BulkData& /*mesh*/, const ProlongFacetVec & proc_prolong_facets, const std::vector<BoundingBox> & proc_target_bboxes, stk::CommSparse &commSparse)
 {
   stk::pack_and_communicate(commSparse,[&]()
   {
@@ -911,7 +911,7 @@ ProlongationFacet::communicate( const CDMesh & mesh, ProlongFacetVec & proc_prol
 }
 
 static
-void pack_facets_within_proc_bboxes(const stk::mesh::BulkData & mesh, const ProlongFacetVec & proc_prolong_facets, const std::vector<BoundingBox> & proc_target_bboxes, stk::CommSparse &commSparse)
+void pack_facets_within_proc_bboxes(const stk::mesh::BulkData& /*mesh*/, const ProlongFacetVec & proc_prolong_facets, const std::vector<BoundingBox> & proc_target_bboxes, stk::CommSparse &commSparse)
 {
   stk::pack_and_communicate(commSparse,[&]()
   {

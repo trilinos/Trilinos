@@ -201,7 +201,7 @@ std::pair<bool,stk::math::Vector3d> smoothed_node_location_using_optimized_mean_
     const stk::mesh::Selector & elemSelector,
     const stk::mesh::Entity node,
     const stk::math::Vector3d & preSmoothedLocation,
-    const QualityMetric &qualityMetric)
+    const QualityMetric &/*qualityMetric*/)
 {
   const auto objective_at_loc = build_function_for_mean_ratio_quality_objective(mesh, coordsField, elemSelector, node);
   const auto sensitivity_at_loc = build_function_for_mean_ratio_quality_objective_sensitivity(mesh, coordsField, elemSelector, node);

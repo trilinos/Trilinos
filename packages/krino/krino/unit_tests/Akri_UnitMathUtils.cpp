@@ -80,7 +80,7 @@ TEST(compute_edge_values, singleCrossings)
   expect_quadratic_crossing(0.77, compute_edge_values(0.77, 1.25));
 }
 
-std::tuple<double,double> minimize_function_along_gradient(const std::function<double(double)> & fn, const std::function<double(double)> & dfdx, const double x0, const double maxDeltax, const double tol)
+std::tuple<double,double> minimize_function_along_gradient(const std::function<double(double)> & fn, const std::function<double(double)> & dfdx, const double x0, const double /*maxDeltax*/, const double /*tol*/)
 {
   const auto vecfn = [&](const std::vector<double>& x) { return fn(x[0]); };
   const auto vecgrad = [&](const std::vector<double>& x) { return std::vector{dfdx(x[0])}; };

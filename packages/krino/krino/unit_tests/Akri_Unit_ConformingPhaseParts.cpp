@@ -107,7 +107,7 @@ public:
     expect_matching_parts(goldRemoveParts, removeParts, "remove parts");
   }
 
-  void expect_child_creation_parts(const stk::topology topology, const std::vector<std::string> & parentPartNames, const stk::mesh::EntityRank entityRank, const PhaseTag & phase, const std::vector<std::string> & goldChildPartNames)
+  void expect_child_creation_parts(const stk::topology topology, const std::vector<std::string> & parentPartNames, const stk::mesh::EntityRank /*entityRank*/, const PhaseTag & phase, const std::vector<std::string> & goldChildPartNames)
   {
     stk::mesh::PartVector parentParts = get_parts(parentPartNames);
     stk::mesh::PartVector goldChildParts = get_parts(goldChildPartNames);
