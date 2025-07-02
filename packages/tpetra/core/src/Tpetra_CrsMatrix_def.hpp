@@ -47,6 +47,7 @@
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosSparse_getDiagCopy.hpp"
 #include "KokkosSparse_spmv.hpp"
+#include "Kokkos_StdAlgorithms.hpp"
 
 #include <memory>
 #include <sstream>
@@ -8299,11 +8300,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
           destMat->numExportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
+          auto numExportPacketsPerLID = destMat->numExportPacketsPerLID_.view_host();
           destMat->numImportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
+          auto numImportPacketsPerLID = destMat->numImportPacketsPerLID_.view_host();
 
           if (verbose) {
             std::ostringstream os;
@@ -8311,8 +8310,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                << std::endl;
             std::cerr << os.str ();
           }
-          Distor.doReversePostsAndWaits(destMat->numExportPacketsPerLID_.view_host(), 1,
-                                            destMat->numImportPacketsPerLID_.view_host());
+          Distor.doReversePostsAndWaits(numExportPacketsPerLID, 1,
+                                            numImportPacketsPerLID);
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Finished 3-arg doReversePostsAndWaits"
@@ -8320,10 +8319,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             std::cerr << os.str ();
           }
 
-          size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
-            totalImportPackets += numImportPacketsPerLID[i];
-          }
+
+          size_t totalImportPackets = Kokkos::Experimental::reduce(Kokkos::DefaultHostExecutionSpace(), numImportPacketsPerLID);
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.
@@ -8394,19 +8391,17 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
           destMat->numExportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
+          auto numExportPacketsPerLID = destMat->numExportPacketsPerLID_.view_host();
           destMat->numImportPacketsPerLID_.sync_host ();
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-            getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
+          auto numImportPacketsPerLID = destMat->numImportPacketsPerLID_.view_host();
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Calling 3-arg doPostsAndWaits"
                << std::endl;
             std::cerr << os.str ();
           }
-          Distor.doPostsAndWaits(destMat->numExportPacketsPerLID_.view_host(), 1,
-                                      destMat->numImportPacketsPerLID_.view_host());
+          Distor.doPostsAndWaits(numExportPacketsPerLID, 1,
+                                      numImportPacketsPerLID);
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Finished 3-arg doPostsAndWaits"
@@ -8414,10 +8409,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             std::cerr << os.str ();
           }
 
-          size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
-            totalImportPackets += numImportPacketsPerLID[i];
-          }
+          size_t totalImportPackets = Kokkos::Experimental::reduce(Kokkos::DefaultHostExecutionSpace(), numImportPacketsPerLID);
 
           // Reallocation MUST go before setting the modified flag,
           // because it may clear out the flags.

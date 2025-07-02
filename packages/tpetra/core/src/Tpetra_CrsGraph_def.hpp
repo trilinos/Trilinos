@@ -7065,17 +7065,13 @@ namespace Tpetra {
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
           destGraph->numExportPacketsPerLID_.sync_host();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
           destGraph->numImportPacketsPerLID_.sync_host();
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
-            getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
 
           Distor.doReversePostsAndWaits(destGraph->numExportPacketsPerLID_.view_host(), 1,
                                             destGraph->numImportPacketsPerLID_.view_host());
           size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID.size(); ++i) {
-            totalImportPackets += numImportPacketsPerLID[i];
+          for (size_t i = 0; i < destGraph->numImportPacketsPerLID_.view_host().size(); ++i) {
+            totalImportPackets += destGraph->numImportPacketsPerLID_.view_host()[i];
           }
 
           // Reallocation MUST go before setting the modified flag,
@@ -7088,9 +7084,9 @@ namespace Tpetra {
           destGraph->exports_.sync_host();
           auto hostExports = destGraph->exports_.view_host();
           Distor.doReversePostsAndWaits(hostExports,
-                                         numExportPacketsPerLID,
+                                         destGraph->numExportPacketsPerLID_.view_host(),
                                          hostImports,
-                                         numImportPacketsPerLID);
+                                         destGraph->numImportPacketsPerLID_.view_host());
         }
         else { // constant number of packets per LI
           destGraph->imports_.modify_host();
@@ -7114,11 +7110,9 @@ namespace Tpetra {
           Distor.doPostsAndWaits(destGraph->numExportPacketsPerLID_.view_host(), 1,
                                       destGraph->numImportPacketsPerLID_.view_host());
 
-          Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
-            getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
           size_t totalImportPackets = 0;
-          for (Array_size_type i = 0; i < numImportPacketsPerLID.size(); ++i) {
-            totalImportPackets += numImportPacketsPerLID[i];
+          for (size_t i = 0; i < destGraph->numImportPacketsPerLID_.view_host().size(); ++i) {
+            totalImportPackets += destGraph->numImportPacketsPerLID_.view_host()[i];
           }
 
           // Reallocation MUST go before setting the modified flag,
@@ -7130,9 +7124,7 @@ namespace Tpetra {
           // version of exports_.
           destGraph->exports_.sync_host();
           auto hostExports = destGraph->exports_.view_host();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
-          Distor.doPostsAndWaits(hostExports, numExportPacketsPerLID, hostImports, numImportPacketsPerLID);
+          Distor.doPostsAndWaits(hostExports, destGraph->numExportPacketsPerLID_.view_host(), hostImports, destGraph->numImportPacketsPerLID_.view_host());
         }
         else { // constant number of packets per LID
           destGraph->imports_.modify_host();

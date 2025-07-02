@@ -11,6 +11,7 @@
 #define GDSW_DEF_HPP
 #include "GDSW_Proxy_decl.hpp"
 #include "Kokkos_ArithTraits.hpp"
+#include "Kokkos_StdAlgorithms.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
 
 using Teuchos::RCP;
@@ -593,8 +594,8 @@ communicateMatrixData3(RCP<const CrsMatrix> inputMatrix,
   RCP<Tpetra::Distributor> distributor = Teuchos::rcpFromRef(importer->getDistributor());
   Teuchos::ArrayView<const LO> localRowsSend = importer->getExportLIDs();
   Teuchos::ArrayView<const LO> localRowsRecv = importer->getRemoteLIDs();
-  Teuchos::ArrayView<const size_t> localRowsSendSize = distributor->getLengthsTo();
-  Teuchos::ArrayView<const size_t> localRowsRecvSize = distributor->getLengthsFrom();
+  auto localRowsSendSize = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(distributor->getLengthsTo());
+  auto localRowsRecvSize = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(distributor->getLengthsFrom());
 
   // Combine sames and permutes for ownedRowGIDs
   // QUESTION: Does iSM handle permutes correctly?
@@ -632,7 +633,7 @@ communicateMatrixData3(RCP<const CrsMatrix> inputMatrix,
         RCP<const Map> targetMap = 
             RCP( new Map(IGO, Teuchos::ArrayView<const GO>(targetGIDs, numTargetGIDs),
                          0, serialComm) );
-        for (LO jj=0; jj<(LO)localRowsSendSize[i]; jj++) {
+        for (LO jj=0; jj<(LO)localRowsSendSize(i); jj++) {
           LO j = send_buff_start + jj;
           const LO localRow = localRowsSend[j];
           inputMatrix->getLocalRowView(localRow, indices, values);
@@ -643,7 +644,7 @@ communicateMatrixData3(RCP<const CrsMatrix> inputMatrix,
             if (targetIndex != ILO) count[j]++;
           }
         }
-        send_buff_start +=localRowsSendSize[i];
+        send_buff_start +=localRowsSendSize(i);
     }
     /*
       std::cout << "local rows and send counts for myPID = " << myPID << std::endl;
@@ -668,7 +669,7 @@ communicateMatrixData3(RCP<const CrsMatrix> inputMatrix,
         RCP<const Map> targetMap = 
             RCP( new Map(IGO, Teuchos::ArrayView<const GO>(targetGIDs, numTargetGIDs),
                          0, serialComm) );
-        for (LO jj=0; jj<(LO)localRowsSendSize[i]; jj++) {
+        for (LO jj=0; jj<(LO)localRowsSendSize(i); jj++) {
           LO j = send_buff_start + jj;
           const LO localRow = localRowsSend[j];
           inputMatrix->getLocalRowView(localRow, indices, values);
@@ -682,7 +683,7 @@ communicateMatrixData3(RCP<const CrsMatrix> inputMatrix,
             }
           }
         }
-        send_buff_start +=localRowsSendSize[i];
+        send_buff_start +=localRowsSendSize(i);
     }
     // CMS: Compute sizes and communicate the count data
     const size_t numRowsRecv = localRowsRecv.size();
@@ -704,36 +705,36 @@ communicateMatrixData3(RCP<const CrsMatrix> inputMatrix,
       }
       }
     */ 
-    std::vector<size_t> sourceSize(numSends);
+    Kokkos::View<size_t*, Kokkos::HostSpace> sourceSize("sourceSize", numSends);
     for (size_t i=0,send_buff_start=0; i<numSends; i++) {
         size_t procCount(0);
         for (LO jj=0; jj<(LO)localRowsSendSize[i]; jj++) {
           LO j = send_buff_start + jj;
           procCount += count[j];
         }
-        sourceSize[i] = procCount;
+        sourceSize(i) = procCount;
         send_buff_start +=localRowsSendSize[i];
     }
-    std::vector<size_t> targetSize(numRecvs);
+    Kokkos::View<size_t*, Kokkos::HostSpace> targetSize("targetSize", numRecvs);
     size_t numTerms(0);
     for (size_t i=0,recv_buff_start=0; i<numRecvs; i++) {
         size_t procCount(0);
-        for (LO jj=0; jj<(LO)localRowsRecvSize[i]; jj++) {
+        for (LO jj=0; jj<(LO)localRowsRecvSize(i); jj++) {
           LO j = recv_buff_start + jj;
           procCount += recvRowNumNonzeros[j];
         }
-        targetSize[i] = procCount;
+        targetSize(i) = procCount;
         numTerms += procCount;
-        recv_buff_start +=localRowsRecvSize[i];
+        recv_buff_start +=localRowsRecvSize(i);
     }
 
     // CMS: Communicate the nonzeros
     std::vector<LO> columnsRecv(numTerms);
     std::vector<SC> valuesRecv(numTerms);
     distributor->doPostsAndWaits(Kokkos::View<const LO*, Kokkos::HostSpace>(localColIDs.data(), localColIDs.size()),
-                                 Teuchos::ArrayView<const size_t>(sourceSize),
+                                 sourceSize,
                                  Kokkos::View<LO*, Kokkos::HostSpace>(columnsRecv.data(), columnsRecv.size()),
-                                 Teuchos::ArrayView<const size_t>(targetSize));
+                                 targetSize);
     
     using KSX = typename Kokkos::ArithTraits<SC>::val_type;
     const KSX* matrixValues_K = reinterpret_cast<const KSX*>(matrixValues.data());
@@ -741,9 +742,9 @@ communicateMatrixData3(RCP<const CrsMatrix> inputMatrix,
     const size_t sizeSend = matrixValues.size();
     const size_t sizeRecv = valuesRecv.size();
     distributor->doPostsAndWaits(Kokkos::View<const KSX*, Kokkos::HostSpace>(matrixValues_K, sizeSend),
-                                 Teuchos::ArrayView<const size_t>(sourceSize),
+                                 sourceSize,
                                  Kokkos::View<KSX*, Kokkos::HostSpace>(valuesRecv_K, sizeRecv),
-                                 Teuchos::ArrayView<const size_t>(targetSize));
+                                 targetSize);
     RCP<const Map> rowMap1to1 = inputMatrix->getRowMap();
     const size_t numRows = rowMap->getLocalNumElements();
     std::vector<size_t> rowCount(numRows, 0);
@@ -853,8 +854,8 @@ importSquareMatrixFromImporter2(RCP<const CrsMatrix> inputMatrix,
   // Scansum to get the begin arrays
   //  size_t numSends = distributor->getNumSends();
   //  size_t numRecvs = distributor->getNumReceives();
-  Teuchos::ArrayView<const size_t> lengthsTo = distributor->getLengthsTo();
-  Teuchos::ArrayView<const size_t> lengthsFrom = distributor->getLengthsFrom();
+  auto lengthsTo = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(distributor->getLengthsTo());
+  auto lengthsFrom = Kokkos::Compat::getKokkosViewDeepCopy<Kokkos::HostSpace>(distributor->getLengthsTo());
 
   // Combine sames and permutes for ownedRowGIDs
   // QUESTION: Does iSM handle permutes correctly?
@@ -934,7 +935,7 @@ communicateMatrixData2(RCP<const CrsMatrix> inputMatrix,
         RCP<const Map> targetMap = 
             RCP( new Map(IGO, Teuchos::ArrayView<const GO>(targetGIDs, numTargetGIDs),
                          0, serialComm) );
-        for (LO jj=0; jj<(LO)localRowsSendSize[i]; jj++) {
+        for (LO jj=0; jj<(LO)localRowsSendSize(i); jj++) {
           LO j = send_buff_start + jj;
           const LO localRow = localRowsSend[j];
           inputMatrix->getLocalRowView(localRow, indices, values);
@@ -945,7 +946,7 @@ communicateMatrixData2(RCP<const CrsMatrix> inputMatrix,
             if (targetIndex != ILO) count[j]++;
           }
         }
-        send_buff_start +=localRowsSendSize[i];
+        send_buff_start +=localRowsSendSize(i);
     }
     /*
       std::cout << "local rows and send counts for myPID = " << myPID << std::endl;
@@ -970,7 +971,7 @@ communicateMatrixData2(RCP<const CrsMatrix> inputMatrix,
         RCP<const Map> targetMap = 
             RCP( new Map(IGO, Teuchos::ArrayView<const GO>(targetGIDs, numTargetGIDs),
                          0, serialComm) );
-        for (LO jj=0; jj<(LO)localRowsSendSize[i]; jj++) {
+        for (LO jj=0; jj<(LO)localRowsSendSize(i); jj++) {
           LO j = send_buff_start + jj;
           const LO localRow = localRowsSend[j];
           inputMatrix->getLocalRowView(localRow, indices, values);
@@ -984,7 +985,7 @@ communicateMatrixData2(RCP<const CrsMatrix> inputMatrix,
             }
           }
         }
-        send_buff_start +=localRowsSendSize[i];
+        send_buff_start +=localRowsSendSize(i);
     }
     // CMS: Compute sizes and communicate the count data
     const size_t numRowsRecv = localRowsRecv.size();
@@ -1006,36 +1007,36 @@ communicateMatrixData2(RCP<const CrsMatrix> inputMatrix,
       }
       }
     */ 
-    std::vector<size_t> sourceSize(numSends);
+    Kokkos::View<size_t*, Kokkos::HostSpace> sourceSize("sourceSize", numSends);
     for (size_t i=0,send_buff_start=0; i<numSends; i++) {
         size_t procCount(0);
-        for (LO jj=0; jj<(LO)localRowsSendSize[i]; jj++) {
+        for (LO jj=0; jj<(LO)localRowsSendSize(i); jj++) {
           LO j = send_buff_start + jj;
           procCount += count[j];
         }
-        sourceSize[i] = procCount;
-        send_buff_start +=localRowsSendSize[i];
+        sourceSize(i) = procCount;
+        send_buff_start +=localRowsSendSize(i);
     }
-    std::vector<size_t> targetSize(numRecvs);
+    Kokkos::View<size_t*, Kokkos::HostSpace> targetSize("targetSize", numRecvs);
     size_t numTerms(0);
     for (size_t i=0,recv_buff_start=0; i<numRecvs; i++) {
         size_t procCount(0);
-        for (LO jj=0; jj<(LO)localRowsRecvSize[i]; jj++) {
+        for (LO jj=0; jj<(LO)localRowsRecvSize(i); jj++) {
           LO j = recv_buff_start + jj;
           procCount += recvRowNumNonzeros[j];
         }
-        targetSize[i] = procCount;
+        targetSize(i) = procCount;
         numTerms += procCount;
-        recv_buff_start +=localRowsRecvSize[i];
+        recv_buff_start +=localRowsRecvSize(i);
     }
 
     // CMS: Communicate the nonzeros
     std::vector<LO> columnsRecv(numTerms);
     std::vector<SC> valuesRecv(numTerms);
     distributor->doPostsAndWaits(Kokkos::View<const LO*, Kokkos::HostSpace>(localColIDs.data(), localColIDs.size()),
-                                 Teuchos::ArrayView<const size_t>(sourceSize),
+                                 sourceSize,
                                  Kokkos::View<LO*, Kokkos::HostSpace>(columnsRecv.data(), columnsRecv.size()),
-                                 Teuchos::ArrayView<const size_t>(targetSize));
+                                 targetSize);
     
     using KSX = typename Kokkos::ArithTraits<SC>::val_type;
     const KSX* matrixValues_K = reinterpret_cast<const KSX*>(matrixValues.data());
@@ -1043,9 +1044,9 @@ communicateMatrixData2(RCP<const CrsMatrix> inputMatrix,
     const size_t sizeSend = matrixValues.size();
     const size_t sizeRecv = valuesRecv.size();
     distributor->doPostsAndWaits(Kokkos::View<const KSX*, Kokkos::HostSpace>(matrixValues_K, sizeSend),
-                                 Teuchos::ArrayView<const size_t>(sourceSize),
+                                 sourceSize,
                                  Kokkos::View<KSX*, Kokkos::HostSpace>(valuesRecv_K, sizeRecv),
-                                 Teuchos::ArrayView<const size_t>(targetSize));
+                                 targetSize);
     RCP<const Map> rowMap1to1 = inputMatrix->getRowMap();
     const size_t numRows = rowMap->getLocalNumElements();
     std::vector<size_t> rowCount(numRows, 0);
@@ -1148,18 +1149,19 @@ communicateRowMap(RCP<const Map> rowMap,
     size_t numSends = distributor->getNumSends();
     size_t numRecvs = distributor->getNumReceives();
     size_t numRows = rowMap->getLocalNumElements();
-    std::vector<size_t> targetValues(numSends);
+    Kokkos::View<size_t*, Kokkos::HostSpace> targetValues("targetValues", numSends);
     std::vector<size_t> targetSizes(numSends, 1);
-    std::vector<size_t> sourceValues(numRecvs, numRows);
+    Kokkos::View<size_t*, Kokkos::HostSpace> sourceValues("sourceValues", numRecvs);
+    Kokkos::Experimental::fill(Kokkos::DefaultHostExecutionSpace(), Kokkos::Experimental::begin(sourceValues), Kokkos::Experimental::end(sourceValues), numRows);
     std::vector<size_t> sourceSizes(numRecvs, 1); 
 
     // CMS: Reverse sends the # of rows on each proc to all neighbors (I think)
-    distributor->doReversePostsAndWaits(Kokkos::View<const size_t*, Kokkos::HostSpace>(sourceValues.data(), sourceValues.size()),
+    distributor->doReversePostsAndWaits(sourceValues,
                                         1,
-                                        Kokkos::View<size_t*, Kokkos::HostSpace>(targetValues.data(), targetValues.size()));
+                                        targetValues);
     // CMS: Compute the total number of rows on reverse neighbors of this rank
     int numTerms(0);
-    for (size_t i=0; i<targetValues.size(); i++) numTerms += targetValues[i];
+    for (size_t i=0; i<targetValues.size(); i++) numTerms += targetValues(i);
     rowMapGIDs.resize(numTerms);
 
     // CMS: For each recv, record each of my GIDs
@@ -1173,14 +1175,14 @@ communicateRowMap(RCP<const Map> rowMap,
 
     // CMS: Reverse all of the GIDs owned by the neighboring proc
     distributor->doReversePostsAndWaits(Kokkos::View<const GO*, Kokkos::HostSpace>(globalIDsSource.data(), globalIDsSource.size()),
-                                        Teuchos::ArrayView<const size_t>(sourceValues),
+                                        sourceValues,
                                         Kokkos::View<GO*, Kokkos::HostSpace>(rowMapGIDs.data(), rowMapGIDs.size()),
-                                        Teuchos::ArrayView<const size_t>(targetValues));
+                                        targetValues);
 
     // CMS: Note the row beginnings of each reverse neighboring row
     rowMapGIDsBegin.resize(numSends+1, 0);
     for (size_t i=0; i<numSends; i++) {
-        rowMapGIDsBegin[i+1] = rowMapGIDsBegin[i] + targetValues[i];
+        rowMapGIDsBegin[i+1] = rowMapGIDsBegin[i] + targetValues(i);
     }
     /*
       const int myPID = rowMap->getComm()->getRank();
@@ -1290,18 +1292,19 @@ communicateMatrixData(RCP<const CrsMatrix> inputMatrix,
 
     }
     const size_t numRowsRecv = localRowsRecvBegin[numRecvs];
-    std::vector<size_t> recvSize(numRecvs), recvRowNumNonzeros(numRowsRecv);
+    Kokkos::View<size_t*, Kokkos::HostSpace> recvSize("recvSize", numRecvs);
+    std::vector<size_t> recvRowNumNonzeros(numRowsRecv);
     for (size_t i=0; i<numRecvs; i++)  {
-        recvSize[i] = localRowsRecvBegin[i+1] - localRowsRecvBegin[i];
+        recvSize(i) = localRowsRecvBegin[i+1] - localRowsRecvBegin[i];
     }
-    std::vector<size_t> sendSize(numSends);
+    Kokkos::View<size_t*, Kokkos::HostSpace> sendSize("sendSize", numSends);
     for (size_t i=0; i<numSends; i++) {
-        sendSize[i] = localRowsSendBegin[i+1] - localRowsSendBegin[i];
+        sendSize(i) = localRowsSendBegin[i+1] - localRowsSendBegin[i];
     }
     distributor->doPostsAndWaits(Kokkos::View<const size_t*, Kokkos::HostSpace>(count.data(), count.size()),
-                                 Teuchos::ArrayView<const size_t>(sendSize),
+                                 sendSize,
                                  Kokkos::View<size_t*, Kokkos::HostSpace>(recvRowNumNonzeros.data(), recvRowNumNonzeros.size()),
-                                 Teuchos::ArrayView<const size_t>(recvSize));
+                                 recvSize);
 
     /*
       const int myPID = rowMap->getComm()->getRank();
@@ -1315,17 +1318,17 @@ communicateMatrixData(RCP<const CrsMatrix> inputMatrix,
       }
       }
     */ 
-    std::vector<size_t> sourceSize(numSends);
+    Kokkos::View<size_t*, Kokkos::HostSpace> sourceSize("sourceSize", numSends);
     for (size_t i=0; i<numSends; i++) {
         size_t procCount(0);
         for (LO j=localRowsSendBegin[i]; j<localRowsSendBegin[i+1]; j++) {
             procCount += count[j];
 
         }
-        sourceSize[i] = procCount;
+        sourceSize(i) = procCount;
 
     }
-    std::vector<size_t> targetSize(numRecvs);
+    Kokkos::View<size_t*, Kokkos::HostSpace> targetSize("targetSize", numRecvs);
     size_t numTerms(0);
     for (size_t i=0; i<numRecvs; i++) {
         size_t procCount(0);
@@ -1333,7 +1336,7 @@ communicateMatrixData(RCP<const CrsMatrix> inputMatrix,
             procCount += recvRowNumNonzeros[j];
 
         }
-        targetSize[i] = procCount;
+        targetSize(i) = procCount;
         numTerms += procCount;
 
     }
@@ -1342,9 +1345,9 @@ communicateMatrixData(RCP<const CrsMatrix> inputMatrix,
     std::vector<LO> columnsRecv(numTerms);
     std::vector<SC> valuesRecv(numTerms);
     distributor->doPostsAndWaits(Kokkos::View<const LO*, Kokkos::HostSpace>(localColIDs.data(), localColIDs.size()),
-                                 Teuchos::ArrayView<const size_t>(sourceSize),
+                                 sourceSize,
                                  Kokkos::View<LO*, Kokkos::HostSpace>(columnsRecv.data(), columnsRecv.size()),
-                                 Teuchos::ArrayView<const size_t>(targetSize));
+                                 targetSize);
     
     using KSX = typename Kokkos::ArithTraits<SC>::val_type;
     const KSX* matrixValues_K = reinterpret_cast<const KSX*>(matrixValues.data());
@@ -1352,9 +1355,9 @@ communicateMatrixData(RCP<const CrsMatrix> inputMatrix,
     const size_t sizeSend = matrixValues.size();
     const size_t sizeRecv = valuesRecv.size();
     distributor->doPostsAndWaits(Kokkos::View<const KSX*, Kokkos::HostSpace>(matrixValues_K, sizeSend),
-                                 Teuchos::ArrayView<const size_t>(sourceSize),
+                                 sourceSize,
                                  Kokkos::View<KSX*, Kokkos::HostSpace>(valuesRecv_K, sizeRecv),
-                                 Teuchos::ArrayView<const size_t>(targetSize));
+                                 targetSize);
     RCP<const Map> rowMap1to1 = inputMatrix->getRowMap();
     const size_t numRows = rowMap->getLocalNumElements();
     std::vector<size_t> rowCount(numRows, 0);
@@ -1493,23 +1496,23 @@ constructDistributor(RCP<const CrsMatrix> inputMatrix,
         offProcessorMap.emplace(recvPIDs[i], i);
     }
     std::vector<GO> recvGIDs(numRecvs);
-    std::vector<size_t> count(numRecvs, 0);
+    Kokkos::View<size_t*, Kokkos::HostSpace> count("count", numRecvs);
     for (size_t i=0; i<numOffProcessorRows; i++) {
         auto iter = offProcessorMap.find(remotePIDs[i]);
         recvGIDs[iter->second] = globalIDs[i];
-        count[iter->second]++;
+        count(iter->second)++;
     }
     localRowsRecvBegin.resize(numRecvs+1, 0);
     for (size_t i=0; i<numRecvs; i++) {
-        localRowsRecvBegin[i+1] = localRowsRecvBegin[i] + count[i];
-        count[i] = 0;
+        localRowsRecvBegin[i+1] = localRowsRecvBegin[i] + count(i);
+        count(i) = 0;
     }
     localRowsRecv.resize(numOffProcessorRows);
     for (size_t i=0; i<numOffProcessorRows; i++) {
         auto iter = offProcessorMap.find(remotePIDs[i]);
-        const int index = localRowsRecvBegin[iter->second] + count[iter->second];
+        const int index = localRowsRecvBegin[iter->second] + count(iter->second);
         localRowsRecv[index] = remoteLocalRows[i];
-        count[iter->second]++;
+        count(iter->second)++;
     }
     /*
       for (size_t i=0; i<numRecvs; i++) {
@@ -1550,22 +1553,22 @@ constructDistributor(RCP<const CrsMatrix> inputMatrix,
       std::cout << std::endl;
     */
     size_t numSends = distributor->getNumSends();
-    std::vector<size_t> targetValues(numSends);
+    Kokkos::View<size_t*, Kokkos::HostSpace> targetValues("targetValues", numSends);
     std::vector<size_t> targetSizes(numSends, 1);
     std::vector<size_t> sourceSizes(numRecvs, 1); 
-    distributor->doReversePostsAndWaits(Kokkos::View<const size_t*, Kokkos::HostSpace>(count.data(), count.size()),
+    distributor->doReversePostsAndWaits(count,
                                         1,
-                                        Kokkos::View<size_t*, Kokkos::HostSpace>(targetValues.data(), targetValues.size()));
+                                        targetValues);
     localRowsSendBegin.resize(numSends+1, 0);
     for (size_t i=0; i<numSends; i++) {
-        localRowsSendBegin[i+1] = localRowsSendBegin[i] + targetValues[i];
+        localRowsSendBegin[i+1] = localRowsSendBegin[i] + targetValues(i);
     }
     int numTerms = localRowsSendBegin[numSends];
     localRowsSend.resize(numTerms);
     distributor->doReversePostsAndWaits(Kokkos::View<const int*, Kokkos::HostSpace>(localRowsRecv.data(), localRowsRecv.size()),
-                                        Teuchos::ArrayView<const size_t>(count),
+                                        count,
                                         Kokkos::View<int*, Kokkos::HostSpace>(localRowsSend.data(), localRowsSend.size()),
-                                        Teuchos::ArrayView<const size_t>(targetValues));
+                                        targetValues);
     /*
       Teuchos::ArrayView<const int> procsTo = distributor->getProcsTo();
       for (size_t i=0; i<numSends; i++) {
@@ -1578,12 +1581,12 @@ constructDistributor(RCP<const CrsMatrix> inputMatrix,
       }
     */
     // switch localRowsRecv to on-processor rather than off-processor localRows
-    for (size_t i=0; i<numRecvs; i++) count[i] = 0;
+    for (size_t i=0; i<numRecvs; i++) count(i) = 0;
     for (size_t i=0; i<numOffProcessorRows; i++) {
         auto iter = offProcessorMap.find(remotePIDs[i]);
-        const int index = localRowsRecvBegin[iter->second] + count[iter->second];
+        const int index = localRowsRecvBegin[iter->second] + count(iter->second);
         localRowsRecv[index] = rowMap->getLocalElement(globalIDs[i]);
-        count[iter->second]++;
+        count(iter->second)++;
     }
 }
 
