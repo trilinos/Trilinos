@@ -74,7 +74,7 @@ public:
   virtual ~UniformRefinementEdgeMarker() {}
 protected:
   virtual void mark_entities_to_be_refined(NodeRefiner & nodeRefiner) const override;
-  virtual void mark_entities_to_be_unrefined(NodeRefiner & nodeRefiner) const override {}
+  virtual void mark_entities_to_be_unrefined(NodeRefiner & /*nodeRefiner*/) const override {}
   virtual bool is_element_a_candidate_for_adaptation(const stk::mesh::Entity elem, const bool doingRefinement) const override;
   virtual void fill_adaptation_caseIds_and_refined_edge_nodes_if_changed(const NodeRefiner & nodeRefiner,
     const stk::mesh::Entity elem,
@@ -82,7 +82,7 @@ protected:
     const bool doingRefinement,
     ElementEdgeCaseIds & elementEdgeCaseIds,
     std::vector<stk::mesh::Entity> & elemEdgeChildNodes) const override;
-  virtual std::vector<stk::mesh::Entity> get_parent_elements_that_will_be_modified_by_unrefinement(const NodeRefiner & nodeRefiner) const override {std::vector<stk::mesh::Entity> tmp; return tmp;}
+  virtual std::vector<stk::mesh::Entity> get_parent_elements_that_will_be_modified_by_unrefinement(const NodeRefiner & /*nodeRefiner*/) const override {std::vector<stk::mesh::Entity> tmp; return tmp;}
   virtual bool locally_have_elements_to_unrefine() const override { return false; }
 private:
   void locally_mark_all_entities_of_non_parent_elements(NodeRefiner & nodeRefiner) const;

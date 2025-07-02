@@ -9,6 +9,7 @@
 #ifndef Akri_MeshHelpers_h
 #define Akri_MeshHelpers_h
 
+#include <Akri_Edge.hpp>
 #include <Akri_FieldRef.hpp>
 #include <stk_math/StkVector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -24,8 +25,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-namespace krino { class FieldRef; }
 
 namespace krino {
 
@@ -103,6 +102,10 @@ void attach_entity_to_element(stk::mesh::BulkData & mesh, const stk::mesh::Entit
 void attach_entity_to_element_if_not_already_attached(stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity element);
 void attach_entity_to_elements(stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::mesh::BulkData &mesh, const stk::mesh::Selector & elementSelector, const stk::mesh::Entity elem);
+bool are_entities_selected(const stk::mesh::Selector & selector, const stk::mesh::Bucket & bucket);
+bool is_entity_selected(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & selector, const stk::mesh::Entity entity);
+void fill_edge_elements(const stk::mesh::BulkData & mesh, const Edge & edge, std::vector<stk::mesh::Entity> & edgeElements);
+void fill_selected_edge_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elemSelector, const Edge & edge, std::vector<stk::mesh::Entity> & edgeElements);
 void unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, std::set<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
 void pack_entities_for_sharing_procs(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & entities, stk::CommSparse &commSparse);
 std::vector<stk::mesh::Entity> unpack_entities_from_other_procs(const stk::mesh::BulkData & mesh, stk::CommSparse &commSparse);
@@ -119,7 +122,8 @@ bool check_element_side_connectivity(const stk::mesh::BulkData & mesh, const stk
 bool check_coincident_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Part & active_part);
 bool fix_coincident_element_ownership(stk::mesh::BulkData & mesh);
 bool fix_face_and_edge_ownership(stk::mesh::BulkData & mesh);
-bool fix_node_owners_to_assure_active_owned_element_for_node(stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart);
+bool fix_face_and_edge_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
+bool fix_node_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
 bool check_face_and_edge_ownership(const stk::mesh::BulkData & mesh);
 bool check_face_and_edge_relations(const stk::mesh::BulkData & mesh);
 bool check_shared_entity_nodes(const stk::mesh::BulkData & mesh, stk::mesh::EntityKey remote_entity_key, std::vector<stk::mesh::EntityId> & remote_entity_node_ids);
@@ -140,6 +144,15 @@ void fill_node_locations(const int dim, const FieldRef coordsField, const NODECO
   nodeLocations.clear();
   for (auto node : nodes)
     nodeLocations.emplace_back(field_data<double>(coordsField, node), dim);
+}
+
+template <typename NODECONTAINER>
+std::vector<stk::math::Vector3d> get_node_locations(const int dim, const FieldRef coordsField, const NODECONTAINER & nodes)
+{
+  std::vector<stk::math::Vector3d> nodeLocations;
+  nodeLocations.reserve(nodes.size());
+  fill_node_locations(dim, coordsField, nodes, nodeLocations);
+  return nodeLocations;
 }
 
 void store_child_node_parent_weights(const stk::mesh::BulkData & mesh,

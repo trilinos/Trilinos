@@ -34,7 +34,7 @@ static std::vector<Edge> get_element_edges(const stk::mesh::BulkData & mesh, con
 }
 
 void IntersectionPointFromNodalLevelsetInterfaceGeometry::append_element_intersection_points(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains,
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints) const

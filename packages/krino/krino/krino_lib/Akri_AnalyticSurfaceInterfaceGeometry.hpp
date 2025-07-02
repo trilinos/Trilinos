@@ -47,7 +47,7 @@ public:
   virtual void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodeParamCoords,
     const ElementIntersectionPointFilter & intersectionPointFilter,
     std::vector<ElementIntersection> & faceIntersections) const override;
-  virtual std::string visualize(const stk::mesh::BulkData & mesh) const override { std::string empty; return empty; }
+  virtual std::string visualize(const stk::mesh::BulkData & /*mesh*/) const override { std::string empty; return empty; }
   virtual int interface_sign_for_uncrossed_element(const InterfaceID interface, const std::vector<stk::math::Vector3d> & elemNodesCoords) const override;
   virtual std::pair<int, double> interface_edge_crossing_sign_and_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;
   virtual int get_starting_phase_for_cutting_surfaces() const override { return 0; }
@@ -108,7 +108,7 @@ public:
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints) const override;
 
-  virtual void store_phase_for_uncut_elements(const stk::mesh::BulkData & mesh) const override {}
+  virtual void store_phase_for_uncut_elements(const stk::mesh::BulkData & /*mesh*/) const override {}
   virtual void store_phase_for_elements_that_will_be_uncut_after_snapping(const stk::mesh::BulkData & mesh,
       const std::vector<IntersectionPoint> & intersectionPoints,
       const std::vector<SnapInfo> & independentSnapInfos,

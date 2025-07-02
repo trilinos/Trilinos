@@ -34,7 +34,7 @@ void determine_original_undecomposed_part_changes_for_current_parts(
 }
 
 void determine_original_undecomposed_part_changes_for_entities(
-    const stk::mesh::BulkData & mesh,
+    const stk::mesh::BulkData & /*mesh*/,
     const stk::mesh::Bucket & bucket,
     const Phase_Support & phaseSupport,
     stk::mesh::Part & childPart,

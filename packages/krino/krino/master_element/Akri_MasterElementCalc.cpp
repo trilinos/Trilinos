@@ -19,7 +19,7 @@ MasterElementCalc::scalar_gradient(
         const int ndims,
         const int nnodes,
         const double* gradop, //: (nvec,npe,nelem,nint)
-        const double* det_J,  //: (nelem,nint)
+        const double* /*det_J*/,  //: (nelem,nint)
         const double* sfield, //: (npe,nelem)
         double* vector )      //: (nvec,nelem,nint)
 {

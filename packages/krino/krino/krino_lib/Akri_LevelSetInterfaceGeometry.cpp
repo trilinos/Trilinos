@@ -146,7 +146,7 @@ PhaseTag LevelSetInterfaceGeometry::get_starting_phase(const ElementCutter * cut
   return LSCutter->get_starting_phase(myPhaseSupport, myLSFields);
 }
 
-PhaseTag LevelSetElementCutter::get_starting_phase(const Phase_Support & phaseSupport, const std::vector<LS_Field> & LSFields) const
+PhaseTag LevelSetElementCutter::get_starting_phase(const Phase_Support & /*phaseSupport*/, const std::vector<LS_Field> & LSFields) const
 {
   PhaseTag phase;
 
@@ -410,7 +410,7 @@ static std::function<bool(const std::array<unsigned,4> &)>
 temporary_build_always_true_diagonal_picker()
 {
   auto diagonalPicker =
-  [](const std::array<unsigned,4> & faceNodes)
+  [](const std::array<unsigned,4> & /*faceNodes*/)
   {
     return true;
   };
@@ -445,7 +445,7 @@ static ParentEdgeFilter keep_owned_edges_filter(const stk::mesh::BulkData & mesh
 
 static ParentEdgeFilter keep_all_edges_filter()
 {
-  const auto filter = [](const CDFEM_Parent_Edge & edge)
+  const auto filter = [](const CDFEM_Parent_Edge & /*edge*/)
   {
     return true;
   };
@@ -556,7 +556,7 @@ void LevelSetInterfaceGeometry::set_parent_element_selector()
 }
 
 void LevelSetInterfaceGeometry::build_parent_edges_for_mesh(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
 {
   const bool addHigherOrderMidSideNodes = determine_if_mesh_has_higher_order_midside_nodes_with_level_set_locally(mesh, myPhaseSupport, myLSFields);
   myParentsToChildMapper.build_map(mesh, myActivePart, myCdfemSupport, addHigherOrderMidSideNodes);
@@ -566,7 +566,7 @@ void LevelSetInterfaceGeometry::build_parent_edges_for_mesh(const stk::mesh::Bul
 
 void LevelSetInterfaceGeometry::build_parent_edges_for_elements(const stk::mesh::BulkData & mesh,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
 {
   const bool addHigherOrderMidSideNodes = determine_if_mesh_has_higher_order_midside_nodes_with_level_set_locally(mesh, myPhaseSupport, myLSFields);
   myParentsToChildMapper.build_map(mesh, myActivePart, myCdfemSupport, addHigherOrderMidSideNodes);
@@ -759,8 +759,8 @@ void LevelSetInterfaceGeometry::append_element_intersection_points(const stk::me
   }
 }
 
-static int get_domain_for_uncut_element(const stk::mesh::BulkData & mesh,
-    const stk::mesh::Entity element,
+static int get_domain_for_uncut_element(const stk::mesh::BulkData & /*mesh*/,
+    const stk::mesh::Entity /*element*/,
     const std::vector<const CDFEM_Parent_Edge *> & elementParentEdges,
     const bool oneLSPerPhase)
 {

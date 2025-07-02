@@ -66,7 +66,7 @@ void Parallel_Facet_File_Reader::get_batch_size(const int local_num_facets, int 
     krinolog << "Reading " << num_facets << " facets, using " << num_batches << " batches of " << batch_size << "." << stk::diag::dendl;
 }
 
-Faceted_Surface_From_File::Faceted_Surface_From_File(const std::string & surface_name, const stk::diag::Timer &parent_timer)
+Faceted_Surface_From_File::Faceted_Surface_From_File(const std::string & /*surface_name*/, const stk::diag::Timer &parent_timer)
 : Faceted_Surface<Facet3d>(),
   my_timer("Facet File Reader", parent_timer),
   my_built_local_facets(false)
@@ -852,7 +852,7 @@ MeshSurface<FACET>::MeshSurface(const stk::mesh::MetaData & meta,
 }
 
 template <class FACET>
-void MeshSurface<FACET>::build_local_facets(const BoundingBox & proc_bbox)
+void MeshSurface<FACET>::build_local_facets(const BoundingBox & /*proc_bbox*/)
 {
   /* %TRACE[ON]% */ Trace trace__("krino::MeshSurface::build_local_facets()"); /* %TRACE% */
   const stk::mesh::BulkData & mesh = my_mesh_meta.mesh_bulk_data();

@@ -701,7 +701,7 @@ static void interpolate_fields(const stk::mesh::BulkData & mesh, const FieldSet 
   stk::mesh::communicate_field_data(mesh, const_fields);
 }
 
-std::vector<stk::mesh::Entity> get_owned_nodes_to_unsnap(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField)
+std::vector<stk::mesh::Entity> get_owned_nodes_to_unsnap(const stk::mesh::BulkData & mesh, const stk::mesh::Part & /*activePart*/, const FieldRef /*coordsField*/, FieldRef cdfemSnapField)
 {
   FieldRef oldSnapDisplacements = cdfemSnapField.field_state(stk::mesh::StateOld);
   const int dim = mesh.mesh_meta_data().spatial_dimension();
@@ -800,7 +800,7 @@ static std::vector<InterpolationPoint> build_interpolation_points_for_snapping(c
   return interpolationPoints;
 }
 
-std::vector<stk::mesh::Entity> get_owned_nodes_to_snap(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField, FieldRef cdfemSnapField)
+std::vector<stk::mesh::Entity> get_owned_nodes_to_snap(const stk::mesh::BulkData & mesh, const stk::mesh::Part & /*activePart*/, const FieldRef /*coordsField*/, FieldRef cdfemSnapField)
 {
   FieldRef oldSnapDisplacements = cdfemSnapField.field_state(stk::mesh::StateOld);
   const int dim = mesh.mesh_meta_data().spatial_dimension();

@@ -82,7 +82,7 @@ void initialize_level_set(const stk::mesh::BulkData & mesh, const ProblemFields 
   }
 }
 
-double initialize_constant_speed(const stk::mesh::BulkData & mesh, const ProblemFields & fields, const double speed)
+double initialize_constant_speed(const stk::mesh::BulkData & /*mesh*/, const ProblemFields & fields, const double speed)
 {
   stk::mesh::field_fill(speed, *fields.speedField);
   return speed;
@@ -219,7 +219,7 @@ void write_fields(stk::io::StkMeshIoBroker &outStkIo, const size_t outputFileInd
   outStkIo.end_output_step(outputFileIndex);
 }
 
-void assemble_residual_for_element_speed(const stk::mesh::BulkData & mesh, const ProblemFields & fields, const double ep)
+void assemble_residual_for_element_speed(const stk::mesh::BulkData & mesh, const ProblemFields & fields, const double /*ep*/)
 {
   // Implementation of Barth-Sethian positive coefficient scheme for element speed fields.
 
@@ -294,7 +294,7 @@ void assemble_residual_for_element_speed(const stk::mesh::BulkData & mesh, const
   }
 }
 
-void assemble_residual_for_nodal_speed(const stk::mesh::BulkData & mesh, const ProblemFields & fields, const double eps)
+void assemble_residual_for_nodal_speed(const stk::mesh::BulkData & mesh, const ProblemFields & fields, const double /*eps*/)
 {
   // Not extensively tested.  This is an adaptation of Barth-Sethian positive coefficient scheme for nodal speed fields
 

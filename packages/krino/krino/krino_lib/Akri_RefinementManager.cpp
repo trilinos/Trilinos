@@ -1,10 +1,5 @@
-/*
- * Akri_RefinementInterface.cpp
- *
- *  Created on: Oct 31, 2022
- *      Author: drnoble
- */
-#include "Akri_RefinementInterface.hpp"
+#include <Akri_RefinementManager.hpp>
+
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <Akri_AuxMetaData.hpp>
@@ -21,20 +16,20 @@
 
 namespace krino {
 
-void clear_refinement_marker(const RefinementInterface & refinement)
+void clear_refinement_marker(const RefinementManager & refinement)
 {
   FieldRef markerField = refinement.get_marker_field_and_sync_to_host();
   stk::mesh::field_fill(static_cast<int>(Refinement::RefinementMarker::NOTHING), markerField, stk::mesh::selectField(markerField));
 }
 
-void mark_selected_elements_for_refinement(const RefinementInterface & refinement, const stk::mesh::Selector & selector)
+void mark_selected_elements_for_refinement(const RefinementManager & refinement, const stk::mesh::Selector & selector)
 {
   FieldRef markerField = refinement.get_marker_field_and_sync_to_host();
   clear_refinement_marker(refinement);
   stk::mesh::field_fill(static_cast<int>(Refinement::RefinementMarker::REFINE), markerField, selector);
 }
 
-void mark_selected_elements_for_refinement(const RefinementInterface & refinement, const int current_refinement_level, const int max_refinement_levels, const stk::mesh::Selector & selector)
+void mark_selected_elements_for_refinement(const RefinementManager & refinement, const int current_refinement_level, const int max_refinement_levels, const stk::mesh::Selector & selector)
 {
   const bool doAdapt = current_refinement_level < max_refinement_levels;
   if (doAdapt)
@@ -43,7 +38,7 @@ void mark_selected_elements_for_refinement(const RefinementInterface & refinemen
     clear_refinement_marker(refinement);
 }
 
-void mark_elements_for_refinement(const RefinementInterface & refinement, const std::vector<stk::mesh::Entity> & elemsToRefine)
+void mark_elements_for_refinement(const RefinementManager & refinement, const std::vector<stk::mesh::Entity> & elemsToRefine)
 {
   clear_refinement_marker(refinement);
   FieldRef markerField = refinement.get_marker_field_and_sync_to_host();
@@ -54,7 +49,7 @@ void mark_elements_for_refinement(const RefinementInterface & refinement, const 
   }
 }
 
-void mark_elements_with_given_ids_for_refinement(const stk::mesh::BulkData & mesh, const RefinementInterface & refinement, const std::vector<stk::mesh::EntityId> & idsOfElemsToRefine)
+void mark_elements_with_given_ids_for_refinement(const stk::mesh::BulkData & mesh, const RefinementManager & refinement, const std::vector<stk::mesh::EntityId> & idsOfElemsToRefine)
 {
   std::vector<stk::mesh::Entity> elementsToRefine;
   for (auto && idOfElemToRefine : idsOfElemsToRefine)
@@ -68,7 +63,7 @@ void mark_elements_with_given_ids_for_refinement(const stk::mesh::BulkData & mes
 }
 
 void mark_based_on_indicator_field(const stk::mesh::BulkData & mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & refinement,
      const std::string & indicatorFieldName,
     const int maxRefinementLevel,
     const int currentRefinementLevel,
@@ -138,7 +133,7 @@ void mark_based_on_indicator_field(const stk::mesh::BulkData & mesh,
   }
 }
 
-void fill_leaf_children(const RefinementInterface & refinement, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & leaf_children)
+void fill_leaf_children(const RefinementManager & refinement, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & leaf_children)
 {
   std::vector<stk::mesh::Entity> grand_children;
   for (auto&& child : children)
@@ -155,7 +150,7 @@ void fill_leaf_children(const RefinementInterface & refinement, const std::vecto
   }
 }
 
-void fill_leaf_children(const RefinementInterface & refinement, const stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & leaf_children)
+void fill_leaf_children(const RefinementManager & refinement, const stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & leaf_children)
 {
   leaf_children.clear();
   std::vector<stk::mesh::Entity> children;
@@ -163,7 +158,7 @@ void fill_leaf_children(const RefinementInterface & refinement, const stk::mesh:
   fill_leaf_children(refinement, children, leaf_children);
 }
 
-void fill_all_children(const RefinementInterface & refinement, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & all_children)
+void fill_all_children(const RefinementManager & refinement, const std::vector<stk::mesh::Entity> & children, std::vector<stk::mesh::Entity> & all_children)
 {
   std::vector<stk::mesh::Entity> grand_children;
   for (auto&& child : children)
@@ -174,7 +169,7 @@ void fill_all_children(const RefinementInterface & refinement, const std::vector
   }
 }
 
-void fill_all_children(const RefinementInterface & refinement, const stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & all_children)
+void fill_all_children(const RefinementManager & refinement, const stk::mesh::Entity entity, std::vector<stk::mesh::Entity> & all_children)
 {
   std::vector<stk::mesh::Entity> children;
   refinement.fill_children(entity, children);
@@ -182,58 +177,58 @@ void fill_all_children(const RefinementInterface & refinement, const stk::mesh::
   fill_all_children(refinement, children, all_children);
 }
 
-KrinoRefinement &
-KrinoRefinement::get(const stk::mesh::MetaData & meta)
+RefinementManager &
+RefinementManager::get(const stk::mesh::MetaData & meta)
 {
-  KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
+  RefinementManager * refinement = const_cast<RefinementManager*>(meta.get_attribute<RefinementManager>());
   STK_ThrowRequireMsg(nullptr != refinement, "Refinement not found on MetaData.");
   return *refinement;
 }
 
-KrinoRefinement &
-KrinoRefinement::create(stk::mesh::MetaData & meta, stk::diag::Timer & timer)
+RefinementManager &
+RefinementManager::create(stk::mesh::MetaData & meta, stk::diag::Timer & timer)
 {
-  KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
-  STK_ThrowRequireMsg(nullptr == refinement, "KrinoRefinement::create should be called only once per MetaData.");
+  RefinementManager * refinement = const_cast<RefinementManager*>(meta.get_attribute<RefinementManager>());
+  STK_ThrowRequireMsg(nullptr == refinement, "RefinementInterface::create should be called only once per MetaData.");
   if (nullptr == refinement)
   {
     AuxMetaData & auxMeta = AuxMetaData::get_or_create(meta);
-    refinement = new KrinoRefinement(meta,
+    refinement = new RefinementManager(meta,
         &auxMeta.active_part(),
         false /*auxMeta.get_force_64bit_flag()*/,
         auxMeta.get_assert_32bit_flag(),
         timer);
-    meta.declare_attribute_with_delete<KrinoRefinement>(refinement);
+    meta.declare_attribute_with_delete<RefinementManager>(refinement);
   }
   return *refinement;
 }
 
-KrinoRefinement &
-KrinoRefinement::create(stk::mesh::MetaData & meta)
+RefinementManager &
+RefinementManager::create(stk::mesh::MetaData & meta)
 {
-  return KrinoRefinement::create(meta, sierra::Diag::sierraTimer());
+  return RefinementManager::create(meta, sierra::Diag::sierraTimer());
 }
 
 bool
-KrinoRefinement::is_created(const stk::mesh::MetaData & meta)
+RefinementManager::is_created(const stk::mesh::MetaData & meta)
 {
-  KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
+  RefinementManager * refinement = const_cast<RefinementManager*>(meta.get_attribute<RefinementManager>());
   return refinement != nullptr;
 }
 
-KrinoRefinement &
-KrinoRefinement::get_or_create(stk::mesh::MetaData & meta)
+RefinementManager &
+RefinementManager::get_or_create(stk::mesh::MetaData & meta)
 {
-  KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
+  RefinementManager * refinement = const_cast<RefinementManager*>(meta.get_attribute<RefinementManager>());
   if (refinement)
     return *refinement;
   return create(meta);
 }
 
-KrinoRefinement &
-KrinoRefinement::get_or_create(stk::mesh::MetaData & meta, stk::diag::Timer & timer)
+RefinementManager &
+RefinementManager::get_or_create(stk::mesh::MetaData & meta, stk::diag::Timer & timer)
 {
-  KrinoRefinement * refinement = const_cast<KrinoRefinement*>(meta.get_attribute<KrinoRefinement>());
+  RefinementManager * refinement = const_cast<RefinementManager*>(meta.get_attribute<RefinementManager>());
   if (refinement)
     return *refinement;
 
@@ -242,7 +237,7 @@ KrinoRefinement::get_or_create(stk::mesh::MetaData & meta, stk::diag::Timer & ti
 
 
 void
-KrinoRefinement::register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::MetaData & meta)
+RefinementManager::register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::MetaData & meta)
 {
   // FIXME: Ugly workaround for fmwk
   AuxMetaData & auxMeta = AuxMetaData::get(meta);
@@ -256,7 +251,7 @@ KrinoRefinement::register_parts_and_fields_via_aux_meta_for_fmwk(stk::mesh::Meta
   }
 }
 
-KrinoRefinement::KrinoRefinement(stk::mesh::MetaData & meta,
+RefinementManager::RefinementManager(stk::mesh::MetaData & meta,
     stk::mesh::Part * activePart,
     const bool force64Bit,
     const bool assert32Bit,
@@ -269,21 +264,17 @@ KrinoRefinement::KrinoRefinement(stk::mesh::MetaData & meta,
   stk::mesh::put_field_on_mesh(myElementMarkerField.field(), meta.universal_part(), 1, 1, nullptr);
 }
 
-KrinoRefinement::~KrinoRefinement()
-{
-}
-
-bool KrinoRefinement::is_child(const stk::mesh::Entity entity) const
+bool RefinementManager::is_child(const stk::mesh::Entity entity) const
 {
   return myRefinement.is_child(entity);
 }
 
-bool KrinoRefinement::is_parent(const stk::mesh::Entity entity) const
+bool RefinementManager::is_parent(const stk::mesh::Entity entity) const
 {
   return myRefinement.is_parent(entity);
 }
 
-bool KrinoRefinement::is_parent_side(const stk::mesh::Entity side) const
+bool RefinementManager::is_parent_side(const stk::mesh::Entity side) const
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
   bool haveAttachedParentElement = false;
@@ -297,62 +288,62 @@ bool KrinoRefinement::is_parent_side(const stk::mesh::Entity side) const
   return haveAttachedParentElement;
 }
 
-stk::mesh::Part & KrinoRefinement::parent_part() const
+stk::mesh::Part & RefinementManager::parent_part() const
 {
   return myRefinement.parent_part();
 }
 
-stk::mesh::Part & KrinoRefinement::child_part() const
+stk::mesh::Part & RefinementManager::child_part() const
 {
   return myRefinement.child_part();
 }
 
-stk::mesh::Entity KrinoRefinement::get_parent(const stk::mesh::Entity child) const
+stk::mesh::Entity RefinementManager::get_parent(const stk::mesh::Entity child) const
 {
   return myRefinement.get_parent(child);
 }
 
-std::pair<stk::mesh::EntityId,int> KrinoRefinement::get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const
+std::pair<stk::mesh::EntityId,int> RefinementManager::get_parent_id_and_parallel_owner_rank(const stk::mesh::Entity child) const
 {
   return myRefinement.get_parent_id_and_parallel_owner_rank(child);
 }
 
-unsigned KrinoRefinement::get_num_children(const stk::mesh::Entity elem) const
+unsigned RefinementManager::get_num_children(const stk::mesh::Entity elem) const
 {
   return myRefinement.get_num_children(elem);
 }
 
-void KrinoRefinement::fill_children(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children) const
+void RefinementManager::fill_children(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & children) const
 {
   myRefinement.fill_children(parent, children);
 }
 
-void KrinoRefinement::fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElemIds) const
+void RefinementManager::fill_child_element_ids(const stk::mesh::Entity parent, std::vector<stk::mesh::EntityId> & childElemIds) const
 {
   myRefinement.fill_child_element_ids(parent, childElemIds);
 }
 
-std::string KrinoRefinement::locally_check_leaf_children_have_parents_on_same_proc() const
+std::string RefinementManager::locally_check_leaf_children_have_parents_on_same_proc() const
 {
   return myRefinement.locally_check_leaf_children_have_parents_on_same_proc();
 }
 
-void KrinoRefinement::fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const
+void RefinementManager::fill_dependents(const stk::mesh::Entity parent, std::vector<stk::mesh::Entity> & dependents) const
 {
   myRefinement.fill_child_elements_that_must_stay_on_same_proc_as_parent(parent, dependents);
 }
 
-bool KrinoRefinement::has_rebalance_constraint(const stk::mesh::Entity entity) const
+bool RefinementManager::has_rebalance_constraint(const stk::mesh::Entity entity) const
 {
   return myRefinement.has_parallel_owner_rebalance_constraint(entity);
 }
 
-void KrinoRefinement::update_element_rebalance_weights_incorporating_parallel_owner_constraints(stk::mesh::Field<double> & elemWtField) const
+void RefinementManager::update_element_rebalance_weights_incorporating_parallel_owner_constraints(stk::mesh::Field<double> & elemWtField) const
 {
   return myRefinement.update_element_rebalance_weights_incorporating_parallel_owner_constraints(elemWtField);
 }
 
-TransitionElementEdgeMarker & KrinoRefinement::setup_marker() const
+TransitionElementEdgeMarker & RefinementManager::setup_marker() const
 {
   // This is delayed to make sure the bulkdata has been created.  It might be better to just pass in the bulkdata when the marker is used.
   if (!myMarker)
@@ -362,7 +353,7 @@ TransitionElementEdgeMarker & KrinoRefinement::setup_marker() const
   return *myMarker;
 }
 
-void KrinoRefinement::set_marker_field(const std::string & markerFieldName)
+void RefinementManager::set_marker_field(const std::string & markerFieldName)
 {
   myElementMarkerField = myMeta.get_field(stk::topology::ELEMENT_RANK, markerFieldName);
   if(myMarker)
@@ -374,7 +365,7 @@ void KrinoRefinement::set_marker_field(const std::string & markerFieldName)
   }
 }
 
-FieldRef KrinoRefinement::get_marker_field_and_sync_to_host() const
+FieldRef RefinementManager::get_marker_field_and_sync_to_host() const
 {
   setup_marker();
   myElementMarkerField.sync_to_host();
@@ -382,7 +373,7 @@ FieldRef KrinoRefinement::get_marker_field_and_sync_to_host() const
   return myElementMarkerField;
 }
 
-int KrinoRefinement::fully_refined_level(const stk::mesh::Entity elem) const
+int RefinementManager::fully_refined_level(const stk::mesh::Entity elem) const
 {
   const int refineLevel = myRefinement.refinement_level(elem);
   if (is_transition(elem))
@@ -390,25 +381,25 @@ int KrinoRefinement::fully_refined_level(const stk::mesh::Entity elem) const
   return refineLevel;
 }
 
-int KrinoRefinement::partially_refined_level(const stk::mesh::Entity elem) const
+int RefinementManager::partially_refined_level(const stk::mesh::Entity elem) const
 {
   const int refineLevel = myRefinement.refinement_level(elem);
   return refineLevel;
 }
 
-bool KrinoRefinement::is_transition(const stk::mesh::Entity elem) const
+bool RefinementManager::is_transition(const stk::mesh::Entity elem) const
 {
   return get_marker().is_transition(elem);
 }
 
-TransitionElementEdgeMarker & KrinoRefinement::get_marker() const
+TransitionElementEdgeMarker & RefinementManager::get_marker() const
 {
   setup_marker();
   STK_ThrowRequireMsg(myMarker, "Logic error.  Marker should have already been setup.");
   return *myMarker;
 }
 
-std::array<unsigned, 2> KrinoRefinement::get_marked_element_counts() const
+std::array<unsigned, 2> RefinementManager::get_marked_element_counts() const
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
   const FieldRef markerField = get_marker_field_and_sync_to_host();
@@ -438,7 +429,7 @@ std::array<unsigned, 2> KrinoRefinement::get_marked_element_counts() const
   return globalNum;
 }
 
-bool KrinoRefinement::is_supported_uniform_refinement_element() const
+bool RefinementManager::is_supported_uniform_refinement_element() const
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
   const FieldRef markerField = get_marker_field_and_sync_to_host();
@@ -466,7 +457,7 @@ bool KrinoRefinement::is_supported_uniform_refinement_element() const
   return static_cast<bool>(reduced_result);
 }
 
-bool KrinoRefinement::do_refinement(const int debugLevel)
+bool RefinementManager::do_refinement(const int /*debugLevel*/)
 { 
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
@@ -506,7 +497,7 @@ bool KrinoRefinement::do_refinement(const int debugLevel)
   return didMakeAnyChanges;
 }
 
-bool KrinoRefinement::do_uniform_refinement(const int numUniformRefinementLevels)
+bool RefinementManager::do_uniform_refinement(const int numUniformRefinementLevels)
 {
   const stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
 
@@ -529,7 +520,7 @@ bool KrinoRefinement::do_uniform_refinement(const int numUniformRefinementLevels
   return didMakeAnyChanges;
 }
 
-void KrinoRefinement::restore_after_restart()
+void RefinementManager::restore_after_restart()
 {
   myRefinement.restore_after_restart();
 
@@ -537,7 +528,7 @@ void KrinoRefinement::restore_after_restart()
   ParallelThrowAssert(myMeta.mesh_bulk_data().parallel(), check_face_and_edge_relations(myMeta.mesh_bulk_data()));
 }
 
-void check_leaf_children_have_parents_on_same_proc(const stk::ParallelMachine comm, const RefinementInterface & refinement)
+void check_leaf_children_have_parents_on_same_proc(const stk::ParallelMachine comm, const RefinementManager & refinement)
 {
   RequireEmptyErrorMsg(comm, refinement.locally_check_leaf_children_have_parents_on_same_proc(), "Leaf child without parent owned on same proc.");
 }

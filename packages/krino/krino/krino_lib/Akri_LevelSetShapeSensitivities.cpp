@@ -36,7 +36,7 @@ static stk::math::Vector3d compute_edge_vector(const FieldRef coordsField, const
   return x1-x0;
 }
 
-static void fill_d_coords_d_levelsets(const FieldRef coordsField, const FieldRef levelSetField, const std::vector<stk::mesh::Entity> & parentNodes, const std::vector<double> & parentWeights, std::vector<stk::math::Vector3d> & dCoordsdParentLevelSets)
+static void fill_d_coords_d_levelsets(const FieldRef coordsField, const FieldRef levelSetField, const std::vector<stk::mesh::Entity> & parentNodes, const std::vector<double> & /*parentWeights*/, std::vector<stk::math::Vector3d> & dCoordsdParentLevelSets)
 {
   STK_ThrowRequireMsg(2 == parentNodes.size(), "Currently only edge intersections are supported.");
   dCoordsdParentLevelSets.clear();

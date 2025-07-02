@@ -20,7 +20,7 @@ public:
     cdmesh = std::make_unique<CDMesh>(mMesh);
     mMesh.mesh_meta_data().enable_late_fields();
     RefinementSupport::get(mMesh.mesh_meta_data()).activate_nonconformal_adaptivity(2);
-    RefinementSupport::get(mMesh.mesh_meta_data()).set_non_interface_conforming_refinement(KrinoRefinement::create(mMesh.mesh_meta_data()));
+    RefinementSupport::get(mMesh.mesh_meta_data()).set_non_interface_conforming_refinement(RefinementManager::create(mMesh.mesh_meta_data()));
   }
 
   void setup_phases()

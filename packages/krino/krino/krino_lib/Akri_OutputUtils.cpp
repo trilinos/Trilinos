@@ -9,6 +9,7 @@
 #define KRINO_KRINO_KRINO_LIB_AKRI_OUTPUTUTILS_CPP_
 #include <Akri_DiagWriter.hpp>
 #include <Akri_OutputUtils.hpp>
+#include <Akri_config.hpp>
 
 #include <string>
 
@@ -16,10 +17,28 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <Akri_Faceted_Surface.hpp>
+#include <Akri_MeshHelpers.hpp>
 #include <Ioss_SubSystem.h>
 #include <Ioss_PropertyManager.h>
 
 namespace krino {
+
+bool is_parallel_io_enabled()
+{
+#ifdef KRINO_HAVE_PARALELL_IO
+  return true;
+#else
+  return false;
+#endif
+}
+
+static void enable_compose_results_if_supported(Ioss::PropertyManager & properties)
+{
+  if (is_parallel_io_enabled())
+    properties.add(Ioss::Property("COMPOSE_RESULTS", 1));
+  else
+    krinolog << "Skipping parallel composed exodus output in krino because the necessary libraries are not enabled." << stk::diag::dendl;
+}
 
 static void enable_io_parts(const stk::mesh::PartVector & parts)
 {
@@ -69,10 +88,22 @@ void output_mesh_with_fields_and_properties(const stk::mesh::BulkData & mesh, co
   enable_io_parts(emptyIoParts);
 }
 
+static void fix_ownership_for_output_selector(stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector)
+{
+  fix_face_and_edge_ownership_to_assure_selected_owned_element(mesh, outputSelector);
+  fix_node_ownership_to_assure_selected_owned_element(mesh, outputSelector);
+}
+
+void fix_ownership_and_output_composed_mesh_with_fields(stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose)
+{
+  fix_ownership_for_output_selector(mesh, outputSelector);
+  output_composed_mesh_with_fields(mesh, outputSelector, fileName, step, time, purpose);
+}
+
 void output_composed_mesh_with_fields(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector, const std::string & fileName, int step, double time, stk::io::DatabasePurpose purpose)
 {
   Ioss::PropertyManager properties;
-  properties.add(Ioss::Property("COMPOSE_RESULTS", 1));
+  enable_compose_results_if_supported(properties);
   output_mesh_with_fields_and_properties(mesh, outputSelector, fileName, step, time, properties, purpose);
 }
 
@@ -114,7 +145,7 @@ void write_facets( const std::vector<FACET> & facets, const std::string & fileBa
 
   // Type (ExodusII) is hard-wired at this time.
   Ioss::PropertyManager properties;
-  properties.add(Ioss::Property("COMPOSE_RESULTS", 1));
+  enable_compose_results_if_supported(properties);
   const std::string fileName = create_file_name(fileBaseName, fileIndex);
   properties.add(Ioss::Property("base_filename", create_file_name(fileBaseName, 0)));
   if (fileIndex > 0)

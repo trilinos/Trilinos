@@ -121,7 +121,7 @@ void BoundingBoxMesh::set_is_cell_edge_function_for_cell_based_mesh() const
 
 void BoundingBoxMesh::set_is_cell_edge_function_for_BCC_mesh() const
 {
-  auto is_cell_edge = [](stk::mesh::Entity node0, stk::mesh::Entity node1)
+  auto is_cell_edge = [](stk::mesh::Entity /*node0*/, stk::mesh::Entity /*node1*/)
   {
     return true;
   };
@@ -154,7 +154,7 @@ BoundingBoxMesh::populate_mesh(const stk::mesh::BulkData::AutomaticAuraOption au
 enum BCCNode { BCC_NODE=8, BCC_NODE_XMINUS=9, BCC_NODE_XPLUS=10, BCC_NODE_YMINUS=11, BCC_NODE_YPLUS=12, BCC_NODE_ZMINUS=13, BCC_NODE_ZPLUS=14 };
 
 void
-BoundingBoxMesh::build_face_tets( size_t cell_id, size_t ix , size_t iy , size_t iz, int iface, const std::vector<stk::mesh::EntityId> & cell_node_ids )
+BoundingBoxMesh::build_face_tets( size_t cell_id, size_t /*ix*/ , size_t /*iy*/ , size_t /*iz*/, int iface, const std::vector<stk::mesh::EntityId> & cell_node_ids )
 {
   std::vector<std::vector<std::vector<int>>> faceTets = {
       {{BCC_NODE, BCC_NODE_XMINUS, 0, 4},
@@ -233,7 +233,7 @@ BoundingBoxMesh::setup_BCC_node( size_t ix , size_t iy , size_t iz, int dx, int 
   }
 }
 
-size_t get_triangle_lattice_node_id(size_t ix, size_t iy, size_t nx, size_t ny)
+size_t get_triangle_lattice_node_id(size_t ix, size_t iy, size_t nx, size_t /*ny*/)
 {
   return 1 + iy*(nx+1) + ix + ((iy%2 == 0) ? (iy/2) : ((iy-1)/2));
 }

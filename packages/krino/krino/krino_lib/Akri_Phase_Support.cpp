@@ -701,7 +701,7 @@ void Phase_Support::add_conforming_part(const stk::mesh::Part & conformingPart,
 
 void Phase_Support::add_interface_part(const stk::mesh::Part & interfacePart,
     const stk::mesh::Part & nonconformingPart,
-    const stk::mesh::Part & originalPart,
+    const stk::mesh::Part & /*originalPart*/,
     const PhaseTag & touchingPhase,
     const PhaseTag & oppositePhase)
 {
@@ -718,8 +718,8 @@ void Phase_Support::add_interface_part(const stk::mesh::Part & interfacePart,
 }
 
 void Phase_Support::add_interface_superset_part(const stk::mesh::Part & interfacePart,
-      const PhaseTag & touchingPhase,
-      const PhaseTag & oppositePhase)
+      const PhaseTag & /*touchingPhase*/,
+      const PhaseTag & /*oppositePhase*/)
 {
   myPhasePartInfo.setup_interface_superset_part(meta(), interfacePart.mesh_meta_data_ordinal());
 }
@@ -1006,7 +1006,7 @@ Phase_Support::get_iopart_roots(const stk::mesh::Part & iopart, std::vector<cons
 }
 //--------------------------------------------------------------------------------
 void
-Phase_Support::get_blocks_touching_surface(const std::string & surface_name, std::vector<std::string> & block_names)
+Phase_Support::get_blocks_touching_surface(const std::string & /*surface_name*/, std::vector<std::string> & block_names)
 { /* %TRACE% */  /* %TRACE% */
 
   std::set<stk::mesh::PartOrdinal> block_ordinal_set;
