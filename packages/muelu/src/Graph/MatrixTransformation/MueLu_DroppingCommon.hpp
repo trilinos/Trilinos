@@ -524,7 +524,14 @@ enum StrengthMeasure : int {
   \frac{-\operatorname{sign}(A_{ij}) |A_{ij}|^2}{|A_{ii}| |A_{jj}|} \le \theta^2
   \f]
   */
-  SignedSmoothedAggregationMeasure = 2
+  SignedSmoothedAggregationMeasure = 2,
+
+  /*
+  \f[
+  |A_{ij}| \le \theta
+  \f]
+   */
+  UnscaledMeasure = 3
 };
 
 }  // namespace Misc

@@ -42,7 +42,7 @@ class DistributorActor {
 
 public:
   DistributorActor();
-  DistributorActor(const DistributorActor& otherActor);
+  DistributorActor(const DistributorActor& otherActor) = default;
 
   template <class ExpView, class ImpView>
   void doPostsAndWaits(const DistributorPlan& plan,

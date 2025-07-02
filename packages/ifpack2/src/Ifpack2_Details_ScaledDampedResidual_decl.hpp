@@ -41,34 +41,34 @@ namespace Details {
 /// \note To Ifpack2 developers: We can't fuse this with X := X + W,
 ///   because data dependencies in the input X are not elementwise
 ///   (unless A is diagonal).
-template<class TpetraOperatorType>
+template <class TpetraOperatorType>
 class ScaledDampedResidual {
-private:
+ private:
   using SC = typename TpetraOperatorType::scalar_type;
   using LO = typename TpetraOperatorType::local_ordinal_type;
   using GO = typename TpetraOperatorType::global_ordinal_type;
   using NT = typename TpetraOperatorType::node_type;
 
-  using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using crs_matrix_type  = Tpetra::CrsMatrix<SC, LO, GO, NT>;
   using multivector_type = Tpetra::MultiVector<SC, LO, GO, NT>;
-  using operator_type = Tpetra::Operator<SC, LO, GO, NT>;
-  using vector_type = Tpetra::Vector<SC, LO, GO, NT>;
+  using operator_type    = Tpetra::Operator<SC, LO, GO, NT>;
+  using vector_type      = Tpetra::Vector<SC, LO, GO, NT>;
 
-public:
-  ScaledDampedResidual (const Teuchos::RCP<const operator_type>& A);
-
-  void
-  setMatrix (const Teuchos::RCP<const operator_type>& A);
+ public:
+  ScaledDampedResidual(const Teuchos::RCP<const operator_type>& A);
 
   void
-  compute (multivector_type& W,
-           const SC& alpha,
-           vector_type& D_inv,
-           multivector_type& B,
-           multivector_type& X,
-           const SC& beta);
+  setMatrix(const Teuchos::RCP<const operator_type>& A);
 
-private:
+  void
+  compute(multivector_type& W,
+          const SC& alpha,
+          vector_type& D_inv,
+          multivector_type& B,
+          multivector_type& X,
+          const SC& beta);
+
+ private:
   using import_type = Tpetra::Import<LO, GO, NT>;
   using export_type = Tpetra::Export<LO, GO, NT>;
 
@@ -83,30 +83,30 @@ private:
 
   // Do the Import, if needed, and return the column Map version of X.
   vector_type&
-  importVector (vector_type& X_domMap);
+  importVector(vector_type& X_domMap);
 
-  bool canFuse (const multivector_type& B) const;
-
-  void
-  unfusedCase (multivector_type& W,
-               const SC& alpha,
-               vector_type& D_inv,
-               multivector_type& B,
-               const operator_type& A,
-               multivector_type& X,
-               const SC& beta);
+  bool canFuse(const multivector_type& B) const;
 
   void
-  fusedCase (vector_type& W,
-             const SC& alpha,
-             vector_type& D_inv,
-             vector_type& B,
-             const crs_matrix_type& A,
-             vector_type& X,
-             const SC& beta);
+  unfusedCase(multivector_type& W,
+              const SC& alpha,
+              vector_type& D_inv,
+              multivector_type& B,
+              const operator_type& A,
+              multivector_type& X,
+              const SC& beta);
+
+  void
+  fusedCase(vector_type& W,
+            const SC& alpha,
+            vector_type& D_inv,
+            vector_type& B,
+            const crs_matrix_type& A,
+            vector_type& X,
+            const SC& beta);
 };
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_SCALEDDAMPEDRESIDUAL_DECL_HPP
+#endif  // IFPACK2_DETAILS_SCALEDDAMPEDRESIDUAL_DECL_HPP

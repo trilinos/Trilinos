@@ -187,7 +187,7 @@ class ScaledComparison {
         auto val         = A.values(offset + x);
         auto neg_aij     = -ATS::real(val);
         auto max_neg_aik = ATS::real(diag(rlid));
-        return neg_aij / max_neg_aik;
+        return ATS::magnitude(neg_aij / max_neg_aik);
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
         auto val                  = A.values(offset + x);
         auto x_aiiajj             = ATS::magnitude(diag(rlid) * diag(A.graph.entries(offset + x)));
@@ -230,10 +230,15 @@ class ScaledComparison {
 
 // helper function to allow partial template deduction
 template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-auto make_scaled_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
-                                    typename ScaledComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, measure>::results_view& results_) {
-  auto functor = ScaledComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, measure>(A_, results_);
-  return functor;
+auto make_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
+                             typename ScaledComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, measure>::results_view& results_) {
+  if constexpr (measure == Misc::UnscaledMeasure) {
+    auto functor = UnscaledComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A_, results_);
+    return functor;
+  } else {
+    auto functor = ScaledComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, measure>(A_, results_);
+    return functor;
+  }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
@@ -482,11 +487,16 @@ class ScaledDistanceLaplacianComparison {
 
 // helper function to allow partial template deduction
 template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
-auto make_scaled_dlap_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
-                                         DistanceFunctorType& dist2_,
-                                         typename ScaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_) {
-  auto functor = ScaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, dist2_, results_);
-  return functor;
+auto make_dlap_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
+                                  DistanceFunctorType& dist2_,
+                                  typename ScaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_) {
+  if constexpr (measure == Misc::UnscaledMeasure) {
+    auto functor = UnscaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType>(A_, dist2_, results_);
+    return functor;
+  } else {
+    auto functor = ScaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, dist2_, results_);
+    return functor;
+  }
 }
 
 /*!

@@ -118,6 +118,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
                          Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>>& coordinates,
                          Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& nullspace,
                          Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& material,
+                         Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>& blocknumber,
                          Teuchos::ParameterList& mueluList,
                          bool profileSetup,
                          bool useAMGX,
@@ -172,6 +173,8 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
         userParamList.set<RCP<CoordinateMultiVector>>("Coordinates", coordinates);
       if (!material.is_null())
         userParamList.set<RCP<Xpetra::MultiVector<SC, LO, GO, NO>>>("Material", material);
+      if (!blocknumber.is_null())
+        userParamList.set<RCP<Xpetra::Vector<LO, LO, GO, NO>>>("BlockNumber", blocknumber);
       if (!nullspace.is_null() && setNullSpace)
         userParamList.set<RCP<Xpetra::MultiVector<SC, LO, GO, NO>>>("Nullspace", nullspace);
       userParamList.set<Teuchos::Array<LO>>("Array<LO> lNodesPerDim", lNodesPerDim);

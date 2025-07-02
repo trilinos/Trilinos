@@ -14,11 +14,6 @@ namespace Tpetra::Details {
   DistributorActor::DistributorActor()
     : mpiTag_(DEFAULT_MPI_TAG) {}
 
-  DistributorActor::DistributorActor(const DistributorActor& otherActor)
-    : mpiTag_(otherActor.mpiTag_),
-    requestsRecv_(otherActor.requestsRecv_),
-    requestsSend_(otherActor.requestsSend_) {}
-
   void DistributorActor::doWaits(const DistributorPlan& plan) {
     doWaitsRecv(plan);
     doWaitsSend(plan);
