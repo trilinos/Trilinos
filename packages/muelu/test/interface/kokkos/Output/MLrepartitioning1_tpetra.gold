@@ -19,7 +19,6 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -70,7 +69,6 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -119,9 +117,6 @@ Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
-BuildAggregatesRandom (Phase 2a (secondary))
-BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -170,9 +165,6 @@ Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
-BuildAggregatesRandom (Phase 2a (secondary))
-BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
 Build (MueLu::AmalgamationFactory)
 [empty list]
@@ -221,9 +213,6 @@ Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
-BuildAggregatesRandom (Phase 2a (secondary))
-BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 aggregation: match ML phase2a = 1   [unused]
 Build (MueLu::AmalgamationFactory)
 [empty list]
