@@ -19,6 +19,7 @@
 class Measurement {
  public:
   virtual void measure() = 0;
+  virtual ~Measurement() = default;
 };
 
 class Reporter {
@@ -79,6 +80,7 @@ class System {
  public:
   virtual void apply()             = 0;
   virtual std::string name() const = 0;
+  virtual ~System()                = default;
 };
 
 class SpMVMeasurement : public Measurement {
