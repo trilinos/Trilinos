@@ -502,8 +502,8 @@ getMaxMinusOffDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
             if (row != col) {
               d  = distFunctor.distance2(row, col);
               d2 = implATS::one() / d;
-              if (implATS::magnitude(mymax) < -implATS::magnitude(d2))
-                mymax = -implATS::magnitude(d2);
+              if (implATS::magnitude(mymax) < implATS::magnitude(d2))
+                mymax = implATS::magnitude(d2);
             }
           }
           lclDiag(row, 0) = mymax;
@@ -596,7 +596,7 @@ class DropFunctor {
       } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
         auto neg_aij        = -ATS::real(val);
         auto max_neg_aik    = eps * ATS::real(diag(rlid));
-        results(offset + k) = Kokkos::max((neg_aij <= max_neg_aik) ? DROP : KEEP,
+        results(offset + k) = Kokkos::max((neg_aij < max_neg_aik) ? DROP : KEEP,
                                           results(offset + k));
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
         auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
@@ -686,7 +686,7 @@ class VectorDropFunctor {
       } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
         auto neg_aij        = -ATS::real(val);
         auto max_neg_aik    = eps * ATS::real(diag(brlid));
-        results(offset + k) = Kokkos::max((neg_aij <= max_neg_aik) ? DROP : KEEP,
+        results(offset + k) = Kokkos::max((neg_aij < max_neg_aik) ? DROP : KEEP,
                                           results(offset + k));
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
         auto aiiajj               = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
