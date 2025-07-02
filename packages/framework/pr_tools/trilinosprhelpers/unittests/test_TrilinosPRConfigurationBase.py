@@ -338,13 +338,24 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(build_name, expected_build_name)
 
 
-    def test_TrilinosPRConfigurationBaseBuildGroupContainsPullRequest(self):
+    def test_TrilinosPRConfigurationBase_build_group_contains_PullRequest(self):
         """Test that a group containing 'Pull Request' causes the build name to reflect a PR build."""
         args = self.dummy_args_gcc_720()
         args.pullrequest_cdash_track = "Pull Request (Non-blocking)"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
         expected_build_name = f"PR-{args.pullrequest_number}-test-{args.genconfig_build_name}-{args.jenkins_job_number}"
+        self.assertEqual(build_name, expected_build_name)
+
+
+    def test_TrilinosPRConfigurationBase_build_group_contains_PullRequest_dashboard_name(self):
+        """Test that a group containing 'Pull Request,' but with a given shorten dashboard build name."""
+        args = self.dummy_args_gcc_720()
+        args.pullrequest_cdash_track = "Pull Request (Non-blocking)"
+        args.dashboard_build_name = "gcc-7.3.0-short-string"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+        build_name = pr_config.pullrequest_build_name
+        expected_build_name = f"PR-{args.pullrequest_number}-test-{args.dashboard_build_name}-{args.jenkins_job_number}"
         self.assertEqual(build_name, expected_build_name)
 
 
@@ -357,9 +368,10 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(build_name, expected_build_name)
 
 
-    def test_TrilinosPRConfigurationBaseBuildNamePassed(self):
-        """Test that a passed build name is used."""
+    def test_TrilinosPRConfigurationBase_dashboard_name(self):
+        """Test that a given dashboard build name is used."""
         args = self.dummy_args()
+        args.pullrequest_cdash_track = "Nightly"
         args.dashboard_build_name = "some-dashboard-build-name"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
