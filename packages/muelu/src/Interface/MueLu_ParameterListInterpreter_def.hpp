@@ -1441,10 +1441,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       RCP<Factory> materialTransfer = rcp(new MultiVectorTransferFactory());
       ParameterList materialTransferParameters;
       materialTransferParameters.set("Vector name", "Material");
-      materialTransferParameters.set("Transfer name", "P");
+      materialTransferParameters.set("Transfer name", "Aggregates");
       materialTransferParameters.set("Normalize", true);
       materialTransfer->SetParameterList(materialTransferParameters);
-      materialTransfer->SetFactory("Transfer factory", manager.GetFactory("Ptent"));
+      materialTransfer->SetFactory("Transfer factory", manager.GetFactory("Aggregates"));
+      materialTransfer->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
       manager.SetFactory("Material", materialTransfer);
 
       auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
