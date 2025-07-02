@@ -203,9 +203,9 @@ public:
     {
       // These are rcp
       const auto domainPointMap = getDomainMap();
-      const auto colPointMap = Teuchos::rcp 
+      const auto colPointMap = Teuchos::rcp
         (new typename BMV::map_type (BMV::makePointMap (*graph_.getColMap(), blockSize_)));
-      *pointImporter_ = Teuchos::rcp 
+      *pointImporter_ = Teuchos::rcp
         (new typename crs_graph_type::import_type (domainPointMap, colPointMap));
     }
     {
@@ -323,9 +323,9 @@ public:
     {
       // These are rcp
       const auto rcpDomainPointMap = getDomainMap();
-      const auto colPointMap = Teuchos::rcp 
+      const auto colPointMap = Teuchos::rcp
         (new typename BMV::map_type (BMV::makePointMap (*graph_.getColMap(), blockSize_)));
-      *pointImporter_ = Teuchos::rcp 
+      *pointImporter_ = Teuchos::rcp
         (new typename crs_graph_type::import_type (rcpDomainPointMap, colPointMap));
     }
     {
@@ -515,7 +515,7 @@ public:
     // Right now, we make many assumptions...
     TEUCHOS_TEST_FOR_EXCEPTION(!destMatrix.is_null(), std::invalid_argument,
                                "destMatrix is required to be null.");
- 
+
     // BlockCrsMatrix requires a complete graph at construction.
     // So first step is to import and fill complete the destGraph.
     RCP<crs_graph_type>  srcGraph = rcp (new  crs_graph_type(this->getCrsGraph()));
@@ -543,7 +543,7 @@ public:
     // Right now, we make many assumptions...
     TEUCHOS_TEST_FOR_EXCEPTION(!destMatrix.is_null(), std::invalid_argument,
                                "destMatrix is required to be null.");
- 
+
     // BlockCrsMatrix requires a complete graph at construction.
     // So first step is to import and fill complete the destGraph.
     RCP<crs_graph_type>  srcGraph = rcp (new  crs_graph_type(this->getCrsGraph()));
@@ -661,7 +661,7 @@ public:
   getLocalRowCopy (LO LocalRow,
                    nonconst_local_inds_host_view_type &Indices,
                    nonconst_values_host_view_type &Values,
-                   size_t& NumEntries) const 
+                   size_t& NumEntries) const
   {
     auto vals = getValuesHost(LocalRow);
     const LO numInds = ptrHost_(LocalRow+1) - ptrHost_(LocalRow);
@@ -830,7 +830,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_host::const_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesHost () const 
+  getValuesHost () const
   {
     return val_.getHostView(Access::ReadOnly);
   }
@@ -839,7 +839,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_dev::const_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesDevice () const 
+  getValuesDevice () const
   {
     return val_.getDeviceView(Access::ReadOnly);
   }
@@ -848,7 +848,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_host
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesHostNonConst () const 
+  getValuesHostNonConst () const
   {
     return val_.getHostView(Access::ReadWrite);
   }
@@ -857,7 +857,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_dev
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesDeviceNonConst () const 
+  getValuesDeviceNonConst () const
   {
     return val_.getDeviceView(Access::ReadWrite);
   }
@@ -866,11 +866,11 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_host::const_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesHost (const LO& lclRow) const 
+  getValuesHost (const LO& lclRow) const
   {
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     auto val = val_.getHostView(Access::ReadOnly);
-    auto r_val = Kokkos::subview(val, Kokkos::pair<LO,LO>(ptrHost_(lclRow)*perBlockSize, ptrHost_(lclRow+1)*perBlockSize)); 
+    auto r_val = Kokkos::subview(val, Kokkos::pair<LO,LO>(ptrHost_(lclRow)*perBlockSize, ptrHost_(lclRow+1)*perBlockSize));
     return r_val;
   }
 
@@ -878,33 +878,33 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_dev::const_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesDevice (const LO& lclRow) const 
+  getValuesDevice (const LO& lclRow) const
   {
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     auto val = val_.getDeviceView(Access::ReadOnly);
-    auto r_val = Kokkos::subview(val, Kokkos::pair<LO,LO>(ptrHost_(lclRow)*perBlockSize, ptrHost_(lclRow+1)*perBlockSize)); 
+    auto r_val = Kokkos::subview(val, Kokkos::pair<LO,LO>(ptrHost_(lclRow)*perBlockSize, ptrHost_(lclRow+1)*perBlockSize));
     return r_val;
   }
 
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::impl_scalar_type_dualview::t_host
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesHostNonConst (const LO& lclRow) 
+  getValuesHostNonConst (const LO& lclRow)
   {
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     auto val = val_.getHostView(Access::ReadWrite);
-    auto r_val = Kokkos::subview(val, Kokkos::pair<LO,LO>(ptrHost_(lclRow)*perBlockSize, ptrHost_(lclRow+1)*perBlockSize)); 
+    auto r_val = Kokkos::subview(val, Kokkos::pair<LO,LO>(ptrHost_(lclRow)*perBlockSize, ptrHost_(lclRow+1)*perBlockSize));
     return r_val;
   }
 
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::impl_scalar_type_dualview::t_dev
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesDeviceNonConst (const LO& lclRow) 
+  getValuesDeviceNonConst (const LO& lclRow)
   {
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     auto val = val_.getDeviceView(Access::ReadWrite);
-    auto r_val = Kokkos::subview(val, Kokkos::pair<LO,LO>(ptrHost_(lclRow)*perBlockSize, ptrHost_(lclRow+1)*perBlockSize)); 
+    auto r_val = Kokkos::subview(val, Kokkos::pair<LO,LO>(ptrHost_(lclRow)*perBlockSize, ptrHost_(lclRow+1)*perBlockSize));
     return r_val;
   }
 
@@ -1078,7 +1078,6 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
   auto X_lcl = X_mv.getLocalViewDevice(Access::ReadOnly);
   auto Y_lcl = Y_mv.getLocalViewDevice(Access::ReadWrite);
 
-#if KOKKOSKERNELS_VERSION >= 40299
   auto A_lcl = getLocalMatrixDevice();
   if(!applyHelper.get()) {
     // The apply helper does not exist, so create it
@@ -1097,11 +1096,6 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
         &applyHelper->handle, KokkosSparse::NoTranspose,
         alpha_impl, A_lcl, X_lcl, beta, Y_lcl);
   }
-#else
-  auto A_lcl = getLocalMatrixDevice();
-  KokkosSparse::spmv(KokkosSparse::NoTranspose, alpha_impl, A_lcl, X_lcl, beta,
-                     Y_lcl);
-#endif
 }
 // clang-format off
 
@@ -1212,8 +1206,8 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
     if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
       auto vals = const_cast<this_BCRS_type&>(*this).getValuesDeviceNonConst();
-      auto r_val = getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);      
-      return r_val; 
+      auto r_val = getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);
+      return r_val;
     }
     else {
       return little_block_type ();
@@ -1232,8 +1226,8 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
     if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
       auto vals = const_cast<this_BCRS_type&>(*this).getValuesHostNonConst();
-      auto r_val = getNonConstLocalBlockFromInputHost (vals.data(), absBlockOffset);      
-      return r_val; 
+      auto r_val = getNonConstLocalBlockFromInputHost (vals.data(), absBlockOffset);
+      return r_val;
     }
     else {
       return little_block_host_type ();
@@ -2134,7 +2128,7 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
             // It's OK to ignore the return value, since if the calling
             // process doesn't own that local row, then the number of
             // entries in that row on the calling process is zero.
-            src->getLocalRowView (lclRowInd, lclColInds, vals); 
+            src->getLocalRowView (lclRowInd, lclColInds, vals);
             const size_t numEnt = lclColInds.extent(0);
 
             // Convert column indices from local to global.
@@ -2384,10 +2378,10 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
       size_t scratch_per_row = sizeof(GO) * maxRowNumEnt + sizeof (LO) * maxRowNumEnt + numBytesPerValue * maxRowNumScalarEnt
         + 2 * sizeof(GO); // Yeah, this is a fudge factor
 
-      const auto policy = policy_type (numImportLIDs, 1, 1)     
+      const auto policy = policy_type (numImportLIDs, 1, 1)
         .set_scratch_size (0, Kokkos::PerTeam (scratch_per_row));
       using host_scratch_space = typename host_exec::scratch_memory_space;
-      
+
       using pair_type = Kokkos::pair<size_t, size_t>;
 
       //The following parallel_for modifies values on host while unpacking.
@@ -2403,7 +2397,7 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
             (member.team_scratch (0), maxRowNumEnt);
           Kokkos::View<impl_scalar_type*, host_scratch_space> vals
             (member.team_scratch (0), maxRowNumScalarEnt);
-          
+
 
           const size_t offval = offset(i);
           const LO lclRow = importLIDsHost(i);
