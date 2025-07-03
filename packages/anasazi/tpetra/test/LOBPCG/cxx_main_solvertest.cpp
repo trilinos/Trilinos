@@ -232,7 +232,6 @@ int main(int argc, char *argv[])
 {
   Tpetra::ScopeGuard tpetraScope (&argc,&argv);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
-  int MyPID = comm->getRank();
 
   bool testFailed;
   bool verbose = false;
