@@ -20,6 +20,7 @@
 #include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
+#include "Xpetra_Access.hpp"
 
 #include <Galeri_XpetraParameters.hpp>
 
@@ -2760,6 +2761,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalDis
   matrixList.set("nx", nx);
   matrixList.set("matrixType", "Laplace1D");
   auto [A, coords, nullspace, dofsPerNode] = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrixCoordsNullspace(matrixList, lib);
+  // coords are uniform on [0, 1].
+  if (comm->getRank() == 0) {  // move first dof to -1e3
+    auto lclCoords  = coords->getLocalViewHost(Xpetra::Access::ReadWrite);
+    lclCoords(0, 0) = -1e3;
+  }
+
+  // d(x_i, x_{i+-1}) ~ 1/nx except for
+  // d(x_0, x_1) ~ 1e3
+  //
+  // -> We drop the entry (1, 0).
+  //    The entry (0, 1) is kept due to the unsymmetric nature of the criterion.
 
   Level fineLevel;
   fineLevel.Set("A", A);
@@ -2769,7 +2781,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalDis
   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
   CoalesceDropFactory_kokkos coalesceDropFact;
   coalesceDropFact.SetFactory("UnAmalgamationInfo", amalgFact);
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(1.0));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.6));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("signed classical distance laplacian")));
   fineLevel.Request("Graph", &coalesceDropFact);
   fineLevel.Request("DofsPerNode", &coalesceDropFact);
@@ -2779,7 +2791,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalDis
   RCP<LWGraph_kokkos> graph_d = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
   auto graph                  = graph_d->copyToHost();
   LO myDofsPerNode            = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
-  TEST_EQUALITY(graph->GetGlobalNumEdges(), 20);
+  TEST_EQUALITY(graph->GetGlobalNumEdges(), 57);
   TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
 }
 
@@ -2800,6 +2812,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalSAD
   matrixList.set("nx", nx);
   matrixList.set("matrixType", "Laplace1D");
   auto [A, coords, nullspace, dofsPerNode] = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrixCoordsNullspace(matrixList, lib);
+  // coords are uniform on [0, 1].
+  if (comm->getRank() == 0) {  // move first dof to -1e3
+    auto lclCoords  = coords->getLocalViewHost(Xpetra::Access::ReadWrite);
+    lclCoords(0, 0) = -1e3;
+  }
+
+  // d(x_i, x_{i+-1}) ~ 1/nx except for
+  // d(x_0, x_1) ~ 1e3
+  //
+  // L_01 = L_10 = -1e-6
+  // L_ij ~ -1/nx^2
+  //
+  // L_ii ~ 2/nx^2 for i=1, .., nx-1
+  // L_00 = L_11 ~ 1/nx^2
+  // L_ii ~ 1/nx^2 for i=nx
+  //
+  //
+  // -> We drop the entries (0, 1), (1, 0) for dropTol = 0.4
 
   Level fineLevel;
   fineLevel.Set("A", A);
@@ -2809,7 +2839,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalSAD
   RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
   CoalesceDropFactory_kokkos coalesceDropFact;
   coalesceDropFact.SetFactory("UnAmalgamationInfo", amalgFact);
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.6));
+  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.4));
   coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("signed classical sa distance laplacian")));
   fineLevel.Request("Graph", &coalesceDropFact);
   fineLevel.Request("DofsPerNode", &coalesceDropFact);
@@ -2819,7 +2849,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalSAD
   RCP<LWGraph_kokkos> graph_d = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
   auto graph                  = graph_d->copyToHost();
   LO myDofsPerNode            = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
-  TEST_EQUALITY(graph->GetGlobalNumEdges(), 24);
+  TEST_EQUALITY(graph->GetGlobalNumEdges(), 56);
   TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
 }
 

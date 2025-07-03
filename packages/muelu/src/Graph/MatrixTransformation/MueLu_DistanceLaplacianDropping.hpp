@@ -582,7 +582,7 @@ class DropFunctor {
 
       scalar_type val;
       if (rlid != clid) {
-        val = one / dist2.distance2(rlid, clid);
+        val = -one / dist2.distance2(rlid, clid);
       } else {
         val = diag(rlid);
       }
@@ -603,7 +603,7 @@ class DropFunctor {
         const bool is_nonpositive = ATS::real(val) <= mATS::zero();
         magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
         // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
-        if (is_nonpositive)
+        if (!is_nonpositive)
           aij2 = -aij2;
         results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
                                           results(offset + k));
@@ -672,7 +672,7 @@ class VectorDropFunctor {
 
       scalar_type val;
       if (brlid != bclid) {
-        val = one / dist2.distance2(brlid, bclid);
+        val = -one / dist2.distance2(brlid, bclid);
       } else {
         val = diag(brlid);
       }
@@ -693,7 +693,7 @@ class VectorDropFunctor {
         const bool is_nonpositive = ATS::real(val) <= mATS::zero();
         magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
         // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
-        if (is_nonpositive)
+        if (!is_nonpositive)
           aij2 = -aij2;
         results(offset + k) = Kokkos::max((aij2 <= eps * eps * aiiajj) ? DROP : KEEP,
                                           results(offset + k));
