@@ -231,7 +231,6 @@ class DeviceBucketRepository
 
   void sync_and_sort_bucket_ids(EntityRank rank)
   {
-    //using ExecSpace = typename NgpMemSpace::execution_space;
     auto& buckets = m_buckets[rank];
     DeviceBucketUView compactBucketUView(buckets.data(), m_bucketViewEndIdx[rank]);
 
@@ -266,7 +265,6 @@ class DeviceBucketRepository
 
   void sync_and_sort_partition_ids(EntityRank rank)
   {
-    //using ExecSpace = typename NgpMemSpace::execution_space;
     auto& partitions = m_partitions[rank];
     DevicePartitionUView compactPartitionUView(partitions.data(), m_partitionViewEndIdx[rank]);
 
