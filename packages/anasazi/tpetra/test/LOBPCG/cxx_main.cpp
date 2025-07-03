@@ -7,78 +7,75 @@
 // *****************************************************************************
 // @HEADER
 //
-// This test is for BlockDavidson solving a generalized (Ax=Bxl) real Hermitian
-// eigenvalue problem, using the BlockDavidsonSolMgr solver manager.
+// This test is for LOBPCG solving a generalized (Ax=Bxl) real Hermitian
+// eigenvalue problem, using the LOBPCGSolMgr solver manager.
 //
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
-#include "AnasaziEpetraAdapter.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-
+#include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBlockDavidsonSolMgr.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#include "AnasaziLOBPCGSolMgr.hpp"
+#include "AnasaziSVQBOrthoManager.hpp"
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
-#include "ModeLaplace1DQ1.h"
+#include <Tpetra_Core.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+
+#include <ModeLaplace1DQ1.hpp>
+
+#include "Teuchos_CommandLineProcessor.hpp"
 
 using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
   bool boolret;
-  int MyPID;
 
-#ifdef EPETRA_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
+  Tpetra::ScopeGuard tpetraScope (&argc,&argv);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
+  int MyPID = comm->getRank();
 
-#endif
-  MyPID = Comm.MyPID();
-
+  int nev = 5;
+  int blockSize = -1;
   bool testFailed;
   bool verbose = false;
   bool debug = false;
   bool shortrun = false;
-  bool insitu = false;
-  bool locking = true;
+  bool fullOrtho = true;
+  bool testRecovery = false;
   std::string which("LM");
-  int  rblocks = 1;
+  std::string ortho("SVQB");
+  int numElements = 100;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
-  cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
-  cmdp.setOption("locking","nolocking",&locking,"Perform locking.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("ortho",&ortho,"Orthogonalization method (SVQB, DGKS, ICGS).");
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
-  cmdp.setOption("rblocks",&rblocks,"Number of blocks after restart.");
+  cmdp.setOption("testrecovery","notestrecovery",&testRecovery,"Test the LOBPCGRitzError recovery code in LOBPCGSolMgr.");
+  cmdp.setOption("fullortho","nofullortho",&fullOrtho,"Use full orthogonalization.");
+  cmdp.setOption("numElements",&numElements,"Number of elements in discretization.");
+  cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
+  cmdp.setOption("blocksize",&blockSize,"Block size used by LOBPCG (-1 = nev)");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef EPETRA_MPI
-    MPI_Finalize();
-#endif
     return -1;
   }
   if (debug) verbose = true;
 
-  typedef double ScalarType;
-  typedef ScalarTraits<ScalarType>                   SCT;
-  typedef SCT::magnitudeType               MagnitudeType;
-  typedef Epetra_MultiVector                          MV;
-  typedef Epetra_Operator                             OP;
-  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
-  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
-  const ScalarType ONE  = SCT::one();
+  typedef double ST;
+  typedef ScalarTraits<ST>                           SCT;
+  typedef SCT::magnitudeType               MT;
+  typedef Tpetra::MultiVector<ST>                     MV;
+  typedef Tpetra::Operator<ST>                        OP;
+  typedef MV::global_ordinal_type                     GO;
+  typedef MV::local_ordinal_type                      LO;
+  typedef MV::node_type                             Node;
+  typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
+  const ST ONE  = SCT::one();
 
   if (verbose && MyPID == 0) {
     std::cout << Anasazi::Anasazi_Version() << std::endl << std::endl;
@@ -89,24 +86,24 @@ int main(int argc, char *argv[])
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
-  elements[0] = 100;
+  elements[0] = numElements;
 
-  // Create problem
-  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+ // Create problem
+  ModeLaplace1DQ1<ST,LO,GO,Node> testCase( comm, brick_dim[0], elements[0]);
   //
   // Get the stiffness and mass matrices
-  RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<const Tpetra::CrsMatrix<ST,LO,GO,Node> > K = testCase.getStiffness();
+  RCP<const Tpetra::CrsMatrix<ST,LO,GO,Node> > M = testCase.getMass();
   //
   // Create the initial vectors
-  int blockSize = 5;
-  RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
-  ivec->Random();
+  if (blockSize == -1)
+    blockSize = nev;
+  RCP<MV> ivec = rcp (new MV (K->getDomainMap(),blockSize));  
+  ivec->randomize();
 
   // Create eigenproblem
-  const int nev = 5;
-  RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
-    rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
+  RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
+    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,M,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
   problem->setHermitian(true);
@@ -121,9 +118,6 @@ int main(int argc, char *argv[])
       std::cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
            << "End Result: TEST FAILED" << std::endl;	
     }
-#ifdef EPETRA_MPI
-    MPI_Finalize() ;
-#endif
     return -1;
   }
 
@@ -139,58 +133,70 @@ int main(int argc, char *argv[])
 
 
   // Eigensolver parameters
-  int numBlocks = 8;
-  int maxRestarts;
+  int maxIters;
   if (shortrun) {
-    maxRestarts = 10;
+    maxIters = 50;
   }
   else {
-    maxRestarts = 100;
+    maxIters = 450;
   }
-  MagnitudeType tol = 1.0e-6;
+  MT tol = 1.0e-6;
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Num Blocks", numBlocks );
-  MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Use Locking", locking );
+  MyPL.set( "Maximum Iterations", maxIters );
+  MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
-  MyPL.set( "In Situ Restarting", insitu );
-  MyPL.set( "Num Restart Blocks", rblocks );
+  MyPL.set( "Full Ortho", fullOrtho );
+  MyPL.set( "Orthogonalization", ortho );
+
+  if (testRecovery) {
+    // initialize with bad P
+    RCP<Anasazi::LOBPCGState<ST,MV> > badstate = rcp( new Anasazi::LOBPCGState<ST,MV>() );
+    Anasazi::SVQBOrthoManager<ST,MV,OP> orthoM(M);
+    orthoM.normalize(*ivec,null);
+    badstate->X = ivec;
+    RCP<MV> P  = rcp (new MV (K->getDomainMap(),blockSize));  
+    MVT::MvInit(*P,0.0);
+    badstate->P = P;
+    MyPL.set( "Init", badstate );
+  }
   //
   // Create the solver manager
-  Anasazi::BlockDavidsonSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
+  Anasazi::LOBPCGSolMgr<ST,MV,OP> MySolverMan(problem, MyPL);
   // 
   // Check that the parameters were all consumed
   if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
       MyPL.getEntryPtr("Which")->isUsed() == false ||
       MyPL.getEntryPtr("Block Size")->isUsed() == false ||
-      MyPL.getEntryPtr("Num Blocks")->isUsed() == false ||
-      MyPL.getEntryPtr("Maximum Restarts")->isUsed() == false ||
+      MyPL.getEntryPtr("Maximum Iterations")->isUsed() == false ||
       MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false ||
       MyPL.getEntryPtr("Use Locking")->isUsed() == false ||
-      MyPL.getEntryPtr("In Situ Restarting")->isUsed() == false ||
-      MyPL.getEntryPtr("Num Restart Blocks")->isUsed() == false || 
-      MyPL.getEntryPtr("Locking Tolerance")->isUsed() == false) {
+      MyPL.getEntryPtr("Locking Tolerance")->isUsed() == false ||
+      MyPL.getEntryPtr("Full Ortho")->isUsed() == false) {
     if (verbose && MyPID==0) {
       std::cout << "Failure! Unused parameters: " << std::endl;
       MyPL.unused(std::cout);
     }
   }
 
+
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMan.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Converged && shortrun==false) {
-    testFailed = true;
+  if (returnCode != Anasazi::Converged) {
+    if ( shortrun==false && (testRecovery==false || fullOrtho==false) ) {
+      testFailed = true;
+    }
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
+  Anasazi::Eigensolution<ST,MV> sol = problem->getSolution();
+  std::vector<Anasazi::Value<ST> > evals = sol.Evals;
   RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
@@ -200,26 +206,11 @@ int main(int argc, char *argv[])
     os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
 
-    // Check the problem against the analytical solutions
-    if (verbose) {
-      double *revals = new double[numev];
-      for (int i=0; i<numev; i++) {
-        revals[i] = sol.Evals[i].realpart;
-      }
-      bool smallest = false;
-      if (which == "SM" || which == "SR") {
-        smallest = true;
-      }
-      testCase->eigenCheck( *evecs, revals, 0, smallest );
-      delete [] revals;
-    }
-
-
     // Compute the direct residual
-    std::vector<ScalarType> normV( numev );
-    SerialDenseMatrix<int,ScalarType> T(numev,numev);
+    std::vector<ST> normV( numev );
+    SerialDenseMatrix<int,ST> T(numev,numev);
     for (int i=0; i<numev; i++) {
-      T(i,i) = sol.Evals[i].realpart;
+      T(i,i) = evals[i].realpart;
     }
     RCP<MV> Mvecs = MVT::Clone( *evecs, numev ),
                     Kvecs = MVT::Clone( *evecs, numev );
@@ -230,18 +221,18 @@ int main(int argc, char *argv[])
     OPT::Apply( *M, *Kvecs, *Mvecs );
     MVT::MvDot( *Mvecs, *Kvecs, normV );
 
-    os << "Number of iterations performed in BlockDavidson_test.exe: " << MySolverMan.getNumIters() << std::endl
-       << "Direct residual norms computed in BlockDavidson_test.exe" << std::endl
+    os << "Number of iterations performed in LOBPCG_test.exe: " << MySolverMan.getNumIters() << std::endl
+       << "Direct residual norms computed in LOBPCG_test.exe" << std::endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << std::endl
        << "----------------------------------------" << std::endl;
     for (int i=0; i<numev; i++) {
-      if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
-        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) / sol.Evals[i].realpart );
+      if ( SCT::magnitude(evals[i].realpart) != SCT::zero() ) {
+        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) / evals[i].realpart );
       }
       else {
         normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) );
       }
-      os << std::setw(20) << sol.Evals[i].realpart << std::setw(20) << normV[i] << std::endl;
+      os << std::setw(20) << evals[i].realpart << std::setw(20) << normV[i] << std::endl;
       if ( normV[i] > tol ) {
         testFailed = true;
       }
@@ -251,10 +242,6 @@ int main(int argc, char *argv[])
     }
 
   }
-
-#ifdef EPETRA_MPI
-  MPI_Finalize() ;
-#endif
 
   if (testFailed) {
     if (verbose && MyPID==0) {
@@ -270,4 +257,4 @@ int main(int argc, char *argv[])
   }
   return 0;
 
-}	
+}

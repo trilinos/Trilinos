@@ -65,7 +65,6 @@ int main(int argc, char *argv[])
   bool testFailed = false;
   bool verbose = false;
   bool debug = false;
-  string filename("mhd1280b.cua");
   string which("LM");
   bool printOnAllProcs = false;
   string outputfn = "";

@@ -18,24 +18,18 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
-#include "AnasaziEpetraAdapter.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-
+#include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
-#include "ModeLaplace1DQ1.h"
+#include <Tpetra_Core.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+
+#include <ModeLaplace1DQ1.hpp>
 
 using namespace Teuchos;
-
 
 class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
@@ -45,17 +39,10 @@ class get_out : public std::logic_error {
 int main(int argc, char *argv[]) 
 {
   bool boolret;
-  int MyPID;
 
-#ifdef EPETRA_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-
-#endif
-  MyPID = Comm.MyPID();
+  Tpetra::ScopeGuard tpetraScope (&argc,&argv);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
+  int MyPID = comm->getRank();
 
   bool testFailed = false;
   bool verbose = false;
@@ -67,20 +54,20 @@ int main(int argc, char *argv[])
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef EPETRA_MPI
-    MPI_Finalize();
-#endif
     return -1;
   }
   if (debug) verbose = true;
 
-  typedef double ScalarType;
-  typedef ScalarTraits<ScalarType>                   SCT;
-  typedef SCT::magnitudeType               MagnitudeType;
-  typedef Epetra_MultiVector                          MV;
-  typedef Epetra_Operator                             OP;
-  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
-  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
+  typedef double                              ST;
+  typedef Teuchos::ScalarTraits<ST>          SCT;
+  typedef SCT::magnitudeType                  MT;
+  typedef Tpetra::MultiVector<ST>             MV;
+  typedef MV::global_ordinal_type             GO;
+  typedef MV::local_ordinal_type              LO;
+  typedef MV::node_type                     Node;
+  typedef Tpetra::Operator<ST>                OP;
+  typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
 
   if (verbose && MyPID == 0) {
     std::cout << Anasazi::Anasazi_Version() << std::endl << std::endl;
@@ -94,11 +81,12 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Create problem
-  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  ModeLaplace1DQ1<ST,LO,GO,Node> testCase( comm, brick_dim[0], elements[0]);
   //
   // Get the stiffness and mass matrices
-  RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<const Tpetra::CrsMatrix<ST,LO,GO,Node> > K = testCase.getStiffness();
+  RCP<const Tpetra::CrsMatrix<ST,LO,GO,Node> > M = testCase.getMass();
+
   const int FIRST_BS = 5;
   const int SECOND_BS = 5;
   const int THIRD_BS = 5;
@@ -108,10 +96,10 @@ int main(int argc, char *argv[])
   ////////////////////////////////////////////////////////////////////////////////
   //
   // Shared parameters
-  RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem;
-  Anasazi::Eigensolution<ScalarType,MV> sol1, sol21, sol22, sol23;
+  RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem;
+  Anasazi::Eigensolution<ST,MV> sol1, sol21, sol22, sol23;
   RCP<const MV> cpoint;
-  RCP<MV> ev2 = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
+  RCP<MV> ev2 = rcp( new MV (K->getDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
   Anasazi::ReturnType returnCode;
   //
   // Verbosity level
@@ -122,7 +110,7 @@ int main(int argc, char *argv[])
   //
   // Eigensolver parameters
   int maxIters = 450;
-  MagnitudeType tol = 1.0e-8;
+  MT tol = 1.0e-8;
   //
   // Create parameter list to pass into the solver managers
   ParameterList MyPL;
@@ -140,9 +128,9 @@ int main(int argc, char *argv[])
     //
     // Build the first eigenproblem
     {
-      RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
-      ivec->Random();
-      problem = rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
+      RCP<MV> ivec = rcp( new MV (K->getDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
+      ivec->randomize();
+      problem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,M,ivec) );
       problem->setHermitian(true);
       problem->setNEV( FIRST_BS+SECOND_BS+THIRD_BS );
       boolret = problem->setProblem();
@@ -155,7 +143,7 @@ int main(int argc, char *argv[])
     // Build the first solver manager
     {
       MyPL.set( "Block Size", FIRST_BS+SECOND_BS+THIRD_BS );
-      Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> solverman1(problem, MyPL);
+      Anasazi::LOBPCGSolMgr<ST,MV,OP> solverman1(problem, MyPL);
       returnCode = solverman1.solve();
       TEUCHOS_TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "First problem was not fully solved.");
       sol1 = problem->getSolution();
@@ -166,8 +154,8 @@ int main(int argc, char *argv[])
     //
     // Build the second/1 eigenproblem
     {
-      RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS ) );
-      ivec->Random();
+      RCP<MV> ivec = rcp( new MV (K->getDomainMap(), FIRST_BS) );
+      ivec->randomize();
       problem->setInitVec(ivec);
       problem->setNEV( FIRST_BS );
       boolret = problem->setProblem();
@@ -180,7 +168,7 @@ int main(int argc, char *argv[])
     // Build the second/1 solver manager
     {
       MyPL.set( "Block Size", FIRST_BS );
-      Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> solverman21(problem, MyPL);
+      Anasazi::LOBPCGSolMgr<ST,MV,OP> solverman21(problem, MyPL);
       returnCode = solverman21.solve();
       TEUCHOS_TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/1 problem was not fully solved.");
       sol21 = problem->getSolution();
@@ -195,8 +183,8 @@ int main(int argc, char *argv[])
     //
     // Build the second/2 eigenproblem
     {
-      RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), SECOND_BS ) );
-      ivec->Random();
+      RCP<MV> ivec = rcp( new MV (K->getDomainMap(), SECOND_BS) );
+      ivec->randomize();
       problem->setAuxVecs(cpoint);
       problem->setInitVec(ivec);
       problem->setNEV( SECOND_BS );
@@ -210,7 +198,7 @@ int main(int argc, char *argv[])
     // Build the second/2 solver manager
     {
       MyPL.set( "Block Size", SECOND_BS );
-      Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> solverman22(problem, MyPL);
+      Anasazi::LOBPCGSolMgr<ST,MV,OP> solverman22(problem, MyPL);
       returnCode = solverman22.solve();
       TEUCHOS_TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/2 problem was not fully solved." );
       sol22 = problem->getSolution();
@@ -227,8 +215,8 @@ int main(int argc, char *argv[])
     //
     // Build the second/3 eigenproblem
     {
-      RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), THIRD_BS ) );
-      ivec->Random();
+      RCP<MV> ivec = rcp( new MV (K->getDomainMap(), THIRD_BS) );
+      ivec->randomize();
       problem->setAuxVecs(cpoint);
       problem->setInitVec(ivec);
       problem->setNEV( THIRD_BS );
@@ -242,7 +230,7 @@ int main(int argc, char *argv[])
     // Build the second/3 solver manager
     {
       MyPL.set( "Block Size", THIRD_BS );
-      Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> solverman23(problem, MyPL);
+      Anasazi::LOBPCGSolMgr<ST,MV,OP> solverman23(problem, MyPL);
       returnCode = solverman23.solve();
       TEUCHOS_TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/3 problem was not fully solved." );
       sol23 = problem->getSolution();
@@ -281,7 +269,7 @@ int main(int argc, char *argv[])
       std::cout << "============================================================" << std::endl;
     }
     for (int i=0; i<NEV; i++) {
-      double tmpd = SCT::magnitude((Evals1[i].realpart - Evals2[i].realpart)/Evals1[i].realpart);
+      MT tmpd = SCT::magnitude((Evals1[i].realpart - Evals2[i].realpart)/Evals1[i].realpart);
       maxd = (tmpd > maxd ? tmpd : maxd);
       if (verbose && MyPID==0) {
         std::cout << std::setw(20) << Evals1[i].realpart << std::setw(20) << Evals2[i].realpart << std::setw(20) << tmpd << std::endl;
@@ -303,7 +291,7 @@ int main(int argc, char *argv[])
     else {
       Mev1 = sol1.Evecs;
     }
-    SerialDenseMatrix<int,double> vtv(NEV,NEV);
+    SerialDenseMatrix<int,ST> vtv(NEV,NEV);
     MVT::MvTransMv(1.0,*Mev1,*ev2,vtv);
     for (int i=0; i<NEV; i++) vtv(i,i) = SCT::magnitude(vtv(i,i)) - 1.0;
     maxd = vtv.normFrobenius();
@@ -316,10 +304,6 @@ int main(int argc, char *argv[])
       testFailed = true;
     }
   }
-
-#ifdef EPETRA_MPI
-  MPI_Finalize() ;
-#endif
 
   if (testFailed) {
     if (verbose && MyPID==0) {
