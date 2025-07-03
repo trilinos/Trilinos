@@ -16,9 +16,41 @@
 
 namespace Tempus {
 
+/** \brief PhiLinearSolver
+ * Uses the ModelEvaluator to compute and hold the Mass matrix and Jacobian
+ */
+template <class Scalar>
+class PhiLinearSolver {
+ public:
+  PhiLinearSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<double>> appModel, bool lumpMass=false)
+    : appModel_(appModel), lumpMass_(lumpMass) {
+  }
+
+  ~PhiLinearSolver() {}
+
+  void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+  void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f);
+  void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mx);
+
+  void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+
+
+ private:
+  Teuchos::RCP<const Thyra::ModelEvaluator<double>> appModel_;
+  const bool lumpMass_;
+
+  mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar>> fullMassMatrix_;
+  mutable Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpMassMatrix_;
+  mutable Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> invMassMatrix_;
+
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
+
+};
+
 /** \brief PhiEvaluator evaluates
  *
- *  \f$[x = \varphi_k(J) b]\f$, where 
+ *  \f$[x = \varphi_k(J) b]\f$, where
  *
  *   - b is a right hand side vector
  *   - J is a linear operator
@@ -28,14 +60,11 @@ class PhiEvaluator
   : virtual public Teuchos::Describable,
     virtual public Teuchos::VerboseObject<PhiEvaluator<Scalar> > {
  public:
-  /// Default Contructor
   PhiEvaluator();
 
-  /// Contructor
   PhiEvaluator(
       std::string name);
 
-  /// Destructor
   ~PhiEvaluator() {}
 
   /// \name Basic PhiEvaluator Methods
@@ -69,7 +98,7 @@ class PhiEvaluator
   virtual void describe(Teuchos::FancyOStream& out,
                         const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
-  
+
   /** \brief Initialize PhiEvaluator
    *
    *  This function will check if all member data is initialized
@@ -81,25 +110,25 @@ class PhiEvaluator
   /// Return if PhiEvaluator is initialized.
   bool isInitialized() { return isInitialized_; }
 
-  void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<double> > appModel)
-  {
-    appModel_ = appModel;
-  }
-  
-  void setLinearizationPoint(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x)
-  {
-    //TODO
-  }
+  void checkInitialized();
 
+  /// set the ModelEvaluator
+  void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<double> > appModel);
+
+  /// Set the linearization point for the Jacobian calculation
+  virtual void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+
+  /// compute the Phi_k function of cdt times Jacobian for right hand side rhs_b
   virtual void computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>>,
                           int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) = 0;
-  
+
  protected:
   std::string name_;
 
   mutable bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
+  Teuchos::RCP<const Tempus::PhiLinearSolver<Scalar>> phiLinSolv_;
 };
 
 }  // namespace Tempus

@@ -16,6 +16,8 @@
 
 // TODO: have to include this header to get LSP to work.
 #include "Tempus_StepperExponentialEuler.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_MultiVectorStdOps_decl.hpp"
 #include "Thyra_OperatorVectorTypes.hpp"
@@ -88,6 +90,7 @@ void StepperExponentialEuler<Scalar>::setModel(
   StepperImplicit<Scalar>::setModel(appModel);
 
   phiEvaluator_->setModel(appModel);
+  phiEvaluator_->initialize();
 
   this->isInitialized_ = false;
 }
@@ -116,6 +119,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   this->checkInitialized();
+  phiEvaluator_->checkInitialized();
 
   using Teuchos::RCP;
   
@@ -250,9 +254,14 @@ void StepperExponentialEuler<Scalar>::takeStep(
       // compute an approximation to dt*phi_1(dt*J)*f and write it to x
       sStatus = LOWSB->solve(Thyra::NOTRANS, *f, vphi.ptr());
 
-      phiEvaluator_->setLinearizationPoint(x);
+      phiEvaluator_->setLinearizationPoint(inArgs);
       phiEvaluator_->computePhi(vphi.ptr(), 1, dt, f);
 
+      Teuchos::RCP<Teuchos::FancyOStream> out =
+        Teuchos::VerboseObjectBase::getDefaultOStream();
+      out->setOutputToRootOnly(0);
+      phiEvaluator_->describe(*out, Teuchos::VERB_EXTREME);
+      
       //std::cout << "ph[0,1] = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       //assign(x.ptr(), ST::zero());
 
@@ -384,14 +393,16 @@ template <class Scalar>
 void StepperExponentialEuler<Scalar>::setStepperExponentialValues(
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
-  // TODO: is this the right place to initialize the PhiEvaluator?
-  auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
-  auto phiPL = Teuchos::sublist(pl, "PhiEvaluator");
-  phiEvaluator_ = phif->createPhiEvaluator(phiPL);
+  Teuchos::RCP<Teuchos::ParameterList> phiPL = Teuchos::null;
 
   if (pl != Teuchos::null) {
+    // TODO read in the pl for the exponential solver
+    phiPL = sublist(pl, "PhiEvaluator");
   }
-  //TODO read in the pl for the exponential solver
+
+  // TODO: is this the right place to initialize the PhiEvaluator?
+  auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
+  phiEvaluator_ = phif->createPhiEvaluator(phiPL);
 }
 
 
