@@ -1,6 +1,6 @@
 // @HEADER
 // *****************************************************************************
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //
 // Copyright 2008 NTESS and the Phalanx contributors.
@@ -22,7 +22,7 @@
 namespace PHX {
 
   /*! @brief Class that implements helper functions for the pure virtual PHX::Evaluator class.
-   
+
       This class implements code that would essentially be repeated in
       each Evaluator class, making it quicker for developers to add
       new evaluators.  All field evaluators should inherit from this
@@ -79,7 +79,7 @@ namespace PHX {
     template<typename DataT,int Rank,typename Layout>
     void addDependentField(const PHX::Field<const DataT,Rank,Layout>& f);
 
-    /** Add dependent field using raw Kokkos::View, DataT must be const. 
+    /** Add dependent field using raw Kokkos::View, DataT must be const.
 
         NOTE: Since DataT is not a true scalar (it contains rank
         information as well), the template deduction fails if we try
@@ -101,17 +101,17 @@ namespace PHX {
 
     virtual void setName(const std::string& name);
 
-    virtual void 
+    virtual void
     postRegistrationSetup(typename Traits::SetupData d,
                           PHX::FieldManager<Traits>& vm) override;
 
-    virtual const std::vector< Teuchos::RCP<FieldTag> >& 
+    virtual const std::vector< Teuchos::RCP<FieldTag> >&
     evaluatedFields() const override;
 
-    virtual const std::vector< Teuchos::RCP<FieldTag> >& 
+    virtual const std::vector< Teuchos::RCP<FieldTag> >&
     contributedFields() const override;
 
-    virtual const std::vector< Teuchos::RCP<FieldTag> >& 
+    virtual const std::vector< Teuchos::RCP<FieldTag> >&
     dependentFields() const override;
 
     virtual const std::vector< Teuchos::RCP<FieldTag> >&
@@ -132,7 +132,7 @@ namespace PHX {
     virtual void preEvaluate(typename Traits::PreEvalData d) override;
 
     virtual void postEvaluate(typename Traits::PostEvalData d) override;
-    
+
     virtual const std::string& getName() const override;
 
     virtual void bindField(const PHX::FieldTag& ft, const std::any& f) override;
@@ -144,6 +144,12 @@ namespace PHX {
     virtual void deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const override;
 
     virtual void printFieldValues(std::ostream& os) const override;
+
+  protected:
+
+    void addEvaluatedFieldTagIfNotAlreadyRegistered(const PHX::FieldTag& ft);
+    void addContributedFieldTagIfNotAlreadyRegistered(const PHX::FieldTag& ft);
+    void addDependentFieldTagIfNotAlreadyRegistered(const PHX::FieldTag& ft);
 
   private:
 
