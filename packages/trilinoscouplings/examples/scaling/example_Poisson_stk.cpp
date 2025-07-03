@@ -269,10 +269,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
     \return Intrepid2 basis
  */
 
-/*void getBasis(Teuchos::RCP<Intrepid::Basis<double,Intrepid2ScalarView > > &basis,
-               const ShardsCellTopology & cellTopology,
-               int order);
-*/
 int getDimension(const ShardsCellTopology & cellTopology);
 
 /**********************************************************************************/
