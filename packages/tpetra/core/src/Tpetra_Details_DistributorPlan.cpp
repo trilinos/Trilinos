@@ -400,10 +400,6 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // Invert map to see what msgs are received and what length
   computeReceives();
 
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  initializeMpiAdvance();
-#endif
-
   // createFromRecvs() calls createFromSends(), but will set
   // howInitialized_ again after calling createFromSends().
   howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS;
@@ -599,10 +595,6 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
   totalReceiveLength_ = remoteProcIDs.size();
   indicesFrom_.clear ();
   numReceives_-=sendMessageToSelf_;
-
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  initializeMpiAdvance();
-#endif
 }
 
 Teuchos::RCP<DistributorPlan> DistributorPlan::getReversePlan() const {
@@ -902,6 +894,10 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
 
+    #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+      initializeMpiAdvance();
+    #endif
+
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
     this->setMyParamList (plist);
@@ -962,7 +958,7 @@ DistributorPlan::getValidParameters() const
 // Used by Teuchos::RCP to clean up an owned MPIX_Comm*
 struct MpixCommDeallocator {
   void free(MPIX_Comm **comm) const {
-    MPIX_Comm_free(*comm);
+    MPIX_Comm_free(comm);
   }
 };
 
@@ -975,28 +971,10 @@ void DistributorPlan::initializeMpiAdvance() {
   Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm_);
   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
   int err = 0;
-  if (sendType_ == DISTRIBUTOR_MPIADVANCE_ALLTOALL) {
+  if (sendType_ == DISTRIBUTOR_MPIADVANCE_ALLTOALL ||
+        sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV ) {
     MPIX_Comm **mpixComm = new(MPIX_Comm*);
     err = MPIX_Comm_init(mpixComm, (*rawComm)());
-    mpixComm_ = Teuchos::RCP(mpixComm,
-      MpixCommDeallocator(),
-      true /*take ownership*/
-    );
-  }
-  else if (sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
-    int numRecvs = (int)(numReceives_ + (sendMessageToSelf_ ? 1 : 0));
-    int *sourceRanks = procsFrom_.data();
-
-    // int *sourceWeights = static_cast<int*>(lengthsFrom_.data());// lengthsFrom_ may not be int
-    const int *sourceWeights = MPI_UNWEIGHTED;
-    int numSends = (int)(numSendsToOtherProcs_ + (sendMessageToSelf_ ? 1 : 0));
-    int *destRanks = procIdsToSendTo_.data();
-
-    // int *destWeights = static_cast<int*>(lengthsTo_.data()); // lengthsTo_ may not be int
-    const int *destWeights = MPI_UNWEIGHTED; // lengthsTo_ may not be int
-
-    MPIX_Comm **mpixComm = new(MPIX_Comm*);
-    err = MPIX_Dist_graph_create_adjacent((*rawComm)(), numRecvs, sourceRanks, sourceWeights, numSends, destRanks, destWeights, MPI_INFO_NULL, false, mpixComm);
     mpixComm_ = Teuchos::RCP(mpixComm,
       MpixCommDeallocator(),
       true /*take ownership*/

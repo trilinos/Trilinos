@@ -322,6 +322,7 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
 
   const int myRank = plan.getComm()->getRank();
   MPIX_Comm *mpixComm = *plan.getMPIXComm();
+  using size_type = Teuchos::Array<size_t>::size_type;
 
   const size_t numSends = plan.getNumSends() + plan.hasSelfMessage();
   const size_t numRecvs = plan.getNumReceives() + plan.hasSelfMessage();
@@ -333,8 +334,8 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
   auto& [importStarts, importLengths] = importSubViewLimits;
   auto& [exportStarts, exportLengths] = exportSubViewLimits;
 
-  for (size_t pp = 0; pp < plan.getNumSends(); ++pp) {
-    sdispls[plan.getProcsTo()[pp]] = exportStarts[pp];
+  for (size_t pp = 0; pp < numSends; ++pp) {
+    sdispls[pp] = exportStarts[pp];
     size_t numPackets = exportLengths[pp];
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
@@ -343,16 +344,12 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
                                    << pp << " (" << numPackets
                                    << ") is too large "
                                       "to be represented as int.");
-    sendcounts[plan.getProcsTo()[pp]] = static_cast<int>(numPackets);
+    sendcounts[pp] = static_cast<int>(numPackets);
   }
 
-  const size_type actualNumReceives =
-      Teuchos::as<size_type>(plan.getNumReceives()) +
-      Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
-
-  for (size_type i = 0; i < actualNumReceives; ++i) {
-    rdispls[plan.getProcsFrom()[i]] = importStarts(i);
-    size_t totalPacketsFrom_i = importLengths(i);
+  for (size_type i = 0; i < numRecvs; ++i) {
+    rdispls[i] = importStarts[i];
+    size_t totalPacketsFrom_i = importLengths[i];
     // totalPacketsFrom_i is converted down to int, so make sure it can be
     // represented
     TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
@@ -362,15 +359,22 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
                                    << i << " (" << totalPacketsFrom_i
                                    << ") is too large "
                                       "to be represented as int.");
-    recvcounts[plan.getProcsFrom()[i]] = static_cast<int>(totalPacketsFrom_i);
+    recvcounts[i] = static_cast<int>(totalPacketsFrom_i);
   }
 
   using T = typename ExpView::non_const_value_type;
   MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType(T());
 
-  const int err = MPIX_Neighbor_alltoallv(
+  MPIX_Info* xinfo;
+  MPIX_Topo* xtopo;
+  MPIX_Info_init(&xinfo);
+  MPIX_Topo_init(numRecvs, plan.getProcsFrom().data(), recvcounts.data(),
+      numSends, plan.getProcsTo().data(), sendcounts.data(), xinfo, &xtopo);
+  const int err = MPIX_Neighbor_alltoallv_topo(
       exports.data(), sendcounts.data(), sdispls.data(), rawType,
-      imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
+      imports.data(), recvcounts.data(), rdispls.data(), rawType, xtopo, mpixComm);
+  MPIX_Topo_free(&xtopo);
+  MPIX_Info_free(&xinfo);
 
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
                              "MPIX_Neighbor_alltoallv failed with error \""
@@ -594,7 +598,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
     doPostsAllToAllImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
     return;
   } else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
-    doPostsNbrAllToAllVImpl(plan, exports,numPackets, imports);
+    doPostsNbrAllToAllVImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
     return;
   }
 #endif // defined(HAVE_TPETRACORE_MPI_ADVANCE)
