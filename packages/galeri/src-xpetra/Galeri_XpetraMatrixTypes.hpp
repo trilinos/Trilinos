@@ -148,15 +148,23 @@ KOKKOS_FORCEINLINE_FUNCTION void GetNeighboursCartesian3dKokkos(const GlobalOrdi
   }
 
 // This macro is used when we enter values in the matrix.
-#define Galeri_enterValue(column_index, value)                    \
-  {                                                               \
-    if (column_index != INVALID) {                                \
-      colidx(entryPtr) = lclColMap.getLocalElement(column_index); \
-      values(entryPtr) = value;                                   \
-      if (i != column_index)                                      \
-        offDiagonalSum += value;                                  \
-      ++entryPtr;                                                 \
-    }                                                             \
+// We insert in a way that guarantees for rows to be sorted.
+#define Galeri_enterValue(rowStart, column_index, value)      \
+  {                                                           \
+    if (column_index != INVALID) {                            \
+      auto clid = lclColMap.getLocalElement(column_index);    \
+      auto K    = entryPtr;                                   \
+      while ((rowStart + 1 <= K) && (clid < colidx(K - 1))) { \
+        colidx(K) = colidx(K - 1);                            \
+        values(K) = values(K - 1);                            \
+        --K;                                                  \
+      }                                                       \
+      colidx(K) = clid;                                       \
+      values(K) = value;                                      \
+      if (i != column_index)                                  \
+        offDiagonalSum += value;                              \
+      ++entryPtr;                                             \
+    }                                                         \
   }
 
 template <class Scalar, class Map>
@@ -205,9 +213,10 @@ class ScaledIdentityStencil {
 
   KOKKOS_FORCEINLINE_FUNCTION
   void EnterValues(const LocalOrdinal i, typename rowptr_type::value_type& entryPtr) const {
-    GlobalOrdinal center            = lclMap.getGlobalElement(i);
-    impl_scalar_type offDiagonalSum = zero;
-    Galeri_enterValue(center, a);
+    GlobalOrdinal center                      = lclMap.getGlobalElement(i);
+    impl_scalar_type offDiagonalSum           = zero;
+    typename rowptr_type::value_type rowStart = entryPtr;
+    Galeri_enterValue(rowStart, center, a);
   }
 };
 
@@ -293,14 +302,15 @@ class TriDiagStencil {
     center = lclMap.getGlobalElement(i);
     GetNeighbours(center, left, right, isDirichlet);
 
-    impl_scalar_type offDiagonalSum = zero;
+    impl_scalar_type offDiagonalSum           = zero;
+    typename rowptr_type::value_type rowStart = entryPtr;
     if (isDirichlet && keepBCs) {
       // Dirichlet unknown we want to keep
-      Galeri_enterValue(center, one);
+      Galeri_enterValue(rowStart, center, one);
     } else {
-      Galeri_enterValue(left, b);
-      Galeri_enterValue(right, c);
-      Galeri_enterValue(center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : a);
+      Galeri_enterValue(rowStart, left, b);
+      Galeri_enterValue(rowStart, right, c);
+      Galeri_enterValue(rowStart, center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : a);
     }
   }
 };
@@ -398,16 +408,17 @@ class Cross2DStencil {
     center = lclMap.getGlobalElement(i);
     GetNeighbours(center, left, right, bottom, top, isDirichlet);
 
-    impl_scalar_type offDiagonalSum = zero;
+    impl_scalar_type offDiagonalSum           = zero;
+    typename rowptr_type::value_type rowStart = entryPtr;
     if (isDirichlet && keepBCs) {
       // Dirichlet unknown we want to keep
-      Galeri_enterValue(center, one);
+      Galeri_enterValue(rowStart, center, one);
     } else {
-      Galeri_enterValue(left, b);
-      Galeri_enterValue(right, c);
-      Galeri_enterValue(bottom, d);
-      Galeri_enterValue(top, e);
-      Galeri_enterValue(center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : a);
+      Galeri_enterValue(rowStart, left, b);
+      Galeri_enterValue(rowStart, right, c);
+      Galeri_enterValue(rowStart, bottom, d);
+      Galeri_enterValue(rowStart, top, e);
+      Galeri_enterValue(rowStart, center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : a);
     }
   }
 };
@@ -516,18 +527,19 @@ class Cross3DStencil {
     center = lclMap.getGlobalElement(i);
     GetNeighbours(center, left, right, front, back, bottom, top, isDirichlet);
 
-    impl_scalar_type offDiagonalSum = zero;
+    impl_scalar_type offDiagonalSum           = zero;
+    typename rowptr_type::value_type rowStart = entryPtr;
     if (isDirichlet && keepBCs) {
       // Dirichlet unknown we want to keep
-      Galeri_enterValue(center, one);
+      Galeri_enterValue(rowStart, center, one);
     } else {
-      Galeri_enterValue(left, b);
-      Galeri_enterValue(right, c);
-      Galeri_enterValue(front, d);
-      Galeri_enterValue(back, e);
-      Galeri_enterValue(bottom, f);
-      Galeri_enterValue(top, g);
-      Galeri_enterValue(center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : a);
+      Galeri_enterValue(rowStart, left, b);
+      Galeri_enterValue(rowStart, right, c);
+      Galeri_enterValue(rowStart, front, d);
+      Galeri_enterValue(rowStart, back, e);
+      Galeri_enterValue(rowStart, bottom, f);
+      Galeri_enterValue(rowStart, top, g);
+      Galeri_enterValue(rowStart, center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : a);
     }
   }
 };
@@ -759,17 +771,18 @@ class Brick3DStencil {
     center = lclMap.getGlobalElement(i);
     GetNeighbours(center, stencil_indices, isDirichlet);
 
-    impl_scalar_type offDiagonalSum = zero;
+    impl_scalar_type offDiagonalSum           = zero;
+    typename rowptr_type::value_type rowStart = entryPtr;
     if (isDirichlet && keepBCs) {
       // Dirichlet unknown we want to keep
-      Galeri_enterValue(center, one);
+      Galeri_enterValue(rowStart, center, one);
     } else {
       for (size_t k0 = 0; k0 < 3; ++k0)
         for (size_t k1 = 0; k1 < 3; ++k1)
           for (size_t k2 = 0; k2 < 3; ++k2)
             if ((k0 != MID) || (k1 != MID) || (k2 != MID))
-              Galeri_enterValue(stencil_indices[k0][k1][k2], stencil_entries(k0, k1, k2));
-      Galeri_enterValue(center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : stencil_entries(MID, MID, MID));
+              Galeri_enterValue(rowStart, stencil_indices[k0][k1][k2], stencil_entries(k0, k1, k2));
+      Galeri_enterValue(rowStart, center, (IsBoundary(center) && !isDirichlet) ? -offDiagonalSum : stencil_entries(MID, MID, MID));
     }
   }
 };
@@ -1583,8 +1596,7 @@ StencilMatrixKokkos(const Teuchos::RCP<const Map>& map,
       });
 
   auto lclA = local_matrix_type(matLabel, numMyElements, ghosted_map->getLocalNumElements(), myNNZ, stencil.values, rowptr, stencil.colidx);
-  ::KokkosSparse::sort_crs_matrix(lclA);
-  auto mtx = MatrixTraits<Map, Matrix>::Build(lclA, map, ghosted_map, map, map);
+  auto mtx  = MatrixTraits<Map, Matrix>::Build(lclA, map, ghosted_map, map, map);
 
 #ifdef HAVE_GALERI_DEBUG
   // Checks to run in debug mode:
