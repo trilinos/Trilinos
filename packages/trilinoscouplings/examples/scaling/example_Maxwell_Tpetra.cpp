@@ -208,7 +208,6 @@ typedef Map::node_type::memory_space memory_space;
 typedef Map::node_type::device_type device_type;
 
 typedef Intrepid2::FunctionSpaceTools<device_type>     Intrepid2FSTools;
-//typedef Intrepid2::RealSpaceTools<device_type> Intrepid2RSTools;
 typedef Intrepid2::CellTools<device_type>      Intrepid2CTools;
 typedef Intrepid2::ScalarView<int, memory_space> Intrepid2ScalarViewint;
 typedef Intrepid2::ScalarView<double, memory_space> Intrepid2ScalarViewdouble;
@@ -1174,9 +1173,7 @@ int body(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Define basis
-  //Basis_HCURL_HEX_I1_FEM<double, Intrepid2ScalarViewdouble > hexHCurlBasis;
   auto hexHCurlBasis = Intrepid2::getBasis<Intrepid2::DerivedNodalBasisFamily<device_type> >(cellType, Intrepid2::FUNCTION_SPACE_HCURL, 1);
-  //Basis_HGRAD_HEX_C1_FEM<double, Intrepid2ScalarViewdouble > hexHGradBasis;
   auto hexHGradBasis = Intrepid2::getBasis<Intrepid2::DerivedNodalBasisFamily<device_type> >(cellType, Intrepid2::FUNCTION_SPACE_HGRAD, 1);
 
   int numFieldsC = hexHCurlBasis->getCardinality();
