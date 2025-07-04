@@ -167,7 +167,7 @@ struct fecomp{
 template<class FC>
 double distance2(const FC & coord, int n1, int n2) {
   double dist = 0.0;
-  for(int i=0; i<coord.extent(1); i++)
+  for(int i=0; i<coord.extent_int(1); i++)
     dist += (coord(n2,i) -coord(n1,i)) * (coord(n2,i) -coord(n1,i));
   return sqrt(dist);
 }
@@ -180,7 +180,6 @@ typedef double scalar_type;
 typedef Teuchos::ScalarTraits<scalar_type> ScalarTraits;
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
-//typedef Tpetra::KokkosClassic::DefaultNode::DefaultNodeType NO;
 typedef Sacado::Fad::SFad<double,2>      Fad2; //# ind. vars fixed at 2
 typedef Tpetra::Map<>::node_type node_type;
 typedef node_type::device_type device_type;
@@ -386,10 +385,10 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 // Copy scalar view
 template<class SV1, class SV2>
 void CopyScalarView2D(const SV1 & v1, SV2 & v2) {
-  Kokkos::resize(v2,v1.extent(0),v1.extent(1));
+  Kokkos::resize(v2,v1.extent_int(0),v1.extent_int(1));
   auto v2_h = Kokkos::create_mirror_view(v2);
-  for(size_t i=0; i<(size_t)v1.extent(0); i++)
-    for(size_t j=0; j<(size_t)v1.extent(1); j++)
+  for(size_t i=0; i<(size_t)v1.extent_int(0); i++)
+    for(size_t j=0; j<(size_t)v1.extent_int(1); j++)
       v2_h(i,j) = v1(i,j);
   Kokkos::deep_copy(v2, v2_h);
 }
@@ -577,7 +576,7 @@ int main(int argc, char *argv[]) {
 
 
   // Build reference element edge to node map
-  ScalarView<int, memory_space> refEdgeToNode("refEdgeToNode", P1_numEdgesPerElem, P1_numNodesPerEdge);//error
+  ScalarView<int, memory_space> refEdgeToNode("refEdgeToNode", P1_numEdgesPerElem, P1_numNodesPerEdge);
   for (int i=0; i<P1_numEdgesPerElem; i++){
     refEdgeToNode(i,0)=P1_cellType.getNodeMap(1, i, 0);
     refEdgeToNode(i,1)=P1_cellType.getNodeMap(1, i, 1);
@@ -939,7 +938,7 @@ int main(int argc, char *argv[]) {
 
   // Generate higher order mesh
   // NOTE: Only correct in serial
-  int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.extent(0) + (degree-1)*(degree-1)*numElems;
+  int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.extent_int(0) + (degree-1)*(degree-1)*numElems;
   int Pn_numNodesperElem = (degree+1)*(degree+1); // Quads
   ScalarView<int, memory_space>    elemToNode("elemToNode",numElems,Pn_numNodesperElem);
   ScalarView<double, memory_space> nodeCoord("nodeCoord",Pn_numNodes,dim);
@@ -978,7 +977,7 @@ int main(int argc, char *argv[]) {
   if (MyPID == 0){
     std::cout << " Number of Pn Global Elements: " << numElemsGlobal << " \n";
     std::cout << " Number of Pn Global Nodes: " << numNodesGlobal << " \n";
-    std::cout << " Number of faux P1 Global Elements: " << aux_P1_elemToNode.extent(0) << " \n\n";
+    std::cout << " Number of faux P1 Global Elements: " << aux_P1_elemToNode.extent_int(0) << " \n\n";
   }
 
 
@@ -1009,7 +1008,6 @@ int main(int argc, char *argv[]) {
   // Define basis
   auto myHGradBasis = new Basis_HGRAD_QUAD_Cn_FEM<device_type, double, double>(degree,POINTTYPE_EQUISPACED);
   RCP<Basis_HGRAD_QUAD_Cn_FEM<device_type,double,double> > myHGradBasis_rcp = rcp(myHGradBasis, false);
-  //RCP<Basis_HGRAD_QUAD_Cn_FEM<double,ScalarView<double, memory_space> > > myHGradBasisWithDofCoords_rcp = rcp(&myHGradBasis, false);
 
   // Auxillary p=1 basis
   auto myHGradBasis_aux = new Basis_HGRAD_QUAD_C1_FEM<device_type, double, double>();
@@ -1934,9 +1932,9 @@ template<class ArrayOut, class ArrayIn>
 void evaluateMaterialTensor(ArrayOut &        matTensorValues,
                             const ArrayIn &   evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.extent(0);
-  int numPoints        = evaluationPoints.extent(1);
-  int spaceDim         = evaluationPoints.extent(2);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints        = evaluationPoints.extent_int(1);
+  int spaceDim         = evaluationPoints.extent_int(2);
 
   double material[2][2];
 
@@ -1961,8 +1959,8 @@ template<class ArrayOut, class ArrayIn>
 void evaluateSourceTerm(ArrayOut &       sourceTermValues,
                         const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.extent(0);
-  int numPoints = evaluationPoints.extent(1);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints = evaluationPoints.extent_int(1);
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
@@ -1980,8 +1978,8 @@ template<class ArrayOut, class ArrayIn>
 void evaluateExactSolution(ArrayOut &       exactSolutionValues,
                            const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.extent(0);
-  int numPoints = evaluationPoints.extent(1);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints = evaluationPoints.extent_int(1);
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
@@ -1998,9 +1996,9 @@ template<class ArrayOut, class ArrayIn>
 void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
                                const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.extent(0);
-  int numPoints = evaluationPoints.extent(1);
-  int spaceDim  = evaluationPoints.extent(2);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints = evaluationPoints.extent_int(1);
+  int spaceDim  = evaluationPoints.extent_int(2);
 
   double gradient[2];
 
@@ -2160,13 +2158,13 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 void GenerateEdgeEnumeration(const ScalarView<int, memory_space> & elemToNode, const ScalarView<double, memory_space> & nodeCoord, ScalarView<int, memory_space> & elemToEdge, ScalarView<int, memory_space> & elemToEdgeOrient, ScalarView<int, memory_space> & edgeToNode, ScalarView<double, memory_space> & edgeCoord) {
   // Not especially efficient, but effective... at least in serial!
 
-  int numElems        = elemToNode.extent(0);
-  int numNodesperElem = elemToNode.extent(1);
-  int dim             = nodeCoord.extent(1);
+  int numElems        = elemToNode.extent_int(0);
+  int numNodesperElem = elemToNode.extent_int(1);
+  int dim             = nodeCoord.extent_int(1);
 
   // Sanity checks
   if(numNodesperElem !=4) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
-  if(elemToEdge.extent(0)!=numElems || elemToEdge.extent(1)!=4 || elemToEdge.extent(0)!=elemToEdgeOrient.extent(0) || elemToEdge.extent(1)!=elemToEdgeOrient.extent(1))
+  if(elemToEdge.extent_int(0)!=numElems || elemToEdge.extent_int(1)!=4 || elemToEdge.extent_int(0)!=elemToEdgeOrient.extent_int(0) || elemToEdge.extent_int(1)!=elemToEdgeOrient.extent_int(1))
     throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
 
   int edge_node0_id[4]={0,1,2,3};
@@ -2203,7 +2201,6 @@ void GenerateEdgeEnumeration(const ScalarView<int, memory_space> & elemToNode, c
   }
 
   // Fill out the edge centers (clobbering data if needed)
-  //edgeCoord.resize(num_edges,dim);
   for(int i=0; i<numElems; i++) {
     for(int j=0; j<4; j++) {
       int n0 = elemToNode(i,edge_node0_id[j]);
@@ -2214,7 +2211,6 @@ void GenerateEdgeEnumeration(const ScalarView<int, memory_space> & elemToNode, c
   }
 
   // Edge to Node connectivity
-  //edgeToNode.resize(num_edges,2);
   for(int i=0; i<numElems; i++) {
     for(int j=0; j<4; j++) {
       int lo = std::min(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
@@ -2250,17 +2246,17 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
                  std::vector<int> & Pn_edgeNodes,
                  std::vector<int> & Pn_cellNodes) {
 //#define DEBUG_PROMOTE_MESH
-  int numElems           = P1_elemToNode.extent(0);
-  int P1_numNodesperElem = P1_elemToNode.extent(1);
-  int P1_numEdgesperElem = P1_elemToEdge.extent(1);
-  int Pn_numNodesperElem = Pn_elemToNode.extent(1);
-  int P1_numNodes        = P1_nodeCoord.extent(0);
-  int P1_numEdges        = P1_edgeCoord.extent(0);
-  int dim                = P1_nodeCoord.extent(1);
+  int numElems           = P1_elemToNode.extent_int(0);
+  int P1_numNodesperElem = P1_elemToNode.extent_int(1);
+  int P1_numEdgesperElem = P1_elemToEdge.extent_int(1);
+  int Pn_numNodesperElem = Pn_elemToNode.extent_int(1);
+  int P1_numNodes        = P1_nodeCoord.extent_int(0);
+  int P1_numEdges        = P1_edgeCoord.extent_int(0);
+  int dim                = P1_nodeCoord.extent_int(1);
 
 
 #ifdef DEBUG_PROMOTE_MESH
-  int Pn_numNodes        = Pn_nodeCoord.extent(0);
+  int Pn_numNodes        = Pn_nodeCoord.extent_int(0);
 #endif
 
   int Pn_ExpectedNodesperElem = P1_numNodesperElem + (degree-1)*P1_numEdgesperElem + (degree-1)*(degree-1);
@@ -2268,8 +2264,8 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
 
   // Sanity checks
   if(P1_numNodesperElem !=4 || Pn_numNodesperElem !=Pn_ExpectedNodesperElem ) throw std::runtime_error("Error: PromoteMesh_Pn_Kirby only works on Quads!");
-  if(P1_elemToEdge.extent(0)!=numElems || P1_elemToEdge.extent(1)!=4 || P1_elemToEdge.extent(0)!=P1_elemToEdgeOrient.extent(0) || P1_elemToEdge.extent(1)!=P1_elemToEdgeOrient.extent(1) ||
-     Pn_elemToNode.extent(0)!=numElems || Pn_nodeCoord.extent(0) != Pn_ExpectedNumNodes)
+  if(P1_elemToEdge.extent_int(0)!=numElems || P1_elemToEdge.extent_int(1)!=4 || P1_elemToEdge.extent_int(0)!=P1_elemToEdgeOrient.extent_int(0) || P1_elemToEdge.extent_int(1)!=P1_elemToEdgeOrient.extent_int(1) ||
+     Pn_elemToNode.extent_int(0)!=numElems || Pn_nodeCoord.extent_int(0) != Pn_ExpectedNumNodes)
     throw std::runtime_error("Error: PromoteMesh_Pn_Kirby array size mismatch");
 
   const CellTopologyData &cellTopoData = *shards::getCellTopologyData<shards::Quadrilateral<4> >();
@@ -2451,7 +2447,7 @@ void CreateP1MeshFromPnMesh(int degree,
     Create element to node map
   */
 
-  int Pn_numElems        = Pn_elemToNode.extent(0);
+  int Pn_numElems        = Pn_elemToNode.extent_int(0);
 
   int p1ElemCtr=0;
   for (int i=0; i<Pn_numElems; ++i) {
@@ -2525,12 +2521,12 @@ void CreateLinearSystem(int numWorksets,
                         std::string &msg
                         )
 {
-  int numCubPoints = cubPoints.extent(0);
-  int cubDim = cubPoints.extent(1);
-  int spaceDim = nodeCoord.extent(1);
-  int numFieldsG = HGBGrads.extent(0);
-  long long numElems = elemToNode.extent(0);
-  int numNodesPerElem = elemToNode.extent(1);
+  int numCubPoints = cubPoints.extent_int(0);
+  int cubDim = cubPoints.extent_int(1);
+  int spaceDim = nodeCoord.extent_int(1);
+  int numFieldsG = HGBGrads.extent_int(0);
+  long long numElems = elemToNode.extent_int(0);
+  int numNodesPerElem = elemToNode.extent_int(1);
 
 
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Allocate arrays")));
@@ -2543,12 +2539,12 @@ void CreateLinearSystem(int numWorksets,
   std::cout << "     numElems = " << numElems << std::endl;
   std::cout << "     numNodesPerElem = " << numNodesPerElem << std::endl;
   std::cout << "     length(globalNodeIds) = " << globalNodeIds.size() << std::endl;
-  std::cout << "     length(nodeCoord) = " << nodeCoord.extent(0) << std::endl;
+  std::cout << "     length(nodeCoord) = " << nodeCoord.extent_int(0) << std::endl;
 
-  if(nodeCoord.extent(0) != Teuchos::as<int>(globalNodeIds.size())) {
+  if(nodeCoord.extent_int(0) != Teuchos::as<int>(globalNodeIds.size())) {
     std::ostringstream errStr;
     errStr << "Error: CreateLinearSystem: length of coordinates != #nodes ("
-           << nodeCoord.extent(0) << "!=" << globalNodeIds.size() << ")";
+           << nodeCoord.extent_int(0) << "!=" << globalNodeIds.size() << ")";
     throw std::runtime_error(errStr.str());
   }
 
@@ -2833,7 +2829,7 @@ void CreateLinearSystem(int numWorksets,
   RCP<multivector_type> nCoord= rcp(new multivector_type(rowMap,2));
   {
     auto nCoordD = nCoord->get2dViewNonConst();
-    for (int inode=0; inode<nodeCoord.extent(0); inode++) {
+    for (int inode=0; inode<nodeCoord.extent_int(0); inode++) {
       nCoordD[0][inode]=nodeCoord(inode,0);
       nCoordD[1][inode]=nodeCoord(inode,1);
     }
@@ -2903,12 +2899,12 @@ void GenerateIdentityCoarsening_pn_to_p1(const ScalarView<int, memory_space> & P
   //We must keep track of the nodes already encountered.  Inserting more than once will cause
   //the values to be summed.  Using a hashtable would work -- we abuse std::map for this purpose.
   std::map<int,int> hashTable;
-  int Nelem=Pn_elemToNode.extent(0);
+  int Nelem=Pn_elemToNode.extent_int(0);
   Array<scalar_type> vals1(1);
   vals1[0] = one;
   Array<global_ordinal_type> cols1(1);
   for(int i=0; i<Nelem; i++) {
-    for(int j=0; j<Pn_elemToNode.extent(1); j++) {
+    for(int j=0; j<Pn_elemToNode.extent_int(1); j++) {
       int row = Pn_elemToNode(i,j);
       if (hashTable.find(row) == hashTable.end()) {
         //not found
@@ -2924,8 +2920,8 @@ void GenerateIdentityCoarsening_pn_to_p1(const ScalarView<int, memory_space> & P
   //JJH FIXME no need to generate R ... it's the identity, stupid
   hashTable.clear();
   R = rcp(new crs_matrix_type(P1_map_aux,1));
-  Nelem = P1_elemToNode.extent(0);
-  int nodesPerElem = P1_elemToNode.extent(1);
+  Nelem = P1_elemToNode.extent_int(0);
+  int nodesPerElem = P1_elemToNode.extent_int(1);
   for(int i=0; i<Nelem; ++i) {
     for(int j=0; j<nodesPerElem; ++j) {
       int row = P1_elemToNode(i,j);
