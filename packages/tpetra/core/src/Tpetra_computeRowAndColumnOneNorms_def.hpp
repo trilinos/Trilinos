@@ -850,10 +850,7 @@ globalizeRowOneNorms (EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_ty
                                         typename NT::device_type>& equib,
                       const Tpetra::RowMatrix<SC, LO, GO, NT>& A)
 {
-  using val_type = typename Kokkos::ArithTraits<SC>::val_type;
-  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
   using mv_type = Tpetra::MultiVector<SC, LO, GO, NT>;
-  using mag_mv_type = Tpetra::MultiVector<mag_type, LO, GO, NT>;
 
   auto G = A.getGraph ();
   TEUCHOS_TEST_FOR_EXCEPTION
