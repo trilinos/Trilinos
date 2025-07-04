@@ -1406,39 +1406,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 /**********************************************************************************/
 
 
-/*void getBasis(Teuchos::RCP<Intrepid::Basis<double,Intrepid2ScalarView > > &basis,
-               const ShardsCellTopology & cellTopology,
-               int order)  {
-
-
- // select basis based on cell topology only for now, and assume first order basis
-    switch (cellTopology.getKey()) {
-
-       case shards::Tetrahedron<4>::key:
-         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double, Intrepid2ScalarView > );
-         break;
-
-       case shards::Hexahedron<8>::key:
-         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double, Intrepid2ScalarView > );
-         break;
-
-       case shards::Triangle<3>::key:
-         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_TRI_C1_FEM<double, Intrepid2ScalarView > );
-         break;
-
-       case shards::Quadrilateral<4>::key:
-         basis = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double, Intrepid2ScalarView > );
-         break;
-
-
-       default:
-         TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
-				    "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");
-
-     }
-
-}
-*/
 int getDimension( const ShardsCellTopology & cellTopology) {
   switch (cellTopology.getKey()) {
   case shards::Tetrahedron<4>::key:
