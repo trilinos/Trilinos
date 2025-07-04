@@ -29,10 +29,6 @@
 #include <Xpetra_TpetraCrsGraph.hpp>
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraMultiVector.hpp>
-#include <Xpetra_EpetraCrsGraph.hpp>
-#endif
 
 
 // Teuchos
@@ -74,7 +70,7 @@ class MachineLearningStatistics_Hex3D {
 
   double distance2(Intrepid2ScalarViewScalar & coord, int n1, int n2) {
     double dist = 0.0;
-    for(int i=0; i<coord.extent(1); i++)
+    for(int i=0; i<coord.extent_int(1); i++)
       dist += (coord(n2,i) -coord(n1,i)) * (coord(n2,i) -coord(n1,i));
     return sqrt(dist);
   }
@@ -130,7 +126,7 @@ class MachineLearningStatistics_Hex3D {
     int node3 = edgeToNode(edge, 0);
     int node4 = edgeToNode(edge, 1);
 
-    int numElems = elemToNode.extent(0);
+    int numElems = elemToNode.extent_int(0);
     for(int i=0; i<numElems; i++) {
       // Set up hex nodes
       int hexnode0 = elemToNode(i, 0);
@@ -189,7 +185,7 @@ class MachineLearningStatistics_Hex3D {
       // 1 - Max/min edge - ratio of max to min edge length
       edge_length_max = distance2(nodeCoord, node1, node2);
       edge_length_min = edge_length_max;
-      int numEdgesPerElem = elemToEdge.extent(1);
+      int numEdgesPerElem = elemToEdge.extent_int(1);
       for (int j=0; j<numEdgesPerElem; j++) {
         edge = elemToEdge(i,j);
         node1 = edgeToNode(edge,0);
@@ -279,8 +275,8 @@ class MachineLearningStatistics_Hex3D {
   /***************************** STATISTICS (Part IIa) ******************************/
   /**********************************************************************************/
   void Phase2a(Intrepid2ScalarViewScalar &worksetJacobDet,Intrepid2ScalarViewScalar &worksetCubWeights) {
-    int worksetSize  = worksetJacobDet.extent(0);
-    int numCubPoints = worksetJacobDet.extent(1);
+    int worksetSize  = worksetJacobDet.extent_int(0);
+    int numCubPoints = worksetJacobDet.extent_int(1);
 
     bool weightsWorkset = (worksetCubWeights.rank()==2)?true:false;
 
@@ -370,14 +366,6 @@ class MachineLearningStatistics_Hex3D {
   }
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-  void Phase2b(Teuchos::RCP<const Epetra_CrsGraph> gl_StiffGraph, Teuchos::RCP<Epetra_MultiVector> coords) {
-    Teuchos::RCP<multivector_type> coords_X = Teuchos::rcp(new Xpetra::EpetraMultiVectorT<GO,Node>(coords));
-    Teuchos::RCP<const crsgraph_type> graph_X = Teuchos::rcp(new Xpetra::EpetraCrsGraphT<GO,Node>(Teuchos::rcp_const_cast<Epetra_CrsGraph>(gl_StiffGraph)));
-
-    Phase2b(graph_X, coords_X);
-  }
-#endif
 
 
   /**********************************************************************************/
