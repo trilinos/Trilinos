@@ -327,7 +327,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     typename crs_matrix_type::nonconst_values_host_view_type vals("vals", numEntriesInRow);
     A.getLocalRowCopy(lrid, cols, vals, numEntriesInRow);
 
-    for(size_t j=0; j<vals.extent(0); j++)
+    for(size_t j=0; j<vals.extent_int(0); j++)
       vals(j) = (cols(j) == lrid) ? 1.0 : 0.0;
 
     A.replaceLocalValues(lrid, cols, vals);
@@ -1234,9 +1234,9 @@ template<class ArrayOut, class ArrayIn>
 void evaluateMaterialTensor(ArrayOut &        matTensorValues,
                              const ArrayIn &   evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.extent(0);
-  int numPoints        = evaluationPoints.extent(1);
-  int spaceDim         = evaluationPoints.extent(2);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints        = evaluationPoints.extent_int(1);
+  int spaceDim         = evaluationPoints.extent_int(2);
 
   double material[3][3];
 
@@ -1264,8 +1264,8 @@ template<class ArrayOut, class ArrayIn>
 void evaluateSourceTerm(ArrayOut &       sourceTermValues,
                         const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.extent(0);
-  int numPoints = evaluationPoints.extent(1);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints = evaluationPoints.extent_int(1);
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
@@ -1286,8 +1286,8 @@ template<class ArrayOut, class ArrayIn>
 void evaluateExactSolution(ArrayOut &       exactSolutionValues,
                            const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.extent(0);
-  int numPoints = evaluationPoints.extent(1);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints = evaluationPoints.extent_int(1);
 
   for(int cell = 0; cell < numWorksetCells; cell++){
     for(int pt = 0; pt < numPoints; pt++){
@@ -1309,9 +1309,9 @@ template<class ArrayOut, class ArrayIn>
 void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
                                const ArrayIn &  evaluationPoints){
 
-  int numWorksetCells  = evaluationPoints.extent(0);
-  int numPoints = evaluationPoints.extent(1);
-  int spaceDim  = evaluationPoints.extent(2);
+  int numWorksetCells  = evaluationPoints.extent_int(0);
+  int numPoints = evaluationPoints.extent_int(1);
+  int spaceDim  = evaluationPoints.extent_int(2);
 
   double gradient[3];
 
