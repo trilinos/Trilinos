@@ -675,7 +675,6 @@ int main(int argc, char *argv[]) {
   // Select basis from the cell topology
   int order = 1;
   spaceDim = getDimension(cellType);
-  //RCP<Intrepid::Basis<double, Intrepid2ScalarView > >  HGradBasis;
   auto HGradBasis = Intrepid2::getBasis<Intrepid2::DerivedNodalBasisFamily<device_type> >(cellType, Intrepid2::FUNCTION_SPACE_HGRAD, order);
 
 
