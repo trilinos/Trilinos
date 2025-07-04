@@ -127,7 +127,6 @@
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/Field.hpp"
 
-//#include "TrilinosCouplings_Statistics.hpp"
 
 /*********************************************************/
 /*                     Typedefs                          */
