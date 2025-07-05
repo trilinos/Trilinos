@@ -1160,6 +1160,13 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
     //      aggFactory->SetFactory("UnAmalgamationInfo", manager.GetFactory("UnAmalgamationInfo"));
 
+    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, "mis2 aggregation") ||
+        MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, "mis2 coarsening")) {
+      if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: symmetrize graph after dropping", bool, false))
+        TEUCHOS_TEST_FOR_EXCEPTION(true,
+                                   Exceptions::RuntimeError,
+                                   "MIS2 algorithms require the use of a symmetrized graph. Please set \"aggregation: symmetrize graph after dropping\" to \"true\".");
+    }
   } else if (aggType == "brick") {
     aggFactory = rcp(new BrickAggregationFactory());
     ParameterList aggParams;
