@@ -337,18 +337,57 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       if (IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: MIS-2 aggregation" << std::endl;
       labels = KokkosGraph::graph_mis2_aggregate<device_t, rowmap_t, colinds_t>(aRowptrs, aColinds, numAggs);
     }
-    auto vertex2AggId = aggregates->GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadWrite);
-    auto procWinner   = aggregates->GetProcWinner()->getLocalViewDevice(Xpetra::Access::OverwriteAll);
-    int rank          = comm->getRank();
-    Kokkos::parallel_for(
-        Kokkos::RangePolicy<exec_space>(0, numRows),
-        KOKKOS_LAMBDA(lno_t i) {
-          procWinner(i, 0) = rank;
-          if (aggStat(i) == READY) {
-            aggStat(i)         = AGGREGATED;
-            vertex2AggId(i, 0) = labels(i);
-          }
-        });
+    {
+      {
+        // find aggregates that are not empty
+        Kokkos::View<bool*, typename device_t::memory_space> has_nodes("has_nodes", numAggs);
+        Kokkos::parallel_for(
+            Kokkos::RangePolicy<exec_space>(0, numRows),
+            KOKKOS_LAMBDA(lno_t i) {
+              if (aggStat(i) == READY)
+                Kokkos::atomic_assign(&has_nodes(labels(i)), true);
+            });
+
+        // compute aggIds for non-empty aggs
+        Kokkos::View<LO*, typename device_t::memory_space> new_labels("new_labels", numAggs);
+        Kokkos::parallel_scan(
+            Kokkos::RangePolicy<exec_space>(0, numAggs),
+            KOKKOS_LAMBDA(lno_t i, lno_t & update, const bool is_final) {
+              if (is_final)
+                new_labels(i) = update;
+              if (has_nodes(i))
+                ++update;
+            },
+            numAggs);
+
+        // reassign aggIds
+        Kokkos::parallel_for(
+            Kokkos::RangePolicy<exec_space>(0, numRows),
+            KOKKOS_LAMBDA(lno_t i) {
+              labels(i) = new_labels(labels(i));
+            });
+      }
+
+      auto vertex2AggId = aggregates->GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadWrite);
+      auto procWinner   = aggregates->GetProcWinner()->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+      int rank          = comm->getRank();
+      Kokkos::parallel_for(
+          Kokkos::RangePolicy<exec_space>(0, numRows),
+          KOKKOS_LAMBDA(lno_t i) {
+            if (aggStat(i) == READY) {
+#ifdef HAVE_MUELU_DEBUG
+              KOKKOS_ASSERT(labels(i) >= 0);
+#endif
+              procWinner(i, 0)   = rank;
+              aggStat(i)         = AGGREGATED;
+              vertex2AggId(i, 0) = labels(i);
+            } else {
+              procWinner(i, 0)   = MUELU_UNASSIGNED;
+              aggStat(i)         = IGNORED;
+              vertex2AggId(i, 0) = MUELU_UNAGGREGATED;
+            }
+          });
+    }
     numNonAggregatedNodes = 0;
     aggregates->SetNumAggregates(numAggs);
   } else {
