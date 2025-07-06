@@ -297,6 +297,22 @@ RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<c
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<Tpetra::FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
+  if (!vec.is_null())
+    return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+
+  return Teuchos::null;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<const Tpetra::FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
+  if (!vec.is_null())
+    return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+
+  return Teuchos::null;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &toTpetra(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &x) {
   typedef TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVectorClass;
   XPETRA_DYNAMIC_CAST(const TpetraMultiVectorClass, x, tX, "toTpetra");

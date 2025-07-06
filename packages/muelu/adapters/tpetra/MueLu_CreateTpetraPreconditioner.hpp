@@ -78,7 +78,7 @@ CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::Operator<Scalar, LocalOrdi
   RCP<block_crs_matrix_type> bcrsA = rcp_dynamic_cast<block_crs_matrix_type>(inA);
   RCP<crs_matrix_type> crsA        = rcp_dynamic_cast<crs_matrix_type>(inA);
   if (crsA != Teuchos::null)
-    A = TpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(crsA);
+    A = Xpetra::toXpetra(crsA);
   else if (bcrsA != Teuchos::null) {
     RCP<Xpetra::CrsMatrix<SC, LO, GO, NO>> temp = rcp(new Xpetra::TpetraBlockCrsMatrix<SC, LO, GO, NO>(bcrsA));
     TEUCHOS_TEST_FOR_EXCEPTION(temp == Teuchos::null, Exceptions::RuntimeError, "CreateTpetraPreconditioner: cast from Tpetra::BlockCrsMatrix to Xpetra::TpetraBlockCrsMatrix failed.");
@@ -184,7 +184,7 @@ void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, Loca
   typedef MueLu ::Hierarchy<SC, LO, GO, NO> Hierarchy;
 
   RCP<Hierarchy> H = Op.GetHierarchy();
-  RCP<Matrix> A    = TpetraCrs_To_XpetraMatrix<SC, LO, GO, NO>(inA);
+  RCP<Matrix> A    = Xpetra::toXpetra(inA);
 
   MueLu::ReuseXpetraPreconditioner<SC, LO, GO, NO>(A, H);
 }
