@@ -52,18 +52,17 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<MueLu::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& inA,
                            Teuchos::ParameterList& inParamList) {
-  typedef Scalar SC;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Node NO;
+#include "Xpetra_UseShortNames.hpp"
 
   using Teuchos::ParameterList;
 
-  typedef Xpetra::MultiVector<SC, LO, GO, NO> MultiVector;
-  typedef Xpetra::Matrix<SC, LO, GO, NO> Matrix;
-  typedef Hierarchy<SC, LO, GO, NO> Hierarchy;
-  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
-  typedef Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> block_crs_matrix_type;
+  using tpMultiVector         = Tpetra::MultiVector<SC, LO, GO, NO>;
+  using coordMultiVector      = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LO, GO, NO>;
+  using tpCoordMultiVector    = Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LO, GO, NO>;
+  using tpLocalOrdinalVector  = Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+  using Hierarchy             = Hierarchy<SC, LO, GO, NO>;
+  using crs_matrix_type       = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 #if defined(HAVE_MUELU_AMGX)
   std::string externalMG = "use external multigrid package";
@@ -90,21 +89,21 @@ CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::Operator<Scalar, LocalOrdi
 
   Teuchos::ParameterList& userList = inParamList.sublist("user data");
   if (userList.isParameter("Coordinates")) {
-    RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LO, GO, NO>> coordinates = Teuchos::null;
+    RCP<coordMultiVector> coordinates = Teuchos::null;
     try {
-      coordinates = TpetraMultiVector_To_XpetraMultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LO, GO, NO>(userList.get<RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>>>("Coordinates"));
+      coordinates = Xpetra::toXpetra(userList.get<RCP<tpCoordMultiVector>>("Coordinates"));
     } catch (Teuchos::Exceptions::InvalidParameterType&) {
-      coordinates = userList.get<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>>>("Coordinates");
+      coordinates = userList.get<RCP<coordMultiVector>>("Coordinates");
     }
-    userList.set<RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LO, GO, NO>>>("Coordinates", coordinates);
+    userList.set<RCP<coordMultiVector>>("Coordinates", coordinates);
   }
 
   if (userList.isParameter("Material")) {
     RCP<MultiVector> material = Teuchos::null;
     try {
-      material = TpetraMultiVector_To_XpetraMultiVector<SC, LO, GO, NO>(userList.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>("Material"));
+      material = Xpetra::toXpetra(userList.get<RCP<tpMultiVector>>("Material"));
     } catch (Teuchos::Exceptions::InvalidParameterType&) {
-      material = userList.get<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>("Material");
+      material = userList.get<RCP<MultiVector>>("Material");
     }
     userList.set<RCP<MultiVector>>("Material", material);
   }
@@ -112,25 +111,25 @@ CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::Operator<Scalar, LocalOrdi
   if (userList.isParameter("Nullspace")) {
     RCP<MultiVector> nullspace = Teuchos::null;
     try {
-      nullspace = TpetraMultiVector_To_XpetraMultiVector<SC, LO, GO, NO>(userList.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>("Nullspace"));
+      nullspace = Xpetra::toXpetra(userList.get<RCP<tpMultiVector>>("Nullspace"));
     } catch (Teuchos::Exceptions::InvalidParameterType&) {
-      nullspace = userList.get<RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>("Nullspace");
+      nullspace = userList.get<RCP<MultiVector>>("Nullspace");
     }
     userList.set<RCP<MultiVector>>("Nullspace", nullspace);
   }
 
   if (userList.isParameter("BlockNumber")) {
-    RCP<Xpetra::MultiVector<LO, LO, GO, NO>> blockNumber = Teuchos::null;
+    RCP<LocalOrdinalVector> blockNumber = Teuchos::null;
     try {
-      blockNumber = TpetraMultiVector_To_XpetraMultiVector<LO, LO, GO, NO>(userList.get<RCP<Tpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>>("BlockNumber"));
+      blockNumber = Xpetra::toXpetra(userList.get<RCP<tpLocalOrdinalVector>>("BlockNumber"));
     } catch (Teuchos::Exceptions::InvalidParameterType&) {
-      blockNumber = userList.get<RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>>("BlockNumber");
+      blockNumber = userList.get<RCP<LocalOrdinalVector>>("BlockNumber");
     }
-    userList.set<RCP<Xpetra::MultiVector<LO, LO, GO, NO>>>("BlockNumber", blockNumber);
+    userList.set<RCP<LocalOrdinalVector>>("BlockNumber", blockNumber);
   }
 
   RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC, LO, GO, NO>(A, inParamList);
-  return rcp(new TpetraOperator<SC, LO, GO, NO>(H));
+  return rcp(new MueLu::TpetraOperator<SC, LO, GO, NO>(H));
 }
 
 /*!
