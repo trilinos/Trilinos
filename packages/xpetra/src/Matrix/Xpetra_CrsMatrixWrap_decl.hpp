@@ -23,7 +23,10 @@
 #include "Xpetra_CrsMatrixFactory.hpp"
 
 #include "Xpetra_Matrix.hpp"
-#include "Xpetra_TpetraBlockCrsMatrix_decl.hpp"
+#include "Xpetra_TpetraOperator.hpp"
+#include "Xpetra_TpetraBlockCrsMatrix.hpp"
+#include "Xpetra_TpetraRowMatrix.hpp"
+#include "Xpetra_TpetraCrsMatrix.hpp"
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Hashtable.hpp>
@@ -451,7 +454,6 @@ class CrsMatrixWrap : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   // Because ColMap might not be available before fillComplete().
   void CreateDefaultView();
 
- private:
   // The colMap can be <tt>null</tt> until fillComplete() is called. The default view of the Matrix have to be updated when fillComplete() is called.
   // If CrsMatrix::fillComplete() have been used instead of CrsMatrixWrap::fillComplete(), the default view is updated when getColMap() is called.
   void updateDefaultView() const;
@@ -486,6 +488,38 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &
 toCrsMatrix(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &matrix) {
   return *dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(matrix).getCrsMatrix();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toXpetra(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &A) {
+  auto xpTpCrs = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A));
+  auto xpCrs   = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(xpTpCrs, true);
+  return rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xpCrs));
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toXpetra(Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &A) {
+  auto xpTpCrs = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A));
+  auto xpCrs   = Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(xpTpCrs, true);
+  return rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xpCrs));
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toXpetra(Teuchos::RCP<Tpetra::FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &A) {
+  auto xpTpCrs = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A));
+  auto xpCrs   = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(xpTpCrs, true);
+  return rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xpCrs));
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toXpetra(Teuchos::RCP<const Tpetra::FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &A) {
+  auto xpTpCrs = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A));
+  auto xpCrs   = Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(xpTpCrs, true);
+  return rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xpCrs));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -558,6 +592,70 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &
 toTpetraBlock(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A) {
   return toTpetraBlock(toCrsMatrix(A));
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toTpetraRowMatrix(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &mat) {
+  auto crsMat  = toCrsMatrix(mat);
+  auto tmp_Crs = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(crsMat);
+  if (!tmp_Crs.is_null()) {
+    return tmp_Crs->getTpetra_CrsMatrixNonConst();
+  } else {
+    auto tmp_BlockCrs = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(crsMat);
+    if (tmp_BlockCrs.is_null())
+      throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
+    return tmp_BlockCrs->getTpetra_BlockCrsMatrixNonConst();
+  }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toTpetraRowMatrix(const Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &mat) {
+  auto crsMat  = toCrsMatrix(mat);
+  auto tmp_Crs = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(crsMat);
+  if (!tmp_Crs.is_null()) {
+    return tmp_Crs->getTpetra_CrsMatrix();
+  } else {
+    auto tmp_BlockCrs = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(crsMat);
+    if (tmp_BlockCrs.is_null())
+      throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::TpetraCrsMatrix and Xpetra::TpetraBlockCrsMatrix failed");
+    return tmp_BlockCrs->getTpetra_BlockCrsMatrix();
+  }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toTpetraRowMatrix(const Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &A) {
+  auto mat  = Teuchos::rcp_dynamic_cast<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A);
+  auto rmat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A);
+  if (!mat.is_null()) {
+    return toTpetraRowMatrix(mat);
+  } else if (!rmat.is_null()) {
+    return rmat->getTpetra_RowMatrixNonConst();
+  } else {
+    auto tpOp = Teuchos::rcp_dynamic_cast<Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A, true);
+    auto tOp  = tpOp->getOperator();
+    auto tRow = Teuchos::rcp_dynamic_cast<Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(tOp, true);
+    return tRow;
+  }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+toTpetraRowMatrix(const Teuchos::RCP<const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &A) {
+  auto mat  = Teuchos::rcp_dynamic_cast<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A);
+  auto rmat = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraRowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A);
+  if (!mat.is_null()) {
+    return toTpetraRowMatrix(mat);
+  } else if (!rmat.is_null()) {
+    return rmat->getTpetra_RowMatrix();
+  } else {
+    auto tpOp = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(A, true);
+    auto tOp  = tpOp->getOperator();
+    auto tRow = Teuchos::rcp_dynamic_cast<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(tOp, true);
+    return tRow;
+  }
 }
 
 }  // namespace Xpetra

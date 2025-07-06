@@ -714,7 +714,7 @@ void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, 
   RCP<HierarchyManager> mueluFactory = rcp(new ParameterListInterpreter<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(*List, A->getComm()));
   RCP<Hierarchy> H                   = mueluFactory->CreateHierarchy();
   H->setlib(Xpetra::UseTpetra);
-  RCP<Matrix> xA = TpetraCrs_To_XpetraMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A);
+  RCP<Matrix> xA = Xpetra::toXpetra(A);
   H->GetLevel(0)->Set("A", xA);
   if (haveCoords) {
     RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> coords = loadDataFromMatlab<RCP<Xpetra_MultiVector_double>>(matlabCoords);
