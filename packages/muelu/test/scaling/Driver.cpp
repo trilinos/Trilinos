@@ -110,6 +110,10 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
   bool equilibrate_diag  = (equilibrate == "diag");
   bool equilibrate_no    = (equilibrate == "no");
   bool assumeSymmetric   = false;
+
+  if (equilibrate_no)
+    return;
+
   typedef typename Tpetra::Details::EquilibrationInfo<typename Kokkos::ArithTraits<Scalar>::val_type, typename Node::device_type> equil_type;
 
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A = toTpetra(Axpetra);
@@ -140,8 +144,6 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
                                    colScalingFactors, true, true,
                                    equibResult_.assumeSymmetric,
                                    Tpetra::SCALING_DIVIDE);
-    } else if (equilibrate_no) {
-      // no-op
     } else
       throw std::runtime_error("Invalid 'equilibrate' option '" + equilibrate + "'");
   }
