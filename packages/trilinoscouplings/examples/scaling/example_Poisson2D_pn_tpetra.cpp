@@ -99,6 +99,7 @@
 #include "Shards_CellTopology.hpp"
 
 // Pamgen includes
+#include "Xpetra_CrsMatrixWrap_decl.hpp"
 #include "create_inline_mesh.h"
 #include "pamgen_im_exodusII_l.h"
 #include "pamgen_im_ne_nemesisI_l.h"
@@ -1563,8 +1564,8 @@ int main(int argc, char *argv[]) {
   RCP<crs_matrix_type> interpolationMatrix, restrictionMatrix;
   if (P_identity != Teuchos::null) {
     Teuchos::ParameterList & level1 = amgList.sublist("level 1");
-    RCP<xpetra_crs_matrix_type> xA1 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(rcpFromRef(StiffMatrix_aux));
-    RCP<xpetra_crs_matrix_type> xP = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(P_identity);
+    RCP<xpetra_crs_matrix_type> xA1 = Xpetra::toXpetra(rcpFromRef(StiffMatrix_aux));
+    RCP<xpetra_crs_matrix_type> xP = Xpetra::toXpetra(P_identity);
     level1.set("A",xA1);
     level1.set("P",xP);
     amgList.set("transpose: use implicit",true);
@@ -1573,7 +1574,7 @@ int main(int argc, char *argv[]) {
     ArrayRCP<scalar_type> data = nullspace->getDataNonConst(0);
     for (int i=0; i<data.size(); ++i)
       data[i] = 1.0;
-    RCP<xpetra_multivector_type> xnullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>(nullspace);
+    RCP<xpetra_multivector_type> xnullspace = Xpetra::toXpetra(nullspace);
     level1.set("Nullspace",xnullspace);
   }
 
