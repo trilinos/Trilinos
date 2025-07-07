@@ -523,10 +523,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, TransformFunctions, Scalar, 
   TEST_EQUALITY(transposeRes->getGlobalNumRows(), A->getGlobalNumRows());
   TEST_EQUALITY(transposeRes->getLocalNumRows(), A->getLocalNumRows());
 
-  auto tpetraRow = Utils::Op2TpetraRow(A);
+  auto tpetraRow = Xpetra::toTpetraRowMatrix(A);
   compareMat(*A, *tpetraRow);
 
-  auto nonConstTpetraRow = Utils::Op2NonConstTpetraRow(A);
+  auto nonConstTpetraRow = Xpetra::toTpetraRowMatrix(A);
   compareMat(*A, *nonConstTpetraRow);
 
   auto tpetraMap = toTpetra(map);
