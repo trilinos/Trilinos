@@ -12,38 +12,26 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
-#include "AnasaziEpetraAdapter.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-
+#include "AnasaziTpetraAdapter.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziSimpleLOBPCGSolMgr.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#include <Tpetra_Core.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
-#include "ModeLaplace1DQ1.h"
+#include <ModeLaplace1DQ1.hpp>
 
 using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
   bool boolret;
-  int MyPID;
 
-#ifdef EPETRA_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-  MyPID = Comm.MyPID();
+  Tpetra::ScopeGuard tpetraScope (&argc,&argv);
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
+  int MyPID = comm->getRank();
 
   bool testFailed;
   bool verbose = false;
@@ -57,21 +45,21 @@ int main(int argc, char *argv[])
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef EPETRA_MPI
-    MPI_Finalize();
-#endif
     return -1;
   }
   if (debug) verbose = true;
 
-  typedef double ScalarType;
-  typedef ScalarTraits<ScalarType>                   SCT;
-  typedef SCT::magnitudeType               MagnitudeType;
-  typedef Epetra_MultiVector                          MV;
-  typedef Epetra_Operator                             OP;
-  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
-  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
-  const ScalarType ONE  = SCT::one();
+  typedef double                              ST;
+  typedef Teuchos::ScalarTraits<ST>          SCT;
+  typedef SCT::magnitudeType                  MT;
+  typedef Tpetra::MultiVector<ST>             MV;
+  typedef MV::global_ordinal_type             GO;
+  typedef MV::local_ordinal_type              LO;
+  typedef MV::node_type                     Node;
+  typedef Tpetra::Operator<ST>                OP;
+  typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
+  const ST ONE  = SCT::one();
 
   if (verbose && MyPID == 0) {
     std::cout << Anasazi::Anasazi_Version() << std::endl << std::endl;
@@ -85,21 +73,21 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Create problem
-  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  ModeLaplace1DQ1<ST,LO,GO,Node> testCase( comm, brick_dim[0], elements[0]);
   //
   // Get the stiffness and mass matrices
-  RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<const Tpetra::CrsMatrix<ST,LO,GO,Node> > K = testCase.getStiffness();
+  RCP<const Tpetra::CrsMatrix<ST,LO,GO,Node> > M = testCase.getMass();
   //
   // Create the initial vectors
   int blockSize = 2;
-  RCP<Anasazi::EpetraMultiVec> ivec = rcp( new Anasazi::EpetraMultiVec(K->OperatorDomainMap(), blockSize) );
-  ivec->Random();
+  RCP<MV> ivec = rcp (new MV (K->getDomainMap(),blockSize));
+  ivec->randomize ();
   //
   // Create eigenproblem
   const int nev = 5;
-  RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
-    rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
+  RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
+    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,M,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
   problem->setHermitian(true);
@@ -114,9 +102,6 @@ int main(int argc, char *argv[])
       std::cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << std::endl
            << "End Result: TEST FAILED" << std::endl;	
     }
-#ifdef EPETRA_MPI
-    MPI_Finalize() ;
-#endif
     return -1;
   }
 
@@ -140,7 +125,7 @@ int main(int argc, char *argv[])
   else {
     maxIters = 450;
   }
-  MagnitudeType tol = 1.0e-6;
+  MT tol = 1.0e-6;
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
@@ -151,7 +136,7 @@ int main(int argc, char *argv[])
   MyPL.set( "Convergence Tolerance", tol );
   //
   // Create the solver manager
-  Anasazi::SimpleLOBPCGSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
+  Anasazi::SimpleLOBPCGSolMgr<ST,MV,OP> MySolverMan(problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMan.solve();
@@ -161,29 +146,15 @@ int main(int argc, char *argv[])
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
+  Anasazi::Eigensolution<ST,MV> sol = problem->getSolution();
   RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
 
-    // Check the problem against the analytical solutions
-    if (verbose) {
-      double *revals = new double[numev];
-      for (int i=0; i<numev; i++) {
-        revals[i] = sol.Evals[i].realpart;
-      }
-      bool smallest = false;
-      if (which == "SM" || which == "SR") {
-        smallest = true;
-      }
-      testCase->eigenCheck( *evecs, revals, 0, smallest );
-      delete [] revals;
-    }
-
     // Compute the direct residual
-    std::vector<ScalarType> normV( numev );
-    SerialDenseMatrix<int,ScalarType> T(numev,numev);
+    std::vector<ST> normV( numev );
+    SerialDenseMatrix<int,ST> T(numev,numev);
     for (int i=0; i<numev; i++) {
       T(i,i) = sol.Evals[i].realpart;
     }
@@ -204,10 +175,6 @@ int main(int argc, char *argv[])
     }
 
   }
-
-#ifdef EPETRA_MPI
-  MPI_Finalize() ;
-#endif
 
   if (testFailed) {
     if (verbose && MyPID==0) {
