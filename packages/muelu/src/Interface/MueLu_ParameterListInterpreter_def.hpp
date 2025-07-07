@@ -315,6 +315,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // and not present in the list, but it is better than nothing.
   useCoordinates_ = false;
   useBlockNumber_ = false;
+  if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: strength-of-connection: matrix", std::string, "distance laplacian"))
+    useCoordinates_ = true;
+  if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: use blocking", bool, true))
+    useBlockNumber_ = true;
   if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
       MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type", std::string, "brick") ||
       MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: export visualization data", bool, true)) {
