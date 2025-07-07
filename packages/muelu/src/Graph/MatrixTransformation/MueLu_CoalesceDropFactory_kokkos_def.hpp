@@ -26,6 +26,7 @@
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Utilities.hpp"
 
 // #define MUELU_COALESCE_DROP_DEBUG 1
 
@@ -461,29 +462,54 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   // Macro that runs dropping for SoC based on A itself, handling of droppingMethod.
   // Calls MueLu_runDroppingFunctors
-#define MueLu_runDroppingFunctors_on_A(SoC)                                              \
-  {                                                                                      \
-    if (droppingMethod == "point-wise") {                                                \
-      auto dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results); \
-                                                                                         \
-      if (aggregationMayCreateDirichlet) {                                               \
-        MueLu_runDroppingFunctors(dropping,                                              \
-                                  drop_boundaries,                                       \
-                                  preserve_diagonals,                                    \
-                                  mark_singletons_as_boundary);                          \
-      } else {                                                                           \
-        MueLu_runDroppingFunctors(dropping,                                              \
-                                  drop_boundaries,                                       \
-                                  preserve_diagonals);                                   \
-      }                                                                                  \
-    } else if (droppingMethod == "cut-drop") {                                           \
-      auto comparison = CutDrop::make_comparison_functor<SoC>(*A, results);              \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                  \
-                                                                                         \
-      MueLu_runDroppingFunctors(drop_boundaries,                                         \
-                                preserve_diagonals,                                      \
-                                cut_drop);                                               \
-    }                                                                                    \
+#define MueLu_runDroppingFunctors_on_A(SoC)                                                              \
+  {                                                                                                      \
+    if (droppingMethod == "point-wise") {                                                                \
+      auto dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);                 \
+                                                                                                         \
+      if (aggregationMayCreateDirichlet) {                                                               \
+        if (symmetrizeDroppedGraph) {                                                                    \
+          auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results); \
+          MueLu_runDroppingFunctors(dropping,                                                            \
+                                    drop_boundaries,                                                     \
+                                    preserve_diagonals,                                                  \
+                                    mark_singletons_as_boundary);                                        \
+        } else {                                                                                         \
+          auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);       \
+          MueLu_runDroppingFunctors(dropping,                                                            \
+                                    drop_boundaries,                                                     \
+                                    preserve_diagonals,                                                  \
+                                    mark_singletons_as_boundary);                                        \
+        }                                                                                                \
+      } else {                                                                                           \
+        if (symmetrizeDroppedGraph) {                                                                    \
+          auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results); \
+          MueLu_runDroppingFunctors(dropping,                                                            \
+                                    drop_boundaries,                                                     \
+                                    preserve_diagonals);                                                 \
+        } else {                                                                                         \
+          auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);       \
+          MueLu_runDroppingFunctors(dropping,                                                            \
+                                    drop_boundaries,                                                     \
+                                    preserve_diagonals);                                                 \
+        }                                                                                                \
+      }                                                                                                  \
+    } else if (droppingMethod == "cut-drop") {                                                           \
+      auto comparison = CutDrop::make_comparison_functor<SoC>(*A, results);                              \
+      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                  \
+                                                                                                         \
+      if (symmetrizeDroppedGraph) {                                                                      \
+        auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);   \
+        MueLu_runDroppingFunctors(drop_boundaries,                                                       \
+                                  preserve_diagonals,                                                    \
+                                  cut_drop);                                                             \
+      } else {                                                                                           \
+        auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);         \
+        MueLu_runDroppingFunctors(drop_boundaries,                                                       \
+                                  preserve_diagonals,                                                    \
+                                  cut_drop);                                                             \
+      }                                                                                                  \
+    }                                                                                                    \
   }
 
   // Macro that runs on the distance Laplacian, handling of droppingMethod.
@@ -494,22 +520,47 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results); \
                                                                                                                \
       if (aggregationMayCreateDirichlet) {                                                                     \
-        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                     \
-                                  drop_boundaries,                                                             \
-                                  preserve_diagonals,                                                          \
-                                  mark_singletons_as_boundary);                                                \
+        if (symmetrizeDroppedGraph) {                                                                          \
+          auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);       \
+          MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                   \
+                                    drop_boundaries,                                                           \
+                                    preserve_diagonals,                                                        \
+                                    mark_singletons_as_boundary);                                              \
+        } else {                                                                                               \
+          auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);             \
+          MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                   \
+                                    drop_boundaries,                                                           \
+                                    preserve_diagonals,                                                        \
+                                    mark_singletons_as_boundary);                                              \
+        }                                                                                                      \
       } else {                                                                                                 \
-        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                     \
-                                  drop_boundaries,                                                             \
-                                  preserve_diagonals);                                                         \
+        if (symmetrizeDroppedGraph) {                                                                          \
+          auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);       \
+          MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                   \
+                                    drop_boundaries,                                                           \
+                                    preserve_diagonals);                                                       \
+        } else {                                                                                               \
+          auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);             \
+          MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                   \
+                                    drop_boundaries,                                                           \
+                                    preserve_diagonals);                                                       \
+        }                                                                                                      \
       }                                                                                                        \
     } else if (droppingMethod == "cut-drop") {                                                                 \
       auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(*A, dist2, results);                        \
       auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                        \
                                                                                                                \
-      MueLu_runDroppingFunctors(drop_boundaries,                                                               \
-                                preserve_diagonals,                                                            \
-                                cut_drop);                                                                     \
+      if (symmetrizeDroppedGraph) {                                                                            \
+        auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);         \
+        MueLu_runDroppingFunctors(drop_boundaries,                                                             \
+                                  preserve_diagonals,                                                          \
+                                  cut_drop);                                                                   \
+      } else {                                                                                                 \
+        auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);               \
+        MueLu_runDroppingFunctors(drop_boundaries,                                                             \
+                                  preserve_diagonals,                                                          \
+                                  cut_drop);                                                                   \
+      }                                                                                                        \
     }                                                                                                          \
   }
 
@@ -541,8 +592,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   {
     SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
 
-    auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
-
     if (threshold != zero) {
       auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
       auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
@@ -571,10 +620,14 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
-      // FIXME: This seems inconsistent
-      // MueLu_runDroppingFunctors(drop_boundaries);
-      auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-      MueLu_runDroppingFunctors(no_op);
+
+      if (symmetrizeDroppedGraph) {
+        auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
+        MueLu_runDroppingFunctors(drop_boundaries);
+      } else {
+        auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
+        MueLu_runDroppingFunctors(no_op);
+      }
     }
 
     if (symmetrizeDroppedGraph) {
@@ -914,39 +967,66 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   // Macro that handles optional block diagonalization.
   // Calls MueLu_runDroppingFunctorsImpl
-#define MueLu_runDroppingFunctors(...)                                                                                                       \
-  {                                                                                                                                          \
-    if (useBlocking) {                                                                                                                       \
-      auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");                                                    \
-      auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation); \
-      MueLu_runDroppingFunctorsImpl(block_diagonalize, __VA_ARGS__);                                                                         \
-    } else                                                                                                                                   \
-      MueLu_runDroppingFunctorsImpl(__VA_ARGS__);                                                                                            \
+#define MueLu_runDroppingFunctors(...)                                                                                                                                \
+  {                                                                                                                                                                   \
+    if (useBlocking) {                                                                                                                                                \
+      auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");                                                                             \
+      auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, mergedA->getCrsGraph()->getImporter(), results, rowTranslation, colTranslation); \
+      MueLu_runDroppingFunctorsImpl(block_diagonalize, __VA_ARGS__);                                                                                                  \
+    } else                                                                                                                                                            \
+      MueLu_runDroppingFunctorsImpl(__VA_ARGS__);                                                                                                                     \
   }
 
   // Macro that runs dropping for SoC based on A itself, handling of droppingMethod.
   // Calls MueLu_runDroppingFunctors
-#define MueLu_runDroppingFunctors_on_A(SoC)                                              \
-  {                                                                                      \
-    if (droppingMethod == "point-wise") {                                                \
-      auto dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results); \
-                                                                                         \
-      if (aggregationMayCreateDirichlet) {                                               \
-        MueLu_runDroppingFunctors(dropping,                                              \
-                                  preserve_diagonals,                                    \
-                                  mark_singletons_as_boundary);                          \
-      } else {                                                                           \
-        MueLu_runDroppingFunctors(dropping,                                              \
-                                  preserve_diagonals);                                   \
-      }                                                                                  \
-    } else if (droppingMethod == "cut-drop") {                                           \
-      auto comparison = CutDrop::make_comparison_functor<SoC>(*A, results);              \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                  \
-                                                                                         \
-      MueLu_runDroppingFunctors(drop_boundaries,                                         \
-                                preserve_diagonals,                                      \
-                                cut_drop);                                               \
-    }                                                                                    \
+#define MueLu_runDroppingFunctors_on_A(SoC)                                                                                                 \
+  {                                                                                                                                         \
+    if (droppingMethod == "point-wise") {                                                                                                   \
+      auto dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results);                                                    \
+                                                                                                                                            \
+      if (aggregationMayCreateDirichlet) {                                                                                                  \
+        if (symmetrizeDroppedGraph) {                                                                                                       \
+          auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results); \
+          MueLu_runDroppingFunctors(dropping,                                                                                               \
+                                    drop_boundaries,                                                                                        \
+                                    preserve_diagonals,                                                                                     \
+                                    mark_singletons_as_boundary);                                                                           \
+        } else {                                                                                                                            \
+          auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);                             \
+          MueLu_runDroppingFunctors(dropping,                                                                                               \
+                                    drop_boundaries,                                                                                        \
+                                    preserve_diagonals,                                                                                     \
+                                    mark_singletons_as_boundary);                                                                           \
+        }                                                                                                                                   \
+      } else {                                                                                                                              \
+        if (symmetrizeDroppedGraph) {                                                                                                       \
+          auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results); \
+          MueLu_runDroppingFunctors(dropping,                                                                                               \
+                                    drop_boundaries,                                                                                        \
+                                    preserve_diagonals);                                                                                    \
+        } else {                                                                                                                            \
+          auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);                             \
+          MueLu_runDroppingFunctors(dropping,                                                                                               \
+                                    drop_boundaries,                                                                                        \
+                                    preserve_diagonals);                                                                                    \
+        }                                                                                                                                   \
+      }                                                                                                                                     \
+    } else if (droppingMethod == "cut-drop") {                                                                                              \
+      auto comparison = CutDrop::make_comparison_functor<SoC>(*A, results);                                                                 \
+      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                     \
+                                                                                                                                            \
+      if (symmetrizeDroppedGraph) {                                                                                                         \
+        auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);   \
+        MueLu_runDroppingFunctors(drop_boundaries,                                                                                          \
+                                  preserve_diagonals,                                                                                       \
+                                  cut_drop);                                                                                                \
+      } else {                                                                                                                              \
+        auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);                               \
+        MueLu_runDroppingFunctors(drop_boundaries,                                                                                          \
+                                  preserve_diagonals,                                                                                       \
+                                  cut_drop);                                                                                                \
+      }                                                                                                                                     \
+    }                                                                                                                                       \
   }
 
   // Macro that runs on the distance Laplacian, handling of droppingMethod.
@@ -957,20 +1037,47 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation); \
                                                                                                                                                                 \
       if (aggregationMayCreateDirichlet) {                                                                                                                      \
-        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                      \
-                                  preserve_diagonals,                                                                                                           \
-                                  mark_singletons_as_boundary);                                                                                                 \
+        if (symmetrizeDroppedGraph) {                                                                                                                           \
+          auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);                     \
+          MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                    \
+                                    drop_boundaries,                                                                                                            \
+                                    preserve_diagonals,                                                                                                         \
+                                    mark_singletons_as_boundary);                                                                                               \
+        } else {                                                                                                                                                \
+          auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);                                                 \
+          MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                    \
+                                    drop_boundaries,                                                                                                            \
+                                    preserve_diagonals,                                                                                                         \
+                                    mark_singletons_as_boundary);                                                                                               \
+        }                                                                                                                                                       \
       } else {                                                                                                                                                  \
-        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                      \
-                                  preserve_diagonals);                                                                                                          \
+        if (symmetrizeDroppedGraph) {                                                                                                                           \
+          auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);                     \
+          MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                    \
+                                    drop_boundaries,                                                                                                            \
+                                    preserve_diagonals);                                                                                                        \
+        } else {                                                                                                                                                \
+          auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);                                                 \
+          MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                    \
+                                    drop_boundaries,                                                                                                            \
+                                    preserve_diagonals);                                                                                                        \
+        }                                                                                                                                                       \
       }                                                                                                                                                         \
     } else if (droppingMethod == "cut-drop") {                                                                                                                  \
       auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(*A, dist2, results);                                                                         \
       auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                         \
                                                                                                                                                                 \
-      MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                \
-                                preserve_diagonals,                                                                                                             \
-                                cut_drop);                                                                                                                      \
+      if (symmetrizeDroppedGraph) {                                                                                                                             \
+        auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);                       \
+        MueLu_runDroppingFunctors(drop_boundaries,                                                                                                              \
+                                  preserve_diagonals,                                                                                                           \
+                                  cut_drop);                                                                                                                    \
+      } else {                                                                                                                                                  \
+        auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);                                                   \
+        MueLu_runDroppingFunctors(drop_boundaries,                                                                                                              \
+                                  preserve_diagonals,                                                                                                           \
+                                  cut_drop);                                                                                                                    \
+      }                                                                                                                                                         \
     }                                                                                                                                                           \
   }
 
@@ -1013,10 +1120,34 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   // dropping decisions for each entry
   auto results = Kokkos::View<DecisionType*, memory_space>("results", lclA.nnz());  // initialized to UNDECIDED
+
+  RCP<Matrix> mergedA;
   {
     SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
 
-    auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);
+    {
+      // Construct merged A.
+
+      auto merged_rowptr      = rowptr_type("rowptr", numNodes + 1);
+      LocalOrdinal nnz_merged = 0;
+
+      auto functor = MatrixConstruction::MergeCountFunctor(lclA, blkPartSize, colTranslation, merged_rowptr);
+      Kokkos::parallel_scan("MergeCount", range, functor, nnz_merged);
+
+      local_graph_type lclMergedGraph;
+      auto colidx_merged = entries_type("entries", nnz_merged);
+      auto values_merged = values_type("values", nnz_merged);
+
+      local_matrix_type lclMergedA = local_matrix_type("mergedA",
+                                                       numNodes, nonUniqueMap->getLocalNumElements(),
+                                                       nnz_merged,
+                                                       values_merged, merged_rowptr, colidx_merged);
+
+      auto fillFunctor = MatrixConstruction::MergeFillFunctor<local_matrix_type>(lclA, blkSize, colTranslation, lclMergedA);
+      Kokkos::parallel_for("MueLu::CoalesceDrop::MergeFill", range, fillFunctor);
+
+      mergedA = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclMergedA, uniqueMap, nonUniqueMap, uniqueMap, uniqueMap);
+    }
 
     if (threshold != zero) {
       auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
@@ -1060,31 +1191,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           }
         }
 
-        RCP<Matrix> mergedA;
-        {
-          // Construct merged A.
-
-          auto merged_rowptr      = rowptr_type("rowptr", numNodes + 1);
-          LocalOrdinal nnz_merged = 0;
-
-          auto functor = MatrixConstruction::MergeCountFunctor(lclA, blkPartSize, colTranslation, merged_rowptr);
-          Kokkos::parallel_scan("MergeCount", range, functor, nnz_merged);
-
-          local_graph_type lclMergedGraph;
-          auto colidx_merged = entries_type("entries", nnz_merged);
-          auto values_merged = values_type("values", nnz_merged);
-
-          local_matrix_type lclMergedA = local_matrix_type("mergedA",
-                                                           numNodes, nonUniqueMap->getLocalNumElements(),
-                                                           nnz_merged,
-                                                           values_merged, merged_rowptr, colidx_merged);
-
-          auto fillFunctor = MatrixConstruction::MergeFillFunctor<local_matrix_type>(lclA, blkSize, colTranslation, lclMergedA);
-          Kokkos::parallel_for("MueLu::CoalesceDrop::MergeFill", range, fillFunctor);
-
-          mergedA = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclMergedA, uniqueMap, nonUniqueMap, uniqueMap, uniqueMap);
-        }
-
         if (socUsesMeasure == "unscaled") {
           MueLu_runDroppingFunctors_on_dlap(Misc::UnscaledMeasure);
         } else if (socUsesMeasure == "smoothed aggregation") {
@@ -1097,7 +1203,15 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
-      // MueLu_runDroppingFunctors(drop_boundaries);
+
+      // if (symmetrizeDroppedGraph) {
+      //   auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(A, rowTranslation, colTranslation, boundaryNodes, results);
+      //   MueLu_runDroppingFunctors(drop_boundaries);
+      // } else {
+      //   auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);
+      //   MueLu_runDroppingFunctors(drop_boundaries);
+      // }
+
       auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
       MueLu_runDroppingFunctors(no_op);
     }
