@@ -38,4 +38,7 @@
 # define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
 #endif
 
+/* Define if want to build with deprecated parameters */
+#cmakedefine TACHO_DEPRECATED_PARAMETERS
+
 #endif
