@@ -213,8 +213,8 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
     comm->barrier();
   }
 
-  X = MultiVectorFactory::Build(map, numVectors);
-  B = MultiVectorFactory::Build(map, numVectors);
+  X = MultiVectorFactory::Build(map, numVectors, /*zeroOut=*/false);
+  B = MultiVectorFactory::Build(map, numVectors, /*zeroOut=*/false);
 
   if (rhsFile.empty()) {
     // we set seed for reproducibility
