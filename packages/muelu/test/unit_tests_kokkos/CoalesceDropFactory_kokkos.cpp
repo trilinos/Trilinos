@@ -213,7 +213,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacian,
 
     TEST_EQUALITY(myDofsPerNode, 3);
     TEST_EQUALITY(numGlobalBoundaryNodes, 100);
-    TEST_EQUALITY(numGlobalEdges, 8624);
+    TEST_EQUALITY(numGlobalEdges, 7940);
   }
 }  // DistanceLaplacian
 

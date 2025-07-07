@@ -79,6 +79,50 @@ class PointwiseDropBoundaryFunctor {
 };
 
 /*!
+  @class PointwiseSymmetricDropBoundaryFunctor
+  @brief Functor that drops boundary nodes for a blockSize == 1 problem.
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class PointwiseSymmetricDropBoundaryFunctor {
+ private:
+  using local_matrix_type   = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using scalar_type         = typename local_matrix_type::value_type;
+  using local_ordinal_type  = typename local_matrix_type::ordinal_type;
+  using memory_space        = typename local_matrix_type::memory_space;
+  using results_view        = Kokkos::View<DecisionType*, memory_space>;
+  using boundary_nodes_view = Kokkos::View<bool*, memory_space>;
+
+  local_matrix_type A;
+  boundary_nodes_view boundaryNodes;
+  boundary_nodes_view boundaryNodesCol;
+  results_view results;
+
+ public:
+  PointwiseSymmetricDropBoundaryFunctor(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A_, boundary_nodes_view boundaryNodes_, results_view& results_)
+    : boundaryNodes(boundaryNodes_)
+    , results(results_) {
+    A                        = A_->getLocalMatrixDevice();
+    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", A_->getColMap()->getLocalNumElements());
+    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", A_->getDomainMap()->getLocalNumElements());
+    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(*A_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
+    boundaryNodesCol = boundaryNodesColumn;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()(local_ordinal_type rlid) const {
+    auto row                 = A.rowConst(rlid);
+    const size_t offset      = A.graph.row_map(rlid);
+    const bool isBoundaryRow = boundaryNodes(rlid);
+    for (local_ordinal_type k = 0; k < row.length; ++k) {
+      auto clid = row.colidx(k);
+      if (isBoundaryRow || boundaryNodesCol(clid))
+        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : DROP,
+                                          results(offset + k));
+    }
+  }
+};
+
+/*!
   @class VectorDropBoundaryFunctor
   @brief Functor that drops boundary nodes for a blockSize > 1 problem.
 */
@@ -112,6 +156,56 @@ class VectorDropBoundaryFunctor {
     if (isBoundaryRow) {
       for (local_ordinal_type k = 0; k < row.length; ++k) {
         auto clid           = row.colidx(k);
+        results(offset + k) = Kokkos::max(rlid == clid ? KEEP : DROP,
+                                          results(offset + k));
+      }
+    }
+  }
+};
+
+/*!
+  @class VectorSymmetricDropBoundaryFunctor
+  @brief Functor that drops boundary nodes for a blockSize > 1 problem.
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class VectorSymmetricDropBoundaryFunctor {
+ private:
+  using local_matrix_type       = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using scalar_type             = typename local_matrix_type::value_type;
+  using local_ordinal_type      = typename local_matrix_type::ordinal_type;
+  using memory_space            = typename local_matrix_type::memory_space;
+  using results_view            = Kokkos::View<DecisionType*, memory_space>;
+  using boundary_nodes_view     = Kokkos::View<bool*, memory_space>;
+  using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
+
+  local_matrix_type A;
+  block_indices_view_type point_to_block;
+  block_indices_view_type ghosted_point_to_block;
+  boundary_nodes_view boundaryNodes;
+  boundary_nodes_view boundaryNodesCol;
+  results_view results;
+
+ public:
+  VectorSymmetricDropBoundaryFunctor(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_, boundary_nodes_view boundaryNodes_, results_view& results_)
+    : point_to_block(point_to_block_)
+    , ghosted_point_to_block(ghosted_point_to_block_)
+    , boundaryNodes(boundaryNodes_)
+    , results(results_) {
+    A                        = A_->getLocalMatrixDevice();
+    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", A_->getColMap()->getLocalNumElements());
+    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", A_->getDomainMap()->getLocalNumElements());
+    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(*A_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
+    boundaryNodesCol = boundaryNodesColumn;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()(local_ordinal_type rlid) const {
+    auto row                 = A.rowConst(rlid);
+    const size_t offset      = A.graph.row_map(rlid);
+    const bool isBoundaryRow = boundaryNodes(point_to_block(rlid));
+    for (local_ordinal_type k = 0; k < row.length; ++k) {
+      auto clid = row.colidx(k);
+      if (isBoundaryRow || boundaryNodesCol(ghosted_point_to_block(clid))) {
         results(offset + k) = Kokkos::max(rlid == clid ? KEEP : DROP,
                                           results(offset + k));
       }
@@ -349,7 +443,7 @@ class BlockDiagonalizeVectorFunctor {
   using block_indices_type            = Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
   using local_block_indices_view_type = typename block_indices_type::dual_view_type_const::t_dev;
   using id_translation_type           = Kokkos::View<local_ordinal_type*, memory_space>;
-  using map_type                      = Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+  using importer_type                 = Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
 
   local_matrix_type A;
   local_block_indices_view_type point_to_block;
@@ -360,14 +454,12 @@ class BlockDiagonalizeVectorFunctor {
   Teuchos::RCP<block_indices_type> ghosted_point_to_blockMV;
 
  public:
-  BlockDiagonalizeVectorFunctor(matrix_type& A_, block_indices_type& point_to_block_, Teuchos::RCP<const map_type> non_unique_map_, results_view& results_, id_translation_type row_translation_, id_translation_type col_translation_)
+  BlockDiagonalizeVectorFunctor(matrix_type& A_, block_indices_type& point_to_block_, const RCP<const importer_type>& importer, results_view& results_, id_translation_type row_translation_, id_translation_type col_translation_)
     : A(A_.getLocalMatrixDevice())
     , point_to_block(point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
     , results(results_)
     , row_translation(row_translation_)
     , col_translation(col_translation_) {
-    auto importer = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(point_to_block_.getMap(), non_unique_map_);
-
     if (!importer.is_null()) {
       ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
       ghosted_point_to_blockMV->doImport(point_to_block_, *importer, Xpetra::INSERT);
