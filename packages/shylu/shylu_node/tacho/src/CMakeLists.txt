@@ -21,6 +21,12 @@ SET(TACHO_HAVE_TEUCHOS ${Trilinos_ENABLE_Teuchos})
                        
 SET(TACHO_HAVE_VTUNE ${TPL_ENABLE_VTune})
 
+IF (Tacho_REMOVE_DEPRECATED_PARAMETERS)
+  SET(TACHO_DEPRECATED_PARAMETERS OFF)
+ELSE()
+  SET(TACHO_DEPRECATED_PARAMETERS ON)
+ENDIF()
+
 #-----------------------------------------------------------------------------
 
 TRIBITS_CONFIGURE_FILE(Tacho_config.h)
