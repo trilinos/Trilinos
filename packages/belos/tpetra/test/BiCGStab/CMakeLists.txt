@@ -20,7 +20,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestBiCGSTABFiles
-    SOURCE_DIR ${${PACKAGE_NAME}_SOURCE_DIR}/epetra/test/BiCGStab
+    SOURCE_DIR ${${PACKAGE_NAME}_SOURCE_DIR}/testmatrices
     SOURCE_FILES cage4.hb
     EXEDEPS Tpetra_BiCGStab_hb
     )

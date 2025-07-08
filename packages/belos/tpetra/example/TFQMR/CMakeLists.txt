@@ -17,7 +17,7 @@ TRIBITS_ADD_EXECUTABLE(
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyExampleTFQMRFiles
-  SOURCE_DIR ${Belos_SOURCE_DIR}/tpetra/example/TFQMR
+  SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
   SOURCE_FILES osrirr1.hb
   EXEDEPS TFQMR_Tpetra_File_Ex 
 )
