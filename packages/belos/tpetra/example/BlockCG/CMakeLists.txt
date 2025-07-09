@@ -15,9 +15,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     COMM serial mpi
     )
 
-  ASSERT_DEFINED(Anasazi_SOURCE_DIR)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyExampleBlockCGFiles
-    SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES bcsstk14.hb
     EXEDEPS BlockCG_Tpetra_File_Ex
     )
