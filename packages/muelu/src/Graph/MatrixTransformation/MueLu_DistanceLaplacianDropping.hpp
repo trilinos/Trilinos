@@ -577,6 +577,43 @@ class DropFunctor {
   void operator()(local_ordinal_type rlid) const {
     auto row            = A.rowConst(rlid);
     const size_t offset = A.graph.row_map(rlid);
+
+#ifdef MUELU_COALESCE_DROP_DEBUG
+    {
+      Kokkos::printf("SoC:        ");
+      for (local_ordinal_type k = 0; k < row.length; ++k) {
+        auto clid = row.colidx(k);
+
+        scalar_type val;
+        if (rlid != clid) {
+          val = -one / dist2.distance2(rlid, clid);
+        } else {
+          val = diag(rlid);
+        }
+
+        if constexpr (measure == Misc::SmoothedAggregationMeasure) {
+          auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+          auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
+
+          Kokkos::printf("%5f ", ATS::sqrt(aij2 / aiiajj));
+        } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+          auto neg_aij     = -ATS::real(val);
+          auto max_neg_aik = ATS::real(diag(rlid));
+          Kokkos::printf("%5f ", neg_aij / max_neg_aik);
+        } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
+          auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+          const bool is_nonpositive = ATS::real(val) <= mATS::zero();
+          magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+          // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
+          if (!is_nonpositive)
+            aij2 = -aij2;
+          Kokkos::printf("%5f ", ATS::sqrt(aij2 / aiiajj));
+        }
+      }
+      Kokkos::printf("\n");
+    }
+#endif
+
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid = row.colidx(k);
 
@@ -666,6 +703,44 @@ class VectorDropFunctor {
     auto brlid          = point_to_block(rlid);
     auto row            = A.rowConst(rlid);
     const size_t offset = A.graph.row_map(rlid);
+
+#ifdef MUELU_COALESCE_DROP_DEBUG
+    {
+      Kokkos::printf("SoC:        ");
+      for (local_ordinal_type k = 0; k < row.length; ++k) {
+        auto clid  = row.colidx(k);
+        auto bclid = ghosted_point_to_block(clid);
+
+        scalar_type val;
+        if (brlid != bclid) {
+          val = -one / dist2.distance2(brlid, bclid);
+        } else {
+          val = diag(brlid);
+        }
+
+        if constexpr (measure == Misc::SmoothedAggregationMeasure) {
+          auto aiiajj = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
+          auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                  // |a_ij|^2
+
+          Kokkos::printf("%5f ", ATS::sqrt(aij2 / aiiajj));
+        } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+          auto neg_aij     = -ATS::real(val);
+          auto max_neg_aik = eps * ATS::real(diag(brlid));
+          Kokkos::printf("%5f ", neg_aij / max_neg_aik);
+        } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
+          auto aiiajj               = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
+          const bool is_nonpositive = ATS::real(val) <= mATS::zero();
+          magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+          // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
+          if (!is_nonpositive)
+            aij2 = -aij2;
+          Kokkos::printf("%5f ", ATS::sqrt(aij2 / aiiajj));
+        }
+      }
+      Kokkos::printf("\n");
+    }
+#endif
+
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid  = row.colidx(k);
       auto bclid = ghosted_point_to_block(clid);
