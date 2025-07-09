@@ -286,7 +286,7 @@ main (int argc, char *argv[])
     A->resumeFill ();
 
     if (A->getRowMap ()->isNodeGlobalElement (0)) {
-      // Get a copy of the row with with global index 0.  Modify the
+      // Get a copy of the row with global index 0.  Modify the
       // diagonal entry of that row.  Submit the modified values to
       // the matrix.
       const global_ordinal_type idOfFirstRow = 0;
