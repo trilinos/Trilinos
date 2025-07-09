@@ -213,11 +213,11 @@ namespace {
                                      const std::vector<stk::mesh::Entity> &entities,
                                      Ioss::GroupingEntity *ioEntity)
   {
-    size_t iossNumFieldComponents = ioField.transformed_storage()->component_count();
+    const int iossNumFieldComponents = ioField.transformed_storage()->component_count();
 
     std::vector<Tio> ioFieldData;
     size_t ioEntityCount = ioEntity->get_field_data(ioField.get_name(), ioFieldData);
-    assert(ioFieldData.size() == entities.size() * iossNumFieldComponents);
+    assert(ioFieldData.size() == static_cast<size_t>(entities.size() * iossNumFieldComponents));
 
     size_t entityCount = entities.size();
 
@@ -232,17 +232,14 @@ namespace {
       throw std::runtime_error(errmsg.str());
     }
 
-    field->sync_to_host();
-    field->modify_on_host();
+    auto fieldData = field->data<Tfield,stk::mesh::OverwriteAll>();
     for (size_t i=0; i < entityCount; ++i) {
-      if (mesh.is_valid(entities[i])) {
-        Tfield *fldData = static_cast<Tfield*>(stk::mesh::field_data(*field, entities[i]));
-        if (fldData != nullptr) {
-          const size_t stkNumFieldComponents = stk::mesh::field_scalars_per_entity(*field, entities[i]);
-          const size_t len = std::min(stkNumFieldComponents, iossNumFieldComponents);
-          for(size_t j=0; j<len; ++j) {
-            fldData[j] = ioFieldData[i*iossNumFieldComponents+j];
-          }
+      if (mesh.is_valid(entities[i]) && field->defined_on(entities[i])) {
+        auto fldData = fieldData.entity_values(entities[i]);
+        const int stkNumFieldComponents = fldData.num_scalars();
+        const stk::mesh::ScalarIdx len ( std::min(stkNumFieldComponents, iossNumFieldComponents) );
+        for(stk::mesh::ScalarIdx j(0); j<len; ++j) {
+          fldData(j) = ioFieldData[i*iossNumFieldComponents+j];
         }
       }
     }
@@ -256,10 +253,10 @@ namespace {
                                                Ioss::GroupingEntity *ioEntity,
                                                const stk::mesh::Part *stkPart)
   {
-    size_t field_componentCount = ioField.transformed_storage()->component_count();
+    stk::mesh::ScalarIdx field_componentCount ( ioField.transformed_storage()->component_count() );
     std::vector<Tio> ioFieldData;
     size_t ioEntityCount = ioEntity->get_field_data(ioField.get_name(), ioFieldData);
-    assert(ioFieldData.size() == entities.size() * field_componentCount);
+    assert(ioFieldData.size() == static_cast<size_t>(entities.size() * field_componentCount));
     size_t entityCount = entities.size();
     if (ioEntityCount != entityCount) {
       std::ostringstream errmsg;
@@ -275,17 +272,14 @@ namespace {
     stk::mesh::MetaData &meta = stk::mesh::MetaData::get(*stkPart);
     stk::mesh::Selector selector = (meta.globally_shared_part() | meta.locally_owned_part()) & *stkPart;
 
-    field->sync_to_host();
-    field->modify_on_host();
+    auto fieldData = field->data<Tfield,stk::mesh::OverwriteAll>();
     for (size_t i=0; i < entityCount; ++i) {
-      if (mesh.is_valid(entities[i])) {
+      if (mesh.is_valid(entities[i]) && field->defined_on(entities[i])) {
         const stk::mesh::Bucket &bucket = mesh.bucket(entities[i]);
         if (selector(bucket)) {
-          Tfield *fldData = static_cast<Tfield*>(stk::mesh::field_data(*field, entities[i]));
-          if (fldData !=nullptr) {
-            for(size_t j=0; j<field_componentCount; ++j) {
-              fldData[j] = ioFieldData[i*field_componentCount+j];
-            }
+          auto fldData = fieldData.entity_values(entities[i]);
+          for(stk::mesh::ScalarIdx j=0_scalar; j<field_componentCount; ++j) {
+            fldData(j) = ioFieldData[i*field_componentCount+j];
           }
         }
       }
@@ -310,24 +304,19 @@ namespace {
 
     std::vector<T> ioFieldData(entityCount*iossFieldLength);
 
-    field->sync_to_host();
-    const stk::mesh::Bucket* prevBkt = nullptr;
-    int stkFieldLength = 0;
-    int length = 0;
+    auto fieldData = field->data<T,stk::mesh::ReadOnly>();
     for (size_t i=0; i < entityCount; ++i) {
       if (mesh.is_valid(entities[i]) && mesh.entity_rank(entities[i]) == field->entity_rank()) {
-        const T *fldData = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
-        if (fldData != nullptr) {
-          const stk::mesh::Bucket* curBkt = mesh.bucket_ptr(entities[i]);
-          if (curBkt != prevBkt) {
-            prevBkt = curBkt;
-            stkFieldLength = stk::mesh::field_scalars_per_entity(*field, *curBkt);
-            STK_ThrowRequireMsg((iossFieldLength >= stkFieldLength), "Field "<<field->name()<<" scalars-per-entity="<<stkFieldLength<<" doesn't match Ioss iossFieldLength(="<<iossFieldLength<<") for io_entity "<<ioEntity->name());
-            length = std::min(iossFieldLength, stkFieldLength);
-          }
+        if (field->defined_on(entities[i])) {
+          auto fldData = fieldData.entity_values(entities[i]);
+          int stkFieldLength = fldData.num_scalars();
+          STK_ThrowRequireMsg((iossFieldLength >= stkFieldLength), "Field "<<field->name()<<" scalars-per-entity="<<static_cast<int>(stkFieldLength)<<" doesn't match Ioss iossFieldLength(="<<iossFieldLength<<") for io_entity "<<ioEntity->name());
+          stk::mesh::ScalarIdx length ( std::min(iossFieldLength, stkFieldLength) );
+
           T* ioFieldDataPtr = ioFieldData.data()+i*iossFieldLength;
-          for(int j=0; j<length; ++j) {
-            ioFieldDataPtr[j] = fldData[j];
+
+          for(stk::mesh::ScalarIdx j(0); j<length; ++j) {
+            ioFieldDataPtr[j] = fldData(j);
           }
         }
       }
@@ -2303,7 +2292,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const stk::mesh::BulkData &bulk = params.bulk_data();
 
         std::string elementTopoName = "unknown";
-        const Ioss::ElementTopology *elementTopo = nullptr;
+        const Ioss::ElementTopology *iossElementTopo = nullptr;
         stk::topology invalidTopology = stk::topology::INVALID_TOPOLOGY;
         stk::topology stkElementTopology = invalidTopology;
 
@@ -2325,35 +2314,41 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           // Check the last token and see if it is an integer...
           const bool allDigits = tokens.back().find_first_not_of("0123456789") == std::string::npos;
           if (allDigits) {
-            elementTopo = Ioss::ElementTopology::factory(tokens[1], true);
+            iossElementTopo = Ioss::ElementTopology::factory(tokens[1], true);
           } else {
             const std::string& elemTopoToken = tokens[tokens.size()-2];
             const bool subAllDigits = elemTopoToken.find_first_not_of("0123456789") == std::string::npos;
             if (!subAllDigits) {
-              elementTopo = Ioss::ElementTopology::factory(elemTopoToken, true);
+              iossElementTopo = Ioss::ElementTopology::factory(elemTopoToken, true);
             }
           }
 
-	  const stk::mesh::MetaData& meta = params.bulk_data().mesh_meta_data();
-	  std::vector<const stk::mesh::Part*> touchingParts = meta.get_blocks_touching_surface(&part);
-	
-	  if(touchingParts.size() == 1u) {
-	    stk::topology stkTouchingTopology = touchingParts[0]->topology();
-	    std::string touchingTopoName = map_stk_topology_to_ioss(stkTouchingTopology);
-	    const Ioss::ElementTopology *touchingTopo = Ioss::ElementTopology::factory(touchingTopoName, true);
-	    if(touchingTopo != elementTopo) {
-	      elementTopo = nullptr;	      
-	    }
-	  }
-	  
-          if (elementTopo != nullptr) {
-            elementTopoName = elementTopo->name();
+          const stk::mesh::MetaData& meta = params.bulk_data().mesh_meta_data();
+          std::vector<const stk::mesh::Part*> touchingParts = meta.get_blocks_touching_surface(&part);
+
+          if(!touchingParts.empty()) {
+            stk::topology stkTouchingTopology = touchingParts[0]->topology();
+            bool sameTopology = std::all_of(touchingParts.cbegin(), touchingParts.cend(),
+                                           [&stkTouchingTopology](const stk::mesh::Part* p) { return p->topology() == stkTouchingTopology; });
+
+            if(sameTopology) {
+              std::string touchingTopoName = map_stk_topology_to_ioss(stkTouchingTopology);
+              const Ioss::ElementTopology *touchingTopo = Ioss::ElementTopology::factory(touchingTopoName, true);
+              if(touchingTopo != iossElementTopo) {
+                // Possible mis-match if a topology name is part of the sideblock name
+                iossElementTopo = nullptr;
+              }
+            }
+          }
+
+          if (iossElementTopo != nullptr) {
+            elementTopoName = iossElementTopo->name();
             bool useShellAllFaceSides = sset->get_database()->get_region()->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
-            stkElementTopology = map_ioss_topology_to_stk(elementTopo, bulk.mesh_meta_data().spatial_dimension(), useShellAllFaceSides);
+            stkElementTopology = map_ioss_topology_to_stk(iossElementTopo, bulk.mesh_meta_data().spatial_dimension(), useShellAllFaceSides);
           }
         }
 
-        return std::make_tuple(elementTopoName, elementTopo, stkElementTopology);
+        return std::make_tuple(elementTopoName, iossElementTopo, stkElementTopology);
       }
 
       std::tuple<std::string, const Ioss::ElementTopology *, stk::topology>
@@ -3435,9 +3430,10 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
               df.reserve(dfSize);
               const auto* const nodeFactorVar = get_distribution_factor_field(*part);
               if((nodeFactorVar != nullptr) && (nodeFactorVar->entity_rank() == stk::topology::NODE_RANK)) {
-                  nodeFactorVar->sync_to_host();
+                  auto nodeFactorData = nodeFactorVar->data<double,stk::mesh::ReadOnly>();
                   for(auto& node : nodes) {
-                      df.push_back(*(double*) (stk::mesh::field_data(*nodeFactorVar, node)));
+                    auto entityValues = nodeFactorData.entity_values(node);
+                    df.push_back(entityValues());
                   }
               } else {
                   size_t count = nodes.size();

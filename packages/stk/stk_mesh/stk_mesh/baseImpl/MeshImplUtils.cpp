@@ -851,7 +851,7 @@ Entity connect_element_to_side<stk::mesh::ConstPartVector>(BulkData & mesh, Enti
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
-                                                     stk::mesh::EntityId new_face_global_id,
+                                                     stk::mesh::EntityId /*new_face_global_id*/,
                                                      const stk::mesh::PartVector & parts)
 {
     stk::mesh::Entity new_face = stk::mesh::Entity();

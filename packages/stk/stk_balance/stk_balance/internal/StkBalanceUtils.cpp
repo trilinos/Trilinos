@@ -79,11 +79,12 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
   std::vector<double> y(numNodes, 0);
   std::vector<double> z(numNodes, 0);
 
+  auto coordFieldData = coordField->data<double, stk::mesh::ReadOnly>();
   for (unsigned nodeIndex = 0; nodeIndex < numNodes; nodeIndex++) {
-    double* xyz = static_cast<double*>(stk::mesh::field_data(*coordField, nodes[nodeIndex]));
-    x[nodeIndex] = xyz[0];
-    y[nodeIndex] = xyz[1];
-    if (dim == 3) z[nodeIndex] = xyz[2];
+    auto xyz = coordFieldData.entity_values(nodes[nodeIndex]);
+    x[nodeIndex] = xyz(0_comp);
+    y[nodeIndex] = xyz(1_comp);
+    if (dim == 3) z[nodeIndex] = xyz(2_comp);
   }
 
   double maxX = *std::max_element(x.begin(), x.end());
@@ -130,6 +131,8 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData,
 {
   const stk::mesh::BucketVector &elementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEMENT_RANK, searchSelector);
 
+  auto coordData = coord->data<double, stk::mesh::ReadOnly>();
+
   for (size_t i=0;i<elementBuckets.size();i++)
   {
     stk::mesh::Bucket &bucket = *elementBuckets[i];
@@ -138,14 +141,14 @@ void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData,
       for(size_t j = 0; j < bucket.size(); j++)
       {
         const stk::mesh::Entity *node = stkMeshBulkData.begin_nodes(bucket[j]);
-        double *xyz = static_cast<double *>(stk::mesh::field_data(*coord, *node));
+        auto xyz = coordData.entity_values(*node);
         double eps = balanceSettings.getAbsoluteToleranceForParticleSearch(bucket[j]);
 
         stk::balance::internal::StkBox box = (stkMeshBulkData.mesh_meta_data().spatial_dimension() == 3) ?
-              stk::balance::internal::StkBox(xyz[0] - eps, xyz[1] - eps, xyz[2] - eps,
-                                             xyz[0] + eps, xyz[1] + eps, xyz[2] + eps) :
-              stk::balance::internal::StkBox(xyz[0] - eps, xyz[1] - eps, 0,
-                                             xyz[0] + eps, xyz[1] + eps, 0);
+              stk::balance::internal::StkBox(xyz(0_comp) - eps, xyz(1_comp) - eps, xyz(2_comp) - eps,
+                                             xyz(0_comp) + eps, xyz(1_comp) + eps, xyz(2_comp) + eps) :
+              stk::balance::internal::StkBox(xyz(0_comp) - eps, xyz(1_comp) - eps, 0,
+                                             xyz(0_comp) + eps, xyz(1_comp) + eps, 0);
 
         unsigned int val1 = stkMeshBulkData.identifier(bucket[j]);
         int val2 = stkMeshBulkData.parallel_rank();

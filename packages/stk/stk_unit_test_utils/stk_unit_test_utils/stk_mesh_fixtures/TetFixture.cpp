@@ -66,7 +66,7 @@ TetFixture::TetFixture(MetaData& meta,
     elem_id_start(eid_start),
     m_meta( meta ),
     m_bulk_data( bulk ),
-    m_elem_parts( ),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("tet_part", stk::topology::TET_4) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( &m_meta.declare_field<double>(stk::topology::NODE_RANK, "Coordinates") ),
     owns_mesh(false)

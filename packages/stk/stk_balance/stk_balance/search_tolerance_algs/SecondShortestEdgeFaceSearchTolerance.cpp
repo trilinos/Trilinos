@@ -17,11 +17,12 @@
 namespace stk {
 namespace balance {
 
-double distanceBetweenNodes(double * firstNodeCoords, double * secondNodeCoords, const int dimension)
+double distanceBetweenNodes(stk::mesh::EntityValues<double> firstNodeCoords,
+                            stk::mesh::EntityValues<double> secondNodeCoords, const int dimension)
 {
   double sum = 0.0;
-  for (int idim = 0; idim < dimension; ++idim) {
-    sum += std::pow(firstNodeCoords[idim] - secondNodeCoords[idim], 2);
+  for (stk::mesh::ComponentIdx component=0_comp; component < dimension; ++component) {
+    sum += std::pow(firstNodeCoords(component) - secondNodeCoords(component), 2);
   }
   return std::sqrt(sum);
 }
@@ -31,13 +32,14 @@ double SecondShortestEdgeFaceSearchTolerance::compute(const stk::mesh::BulkData 
                                                       const stk::mesh::Entity * faceNodes,
                                                       const unsigned numFaceNodes) const
 {
+  auto coordFieldData = coordField.data<double>();
   std::vector<double> edgeLengthVector(numFaceNodes);
   const int dimension = mesh.mesh_meta_data().spatial_dimension();
   stk::mesh::Entity lastNode = faceNodes[numFaceNodes-1];
-  double * oldNodePosition = static_cast<double*>(stk::mesh::field_data(coordField, lastNode));
+  auto oldNodePosition = coordFieldData.entity_values(lastNode);
 
   for (size_t inode = 0; inode < numFaceNodes; ++inode) {
-    double * nodePosition(static_cast<double*>(stk::mesh::field_data(coordField, faceNodes[inode])));
+    auto nodePosition(coordFieldData.entity_values(faceNodes[inode]));
     edgeLengthVector[inode] = distanceBetweenNodes(nodePosition, oldNodePosition, dimension);
     oldNodePosition = nodePosition;
   }

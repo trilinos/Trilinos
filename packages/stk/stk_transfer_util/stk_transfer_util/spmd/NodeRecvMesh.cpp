@@ -207,11 +207,11 @@ unsigned NodeRecvMesh::value_size(const EntityKey& k, const unsigned i) const
   return stk::mesh::field_scalars_per_entity(*m_fieldVec[i].field, k);
 }
 
-unsigned NodeRecvMesh::num_values(const EntityKey& e) const { return m_fieldVec.size(); }
+unsigned NodeRecvMesh::num_values(const EntityKey& /*e*/) const { return m_fieldVec.size(); }
 
 unsigned NodeRecvMesh::max_num_values() const { return m_fieldVec.size(); }
 
-unsigned NodeRecvMesh::value_key(const EntityKey& k, const unsigned i) const
+unsigned NodeRecvMesh::value_key(const EntityKey& /*k*/, const unsigned i) const
 {
   return i;
 }

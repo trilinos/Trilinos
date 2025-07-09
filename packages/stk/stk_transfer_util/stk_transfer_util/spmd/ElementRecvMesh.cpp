@@ -238,11 +238,11 @@ unsigned ElementRecvMesh::value_size(const EntityKey& k, const unsigned i) const
   return lengthPerPoint;
 }
 
-unsigned ElementRecvMesh::num_values(const EntityKey& e) const { return m_fieldVec.size(); }
+unsigned ElementRecvMesh::num_values(const EntityKey& /*e*/) const { return m_fieldVec.size(); }
 
 unsigned ElementRecvMesh::max_num_values() const { return m_fieldVec.size(); }
 
-unsigned ElementRecvMesh::value_key(const EntityKey& k, const unsigned i) const
+unsigned ElementRecvMesh::value_key(const EntityKey& /*k*/, const unsigned i) const
 {
   return i;
 }

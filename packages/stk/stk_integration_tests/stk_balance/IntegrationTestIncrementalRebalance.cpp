@@ -87,10 +87,11 @@ protected:
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
     size_t num_elements_migrated = 0;
+    auto procOwnerData = procOwner->data<stk::mesh::ReadOnly>();
     for(const stk::mesh::Entity& element : elements )
     {
-      double* data = stk::mesh::field_data(*procOwner, element);
-      if ( *data != get_bulk().parallel_rank())
+      auto data = procOwnerData.entity_values(element);
+      if ( data() != get_bulk().parallel_rank())
       {
         num_elements_migrated++;
       }
@@ -103,10 +104,11 @@ protected:
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
+    auto procOwnerData = procOwner->data();
     for(const stk::mesh::Entity &element : elements )
     {
-      double* data = stk::mesh::field_data(*procOwner, element);
-      *data = get_bulk().parallel_rank();
+      auto data = procOwnerData.entity_values(element);
+      data() = get_bulk().parallel_rank();
     }
   }
 
@@ -115,10 +117,11 @@ protected:
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
+    auto weight_field_data = weight_field->data();
     for(const stk::mesh::Entity &element : elements )
     {
-      double* data = stk::mesh::field_data(*weight_field, element);
-      *data = weight;
+      auto data = weight_field_data.entity_values(element);
+      data() = weight;
     }
   }
 
@@ -127,13 +130,14 @@ protected:
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
+    auto weight_field_data = weight_field->data();
     for(stk::mesh::EntityId id : ids )
     {
       stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, id);
       if(get_bulk().is_valid(element) && get_bulk().bucket(element).owned())
       {
-        double* data = stk::mesh::field_data(*weight_field, element);
-        *data = newWeight;
+      auto data = weight_field_data.entity_values(element);
+        data() = newWeight;
       }
     }
   }
@@ -143,8 +147,9 @@ protected:
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
 
-    double* data = stk::mesh::field_data(*weight_field, elements[0]);
-    *data = 1;
+    auto weight_field_data = weight_field->data();
+    auto data = weight_field_data.entity_values(elements[0]);
+    data() = 1;
   }
 
   void setup_fields()
@@ -172,6 +177,7 @@ protected:
   void move_coordinates(const std::string& coordinate_field_name)
   {
     const stk::mesh::FieldBase * coord = get_meta().get_field(stk::topology::NODE_RANK, coordinate_field_name);
+    auto coordData = coord->data<double>();
 
     stk::mesh::EntityVector nodes;
     stk::mesh::get_entities(get_bulk(), stk::topology::NODE_RANK, get_meta().locally_owned_part() | get_meta().globally_shared_part(), nodes);
@@ -183,13 +189,13 @@ protected:
 
     for(stk::mesh::Entity node : nodes)
     {
-      double *xyz = static_cast<double *>(stk::mesh::field_data(*coord, node));
-      double newx = xyz[0]*cos(rotation) + xyz[1]*sin(rotation) + dx;
-      double newy = -xyz[0]*sin(rotation) + xyz[1]*cos(rotation) + dy;
-      double newz = xyz[2] + dz;
-      xyz[0] = newx;
-      xyz[1] = newy;
-      xyz[2] = newz;
+      auto xyz = coordData.entity_values(node);
+      double newx = xyz(0_comp)*cos(rotation) + xyz(1_comp)*sin(rotation) + dx;
+      double newy = -xyz(0_comp)*sin(rotation) + xyz(1_comp)*cos(rotation) + dy;
+      double newz = xyz(2_comp) + dz;
+      xyz(0_comp) = newx;
+      xyz(1_comp) = newy;
+      xyz(2_comp) = newz;
     }
   }
 
@@ -411,16 +417,18 @@ protected:
   {
     const stk::mesh::Entity* nodes = get_bulk().begin_nodes(element);
     const unsigned numNodesThisEntity = get_bulk().num_nodes(element);
+    const stk::mesh::FieldBase* coords = get_meta().coordinate_field();
+    auto coordWeights = coords->data<double, stk::mesh::ReadOnly>();
     if(get_bulk().is_valid(element))
     {
       for(unsigned j=0; j<numNodesThisEntity; j++)
       {
         if (get_bulk().is_valid(nodes[j]))
         {
-          double *coordDataForNode = static_cast<double*>(stk::mesh::field_data(*get_meta().coordinate_field(),nodes[j]));
-          centroid[0] += coordDataForNode[0];
-          centroid[1] += coordDataForNode[1];
-          centroid[2] += coordDataForNode[2];
+          auto coordDataForNode = coordWeights.entity_values(nodes[j]);
+          centroid[0] += coordDataForNode(0_comp);
+          centroid[1] += coordDataForNode(1_comp);
+          centroid[2] += coordDataForNode(2_comp);
         }
       }
       centroid[0] /= numNodesThisEntity;
@@ -431,16 +439,19 @@ protected:
 
   void set_weight(stk::mesh::Entity element, double weight)
   {
-    double* data = stk::mesh::field_data(*weight_field, element);
-    *data = weight;
+    auto weight_field_data = weight_field->data();
+    auto data = weight_field_data.entity_values(element);
+    data() = weight;
   }
 
   void set_coords(stk::mesh::Entity node, double* coords)
   {
-    double* data = static_cast<double*>(stk::mesh::field_data(*get_meta().coordinate_field(), node));
-    data[0] = coords[0];
-    data[1] = coords[1];
-    data[2] = coords[2];
+    const stk::mesh::FieldBase * coord = get_meta().coordinate_field();
+    auto coordData = coord->data<double>();
+    auto data = coordData.entity_values(node);
+    data(0_comp) = coords[0];
+    data(1_comp) = coords[1];
+    data(2_comp) = coords[2];
   }
 
   void balance_mesh_with_search_for_particles(std::string decompMethod, bool incrementalRebalance)

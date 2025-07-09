@@ -531,7 +531,7 @@ stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
 int get_entity_subcell_id(const BulkData& mesh,
         const Entity entity,
         [[maybe_unused]] const EntityRank subcell_rank,
-        stk::topology subcell_topology,
+        stk::topology /*subcell_topology*/,
         const std::vector<Entity>& subcell_nodes)
 {
     STK_ThrowAssert(subcell_rank <= stk::topology::ELEMENT_RANK);

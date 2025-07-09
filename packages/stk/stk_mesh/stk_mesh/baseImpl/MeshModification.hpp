@@ -62,7 +62,7 @@ public:
         m_entity_states(),
         m_deleted_entity_cache(bulkData),
         m_sync_state(MODIFIABLE),
-        m_synchronizedCount("SynchronizedCount"),
+        m_synchronizedCount(0),
         m_did_any_shared_entity_change_parts(false)
     {
       m_entity_states.push_back(Deleted);
@@ -76,16 +76,12 @@ public:
     void set_sync_state_synchronized() { m_sync_state = SYNCHRONIZED; }
     void set_sync_state_modifiable() { m_sync_state = MODIFIABLE; }
 
-    size_t synchronized_count() const { return m_synchronizedCount(); }
+    size_t synchronized_count() const { return m_synchronizedCount; }
     void increment_sync_count() {
-      ++m_synchronizedCount();
+      ++m_synchronizedCount;
     }
     void set_sync_count(size_t syncCount) {
-      m_synchronizedCount() = syncCount;
-    }
-
-    const DeviceSynchronizedCountType& device_synchronized_count() const {
-      return m_synchronizedCount;
+      m_synchronizedCount = syncCount;
     }
 
     bool modification_begin(const std::string description);
@@ -160,7 +156,7 @@ private:
     DeletedEntityCache m_deleted_entity_cache;
 
     BulkDataSyncState m_sync_state;
-    DeviceSynchronizedCountType m_synchronizedCount;
+    size_t m_synchronizedCount;
     bool m_did_any_shared_entity_change_parts;
 };
 

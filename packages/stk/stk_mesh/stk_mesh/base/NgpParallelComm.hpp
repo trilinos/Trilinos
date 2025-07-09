@@ -37,10 +37,12 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/MPI.hpp>
 #include <stk_util/ngp/NgpSpaces.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_mesh/base/NgpField.hpp>
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/NgpParallelDataExchange.hpp>
+#include <stk_mesh/baseImpl/DoOp.hpp>
 #include <Kokkos_Core.hpp>
 
 namespace stk {
@@ -50,32 +52,41 @@ using CommProcsViewType = Kokkos::View<int*, stk::ngp::MemSpace>;
 
 using OffsetViewType = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
 
-template<typename T, typename ExchangeHandler>
+template<typename T, Operation OP, typename ExchangeHandler>
 void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
-                                                const std::vector<int> & comm_procs,
                                                 ExchangeHandler & exchangeHandler,
                                                 bool includeGhosts,
                                                 bool deterministic)
 {
 #if defined( STK_HAS_MPI)
   const int msgTag = 10242;
-  size_t num_comm_procs = comm_procs.size();
 
   Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup");
   auto& ngpMesh = exchangeHandler.get_ngp_mesh();
   auto ngpFields = exchangeHandler.get_ngp_fields();
   auto& bulkData = ngpMesh.get_bulk_on_host();
-  stk::mesh::EntityRank fieldRank = exchangeHandler.get_ngp_fields()[0]->get_rank();
-  size_t totalMeshIndicesOffsets = 0;
+
+  const std::vector<stk::mesh::EntityRank>& fieldRanks = exchangeHandler.get_field_ranks();
+
   Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup - max map extent");
 
-  for (size_t proc = 0; proc < num_comm_procs; ++proc) {
-    auto sharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, comm_procs[proc], includeGhosts);
-    totalMeshIndicesOffsets += sharedCommMap.extent(0);
+  std::vector<int> comm_procs;
+  size_t totalMeshIndicesOffsets = 0;
+
+  for (int proc = 0; proc < bulkData.parallel_size(); ++proc) {
+    for(stk::mesh::EntityRank fieldRank : fieldRanks) {
+      auto sharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, proc, includeGhosts);
+      if (sharedCommMap.extent(0) > 0) {
+        comm_procs.push_back(proc);
+        totalMeshIndicesOffsets += sharedCommMap.extent(0);
+      }
+    }
   }
+  stk::util::sort_and_unique(comm_procs);
 
   Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup - all message sizing");
   size_t totalMsgSizeForAllProcs = 0;
+  const size_t num_comm_procs = comm_procs.size();
   std::vector<size_t> messageSizes(num_comm_procs, 0);
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {
     int iproc = comm_procs[proc];
@@ -93,12 +104,12 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   auto& deviceRecvData = exchangeHandler.get_device_recv_data();
 
   auto& deviceMeshIndicesOffsets = exchangeHandler.get_device_mesh_indices_offsets();
-  if (deviceMeshIndicesOffsets.extent(0) < totalMeshIndicesOffsets) {
+  if (deviceMeshIndicesOffsets.extent(0) < (totalMeshIndicesOffsets+num_comm_procs)) {
     Kokkos::resize(Kokkos::WithoutInitializing, deviceMeshIndicesOffsets, totalMeshIndicesOffsets+num_comm_procs);
   }
 
   auto& hostMeshIndicesOffsets = exchangeHandler.get_host_mesh_indices_offsets();
-  if (hostMeshIndicesOffsets.extent(0) < totalMeshIndicesOffsets) {
+  if (hostMeshIndicesOffsets.extent(0) < (totalMeshIndicesOffsets+num_comm_procs)) {
     Kokkos::resize(Kokkos::WithoutInitializing, hostMeshIndicesOffsets, totalMeshIndicesOffsets+num_comm_procs);
   }
 
@@ -110,26 +121,35 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {
     hostBufferOffsets[proc+1] = hostBufferOffsets[proc] + messageSizes[proc];
 
-    auto sharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, comm_procs[proc], includeGhosts);
-
     hostMeshIndicesOffsets(proc) = hostMeshIndicesIdx;
-    size_t baseProcOffset = hostMeshIndicesIdx;
-    hostMeshIndicesIdx += sharedCommMap.extent(0);
+    unsigned baseProcOffset = hostMeshIndicesIdx;
 
+    unsigned hostMeshIndicesCounter = 0;
     unsigned hostMeshIndicesOffsetsCounter = 0;
-    for (size_t i = 0; i < sharedCommMap.extent(0); ++i) {
-      hostMeshIndicesOffsets(baseProcOffset+i) = hostMeshIndicesOffsetsCounter;
-      auto meshIndex = sharedCommMap(i);
 
-      for (auto ngpField : ngpFields) {
-        size_t numComponents = stk::mesh::field_scalars_per_entity(*(ngpField->get_field_base()), meshIndex.bucket_id);
+    for(stk::mesh::EntityRank fieldRank : fieldRanks) {
+      auto sharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, comm_procs[proc], includeGhosts);
+      hostMeshIndicesIdx += sharedCommMap.extent(0);
 
-        if (numComponents != 0) {
-          hostMeshIndicesOffsetsCounter += numComponents;
+      for (size_t i = 0; i < sharedCommMap.extent(0); ++i) {
+        hostMeshIndicesOffsets(baseProcOffset+hostMeshIndicesCounter+i) = hostMeshIndicesOffsetsCounter;
+        auto meshIndex = sharedCommMap(i);
+
+        for (auto ngpField : ngpFields) {
+          if (ngpField->get_rank() == fieldRank) {
+            size_t numComponents = stk::mesh::field_scalars_per_entity(*(ngpField->get_field_base()), meshIndex.bucket_id);
+
+            if (numComponents != 0) {
+              hostMeshIndicesOffsetsCounter += numComponents;
+            }
+          }
         }
       }
+
+      hostMeshIndicesCounter += sharedCommMap.extent(0);
     }
   }
+
   Kokkos::deep_copy(deviceMeshIndicesOffsets, hostMeshIndicesOffsets);
   Kokkos::Profiling::popRegion();
   Kokkos::Profiling::popRegion();
@@ -145,25 +165,35 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   Kokkos::Profiling::pushRegion("NGP MPI - message pack");
   for (size_t proc = 0; proc < num_comm_procs; ++proc) {
     auto iProc = comm_procs[proc];
-    auto hostSharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, iProc, includeGhosts);
     auto dataBegin = hostBufferOffsets[proc];
     auto baseProcOffset = hostMeshIndicesOffsets(proc);
-    Kokkos::parallel_for(ThisRangePolicy(0, hostSharedCommMap.extent(0)),
-      KOKKOS_LAMBDA(size_t idx) {
-        auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc, includeGhosts);
-        auto fastMeshIndex = deviceSharedCommMap(idx);
-        int sendBufferStartIdx = deviceMeshIndicesOffsets(baseProcOffset+idx);
-        const auto& ngpFieldsOnDevice = exchangeHandler.get_ngp_fields_on_device();
-        for (size_t fieldIdx = 0; fieldIdx < ngpFieldsOnDevice.extent(0); ++fieldIdx) {
-          NgpFieldType const& field = ngpFieldsOnDevice(fieldIdx);
-          size_t numComponents = field.get_num_components_per_entity(fastMeshIndex);
+    size_t meshIndicesCounter = 0;
 
-          for (size_t comp = 0; comp < numComponents; ++comp) {
-            deviceSendData(dataBegin + sendBufferStartIdx++) = field.get(fastMeshIndex, comp);
+    for(stk::mesh::EntityRank fieldRank : fieldRanks) {
+      auto hostSharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, iProc, includeGhosts);
+
+      Kokkos::parallel_for(ThisRangePolicy(0, hostSharedCommMap.extent(0)),
+        KOKKOS_LAMBDA(size_t idx) {
+          auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc, includeGhosts);
+          auto fastMeshIndex = deviceSharedCommMap(idx);
+          int sendBufferStartIdx = deviceMeshIndicesOffsets(baseProcOffset+meshIndicesCounter+idx);
+          const auto& ngpFieldsOnDevice = exchangeHandler.get_ngp_fields_on_device();
+
+          for (size_t fieldIdx = 0; fieldIdx < ngpFieldsOnDevice.extent(0); ++fieldIdx) {
+            NgpFieldType const& field = ngpFieldsOnDevice(fieldIdx);
+            if (field.get_rank() == fieldRank) {
+              size_t numComponents = field.get_num_components_per_entity(fastMeshIndex);
+
+              for (size_t comp = 0; comp < numComponents; ++comp) {
+                deviceSendData(dataBegin + sendBufferStartIdx++) = field.get(fastMeshIndex, comp);
+              }
+            }
           }
         }
-      }
-    );
+      );
+      Kokkos::fence();
+      meshIndicesCounter += hostSharedCommMap.extent(0);
+    }
   }
   Kokkos::fence();
   Kokkos::Profiling::popRegion();
@@ -191,27 +221,37 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
     Kokkos::Profiling::popRegion();
 
     Kokkos::Profiling::pushRegion("NGP MPI - message unpacking");
+    impl::DoOp<T,OP> doOperation;
     auto iProc = comm_procs[idx];
-    auto hostSharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, iProc, includeGhosts);
     auto dataBegin = hostBufferOffsets[idx];
     auto baseProcOffset = hostMeshIndicesOffsets(idx);
-    Kokkos::parallel_for(ThisRangePolicy(0, hostSharedCommMap.extent(0)),
-      KOKKOS_LAMBDA(size_t index) {
-        auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc, includeGhosts);
-        auto fastMeshIndex = deviceSharedCommMap(index);
-        int recvBufferStartIdx = deviceMeshIndicesOffsets(baseProcOffset+index);
+    size_t meshIndicesCounter = 0;
 
-        const auto& ngpFieldsOnDevice = exchangeHandler.get_ngp_fields_on_device();
-        for (size_t fieldIdx = 0; fieldIdx < ngpFieldsOnDevice.extent(0); ++fieldIdx) {
-          NgpFieldType const& field = ngpFieldsOnDevice(fieldIdx);
-          size_t numComponents = field.get_num_components_per_entity(fastMeshIndex);
+    for(stk::mesh::EntityRank fieldRank : fieldRanks) {
+      auto hostSharedCommMap = bulkData.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, iProc, includeGhosts);
 
-          for (size_t comp = 0; comp < numComponents; ++comp) {
-            field.get(fastMeshIndex, comp) += deviceRecvData(dataBegin + recvBufferStartIdx++);
+      Kokkos::parallel_for(ThisRangePolicy(0, hostSharedCommMap.extent(0)),
+        KOKKOS_LAMBDA(size_t index) {
+          auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc, includeGhosts);
+          auto fastMeshIndex = deviceSharedCommMap(index);
+          int recvBufferStartIdx = deviceMeshIndicesOffsets(baseProcOffset+meshIndicesCounter+index);
+
+          const auto& ngpFieldsOnDevice = exchangeHandler.get_ngp_fields_on_device();
+          for (size_t fieldIdx = 0; fieldIdx < ngpFieldsOnDevice.extent(0); ++fieldIdx) {
+            NgpFieldType const& field = ngpFieldsOnDevice(fieldIdx);
+            if (field.get_rank() == fieldRank) {
+              size_t numComponents = field.get_num_components_per_entity(fastMeshIndex);
+
+              for (size_t comp = 0; comp < numComponents; ++comp) {
+                field.get(fastMeshIndex, comp) = doOperation(field.get(fastMeshIndex, comp), deviceRecvData(dataBegin + recvBufferStartIdx++));
+              }
+            }
           }
         }
-      }
-    );
+      );
+      Kokkos::fence();
+      meshIndicesCounter += hostSharedCommMap.extent(0);
+    }
     Kokkos::Profiling::popRegion();
   }
 

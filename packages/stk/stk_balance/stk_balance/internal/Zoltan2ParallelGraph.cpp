@@ -345,7 +345,8 @@ void Zoltan2ParallelGraph::createGraphEdgesUsingNodeConnectivity(stk::mesh::Bulk
         }
         else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::CONNECTIVITY) {
           const stk::mesh::Field<double> & connectivityWeights = *balanceSettings.getVertexConnectivityWeightField(stkMeshBulkData);
-          mVertexWeights[local_id] = *stk::mesh::field_data(connectivityWeights, elementOfConcern);
+          auto connectivityWeightsData = connectivityWeights.data<stk::mesh::ReadOnly>();
+          mVertexWeights[local_id] = connectivityWeightsData.entity_values(elementOfConcern)();
         }
         else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::FIELD) {
           mVertexWeights[local_id] = 0; //real field weights set in adjust_vertex_weights

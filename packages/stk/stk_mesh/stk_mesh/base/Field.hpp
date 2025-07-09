@@ -156,7 +156,7 @@ public:
         const DataTraits& dataTraits,
         unsigned numberOfStates,
         FieldState thisState)
-    : FieldBase(meta, entityRank, fieldOrdinal, name, dataTraits, numberOfStates, thisState,
+    : FieldBase(meta, entityRank, fieldOrdinal, name, dataTraits, numberOfStates, thisState, host_layout, device_layout,
                 new FieldData<T, stk::ngp::HostMemSpace, HostLayout>(entityRank, fieldOrdinal, name, dataTraits))
   {
     if constexpr (HostLayout != Layout::Right) {
@@ -174,14 +174,6 @@ public:
   }
 
   virtual ~Field() = default;
-
-  virtual Layout host_data_layout() const override {
-    return host_layout;
-  }
-
-  virtual Layout device_data_layout() const override {
-    return device_layout;
-  }
 
   virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const override
   {

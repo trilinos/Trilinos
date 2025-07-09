@@ -181,7 +181,7 @@ class Hex8SendMesh : public stk::search::SourceMeshInterface<Hex8SendMesh>
   }
 
   //BEGINSource_bounding_boxes
-  void bounding_boxes(std::vector<BoundingBox>& boxes, bool includeGhosts=false) const override
+  void bounding_boxes(std::vector<BoundingBox>& boxes, [[maybe_unused]] bool /*includeGhosts*/=false) const override
   {
     Point min_corner, max_corner;
 
@@ -318,9 +318,9 @@ class Hex8SendMesh : public stk::search::SourceMeshInterface<Hex8SendMesh>
     return stk::search::ObjectOutsideDomainPolicy::IGNORE;
   }
 
-  void update_ghosting(const EntityProcVec& entity_keys, const std::string& suffix = "") override { }
+  void update_ghosting(const EntityProcVec& /*entity_keys*/, const std::string& /*suffix*/ = "") override { }
 
-  void update_ghosted_key(EntityKey& k) override { }
+  void update_ghosted_key(EntityKey& /*k*/) override { }
 
   void post_mesh_modification_event() override { }
 

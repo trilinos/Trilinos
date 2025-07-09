@@ -49,7 +49,8 @@ class FieldDataAccessFixture : public stk::unit_test_util::MeshFixture
 public:
   FieldDataAccessFixture()
     : m_field(nullptr),
-      m_leftField(nullptr)
+      m_leftField(nullptr),
+      m_rightField(nullptr)
   {}
 
   stk::mesh::Entity create_node(stk::mesh::EntityId nodeId)
@@ -86,6 +87,16 @@ public:
     stk::io::fill_mesh("generated:2x1x1", get_bulk());
   }
 
+  void build_mesh_with_scalar_right_field()
+  {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+
+    m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::NODE_RANK, "nodeRightField");
+    stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), nullptr);
+
+    stk::io::fill_mesh("generated:2x1x1", get_bulk());
+  }
+
   void build_mesh_with_multi_component_field()
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
@@ -106,6 +117,16 @@ public:
     stk::io::fill_mesh("generated:2x1x1", get_bulk());
   }
 
+  void build_mesh_with_multi_component_right_field()
+  {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+
+    m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::NODE_RANK, "nodeRightField");
+    stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, nullptr);
+
+    stk::io::fill_mesh("generated:2x1x1", get_bulk());
+  }
+
   void build_mesh_with_multi_copy_field()
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
@@ -120,8 +141,18 @@ public:
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
-    m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::NODE_RANK, "nodeField");
+    m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::NODE_RANK, "nodeLeftField");
     stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 1, 8, nullptr);
+
+    stk::io::fill_mesh("generated:2x1x1", get_bulk());
+  }
+
+  void build_mesh_with_multi_copy_right_field()
+  {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+
+    m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::NODE_RANK, "nodeRightField");
+    stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 1, 8, nullptr);
 
     stk::io::fill_mesh("generated:2x1x1", get_bulk());
   }
@@ -140,8 +171,18 @@ public:
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
-    m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::NODE_RANK, "nodeField");
+    m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::NODE_RANK, "nodeLeftField");
     stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 3, 8, nullptr);
+
+    stk::io::fill_mesh("generated:2x1x1", get_bulk());
+  }
+
+  void build_mesh_with_multi_copy_multi_component_right_field()
+  {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+
+    m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::NODE_RANK, "nodeRightField");
+    stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, 8, nullptr);
 
     stk::io::fill_mesh("generated:2x1x1", get_bulk());
   }
@@ -149,6 +190,7 @@ public:
 protected:
   stk::mesh::Field<int>* m_field;
   stk::mesh::Field<int, stk::mesh::Layout::Left>* m_leftField;
+  stk::mesh::Field<int, stk::mesh::Layout::Right>* m_rightField;
 };
 
 }

@@ -57,8 +57,7 @@ struct sharing_info
     sharing_info(stk::mesh::Entity entity, int sharing_proc, int owner) :
         m_entity(entity), m_sharing_proc(sharing_proc), m_owner(owner) {}
 
-    sharing_info(const sharing_info& rhs) :
-        m_entity(rhs.m_entity), m_sharing_proc(rhs.m_sharing_proc), m_owner(rhs.m_owner) {}
+    sharing_info(const sharing_info&) = default;
 
     sharing_info():
       m_entity(stk::mesh::Entity()), m_sharing_proc(-1), m_owner(-1) {}

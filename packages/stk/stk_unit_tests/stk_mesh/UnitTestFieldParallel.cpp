@@ -115,9 +115,7 @@ void do_parallel_assemble()
   int p_rank = stk::parallel_machine_rank(pm);
   int p_size = stk::parallel_machine_size(pm);
 
-  if (p_size == 1) {
-    return;
-  }
+  if (p_size == 1) { GTEST_SKIP(); }
 
   const unsigned NX = 3;
   const unsigned NY = 3;
@@ -162,8 +160,8 @@ void do_parallel_assemble()
   count_entities( shared_sel, bulk, counts );
 
   int multiplier = (p_rank == 0 || p_rank == p_size - 1) ? 1 : 2;
-  EXPECT_EQ( multiplier * (NX + 1) * (NY + 1), counts[0]); // nodes
-  EXPECT_EQ( multiplier * 2 * NX * (NY + 1),   counts[1]); // edges
+  EXPECT_EQ( multiplier * (NX + 1) * (NY + 1), counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ( multiplier * 2 * NX * (NY + 1),   counts[stk::topology::EDGE_RANK]);
 
   // Move center nodes into center part
   Entity center_element = fixture.elem(NX / 2, NY / 2, p_rank);
@@ -345,12 +343,10 @@ void do_parallel_assemble_including_ghosts()
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
-  int p_rank = stk::parallel_machine_rank(pm);
-  int p_size = stk::parallel_machine_size(pm);
+  const int p_rank = stk::parallel_machine_rank(pm);
+  const int p_size = stk::parallel_machine_size(pm);
 
-  if (p_size == 1) {
-    return;
-  }
+  if (p_size == 1) { GTEST_SKIP(); }
 
   const unsigned NX = 3;
   const unsigned NY = 3;
@@ -494,7 +490,7 @@ void do_parallel_assemble_including_ghosts()
 
       int field_id = universal_scalar_node_field.mesh_meta_data_ordinal();
       EXPECT_EQ( do_operation<double>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
-                 *field_data(universal_scalar_node_field, node) );
+                 *field_data(universal_scalar_node_field, node) )<<"node_id = "<<node_id;
 
       field_id = universal_cartesian_node_field.mesh_meta_data_ordinal();
       double* data = stk::mesh::field_data(universal_cartesian_node_field, node);
@@ -509,7 +505,7 @@ void do_parallel_assemble_including_ghosts()
       field_id = non_universal_scalar_node_field.mesh_meta_data_ordinal();
       if (bucket.member(center_part)) {
         EXPECT_EQ( do_operation<double>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
-                   *field_data(non_universal_scalar_node_field, node) );
+                   *field_data(non_universal_scalar_node_field, node) )<<"non-univ-field, node_id == "<<node_id;
       }
 
       field_id = universal_scalar_id_node_field.mesh_meta_data_ordinal();

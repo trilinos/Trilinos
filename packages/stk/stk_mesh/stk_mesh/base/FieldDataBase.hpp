@@ -34,7 +34,7 @@ public:
     : m_accessTag(InvalidAccess)
   {}
 
-  KOKKOS_FUNCTION explicit FieldDataBase(bool)
+  explicit FieldDataBase(bool)
     : m_copyCount("CopyCount"),
       m_accessTag(InvalidAccess)
   {}

@@ -130,7 +130,7 @@ void check_sideset_orientation(const stk::mesh::BulkData& bulk,
                                const stk::mesh::EntityId expectedId,
                                const stk::mesh::ConnectivityOrdinal expectedOrdinal)
 {
-  stk::mesh::SideSet sideSet = *sidesets[0];
+  stk::mesh::SideSet& sideSet = *sidesets[0];
   stk::mesh::SideSetEntry sideSetEntry;
   if (sideSet.size() > 0) {
     sideSetEntry = sideSet[0];

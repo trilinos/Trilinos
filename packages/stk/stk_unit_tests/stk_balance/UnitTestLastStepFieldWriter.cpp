@@ -61,12 +61,13 @@ void verify_field_data_is_same_for_all_nodes(const stk::mesh::BulkData& bulkData
   stk::mesh::EntityVector nodes;
   stk::mesh::get_selected_entities(meta.locally_owned_part(), bulkData.buckets(stk::topology::NODE_RANK), nodes);
 
-  stk::mesh::FieldBase* nodalTestData = meta.get_field(stk::topology::NODE_RANK, fieldName);
+  stk::mesh::FieldBase* nodalTestDataField = meta.get_field(stk::topology::NODE_RANK, fieldName);
+  auto nodalTestData = nodalTestDataField->data<double, stk::mesh::ReadOnly>();
 
   for(stk::mesh::Entity node : nodes)
   {
-    double *data = static_cast<double*>(stk::mesh::field_data(*nodalTestData, node));
-    EXPECT_EQ(initialVal, *data);
+    auto data = nodalTestData.entity_values(node);
+    EXPECT_EQ(initialVal, data());
   }
 }
 

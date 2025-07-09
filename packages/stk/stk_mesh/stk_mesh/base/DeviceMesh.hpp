@@ -35,7 +35,6 @@
 #define STK_MESH_DEVICEMESH_HPP
 
 #include <stk_util/stk_config.h>
-#include <stk_util/util/StridedArray.hpp>
 #include "stk_mesh/base/NgpMeshBase.hpp"
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/Entity.hpp"

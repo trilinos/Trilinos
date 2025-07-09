@@ -49,11 +49,11 @@
 namespace stk {
 namespace search {
 
-ExternalPointNoOpHandler::ExternalPointNoOpHandler(double tol) {}
+ExternalPointNoOpHandler::ExternalPointNoOpHandler(double /*tol*/) {}
 
-bool ExternalPointNoOpHandler::handle_point(const stk::search::spmd::EntityKeyPair& k,
-                                            const std::vector<double>& toCoords,
-                                            std::vector<double>& parametricCoords,
+bool ExternalPointNoOpHandler::handle_point(const stk::search::spmd::EntityKeyPair& /*k*/,
+                                            const std::vector<double>& /*toCoords*/,
+                                            std::vector<double>& /*parametricCoords*/,
                                             double& geometricDistanceSquared,
                                             bool& isWithinGeometricTolerance) const
 {

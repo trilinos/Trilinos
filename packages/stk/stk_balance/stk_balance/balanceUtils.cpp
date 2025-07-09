@@ -53,10 +53,11 @@ int BalanceSettings::getGraphVertexWeight(stk::topology /*type*/) const
 double BalanceSettings::getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index) const
 {
     const stk::mesh::Field<double> &field = *getVertexWeightField(bulkData, criteria_index);
-    const double *weight = stk::mesh::field_data(field, entity);
-    if (weight != nullptr) {
-      STK_ThrowRequireWithSierraHelpMsg(*weight >= 0);
-      return *weight;
+    if (field.defined_on(entity)) {
+      auto fieldData = field.data<stk::mesh::ReadOnly>();
+      auto weight = fieldData.entity_values(entity);
+      STK_ThrowRequireWithSierraHelpMsg(weight() >= 0);
+      return weight();
     }
     else {
       return m_defaultFieldWeight;
