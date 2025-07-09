@@ -1040,7 +1040,7 @@ class ArithTraits<__float128> {
 #endif  // KOKKOS_ENABLE_LIBQUADMATH
 
 template <>
-class ArithTraits< ::Kokkos::complex<float> > {
+class ArithTraits<::Kokkos::complex<float>> {
  public:
   using val_type = ::Kokkos::complex<float>;
   using mag_type = float;
@@ -1051,7 +1051,7 @@ class ArithTraits< ::Kokkos::complex<float> > {
 };
 
 template <>
-class ArithTraits< ::Kokkos::complex<double> > {
+class ArithTraits<::Kokkos::complex<double>> {
  public:
   using val_type = ::Kokkos::complex<double>;
   using mag_type = double;
@@ -1067,7 +1067,7 @@ class ArithTraits< ::Kokkos::complex<double> > {
 /// std::complex<RealFloatType> for RealFloatType = float, double, or
 /// long double.
 template <class RealFloatType>
-class ArithTraits<std::complex<RealFloatType> > {
+class ArithTraits<std::complex<RealFloatType>> {
  public:
   //! Kokkos internally replaces std::complex with Kokkos::complex.
   using val_type = ::Kokkos::complex<RealFloatType>;
@@ -1087,14 +1087,14 @@ class ArithTraits<std::complex<RealFloatType> > {
 #ifdef KOKKOS_ENABLE_SYCL
   template <typename Dummy = RealFloatType>
   static bool isInf(const std::complex<Dummy>& x) {
-    KOKKOS_IF_ON_HOST((using std::isinf;))
-    KOKKOS_IF_ON_DEVICE((using sycl::isinf;))
-    return isinf(real(x)) || isinf(imag(x));
-  }
-  template <>
-  static bool isInf<long double>(const std::complex<long double>& x) {
-    Kokkos::abort("isInf not available for std::complex<long double>!\n");
-    return true;
+    if constexpr (std::is_same_v<Dummy, long double>) {
+      Kokkos::abort("isInf not available for std::complex<long double>!\n");
+      return true;
+    } else {
+      KOKKOS_IF_ON_HOST((using std::isinf;))
+      KOKKOS_IF_ON_DEVICE((using sycl::isinf;))
+      return isinf(real(x)) || isinf(imag(x));
+    }
   }
 #else
   static bool isInf(const std::complex<RealFloatType>& x) {
@@ -1106,14 +1106,14 @@ class ArithTraits<std::complex<RealFloatType> > {
 #ifdef KOKKOS_ENABLE_SYCL
   template <typename Dummy = RealFloatType>
   static bool isNan(const std::complex<Dummy>& x) {
-    KOKKOS_IF_ON_HOST((using std::isnan;))
-    KOKKOS_IF_ON_DEVICE((using sycl::isnan;))
-    return isnan(real(x)) || isnan(imag(x));
-  }
-  template <>
-  static bool isNan<long double>(const std::complex<long double>& x) {
-    Kokkos::abort("isNan not available for std::complex<long double>!\n");
-    return true;
+    if constexpr (std::is_same_v<Dummy, long double>) {
+      Kokkos::abort("isNan not available for std::complex<long double>!\n");
+      return true;
+    } else {
+      KOKKOS_IF_ON_HOST((using std::isnan;))
+      KOKKOS_IF_ON_DEVICE((using sycl::isnan;))
+      return isnan(real(x)) || isnan(imag(x));
+    }
   }
 #else
   static bool isNan(const std::complex<RealFloatType>& x) {

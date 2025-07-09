@@ -1,5 +1,12 @@
 # Change Log
 
+## [4.6.02](https://github.com/kokkos/kokkos-kernels/tree/4.6.02)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.6.01...4.6.02)
+
+### Bug Fixes:
+- Sycl: Avoid warning for explicit instantiations with storage class [\#2615](https://github.com/kokkos/kokkos-kernels/pull/2615)
+- Sycl: Fix constexpr condition to test long double complex type [\#2688](https://github.com/kokkos/kokkos-kernels/pull/2688)
+
 ## [4.6.01](https://github.com/kokkos/kokkos-kernels/tree/4.6.01)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.6.00...4.6.01)
 

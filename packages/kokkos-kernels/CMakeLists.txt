@@ -11,7 +11,7 @@ SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(KokkosKernels_VERSION_MAJOR 4)
 SET(KokkosKernels_VERSION_MINOR 6)
-SET(KokkosKernels_VERSION_PATCH 1)
+SET(KokkosKernels_VERSION_PATCH 2)
 SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
 
 #Set variables for config file
