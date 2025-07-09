@@ -72,14 +72,11 @@ void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
   if (*iunit > -100 && *iunit < 100) {
 #if Build64
     //To remove the warning for "snprintf(string, 3, "%02ld", labs(*iunit));" with minimal performance changes
-    char *string19;
-    string19 = (char *)malloc(20 * sizeof(char));
-    snprintf(string19, 20, "%019ld", labs(*iunit));
-    string[0] = string19[17];
-    string[1] = string19[18];
-    string[2] = string19[19];
-    free(string19);
-    string19 = NULL;
+    int ret = snprintf(string, 3, "%02ld", labs(*iunit));
+    if (ret < 0 || ret > 3) {
+      printf("exodus error");
+      exit(1);
+    }
 #else
     snprintf(string, 3, "%02d", abs(*iunit));
 #endif
