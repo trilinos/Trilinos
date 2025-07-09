@@ -74,8 +74,8 @@ void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
     //To remove the warning for "snprintf(string, 3, "%02ld", labs(*iunit));" with minimal performance changes
     int ret = snprintf(string, 3, "%02ld", labs(*iunit));
     if (ret < 0 || ret > 3) {
-      printf("exodus error");
-      exit(1);
+      fprintf(stderr, "SUPES: exname error.");
+      exit(EXIT_FAILURE);
     }
 #else
     snprintf(string, 3, "%02d", abs(*iunit));
