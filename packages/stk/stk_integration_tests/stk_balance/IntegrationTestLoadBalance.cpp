@@ -1254,13 +1254,15 @@ void putCoordinatesOnElement(stk::mesh::BulkData& bulk, stk::mesh::Entity elemen
   unsigned spatialDim = bulk.mesh_meta_data().spatial_dimension();
   const stk::mesh::Entity* nodes = bulk.begin_nodes(element);
   unsigned numNodes = bulk.num_nodes(element);
+
+  auto coordFieldData = coordField.data();
   for(size_t j = 0; j < numNodes; j++)
   {
-    double* coordsXyzForNode = stk::mesh::field_data(coordField, nodes[j]);
+    auto coordsXyzForNode = coordFieldData.entity_values(nodes[j]);
 
-    coordsXyzForNode[0] = nodalCoords[j * spatialDim + 0];
-    coordsXyzForNode[1] = nodalCoords[j * spatialDim + 1];
-    coordsXyzForNode[2] = nodalCoords[j * spatialDim + 2];
+    coordsXyzForNode(0_comp) = nodalCoords[j * spatialDim + 0];
+    coordsXyzForNode(1_comp) = nodalCoords[j * spatialDim + 1];
+    coordsXyzForNode(2_comp) = nodalCoords[j * spatialDim + 2];
   }
 }
 

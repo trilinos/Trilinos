@@ -46,6 +46,7 @@ namespace impl {
   stk::mesh::Selector translate_selector(const stk::mesh::Selector & in_selector, const stk::mesh::MetaData & out_meta);
   void translate_parts(const stk::mesh::PartVector & inParts, const stk::mesh::MetaData & outMeta, stk::mesh::PartVector & outParts);
   void clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta, stk::mesh::MetaData & out_meta);
+  void copy_field_data(const stk::mesh::BulkData & inMesh, std::vector<stk::mesh::FieldBase*>& inFieldsToCopyFrom, stk::mesh::BulkData & outMesh, std::vector<stk::mesh::FieldBase*>& outFieldsToCopyTo);
 }
 
 } // namespace tools

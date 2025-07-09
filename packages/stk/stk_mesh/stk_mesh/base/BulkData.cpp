@@ -414,7 +414,9 @@ BulkData::~BulkData()
     m_ghosting.pop_back();
   }
 
-  mesh_meta_data().set_mesh_bulk_data(nullptr);
+  if (this == &mesh_meta_data().mesh_bulk_data()) {
+    mesh_meta_data().set_mesh_bulk_data(nullptr);
+  }
 
   delete m_elemElemGraph;
 
@@ -4014,13 +4016,13 @@ void BulkData::make_ghost_info_symmetric()
 
           if (sharedAndGhostedOrMultipleGhosted) {
             for(unsigned ii=0; ii<ec.size(); ++ii) {
-              int proc_ii = ec[ii].proc;
+              const int proc_ii = ec[ii].proc;
               commSparse.send_buffer(proc_ii).pack<EntityKey>(all_comm[i].key);
               commSparse.send_buffer(proc_ii).pack<unsigned>(ec.size()-1);
 
               for(unsigned jj=0; jj<ec.size(); ++jj) {
                 if (ii != jj) {
-                  int proc_jj = ec[jj].proc;
+                  const int proc_jj = ec[jj].proc;
                   commSparse.send_buffer(proc_ii).pack<unsigned>(ec[jj].ghost_id);
                   commSparse.send_buffer(proc_ii).pack<int>(proc_jj);
                 }
@@ -4048,13 +4050,16 @@ void BulkData::make_ghost_info_symmetric()
         buf.unpack<unsigned>(ghostId);
         int otherProc = -1;
         buf.unpack<int>(otherProc);
-        EntityCommInfo entityCommInfo(SYMM_INFO+ghostId, otherProc);
+ 
+        if (otherProc != parallel_rank()) {
+          EntityCommInfo entityCommInfo(SYMM_INFO+ghostId, otherProc);
 
-        std::pair<int,bool> result = entity_comm_map_insert(entity, entityCommInfo);
-        if (result.second) {
-          const int entityCommIndex = result.first;
-          EntityCommListInfo commListInfo = {key, entity, entityCommIndex};
-          newCommListEntries.push_back(commListInfo);
+          std::pair<int,bool> result = entity_comm_map_insert(entity, entityCommInfo);
+          if (result.second) {
+            const int entityCommIndex = result.first;
+            EntityCommListInfo commListInfo = {key, entity, entityCommIndex};
+            newCommListEntries.push_back(commListInfo);
+          }
         }
       }
     }
@@ -4246,6 +4251,7 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
     STK_ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
     EntityProcVec auraEntitiesToResend;
+    EntityVector newlyShared;
     {
       stk::CommSparse comm(parallel());
       const bool anythingToUnpack = impl::pack_and_send_modified_shared_entity_states(
@@ -4260,6 +4266,14 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
             buf.unpack<EntityKey>(key);
             buf.unpack<EntityState>(remoteState);
             Entity entity = get_entity(key);
+            int isShared = 0;
+            buf.unpack<int>(isShared);
+            if (isShared == 1) {
+              auto rslt = entity_comm_map_insert(entity, EntityCommInfo(SHARED, p));
+              if (rslt.second){
+                newlyShared.push_back(entity);
+              }
+            }
             int numSharingProcs = 0;
             buf.unpack<int>(numSharingProcs);
             for(int sp=0; sp<numSharingProcs; ++sp) {
@@ -4339,6 +4353,15 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
 #endif
 
     OrdinalVector scratch, scratch2;
+    part_storage.induced_part_ordinals.clear();
+    part_storage.removeParts.clear();
+    part_storage.induced_part_ordinals.push_back(mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal());
+    OrdinalVector& sharedPart = part_storage.induced_part_ordinals;
+
+    for(Entity ent : newlyShared) {
+      internal_change_entity_parts(ent, sharedPart, part_storage.removeParts, scratch, scratch2);
+    }
+
     for (stk::mesh::Entity entity : entitiesNoLongerShared) {
       part_storage.induced_part_ordinals.clear();
       part_storage.removeParts.clear();

@@ -74,7 +74,7 @@ template <typename MemSpace> using DeviceBucketsModifiedCollectionType = Kokkos:
 
 using FieldMetaDataArrayType = typename Kokkos::View<FieldMetaData*, stk::ngp::HostMemSpace>;
 
-using DeviceSynchronizedCountType = Kokkos::View<int, stk::ngp::HostPinnedSpace>;
+using FieldMetaDataModCountType = Kokkos::View<unsigned, stk::ngp::HostPinnedSpace>;
 
 
 template <typename MemSpace>

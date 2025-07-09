@@ -1,259 +1,536 @@
-// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
-// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
-// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
-// in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its contributors
-//       may be used to endorse or promote products derived from this
-//       software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 #include <gtest/gtest.h>
-#include <stk_util/stk_config.h>
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_search/CoarseSearch.hpp>
-#include <stk_mesh/base/MeshBuilder.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <stk_util/parallel/OutputStreams.hpp>
+
+#include <Kokkos_Core.hpp>
+#include <memory>
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/ForEachEntity.hpp>
-#include <stk_mesh/base/NgpForEachEntity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
-#include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
+#include <stk_mesh/base/NgpField.hpp>
+#include <stk_mesh/base/NgpForEachEntity.hpp>
+#include <stk_mesh/base/NgpMesh.hpp>
+#include <stk_mesh/base/NgpFieldBLAS.hpp>
+#include <stk_mesh/base/Selector.hpp>
+#include <stk_search/BoxIdent.hpp>
+#include <stk_search/CoarseSearch.hpp>
+#include <stk_search/LocalCoarseSearch.hpp>
+#include <stk_search/IdentProc.hpp>
+#include <stk_search/Point.hpp>
+#include <stk_search/SearchMethod.hpp>
+#include <stk_search/Sphere.hpp>
+#include <stk_topology/topology.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_io/FillMesh.hpp>
 #include <stk_unit_test_utils/timer.hpp>
 
-namespace perf_test {
+static constexpr size_t MAX_NEIGHBORS = 40;
 
-using ExecSpace = Kokkos::DefaultExecutionSpace;
-using HostSpace = Kokkos::DefaultHostExecutionSpace;
-
-using ElemIdentProc = stk::search::IdentProc<unsigned,int>;
-using NodeIdentProc = stk::search::IdentProc<stk::mesh::EntityId,int>;
-using SphereIdentProc = stk::search::BoxIdentProc<stk::search::Sphere<double>,ElemIdentProc>;
-using PointIdentProc = stk::search::BoxIdentProc<stk::search::Point<double>,NodeIdentProc>;
-using Intersection = stk::search::IdentProcIntersection<ElemIdentProc,NodeIdentProc>;
-
-using DomainViewType = Kokkos::View<SphereIdentProc*,ExecSpace>;
-using RangeViewType = Kokkos::View<PointIdentProc*,ExecSpace>;
-using ResultViewType = Kokkos::View<Intersection*,ExecSpace>;
-
-using FastMeshIndicesViewType = Kokkos::View<stk::mesh::FastMeshIndex*,ExecSpace>;
-
-constexpr unsigned maxNumNeighbors = 16; //we're only expecting 8 per element
-
-DomainViewType create_elem_spheres(const stk::mesh::BulkData& mesh, double radius)
+class NeighborSearch
 {
-  const stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-  const unsigned numLocalElems = stk::mesh::count_entities(mesh, stk::topology::ELEM_RANK, meta.locally_owned_part());
-  DomainViewType elemSpheres("elemSpheres", numLocalElems);
+  using ExecSpace = stk::ngp::ExecSpace;
+  using NodeIdent = stk::mesh::Entity::entity_value_type;
+  using NodeIdentProc = stk::search::IdentProc<stk::mesh::EntityId, int>;
+  using SphereIdent = stk::search::BoxIdent<stk::search::Sphere<double>, NodeIdent>;
+  using SphereIdentProc = stk::search::BoxIdentProc<stk::search::Sphere<double>, NodeIdentProc>;
+  using PointIdent = stk::search::BoxIdent<stk::search::Point<double>, NodeIdent>;
+  using PointIdentProc = stk::search::BoxIdentProc<stk::search::Point<double>, NodeIdentProc>;
+  using LocalIntersection = stk::search::IdentIntersection<NodeIdent, NodeIdent>;
+  using Intersection = stk::search::IdentProcIntersection<NodeIdentProc, NodeIdentProc>;
 
-  const stk::mesh::FieldBase* coordField = meta.coordinate_field();
-  const stk::mesh::NgpField<double>& ngpCoords = stk::mesh::get_updated_ngp_field<double>(*coordField);
-  const stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(mesh);
-  const int myRank = mesh.parallel_rank();
+  using LocalRangeViewType = Kokkos::View<SphereIdent *, ExecSpace>;
+  using LocalDomainViewType = Kokkos::View<PointIdent *, ExecSpace>;
+  using LocalResultViewType = Kokkos::View<LocalIntersection *, ExecSpace>;
 
-  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part(),
-  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elemIndex) {
-      stk::mesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elemIndex);
-      stk::mesh::Entity elemEntity = ngpMesh.get_entity(stk::topology::ELEM_RANK, elemIndex);
-      unsigned elemLocalId = ngpMesh.local_id(elemEntity);
-      stk::search::Point<double> center(0,0,0);
-      for(unsigned j=0; j<nodes.size(); ++j) {
-        stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[j]);
-        stk::mesh::EntityFieldData<double> coords = ngpCoords(nodeIndex);
-        center[0] += coords[0];
-        center[1] += coords[1];
-        center[2] += coords[2];
+  using RangeViewType = Kokkos::View<SphereIdentProc *, ExecSpace>;
+  using DomainViewType = Kokkos::View<PointIdentProc *, ExecSpace>;
+  using ResultViewType = Kokkos::View<Intersection *, ExecSpace>;
+
+public:
+  using DoubleField = stk::mesh::Field<double>;
+  using NgpDoubleField = stk::mesh::NgpField<double>;
+
+  NeighborSearch(std::shared_ptr<stk::mesh::BulkData> bulkData,
+                 const std::vector<std::string> &blockNames = {})
+  : m_bulkData(bulkData)
+  {
+    stk::mesh::MetaData& meta = m_bulkData->mesh_meta_data();
+
+    if (blockNames.size() == 0) {
+      m_selector = stk::mesh::Selector(meta.universal_part());
+    } else {
+      stk::mesh::PartVector parts;
+      for (const auto &blockName : blockNames) {
+        stk::mesh::Part *part = meta.get_part(blockName);
+        STK_ThrowRequireMsg(part != nullptr, "Block " << blockName << " not found.");
+        parts.push_back(part);
       }
-
-      center[0] /= nodes.size();
-      center[1] /= nodes.size();
-      center[2] /= nodes.size();
-
-      elemSpheres(elemLocalId) = SphereIdentProc{stk::search::Sphere<double>(center, radius), ElemIdentProc(elemEntity.local_offset(), myRank)};
+      m_selector = stk::mesh::selectUnion(parts);
     }
-  );
-  
-  return elemSpheres;
-}
 
-RangeViewType create_node_points(const stk::mesh::BulkData& mesh)
-{
-  const stk::mesh::MetaData& meta = mesh.mesh_meta_data();
-  const unsigned numLocalNodes = stk::mesh::count_entities(mesh, stk::topology::NODE_RANK, meta.locally_owned_part());
-  const int myRank = mesh.parallel_rank();
-  RangeViewType nodePoints("nodePoints", numLocalNodes);
+    m_owned_selector = m_selector & m_bulkData->mesh_meta_data().locally_owned_part();
 
-  const stk::mesh::FieldBase* coordField = meta.coordinate_field();
-  const stk::mesh::NgpField<double>& ngpCoords = stk::mesh::get_updated_ngp_field<double>(*coordField);
-  const stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(mesh);
+    // Get the node number of neighbors field
+    m_numNeighborsField = &meta.get_field<double>(stk::topology::NODE_RANK, "num_neighbors")->field_of_state(stk::mesh::StateNone);
 
-  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, mesh.mesh_meta_data().locally_owned_part(),
-  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& nodeIndex) {
-      stk::mesh::EntityFieldData<double> coords = ngpCoords(nodeIndex);
-      stk::mesh::Entity node = ngpMesh.get_entity(stk::topology::NODE_RANK, nodeIndex);
-      unsigned nodeLocalId = ngpMesh.local_id(node);
-      nodePoints(nodeLocalId) = PointIdentProc{stk::search::Point<double>(coords[0], coords[1], coords[2]), NodeIdentProc(ngpMesh.identifier(node), myRank)};
-    }
-  );
-  
-  return nodePoints;
-}
+    // Get the node neighbors field
+    m_neighborsField = &meta.get_field<double>(stk::topology::NODE_RANK, "neighbors")->field_of_state(stk::mesh::StateNone);
 
-void ghost_node_neighbors_to_elements(stk::mesh::BulkData& mesh, const ResultViewType& searchResults)
-{
-  auto hostSpace = HostSpace{};
-  auto hostSearchResults = Kokkos::create_mirror_view_and_copy(hostSpace, searchResults);
+    // Get the coordinates field
+    m_coordField = static_cast<const DoubleField*>(meta.coordinate_field());
 
-  mesh.modification_begin();
-  stk::mesh::Ghosting& neighborGhosting = mesh.create_ghosting("neighbors");
-  std::vector<stk::mesh::EntityProc> nodesToGhost;
+    // Get the kernel radius field
+    m_kernelRadiusField = &meta.get_field<double>(stk::topology::NODE_RANK, "kernel_radius")->field_of_state(stk::mesh::StateNone);
 
-  const int myRank = mesh.parallel_rank();
-
-  for(size_t i=0; i<hostSearchResults.size(); ++i) {
-    auto result = hostSearchResults(i);
-    if (result.domainIdentProc.proc() != myRank && result.rangeIdentProc.proc() == myRank) {
-      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, result.rangeIdentProc.id());
-      nodesToGhost.emplace_back(node, result.domainIdentProc.proc());
-    }
+    // Get the function values field
+    m_functionValuesField = &meta.get_field<double>(stk::topology::NODE_RANK, "function_values")->field_of_state(stk::mesh::StateNone);
   }
 
-  mesh.change_ghosting(neighborGhosting, nodesToGhost);
-  mesh.modification_end();
-}
+  void compute_kernel_radius()
+  {
+    const stk::mesh::NgpMesh &ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulkData);
+    // Get the ngp fields
+    auto ngpCoordField = stk::mesh::get_updated_ngp_field<double>(*m_coordField);
+    ngpCoordField.sync_to_device();
+    auto ngpKernelRadiusField = stk::mesh::get_updated_ngp_field<double>(*m_kernelRadiusField);
+    ngpKernelRadiusField.clear_sync_state();
+    const double tolerance = std::numeric_limits<double>::epsilon();
 
-void unpack_search_results_into_field(stk::mesh::BulkData& mesh,
-                                      stk::mesh::Field<unsigned>& neighborField,
-                                      const ResultViewType& searchResults)
-{
-  auto hostSpace = HostSpace{};
-  auto hostSearchResults = Kokkos::create_mirror_view_and_copy(hostSpace, searchResults);
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, m_selector,
+      KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex &node_index) {
+        // Get the node's coordinates
+        stk::mesh::EntityFieldData<double> coordinates = ngpCoordField(node_index);
 
-  const int myRank = mesh.parallel_rank();
-
-  for(size_t i=0; i<hostSearchResults.size(); ++i) {
-    auto result = hostSearchResults(i);
-    if (result.domainIdentProc.proc() == myRank) {
-      stk::mesh::Entity elem(result.domainIdentProc.id());
-      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, result.rangeIdentProc.id());
-      ASSERT_TRUE(mesh.is_valid(node));
-      unsigned* neighborData = stk::mesh::field_data(neighborField, elem);
-      unsigned& numNeighbors = neighborData[0];
-      ASSERT_TRUE(numNeighbors < maxNumNeighbors);
-      neighborData[1+numNeighbors] = node.local_offset();
-      ++numNeighbors;
-    }
+        // Get the kernel radius
+        double kernel_radius_squared = 0.0;
+        stk::mesh::NgpMesh::ConnectedEntities connected_entities = ngpMesh.get_connected_entities(stk::topology::NODE_RANK, node_index, stk::topology::ELEMENT_RANK);
+        for (size_t i = 0; i < connected_entities.size(); ++i) {
+          stk::mesh::FastMeshIndex elem_index = ngpMesh.fast_mesh_index(connected_entities[i]);
+          stk::mesh::NgpMesh::ConnectedNodes connected_nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elem_index);
+          for (size_t j = 0; j < connected_nodes.size(); ++j) {
+            stk::mesh::FastMeshIndex neighbor_index = ngpMesh.fast_mesh_index(connected_nodes[j]);
+            stk::mesh::EntityFieldData<double> neighbor_coordinates = ngpCoordField(neighbor_index);
+            double length_squared = 0;
+            for (size_t k = 0; k < 3; ++k) {
+              const double value = coordinates[k] - neighbor_coordinates[k];
+              length_squared += value * value;
+            }
+            kernel_radius_squared = Kokkos::max(kernel_radius_squared, length_squared);
+          }
+        }
+        const double kernel_radius = Kokkos::sqrt(kernel_radius_squared);
+        ngpKernelRadiusField(node_index, 0) = kernel_radius + tolerance;
+      });
+    ngpKernelRadiusField.modify_on_device();
   }
+
+  // The domain will be the nodes. Search will find the nodes within the spheres from above.
+  // The identifiers will be the node entity-offsets
+  LocalDomainViewType create_local_node_points() {
+    const stk::mesh::MetaData &meta = m_bulkData->mesh_meta_data();
+    stk::mesh::Selector ownedOrShared = m_owned_selector | meta.globally_shared_part();
+    const unsigned num_local_nodes = stk::mesh::count_entities(*m_bulkData, stk::topology::NODE_RANK, ownedOrShared);
+    LocalDomainViewType node_points("node_points", num_local_nodes);
+
+    auto& ngpCoordField = stk::mesh::get_updated_ngp_field<double>(*m_coordField);
+    ngpCoordField.sync_to_device();
+    const stk::mesh::NgpMesh &ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulkData);
+
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, ownedOrShared,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& node_index) {
+      stk::mesh::EntityFieldData<double> coords = ngpCoordField(node_index);
+      stk::mesh::Entity node = ngpMesh.get_entity(stk::topology::NODE_RANK, node_index);
+      const unsigned nodeLocalId = ngpMesh.local_id(node);
+      node_points(nodeLocalId) = PointIdent{stk::search::Point<double>(coords[0], coords[1], coords[2]), NodeIdent(node.local_offset())};
+    });
+
+    return node_points;
+  }
+
+  // The domain will be the nodes. Search will find the nodes within the spheres from above.
+  // The identifiers will be the global node ids.
+  DomainViewType create_node_points() {
+    const stk::mesh::MetaData &meta = m_bulkData->mesh_meta_data();
+    stk::mesh::Selector ownedOrShared = m_owned_selector | meta.globally_shared_part();
+    const unsigned num_local_nodes = stk::mesh::count_entities(*m_bulkData, stk::topology::NODE_RANK, ownedOrShared);
+    DomainViewType node_points("node_points", num_local_nodes);
+
+    auto& ngpCoordField = stk::mesh::get_updated_ngp_field<double>(*m_coordField);
+    ngpCoordField.sync_to_device();
+    const stk::mesh::NgpMesh &ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulkData);
+    const int myRank = m_bulkData->parallel_rank();
+
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, ownedOrShared,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& node_index) {
+      stk::mesh::EntityFieldData<double> coords = ngpCoordField(node_index);
+      stk::mesh::Entity node = ngpMesh.get_entity(stk::topology::NODE_RANK, node_index);
+      const unsigned nodeLocalId = ngpMesh.local_id(node);
+      node_points(nodeLocalId) = PointIdentProc{stk::search::Point<double>(coords[0], coords[1], coords[2]), NodeIdentProc(node.local_offset(), myRank)};
+    });
+
+    return node_points;
+  }
+
+  // Sphere range. Will be used to find the nodes within a ball defined by the sphere.
+  // The identifiers will be the entity local_offsets
+  LocalRangeViewType create_local_node_spheres(const stk::mesh::Selector& selector) {
+    const unsigned numNodes = stk::mesh::count_entities(*m_bulkData, stk::topology::NODE_RANK, selector);
+    LocalRangeViewType node_spheres("node_spheres", numNodes);
+
+    auto& ngpCoordField = stk::mesh::get_updated_ngp_field<double>(*m_coordField);
+    ngpCoordField.sync_to_device();
+    auto& ngpKernelRadiusField = stk::mesh::get_updated_ngp_field<double>(*m_kernelRadiusField);
+    ngpKernelRadiusField.sync_to_device();
+
+    const stk::mesh::NgpMesh &ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulkData);
+
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, selector,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& node_index) {
+      stk::mesh::EntityFieldData<double> coords = ngpCoordField(node_index);
+      stk::search::Point<double> center(coords[0], coords[1], coords[2]);
+      stk::mesh::Entity node = ngpMesh.get_entity(stk::topology::NODE_RANK, node_index);
+      const unsigned nodeLocalId = ngpMesh.local_id(node);
+      double radius = ngpKernelRadiusField(node_index, 0);
+      node_spheres(nodeLocalId) = SphereIdent{stk::search::Sphere<double>(center, radius), NodeIdent(node.local_offset())};
+    });
+
+    return node_spheres;
+  }
+
+  // Sphere range. Will be used to find the nodes within a ball defined by the sphere.
+  // The identifiers will be the entity local_offsets
+  RangeViewType create_node_spheres(const stk::mesh::Selector& selector) {
+    const unsigned numNodes = stk::mesh::count_entities(*m_bulkData, stk::topology::NODE_RANK, selector);
+    RangeViewType node_spheres("node_spheres", numNodes);
+
+    auto& ngpCoordField = stk::mesh::get_updated_ngp_field<double>(*m_coordField);
+    ngpCoordField.sync_to_device();
+    auto& ngpKernelRadiusField = stk::mesh::get_updated_ngp_field<double>(*m_kernelRadiusField);
+    ngpKernelRadiusField.sync_to_device();
+
+    const stk::mesh::NgpMesh &ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulkData);
+    const int myRank = m_bulkData->parallel_rank();
+
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, selector,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& node_index) {
+      stk::mesh::EntityFieldData<double> coords = ngpCoordField(node_index);
+      stk::search::Point<double> center(coords[0], coords[1], coords[2]);
+      stk::mesh::Entity node = ngpMesh.get_entity(stk::topology::NODE_RANK, node_index);
+      const unsigned nodeLocalId = ngpMesh.local_id(node);
+      double radius = ngpKernelRadiusField(node_index, 0);
+      node_spheres(nodeLocalId) = SphereIdentProc{stk::search::Sphere<double>(center, radius), NodeIdentProc(node.local_offset(), myRank)};
+    });
+
+    return node_spheres;
+  }
+
+  // Ghost the neighbors to the nodes processor
+  void ghost_node_neighbors(const ResultViewType::HostMirror &host_search_results)
+  {
+    m_bulkData->modification_begin();
+    stk::mesh::Ghosting &neighbor_ghosting = m_bulkData->create_ghosting("neighbors");
+    std::vector<stk::mesh::EntityProc> nodes_to_ghost;
+
+    const int myRank = m_bulkData->parallel_rank();
+
+    for (size_t i = 0; i < host_search_results.size(); ++i) {
+      auto result = host_search_results(i);
+      if (result.domainIdentProc.proc() != myRank && result.rangeIdentProc.proc() == myRank) {
+        stk::mesh::Entity node(result.rangeIdentProc.id());
+        nodes_to_ghost.emplace_back(node, result.domainIdentProc.proc());
+      }
+    }
+
+    m_bulkData->change_ghosting(neighbor_ghosting, nodes_to_ghost);
+    m_bulkData->modification_end();
+  }
+
+  // Put the search results into the neighbors field. The neighbors field is a field of entity offsets. The neighbors are sorted by distance. Near to far.
+  void unpack_search_results_into_field(const LocalResultViewType& search_results)
+  {
+    auto ngpCoordField = stk::mesh::get_updated_ngp_field<double>(*m_coordField);
+    auto ngpNeighborsField = stk::mesh::get_updated_ngp_field<double>(*m_neighborsField);
+    auto ngpNumNeighborsField = stk::mesh::get_updated_ngp_field<double>(*m_numNeighborsField);
+    auto ngpFunctionValuesField = stk::mesh::get_updated_ngp_field<double>(*m_functionValuesField);
+
+    ngpCoordField.sync_to_device();
+    ngpNeighborsField.sync_to_device();
+    ngpNumNeighborsField.sync_to_device();
+    ngpFunctionValuesField.sync_to_device();
+
+    const stk::mesh::NgpMesh &ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulkData);
+
+    const size_t numResults = search_results.size();
+    Kokkos::parallel_for("unpack_search_results", Kokkos::RangePolicy<stk::ngp::ExecSpace>(0, numResults),
+      KOKKOS_LAMBDA(const int& i)
+      {
+        auto result = search_results(i);
+        unsigned domainId = result.domainIdent;
+        const bool shouldUnpack = i==0 || search_results(i-1).domainIdent != domainId;
+        if (shouldUnpack) {
+          unsigned ii = i;
+          while(ii<search_results.size() && result.domainIdent == domainId) {
+            stk::mesh::Entity node(result.domainIdent);
+            stk::mesh::Entity neighbor(result.rangeIdent);
+            stk::mesh::FastMeshIndex nodeIndex = ngpMesh.device_mesh_index(node);
+            stk::mesh::FastMeshIndex neighborIndex = ngpMesh.device_mesh_index(neighbor);
+
+            const stk::mesh::EntityFieldData<double> neighborCoords = ngpCoordField(neighborIndex);
+            const stk::mesh::EntityFieldData<double> nodeCoords = ngpCoordField(nodeIndex);
+            stk::mesh::EntityFieldData<double> p_neighbor_data = ngpNeighborsField(nodeIndex);
+            double& num_neighbors = ngpNumNeighborsField(nodeIndex,0);
+            stk::mesh::EntityFieldData<double> p_function_values = ngpFunctionValuesField(nodeIndex);  // Using the function values field as a temporary storage for the squared distances
+
+            // Calculate the squared distance between the node and the neighbor
+            double distance_squared = 0.0;
+            for (size_t j = 0; j < 3; ++j) {
+              const double value = neighborCoords[j] - nodeCoords[j];
+              distance_squared += value * value;
+            }
+            // Find where to insert the neighbor, based on the distance
+            unsigned insert_index = (unsigned)num_neighbors;  // Default to the end of the list
+            for (size_t j = 0; j < insert_index; ++j) {
+              if (distance_squared < p_function_values[j]) {
+                insert_index = j;
+                break;
+              }
+            }
+
+            // Shift the function values and neighbors to make room for the new neighbor
+            unsigned reverse_start_index = (unsigned)num_neighbors;
+            if (reverse_start_index == MAX_NEIGHBORS) {
+              Kokkos::printf("Node %ld has too many neighbors. The furthest neighbor will be removed.\n", ngpMesh.identifier(node));
+              --reverse_start_index;
+            } else {
+              num_neighbors += 1;
+            }
+            for (size_t j = reverse_start_index; j > insert_index; --j) {
+              p_function_values[j] = p_function_values[j - 1];
+              p_neighbor_data[j] = p_neighbor_data[j - 1];
+            }
+
+            // Insert the new neighbor
+            p_function_values[insert_index] = distance_squared;
+            p_neighbor_data[insert_index] = (double)neighbor.local_offset();
+            ++ii;
+            result = search_results(ii);
+          }
+        }
+      });
+    m_neighborsField->modify_on_device();
+    m_numNeighborsField->modify_on_device();
+  }
+
+  void do_ball_search()
+  {
+    DomainViewType node_points = create_node_points();
+    RangeViewType node_spheres = create_node_spheres(m_owned_selector);
+    m_kernelRadiusField->clear_sync_state();
+
+    ResultViewType search_results;
+    stk::search::SearchMethod search_method = stk::search::MORTON_LBVH;
+
+    stk::ngp::ExecSpace exec_space = Kokkos::DefaultExecutionSpace{};
+    const bool results_parallel_symmetry = true;
+
+    stk::search::coarse_search(node_points, node_spheres, search_method, m_bulkData->parallel(), search_results, exec_space, results_parallel_symmetry);
+
+    ResultViewType::HostMirror host_search_results = Kokkos::create_mirror_view(search_results);
+    Kokkos::deep_copy(host_search_results, search_results);
+
+    ghost_node_neighbors(host_search_results);
+
+    stk::mesh::Selector all = m_bulkData->mesh_meta_data().universal_part();
+    LocalDomainViewType local_node_points = create_local_node_points();
+    LocalRangeViewType local_node_spheres = create_local_node_spheres(all);
+
+    LocalResultViewType local_search_results;
+    const bool sortResults = true;
+    stk::search::local_coarse_search(local_node_points, local_node_spheres, search_method, local_search_results, exec_space, sortResults);
+
+    unpack_search_results_into_field(local_search_results);
+  }
+
+  void add_nodes_neighbors_within_variable_ball() {
+    compute_kernel_radius();
+    do_ball_search();
+  }
+
+  void check_neighbor_stats(int nElemX, int nElemY, int nElemZ,
+                            int expectedMinNeighbors, int expectedMaxNeighbors)
+  {
+    // Initialize the min and max values
+    double max_num_neighbors = 0;
+    double min_num_neighbors = std::numeric_limits<double>::max();
+    double total_num_neighbors = 0;
+    double num_entities = stk::mesh::count_entities(*m_bulkData, stk::topology::NODE_RANK, m_owned_selector);
+    NgpDoubleField& ngpNumNeighborsField = stk::mesh::get_updated_ngp_field<double>(*m_numNeighborsField);
+    NgpDoubleField& ngpNeighborsField = stk::mesh::get_updated_ngp_field<double>(*m_neighborsField);
+    const bool newestDataIsOnDevice = !ngpNumNeighborsField.need_sync_to_device()
+                                   && !ngpNeighborsField.need_sync_to_device();
+
+    if (newestDataIsOnDevice) {
+      ngpNumNeighborsField.sync_to_host();
+      ngpNeighborsField.sync_to_host();
+    }
+
+    const stk::mesh::BucketVector& nodeBuckets = m_bulkData->get_buckets(stk::topology::NODE_RANK, m_owned_selector);
+    for(const stk::mesh::Bucket* bptr : nodeBuckets) {
+      for(stk::mesh::Entity node : *bptr) {
+        const double* numNeighbors = reinterpret_cast<const double*>(stk::mesh::field_data(*m_numNeighborsField, node));
+        max_num_neighbors = std::max(max_num_neighbors, numNeighbors[0]);
+        min_num_neighbors = std::min(min_num_neighbors, numNeighbors[0]);
+        total_num_neighbors += numNeighbors[0];
+      }
+    }
+
+    MPI_Allreduce(MPI_IN_PLACE, &max_num_neighbors, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &min_num_neighbors, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &total_num_neighbors, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &num_entities, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    EXPECT_EQ(min_num_neighbors, expectedMinNeighbors);//neighbors include 'self'
+    EXPECT_EQ(max_num_neighbors, expectedMaxNeighbors);
+  //  const double avg_num_neighbors = total_num_neighbors / num_entities;
+  //  EXPECT_NEAR(avg_num_neighbors, 14.518518, 0.001);
+    const size_t expectedTotalNodes = (nElemX + 1) * (nElemY + 1) * (nElemZ + 1);
+    EXPECT_EQ(num_entities, expectedTotalNodes);
+  }
+
+  void zero_fields()
+  {
+    stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace{};
+
+    constexpr double zero = 0.0;
+    stk::mesh::field_fill(zero, *m_numNeighborsField, execSpace);
+    stk::mesh::field_fill(zero, *m_neighborsField, execSpace);
+    stk::mesh::field_fill(zero, *m_kernelRadiusField, execSpace);
+    stk::mesh::field_fill(zero, *m_functionValuesField, execSpace);
+  }
+
+private:
+  std::shared_ptr<stk::mesh::BulkData> m_bulkData;
+  stk::mesh::Selector m_selector;
+  stk::mesh::Selector m_owned_selector;
+  stk::mesh::NgpMesh m_ngpMesh;
+  const DoubleField *m_coordField;
+  DoubleField *m_numNeighborsField;
+  DoubleField *m_neighborsField;
+  DoubleField *m_kernelRadiusField;
+  DoubleField *m_functionValuesField;
+};
+
+class NeighborSearchTestFixture : public ::testing::Test
+{
+protected:
+  void SetUp() override { }
+
+  void create_mesh_and_search_manager(MPI_Comm comm, const std::string &mesh_spec)
+  {
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr =
+        stk::mesh::MeshBuilder(comm)
+             .set_spatial_dimension(3)
+             .set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA)
+             .set_maintain_local_ids(true)
+             .create();
+    stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+
+    NeighborSearch::DoubleField& nodeNumNeighborsField = meta.declare_field<double>(stk::topology::NODE_RANK, "num_neighbors", 1);
+    stk::mesh::put_field_on_entire_mesh(nodeNumNeighborsField, 1);
+
+    NeighborSearch::DoubleField& nodeNeighborsField = meta.declare_field<double>(stk::topology::NODE_RANK, "neighbors", 1);
+    stk::mesh::put_field_on_entire_mesh(nodeNeighborsField, MAX_NEIGHBORS);
+
+    NeighborSearch::DoubleField& functionValuesField = meta.declare_field<double>(stk::topology::NODE_RANK, "function_values", 1);
+    stk::mesh::put_field_on_entire_mesh(functionValuesField, MAX_NEIGHBORS);
+
+    NeighborSearch::DoubleField& kernelRadiusField = meta.declare_field<double>(stk::topology::NODE_RANK, "kernel_radius", 1);
+    stk::mesh::put_field_on_entire_mesh(kernelRadiusField, 1);
+
+    stk::io::fill_mesh(mesh_spec, *bulkPtr);
+
+    m_searchManager = std::make_shared<NeighborSearch>(bulkPtr, std::vector<std::string>{"block_1"});
+  }
+
+  std::shared_ptr<NeighborSearch> m_searchManager;
+};
+
+std::string get_mesh_spec(int nX, int nY, int nZ, double bboxScaleFactor = 1.0)
+{
+  std::string meshSpec = "generated:" + std::to_string(nX) + "x" + std::to_string(nY) + "x" + std::to_string(nZ);
+
+  if (bboxScaleFactor != 1.0) {
+    meshSpec += "|bbox:";
+    meshSpec += std::to_string(-bboxScaleFactor * nX) + ","
+              + std::to_string(-bboxScaleFactor * nY) + ","
+              + std::to_string(-bboxScaleFactor * nZ);
+    meshSpec += ","
+              + std::to_string(bboxScaleFactor * nX) +  ","
+              + std::to_string(bboxScaleFactor * nY) +  ","
+              + std::to_string(bboxScaleFactor * nZ);
+  }
+
+  return meshSpec;
 }
 
-void verify_8_neighbors_per_element(const stk::mesh::BulkData& mesh,
-                                    const stk::mesh::Field<unsigned>& neighborField)
-{
-  stk::mesh::for_each_entity_run(mesh, stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part(),
-  [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity elem) {
-    const unsigned* neighborData = stk::mesh::field_data(neighborField, elem);
-    EXPECT_EQ(8u, neighborData[0]);
-  });
-}
-
-TEST(PerfNgpSearch, elemNodeNeighbors)
-{
+TEST_F(NeighborSearchTestFixture, VariableBallSearchUnitCubes) {
   MPI_Comm comm = stk::parallel_machine_world();
-  if (stk::parallel_machine_size(comm) > 4) { GTEST_SKIP(); }
-
-  std::unique_ptr<stk::mesh::BulkData> meshPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
-                                     .set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA)
-                                     .set_spatial_dimension(3)
-                                     .set_maintain_local_ids(true)
-                                     .create();
-  stk::mesh::MetaData& meta = meshPtr->mesh_meta_data();
-
-  std::string meshSpec("generated:80x80x80|bbox:-20,-20,-20,20,20,20");
-  const double radius = 0.5;
-  //elems are 0.5 cubes, so radius 0.5 from the center should find 8 nodes per hex
-
-  stk::mesh::Field<unsigned>& neighborField = meta.declare_field<unsigned>(stk::topology::ELEM_RANK, "nodeNeighbors");
-  stk::mesh::put_field_on_mesh(neighborField, meta.universal_part(), maxNumNeighbors+1, nullptr);
-
-  stk::io::fill_mesh(meshSpec, *meshPtr);
-
-  std::vector<size_t> globalCounts;
-  stk::mesh::comm_mesh_counts(*meshPtr, globalCounts);
-  if (stk::parallel_machine_rank(comm) == 0) {
-    std::cout<<"using mesh " << meshSpec << " with " << globalCounts[stk::topology::ELEM_RANK] << " elements" << std::endl;
+  const int numProcs = stk::parallel_machine_size(comm);
+  if (numProcs > 5) {
+      GTEST_SKIP_("Test only runs with 5 or fewer processes.");
   }
+
+  int numElemX = 50;
+  int numElemY = 50;
+  int numElemZ = 10*numProcs;
+  std::string meshSpec = get_mesh_spec(numElemX, numElemY, numElemZ);
+  stk::outputP0()<<"meshSpec: "<<meshSpec<<std::endl;
+
+  create_mesh_and_search_manager(comm, meshSpec);
 
   stk::unit_test_util::BatchTimer batchTimer(comm);
   batchTimer.initialize_batch_timer();
   const unsigned NUM_RUNS = 50;
 
-  const unsigned numLocalElems = stk::mesh::count_entities(*meshPtr, stk::topology::ELEM_RANK, meta.locally_owned_part());
-  const unsigned numLocalOwnedNodes = stk::mesh::count_entities(*meshPtr, stk::topology::NODE_RANK, meta.locally_owned_part());
-  stk::mesh::Selector sharedAndOwned = meta.globally_shared_part() & meta.locally_owned_part();
-  const unsigned numSharedAndOwnedNodes = stk::mesh::count_entities(*meshPtr, stk::topology::NODE_RANK, sharedAndOwned);
-  const bool enforceSearchResultSymmetry = true;
-  ExecSpace execSpace = ExecSpace{};
-  
-  ResultViewType searchResults;
   for(unsigned i=0; i<NUM_RUNS; ++i) {
     batchTimer.start_batch_timer();
-    
-    DomainViewType elemSpheres = create_elem_spheres(*meshPtr, radius);
-    RangeViewType nodePoints = create_node_points(*meshPtr);
-  
-    EXPECT_EQ(elemSpheres.size(), numLocalElems);
-    EXPECT_EQ(nodePoints.size(), numLocalOwnedNodes);
-  
-    stk::search::SearchMethod searchMethod = stk::search::MORTON_LBVH;
-  
-    stk::search::coarse_search(elemSpheres, nodePoints, searchMethod, comm, searchResults, execSpace, enforceSearchResultSymmetry);
-  
+
+    m_searchManager->zero_fields();
+    m_searchManager->add_nodes_neighbors_within_variable_ball();
+
     batchTimer.stop_batch_timer();
   }
 
-  constexpr unsigned numNodesPerElement = 8;
-  unsigned expectedNumResults = numLocalElems * numNodesPerElement;
-  if (enforceSearchResultSymmetry) {
-    EXPECT_GE(searchResults.size(), expectedNumResults+numSharedAndOwnedNodes);
-  }
-  else {
-    EXPECT_EQ(searchResults.size(), expectedNumResults);
-  }
-
-  ghost_node_neighbors_to_elements(*meshPtr, searchResults);
-
-  unpack_search_results_into_field(*meshPtr, neighborField, searchResults);
-
-  verify_8_neighbors_per_element(*meshPtr, neighborField);
+  int minNeighbors = 8;
+  int maxNeighbors = 27;
+  m_searchManager->check_neighbor_stats(numElemX, numElemY, numElemZ, minNeighbors, maxNeighbors);
 
   batchTimer.print_batch_timing(NUM_RUNS);
 }
 
-}  // namespace perf_test
+TEST_F(NeighborSearchTestFixture, VariableBallSearchScaledCubes) {
+  MPI_Comm comm = stk::parallel_machine_world();
+  if (stk::parallel_machine_size(stk::parallel_machine_world()) > 5) {
+      GTEST_SKIP_("Test only runs with 5 or fewer processes.");
+  }
 
+  int numElemX = 3;
+  int numElemY = 3;
+  int numElemZ = 4;
+  double bboxScaleFactor = 1.0 / 7.0;
+  std::string meshSpec = get_mesh_spec(numElemX, numElemY, numElemZ, bboxScaleFactor);
+  stk::outputP0()<<"meshSpec: "<<meshSpec<<std::endl;
+
+  create_mesh_and_search_manager(comm, meshSpec);
+
+  m_searchManager->add_nodes_neighbors_within_variable_ball();
+  int minNeighbors = 8;
+  int maxNeighbors = 27;
+  m_searchManager->check_neighbor_stats(numElemX, numElemY, numElemZ, minNeighbors, maxNeighbors);
+}

@@ -42,19 +42,19 @@ namespace stk {
 
 static const char PUSH = '\016';                                ///< Meta-character to increase indentation
 static const char POP = '\017';                                 ///< Meta-character to decrease indentation
-static const char LEFT = '\021';                                ///< Meta-character to force left justification
+static const char FORCE_LEFT = '\021';                                ///< Meta-character to force left justification
 
 /**
  * @brief Class <b>basic_indent_streambuf</b> implements a output streambuf that performs
  * indentation, blank line removal and outline bracing, sending the result character stream to
  * another output stream buffer.
  *
- * When, the meta-characters PUSH, POP, and LEFT are inserted into the stream buffer, the characters
+ * When, the meta-characters PUSH, POP, and FORCE_LEFT are inserted into the stream buffer, the characters
  * is discarded and the appropriate operation occurs.  In the case of PUSH, the next line will
  * indented by an additional <B>m_indentSize</B> spaces and the currently line will end with an
  * open brace ({) is BRACES are enabled.  In the case of POP, the next line will be indented by
  * <B>m_indentSize</B> spaces, it may be preceeded by a line containing a properly indented close
- * brace (}).  In the case of LEFT, the next line (current line if at the start), will not be
+ * brace (}).  In the case of FORCE_LEFT, the next line (current line if at the start), will not be
  * indented.
  *
  * The stream bufer can be created with BRACES and BLANK_LINES enabled or disabled.  When BRACE is
@@ -234,7 +234,7 @@ public:
 	next_line();
       m_nextIndentLevel = m_indentLevel + 1;
     }
-    else if (c == Tr::to_int_type(LEFT)) {
+    else if (c == Tr::to_int_type(FORCE_LEFT)) {
       m_leftJustify = true;
     }
     else {
@@ -281,7 +281,7 @@ public:
 	    next_line();
 	  m_nextIndentLevel = m_indentLevel + 1;
 	}
-        else if (Tr::to_int_type(*p) == Tr::to_int_type(LEFT)) {
+        else if (Tr::to_int_type(*p) == Tr::to_int_type(FORCE_LEFT)) {
           ++p;
           m_leftJustify = true;
         }
@@ -312,7 +312,7 @@ public:
 	    next_line();
 	  m_nextIndentLevel = m_indentLevel + 1;
 	}
-        else if (Tr::to_int_type(*q) == Tr::to_int_type(LEFT)) {
+        else if (Tr::to_int_type(*q) == Tr::to_int_type(FORCE_LEFT)) {
           m_leftJustify = true;
 	  p = q + 1;
         }

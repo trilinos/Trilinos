@@ -191,36 +191,54 @@ private:
 //==============================================================================
 class ComponentIdx : public FieldIndex<ComponentIdx, int> {
 public:
-  explicit ComponentIdx(int value) : FieldIndex(value) {}
-  ComponentIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  KOKKOS_INLINE_FUNCTION explicit ComponentIdx(int value) : FieldIndex(value) {}
+  KOKKOS_INLINE_FUNCTION ComponentIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
 };
 
 class ComponentIdxIterator : public FieldIndexIterator<ComponentIdxIterator, ComponentIdx> {
 public:
-  ComponentIdxIterator(ComponentIdx::index_type value) : FieldIndexIterator(value) {}
+  KOKKOS_INLINE_FUNCTION ComponentIdxIterator(ComponentIdx::index_type value) : FieldIndexIterator(value) {}
 };
 
 class ComponentIdxProxy : public FieldIndexProxy<ComponentIdxProxy, ComponentIdxIterator> {
 public:
-  ComponentIdxProxy(ComponentIdxIterator::index_type size) : FieldIndexProxy(size) {}
+  KOKKOS_INLINE_FUNCTION ComponentIdxProxy(ComponentIdxIterator::index_type size) : FieldIndexProxy(size) {}
 };
 
 
 //==============================================================================
 class CopyIdx : public FieldIndex<CopyIdx, int> {
 public:
-  explicit CopyIdx(int value) : FieldIndex(value) {}
-  CopyIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  KOKKOS_INLINE_FUNCTION explicit CopyIdx(int value) : FieldIndex(value) {}
+  KOKKOS_INLINE_FUNCTION CopyIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
 };
 
 class CopyIdxIterator : public FieldIndexIterator<CopyIdxIterator, CopyIdx> {
 public:
-  CopyIdxIterator(CopyIdx::index_type value) : FieldIndexIterator(value) {}
+  KOKKOS_INLINE_FUNCTION CopyIdxIterator(CopyIdx::index_type value) : FieldIndexIterator(value) {}
 };
 
 class CopyIdxProxy : public FieldIndexProxy<CopyIdxProxy, CopyIdxIterator> {
 public:
-  CopyIdxProxy(CopyIdxIterator::index_type size) : FieldIndexProxy(size) {}
+  KOKKOS_INLINE_FUNCTION CopyIdxProxy(CopyIdxIterator::index_type size) : FieldIndexProxy(size) {}
+};
+
+
+//==============================================================================
+class ScalarIdx : public FieldIndex<ScalarIdx, int> {
+public:
+  KOKKOS_INLINE_FUNCTION explicit ScalarIdx(int value) : FieldIndex(value) {}
+  KOKKOS_INLINE_FUNCTION ScalarIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+};
+
+class ScalarIdxIterator : public FieldIndexIterator<ScalarIdxIterator, ScalarIdx> {
+public:
+  KOKKOS_INLINE_FUNCTION ScalarIdxIterator(ScalarIdx::index_type value) : FieldIndexIterator(value) {}
+};
+
+class ScalarIdxProxy : public FieldIndexProxy<ScalarIdxProxy, ScalarIdxIterator> {
+public:
+  KOKKOS_INLINE_FUNCTION ScalarIdxProxy(ScalarIdxIterator::index_type size) : FieldIndexProxy(size) {}
 };
 
 
@@ -229,44 +247,45 @@ public:
 // Kokkos thread team iteration
 class EntityIdx : public FieldIndex<EntityIdx, int> {
 public:
-  EntityIdx(int value) : FieldIndex(value) {}
-  EntityIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  KOKKOS_INLINE_FUNCTION EntityIdx(int value) : FieldIndex(value) {}
+  KOKKOS_INLINE_FUNCTION EntityIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
 };
 
 class EntityIdxIterator : public FieldIndexIterator<EntityIdxIterator, EntityIdx> {
 public:
-  EntityIdxIterator(EntityIdx::index_type value) : FieldIndexIterator(value) {}
+  KOKKOS_INLINE_FUNCTION EntityIdxIterator(EntityIdx::index_type value) : FieldIndexIterator(value) {}
 };
 
 class EntityIdxProxy : public FieldIndexProxy<EntityIdxProxy, EntityIdxIterator> {
 public:
-  EntityIdxProxy(EntityIdxIterator::index_type size) : FieldIndexProxy(size) {}
+  KOKKOS_INLINE_FUNCTION EntityIdxProxy(EntityIdxIterator::index_type size) : FieldIndexProxy(size) {}
 };
 
 //==============================================================================
 class ByteIdx : public FieldIndex<ByteIdx, int> {
 public:
-  explicit ByteIdx(int value) : FieldIndex(value) {}
-  ByteIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  KOKKOS_INLINE_FUNCTION explicit ByteIdx(int value) : FieldIndex(value) {}
+  KOKKOS_INLINE_FUNCTION ByteIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
 };
 
 class ByteIdxIterator : public FieldIndexIterator<ByteIdxIterator, ByteIdx> {
 public:
-  ByteIdxIterator(ByteIdx::index_type value) : FieldIndexIterator(value) {}
+  KOKKOS_INLINE_FUNCTION ByteIdxIterator(ByteIdx::index_type value) : FieldIndexIterator(value) {}
 };
 
 class ByteIdxProxy : public FieldIndexProxy<ByteIdxProxy, ByteIdxIterator> {
 public:
-  ByteIdxProxy(ByteIdxIterator::index_type size) : FieldIndexProxy(size) {}
+  KOKKOS_INLINE_FUNCTION ByteIdxProxy(ByteIdxIterator::index_type size) : FieldIndexProxy(size) {}
 };
 
 }
 
 //==============================================================================
-inline stk::mesh::ComponentIdx operator ""_comp(unsigned long long int comp) { return stk::mesh::ComponentIdx(comp); }
-inline stk::mesh::CopyIdx operator ""_copy(unsigned long long int copy) { return stk::mesh::CopyIdx(copy); }
-inline stk::mesh::EntityIdx operator ""_entity(unsigned long long int entity) { return stk::mesh::EntityIdx(entity); }
-inline stk::mesh::ByteIdx operator ""_byte(unsigned long long int byte) { return stk::mesh::ByteIdx(byte); }
+KOKKOS_INLINE_FUNCTION stk::mesh::ComponentIdx operator ""_comp(unsigned long long int comp) { return stk::mesh::ComponentIdx(comp); }
+KOKKOS_INLINE_FUNCTION stk::mesh::CopyIdx operator ""_copy(unsigned long long int copy) { return stk::mesh::CopyIdx(copy); }
+KOKKOS_INLINE_FUNCTION stk::mesh::ScalarIdx operator ""_scalar(unsigned long long int scalar) { return stk::mesh::ScalarIdx(scalar); }
+KOKKOS_INLINE_FUNCTION stk::mesh::EntityIdx operator ""_entity(unsigned long long int entity) { return stk::mesh::EntityIdx(entity); }
+KOKKOS_INLINE_FUNCTION stk::mesh::ByteIdx operator ""_byte(unsigned long long int byte) { return stk::mesh::ByteIdx(byte); }
 
 //==============================================================================
 #endif // FIELDINDEXTYPES_HPP

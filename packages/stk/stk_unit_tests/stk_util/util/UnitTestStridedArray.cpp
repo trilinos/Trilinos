@@ -36,6 +36,7 @@
 #include "Kokkos_Core.hpp"
 #include "gtest/gtest.h"
 #include <vector>
+#include <iterator>
 
 TEST( StridedArray, ptr_and_size)
 {
@@ -49,10 +50,50 @@ TEST( StridedArray, ptr_and_size)
   }
 }
 
+TEST( StridedArray, ptr_and_size_begin_end)
+{
+  const int firstItem = 1;
+  std::vector<int> vec = {firstItem, 3, 5, 2};
+  stk::util::StridedArray<int> stridedArray(vec.data(), vec.size());
+
+  EXPECT_EQ(vec.size(), stridedArray.size());
+
+  using Iter = stk::util::StridedArray<int>::Iterator;
+
+  Iter begin = stridedArray.begin();
+  Iter end = stridedArray.end();
+
+  EXPECT_EQ(firstItem, *begin);
+  EXPECT_TRUE((begin != end));
+  auto size = std::distance(begin,end);
+  EXPECT_EQ(size, stridedArray.size());
+
+  unsigned i=0;
+  for(Iter it=begin; it!=end; ++it) {
+    EXPECT_EQ(vec[i], *it);
+    ++i;
+  }
+}
+
+TEST( StridedArray, ptr_and_size_rangeFor)
+{
+  std::vector<int> vec = {1, 3, 5, 2};
+  stk::util::StridedArray<int> stridedArray(vec.data(), vec.size());
+
+  EXPECT_EQ(vec.size(), stridedArray.size());
+
+  unsigned i = 0;
+  for(int item : stridedArray) {
+    EXPECT_EQ(vec[i],  item);
+    ++i;
+  }
+  EXPECT_EQ(i, stridedArray.size());
+}
+
 TEST( StridedArray, pair_iter)
 {
   std::vector<int> vec = {1, 3, 5, 2};
-  stk::util::StridedArray<int> stridedArray(stk::PairIter<int*>(vec.data(), vec.data()+vec.size()));
+  stk::util::StridedArray<int> stridedArray(stk::PairIter<int*>(vec.data(), vec.data()+vec.size()), 1);
 
   EXPECT_EQ(vec.size(), stridedArray.size());
 
@@ -113,6 +154,44 @@ void run_comparison_test_on_device()
 TEST(StridedArray, comparison_on_device)
 {
   run_comparison_test_on_device();
+}
+
+void run_comparison_test_on_device_range_for()
+{
+  constexpr int N1 = 3;
+  constexpr int N2 = 5;
+  Kokkos::View<int**> v1("v1", N1, N2);
+
+  Kokkos::parallel_for(N1, KOKKOS_LAMBDA(const int& i) {
+    for(int j=0; j<N2; ++j) {
+      v1(i,j) = 1 + i + j;
+    }
+  });
+
+  int result = 0;
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const int& i, int& localResult) {
+    int stride = N1;
+    stk::util::StridedArray<int> sa(v1.data(), N2, stride);
+
+    int expectedValue = 0;
+    for(int jj=0; jj<N2; ++jj) {
+      expectedValue += v1(0,jj);
+    }
+
+    int saSum = 0;
+    for(int item : sa) {
+      saSum += item;
+    }
+
+    localResult = expectedValue == saSum ? 0 : 1;
+  }, result);
+
+  EXPECT_EQ(0, result);
+}
+
+TEST(StridedArray, comparison_on_device_rangeFor)
+{
+  run_comparison_test_on_device_range_for();
 }
 
 #endif

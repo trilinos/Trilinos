@@ -45,6 +45,7 @@
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 
 #include <vector>
+#include <algorithm>
 
 //----------------------------------------------------------------------
 
@@ -111,28 +112,15 @@ bool is_shell_configuration_valid_for_side_connection(stk::topology creationElem
 
 bool is_shell_configuration_valid_for_side_connection(const SideCreationElementPair& shellPair);
 
-inline
-bool is_in_list(Entity entity, const Entity* begin, const Entity* end) 
-{
-  return std::find(begin, end, entity) != end; 
-}
-
 template<typename VecType>
 void
 remove_entities_not_in_list(const Entity* beginList,
                             const Entity* endList,
                             VecType& entities)
 {
-  int numFound=0;
-  for(int j=0, initialSize=entities.size(); j<initialSize; ++j) {
-    if (is_in_list(entities[j], beginList, endList)) {
-      if (j > numFound) {
-        entities[numFound] = entities[j];
-      }
-      ++numFound;
-    }
-  }    
-  entities.resize(numFound);
+  auto it = std::remove_if(entities.begin(), entities.end(),
+                    [&](Entity x) { return std::find(beginList,endList,x) == endList; });
+  entities.resize(it - entities.begin());
 }
 
 template<typename VecType>

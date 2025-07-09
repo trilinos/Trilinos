@@ -2476,4 +2476,57 @@ TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity1_maxCa
   }
 }
 
+class LateFieldsTestFixture : public ::testing::Test {
+   protected:
+    void SetUp() override {
+        if (stk::parallel_machine_size(MPI_COMM_WORLD) > 4) {
+            GTEST_SKIP_("Test only runs on 4 or fewer processes.");
+        }
+        builder = std::make_shared<stk::mesh::MeshBuilder>(MPI_COMM_WORLD);
+        bulk = builder->create();
+        stk::io::fill_mesh("generated:1x1x4", *bulk);
+    }
+    void TearDown() override {
+        bulk.reset();
+        builder.reset();
+    }
+    int rank;
+    int num_procs;
+    std::shared_ptr<stk::mesh::MeshBuilder> builder;
+    std::shared_ptr<stk::mesh::BulkData> bulk;
+};
+
+TEST_F(LateFieldsTestFixture, get_ngp_field_multistate_no_seg_fault) {
+    stk::mesh::MetaData &meta_data = bulk->mesh_meta_data();
+
+    meta_data.enable_late_fields();
+
+    stk::topology::rank_t topology_rank = stk::topology::NODE_RANK;
+    stk::io::FieldOutputType field_output_type = stk::io::FieldOutputType::VECTOR_3D;
+    stk::mesh::FieldBase &data_field = meta_data.declare_field<double>(topology_rank, "displacement_coefficients", 2);
+    stk::mesh::Selector selector = stk::mesh::Selector(meta_data.universal_part());
+
+    std::vector<double> initial_values(3, 0.0);
+    stk::mesh::put_field_on_mesh(data_field, selector, 3, initial_values.data());
+
+    stk::io::set_field_output_type(data_field, field_output_type);
+    stk::io::set_field_role(data_field, Ioss::Field::TRANSIENT);
+
+    meta_data.disable_late_fields();
+
+    stk::mesh::Field<double> *field = meta_data.get_field<double>(topology_rank, "displacement_coefficients");
+    ASSERT_NE(field, nullptr) << "Field 'displacement_coefficients' should exist.";
+    stk::mesh::FieldState state_n = stk::mesh::StateN;
+    stk::mesh::FieldState state_np1 = stk::mesh::StateNP1;
+
+    auto &field_np1 = field->field_of_state(state_np1);
+    auto &ngp_field_np1 = stk::mesh::get_updated_ngp_field<double>(field_np1);
+    EXPECT_EQ(stk::topology::NODE_RANK, ngp_field_np1.get_rank());
+
+    auto &field_n = field->field_of_state(state_n);
+
+    auto &ngp_field_n = stk::mesh::get_updated_ngp_field<double>(field_n);
+    EXPECT_EQ(stk::topology::NODE_RANK, ngp_field_n.get_rank());
+}
+
 }

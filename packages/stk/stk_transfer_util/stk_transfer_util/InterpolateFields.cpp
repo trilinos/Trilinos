@@ -88,7 +88,7 @@ MasterElementFieldInterpolator::MasterElementFieldInterpolator(
 }
 
 void MasterElementFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKeyPair& key,
-                                                        const std::vector<double>& evalPoint,
+                                                        const std::vector<double>& /*evalPoint*/,
                                                         const std::vector<double>& parametricCoords,
                                                         InterpolationData& data) const
 {
@@ -238,7 +238,7 @@ void PatchRecoveryFieldInterpolator::set_interpolator(const stk::transfer::Patch
 
 void PatchRecoveryFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKeyPair& key,
                                                         const std::vector<double>& evalPoint,
-                                                        const std::vector<double>& parametricCoords,
+                                                        const std::vector<double>& /*parametricCoords*/,
                                                         InterpolationData& data) const
 {
   for(unsigned i = 0; i < data.nFields; ++i) {
@@ -288,8 +288,8 @@ CopyFieldInterpolator::CopyFieldInterpolator(stk::mesh::BulkData& bulk)
 }
 
 void CopyFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKeyPair& key,
-                                               const std::vector<double>& evalPoint,
-                                               const std::vector<double>& parametricCoords,
+                                               const std::vector<double>& /*evalPoint*/,
+                                               const std::vector<double>& /*parametricCoords*/,
                                                InterpolationData& data) const
 {
   for(unsigned i = 0; i < data.nFields; ++i) {
@@ -375,8 +375,8 @@ SumFieldInterpolator::SumFieldInterpolator(stk::mesh::BulkData& bulk)
 }
 
 void SumFieldInterpolator::interpolate_fields(const stk::search::spmd::EntityKeyPair& key,
-                                              const std::vector<double>& evalPoint,
-                                              const std::vector<double>& parametricCoords,
+                                              const std::vector<double>& /*evalPoint*/,
+                                              const std::vector<double>& /*parametricCoords*/,
                                               InterpolationData& data) const
 {
   for(unsigned i = 0; i < data.nFields; ++i) {

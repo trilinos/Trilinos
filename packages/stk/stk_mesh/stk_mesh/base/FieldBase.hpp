@@ -122,8 +122,8 @@ public:
    */
   const DataTraits & data_traits() const { return m_data_traits ; }
 
-  virtual Layout host_data_layout() const = 0;
-  virtual Layout device_data_layout() const = 0;
+  Layout host_data_layout() const { return m_hostDataLayout; }
+  Layout device_data_layout() const { return m_deviceDataLayout; }
 
   /** \brief  Number of states of this field */
   unsigned number_of_states() const { return m_num_states ; }
@@ -203,7 +203,10 @@ public:
   }
 
   inline FieldMetaDataArrayType& get_internal_field_meta_data() {
-    return static_cast<FieldBytes<stk::ngp::HostMemSpace>&>(*m_hostFieldData).m_fieldMetaData;
+    auto& hostFieldBytes = static_cast<FieldBytes<stk::ngp::HostMemSpace>&>(*m_hostFieldData);
+    hostFieldBytes.modify_field_meta_data();
+
+    return hostFieldBytes.m_fieldMetaData;
   }
 
   // Access the cached copy of the host-side FieldMetaData array
@@ -430,6 +433,36 @@ protected:
     }
   };
 
+  template <typename T, FieldAccessTag FieldAccess, typename MemSpace>
+  struct AutoLayoutFieldDataBuilder {
+    using FieldDataType = typename FieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto>::FieldDataType;
+    static FieldDataType build_field_data(const FieldBase& fieldBase) {
+      if constexpr (std::is_same_v<MemSpace, stk::ngp::HostMemSpace>) {
+        // Build from a properly-cast FieldData so that we can update it properly first while still taking
+        // advantage of copy elision by directly returning the newly-constructed FieldData object.
+        if (fieldBase.host_data_layout() == Layout::Right) {
+          auto fieldDataRight = FieldDataHelper<T, FieldAccess, MemSpace, Layout::Right>::field_data(fieldBase);
+          return typename FieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto>::FieldDataType(fieldDataRight,
+                                                                                                 FieldAccess);
+        }
+        else if (fieldBase.host_data_layout() == Layout::Left) {
+          auto fieldDataLeft = FieldDataHelper<T, FieldAccess, MemSpace, Layout::Left>::field_data(fieldBase);
+          return typename FieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto>::FieldDataType(fieldDataLeft,
+                                                                                                 FieldAccess);
+        }
+        else {
+          STK_ThrowErrorMsg("Host data layout of " << fieldBase.host_data_layout() << " is unsupported.  It must be "
+                            "either Layout::Right or Layout::Left.");
+          return typename FieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto>::FieldDataType(); // Keep compiler happy
+        }
+      }
+      else {
+        STK_ThrowErrorMsg("Layout::Auto access to Field data is only available on the host.");
+        return typename FieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto>::FieldDataType(); // Keep compiler happy
+      }
+    }
+  };
+
 
   template <typename T, FieldAccessTag FieldAccess, typename MemSpace, Layout DataLayout, typename ExecSpace>
   struct AsyncFieldDataHelper {
@@ -452,6 +485,43 @@ protected:
     using FieldDataType = ConstFieldData<T, MemSpace, DataLayout>;
     static FieldDataType& field_data(const FieldBase& fieldBase, const ExecSpace& execSpace) {
       return fieldBase.async_const_field_data_handle<T, MemSpace, DataLayout, ExecSpace>(fieldBase, execSpace);
+    }
+  };
+
+  template <typename T, FieldAccessTag FieldAccess, typename MemSpace, typename ExecSpace>
+  struct AsyncAutoLayoutFieldDataBuilder {
+    using FieldDataType =
+        typename AsyncFieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto, ExecSpace>::FieldDataType;
+    static FieldDataType build_field_data(const FieldBase& fieldBase, const ExecSpace& execSpace) {
+      if constexpr (std::is_same_v<MemSpace, stk::ngp::HostMemSpace>) {
+        // Build from a properly-cast FieldData so that we can update it properly first while still taking
+        // advantage of copy elision by directly returning the newly-constructed FieldData object.
+        if (fieldBase.host_data_layout() == Layout::Right) {
+          auto fieldDataRight =
+              AsyncFieldDataHelper<T, FieldAccess, MemSpace, Layout::Right, ExecSpace>::field_data(fieldBase,
+                                                                                                   execSpace);
+          return typename
+              AsyncFieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto, ExecSpace>::FieldDataType(fieldDataRight,
+                                                                                                     FieldAccess);
+        }
+        else if (fieldBase.host_data_layout() == Layout::Left) {
+          auto fieldDataLeft =
+              AsyncFieldDataHelper<T, FieldAccess, MemSpace, Layout::Left, ExecSpace>::field_data(fieldBase,
+                                                                                                  execSpace);
+          return typename
+              AsyncFieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto, ExecSpace>::FieldDataType(fieldDataLeft,
+                                                                                                     FieldAccess);
+        }
+        else {
+          STK_ThrowErrorMsg("Host data layout of " << fieldBase.host_data_layout() << " is unsupported.  It must be "
+                            "either Layout::Right or Layout::Left.");
+          return typename AsyncFieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto, ExecSpace>::FieldDataType(); // Keep compiler happy
+        }
+      }
+      else {
+        STK_ThrowErrorMsg("Layout::Auto access to Field data is only available on the host.");
+        return typename AsyncFieldDataHelper<T, FieldAccess, MemSpace, Layout::Auto, ExecSpace>::FieldDataType(); // Keep compiler happy
+      }
     }
   };
 
@@ -647,15 +717,20 @@ public:
             FieldAccessTag FieldAccess = ReadWrite,
             typename MemSpace = stk::ngp::HostMemSpace,
             Layout DataLayout = DefaultLayoutSelector<MemSpace>::layout>
-  typename std::enable_if_t<std::is_arithmetic_v<T>,
+  typename std::enable_if_t<is_field_datatype_v<T>,
                             typename FieldDataHelper<T, FieldAccess, MemSpace, DataLayout>::FieldDataType>
   data() const
   {
     check_lifetimes<FieldAccess, MemSpace>();
     synchronize<FieldAccess, MemSpace>();
 
-    return typename FieldDataHelper<T, FieldAccess, MemSpace, DataLayout>::FieldDataType(
-        FieldDataHelper<T, FieldAccess, MemSpace, DataLayout>::field_data(*this), FieldAccess);
+    if constexpr (DataLayout == Layout::Auto) {
+      return AutoLayoutFieldDataBuilder<T, FieldAccess, MemSpace>::build_field_data(*this);
+    }
+    else {
+      return typename FieldDataHelper<T, FieldAccess, MemSpace, DataLayout>::FieldDataType(
+            FieldDataHelper<T, FieldAccess, MemSpace, DataLayout>::field_data(*this), FieldAccess);
+    }
   }
 
 
@@ -668,15 +743,21 @@ public:
             typename MemSpace = stk::ngp::HostMemSpace,
             Layout DataLayout = DefaultLayoutSelector<MemSpace>::layout,
             typename ExecSpace = stk::ngp::ExecSpace>
-  typename std::enable_if_t<std::is_arithmetic_v<T>,
+  typename std::enable_if_t<is_field_datatype_v<T>,
                             typename FieldDataHelper<T, FieldAccess, MemSpace, DataLayout>::FieldDataType>
   data(const ExecSpace& execSpace) const
   {
     check_lifetimes<FieldAccess, MemSpace>();
     synchronize<FieldAccess, MemSpace>(execSpace);
 
-    return typename AsyncFieldDataHelper<T, FieldAccess, MemSpace, DataLayout, ExecSpace>::FieldDataType(
-        AsyncFieldDataHelper<T, FieldAccess, MemSpace, DataLayout, ExecSpace>::field_data(*this, execSpace), FieldAccess);
+    if constexpr (DataLayout == Layout::Auto) {
+      return AsyncAutoLayoutFieldDataBuilder<T, FieldAccess, MemSpace, ExecSpace>::build_field_data(*this, execSpace);
+    }
+    else {
+      return typename AsyncFieldDataHelper<T, FieldAccess, MemSpace, DataLayout, ExecSpace>::FieldDataType(
+            AsyncFieldDataHelper<T, FieldAccess, MemSpace, DataLayout, ExecSpace>::field_data(*this, execSpace),
+            FieldAccess);
+    }
   }
 
 
@@ -805,14 +886,16 @@ private:
       NgpField<T, NgpMemSpace>& get_updated_ngp_field_async(const FieldBase&, stk::ngp::ExecSpace&&);
 
 protected:
-  FieldBase(MetaData                   * arg_mesh_meta_data,
-            stk::topology::rank_t        arg_entity_rank,
-            unsigned                     arg_ordinal,
-            const std::string          & arg_name,
-            const DataTraits           & arg_traits,
-            unsigned                     arg_number_of_states,
-            FieldState                   arg_this_state,
-            FieldDataBase              * hostFieldData)
+  FieldBase(MetaData* arg_mesh_meta_data,
+            stk::topology::rank_t arg_entity_rank,
+            unsigned arg_ordinal,
+            const std::string& arg_name,
+            const DataTraits& arg_traits,
+            unsigned arg_number_of_states,
+            FieldState arg_this_state,
+            Layout hostDataLayout,
+            Layout deviceDataLayout,
+            FieldDataBase* hostFieldData)
     : m_mesh(nullptr),
       m_hostFieldData(hostFieldData),
       m_deviceFieldData(nullptr),
@@ -831,6 +914,8 @@ protected:
       m_numSyncsToDevice(0),
       m_modifiedOnHost(false),
       m_modifiedOnDevice(false),
+      m_hostDataLayout(hostDataLayout),
+      m_deviceDataLayout(deviceDataLayout),
       m_execSpace(Kokkos::DefaultExecutionSpace())
   {
     FieldBase * const pzero = nullptr ;
@@ -847,21 +932,23 @@ private:
   EntityRank m_entity_rank;
   const std::string m_name;
   const unsigned m_num_states;
-  FieldBase                  * m_field_states[ MaximumFieldStates ];
-  FieldRestrictionVector       m_restrictions;
-  void*                        m_initial_value;
-  unsigned                     m_initial_value_num_bytes;
-  CSet                         m_attribute;
-  const DataTraits           & m_data_traits;
-  MetaData             * const m_meta_data;
-  const unsigned               m_ordinal;
-  const FieldState             m_this_state;
-  mutable NgpFieldBase       * m_ngpField;
-  mutable size_t               m_numSyncsToHost;
-  mutable size_t               m_numSyncsToDevice;
-  mutable bool                 m_modifiedOnHost;
-  mutable bool                 m_modifiedOnDevice;
-  mutable stk::ngp::ExecSpace  m_execSpace;
+  FieldBase* m_field_states[ MaximumFieldStates ];
+  FieldRestrictionVector m_restrictions;
+  void* m_initial_value;
+  unsigned m_initial_value_num_bytes;
+  CSet m_attribute;
+  const DataTraits& m_data_traits;
+  MetaData* const m_meta_data;
+  const unsigned m_ordinal;
+  const FieldState m_this_state;
+  mutable NgpFieldBase* m_ngpField;
+  mutable size_t m_numSyncsToHost;
+  mutable size_t m_numSyncsToDevice;
+  mutable bool m_modifiedOnHost;
+  mutable bool m_modifiedOnDevice;
+  Layout m_hostDataLayout;
+  Layout m_deviceDataLayout;
+  mutable stk::ngp::ExecSpace m_execSpace;
 };
 
 /** \brief  Print the field type, text name, and number of states. */

@@ -39,7 +39,6 @@
 
 #include <stk_util/stk_config.h>
 #include <stk_topology/topology.hpp>    // for topology, etc
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/NamedPair.hpp>  // for NAMED_PAIR
 #include <stk_util/util/PairIter.hpp>   // for PairIter
 #include <cstddef>
@@ -86,7 +85,8 @@ typedef std::vector<EntityKey>      EntityKeyVector;
 enum class Layout : uint8_t
 {
   Left,    // Adjacent Entities in memory
-  Right    // Adjacent components in memory
+  Right,   // Adjacent components in memory
+  Auto     // Run-time access to Field data with the correct layout; Not for Field registration
 };
 
 inline std::ostream& operator<<(std::ostream& os, Layout layout) {
@@ -96,6 +96,9 @@ inline std::ostream& operator<<(std::ostream& os, Layout layout) {
             break;
         case Layout::Right:
             os << "Layout::Right";
+            break;
+        case Layout::Auto:
+            os << "Layout::Auto";
             break;
         default:
             os << "Unknown Layout";
@@ -287,7 +290,9 @@ using EntityIdProcMap = std::map<EntityId, int>;
 
 using EntityKeyProc    = std::pair<EntityKey, int>;
 using EntityKeyProcVec = std::vector<EntityKeyProc>;
-using EntityKeyProcMap = std::map<EntityKey, int>;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Aug 2025
+using EntityKeyProcMap STK_DEPRECATED = std::map<EntityKey, int>;
+#endif
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *

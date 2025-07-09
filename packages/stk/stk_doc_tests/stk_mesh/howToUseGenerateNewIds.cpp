@@ -81,7 +81,12 @@ TEST(StkMeshHowTo, use_generate_new_ids)
   std::vector<stk::mesh::EntityId> requestedIds;
   unsigned numRequested = 10;
 
-  bulkPtr->generate_new_ids(stk::topology::NODE_RANK, numRequested, requestedIds);
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+  {
+    bulkPtr->generate_new_ids(stk::topology::NODE_RANK, numRequested, requestedIds);
+  }
 
   test_that_ids_are_unique(*bulkPtr, stk::topology::NODE_RANK, requestedIds);
 }

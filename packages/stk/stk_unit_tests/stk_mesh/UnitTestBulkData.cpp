@@ -148,12 +148,14 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
   ASSERT_TRUE( mesh.is_valid(node));
 
   const stk::mesh::ConnectedEntities node_elems = mesh.get_connected_entities(node, stk::topology::ELEM_RANK);
-  for(unsigned i=0; i<node_elems.size() && !mesh.is_valid(elem); ++i)
-  {
-    elem = node_elems[i];
+  for(stk::mesh::Entity node_elem : node_elems) {
+    elem = node_elem;
     if(mesh.parallel_owner_rank(elem) != p_rank)
     {
       elem = Entity();
+    }
+    if (mesh.is_valid(elem)) {
+      break;
     }
   }
 

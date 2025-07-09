@@ -41,6 +41,8 @@
 #include <string>                       // for string
 #include <typeinfo>                     // for type_info
 #include <vector>                       // for vector
+#include <type_traits>
+
 namespace stk { class CommBuffer; }
 namespace stk { namespace mesh { class DataTraits; } }
 
@@ -48,6 +50,17 @@ namespace stk {
 namespace mesh {
 
 class DataTraits ;
+
+template <typename T>
+struct is_field_datatype {
+  static constexpr bool value = std::is_arithmetic<T>::value ||
+                                std::is_same<std::complex<float>, T>::value ||
+                                std::is_same<std::complex<double>, T>::value;
+};
+
+template <typename T>
+constexpr bool is_field_datatype_v = is_field_datatype<T>::value;
+
 
 //----------------------------------------------------------------------
 /** \brief  Query singleton for data traits of a given data type. */

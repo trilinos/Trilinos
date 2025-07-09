@@ -260,7 +260,7 @@ struct DeviceBucketPartsMatcherFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-  void final(value_type& dst) const {}
+  void final(value_type& /*dst*/) const {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int i, value_type& update) const {

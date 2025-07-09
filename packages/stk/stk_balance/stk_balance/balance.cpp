@@ -118,6 +118,7 @@ void update_color_fields(stk::mesh::BulkData& bulk,
   stk::mesh::FieldBase* colorField = get_coloring_field(meta, rootTopologyPart);
   STK_ThrowRequireMsg(colorField != nullptr, "Root topology part not supported, created after I/O for topology " << rootTopologyPart.topology().name());
 
+  auto colorData = colorField->data<int>();
   stk::mesh::EntityVector entities;
   stk::mesh::get_entities(bulk, rank, rootTopologyPart, entities);
   for(stk::mesh::Entity entity : entities)
@@ -125,8 +126,8 @@ void update_color_fields(stk::mesh::BulkData& bulk,
     if(localIds.does_entity_have_local_id(entity))
     {
       unsigned localId = localIds.entity_to_local(entity);
-      int* colorData = static_cast<int*>(stk::mesh::field_data(*colorField, entity));
-      *colorData = coloredGraphVertices[localId];
+      auto entityColorData = colorData.entity_values(entity);
+      entityColorData() = coloredGraphVertices[localId];
     }
   }
 }
