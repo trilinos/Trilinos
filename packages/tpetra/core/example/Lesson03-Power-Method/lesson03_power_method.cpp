@@ -279,8 +279,7 @@ main (int argc, char *argv[])
     // Increase diagonal dominance
     //
     if (myRank == 0) {
-      cout << endl << "Increasing magnitude of A(0,0), "
-	"solving again" << endl;
+      cout << endl << "Increasing magnitude of A(0,0), solving again" << endl;
     }
 
     // Must call resumeFill() before changing the matrix.
