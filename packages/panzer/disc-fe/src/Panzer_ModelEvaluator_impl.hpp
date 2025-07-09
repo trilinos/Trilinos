@@ -1882,7 +1882,10 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
 
     std::cout << " CALL EVAL RESP " << std::endl;
     responseLibrary_->addResponsesToInArgs<Traits::Tangent>(ae_inargs);
+    // setenv("PHX_PRINT_FIELDS","1",1);
+    // responseLibrary_->writeGraphvizFiles<panzer::Traits::Tangent>("ResponseLibrary_");
     responseLibrary_->evaluate<Traits::Tangent>(ae_inargs);
+    // unsetenv("PHX_PRINT_FIELDS");
   }
 }
 
