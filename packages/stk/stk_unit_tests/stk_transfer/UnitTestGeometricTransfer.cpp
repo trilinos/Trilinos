@@ -13,6 +13,7 @@
 #include <array>
 #include <limits>
 #include <memory>
+#include <sstream>
 #include <utility>
 
 #include <gtest/gtest.h>
@@ -23,6 +24,8 @@
 #include <stk_transfer/TransferBase.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include "stk_transfer/ReducedDependencyCommData.hpp"
+#include "stk_unit_test_utils/StkReportRedirector.hpp"
+#include "stk_util/parallel/OutputStreams.hpp"
 
 
 namespace stk {
@@ -56,7 +59,7 @@ public:
   void bounding_boxes(std::vector<BoundingBox>& boxes) const
   {
     boxes.clear();
-    boxes.push_back(BoundingBox(stk::search::Box<double>(),EntityProc(0,0)));
+    boxes.push_back(BoundingBox(stk::search::Box<double>({0,0,0}, {1,1,1}),EntityProc(0,0)));
   }
 };
 
@@ -76,11 +79,11 @@ class NonTrivialTestDestMesh {
 public:
   typedef TrivialTestKey Key;
   typedef stk::search::IdentProc<Key, int> EntityProc;
-  typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
+  typedef std::pair<stk::search::Sphere<double>,EntityProc> BoundingBox;
   void bounding_boxes(std::vector<BoundingBox>& boxes) const
   {
     boxes.clear();
-    boxes.push_back(BoundingBox(stk::search::Box<double>({0,0,0}, {1,1,1}),EntityProc(0,0)));
+    boxes.push_back(BoundingBox(stk::search::Sphere<double>({-0.1,-0.1,-0.1},0.05),EntityProc(0,0)));
   }
 };
 
@@ -94,6 +97,72 @@ public:
   typedef std::pair<EntityProcA, EntityProcB> EntityProcRelation;
   typedef std::vector<EntityProcRelation> EntityProcRelationVec;
 };
+
+
+template <typename SrcMeshType, typename DestMeshType>
+class TestInterpHandleExpansion {
+public:
+  typedef SrcMeshType MeshA;
+  typedef DestMeshType MeshB;
+  typedef typename MeshA::EntityProc EntityProcA;
+  typedef typename MeshB::EntityProc EntityProcB;
+  typedef std::pair<EntityProcA, EntityProcB> EntityProcRelation;
+  typedef std::vector<EntityProcRelation> EntityProcRelationVec;
+
+  static void handle_box_expansions(
+    const MeshA* /*mesha*/,
+    const MeshB* /*meshb*/,
+    std::vector<typename MeshA::BoundingBox>& /*range*/,
+    std::vector<typename MeshB::BoundingBox>& domain,
+    const double expansion_factor
+  )
+  {
+    // only expand domain boxes
+    for(auto&& box : domain) {
+      stk::search::scale_by(box.first, expansion_factor);
+    }
+  }
+};
+
+template <typename SrcMeshType, typename DestMeshType>
+class TestInterpHandleExpansionRemoveDomain {
+public:
+  typedef SrcMeshType MeshA;
+  typedef DestMeshType MeshB;
+  typedef typename MeshA::EntityProc EntityProcA;
+  typedef typename MeshB::EntityProc EntityProcB;
+  typedef std::pair<EntityProcA, EntityProcB> EntityProcRelation;
+  typedef std::vector<EntityProcRelation> EntityProcRelationVec;
+
+  static void handle_box_expansions(
+    const MeshA* /*mesha*/,
+    const MeshB* /*meshb*/,
+    std::vector<typename MeshA::BoundingBox>& /*range*/,
+    std::vector<typename MeshB::BoundingBox>& domain,
+    const double /*expansion_factor*/
+  )
+  {
+    domain.clear();
+  }
+};
+
+
+template <typename SrcMeshType, typename DestMeshType>
+class TestInterpPrintExpansion {
+public:
+  typedef SrcMeshType MeshA;
+  typedef DestMeshType MeshB;
+  typedef typename MeshA::EntityProc EntityProcA;
+  typedef typename MeshB::EntityProc EntityProcB;
+  typedef std::pair<EntityProcA, EntityProcB> EntityProcRelation;
+  typedef std::vector<EntityProcRelation> EntityProcRelationVec;
+
+  static void print_expansion_warnings(int /*num_passes*/, size_t /*domain_size*/) {
+
+  }
+};
+
+
 
 TEST(GeomXferImpl, coarseSearchImpl_emptyDomain)
 {
@@ -109,9 +178,59 @@ TEST(GeomXferImpl, coarseSearchImpl_emptyDomain)
   EXPECT_TRUE(entProcRelVec.empty());
 }
 
-TEST(GeomXferImpl, coarseSearchImpl_expansionLimitThrow)
+TEST(GeomXferImpl, coarseSearchImpl_defaultPrinter)
 {
+  if( stk::parallel_machine_size(MPI_COMM_WORLD) > 1 ) GTEST_SKIP();
+  
   using Interp = TrivialTestInterp<NonTrivialTestSrcMesh, NonTrivialTestDestMesh>;
+
+  Interp::EntityProcRelationVec entProcRelVec;
+  NonTrivialTestSrcMesh meshA; // box from 0,0,0 to 1,1,1
+  NonTrivialTestDestMesh meshB; // point at -0.1,-0.1,-0.1 radius 0.05
+  const double expansionFactor = 1.1;  // >1 so coarse_search_impl will try
+                                       // to expand boxes to find range entries
+
+  {
+    std::ostringstream messages;
+    stk::set_outputP0(&messages, MPI_COMM_WORLD);
+    stk::transfer::impl::coarse_search_impl<Interp>(
+        entProcRelVec, MPI_COMM_WORLD, &meshA, &meshB, stk::search::KDTREE, expansionFactor);
+    EXPECT_TRUE(messages.str().find("Number of points not found: 1 after expanding bounding boxes 2 time(s)") != std::string::npos);
+    stk::reset_default_output_streams(MPI_COMM_WORLD);
+  }
+
+  EXPECT_EQ(1U,entProcRelVec.size());
+}
+
+TEST(GeomXferImpl, coarseSearchImpl_customPrinter)
+{
+  if( stk::parallel_machine_size(MPI_COMM_WORLD) > 1 ) GTEST_SKIP();
+
+  using Interp = TestInterpPrintExpansion<NonTrivialTestSrcMesh, NonTrivialTestDestMesh>;
+
+  Interp::EntityProcRelationVec entProcRelVec;
+  NonTrivialTestSrcMesh meshA; // box from 0,0,0 to 1,1,1
+  NonTrivialTestDestMesh meshB; // point at -0.1,-0.1,-0.1 radius 0.05
+  const double expansionFactor = 1.1;  // >1 so coarse_search_impl will try
+                                       // to expand boxes to find range entries
+
+  {
+    std::ostringstream messages;
+    stk::set_outputP0(&messages, MPI_COMM_WORLD);
+    stk::transfer::impl::coarse_search_impl<Interp>(
+        entProcRelVec, MPI_COMM_WORLD, &meshA, &meshB, stk::search::KDTREE, expansionFactor);
+    EXPECT_EQ("", messages.str());
+    stk::reset_default_output_streams(MPI_COMM_WORLD);
+  }
+
+  EXPECT_EQ(1U,entProcRelVec.size());
+}
+
+TEST(GeomXferImpl, coarseSearchImpl_customBoxExpansion)
+{
+  if( stk::parallel_machine_size(MPI_COMM_WORLD) > 1 ) GTEST_SKIP();
+
+  using Interp = TestInterpHandleExpansion<NonTrivialTestSrcMesh, NonTrivialTestDestMesh>;
 
   Interp::EntityProcRelationVec entProcRelVec;
   NonTrivialTestSrcMesh meshA;
@@ -119,11 +238,37 @@ TEST(GeomXferImpl, coarseSearchImpl_expansionLimitThrow)
   const double expansionFactor = 1.1;  // >1 so coarse_search_impl will try
                                        // to expand boxes to find range entries
 
-  //dest mesh has an expanding box, will throw when this box length scale hits 3.0 (arbitrary)                                       
-  EXPECT_ANY_THROW(stk::transfer::impl::coarse_search_impl<Interp>(
-      entProcRelVec, MPI_COMM_WORLD, &meshA, &meshB, stk::search::KDTREE, expansionFactor, 3.0));
+  // only expands domain, so should take more iterations than default (2). Check that it did at least 10.
+  {
+    std::ostringstream messages;
+    stk::set_outputP0(&messages, MPI_COMM_WORLD);
+    stk::transfer::impl::coarse_search_impl<Interp>(
+        entProcRelVec, MPI_COMM_WORLD, &meshA, &meshB, stk::search::KDTREE, expansionFactor);
+    EXPECT_TRUE(messages.str().find("Number of points not found: 1 after expanding bounding boxes 10 time(s)") != std::string::npos);
+    stk::reset_default_output_streams(MPI_COMM_WORLD);
+  }
+
+  EXPECT_EQ(1U,entProcRelVec.size());
+}
+
+TEST(GeomXferImpl, coarseSearchImpl_customBoxExpansionDomainRemoval)
+{
+  if( stk::parallel_machine_size(MPI_COMM_WORLD) > 1 ) GTEST_SKIP();
+
+  using Interp = TestInterpHandleExpansionRemoveDomain<NonTrivialTestSrcMesh, NonTrivialTestDestMesh>;
+
+  Interp::EntityProcRelationVec entProcRelVec;
+  NonTrivialTestSrcMesh meshA;
+  NonTrivialTestDestMesh meshB;
+  const double expansionFactor = 1.1;  // >1 so coarse_search_impl will try
+                                       // to expand boxes to find range entries
+
+  stk::transfer::impl::coarse_search_impl<Interp>(
+      entProcRelVec, MPI_COMM_WORLD, &meshA, &meshB, stk::search::KDTREE, expansionFactor);
+
   EXPECT_TRUE(entProcRelVec.empty());
 }
+
 
 using EntityKey = uint64_t;
 

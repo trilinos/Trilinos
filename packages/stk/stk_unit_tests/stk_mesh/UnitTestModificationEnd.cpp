@@ -68,315 +68,12 @@
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "stk_unit_test_utils/TextMesh.hpp"
+#include "stk_unit_test_utils/stk_mesh_fixtures/TetFixture.hpp"
 #include "UnitTestModificationEnd.hpp"
 
 #include <stdio.h> // getline
 
 namespace stk { namespace mesh { namespace unit_test {
-
-//TEST(BulkDataModificationEnd, test_IR_ghosted_modify_delete_with_element_being_marked_as_modified)
-//{
-//  MPI_Comm communicator = MPI_COMM_WORLD;
-//  int numProcs = -1;
-//  MPI_Comm_size(communicator, &numProcs);
-//
-//  if(numProcs == 2)
-//  {
-//    //============== Load 1x1x4 mesh into BulkData
-//
-//    const int spatialDim = 3;
-//    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//    stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
-//
-//    std::string exodusFileName = getOption("-i", "generated:1x1x4");
-//    populateBulkDataWithFile(exodusFileName, communicator, stkMeshBulkData);
-//
-//    //============== Get Global Count Of Elements and Nodes
-//
-//    std::vector<size_t> globalCounts;
-//    stk::mesh::comm_mesh_counts(stkMeshBulkData, globalCounts);
-//
-//    size_t numNodes = 20;
-//    size_t numEdges = 0;
-//    size_t numFaces = 0;
-//    size_t numElements = 4;
-//
-//    ASSERT_EQ(numNodes, globalCounts[stk::topology::NODE_RANK]);
-//    ASSERT_EQ(numEdges, globalCounts[stk::topology::EDGE_RANK]);
-//    ASSERT_EQ(numFaces, globalCounts[stk::topology::FACE_RANK]);
-//    ASSERT_EQ(numElements, globalCounts[stk::topology::ELEMENT_RANK]);
-//
-//    checkThatMeshIsParallelConsistent(stkMeshBulkData);
-//
-//    bool isCheckAfterCallToIRGMD = false;
-//
-//    checkCommListAndMap(stkMeshBulkData, isCheckAfterCallToIRGMD);
-//    stkMeshBulkData.modification_begin();
-//    stkMeshBulkData.my_internal_resolve_ghosted_modify_delete();
-//    checkCommListAndMap(stkMeshBulkData, isCheckAfterCallToIRGMD);
-//
-//    std::vector<std::vector<stk::mesh::EntityState> > elementStates(numProcs);
-//    for (size_t i=0;i<elementStates.size();i++)
-//    {
-//      elementStates[i].resize(numElements, stk::mesh::Unchanged);
-//    }
-//
-//    std::vector<std::vector<stk::mesh::EntityState> > nodeStates(numProcs);
-//    for (size_t i=0;i<nodeStates.size();i++)
-//    {
-//      nodeStates[i].resize(numNodes, stk::mesh::Unchanged);
-//    }
-//
-//    bool areNodesValid[2][20] = {
-//      { true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, },
-//      { false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true }
-//    };
-//
-//    bool areElementsValid[2][4] = {
-//      { true, true, true, false, },
-//      { false, true, true, true }
-//    };
-//
-//    checkStatesOfEntities(nodeStates, elementStates, areNodesValid, areElementsValid, stkMeshBulkData);
-//
-//    mark_element3_as_modified(stkMeshBulkData);
-//
-//    int element3Index = 2;
-//    int proc_that_modified_element3 = 1;
-//    elementStates[proc_that_modified_element3][element3Index] = stk::mesh::Modified;
-//
-//    checkStatesOfEntities(nodeStates, elementStates, areNodesValid, areElementsValid, stkMeshBulkData);
-//
-//    //============== Call IRGMD and check what happens to states of entities and comm maps and lists
-//
-//    stkMeshBulkData.my_internal_resolve_ghosted_modify_delete();
-//
-//    int proc_that_no_longer_has_element3 = 0;
-//    areElementsValid[proc_that_no_longer_has_element3][element3Index] = false;
-//
-//    for (size_t i=9;i<=16;i++)
-//    {
-//      int proc_on_which_nodes_9thru16_are_modified = 0;
-//      nodeStates[proc_on_which_nodes_9thru16_are_modified][i-1] = stk::mesh::Modified;
-//    }
-//
-//    int elementNextToModifiedElementOnProc0 = 1;
-//    int proc_that_has_element2_modified_as_result_of_element3_modification = 0;
-//    elementStates[proc_that_has_element2_modified_as_result_of_element3_modification][elementNextToModifiedElementOnProc0] = stk::mesh::Modified;
-//
-//    checkStatesOfEntities(nodeStates, elementStates, areNodesValid, areElementsValid, stkMeshBulkData);
-//
-//    isCheckAfterCallToIRGMD = true;
-//    checkCommListAndMap(stkMeshBulkData, isCheckAfterCallToIRGMD);
-//  }
-//}
-
-//TEST(BulkDataModificationEnd, create_an_edge_and_test_pieces_of_internal_modification_end_for_edges)
-//{
-//  MPI_Comm communicator = MPI_COMM_WORLD;
-//  int numProcs = -1;
-//  MPI_Comm_size(communicator, &numProcs);
-//
-//  if(numProcs == 2)
-//  {
-//    //============== Load 1x1x4 mesh into Bulk Data
-//
-//    const int spatialDim = 3;
-//    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-//    stk::unit_test_util::BulkDataTester stkMeshBulkData(stkMeshMetaData, communicator);
-//
-//    // Elements 1 and 2 on proc 0, Elements 3 and 4 on proc 1
-//    // Elements 2 and 3 are shared because of nodes 9, 10, 11, 12
-//    // Element 2 is ghosted onto Proc 1, and Element 0 is ghosted onto Proc 0
-//
-//    std::string exodusFileName = getOption("-i", "generated:1x1x4");
-//    populateBulkDataWithFile(exodusFileName, communicator, stkMeshBulkData);
-//
-//    //============== Before starting, make sure mesh is parallel consistent
-//
-//    std::vector<std::string> meshStart;
-//    getMeshLineByLine(stkMeshBulkData, meshStart);
-//
-//    checkThatMeshIsParallelConsistent(stkMeshBulkData);
-//
-//    int myProcId = stkMeshBulkData.parallel_rank();
-//
-//    std::vector<stk::mesh::EntityId> edgeIds;
-//    std::vector<std::vector<stk::mesh::EntityId> > nodeIdsForEdge;
-//    std::vector<std::vector<stk::mesh::EntityId> > elementRelations;
-//
-//    edgeIds.push_back(100+myProcId);
-//    nodeIdsForEdge.resize(edgeIds.size());
-//    elementRelations.resize(edgeIds.size());
-//    for ( size_t i=0;i<edgeIds.size();i++)
-//    {
-//      nodeIdsForEdge[i].resize(2);
-//      nodeIdsForEdge[i][0] = 9;
-//      nodeIdsForEdge[i][1] = 10;
-//
-//      elementRelations[i].resize(1);
-//      elementRelations[i][0] = 2+myProcId;
-//    }
-//
-//    std::vector<stk::mesh::Entity> edgeEntities(edgeIds.size());
-//    stk::mesh::Part& edge_part = stkMeshBulkData.mesh_meta_data().declare_part("edge_part", stk::topology::EDGE_RANK);
-//
-//    stkMeshBulkData.modification_begin();
-//
-//    create_edges(stkMeshBulkData, edgeIds, nodeIdsForEdge, elementRelations, edgeEntities, edge_part);
-//
-//    stkMeshBulkData.my_internal_resolve_shared_modify_delete();
-//
-//    checkResultsOfIRSMD_for_edges(stkMeshBulkData);
-//
-//    //============== Make sure we have 2 edges
-//
-//    std::vector<size_t> globalCounts;
-//    stk::mesh::comm_mesh_counts(stkMeshBulkData, globalCounts);
-//    size_t numEdgesTotal = 2;
-//    EXPECT_EQ(numEdgesTotal, globalCounts[stk::topology::EDGE_RANK]);
-//
-//    //============== Check results of IRGMD
-//
-//    stkMeshBulkData.my_internal_resolve_ghosted_modify_delete();
-//
-//    checkResultsOfIRGMD_for_edges(stkMeshBulkData, edgeEntities);
-//
-//    //============== Before starting, make sure mesh is parallel consistent
-//
-//    checkThatMeshIsParallelConsistent(stkMeshBulkData);
-//
-//    //============== Check the result of internal_update_distributed_index
-//
-//    for (size_t i=0;i<edgeIds.size();i++)
-//    {
-//      stk::mesh::EntityKey edgeKey(stk::topology::EDGE_RANK, edgeIds[i]);
-//      stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData.my_internal_comm_list().begin(), stkMeshBulkData.my_internal_comm_list().end(), edgeKey);
-//      bool edge_is_not_in_comm_list = iter == stkMeshBulkData.my_internal_comm_list().end() || iter->key != edgeKey;
-//      EXPECT_TRUE(edge_is_not_in_comm_list);
-//
-//      const bool is_entity_ghosted = !stkMeshBulkData.my_internal_entity_comm_map(edgeKey, stkMeshBulkData.aura_ghosting()).empty();
-//      EXPECT_FALSE( is_entity_ghosted );
-//
-//      const bool is_entity_shared = !stkMeshBulkData.my_internal_entity_comm_map(edgeKey, stkMeshBulkData.shared_ghosting()).empty();
-//      EXPECT_FALSE( is_entity_shared );
-//
-//    }
-//
-//    for (size_t i=0;i<elementRelations.size();i++)
-//    {
-//      for (size_t j=0;j<elementRelations[i].size();j++)
-//      {
-//        stk::mesh::EntityKey elementKey(stk::topology::ELEMENT_RANK, elementRelations[i][j]);
-//        stk::mesh::EntityCommListInfoVector::const_iterator iter = std::lower_bound(stkMeshBulkData.my_internal_comm_list().begin(), stkMeshBulkData.my_internal_comm_list().end(), elementKey);
-//        bool element_not_in_comm_list = iter == stkMeshBulkData.my_internal_comm_list().end();
-//        EXPECT_TRUE(element_not_in_comm_list);
-//
-//        const bool is_entity_ghosted = !stkMeshBulkData.my_internal_entity_comm_map(elementKey, stkMeshBulkData.aura_ghosting()).empty();
-//        EXPECT_FALSE( is_entity_ghosted );
-//
-//        const bool is_entity_shared = !stkMeshBulkData.my_internal_entity_comm_map(elementKey, stkMeshBulkData.shared_ghosting()).empty();
-//        EXPECT_FALSE( is_entity_shared );
-//      }
-//    }
-//
-//    std::vector<stk::mesh::Entity> shared_new;
-//    stkMeshBulkData.my_internal_update_distributed_index(stk::topology::EDGE_RANK, shared_new);
-//    ASSERT_EQ(1u, shared_new.size());
-//    for (size_t i=0;i<edgeIds.size();i++)
-//    {
-//      stk::mesh::EntityId shared_edge_id = 100;
-//      EXPECT_EQ(shared_edge_id, stkMeshBulkData.identifier(shared_new[i]));
-//
-//      //============== Funky! Edge is marked as created, not modified. So resolved ownership of "modified" doesn't mess with created.
-//
-//      EXPECT_EQ(myProcId, stkMeshBulkData.parallel_owner_rank(shared_new[i]));
-//      EXPECT_EQ(stk::mesh::Created, stkMeshBulkData.state(shared_new[i]));
-//    }
-//
-//    stk::mesh::EntityKey entity_key(stk::topology::NODE_RANK, 9);
-//    stk::mesh::Entity node = stkMeshBulkData.get_entity(entity_key);
-//
-//    EXPECT_TRUE(stkMeshBulkData.bucket(node).member(edge_part));
-//    for (size_t i=0;i<edgeEntities.size();i++)
-//    {
-//      EXPECT_FALSE(stkMeshBulkData.bucket(edgeEntities[i]).shared());
-//    }
-//
-//    stkMeshBulkData.my_resolve_ownership_of_modified_entities(shared_new);
-//
-//    for (size_t i=0;i<edgeEntities.size();i++)
-//    {
-//      EXPECT_FALSE(stkMeshBulkData.bucket(edgeEntities[i]).shared());
-//
-//      EXPECT_EQ(myProcId, stkMeshBulkData.parallel_owner_rank(shared_new[i])) <<
-//                                                                                 "Proc " << stkMeshBulkData.parallel_rank() << " failed.";
-//
-//      EXPECT_FALSE(stkMeshBulkData.bucket(shared_new[i]).shared());
-//      EXPECT_TRUE(stkMeshBulkData.bucket(shared_new[i]).owned());
-//      EXPECT_FALSE(stkMeshBulkData.bucket(shared_new[i]).member(stkMeshBulkData.ghosting_part(stkMeshBulkData.aura_ghosting())));
-//
-//      EXPECT_FALSE(stkMeshBulkData.bucket(edgeEntities[i]).shared());
-//    }
-//    EXPECT_TRUE(stkMeshBulkData.bucket(node).member(edge_part));
-//
-//    //============== Hopefully this works!
-//
-//    stkMeshBulkData.my_move_entities_to_proper_part_ownership( shared_new );
-//
-//    for (size_t i=0;i<edgeEntities.size();i++)
-//    {
-//      EXPECT_TRUE(stkMeshBulkData.bucket(shared_new[i]).shared());
-//      if ( stkMeshBulkData.parallel_rank() == 0 )
-//      {
-//        EXPECT_TRUE(stkMeshBulkData.bucket(shared_new[i]).owned());
-//      }
-//      else
-//      {
-//        EXPECT_FALSE(stkMeshBulkData.bucket(shared_new[i]).owned());
-//      }
-//      EXPECT_FALSE(stkMeshBulkData.bucket(shared_new[i]).member(stkMeshBulkData.ghosting_part(stkMeshBulkData.aura_ghosting())));
-//      EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(shared_new[i])) ;
-//    }
-//
-//    stkMeshBulkData.my_add_comm_list_entries_for_entities( shared_new );
-//
-//    for (size_t i=0;i<edgeEntities.size();i++)
-//    {
-//      stk::mesh::EntityKey edgeKey = stkMeshBulkData.entity_key(shared_new[i]);
-//      stk::mesh::EntityCommListInfoVector::const_iterator  iter = std::lower_bound(stkMeshBulkData.my_internal_comm_list().begin(), stkMeshBulkData.my_internal_comm_list().end(), edgeKey);
-//      bool edge_is_in_comm_list = iter != stkMeshBulkData.my_internal_comm_list().end() && iter->key == edgeKey;
-//      EXPECT_TRUE(edge_is_in_comm_list);
-//
-//      const bool is_entity_ghosted = !stkMeshBulkData.my_internal_entity_comm_map(edgeKey, stkMeshBulkData.aura_ghosting()).empty();
-//      EXPECT_FALSE( is_entity_ghosted );
-//
-//      const bool is_entity_shared = !stkMeshBulkData.my_internal_entity_comm_map(edgeKey, stkMeshBulkData.shared_ghosting()).empty();
-//      EXPECT_TRUE( is_entity_shared );
-//    }
-//
-//    //============== Not sure what IRSM is supposed to do?
-//
-//    std::vector<std::string> meshBefore;
-//    getMeshLineByLine(stkMeshBulkData, meshBefore);
-//
-//    stkMeshBulkData.my_internal_resolve_shared_membership();
-//
-//    std::vector<std::string> meshAfter;
-//    getMeshLineByLine(stkMeshBulkData, meshAfter);
-//
-//    stkMeshBulkData.my_internal_regenerate_aura();
-//
-//    std::vector<std::string> meshAfterAura;
-//    getMeshLineByLine(stkMeshBulkData, meshAfterAura);
-//
-//    ////        compareMeshes(stkMeshBulkData.parallel_rank(), meshStart, meshAfterAura);
-//    ////        writeMesh(myProcId, "Before::", meshStart);
-//    //        writeMesh(myProcId, "After::", meshAfterAura);
-//
-//    checkItAllForThisCase(stkMeshBulkData);
-//  }
-//}
 
 TEST(BulkDataModificationEnd, create_an_edge_and_test_up_to_IR_parallel_create)
 {
@@ -1010,6 +707,64 @@ TEST(TestModificationEnd, destroySharedNode_threeSharers_deinducePartMembership)
     EXPECT_FALSE(bulk.is_valid(node4));
     EXPECT_FALSE(bulk.is_valid(node5));
   }
+}
+
+void create_bonds(stk::mesh::BulkData& bulk)
+{
+  const unsigned numElems = 3;
+  std::vector<stk::mesh::EntityId> elemIds[2] =
+  { { 40, 50, 60},
+    { 41, 51, 61} };
+
+  std::vector<stk::mesh::EntityIdVector> nodeIds[2] =
+  { { {6,13}, { 8,13}, { 1,13} },
+    { {6,13}, {16,13}, {15,13} } };
+
+  bulk.modification_begin();
+  stk::mesh::Ghosting& ghosting = bulk.create_ghosting("my_custom_ghosting");
+  std::vector<stk::mesh::EntityProc> sendGhosts;
+  const int myRank = bulk.parallel_rank();
+  if (myRank == 0) {
+    sendGhosts.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK,6),1));
+  }
+  else {
+    sendGhosts.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::NODE_RANK,13),0));
+  }
+
+  bulk.change_ghosting(ghosting, sendGhosts);
+
+  bulk.modification_end();
+
+  stk::mesh::Part& beamPart = bulk.mesh_meta_data().declare_part_with_topology("beamPart", stk::topology::BEAM_2);
+  stk::mesh::PartVector elemParts = {&beamPart};
+
+  bulk.modification_begin();
+
+  for(unsigned i=0; i<numElems; ++i) {
+    stk::mesh::declare_element(bulk, elemParts, elemIds[myRank][i], nodeIds[myRank][i]);
+  }
+
+  bulk.modification_end();
+}
+
+TEST(TestModificationEnd, tet_crk_bonds)
+{
+  MPI_Comm comm = stk::parallel_machine_world();
+  if (stk::parallel_machine_size(comm) != 2) { GTEST_SKIP(); }
+
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = create_mesh(comm, spatialDim, stk::mesh::BulkData::AUTO_AURA);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+
+  const size_t nx = 1, ny = 1, nz = 3, nidStart = 1, eidStart = 1;
+  stk::mesh::fixtures::TetFixture fixture(meta, bulk, nx, ny, nz, nidStart, eidStart);
+  fixture.generate_mesh();
+
+  const unsigned expectedNumNodes = bulk.parallel_rank()==0 ? 12 : 16;
+  EXPECT_EQ(expectedNumNodes, stk::mesh::count_entities(bulk, stk::topology::NODE_RANK, meta.universal_part()));
+
+  create_bonds(bulk);
 }
 
 } } } // namespace stk mesh unit_test

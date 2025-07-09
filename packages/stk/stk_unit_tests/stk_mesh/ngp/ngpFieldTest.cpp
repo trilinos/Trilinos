@@ -1946,7 +1946,7 @@ TEST(DeviceField, checkSizeof)
   #ifdef NDEBUG
     size_t expectedNumBytes = 128;  // Release build on device architecture
   #else
-    size_t expectedNumBytes = 200;  // Debug build on device architecture
+    size_t expectedNumBytes = 208;  // Debug build on device architecture
   #endif
 #else
   #ifdef NDEBUG
@@ -1965,7 +1965,7 @@ TEST(DeviceFieldData, checkSizeof)
   #ifdef NDEBUG
     size_t expectedNumBytes = 112;  // Release build on device architecture
   #else
-    size_t expectedNumBytes = 184;  // Debug build on device architecture
+    size_t expectedNumBytes = 192;  // Debug build on device architecture
   #endif
 #else
   #ifdef NDEBUG

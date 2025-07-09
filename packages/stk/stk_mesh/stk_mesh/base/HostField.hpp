@@ -99,7 +99,7 @@ class HostField : public NgpFieldBase
   size_t num_syncs_to_device() const override { return m_hostField->num_syncs_to_device(); }
   void fence() override {}
 
-  unsigned get_component_stride(const FastMeshIndex& entityIndex) const { return 1; }
+  unsigned get_component_stride(const FastMeshIndex& /*entityIndex*/) const { return 1; }
 
   unsigned get_component_stride(unsigned /*bucketId*/) const { return 1; }
 

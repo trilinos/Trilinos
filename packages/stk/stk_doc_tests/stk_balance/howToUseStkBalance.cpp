@@ -39,6 +39,8 @@ bool is_mesh_balanced(const stk::mesh::BulkData& bulk)
 
 bool is_mesh_balanced_wrt_weight(const stk::mesh::BulkData& bulk, stk::mesh::Field<double>& weightField)
 {
+    auto weightFieldData = weightField.data<stk::mesh::ReadOnly>();
+
     std::vector<size_t> counts;
     stk::mesh::comm_mesh_counts(bulk, counts);
 
@@ -53,8 +55,8 @@ bool is_mesh_balanced_wrt_weight(const stk::mesh::BulkData& bulk, stk::mesh::Fie
     {
         if(bulk.bucket(element).owned())
         {
-            double *data = stk::mesh::field_data(weightField, element);
-            weightThisProc += *data;
+            auto data = weightFieldData.entity_values(element);
+            weightThisProc += data();
         }
     }
 
@@ -244,14 +246,16 @@ protected:
 
 void set_vertex_weights(const stk::mesh::BulkData& bulk, stk::mesh::Selector selector, stk::mesh::Field<double>& weightField)
 {
+    auto weightFieldData = weightField.data();
+
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, selector, elements);
     for(stk::mesh::Entity element : elements)
     {
         if(bulk.bucket(element).owned())
         {
-            double *data = stk::mesh::field_data(weightField, element);
-            *data = static_cast<double>(bulk.identifier(element));
+            auto data = weightFieldData.entity_values(element);
+            data() = static_cast<double>(bulk.identifier(element));
         }
     }
 }
@@ -395,10 +399,13 @@ void verify_mesh_balanced_wrt_fields(const stk::mesh::BulkData& bulk, const std:
 
     for(size_t i=0;i<critFields.size();++i)
     {
+        auto critField = critFields[i];
+        auto critFieldData = critField->data();
+
         for(stk::mesh::Entity element : elements)
         {
-            double *data = stk::mesh::field_data(*critFields[i], element);
-            sums[i] += *data;
+            auto data = critFieldData.entity_values(element);
+            sums[i] += data();
         }
     }
 
@@ -416,20 +423,23 @@ void set_vertex_weights_checkerboard(stk::mesh::BulkData& bulk, stk::mesh::Selec
 {
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, selector, elements);
+
+    auto weightField1Data = weightField1.data();
+    auto weightField2Data = weightField2.data();
     for(stk::mesh::Entity element : elements)
     {
-        double *data1 = stk::mesh::field_data(weightField1, element);
-        double *data2 = stk::mesh::field_data(weightField2, element);
+        auto data1 = weightField1Data.entity_values(element);
+        auto data2 = weightField2Data.entity_values(element);
         stk::mesh::EntityId id = bulk.identifier(element);
         if(id%2==0)
         {
-            *data1 = 1.0;
-            *data2 = 0.0;
+            data1() = 1.0;
+            data2() = 0.0;
         }
         else
         {
-            *data1 = 0.0;
-            *data2 = 1.0;
+            data1() = 0.0;
+            data2() = 1.0;
         }
     }
 }

@@ -121,33 +121,6 @@ bool is_received_entity_in_local_shared_entity_list(
                       const std::vector<shared_entity_type>& shared_entities_this_proc,
                       const shared_entity_type &shared_entity_from_other_proc);
 
-bool ghost_id_is_found_in_comm_data(const PairIterEntityComm& comm_data,
-                                    int entity_owner,
-                                    int ghost_id);
-
-bool all_ghost_ids_are_found_in_comm_data(const PairIterEntityComm& comm_data,
-                                          int entity_owner,
-                                          const std::vector<int>& recvd_ghost_ids);
-
-void comm_shared_procs(PairIterEntityComm commInfo,
-                       std::vector<int>& sharingProcs);
-
-void fill_sorted_procs(PairIterEntityComm ec, std::vector<int>& procs);
-
-void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs);
-
-inline
-bool is_comm_ordered(const PairIterEntityComm& ec)
-{
-  int n = ec.size();
-  for (int i=1; i<n; ++i) {
-    if (!(ec[i-1] < ec[i])) {
-      return false;
-    }
-  }
-  return true;
-}
-
 } // namespace impl
 } // namespace mesh
 } // namespace stk

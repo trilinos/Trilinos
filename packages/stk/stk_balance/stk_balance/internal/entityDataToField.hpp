@@ -44,10 +44,11 @@ namespace internal {
 
 inline void put_entity_data_to_field(const stk::mesh::EntityProcVec& entityDataToBePutIntoField, stk::mesh::FieldBase *field)
 {
+  auto fieldData = field->data<double>();
   for(const stk::mesh::EntityProc& entityProc : entityDataToBePutIntoField)
   {
-    unsigned *fieldData = static_cast<unsigned*>(stk::mesh::field_data(*field, entityProc.first));
-    *fieldData = static_cast<unsigned>(entityProc.second);
+    auto entityFieldData = fieldData.entity_values(entityProc.first);
+    entityFieldData() = static_cast<double>(entityProc.second);
   }
 }
 

@@ -917,11 +917,11 @@ TYPED_TEST_SUITE(DenseParallelCommTesterIntT, ExchangerTypes, NameGenerator);
 
 TYPED_TEST(DenseParallelCommTesterIntT, ClassNonBlocking)
 {
-  using ExchangerType = TypeParam;
-  using ElementType = int;
+  using ExchType = TypeParam;
+  using ElemType = int;
   
-  ExchangerType exchanger1(this->comm);
-  ExchangerType exchanger2(this->comm);
+  ExchType exchanger1(this->comm);
+  ExchType exchanger2(this->comm);
 
   EXPECT_FALSE(exchanger1.are_recvs_in_progress());
   EXPECT_FALSE(exchanger1.are_sends_in_progress());
@@ -934,8 +934,8 @@ TYPED_TEST(DenseParallelCommTesterIntT, ClassNonBlocking)
   for (int i=0; i < 100; ++i) {
     this->set_offset(i);
     
-    std::vector< std::vector<ElementType> > sendLists2 = sendListsTest;
-    std::vector< std::vector<ElementType> > recvLists2 = recvListsTest;
+    std::vector< std::vector<ElemType> > sendLists2 = sendListsTest;
+    std::vector< std::vector<ElemType> > recvLists2 = recvListsTest;
 
     exchanger1.start_nonblocking(sendListsTest, recvListsTest);
     exchanger2.start_nonblocking(sendLists2, recvLists2);

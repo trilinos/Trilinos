@@ -18,6 +18,7 @@
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include "stk_search/BoundingBox.hpp"
 #include "stk_search/CoarseSearch.hpp"
+#include "stk_util/parallel/Parallel.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
@@ -25,21 +26,9 @@ namespace transfer {
 
 namespace impl {
 
-inline void throw_error_on_coarse_expansion_limit(stk::ParallelMachine comm, const std::string local_err_msg)
-{
-  if (stk::util::get_common_coupling_version() >= 15) {
-    std::ostringstream global_err_msg;
-    stk::all_write_string(comm, global_err_msg, local_err_msg);
-    int err = (int) global_err_msg.str().size();
-    int global_err = 0;
-    stk::all_reduce_sum(comm, &err, &global_err, 1);
-    STK_ThrowRequireMsg(!global_err, global_err_msg.str());
-  }
-}
-
 template <class BoundingBoxType>
-struct BoundingBoxCompare{
-
+struct BoundingBoxCompare 
+{
   bool operator()(const BoundingBoxType & a, const BoundingBoxType & b) const
   {
     return a.second.id() < b.second.id();
@@ -93,7 +82,7 @@ void get_remaining_domain_points(std::vector<typename INTERPOLATE::MeshB::Boundi
 }
 
 template <typename T, typename=int>
-struct CallOptionalPostCoarseSearchFilter
+struct OptionalPostCoarseSearchFilter
 {
   static void call(typename T::EntityProcRelationVec & /*BtoA*/,
       const typename T::MeshA * /*mesha*/,
@@ -104,7 +93,7 @@ struct CallOptionalPostCoarseSearchFilter
 };
 
 template <typename T>
-struct CallOptionalPostCoarseSearchFilter<T, decltype((void) T::post_coarse_search_filter, 0)>
+struct OptionalPostCoarseSearchFilter<T, decltype((void) T::post_coarse_search_filter, 0)>
 {
   static void call(typename T::EntityProcRelationVec &BtoA,
       const typename T::MeshA * mesha,
@@ -115,6 +104,81 @@ struct CallOptionalPostCoarseSearchFilter<T, decltype((void) T::post_coarse_sear
     T::post_coarse_search_filter(BtoA, *mesha, *meshb);
   }
 };
+
+template <typename INTERPOLATE, typename=int>
+struct BoxExpansionHandler
+{
+  using MeshA = typename INTERPOLATE::MeshA;
+  using MeshB = typename INTERPOLATE::MeshB;
+  using BoundingBoxA = typename INTERPOLATE::MeshA::BoundingBox;
+  using BoundingBoxB = typename INTERPOLATE::MeshB::BoundingBox;
+
+  static void call(
+    const MeshA* /*mesha*/,
+    const MeshB* /*meshb*/,
+    std::vector<BoundingBoxA>& range,  // from
+    std::vector<BoundingBoxB>& domain, // to
+    const double expansion_factor
+  )
+  {
+    for(auto&& box : range) {
+      search::scale_by(box.first, expansion_factor);
+    }
+
+    for(auto&& box : domain) {
+      search::scale_by(box.first, expansion_factor);
+    }
+  }
+};
+
+template <typename INTERPOLATE>
+struct BoxExpansionHandler<INTERPOLATE, decltype((void) INTERPOLATE::handle_box_expansions, 0)>
+{
+  using MeshA = typename INTERPOLATE::MeshA;
+  using MeshB = typename INTERPOLATE::MeshB;
+  using BoundingBoxA = typename INTERPOLATE::MeshA::BoundingBox;
+  using BoundingBoxB = typename INTERPOLATE::MeshB::BoundingBox;
+
+  static void call(
+    const MeshA* mesha,
+    const MeshB* meshb,
+    std::vector<BoundingBoxA>& range,  // from
+    std::vector<BoundingBoxB>& domain, // to
+    const double expansion_factor
+  )
+  {
+    INTERPOLATE::handle_box_expansions(mesha, meshb, range, domain, expansion_factor);
+  }
+};
+
+template <typename INTERPOLATE, typename=int>
+struct ExpansionWarningPrinter
+{
+  static void call(
+    int num_coarse_search_passes,
+    size_t global_domain_size
+  )
+  {
+    stk::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: "
+                    << global_domain_size << " after expanding bounding boxes " << num_coarse_search_passes
+                    << " time(s)" << std::endl;
+    stk::outputP0() << "...will now expand the set of candidate bounding boxes and re-attempt the coarse search"
+                    << std::endl;
+  }
+};
+
+template <typename INTERPOLATE>
+struct ExpansionWarningPrinter<INTERPOLATE, decltype((void) INTERPOLATE::print_expansion_warnings, 0)>
+{
+  static void call(
+    int num_coarse_search_passes,
+    size_t global_domain_size
+  )
+  {
+    INTERPOLATE::print_expansion_warnings(num_coarse_search_passes, global_domain_size);
+  }
+};
+
 
 template <typename T>
 auto call_copy_entities(T & mesh, typename T::EntityProcVec & entities_to_copy, const std::string & name)
@@ -129,18 +193,7 @@ void call_copy_entities(T & ... /*t*/)
   //copy entities doesn't exist, so NO-OP
 }
 
-template <class INTERPOLATE>
-void print_expansion_warnings(stk::ParallelMachine comm, int number_coarse_search_passes, size_t domain_size)
-{
-  // sum and provide message to user
-  size_t global_domain_size = 0;
-  stk::all_reduce_max(comm, &domain_size, &global_domain_size, 1);
-  stk::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: "
-                  << global_domain_size << " after expanding bounding boxes: " << number_coarse_search_passes
-                  << " time(s)" << std::endl;
-  stk::outputP0() << "...will now expand the set of candidate bounding boxes and re-attempt the coarse search"
-                  << std::endl;
-}
+
 
 template <class INTERPOLATE>
 void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec &domain_to_range,
@@ -148,8 +201,7 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec &domain_to_r
     const typename INTERPOLATE::MeshA *mesha,
     const typename INTERPOLATE::MeshB *meshb,
     const stk::search::SearchMethod search_method,
-    const double expansion_factor,
-    const double expansion_limit = std::numeric_limits<double>::max())
+    const double expansion_factor)
 {
   using BoundingBoxA = typename INTERPOLATE::MeshA::BoundingBox;
   using BoundingBoxB = typename INTERPOLATE::MeshB::BoundingBox;
@@ -187,22 +239,32 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec &domain_to_r
     search::coarse_search(domain, range, search_method, comm, this_pass_domain_to_range, true, true, true);
 
     num_coarse_search_passes++;
-    CallOptionalPostCoarseSearchFilter<INTERPOLATE>::call(this_pass_domain_to_range, mesha, meshb);
+    OptionalPostCoarseSearchFilter<INTERPOLATE>::call(this_pass_domain_to_range, mesha, meshb);
     impl::get_remaining_domain_points<INTERPOLATE>(domain, this_pass_domain_to_range);
 
     domain_empty = stk::is_true_on_all_procs(comm, domain.empty());
     const bool terminate_on_first_pass = (domain_empty || expansion_factor <= 1.0) && num_coarse_search_passes == 1;
 
+    size_t global_domain_size = 0;
+    size_t domain_size = domain.size();
+
+    if (stk::util::get_common_coupling_version() >= 16) {
+      if (!domain_empty){
+        stk::all_reduce_sum(comm, &domain_size, &global_domain_size, 1);
+      }
+    }
+
     if (terminate_on_first_pass) {
       domain_to_range.swap(this_pass_domain_to_range);
 
-      if (!domain_empty){
-        size_t domain_size = domain.size();
-        size_t global_domain_size = 0;
-        stk::all_reduce_max(comm, &domain_size, &global_domain_size, 1);
+      if ( !domain_empty ){
+        if (stk::util::get_common_coupling_version() < 16) {
+          stk::all_reduce_max(comm, &domain_size, &global_domain_size, 1);
+        }
         stk::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: "
                         << global_domain_size << " in initial coarse search" << std::endl;
       }
+
       break;
     }
 
@@ -210,27 +272,37 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec &domain_to_r
     domain_to_range.insert(domain_to_range.end(), this_pass_domain_to_range.begin(), this_pass_domain_to_range.end());
 
     if (!domain_empty) {
-      std::string local_err_msg;
-      for (BoundingBoxB &box : domain) {
-        const auto box_scale = search::length_scale(box.first);
+      BoxExpansionHandler<INTERPOLATE>::call(
+        mesha, meshb, range, domain, expansion_factor
+      );
 
-        if(box_scale > expansion_limit)
-        {
-          std::ostringstream err;
-          err << "During coarse search, bounding box size = " << box_scale << " which exceeds the expansion tolerance = "
-                                                         << expansion_limit << ".  Box info: " << box.first << std::endl;
-          local_err_msg +=  err.str();
-        }
+      // preserve MPI pattern from old throw_error_on_coarse_expansion_limit
+      if (stk::util::get_common_coupling_version() == 15) {
 
-        search::scale_by(box.first, expansion_factor);
+        std::string local_err_msg;
+        std::ostringstream global_err_msg;
+        stk::all_write_string(comm, global_err_msg, local_err_msg);
+
+        int err = 0;
+        int global_err = 0;
+        stk::all_reduce_sum(comm, &err, &global_err, 1);
+
+        STK_ThrowRequireMsg(!global_err, global_err_msg.str());
       }
 
-      for (BoundingBoxA &box : range) {
-        search::scale_by(box.first, expansion_factor);
+      // preserve MPI pattern from old print_expansion_warnings
+      if (stk::util::get_common_coupling_version() < 16) {
+        stk::all_reduce_max(comm, &domain_size, &global_domain_size, 1);
       }
 
-      throw_error_on_coarse_expansion_limit(comm, local_err_msg);
-      print_expansion_warnings<INTERPOLATE>(comm, num_coarse_search_passes, domain.size());
+      ExpansionWarningPrinter<INTERPOLATE>::call(
+        num_coarse_search_passes, global_domain_size
+      );
+
+      if (stk::util::get_common_coupling_version() >= 16) {
+        // Custom expansion handlers may remove items from the domain
+        domain_empty = stk::is_true_on_all_procs(comm, domain.empty());
+      }
     }
   }
   sort(domain_to_range.begin(), domain_to_range.end());

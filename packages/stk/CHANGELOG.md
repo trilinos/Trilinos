@@ -1,5 +1,10 @@
 # CHANGELOG
 
+5.25.4 (STK_VERSION 5250400) 7/9/2025
+  stk_tools: new disconnect-elem capability
+  stk_mesh: bug-fix for late-created multi-state field, NgpField
+  stk_mesh: refinements to new Field Data Access APIs
+
 5.25.3 (STK_VERSION 5250300) 6/10/2025
   stk_unit_test_utils: fix cmake error, some files that depend on
                       stk_search_util needed to be excluded

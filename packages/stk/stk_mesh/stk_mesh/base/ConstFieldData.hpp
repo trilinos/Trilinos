@@ -63,7 +63,7 @@ public:
   ConstFieldData(FieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes);
   KOKKOS_FUNCTION virtual ~ConstFieldData() override;
 
-  KOKKOS_FUNCTION ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag);
+  ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag);
   KOKKOS_FUNCTION ConstFieldData(const ConstFieldData& fieldData);
   KOKKOS_FUNCTION ConstFieldData(ConstFieldData&& fieldData);
   KOKKOS_FUNCTION ConstFieldData& operator=(const ConstFieldData& fieldData);
@@ -203,6 +203,57 @@ protected:
   virtual void fence(const stk::ngp::ExecSpace&) override {}
 };
 
+//------------------------------------------------------------------------------
+template <typename T>
+class ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto> : public FieldBytes<stk::ngp::HostMemSpace>
+{
+public:
+  using value_type = T;
+  static constexpr Layout layout = Layout::Auto;
+
+  ConstFieldData();
+  ConstFieldData(const FieldBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag);
+  KOKKOS_FUNCTION ~ConstFieldData() override;
+
+  KOKKOS_FUNCTION ConstFieldData(const ConstFieldData& fieldData);
+  KOKKOS_FUNCTION ConstFieldData(ConstFieldData&& fieldData);
+  KOKKOS_FUNCTION ConstFieldData& operator=(const ConstFieldData& fieldData);
+  KOKKOS_FUNCTION ConstFieldData& operator=(ConstFieldData&& fieldData);
+
+  inline
+  EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto> entity_values(Entity entity,
+                                                                            const char* file = STK_HOST_FILE,
+                                                                            int line = STK_HOST_LINE) const;
+
+  inline
+  EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto> entity_values(const MeshIndex& mi,
+                                                                            const char* file = STK_HOST_FILE,
+                                                                            int line = STK_HOST_LINE) const;
+
+  inline
+  EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto> entity_values(const FastMeshIndex& fmi,
+                                                                            const char* file = STK_HOST_FILE,
+                                                                            int line = STK_HOST_LINE) const;
+
+  inline
+  BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto> bucket_values(const Bucket& bucket,
+                                                                            const char* file = STK_HOST_FILE,
+                                                                            int line = STK_HOST_LINE) const;
+
+  inline
+  BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto> bucket_values(int bucketId,
+                                                                            const char* file = STK_HOST_FILE,
+                                                                            int line = STK_HOST_LINE) const;
+
+protected:
+  template <typename _T, typename _MemSpace> friend class HostField;
+
+  virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
+  virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
+  virtual void update(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) override;
+  virtual void fence(const stk::ngp::ExecSpace&) override {}
+};
+
 
 //==============================================================================
 // Device ConstFieldData definitions
@@ -217,9 +268,7 @@ ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData()
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, Layout DataLayout>
 ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData(FieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes)
-  : FieldBytes<MemSpace>(hostFieldBytes->entity_rank(), hostFieldBytes->field_ordinal(),
-                         hostFieldBytes->field_name(), hostFieldBytes->data_traits().alignment_of,
-                         DataLayout)
+  : FieldBytes<MemSpace>(hostFieldBytes, DataLayout)
 {}
 
 //------------------------------------------------------------------------------
@@ -234,13 +283,11 @@ ConstFieldData<T, MemSpace, DataLayout>::~ConstFieldData()
 
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, Layout DataLayout>
-KOKKOS_FUNCTION
 ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag)
   : FieldBytes<MemSpace>(fieldData)
 {
-  KOKKOS_IF_ON_HOST(
-    this->track_copy(accessTag);
-  )
+  this->track_copy(accessTag);
+  this->update_field_meta_data_mod_count();
 }
 
 //------------------------------------------------------------------------------
@@ -456,6 +503,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::ConstFieldData(const C
   : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
 {
   this->track_copy(accessTag);
+  this->update_field_meta_data_mod_count();
 }
 
 //------------------------------------------------------------------------------
@@ -645,7 +693,8 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::ConstFieldData(const Co
                                                                         FieldAccessTag accessTag)
   : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
 {
-    this->track_copy(accessTag);
+  this->track_copy(accessTag);
+  this->update_field_meta_data_mod_count();
 }
 
 //------------------------------------------------------------------------------
@@ -805,6 +854,262 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::update(const stk::ngp::
 {
   this->m_fieldDataSynchronizedCount = this->mesh().synchronized_count();
 }
+
+
+//==============================================================================
+// Host ConstFieldData definitions: Layout::Auto
+//==============================================================================
+
+template <typename T>
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::ConstFieldData()
+  : FieldBytes<stk::ngp::HostMemSpace>()
+{}
+
+//------------------------------------------------------------------------------
+template <typename T>
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::ConstFieldData(
+    const FieldBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag)
+  : FieldBytes<stk::ngp::HostMemSpace>(hostFieldBytes)
+{
+  this->track_copy(accessTag);
+  this->update_field_meta_data_mod_count();
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+KOKKOS_FUNCTION
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::~ConstFieldData()
+{
+  KOKKOS_IF_ON_HOST(
+    this->release_copy();
+  )
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+KOKKOS_FUNCTION
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::ConstFieldData(const ConstFieldData& fieldData)
+  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+{
+  KOKKOS_IF_ON_HOST(
+    this->track_copy(this->access_tag());
+  )
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+KOKKOS_FUNCTION
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::ConstFieldData(ConstFieldData&& fieldData)
+  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+{
+  KOKKOS_IF_ON_HOST(
+    this->track_copy(this->access_tag());
+  )
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+KOKKOS_FUNCTION
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>&
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::operator=(const ConstFieldData& fieldData)
+{
+  KOKKOS_IF_ON_HOST(
+    this->release_copy();  // Decrement first if becoming untracked
+    FieldBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
+    this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
+  )
+
+  return *this;
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+KOKKOS_FUNCTION
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>&
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::operator=(ConstFieldData&& fieldData)
+{
+  KOKKOS_IF_ON_HOST(
+    this->release_copy();  // Decrement first if becoming untracked
+    FieldBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
+    this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
+  )
+
+  return *this;
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(Entity entity,
+                                                                       const char* file, int line) const
+{
+  const MeshIndex& mi = this->mesh().mesh_index(entity);
+
+  this->check_updated_field(file, line);
+  this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
+
+  if (m_layout == Layout::Right) {
+    return EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity, this->field_name());
+  }
+  else if (m_layout == Layout::Left) {
+    return EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data) + mi.bucket_ordinal,
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const MeshIndex& mi,
+                                                                       const char* file, int line) const
+{
+  this->check_updated_field(file, line);
+  this->check_mesh(mi.bucket->mesh(), "Entity", file, line);
+  this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
+  this->check_bucket_ordinal(mi.bucket->bucket_id(), mi.bucket_ordinal, file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
+
+  if (m_layout == Layout::Right) {
+    return EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity, this->field_name());
+  }
+  else if (m_layout == Layout::Left) {
+    return EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data) + mi.bucket_ordinal,
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const FastMeshIndex& fmi,
+                                                                       const char* file, int line) const
+{
+  this->check_updated_field(file, line);
+  this->check_bucket_id(fmi.bucket_id, "entity", file, line);
+  this->check_bucket_ordinal(fmi.bucket_id, fmi.bucket_ord, file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[fmi.bucket_id];
+
+  if (m_layout == Layout::Right) {
+    return EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * fmi.bucket_ord),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity, this->field_name());
+  }
+  else if (m_layout == Layout::Left) {
+    return EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data) + fmi.bucket_ord,
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return EntityValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto>
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(const Bucket& bucket,
+                                                                       const char* file, int line) const
+{
+  this->check_updated_field(file, line);
+  this->check_mesh(bucket.mesh(), "Bucket", file, line);
+  this->check_rank(bucket.entity_rank(), "Bucket", file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucket.bucket_id()];
+
+  if (m_layout == Layout::Right) {
+    return BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketSize, this->field_name());
+  }
+  else if (m_layout == Layout::Left) {
+    return BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketSize,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0, nullptr);  // Keep compiler happy
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto>
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(int bucketId,
+                                                                       const char* file, int line) const
+{
+  this->check_updated_field(file, line);
+  this->check_bucket_id(bucketId, "bucket", file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucketId];
+
+  if (m_layout == Layout::Right) {
+    return BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketSize, this->field_name());
+  }
+  else if (m_layout == Layout::Left) {
+    return BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketSize,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return BucketValues<const T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0, nullptr);  // Keep compiler happy
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+void
+ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::update(const stk::ngp::ExecSpace&, Layout)
+{
+  this->m_fieldDataSynchronizedCount = this->mesh().synchronized_count();
+}
+
 
 //==============================================================================
 }

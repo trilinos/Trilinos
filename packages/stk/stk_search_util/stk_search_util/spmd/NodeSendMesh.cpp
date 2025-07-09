@@ -163,11 +163,11 @@ void NodeSendMesh::find_parametric_coords(const EntityKey& k, const std::vector<
                                                  isWithinParametricTolerance);
 }
 
-bool NodeSendMesh::modify_search_outside_parametric_tolerance(const EntityKey& k,
-                                                              const std::vector<double>& toCoords,
-                                                              std::vector<double>& parametricCoords,
-                                                              double& geometricDistanceSquared,
-                                                              bool& isWithinGeometricTolerance) const
+bool NodeSendMesh::modify_search_outside_parametric_tolerance(const EntityKey& /*k*/,
+                                                              const std::vector<double>& /*toCoords*/,
+                                                              std::vector<double>& /*parametricCoords*/,
+                                                              double& /*geometricDistanceSquared*/,
+                                                              bool& /*isWithinGeometricTolerance*/) const
 {
   return false;
 }

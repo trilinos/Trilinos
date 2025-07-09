@@ -215,7 +215,7 @@ namespace unit_test_util {
     return nullptr;
   }
 
-  void MasterElementProvider::check_consistent_topology(const stk::search::SearchTopology& meTopo) const
+  void MasterElementProvider::check_consistent_topology([[maybe_unused]] const stk::search::SearchTopology& meTopo) const
   {
     // Only support Hex8, Quad4 and Line2
     STK_ThrowAssertMsg(meTopo.get_topology() == stk::topology::HEX_8 ||

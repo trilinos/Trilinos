@@ -66,6 +66,11 @@ TEST(FieldLayout, ostreamOperator)
   }
   {
     std::ostringstream os;
+    os<<stk::mesh::Layout::Auto;
+    EXPECT_EQ(std::string("Layout::Auto"), os.str());
+  }
+  {
+    std::ostringstream os;
     os<<static_cast<stk::mesh::Layout>(42);
     EXPECT_EQ(std::string("Unknown Layout"), os.str());
   }
@@ -1466,7 +1471,8 @@ void device_is_field_defined(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& f
                              stk::mesh::Part& part1, stk::mesh::Part& part2)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  auto fieldBytes = field.const_bytes();
+  field.data<stk::mesh::Unsynchronized, stk::ngp::MemSpace>();  // Trigger device FieldData creation before accessing bytes
+  auto fieldBytes = field.const_bytes<stk::ngp::MemSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, part1,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {

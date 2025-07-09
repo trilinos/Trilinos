@@ -42,13 +42,15 @@ TEST(Stkbalance, DISABLED_Ticket15830)
 
 void getMaxMinForNodes(stk::mesh::BulkData& bulk, stk::mesh::EntityVector& nodes, std::vector<double>& minCoord, std::vector<double>& maxCoord, const stk::mesh::FieldBase & coordField)
 {
+  auto coordFieldData = coordField.data<double, stk::mesh::ReadOnly>();
   for(stk::mesh::Entity node : nodes)
   {
-    double *coord = static_cast<double*>(stk::mesh::field_data(coordField, node));
-    for(unsigned j=0;j<bulk.mesh_meta_data().spatial_dimension();++j)
+    auto coord = coordFieldData.entity_values(node);
+    int spatialDimension = bulk.mesh_meta_data().spatial_dimension();
+    for(stk::mesh::ComponentIdx j=0_comp; j<spatialDimension; ++j)
     {
-      minCoord[j] = std::min(minCoord[j], coord[j]);
-      maxCoord[j] = std::max(maxCoord[j], coord[j]);
+      minCoord[j] = std::min(minCoord[j], coord(j));
+      maxCoord[j] = std::max(maxCoord[j], coord(j));
     }
   }
 }

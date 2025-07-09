@@ -204,6 +204,26 @@ void copy_field_data(const stk::mesh::BulkData & inMesh, stk::mesh::BulkData & o
   }
 }
 
+void copy_field_data(const stk::mesh::BulkData & inMesh, std::vector<stk::mesh::FieldBase*>& inFieldsToCopyFrom, stk::mesh::BulkData & outMesh, std::vector<stk::mesh::FieldBase*>& outFieldsToCopyTo )
+{
+
+//  STK_ThrowAssert(inFields.size() == outFields.size());
+
+  unsigned numFields = std::min(inFieldsToCopyFrom.size(), outFieldsToCopyTo.size());
+  for ( unsigned fieldIndex=0; fieldIndex < numFields; ++fieldIndex ) {
+    const stk::mesh::FieldBase & inField = *inFieldsToCopyFrom[fieldIndex];
+    const stk::mesh::FieldBase & outField = *outFieldsToCopyTo[fieldIndex];
+    copy_field_data(inMesh, outMesh, inField, outField);
+  }
+
+  const bool outMeshAuraFromCommunication = outMesh.is_automatic_aura_on() && !inMesh.is_automatic_aura_on();
+  if (outMeshAuraFromCommunication) {
+    const std::vector<stk::mesh::Ghosting *> ghostings = outMesh.ghostings();
+    const std::vector<const stk::mesh::FieldBase *> const_fields(outFieldsToCopyTo.begin(), outFieldsToCopyTo.end());
+    stk::mesh::communicate_field_data(*ghostings[stk::mesh::BulkData::AURA], const_fields);
+  }
+}
+
 void clone_bulk_data_entities(const stk::mesh::BulkData & inMesh, stk::mesh::BulkData & outMesh)
 {
   const stk::mesh::MetaData & inMeta = inMesh.mesh_meta_data();

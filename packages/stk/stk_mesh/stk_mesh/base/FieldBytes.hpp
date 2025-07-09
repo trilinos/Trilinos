@@ -48,8 +48,7 @@ class FieldBytes : public ConstFieldBytes<MemSpace>
 {
 public:
   KOKKOS_FUNCTION FieldBytes();
-  FieldBytes(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName, int bytesPerScalar,
-             Layout dataLayout);
+  FieldBytes(FieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes, Layout dataLayout);
   KOKKOS_FUNCTION virtual ~FieldBytes() override {}
 
   KOKKOS_DEFAULTED_FUNCTION FieldBytes(const FieldBytes& fieldData) = default;
@@ -169,9 +168,8 @@ FieldBytes<MemSpace>::FieldBytes()
 
 //------------------------------------------------------------------------------
 template <typename MemSpace>
-FieldBytes<MemSpace>::FieldBytes(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName,
-                                 int bytesPerScalar, Layout dataLayout)
-  : ConstFieldBytes<MemSpace>(entityRank, fieldOrdinal, fieldName, bytesPerScalar, dataLayout)
+FieldBytes<MemSpace>::FieldBytes(FieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes, Layout dataLayout)
+  : ConstFieldBytes<MemSpace>(hostFieldBytes, dataLayout)
 {}
 
 //------------------------------------------------------------------------------
