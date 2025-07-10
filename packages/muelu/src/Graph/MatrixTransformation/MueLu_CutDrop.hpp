@@ -310,7 +310,7 @@ class UnscaledDistanceLaplacianComparison {
       auto clid = A.graph.entries(offset + x);
       scalar_type val;
       if (rlid != clid) {
-        val = one / dist2->distance2(rlid, clid);
+        val = -one / dist2->distance2(rlid, clid);
       } else {
         val = diag(rlid);
       }
@@ -429,7 +429,7 @@ class ScaledDistanceLaplacianComparison {
       auto clid = A.graph.entries(offset + x);
       scalar_type val;
       if (rlid != clid) {
-        val = one / dist2->distance2(rlid, clid);
+        val = -one / dist2->distance2(rlid, clid);
       } else {
         val = diag(rlid);
       }
@@ -540,6 +540,16 @@ class CutDropFunctor {
     auto row_permutation = Kokkos::subview(index, Kokkos::make_pair(A.graph.row_map(rlid), A.graph.row_map(rlid + 1)));
 
     auto comparator = comparison.getComparator(rlid);
+
+#ifdef MUELU_COALESCE_DROP_DEBUG
+    {
+      Kokkos::printf("SoC:        ");
+      for (local_ordinal_type k = 0; k < row.length; ++k) {
+        Kokkos::printf("%5f ", comparator.get_value(k));
+      }
+      Kokkos::printf("\n");
+    }
+#endif
 
     for (size_t i = 0; i < nnz; ++i) {
       row_permutation(i) = i;

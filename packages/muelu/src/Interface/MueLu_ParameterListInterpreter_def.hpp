@@ -1053,9 +1053,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold", double, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: greedy Dirichlet", bool, dropParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian metric", std::string, dropParams);
+#ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical algo", std::string, dropParams);
+#endif
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian directional weights", Teuchos::Array<double>, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring: localize color graph", bool, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: dropping may create Dirichlet", bool, dropParams);
@@ -1074,6 +1076,35 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, dropParams);
     }
 
+#ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
+    if (!dropParams.isParameter("aggregation: drop scheme") ||
+        (dropParams.isParameter("aggregation: drop scheme") &&
+         ((dropParams.get<std::string>("aggregation: drop scheme") != "point-wise") && (dropParams.get<std::string>("aggregation: drop scheme") != "cut-drop")))) {
+      Teuchos::ParameterList dropParamsWithDefaults(dropParams);
+
+#define MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(paramList, paramName, paramType) \
+  if (!paramList.isParameter(paramName)) {                                      \
+    paramList.set(paramName, MasterList::getDefault<paramType>(paramName));     \
+  }
+
+      MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(dropParamsWithDefaults, "aggregation: drop scheme", std::string);
+      MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(dropParamsWithDefaults, "aggregation: strength-of-connection: matrix", std::string);
+      MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(dropParamsWithDefaults, "aggregation: strength-of-connection: measure", std::string);
+      MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(dropParamsWithDefaults, "aggregation: use blocking", bool);
+
+#undef MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST
+
+      // We are using the old style of dropping params
+      TEUCHOS_TEST_FOR_EXCEPTION(dropParams.isParameter("aggregation: strength-of-connection: matrix") ||
+                                     dropParams.isParameter("aggregation: strength-of-connection: measure") ||
+                                     dropParams.isParameter("aggregation: use blocking"),
+                                 Teuchos::Exceptions::InvalidParameterType,
+                                 "The inputs contain a mix of old and new dropping parameters:\n\n"
+                                     << dropParams << "\n\nKeep in mind that defaults are set for old parameters, so this gets interpreted as\n\n"
+                                     << dropParamsWithDefaults);
+    }
+#endif
+
     if (!amalgFact.is_null())
       dropFactory->SetFactory("UnAmalgamationInfo", manager.GetFactory("UnAmalgamationInfo"));
 
@@ -1081,7 +1112,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       std::string drop_scheme = dropParams.get<std::string>("aggregation: drop scheme");
       if (drop_scheme == "block diagonal colored signed classical")
         manager.SetFactory("Coloring Graph", dropFactory);
-      if (drop_scheme.find("block diagonal") != std::string::npos || drop_scheme == "signed classical") {
+      if ((MUELU_TEST_PARAM_2LIST(dropParams, defaultList, "aggregation: use blocking", bool, true)) ||
+          (drop_scheme.find("block diagonal") != std::string::npos || drop_scheme == "signed classical")) {
         if (levelID > 0)
           dropFactory->SetFactory("BlockNumber", this->GetFactoryManager(levelID - 1)->GetFactory("BlockNumber"));
         else

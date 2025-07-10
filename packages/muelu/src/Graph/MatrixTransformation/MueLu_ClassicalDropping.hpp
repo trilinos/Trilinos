@@ -88,6 +88,40 @@ class DropFunctor {
   void operator()(const local_ordinal_type rlid) const {
     auto row      = A.rowConst(rlid);
     size_t offset = A.graph.row_map(rlid);
+
+#ifdef MUELU_COALESCE_DROP_DEBUG
+    {
+      Kokkos::printf("SoC:        ");
+      for (local_ordinal_type k = 0; k < row.length; ++k) {
+        auto clid = row.colidx(k);
+
+        auto val = row.value(k);
+
+        if constexpr (measure == Misc::SmoothedAggregationMeasure) {
+          auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+          auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
+
+          Kokkos::printf("%5f ", ATS::sqrt(aij2 / aiiajj));
+        } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+          auto neg_aij        = -ATS::real(val);
+          auto max_neg_aik    = eps * ATS::real(diag(rlid));
+          results(offset + k) = Kokkos::max((neg_aij < max_neg_aik) ? DROP : KEEP,
+                                            results(offset + k));
+          Kokkos::printf("%5f ", neg_aij / max_neg_aik);
+        } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
+          auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+          const bool is_nonpositive = ATS::real(val) <= mATS::zero();
+          magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+          // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
+          if (!is_nonpositive)
+            aij2 = -aij2;
+          Kokkos::printf("%5f ", ATS::sqrt(aij2 / aiiajj));
+        }
+      }
+      Kokkos::printf("\n");
+    }
+#endif
+
     for (local_ordinal_type k = 0; k < row.length; ++k) {
       auto clid = row.colidx(k);
 
