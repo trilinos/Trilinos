@@ -219,11 +219,11 @@ namespace Sacado {
 
     protected:
 
-      //! Value
-      T val_;
-
       //! Derivative array
       T dx_[Num];
+
+      //! Value
+      T val_;
 
     }; // class StaticFixedStorage
 
