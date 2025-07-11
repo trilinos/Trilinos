@@ -121,7 +121,7 @@ int run(int argc, char *argv[]) {
     GaleriList.set ("nx", nx);
     GaleriList.set ("ny", nx);
 
-    auto Map = RCP{Galeri::Xpetra::CreateMap<ST,GO,tmap_t>("Cartesian2D", comm, GaleriList)};
+    auto Map = RCP{Galeri::Xpetra::CreateMap<LO,GO,tmap_t>("Cartesian2D", comm, GaleriList)};
     auto GaleriProblem = Galeri::Xpetra::BuildProblem<ST,LO,GO,tmap_t,tcrsmatrix_t,MV>("Laplace2D", Map, GaleriList);
 
     // Create matrix from problem
