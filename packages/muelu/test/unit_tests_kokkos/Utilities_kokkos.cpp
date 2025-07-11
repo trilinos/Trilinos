@@ -382,41 +382,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, ApplyRowSumCriterion, Scalar
   }
 }  // ApplyRowSumCriterion
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, MyOldScaleMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-#include <MueLu_UseShortNames.hpp>
-  MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-
-  using TST                      = Teuchos::ScalarTraits<Scalar>;
-  using Utils                    = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-  auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-  auto B = MueLu_TestHelper_Factory::Build1DPoisson(100);
-
-  Teuchos::ArrayRCP<Scalar> arr(100, Scalar(2.0));
-
-  Utils::MyOldScaleMatrix(*A, arr, false);
-
-  const auto localMatrixScaled   = A->getLocalMatrixHost();
-  const auto localMatrixOriginal = B->getLocalMatrixHost();
-  const auto numRows             = A->getLocalNumRows();
-  for (size_t row = 0; row < numRows; ++row) {
-    auto scaledRowView = localMatrixScaled.row(row);
-    auto origRowView   = localMatrixOriginal.row(row);
-    auto length        = scaledRowView.length;
-
-    for (int colID = 0; colID < length; colID++) {
-      TEST_EQUALITY(scaledRowView.value(colID), Scalar(2.0) * origRowView.value(colID));
-    }
-  }
-
-#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-  TEST_THROW(Utils::MyOldScaleMatrix_Epetra(*A, arr, false, false), MueLu::Exceptions::RuntimeError);
-#endif
-
-}  // MyOldScaleMatrix
-
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, ApplyOAZToMatrixRows, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
@@ -613,7 +578,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, UtilsFunctions, Scalar, Loca
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ZeroDirichletRows, SC, LO, GO, NO)             \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ZeroDirichletCols, SC, LO, GO, NO)             \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ApplyRowSumCriterion, SC, LO, GO, NO)          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, MyOldScaleMatrix, SC, LO, GO, NO)              \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ApplyOAZToMatrixRows, SC, LO, GO, NO)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, TransformFunctions, SC, LO, GO, NO)            \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, UtilsFunctions, SC, LO, GO, NO)

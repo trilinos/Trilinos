@@ -38,14 +38,17 @@ void SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(c
 
   Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);
 
-  Teuchos::ArrayRCP<const SC> D = Utilities::GetMatrixDiagonal_arcp(*A);
-
   RCP<CrsMatrix> Ptmp_ = CrsMatrixFactory::Build(C.GetPattern());
   Ptmp_->fillComplete(P0.getDomainMap(), P0.getRangeMap());
   RCP<Matrix> Ptmp = rcp(new CrsMatrixWrap(Ptmp_));
 
   // Initial P0 would only be used for multiplication
   P = rcp_const_cast<Matrix>(rcpFromRef(P0));
+
+  const auto rowMap = A->getRowMap();
+  auto invDiag      = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, true);
+  A->getLocalDiagCopy(*invDiag);
+  invDiag->reciprocal(*invDiag);
 
   for (size_t k = 0; k < nIts_; k++) {
     AP = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *P, false, mmfancy, true, true);
@@ -57,7 +60,7 @@ void SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(c
 #else
     // gradient = - A * P
     SC stepLength = stepLength_;
-    Utilities::MyOldScaleMatrix(*AP, D, true, true, false);
+    AP->leftScale(*invDiag);
     C.Apply(*AP, *Ptmp);
 #endif
 
