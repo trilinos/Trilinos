@@ -29,19 +29,25 @@ class PhiLinearSolver {
   ~PhiLinearSolver() {}
 
   void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
-  void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f);
-  void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mx);
+  void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
+  void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
 
   void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+  void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
+  Thyra::SolveStatus<Scalar> solveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+				      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> iMf,
+				      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf, Scalar alpha=1., Scalar beta=0.) const;
 
  private:
   Teuchos::RCP<const Thyra::ModelEvaluator<double>> appModel_;
   const bool lumpMass_;
 
-  mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar>> fullMassMatrix_;
-  mutable Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpMassMatrix_;
-  mutable Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> invMassMatrix_;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar>> fullMassMatrix_;
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpMassMatrix_;
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> invMassMatrix_;
+
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
@@ -70,8 +76,7 @@ class PhiEvaluator
   /// \name Basic PhiEvaluator Methods
   //@{
 
-  /// Make a shallow copy of PhiEvaluator (i.e., only RCPs to states and
-  /// interpolator).
+  /// Make a shallow copy of PhiEvaluator (i.e., only RCPs).
   void copy(Teuchos::RCP<const PhiEvaluator<Scalar> > sh);
   //@}
 
@@ -116,11 +121,11 @@ class PhiEvaluator
   void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<double> > appModel);
 
   /// Set the linearization point for the Jacobian calculation
-  virtual void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+  virtual void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) = 0;
 
   /// compute the Phi_k function of cdt times Jacobian for right hand side rhs_b
-  virtual void computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>>,
-                          int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) = 0;
+  virtual Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>>,
+						int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) = 0;
 
  protected:
   std::string name_;
@@ -128,7 +133,7 @@ class PhiEvaluator
   mutable bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
-  Teuchos::RCP<const Tempus::PhiLinearSolver<Scalar>> phiLinSolv_;
+  Teuchos::RCP<Tempus::PhiLinearSolver<Scalar>> phiLinSolv_;
 };
 
 }  // namespace Tempus
