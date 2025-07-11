@@ -40,6 +40,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml"
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml"
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml --ensure-kn"
+      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_ReitzingerEmin.xml"
       COMM serial mpi
       NUM_MPI_PROCS 4
       )
@@ -154,7 +155,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
-    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Stratimikos.xml Stratimikos_Maxwell1.xml Maxwell.xml Maxwell2.xml Maxwell3.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml Maxwell_ML1_MueLu.xml Maxwell_Reitzinger.xml Maxwell_Reitzinger_repart.xml GMHD.dat GMHD_nodalCoords.dat  GMHD_D0.dat GMHD_curlcurlBlk.dat gmhd.xml
+    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Stratimikos.xml Stratimikos_Maxwell1.xml Maxwell.xml Maxwell2.xml Maxwell3.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml Maxwell_ML1_MueLu.xml Maxwell_Reitzinger.xml Maxwell_Reitzinger_repart.xml Maxwell_ReitzingerEmin.xml GMHD.dat GMHD_nodalCoords.dat  GMHD_D0.dat GMHD_curlcurlBlk.dat gmhd.xml
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp_complex
