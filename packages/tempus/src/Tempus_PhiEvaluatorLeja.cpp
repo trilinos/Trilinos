@@ -10,14 +10,16 @@
 #include "Tempus_ExplicitTemplateInstantiation.hpp"
 
 #ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
-#include "Tempus_PhiEvaluator.hpp"
-#include "Tempus_PhiEvaluator_impl.hpp"
+#include "Tempus_PhiEvaluatorLeja.hpp"
+#include "Tempus_PhiEvaluatorLeja_impl.hpp"
 
 namespace Tempus {
 
-TEMPUS_INSTANTIATE_TEMPLATE_CLASS(PhiLinearSolver)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(PhiEvaluatorLeja)
 
-TEMPUS_INSTANTIATE_TEMPLATE_CLASS(PhiEvaluator)
+// Nonmember constructor from a ParameterList
+template Teuchos::RCP<PhiEvaluatorLeja<double> > createPhiEvaluatorLeja(
+	    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
 }  // namespace Tempus
 

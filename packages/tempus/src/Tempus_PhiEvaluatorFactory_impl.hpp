@@ -9,6 +9,7 @@
 
 #include "Tempus_PhiEvaluator.hpp"
 #include "Tempus_PhiEvaluatorPFD.hpp"
+#include "Tempus_PhiEvaluatorLeja.hpp"
 //#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tempus_PhiEvaluatorFactory.hpp"
 
@@ -41,6 +42,9 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
 {
   if (phiEvaluatorType == "PFD") {
     return createPhiEvaluatorPFD<Scalar>(phiEvaluatorPL);
+  }
+  else if (phiEvaluatorType == "Leja") {
+    return createPhiEvaluatorLeja<Scalar>(phiEvaluatorPL);
   }
   else {
     Teuchos::RCP<Teuchos::FancyOStream> out =

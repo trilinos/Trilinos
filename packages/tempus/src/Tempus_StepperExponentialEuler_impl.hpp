@@ -122,7 +122,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
   phiEvaluator_->checkInitialized();
 
   using Teuchos::RCP;
-  
+
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperExponentialEuler::takeStep()");
@@ -187,6 +187,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
 
       //std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
 
+      // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
       RCP<Thyra::VectorBase<Scalar> > f = x->clone_v();
       this->evaluateImplicitODE(f, x, xDot, time, p);
 
@@ -194,9 +195,7 @@ void StepperExponentialEuler<Scalar>::takeStep(
       //std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       //std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
 
-      /*
-       * Using the appModel
-       */
+      // Using the appModel
       RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
       Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
       Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = appModel->createOutArgs();
@@ -207,11 +206,6 @@ void StepperExponentialEuler<Scalar>::takeStep(
       if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
         jac_p = appModel->create_W_prec();
       }
-
-      //if(zero_==Teuchos::null) {
-      //  zero_ = Thyra::createMember(*me->get_x_space());
-      //  Thyra::assign(zero_.ptr(),0.0);
-      //}
 
       const Scalar alpha = Scalar(1.0)/dt;
       const Scalar beta  = Scalar(0.5);
@@ -231,86 +225,56 @@ void StepperExponentialEuler<Scalar>::takeStep(
       // this will fill the Jacobian operator
       appModel->evalModel(inArgs, outArgs);
 
-      // TODO: const-cast why?
-      RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel->get_W_factory();
-      RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
-          Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
-      
-      RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = Teuchos::null;
-      if (jac_p == Teuchos::null){
-	// without preconditioner
-	RCP<const Thyra::LinearOpBase<Scalar>> const_jac = Teuchos::rcpFromRef(*jac);
-	LOWSB = Thyra::linearOpWithSolve(*lowsFactory, const_jac);
+      // initialize space for the update
+      RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();
+      assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
+
+      bool use_phi_eval = true;
+      Scalar factor = Scalar(-1.);
+      if (use_phi_eval) {
+	// use the PhiEvaluator to compute update
+	Teuchos::RCP<Teuchos::FancyOStream> out =
+	  Teuchos::VerboseObjectBase::getDefaultOStream();
+        out->setOutputToRootOnly(0);
+
+	phiEvaluator_->describe(*out, Teuchos::VERB_EXTREME);
+
+	phiEvaluator_->setLinearizationPoint(inArgs);
+        sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, f);
+	factor = Scalar(-dt);
       }
       else {
-	// with preconditioner
-	LOWSB = lowsFactory->createOp();
-        Thyra::initializePreconditionedOp<Scalar>(*lowsFactory, jac, jac_p, LOWSB.ptr());
+	// TODO: const-cast why?
+	RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel->get_W_factory();
+	RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
+          Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
+
+	RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = Teuchos::null;
+	if (jac_p == Teuchos::null){
+	  // without preconditioner
+	  RCP<const Thyra::LinearOpBase<Scalar>> const_jac = Teuchos::rcpFromRef(*jac);
+	  LOWSB = Thyra::linearOpWithSolve(*lowsFactory, const_jac);
+	}
+	else {
+	  // with preconditioner
+	  LOWSB = lowsFactory->createOp();
+	  Thyra::initializePreconditionedOp<Scalar>(*lowsFactory, jac, jac_p, LOWSB.ptr());
+	}
+
+	// compute an approximation to dt*phi_1(dt*J)*f and write it to x
+	sStatus = LOWSB->solve(Thyra::NOTRANS, *f, vphi.ptr());
+	factor = Scalar(-1.);
       }
 
-      RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();
-      assign(vphi.ptr(), ST::zero()); // Must initialize to a guess before solve!
-
-      // compute an approximation to dt*phi_1(dt*J)*f and write it to x
-      sStatus = LOWSB->solve(Thyra::NOTRANS, *f, vphi.ptr());
-
-      phiEvaluator_->setLinearizationPoint(inArgs);
-      phiEvaluator_->computePhi(vphi.ptr(), 1, dt, f);
-
-      Teuchos::RCP<Teuchos::FancyOStream> out =
-        Teuchos::VerboseObjectBase::getDefaultOStream();
-      out->setOutputToRootOnly(0);
-      phiEvaluator_->describe(*out, Teuchos::VERB_EXTREME);
-      
       //std::cout << "ph[0,1] = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       //assign(x.ptr(), ST::zero());
 
       // x = xOld - dt*phi_1(dt*J)*f
-      Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.), *vphi);
-      
-      /*
-      using Teuchos::tab; using Teuchos::rcpFromPtr;
-      typedef Teuchos::ScalarTraits<Scalar> ST;
-      Teuchos::OSTab tab2(out);
-      out << "\nShowing resuse of the preconditioner ...\n";
-      Teuchos::RCP<Thyra::LinearOpBase<Scalar> > A = rcpFromPtr(A_inout);
-      // Create the initial preconditioner for the input forward operator
-      Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > P =
-      precFactory.createPrec();
-      Thyra::initializePrec<Scalar>(precFactory, A, P.ptr());
-      // Create the invertible LOWS object given the preconditioner
-      Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
-      lowsFactory.createOp();
-      Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A, P, invertibleA.ptr());
-      // Solve the first linear system
-      assign(x1, ST::zero());
-      Thyra::SolveStatus<Scalar> status1 = Thyra::solve<Scalar>(*invertibleA,
-      Thyra::NOTRANS, b1, x1);
-      out << "\nSolve status:\n" << status1;
-      // Change the forward linear operator without changing the preconditioner
-      opChanger.changeOp(A.ptr());
-      // Warning! After the above change the integrity of the preconditioner
-      // linear operators in P is undefined. For some implementations of the
-      // preconditioner, its behavior will remain unchanged (e.g. ILU) which in
-      // other cases the behavior will change but the preconditioner will still
-      // work (e.g. Jacobi). However, there may be valid implementations where
-      // the preconditioner will simply break if the forward operator that it is
-      // based on breaks.
-      //
-      // Reinitialize the LOWS object given the updated forward operator A and the
-      // old preconditioner P.
-      Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A, P, invertibleA.ptr());
-      // Solve the second linear system
-      assign(x2, ST::zero());
-      Thyra::SolveStatus<Scalar>status2 = Thyra::solve<Scalar>(*invertibleA,
-      Thyra::NOTRANS, b2, x2);
-      out << "\nSolve status:\n" << status2;
-      } // end externalPreconditionerReuseWithSolves
-      */
+      Thyra::V_VpStV(x.ptr(), *xOld, factor, *vphi);
     }
 
     //std::cout << sStatus << std::endl;
-    
+
     stepperEEAppAction_->execute(solutionHistory, thisStepper,
       StepperExponentialEulerAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
 
@@ -419,7 +383,7 @@ createStepperExponentialEuler(
   stepper->setStepperImplicitValues(pl);
 
   stepper->setStepperExponentialValues(pl);
-  
+
   if (model != Teuchos::null) {
     stepper->setModel(model);
     stepper->initialize();

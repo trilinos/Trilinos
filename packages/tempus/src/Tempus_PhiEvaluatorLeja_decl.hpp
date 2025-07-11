@@ -4,14 +4,14 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_PhiEvaluatorPFD_decl_hpp
-#define Tempus_PhiEvaluatorPFD_decl_hpp
+#ifndef Tempus_PhiEvaluatorLeja_decl_hpp
+#define Tempus_PhiEvaluatorLeja_decl_hpp
 
 #include "Tempus_PhiEvaluator.hpp"
 
 namespace Tempus {
 
-/** \brief PhiEvaluatorPFD uses a partial fraction decomposition to evaluate
+/** \brief PhiEvaluatorLeja uses a Leja point method to evaluate the phi-function vector product
  *
  *  \f$[x = \varphi_k(J) b]\f$, where 
  *
@@ -19,31 +19,32 @@ namespace Tempus {
  *   - J is a linear operator
  */
 template <class Scalar>
-class PhiEvaluatorPFD
+class PhiEvaluatorLeja
   : virtual public PhiEvaluator<Scalar> {
  public:
   /// Inherit Contructor
   using PhiEvaluator<Scalar>::PhiEvaluator;
 
-  /// \name Basic PhiEvaluatorPFD Methods
+  /// \name Basic PhiEvaluatorLeja Methods
+  //@{
 
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
-  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) override;
-
-  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> vphi,
+  /// Set the linearization point for the Jacobian calculation
+  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) override;
+  
+  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>>,
 					int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
-
- private:
-  mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
+  
+  //protected:
 };
 
 /// Nonmember constructor from a ParameterList
 template <class Scalar>
-Teuchos::RCP<PhiEvaluatorPFD<Scalar>> createPhiEvaluatorPFD(
+Teuchos::RCP<PhiEvaluatorLeja<Scalar> > createPhiEvaluatorLeja(
     Teuchos::RCP<Teuchos::ParameterList> pList);
 
 }  // namespace Tempus
 
-#endif  // Tempus_PhiEvaluatorPFD_decl_hpp
+#endif  // Tempus_PhiEvaluatorLeja_decl_hpp
