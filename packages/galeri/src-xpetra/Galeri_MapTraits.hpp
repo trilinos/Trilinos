@@ -52,19 +52,26 @@ struct UndefinedMapTraits {
 template <class GlobalOrdinal, class Map>
 class MapTraits {
  public:
-  static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) { return UndefinedMapTraits<Map>::notDefined(); }
+  static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return UndefinedMapTraits<Map>::notDefined(); }
 
-  static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) { return UndefinedMapTraits<Map>::notDefined(); }
+  static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, const Kokkos::View<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return UndefinedMapTraits<Map>::notDefined(); }
+
+  static Teuchos::RCP<Map> Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return UndefinedMapTraits<Map>::notDefined(); }
 };
 
 #ifdef HAVE_GALERI_TPETRA
 /* Specialized traits for Map = Tpetra::Map<...> */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-class MapTraits<GlobalOrdinal, Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > {
- public:
-  static Teuchos::RCP<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) { return rcp(new Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
+class MapTraits<GlobalOrdinal, Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> {
+  using device_type                      = typename Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>::device_type;
+  using global_indices_array_device_type = Kokkos::View<const GlobalOrdinal *, device_type>;
 
-  static Teuchos::RCP<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) { return rcp(new Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm)); }
+ public:
+  static Teuchos::RCP<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
+
+  static Teuchos::RCP<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, const global_indices_array_device_type &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
+
+  static Teuchos::RCP<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm)); }
 };
 #endif  // HAVE_GALERI_TPETRA
 
@@ -72,22 +79,26 @@ class MapTraits<GlobalOrdinal, Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > 
 #ifdef HAVE_XPETRA_TPETRA
 /* Specialized traits for Map = Xpetra::TpetraMap<...> */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-class MapTraits<GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> > {
+class MapTraits<GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>> {
  public:
-  static Teuchos::RCP< ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> > Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) { return Teuchos::rcp(new ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
+  static Teuchos::RCP<::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
 
-  static Teuchos::RCP< ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> > Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) { return Teuchos::rcp(new ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm)); }
+  static Teuchos::RCP<::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, const typename ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>::global_indices_array_device_type &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
+
+  static Teuchos::RCP<::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm)); }
 };
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
 /* Specialized traits for Map = Xpetra::EpetraMap<int,GlobalOrdinal,Node> */
 template <class GlobalOrdinal, class Node>
-class MapTraits<GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node> > {
+class MapTraits<GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node>> {
  public:
-  static Teuchos::RCP< ::Xpetra::EpetraMapT<GlobalOrdinal, Node> > Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) { return Teuchos::rcp(new ::Xpetra::EpetraMapT<GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
+  static Teuchos::RCP<::Xpetra::EpetraMapT<GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new ::Xpetra::EpetraMapT<GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
 
-  static Teuchos::RCP< ::Xpetra::EpetraMapT<GlobalOrdinal, Node> > Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm) { return Teuchos::rcp(new ::Xpetra::EpetraMapT<GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm)); }
+  static Teuchos::RCP<::Xpetra::EpetraMapT<GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, const typename ::Xpetra::EpetraMapT<GlobalOrdinal, Node>::global_indices_array_device_type &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new ::Xpetra::EpetraMapT<GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
+
+  static Teuchos::RCP<::Xpetra::EpetraMapT<GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new ::Xpetra::EpetraMapT<GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm)); }
 };
 #endif
 
