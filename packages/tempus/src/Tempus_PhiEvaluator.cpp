@@ -15,6 +15,8 @@
 
 namespace Tempus {
 
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(PhiLinearSolver)
+
 TEMPUS_INSTANTIATE_TEMPLATE_CLASS(PhiEvaluator)
 
 }  // namespace Tempus

@@ -12,14 +12,19 @@
 
 #include "Tempus_PhiEvaluator.hpp"
 #include "Tempus_PhiEvaluator_decl.hpp"
+#include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
-#include "Thyra_DefaultInverseLinearOp_decl.hpp"
-#include "Thyra_DefaultMultipliedLinearOp_decl.hpp"
+//#include "Thyra_DefaultInverseLinearOp_decl.hpp"
+//#include "Thyra_DefaultMultipliedLinearOp_decl.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps_decl.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
+
 
 namespace Tempus {
 
@@ -90,15 +95,15 @@ PhiEvaluator<Scalar>::getValidParametersBasic() const
 
   pl->setName(getName());
 
-  //pl->set(
-  //    "var", default,
-  //    "'var' sets the var.  "
-  //    "'opt1' - will do this.  "
-  //    "'opt2' - will do that!");
-
   pl->set(
       "PhiEvaluator Type", "PFD",
       "Method to approximate the phi-function evaluation.");
+
+  pl->set(
+      "Lump Mass", false,
+      "'Lump Mass' switch on lumping of the mass matrix.  "
+      "'true' - will lump the mass matrix for PhiEvaluators that support this feature.  "
+      "'false' - will switch off mass lumping.");
 
   //pl->set("?", *member_->getNonconstParameterList());
 
@@ -143,12 +148,6 @@ void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluat
   phiLinSolv_ = Teuchos::rcp(new PhiLinearSolver<Scalar>(appModel_, lumpmass));
 }
 
-template <class Scalar>
-void PhiEvaluator<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs)
-{
-
-}
-
 
 /*
  * PhiLinearSolver methods
@@ -159,17 +158,15 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 {
 
   typedef Thyra::ModelEvaluatorBase MEB;
-  using Teuchos::RCP;
-  using Thyra::createMember;
 
   // first allocate space for the mass matrix
   fullMassMatrix_ = appModel_->create_W_op();
 
   // request only the mass matrix from the physics
-  // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
-  MEB::InArgs<Scalar>  inArgs_new  = appModel_->createInArgs();
+  // Model evaluator builds: alpha*M*u_dot + beta*F(u) = 0
+  MEB::InArgs<Scalar> inArgs_new  = appModel_->createInArgs();
   inArgs_new.setArgs(inArgs);
-  inArgs_new.set_x_dot(inArgs.get_x_dot());
+  inArgs_new.set_x_dot(inArgs.get_x_dot()); //TODO: why?
   inArgs_new.set_alpha(1.0);
   inArgs_new.set_beta(0.0);
 
@@ -198,15 +195,15 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
   //EpetraExt::RowMatrixToMatrixMarketFile("fullMassMatrix_mat.mm",*crsMat);
 
   if(!lumpMass_) {
-    invMassMatrix_ = Thyra::inverse<Scalar>(appModel_->get_W_factory(),fullMassMatrix_);
+    invMassMatrix_ = Thyra::inverse<Scalar>(*appModel_->get_W_factory(),fullMassMatrix_);
   }
   else {
     // build lumped mass matrix (assumes all positive mass entries, does a simple sum)
     Teuchos::RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(*fullMassMatrix_->domain());
     Thyra::assign(ones.ptr(),1.0);
 
-    RCP<Thyra::VectorBase<Scalar> > lumpMass = Thyra::createMember(*fullMassMatrix_->range());
-    RCP<Thyra::VectorBase<Scalar> > invLumpMass = Thyra::createMember(*fullMassMatrix_->range());
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > lumpMass = Thyra::createMember(*fullMassMatrix_->range());
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > invLumpMass = Thyra::createMember(*fullMassMatrix_->range());
     Thyra::apply(*fullMassMatrix_, Thyra::NOTRANS, *ones, lumpMass.ptr());
 
     //TODO:
@@ -221,7 +218,8 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f)
+void PhiLinearSolver<Scalar>::applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf,
+                                        const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const
 {
   // apply the mass matrix
   if (f != Teuchos::null && Mf != Teuchos::null) {
@@ -233,7 +231,8 @@ void PhiLinearSolver<Scalar>::applyMass(const Teuchos::Ptr<Thyra::VectorBase<Sca
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf)
+void PhiLinearSolver<Scalar>::solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f,
+                                        const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const
 {
   // invert the mass matrix
   if (Mf != Teuchos::null && f != Teuchos::null) {
@@ -244,15 +243,146 @@ void PhiLinearSolver<Scalar>::solveMass(const Teuchos::Ptr<Thyra::VectorBase<Sca
 template <class Scalar>
 void PhiLinearSolver<Scalar>::computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
 {
+  typedef Thyra::ModelEvaluatorBase MEB;
 
+  // first allocate space for the Jacobian matrix
+  jacobianMatrix_ = appModel_->create_W_op();
+
+  // request only the Jacobian matrix from the physics
+  // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
+  MEB::InArgs<Scalar> inArgs_new  = appModel_->createInArgs();
+  inArgs_new.setArgs(inArgs);
+  inArgs_new.set_x_dot(inArgs.get_x_dot());
+  inArgs_new.set_alpha(0.0);
+  inArgs_new.set_beta(1.0);
+
+  // set only the Jacobian matrix
+  MEB::OutArgs<Scalar> outArgs = appModel_->createOutArgs();
+  outArgs.set_W_op(jacobianMatrix_);
+
+  // this will fill the Jacobian matrix operator
+  appModel_->evalModel(inArgs_new, outArgs);
 }
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf,
+                                            const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const
+{
+  // apply the Jacobian matrix
+  if (f != Teuchos::null && Jf != Teuchos::null) {
+    Thyra::apply(*jacobianMatrix_, Thyra::NOTRANS, *f, Jf.ptr());
+  }
+}
+
+template <class Scalar>
+Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+							     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> iMf,
+							     const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
+							     Scalar alpha, Scalar beta) const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  MEB::OutArgs<Scalar> outArgs = appModel_->createOutArgs();
+
+  // first allocate space for the jacobian
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar>> MpJ = appModel_->create_W_op();
+  Teuchos::RCP<Thyra::PreconditionerBase<Scalar>> MpJ_p = Teuchos::null;
+  if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
+    MpJ_p = appModel_->create_W_prec();
+  }
+  //TODO: support all types of preconditoner (compare NOX_Thyra_Group.C)
+
+  MEB::InArgs<Scalar> inArgs_new = appModel_->createInArgs();
+  inArgs_new.setArgs(inArgs);
+  inArgs_new.set_x_dot(inArgs.get_x_dot());
+  inArgs_new.set_alpha(alpha);
+  inArgs_new.set_beta(beta);
+
+  // set only the mass plus jacobian (MpJ) matrix
+  outArgs.set_W_op(MpJ);
+  if (MpJ_p != Teuchos::null){
+    outArgs.set_W_prec(MpJ_p);
+  }
+
+  // this will fill the MpJ operator
+  appModel_->evalModel(inArgs, outArgs);
+
+  // TODO: const-cast why?
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel_->get_W_factory();
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
+    Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
+      
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = Teuchos::null;
+  if (MpJ_p == Teuchos::null){
+    // without preconditioner
+    Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> const_MpJ = Teuchos::rcpFromRef(*MpJ);
+    LOWSB = Thyra::linearOpWithSolve(*lowsFactory, const_MpJ);
+  }
+  else {
+    // with preconditioner
+    LOWSB = lowsFactory->createOp();
+    Thyra::initializePreconditionedOp<Scalar>(*lowsFactory, MpJ, MpJ_p, LOWSB.ptr());
+  }
+
+  assign(iMf.ptr(), ST::zero()); //TODO: needed?
+
+  // compute the solution to (MpJ)\Mf and write it to iMf
+  Thyra::SolveStatus<Scalar> sStatus = LOWSB->solve(Thyra::NOTRANS, *Mf, iMf.ptr());
+
+  return sStatus;
+}
+
 
 }  // namespace Tempus
 #endif  // Tempus_PhiEvaluator_impl_hpp
 
+/**
+ * TODO: code for working with preconditioners
+      using Teuchos::tab; using Teuchos::rcpFromPtr;
+      typedef Teuchos::ScalarTraits<Scalar> ST;
+      Teuchos::OSTab tab2(out);
+      out << "\nShowing resuse of the preconditioner ...\n";
+      Teuchos::RCP<Thyra::LinearOpBase<Scalar> > A = rcpFromPtr(A_inout);
+      // Create the initial preconditioner for the input forward operator
+      Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > P =
+      precFactory.createPrec();
+      Thyra::initializePrec<Scalar>(precFactory, A, P.ptr());
+      // Create the invertible LOWS object given the preconditioner
+      Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+      lowsFactory.createOp();
+      Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A, P, invertibleA.ptr());
+      // Solve the first linear system
+      assign(x1, ST::zero());
+      Thyra::SolveStatus<Scalar> status1 = Thyra::solve<Scalar>(*invertibleA,
+      Thyra::NOTRANS, b1, x1);
+      out << "\nSolve status:\n" << status1;
+      // Change the forward linear operator without changing the preconditioner
+      opChanger.changeOp(A.ptr());
+      // Warning! After the above change the integrity of the preconditioner
+      // linear operators in P is undefined. For some implementations of the
+      // preconditioner, its behavior will remain unchanged (e.g. ILU) which in
+      // other cases the behavior will change but the preconditioner will still
+      // work (e.g. Jacobi). However, there may be valid implementations where
+      // the preconditioner will simply break if the forward operator that it is
+      // based on breaks.
+      //
+      // Reinitialize the LOWS object given the updated forward operator A and the
+      // old preconditioner P.
+      Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A, P, invertibleA.ptr());
+      // Solve the second linear system
+      assign(x2, ST::zero());
+      Thyra::SolveStatus<Scalar>status2 = Thyra::solve<Scalar>(*invertibleA,
+      Thyra::NOTRANS, b2, x2);
+      out << "\nSolve status:\n" << status2;
+      } // end externalPreconditionerReuseWithSolves
+ */
+
+
 
 /**
-
+ * TODO: code from Panzer explicit modelevaluator
+ *
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 

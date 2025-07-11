@@ -11,7 +11,7 @@
 
 namespace Tempus {
 
-/** \brief PhiEvaluatorPFD used a partial fraction decomposition to evaluate
+/** \brief PhiEvaluatorPFD uses a partial fraction decomposition to evaluate
  *
  *  \f$[x = \varphi_k(J) b]\f$, where 
  *
@@ -26,20 +26,22 @@ class PhiEvaluatorPFD
   using PhiEvaluator<Scalar>::PhiEvaluator;
 
   /// \name Basic PhiEvaluatorPFD Methods
-  //@{
 
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
-  void computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>>,
-                  int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
-  
-  //protected:
+  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) override;
+
+  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> vphi,
+					int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
+
+ private:
+  mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
 };
 
 /// Nonmember constructor from a ParameterList
 template <class Scalar>
-Teuchos::RCP<PhiEvaluatorPFD<Scalar> > createPhiEvaluatorPFD(
+Teuchos::RCP<PhiEvaluatorPFD<Scalar>> createPhiEvaluatorPFD(
     Teuchos::RCP<Teuchos::ParameterList> pList);
 
 }  // namespace Tempus
