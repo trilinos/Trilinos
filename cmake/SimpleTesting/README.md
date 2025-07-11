@@ -68,6 +68,8 @@ $TRILINOS_DIR/commonTools/framework/get-changed-trilinos-packages.sh \
     package_subproject_list.cmake
 ```
 
+From your `$BUILD_DIR` with a GenConfig environment loaded, run the following command to launch the Trilinos CTest driver
+that will configure, build, and test.
 ```shell
 ctest \
    -S ${TRILINOS_DIR}/cmake/SimpleTesting/cmake/ctest-driver.cmake \
