@@ -343,7 +343,7 @@ void unpack_shared_nodes(const stk::mesh::BulkData & mesh,
   });
 }
 
-void FastIterativeMethod::parallel_communicate_nodes(ParallelErrorMessage& err, std::set<stk::mesh::Entity> & nodes) const
+void FastIterativeMethod::parallel_communicate_nodes(ParallelErrorMessage& /*err*/, std::set<stk::mesh::Entity> & nodes) const
 {
   if (mesh().parallel_size() > 1)
   {
@@ -408,7 +408,7 @@ void unpack_shared_node_distances(const stk::mesh::BulkData & mesh,
   });
 }
 
-void FastIterativeMethod::parallel_communicate_node_distances(ParallelErrorMessage& err, const std::set<stk::mesh::Entity> & nodes, std::vector<double> & distances) const
+void FastIterativeMethod::parallel_communicate_node_distances(ParallelErrorMessage& /*err*/, const std::set<stk::mesh::Entity> & nodes, std::vector<double> & distances) const
 {
   if (mesh().parallel_size() > 1)
   {

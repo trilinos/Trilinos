@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -26,7 +26,7 @@ int term_width(void)
   if (isatty(fileno(stderr))) {
 #ifdef TIOCGSIZE
     struct ttysize ts;
-    ioctl(STDIN_FILENO, TIOCGSIZE, &ts);
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &ts);
     cols = ts.ts_cols;
 #elif defined(_MSC_VER)
     CONSOLE_SCREEN_BUFFER_INFO csbi;

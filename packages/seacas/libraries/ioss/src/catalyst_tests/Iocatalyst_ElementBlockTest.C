@@ -16,6 +16,15 @@
 #include <catalyst/Iocatalyst_DatabaseIO.h>
 #include <catalyst_tests/Iocatalyst_DatabaseIOTest.h>
 
+TEST_F(Iocatalyst_DatabaseIOTest, WriteOneBlockWith1Cell)
+{
+  Iocatalyst::BlockMesh bmOne;
+  setBlockMeshSize(1, 1, 1);
+  addBlockMesh(bmOne);
+
+  runUnstructuredTest("test_eb_1_cell_1");
+}
+
 TEST_F(Iocatalyst_DatabaseIOTest, WriteThreeElementBlocksWith24Cells)
 {
   Iocatalyst::BlockMesh bmOne;

@@ -11,9 +11,18 @@
 //  to Epetra and Thyra.
 //
 
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziMVOPTester.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziBasicOutputManager.hpp"
+
+#include "AnasaziThyraAdapter.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #endif
@@ -22,17 +31,7 @@
 #endif
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
-
-#include "AnasaziConfigDefs.hpp"
-#include "AnasaziMVOPTester.hpp"
-#include "AnasaziEpetraAdapter.hpp"
-#include "AnasaziBasicOutputManager.hpp"
-
-#ifdef HAVE_EPETRA_THYRA
-#include "AnasaziThyraAdapter.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
+#include "Teuchos_StandardCatchMacros.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -40,7 +39,7 @@ int main(int argc, char *argv[])
   bool ierr, gerr;
   gerr = true;
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
   Teuchos::RCP<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
@@ -65,17 +64,6 @@ int main(int argc, char *argv[])
   if (verbose) {
     MyOM->setVerbosity( Anasazi::Warnings );
   }
-
-#ifndef HAVE_EPETRA_THYRA
-  MyOM->stream(Anasazi::Warnings) 
-    << "Please configure Anasazi with:" << std::endl
-    << "--enable-epetra-thyra" << std::endl
-    << "--enable-anasazi-thyra" << std::endl;
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return -1;
-#endif
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
@@ -138,7 +126,6 @@ int main(int argc, char *argv[])
   ierr = A->FillComplete();
   assert(ierr==0);
 
-#ifdef HAVE_EPETRA_THYRA
   typedef Thyra::MultiVectorBase<double> TMVB;
   typedef Thyra::LinearOpBase<double>    TLOB;
 
@@ -170,9 +157,8 @@ int main(int argc, char *argv[])
   else {
     MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestOperatorTraits() ***" << std::endl << std::endl;
   }
-#endif
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize();
 #endif
 

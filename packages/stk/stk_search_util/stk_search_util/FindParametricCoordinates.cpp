@@ -65,7 +65,7 @@ MasterElementParametricCoordsFinder::MasterElementParametricCoordsFinder(
 }
 
 void MasterElementParametricCoordsFinder::gather_nodal_coordinates(const spmd::EntityKeyPair& key,
-                                                                   const stk::topology topo) const
+                                                                   [[maybe_unused]] const stk::topology topo) const
 {
   unsigned numFieldComponents;
   unsigned numNodes;
@@ -136,7 +136,7 @@ void NodeParametricCoordsFinder::find_parametric_coords(const spmd::EntityKeyPai
 }
 
 void NodeParametricCoordsFinder::evaluate_parametric_coords(const spmd::EntityKeyPair& k,
-                                                            const std::vector<double>& paramCoords,
+                                                            const std::vector<double>& /*paramCoords*/,
                                                             std::vector<double>& evalPoint) const
 {
   STK_ThrowRequire(k.rank() == stk::topology::NODE_RANK);

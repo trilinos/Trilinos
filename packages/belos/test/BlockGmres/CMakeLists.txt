@@ -47,15 +47,9 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       )
 
     IF(NOT ${${PROJECT_NAME}_HOSTNAME} STREQUAL "KALLIKRATES")
-      ASSERT_DEFINED(Anasazi_SOURCE_DIR)
       TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
-        SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
-        SOURCE_FILES mhd1280b.cua mhd1280a.cua
-        EXEDEPS bl_gmres_complex_hb
-      )
-      TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles2
-        SOURCE_DIR ${Belos_SOURCE_DIR}/test/BlockGmres
-        SOURCE_FILES cg05.cua
+        SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
+        SOURCE_FILES mhd1280b.cua mhd1280a.cua cg05.cua
         EXEDEPS bl_gmres_complex_hb
       )
     ENDIF()

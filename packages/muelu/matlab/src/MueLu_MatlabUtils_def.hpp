@@ -427,25 +427,25 @@ RCP<Tpetra_CrsMatrix_complex> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_complex> >
 template <>
 RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadDataFromMatlab<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(const mxArray* mxa) {
   RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmat = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(mxa);
-  return MueLu::TpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmat);
+  return Xpetra::toXpetra(tmat);
 }
 
 template <>
 RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadDataFromMatlab<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(const mxArray* mxa) {
   RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tmat = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(mxa);
-  return MueLu::TpetraCrs_To_XpetraMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tmat);
+  return Xpetra::toXpetra(tmat);
 }
 
 template <>
 RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadDataFromMatlab<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(const mxArray* mxa) {
   RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tpetraMV = loadDataFromMatlab<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(mxa);
-  return MueLu::TpetraMultiVector_To_XpetraMultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMV);
+  return Xpetra::toXpetra(tpetraMV);
 }
 
 template <>
 RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadDataFromMatlab<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(const mxArray* mxa) {
   RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tpetraMV = loadDataFromMatlab<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(mxa);
-  return MueLu::TpetraMultiVector_To_XpetraMultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMV);
+  return Xpetra::toXpetra(tpetraMV);
 }
 
 #ifdef HAVE_MUELU_EPETRA
@@ -717,25 +717,25 @@ mxArray* saveDataToMatlab(RCP<Xpetra_ordinal_vector>& data) {
 
 template <>
 mxArray* saveDataToMatlab(RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& data) {
-  RCP<Xpetra_MultiVector_double> xmv = MueLu::TpetraMultiVector_To_XpetraMultiVector(data);
+  RCP<Xpetra_MultiVector_double> xmv = Xpetra::toXpetra(data);
   return saveDataToMatlab(xmv);
 }
 
 template <>
 mxArray* saveDataToMatlab(RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& data) {
-  RCP<Xpetra_MultiVector_complex> xmv = MueLu::TpetraMultiVector_To_XpetraMultiVector(data);
+  RCP<Xpetra_MultiVector_complex> xmv = Xpetra::toXpetra(data);
   return saveDataToMatlab(xmv);
 }
 
 template <>
 mxArray* saveDataToMatlab(RCP<Tpetra_CrsMatrix_double>& data) {
-  RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > xmat = TpetraCrs_To_XpetraMatrix(data);
+  RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > xmat = Xpetra::toXpetra(data);
   return saveDataToMatlab(xmat);
 }
 
 template <>
 mxArray* saveDataToMatlab(RCP<Tpetra_CrsMatrix_complex>& data) {
-  RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > xmat = TpetraCrs_To_XpetraMatrix(data);
+  RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > xmat = Xpetra::toXpetra(data);
   return saveDataToMatlab(xmat);
 }
 

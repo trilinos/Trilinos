@@ -21,14 +21,14 @@ class Phase_Support;
 
 void
 mark_possible_cut_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
-      const RefinementInterface & refinement,
+      const RefinementManager & refinement,
       const InterfaceGeometry & interfaceGeometry,
       const RefinementSupport & refinementSupport,
       const int numRefinements);
 
 void
 mark_elements_that_intersect_interval(const stk::mesh::BulkData& mesh,
-      const RefinementInterface & refinement,
+      const RefinementManager & refinement,
       const InterfaceGeometry & interfaceGeometry,
       const std::array<double,2> refinementInterval,
       const int numRefineLevels,
@@ -36,14 +36,14 @@ mark_elements_that_intersect_interval(const stk::mesh::BulkData& mesh,
 
 void
 mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
-      const RefinementInterface & refinement,
+      const RefinementManager & refinement,
       const InterfaceGeometry & interfaceGeometry,
       const RefinementSupport & refinementSupport,
       const FieldRef coords_field,
       const int num_refinements);
 
 std::vector<std::pair<stk::mesh::Entity,unsigned>> get_owned_adaptivity_parents_and_their_element_part(const stk::mesh::BulkData& mesh,
-    const RefinementInterface & refinement,
+    const RefinementManager & refinement,
     const Phase_Support & phaseSupport);
 
 }

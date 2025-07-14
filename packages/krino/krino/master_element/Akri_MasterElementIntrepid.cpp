@@ -9,7 +9,6 @@
 #include <Akri_MasterElementIntrepid.hpp>
 #include <Akri_MasterElementCalc.hpp>
 
-#include <Teuchos_RCP.hpp>
 #include <Kokkos_DynRankView.hpp>
 #include <Intrepid2_Basis.hpp>
 #include <Intrepid2_Cubature.hpp>
@@ -202,7 +201,7 @@ MasterElementIntrepid::shape_fcn_deriv(
 
 void
 MasterElementIntrepid::interpolate_point(
-    const int  npar_coord,
+    const int  /*npar_coord*/,
     const double * par_coord,      // (npar_coord)
     const int  ncomp_field,
     const double * field,          // (num_nodes,ncomp_field)

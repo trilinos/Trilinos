@@ -36,10 +36,12 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA) {
 #ifdef HAVE_MUELU_ML
   Teuchos::ParameterList mlList;
   ML_Epetra::SetDefaults("SA", mlList);
+  mlList.set("parameterlist: syntax", "ml");
   TEST_EQUALITY(compareLists(List, mlList), true);
 #endif
 
   // Gold list
+  goldList.set("parameterlist: syntax", "ml");
   goldList.set("default values", "SA");
   goldList.set("max levels", 10);
   goldList.set("prec type", "MGV");
@@ -61,6 +63,50 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA) {
   TEST_EQUALITY(compareLists(List, goldList), true);
 }  // SA
 
+TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, SA_plus_translate) {
+  // SetDefaults(SA)
+  Teuchos::ParameterList List, goldList, dummy;
+  MueLu::ML2MueLuParameterTranslator::SetDefaults("SA", List);
+
+  std::string syntaxStr = "parameterlist: syntax";
+  TEST_EQUALITY(List.isParameter(syntaxStr), true);
+  std::string listStr = List.get<std::string>(syntaxStr);
+  TEST_EQUALITY(listStr, "ml");
+
+  List.remove(syntaxStr);
+  std::string paramXML = MueLu::ML2MueLuParameterTranslator::translate(List, "");
+  List                 = *Teuchos::getParametersFromXmlString(paramXML);
+
+  std::cout << "\n-----------------------\n"
+            << List << std::endl;
+
+  // gold list
+  goldList.set("aggregation: match ML phase1", true);
+  goldList.set("aggregation: match ML phase2a", true);
+  goldList.set("aggregation: match ML phase2b", true);
+  goldList.set("aggregation: use ml scaling of drop tol", true);
+  goldList.set("max levels", 10);
+  goldList.set("cycle type", "V");
+  goldList.set("sa: damping factor", 1.333);
+  goldList.set("sa: eigenvalue estimate num iterations", 10);
+  goldList.set("smoother: type", "RELAXATION");
+  goldList.set("smoother: pre or post", "both");
+  goldList.set("repartition: start level", 2);
+  goldList.set("repartition: put on single proc", 5000);
+  goldList.set("coarse: type", "klu");
+  goldList.set("coarse: max size", 128);
+  goldList.sublist("smoother: params").set("relaxation: type", "Symmetric Gauss-Seidel");
+  goldList.sublist("smoother: params").set("relaxation: sweeps", 2);
+  goldList.sublist("smoother: params").set("relaxation: damping factor", 1.0);
+  goldList.set("coarse: params", dummy);
+
+  std::cout << "\n-----------------------\n"
+            << goldList << std::endl;
+
+  TEST_EQUALITY(compareLists(List, goldList), true);
+
+}  // SA_plus_translate
+
 TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
   // SetDefaults(SA)
   Teuchos::ParameterList List, goldList;
@@ -69,10 +115,12 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
 #ifdef HAVE_MUELU_ML
   Teuchos::ParameterList mlList;
   ML_Epetra::SetDefaultsRefMaxwell(mlList);
+  mlList.set("parameterlist: syntax", "ml");
   TEST_EQUALITY(compareLists(List, mlList), true);
 #endif
 
   // Gold list
+  goldList.set("parameterlist: syntax", "ml");
   goldList.set("default values", "RefMaxwell");
   goldList.set("max levels", 10);
   goldList.set("prec type", "MGV");
@@ -138,7 +186,6 @@ TEUCHOS_UNIT_TEST(ML2MueLuParameterTranslator, RefMaxwell) {
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("cycle applications", 1);
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("aggregation: threshold", 0.01);
   goldList.sublist("refmaxwell: 11list").sublist("edge matrix free: coarse").set("ML label", "coarse (1,1) block");
-
   goldList.sublist("refmaxwell: 22list").set("default values", "SA");
   goldList.sublist("refmaxwell: 22list").set("max levels", 10);
   goldList.sublist("refmaxwell: 22list").set("prec type", "MGV");

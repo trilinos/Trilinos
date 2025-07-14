@@ -60,7 +60,7 @@ const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
   }
-  TEUCHOS_UNREACHABLE_RETURN(NULL);
+  TEUCHOS_UNREACHABLE_RETURN("");
 }
 
 

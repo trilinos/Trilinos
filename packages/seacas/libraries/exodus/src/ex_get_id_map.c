@@ -69,14 +69,14 @@ int ex_get_id_map(int exoid, ex_entity_type map_type, void_int *map)
 
   /* See if any entries are stored in this file */
   int dimid;
-  if (nc_inq_dimid(exoid, dnumentries, &dimid) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dnumentries, &dimid) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
   int mapid;
-  if (nc_inq_varid(exoid, vmap, &mapid) != NC_NOERR) {
+  if (nc_inq_varid(exoid, vmap, &mapid) != EX_NOERR) {
     size_t num_entries;
-    if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d", tname,
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -108,7 +108,7 @@ int ex_get_id_map(int exoid, ex_entity_type map_type, void_int *map)
     status = nc_get_var_int(exoid, mapid, map);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s id map in file id %d", tname, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);

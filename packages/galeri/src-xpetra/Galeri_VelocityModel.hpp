@@ -14,88 +14,78 @@
 
 namespace Galeri {
 
-  namespace Xpetra {
+namespace Xpetra {
 
-    template<typename Scalar,typename LocalOrdinal,typename GlobalOrdinal>
-    class VelocityModel {
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
+class VelocityModel {
+ public:
+  VelocityModel(LocalOrdinal dimension, LocalOrdinal model) {
+    dim_       = dimension;
+    modelType_ = model;
+  }
 
-    public:
+  VelocityModel() {
+    dim_       = 3;
+    modelType_ = 0;
+  }
 
-      VelocityModel(LocalOrdinal dimension,LocalOrdinal model) {
-	dim_=dimension;
-	modelType_=model;
-      }
+  void setDim(LocalOrdinal dimension) {
+    dim_ = dimension;
+  }
 
-      VelocityModel() {
-	dim_=3;
-	modelType_=0;
-      }
+  void setModel(LocalOrdinal model) {
+    modelType_ = model;
+  }
 
-      void setDim(LocalOrdinal dimension) {
-	dim_=dimension;
-      }
+  Scalar getVelocity(double x, double y, double z);
 
-      void setModel(LocalOrdinal model) {
-	modelType_=model;
-      }
+ private:
+  typedef Scalar SC;
+  typedef LocalOrdinal LO;
 
-      Scalar getVelocity(double x,double y,double z);
+  // dimension and model type
+  LO dim_, modelType_;
+};
 
-    private:
-
-      typedef Scalar        SC;
-      typedef LocalOrdinal  LO;
-
-      // dimension and model type
-      LO dim_, modelType_;
-
-    };
-
-    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
-    Scalar VelocityModel<Scalar,LocalOrdinal,GlobalOrdinal>::getVelocity(double x, double y, double z) {
-      
-      Scalar c=(Scalar)1.0;
-      if(dim_==2) {
-	if(modelType_==0) {
-	  // constant wavespeed
-	  c=(Scalar)1.0;
-	}
-	else if(modelType_==1) {
-	  // converging lens
-	  c=(Scalar)(4.0/3.0)*(1.0-0.5*exp(-32.0*((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5))));
-	}
-	else if(modelType_==2) {
-	  // wedge
-	  c=(Scalar)1.0;
-	  if(x<0.8-0.2*y)
-	    c=(Scalar)0.7;
-	  if(x<0.4+0.1*y)
-	    c=(Scalar)1.3;
-	}
-      }
-      else { // if dim_==3
-	if(modelType_==0) {
-	  // constant wavespeed
-	  c=(Scalar)1.0;
-	}
-	else if(modelType_==1) {
-	  // converging lens
-	  c=(Scalar)(4.0/3.0)*(1.0-0.5*exp(-32.0*((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5)+(z-0.5)*(z-0.5))));
-	}
-	else if(modelType_==2) {
-	  // wedge
-	  c=(Scalar)1.0;
-	  if(x<0.8-0.2*z)
-	    c=(Scalar)0.7;
-	  if(x<0.4+0.1*z)
-	    c=(Scalar)1.3;
-	}
-      }
-      return c;
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
+Scalar VelocityModel<Scalar, LocalOrdinal, GlobalOrdinal>::getVelocity(double x, double y, double z) {
+  Scalar c = (Scalar)1.0;
+  if (dim_ == 2) {
+    if (modelType_ == 0) {
+      // constant wavespeed
+      c = (Scalar)1.0;
+    } else if (modelType_ == 1) {
+      // converging lens
+      c = (Scalar)(4.0 / 3.0) * (1.0 - 0.5 * exp(-32.0 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))));
+    } else if (modelType_ == 2) {
+      // wedge
+      c = (Scalar)1.0;
+      if (x < 0.8 - 0.2 * y)
+        c = (Scalar)0.7;
+      if (x < 0.4 + 0.1 * y)
+        c = (Scalar)1.3;
     }
+  } else {  // if dim_==3
+    if (modelType_ == 0) {
+      // constant wavespeed
+      c = (Scalar)1.0;
+    } else if (modelType_ == 1) {
+      // converging lens
+      c = (Scalar)(4.0 / 3.0) * (1.0 - 0.5 * exp(-32.0 * ((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5) + (z - 0.5) * (z - 0.5))));
+    } else if (modelType_ == 2) {
+      // wedge
+      c = (Scalar)1.0;
+      if (x < 0.8 - 0.2 * z)
+        c = (Scalar)0.7;
+      if (x < 0.4 + 0.1 * z)
+        c = (Scalar)1.3;
+    }
+  }
+  return c;
+}
 
-  } // namespace Xpetra
+}  // namespace Xpetra
 
-} // namespace Galeri
+}  // namespace Galeri
 
-#endif // GALERI_HELMHOLTZ3DPROBLEM_HPP
+#endif  // GALERI_HELMHOLTZ3DPROBLEM_HPP

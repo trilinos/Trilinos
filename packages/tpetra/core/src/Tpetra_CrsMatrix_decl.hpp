@@ -18,11 +18,7 @@
 #include "TpetraExt_MatrixMatrix_fwd.hpp"
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
-#if KOKKOSKERNELS_VERSION >= 40299
 #include "Tpetra_Details_MatrixApplyHelper.hpp"
-#else
-#include "Tpetra_LocalCrsMatrixOperator.hpp"
-#endif
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
@@ -479,42 +475,34 @@ private:
                               device_type,
                               void,
                               typename local_graph_device_type::size_type>;
-    using local_matrix_host_type = 
+    using local_matrix_host_type =
           typename local_matrix_device_type::HostMirror;
 
-#if KOKKOSKERNELS_VERSION < 40299
-    /// \brief The type of the local matrix-vector operator (a wrapper of \c KokkosSparse::CrsMatrix )
-    using local_multiply_op_type =
-      LocalCrsMatrixOperator<scalar_type,
-                             scalar_type,
-                             device_type>;
-#endif
-
-    using row_ptrs_device_view_type = 
+    using row_ptrs_device_view_type =
           typename row_matrix_type::row_ptrs_device_view_type;
-    using row_ptrs_host_view_type = 
+    using row_ptrs_host_view_type =
           typename row_matrix_type::row_ptrs_host_view_type;
 
 
-    using local_inds_device_view_type = 
+    using local_inds_device_view_type =
           typename row_matrix_type::local_inds_device_view_type;
-    using local_inds_host_view_type = 
+    using local_inds_host_view_type =
           typename row_matrix_type::local_inds_host_view_type;
-    using nonconst_local_inds_host_view_type = 
+    using nonconst_local_inds_host_view_type =
           typename row_matrix_type::nonconst_local_inds_host_view_type;
 
-    using global_inds_device_view_type = 
+    using global_inds_device_view_type =
           typename row_matrix_type::global_inds_device_view_type;
-    using global_inds_host_view_type = 
+    using global_inds_host_view_type =
           typename row_matrix_type::global_inds_host_view_type;
-    using nonconst_global_inds_host_view_type = 
+    using nonconst_global_inds_host_view_type =
           typename row_matrix_type::nonconst_global_inds_host_view_type;
 
-    using values_device_view_type = 
+    using values_device_view_type =
           typename row_matrix_type::values_device_view_type;
-    using values_host_view_type = 
+    using values_host_view_type =
           typename row_matrix_type::values_host_view_type;
-    using nonconst_values_host_view_type = 
+    using nonconst_values_host_view_type =
           typename row_matrix_type::nonconst_values_host_view_type;
 
     //@}
@@ -2187,7 +2175,7 @@ private:
     ///
     /// \pre The matrix must be fill complete:
     ///   <tt>isFillComplete() == true</tt>.
-    /// 
+    ///
     void
     replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap);
 
@@ -2216,7 +2204,7 @@ private:
     ///
     /// \pre The matrix must be fill complete:
     ///   <tt>isFillComplete() == true</tt>.
-    /// 
+    ///
     void
     replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap);
 
@@ -2313,15 +2301,6 @@ private:
     getLocalMatrixDevice () const;
     local_matrix_host_type getLocalMatrixHost () const;
 #undef TPETRA_DETAILS_ALWAYS_INLINE
-
-#if KOKKOSKERNELS_VERSION < 40299
-    /// \brief The local sparse matrix operator 
-    ///   (a wrapper of \c getLocalMatrixDevice()
-    ///   that supports local matrix-vector multiply)
-    ///
-    /// \warning It is only valid to call this method if this->isFillComplete().
-    std::shared_ptr<local_multiply_op_type> getLocalMultiplyOperator () const;
-#endif
 
     /// \brief Number of global elements in the row map of this matrix.
     ///
@@ -2518,6 +2497,26 @@ private:
     //! Indicates that the graph is static, so that new entries cannot be added to this matrix.
     bool isStaticGraph () const;
 
+    /// \brief Compute and return the infinity norm of the matrix.
+    ///
+    /// The Frobenius norm of the matrix is defined as
+    /// \f\[
+    ///   \|A\|_\infty = \max_{i}{\sum_{j} \|A(i,j)\|}.
+    /// \f\].
+    ///
+    mag_type getNormInf () const;
+
+    /// \brief Compute and return the 1-norm of the matrix.
+    ///
+    /// \param assumeSymmetric [in] Whether the matrix is symmetric. If so, computes infinity norm instead.
+    //
+    /// The Frobenius norm of the matrix is defined as
+    /// \f\[
+    ///   \|A\|_1 = \max_{j}{\sum_{i} \|A(i,j)\|}.
+    /// \f\].
+    ///
+    mag_type getNorm1 (bool assumeSymmetric = false) const;
+
     /// \brief Compute and return the Frobenius norm of the matrix.
     ///
     /// The Frobenius norm of the matrix is defined as
@@ -2534,22 +2533,10 @@ private:
 protected:
     using values_dualv_type =
           Kokkos::DualView<impl_scalar_type*, device_type>;
-    using values_wdv_type = 
+    using values_wdv_type =
           Details::WrappedDualView<values_dualv_type>;
     values_wdv_type valuesUnpacked_wdv;
     mutable values_wdv_type valuesPacked_wdv;
-
-#if KOKKOSKERNELS_VERSION < 40299
-    using ordinal_rowptrs_type = typename local_multiply_op_type::ordinal_view_type;
-    /// \brief local_ordinal typed version of local matrix's rowptrs.
-    ///   This allows the LocalCrsMatrixOperator to have rowptrs and entries be the same type,
-    ///   so cuSPARSE SpMV (including merge-path) can be used for apply.
-    ///   This is allocated and populated lazily in getLocalMultiplyOperator(), only if all 4 conditions are met:
-    ///     - node_type is KokkosCudaWrapperNode
-    ///     - the cuSPARSE TPL is enabled
-    ///     - local_ordinal_type can represent getLocalNumEntries()
-    mutable ordinal_rowptrs_type ordinalRowptrs;
-#endif
 
 public:
 
@@ -3923,7 +3910,6 @@ public:
     typename values_dualv_type::t_dev
     getValuesViewDeviceNonConst (const RowInfo& rowinfo);
 
-#if KOKKOSKERNELS_VERSION >= 40299
 private:
     // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
     // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
@@ -3939,7 +3925,7 @@ private:
     /// The specialization of Details::MatrixApplyHelper used by this class in apply().
     using ApplyHelper = Details::MatrixApplyHelper<
       local_matrix_device_type,
-      local_matrix_int_rowptrs_device_type, 
+      local_matrix_int_rowptrs_device_type,
       typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::device_view_type>;
 
 
@@ -3950,7 +3936,6 @@ private:
       }
       return applyHelper;
     }
-#endif
 
   protected:
 
@@ -3964,7 +3949,7 @@ private:
 
 
     // friend Matrix Matrix utility function that needs to access integer-typed rowptrs
-    friend 
+    friend
     void Tpetra::MMdetails::import_and_extract_views<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
     const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>&   A,
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >   targetMap,
@@ -4062,14 +4047,12 @@ protected:
                                       Teuchos::Array<Scalar> > > nonlocals_;
 
   private:
-#if KOKKOSKERNELS_VERSION >= 40299
     /// The apply helper is lazily created in apply(), and reset when resumeFill is called.
     /// It performs 3 functions:
     /// - Decides whether a version of the local matrix with int-typed rowptrs can and should be used to enable spmv TPLs
     /// - Keeps SPMVHandles for both the regular local matrix, and the int-typed version
     /// - Stores the int-typed rowptrs (if they can all be represented by int)
     mutable std::shared_ptr<ApplyHelper> applyHelper;
-#endif
 
   public:
     // FIXME (mfh 24 Feb 2014) Is it _really_ necessary to make this a
@@ -4086,7 +4069,7 @@ protected:
       DestOffsetViewType dst_offset_;
       typedef typename DestOffsetViewType::non_const_value_type scalar_index_type;
 
-      pack_functor (DestViewType dst, 
+      pack_functor (DestViewType dst,
                     const SrcViewType src,
                     DestOffsetViewType dst_offset,
                     const SrcOffsetViewType src_offset) :

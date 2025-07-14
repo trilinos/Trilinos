@@ -23,18 +23,16 @@
 #include "AnasaziBlockDavidsonSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
 #include "Epetra_SerialComm.h"
 #endif
 
-#ifdef HAVE_EPETRA_THYRA
 #include "AnasaziThyraAdapter.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
-#endif
 
 #include "ModeLaplace1DQ1.h"
 
@@ -49,7 +47,7 @@ int main(int argc, char *argv[])
   bool boolret;
   int MyPID;
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -72,20 +70,11 @@ int main(int argc, char *argv[])
     cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
     cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
       MPI_Finalize();
 #endif
       return -1;
     }
-
-#ifndef HAVE_EPETRA_THYRA
-    if (verbose && MyPid == 0) {
-      cout << "Please configure Anasazi with:" << endl;
-      cout << "--enable-epetra-thyra" << endl;
-      cout << "--enable-anasazi-thyra" << endl;
-    }
-    return 0;
-#endif
 
     typedef double ScalarType;
     typedef ScalarTraits<ScalarType>                   SCT;
@@ -157,7 +146,7 @@ int main(int argc, char *argv[])
         cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
           << "End Result: TEST FAILED" << endl;	
       }
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
       MPI_Finalize() ;
 #endif
       return -1;
@@ -265,7 +254,7 @@ int main(int argc, char *argv[])
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,cout,success);
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize() ;
 #endif
 

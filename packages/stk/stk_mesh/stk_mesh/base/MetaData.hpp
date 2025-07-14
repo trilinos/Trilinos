@@ -47,10 +47,9 @@
 #include <utility>                      // for pair
 #include <vector>                       // for vector, vector<>::size_type
 #include <stk_util/stk_config.h>
-#include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, etc
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_mesh/base/Types.hpp>      // for EntityRank, etc
 #include <stk_mesh/baseImpl/FieldRepository.hpp>  // for FieldRepository, etc
 #include <stk_mesh/baseImpl/PartRepository.hpp>  // for PartRepository
 #include <stk_topology/topology.hpp>    // for topology, topology::rank_t, etc
@@ -794,6 +793,9 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank, const std::string
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to MetaData::declare_field(), "
                 "and not the Field itself");
+  static_assert(HostLayout != Layout::Auto,
+                "Layout::Auto can only be used for access through FieldBase::data() calls and not for registering "
+                "Fields themselves.  You may only use Layout::Right or Layout::Left for the host Field.");
 
   const DataTraits & traits = data_traits<T>();
 
@@ -869,7 +871,9 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank, const std::string
     }
   }
 
-  f[0]->set_mesh(m_bulk_data);
+  for(unsigned i=0; i<number_of_states; ++i) {
+    f[i]->set_mesh(m_bulk_data);
+  }
 
   return *f[0];
 }

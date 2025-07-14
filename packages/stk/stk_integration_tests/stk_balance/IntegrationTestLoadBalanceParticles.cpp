@@ -173,16 +173,17 @@ protected:
   {
     int numGlobalElements = get_bulk().parallel_size()*numLocalElements;
 
+    auto particleCountFieldData = m_particleCountField->data();
     for (int elementId=1; elementId<=numGlobalElements; ++elementId) {
       stk::mesh::Entity element = get_bulk().get_entity(stk::mesh::EntityKey(stk::topology::ELEM_RANK,elementId));
       if (get_bulk().is_valid(element) && get_bulk().bucket(element).owned()) {
-        double* weight = stk::mesh::field_data(*m_particleCountField, element);
-        EXPECT_TRUE(nullptr != weight);
+        EXPECT_TRUE(m_particleCountField->defined_on(element));
+        auto weight = particleCountFieldData.entity_values(element);
         if (elementId == 1) {
-          *weight = static_cast<double>(numGlobalElements - 1);
+          weight() = static_cast<double>(numGlobalElements - 1);
         }
         else {
-          *weight = 1.0;
+          weight() = 1.0;
         }
       }
     }
@@ -190,9 +191,10 @@ protected:
 
   void update_vertex_weight(stk::mesh::Entity elem)
   {
-    double* weight = stk::mesh::field_data(*m_particleCountField, elem);
-    EXPECT_TRUE(nullptr != weight);
-    *weight = static_cast<double> (m_particleManager.count_particles_in_element(elem));
+    auto particleCountFieldData = m_particleCountField->data();
+    EXPECT_TRUE(m_particleCountField->defined_on(elem));
+    auto weight = particleCountFieldData.entity_values(elem);
+    weight() = static_cast<double> (m_particleManager.count_particles_in_element(elem));
   }
 
   void add_particles_to_element(const std::vector<int> & particleIds, stk::mesh::Entity elem)
@@ -230,9 +232,10 @@ protected:
   double get_total_weight_for_these_elements(const stk::mesh::EntityVector & solidElements)
   {
     double totalWeightTheseElements = 0.0;
+    auto particleCountFieldData = m_particleCountField->data<stk::mesh::ReadOnly>();
     for (const stk::mesh::Entity element : solidElements) {
-      double* weight = stk::mesh::field_data(*m_particleCountField, element);
-      totalWeightTheseElements += (*weight);
+      auto weight = particleCountFieldData.entity_values(element);
+      totalWeightTheseElements += (weight());
     }
     return totalWeightTheseElements;
   }

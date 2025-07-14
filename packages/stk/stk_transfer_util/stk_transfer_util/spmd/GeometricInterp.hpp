@@ -76,12 +76,12 @@ class GeometricInterp {
 
   using EntityKeyMap = std::multimap<EntityKeyB, EntityKeyA> ;
 
-  static void filter_to_nearest(EntityKeyMap& RangeToDomain, MeshA& FromMesh, MeshB& ToMesh)
+  static void filter_to_nearest(EntityKeyMap& /*RangeToDomain*/, MeshA& /*FromMesh*/, MeshB& /*ToMesh*/)
   {
     STK_ThrowRequireMsg(false, "GeometricInterp::filter_to_nearest() not implemented");
   }
 
-  static void apply(MeshB& ToMesh, MeshA& FromMesh, const EntityKeyMap& RangeToDomain)
+  static void apply(MeshB& /*ToMesh*/, MeshA& /*FromMesh*/, const EntityKeyMap& /*RangeToDomain*/)
   {
     STK_ThrowRequireMsg(false, "GeometricInterp::apply() wrong overload, can't take a map any more.");
   }

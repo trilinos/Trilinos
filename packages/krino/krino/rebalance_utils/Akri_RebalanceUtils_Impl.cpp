@@ -14,6 +14,7 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Element.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_RefinementManager.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -25,13 +26,12 @@
 #include <utility>
 #include <vector>
 
-#include <Akri_RefinementInterface.hpp>
 
 namespace krino {
 namespace rebalance_utils {
 namespace impl {
 
-void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp_changes, const RefinementInterface& refinement, const stk::mesh::BulkData & bulk_data)
+void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp_changes, const RefinementManager& refinement, const stk::mesh::BulkData & bulk_data)
 {
   // At this point decomp_changes has all adaptivity parent + child elements that are moving
   // and their dest procs match.
@@ -97,7 +97,7 @@ void set_family_tree_destinations(stk::balance::DecompositionChangeList & decomp
 
 void
 update_rebalance_for_adaptivity(stk::balance::DecompositionChangeList & decomp_changes,
-    const RefinementInterface& refinement,
+    const RefinementManager& refinement,
     const stk::mesh::BulkData & bulk_data)
 {
   auto all_changes = decomp_changes.get_all_partition_changes();
@@ -225,7 +225,7 @@ accumulate_cdfem_child_weights_to_parents(const stk::mesh::BulkData & bulk_data,
 }
 
 void accumulate_adaptivity_child_weights_to_parents(
-    const stk::mesh::BulkData & bulk_data, const RefinementInterface& refinement, stk::mesh::Field<double> & element_weights_field)
+    const stk::mesh::BulkData & /*bulk_data*/, const RefinementManager& refinement, stk::mesh::Field<double> & element_weights_field)
 {
   refinement.update_element_rebalance_weights_incorporating_parallel_owner_constraints(element_weights_field);
 }

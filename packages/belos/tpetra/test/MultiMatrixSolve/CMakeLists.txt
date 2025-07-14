@@ -18,7 +18,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestGmresMultiFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/tpetra/example/BlockGmres
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES orsirr1.hb
     EXEDEPS Tpetra_pseudo_gmres_multi_hb
   )

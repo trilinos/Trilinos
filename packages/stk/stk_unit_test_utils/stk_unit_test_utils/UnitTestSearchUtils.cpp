@@ -189,7 +189,7 @@ construct_element_centroid_recv_mesh(stk::mesh::BulkData& bulk, double parametri
 
 std::shared_ptr<stk::search::spmd::ElementRecvMesh>
 construct_hex_gauss_point_recv_mesh(stk::mesh::BulkData& bulk, double parametricTolerance, double geometricTolerance,
-                                    unsigned integrationOrder, const std::vector<std::string>& blocks,
+                                    unsigned /*integrationOrder*/, const std::vector<std::string>& blocks,
                                     const stk::mesh::Selector& activeSelector)
 {
   const stk::mesh::MetaData& meta = bulk.mesh_meta_data();

@@ -34,3 +34,4 @@
 
 #cmakedefine KRINO_HAVE_YAML
 #cmakedefine KRINO_HAVE_PARMETIS
+#cmakedefine KRINO_HAVE_PARALELL_IO

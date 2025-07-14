@@ -97,7 +97,7 @@ int ex_get_reduction_vars(int exoid, int time_step, ex_entity_type var_type, ex_
 
   /* inquire previously defined variable */
   if ((status = nc_inq_varid(exoid, exi_name_red_var_of_object(var_type, obj_id_ndx), &varid)) !=
-      NC_NOERR) {
+      EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Warning: no reduction variables for %s %" PRId64 " in file id %d",
              ex_name_of_object(var_type), obj_id, exoid);
@@ -119,7 +119,7 @@ int ex_get_reduction_vars(int exoid, int time_step, ex_entity_type var_type, ex_
     status = nc_get_vara_double(exoid, varid, start, count, var_vals);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get reduction variable values for %s %" PRId64 " in file id %d",
              ex_name_of_object(var_type), obj_id, exoid);

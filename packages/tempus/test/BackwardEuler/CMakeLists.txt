@@ -14,6 +14,7 @@ IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
     SOURCES Tempus_Test_BackwardEuler_CDR.cpp ${TEMPUS_UNIT_TEST_MAIN}
     TESTONLYLIBS tempus_test_models
     NUM_MPI_PROCS 1
+    RUN_SERIAL
     )
 ENDIF()
 
@@ -60,7 +61,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BackwardEuler_SinCos_CopyFiles
-  DEST_FILES Tempus_BackwardEuler_SinCos.xml 
+  DEST_FILES Tempus_BackwardEuler_SinCos.xml
   EXEDEPS BackwardEuler_SinCos
   )
 

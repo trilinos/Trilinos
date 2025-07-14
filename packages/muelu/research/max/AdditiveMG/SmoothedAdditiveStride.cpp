@@ -329,7 +329,7 @@ int main(int argc, char* argv[]) {
 
     //=============================================================================================================
     RCP<crs_matrix_type> Pbar = Tpetra::MatrixMatrix::add(1.0, false, *tpetra_prolong, -1.0, false, *BAP);
-    mueluPbar                 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type>(Pbar);
+    mueluPbar                 = Xpetra::toXpetra(Pbar);
     Tpetra::MatrixMarket::Writer<crs_matrix_type>::writeSparseFile("Pbar.mtx", Pbar);  // Auxiliary prints introduced to generate pictures
   }
   H->GetLevel(1)->Set("Pbar", mueluPbar);

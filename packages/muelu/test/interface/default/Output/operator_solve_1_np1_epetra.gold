@@ -22,7 +22,6 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
 aggregation: deterministic = 0   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
@@ -58,7 +57,6 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
 aggregation: deterministic = 0   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
@@ -94,7 +92,6 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
 aggregation: deterministic = 0   [unused]
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace

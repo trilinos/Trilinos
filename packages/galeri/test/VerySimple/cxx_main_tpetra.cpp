@@ -26,8 +26,7 @@
 
 using namespace Galeri;
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -50,7 +49,7 @@ int main(int argc, char* argv[])
   // with Matrix arising from a 5-point formula discretization.
 
   std::string mapType = "Cartesian2D";
-  auto mapParameters = Teuchos::ParameterList("Tpetra::Map");
+  auto mapParameters  = Teuchos::ParameterList("Tpetra::Map");
   // dimension of the problem is nx x ny
   mapParameters.set("nx", 10 * comm->getSize());
   mapParameters.set("ny", 10);
@@ -60,8 +59,7 @@ int main(int argc, char* argv[])
 
   auto out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
-  try
-  {
+  try {
     // Creation of the map
     auto map = RCP{Galeri::Xpetra::CreateMap<Scalar, GO, Tpetra_Map>(mapType, comm, mapParameters)};
 
@@ -69,9 +67,9 @@ int main(int argc, char* argv[])
     auto problem = Galeri::Xpetra::BuildProblem<Scalar, LO, GO, Tpetra_Map, Tpetra_CrsMatrix, Tpetra_MultiVector>("Laplace2D", map, mapParameters);
 
     // Build Matrix and MultiVectors
-    auto matrix = problem->BuildMatrix();
-    auto LHS = rcp(new Tpetra_MultiVector(matrix->getDomainMap(), 1));
-    auto RHS = rcp(new Tpetra_MultiVector(matrix->getRangeMap(), 1));
+    auto matrix        = problem->BuildMatrix();
+    auto LHS           = rcp(new Tpetra_MultiVector(matrix->getDomainMap(), 1));
+    auto RHS           = rcp(new Tpetra_MultiVector(matrix->getRangeMap(), 1));
     auto ExactSolution = rcp(new Tpetra_MultiVector(matrix->getDomainMap(), 1));
 
     ExactSolution->randomize(0, 100);
@@ -85,11 +83,8 @@ int main(int argc, char* argv[])
     ExactSolution->describe(*out, Teuchos::EVerbosityLevel::VERB_EXTREME);
 
     // at this point any LinearSolver can be used which understands the Tpetra objects. For example: Amesos2 or Ifpack2
-  }
-  catch (Galeri::Exception &rhs)
-  {
-    if (comm->getRank() == 0)
-    {
+  } catch (Galeri::Exception& rhs) {
+    if (comm->getRank() == 0) {
       cerr << "Caught exception: ";
       rhs.Print();
 

@@ -53,7 +53,7 @@ public:
   FieldData(FieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes);
   KOKKOS_FUNCTION virtual ~FieldData() override {}
 
-  KOKKOS_FUNCTION FieldData(const FieldData& fieldData, FieldAccessTag accessTag);
+  FieldData(const FieldData& fieldData, FieldAccessTag accessTag);
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
   KOKKOS_DEFAULTED_FUNCTION FieldData(FieldData&&) = default;
   KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(const FieldData&) = default;
@@ -163,6 +163,47 @@ public:
                                                                       int line = STK_HOST_LINE) const;
 };
 
+//------------------------------------------------------------------------------
+template <typename T>
+class FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>
+    : public ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>
+{
+public:
+  FieldData();
+  FieldData(const FieldBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag);
+  KOKKOS_DEFAULTED_FUNCTION virtual ~FieldData() override = default;
+
+  KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
+  KOKKOS_DEFAULTED_FUNCTION FieldData(FieldData&&) = default;
+  KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(const FieldData&) = default;
+  KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(FieldData&&) = default;
+
+  inline
+  EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto> entity_values(Entity entity,
+                                                                      const char* file = STK_HOST_FILE,
+                                                                      int line = STK_HOST_LINE) const;
+
+  inline
+  EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto> entity_values(const MeshIndex& mi,
+                                                                      const char* file = STK_HOST_FILE,
+                                                                      int line = STK_HOST_LINE) const;
+
+  inline
+  EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto> entity_values(const FastMeshIndex& fmi,
+                                                                      const char* file = STK_HOST_FILE,
+                                                                      int line = STK_HOST_LINE) const;
+
+  inline
+  BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto> bucket_values(const Bucket& bucket,
+                                                                      const char* file = STK_HOST_FILE,
+                                                                      int line = STK_HOST_LINE) const;
+
+  inline
+  BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto> bucket_values(int bucketId,
+                                                                      const char* file = STK_HOST_FILE,
+                                                                      int line = STK_HOST_LINE) const;
+};
+
 
 //==============================================================================
 // Device FieldData definitions
@@ -184,7 +225,6 @@ FieldData<T, MemSpace, DataLayout>::FieldData(FieldBytes<stk::ngp::HostMemSpace>
 
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, Layout DataLayout>
-KOKKOS_FUNCTION
 FieldData<T, MemSpace, DataLayout>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
   : ConstFieldData<T, MemSpace, DataLayout>(fieldData, accessTag)
 {}
@@ -487,6 +527,188 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::bucket_values(int bucketId,
         fieldMetaData.m_numCopiesPerEntity,
         fieldMetaData.m_bucketSize,
         fieldMetaData.m_bucketCapacity, this->field_name());
+}
+
+
+//==============================================================================
+// Host FieldData definitions: Layout::Auto
+//==============================================================================
+
+template <typename T>
+FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::FieldData()
+  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>()
+{}
+
+//------------------------------------------------------------------------------
+template <typename T>
+FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::FieldData(const FieldBytes<stk::ngp::HostMemSpace>& hostFieldBytes,
+                                                              FieldAccessTag accessTag)
+  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>(hostFieldBytes, accessTag)
+{}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(Entity entity,
+                                                                  const char* file, int line) const
+{
+  const MeshIndex& mi = this->mesh().mesh_index(entity);
+
+  this->check_updated_field(file, line);
+  this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
+
+  if (this->m_layout == Layout::Right) {
+    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity, this->field_name());
+  }
+  else if (this->m_layout == Layout::Left) {
+    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data) + mi.bucket_ordinal,
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const MeshIndex& mi,
+                                                                  const char* file, int line) const
+{
+  this->check_updated_field(file, line);
+  this->check_mesh(mi.bucket->mesh(), "Entity", file, line);
+  this->check_rank(mi.bucket->entity_rank(), "Entity", file, line);
+  this->check_bucket_ordinal(mi.bucket->bucket_id(), mi.bucket_ordinal, file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
+
+  if (this->m_layout == Layout::Right) {
+    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity, this->field_name());
+  }
+  else if (this->m_layout == Layout::Left) {
+    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data) + mi.bucket_ordinal,
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const FastMeshIndex& fmi,
+                                                                  const char* file, int line) const
+{
+  this->check_updated_field(file, line);
+  this->check_bucket_id(fmi.bucket_id, "entity", file, line);
+  this->check_bucket_ordinal(fmi.bucket_id, fmi.bucket_ord, file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[fmi.bucket_id];
+
+  if (this->m_layout == Layout::Right) {
+    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * fmi.bucket_ord),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity, this->field_name());
+  }
+  else if (this->m_layout == Layout::Left) {
+    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data) + fmi.bucket_ord,
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(const Bucket& bucket,
+                                                                  const char* file, int line) const
+{
+  this->check_updated_field(file, line);
+  this->check_mesh(bucket.mesh(), "Bucket", file, line);
+  this->check_rank(bucket.entity_rank(), "Bucket", file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucket.bucket_id()];
+
+  if (this->m_layout == Layout::Right) {
+    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketSize, this->field_name());
+  }
+  else if (this->m_layout == Layout::Left) {
+    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketSize,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0, nullptr);  // Keep compiler happy
+  }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(int bucketId,
+                                                                  const char* file, int line) const
+{
+  this->check_updated_field(file, line);
+  this->check_bucket_id(bucketId, "bucket", file, line);
+
+  const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucketId];
+
+  if (this->m_layout == Layout::Right) {
+    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketSize, this->field_name());
+  }
+  else if (this->m_layout == Layout::Left) {
+    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+          reinterpret_cast<T*>(fieldMetaData.m_data),
+          fieldMetaData.m_numComponentsPerEntity,
+          fieldMetaData.m_numCopiesPerEntity,
+          fieldMetaData.m_bucketSize,
+          fieldMetaData.m_bucketCapacity, this->field_name());
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
+                      "either Layout::Right or Layout::Left.");
+    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0, nullptr);  // Keep compiler happy
+  }
 }
 
 //==============================================================================

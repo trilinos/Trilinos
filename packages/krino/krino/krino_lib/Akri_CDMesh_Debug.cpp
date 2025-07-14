@@ -195,7 +195,7 @@ debug_nodal_parts_and_fields(const stk::mesh::BulkData & mesh, const SubElementN
 }
 
 void
-debug_sides(const stk::mesh::BulkData & mesh, stk::mesh::Part & active_part)
+debug_sides(const stk::mesh::BulkData & mesh, stk::mesh::Part & /*active_part*/)
 {
   std::vector<stk::mesh::Entity> sides;
   stk::mesh::get_entities( mesh, mesh.mesh_meta_data().side_rank(), sides );

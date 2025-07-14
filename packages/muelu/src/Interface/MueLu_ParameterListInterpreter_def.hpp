@@ -315,6 +315,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // and not present in the list, but it is better than nothing.
   useCoordinates_ = false;
   useBlockNumber_ = false;
+  if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: strength-of-connection: matrix", std::string, "distance laplacian"))
+    useCoordinates_ = true;
+  if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: use blocking", bool, true))
+    useBlockNumber_ = true;
   if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
       MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type", std::string, "brick") ||
       MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: export visualization data", bool, true)) {
@@ -1049,13 +1053,19 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold", double, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: greedy Dirichlet", bool, dropParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian metric", std::string, dropParams);
+#ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical algo", std::string, dropParams);
+#endif
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian directional weights", Teuchos::Array<double>, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring: localize color graph", bool, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: dropping may create Dirichlet", bool, dropParams);
     if (useKokkos_) {
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: use blocking", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: symmetrize graph after dropping", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: strength-of-connection: matrix", std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: strength-of-connection: measure", std::string, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, dropParams);
@@ -1066,6 +1076,35 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, dropParams);
     }
 
+#ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
+    if (!dropParams.isParameter("aggregation: drop scheme") ||
+        (dropParams.isParameter("aggregation: drop scheme") &&
+         ((dropParams.get<std::string>("aggregation: drop scheme") != "point-wise") && (dropParams.get<std::string>("aggregation: drop scheme") != "cut-drop")))) {
+      Teuchos::ParameterList dropParamsWithDefaults(dropParams);
+
+#define MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(paramList, paramName, paramType) \
+  if (!paramList.isParameter(paramName)) {                                      \
+    paramList.set(paramName, MasterList::getDefault<paramType>(paramName));     \
+  }
+
+      MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(dropParamsWithDefaults, "aggregation: drop scheme", std::string);
+      MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(dropParamsWithDefaults, "aggregation: strength-of-connection: matrix", std::string);
+      MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(dropParamsWithDefaults, "aggregation: strength-of-connection: measure", std::string);
+      MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST(dropParamsWithDefaults, "aggregation: use blocking", bool);
+
+#undef MUELU_TEST_AND_SET_VAR_FROM_MASTERLIST
+
+      // We are using the old style of dropping params
+      TEUCHOS_TEST_FOR_EXCEPTION(dropParams.isParameter("aggregation: strength-of-connection: matrix") ||
+                                     dropParams.isParameter("aggregation: strength-of-connection: measure") ||
+                                     dropParams.isParameter("aggregation: use blocking"),
+                                 Teuchos::Exceptions::InvalidParameterType,
+                                 "The inputs contain a mix of old and new dropping parameters:\n\n"
+                                     << dropParams << "\n\nKeep in mind that defaults are set for old parameters, so this gets interpreted as\n\n"
+                                     << dropParamsWithDefaults);
+    }
+#endif
+
     if (!amalgFact.is_null())
       dropFactory->SetFactory("UnAmalgamationInfo", manager.GetFactory("UnAmalgamationInfo"));
 
@@ -1073,7 +1112,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       std::string drop_scheme = dropParams.get<std::string>("aggregation: drop scheme");
       if (drop_scheme == "block diagonal colored signed classical")
         manager.SetFactory("Coloring Graph", dropFactory);
-      if (drop_scheme.find("block diagonal") != std::string::npos || drop_scheme == "signed classical") {
+      if ((MUELU_TEST_PARAM_2LIST(dropParams, defaultList, "aggregation: use blocking", bool, true)) ||
+          (drop_scheme.find("block diagonal") != std::string::npos || drop_scheme == "signed classical")) {
         if (levelID > 0)
           dropFactory->SetFactory("BlockNumber", this->GetFactoryManager(levelID - 1)->GetFactory("BlockNumber"));
         else
@@ -1441,10 +1481,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       RCP<Factory> materialTransfer = rcp(new MultiVectorTransferFactory());
       ParameterList materialTransferParameters;
       materialTransferParameters.set("Vector name", "Material");
-      materialTransferParameters.set("Transfer name", "P");
+      materialTransferParameters.set("Transfer name", "Aggregates");
       materialTransferParameters.set("Normalize", true);
       materialTransfer->SetParameterList(materialTransferParameters);
-      materialTransfer->SetFactory("Transfer factory", manager.GetFactory("Ptent"));
+      materialTransfer->SetFactory("Transfer factory", manager.GetFactory("Aggregates"));
+      materialTransfer->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
       manager.SetFactory("Material", materialTransfer);
 
       auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
@@ -1656,6 +1697,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per thread", int, repartheurParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per thread", int, repartheurParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance", double, repartheurParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: put on single proc", int, repartheurParams);
     repartheurFactory->SetParameterList(repartheurParams);
     repartheurFactory->SetFactory("A", manager.GetFactory("A"));
     manager.SetFactory("number of partitions", repartheurFactory);

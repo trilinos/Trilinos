@@ -345,8 +345,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
 /**********************************************************************************/
 
 
-int main(int argc, char *argv[]) {
-
+int main_(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using entity_type = stk::mesh::Entity;
@@ -363,7 +362,6 @@ int main(int argc, char *argv[]) {
   const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
   const stk::mesh::EntityRank ELEMENT_RANK = stk::topology::ELEMENT_RANK;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
   RCP<const Teuchos::MpiComm<int> > MpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
   int numRanks = Comm->getSize();
@@ -1458,4 +1456,13 @@ int getDimension( const ShardsCellTopology & cellTopology) {
     TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
 			       "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");
   }
+}
+
+
+int main(int argc, char *argv[]) {
+  Kokkos::initialize(argc,argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+
+  main_(argc,argv);
+  Kokkos::finalize();
 }

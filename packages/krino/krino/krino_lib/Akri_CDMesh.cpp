@@ -44,7 +44,6 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Quality.hpp>
 #include <Akri_QualityMetric.hpp>
-#include <Akri_RefinementInterface.hpp>
 #include <Akri_Snap.hpp>
 #include <Akri_SnapToNode.hpp>
 #include <Akri_SubElementChildNodeAncestry.hpp>
@@ -58,6 +57,7 @@
 
 #include <Akri_RefinementSupport.hpp>
 #include <Akri_ParallelErrorMessage.hpp>
+#include <Akri_RefinementManager.hpp>
 namespace krino{
 
 std::unique_ptr<CDMesh> CDMesh::the_new_mesh;
@@ -170,7 +170,7 @@ std::vector<InterfaceID> CDMesh::active_interface_ids(const std::vector<Surface_
 }
 
 void
-CDMesh::handle_possible_failed_time_step( stk::mesh::BulkData & mesh, const int step_count )
+CDMesh::handle_possible_failed_time_step( stk::mesh::BulkData & /*mesh*/, const int /*step_count*/ )
 {
   const bool haveEverPerformedDecomposition = nullptr != the_new_mesh.get();
   if (haveEverPerformedDecomposition)
@@ -294,7 +294,7 @@ void CDMesh::prepare_for_resnapping(const stk::mesh::BulkData & mesh, const Inte
   }
 }
 
-static void straighten_quadratic_edge(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordsField, const unsigned dim, const std::array<stk::mesh::Entity,3> & edgeNodes)
+static void straighten_quadratic_edge(const stk::mesh::BulkData & /*mesh*/, const stk::mesh::FieldBase & coordsField, const unsigned dim, const std::array<stk::mesh::Entity,3> & edgeNodes)
 {
   const double * coords0 = static_cast<double*>(stk::mesh::field_data( coordsField, edgeNodes[0] ));
   const double * coords1 = static_cast<double*>(stk::mesh::field_data( coordsField, edgeNodes[1] ));
@@ -394,7 +394,7 @@ CDMesh::decompose_mesh(const InterfaceGeometry & interfaceGeometry, const int st
   NodeToCapturedDomainsMap nodesToCapturedDomains;
 
   {
-    fix_node_owners_to_assure_active_owned_element_for_node(mesh, get_active_part());
+    fix_node_ownership_to_assure_selected_owned_element(mesh, get_active_part());
 
     // Not sure if this is krino's responsibility or the driving application.  If we have
     // elemental death fields, these need to be parallel consistent on aura elements.
@@ -652,7 +652,7 @@ CDMesh::get_owned_unused_old_child_elements_and_clear_child_elements()
 
 bool
 CDMesh::decomposition_needs_update(const InterfaceGeometry & interfaceGeometry,
-      const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs)
+      const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & /*periodic_node_pairs*/)
 {
   return !the_new_mesh || the_new_mesh->decomposition_has_changed(interfaceGeometry);
 }
@@ -681,7 +681,7 @@ CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coord
   std::function<void(int)> markerFunction;
   if (refinementSupport.has_refinement_interval())
   {
-    markerFunction = [&mesh, &refinementSupport, &interfaceGeometry](int num_refinements)
+    markerFunction = [&mesh, &refinementSupport, &interfaceGeometry](int /*num_refinements*/)
     {
       constexpr bool isDefaultCoarsen = true;
       mark_elements_that_intersect_interval(mesh,
@@ -1988,7 +1988,7 @@ std::vector<std::vector<int>> determine_sharing_procs_of_nodes_in_ancestries(con
 }
 
 template <typename T>
-void pack_node_data_for_node_ancestries(const stk::mesh::BulkData & mesh, const std::vector<std::pair<SubElementChildNodeAncestry,T>> & nodeAncestriesAndData, const std::vector<std::vector<int>> & destinationProcs, stk::CommSparse &commSparse)
+void pack_node_data_for_node_ancestries(const stk::mesh::BulkData & /*mesh*/, const std::vector<std::pair<SubElementChildNodeAncestry,T>> & nodeAncestriesAndData, const std::vector<std::vector<int>> & destinationProcs, stk::CommSparse &commSparse)
 {
   stk::pack_and_communicate(commSparse,[&]()
   {
@@ -2923,7 +2923,7 @@ std::function<double(stk::mesh::Entity)> build_get_local_length_scale_for_side_f
 std::function<double(stk::mesh::Entity)> build_get_constant_length_scale_for_side_function(const double lengthScale)
 {
   auto get_length_scale_for_side =
-      [lengthScale](stk::mesh::Entity side)
+      [lengthScale](stk::mesh::Entity /*side*/)
       {
         return lengthScale;
       };
@@ -3152,7 +3152,7 @@ CDMesh::update_adaptivity_parent_entities()
     return;
   }
 
-  const RefinementInterface & refinement = myRefinementSupport.get_non_interface_conforming_refinement();
+  const RefinementManager & refinement = myRefinementSupport.get_non_interface_conforming_refinement();
   stk::mesh::BulkData& mesh = stk_bulk();
 
   stk::mesh::PartVector add_parts;

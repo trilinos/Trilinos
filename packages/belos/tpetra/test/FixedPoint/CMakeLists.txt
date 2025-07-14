@@ -6,9 +6,8 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 
-ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_FixedPoint_hb_CopyFiles1
-  SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+  SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb
   EXEDEPS Tpetra_FixedPoint_hb_test
   )

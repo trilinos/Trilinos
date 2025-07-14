@@ -54,7 +54,6 @@
 #include "CJ_Version.h"
 
 namespace {
-  bool                       check_variable_params(size_t p, const Excn::Variables &vars);
   template <typename T> void clear(std::vector<T> &vec)
   {
     vec.clear();
@@ -205,18 +204,6 @@ namespace {
 
   StringVector get_exodus_variable_names(int id, ex_entity_type elType, size_t var_count);
 
-  template <typename T, typename INT>
-  void filter_truth_table(int id, Excn::Mesh<INT> &global, std::vector<T> &glob_blocks,
-                          Excn::Variables &vars, const StringIdVector &variable_names);
-
-  template <typename T, typename INT>
-  void get_truth_table(Excn::Mesh<INT> &global, std::vector<std::vector<T>> &blocks,
-                       std::vector<T> &glob_blocks, Excn::Variables &vars, int debug);
-
-  template <typename U>
-  void create_output_truth_table(std::vector<U> &global_sets, Excn::Variables &vars,
-                                 std::vector<int> &truth_table);
-
   template <typename T, typename U, typename INT>
   int read_write_master_values(Excn::Variables &vars, const Excn::Mesh<INT> &global,
                                std::vector<U>               &global_sets,
@@ -224,10 +211,10 @@ namespace {
                                std::vector<std::vector<U>> &local_sets, std::vector<T> &values,
                                size_t p, Excn::ExodusFile &id, int time_step, int time_step_out);
 
-  void get_variable_params(int id, Excn::Variables &vars, const StringIdVector &variable_list);
+  void get_variable_params(int part, Excn::Variables &vars, const StringIdVector &variable_list);
 
-  void get_put_variable_names(int id, int out, Excn::Variables &vars, Excn::SystemInterface &si,
-                              int *combined_status_variable_index = nullptr);
+  void put_variable_names(int out, Excn::Variables &vars, Excn::SystemInterface &si,
+                          int *combined_status_variable_index = nullptr);
 
   template <typename INT>
   void build_reverse_node_map(std::vector<Excn::Mesh<INT>> &local_mesh, Excn::Mesh<INT> *global,
@@ -509,17 +496,26 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
       // on one database and the first on the next database.
 
       int i = 0;
-      for (i = nts; i > 0; i--) {
-        if (times[i - 1] < t_min) {
-          if (used || t_min - times[i - 1] >= interFace.interpart_minimum_time_delta()) {
-            used = true;
-            global_times.push_back(TimeStepMap<T>(p - 1, i - 1, times[i - 1]));
+      if (interFace.use_all_times()) {
+        for (i = nts; i > 0; i--) {
+          used = true;
+          global_times.push_back(TimeStepMap<T>(p - 1, i - 1, times[i - 1]));
+        }
+        local_mesh[p - 1].timestepCount = i;
+        t_min                           = t_min < times[0] ? t_min : times[0];
+      }
+      else {
+        for (i = nts; i > 0; i--) {
+          if (times[i - 1] < t_min) {
+            if (used || t_min - times[i - 1] >= interFace.interpart_minimum_time_delta()) {
+              used = true;
+              global_times.push_back(TimeStepMap<T>(p - 1, i - 1, times[i - 1]));
+            }
           }
         }
+        local_mesh[p - 1].timestepCount = i;
+        t_min                           = t_min < times[0] ? t_min : times[0];
       }
-      local_mesh[p - 1].timestepCount = i;
-      t_min                           = t_min < times[0] ? t_min : times[0];
-
       if (!used) {
         std::string part = "Part " + std::to_string(p) + ": ";
         part += interFace.inputFiles_[p - 1];
@@ -673,85 +669,32 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
 
   bool            add_n_status = interFace.nodal_status_variable() != "NONE";
   bool            add_e_status = interFace.element_status_variable() != "NONE";
-  Excn::Variables global_vars(Excn::ObjectType::GLOBAL);
-  Excn::Variables nodal_vars(Excn::ObjectType::NODE, add_n_status);
-  Excn::Variables element_vars(Excn::ObjectType::EBLK, add_e_status);
-  Excn::Variables nodeset_vars(Excn::ObjectType::NSET);
-  Excn::Variables sideset_vars(Excn::ObjectType::SSET);
+  Excn::Variables global_vars(Excn::ObjectType::GLOBAL, part_count);
+  Excn::Variables nodal_vars(Excn::ObjectType::NODE, part_count, add_n_status);
+  Excn::Variables element_vars(Excn::ObjectType::EBLK, part_count, add_e_status);
+  Excn::Variables nodeset_vars(Excn::ObjectType::NSET, part_count);
+  Excn::Variables sideset_vars(Excn::ObjectType::SSET, part_count);
 
-  {
-    Excn::ExodusFile id(0);
-
-    get_variable_params(id, global_vars, interFace.global_var_names());
-    get_variable_params(id, nodal_vars, interFace.node_var_names());
-    get_variable_params(id, element_vars, interFace.elem_var_names());
-    get_variable_params(id, nodeset_vars, interFace.nset_var_names());
-    get_variable_params(id, sideset_vars, interFace.sset_var_names());
-
-    get_truth_table(global, blocks, glob_blocks, element_vars, 4);
-    filter_truth_table(id, global, glob_blocks, element_vars, interFace.elem_var_names());
-
-    get_truth_table(global, nodesets, glob_nsets, nodeset_vars, 32);
-    filter_truth_table(id, global, glob_nsets, nodeset_vars, interFace.nset_var_names());
-
-    get_truth_table(global, sidesets, glob_ssets, sideset_vars, 16);
-    filter_truth_table(id, global, glob_ssets, sideset_vars, interFace.sset_var_names());
+  for (size_t part = 0; part < part_count; part++) {
+    get_variable_params(part, global_vars, interFace.global_var_names());
+    get_variable_params(part, nodal_vars, interFace.node_var_names());
+    get_variable_params(part, element_vars, interFace.elem_var_names());
+    get_variable_params(part, nodeset_vars, interFace.nset_var_names());
+    get_variable_params(part, sideset_vars, interFace.sset_var_names());
   }
 
-  // Check that the variable counts are the same on the subsequent files...
-  // Error out if there is a difference...
-  bool found_error = false;
-  for (size_t p = 1; p < part_count; p++) {
-    found_error |= check_variable_params(p, global_vars);
-    found_error |= check_variable_params(p, nodal_vars);
-    found_error |= check_variable_params(p, element_vars);
-    found_error |= check_variable_params(p, nodeset_vars);
-    found_error |= check_variable_params(p, sideset_vars);
-  }
-  if (found_error) {
-    return 1;
-  }
-
-  // There is a slightly tricky situation here. The truthTable block order
-  // is based on the ordering of the blocks on the input databases.
-  // These blocks may have been reordered on output to make the 'offset'
-  // variables line up correctly when the element ids are mapped back to
-  // the "overall global" order.  There is not much problem since most
-  // calls  outputting block-related items pass the id and don't rely
-  // on ordering. However, the truth table is one of the exceptions
-  // and we need to reorder the truth table to match the output block
-  // order. After this call, we can use the original ordering, so just
-  // need a temporary vector here...
-  if (global_vars.count(Excn::InOut::OUT_) + nodal_vars.count(Excn::InOut::OUT_) +
-          element_vars.count(Excn::InOut::OUT_) + nodeset_vars.count(Excn::InOut::OUT_) +
-          sideset_vars.count(Excn::InOut::OUT_) >
-      0) {
-
-    std::vector<int> elem_truth_table;
-    std::vector<int> nset_truth_table;
-    std::vector<int> sset_truth_table;
-    create_output_truth_table(glob_blocks, element_vars, elem_truth_table);
-    create_output_truth_table(glob_nsets, nodeset_vars, nset_truth_table);
-    create_output_truth_table(glob_ssets, sideset_vars, sset_truth_table);
-
-    ex_put_all_var_param(Excn::ExodusFile::output(), global_vars.count(Excn::InOut::OUT_),
-                         nodal_vars.count(Excn::InOut::OUT_), element_vars.count(Excn::InOut::OUT_),
-                         Data(elem_truth_table), nodeset_vars.count(Excn::InOut::OUT_),
-                         Data(nset_truth_table), sideset_vars.count(Excn::InOut::OUT_),
-                         Data(sset_truth_table));
-  }
+  ex_put_all_var_param(Excn::ExodusFile::output(), global_vars.count(), nodal_vars.count(),
+                       element_vars.count(), nullptr, nodeset_vars.count(), nullptr,
+                       sideset_vars.count(), nullptr);
 
   // II. read/write the variable names
   int combined_status_variable_index = 0;
-  {
-    Excn::ExodusFile id(0);
-    get_put_variable_names(id, Excn::ExodusFile::output(), global_vars, interFace);
-    get_put_variable_names(id, Excn::ExodusFile::output(), nodal_vars, interFace);
-    get_put_variable_names(id, Excn::ExodusFile::output(), element_vars, interFace,
-                           &combined_status_variable_index);
-    get_put_variable_names(id, Excn::ExodusFile::output(), nodeset_vars, interFace);
-    get_put_variable_names(id, Excn::ExodusFile::output(), sideset_vars, interFace);
-  }
+  put_variable_names(Excn::ExodusFile::output(), global_vars, interFace);
+  put_variable_names(Excn::ExodusFile::output(), nodal_vars, interFace);
+  put_variable_names(Excn::ExodusFile::output(), element_vars, interFace,
+                     &combined_status_variable_index);
+  put_variable_names(Excn::ExodusFile::output(), nodeset_vars, interFace);
+  put_variable_names(Excn::ExodusFile::output(), sideset_vars, interFace);
   ex_update(Excn::ExodusFile::output());
 
   /**********************************************************************/
@@ -763,9 +706,6 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   if (debug_level & 1) {
     fmt::print("{}", time_stamp(tsFormat));
   }
-
-  std::vector<T> global_values(global_vars.count(Excn::InOut::IN_));
-  std::vector<T> output_global_values(global_vars.count(Excn::InOut::OUT_));
 
   // Determine maximum number of entities on any part
   auto max_ent = find_max_entity_count(part_count, local_mesh, global, blocks, nodesets, sidesets);
@@ -814,21 +754,22 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     (time_step)(time_val)(global_times[time_step].timeValue);
     error += ex_put_time(Excn::ExodusFile::output(), time_step_out, &time_val);
 
-    if (global_vars.count(Excn::InOut::OUT_) > 0) {
+    if (global_vars.count() > 0) {
       if (debug_level & 1) {
         fmt::print("{}Global Variables...\n", time_stamp(tsFormat));
       }
+      std::vector<T> global_values(global_vars.in_count(p));
+      std::vector<T> output_global_values(global_vars.count());
       error += ex_get_var(id, global_times[time_step].localStepNumber + 1, EX_GLOBAL, 0, 0,
-                          global_vars.count(), static_cast<void *>(Data(global_values)));
+                          global_vars.in_count(p), static_cast<void *>(Data(global_values)));
       // Map ...
-      for (int ig = 0; ig < global_vars.count(Excn::InOut::IN_); ig++) {
-        if (global_vars.index_[ig] > 0) {
-          SMART_ASSERT(ig < static_cast<int>(global_values.size()));
-          output_global_values[global_vars.index_[ig] - 1] = global_values[ig];
+      for (size_t ig = 0; ig < global_vars.in_count(p); ig++) {
+        if (global_vars.inputIndex_[p][ig] > 0) {
+          output_global_values[global_vars.inputIndex_[p][ig] - 1] = global_values[ig];
         }
       }
       error += ex_put_var(Excn::ExodusFile::output(), time_step_out, EX_GLOBAL, 1, 0,
-                          global_vars.count(Excn::InOut::OUT_), Data(output_global_values));
+                          global_vars.count(), Data(output_global_values));
     }
 
     // ========================================================================
@@ -837,47 +778,41 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
       fmt::print("{}Nodal Variables...\n", time_stamp(tsFormat));
     }
 
-    if (nodal_vars.count(Excn::InOut::OUT_) > 0) {
+    if (nodal_vars.count() > 0) {
       size_t         node_count = local_mesh[p].count(Excn::ObjectType::NODE);
       std::vector<T> master_nodal_values(global.count(Excn::ObjectType::NODE));
 
-      int offset = nodal_vars.addStatus ? 1 : 0;
-      for (int i = 0; i < nodal_vars.count(Excn::InOut::OUT_) - offset;
-           i++) { // Last output variable may be status
-        for (int j = 0; j < nodal_vars.count(Excn::InOut::IN_); j++) {
-          if (nodal_vars.index_[j] - 1 == i) {
-            std::fill(master_nodal_values.begin(), master_nodal_values.end(), T(0.0));
+      for (size_t i = 0; i < nodal_vars.in_count(p); i++) {
+        int out_index = nodal_vars.inputIndex_[p][i];
+        if (out_index > 0) {
+          std::fill(master_nodal_values.begin(), master_nodal_values.end(), T(0.0));
+          error += ex_get_var(id, global_times[time_step].localStepNumber + 1, EX_NODAL, i + 1, 0,
+                              node_count, Data(values));
 
-            error += ex_get_var(id, global_times[time_step].localStepNumber + 1, EX_NODAL, j + 1, 0,
-                                node_count, Data(values));
-
-            // copy values to master nodal value information
-            for (size_t jj = 0; jj < node_count; jj++) {
-              // Map local nodal value to global location...
-              size_t nodal_value               = local_mesh[p].localNodeToGlobal[jj];
-              master_nodal_values[nodal_value] = values[jj];
-            }
-            error += ex_put_var(Excn::ExodusFile::output(), time_step_out, EX_NODAL, i + 1, 0,
-                                global.count(Excn::ObjectType::NODE), Data(master_nodal_values));
-            break;
-          }
-        }
-
-        // Fill "node_status" variable -- 'alive' for alive; 1-alive for dead.
-        // It is the last output variable...
-        if (nodal_vars.addStatus) {
-          SMART_ASSERT(alive == 0.0 || alive == 1.0)(alive);
-          std::fill(master_nodal_values.begin(), master_nodal_values.end(), T((1.0 - alive)));
-          for (size_t j = 0; j < node_count; j++) {
+          // copy values to master nodal value information
+          for (size_t jj = 0; jj < node_count; jj++) {
             // Map local nodal value to global location...
-            size_t nodal_value               = local_mesh[p].localNodeToGlobal[j];
-            master_nodal_values[nodal_value] = alive;
+            size_t nodal_value               = local_mesh[p].localNodeToGlobal[jj];
+            master_nodal_values[nodal_value] = values[jj];
           }
-
-          error += ex_put_var(Excn::ExodusFile::output(), time_step_out, EX_NODAL,
-                              nodal_vars.count(Excn::InOut::OUT_), 0,
+          error += ex_put_var(Excn::ExodusFile::output(), time_step_out, EX_NODAL, out_index, 0,
                               global.count(Excn::ObjectType::NODE), Data(master_nodal_values));
         }
+      }
+
+      // Fill "node_status" variable -- 'alive' for alive; 1-alive for dead.
+      // It is the last output variable...
+      if (nodal_vars.addStatus) {
+        SMART_ASSERT(alive == 0.0 || alive == 1.0)(alive);
+        std::fill(master_nodal_values.begin(), master_nodal_values.end(), T((1.0 - alive)));
+        for (size_t j = 0; j < node_count; j++) {
+          // Map local nodal value to global location...
+          size_t nodal_value               = local_mesh[p].localNodeToGlobal[j];
+          master_nodal_values[nodal_value] = alive;
+        }
+
+        error += ex_put_var(Excn::ExodusFile::output(), time_step_out, EX_NODAL, nodal_vars.count(),
+                            0, global.count(Excn::ObjectType::NODE), Data(master_nodal_values));
       }
     }
 
@@ -886,7 +821,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     if (debug_level & 1) {
       fmt::print("{}Element Variables...\n", time_stamp(tsFormat));
     }
-    if (element_vars.count(Excn::InOut::IN_) > 0) {
+    if (element_vars.count() > 0) {
       read_write_master_values(element_vars, global, glob_blocks, local_mesh, blocks, values, p, id,
                                global_times[time_step].localStepNumber, time_step_out);
     }
@@ -895,9 +830,8 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     // Use the output time step for writing data
     if (interFace.element_status_variable() != "NONE") {
       add_status_variable(Excn::ExodusFile::output(), global, blocks[p], glob_blocks,
-                          local_mesh[p].localElementToGlobal, time_step_out,
-                          element_vars.index_[element_vars.count(Excn::InOut::IN_)], alive,
-                          combined_status_variable_index);
+                          local_mesh[p].localElementToGlobal, time_step_out, element_vars.count(),
+                          alive, combined_status_variable_index);
     }
 
     // ========================================================================
@@ -905,7 +839,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     if (debug_level & 1) {
       fmt::print("{}Sideset Variables...\n", time_stamp(tsFormat));
     }
-    if (sideset_vars.count(Excn::InOut::IN_) > 0) {
+    if (sideset_vars.count() > 0) {
       read_write_master_values(sideset_vars, global, glob_ssets, local_mesh, sidesets, values, p,
                                id, global_times[time_step].localStepNumber, time_step_out);
     }
@@ -915,7 +849,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     if (debug_level & 1) {
       fmt::print("{}Nodeset Variables...\n", time_stamp(tsFormat));
     }
-    if (nodeset_vars.count(Excn::InOut::IN_) > 0) {
+    if (nodeset_vars.count() > 0) {
       read_write_master_values(nodeset_vars, global, glob_nsets, local_mesh, nodesets, values, p,
                                id, global_times[time_step].localStepNumber, time_step_out);
     }
@@ -1818,70 +1752,44 @@ namespace {
     }
   }
 
-  void get_put_variable_names(int id, int out, Excn::Variables &vars, Excn::SystemInterface &si,
-                              int *combined_status_variable_index)
+  void put_variable_names(int out, Excn::Variables &vars, Excn::SystemInterface &si,
+                          int *combined_status_variable_index)
   {
-    if (vars.count(Excn::InOut::OUT_) > 0) {
-
-      char **output_name_list =
-          get_name_array(vars.count(Excn::InOut::OUT_), Excn::ExodusFile::max_name_length());
-
-      int num_vars       = vars.index_.size();
-      int extra          = vars.addStatus ? 1 : 0;
-      int num_input_vars = num_vars - extra;
-
-      char **input_name_list = get_name_array(num_vars, Excn::ExodusFile::max_name_length());
-      if (num_input_vars > 0) {
-        int error = ex_get_variable_names(id, vars.type(), num_input_vars, input_name_list);
-        if (error != EX_NOERR) {
-          fmt::print(stderr, "ERROR: Cannot get {} variable names\n", vars.label());
-          exit(EXIT_FAILURE);
-        }
-      }
-
-      std::string status;
+    if (vars.count() > 0) {
+      std::string status = "NONE";
       if (vars.type() == EX_ELEM_BLOCK || vars.type() == EX_NODAL) {
-        if (vars.type() == EX_ELEM_BLOCK) {
-          status = si.element_status_variable();
-          if (status != "NONE") {
-            copy_string(input_name_list[num_vars - 1], status,
-                        Excn::ExodusFile::max_name_length() + 1);
-          }
-        }
-        else if (vars.type() == EX_NODAL) {
-          status = si.nodal_status_variable();
-          if (status != "NONE") {
-            copy_string(input_name_list[num_vars - 1], status,
-                        Excn::ExodusFile::max_name_length() + 1);
+        status = (vars.type() == EX_ELEM_BLOCK) ? si.element_status_variable()
+                                                : si.nodal_status_variable();
+
+        if (status != "NONE") {
+          // See if any of the variable names conflict with the status variable name...
+          for (const auto &name : vars.names_) {
+            if (case_compare(name, status)) {
+              // Error -- duplicate element variable names on output database.
+              fmt::print(
+                  stderr,
+                  "\nERROR: A {} variable already exists on one of the input  databases with the "
+                  "same name as the status variable '{}'. This is not allowed.\n\n",
+                  vars.label(), status);
+              exit(EXIT_FAILURE);
+            }
           }
         }
       }
 
-      // Iterate through the 'var_index' and transfer
-      // Assume that the number of pointers is limited to
-      // the number of results variables
+      int    extra = vars.addStatus ? 1 : 0;
+      char **output_name_list =
+          get_name_array(vars.count() + extra, Excn::ExodusFile::max_name_length());
+
       size_t maxlen = 0;
-      for (int i = 0; i < num_vars; i++) {
-        if (vars.index_[i] > 0) {
-          copy_string(output_name_list[vars.index_[i] - 1], input_name_list[i],
-                      Excn::ExodusFile::max_name_length() + 1);
-          if (strlen(input_name_list[i]) > maxlen) {
-            maxlen = strlen(input_name_list[i]);
-          }
+      {
+        int i = 0;
+        for (const auto &name : vars.names_) {
+          copy_string(output_name_list[i++], name, Excn::ExodusFile::max_name_length() + 1);
+          maxlen = std::max(maxlen, name.length());
         }
-      }
-
-      // See if any of the variable names conflict with the status variable name...
-      if (status != "NONE") {
-        for (size_t i = 0; i < static_cast<size_t>(vars.count(Excn::InOut::OUT_)) - 1; i++) {
-          if (case_compare(output_name_list[i], status)) {
-            // Error -- duplicate element variable names on output database.
-            fmt::print(stderr,
-                       "\nERROR: A {} variable already exists on the input database with the "
-                       "same name as the status variable '{}'. This is not allowed.\n\n",
-                       vars.label(), status);
-            exit(EXIT_FAILURE);
-          }
+        if (vars.addStatus) {
+          copy_string(output_name_list[i++], status, Excn::ExodusFile::max_name_length() + 1);
         }
       }
 
@@ -1893,13 +1801,13 @@ namespace {
         nfield = 1;
       }
 
-      fmt::print("Found {} {} variables.\n\t", vars.count(Excn::InOut::OUT_), vars.label());
+      fmt::print("Found {} {} variables.\n\t", vars.count(), vars.label());
       {
-        int i    = 0;
-        int ifld = 1;
-        while (i < vars.count(Excn::InOut::OUT_)) {
-          fmt::print("{:<{}}", output_name_list[i++], maxlen);
-          if (++ifld > nfield && i < vars.count(Excn::InOut::OUT_)) {
+        size_t i    = 0;
+        int    ifld = 1;
+        for (const auto &name : vars.names_) {
+          fmt::print("{:<{}}", name, maxlen);
+          if (++ifld > nfield && ++i < vars.count()) {
             fmt::print("\n\t");
             ifld = 1;
           }
@@ -1907,7 +1815,7 @@ namespace {
         fmt::print("\n\n");
       }
 
-      ex_put_variable_names(out, vars.type(), vars.count(Excn::InOut::OUT_), output_name_list);
+      ex_put_variable_names(out, vars.type(), vars.count() + extra, output_name_list);
 
       // KLUGE: Handle finding combined status index variable here since it is
       // the only place we have the list of output variable names...
@@ -1915,20 +1823,19 @@ namespace {
         *combined_status_variable_index = 0;
         const std::string &comb_stat    = si.combined_mesh_status_variable();
         if (!comb_stat.empty()) {
-          for (int i = 0; i < vars.count(Excn::InOut::OUT_); i++) {
-            if (case_compare(comb_stat, output_name_list[i])) {
+          for (size_t i = 0; i < vars.count(); i++) {
+            if (case_compare(comb_stat, vars.names_[i])) {
               *combined_status_variable_index = i + 1;
               break;
             }
           }
         }
       }
-      free_name_array(output_name_list, vars.count(Excn::InOut::OUT_));
-      free_name_array(input_name_list, num_vars);
+      free_name_array(output_name_list, vars.count() + extra);
     }
   }
 
-  void get_variable_params(int id, Excn::Variables &vars, const StringIdVector &variable_list)
+  void get_variable_params(int part, Excn::Variables &vars, const StringIdVector &variable_list)
   {
     // Determines the number of variables of type 'type()' that will
     // be written to the output database. The 'variable_list' vector
@@ -1947,41 +1854,29 @@ namespace {
     // var_index[i] > 0, variable written; is variable 'var_index[i]'
 
     // If 'type' is ELEMENT or NODE, then reserve space for the 'status' variable.
-    int extra = vars.addStatus ? 1 : 0;
-    int num_vars;
+    int              num_vars;
+    Excn::ExodusFile id(part);
     ex_get_variable_param(id, vars.type(), &num_vars);
 
-    vars.index_.resize(num_vars + extra);
-
-    // Create initial index which defaults to no output...
-    std::fill(vars.index_.begin(), vars.index_.end(), 0);
-    // ...Except for the status variable (if any)
-    if (extra == 1) {
-      vars.index_[num_vars] = 1;
+    // If user specifies "NONE" for the variable list no variables
+    // will be written.  Just return 0.
+    if (variable_list.size() == 1 && case_compare(variable_list[0].first, "none")) {
+      vars.inputIndex_[part].resize(num_vars, 0);
+      return;
     }
 
     // If 'variable_list' is empty or specified 'ALL', then all
     // variables are to be output
+    StringVector exo_names = get_exodus_variable_names(id, vars.type(), num_vars);
     if (variable_list.empty() ||
         (variable_list.size() == 1 && case_compare(variable_list[0].first, "all"))) {
-      std::iota(vars.index_.begin(), vars.index_.end(), 1);
-      vars.outputCount = num_vars + extra;
-      return;
+      vars.inputIndex_[part].resize(num_vars, 1);
     }
-
-    // Another possibility is user specifies "NONE" for the variable
-    // list so no variables will be written.  Just return 0.
-    if (variable_list.size() == 1 && case_compare(variable_list[0].first, "none")) {
-      vars.outputCount = extra;
-      return;
-    }
-
-    // At this point, the variable_list specifies at least one
-    // variable to be output to the database.
-    // Get the list that the user entered and the list of files
-    // from the input database...
-    {
-      StringVector exo_names = get_exodus_variable_names(id, vars.type(), num_vars);
+    else {
+      // At this point, the variable_list specifies at least one
+      // variable to be output to the database.
+      // Get the list that the user entered and the list of names
+      // from the input database...
 
       // Iterate 'variable_list' and find position in 'exo_names'.  If
       // not found, there is an error -- set index to -1; otherwise set
@@ -1991,72 +1886,47 @@ namespace {
       // The variable_list may contain multiple entries for each
       // variable if the user is specifying output only on certain
       // element blocks...
-      std::string var_name;
-      int         var_count = 0;
-      for (const auto &elem : variable_list) {
-        if (var_name == elem.first) {
+      bool omit = false;
+      if (variable_list.size() >= 2 && case_compare(variable_list[0].first, "!omit")) {
+        omit = true;
+      }
+      vars.inputIndex_[part].resize(num_vars, omit ? 1 : 0);
+
+      for (const auto &[elem, eb_id] : variable_list) {
+        if (case_compare(elem, "!omit")) {
           continue;
         }
-        var_name   = elem.first;
         bool found = false;
         for (size_t j = 0; j < exo_names.size() && !found; j++) {
-          if (case_compare(exo_names[j], var_name)) {
-            found          = true;
-            vars.index_[j] = ++var_count;
+          if (case_compare(exo_names[j], elem)) {
+            found                     = true;
+            vars.inputIndex_[part][j] = omit ? 0 : 1;
           }
         }
         if (!found) {
-          fmt::print(stderr, "ERROR: Variable '{}' is not valid.\n", elem.first);
-          exit(EXIT_FAILURE);
+          fmt::print(stderr, "WARNING: Variable '{}' not found on part {}.\n", elem, part);
         }
       }
-      // Count non-zero entries in var_index;
-      int nz_count = 0;
-      for (auto &elem : vars.index_) {
-        if (elem > 0) {
-          nz_count++;
+    }
+
+    for (size_t i = 0; i < vars.inputIndex_[part].size(); i++) {
+      if (vars.inputIndex_[part][i] != 0) {
+        auto name  = exo_names[i];
+        bool found = false;
+        for (size_t j = 0; j < vars.names_.size(); j++) {
+          if (case_compare(vars.names_[j], name)) {
+            found                     = true;
+            vars.inputIndex_[part][i] = j + 1;
+            break;
+          }
+        }
+        if (!found) {
+          vars.names_.push_back(name);
+          vars.inputIndex_[part][i] = vars.names_.size();
         }
       }
-      SMART_ASSERT(nz_count == var_count + extra)(nz_count)(var_count);
-
-      if (vars.addStatus) {
-        vars.index_[num_vars] = nz_count; // Already counted above...
-      }
-      vars.outputCount = nz_count;
-      return;
     }
-  }
-
-  bool check_variable_params(size_t p, const Excn::Variables &vars)
-  {
-    // Determines the number of variables of type 'type()' that will
-    // be written to the output database. The 'variable_list' vector
-    // specifies a possibly empty list of variable names that the user
-    // wants transferred to the output database. If 'variable_list' is
-    // empty, then all variables of that type will be transferred; if
-    // the 'variable_list' size is 1 and it contains the string 'NONE',
-    // then no variables of that type will be transferred; if size is 1
-    // and it contains the string 'ALL', then all variables of that type
-    // will be transferred.
-    //
-    // Returns the number of variables which will be output Also creates
-    // a 'var_index'.  The var_index is zero-based and of size
-    // 'input_variable_count'. If:
-    // var_index[i] ==0, variable not written to output database
-    // var_index[i] > 0, variable written; is variable 'var_index[i]'
-
-    // If 'type' is ELEMENT or NODE, then reserve space for the 'status' variable.
-    int  extra = vars.addStatus ? 1 : 0;
-    int  num_vars;
-    auto id = Excn::ExodusFile(p);
-    ex_get_variable_param(id, vars.type(), &num_vars);
-    if (static_cast<size_t>(num_vars) != vars.index_.size() - extra) {
-      fmt::print("ERROR: Part mesh {} has a different number of {} variables ({}) than the root "
-                 "part mesh ({}) which is not allowed.\n",
-                 p, vars.label(), num_vars, vars.index_.size() - extra);
-      return true;
-    }
-    return false;
+    return;
   }
 
   template <typename INT> void put_mesh_summary(const Excn::Mesh<INT> &mesh)
@@ -2593,6 +2463,10 @@ namespace {
 
   StringVector get_exodus_variable_names(int id, ex_entity_type elType, size_t var_count)
   {
+    if (var_count == 0) {
+      return {};
+    }
+
     // Allocate space for variable names...
     char **name_list = get_name_array(var_count, Excn::ExodusFile::max_name_length());
     int    error     = ex_get_variable_names(id, elType, var_count, name_list);
@@ -2609,159 +2483,6 @@ namespace {
 
     free_name_array(name_list, var_count);
     return names;
-  }
-
-  template <typename T, typename INT>
-  void filter_truth_table(int id, Excn::Mesh<INT> &global, std::vector<T> &glob_blocks,
-                          Excn::Variables &vars, const StringIdVector &variable_names)
-  {
-    // This routine checks the 'variable_names' list to see if the user
-    // has restricted the output of certain variables to certain element
-    // blocks. If so, then the truth table is modified to match the
-    // users request.
-    if (variable_names.empty()) {
-      return;
-    }
-
-    // Check for a non-zero id entry in the variable_names list which
-    // will signify a user-specified element block.
-    bool found_it = false;
-    for (size_t i = 0; i < variable_names.size() && !found_it; i++) {
-      if (variable_names[i].second > 0) {
-        found_it = true;
-      }
-    }
-    if (!found_it) {
-      return;
-    }
-
-    // At this point, know that there is at least one block-restricted
-    // variable output specification. For each one, modify the global
-    // truth table to match the specification.
-    StringVector exo_names = get_exodus_variable_names(id, vars.type(), vars.count());
-
-    std::string var_name;
-    int         out_position = -1;
-    for (auto [v_name, v_blkid] : variable_names) {
-      if (v_blkid > 0 && var_name != v_name) {
-        var_name = v_name;
-        // Find which exodus variable matches this name
-        out_position = -1;
-        for (size_t j = 0; j < exo_names.size(); j++) {
-          if (case_compare(exo_names[j], var_name)) {
-            out_position = vars.index_[j] - 1;
-            break;
-          }
-        }
-        if (out_position < 0) {
-          fmt::print(stderr, "ERROR: Variable '{}' does not exist on any block in this database.\n",
-                     v_name);
-          exit(EXIT_FAILURE);
-        }
-
-        // Set all truth table entries for this variable to negative
-        // of current value and then iterate over specified blocks and
-        // set those positive.  This way can make sure that the
-        // variable truly exists for the block that the user specified.
-        found_it = false;
-        for (size_t b = 0; b < global.count(vars.objectType); b++) {
-          if (glob_blocks[b].id == v_blkid) {
-            if (glob_blocks[b].truthTable[out_position] == 0) {
-              fmt::print(stderr, "ERROR: Variable '{}' does not exist on block {}.\n", v_name,
-                         v_blkid);
-              exit(EXIT_FAILURE);
-            }
-            else {
-              found_it = true;
-              break;
-            }
-          }
-          else {
-            // User does not want this variable output on these blocks...
-            glob_blocks[b].truthTable[out_position] = 0;
-          }
-        }
-
-        if (!found_it) {
-          fmt::print(stderr,
-                     "ERROR: User-specified block id of {} for variable '{}' does not exist.\n",
-                     v_blkid, v_name);
-          exit(EXIT_FAILURE);
-        }
-      }
-    }
-  }
-
-  template <typename T, typename INT>
-  void get_truth_table(Excn::Mesh<INT> &global, std::vector<std::vector<T>> &blocks,
-                       std::vector<T> &glob_blocks, Excn::Variables &vars, int debug)
-  {
-    // read truth table - sum across all parts since many will
-    // have values set to zero for zero length blocks the element
-    // variable truth table organized as a 2D array:
-    // [global.count(Excn::EBLK)][num_elem_vars]
-
-    Excn::ObjectType object_type = vars.objectType;
-
-    if (vars.count(Excn::InOut::OUT_) > 0) {
-      // For each input exodus file, get it's truth table and fill
-      // in the location in the output truth table...
-
-      size_t part_count = blocks.size();
-      for (size_t p = 0; p < part_count; p++) {
-        Excn::ExodusFile id(p);
-
-        for (size_t b = 0; b < global.count(object_type); b++) {
-          size_t gb = 0;
-          for (; gb < global.count(object_type); gb++) {
-            if (glob_blocks[gb].id == blocks[p][b].id) {
-              break;
-            }
-          }
-          SMART_ASSERT(glob_blocks[gb].id == blocks[p][b].id);
-
-          if (p == 0) {
-            glob_blocks[gb].truthTable.resize(vars.count(Excn::InOut::OUT_));
-          }
-
-          if (vars.count(Excn::InOut::IN_) > 0) {
-            blocks[p][b].truthTable.resize(vars.count(Excn::InOut::IN_));
-            ex_get_object_truth_vector(id, vars.type(), blocks[p][b].id,
-                                       vars.count(Excn::InOut::IN_), Data(blocks[p][b].truthTable));
-
-            // Find global block corresponding to this block. (Ids match)
-            for (int j = 0; j < vars.count(Excn::InOut::IN_); j++) {
-              if (vars.index_[j] > 0) {
-                glob_blocks[gb].truthTable[vars.index_[j] - 1] += blocks[p][b].truthTable[j];
-              }
-            }
-          }
-          if (vars.addStatus) {
-            glob_blocks[gb].truthTable[vars.count(Excn::InOut::OUT_) - 1] = 1;
-          }
-        }
-      }
-
-      // reset truth table values that may be greater than 1
-      for (size_t b = 0; b < global.count(object_type); b++) {
-        for (int j = 0; j < vars.count(Excn::InOut::OUT_); j++) {
-          if (glob_blocks[b].truthTable[j] > 0) {
-            glob_blocks[b].truthTable[j] = 1;
-          }
-        }
-      }
-
-      if (debug_level & debug) {
-        fmt::print("Truth table for {}\t{} variables\t{} sets\n", vars.label(),
-                   vars.count(Excn::InOut::OUT_), global.count(object_type));
-        for (size_t b = 0; b < global.count(object_type); b++) {
-          for (int j = 0; j < vars.count(Excn::InOut::OUT_); j++) {
-            fmt::print("{}", glob_blocks[b].truthTable[j]);
-          }
-          fmt::print("\n");
-        }
-      }
-    }
   }
 
   bool case_compare(std::string_view s1, std::string_view s2)
@@ -2922,6 +2643,9 @@ namespace {
     int error  = 0;
     int id_out = Excn::ExodusFile::output(); // output file identifier
 
+    std::vector<int> vars_output(vars.count() +
+                                 1); // Keep track of which variables were written for this part.
+
     size_t max_size = 0;
     for (size_t b = 0; b < global.count(vars.objectType); b++) {
       if (max_size < global_sets[b].entity_count()) {
@@ -2933,24 +2657,23 @@ namespace {
     // Only needed for element, but haven't cleaned this up yet...
     INT *part_loc_elem_to_global = Data(local_mesh[p].localElementToGlobal);
 
-    for (int i = 0; i < vars.count(Excn::InOut::IN_); i++) {
-      if (vars.index_[i] > 0) {
-        int ivar = vars.index_[i] - 1;
+    for (size_t i = 0; i < vars.in_count(p); i++) {
+      if (vars.inputIndex_[p][i] > 0) {
+        int out_index = vars.inputIndex_[p][i];
+        if (out_index > 0) {
 
-        for (size_t b = 0; b < global.count(vars.objectType); b++) {
-          size_t lb = 0;
-          for (; lb < global.count(vars.objectType); lb++) {
-            if (global_sets[b].id == local_sets[p][lb].id) {
-              break;
+          for (size_t b = 0; b < global.count(vars.objectType); b++) {
+            size_t lb = 0;
+            for (; lb < global.count(vars.objectType); lb++) {
+              if (global_sets[b].id == local_sets[p][lb].id) {
+                break;
+              }
             }
-          }
-          SMART_ASSERT(global_sets[b].id == local_sets[p][lb].id);
-
-          if (global_sets[b].truthTable[ivar] && local_sets[p][lb].entity_count() > 0) {
+            SMART_ASSERT(global_sets[b].id == local_sets[p][lb].id);
 
             int entity_count = local_sets[p][lb].entity_count();
+            if (entity_count > 0) {
 
-            if (local_sets[p][lb].truthTable[i] > 0) {
               error += ex_get_var(id, time_step + 1, exodus_object_type(vars.objectType), i + 1,
                                   local_sets[p][lb].id, entity_count, Data(values));
 
@@ -2959,7 +2682,6 @@ namespace {
                 map_element_vars(local_sets[p][lb].offset_, global_sets[b].offset_, entity_count,
                                  values, master_values, part_loc_elem_to_global);
                 break;
-
               case Excn::ObjectType::SSET:
                 map_sideset_vars(local_sets[p][lb], entity_count, values, master_values);
                 break;
@@ -2970,28 +2692,38 @@ namespace {
               default: break;
               }
             }
-            ex_put_var(id_out, time_step_out, exodus_object_type(vars.objectType), ivar + 1,
+            vars_output[out_index] = 1;
+            ex_put_var(id_out, time_step_out, exodus_object_type(vars.objectType), out_index,
+                       global_sets[b].id, global_sets[b].entity_count(), Data(master_values));
+          }
+        }
+      }
+    }
+    if (vars.count() > vars.in_count(p)) {
+      std::fill(master_values.begin(), master_values.end(), 0.0);
+
+      for (size_t i = 1; i <= vars.count(); i++) {
+        if (vars_output[i] == 1) {
+          continue;
+        }
+        for (size_t b = 0; b < global.count(vars.objectType); b++) {
+          size_t lb = 0;
+          for (; lb < global.count(vars.objectType); lb++) {
+            if (global_sets[b].id == local_sets[p][lb].id) {
+              break;
+            }
+          }
+          SMART_ASSERT(global_sets[b].id == local_sets[p][lb].id);
+
+          int entity_count = local_sets[p][lb].entity_count();
+          if (entity_count > 0) {
+            ex_put_var(id_out, time_step_out, exodus_object_type(vars.objectType), i,
                        global_sets[b].id, global_sets[b].entity_count(), Data(master_values));
           }
         }
       }
     }
     return error;
-  }
-
-  template <typename U>
-  void create_output_truth_table(std::vector<U> &global_sets, Excn::Variables &vars,
-                                 std::vector<int> &truth_table)
-  {
-    truth_table.resize(global_sets.size() * vars.count(Excn::InOut::OUT_));
-    for (auto &global_set : global_sets) {
-      int bout = global_set.position_;
-      SMART_ASSERT(bout >= 0);
-      for (int j = 0; j < vars.count(Excn::InOut::OUT_); j++) {
-        int out_ttable_loc          = (bout * vars.count(Excn::InOut::OUT_)) + j;
-        truth_table[out_ttable_loc] = global_set.truthTable[j];
-      }
-    }
   }
 
   template <typename INT>

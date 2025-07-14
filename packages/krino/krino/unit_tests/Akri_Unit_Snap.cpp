@@ -140,7 +140,7 @@ protected:
     }
   }
 
-  bool is_node_in_assigned_nodes_for_indices(const stk::mesh::BulkData & mesh, const stk::mesh::Entity node, const std::vector<unsigned> & nodeIndices)
+  bool is_node_in_assigned_nodes_for_indices(const stk::mesh::BulkData & /*mesh*/, const stk::mesh::Entity node, const std::vector<unsigned> & nodeIndices)
   {
     for (auto nodeIndex : nodeIndices)
       if (this->get_assigned_node_for_index(nodeIndex) == node)

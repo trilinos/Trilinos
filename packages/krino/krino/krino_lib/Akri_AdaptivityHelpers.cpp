@@ -13,6 +13,7 @@
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Phase_Support.hpp>
+#include <Akri_RefinementManager.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -26,11 +27,10 @@
 #include <string>
 #include <vector>
 
-#include "Akri_RefinementInterface.hpp"
 namespace krino
 {
 
-void filter_refinement_marker(const RefinementInterface & refinement, const stk::mesh::BulkData & mesh, FieldRef elem_marker, const stk::mesh::Selector & do_not_refine_or_unrefine_selector)
+void filter_refinement_marker(const RefinementManager & refinement, const stk::mesh::BulkData & mesh, FieldRef elem_marker, const stk::mesh::Selector & do_not_refine_or_unrefine_selector)
 {
   const auto & parentPart = refinement.parent_part();
 
@@ -54,7 +54,7 @@ void filter_refinement_marker(const RefinementInterface & refinement, const stk:
 }
 
 
-void perform_multilevel_adaptivity(RefinementInterface & refinement,
+void perform_multilevel_adaptivity(RefinementManager & refinement,
     stk::mesh::BulkData & mesh,
     const std::function<void(int)> & marker_function,
     const stk::mesh::Selector & do_not_refine_selector)

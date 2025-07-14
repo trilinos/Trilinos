@@ -61,13 +61,13 @@ public:
 
     for(stk::mesh::FieldBase * transientField : allTransientFields)
     {
+        auto transientFieldData = transientField->data<double>();
         for(size_t i = 0; i < entities.size(); i++)
         {
-            unsigned numEntriesPerEntity = stk::mesh::field_scalars_per_entity(*transientField, entities[i]);
             double value = 100.0 * static_cast<double>(bulk.identifier(entities[i])) + time;
-            double *data = static_cast<double*> (stk::mesh::field_data(*transientField, entities[i]));
-            for(unsigned j=0; j<numEntriesPerEntity; j++)
-                data[j] = value + j;
+            auto data = transientFieldData.entity_values(entities[i]);
+            for(stk::mesh::ComponentIdx component : data.components())
+              data(component) = value + static_cast<int>(component);
         }
     }
 }
@@ -131,14 +131,15 @@ TEST_F(BalanceFromField, 6elems2procs_readLastTimeStepFromFile)
   stk::mesh::BulkData & bulk = initialMesh.get_bulk();
   stk::mesh::Field<double> &weightField = *bulk.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
                                                                                    m_transientFieldName + "_scalar");
+  auto weightFieldData = weightField.data<stk::mesh::ReadOnly>();
   const stk::mesh::BucketVector & elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK,
                                                                  bulk.mesh_meta_data().locally_owned_part());
   for (const stk::mesh::Bucket * bucket : elemBuckets) {
     for (const stk::mesh::Entity elem : *bucket) {
       const stk::mesh::EntityId elemId = bulk.identifier(elem);
-      const double * fieldWeight = stk::mesh::field_data(weightField, elem);
+      auto fieldWeight = weightFieldData.entity_values(elem);
       const double expectedFieldWeight = 100 * elemId + 2.0;  // Fixture scales ID by 100 and adds time
-      EXPECT_DOUBLE_EQ(*fieldWeight, expectedFieldWeight);
+      EXPECT_DOUBLE_EQ(fieldWeight(), expectedFieldWeight);
     }
   }
 

@@ -39,6 +39,7 @@
 
 #define KRINO_HAVE_YAML
 #define KRINO_HAVE_PARMETIS
+#define KRINO_HAVE_PARALELL_IO
 
 #else
 
