@@ -858,6 +858,8 @@ public:
   template <typename MemSpace>
   MeshIndexType<MemSpace>& get_updated_fast_mesh_indices() const;
 
+  FieldDataManager& get_field_data_manager() const { return *m_field_data_manager.get(); }
+
 protected: //functions
   BulkData(std::shared_ptr<MetaData> mesh_meta_data,
            ParallelMachine parallel,

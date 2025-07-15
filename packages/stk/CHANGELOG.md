@@ -1,5 +1,9 @@
 # CHANGELOG
 
+5.25.6 (STK_VERSION 5250600) 7/14/2025
+  stk_mesh: Fix Release/Debug hybrid build inconsistency in new
+  Field data access.
+
 5.25.4 (STK_VERSION 5250400) 7/9/2025
   stk_tools: new disconnect-elem capability
   stk_mesh: bug-fix for late-created multi-state field, NgpField

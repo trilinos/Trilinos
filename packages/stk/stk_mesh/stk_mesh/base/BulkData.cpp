@@ -388,7 +388,7 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
   m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);
 
   if (not m_field_data_manager) {
-    m_field_data_manager = std::make_unique<DefaultFieldDataManager>(mesh_meta_data->entity_rank_count());
+    m_field_data_manager = std::make_unique<FieldDataManager>(mesh_meta_data->entity_rank_count());
   }
 
   initialize_arrays();

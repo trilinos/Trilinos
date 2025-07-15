@@ -55,104 +55,104 @@ public:
 
   // Implicit conversion constructor from integral types
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION FieldIndex(T value) : m_value(static_cast<IndexType>(value)) {}
+  constexpr KOKKOS_INLINE_FUNCTION FieldIndex(T value) : m_value(static_cast<IndexType>(value)) {}
   KOKKOS_DEFAULTED_FUNCTION ~FieldIndex() = default;
 
-  KOKKOS_DEFAULTED_FUNCTION FieldIndex(const FieldIndex&) = default;
-  KOKKOS_DEFAULTED_FUNCTION FieldIndex(FieldIndex&&) = default;
-  KOKKOS_DEFAULTED_FUNCTION FieldIndex& operator=(const FieldIndex&) = default;
-  KOKKOS_DEFAULTED_FUNCTION FieldIndex& operator=(FieldIndex&&) = default;
+  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex(const FieldIndex&) = default;
+  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex(FieldIndex&&) = default;
+  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex& operator=(const FieldIndex&) = default;
+  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex& operator=(FieldIndex&&) = default;
 
   // Implicit conversion operators to integral types
-  KOKKOS_INLINE_FUNCTION operator int() const { return static_cast<int>(m_value); }
-  KOKKOS_INLINE_FUNCTION operator unsigned int() const { return static_cast<unsigned int>(m_value); }
-  KOKKOS_INLINE_FUNCTION operator long int() const { return static_cast<long int>(m_value); }
-  KOKKOS_INLINE_FUNCTION operator unsigned long int() const { return static_cast<unsigned long int>(m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION operator int() const { return static_cast<int>(m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION operator unsigned int() const { return static_cast<unsigned int>(m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION operator long int() const { return static_cast<long int>(m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION operator unsigned long int() const { return static_cast<unsigned long int>(m_value); }
 
   // Mutating operators
-  KOKKOS_INLINE_FUNCTION Derived& operator++() { ++m_value; return static_cast<Derived&>(*this); }
-  KOKKOS_INLINE_FUNCTION Derived& operator--() { --m_value; return static_cast<Derived&>(*this); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived& operator++() { ++m_value; return static_cast<Derived&>(*this); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived& operator--() { --m_value; return static_cast<Derived&>(*this); }
 
-  KOKKOS_INLINE_FUNCTION Derived operator++(int) {
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator++(int) {
     Derived temp = static_cast<Derived&>(*this); ++m_value; return temp;
   }
-  KOKKOS_INLINE_FUNCTION Derived operator--(int) {
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator--(int) {
     Derived temp = static_cast<Derived&>(*this); --m_value; return temp;
   }
 
-  KOKKOS_INLINE_FUNCTION Derived& operator+=(const Derived& rhs) {
+  constexpr KOKKOS_INLINE_FUNCTION Derived& operator+=(const Derived& rhs) {
     m_value += rhs.m_value; return static_cast<Derived&>(*this);
   }
-  KOKKOS_INLINE_FUNCTION Derived& operator-=(const Derived& rhs) {
+  constexpr KOKKOS_INLINE_FUNCTION Derived& operator-=(const Derived& rhs) {
     m_value -= rhs.m_value; return static_cast<Derived&>(*this);
   }
 
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION Derived& operator+=(T rhs) { m_value += rhs; return static_cast<Derived&>(*this); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived& operator+=(T rhs) { m_value += rhs; return static_cast<Derived&>(*this); }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION Derived& operator-=(T rhs) { m_value -= rhs; return static_cast<Derived&>(*this); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived& operator-=(T rhs) { m_value -= rhs; return static_cast<Derived&>(*this); }
 
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION Derived& operator=(T rhs) { m_value = rhs; return static_cast<Derived&>(*this); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived& operator=(T rhs) { m_value = rhs; return static_cast<Derived&>(*this); }
 
   // Arithmetic operators
-  KOKKOS_INLINE_FUNCTION Derived operator+(const Derived& other) const { return Derived(m_value + other.m_value); }
-  KOKKOS_INLINE_FUNCTION Derived operator-(const Derived& other) const { return Derived(m_value - other.m_value); }
-  KOKKOS_INLINE_FUNCTION Derived operator*(const Derived& other) const { return Derived(m_value * other.m_value); }
-  KOKKOS_INLINE_FUNCTION Derived operator/(const Derived& other) const { return Derived(m_value / other.m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator+(const Derived& other) const { return Derived(m_value + other.m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator-(const Derived& other) const { return Derived(m_value - other.m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator*(const Derived& other) const { return Derived(m_value * other.m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator/(const Derived& other) const { return Derived(m_value / other.m_value); }
 
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION Derived operator+(T rhs) const { return Derived(m_value + rhs); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator+(T rhs) const { return Derived(m_value + rhs); }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION Derived operator-(T rhs) const { return Derived(m_value - rhs); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator-(T rhs) const { return Derived(m_value - rhs); }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION Derived operator*(T rhs) const { return Derived(m_value * rhs); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator*(T rhs) const { return Derived(m_value * rhs); }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION Derived operator/(T rhs) const { return Derived(m_value / rhs); }
+  constexpr KOKKOS_INLINE_FUNCTION Derived operator/(T rhs) const { return Derived(m_value / rhs); }
 
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend Derived operator+(T lhs, const Derived& rhs) { return Derived(lhs + rhs.m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION friend Derived operator+(T lhs, const Derived& rhs) { return Derived(lhs + rhs.m_value); }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend Derived operator-(T lhs, const Derived& rhs) { return Derived(lhs - rhs.m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION friend Derived operator-(T lhs, const Derived& rhs) { return Derived(lhs - rhs.m_value); }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend Derived operator*(T lhs, const Derived& rhs) { return Derived(lhs * rhs.m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION friend Derived operator*(T lhs, const Derived& rhs) { return Derived(lhs * rhs.m_value); }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend Derived operator/(T lhs, const Derived& rhs) { return Derived(lhs / rhs.m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION friend Derived operator/(T lhs, const Derived& rhs) { return Derived(lhs / rhs.m_value); }
 
   // Comparison operators
-  KOKKOS_INLINE_FUNCTION bool operator==(const Derived& other) const { return m_value == other.m_value; }
-  KOKKOS_INLINE_FUNCTION bool operator!=(const Derived& other) const { return m_value != other.m_value; }
-  KOKKOS_INLINE_FUNCTION bool operator< (const Derived& other) const { return m_value <  other.m_value; }
-  KOKKOS_INLINE_FUNCTION bool operator<=(const Derived& other) const { return m_value <= other.m_value; }
-  KOKKOS_INLINE_FUNCTION bool operator> (const Derived& other) const { return m_value >  other.m_value; }
-  KOKKOS_INLINE_FUNCTION bool operator>=(const Derived& other) const { return m_value >= other.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator==(const Derived& other) const { return m_value == other.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator!=(const Derived& other) const { return m_value != other.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator< (const Derived& other) const { return m_value <  other.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator<=(const Derived& other) const { return m_value <= other.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator> (const Derived& other) const { return m_value >  other.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator>=(const Derived& other) const { return m_value >= other.m_value; }
 
   // Comparison operators with integral types
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION bool operator==(T rhs) const { return m_value == rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator==(T rhs) const { return m_value == rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION bool operator!=(T rhs) const { return m_value != rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator!=(T rhs) const { return m_value != rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION bool operator< (T rhs) const { return m_value <  rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator< (T rhs) const { return m_value <  rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION bool operator<=(T rhs) const { return m_value <= rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator<=(T rhs) const { return m_value <= rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION bool operator> (T rhs) const { return m_value >  rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator> (T rhs) const { return m_value >  rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION bool operator>=(T rhs) const { return m_value >= rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator>=(T rhs) const { return m_value >= rhs; }
 
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend bool operator==(T lhs, const Derived& rhs) { return lhs == rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator==(T lhs, const Derived& rhs) { return lhs == rhs.m_value; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend bool operator!=(T lhs, const Derived& rhs) { return lhs != rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator!=(T lhs, const Derived& rhs) { return lhs != rhs.m_value; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend bool operator< (T lhs, const Derived& rhs) { return lhs <  rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator< (T lhs, const Derived& rhs) { return lhs <  rhs.m_value; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend bool operator<=(T lhs, const Derived& rhs) { return lhs <= rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator<=(T lhs, const Derived& rhs) { return lhs <= rhs.m_value; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend bool operator> (T lhs, const Derived& rhs) { return lhs >  rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator> (T lhs, const Derived& rhs) { return lhs >  rhs.m_value; }
   template <typename T, typename = EnableIfIntegral<T>>
-  KOKKOS_INLINE_FUNCTION friend bool operator>=(T lhs, const Derived& rhs) { return lhs >= rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator>=(T lhs, const Derived& rhs) { return lhs >= rhs.m_value; }
 
 private:
   int m_value;
@@ -163,11 +163,11 @@ class FieldIndexIterator {
 public:
   using index_type = typename IndexType::index_type;
 
-  KOKKOS_INLINE_FUNCTION FieldIndexIterator(index_type value) : m_value(value) {}
-  KOKKOS_INLINE_FUNCTION FieldIndexIterator& operator++() { ++m_value; return *this; }
-  KOKKOS_INLINE_FUNCTION FieldIndexIterator& operator--() { --m_value; return *this; }
-  KOKKOS_INLINE_FUNCTION IndexType operator*() const { return IndexType(m_value); }
-  KOKKOS_INLINE_FUNCTION bool operator!=(const FieldIndexIterator& other) const { return m_value != other.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION FieldIndexIterator(index_type value) : m_value(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION FieldIndexIterator& operator++() { ++m_value; return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION FieldIndexIterator& operator--() { --m_value; return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION IndexType operator*() const { return IndexType(m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION bool operator!=(const FieldIndexIterator& other) const { return m_value != other.m_value; }
 private:
   index_type m_value;
 };
@@ -178,11 +178,11 @@ class FieldIndexProxy {
 public:
   using index_type = typename IteratorType::index_type;
 
-  KOKKOS_INLINE_FUNCTION FieldIndexProxy(index_type size) : m_size(size) {}
-  KOKKOS_INLINE_FUNCTION IteratorType begin() { return IteratorType(0); }
-  KOKKOS_INLINE_FUNCTION IteratorType end() { return IteratorType(m_size); }
-  KOKKOS_INLINE_FUNCTION IteratorType rbegin() { return IteratorType(m_size-1); }
-  KOKKOS_INLINE_FUNCTION IteratorType rend() { return IteratorType(-1); }
+  constexpr KOKKOS_INLINE_FUNCTION FieldIndexProxy(index_type size) : m_size(size) {}
+  constexpr KOKKOS_INLINE_FUNCTION IteratorType begin() { return IteratorType(0); }
+  constexpr KOKKOS_INLINE_FUNCTION IteratorType end() { return IteratorType(m_size); }
+  constexpr KOKKOS_INLINE_FUNCTION IteratorType rbegin() { return IteratorType(m_size-1); }
+  constexpr KOKKOS_INLINE_FUNCTION IteratorType rend() { return IteratorType(-1); }
 private:
   index_type m_size;
 };
@@ -191,54 +191,54 @@ private:
 //==============================================================================
 class ComponentIdx : public FieldIndex<ComponentIdx, int> {
 public:
-  KOKKOS_INLINE_FUNCTION explicit ComponentIdx(int value) : FieldIndex(value) {}
-  KOKKOS_INLINE_FUNCTION ComponentIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION explicit ComponentIdx(int value) : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION ComponentIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
 };
 
 class ComponentIdxIterator : public FieldIndexIterator<ComponentIdxIterator, ComponentIdx> {
 public:
-  KOKKOS_INLINE_FUNCTION ComponentIdxIterator(ComponentIdx::index_type value) : FieldIndexIterator(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION ComponentIdxIterator(ComponentIdx::index_type value) : FieldIndexIterator(value) {}
 };
 
 class ComponentIdxProxy : public FieldIndexProxy<ComponentIdxProxy, ComponentIdxIterator> {
 public:
-  KOKKOS_INLINE_FUNCTION ComponentIdxProxy(ComponentIdxIterator::index_type size) : FieldIndexProxy(size) {}
+  constexpr KOKKOS_INLINE_FUNCTION ComponentIdxProxy(ComponentIdxIterator::index_type size) : FieldIndexProxy(size) {}
 };
 
 
 //==============================================================================
 class CopyIdx : public FieldIndex<CopyIdx, int> {
 public:
-  KOKKOS_INLINE_FUNCTION explicit CopyIdx(int value) : FieldIndex(value) {}
-  KOKKOS_INLINE_FUNCTION CopyIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION explicit CopyIdx(int value) : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION CopyIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
 };
 
 class CopyIdxIterator : public FieldIndexIterator<CopyIdxIterator, CopyIdx> {
 public:
-  KOKKOS_INLINE_FUNCTION CopyIdxIterator(CopyIdx::index_type value) : FieldIndexIterator(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION CopyIdxIterator(CopyIdx::index_type value) : FieldIndexIterator(value) {}
 };
 
 class CopyIdxProxy : public FieldIndexProxy<CopyIdxProxy, CopyIdxIterator> {
 public:
-  KOKKOS_INLINE_FUNCTION CopyIdxProxy(CopyIdxIterator::index_type size) : FieldIndexProxy(size) {}
+  constexpr KOKKOS_INLINE_FUNCTION CopyIdxProxy(CopyIdxIterator::index_type size) : FieldIndexProxy(size) {}
 };
 
 
 //==============================================================================
 class ScalarIdx : public FieldIndex<ScalarIdx, int> {
 public:
-  KOKKOS_INLINE_FUNCTION explicit ScalarIdx(int value) : FieldIndex(value) {}
-  KOKKOS_INLINE_FUNCTION ScalarIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION explicit ScalarIdx(int value) : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION ScalarIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
 };
 
 class ScalarIdxIterator : public FieldIndexIterator<ScalarIdxIterator, ScalarIdx> {
 public:
-  KOKKOS_INLINE_FUNCTION ScalarIdxIterator(ScalarIdx::index_type value) : FieldIndexIterator(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION ScalarIdxIterator(ScalarIdx::index_type value) : FieldIndexIterator(value) {}
 };
 
 class ScalarIdxProxy : public FieldIndexProxy<ScalarIdxProxy, ScalarIdxIterator> {
 public:
-  KOKKOS_INLINE_FUNCTION ScalarIdxProxy(ScalarIdxIterator::index_type size) : FieldIndexProxy(size) {}
+  constexpr KOKKOS_INLINE_FUNCTION ScalarIdxProxy(ScalarIdxIterator::index_type size) : FieldIndexProxy(size) {}
 };
 
 
@@ -247,45 +247,49 @@ public:
 // Kokkos thread team iteration
 class EntityIdx : public FieldIndex<EntityIdx, int> {
 public:
-  KOKKOS_INLINE_FUNCTION EntityIdx(int value) : FieldIndex(value) {}
-  KOKKOS_INLINE_FUNCTION EntityIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION EntityIdx(int value) : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION EntityIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
 };
 
 class EntityIdxIterator : public FieldIndexIterator<EntityIdxIterator, EntityIdx> {
 public:
-  KOKKOS_INLINE_FUNCTION EntityIdxIterator(EntityIdx::index_type value) : FieldIndexIterator(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION EntityIdxIterator(EntityIdx::index_type value) : FieldIndexIterator(value) {}
 };
 
 class EntityIdxProxy : public FieldIndexProxy<EntityIdxProxy, EntityIdxIterator> {
 public:
-  KOKKOS_INLINE_FUNCTION EntityIdxProxy(EntityIdxIterator::index_type size) : FieldIndexProxy(size) {}
+  constexpr KOKKOS_INLINE_FUNCTION EntityIdxProxy(EntityIdxIterator::index_type size) : FieldIndexProxy(size) {}
 };
 
 //==============================================================================
 class ByteIdx : public FieldIndex<ByteIdx, int> {
 public:
-  KOKKOS_INLINE_FUNCTION explicit ByteIdx(int value) : FieldIndex(value) {}
-  KOKKOS_INLINE_FUNCTION ByteIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION explicit ByteIdx(int value) : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION ByteIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
 };
 
 class ByteIdxIterator : public FieldIndexIterator<ByteIdxIterator, ByteIdx> {
 public:
-  KOKKOS_INLINE_FUNCTION ByteIdxIterator(ByteIdx::index_type value) : FieldIndexIterator(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION ByteIdxIterator(ByteIdx::index_type value) : FieldIndexIterator(value) {}
 };
 
 class ByteIdxProxy : public FieldIndexProxy<ByteIdxProxy, ByteIdxIterator> {
 public:
-  KOKKOS_INLINE_FUNCTION ByteIdxProxy(ByteIdxIterator::index_type size) : FieldIndexProxy(size) {}
+  constexpr KOKKOS_INLINE_FUNCTION ByteIdxProxy(ByteIdxIterator::index_type size) : FieldIndexProxy(size) {}
 };
 
 }
 
 //==============================================================================
-KOKKOS_INLINE_FUNCTION stk::mesh::ComponentIdx operator ""_comp(unsigned long long int comp) { return stk::mesh::ComponentIdx(comp); }
-KOKKOS_INLINE_FUNCTION stk::mesh::CopyIdx operator ""_copy(unsigned long long int copy) { return stk::mesh::CopyIdx(copy); }
-KOKKOS_INLINE_FUNCTION stk::mesh::ScalarIdx operator ""_scalar(unsigned long long int scalar) { return stk::mesh::ScalarIdx(scalar); }
-KOKKOS_INLINE_FUNCTION stk::mesh::EntityIdx operator ""_entity(unsigned long long int entity) { return stk::mesh::EntityIdx(entity); }
-KOKKOS_INLINE_FUNCTION stk::mesh::ByteIdx operator ""_byte(unsigned long long int byte) { return stk::mesh::ByteIdx(byte); }
+constexpr KOKKOS_INLINE_FUNCTION stk::mesh::ComponentIdx operator ""_comp(unsigned long long int comp) { return stk::mesh::ComponentIdx(comp); }
+constexpr KOKKOS_INLINE_FUNCTION stk::mesh::CopyIdx operator ""_copy(unsigned long long int copy) { return stk::mesh::CopyIdx(copy); }
+constexpr KOKKOS_INLINE_FUNCTION stk::mesh::ScalarIdx operator ""_scalar(unsigned long long int scalar) { return stk::mesh::ScalarIdx(scalar); }
+constexpr KOKKOS_INLINE_FUNCTION stk::mesh::EntityIdx operator ""_entity(unsigned long long int entity) { return stk::mesh::EntityIdx(entity); }
+constexpr KOKKOS_INLINE_FUNCTION stk::mesh::ByteIdx operator ""_byte(unsigned long long int byte) { return stk::mesh::ByteIdx(byte); }
+
+constexpr stk::mesh::ComponentIdx x_comp(0);
+constexpr stk::mesh::ComponentIdx y_comp(1);
+constexpr stk::mesh::ComponentIdx z_comp(2);
 
 //==============================================================================
 #endif // FIELDINDEXTYPES_HPP

@@ -27,7 +27,7 @@ public:
   ConstFieldBytes(ConstFieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes, Layout dataLayout);
   KOKKOS_FUNCTION virtual ~ConstFieldBytes() override {}
 
-  KOKKOS_DEFAULTED_FUNCTION ConstFieldBytes(const ConstFieldBytes& fieldData) = default;
+  KOKKOS_INLINE_FUNCTION ConstFieldBytes(const ConstFieldBytes& other);
   KOKKOS_DEFAULTED_FUNCTION ConstFieldBytes(ConstFieldBytes&&) = default;
   KOKKOS_DEFAULTED_FUNCTION ConstFieldBytes& operator=(const ConstFieldBytes&) = default;
   KOKKOS_DEFAULTED_FUNCTION ConstFieldBytes& operator=(ConstFieldBytes&&) = default;
@@ -91,18 +91,13 @@ protected:
 
   DeviceFieldMetaDataArrayType<MemSpace> m_deviceFieldMetaData;
   MeshIndexType<MemSpace> m_deviceFastMeshIndices;
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-  DeviceStringType<MemSpace> m_deviceFieldName;
-  HostStringType m_hostFieldName;
+  DeviceStringType m_fieldName;
   FieldMetaDataModCountType m_fieldMetaDataModCount;
-#endif
   BulkData* m_hostBulk;
   Ordinal m_ordinal;
   int m_bytesPerScalar;
   int m_fieldDataSynchronizedCount;
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   unsigned m_localFieldMetaDataModCount;
-#endif
   EntityRank m_rank;
   Layout m_layout;
 };
@@ -123,7 +118,7 @@ public:
                   const DataTraits& dataTraits, Layout dataLayout);
   virtual ~ConstFieldBytes() override = default;
 
-  ConstFieldBytes(const ConstFieldBytes& fieldData) = default;
+  ConstFieldBytes(const ConstFieldBytes& other);
   ConstFieldBytes(ConstFieldBytes&&) = default;
   ConstFieldBytes& operator=(const ConstFieldBytes&) = default;
   ConstFieldBytes& operator=(ConstFieldBytes&&) = default;
@@ -242,15 +237,11 @@ protected:
   FieldMetaDataArrayType m_fieldMetaData;
   BulkData* m_bulk;
   const DataTraits* m_dataTraits;
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   HostStringType m_fieldName;
   FieldMetaDataModCountType m_fieldMetaDataModCount;
-#endif
   Ordinal m_ordinal;
   int m_fieldDataSynchronizedCount;
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   unsigned m_localFieldMetaDataModCount;
-#endif
   EntityRank m_rank;
   Layout m_layout;
 };
@@ -268,12 +259,10 @@ ConstFieldBytes<MemSpace>::ConstFieldBytes()
     m_ordinal(InvalidOrdinal),
     m_bytesPerScalar(0),
     m_fieldDataSynchronizedCount(0),
+    m_localFieldMetaDataModCount(0),
     m_rank(InvalidEntityRank),
     m_layout(Layout::Left)
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-  m_localFieldMetaDataModCount = 0;
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -284,19 +273,37 @@ ConstFieldBytes<MemSpace>::ConstFieldBytes(ConstFieldBytes<stk::ngp::HostMemSpac
     m_ordinal(hostFieldBytes->field_ordinal()),
     m_bytesPerScalar(hostFieldBytes->data_traits().alignment_of),
     m_fieldDataSynchronizedCount(0),
+    m_localFieldMetaDataModCount(0),
     m_rank(hostFieldBytes->entity_rank()),
     m_layout(dataLayout)
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   const std::string fieldName(hostFieldBytes->field_name());
-  m_deviceFieldName = DeviceStringType<MemSpace>(Kokkos::view_alloc(Kokkos::WithoutInitializing, fieldName),
-                                                 fieldName.size()+1);
-  m_hostFieldName = HostStringType(fieldName, fieldName.size()+1);
-  std::strcpy(m_hostFieldName.data(), fieldName.c_str());
-  Kokkos::deep_copy(m_deviceFieldName, m_hostFieldName);
+  m_fieldName = DeviceStringType(Kokkos::view_alloc(Kokkos::WithoutInitializing, fieldName), fieldName.size()+1);
+  std::strcpy(m_fieldName.data(), fieldName.c_str());
   m_fieldMetaDataModCount = hostFieldBytes->m_fieldMetaDataModCount;
-  m_localFieldMetaDataModCount = 0;
+}
+
+//------------------------------------------------------------------------------
+template <typename MemSpace>
+KOKKOS_INLINE_FUNCTION
+ConstFieldBytes<MemSpace>::ConstFieldBytes(const ConstFieldBytes& other)
+  : FieldDataBase(other),
+    m_deviceFieldMetaData(other.m_deviceFieldMetaData),
+    m_deviceFastMeshIndices(other.m_deviceFastMeshIndices),
+#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
+    m_fieldName(other.m_fieldName),
+#else
+    m_fieldName(),
 #endif
+    m_fieldMetaDataModCount(other.m_fieldMetaDataModCount),
+    m_hostBulk(other.m_hostBulk),
+    m_ordinal(other.m_ordinal),
+    m_bytesPerScalar(other.m_bytesPerScalar),
+    m_fieldDataSynchronizedCount(other.m_fieldDataSynchronizedCount),
+    m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount),
+    m_rank(other.m_rank),
+    m_layout(other.m_layout)
+{
 }
 
 //------------------------------------------------------------------------------
@@ -394,13 +401,7 @@ KOKKOS_INLINE_FUNCTION const char*
 ConstFieldBytes<MemSpace>::field_name() const
 {
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-  if constexpr (impl::is_called_on_host()) {
-    return m_hostFieldName.data();
-  }
-  else {
-    return m_deviceFieldName.data();
-  }
-  return nullptr;  // Keep Nvidia compiler happy about always having return value
+  return m_fieldName.data();
 #else
   return "";
 #endif
@@ -411,9 +412,7 @@ template <typename MemSpace>
 void
 ConstFieldBytes<MemSpace>::modify_field_meta_data()
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   ++m_fieldMetaDataModCount();
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -627,12 +626,10 @@ ConstFieldBytes<stk::ngp::HostMemSpace>::ConstFieldBytes()
     m_dataTraits(&stk::mesh::data_traits<void>()),
     m_ordinal(InvalidOrdinal),
     m_fieldDataSynchronizedCount(0),
+    m_localFieldMetaDataModCount(0),
     m_rank(InvalidEntityRank),
     m_layout(Layout::Right)
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
-  m_localFieldMetaDataModCount = 0;
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -645,15 +642,34 @@ ConstFieldBytes<stk::ngp::HostMemSpace>::ConstFieldBytes(EntityRank entityRank, 
     m_dataTraits(&dataTraits),
     m_ordinal(fieldOrdinal),
     m_fieldDataSynchronizedCount(0),
+    m_localFieldMetaDataModCount(0),
     m_rank(entityRank),
     m_layout(dataLayout)
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   m_fieldName = HostStringType(fieldName, fieldName.size()+1);
   std::strcpy(m_fieldName.data(), fieldName.c_str());
   m_fieldMetaDataModCount = FieldMetaDataModCountType("FieldMetaDataModCount");
-  m_localFieldMetaDataModCount = 0;
+}
+
+//------------------------------------------------------------------------------
+inline
+ConstFieldBytes<stk::ngp::HostMemSpace>::ConstFieldBytes(const ConstFieldBytes& other)
+  : FieldDataBase(other),
+    m_fieldMetaData(other.m_fieldMetaData),
+    m_bulk(other.m_bulk),
+    m_dataTraits(other.m_dataTraits),
+#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
+    m_fieldName(other.m_fieldName),
+#else
+    m_fieldName(),
 #endif
+    m_fieldMetaDataModCount(other.m_fieldMetaDataModCount),
+    m_ordinal(other.m_ordinal),
+    m_fieldDataSynchronizedCount(other.m_fieldDataSynchronizedCount),
+    m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount),
+    m_rank(other.m_rank),
+    m_layout(other.m_layout)
+{
 }
 
 //------------------------------------------------------------------------------
@@ -1007,9 +1023,7 @@ ConstFieldBytes<stk::ngp::HostMemSpace>::field_name() const
 inline void
 ConstFieldBytes<stk::ngp::HostMemSpace>::modify_field_meta_data()
 {
-#if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   ++m_fieldMetaDataModCount();
-#endif
 }
 
 //------------------------------------------------------------------------------

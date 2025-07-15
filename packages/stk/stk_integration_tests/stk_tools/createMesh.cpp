@@ -80,10 +80,11 @@ TEST_F(StkToolsA, WriteTextMeshDescFromExodusFile)
   stk::mesh::get_entities(get_bulk(), stk::topology::NODE_RANK, nodes);
 
   os << "std::vector<double> coordinates{\n";
+  auto coordData = coordField->data<stk::mesh::ReadOnly>();
   for(stk::mesh::Entity node : nodes)
   {
-    double *coord = stk::mesh::field_data(*coordField, node);
-    os << coord[0] << ", " << coord[1] << ", " << coord[2] << "," << std::endl;
+    auto coord = coordData.entity_values(node);
+    os << coord(0_comp) << ", " << coord(1_comp) << ", " << coord(2_comp) << "," << std::endl;
   }
   os << "};\n";
 

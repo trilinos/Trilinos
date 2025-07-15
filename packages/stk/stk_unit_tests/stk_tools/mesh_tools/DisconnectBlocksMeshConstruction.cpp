@@ -924,28 +924,29 @@ void setup_mesh_with_hinge_ring(stk::mesh::BulkData& bulk)
   bulk.modification_end();
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
-  double* coordNode22 = (double*)stk::mesh::field_data(*coords, node22);
-  double* coordNode23 = (double*)stk::mesh::field_data(*coords, node23);
-  double* coordNode26 = (double*)stk::mesh::field_data(*coords, node26);
-  double* coordNode27 = (double*)stk::mesh::field_data(*coords, node27);
+  auto coordsData = coords->data<double>();
+  auto coordNode22 = coordsData.entity_values(node22);
+  auto coordNode23 = coordsData.entity_values(node23);
+  auto coordNode26 = coordsData.entity_values(node26);
+  auto coordNode27 = coordsData.entity_values(node27);
 
-  double* coordNode122 = (double*)stk::mesh::field_data(*coords, newNode122);
-  double* coordNode123 = (double*)stk::mesh::field_data(*coords, newNode123);
-  double* coordNode126 = (double*)stk::mesh::field_data(*coords, newNode126);
-  double* coordNode127 = (double*)stk::mesh::field_data(*coords, newNode127);
+  auto coordNode122 = coordsData.entity_values(newNode122);
+  auto coordNode123 = coordsData.entity_values(newNode123);
+  auto coordNode126 = coordsData.entity_values(newNode126);
+  auto coordNode127 = coordsData.entity_values(newNode127);
 
-  coordNode122[0] = coordNode22[0] + EPS;
-  coordNode122[1] = coordNode22[1] + EPS;
-  coordNode122[2] = coordNode22[2];
-  coordNode123[0] = coordNode23[0] - EPS;
-  coordNode123[1] = coordNode23[1] + EPS;
-  coordNode123[2] = coordNode23[2];
-  coordNode126[0] = coordNode26[0] + EPS;
-  coordNode126[1] = coordNode26[1] - EPS;
-  coordNode126[2] = coordNode26[2];
-  coordNode127[0] = coordNode27[0] - EPS;
-  coordNode127[1] = coordNode27[1] - EPS;
-  coordNode127[2] = coordNode27[2];
+  coordNode122(0_comp) = coordNode22(0_comp) + EPS;
+  coordNode122(1_comp) = coordNode22(1_comp) + EPS;
+  coordNode122(2_comp) = coordNode22(2_comp);
+  coordNode123(0_comp) = coordNode23(0_comp) - EPS;
+  coordNode123(1_comp) = coordNode23(1_comp) + EPS;
+  coordNode123(2_comp) = coordNode23(2_comp);
+  coordNode126(0_comp) = coordNode26(0_comp) + EPS;
+  coordNode126(1_comp) = coordNode26(1_comp) - EPS;
+  coordNode126(2_comp) = coordNode26(2_comp);
+  coordNode127(0_comp) = coordNode27(0_comp) - EPS;
+  coordNode127(1_comp) = coordNode27(1_comp) - EPS;
+  coordNode127(2_comp) = coordNode27(2_comp);
 }
 
 stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge(stk::mesh::BulkData& bulk)

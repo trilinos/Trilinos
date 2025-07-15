@@ -1943,17 +1943,9 @@ TEST_F(ModifyBySelectorFixture, hostToDevice_partialField_byReference)
 TEST(DeviceField, checkSizeof)
 {
 #ifdef STK_USE_DEVICE_MESH
-  #ifdef NDEBUG
-    size_t expectedNumBytes = 128;  // Release build on device architecture
-  #else
-    size_t expectedNumBytes = 208;  // Debug build on device architecture
-  #endif
+  size_t expectedNumBytes = 184;
 #else
-  #ifdef NDEBUG
-    size_t expectedNumBytes = 112;  // Release build on host architecture
-  #else
-    size_t expectedNumBytes = 160;  // Debug build on host architecture
-  #endif
+  size_t expectedNumBytes = 160;
 #endif
   std::cout << "sizeof(stk::mesh::DeviceField<double>): " << sizeof(stk::mesh::DeviceField<double>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::DeviceField<double>) <= expectedNumBytes);
@@ -1962,17 +1954,9 @@ TEST(DeviceField, checkSizeof)
 TEST(DeviceFieldData, checkSizeof)
 {
 #ifdef STK_USE_DEVICE_MESH
-  #ifdef NDEBUG
-    size_t expectedNumBytes = 112;  // Release build on device architecture
-  #else
-    size_t expectedNumBytes = 192;  // Debug build on device architecture
-  #endif
+  size_t expectedNumBytes = 168;
 #else
-  #ifdef NDEBUG
-    size_t expectedNumBytes = 96;   // Release build on host architecture
-  #else
-    size_t expectedNumBytes = 144;  // Debug build on host architecture
-  #endif
+  size_t expectedNumBytes = 144;
 #endif
   std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::MemSpace>): "
             << sizeof(stk::mesh::FieldData<double, stk::ngp::MemSpace>) << std::endl;
@@ -1981,11 +1965,7 @@ TEST(DeviceFieldData, checkSizeof)
 
 TEST(HostFieldData, checkSizeof)
 {
-#ifdef NDEBUG
-  size_t expectedNumBytes = 96;   // Release build
-#else
-  size_t expectedNumBytes = 144;  // Debug build
-#endif
+  size_t expectedNumBytes = 144;
   std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::HostMemSpace>): "
             << sizeof(stk::mesh::FieldData<double, stk::ngp::HostMemSpace>) << std::endl;
   EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::HostMemSpace>) <= expectedNumBytes);

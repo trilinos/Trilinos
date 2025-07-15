@@ -64,6 +64,13 @@ public:
   { }
 
 protected:
+  stk::mesh::Field<double>& declare_vector_field(const std::string& fieldName)
+  {
+    stk::mesh::Field<double>& newField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, fieldName);
+    stk::mesh::put_field_on_mesh(newField, get_meta().universal_part(), 3, nullptr);
+    return newField;
+  }
+
   void declare_centroid_field()
   {
     m_centroidField = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "centroid");
@@ -245,6 +252,32 @@ protected:
     }
 
     verifierFunctor(ELEMS_PER_DIM, NUM_BLOCKS, USED_BLOCKS, *m_centroidField);
+
+    batchTimer.print_batch_timing(numIters);
+  }
+
+  template <typename FIELD_DATA_FUNCTOR>
+  void run_field_data_acquisition_test(int numIters, const FIELD_DATA_FUNCTOR& fieldDataFunctor)
+  {
+    const unsigned NUM_RUNS = 5;
+    const int ELEMS_PER_DIM = 100;
+
+    batchTimer.initialize_batch_timer();
+
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::mesh::Field<double>& field1 = declare_vector_field("field1");
+    stk::mesh::Field<double>& field2 = declare_vector_field("field2");
+    stk::mesh::Field<double>& field3 = declare_vector_field("field3");
+    stk::mesh::Field<double>& field4 = declare_vector_field("field4");
+    stk::io::fill_mesh(stk::unit_test_util::get_mesh_spec(ELEMS_PER_DIM), get_bulk());
+
+    stk::mesh::Selector selector(get_meta().locally_owned_part());
+
+    for (unsigned run = 0; run < NUM_RUNS; ++run) {
+      batchTimer.start_batch_timer();
+      fieldDataFunctor(numIters, field1, field2, field3, field4);
+      batchTimer.stop_batch_timer();
+    }
 
     batchTimer.print_batch_timing(numIters);
   }
@@ -783,6 +816,70 @@ auto compute_centroid_bucket_access_right_auto = [](const stk::mesh::Selector& s
     }
   }
 };
+
+auto host_field_data_acquisition = [](int numIters, stk::mesh::Field<double>& field1, stk::mesh::Field<double>& field2,
+                                      stk::mesh::Field<double>& field3, stk::mesh::Field<double>& field4)
+{
+  for (int iter = 0; iter < numIters; ++iter) {
+    auto fieldData1 = field1.data();
+    auto fieldData2 = field2.data();
+    auto fieldData3 = field3.data();
+    auto fieldData4 = field4.data();
+  }
+};
+
+auto host_entity_values_acquisition = [](int numIters, stk::mesh::Field<double>& field1,
+                                         stk::mesh::Field<double>& field2, stk::mesh::Field<double>& field3,
+                                         stk::mesh::Field<double>& field4)
+{
+  auto fieldData1 = field1.data();
+  auto fieldData2 = field2.data();
+  auto fieldData3 = field3.data();
+  auto fieldData4 = field4.data();
+  const stk::mesh::BulkData& bulk = field1.get_mesh();
+  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+
+  for (int iter = 0; iter < numIters; ++iter) {
+    auto entityValues1 = fieldData1.entity_values(elem);
+    asm volatile("" : : "r,m"(entityValues1) : "memory");  // Prevent from optimizing away by "using" object in volatile do-nothing operation
+
+    auto entityValues2 = fieldData2.entity_values(elem);
+    asm volatile("" : : "r,m"(entityValues2) : "memory");
+
+    auto entityValues3 = fieldData3.entity_values(elem);
+    asm volatile("" : : "r,m"(entityValues3) : "memory");
+
+    auto entityValues4 = fieldData4.entity_values(elem);
+    asm volatile("" : : "r,m"(entityValues4) : "memory");
+  }
+};
+
+auto host_bucket_values_acquisition = [](int numIters, stk::mesh::Field<double>& field1,
+                                         stk::mesh::Field<double>& field2, stk::mesh::Field<double>& field3,
+                                         stk::mesh::Field<double>& field4)
+{
+  auto fieldData1 = field1.data();
+  auto fieldData2 = field2.data();
+  auto fieldData3 = field3.data();
+  auto fieldData4 = field4.data();
+  const stk::mesh::BulkData& bulk = field1.get_mesh();
+  stk::mesh::Bucket& bucket = bulk.bucket(bulk.get_entity(stk::topology::ELEM_RANK, 1));
+
+  for (int iter = 0; iter < numIters; ++iter) {
+    auto bucketValues1 = fieldData1.bucket_values(bucket);
+    asm volatile("" : : "r,m"(bucketValues1) : "memory");  // Prevent from optimizing away by "using" object in volatile do-nothing operation
+
+    auto bucketValues2 = fieldData2.bucket_values(bucket);
+    asm volatile("" : : "r,m"(bucketValues2) : "memory");
+
+    auto bucketValues3 = fieldData3.bucket_values(bucket);
+    asm volatile("" : : "r,m"(bucketValues3) : "memory");
+
+    auto bucketValues4 = fieldData4.bucket_values(bucket);
+    asm volatile("" : : "r,m"(bucketValues4) : "memory");
+  }
+};
+
 #ifdef NDEBUG
   constexpr int numHostIters = 100;
 #else
@@ -958,6 +1055,32 @@ TEST_F(FieldDataAccess, bucket_SingleBlock_layoutRightAuto)
   run_single_block_test_right(numHostIters, compute_centroid_bucket_access_right_auto,
                               host_verify_averaged_centroids_are_center_of_mesh_right);
 }
+
+
+//------------------------------------------------------------------------------
+TEST_F(FieldDataAccess, FieldDataAcquisition)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_field_data_acquisition_test(20'000'000, host_field_data_acquisition);
+}
+
+//------------------------------------------------------------------------------
+TEST_F(FieldDataAccess, EntityValuesAcquisition)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_field_data_acquisition_test(500'000'000, host_entity_values_acquisition);
+}
+
+//------------------------------------------------------------------------------
+TEST_F(FieldDataAccess, BucketValuesAcquisition)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_field_data_acquisition_test(500'000'000, host_bucket_values_acquisition);
+}
+
 
 //------------------------------------------------------------------------------
 
@@ -1157,11 +1280,30 @@ auto device_compute_centroid_bucket_access = [](const stk::mesh::Selector& selec
   device_compute_centroid_bucket_access_function(selector, centroidField, coordsField);
 };
 
+void device_field_data_acquisition_function(int numIters, stk::mesh::Field<double>& field1,
+                                            stk::mesh::Field<double>& field2, stk::mesh::Field<double>& field3,
+                                            stk::mesh::Field<double>& field4)
+{
+  for (int iter = 0; iter < numIters; ++iter) {
+    [[maybe_unused]] auto fieldData1 = field1.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    [[maybe_unused]] auto fieldData2 = field2.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    [[maybe_unused]] auto fieldData3 = field3.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    [[maybe_unused]] auto fieldData4 = field4.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  }
+}
+
+auto device_field_data_acquisition = [](int numIters, stk::mesh::Field<double>& field1, stk::mesh::Field<double>& field2,
+                                        stk::mesh::Field<double>& field3, stk::mesh::Field<double>& field4)
+{
+  device_field_data_acquisition_function(numIters, field1, field2, field3, field4);
+};
+
 #ifdef STK_ENABLE_GPU
   constexpr int numDeviceIters = 2000;
 #else
   constexpr int numDeviceIters = 100;
 #endif
+
 //------------------------------------------------------------------------------
 TEST_F(LegacyDeviceFieldDataAccess, entity_component_SingleBlock)
 {
@@ -1260,6 +1402,14 @@ TEST_F(DeviceFieldDataAccess, bucket_PartialBlock)
 
   run_partial_block_test(numDeviceIters, device_compute_centroid_bucket_access,
                          device_verify_averaged_centroids_are_center_of_mesh);
+}
+
+//------------------------------------------------------------------------------
+TEST_F(DeviceFieldDataAccess, FieldDataAcquisition)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_field_data_acquisition_test(20'000'000, device_field_data_acquisition);
 }
 
 }

@@ -21,7 +21,7 @@ TEST(FixNodeSharingViaSearch, twoHex_2proc)
   if(stk::parallel_machine_size(comm) != 2) { GTEST_SKIP(); }
   const int myProc = stk::parallel_machine_rank(comm);
 
-  constexpr unsigned dim = 3;
+  constexpr int dim = 3;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(dim, stk::parallel_machine_world());
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
 
@@ -48,10 +48,11 @@ TEST(FixNodeSharingViaSearch, twoHex_2proc)
 
   unsigned counter = 0;
   stk::mesh::ConnectedEntities nodes = bulkPtr->get_connected_entities(elem, stk::topology::NODE_RANK);
+  auto coordData = coordField.data();
   for(unsigned n=0; n<nodes.size(); ++n) {
-    double* nodeCoords = stk::mesh::field_data(coordField, nodes[n]);
-    for(unsigned d=0; d<dim; ++d) {
-      nodeCoords[d] = coords[counter++];
+    auto nodeCoords = coordData.entity_values(nodes[n]);
+    for(stk::mesh::ComponentIdx d=0_comp; d<dim; ++d) {
+      nodeCoords(d) = coords[counter++];
     }
   }
 
@@ -69,7 +70,7 @@ TEST(FixNodeSharingViaSearch, oneD_userTolerance)
   if(stk::parallel_machine_size(comm) != 2) { GTEST_SKIP(); }
   const int myProc = stk::parallel_machine_rank(comm);
 
-  constexpr unsigned dim = 1;
+  constexpr int dim = 1;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(dim, stk::parallel_machine_world());
   stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
 
@@ -94,10 +95,11 @@ TEST(FixNodeSharingViaSearch, oneD_userTolerance)
 
   unsigned counter = 0;
   stk::mesh::ConnectedEntities nodes = bulkPtr->get_connected_entities(elem, stk::topology::NODE_RANK);
+  auto coordFieldData = coordField.data();
   for(unsigned n=0; n<nodes.size(); ++n) {
-    double* nodeCoords = stk::mesh::field_data(coordField, nodes[n]);
-    for(unsigned d=0; d<dim; ++d) {
-      nodeCoords[d] = coords[counter++];
+    auto nodeCoords = coordFieldData.entity_values(nodes[n]);
+    for(stk::mesh::ComponentIdx d=0_comp; d<dim; ++d) {
+      nodeCoords(d) = coords[counter++];
     }
   }
 
