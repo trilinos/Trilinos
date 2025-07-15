@@ -289,6 +289,7 @@ ConstADvari: public ADvari {
  public:
 	static CADcontext cadc;
 	inline void *operator new(size_t len) { return ConstADvari::cadc.Memalloc(len); }
+	void operator delete(void*) {} /*Should never be called.*/
 	inline ConstADvari(double t): ADvari(Hv_copy, t) { prevcad = lastcad; lastcad = this; }
 	static void aval_reset(void);
 	};
