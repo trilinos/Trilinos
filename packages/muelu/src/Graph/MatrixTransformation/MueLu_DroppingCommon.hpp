@@ -98,13 +98,13 @@ class PointwiseSymmetricDropBoundaryFunctor {
   results_view results;
 
  public:
-  PointwiseSymmetricDropBoundaryFunctor(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A_, boundary_nodes_view boundaryNodes_, results_view& results_)
+  PointwiseSymmetricDropBoundaryFunctor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_, boundary_nodes_view boundaryNodes_, results_view& results_)
     : boundaryNodes(boundaryNodes_)
     , results(results_) {
-    A                        = A_->getLocalMatrixDevice();
-    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", A_->getColMap()->getLocalNumElements());
-    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", A_->getDomainMap()->getLocalNumElements());
-    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(*A_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
+    A                        = A_.getLocalMatrixDevice();
+    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", A_.getColMap()->getLocalNumElements());
+    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", A_.getDomainMap()->getLocalNumElements());
+    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(A_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
     boundaryNodesCol = boundaryNodesColumn;
   }
 
@@ -186,15 +186,15 @@ class VectorSymmetricDropBoundaryFunctor {
   results_view results;
 
  public:
-  VectorSymmetricDropBoundaryFunctor(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_, boundary_nodes_view boundaryNodes_, results_view& results_)
+  VectorSymmetricDropBoundaryFunctor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_, boundary_nodes_view boundaryNodes_, results_view& results_)
     : point_to_block(point_to_block_)
     , ghosted_point_to_block(ghosted_point_to_block_)
     , boundaryNodes(boundaryNodes_)
     , results(results_) {
-    A                        = A_->getLocalMatrixDevice();
-    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", A_->getColMap()->getLocalNumElements());
-    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", A_->getDomainMap()->getLocalNumElements());
-    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(*A_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
+    A                        = A_.getLocalMatrixDevice();
+    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", A_.getColMap()->getLocalNumElements());
+    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", A_.getDomainMap()->getLocalNumElements());
+    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(A_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
     boundaryNodesCol = boundaryNodesColumn;
   }
 
