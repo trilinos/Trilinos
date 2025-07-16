@@ -56,10 +56,26 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
   
   const Scalar alpha = Scalar(1.0);
   const Scalar beta  = Scalar(0.5) * cdt;
-
-  //std::cout << "computing Phi!" << std::endl;
   
   Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*inArgs_lin_, phiv, rhs_b, alpha, beta);
+
+  //TODO: make this configurable
+  Teuchos::RCP<Teuchos::FancyOStream> out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
+  out->setOutputToRootOnly(0);
+
+  int current_iters= -1;
+  if(!sStatus.extraParameters.is_null()) {
+    current_iters = sStatus.extraParameters->get("Iteration Count", 0);
+  }
+  Scalar achieved_tol = sStatus.achievedTol;
+
+  if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED) {
+    *out->getOStream() << "PhiPFD converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
+  }
+  else if (sStatus.solveStatus == ::Thyra::SOLVE_STATUS_UNCONVERGED) {
+    *out->getOStream() << sStatus.message << std::endl;    
+  }
 
   return sStatus;
 }

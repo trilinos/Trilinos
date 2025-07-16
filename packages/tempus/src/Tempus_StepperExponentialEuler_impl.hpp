@@ -209,60 +209,15 @@ void StepperExponentialEuler<Scalar>::takeStep(
 
       bool use_phi_eval = true;
       Scalar factor = Scalar(-dt);
-      if (use_phi_eval) {
-	// use the PhiEvaluator to compute update
-	//Teuchos::RCP<Teuchos::FancyOStream> out =
-	//  Teuchos::VerboseObjectBase::getDefaultOStream();
-        //out->setOutputToRootOnly(0);
-	//phiEvaluator_->describe(*out, Teuchos::VERB_EXTREME);
 
-	phiEvaluator_->setLinearizationPoint(inArgs);
-        sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, f);
-      }
-      else {
-	const Scalar alpha = Scalar(1.0)/dt;
-	const Scalar beta  = Scalar(0.5);
-	inArgs.set_alpha(alpha);
-	inArgs.set_beta(beta);
+      // use the PhiEvaluator to compute update
+      //Teuchos::RCP<Teuchos::FancyOStream> out =
+      //  Teuchos::VerboseObjectBase::getDefaultOStream();
+      //out->setOutputToRootOnly(0);
+      //phiEvaluator_->describe(*out, Teuchos::VERB_EXTREME);
 
-        Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = appModel->createOutArgs();
-
-	// first allocate space for the jacobian
-	RCP<Thyra::LinearOpBase<Scalar>> jac = appModel->create_W_op();
-	RCP<Thyra::PreconditionerBase<Scalar>> jac_p = Teuchos::null;
-	if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
-	  jac_p = appModel->create_W_prec();
-	}
-	// set only the jacobian matrix
-	outArgs.set_W_op(jac);
-	if (jac_p != Teuchos::null){
-	  outArgs.set_W_prec(jac_p);
-	}
-
-	// this will fill the Jacobian operator
-	appModel->evalModel(inArgs, outArgs);
-
-	// TODO: const-cast why?
-	RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel->get_W_factory();
-	RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =
-          Teuchos::rcp_const_cast<Thyra::LinearOpWithSolveFactoryBase<Scalar>>(const_lowsFactory);
-
-	RCP<Thyra::LinearOpWithSolveBase<Scalar>> LOWSB = Teuchos::null;
-	if (jac_p == Teuchos::null){
-	  // without preconditioner
-	  RCP<const Thyra::LinearOpBase<Scalar>> const_jac = Teuchos::rcpFromRef(*jac);
-	  LOWSB = Thyra::linearOpWithSolve(*lowsFactory, const_jac);
-	}
-	else {
-	  // with preconditioner
-	  LOWSB = lowsFactory->createOp();
-	  Thyra::initializePreconditionedOp<Scalar>(*lowsFactory, jac, jac_p, LOWSB.ptr());
-	}
-
-	// compute an approximation to dt*phi_1(dt*J)*f and write it to x
-	sStatus = LOWSB->solve(Thyra::NOTRANS, *f, vphi.ptr());
-	factor = Scalar(-1.);
-      }
+      phiEvaluator_->setLinearizationPoint(inArgs);
+      sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, f);
 
       //std::cout << "ph[0,1] = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       //assign(x.ptr(), ST::zero());
