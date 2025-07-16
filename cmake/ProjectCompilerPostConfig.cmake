@@ -156,6 +156,46 @@ set(promoted_warnings
     zero-length-bounds
 )
 
+include(CheckCXXCompilerFlag)
+
+# Function to filter valid warnings
+function(filter_valid_warnings warnings output)
+    set(valid_warnings "")
+    foreach(warning ${warnings})
+        # Check if the compiler supports the warning flag
+        string(CONCAT flag "-W" ${warning})
+        check_cxx_compiler_flag("${flag}" COMPILER_SUPPORTS_${warning}_WARNING)
+
+        if(COMPILER_SUPPORTS_${warning}_WARNING)
+            list(APPEND valid_warnings "${warning}")
+        else()
+            message(STATUS "Invalid warning flag: ${flag}")
+        endif()
+    endforeach()
+    set(${output} ${valid_warnings} PARENT_SCOPE)
+endfunction()
+
+# Function to filter valid warnings
+function(filter_valid_warnings_as_errors warnings output)
+    set(valid_warnings "")
+    foreach(warning ${warnings})
+        # Check if the compiler supports the warning flag
+        string(CONCAT flag "-Werror=" ${warning})
+        check_cxx_compiler_flag("${flag}" COMPILER_SUPPORTS_${warning}_WARNING_AS_ERROR)
+
+        if(COMPILER_SUPPORTS_${warning}_WARNING_AS_ERROR)
+            list(APPEND valid_warnings "${warning}")
+        else()
+            message(STATUS "Invalid warning flag: ${flag}")
+        endif()
+    endforeach()
+    set(${output} ${valid_warnings} PARENT_SCOPE)
+endfunction()
+
+# Filter upcoming and promoted warnings
+filter_valid_warnings("${upcoming_warnings}" upcoming_warnings)
+filter_valid_warnings_as_errors("${promoted_warnings}" promoted_warnings)
+
 if("${Trilinos_WARNINGS_MODE}" STREQUAL "WARN")
     enable_warnings("${upcoming_warnings}")
     enable_errors("${promoted_warnings}")
