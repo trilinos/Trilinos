@@ -14,6 +14,8 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "Xpetra_Access.hpp"
 #include "Xpetra_Matrix.hpp"
+#include "Xpetra_VectorFactory.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
