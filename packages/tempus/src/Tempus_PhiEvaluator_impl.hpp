@@ -306,7 +306,7 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Thyra::ModelE
   }
 
   // this will fill the MpJ operator
-  appModel_->evalModel(inArgs, outArgs);
+  appModel_->evalModel(inArgs_new, outArgs);
 
   // TODO: const-cast why?
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel_->get_W_factory();
