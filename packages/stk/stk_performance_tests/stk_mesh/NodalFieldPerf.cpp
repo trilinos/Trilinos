@@ -71,7 +71,6 @@ public:
   }
 
   void setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                                                std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager,
                                                 unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
                                                 unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity())
   {
@@ -79,7 +78,6 @@ public:
     builder.set_spatial_dimension(m_spatialDim);
     builder.set_entity_rank_names(m_entityRankNames);
     builder.set_aura_option(auraOption);
-    builder.set_field_data_manager(std::move(fieldDataManager));
     builder.set_initial_bucket_capacity(initialBucketCapacity);
     builder.set_maximum_bucket_capacity(maximumBucketCapacity);
 
@@ -243,11 +241,9 @@ TEST_F(NgpFieldAccessPerformance, pureHost_vectorSum_DefaultFieldDataManager)
   if (get_parallel_size() != 1) return;
 
   unsigned numElemsPerDim = 100;
-  const int weKnowThereAreFiveRanks = 5;
-  auto fieldDataManager = std::make_unique<stk::mesh::DefaultFieldDataManager>(weKnowThereAreFiveRanks);
 
   batchTimer.initialize_batch_timer();
-  setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+  setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA);
   createNodalVectorFields();
   stk::io::fill_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), *bulkData);
 
@@ -268,11 +264,9 @@ TEST_F(NgpFieldAccessPerformance, host_vectorSum_DefaultFieldDataManager)
   if (get_parallel_size() != 1) return;
 
   unsigned numElemsPerDim = 100;
-  const int weKnowThereAreFiveRanks = 5;
-  auto fieldDataManager = std::make_unique<stk::mesh::DefaultFieldDataManager>(weKnowThereAreFiveRanks);
 
   batchTimer.initialize_batch_timer();
-  setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+  setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA);
   createNodalVectorFields();
   stk::io::fill_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), *bulkData);
 
@@ -304,40 +298,14 @@ TEST_F(NgpFieldAccessPerformance, vectorSum_DefaultFieldDataManager)
   if (get_parallel_size() != 1) return;
 
   unsigned numElemsPerDim = 100;
-  const int weKnowThereAreFiveRanks = 5;
-  auto fieldDataManager = std::make_unique<stk::mesh::DefaultFieldDataManager>(weKnowThereAreFiveRanks);
 
   batchTimer.initialize_batch_timer();
-  setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+  setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA);
   createNodalVectorFields();
   fill_mesh(*bulkData, numElemsPerDim);
 
   const unsigned NUM_RUNS = 5;
   const unsigned NUM_ITERS = 1000;
-  for (unsigned j = 0; j < NUM_RUNS; j++) {
-    batchTimer.start_batch_timer();
-    testVectorFieldSum(NUM_ITERS);
-    batchTimer.stop_batch_timer();
-  }
-  batchTimer.print_batch_timing(NUM_ITERS);
-
-  checkResult();
-}
-
-TEST_F(NgpFieldAccessPerformance, vectorSum_ContiguousFieldDataManager)
-{
-  if (get_parallel_size() != 1) return;
-
-  unsigned numElemsPerDim = 100;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-
-  batchTimer.initialize_batch_timer();
-  setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
-  createNodalVectorFields();
-  fill_mesh(*bulkData, numElemsPerDim);
-
-  const unsigned NUM_RUNS = 5;
-  const unsigned NUM_ITERS = 2000;
   for (unsigned j = 0; j < NUM_RUNS; j++) {
     batchTimer.start_batch_timer();
     testVectorFieldSum(NUM_ITERS);

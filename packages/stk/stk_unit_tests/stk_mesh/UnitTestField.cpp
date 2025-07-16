@@ -778,30 +778,20 @@ protected:
 class LateFieldFixture : public LateFieldFixtureNoTest, public ::ngp_testing::Test
 {
 protected:
-  void custom_allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                            std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager)
+  void custom_allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
     stk::mesh::MeshBuilder builder(communicator);
     builder.set_spatial_dimension(m_spatialDim);
     builder.set_entity_rank_names(m_entityRankNames);
     builder.set_aura_option(auraOption);
-    builder.set_field_data_manager(std::move(fieldDataManager));
 
     bulkData = builder.create();
     metaData = bulkData->mesh_meta_data_ptr();
   }
 
-  void setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                                                std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager)
+  void setup_empty_mesh_with_late_fields(stk::mesh::BulkData::AutomaticAuraOption auraOption)
   {
-    custom_allocate_bulk(auraOption, std::move(fieldDataManager));
-    metaData->enable_late_fields();
-  }
-
-  virtual void setup_empty_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption,
-                                std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager)
-  {
-    custom_allocate_bulk(auraOption, std::move(fieldDataManager));
+    custom_allocate_bulk(auraOption);
     metaData->enable_late_fields();
   }
 
@@ -853,11 +843,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_late_first_field(stk::mesh::EntityRank rank,
-                                  std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                      std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_late_first_field(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     // Note that we still have a nodal coordinates field
 
     stk::mesh::Field<T> & lateField = declare_field<T>("late_field", rank);
@@ -869,11 +857,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_late_field(stk::mesh::EntityRank rank,
-                            std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_late_field(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
     stk::io::fill_mesh("generated:1x1x2", *bulkData);
@@ -889,11 +875,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_late_field_multiple_buckets(stk::mesh::EntityRank rank,
-                                             std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                                 std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_late_field_multiple_buckets(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     create_part("block_2", stk::topology::ELEM_RANK);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
@@ -920,11 +904,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_late_field_multiple_duplicate_put_field(stk::mesh::EntityRank rank,
-                                                         std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                                             std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_late_field_multiple_duplicate_put_field(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
     stk::io::fill_mesh("generated:1x1x2", *bulkData);
@@ -941,11 +923,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_late_field_multiple_different_put_field(stk::mesh::EntityRank rank,
-                                                         std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                                             std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_late_field_multiple_different_put_field(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     create_part("block_2", stk::topology::ELEM_RANK);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
@@ -963,11 +943,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_two_late_fields_sequential(stk::mesh::EntityRank rank,
-                                            std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                                std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_two_late_fields_sequential(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
     stk::io::fill_mesh("generated:1x1x2", *bulkData);
@@ -987,11 +965,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_two_late_fields_interleaved(stk::mesh::EntityRank rank,
-                                             std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                                 std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_two_late_fields_interleaved(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
     stk::io::fill_mesh("generated:1x1x2", *bulkData);
@@ -1012,11 +988,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_two_late_fields_out_of_order(stk::mesh::EntityRank rank,
-                                              std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                                  std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_two_late_fields_out_of_order(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
     stk::io::fill_mesh("generated:1x1x2", *bulkData);
@@ -1037,11 +1011,9 @@ protected:
   }
 
   template <typename T1, typename T2>
-  void setup_add_two_late_fields_different_type_out_of_order(stk::mesh::EntityRank rank,
-                                                             std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                                                 std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_two_late_fields_different_type_out_of_order(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T1> & earlyField = declare_field<T1>("early_field", rank);
     put_field(earlyField, get_meta().universal_part());
     stk::io::fill_mesh("generated:1x1x2", *bulkData);
@@ -1062,11 +1034,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_two_late_fields_different_rank_out_of_order(stk::mesh::EntityRank rank1, stk::mesh::EntityRank rank2,
-                                                             std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                                                 std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_two_late_fields_different_rank_out_of_order(stk::mesh::EntityRank rank1, stk::mesh::EntityRank rank2)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", stk::topology::ELEM_RANK);
     put_field(earlyField, get_meta().universal_part());
     stk::io::fill_mesh("generated:1x1x2", *bulkData);
@@ -1087,11 +1057,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_early_field_to_late_part(stk::mesh::EntityRank rank,
-                                          std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                              std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_early_field_to_late_part(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     const bool addIoPartAttribute = false;
     create_part("block_1", stk::topology::ELEM_RANK, addIoPartAttribute);
     create_part("block_2", stk::topology::ELEM_RANK);
@@ -1127,11 +1095,9 @@ protected:
   }
 
   template <typename T>
-  void setup_add_late_field_to_late_part(stk::mesh::EntityRank rank,
-                                         std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
-                                             std::unique_ptr<stk::mesh::FieldDataManager>())
+  void setup_add_late_field_to_late_part(stk::mesh::EntityRank rank)
   {
-    setup_empty_mesh_with_field_data_manager(stk::mesh::BulkData::NO_AUTO_AURA, std::move(fieldDataManager));
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
     const bool addIoPartAttribute = false;
     create_part("block_1", stk::topology::ELEM_RANK, addIoPartAttribute);
     stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
@@ -1308,166 +1274,6 @@ TEST_F(LateFieldFixture, addLateElementFieldToLatePart)
   setup_add_late_field_to_late_part<int>(stk::topology::ELEM_RANK);
 }
 
-TEST_F(LateFieldFixture, addLateIntFirstElementFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_first_field<int>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addLateIntNodalFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_field<int>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addLateIntElementFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_field<int>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addLateIntNodalField_multipleBucketsContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_field_multiple_buckets<int>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addLateIntNodalField_multipleDuplicatePutFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_field_multiple_duplicate_put_field<int>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addLateIntElementField_multipleDuplicatePutFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_field_multiple_duplicate_put_field<int>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addLateIntNodalField_multipleDifferentPutFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_field_multiple_different_put_field<int>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addLateIntElementField_multipleDifferentPutFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_field_multiple_different_put_field<int>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateIntNodalFields_sequentialContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_sequential<int>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateIntElementFields_sequentialContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_sequential<int>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateIntNodalFields_interleavedContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_interleaved<int>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateIntElementFields_interleavedContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_interleaved<int>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateIntNodalFields_outOfOrderContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_out_of_order<int>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateIntElementFields_outOfOrderContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_out_of_order<int>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateIntAndDoubleNodalFields_outOfOrderContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_different_type_out_of_order<int, double>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateIntAndDoubleElementFields_outOfOrderContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_different_type_out_of_order<int, double>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateShortAndDoubleNodalFields_outOfOrderContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_different_type_out_of_order<short, double>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateShortAndDoubleElementFields_outOfOrderContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_different_type_out_of_order<short, double>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addTwoLateNodalAndElementFields_outOfOrderContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_two_late_fields_different_rank_out_of_order<int>(stk::topology::NODE_RANK, stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addEarlyNodalFieldToLatePartContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_early_field_to_late_part<int>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addEarlyElementFieldToLatePartContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_early_field_to_late_part<int>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addLateNodalFieldToLatePartContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_field_to_late_part<int>(stk::topology::NODE_RANK, std::move(fieldDataManager));
-}
-
-TEST_F(LateFieldFixture, addLateElementFieldToLatePartContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
-  auto fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>();
-  setup_add_late_field_to_late_part<int>(stk::topology::ELEM_RANK, std::move(fieldDataManager));
-}
 
 TEST(SharedSidesetField, verifySidesetFieldAfterMeshRead) {
   std::string serialOutputMeshName = "ARB.e";
@@ -1478,16 +1284,15 @@ TEST(SharedSidesetField, verifySidesetFieldAfterMeshRead) {
     const double initValue = 123.0;
 
     // Build the target serial mesh and write it to a file
-    if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
-    {
+    if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
       std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_SELF);
       stk::mesh::BulkData& bulk = *bulkPtr;
 
       stk::unit_test_util::create_AB_mesh_with_sideset_and_distribution_factors(bulk,
-                                                                                               stk::unit_test_util::LEFT,
-                                                                                               stk::unit_test_util::DECREASING,
-                                                                                               fieldName,
-                                                                                               initValue);
+                                                                                stk::unit_test_util::LEFT,
+                                                                                stk::unit_test_util::DECREASING,
+                                                                                fieldName,
+                                                                                initValue);
 
       stk::io::write_mesh_with_fields(serialOutputMeshName, bulk, 1, 1.0);
     }
@@ -1912,69 +1717,113 @@ void create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeI
   *stk::mesh::field_data(field, node) = nodeId;
 }
 
-enum class FieldDataManagerType
+class CustomBulkData : public stk::mesh::BulkData
 {
-  DEFAULT,
-  CONTIGUOUS
+protected:
+  friend class CustomMeshBuilder;
+
+  CustomBulkData(std::shared_ptr<stk::mesh::MetaData> metaData,
+                 stk::ParallelMachine parallel,
+                 enum AutomaticAuraOption autoAuraOption = AUTO_AURA,
+                 std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager = std::unique_ptr<stk::mesh::FieldDataManager>(),
+                 unsigned initialBucketCapacity = stk::mesh::get_default_initial_bucket_capacity(),
+                 unsigned maximumBucketCapacity = stk::mesh::get_default_maximum_bucket_capacity(),
+                 std::shared_ptr<stk::mesh::impl::AuraGhosting> auraGhosting = std::shared_ptr<stk::mesh::impl::AuraGhosting>(),
+                 bool createUpwardConnectivity = true)
+#ifdef SIERRA_MIGRATION
+    : BulkData(metaData, parallel, autoAuraOption, false, std::move(fieldDataManager), initialBucketCapacity,
+               maximumBucketCapacity, auraGhosting, createUpwardConnectivity)
+#else
+    : BulkData(metaData, parallel, autoAuraOption, std::move(fieldDataManager), initialBucketCapacity,
+               maximumBucketCapacity, auraGhosting, createUpwardConnectivity)
+#endif
+  {
+  }
+};
+
+
+class CustomMeshBuilder : public stk::mesh::MeshBuilder
+{
+public:
+  CustomMeshBuilder() = default;
+  CustomMeshBuilder(stk::ParallelMachine comm)
+    : stk::mesh::MeshBuilder(comm)
+  {}
+
+  virtual ~CustomMeshBuilder() override = default;
+
+  //using statement to avoid compile-warning about 'only partially overridden'
+  using stk::mesh::MeshBuilder::create;
+
+  MeshBuilder& custom_set_field_data_manager(std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager)
+  {
+    m_customFieldDataManager = std::move(fieldDataManager);
+    return *this;
+  }
+
+  virtual std::unique_ptr<stk::mesh::BulkData> create(std::shared_ptr<stk::mesh::MetaData> metaData) override
+  {
+    STK_ThrowRequireMsg(m_haveComm, "MeshBuilder must be given an MPI communicator before creating BulkData");
+
+    std::unique_ptr<CustomBulkData> bulkPtr(new CustomBulkData(metaData,
+                                                               m_comm,
+                                                               m_auraOption,
+                                                               std::move(m_customFieldDataManager),
+                                                               m_initialBucketCapacity,
+                                                               m_maximumBucketCapacity,
+                                                               create_aura_ghosting(),
+                                                               m_upwardConnectivity));
+    bulkPtr->set_symmetric_ghost_info(m_symmetricGhostInfo);
+    bulkPtr->set_maintain_local_ids(m_maintainLocalIds);
+    return bulkPtr;
+  }
+
+protected:
+  std::unique_ptr<stk::mesh::FieldDataManager> m_customFieldDataManager;
 };
 
 using FieldDataType = int;
 
-class VariableCapacityFieldData : public ::testing::TestWithParam<FieldDataManagerType>
+class VariableCapacityFieldData : public ::ngp_testing::Test
 {
 public:
   VariableCapacityFieldData()
     : m_fieldDataManager(nullptr)
-  {
-  }
+  {}
 
   void build_empty_mesh(unsigned initialBucketCapacity, unsigned maximumBucketCapacity)
   {
-    std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager;
-    if (GetParam() == FieldDataManagerType::DEFAULT) {
-      const unsigned numRanks = 1;
-      const unsigned alignment = 4;
-      fieldDataManager = std::make_unique<stk::mesh::DefaultFieldDataManager>(numRanks, alignment);
-    }
-    else if (GetParam() == FieldDataManagerType::CONTIGUOUS) {
-      const unsigned extraCapacity = 4;  // Room for 1 extra int, for occasional in-place sorting
-      const unsigned alignment = 4;
-      fieldDataManager = std::make_unique<stk::mesh::ContiguousFieldDataManager>(extraCapacity, alignment);
-    }
+    const unsigned numRanks = 1;
+    const unsigned alignment = 4;
+    std::unique_ptr<stk::mesh::FieldDataManager> fieldDataManager =
+        std::make_unique<stk::mesh::FieldDataManager>(numRanks, alignment);
 
     m_fieldDataManager = fieldDataManager.get();
 
-    stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+    CustomMeshBuilder builder(MPI_COMM_WORLD);
     builder.set_spatial_dimension(3);
     builder.set_initial_bucket_capacity(initialBucketCapacity);
     builder.set_maximum_bucket_capacity(maximumBucketCapacity);
-    builder.set_field_data_manager(std::move(fieldDataManager));
+    builder.custom_set_field_data_manager(std::move(fieldDataManager));
+
     m_bulk = builder.create();
     m_meta = &m_bulk->mesh_meta_data();
   }
 
-  int expected_bytes_allocated_host(const stk::mesh::BucketVector & buckets, int dataSize)
-  {
-    int extraCapacity = 0;
-    if (GetParam() == FieldDataManagerType::CONTIGUOUS) {
-      extraCapacity = dynamic_cast<stk::mesh::ContiguousFieldDataManager&>(*m_fieldDataManager).get_extra_capacity();
-    }
-
-    return std::accumulate(buckets.begin(), buckets.end(), 0,
-      [&](int currentValue, const stk::mesh::Bucket * bucket) {
-         const int allocationCount = (GetParam() == FieldDataManagerType::DEFAULT) ? bucket->capacity()
-                                                                                   : bucket->size();
-         return currentValue + stk::adjust_up_to_alignment_boundary(static_cast<size_t>(dataSize)*allocationCount,
-                                                                    m_fieldDataManager->get_alignment_bytes());
-      }) + extraCapacity;
-  }
-
-  int expected_bytes_allocated_device(const stk::mesh::BucketVector & buckets, int dataSize)
+  int expected_bytes_allocated_host(const stk::mesh::BucketVector& buckets, int dataSize)
   {
     return std::accumulate(buckets.begin(), buckets.end(), 0,
       [&](int currentValue, const stk::mesh::Bucket* bucket) {
-         const int allocationCount = bucket->capacity();
-         return currentValue + stk::adjust_up_to_alignment_boundary(static_cast<size_t>(dataSize)*allocationCount,
+         return currentValue + stk::adjust_up_to_alignment_boundary(static_cast<size_t>(dataSize) * bucket->capacity(),
+                                                                    m_fieldDataManager->get_alignment_bytes());
+      });
+  }
+
+  int expected_bytes_allocated_device(const stk::mesh::BucketVector& buckets, int dataSize)
+  {
+    return std::accumulate(buckets.begin(), buckets.end(), 0,
+      [&](int currentValue, const stk::mesh::Bucket* bucket) {
+         return currentValue + stk::adjust_up_to_alignment_boundary(static_cast<size_t>(dataSize) * bucket->capacity(),
                                                                     stk::mesh::DeviceFieldAlignmentSize);
       });
   }
@@ -2066,15 +1915,12 @@ public:
   }
 
 protected:
-  stk::mesh::FieldDataManager * m_fieldDataManager;
+  stk::mesh::FieldDataManager* m_fieldDataManager;
   std::unique_ptr<stk::mesh::BulkData> m_bulk;
   stk::mesh::MetaData * m_meta;
 };
 
-INSTANTIATE_TEST_SUITE_P(VariableCapacityBuckets, VariableCapacityFieldData,
-                         ::testing::Values(FieldDataManagerType::DEFAULT, FieldDataManagerType::CONTIGUOUS));
-
-TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity1)
+TEST_F(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity1)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -2111,7 +1957,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity1)
   }
 }
 
-TEST_P(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2)
+TEST_F(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -2148,7 +1994,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2)
   }
 }
 
-TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2)
+TEST_F(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -2185,7 +2031,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2)
   }
 }
 
-TEST_P(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2_withMultistateFieldData)
+TEST_F(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2_withMultistateFieldData)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -2223,7 +2069,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2_with
   }
 }
 
-TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2_withMultistateFieldData)
+TEST_F(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2_withMultistateFieldData)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -2262,7 +2108,7 @@ TEST_P(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2_with
   }
 }
 
-TEST_P(VariableCapacityFieldData, deleteNodes_initialCapacity1_maxCapacity1)
+TEST_F(VariableCapacityFieldData, deleteNodes_initialCapacity1_maxCapacity1)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -2300,7 +2146,7 @@ TEST_P(VariableCapacityFieldData, deleteNodes_initialCapacity1_maxCapacity1)
   }
 }
 
-TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity2_maxCapacity2)
+TEST_F(VariableCapacityFieldData, changeNodeParts_initialCapacity2_maxCapacity2)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -2362,7 +2208,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity2_maxCapacity2)
   }
 }
 
-TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity1_maxCapacity2)
+TEST_F(VariableCapacityFieldData, changeNodeParts_initialCapacity1_maxCapacity2)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -2424,7 +2270,7 @@ TEST_P(VariableCapacityFieldData, changeNodeParts_initialCapacity1_maxCapacity2)
   }
 }
 
-TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity2_maxCapacity2)
+TEST_F(VariableCapacityFieldData, initialMeshConstruction_initialCapacity2_maxCapacity2)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -2450,7 +2296,7 @@ TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity2_maxCa
   }
 }
 
-TEST_P(VariableCapacityFieldData, initialMeshConstruction_initialCapacity1_maxCapacity2)
+TEST_F(VariableCapacityFieldData, initialMeshConstruction_initialCapacity1_maxCapacity2)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 

@@ -97,14 +97,21 @@ bool EntityDisconnectTool::is_element_connected(const stk::mesh::Entity& face) c
 void EntityDisconnectTool::identify_adjacent_elements()
 {
   m_adjacentElements.clear();
-  m_adjacentElements.reserve(m_adjacentFaces.size() * 2U);
-  for (const auto& dcFace : m_adjacentFaces) {
-    const auto dcElems = mesh().get_connected_entities(dcFace, stk::topology::ELEMENT_RANK);
+  m_adjacentElements.reserve(m_adjacentFaces.size() * 2U + m_disconnectFaces.size() * 2U);
+  add_elements_adjacent_to(m_adjacentFaces, m_adjacentElements);
+  add_elements_adjacent_to(m_disconnectFaces, m_adjacentElements);
+  stk::util::sort_and_unique(m_adjacentElements);
+}
+
+void EntityDisconnectTool::add_elements_adjacent_to(
+    const stk::mesh::EntityVector& faces, stk::mesh::EntityVector& adjacentElements)
+{
+  for (const auto& adjFace : faces) {
+    const auto dcElems = mesh().get_connected_entities(adjFace, stk::topology::ELEMENT_RANK);
     for (auto e = 0U; e < dcElems.size(); ++e) {
       m_adjacentElements.push_back(dcElems[e]);
     }
   }
-  stk::util::sort_and_unique(m_adjacentElements);
 }
 
 void EntityDisconnectTool::identify_elem_side_pairs()
