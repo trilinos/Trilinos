@@ -191,59 +191,57 @@ void StepperExponentialEuler<Scalar>::takeStep(
       RCP<Thyra::VectorBase<Scalar> > f = x->clone_v();
       this->evaluateImplicitODE(f, x, xDot, time, p);
 
-      std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
+      //std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
       //std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       //std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
 
       // Using the appModel
       RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
       Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
-      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = appModel->createOutArgs();
-
-      // first allocate space for the jacobian
-      RCP<Thyra::LinearOpBase<Scalar>> jac = appModel->create_W_op();
-      RCP<Thyra::PreconditionerBase<Scalar>> jac_p = Teuchos::null;
-      if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
-        jac_p = appModel->create_W_prec();
-      }
-
-      const Scalar alpha = Scalar(1.0)/dt;
-      const Scalar beta  = Scalar(0.5);
       // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
       inArgs.set_x(x);
       inArgs.set_t(time);
       inArgs.set_x_dot(xDot); // for what? xDot is zero at this point, updating of it not decided
-      inArgs.set_alpha(alpha);
-      inArgs.set_beta(beta);
-
-      // set only the jacobian matrix
-      outArgs.set_W_op(jac);
-      if (jac_p != Teuchos::null){
-        outArgs.set_W_prec(jac_p);
-      }
-
-      // this will fill the Jacobian operator
-      appModel->evalModel(inArgs, outArgs);
 
       // initialize space for the update
       RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();
       assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
 
       bool use_phi_eval = true;
-      Scalar factor = Scalar(-1.);
+      Scalar factor = Scalar(-dt);
       if (use_phi_eval) {
 	// use the PhiEvaluator to compute update
-	Teuchos::RCP<Teuchos::FancyOStream> out =
-	  Teuchos::VerboseObjectBase::getDefaultOStream();
-        out->setOutputToRootOnly(0);
-
-	phiEvaluator_->describe(*out, Teuchos::VERB_EXTREME);
+	//Teuchos::RCP<Teuchos::FancyOStream> out =
+	//  Teuchos::VerboseObjectBase::getDefaultOStream();
+        //out->setOutputToRootOnly(0);
+	//phiEvaluator_->describe(*out, Teuchos::VERB_EXTREME);
 
 	phiEvaluator_->setLinearizationPoint(inArgs);
         sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, f);
-	factor = Scalar(-dt);
       }
       else {
+	const Scalar alpha = Scalar(1.0)/dt;
+	const Scalar beta  = Scalar(0.5);
+	inArgs.set_alpha(alpha);
+	inArgs.set_beta(beta);
+
+        Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs = appModel->createOutArgs();
+
+	// first allocate space for the jacobian
+	RCP<Thyra::LinearOpBase<Scalar>> jac = appModel->create_W_op();
+	RCP<Thyra::PreconditionerBase<Scalar>> jac_p = Teuchos::null;
+	if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
+	  jac_p = appModel->create_W_prec();
+	}
+	// set only the jacobian matrix
+	outArgs.set_W_op(jac);
+	if (jac_p != Teuchos::null){
+	  outArgs.set_W_prec(jac_p);
+	}
+
+	// this will fill the Jacobian operator
+	appModel->evalModel(inArgs, outArgs);
+
 	// TODO: const-cast why?
 	RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar>> const_lowsFactory = appModel->get_W_factory();
 	RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar>> lowsFactory =

@@ -57,7 +57,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
   const Scalar alpha = Scalar(1.0);
   const Scalar beta  = Scalar(0.5) * cdt;
 
-  std::cout << "computing Phi!" << std::endl;
+  //std::cout << "computing Phi!" << std::endl;
   
   Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*inArgs_lin_, phiv, rhs_b, alpha, beta);
 

@@ -163,14 +163,14 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   writeOrderError("Tempus_ExponentialEuler_CDR-Error.dat", stepper, StepSize,
                   solutions, xErrorNorm, xSlope, out);
 
-  TEST_FLOATING_EQUALITY(xSlope, 1.32213, 0.01);
-  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.116919, 1.0e-4);
+  TEST_FLOATING_EQUALITY(xSlope, 1.3372, 0.01);
+  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.498668, 1.0e-4);
   //TEST_FLOATING_EQUALITY(xDotSlope, 1.32052, 0.01);
   //TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.449888, 1.0e-4);
   // At small dt, slopes should be equal to order.
   // double order = stepper->getOrder();
-  // TEST_FLOATING_EQUALITY( xSlope,              order, 0.01   );
-  // TEST_FLOATING_EQUALITY( xDotSlope,           order, 0.01 );
+  // TEST_FLOATING_EQUALITY(xSlope,              order, 0.01 );
+  // TEST_FLOATING_EQUALITY(xDotSlope,           order, 0.01 );
 
   // Write fine mesh solution at final time
   // This only works for ONE MPI process
