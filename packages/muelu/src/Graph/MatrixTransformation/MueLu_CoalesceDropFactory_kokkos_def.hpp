@@ -31,11 +31,16 @@
 // #define MUELU_COALESCE_DROP_DEBUG 1
 
 #include "MueLu_BoundaryDetection.hpp"
-#include "MueLu_ClassicalDropping.hpp"
-#include "MueLu_CutDrop.hpp"
 #include "MueLu_DroppingCommon.hpp"
-#include "MueLu_DistanceLaplacianDropping.hpp"
 #include "MueLu_MatrixConstruction.hpp"
+
+// The different dropping algorithms are split up over several translation units. This speeds up compilation and also avoids launch latencies on GPU.
+#include "MueLu_ScalarDroppingBase.hpp"
+#include "MueLu_ScalarDroppingClassical.hpp"
+#include "MueLu_ScalarDroppingDistanceLaplacian.hpp"
+#include "MueLu_VectorDroppingBase.hpp"
+#include "MueLu_VectorDroppingClassical.hpp"
+#include "MueLu_VectorDroppingDistanceLaplacian.hpp"
 
 namespace MueLu {
 
@@ -183,243 +188,6 @@ void runBoundaryFunctors(local_matrix_type& lclA, boundary_nodes_view& boundaryN
   auto boundaries          = BoundaryDetection::BoundaryFunctor(lclA, functors...);
   Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries);
 }
-
-namespace scalar {
-
-template <class local_matrix_type, class results_view, class rowptr_type, class nnz_count_type, class... Functors>
-void runDroppingFunctorsImpl(local_matrix_type& lclA, results_view& results, rowptr_type& filtered_rowptr, nnz_count_type& nnz_filtered, Functors&... functors) {
-  using scalar_type        = typename local_matrix_type::value_type;
-  using local_ordinal_type = typename local_matrix_type::ordinal_type;
-  using memory_space       = typename local_matrix_type::memory_space;
-
-  using execution_space = typename local_matrix_type::execution_space;
-  using range_type      = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
-  auto range            = range_type(0, lclA.numRows());
-#if !defined(HAVE_MUELU_DEBUG)
-  auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, functors...);
-
-#else
-  auto debug           = Misc::DebugFunctor(lclA, results);
-  auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, functors..., debug);
-#endif
-  Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz_filtered);
-}
-
-template <class matrix_type, class results_view, class rowptr_type, class nnz_count_type, class Level, class... Functors>
-void runDroppingFunctors(matrix_type& A, results_view& results, rowptr_type& filtered_rowptr, nnz_count_type& nnz_filtered, const bool useBlocking, Level& level, const Factory& factory, Functors&... functors) {
-  auto lclA = A.getLocalMatrixDevice();
-  if (useBlocking) {
-    using LO                 = typename matrix_type::local_ordinal_type;
-    using GO                 = typename matrix_type::global_ordinal_type;
-    using NO                 = typename matrix_type::node_type;
-    using LocalOrdinalVector = Xpetra::Vector<LO, LO, GO, NO>;
-    auto BlockNumber         = level.template Get<Teuchos::RCP<LocalOrdinalVector>>("BlockNumber", factory.GetFactory("BlockNumber").get());
-    auto block_diagonalize   = Misc::BlockDiagonalizeFunctor(A, *BlockNumber, results);
-
-    runDroppingFunctorsImpl(lclA, results, filtered_rowptr, nnz_filtered, block_diagonalize, functors...);
-  } else
-    runDroppingFunctorsImpl(lclA, results, filtered_rowptr, nnz_filtered, functors...);
-}
-
-template <Misc::StrengthMeasure SoC, class matrix_type, class results_view, class rowptr_type, class boundary_nodes_type, class nnz_count_type, class Level>
-void runDroppingFunctors_on_A(matrix_type& A, results_view& results, rowptr_type& filtered_rowptr, nnz_count_type& nnz_filtered,
-                              boundary_nodes_type& boundaryNodes,
-                              const std::string& droppingMethod,
-                              const typename Teuchos::ScalarTraits<typename matrix_type::scalar_type>::magnitudeType threshold,
-                              const bool aggregationMayCreateDirichlet,
-                              const bool symmetrizeDroppedGraph,
-                              const bool useBlocking,
-                              Level& level,
-                              const Factory& factory) {
-  auto lclA               = A.getLocalMatrixDevice();
-  auto preserve_diagonals = Misc::KeepDiagonalFunctor(lclA, results);
-
-  if (droppingMethod == "point-wise") {
-    auto dropping = ClassicalDropping::make_drop_functor<SoC>(A, threshold, results);
-
-    if (aggregationMayCreateDirichlet) {
-      auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
-
-      if (symmetrizeDroppedGraph) {
-        auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
-        scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                    dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals,
-                                    mark_singletons_as_boundary);
-      } else {
-        auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
-        scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                    dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals,
-                                    mark_singletons_as_boundary);
-      }
-    } else {
-      if (symmetrizeDroppedGraph) {
-        auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
-        scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                    dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals);
-      } else {
-        auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
-        scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                    dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals);
-      }
-    }
-  } else if (droppingMethod == "cut-drop") {
-    auto comparison = CutDrop::make_comparison_functor<SoC>(A, results);
-    auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-    if (symmetrizeDroppedGraph) {
-      auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
-      scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                  drop_boundaries,
-                                  preserve_diagonals,
-                                  cut_drop);
-    } else {
-      auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
-      scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                  drop_boundaries,
-                                  preserve_diagonals,
-                                  cut_drop);
-    }
-  }
-}
-
-template <Misc::StrengthMeasure SoC, class matrix_type, class results_view, class rowptr_type, class boundary_nodes_type, class nnz_count_type, class Level, class DistanceFunctorType>
-void runDroppingFunctors_on_dlap_inner(matrix_type& A, results_view& results, rowptr_type& filtered_rowptr, nnz_count_type& nnz_filtered,
-                                       boundary_nodes_type& boundaryNodes,
-                                       const std::string& droppingMethod,
-                                       const typename Teuchos::ScalarTraits<typename matrix_type::scalar_type>::magnitudeType threshold,
-                                       const bool aggregationMayCreateDirichlet,
-                                       const bool symmetrizeDroppedGraph,
-                                       const bool useBlocking,
-                                       DistanceFunctorType& dist2,
-                                       Level& level,
-                                       const Factory& factory) {
-  auto lclA               = A.getLocalMatrixDevice();
-  auto preserve_diagonals = Misc::KeepDiagonalFunctor(lclA, results);
-
-  if (droppingMethod == "point-wise") {
-    auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(A, threshold, dist2, results);
-
-    if (aggregationMayCreateDirichlet) {
-      auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
-
-      if (symmetrizeDroppedGraph) {
-        auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
-        scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                    dist_laplacian_dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals,
-                                    mark_singletons_as_boundary);
-      } else {
-        auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
-        scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                    dist_laplacian_dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals,
-                                    mark_singletons_as_boundary);
-      }
-    } else {
-      if (symmetrizeDroppedGraph) {
-        auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
-        scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                    dist_laplacian_dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals);
-      } else {
-        auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
-        scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                    dist_laplacian_dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals);
-      }
-    }
-  } else if (droppingMethod == "cut-drop") {
-    auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(A, dist2, results);
-    auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-    if (symmetrizeDroppedGraph) {
-      auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(A, boundaryNodes, results);
-      scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                  drop_boundaries,
-                                  preserve_diagonals,
-                                  cut_drop);
-    } else {
-      auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
-      scalar::runDroppingFunctors(A, results, filtered_rowptr, nnz_filtered, useBlocking, level, factory,
-                                  drop_boundaries,
-                                  preserve_diagonals,
-                                  cut_drop);
-    }
-  }
-}
-
-template <Misc::StrengthMeasure SoC, class matrix_type, class results_view, class rowptr_type, class boundary_nodes_type, class nnz_count_type, class Level>
-void runDroppingFunctors_on_dlap(matrix_type& A, results_view& results, rowptr_type& filtered_rowptr, nnz_count_type& nnz_filtered,
-                                 boundary_nodes_type& boundaryNodes,
-                                 const std::string& droppingMethod,
-                                 const typename Teuchos::ScalarTraits<typename matrix_type::scalar_type>::magnitudeType threshold,
-                                 const bool aggregationMayCreateDirichlet,
-                                 const bool symmetrizeDroppedGraph,
-                                 const bool useBlocking,
-                                 const std::string& distanceLaplacianMetric,
-                                 Level& level,
-                                 const Factory& factory) {
-  using SC                = typename matrix_type::scalar_type;
-  using LO                = typename matrix_type::local_ordinal_type;
-  using GO                = typename matrix_type::global_ordinal_type;
-  using NO                = typename matrix_type::node_type;
-  using magnitudeType     = typename Teuchos::ScalarTraits<SC>::magnitudeType;
-  using doubleMultiVector = Xpetra::MultiVector<magnitudeType, LO, GO, NO>;
-  auto coords             = level.template Get<Teuchos::RCP<doubleMultiVector>>("Coordinates", factory.GetFactory("Coordinates").get());
-  if (distanceLaplacianMetric == "unweighted") {
-    auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(A, coords);
-    runDroppingFunctors_on_dlap_inner<SoC>(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
-  } else if (distanceLaplacianMetric == "material") {
-    auto material = level.template Get<Teuchos::RCP<doubleMultiVector>>("Material", factory.GetFactory("Material").get());
-
-    if (factory.IsPrint(Runtime0)) {
-      auto spatialDim = coords->getNumVectors();
-      if (material->getNumVectors() == 1) {
-        factory.GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(spatialDim * spatialDim != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-        {
-          Teuchos::Array<SC> means(material->getNumVectors());
-          material->meanValue(means());
-          std::stringstream ss;
-          ss << "material tensor mean =" << std::endl;
-          size_t k = 0;
-          for (size_t i = 0; i < spatialDim; ++i) {
-            ss << "   ";
-            for (size_t j = 0; j < spatialDim; ++j) {
-              ss << means[k] << " ";
-              ++k;
-            }
-            ss << std::endl;
-          }
-          factory.GetOStream(Runtime0) << ss.str();
-        }
-      }
-    }
-
-    if (material->getNumVectors() == 1) {
-      auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(A, coords, material);
-      runDroppingFunctors_on_dlap_inner<SoC>(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
-    } else {
-      auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(A, coords, material);
-      runDroppingFunctors_on_dlap_inner<SoC>(A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
-    }
-  }
-}
-
-}  // namespace scalar
 
 template <class magnitudeType>
 void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppingMethod, bool& useBlocking, std::string& socUsesMatrix, std::string& socUsesMeasure, bool& symmetrizeDroppedGraph, bool& generateColoringGraph, magnitudeType& threshold) {
@@ -651,28 +419,28 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     if (threshold != zero) {
       if (socUsesMatrix == "A") {
         if (socUsesMeasure == "unscaled") {
-          scalar::runDroppingFunctors_on_A<Misc::UnscaledMeasure>(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
-                                                                  aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+                                                                                                                              aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          scalar::runDroppingFunctors_on_A<Misc::SmoothedAggregationMeasure>(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
-                                                                             aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+                                                                                                                                         aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          scalar::runDroppingFunctors_on_A<Misc::SignedRugeStuebenMeasure>(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
-                                                                           aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+                                                                                                                                       aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          scalar::runDroppingFunctors_on_A<Misc::SignedSmoothedAggregationMeasure>(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
-                                                                                   aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+                                                                                                                                               aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         }
       } else if (socUsesMatrix == "distance laplacian") {
         auto coords = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
         if (socUsesMeasure == "unscaled") {
-          scalar::runDroppingFunctors_on_dlap<Misc::UnscaledMeasure>(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          scalar::runDroppingFunctors_on_dlap<Misc::SmoothedAggregationMeasure>(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          scalar::runDroppingFunctors_on_dlap<Misc::SignedRugeStuebenMeasure>(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          scalar::runDroppingFunctors_on_dlap<Misc::SignedSmoothedAggregationMeasure>(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         }
       }
     } else {
@@ -680,16 +448,16 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
       if (symmetrizeDroppedGraph) {
         auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(*A, boundaryNodes, results);
-        scalar::runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
       } else {
         auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-        scalar::runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, no_op);
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, no_op);
       }
     }
 
     if (symmetrizeDroppedGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      scalar::runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
     }
   }
   GO numDropped = lclA.nnz() - nnz_filtered;
@@ -769,11 +537,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     filtered_rowptr = rowptr_type("rowptr_coloring_graph", lclA.numRows() + 1);
     if (localizeColoringGraph) {
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
-      scalar::runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_offrank);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_offrank);
     }
     if (symmetrizeColoringGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      scalar::runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
@@ -791,255 +559,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   return std::make_tuple(numDropped, boundaryNodes);
 }
-
-namespace vector {
-
-template <class local_matrix_type, class local_ordinal_type, class block_indices_view_type, class results_view, class rowptr_type, class nnz_count_type, class... Functors>
-void runDroppingFunctorsImpl(local_matrix_type& lclA, local_ordinal_type& blkPartSize, block_indices_view_type& colTranslation, results_view& results, rowptr_type& filtered_rowptr, rowptr_type& graph_rowptr, nnz_count_type& nnz, Functors&... functors) {
-  using scalar_type  = typename local_matrix_type::value_type;
-  using memory_space = typename local_matrix_type::memory_space;
-
-  using execution_space = typename local_matrix_type::execution_space;
-  using range_type      = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
-  auto numNodes         = graph_rowptr.extent(0) - 1;
-  auto range            = range_type(0, numNodes);
-#if !defined(HAVE_MUELU_DEBUG)
-  auto countingFunctor = MatrixConstruction::VectorCountingFunctor(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, functors...);
-
-#else
-  auto debug           = Misc::DebugFunctor(lclA, results);
-  auto countingFunctor = MatrixConstruction::VectorCountingFunctor(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, functors...);
-#endif
-  Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz);
-}
-
-template <class matrix_type, class local_ordinal_type, class block_indices_view_type, class results_view, class rowptr_type, class nnz_count_type, class Level, class... Functors>
-void runDroppingFunctors(matrix_type& A, matrix_type& mergedA, local_ordinal_type& blkPartSize, block_indices_view_type& rowTranslation, block_indices_view_type& colTranslation, results_view& results, rowptr_type& filtered_rowptr, rowptr_type& graph_rowptr, nnz_count_type& nnz, const bool useBlocking, Level& level, const Factory& factory, Functors&... functors) {
-  auto lclA = A.getLocalMatrixDevice();
-  if (useBlocking) {
-    using LO                 = typename matrix_type::local_ordinal_type;
-    using GO                 = typename matrix_type::global_ordinal_type;
-    using NO                 = typename matrix_type::node_type;
-    using LocalOrdinalVector = Xpetra::Vector<LO, LO, GO, NO>;
-    auto BlockNumber         = level.template Get<Teuchos::RCP<LocalOrdinalVector>>("BlockNumber", factory.GetFactory("BlockNumber").get());
-    auto block_diagonalize   = Misc::BlockDiagonalizeVectorFunctor(A, *BlockNumber, mergedA.getCrsGraph()->getImporter(), results, rowTranslation, colTranslation);
-
-    runDroppingFunctorsImpl(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, block_diagonalize, functors...);
-  } else
-    runDroppingFunctorsImpl(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, functors...);
-}
-
-template <Misc::StrengthMeasure SoC, class matrix_type, typename block_indices_view_type, class results_view, class rowptr_type, class boundary_nodes_type, class nnz_count_type, class Level>
-void runDroppingFunctors_on_A(matrix_type& A, matrix_type& mergedA, typename matrix_type::local_ordinal_type blkPartSize, block_indices_view_type& rowTranslation, block_indices_view_type& colTranslation, results_view& results, rowptr_type& filtered_rowptr, rowptr_type& graph_rowptr, nnz_count_type& nnz,
-                              boundary_nodes_type& boundaryNodes,
-                              const std::string& droppingMethod,
-                              const typename Teuchos::ScalarTraits<typename matrix_type::scalar_type>::magnitudeType threshold,
-                              const bool aggregationMayCreateDirichlet,
-                              const bool symmetrizeDroppedGraph,
-                              const bool useBlocking,
-                              Level& level,
-                              const Factory& factory) {
-  auto lclA                        = A.getLocalMatrixDevice();
-  auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
-  auto mark_singletons_as_boundary = Misc::MarkSingletonVectorFunctor(lclA, rowTranslation, boundaryNodes, results);
-
-  if (droppingMethod == "point-wise") {
-    auto dropping = ClassicalDropping::make_drop_functor<SoC>(A, threshold, results);
-
-    if (aggregationMayCreateDirichlet) {
-      if (symmetrizeDroppedGraph) {
-        auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
-        vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                    dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals,
-                                    mark_singletons_as_boundary);
-      } else {
-        auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);
-        vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                    dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals,
-                                    mark_singletons_as_boundary);
-      }
-    } else {
-      if (symmetrizeDroppedGraph) {
-        auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
-        vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                    dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals);
-      } else {
-        auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);
-        vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                    dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals);
-      }
-    }
-  } else if (droppingMethod == "cut-drop") {
-    auto comparison = CutDrop::make_comparison_functor<SoC>(A, results);
-    auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-    if (symmetrizeDroppedGraph) {
-      auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
-      vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                  drop_boundaries,
-                                  preserve_diagonals,
-                                  cut_drop);
-    } else {
-      auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);
-      vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                  drop_boundaries,
-                                  preserve_diagonals,
-                                  cut_drop);
-    }
-  }
-}
-
-template <Misc::StrengthMeasure SoC, class matrix_type, class block_indices_view_type, class results_view, class rowptr_type, class boundary_nodes_type, class nnz_count_type, class Level, class DistanceFunctorType>
-void runDroppingFunctors_on_dlap_inner(matrix_type& A, matrix_type& mergedA, typename matrix_type::local_ordinal_type blkPartSize, block_indices_view_type& rowTranslation, block_indices_view_type& colTranslation, results_view& results, rowptr_type& filtered_rowptr, rowptr_type& graph_rowptr, nnz_count_type& nnz,
-                                       boundary_nodes_type& boundaryNodes,
-                                       const std::string& droppingMethod,
-                                       const typename Teuchos::ScalarTraits<typename matrix_type::scalar_type>::magnitudeType threshold,
-                                       const bool aggregationMayCreateDirichlet,
-                                       const bool symmetrizeDroppedGraph,
-                                       const bool useBlocking,
-                                       DistanceFunctorType& dist2,
-                                       Level& level,
-                                       const Factory& factory) {
-  auto lclA                        = A.getLocalMatrixDevice();
-  auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
-  auto mark_singletons_as_boundary = Misc::MarkSingletonVectorFunctor(lclA, rowTranslation, boundaryNodes, results);
-
-  if (droppingMethod == "point-wise") {
-    auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(A, mergedA, threshold, dist2, results, rowTranslation, colTranslation);
-
-    if (aggregationMayCreateDirichlet) {
-      if (symmetrizeDroppedGraph) {
-        auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
-        vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                    dist_laplacian_dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals,
-                                    mark_singletons_as_boundary);
-      } else {
-        auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);
-        vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                    dist_laplacian_dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals,
-                                    mark_singletons_as_boundary);
-      }
-    } else {
-      if (symmetrizeDroppedGraph) {
-        auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
-        vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                    dist_laplacian_dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals);
-      } else {
-        auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);
-        vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                    dist_laplacian_dropping,
-                                    drop_boundaries,
-                                    preserve_diagonals);
-      }
-    }
-  } else if (droppingMethod == "cut-drop") {
-    auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(A, dist2, results);
-    auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
-
-    if (symmetrizeDroppedGraph) {
-      auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
-      vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                  drop_boundaries,
-                                  preserve_diagonals,
-                                  cut_drop);
-    } else {
-      auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);
-      vector::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
-                                  drop_boundaries,
-                                  preserve_diagonals,
-                                  cut_drop);
-    }
-  }
-}
-
-template <Misc::StrengthMeasure SoC, class matrix_type, class block_indices_view_type, class results_view, class rowptr_type, class boundary_nodes_type, class nnz_count_type, class Level, class Weights>
-void runDroppingFunctors_on_dlap(matrix_type& A, matrix_type& mergedA, typename matrix_type::local_ordinal_type blkPartSize, block_indices_view_type& rowTranslation, block_indices_view_type& colTranslation, results_view& results, rowptr_type& filtered_rowptr, rowptr_type& graph_rowptr, nnz_count_type& nnz,
-                                 boundary_nodes_type& boundaryNodes,
-                                 const std::string& droppingMethod,
-                                 const typename Teuchos::ScalarTraits<typename matrix_type::scalar_type>::magnitudeType threshold,
-                                 const bool aggregationMayCreateDirichlet,
-                                 const bool symmetrizeDroppedGraph,
-                                 const bool useBlocking,
-                                 const std::string& distanceLaplacianMetric,
-                                 Weights dlap_weights,
-                                 typename matrix_type::local_ordinal_type interleaved_blocksize,
-                                 Level& level,
-                                 const Factory& factory) {
-  using SC                = typename matrix_type::scalar_type;
-  using LO                = typename matrix_type::local_ordinal_type;
-  using GO                = typename matrix_type::global_ordinal_type;
-  using NO                = typename matrix_type::node_type;
-  using magnitudeType     = typename Teuchos::ScalarTraits<SC>::magnitudeType;
-  using doubleMultiVector = Xpetra::MultiVector<magnitudeType, LO, GO, NO>;
-  auto coords             = level.template Get<Teuchos::RCP<doubleMultiVector>>("Coordinates", factory.GetFactory("Coordinates").get());
-  if (distanceLaplacianMetric == "unweighted") {
-    auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(mergedA, coords);
-    runDroppingFunctors_on_dlap_inner<SoC>(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
-  } else if (distanceLaplacianMetric == "weighted") {
-    auto k_dlap_weights_host = Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(&dlap_weights[0], dlap_weights.size());
-    auto k_dlap_weights      = Kokkos::View<double*>("dlap_weights", k_dlap_weights_host.extent(0));
-    Kokkos::deep_copy(k_dlap_weights, k_dlap_weights_host);
-    auto dist2 = DistanceLaplacian::WeightedDistanceFunctor(mergedA, coords, k_dlap_weights);
-    runDroppingFunctors_on_dlap_inner<SoC>(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
-  } else if (distanceLaplacianMetric == "block weighted") {
-    auto k_dlap_weights_host = Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(&dlap_weights[0], dlap_weights.size());
-    auto k_dlap_weights      = Kokkos::View<double*>("dlap_weights", k_dlap_weights_host.extent(0));
-    Kokkos::deep_copy(k_dlap_weights, k_dlap_weights_host);
-    auto dist2 = DistanceLaplacian::BlockWeightedDistanceFunctor(mergedA, coords, k_dlap_weights, interleaved_blocksize);
-    runDroppingFunctors_on_dlap_inner<SoC>(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
-  } else if (distanceLaplacianMetric == "material") {
-    auto material = level.template Get<Teuchos::RCP<doubleMultiVector>>("Material", factory.GetFactory("Material").get());
-
-    if (factory.IsPrint(Runtime0)) {
-      auto spatialDim = coords->getNumVectors();
-      if (material->getNumVectors() == 1) {
-        factory.GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(spatialDim * spatialDim != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-        {
-          Teuchos::Array<SC> means(material->getNumVectors());
-          material->meanValue(means());
-          std::stringstream ss;
-          ss << "material tensor mean =" << std::endl;
-          size_t k = 0;
-          for (size_t i = 0; i < spatialDim; ++i) {
-            ss << "   ";
-            for (size_t j = 0; j < spatialDim; ++j) {
-              ss << means[k] << " ";
-              ++k;
-            }
-            ss << std::endl;
-          }
-          factory.GetOStream(Runtime0) << ss.str();
-        }
-      }
-    }
-
-    if (material->getNumVectors() == 1) {
-      auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(mergedA, coords, material);
-      runDroppingFunctors_on_dlap_inner<SoC>(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
-    } else {
-      auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(mergedA, coords, material);
-      runDroppingFunctors_on_dlap_inner<SoC>(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, dist2, level, factory);
-    }
-  }
-}
-
-}  // namespace vector
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1284,13 +803,13 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     if (threshold != zero) {
       if (socUsesMatrix == "A") {
         if (socUsesMeasure == "unscaled") {
-          vector::runDroppingFunctors_on_A<Misc::UnscaledMeasure>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          vector::runDroppingFunctors_on_A<Misc::SmoothedAggregationMeasure>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          vector::runDroppingFunctors_on_A<Misc::SignedRugeStuebenMeasure>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          vector::runDroppingFunctors_on_A<Misc::SignedSmoothedAggregationMeasure>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         }
       } else if (socUsesMatrix == "distance laplacian") {
         auto coords = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
@@ -1321,25 +840,25 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
         }
 
         if (socUsesMeasure == "unscaled") {
-          vector::runDroppingFunctors_on_dlap<Misc::UnscaledMeasure>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          vector::runDroppingFunctors_on_dlap<Misc::SmoothedAggregationMeasure>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          vector::runDroppingFunctors_on_dlap<Misc::SignedRugeStuebenMeasure>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          vector::runDroppingFunctors_on_dlap<Misc::SignedSmoothedAggregationMeasure>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         }
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
 
       auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-      vector::runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, no_op);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, no_op);
     }
 
     if (symmetrizeDroppedGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      vector::runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     }
   }
   LocalOrdinal nnz_filtered = nnz.first;
@@ -1419,11 +938,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     graph_rowptr    = rowptr_type("rowptr", numNodes + 1);
     if (localizeColoringGraph) {
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
-      vector::runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, drop_offrank);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, drop_offrank);
     }
     if (symmetrizeColoringGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      vector::runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
