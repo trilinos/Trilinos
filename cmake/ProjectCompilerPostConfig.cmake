@@ -56,6 +56,8 @@ set(explicitly_disabled_warnings
     inline
 )
 set(upcoming_warnings
+    class-memaccess
+    missing-braces
     shadow
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
@@ -76,7 +78,6 @@ set(promoted_warnings
     cast-align
     catch-value
     char-subscripts
-    class-memaccess
     comment
     dangling-else
     dangling-pointer=2
@@ -110,7 +111,6 @@ set(promoted_warnings
     mismatched-dealloc
     mismatched-new-delete
     missing-attributes
-    missing-braces
     multistatement-macros
     narrowing
     nonnull
@@ -156,11 +156,47 @@ set(promoted_warnings
     zero-length-bounds
 )
 
+include(CheckCXXCompilerFlag)
+
+function(filter_valid_warnings warnings output)
+    set(valid_warnings "")
+    foreach(warning ${warnings})
+        # Check if the compiler supports the warning flag
+        string(CONCAT flag "-W" ${warning})
+        check_cxx_compiler_flag("${flag}" COMPILER_SUPPORTS_${warning}_WARNING)
+
+        if(COMPILER_SUPPORTS_${warning}_WARNING)
+            list(APPEND valid_warnings "${warning}")
+        endif()
+    endforeach()
+    set(${output} ${valid_warnings} PARENT_SCOPE)
+endfunction()
+
+
+function(filter_valid_warnings_as_errors warnings output)
+    set(valid_warnings "")
+    foreach(warning ${warnings})
+        # Check if the compiler supports the warning-as-error flag
+        string(CONCAT flag "-Werror=" ${warning})
+        check_cxx_compiler_flag("${flag}" COMPILER_SUPPORTS_${warning}_WARNING_AS_ERROR)
+
+        if(COMPILER_SUPPORTS_${warning}_WARNING_AS_ERROR)
+            list(APPEND valid_warnings "${warning}")
+        endif()
+    endforeach()
+    set(${output} ${valid_warnings} PARENT_SCOPE)
+endfunction()
+
+
 if("${Trilinos_WARNINGS_MODE}" STREQUAL "WARN")
+    filter_valid_warnings("${upcoming_warnings}" upcoming_warnings)
     enable_warnings("${upcoming_warnings}")
+    filter_valid_warnings_as_errors("${promoted_warnings}" promoted_warnings)
     enable_errors("${promoted_warnings}")
     disable_warnings_for_deprecated_packages()
 elseif("${Trilinos_WARNINGS_MODE}" STREQUAL "ERROR")
+    filter_valid_warnings_as_errors("${promoted_warnings}" promoted_warnings)
+    filter_valid_warnings_as_errors("${upcoming_warnings}" upcoming_warnings)
     enable_errors("${promoted_warnings};${upcoming_warnings}")
     disable_warnings_for_deprecated_packages()
 endif()
