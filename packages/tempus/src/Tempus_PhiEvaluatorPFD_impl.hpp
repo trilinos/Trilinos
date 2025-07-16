@@ -71,10 +71,10 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
   Scalar achieved_tol = sStatus.achievedTol;
 
   if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED) {
-    *out->getOStream() << "PhiPFD converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
+    *out << "PhiPFD converged: iters: " << current_iters << " tol: " << achieved_tol << std::endl;
   }
   else if (sStatus.solveStatus == ::Thyra::SOLVE_STATUS_UNCONVERGED) {
-    *out->getOStream() << sStatus.message << std::endl;    
+    *out << sStatus.message << std::endl;
   }
 
   return sStatus;
