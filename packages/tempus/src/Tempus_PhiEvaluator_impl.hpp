@@ -21,6 +21,7 @@
 //#include "Thyra_DefaultInverseLinearOp_decl.hpp"
 //#include "Thyra_DefaultMultipliedLinearOp_decl.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps_decl.hpp"
 #include "Thyra_OperatorVectorTypes.hpp"
@@ -327,8 +328,29 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Thyra::ModelE
 
   assign(iMf.ptr(), ST::zero()); //TODO: needed?
 
+  // Create solve criteria
+  Thyra::SolveCriteria<Scalar> solveCriteria;
+  solveCriteria.requestedTol = 1e-6;//p.get("Tolerance", 1.0e-6);
+
+  //std::string numer_measure = p.get("Solve Measure Numerator", "Norm Residual");
+  //std::string denom_measure = p.get("Solve Measure Denominator", "Norm Initial Residual");
+
+  //if (name == "None")
+  //  return ::Thyra::SOLVE_MEASURE_ONE;
+  //else if (name == "Norm Residual")
+  //  return ::Thyra::SOLVE_MEASURE_NORM_RESIDUAL;
+  //else if (name == "Norm Solution")
+  //  return ::Thyra::SOLVE_MEASURE_NORM_SOLUTION;
+  //else if (name == "Norm Initial Residual")
+  //  return ::Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL;
+  //else if (name == "Norm RHS")
+  //  return ::Thyra::SOLVE_MEASURE_NORM_RHS;
+
+  solveCriteria.solveMeasureType =
+    Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL, Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
+
   // compute the solution to (MpJ)\Mf and write it to iMf
-  Thyra::SolveStatus<Scalar> sStatus = LOWSB->solve(Thyra::NOTRANS, *Mf, iMf.ptr());
+  Thyra::SolveStatus<Scalar> sStatus = LOWSB->solve(Thyra::NOTRANS, *Mf, iMf.ptr(), Teuchos::constPtr(solveCriteria));
 
   return sStatus;
 }
