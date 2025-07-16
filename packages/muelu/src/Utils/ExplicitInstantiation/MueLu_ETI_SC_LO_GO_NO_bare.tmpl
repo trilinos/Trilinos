@@ -1,0 +1,24 @@
+// @HEADER
+// *****************************************************************************
+//        MueLu: A package for multigrid based preconditioning
+//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+// TAW 1/22/16: this is the template file for CMake style ETI
+
+#include "MueLu_ConfigDefs.hpp"
+
+@CONDITION_NAME@
+
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
+
+#include "@CLASS_FILE_NAME@_def.hpp"
+
+#include "MueLu_ETI_4arg.hpp"
+
+@CONDITION_NAME_END@ // @CONDITION_NAME@
+
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION
