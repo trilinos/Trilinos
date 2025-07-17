@@ -56,8 +56,9 @@ set(explicitly_disabled_warnings
     inline
 )
 set(upcoming_warnings
-    shadow
     class-memaccess
+    missing-braces
+    shadow
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
@@ -110,7 +111,6 @@ set(promoted_warnings
     mismatched-dealloc
     mismatched-new-delete
     missing-attributes
-    missing-braces
     multistatement-macros
     narrowing
     nonnull
