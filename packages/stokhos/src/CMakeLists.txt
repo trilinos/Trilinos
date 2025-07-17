@@ -1118,9 +1118,17 @@ IF (Stokhos_ENABLE_Sacado)
 
       ENDIF()
 
+      # LIST(APPEND MUELU_SC_LO_GO_NO_ETI_CLASSES
+      #       "MueLu::ScalarDroppingClassical"
+      #       "MueLu::ScalarDroppingDistanceLaplacian"
+      #       "MueLu::VectorDroppingClassical"
+      #       "MueLu::VectorDroppingDistanceLaplacian")
+
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
         TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
+        APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.cpp)
+        MESSAGE("${MUELU_CPP_SOURCES}")
         IF (MueLu_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_ENSEMBLE_ETI(
             "${Stokhos_ETI_Ensemble_Sizes}"
@@ -1133,9 +1141,12 @@ IF (Stokhos_ENABLE_Sacado)
           LIST(APPEND STOKHOS_MUELU_DEPLIBS ${DEPLIBS_OUT})
         ENDIF()
       ENDIF()
+
       IF(Stokhos_ENABLE_PCE_Scalar_Type)
         TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*.hpp)
+        APPEND_GLOB(MUELU_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*.cpp)
+        MESSAGE("${MUELU_CPP_SOURCES}")
         IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_PCE_ETI(
             "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"

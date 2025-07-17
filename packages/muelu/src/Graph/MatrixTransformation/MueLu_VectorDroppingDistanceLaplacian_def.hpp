@@ -10,9 +10,6 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef MUELU_VECTORDROPPINGCLASSICAL_DEF_HPP
-#define MUELU_VECTORDROPPINGCLASSICAL_DEF_HPP
-
 #include "MueLu_VectorDroppingDistanceLaplacian_decl.hpp"
 
 namespace MueLu {
@@ -94,12 +91,7 @@ void VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
 }
 }  // namespace MueLu
 
-#define MUELU_ETI_GROUP(SC, LO, GO, NO)                                                                                 \
-  template class MueLu::VectorDroppingDistanceLaplacian<SC, LO, GO, NO, MueLu::Misc::SmoothedAggregationMeasure>;       \
-  template class MueLu::VectorDroppingDistanceLaplacian<SC, LO, GO, NO, MueLu::Misc::SignedRugeStuebenMeasure>;         \
-  template class MueLu::VectorDroppingDistanceLaplacian<SC, LO, GO, NO, MueLu::Misc::SignedSmoothedAggregationMeasure>; \
-  template class MueLu::VectorDroppingDistanceLaplacian<SC, LO, GO, NO, MueLu::Misc::UnscaledMeasure>;
-
-#endif
+#define MUELU_ETI_GROUP(SC, LO, GO, NO) \
+  MUELU_ETI_SLGN_SoC(MueLu::VectorDroppingDistanceLaplacian, SC, LO, GO, NO)
 
 #endif

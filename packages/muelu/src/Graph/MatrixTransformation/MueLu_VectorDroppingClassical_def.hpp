@@ -90,10 +90,7 @@ void VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, SoC>::ru
 }
 }  // namespace MueLu
 
-#define MUELU_ETI_GROUP(SC, LO, GO, NO)                                                                         \
-  template class MueLu::VectorDroppingClassical<SC, LO, GO, NO, MueLu::Misc::SmoothedAggregationMeasure>;       \
-  template class MueLu::VectorDroppingClassical<SC, LO, GO, NO, MueLu::Misc::SignedRugeStuebenMeasure>;         \
-  template class MueLu::VectorDroppingClassical<SC, LO, GO, NO, MueLu::Misc::SignedSmoothedAggregationMeasure>; \
-  template class MueLu::VectorDroppingClassical<SC, LO, GO, NO, MueLu::Misc::UnscaledMeasure>;
+#define MUELU_ETI_GROUP(SC, LO, GO, NO) \
+  MUELU_ETI_SLGN_SoC(MueLu::VectorDroppingClassical, SC, LO, GO, NO)
 
 #endif
