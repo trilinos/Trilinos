@@ -59,6 +59,7 @@ set(upcoming_warnings
     class-memaccess
     missing-braces
     shadow
+    class-memaccess
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
