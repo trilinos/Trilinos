@@ -632,4 +632,10 @@ enum StrengthMeasure : int {
 
 }  // namespace MueLu
 
+#define MUELU_ETI_SLGN_SoC(CLASSNAME, SC, LO, GO, NO)                                      \
+  template class CLASSNAME<SC, LO, GO, NO, MueLu::Misc::SmoothedAggregationMeasure>;       \
+  template class CLASSNAME<SC, LO, GO, NO, MueLu::Misc::SignedRugeStuebenMeasure>;         \
+  template class CLASSNAME<SC, LO, GO, NO, MueLu::Misc::SignedSmoothedAggregationMeasure>; \
+  template class CLASSNAME<SC, LO, GO, NO, MueLu::Misc::UnscaledMeasure>;
+
 #endif
