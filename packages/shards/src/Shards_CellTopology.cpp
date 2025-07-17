@@ -46,7 +46,7 @@ CellTopology & CellTopology::operator = ( const CellTopology & right )
 
 void CellTopology::requireCell() const
 {
-  if ( m_cell == NULL || m_cell->base == NULL ) {
+  if ( m_cell == NULL || m_cell->Nbase == NULL ) {
     std::string msg ;
     msg.append( "shards::CellTopology::requireCell() : FAILED " );
     if ( m_cell == NULL ) {
