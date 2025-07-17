@@ -57,6 +57,7 @@ set(explicitly_disabled_warnings
 )
 set(upcoming_warnings
     shadow
+    class-memaccess
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
@@ -76,7 +77,6 @@ set(promoted_warnings
     cast-align
     catch-value
     char-subscripts
-    class-memaccess
     comment
     dangling-else
     dangling-pointer=2
