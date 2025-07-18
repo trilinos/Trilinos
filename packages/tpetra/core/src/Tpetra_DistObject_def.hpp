@@ -622,7 +622,7 @@ namespace Tpetra {
     }
     using ::Tpetra::Details::reallocDualViewIfNeeded;
     const bool reallocated =
-      reallocDualViewIfNeeded (this->imports_, newSize, "imports");
+      reallocDualViewIfNeeded (this->imports_parentView_,this->imports_, newSize, "imports");
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Finished realloc'ing imports_" << std::endl;
@@ -672,6 +672,7 @@ namespace Tpetra {
     // Reallocate numExportPacketsPerLID_ if needed.
     const bool firstReallocated =
       reallocDualViewIfNeeded (this->numExportPacketsPerLID_,
+                               this->numExportPacketsPerLID_,
                                numExportLIDs,
                                "numExportPacketsPerLID",
                                tooBigFactor,
@@ -683,6 +684,7 @@ namespace Tpetra {
     const bool needFenceBeforeNextAlloc = ! firstReallocated;
     const bool secondReallocated =
       reallocDualViewIfNeeded (this->numImportPacketsPerLID_,
+                               this->numImportPacketsPerLID_,
                                numImportLIDs,
                                "numImportPacketsPerLID",
                                tooBigFactor,
@@ -1985,6 +1987,29 @@ DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::createPrefix(
   auto comm = map.is_null() ? Teuchos::null : map->getComm();
   return Details::createPrefix(comm.getRawPtr(), className, methodName);
 }
+
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::getSizeOfImports() const {
+  return this->imports_parentView_.view_device().extent(0);
+}
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::getSizeOfExports() const {
+  return this->exports_.view_device().extent(0);
+}
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::clearImports() {
+  this->imports_parentView_.realloc(0);
+  this->imports_ = this->imports_parentView_;
+}
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::clearExports() {
+  this->exports_.realloc(0);
+}
+
 
 template <class DistObjectType>
 void removeEmptyProcessesInPlace(
