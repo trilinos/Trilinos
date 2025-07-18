@@ -167,7 +167,7 @@ example (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // MPI_COMM_WORLD.
     TimeMonitor monitor (*exportTimer); // Time the redistribution
 
-    // Make an export object with procZeroMap as the source Map, and
+    // Make an Export object with procZeroMap as the source Map, and
     // globalMap as the target Map.  The Export type has the same
     // template parameters as a Map.  Note that Export does not depend
     // on the Scalar template parameter of the objects it
