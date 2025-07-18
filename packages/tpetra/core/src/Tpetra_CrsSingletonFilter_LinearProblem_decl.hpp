@@ -143,13 +143,14 @@ namespace Tpetra {
     //@{
 
     using map_type = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
-    using crs_matrix_type = CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using row_matrix_type = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using multivector_type = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using vector_type = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using vector_type_int = Vector<int, LocalOrdinal, GlobalOrdinal, Node>;
-    using vector_type_LO = Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
-    using linear_problem_type = LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using row_matrix_type = Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using multivector_type = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using vector_type = Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using vector_type_int = Tpetra::Vector<int, LocalOrdinal, GlobalOrdinal, Node>;
+    using vector_type_LO = Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+    using linear_problem_type = Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using import_type = Tpetra::Import<LocalOrdinal, GlobalOrdinal, Node>;
 
     using scalar_type = Tpetra::Vector<>::scalar_type;
     using local_ordinal_type = Tpetra::Vector<>::local_ordinal_type;
@@ -288,7 +289,7 @@ namespace Tpetra {
     Teuchos::RCP<row_matrix_type> FullMatrix() const {return(FullMatrix_);}
   
     /// \brief Returns RCP to Tpetra::CrsMatrix from reduced problem.
-    Teuchos::RCP<row_matrix_type> ReducedMatrix() const {return(ReducedProblem_->getMatrix());}
+    Teuchos::RCP<crs_matrix_type> ReducedMatrix() const {return ReducedMatrix_;}
   
     //! Returns RCP to Tpetra::MapColoring object: color 0 rows are part of reduced system.
     //Epetra_MapColoring * RowMapColors() const {return(RowMapColors_);}
@@ -297,16 +298,16 @@ namespace Tpetra {
     //Epetra_MapColoring * ColMapColors() const {return(ColMapColors_);}
   
     //! Returns RCP to Tpetra::Map describing the reduced system row distribution.
-    Teuchos::RCP<const map_type> ReducedMatrixRowMap() const {return(ReducedProblem_->getMatrix()->getRowMap());}
+    Teuchos::RCP<const map_type> ReducedMatrixRowMap() const {return ReducedMatrixRowMap_;}
   
     //! Returns RCP to Tpetra::Map describing the reduced system column distribution.
-    Teuchos::RCP<const map_type> ReducedMatrixColMap() const {return(ReducedProblem_->getMatrix()->getColMap());}
+    Teuchos::RCP<const map_type> ReducedMatrixColMap() const {return ReducedMatrixColMap_;}
   
     //! Returns RCP to Tpetra::Map describing the domain map for the reduced system.
-    Teuchos::RCP<const map_type> ReducedMatrixDomainMap() const {return(ReducedProblem_->getMatrix()->getDomainMap());}
+    Teuchos::RCP<const map_type> ReducedMatrixDomainMap() const {return ReducedMatrixDomainMap_;}
   
     //! Returns RCP to Tpetra::Map describing the range map for the reduced system.
-    Teuchos::RCP<const map_type> ReducedMatrixRangeMap() const {return(ReducedProblem_->getMatrix()->getRangeMap());}
+    Teuchos::RCP<const map_type> ReducedMatrixRangeMap() const {return ReducedMatrixRangeMap_;}
     //@}
   
    protected:
@@ -325,14 +326,12 @@ namespace Tpetra {
     //void GetRow(int localRow, int & NumIndices, int * & Indices);
     void GetRow(local_ordinal_type localRow, size_t & NumIndices,
                 Teuchos::Array<local_ordinal_type> & localIndices);
-    void GetRow(int localRow, int & NumIndices, double * & Values, int * & Indices);
-  #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-    int GetRowGCIDs(int Row, int & NumIndices, double * & Values, int * & GlobalIndices);
-  #endif
-  #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    int GetRowGCIDs(int Row, int & NumIndices, double * & Values, long long * & GlobalIndices);
-  #endif
+    void GetRow(LocalOrdinal Row, size_t &NumIndices, Teuchos::ArrayView<const Scalar> &Values, 
+       Teuchos::ArrayView<const LocalOrdinal> &Indices);
     
+    void GetRowGCIDs(LocalOrdinal Row, size_t & NumIndices, Teuchos::ArrayView<const Scalar> & Values, 
+                     Teuchos::Array<GlobalOrdinal> & GlobalIndices);
+
     void CreatePostSolveArrays(vector_type_LO localRowIDofSingletonCol,
                                vector_type_LO ColProfiles,
                                vector_type_LO NewColProfiles,
@@ -357,11 +356,11 @@ namespace Tpetra {
     
     Teuchos::RCP<const map_type> ReducedMatrixRowMap_;
     Teuchos::RCP<const map_type> ReducedMatrixColMap_;
-    //Teuchos::RCP<map_type> ReducedMatrixDomainMap_;
+    Teuchos::RCP<const map_type> ReducedMatrixDomainMap_;
     Teuchos::RCP<const map_type> ReducedMatrixRangeMap_;
     Teuchos::RCP<const map_type> OrigReducedMatrixDomainMap_;
-    //Teuchos::RCP<import_type> Full2ReducedRHSImporter_;
-    //Teuchos::RCP<import_type> Full2ReducedLHSImporter_;
+    Teuchos::RCP<import_type> Full2ReducedRHSImporter_;
+    Teuchos::RCP<import_type> Full2ReducedLHSImporter_;
     //Teuchos::RCP<export_type> RedistributeDomainExporter_;
 
     Teuchos::ArrayRCP<local_ordinal_type> ColSingletonRowLIDs_;
