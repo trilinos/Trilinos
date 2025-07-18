@@ -53,16 +53,13 @@ void GMRESSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matri
   SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
 
   RCP<const Matrix> A = rcpFromRef(Aref);
-
-  const auto rowMap = A->getRowMap();
-  auto invDiag      = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, true);
+  // bool               useTpetra = (A->getRowMap()->lib() == Xpetra::UseTpetra);
 
   // FIXME: Don't know why, but in the MATLAB code we have D = I. Follow that for now.
 #if 0
-  A->getLocalDiagCopy(*invDiag);
-  invDiag->reciprocal(*invDiag);
+    ArrayRCP<const SC> D         = Utilities::GetMatrixDiagonal_arcp(*A);
 #else
-  invDiag->putScalar(one);
+  ArrayRCP<const SC> D(A->getLocalNumRows(), one);
 #endif
 
   Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);
@@ -84,7 +81,7 @@ void GMRESSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matri
     C.Apply(*tmpAP, *T);
 
     V[0] = MatrixFactory2::BuildCopy(T);
-    V[0]->leftScale(*invDiag);
+    Utilities::MyOldScaleMatrix(*V[0], D, true /*doInverse*/, true /*doFillComplete*/, false /*doOptimizeStorage*/);
 
     rho = sqrt(Utilities::Frobenius(*V[0], *V[0]));
 
@@ -104,7 +101,7 @@ void GMRESSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matri
     C.Apply(*tmpAP, *T);
 
     V[i + 1] = MatrixFactory2::BuildCopy(T);
-    V[i + 1]->leftScale(*invDiag);
+    Utilities::MyOldScaleMatrix(*V[i + 1], D, true /*doInverse*/, true /*doFillComplete*/, false /*doOptimizeStorage*/);
 
     // Update Hessenberg matrix
     for (size_t j = 0; j <= i; j++) {
