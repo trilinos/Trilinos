@@ -204,7 +204,7 @@ public:
   unsigned getBaseKey() const
     {
       SHARDS_REQUIRE( requireCell() );
-      return m_cell->base->key ;
+      return m_cell->Nbase->key ;
     }
         
         
@@ -227,7 +227,7 @@ public:
   const char* getBaseName() const
     {
       SHARDS_REQUIRE( requireCell() );
-      return m_cell->base->name ;
+      return m_cell->Nbase->name ;
     }
         
         
@@ -284,7 +284,7 @@ public:
   const CellTopologyData * getBaseCellTopologyData() const
     {
       SHARDS_REQUIRE( requireCell() );
-      return m_cell->base ;
+      return m_cell->Nbase ;
     }
 
         
@@ -311,7 +311,7 @@ public:
   const CellTopologyData * getBaseCellTopologyData( const unsigned subcell_dim ,
                                                     const unsigned subcell_ord ) const
     {
-      return getCellTopologyData(subcell_dim,subcell_ord)->base ;
+      return getCellTopologyData(subcell_dim,subcell_ord)->Nbase ;
     }
 
         

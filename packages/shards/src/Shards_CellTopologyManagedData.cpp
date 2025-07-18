@@ -76,7 +76,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   m_subcell[0].topology = this;
   m_subcell[0].node     = index_identity_array();
 
-  base = 0;
+  Nbase = 0;
   name = m_name.c_str();
   key  = 0 ;
   dimension              = 0;
@@ -113,7 +113,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   m_subcell[0].topology = this;
   m_subcell[0].node     = index_identity_array();
 
-  base = getCellTopologyData< Line<2> >();
+  Nbase = getCellTopologyData< Line<2> >();
   name = m_name.c_str();
   key  = cellTopologyKey( 1 , 0 , 0 , 2 , node_count_ );
   dimension              = 1 ;
@@ -165,7 +165,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   }
 
   const bool error_base = base && (
-    base->base         != base ||
+    base->Nbase         != base ||
     base->vertex_count != base->node_count ||
     base->vertex_count != vertex_count_ ||
     base->edge_count   != edges.size() );
@@ -255,7 +255,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   }
   
   // Set error flags for base, edges and faces
-  const bool error_base = base && (base->base         != base             ||
+  const bool error_base = base && (base->Nbase         != base             ||
                                    base->vertex_count != base->node_count ||
                                    base->vertex_count != vertex_count_    ||
                                    base->edge_count   != edges.size()     ||
