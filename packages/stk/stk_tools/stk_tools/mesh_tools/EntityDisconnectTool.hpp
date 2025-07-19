@@ -119,6 +119,7 @@ class EntityDisconnectTool
   void filter_exterior_faces();
   void identify_node_adjacent_faces();
   void identify_adjacent_elements();
+  void add_elements_adjacent_to(const stk::mesh::EntityVector& faces, stk::mesh::EntityVector& adjacentElements);
   void identify_elem_side_pairs();
 
   void merge_connected_faces(const stk::mesh::EntityVector& adjacentFaces);

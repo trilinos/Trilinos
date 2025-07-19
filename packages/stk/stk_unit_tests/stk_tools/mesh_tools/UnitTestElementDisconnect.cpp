@@ -62,6 +62,19 @@ class TestElementDisconnect : public stk::unit_test_util::MeshFixture
     return facesFiltered;
   }
 
+  static auto is_exterior(const stk::mesh::BulkData& bulk, const stk::mesh::Entity& face)
+  {
+    return bulk.get_connected_entities(face, stk::topology::ELEMENT_RANK).size() == 1U;
+  }
+
+  static auto is_interior(const stk::mesh::BulkData& bulk, const stk::mesh::Entity& face)
+  {
+    return bulk.get_connected_entities(face, stk::topology::ELEMENT_RANK).size() == 2U;
+  }
+
+  auto get_interior_faces() { return get_faces(is_interior); }
+  auto get_exterior_faces() { return get_faces(is_exterior); }
+
   auto get_elements()
   {
     auto& bulk = get_bulk();
@@ -107,16 +120,6 @@ class TestElementDisconnect : public stk::unit_test_util::MeshFixture
       localCount += bucket->size();
     }
     return stk::get_global_sum(bulk.parallel(), localCount);
-  }
-
-  static auto is_exterior(const stk::mesh::BulkData& bulk, const stk::mesh::Entity& face)
-  {
-    return bulk.get_connected_entities(face, stk::topology::ELEMENT_RANK).size() == 1U;
-  }
-
-  static auto is_interior(const stk::mesh::BulkData& bulk, const stk::mesh::Entity& face)
-  {
-    return bulk.get_connected_entities(face, stk::topology::ELEMENT_RANK).size() == 2U;
   }
 
   void check_face_pairs_are_different(const stk::experimental::EntityDisconnectTool& disconnecter)
@@ -207,8 +210,8 @@ TEST_F(ElementDisconnectAdjacencyTests, exteriorDisconnectList_gen2x2x2)
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 1) GTEST_SKIP() << "Test only available in serial!";
   create_mesh_with_faces(2, 2, 2);
 
-  auto disconnectFaces = get_faces(TestElementDisconnect::is_exterior);
-  auto interiorFaces = get_faces(TestElementDisconnect::is_interior);
+  auto disconnectFaces = get_exterior_faces();
+  auto interiorFaces = get_interior_faces();
 
   EntityDisconnectTool disconnecter(get_bulk(), disconnectFaces);
   const auto& adjacentFaces = disconnecter.get_node_adjacent_faces();
@@ -223,8 +226,8 @@ TEST_F(ElementDisconnectAdjacencyTests, interiorDisconnectList_gen2x2x2)
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 1) GTEST_SKIP() << "Test only available in serial!";
   create_mesh_with_faces(2, 2, 2);
 
-  auto exteriorFaces = get_faces(TestElementDisconnect::is_exterior);
-  auto disconnectFaces = get_faces(TestElementDisconnect::is_interior);
+  auto exteriorFaces = get_exterior_faces();
+  auto disconnectFaces = get_interior_faces();
 
   EntityDisconnectTool disconnecter(get_bulk(), disconnectFaces);
   const auto& adjacentFaces = disconnecter.get_node_adjacent_faces();
@@ -428,8 +431,8 @@ TEST_F(TestElementDisconnect, disconnect_plane_x_eq_2_gen3x2x2)
   create_mesh_with_faces(3, 2, 2);
 
   constexpr double x_plane = 2.0;
-  auto on_x_plane = [](const stk::mesh::BulkData& bulk, const stk::mesh::Entity& entity) {
-    auto centroid = compute_face_centroid(bulk, entity);
+  auto on_x_plane = [](const stk::mesh::BulkData& bulk_, const stk::mesh::Entity& entity) {
+    auto centroid = compute_face_centroid(bulk_, entity);
     return (std::abs(centroid[0] - x_plane) <= 1.0e-10);
   };
 
@@ -481,8 +484,8 @@ TEST_F(TestElementDisconnect, disconnect_edge_elems_gen2x2x2)
 
   constexpr double x_plane = 1.0;
   constexpr double y_plane = 1.0;
-  auto is_lower_left_face = [](const stk::mesh::BulkData& bulk, const stk::mesh::Entity& entity) {
-    auto centroid = compute_face_centroid(bulk, entity);
+  auto is_lower_left_face = [](const stk::mesh::BulkData& bulk_, const stk::mesh::Entity& entity) {
+    auto centroid = compute_face_centroid(bulk_, entity);
     auto is_lower_xplane = (std::abs(centroid[0] - x_plane) <= 1.0e-10 && centroid[1] < y_plane);
     auto is_lower_yplane = (std::abs(centroid[1] - y_plane) <= 1.0e-10 && centroid[0] < x_plane);
     return is_lower_xplane || is_lower_yplane;
@@ -561,8 +564,8 @@ TEST_F(TestElementDisconnect, disconnect_x_halfplane_gen2x2x2)
 
   constexpr double x_plane = 1.0;
   constexpr double y_plane = 1.0;
-  auto is_lower_left_face = [](const stk::mesh::BulkData& bulk, const stk::mesh::Entity& entity) {
-    auto centroid = compute_face_centroid(bulk, entity);
+  auto is_lower_left_face = [](const stk::mesh::BulkData& bulk_, const stk::mesh::Entity& entity) {
+    auto centroid = compute_face_centroid(bulk_, entity);
     auto is_lower_xplane = (std::abs(centroid[0] - x_plane) <= 1.0e-10 && centroid[1] < y_plane);
     return is_lower_xplane;
   };
@@ -587,6 +590,58 @@ TEST_F(TestElementDisconnect, disconnect_x_halfplane_gen2x2x2)
   EXPECT_EQ(numNewFaces, 2U);
 
   check_face_pairs_are_different(disconnecter);
+}
+
+using MeshParam = std::tuple<unsigned, unsigned, unsigned>;
+std::string print_mesh_dimensions(const ::testing::TestParamInfo<MeshParam>& p)
+{
+  std::stringstream ss;
+  const auto& [num_x, num_y, num_z] = p.param;
+  ss << num_x << "x" << num_y << "x" << num_z;
+  return ss.str();
+}
+
+class TestElementDisconnectSuite : public TestElementDisconnect, public ::testing::WithParamInterface<MeshParam>
+{
+ protected:
+  TestElementDisconnectSuite() = default;
+  auto get_mesh_dimensions() const { return GetParam(); }
+};
+
+auto generate_meshes()
+{
+  auto dimensions = ::testing::Values(1U, 2U, 3U, 4U, 5U);
+  return ::testing::Combine(dimensions, dimensions, dimensions);
+}
+
+INSTANTIATE_TEST_SUITE_P(testDisconnectSuite, TestElementDisconnectSuite, generate_meshes(), print_mesh_dimensions);
+
+TEST_P(TestElementDisconnectSuite, disconnect_all_elements)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    GTEST_SKIP() << "Test only runs in serial";
+  }
+
+  auto [numElemsX, numElemsY, numElemsZ] = get_mesh_dimensions();
+  create_mesh_with_faces(numElemsX, numElemsY, numElemsZ);
+
+  auto interiorFaces = get_interior_faces();
+  auto exteriorFaces = get_exterior_faces();
+
+  unsigned expectedNumInteriorFaces = original_num_interior_faces();
+  unsigned expectedNumExteriorFaces = original_num_exterior_faces();
+  EXPECT_EQ(interiorFaces.size(), expectedNumInteriorFaces);
+  EXPECT_EQ(exteriorFaces.size(), expectedNumExteriorFaces);
+
+  stk::experimental::EntityDisconnectTool disconnecter(get_bulk(), interiorFaces);
+  disconnecter.determine_new_nodes();
+  disconnecter.modify_mesh();
+
+  // Each interior face should have been disconnected, creating two new exterior faces for each original interior face
+  interiorFaces = get_interior_faces();
+  exteriorFaces = get_exterior_faces();
+  EXPECT_EQ(interiorFaces.size(), 0U);
+  EXPECT_EQ(exteriorFaces.size(), expectedNumExteriorFaces + expectedNumInteriorFaces * 2U);
 }
 
 }  // namespace stk::experimental

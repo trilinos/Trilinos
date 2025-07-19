@@ -59,7 +59,7 @@ TEST_F(StkToolsC, DeleteMeshExceptSpecifiedElems)
   stk::io::write_mesh("modified.e", get_bulk());
 }
 
-void stk_determine_centroid(const unsigned spatial_dim, stk::mesh::Entity element,
+void stk_determine_centroid(const int spatial_dim, stk::mesh::Entity element,
                             const stk::mesh::FieldBase& nodal_coord, std::vector<double> & centroid)
 {
   centroid.resize(spatial_dim);
@@ -69,16 +69,17 @@ void stk_determine_centroid(const unsigned spatial_dim, stk::mesh::Entity elemen
   const stk::mesh::Entity* const node_vec = bulk_data.begin_nodes(element);
   const unsigned num_nodes = bulk_data.num_nodes(element);
 
+  auto nodal_coord_data = nodal_coord.data<double, stk::mesh::ReadOnly>();
   for (unsigned iNode = 0; iNode < num_nodes; ++iNode) {
     stk::mesh::Entity node = node_vec[iNode];
-    double* coor = static_cast<double*>(stk::mesh::field_data(nodal_coord, node));
-    STK_ThrowRequire(coor);
-    for (unsigned i = 0; i < spatial_dim; ++i) {
-      centroid[i] += coor[i];
+    auto coor = nodal_coord_data.entity_values(node);
+    STK_ThrowRequire(coor.is_field_defined());
+    for (stk::mesh::ComponentIdx i = 0_comp; i < spatial_dim; ++i) {
+      centroid[i] += coor(i);
     }
   }
 
-  for(unsigned i = 0; i < spatial_dim; ++i) {
+  for(int i = 0; i < spatial_dim; ++i) {
     centroid[i] /= num_nodes;
   }
 }

@@ -258,13 +258,30 @@ void copy_field_data(const stk::mesh::BulkData& oldBulk,
 
   for(unsigned i=0; i<oldFields.size(); ++i)
   {
-    unsigned oldBytesPerEntity = stk::mesh::field_bytes_per_entity(*oldFields[i], oldEntity);
+    auto oldFieldBytes = oldFields[i]->const_bytes();
+    auto newFieldBytes = newFields[i]->bytes();
 
-    unsigned char* oldData = static_cast<unsigned char*>(stk::mesh::field_data(*oldFields[i], oldEntity));
-    unsigned char* newData = static_cast<unsigned char*>(stk::mesh::field_data(*newFields[i], newEntity));
+    if (oldFields[i]->host_data_layout() == stk::mesh::Layout::Right) {
+      auto oldEntityBytes = oldFieldBytes.entity_bytes_right(oldEntity);
+      auto newEntityBytes = newFieldBytes.entity_bytes_right(newEntity);
 
-    for(unsigned j=0; j<oldBytesPerEntity; ++j)
-      newData[j] = oldData[j];
+      for (stk::mesh::ByteIdx idx : oldEntityBytes.bytes()) {
+        newEntityBytes(idx) = oldEntityBytes(idx);
+      }
+    }
+
+    else if (oldFields[i]->host_data_layout() == stk::mesh::Layout::Left) {
+      auto oldEntityBytes = oldFieldBytes.entity_bytes_left(oldEntity);
+      auto newEntityBytes = newFieldBytes.entity_bytes_left(newEntity);
+
+      for (stk::mesh::ByteIdx idx : oldEntityBytes.bytes()) {
+        newEntityBytes(idx) = oldEntityBytes(idx);
+      }
+    }
+
+    else {
+      STK_ThrowErrorMsg("Unsupported host Field data layout: " << oldFields[i]->host_data_layout());
+    }
   }
 }
 

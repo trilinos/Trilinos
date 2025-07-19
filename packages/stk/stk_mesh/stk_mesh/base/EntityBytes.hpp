@@ -58,7 +58,7 @@ public:
 
   KOKKOS_DEFAULTED_FUNCTION ~EntityBytes() = default;
 
-  KOKKOS_INLINE_FUNCTION ByteIdx num_bytes() const { return ByteIdx(m_numBytesPerEntity); }
+  KOKKOS_INLINE_FUNCTION int num_bytes() const { return m_numBytesPerEntity; }
   KOKKOS_INLINE_FUNCTION ByteIdxProxy bytes() const { return ByteIdxProxy(m_numBytesPerEntity); }
 
   KOKKOS_INLINE_FUNCTION bool is_field_defined() const { return m_numBytesPerEntity != 0; }
@@ -103,7 +103,7 @@ public:
 
   ~EntityBytes() = default;
 
-  inline ByteIdx num_bytes() const { return ByteIdx(m_numBytesPerEntity); }
+  inline int num_bytes() const { return m_numBytesPerEntity; }
   inline ByteIdxProxy bytes() const { return ByteIdxProxy(m_numBytesPerEntity); }
 
   inline bool is_field_defined() const { return m_numBytesPerEntity != 0; }
@@ -145,7 +145,7 @@ public:
 
   ~EntityBytesLeft() = default;
 
-  inline ByteIdx num_bytes() const { return ByteIdx(m_numBytesPerEntity); }
+  inline int num_bytes() const { return m_numBytesPerEntity; }
   inline ByteIdxProxy bytes() const { return ByteIdxProxy(m_numBytesPerEntity); }
 
   inline bool is_field_defined() const { return m_numBytesPerEntity != 0; }
@@ -179,7 +179,7 @@ public:
 
   ~EntityBytesRight() = default;
 
-  inline ByteIdx num_bytes() const { return ByteIdx(m_numBytesPerEntity); }
+  inline int num_bytes() const { return m_numBytesPerEntity; }
   inline ByteIdxProxy bytes() const { return ByteIdxProxy(m_numBytesPerEntity); }
 
   inline bool is_field_defined() const { return m_numBytesPerEntity != 0; }

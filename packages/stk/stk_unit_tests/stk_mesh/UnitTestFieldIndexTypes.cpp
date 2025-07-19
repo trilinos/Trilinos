@@ -56,6 +56,14 @@ TEST(FieldIndexTypes, constructionAndArgumentPassing_component)
   strong_function_component(componentIdx0u);
   strong_function_component(componentIdx0l);
   strong_function_component(componentIdx0ul);
+
+  strong_function_component(x_comp);
+  strong_function_component(y_comp);
+  strong_function_component(z_comp);
+
+  EXPECT_EQ(x_comp, stk::mesh::ComponentIdx(0));
+  EXPECT_EQ(y_comp, stk::mesh::ComponentIdx(1));
+  EXPECT_EQ(z_comp, stk::mesh::ComponentIdx(2));
 }
 
 //------------------------------------------------------------------------------
