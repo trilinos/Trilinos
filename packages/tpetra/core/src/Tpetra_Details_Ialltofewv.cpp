@@ -337,7 +337,7 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
   MPI_Waitall(reqs.size(), reqs.data(), MPI_STATUSES_IGNORE);
   reqs.resize(0);
 
-  // if I am a root, recieve data from each aggregator
+  // if I am a root, receive data from each aggregator
   // The aggregator will send contiguous data, which we may need to spread out according to rdispls
   auto rootBuf = cache.pimpl->get_rootBuf<RecvExecSpace>(0);
   if (isRoot) {
