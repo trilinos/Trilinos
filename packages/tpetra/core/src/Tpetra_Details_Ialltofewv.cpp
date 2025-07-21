@@ -367,7 +367,6 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
 
       if (count) {
         MPI_Request rreq;
-        // &rootBuf(displ)
         MPI_Irecv(rootBuf.data() + displ, count, req.recvtype, aggSrc, ROOT_TAG,  req.comm, &rreq);
         reqs.push_back(rreq);
         displ += size_t(count) * recvSize;
