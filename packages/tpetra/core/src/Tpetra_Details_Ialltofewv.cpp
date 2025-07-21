@@ -422,12 +422,12 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
     Kokkos::deep_copy(args, args_h);
     using Policy = Kokkos::TeamPolicy<RecvExecSpace>;
     Policy policy(size, Kokkos::AUTO);
-    Kokkos::parallel_for("fixup rdispl", policy, 
+    Kokkos::parallel_for("Tpetra::Details::Ialltofewv: apply rdispls to contiguous root buffer", policy,
       KOKKOS_LAMBDA(typename Policy::member_type member){
         team_memcpy(member, args(member.league_rank()));
       }
     );
-    Kokkos::fence("after fixup rdispl");
+    Kokkos::fence("Tpetra::Details::Ialltofewv: after apply rdispls to contiguous root buffer");
 
   }
 
