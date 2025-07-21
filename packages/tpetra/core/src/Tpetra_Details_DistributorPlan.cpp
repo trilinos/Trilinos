@@ -410,6 +410,10 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // Invert map to see what msgs are received and what length
   computeReceives();
 
+#if defined(HAVE_TPETRA_MPI)
+  maybeInitializeRoots();
+#endif
+
   // createFromRecvs() calls createFromSends(), but will set
   // howInitialized_ again after calling createFromSends().
   howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS;
@@ -605,6 +609,10 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
   totalReceiveLength_ = remoteProcIDs.size();
   indicesFrom_.clear ();
   numReceives_-=sendMessageToSelf_;
+
+#if defined(HAVE_TPETRA_MPI)
+  maybeInitializeRoots();
+#endif
 }
 
 Teuchos::RCP<DistributorPlan> DistributorPlan::getReversePlan() const {
@@ -931,9 +939,9 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
     // sublist passed to setParameterList(), so we save the pointer.
     this->setMyParamList (plist);
 
-
+#if defined(HAVE_TPETRA_MPI)
     maybeInitializeRoots();
-    // FIXME: MPI Advance
+#endif
   }
 }
 
@@ -1042,7 +1050,7 @@ void DistributorPlan::initializeMpiAdvance() {
     std::vector<int> recvbuf(comm_->getSize());
 
     // FIXME: is there a more natural way to do this?
-    // Maybe MPI_Allreduce is better, we just care if anyone is sending anything to each proces
+    // Maybe MPI_Allreduce is better, we just care if anyone is sending anything to each process
     // we just need to know all processes that receive anything (including a self message)
     Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm_);
     Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
