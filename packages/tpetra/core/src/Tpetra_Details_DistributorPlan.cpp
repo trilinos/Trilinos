@@ -1064,7 +1064,8 @@ void DistributorPlan::initializeMpiAdvance() {
       }
     }
 
-    // If anyone is using slow-path communication, skip collectives
+    // In "slow-path" communication, the data is not blocked according to sending / receiving proc.
+    // The root-detection algorithm expects data to be blocked, so disable.
     int slow = !getIndicesTo().is_null() ? 1 : 0;
     MPI_Allreduce(MPI_IN_PLACE, &slow, 1, MPI_INT, MPI_LOR, comm);
     if (slow) {
@@ -1072,7 +1073,7 @@ void DistributorPlan::initializeMpiAdvance() {
       if (Tpetra::Details::Behavior::verbose()) {
         {
           std::stringstream ss;
-          ss << __FILE__ << ":" << __LINE__ << " " << comm_->getRank() << ": WARNING: you used Ialltoallv send mode, but someone is slow-path. Setting send-type to \"Send\"" << std::endl;
+          ss << __FILE__ << ":" << __LINE__ << " " << comm_->getRank() << ": WARNING: Ialltoallv send mode set, at least one rank's data is not grouped by rank. Setting to \"Send\"" << std::endl;
           std::cerr << ss.str();
         }
       }
