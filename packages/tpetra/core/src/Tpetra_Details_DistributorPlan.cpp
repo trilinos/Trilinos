@@ -130,8 +130,11 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     lengthsFrom_(otherPlan.lengthsFrom_),
     procsFrom_(otherPlan.procsFrom_),
     startsFrom_(otherPlan.startsFrom_),
-    indicesFrom_(otherPlan.indicesFrom_),
+    indicesFrom_(otherPlan.indicesFrom_)
+#if defined(HAVE_TPETRACORE_MPI)
+    ,
     roots_(otherPlan.roots_)
+#endif
 { }
 
 size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs) {
@@ -625,6 +628,7 @@ void DistributorPlan::createReversePlan() const
   reversePlan_ = Teuchos::rcp(new DistributorPlan(comm_));
   reversePlan_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
 
+#if defined(HAVE_TPETRACORE_MPI)
   // If the forward plan matches an all-to-few communication pattern,
   // the reverse plan is few-to-all, so don't use a special all-to-few
   // implementation for it
@@ -639,6 +643,7 @@ void DistributorPlan::createReversePlan() const
   } else {
     reversePlan_->sendType_ = sendType_;
   }
+#endif
 
 
   // The total length of all the sends of this DistributorPlan.  We
