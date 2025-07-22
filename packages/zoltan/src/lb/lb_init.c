@@ -163,7 +163,7 @@ void Zoltan_LB_Serialize(struct Zoltan_Struct const *zz, char **buf)
  
   /* Copy Remap array; needed by Point_Assign  */
   if (lb->Remap != NULL) {
-    int *intptr = (int *)bufptr;
+    intptr = (int *)bufptr;
     *intptr = 1;  // Sending Remap data
     bufptr += sizeof(int);
     int nbytes = lb->Num_Global_Parts * sizeof(int);
@@ -171,7 +171,7 @@ void Zoltan_LB_Serialize(struct Zoltan_Struct const *zz, char **buf)
     bufptr += nbytes;
   }
   else {
-    int *intptr = (int *)bufptr;
+    intptr = (int *)bufptr;
     *intptr = 0;  // Not sending Remap data
     bufptr += sizeof(int);
   }
