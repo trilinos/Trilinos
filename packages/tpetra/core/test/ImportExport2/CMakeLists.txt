@@ -34,7 +34,7 @@ if (TPL_ENABLE_MPI)
 TRIBITS_ADD_TEST(
   ImportExport2_UnitTests
   NAME ImportExport2_UnitTests_Ialltofewv
-  COMM serial mpi
+  COMM mpi
   ARGS "--distributor-send-type=Ialltofewv --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
   STANDARD_PASS_OUTPUT
 )
