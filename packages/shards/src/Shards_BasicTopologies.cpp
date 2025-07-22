@@ -216,7 +216,7 @@ struct Descriptor<
       self.topology = & top ;
       self.node     = index_identity_array();
 
-      top.Nbase             = base ? base : & top ;
+      top.base             = base ? base : & top ;
       top.name             = name ;
       top.key              = Traits::key ;
       top.dimension        = 3 ;
@@ -277,7 +277,7 @@ struct Descriptor<
       self.topology = & top ;
       self.node     = index_identity_array();
 
-      top.Nbase              = base ? base : & top ;
+      top.base              = base ? base : & top ;
       top.name              = name ;
       top.key               = Traits::key ;
       top.dimension         = 2 ;
@@ -336,7 +336,7 @@ struct Descriptor<
       self.topology = & top ;
       self.node     = index_identity_array();
 
-      top.Nbase              = base ? base : & top ;
+      top.base              = base ? base : & top ;
       top.name              = name ;
       top.key               = Traits::key ;
       top.dimension         = 1 ;
@@ -391,7 +391,7 @@ struct Descriptor<
       self.topology = & top ;
       self.node     = index_identity_array();
 
-      top.Nbase              = base ? base : & top ;
+      top.base              = base ? base : & top ;
       top.name              = name ;
       top.key               = Traits::key ;
       top.dimension         = 0 ;

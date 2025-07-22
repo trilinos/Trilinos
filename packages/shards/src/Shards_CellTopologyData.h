@@ -40,7 +40,7 @@ struct CellTopologyData {
   /** \brief  Base, a.k.a. not-extended, version of this topology
    *          where vertex_count == node_count.
    */
-  const struct CellTopologyData * Nbase ;
+  const struct CellTopologyData * base ;
 
   /** \brief Intuitive name for this topology */
   const char * name ;
