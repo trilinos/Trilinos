@@ -59,6 +59,7 @@ set(upcoming_warnings
     class-memaccess
     missing-braces
     shadow
+    unused-but-set-variable
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
@@ -141,7 +142,6 @@ set(promoted_warnings
     uninitialized
     unknown-pragmas
     unused
-    unused-but-set-variable
     unused-const-variable=1
     unused-function
     unused-label
