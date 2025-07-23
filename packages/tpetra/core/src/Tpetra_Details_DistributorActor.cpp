@@ -32,10 +32,7 @@ namespace Tpetra::Details {
       requestsRecv_.resize(0);
     }
 
-    {
-      ProfilingRegion ws("Tpetra::Distributor: doWaitsIalltofewv[via doWaitsRecv]");
-      doWaitsIalltofewv(plan);
-    }
+    doWaitsIalltofewv(plan);
   }
 
   void DistributorActor::doWaitsSend(const DistributorPlan& plan) {
