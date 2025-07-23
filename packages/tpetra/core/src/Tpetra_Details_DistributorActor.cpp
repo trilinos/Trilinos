@@ -46,7 +46,7 @@ namespace Tpetra::Details {
   }
 
   void DistributorActor::doWaitsIalltofewv(const DistributorPlan& plan) {
-    #ifdef HAVE_TPETRA_MPI
+#ifdef HAVE_TPETRA_MPI
     if (ialltofewv_.req) {
 
       ProfilingRegion ws("Tpetra::Distributor: doWaitsIalltofewv");
@@ -59,8 +59,7 @@ namespace Tpetra::Details {
       ialltofewv_.req = std::nullopt;
       ialltofewv_.roots.clear();
     }
-  #endif
-
+#endif
   }
 
   bool DistributorActor::isReady() const {
