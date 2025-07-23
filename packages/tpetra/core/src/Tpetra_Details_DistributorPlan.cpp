@@ -627,6 +627,7 @@ void DistributorPlan::createReversePlan() const
 {
   reversePlan_ = Teuchos::rcp(new DistributorPlan(comm_));
   reversePlan_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
+  reversePlan_->sendType_ = sendType_;
 
 #if defined(HAVE_TPETRACORE_MPI)
   // If the forward plan matches an all-to-few communication pattern,
@@ -640,8 +641,6 @@ void DistributorPlan::createReversePlan() const
     }
 
     reversePlan_->sendType_ = DistributorSendTypeStringToEnum(Behavior::defaultSendType());
-  } else {
-    reversePlan_->sendType_ = sendType_;
   }
 #endif
 
