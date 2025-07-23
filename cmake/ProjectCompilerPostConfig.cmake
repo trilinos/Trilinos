@@ -57,6 +57,7 @@ set(explicitly_disabled_warnings
 )
 set(upcoming_warnings
     shadow
+    uninitialized
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
@@ -78,7 +79,6 @@ set(promoted_warnings
     strict-aliasing
     switch
     type-limits
-    uninitialized
     unused-function
     unused-label
     unused-value
