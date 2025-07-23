@@ -9,8 +9,6 @@
 
 #include "Tpetra_Details_DistributorActor.hpp"
 
-#include <fstream>
-
 namespace Tpetra::Details {
 
   DistributorActor::DistributorActor()
