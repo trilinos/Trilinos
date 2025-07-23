@@ -1048,13 +1048,8 @@ namespace Tpetra {
         }
       }
       else {
-        ProfilingRegion region_dpw
-          ("Tpetra::DistObject::doTransferNew::doPosts");
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
-        // favor of Kokkos profiling.
-        Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
+        ////////////////////////////////////////////////////////////////////
+        // packAndPrepare
 
         if (constantNumPackets == 0) {
           if (verbose) {
