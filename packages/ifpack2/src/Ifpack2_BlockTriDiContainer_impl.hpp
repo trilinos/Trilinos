@@ -1024,63 +1024,30 @@ local_ordinal_type getAutomaticNSubparts(const local_ordinal_type num_parts,
                                          const local_ordinal_type line_length,
                                          const local_ordinal_type block_size) {
   // BMK: replaced theoretical model with empirical model
-  // This is a linear regression based on data from a grid search.
-  // The independent terms in the regression are:
-  // - "parallelism surplus" - smaller when problem has enough lines to saturate GPU, larger otherwise
+  // This is a linear regression based on:
+  // - required vs. available parallelism (num_parts vs num_teams)
   // - log2 of the line length
   // - block size
-  double parallelismSurplus = Kokkos::sqrt((double)num_teams / num_parts);
-  double logLineLength      = Kokkos::log2((double)line_length);
-  (void)logLineLength;
+  double parallelismSurplus = Kokkos::sqrt((double) num_teams / num_parts);
+  double logLineLength = Kokkos::log2((double) line_length);
   // Directly predict with linear model
-#if defined(KOKKOS_ARCH_AMD_GFX942) || defined(KOKKOS_ARCH_AMD_GFX942_APU)
-  // MI300-specific data
   double modeled = -9.2312 + 4.6946 * parallelismSurplus + 0.4095 * block_size + 0.966 * logLineLength;
-  // Do not split lines if there is plenty of parallelism
-  if (parallelismSurplus < 0.3)
-    modeled = 1;
-#elif defined(KOKKOS_ARCH_HOPPER) || defined(KOKKOS_ARCH_BLACKWELL)
-  // Based on H100 data
-  double modeled = -9.6053 + 4.7477 * parallelismSurplus + 0.2338 * block_size + 1.0794 * logLineLength;
-  // On H100, performance degrades rapidly if small lines are split too many times
-  double maxSplit = (double)line_length / 8;
-  if (modeled > maxSplit)
-    modeled = maxSplit;
-#elif defined(KOKKOS_ENABLE_CUDA)
-  // Based on V100 data, line splitting is profitable in fewer cases
-  // (only when there are few, long lines)
-  double modeled = 1;
-  if (parallelismSurplus > 1 && line_length > 64)
-    modeled = 4;
-#elif defined(KOKKOS_ENABLE_HIP)
-  // Based on MI250X data
-  double modeled = -8.6214 + 7.3468 * parallelismSurplus + 0.3596 * block_size + 0.6673 * logLineLength;
-#else
-  // GPUs other than CUDA or HIP: default to simple model that works for V100
-  double modeled = 1;
-  if (parallelismSurplus > 1 && line_length > 64)
-    modeled = 4;
-#endif
-
   // Round to nearest integer
   local_ordinal_type n_subparts_per_part = 0.5 + modeled;
-  // Do not split lines if there is plenty of parallelism available
-  if (parallelismSurplus < 0.3)
-    n_subparts_per_part = 1;
-  // Clamp the result to valid range
+  // Then clamp the result to valid range
   // Criteria for valid n_subparts_per_part (where connection_length is 2 for wide separators)
   //   line_length >= n_subparts_per_part + (n_subparts_per_part - 1) * connection_length
-  // Equivalently:
+  // Equivalently,
   //   line_length >= n_subparts_per_part + n_subparts_per_part * 2 - 2
   //   line_length >= 3 * n_subparts_per_part - 2
   local_ordinal_type min_subparts_per_part = 1;
   local_ordinal_type max_subparts_per_part = (line_length + 2) / 3;
-  // Limit memory usage from too many sublines
-  if (max_subparts_per_part > 16)
+  // Limit memory usage
+  if(max_subparts_per_part > 16)
     max_subparts_per_part = 16;
-  if (n_subparts_per_part < min_subparts_per_part)
+  if(n_subparts_per_part < min_subparts_per_part)
     n_subparts_per_part = min_subparts_per_part;
-  if (n_subparts_per_part > max_subparts_per_part)
+  if(n_subparts_per_part > max_subparts_per_part)
     n_subparts_per_part = max_subparts_per_part;
   return n_subparts_per_part;
 }
@@ -1137,25 +1104,19 @@ createPartInterface(const Teuchos::RCP<const typename BlockHelperDetails::ImplTy
     // decides the value automatically
     using execution_space = typename impl_type::execution_space;
 
-    // Line splitting only benefits GPUs
-    if constexpr (impl_type::node_type::is_gpu) {
-      const int line_length = partsz[0].first;
+    const int line_length = partsz[0].first;
 
-      const local_ordinal_type team_size =
-          SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
-              recommended_team_size(blocksize, vector_length, internal_vector_length);
+    const local_ordinal_type team_size =
+        SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
+            recommended_team_size(blocksize, vector_length, internal_vector_length);
 
-      const local_ordinal_type num_teams = std::max(1, execution_space().concurrency() / (team_size * vector_length));
-      n_subparts_per_part                = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
+    const local_ordinal_type num_teams = std::max(1, execution_space().concurrency() / (team_size * vector_length));
+
+    n_subparts_per_part = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
+
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-      printf("Automatically chosen n_subparts_per_part = %d for nparts = %d, num_teams = %d, team_size = %d, line_length = %d, and blocksize = %d;\n", n_subparts_per_part, nparts, num_teams, team_size, line_length, blocksize);
+    printf("Automatically chosen n_subparts_per_part = %d for nparts = %d, num_teams = %d, team_size = %d, line_length = %d, and blocksize = %d;\n", n_subparts_per_part, nparts, num_teams, team_size, line_length, blocksize);
 #endif
-    } else {
-      n_subparts_per_part = 1;
-#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-      printf("Automatically chosen n_subparts_per_part = 1 for CPU backend\n");
-#endif
-    }
   } else {
     n_subparts_per_part = n_subparts_per_part_in;
   }
@@ -1933,7 +1894,8 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
 
   using impl_type = BlockHelperDetails::ImplType<MatrixType>;
 
-  using execution_space = typename impl_type::execution_space;
+  using execution_space      = typename impl_type::execution_space;
+  using host_execution_space = typename impl_type::host_execution_space;
 
   using local_ordinal_type         = typename impl_type::local_ordinal_type;
   using global_ordinal_type        = typename impl_type::global_ordinal_type;
@@ -1945,7 +1907,6 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
   using crs_matrix_type            = typename impl_type::tpetra_crs_matrix_type;
   using block_crs_matrix_type      = typename impl_type::tpetra_block_crs_matrix_type;
   using btdm_scalar_type_3d_view   = typename impl_type::btdm_scalar_type_3d_view;
-  using lo_traits                  = Tpetra::Details::OrdinalTraits<local_ordinal_type>;
 
   constexpr int vector_length = impl_type::vector_length;
 
@@ -1958,97 +1919,87 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
   TEUCHOS_ASSERT(hasBlockCrsMatrix || g->getLocalNumRows() != 0);
   const local_ordinal_type blocksize = hasBlockCrsMatrix ? A->getBlockSize() : A->getLocalNumRows() / g->getLocalNumRows();
 
-  const auto partptr      = interf.partptr;
-  const auto lclrow       = interf.lclrow;
-  const auto rowidx2part  = interf.rowidx2part;
-  const auto part2rowidx0 = interf.part2rowidx0;
-  const auto packptr      = interf.packptr;
+  // mirroring to host
+  const auto partptr      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.partptr);
+  const auto lclrow       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.lclrow);
+  const auto rowidx2part  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.rowidx2part);
+  const auto part2rowidx0 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.part2rowidx0);
+  const auto packptr      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), interf.packptr);
 
-  // TODO: add nrows as a member of part interface?
-  const local_ordinal_type nrows = Kokkos::create_mirror_view_and_copy(
-      Kokkos::HostSpace(), Kokkos::subview(partptr, partptr.extent(0) - 1))();
+  const local_ordinal_type nrows = partptr(partptr.extent(0) - 1);
 
-  Kokkos::View<local_ordinal_type *, execution_space> col2row("col2row", A->getLocalNumCols());
+  Kokkos::View<local_ordinal_type *, host_execution_space> col2row("col2row", A->getLocalNumCols());
 
   // find column to row map on host
 
-  Kokkos::deep_copy(execution_space(), col2row, Teuchos::OrdinalTraits<local_ordinal_type>::invalid());
+  Kokkos::deep_copy(col2row, Teuchos::OrdinalTraits<local_ordinal_type>::invalid());
   {
-    TEUCHOS_ASSERT(!(g->getRowMap().is_null() || g->getColMap().is_null() || g->getDomainMap().is_null()));
-#if defined(BLOCKTRIDICONTAINER_DEBUG)
-    {
-      // On host: check that row, col, domain maps are consistent
-      auto rowmapHost = g->getRowMap();
-      auto colmapHost = g->getColMap();
-      auto dommapHost = g->getDomainMap();
-      for (local_ordinal_type lr = 0; lr < nrows; lr++) {
-        const global_ordinal_type gid = rowmapHost->getGlobalElement(lr);
-        TEUCHOS_ASSERT(gid != Teuchos::OrdinalTraits<global_ordinal_type>::invalid());
-        if (dommapHost->isNodeGlobalElement(gid)) {
-          const local_ordinal_type lc = colmapHost->getLocalElement(gid);
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(lc == Teuchos::OrdinalTraits<local_ordinal_type>::invalid(),
-                                      BlockHelperDetails::get_msg_prefix(comm) << "GID " << gid
-                                                                               << " gives an invalid local column.");
-        }
-      }
-    }
-#endif
-    auto rowmap = g->getRowMap()->getLocalMap();
-    auto colmap = g->getColMap()->getLocalMap();
-    auto dommap = g->getDomainMap()->getLocalMap();
+    const auto rowmap = g->getRowMap();
+    const auto colmap = g->getColMap();
+    const auto dommap = g->getDomainMap();
+    TEUCHOS_ASSERT(!(rowmap.is_null() || colmap.is_null() || dommap.is_null()));
 
-    const Kokkos::RangePolicy<execution_space> policy(0, nrows);
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
+    const Kokkos::RangePolicy<host_execution_space> policy(0, nrows);
     Kokkos::parallel_for(
         "performSymbolicPhase::RangePolicy::col2row",
         policy, KOKKOS_LAMBDA(const local_ordinal_type &lr) {
-          const global_ordinal_type gid = rowmap.getGlobalElement(lr);
-          if (dommap.getLocalElement(gid) != lo_traits::invalid()) {
-            const local_ordinal_type lc = colmap.getLocalElement(gid);
-            col2row(lc)                 = lr;
+          const global_ordinal_type gid = rowmap->getGlobalElement(lr);
+          TEUCHOS_ASSERT(gid != Teuchos::OrdinalTraits<global_ordinal_type>::invalid());
+          if (dommap->isNodeGlobalElement(gid)) {
+            const local_ordinal_type lc = colmap->getLocalElement(gid);
+#if defined(BLOCKTRIDICONTAINER_DEBUG)
+            TEUCHOS_TEST_FOR_EXCEPT_MSG(lc == Teuchos::OrdinalTraits<local_ordinal_type>::invalid(),
+                                        BlockHelperDetails::get_msg_prefix(comm) << "GID " << gid
+                                                                                 << " gives an invalid local column.");
+#endif
+            col2row(lc) = lr;
           }
         });
+#endif
   }
 
   // construct the D and R graphs in A = D + R.
   {
-    const auto local_graph        = g->getLocalGraphDevice();
+    const auto local_graph        = g->getLocalGraphHost();
     const auto local_graph_rowptr = local_graph.row_map;
     TEUCHOS_ASSERT(local_graph_rowptr.size() == static_cast<size_t>(nrows + 1));
     const auto local_graph_colidx = local_graph.entries;
 
     // assume no overlap.
 
-    Kokkos::View<local_ordinal_type *, execution_space> lclrow2idx("lclrow2idx", nrows);
+    Kokkos::View<local_ordinal_type *, host_execution_space> lclrow2idx("lclrow2idx", nrows);
     {
-      const Kokkos::RangePolicy<execution_space> policy(0, nrows);
+      const Kokkos::RangePolicy<host_execution_space> policy(0, nrows);
       Kokkos::parallel_for(
           "performSymbolicPhase::RangePolicy::lclrow2idx",
           policy, KOKKOS_LAMBDA(const local_ordinal_type &i) {
-            lclrow2idx(lclrow(i)) = i;
+            lclrow2idx[lclrow(i)] = i;
           });
     }
 
     // count (block) nnzs in D and R.
-    size_type D_nnz, R_nnz_owned, R_nnz_remote;
+    typedef BlockHelperDetails::SumReducer<size_type, 3, host_execution_space> sum_reducer_type;
+    typename sum_reducer_type::value_type sum_reducer_value;
     {
-      const Kokkos::RangePolicy<execution_space> policy(0, nrows);
+      const Kokkos::RangePolicy<host_execution_space> policy(0, nrows);
       Kokkos::parallel_reduce
           // profiling interface does not work
           (  //"performSymbolicPhase::RangePolicy::count_nnz",
-              policy, KOKKOS_LAMBDA(const local_ordinal_type &lr, size_type &update_D_nnz, size_type &update_R_nnz_owned, size_type &update_R_nnz_remote) {
+              policy, KOKKOS_LAMBDA(const local_ordinal_type &lr, typename sum_reducer_type::value_type &update) {
                 // LID -> index.
-                const local_ordinal_type ri0 = lclrow2idx(lr);
+                const local_ordinal_type ri0 = lclrow2idx[lr];
                 const local_ordinal_type pi0 = rowidx2part(ri0);
                 for (size_type j = local_graph_rowptr(lr); j < local_graph_rowptr(lr + 1); ++j) {
                   const local_ordinal_type lc   = local_graph_colidx(j);
-                  const local_ordinal_type lc2r = col2row(lc);
+                  const local_ordinal_type lc2r = col2row[lc];
                   bool incr_R                   = false;
                   do {  // breakable
                     if (lc2r == (local_ordinal_type)-1) {
                       incr_R = true;
                       break;
                     }
-                    const local_ordinal_type ri = lclrow2idx(lc2r);
+                    const local_ordinal_type ri = lclrow2idx[lc2r];
                     const local_ordinal_type pi = rowidx2part(ri);
                     if (pi != pi0) {
                       incr_R = true;
@@ -2058,20 +2009,23 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
                     // LID space, tridiag LIDs in a row are not necessarily related by
                     // {-1, 0, 1}.
                     if (ri0 + 1 >= ri && ri0 <= ri + 1)
-                      ++update_D_nnz;
+                      ++update.v[0];  // D_nnz
                     else
                       incr_R = true;
                   } while (0);
                   if (incr_R) {
                     if (lc < nrows)
-                      ++update_R_nnz_owned;
+                      ++update.v[1];  // R_nnz_owned
                     else
-                      ++update_R_nnz_remote;
+                      ++update.v[2];  // R_nnz_remote
                   }
                 }
               },
-              D_nnz, R_nnz_owned, R_nnz_remote);
+              sum_reducer_type(sum_reducer_value));
     }
+    size_type D_nnz        = sum_reducer_value.v[0];
+    size_type R_nnz_owned  = sum_reducer_value.v[1];
+    size_type R_nnz_remote = sum_reducer_value.v[2];
 
     if (!overlap_communication_and_computation) {
       R_nnz_owned += R_nnz_remote;
@@ -2080,10 +2034,10 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
 
     // construct the D_00 graph.
     {
-      const auto flat_td_ptr = btdm.flat_td_ptr;
+      const auto flat_td_ptr = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), btdm.flat_td_ptr);
 
       btdm.A_colindsub         = local_ordinal_type_1d_view("btdm.A_colindsub", D_nnz);
-      const auto D_A_colindsub = btdm.A_colindsub;
+      const auto D_A_colindsub = Kokkos::create_mirror_view(btdm.A_colindsub);
 
 #if defined(BLOCKTRIDICONTAINER_DEBUG)
       Kokkos::deep_copy(D_A_colindsub, Teuchos::OrdinalTraits<local_ordinal_type>::invalid());
@@ -2092,9 +2046,9 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
       const local_ordinal_type nparts = partptr.extent(0) - 1;
 
       {
-        const Kokkos::RangePolicy<execution_space> policy(0, nparts);
+        const Kokkos::RangePolicy<host_execution_space> policy(0, nparts);
         Kokkos::parallel_for(
-            "performSymbolicPhase::RangePolicy<execution_space>::D_graph",
+            "performSymbolicPhase::RangePolicy<host_execution_space>::D_graph",
             policy, KOKKOS_LAMBDA(const local_ordinal_type &pi0) {
               const local_ordinal_type part_ri0 = part2rowidx0(pi0);
               local_ordinal_type offset         = 0;
@@ -2118,12 +2072,10 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
             });
       }
 #if defined(BLOCKTRIDICONTAINER_DEBUG)
-      {
-        auto D_A_colindsub_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), D_A_colindsub);
-        for (size_t i = 0; i < D_A_colindsub_host.extent(0); ++i)
-          TEUCHOS_ASSERT(D_A_colindsub_host(i) != Teuchos::OrdinalTraits<local_ordinal_type>::invalid());
-      }
+      for (size_t i = 0; i < D_A_colindsub.extent(0); ++i)
+        TEUCHOS_ASSERT(D_A_colindsub(i) != Teuchos::OrdinalTraits<local_ordinal_type>::invalid());
 #endif
+      Kokkos::deep_copy(btdm.A_colindsub, D_A_colindsub);
 
       // Allocate values.
       {
@@ -2146,19 +2098,19 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
       amd.rowptr      = size_type_1d_view("amd.rowptr", nrows + 1);
       amd.A_colindsub = local_ordinal_type_1d_view(do_not_initialize_tag("amd.A_colindsub"), R_nnz_owned);
 
-      const auto R_rowptr      = amd.rowptr;
-      const auto R_A_colindsub = amd.A_colindsub;
+      const auto R_rowptr      = Kokkos::create_mirror_view(amd.rowptr);
+      const auto R_A_colindsub = Kokkos::create_mirror_view(amd.A_colindsub);
 
       amd.rowptr_remote      = size_type_1d_view("amd.rowptr_remote", overlap_communication_and_computation ? nrows + 1 : 0);
       amd.A_colindsub_remote = local_ordinal_type_1d_view(do_not_initialize_tag("amd.A_colindsub_remote"), R_nnz_remote);
 
-      const auto R_rowptr_remote      = amd.rowptr_remote;
-      const auto R_A_colindsub_remote = amd.A_colindsub_remote;
+      const auto R_rowptr_remote      = Kokkos::create_mirror_view(amd.rowptr_remote);
+      const auto R_A_colindsub_remote = Kokkos::create_mirror_view(amd.A_colindsub_remote);
 
       {
-        const Kokkos::RangePolicy<execution_space> policy(0, nrows);
+        const Kokkos::RangePolicy<host_execution_space> policy(0, nrows);
         Kokkos::parallel_for(
-            "performSymbolicPhase::RangePolicy<execution_space>::R_graph_count",
+            "performSymbolicPhase::RangePolicy<host_execution_space>::R_graph_count",
             policy, KOKKOS_LAMBDA(const local_ordinal_type &lr) {
               const local_ordinal_type ri0 = lclrow2idx[lr];
               const local_ordinal_type pi0 = rowidx2part(ri0);
@@ -2186,9 +2138,9 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
       // exclusive scan
       typedef BlockHelperDetails::ArrayValueType<size_type, 2> update_type;
       {
-        Kokkos::RangePolicy<execution_space> policy(0, nrows + 1);
+        Kokkos::RangePolicy<host_execution_space> policy(0, nrows + 1);
         Kokkos::parallel_scan(
-            "performSymbolicPhase::RangePolicy<execution_space>::R_graph_fill",
+            "performSymbolicPhase::RangePolicy<host_execution_space>::R_graph_fill",
             policy, KOKKOS_LAMBDA(const local_ordinal_type &lr, update_type &update, const bool &final) {
               update_type val;
               val.v[0] = R_rowptr(lr);
@@ -2228,15 +2180,13 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
               update += val;
             });
       }
-      {
-        // Check that the last elements of R_rowptr (aka amd.rowptr)
-        // and R_rowptr_remote (aka amd.rowptr_remote) match the expected entry counts
-        auto r_rowptr_end = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Kokkos::subview(R_rowptr, nrows));
-        TEUCHOS_ASSERT(r_rowptr_end() == R_nnz_owned);
-        if (overlap_communication_and_computation) {
-          auto r_rowptr_remote_end = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Kokkos::subview(R_rowptr_remote, nrows));
-          TEUCHOS_ASSERT(r_rowptr_remote_end() == R_nnz_remote);
-        }
+      TEUCHOS_ASSERT(R_rowptr(nrows) == R_nnz_owned);
+      Kokkos::deep_copy(amd.rowptr, R_rowptr);
+      Kokkos::deep_copy(amd.A_colindsub, R_A_colindsub);
+      if (overlap_communication_and_computation) {
+        TEUCHOS_ASSERT(R_rowptr_remote(nrows) == R_nnz_remote);
+        Kokkos::deep_copy(amd.rowptr_remote, R_rowptr_remote);
+        Kokkos::deep_copy(amd.A_colindsub_remote, R_A_colindsub_remote);
       }
 
       // Allocate or view values.
@@ -2554,11 +2504,11 @@ solveSingleVectorNew(const typename Kokkos::TeamPolicy<typename impl_type::execu
   // const local_ordinal_type num_vectors = X_scalar_values.extent(2);
 
   // const local_ordinal_type blocksize = D_scalar_values.extent(1);
-  const local_ordinal_type astep = D_internal_vector_values.stride(0);
-  const local_ordinal_type as0   = D_internal_vector_values.stride(1);  // blocksize*vector_length;
-  const local_ordinal_type as1   = D_internal_vector_values.stride(2);  // vector_length;
-  const local_ordinal_type xstep = X_internal_vector_values.stride(0);
-  const local_ordinal_type xs0   = X_internal_vector_values.stride(1);  // vector_length;
+  const local_ordinal_type astep = D_internal_vector_values.stride_0();
+  const local_ordinal_type as0   = D_internal_vector_values.stride_1();  // blocksize*vector_length;
+  const local_ordinal_type as1   = D_internal_vector_values.stride_2();  // vector_length;
+  const local_ordinal_type xstep = X_internal_vector_values.stride_0();
+  const local_ordinal_type xs0   = X_internal_vector_values.stride_1();  // vector_length;
 
   // move to starting point
   A += i0 * astep + v;
@@ -2629,7 +2579,7 @@ solveSingleVectorNew(const typename Kokkos::TeamPolicy<typename impl_type::execu
     // for multiple rhs
     // X += xs1;
   } else {
-    const local_ordinal_type ws0 = WW.stride(0);
+    const local_ordinal_type ws0 = WW.stride_0();
     auto W                       = WW.data() + v;
     KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(default_mode_type,
                                                            member, blocksize, X, xs0, W, ws0);
@@ -4282,11 +4232,11 @@ struct SolveTridiags {
     // const local_ordinal_type num_vectors = X_scalar_values.extent(2);
 
     // const local_ordinal_type blocksize = D_scalar_values.extent(1);
-    const local_ordinal_type astep = D_internal_vector_values.stride(0);
-    const local_ordinal_type as0   = D_internal_vector_values.stride(1);  // blocksize*vector_length;
-    const local_ordinal_type as1   = D_internal_vector_values.stride(2);  // vector_length;
-    const local_ordinal_type xstep = X_internal_vector_values.stride(0);
-    const local_ordinal_type xs0   = X_internal_vector_values.stride(1);  // vector_length;
+    const local_ordinal_type astep = D_internal_vector_values.stride_0();
+    const local_ordinal_type as0   = D_internal_vector_values.stride_1();  // blocksize*vector_length;
+    const local_ordinal_type as1   = D_internal_vector_values.stride_2();  // vector_length;
+    const local_ordinal_type xstep = X_internal_vector_values.stride_0();
+    const local_ordinal_type xs0   = X_internal_vector_values.stride_1();  // vector_length;
 
     // move to starting point
     A += i0 * astep + v;
@@ -4357,7 +4307,7 @@ struct SolveTridiags {
       // for multiple rhs
       // X += xs1;
     } else {
-      const local_ordinal_type ws0 = WW.stride(0);
+      const local_ordinal_type ws0 = WW.stride_0();
       auto W                       = WW.data() + v;
       KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(default_mode_type,
                                                              member, blocksize, X, xs0, W, ws0);
@@ -4599,10 +4549,10 @@ struct SolveTridiags {
                                                         member,
                                                         blocksize, blocksize,
                                                         -one,
-                                                        C.data(), C.stride(0), C.stride(1),
-                                                        v_1.data(), v_1.stride(0),
+                                                        C.data(), C.stride_0(), C.stride_1(),
+                                                        v_1.data(), v_1.stride_0(),
                                                         one,
-                                                        v_2.data(), v_2.stride(0));
+                                                        v_2.data(), v_2.stride_0());
       });
     } else if (local_subpartidx == (local_ordinal_type)part2packrowidx0_sub.extent(1) - 2) {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const int &v) {
@@ -4614,10 +4564,10 @@ struct SolveTridiags {
                                                         member,
                                                         blocksize, blocksize,
                                                         -one,
-                                                        C.data(), C.stride(0), C.stride(1),
-                                                        v_1.data(), v_1.stride(0),
+                                                        C.data(), C.stride_0(), C.stride_1(),
+                                                        v_1.data(), v_1.stride_0(),
                                                         one,
-                                                        v_2.data(), v_2.stride(0));
+                                                        v_2.data(), v_2.stride_0());
       });
     } else {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const int &v) {
@@ -4630,10 +4580,10 @@ struct SolveTridiags {
                                                           member,
                                                           blocksize, blocksize,
                                                           -one,
-                                                          C.data(), C.stride(0), C.stride(1),
-                                                          v_1.data(), v_1.stride(0),
+                                                          C.data(), C.stride_0(), C.stride_1(),
+                                                          v_1.data(), v_1.stride_0(),
                                                           one,
-                                                          v_2.data(), v_2.stride(0));
+                                                          v_2.data(), v_2.stride_0());
         }
         {
           auto v_1 = Kokkos::subview(X_internal_vector_values, r0, Kokkos::ALL(), 0, v);
@@ -4644,10 +4594,10 @@ struct SolveTridiags {
                                                           member,
                                                           blocksize, blocksize,
                                                           -one,
-                                                          C.data(), C.stride(0), C.stride(1),
-                                                          v_1.data(), v_1.stride(0),
+                                                          C.data(), C.stride_0(), C.stride_1(),
+                                                          v_1.data(), v_1.stride_0(),
                                                           one,
-                                                          v_2.data(), v_2.stride(0));
+                                                          v_2.data(), v_2.stride_0());
         }
       });
     }
@@ -4731,10 +4681,10 @@ struct SolveTridiags {
                                                           member,
                                                           blocksize, blocksize,
                                                           -one,
-                                                          E.data(), E.stride(0), E.stride(1),
-                                                          v_2.data(), v_2.stride(0),
+                                                          E.data(), E.stride_0(), E.stride_1(),
+                                                          v_2.data(), v_2.stride_0(),
                                                           one,
-                                                          v_1.data(), v_1.stride(0));
+                                                          v_1.data(), v_1.stride_0());
         }
       });
     } else if (local_subpartidx == (local_ordinal_type)part2packrowidx0_sub.extent(1) - 2) {
@@ -4749,10 +4699,10 @@ struct SolveTridiags {
                                                           member,
                                                           blocksize, blocksize,
                                                           -one,
-                                                          E.data(), E.stride(0), E.stride(1),
-                                                          v_2.data(), v_2.stride(0),
+                                                          E.data(), E.stride_0(), E.stride_1(),
+                                                          v_2.data(), v_2.stride_0(),
                                                           one,
-                                                          v_1.data(), v_1.stride(0));
+                                                          v_1.data(), v_1.stride_0());
         }
       });
     } else {
@@ -4768,10 +4718,10 @@ struct SolveTridiags {
                                                             member,
                                                             blocksize, blocksize,
                                                             -one,
-                                                            E.data(), E.stride(0), E.stride(1),
-                                                            v_2.data(), v_2.stride(0),
+                                                            E.data(), E.stride_0(), E.stride_1(),
+                                                            v_2.data(), v_2.stride_0(),
                                                             one,
-                                                            v_1.data(), v_1.stride(0));
+                                                            v_1.data(), v_1.stride_0());
           }
         }
         {
@@ -4785,10 +4735,10 @@ struct SolveTridiags {
                                                             member,
                                                             blocksize, blocksize,
                                                             -one,
-                                                            E.data(), E.stride(0), E.stride(1),
-                                                            v_2.data(), v_2.stride(0),
+                                                            E.data(), E.stride_0(), E.stride_1(),
+                                                            v_2.data(), v_2.stride_0(),
                                                             one,
-                                                            v_1.data(), v_1.stride(0));
+                                                            v_1.data(), v_1.stride_0());
           }
         }
       });
