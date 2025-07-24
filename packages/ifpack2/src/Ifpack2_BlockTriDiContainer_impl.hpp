@@ -1023,33 +1023,14 @@ local_ordinal_type getAutomaticNSubparts(const local_ordinal_type num_parts,
                                          const local_ordinal_type num_teams,
                                          const local_ordinal_type line_length,
                                          const local_ordinal_type block_size) {
-  // BMK: replaced theoretical model with empirical model
-  // This is a linear regression based on:
-  // - required vs. available parallelism (num_parts vs num_teams)
-  // - log2 of the line length
-  // - block size
-  double parallelismSurplus = Kokkos::sqrt((double)num_teams / num_parts);
-  double logLineLength      = Kokkos::log2((double)line_length);
-  // Directly predict with linear model
-  double modeled = -9.2312 + 4.6946 * parallelismSurplus + 0.4095 * block_size + 0.966 * logLineLength;
-  // Round to nearest integer
-  local_ordinal_type n_subparts_per_part = 0.5 + modeled;
-  // Then clamp the result to valid range
-  // Criteria for valid n_subparts_per_part (where connection_length is 2 for wide separators)
-  //   line_length >= n_subparts_per_part + (n_subparts_per_part - 1) * connection_length
-  // Equivalently,
-  //   line_length >= n_subparts_per_part + n_subparts_per_part * 2 - 2
-  //   line_length >= 3 * n_subparts_per_part - 2
-  local_ordinal_type min_subparts_per_part = 1;
-  local_ordinal_type max_subparts_per_part = (line_length + 2) / 3;
-  // Limit memory usage
-  if (max_subparts_per_part > 16)
-    max_subparts_per_part = 16;
-  if (n_subparts_per_part < min_subparts_per_part)
-    n_subparts_per_part = min_subparts_per_part;
-  if (n_subparts_per_part > max_subparts_per_part)
-    n_subparts_per_part = max_subparts_per_part;
-  return n_subparts_per_part;
+  local_ordinal_type n_subparts_per_part_0 = 1;
+  local_ordinal_type flop_0                = costSolveSchur(num_parts, num_teams, line_length, block_size, n_subparts_per_part_0);
+  local_ordinal_type flop_1                = costSolveSchur(num_parts, num_teams, line_length, block_size, n_subparts_per_part_0 + 1);
+  while (flop_0 > flop_1) {
+    flop_0 = flop_1;
+    flop_1 = costSolveSchur(num_parts, num_teams, line_length, block_size, (++n_subparts_per_part_0) + 1);
+  }
+  return n_subparts_per_part_0;
 }
 
 template <typename ArgActiveExecutionMemorySpace>
