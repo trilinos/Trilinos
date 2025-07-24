@@ -42,6 +42,10 @@ Response_Probe(const std::string & responseName, MPI_Comm comm,
 
     // set ghosted container (work space for assembly)
     linObjFactory_->initializeGhostedContainer(panzer::LinearObjContainer::X,*ghostedContainer_);
+
+    if constexpr (std::is_same<EvalT,panzer::Traits::Jacobian>::value) {
+      this->setDerivativeVectorSpace(thyraObjFactory_->getThyraDomainSpace());
+    }
   }
 }
 
