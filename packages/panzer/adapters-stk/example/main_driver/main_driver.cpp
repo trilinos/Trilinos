@@ -26,6 +26,7 @@
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+#include "Panzer_ClosureModel_Factory_Composite_TemplateBuilder.hpp"
 #include "Panzer_PauseToAttach.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
@@ -36,6 +37,7 @@
 #endif
 
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
+#include "user_app_ClosureModel_Factory_STK_TemplateBuilder.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 #include "user_app_NOXObserverFactory.hpp"
@@ -124,9 +126,26 @@ int main(int argc, char *argv[])
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
 
     // Add in the application specific closure model factory
-    user_app::MyModelFactory_TemplateBuilder cm_builder;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
-    cm_factory.buildObjects(cm_builder);
+    {
+      // Base closure models
+      user_app::MyModelFactory_TemplateBuilder cm_builder1;
+      Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > model_factory1 = 
+        Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
+      model_factory1->buildObjects(cm_builder1);
+
+      // STK specific closure models
+      user_app::MyModelFactorySTK_TemplateBuilder cm_builder2;
+      Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > model_factory2 = 
+        Teuchos::rcp(new panzer::ClosureModelFactory_TemplateManager<panzer::Traits>);
+      model_factory2->buildObjects(cm_builder2);
+
+      // Composite
+      panzer::ClosureModelFactoryComposite_TemplateBuilder builder_composite;
+      builder_composite.addFactory(model_factory1);
+      builder_composite.addFactory(model_factory2);
+      cm_factory.buildObjects(builder_composite);
+    }
 
     // Add in the application specific bc factory
     user_app::BCFactory bc_factory;
