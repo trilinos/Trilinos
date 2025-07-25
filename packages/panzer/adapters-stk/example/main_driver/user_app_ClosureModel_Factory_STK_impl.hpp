@@ -83,10 +83,6 @@ buildClosureModels(const std::string& model_id,
         auto plist_copy = plist;
         {
           validParams.set("Type","Exodus Cell Data");
-          validParams.set("Index Choice","Fixed",
-                          "What index to use",
-                          rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("Fixed", "Interpolate","Closest"))));
-          validParams.set("Index Value",0);
           validParams.set("Field Names","");
           validParams.set("Exodus Names","");
           plist_copy.validateParametersAndSetDefaults(validParams);
@@ -100,18 +96,11 @@ buildClosureModels(const std::string& model_id,
         panzer::StringTokenizer(*exodusNames,plist_copy.get<std::string>("Exodus Names"));
         TEUCHOS_ASSERT(exodusNames->size() > 0);
 
-        std::string indexChoice = plist_copy.get<std::string>("Index Choice");
-        TEUCHOS_ASSERT(indexChoice == "Fixed"); // Only suppor tone option for now
-
-        int indexValue = plist_copy.get<int>("Index Value");
-
         auto e = Teuchos::make_rcp<panzer_stk::GatherExodusCellDataToIP<EvalT,panzer::Traits>>
                    (this->getMesh(),
                     *fieldNames,
                     *exodusNames,
-                    ir,
-                    panzer_stk::GatherExodusCellDataToIP<EvalT,panzer::Traits>::IndexChoice::Fixed,
-                    indexValue);
+                    ir);
 
           evaluators->push_back(e);
         found = true;

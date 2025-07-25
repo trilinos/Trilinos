@@ -63,8 +63,6 @@
               <Parameter name="Type" type="string" value="Exodus Cell Data"/>
               <Parameter name="Field Names" type="string" value="SOURCE_TEMPERATURE"/>
               <Parameter name="Exodus Names" type="string" value="TEST_FIELD"/>
-              <Parameter name="Index Choice" type="string" value="Fixed"/>
-              <Parameter name="Index Value" type="int" value="6"/>
             </ParameterList>
             <ParameterList name="Heat Capacity">
                 <Parameter name="Value" type="double" value="1.0"/>
