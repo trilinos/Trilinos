@@ -176,7 +176,7 @@ struct Ialltofewv::Cache::impl {
 
 };
 
-Ialltofewv::Cache::Cache() : pimpl(std::make_shared<Cache::impl>()) {}
+Ialltofewv::Cache::Cache() = default;
 Ialltofewv::Cache::~Cache() = default;
 
 namespace {
@@ -192,6 +192,11 @@ int wait_impl(Ialltofewv::Req &req, Ialltofewv::Cache &cache) {
   }
 
   ProfilingRegion pr("alltofewv::wait");
+
+  // lazy-init view cache
+  if (!cache.pimpl) {
+    cache.pimpl = std::make_shared<Ialltofewv::Cache::impl>();
+  }
 
   const int rank = [&]() -> int {
     int _rank;
