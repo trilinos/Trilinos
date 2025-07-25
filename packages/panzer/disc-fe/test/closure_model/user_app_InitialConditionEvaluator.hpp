@@ -1,3 +1,6 @@
+#ifndef USER_APP_INITIAL_CONDITION_EVALUATOR_HPP
+#define USER_APP_INITIAL_CONDITION_EVALUATOR_HPP
+
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 
 namespace user_app {
@@ -42,3 +45,5 @@ namespace user_app {
     PHX::MDField<ScalarT,panzer::Cell,panzer::Point> temperature_;
   };
 }
+
+#endif

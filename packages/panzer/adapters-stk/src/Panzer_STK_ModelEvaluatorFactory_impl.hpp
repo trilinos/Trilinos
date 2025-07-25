@@ -60,8 +60,10 @@
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_ParameterListCallbackBlocked.hpp"
 #include "Panzer_STK_IOClosureModel_Factory_TemplateBuilder.hpp"
+#include "Panzer_ClosureModel_Factory_Composite.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 #include "Panzer_STK_SetupLOWSFactory.hpp"
+#include "Panzer_STK_MeshAccessor.hpp"
 
 #include <vector>
 #include <iostream>
@@ -376,6 +378,11 @@ namespace panzer_stk {
     mesh->print(fout);
     if(p.sublist("Output").get<bool>("Write to Exodus"))
       mesh->setupExodusFile(p.sublist("Output").get<std::string>("File Name"));
+
+    // Register the mesh with the closure model factories (recursive for composite factories)
+    ////////////////////////////////////////////////////////////////////////////////////////
+    p.sublist("User Data").set("panzer_stk::STK_Interface",mesh);
+    this->registerMeshWithClosureModelFactories(mesh,const_cast<panzer::ClosureModelFactory_TemplateManager<panzer::Traits>&>(user_cm_factory));
 
     // build a workset factory that depends on STK
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -1552,6 +1559,43 @@ namespace panzer_stk {
   {
      user_data.set<int>("Workset Size",workset_size);
      rl.buildResponseEvaluators(physicsBlocks, cm_factory, closure_models, user_data);
+  }
+
+  struct SetMeshFunctor {
+    const Teuchos::RCP<panzer_stk::STK_Interface>& mesh_;
+    panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& user_cm_factory_;
+    SetMeshFunctor(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+                   panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory)
+                   : mesh_(mesh),user_cm_factory_(user_cm_factory){}
+
+    template<typename EvalT>
+    void operator()(EvalT t) const {
+      auto factory = user_cm_factory_.getAsObject<EvalT>();
+      panzer_stk::STKMeshAccessor* mesh_accessor = nullptr;
+      mesh_accessor = dynamic_cast<panzer_stk::STKMeshAccessor*>(factory.get());
+      if (mesh_accessor) {
+        mesh_accessor->setMesh(mesh_);
+      }
+      else {
+        // try casting to a composite class and rescurively call this functor
+        panzer::ClosureModelFactoryComposite<EvalT>* composite = nullptr;
+        composite = dynamic_cast<panzer::ClosureModelFactoryComposite<EvalT>*>(factory.get());
+        if (composite) {
+          auto& sub_factories = composite->getFactories();
+          for (auto sub_factory : sub_factories) {
+            Sacado::mpl::for_each_no_kokkos<panzer::Traits::EvalTypes>(SetMeshFunctor(mesh_,*sub_factory));
+          }
+        }
+      }
+    }
+  };
+
+  template<typename ScalarT>
+  void ModelEvaluatorFactory<ScalarT>::
+  registerMeshWithClosureModelFactories(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+                                        panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& user_cm_factory)
+  {
+    Sacado::mpl::for_each_no_kokkos<panzer::Traits::EvalTypes>(SetMeshFunctor(mesh,user_cm_factory));
   }
 
   template<typename ScalarT>

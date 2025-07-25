@@ -320,7 +320,7 @@ buildClosureModels(const std::string& model_id,
     }
 
 
-    if (!found) {
+    if (!found && this->m_throw_if_model_not_found) {
       std::stringstream msg;
       msg << "ClosureModelFactory failed to build evaluator for key \"" << key 
           << "\"\nin model \"" << model_id

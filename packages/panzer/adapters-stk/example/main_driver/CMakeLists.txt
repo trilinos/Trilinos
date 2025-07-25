@@ -20,6 +20,11 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES Panzer_xml_to_yaml.cpp
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  write_exodus_initial_condition
+  SOURCES write_exodus_initial_condition.cpp ${PANZER_UNIT_TEST_MAIN}
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
   SOURCE_FILES
     energy-ss.xml
@@ -42,7 +47,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     make-mesh.sh
     do-runs-multiblock.sh
     set_seacas_decomp.sh
-  EXEDEPS main_driver
+    energy-load-cell-data.xml
+  EXEDEPS main_driver xml_to_yaml
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(genesis_initial_condition_files
+  SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/stk_interface_test/meshes
+  SOURCE_FILES quad8.gen
+  EXEDEPS write_exodus_initial_condition main_driver
   )
 
 IF(PANZER_HAVE_EPETRA_STACK)

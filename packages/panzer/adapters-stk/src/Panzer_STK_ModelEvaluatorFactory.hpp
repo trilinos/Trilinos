@@ -295,7 +295,8 @@ namespace panzer_stk {
                                            const Teuchos::ParameterList & closure_models,
                                            int workset_size, Teuchos::ParameterList & user_data) const;
 
-
+    void registerMeshWithClosureModelFactories(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+                                               panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & user_cm_factory);
   private:
 
     Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > m_physics_me;

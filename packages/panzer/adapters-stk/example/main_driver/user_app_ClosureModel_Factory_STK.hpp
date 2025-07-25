@@ -8,20 +8,30 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef PANZER_CLOSURE_MODEL_FACTORY_COMPOSITE_DECL_HPP
-#define PANZER_CLOSURE_MODEL_FACTORY_COMPOSITE_DECL_HPP
+#ifndef USER_APP_CLOSURE_MODEL_FACTORY_STK_HPP
+#define USER_APP_CLOSURE_MODEL_FACTORY_STK_HPP
 
 #include "Panzer_ClosureModel_Factory.hpp"
-#include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
+#include "Panzer_STK_MeshAccessor.hpp"
 
 namespace panzer {
+  class InputEquationSet;
+
+  template <typename> class LinearObjFactory;
+}
+
+namespace user_app {
 
   template<typename EvalT>
-  class ClosureModelFactoryComposite : public panzer::ClosureModelFactory<EvalT> {
+  class MyModelFactorySTK : public panzer::ClosureModelFactory<EvalT>,
+                            public panzer_stk::STKMeshAccessor
+  {
+    Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > distr_param_lof;
 
   public:
 
-    ClosureModelFactoryComposite(const std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >& factories);
+    void setDistributedParameterLOF(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & dpl)
+    { distr_param_lof = dpl; }
 
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     buildClosureModels(const std::string& model_id,
@@ -33,15 +43,10 @@ namespace panzer {
 		       const Teuchos::RCP<panzer::GlobalData>& global_data,
 		       PHX::FieldManager<panzer::Traits>& fm) const;
 
-    std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits>>>&
-    getFactories(){return m_factories;}
-
-  private:
-
-    std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits>>> m_factories;
-
   };
 
 }
+
+#include "user_app_ClosureModel_Factory_STK_impl.hpp"
 
 #endif
