@@ -300,7 +300,6 @@ int gen_geom, int gen_graph, int gen_hg)
     goto End;
   }
   for (i=0; i<num_obj; i++) {
-    int j;
     for (j = 0; j < lenGID; j++)
       fprintf(fp, ZOLTAN_ID_SPEC" ", global_ids[i*lenGID+j]);
     fprintf(fp, "\n");

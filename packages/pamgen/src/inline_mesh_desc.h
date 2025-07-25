@@ -408,9 +408,9 @@ namespace PAMGEN_NEVADA {
       static std::stringstream echo_stream;
 
     private:
-	std::vector <Partition *> sorted_partition_list;
+       std::vector <Partition *> Psorted_partition_list;
     public:
-	const std::vector<Partition *> & get_sorted_partition_list() const {return sorted_partition_list;}
+       const std::vector<Partition *> & get_sorted_partition_list() const {return Psorted_partition_list;}
 
   };
 

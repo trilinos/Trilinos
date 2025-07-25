@@ -20,10 +20,10 @@ template <typename ExecSpace, typename DiagOffsets, typename Rowptrs,
 DiagOffsets findDiagOffsets(const Rowptrs& rowptrs, const Entries& entries,
                             size_t nrows, int blocksize) {
   DiagOffsets diag_offsets(do_not_initialize_tag("btdm.diag_offsets"), nrows);
-  int err = 0;
+  int err1 = 0;
   Kokkos::parallel_reduce(
       Kokkos::RangePolicy<ExecSpace>(0, nrows),
-      KOKKOS_LAMBDA(size_t row, int& err) {
+      KOKKOS_LAMBDA(size_t row, int& err2) {
         auto rowBegin = rowptrs(row);
         auto rowEnd   = rowptrs(row + 1);
         for (size_t j = rowBegin; j < rowEnd; j++) {
@@ -32,11 +32,11 @@ DiagOffsets findDiagOffsets(const Rowptrs& rowptrs, const Entries& entries,
             return;
           }
         }
-        err++;
+        err2++;
       },
-      err);
+      err1);
   TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      err, "Ifpack2 BTD: at least one row has no diagonal entry");
+      err1, "Ifpack2 BTD: at least one row has no diagonal entry");
   return diag_offsets;
 }
 

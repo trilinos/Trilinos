@@ -1023,14 +1023,66 @@ local_ordinal_type getAutomaticNSubparts(const local_ordinal_type num_parts,
                                          const local_ordinal_type num_teams,
                                          const local_ordinal_type line_length,
                                          const local_ordinal_type block_size) {
-  local_ordinal_type n_subparts_per_part_0 = 1;
-  local_ordinal_type flop_0                = costSolveSchur(num_parts, num_teams, line_length, block_size, n_subparts_per_part_0);
-  local_ordinal_type flop_1                = costSolveSchur(num_parts, num_teams, line_length, block_size, n_subparts_per_part_0 + 1);
-  while (flop_0 > flop_1) {
-    flop_0 = flop_1;
-    flop_1 = costSolveSchur(num_parts, num_teams, line_length, block_size, (++n_subparts_per_part_0) + 1);
-  }
-  return n_subparts_per_part_0;
+  // BMK: replaced theoretical model with empirical model
+  // This is a linear regression based on data from a grid search.
+  // The independent terms in the regression are:
+  // - "parallelism surplus" - smaller when problem has enough lines to saturate GPU, larger otherwise
+  // - log2 of the line length
+  // - block size
+  double parallelismSurplus = Kokkos::sqrt((double)num_teams / num_parts);
+  double logLineLength      = Kokkos::log2((double)line_length);
+  (void)logLineLength;
+  // Directly predict with linear model
+#if defined(KOKKOS_ARCH_AMD_GFX942) || defined(KOKKOS_ARCH_AMD_GFX942_APU)
+  // MI300-specific data
+  double modeled = -9.2312 + 4.6946 * parallelismSurplus + 0.4095 * block_size + 0.966 * logLineLength;
+  // Do not split lines if there is plenty of parallelism
+  if (parallelismSurplus < 0.3)
+    modeled = 1;
+#elif defined(KOKKOS_ARCH_HOPPER) || defined(KOKKOS_ARCH_BLACKWELL)
+  // Based on H100 data
+  double modeled = -9.6053 + 4.7477 * parallelismSurplus + 0.2338 * block_size + 1.0794 * logLineLength;
+  // On H100, performance degrades rapidly if small lines are split too many times
+  double maxSplit = (double)line_length / 8;
+  if (modeled > maxSplit)
+    modeled = maxSplit;
+#elif defined(KOKKOS_ENABLE_CUDA)
+  // Based on V100 data, line splitting is profitable in fewer cases
+  // (only when there are few, long lines)
+  double modeled = 1;
+  if (parallelismSurplus > 1 && line_length > 64)
+    modeled = 4;
+#elif defined(KOKKOS_ENABLE_HIP)
+  // Based on MI250X data
+  double modeled = -8.6214 + 7.3468 * parallelismSurplus + 0.3596 * block_size + 0.6673 * logLineLength;
+#else
+  // GPUs other than CUDA or HIP: default to simple model that works for V100
+  double modeled = 1;
+  if (parallelismSurplus > 1 && line_length > 64)
+    modeled = 4;
+#endif
+
+  // Round to nearest integer
+  local_ordinal_type n_subparts_per_part = 0.5 + modeled;
+  // Do not split lines if there is plenty of parallelism available
+  if (parallelismSurplus < 0.3)
+    n_subparts_per_part = 1;
+  // Clamp the result to valid range
+  // Criteria for valid n_subparts_per_part (where connection_length is 2 for wide separators)
+  //   line_length >= n_subparts_per_part + (n_subparts_per_part - 1) * connection_length
+  // Equivalently:
+  //   line_length >= n_subparts_per_part + n_subparts_per_part * 2 - 2
+  //   line_length >= 3 * n_subparts_per_part - 2
+  local_ordinal_type min_subparts_per_part = 1;
+  local_ordinal_type max_subparts_per_part = (line_length + 2) / 3;
+  // Limit memory usage from too many sublines
+  if (max_subparts_per_part > 16)
+    max_subparts_per_part = 16;
+  if (n_subparts_per_part < min_subparts_per_part)
+    n_subparts_per_part = min_subparts_per_part;
+  if (n_subparts_per_part > max_subparts_per_part)
+    n_subparts_per_part = max_subparts_per_part;
+  return n_subparts_per_part;
 }
 
 template <typename ArgActiveExecutionMemorySpace>
@@ -1085,19 +1137,25 @@ createPartInterface(const Teuchos::RCP<const typename BlockHelperDetails::ImplTy
     // decides the value automatically
     using execution_space = typename impl_type::execution_space;
 
-    const int line_length = partsz[0].first;
+    // Line splitting only benefits GPUs
+    if constexpr (impl_type::node_type::is_gpu) {
+      const int line_length = partsz[0].first;
 
-    const local_ordinal_type team_size =
-        SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
-            recommended_team_size(blocksize, vector_length, internal_vector_length);
+      const local_ordinal_type team_size =
+          SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
+              recommended_team_size(blocksize, vector_length, internal_vector_length);
 
-    const local_ordinal_type num_teams = std::max(1, execution_space().concurrency() / (team_size * vector_length));
-
-    n_subparts_per_part = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
-
+      const local_ordinal_type num_teams = std::max(1, execution_space().concurrency() / (team_size * vector_length));
+      n_subparts_per_part                = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
 #ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-    printf("Automatically chosen n_subparts_per_part = %d for nparts = %d, num_teams = %d, team_size = %d, line_length = %d, and blocksize = %d;\n", n_subparts_per_part, nparts, num_teams, team_size, line_length, blocksize);
+      printf("Automatically chosen n_subparts_per_part = %d for nparts = %d, num_teams = %d, team_size = %d, line_length = %d, and blocksize = %d;\n", n_subparts_per_part, nparts, num_teams, team_size, line_length, blocksize);
 #endif
+    } else {
+      n_subparts_per_part = 1;
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+      printf("Automatically chosen n_subparts_per_part = 1 for CPU backend\n");
+#endif
+    }
   } else {
     n_subparts_per_part = n_subparts_per_part_in;
   }

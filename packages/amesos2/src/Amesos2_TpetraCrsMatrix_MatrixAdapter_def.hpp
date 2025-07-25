@@ -457,7 +457,6 @@ namespace Amesos2 {
               //    nzvals(transpose_map(k)) = nzvals_t(k);
               //  }
               //}
-              typedef Kokkos::DefaultHostExecutionSpace HostExecSpaceType;
               Kokkos::parallel_for("Amesos2::TpetraCrsMatrixAdapter::gather", Kokkos::RangePolicy<HostExecSpaceType>(0, ret),
                 KOKKOS_LAMBDA(const int k) { if (transpose_map(k) >= 0) nzvals(transpose_map(k)) = nzvals_t(k); });
             }

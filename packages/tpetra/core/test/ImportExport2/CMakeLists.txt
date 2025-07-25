@@ -30,6 +30,16 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+if (TPL_ENABLE_MPI)
+TRIBITS_ADD_TEST(
+  ImportExport2_UnitTests
+  NAME ImportExport2_UnitTests_Ialltofewv
+  COMM mpi
+  ARGS "--distributor-send-type=Ialltofewv --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+  STANDARD_PASS_OUTPUT
+)
+endif()
+
 IF (${PACKAGE_NAME}_ENABLE_mpi_advance)
   message(STATUS "Tpetra: adding MPI Advance ImportExport2 unit tests because ${PACKAGE_NAME}_ENABLE_mpi_advance is truthy")
 
