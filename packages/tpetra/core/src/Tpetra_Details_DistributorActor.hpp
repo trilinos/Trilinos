@@ -10,6 +10,9 @@
 #ifndef TPETRA_DETAILS_DISTRIBUTOR_ACTOR_HPP
 #define TPETRA_DETAILS_DISTRIBUTOR_ACTOR_HPP
 
+#include <optional>
+#include <vector>
+
 #include "Teuchos_Assert.hpp"
 #include "Tpetra_Details_DistributorPlan.hpp"
 #include "Tpetra_Util.hpp"
@@ -24,6 +27,7 @@
 
 #ifdef HAVE_TPETRA_MPI
 #include "mpi.h"
+#include "Tpetra_Details_Ialltofewv.hpp"
 #endif
 
 namespace Tpetra::Details {
@@ -99,6 +103,8 @@ public:
 
   void doWaitsSend(const DistributorPlan& plan);
 
+  void doWaitsIalltofewv(const DistributorPlan &plan);
+
   bool isReady() const;
 
 private:
@@ -131,7 +137,26 @@ private:
                                const ImpView &imports,
                                const SubViewLimits& importSubViewLimits);
 #endif // HAVE_TPETRACORE_MPI_ADVANCE
-#endif // HAVE_TPETRA_CORE
+
+  template <typename ExpView, typename ImpView>
+  void doPostsIalltofewvImpl(const DistributorPlan &plan,
+                             const ExpView &exports,
+                             const SubViewLimits& exportSubViewLimits,
+                             const ImpView &imports,
+                             const SubViewLimits& importSubViewLimits);
+
+  // ialltofewv members
+  struct {
+    Details::Ialltofewv impl;
+    std::optional<Details::Ialltofewv::Req> req;
+    Teuchos::RCP<std::vector<int>> sendcounts;
+    Teuchos::RCP<std::vector<int>> sdispls;
+    Teuchos::RCP<std::vector<int>> recvcounts;
+    Teuchos::RCP<std::vector<int>> rdispls;
+    std::vector<int> roots;
+  } ialltofewv_;
+
+#endif // HAVE_TPETRA_MPI
 
   int mpiTag_;
 
@@ -219,6 +244,138 @@ packOffset(const DstViewType& dst,
 }
 
 #ifdef HAVE_TPETRA_MPI
+
+template <class ExpView, class ImpView>
+void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan &plan,
+                                           const ExpView &exports,
+                                           const SubViewLimits& exportSubViewLimits,
+                                           const ImpView &imports,
+                                           const SubViewLimits& importSubViewLimits) {
+  using size_type = Teuchos::Array<size_t>::size_type;
+  using ExportValue = typename ExpView::non_const_value_type;
+
+  ProfilingRegion pr("Tpetra::Distributor: doPostsIalltofewvImpl");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      !plan.getIndicesTo().is_null(), std::runtime_error,
+      "Send Type=\"Ialltofewv\" only works for fast-path communication.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    bool(ialltofewv_.req), std::runtime_error,
+    "This actor has an active Ialltofewv already");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      bool(ialltofewv_.sendcounts), std::runtime_error,
+      "This actor has an active Ialltofewv already");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    bool(ialltofewv_.sdispls), std::runtime_error,
+      "This actor has an active Ialltofewv already");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    bool(ialltofewv_.recvcounts), std::runtime_error,
+      "This actor has an active Ialltofewv already");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    bool(ialltofewv_.rdispls), std::runtime_error,
+      "This actor has an active Ialltofewv already");
+
+  auto comm = plan.getComm();
+
+  const auto& [importStarts, importLengths] = importSubViewLimits;
+  const auto& [exportStarts, exportLengths] = exportSubViewLimits;
+
+
+  ialltofewv_.roots = plan.getRoots();
+  const int nroots = ialltofewv_.roots.size();
+  const int *roots = ialltofewv_.roots.data();
+  ialltofewv_.req = std::make_optional<Details::Ialltofewv::Req>();
+  ialltofewv_.sendcounts = Teuchos::rcp(new std::vector<int>(nroots));
+  ialltofewv_.sdispls = Teuchos::rcp(new std::vector<int>(nroots));
+  ialltofewv_.recvcounts = Teuchos::rcp(new std::vector<int>);
+  ialltofewv_.rdispls = Teuchos::rcp(new std::vector<int>);
+
+  for (int rootIdx = 0; rootIdx < nroots; ++rootIdx) {
+    const int root = roots[rootIdx];
+
+    //if we can't find the root proc index in our plan, it just means we send 0
+    // also make sure root only appears once in getProcsTo()
+    size_type rootProcIndex = plan.getProcsTo().size(); // sentinel value -> not found
+    for (size_type pi = 0; pi < plan.getProcsTo().size(); ++pi) {
+      if (plan.getProcsTo()[pi] == root) {
+        rootProcIndex = pi;
+        break;
+      }
+    }
+
+    // am I sending to root?
+    int sendcount = 0;
+    if (rootProcIndex != plan.getProcsTo().size()) {
+      sendcount = exportLengths[rootProcIndex];
+    }
+    (*ialltofewv_.sendcounts)[rootIdx] = sendcount;
+
+    int sdispl = 0;
+    if (0 != sendcount) {
+      sdispl = exportStarts[rootProcIndex];
+    }
+    (*ialltofewv_.sdispls)[rootIdx] = sdispl;
+
+    // If I happen to be this root, set up my receive metadata
+    if (comm->getRank() == root) {
+
+      // don't recv anything from anywhere by default
+      ialltofewv_.recvcounts->resize(comm->getSize());
+      std::fill(ialltofewv_.recvcounts->begin(), ialltofewv_.recvcounts->end(), 0);
+      ialltofewv_.rdispls->resize(comm->getSize());
+      std::fill(ialltofewv_.rdispls->begin(), ialltofewv_.rdispls->end(), 0);
+
+      const size_type actualNumReceives =
+      Teuchos::as<size_type>(plan.getNumReceives()) +
+      Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
+
+      for (size_type i = 0; i < actualNumReceives; ++i) {
+        const int src = plan.getProcsFrom()[i];
+        (*ialltofewv_.rdispls)[src] = importStarts[i];
+        (*ialltofewv_.recvcounts)[src] = Teuchos::as<int>(importLengths[i]);
+      }
+    }
+
+  } // rootIdx
+
+  // TODO: do we need to pass ExportValue{} here?
+  MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<ExportValue>::getType(ExportValue{});
+  // FIXME: is there a better way to do this?
+  Teuchos::RCP<const Teuchos::MpiComm<int>> tMpiComm =
+    Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> oMpiComm =
+    tMpiComm->getRawMpiComm();
+  MPI_Comm mpiComm = (*oMpiComm)();
+
+  // don't care about send-side accessibility because it's not accessed through kokkos
+  // rely on MPI to do the right thing
+  constexpr bool recvDevAccess = Kokkos::SpaceAccessibility<
+     Kokkos::DefaultExecutionSpace, typename ImpView::memory_space>::accessible;
+  constexpr bool sendDevAccess = Kokkos::SpaceAccessibility<
+     Kokkos::DefaultExecutionSpace, typename ExpView::memory_space>::accessible;
+  static_assert(recvDevAccess == sendDevAccess, "sending across host/device");
+
+  const int err = ialltofewv_.impl.post<recvDevAccess>(exports.data(), ialltofewv_.sendcounts->data(), ialltofewv_.sdispls->data(), rawType,
+    imports.data(), ialltofewv_.recvcounts->data(), ialltofewv_.rdispls->data(), 
+    roots, nroots,
+    rawType,
+    mpiTag_, mpiComm, &(*ialltofewv_.req));
+
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                              "ialltofewv failed with error \""
+                              << Teuchos::mpiErrorCodeToString(err)
+                              << "\".");
+}
+
+
+
+
+
 template <class ExpView, class ImpView>
 void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
                                            const ExpView &exports,
@@ -436,6 +593,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   // These send options require no matching receives, so we just return.
   const Details::EDistributorSendType sendType = plan.getSendType();
   if ((sendType == Details::DISTRIBUTOR_ALLTOALL)
+      || (sendType == Details::DISTRIBUTOR_IALLTOFEWV)
 #ifdef HAVE_TPETRACORE_MPI_ADVANCE
       || (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL)
       || (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV)
@@ -591,6 +749,9 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
 
   if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
     doPostsAllToAllImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
+    return;
+  } else if (sendType == Details::DISTRIBUTOR_IALLTOFEWV) {
+    doPostsIalltofewvImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
     return;
   }
 #ifdef HAVE_TPETRACORE_MPI_ADVANCE
