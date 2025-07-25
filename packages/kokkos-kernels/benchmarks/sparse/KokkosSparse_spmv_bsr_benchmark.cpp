@@ -27,7 +27,7 @@
 
 /* Some versions of clang that hipcc is basedoff of haven't stabilized
  * std::filesystem yet */
-#if defined(KOKKOS_ENABLE_HIP) && __HIPCC__
+#if defined(KOKKOS_ENABLE_HIP) && __HIPCC__ && (HIP_VERSION < 60000000)
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 #else
@@ -267,8 +267,7 @@ void run(benchmark::State &state, const Bsr &bsr, const size_t k) {
                               + bsr.nnz() * sizeof(ordinal_type)                                 // A col indices
                               + (bsr.numRows() + 1) * sizeof(size_type)                          // A row-map
                               + 2 * bsr.numRows() * bsr.blockDim() * k * sizeof(scalar_type)     // load / store y
-                              + bsr.numCols() * bsr.blockDim() * k * sizeof(scalar_type)         // load x
-      ;
+                              + bsr.numCols() * bsr.blockDim() * k * sizeof(scalar_type);        // load x
 
   state.SetBytesProcessed(bytesPerSpmv * state.iterations());
 }

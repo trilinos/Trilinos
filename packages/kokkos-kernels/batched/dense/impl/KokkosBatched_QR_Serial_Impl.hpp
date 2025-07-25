@@ -51,8 +51,8 @@ KOKKOS_INLINE_FUNCTION int SerialQR<Algo::QR::Unblocked>::invoke(const AViewType
   }
 #endif
 
-  return Impl::SerialQR_Internal::invoke(A.extent(0), A.extent(1), A.data(), A.stride_0(), A.stride_1(), t.data(),
-                                         t.stride_0(), w.data());
+  return Impl::SerialQR_Internal::invoke(A.extent(0), A.extent(1), A.data(), A.stride(0), A.stride(1), t.data(),
+                                         t.stride(0), w.data());
 }
 
 }  // namespace KokkosBatched

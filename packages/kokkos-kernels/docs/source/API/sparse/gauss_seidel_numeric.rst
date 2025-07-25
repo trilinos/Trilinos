@@ -77,54 +77,7 @@ once for a completely new matrix, and again after the matrix's values have chang
 See the examples for :doc:`symmetric_gauss_seidel_apply <gauss_seidel_apply_symmetric>`, :doc:`forward_sweep_gauss_seidel_apply <gauss_seidel_apply_forward>`,
 and :doc:`backward_sweep_gauss_seidel_apply <gauss_seidel_apply_backward>` for how to apply the Gauss-Seidel preconditioner to a specific linear system.
 
-.. code:: cppkokkos
-
-  #include "Kokkos_Core.hpp"
-  #include "KokkosKernels_Handle.hpp"
-  #include "KokkosSparse_IOUtils.hpp"
-  #include "KokkosSparse_CrsMatrix.hpp"
-  #include "KokkosSparse_gauss_seidel.hpp"
-  #include "KokkosBlas1_scal.hpp"
-  
-  int main() {
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
-    using MemSpace  = typename ExecSpace::memory_space;
-    using Handle    = KokkosKernels::KokkosKernelsHandle<int, int, double, ExecSpace, MemSpace, MemSpace>;
-    using Matrix    = KokkosSparse::CrsMatrix<double, int, ExecSpace, void, int>;
-    constexpr int numRows = 10000;
-    Kokkos::initialize();
-    {
-      // Generate a square, diagonally dominant, but nonsymmetric matrix
-      // on which Gauss-Seidel should converge in a few iterations.
-      // Insert about 20 entries per row.
-      int nnz = numRows * 20; 
-      Matrix A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Matrix>(
-          numRows, numRows, nnz, 2, 100, 1.05);
-      Handle handle;
-      handle.create_gs_handle(KokkosSparse::GS_DEFAULT);
-      // Symbolic setup (for A's sparsity pattern).
-      KokkosSparse::gauss_seidel_symbolic(
-          &handle, numRows, numRows, A.graph.row_map, A.graph.entries,
-          /* whether matrix is structurally symmetric */ false);
-  
-      std::cout << "Calling Gauss-Seidel numeric setup...\n";
-      KokkosSparse::gauss_seidel_numeric(
-          &handle, numRows, numRows, A.graph.row_map, A.graph.entries, A.values,
-          /* whether matrix is structurally symmetric */ false);
-  
-      // ...use the handle to solve one or more systems...
-  
-      std::cout << "Changing A's values, but keeping its sparsity pattern the same...\n";
-      Kokkos::parallel_for(nnz, KOKKOS_LAMBDA(int i) {A.values(i) *= 2.0;});
-  
-      // Call numeric again to update the handle for the new values
-      std::cout << "Calling Gauss-Seidel numeric setup again...\n";
-      KokkosSparse::gauss_seidel_numeric(
-          &handle, numRows, numRows, A.graph.row_map, A.graph.entries, A.values, false);
-          
-      // ...use the handle again to solve one or more systems...
-    }
-    Kokkos::finalize();
-    return 0;
-  }
+.. literalinclude:: ../../../../example/wiki/sparse/KokkosSparse_wiki_gauss_seidel.cpp
+  :language: c++
+  :lines: 16-
 

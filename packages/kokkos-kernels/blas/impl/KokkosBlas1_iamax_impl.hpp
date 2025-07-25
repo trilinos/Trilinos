@@ -61,9 +61,7 @@ struct V_Iamax_Functor {
     if (val > maxval) lmaxloc = i;
   }
 
-  KOKKOS_INLINE_FUNCTION void init(value_type& update) const {
-    update = Kokkos::reduction_identity<typename RV::value_type>::max() + 1;
-  }
+  KOKKOS_INLINE_FUNCTION void init(value_type& update) const { update = 1; }
 
   KOKKOS_INLINE_FUNCTION void join(value_type& update, const value_type& source) const {
     mag_type source_val = IPT::norm(m_x(source - 1));

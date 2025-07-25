@@ -393,15 +393,20 @@ class BsrMatrix {
   //! Copy constructor (shallow copy).
   template <typename SType, typename OType, class DType, class MTType, typename IType>
   explicit BsrMatrix(const BsrMatrix<SType, OType, DType, MTType, IType>& B)
-      : graph(B.graph.entries, B.graph.row_map),
+      :
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+        graph(B.graph.entries, B.graph.row_map),
+#else
+        graph(B.graph),
+#endif
+
         values(B.values),
         dev_config(B.dev_config),
         numCols_(B.numCols()),
         blockDim_(B.blockDim()) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
     graph.row_block_offsets = B.graph.row_block_offsets;
-    // MD: Changed the copy constructor of graph
-    // as the constructor of StaticCrsGraph does not allow copy from non const
-    // version.
+#endif
   }
 
   /// \brief Construct with a graph that will be shared.

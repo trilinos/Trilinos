@@ -25,8 +25,8 @@
 #include "KokkosSparse_gmres_handle.hpp"
 #include "KokkosKernels_default_types.hpp"
 
-#ifndef _KOKKOSKERNELHANDLE_HPP
-#define _KOKKOSKERNELHANDLE_HPP
+#ifndef KOKKOSKERNELS_HANDLE_HPP
+#define KOKKOSKERNELS_HANDLE_HPP
 
 namespace KokkosKernels {
 
@@ -903,4 +903,4 @@ class KokkosKernelsHandle {
 }  // namespace Experimental
 }  // namespace KokkosKernels
 
-#endif  //_KOKKOSKERNELHANDLE_HPP
+#endif  // KOKKOSKERNELS_HANDLE_HPP

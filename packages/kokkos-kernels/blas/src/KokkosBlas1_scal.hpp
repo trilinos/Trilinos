@@ -122,7 +122,10 @@ void scal(const RMV& R, const AV& a, const XMV& X) {
 struct SerialScale {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType& A) {
-    return Impl::SerialScaleInternal::invoke(A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(), A.stride_1());
+    if constexpr (AViewType::rank() == 1)
+      return Impl::SerialScaleInternal::invoke(A.extent(0), alpha, A.data(), A.stride(0));
+    else
+      return Impl::SerialScaleInternal::invoke(A.extent(0), A.extent(1), alpha, A.data(), A.stride(0), A.stride(1));
   }
 };
 
@@ -134,8 +137,11 @@ template <typename MemberType>
 struct TeamScale {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const ScalarType alpha, const AViewType& A) {
-    return Impl::TeamScaleInternal::invoke(member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
-                                           A.stride_1());
+    if constexpr (AViewType::rank() == 1)
+      return Impl::TeamScaleInternal::invoke(member, A.extent(0), alpha, A.data(), A.stride(0));
+    else
+      return Impl::TeamScaleInternal::invoke(member, A.extent(0), A.extent(1), alpha, A.data(), A.stride(0),
+                                             A.stride(1));
   }
 };
 
@@ -147,8 +153,11 @@ template <typename MemberType>
 struct TeamVectorScale {
   template <typename ScalarType, typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType& member, const ScalarType alpha, const AViewType& A) {
-    return Impl::TeamVectorScaleInternal::invoke(member, A.extent(0), A.extent(1), alpha, A.data(), A.stride_0(),
-                                                 A.stride_1());
+    if constexpr (AViewType::rank() == 1)
+      return Impl::TeamVectorScaleInternal::invoke(member, A.extent(0), alpha, A.data(), A.stride(0));
+    else
+      return Impl::TeamVectorScaleInternal::invoke(member, A.extent(0), A.extent(1), alpha, A.data(), A.stride(0),
+                                                   A.stride(1));
   }
 };
 

@@ -51,11 +51,7 @@
 #include "Test_Batched_SerialTrtri_Complex.hpp"
 #include "Test_Batched_SerialSVD.hpp"
 #include "Test_Batched_SerialPttrf.hpp"
-#include "Test_Batched_SerialPttrf_Real.hpp"
-#include "Test_Batched_SerialPttrf_Complex.hpp"
 #include "Test_Batched_SerialPttrs.hpp"
-#include "Test_Batched_SerialPttrs_Real.hpp"
-#include "Test_Batched_SerialPttrs_Complex.hpp"
 #include "Test_Batched_SerialPbtrf.hpp"
 #include "Test_Batched_SerialPbtrs.hpp"
 #include "Test_Batched_SerialLaswp.hpp"
@@ -66,6 +62,7 @@
 #include "Test_Batched_SerialSyr.hpp"
 #include "Test_Batched_SerialLacgv.hpp"
 #include "Test_Batched_SerialGbtrf.hpp"
+#include "Test_Batched_SerialGbtrs.hpp"
 
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"

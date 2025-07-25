@@ -174,9 +174,10 @@ In `perf_test` there are test drivers.
 Please report bugs or performance issues to: https://github.com/kokkos/kokkos-kernels/issues
 
 ##### [LICENSE](https://github.com/kokkos/kokkos-kernels/blob/devel/LICENSE)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![License](https://img.shields.io/badge/License-Apache--2.0_WITH_LLVM--exception-blue)](https://spdx.org/licenses/LLVM-exception.html)
 
-KokkosKernels is licensed under standard 3-clause BSD terms of use.  For
-specifics, please refer to the LICENSE file contained in the
-repository or distribution.  Under the terms of Contract DE-NA0003525 with NTESS,
+Under the terms of Contract DE-NA0003525 with NTESS,
 the U.S. Government retains certain rights in this software.
+
+The full license statement used in all headers is available [here](https://kokkos.org/kokkos-core-wiki/license.html) or
+[here](https://github.com/kokkos/kokkos-kernels/blob/develop/LICENSE).

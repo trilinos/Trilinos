@@ -19,8 +19,8 @@
 #include <string>
 #include <KokkosKernels_HashmapAccumulator.hpp>
 
-#ifndef _SPILUKHANDLE_HPP
-#define _SPILUKHANDLE_HPP
+#ifndef KOKKOSSPARSE_SPILUKHANDLE_HPP
+#define KOKKOSSPARSE_SPILUKHANDLE_HPP
 
 // #define EXPAND_FACT 3
 
