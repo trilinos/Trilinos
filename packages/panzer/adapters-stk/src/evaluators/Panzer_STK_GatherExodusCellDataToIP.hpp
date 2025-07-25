@@ -34,32 +34,20 @@ class GatherExodusCellDataToIP
   
 public:
 
-  // Strategy to pick the time index for the solution from the input file
-  enum class IndexChoice {
-    /// Specify an index and use it for the whole run
-    Fixed,
-    /// Interpolate using time values
-    Interpolate,
-    /// Pick the closest time value
-    Closest
-  };
-  
   /**
      Loads a set of fields from an exodus file into the field
      manager. The list of exodus names are mapped to the field names.
+     The time index from the exodus file for these fields corresponds
+     to the restart value in the exodus mesh reader.
 
      @param mesh STK mesh to read value from
      @param fieldNames Names of all fields in the field manager
      @param exodusNames Names of the fields in the exodus file 
-     @param indexChoice determines how to pick the index in the exodus file.
-     @param indexValue if indexChoice is set to "Fixed", this is the value to use.
    */
   GatherExodusCellDataToIP(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh,
                            const std::vector<std::string>& fieldNames,
                            const std::vector<std::string>& exodusNames,
-                           const Teuchos::RCP<panzer::IntegrationRule>& integrationRule,
-                           const GatherExodusCellDataToIP::IndexChoice& indexChoice,
-                           const int indexValue = 0);
+                           const Teuchos::RCP<panzer::IntegrationRule>& integrationRule);
   
   void postRegistrationSetup(typename Traits::SetupData d,
 			     PHX::FieldManager<Traits>& vm);
@@ -74,8 +62,6 @@ private:
   const std::vector<std::string> exodusNames_;
   std::vector<PHX::MDField<ScalarT,panzer::Cell,panzer::IP>> gatherFields_;
   std::vector<VariableField*> stkFields_;
-  const GatherExodusCellDataToIP::IndexChoice indexChoice_;
-  const int indexValue_;
 };
 
 }

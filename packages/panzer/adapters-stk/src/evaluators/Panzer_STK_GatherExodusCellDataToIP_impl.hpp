@@ -26,13 +26,9 @@ panzer_stk::GatherExodusCellDataToIP<EvalT, Traits>::
 GatherExodusCellDataToIP(const Teuchos::RCP<const STK_Interface> & mesh,
                          const std::vector<std::string>& fieldNames,
                          const std::vector<std::string>& exodusNames,
-                         const Teuchos::RCP<panzer::IntegrationRule>& integrationRule,
-                         const GatherExodusCellDataToIP::IndexChoice& indexChoice,
-                         const int indexValue)
+                         const Teuchos::RCP<panzer::IntegrationRule>& integrationRule)
   : mesh_(mesh),
-    exodusNames_(exodusNames),
-    indexChoice_(indexChoice),
-    indexValue_(indexValue)
+    exodusNames_(exodusNames)
 {
   using panzer::Cell;
   using panzer::IP;
