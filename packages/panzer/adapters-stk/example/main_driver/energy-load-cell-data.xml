@@ -4,7 +4,7 @@
         <Parameter name="Source" type="string" value="Exodus File" />
         <ParameterList name="Exodus File">
             <Parameter name="File Name" type="string" value="energy-load-cell-data-SOURCE.exo" />
-            <Parameter name="Restart Index" type="int" value="1" />
+            <Parameter name="Restart Index" type="int" value="10" />
         </ParameterList>
     </ParameterList>
 

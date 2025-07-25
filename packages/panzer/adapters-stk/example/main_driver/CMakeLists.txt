@@ -51,12 +51,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
   EXEDEPS main_driver xml_to_yaml
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(genesis_initial_condition_files
-  SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/stk_interface_test/meshes
-  SOURCE_FILES quad8.gen
-  EXEDEPS write_exodus_initial_condition main_driver
-  )
-
 IF(PANZER_HAVE_EPETRA_STACK)
   TRIBITS_ADD_ADVANCED_TEST(
     main_driver_energy-ss
@@ -130,6 +124,18 @@ TRIBITS_ADD_ADVANCED_TEST(
   TEST_0 EXEC main_driver
     ARGS  --i=energy-ss-tp-multiblock-ic-bc-issue.xml --time
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 2
+    ENVIRONMENT IOSS_PROPERTIES=DECOMPOSITION_METHOD=rib
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy_load_cell_data
+  TEST_0 EXEC write_exodus_initial_condition
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  TEST_1 EXEC main_driver
+    ARGS  --i=energy-load-cell-data.xml --time
+    PASS_REGULAR_EXPRESSION ": 0.970"
     NUM_MPI_PROCS 2
     ENVIRONMENT IOSS_PROPERTIES=DECOMPOSITION_METHOD=rib
   )
