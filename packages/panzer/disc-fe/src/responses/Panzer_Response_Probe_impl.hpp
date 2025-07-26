@@ -11,6 +11,7 @@
 #ifndef __Panzer_Response_Probe_impl_hpp__
 #define __Panzer_Response_Probe_impl_hpp__
 
+#include "Panzer_ResponseBase.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_dyn_cast.hpp"
@@ -41,6 +42,10 @@ Response_Probe(const std::string & responseName, MPI_Comm comm,
 
     // set ghosted container (work space for assembly)
     linObjFactory_->initializeGhostedContainer(panzer::LinearObjContainer::X,*ghostedContainer_);
+
+    if constexpr (std::is_same<EvalT,panzer::Traits::Jacobian>::value) {
+      this->setDerivativeVectorSpace(thyraObjFactory_->getThyraDomainSpace());
+    }
   }
 }
 
@@ -85,6 +90,7 @@ scatterResponse()
     TEUCHOS_ASSERT(this->useThyra());
 
     this->getThyraVector()[0] = glbValue;
+    std::cout << " VAL " << glbValue << std::endl;
   }
 }
 
@@ -132,6 +138,8 @@ scatterResponse()
   if (n == 0)
     value.resize(num_deriv);
 
+  std::cout << " HAVE PROBE " << have_probe << std::endl;
+
   // find the minimum processor who has the probe value
   if (num_deriv > 0) {
     int locProc = have_probe ? this->getComm()->getRank() : this->getComm()->getSize();
@@ -158,8 +166,10 @@ scatterResponse()
     // use thyra
     TEUCHOS_ASSERT(this->useThyra());
     Thyra::ArrayRCP< Thyra::ArrayRCP<double> > deriv = this->getThyraMultiVector();
-    for (int i=0; i<num_deriv; ++i)
+    for (int i=0; i<num_deriv; ++i) {
       deriv[i][0] = value.dx(i);
+      std::cout << "VALS " << value.val() << " " << value.dx(i) << std::endl;
+    }
   }
 }
 
