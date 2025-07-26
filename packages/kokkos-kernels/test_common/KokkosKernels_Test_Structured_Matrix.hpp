@@ -955,10 +955,8 @@ struct fill_3D_matrix_functor {
                  4 * (numXEdge + numYEdge + numZEdge) * edgeStencilLength + 8 * cornerStencilLength;
     numEntriesPerGridPlane = numZFace * interiorStencilLength + 2 * numXEdge * faceStencilLength +
                              2 * numYEdge * faceStencilLength + 4 * edgeStencilLength;
-    ;
     numEntriesBottomPlane = numZFace * faceStencilLength + 2 * numXEdge * edgeStencilLength +
                             2 * numYEdge * edgeStencilLength + 4 * cornerStencilLength;
-    ;
     numEntriesPerGridRow     = numXEdge * interiorStencilLength + 2 * faceStencilLength;
     numEntriesFrontRow       = numXEdge * faceStencilLength + 2 * edgeStencilLength;
     numEntriesBottomFrontRow = numXEdge * edgeStencilLength + 2 * cornerStencilLength;

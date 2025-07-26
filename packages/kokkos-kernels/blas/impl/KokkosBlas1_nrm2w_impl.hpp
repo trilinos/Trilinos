@@ -66,7 +66,6 @@ struct V_Nrm2w_Functor {
   void operator()(const size_type& i, value_type& sum) const {
     const value_type tmp = IPT::norm(m_x(i)) / IPT::norm(m_w(i));
     sum += tmp * tmp;
-    ;
   }
 
   KOKKOS_INLINE_FUNCTION void init(value_type& update) const { update = AT::zero(); }

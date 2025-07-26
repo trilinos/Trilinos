@@ -1517,7 +1517,6 @@ KOKKOS_INLINE_FUNCTION int InnerGemmFixC<1, 1>::serial_invoke(OpA opA, OpB opB, 
   if (!(m <= 1 && n <= 1)) Kokkos::abort("InnerGemmFixC<1,1>::serial_invoke, assert failure (m<=1 && n<=1)");
 
   return serial_invoke(opA, opB, alpha, A, B, k, C);
-  ;
 }
 
 }  // namespace KokkosBatched

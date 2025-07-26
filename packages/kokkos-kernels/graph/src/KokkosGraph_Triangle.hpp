@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOS_TRIANGLE_HPP
-#define _KOKKOS_TRIANGLE_HPP
+#ifndef KOKKOSGRAPH_TRIANGLE_HPP
+#define KOKKOSGRAPH_TRIANGLE_HPP
 #include "KokkosSparse_spgemm_impl.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_Handle.hpp"

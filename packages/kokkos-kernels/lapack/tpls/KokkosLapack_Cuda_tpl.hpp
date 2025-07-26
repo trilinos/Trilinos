@@ -27,22 +27,14 @@ CudaLapackSingleton::CudaLapackSingleton() {
   if (stat != CUSOLVER_STATUS_SUCCESS) Kokkos::abort("CUSOLVER initialization failed\n");
 }
 
-CudaLapackSingleton& CudaLapackSingleton::singleton() {
-  std::unique_ptr<CudaLapackSingleton>& instance = get_instance();
-  if (!instance) {
-    instance = std::make_unique<CudaLapackSingleton>();
-    Kokkos::push_finalize_hook([&]() {
-      cusolverDnDestroy(instance->handle);
-      instance.reset();
-    });
-  }
-  return *instance;
-}
+CudaLapackSingleton::~CudaLapackSingleton() { cusolverDnDestroy(handle); }
 
-bool CudaLapackSingleton::is_initialized() { return get_instance() != nullptr; }
+CudaLapackSingleton& CudaLapackSingleton::singleton() { return get_instance().get(); }
 
-std::unique_ptr<CudaLapackSingleton>& CudaLapackSingleton::get_instance() {
-  static std::unique_ptr<CudaLapackSingleton> s;
+bool CudaLapackSingleton::is_initialized() { return get_instance().is_initialized(); }
+
+KokkosKernels::Impl::Singleton<CudaLapackSingleton>& CudaLapackSingleton::get_instance() {
+  static KokkosKernels::Impl::Singleton<CudaLapackSingleton> s;
   return s;
 }
 

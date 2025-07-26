@@ -26,7 +26,7 @@ struct SerialTrtri<Uplo::Lower, ArgDiag, Algo::Trtri::Unblocked> {
   template <typename AViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const AViewType &A) {
     return SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(ArgDiag::use_unit_diag, A.extent(0), A.extent(1),
-                                                                    A.data(), A.stride_0(), A.stride_1());
+                                                                    A.data(), A.stride(0), A.stride(1));
   }
 };
 template <typename ArgDiag>

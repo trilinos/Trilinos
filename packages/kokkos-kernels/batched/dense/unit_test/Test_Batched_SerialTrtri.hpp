@@ -263,9 +263,7 @@ void impl_test_batched_trtri(const int N, const int K) {
   for (int i = 0; i < N; i++) {
     vgemm.A = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
     vgemm.B = Kokkos::subview(A_original, i, Kokkos::ALL(), Kokkos::ALL());
-    ;
     vgemm.C = Kokkos::subview(A_I, i, Kokkos::ALL(), Kokkos::ALL());
-    ;
     Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(K, Kokkos::AUTO, 16),
                          vgemm);
   }

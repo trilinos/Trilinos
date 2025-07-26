@@ -156,14 +156,14 @@ struct SparseRowView {
   /// \brief Constructor
   ///
   /// \param values   [in] Array of the row's values.
-  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param colidx [in] Array of the row's column indices.
   /// \param stride   [in] (Constant) stride between matrix entries in
   ///   each of the above arrays.
   /// \param count    [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
-  SparseRowView(value_type* const values, ordinal_type* const colidx__, const ordinal_type& stride,
+  SparseRowView(value_type* const values, ordinal_type* const colidx, const ordinal_type& stride,
                 const ordinal_type& count)
-      : values_(values), colidx_(colidx__), stride_(stride), length(count) {}
+      : values_(values), colidx_(colidx), stride_(stride), length(count) {}
 
   /// \brief Constructor with offset into \c colidx array
   /// \tparam OffsetType The type of \c idx (see above).  Must be a
@@ -172,17 +172,17 @@ struct SparseRowView {
   ///   but a number of entries that does not fit in int.
   ///
   /// \param values   [in] Array of the row's values.
-  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param colidx [in] Array of the row's column indices.
   /// \param stride   [in] (Constant) stride between matrix entries in
   ///                 each of the above arrays.
   /// \param count    [in] Number of entries in the row.
   /// \param idx      [in] Start offset into \c colidx array
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION SparseRowView(
-      const typename MatrixType::values_type& values, const typename MatrixType::index_type& colidx__,
+      const typename MatrixType::values_type& values, const typename MatrixType::index_type& colidx,
       const ordinal_type& stride, const ordinal_type& count, const OffsetType& idx,
       const typename std::enable_if<std::is_integral<OffsetType>::value, int>::type& = 0)
-      : values_(&values(idx)), colidx_(&colidx__(idx)), stride_(stride), length(count) {}
+      : values_(&values(idx)), colidx_(&colidx(idx)), stride_(stride), length(count) {}
 
   /// \brief Number of entries in the row.
   ///
@@ -245,14 +245,14 @@ struct SparseRowViewConst {
   /// \brief Constructor
   ///
   /// \param values   [in] Array of the row's values.
-  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param colidx [in] Array of the row's column indices.
   /// \param stride   [in] (Constant) stride between matrix entries in
   ///                 each of the above arrays.
   /// \param count    [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
-  SparseRowViewConst(value_type* const values, ordinal_type* const colidx__, const ordinal_type& stride,
+  SparseRowViewConst(value_type* const values, ordinal_type* const colidx, const ordinal_type& stride,
                      const ordinal_type& count)
-      : values_(values), colidx_(colidx__), stride_(stride), length(count) {}
+      : values_(values), colidx_(colidx), stride_(stride), length(count) {}
 
   /// \brief Constructor with offset into \c colidx array
   ///
@@ -261,17 +261,17 @@ struct SparseRowViewConst {
   ///   For example, the matrix may have dimensions that fit in int,
   ///   but a number of entries that does not fit in int.
   /// \param values   [in] Array of the row's values.
-  /// \param colidx__ [in] Array of the row's column indices.
+  /// \param colidx [in] Array of the row's column indices.
   /// \param stride   [in] (Constant) stride between matrix entries in
   ///                 each of the above arrays.
   /// \param count    [in] Number of entries in the row.
   /// \param idx      [in] Start offset into \c colidx array
   template <class OffsetType>
   KOKKOS_INLINE_FUNCTION SparseRowViewConst(
-      const typename MatrixType::values_type& values, const typename MatrixType::index_type& colidx__,
+      const typename MatrixType::values_type& values, const typename MatrixType::index_type& colidx,
       const ordinal_type& stride, const ordinal_type& count, const OffsetType& idx,
       const typename std::enable_if<std::is_integral<OffsetType>::value, int>::type& = 0)
-      : values_(&values(idx)), colidx_(&colidx__(idx)), stride_(stride), length(count) {}
+      : values_(&values(idx)), colidx_(&colidx(idx)), stride_(stride), length(count) {}
 
   /// \brief Number of entries in the row.
   ///
@@ -412,11 +412,18 @@ class CrsMatrix {
   //! Copy constructor (shallow copy).
   template <typename InScalar, typename InOrdinal, class InDevice, class InMemTraits, typename InSizeType>
   KOKKOS_INLINE_FUNCTION CrsMatrix(const CrsMatrix<InScalar, InOrdinal, InDevice, InMemTraits, InSizeType>& B)
-      : graph(B.graph.entries, B.graph.row_map), values(B.values), numCols_(B.numCols()), dev_config(B.dev_config) {
+      :
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+        graph(B.graph.entries, B.graph.row_map),
+#else
+        graph(B.graph),
+#endif
+        values(B.values),
+        numCols_(B.numCols()),
+        dev_config(B.dev_config) {
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
     graph.row_block_offsets = B.graph.row_block_offsets;
-    // TODO: MD 07/2017: Changed the copy constructor of graph
-    // as the constructor of StaticCrsGraph does not allow copy from non const
-    // version.
+#endif
   }
 
   //! Deep copy constructor (can cross spaces)
@@ -458,7 +465,15 @@ class CrsMatrix {
   CrsMatrix(const std::string& label,
             const StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_,
             const OrdinalType& ncols)
-      : graph(graph_.entries, graph_.row_map), values(label, graph_.entries.extent(0)), numCols_(ncols) {}
+      :
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+        graph(graph_.entries, graph_.row_map),
+#else
+        graph(graph_),
+#endif
+        values(label, graph_.entries.extent(0)),
+        numCols_(ncols) {
+  }
 
   /// \brief Constructor that accepts a a static graph, and values.
   ///
@@ -471,7 +486,16 @@ class CrsMatrix {
   template <typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
   CrsMatrix(const std::string&, const OrdinalType& ncols, const values_type& vals,
             const StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_)
-      : graph(graph_.entries, graph_.row_map), values(vals), numCols_(ncols) {}
+      :
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
+        graph(graph_.entries, graph_.row_map),
+#else
+        graph(graph_),
+#endif
+
+        values(vals),
+        numCols_(ncols) {
+  }
 
   /// \brief Constructor that copies raw arrays of host data in
   ///   3-array CRS (compressed row storage) format.

@@ -68,8 +68,8 @@ class JacobiPrec {
         }
     } else if (std::is_same<ArgMode, Mode::Team>::value) {
       auto diag_values_array = diag_values.data();
-      auto vs0               = diag_values.stride_0();
-      auto vs1               = diag_values.stride_1();
+      auto vs0               = diag_values.stride(0);
+      auto vs1               = diag_values.stride(1);
 
       Kokkos::parallel_reduce(
           Kokkos::TeamThreadRange(member, 0, n_operators * n_rows),
@@ -85,8 +85,8 @@ class JacobiPrec {
           tooSmall);
     } else if (std::is_same<ArgMode, Mode::TeamVector>::value) {
       auto diag_values_array = diag_values.data();
-      auto vs0               = diag_values.stride_0();
-      auto vs1               = diag_values.stride_1();
+      auto vs0               = diag_values.stride(0);
+      auto vs1               = diag_values.stride(1);
 
       Kokkos::parallel_reduce(
           Kokkos::TeamVectorRange(member, 0, n_operators * n_rows),

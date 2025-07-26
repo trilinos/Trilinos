@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSBSPGEMMIMPL_HPP
-#define _KOKKOSBSPGEMMIMPL_HPP
+#ifndef KOKKOSSPARSE_BSPGEMM_IMPL_HPP
+#define KOKKOSSPARSE_BSPGEMM_IMPL_HPP
 
 #include "KokkosSparse_spgemm_impl.hpp"
 
@@ -71,9 +71,9 @@ class KokkosBSPGEMM : public KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_v
             typename c_scalar_view_t, typename mpool_type>
   struct NumericCMEM_CPU;
 
-  template <typename a_row_view_t__, typename a_nnz_view_t__, typename a_scalar_view_t__, typename b_row_view_t__,
-            typename b_nnz_view_t__, typename b_scalar_view_t__, typename c_row_view_t__, typename c_nnz_view_t__,
-            typename c_scalar_view_t__, typename c_nnz_tmp_view_t>
+  template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t, typename b_row_view_t,
+            typename b_nnz_view_t, typename b_scalar_view_t, typename c_row_view_t, typename c_nnz_view_t,
+            typename c_scalar_view_t, typename c_nnz_tmp_view_t>
   struct NumericCMEM;
 
  private:

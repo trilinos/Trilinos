@@ -162,17 +162,25 @@ void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[], con
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
   if (std::is_same_v<ExecutionSpace, Kokkos::Cuda> && (A.extent(0) < A.extent(1))) {
     throw std::runtime_error(
-        "CUSOLVER does not support SVD for matrices with more columns "
-        "than rows, you can transpose you matrix first then compute "
-        "SVD of that transpose: At=VSUt, and swap the output U and Vt"
-        " and transpose them to recover the desired SVD.");
+        "KokkosLapack::svd: CUSOLVER does not support SVD for matrices"
+        " with more columns than rows, you can transpose you matrix first"
+        " then compute SVD of that transpose: At=VSUt, and swap the output"
+        " U and Vt and transpose them to recover the desired SVD.");
   }
 #endif
+
+  // Do some more checks on SVector before picking a unique layout for it
+  // as it is a rank-1 view.
+  if constexpr (std::is_same_v<typename SVector::array_layout, Kokkos::LayoutStride>) {
+    if (!S.span_is_contiguous()) {
+      throw std::runtime_error("KokkosLapack::svd: S does not have a contiguous span.");
+    }
+  }
 
   using AMatrix_Internal = Kokkos::View<typename AMatrix::non_const_value_type**, typename AMatrix::array_layout,
                                         typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-  using SVector_Internal = Kokkos::View<typename SVector::non_const_value_type*, typename SVector::array_layout,
+  using SVector_Internal = Kokkos::View<typename SVector::non_const_value_type*, Kokkos::LayoutLeft,
                                         typename SVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
   using UMatrix_Internal = Kokkos::View<typename UMatrix::non_const_value_type**, typename UMatrix::array_layout,

@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOS_GAUSSSEIDEL_HPP
-#define _KOKKOS_GAUSSSEIDEL_HPP
+#ifndef KOKKOSSPARSE_GAUSSSEIDEL_HPP
+#define KOKKOSSPARSE_GAUSSSEIDEL_HPP
 
 #include "KokkosSparse_gauss_seidel_spec.hpp"
 #include "KokkosKernels_Handle.hpp"

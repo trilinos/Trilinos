@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSGRAPH_DISTANCE2COLOR_IMPL_HPP
-#define _KOKKOSGRAPH_DISTANCE2COLOR_IMPL_HPP
+#ifndef KOKKOSGRAPH_DISTANCE2COLOR_IMPL_HPP
+#define KOKKOSGRAPH_DISTANCE2COLOR_IMPL_HPP
 
 #include <iomanip>
 #include <stdexcept>
@@ -1550,4 +1550,4 @@ void graph_print_distance2_color_histogram(KernelHandle* handle, bool csv = fals
 }  // namespace Impl
 }  // namespace KokkosGraph
 
-#endif  // _KOKKOSGRAPH_DISTANCE2COLOR_IMPL_HPP
+#endif  // KOKKOSGRAPH_DISTANCE2COLOR_IMPL_HPP
