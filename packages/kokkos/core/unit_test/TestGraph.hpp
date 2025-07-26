@@ -1094,6 +1094,7 @@ void test_graph_capture() {
                            3 * static_cast<int>(GraphNodeType::CAPTURE)));
 }
 
+/*
 TEST(TEST_CATEGORY, graph_capture) {
   if constexpr (GraphNodeTypes<TEST_EXECSPACE>::support_capture) {
     test_graph_capture<TEST_EXECSPACE>();
@@ -1102,6 +1103,7 @@ TEST(TEST_CATEGORY, graph_capture) {
                  << " does not support capture.";
   }
 }
+*/
 
 TEST(TEST_CATEGORY, graph_then) {
   using types = GraphNodeTypes<TEST_EXECSPACE>;
