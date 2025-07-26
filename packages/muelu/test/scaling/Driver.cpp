@@ -295,6 +295,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   std::string levelPerformanceModel = "no";
   clp.setOption("performance-model", &levelPerformanceModel, "runs the level-by-level performance mode options- 'no', 'yes' or 'verbose'");
 
+  bool performSacrifice = Node::is_gpu;
+  clp.setOption("sacrificial-solve", "no-sacrificial-solve", &performSacrifice, "Warm up the solver using a sacrificial solve");
+
   bool kokkosTuning = false;
 #ifdef KOKKOS_ENABLE_TUNING
   clp.setOption("tuning-with-kokkos", "no-tuning-with-kokkos", &kokkosTuning, "enable Kokkos tuning inferface");
@@ -323,7 +326,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   if (yamlFileName != "") {
     Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   } else {
-    if (inst == Xpetra::COMPLEX_INT_INT)
+    if (Node::is_gpu)
+      xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-gpu.xml");
+    else if (inst == Xpetra::COMPLEX_INT_INT)
       xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling-complex.xml");
     else
       xmlFileName = (xmlFileName != "" ? xmlFileName : "scaling.xml");
@@ -591,7 +596,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         // =========================================================================
         // Solve the system numResolves+1 times
         try {
-          SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess);
+          SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrifice);
 
           comm->barrier();
         } catch (const std::exception& e) {
