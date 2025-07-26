@@ -64,7 +64,7 @@ struct SerialLeftHouseholderInternal {
     const mag_type norm_x = Kokkos::ArithTraits<mag_type>::sqrt(norm_x2_square + norm_chi1 * norm_chi1);
 
     /// compute alpha
-    const mag_type alpha = (*chi1 < Kokkos::ArithTraits<value_type>::zero() ? one : minus_one) * norm_x;
+    const mag_type alpha = (Kokkos::real(*chi1) < Kokkos::ArithTraits<mag_type>::zero() ? one : minus_one) * norm_x;
 
     /// overwrite x2 with u2
     const value_type chi1_minus_alpha     = *chi1 - alpha;
