@@ -14,7 +14,7 @@
 
     This example uses the following Trilinos packages:
     \li        Pamgen to generate a Hexahedral mesh.
-    \li        Intrepid to build the discretization matrices and right-hand side.
+    \li        Intrepid2 to build the discretization matrices and right-hand side.
     \li        Epetra to handle the global matrix and vector.
     \li        ML to solve the linear system.
 
@@ -64,19 +64,20 @@
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_Pamgen_Utils.hpp"
-#include "TrilinosCouplings_Statistics.hpp"
+#include "TrilinosCouplings_Statistics_Intrepid2.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExample_SolveWithBelos.hpp"
 
-// Intrepid includes
-#include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_CellTools.hpp"
-#include "Intrepid_ArrayTools.hpp"
-#include "Intrepid_HCURL_HEX_I1_FEM.hpp"
-#include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid_RealSpaceTools.hpp"
-#include "Intrepid_DefaultCubatureFactory.hpp"
-#include "Intrepid_Utils.hpp"
+// Intrepid2 includes
+#include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_ScalarView.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_ArrayTools.hpp"
+#include "Intrepid2_HCURL_HEX_I1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_RealSpaceTools.hpp"
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_Utils.hpp"
+#include "Intrepid2_CellGeometry.hpp"
 
 // Kokkos includes
 #include "Kokkos_Core.hpp"
@@ -162,7 +163,7 @@
 
 
 using namespace std;
-using namespace Intrepid;
+using namespace Intrepid2;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -200,9 +201,17 @@ typedef Xpetra::MultiVector<SC,LO,GO,NO> Xpetra_MultiVector;
 /*********************************************************/
 /*                     Typedefs                          */
 /*********************************************************/
-typedef Intrepid::FunctionSpaceTools     IntrepidFSTools;
-typedef Intrepid::RealSpaceTools<double> IntrepidRSTools;
-typedef Intrepid::CellTools<double>      IntrepidCTools;
+// Tpetra typedefs
+typedef Tpetra::Map<> Map;
+
+typedef Map::node_type::memory_space memory_space;
+typedef Map::node_type::device_type device_type;
+
+typedef Intrepid2::FunctionSpaceTools<device_type>     Intrepid2FSTools;
+typedef Intrepid2::CellTools<device_type>      Intrepid2CTools;
+typedef Intrepid2::ScalarView<int, memory_space> Intrepid2ScalarViewint;
+typedef Intrepid2::ScalarView<double, memory_space> Intrepid2ScalarViewdouble;
+typedef Intrepid2::ScalarView<bool, memory_space> Intrepid2ScalarViewbool;
 
 
 struct fecomp{
@@ -440,10 +449,10 @@ int body(int argc, char *argv[]) {
       << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
       << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
       << "|                                                                             |\n" \
-      << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-      << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen             |\n" \
-      << "|  MueLu's website:    http://trilinos.sandia.gov/packages/muelu              |\n" \
-      << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+      << "|  Intrepid2's website: http://trilinos.sandia.gov/packages/intrepid2         |\n" \
+      << "|  Pamgen's website:    http://trilinos.sandia.gov/packages/pamgen            |\n" \
+      << "|  MueLu's website:     http://trilinos.sandia.gov/packages/muelu             |\n" \
+      << "|  Trilinos website:    http://trilinos.sandia.gov                            |\n" \
       << "|                                                                             |\n" \
       << "===============================================================================\n";
   }
@@ -566,14 +575,14 @@ int body(int argc, char *argv[]) {
   int spaceDim = cellType.getDimension();
 
   // Build reference element edge to node map
-  FieldContainer<int> refEdgeToNode(numEdgesPerElem,numNodesPerEdge);
+  Intrepid2ScalarViewint refEdgeToNode("refEdgeToNode",numEdgesPerElem,numNodesPerEdge);
   for (int i=0; i<numEdgesPerElem; i++){
     refEdgeToNode(i,0)=cellType.getNodeMap(1, i, 0);
     refEdgeToNode(i,1)=cellType.getNodeMap(1, i, 1);
   }
 
   // Build reference element face to node map
-  FieldContainer<int> refFaceToNode(numFacesPerElem,numNodesPerFace);
+  Intrepid2ScalarViewint refFaceToNode("refFaceToNode", numFacesPerElem,numNodesPerFace);
   for (int i=0; i<numFacesPerElem; i++){
     refFaceToNode(i,0)=cellType.getNodeMap(2, i, 0);
     refFaceToNode(i,1)=cellType.getNodeMap(2, i, 1);
@@ -582,7 +591,7 @@ int body(int argc, char *argv[]) {
   }
 
   // Build reference element face to edge map (Hardcoded for now)
-  FieldContainer<int> refFaceToEdge(numFacesPerElem,numEdgesPerFace);
+  Intrepid2ScalarViewint refFaceToEdge("refFaceToEdge", numFacesPerElem,numEdgesPerFace);
   refFaceToEdge(0,0)=0; refFaceToEdge(0,1)=9;
   refFaceToEdge(0,2)=4; refFaceToEdge(0,3)=8;
   refFaceToEdge(1,0)=1; refFaceToEdge(1,1)=10;
@@ -687,9 +696,9 @@ int body(int argc, char *argv[]) {
 
   // Get node-element connectivity and set element mu/sigma value
   int telct = 0;
-  FieldContainer<int> elemToNode(numElems,numNodesPerElem);
-  FieldContainer<double> muVal(numElems);
-  FieldContainer<double> sigmaVal(numElems);
+  Intrepid2ScalarViewint elemToNode("elemToNode", numElems,numNodesPerElem);
+  Intrepid2ScalarViewdouble muVal("muVal", numElems);
+  Intrepid2ScalarViewdouble sigmaVal("sigmaVal", numElems);
 
   for(long long b = 0; b < numElemBlk; b++){
     for(long long el = 0; el < elements[b]; el++){
@@ -704,7 +713,7 @@ int body(int argc, char *argv[]) {
   }
 
   // Read node coordinates and place in field container
-  FieldContainer<double> nodeCoord(numNodes,dim);
+  Intrepid2ScalarViewdouble nodeCoord("nodeCoord", numNodes,dim);
   double * nodeCoordx = new double [numNodes];
   double * nodeCoordy = new double [numNodes];
   double * nodeCoordz = new double [numNodes];
@@ -790,8 +799,8 @@ int body(int argc, char *argv[]) {
       oidx++;
     }
 
-  FieldContainer<int> elemToEdge(numElems,numEdgesPerElem);
-  FieldContainer<int> elemToFace(numElems,numFacesPerElem);
+  Intrepid2ScalarViewint elemToEdge("elemToEdge",numElems,numEdgesPerElem);
+  Intrepid2ScalarViewint elemToFace("elemToFace",numElems,numFacesPerElem);
 
   // Calculate edge and face ids
   int elct = 0;
@@ -844,7 +853,7 @@ int body(int argc, char *argv[]) {
   }
 
   // Edge to Node connectivity
-  FieldContainer<int> edgeToNode(edge_vector.size(), numNodesPerEdge);
+  Intrepid2ScalarViewint edgeToNode("edgeToNode", edge_vector.size(), numNodesPerEdge);
   for(unsigned ect = 0; ect != edge_vector.size(); ect++){
     std::list<long long>::iterator elit;
     int nct = 0;
@@ -857,7 +866,7 @@ int body(int argc, char *argv[]) {
   }
 
   // Face to Node connectivity
-  FieldContainer<int> faceToNode(face_vector.size(), numNodesPerFace);
+  Intrepid2ScalarViewint faceToNode("faceToNode", face_vector.size(), numNodesPerFace);
   for(unsigned fct = 0; fct != face_vector.size(); fct++){
     std::list<long long>::iterator flit;
     int nct = 0;
@@ -870,8 +879,8 @@ int body(int argc, char *argv[]) {
   }
 
   // Face to Edge connectivity
-  FieldContainer<int> faceToEdge(face_vector.size(), numEdgesPerFace);
-  FieldContainer<bool> faceDone(face_vector.size());
+  Intrepid2ScalarViewint faceToEdge("faceToEdge", face_vector.size(), numEdgesPerFace);
+  Intrepid2ScalarViewbool faceDone("faceDone", face_vector.size());
   for (int ielem = 0; ielem < numElems; ielem++){
     for (int iface = 0; iface < numFacesPerElem; iface++){
       if (!faceDone(elemToFace(ielem,iface))){
@@ -966,8 +975,8 @@ int body(int argc, char *argv[]) {
 
 
   // Container indicating whether a face is on the boundary (1-yes 0-no)
-  FieldContainer<int> edgeOnBoundary(numEdges);
-  FieldContainer<int> faceOnBoundary(numFaces);
+  Intrepid2ScalarViewint edgeOnBoundary("edgeOnBoundary", numEdges);
+  Intrepid2ScalarViewint faceOnBoundary("faceOnBoundary",numFaces);
 
   // Get boundary (side set) information
   long long * sideSetIds = new long long [numSideSets];
@@ -997,7 +1006,7 @@ int body(int argc, char *argv[]) {
 
 
   // Container indicating whether a node is on the boundary (1-yes 0-no)
-  FieldContainer<int> nodeOnBoundary(numNodes);
+  Intrepid2ScalarViewint nodeOnBoundary("nodeOnBoundary", numNodes);
   int numEdgeOnBndy=0;
   for (int i=0; i<numEdges; i++) {
     if (edgeOnBoundary(i)){
@@ -1101,15 +1110,15 @@ int body(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Get numerical integration points and weights for cell
-  DefaultCubatureFactory<double>  cubFactory;
+  DefaultCubatureFactory  cubFactory;
   int cubDegree = 2;
-  RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree);
+  RCP<Intrepid2::Cubature<device_type> > hexCub = cubFactory.create<device_type>(cellType, cubDegree);
 
   int cubDim       = hexCub->getDimension();
   int numCubPoints = hexCub->getNumPoints();
 
-  FieldContainer<double> cubPoints(numCubPoints, cubDim);
-  FieldContainer<double> cubWeights(numCubPoints);
+  Intrepid2ScalarViewdouble cubPoints("cubPoints", numCubPoints, cubDim);
+  Intrepid2ScalarViewdouble cubWeights("cubWeights", numCubPoints);
 
   hexCub->getCubature(cubPoints, cubWeights);
 
@@ -1122,14 +1131,14 @@ int body(int argc, char *argv[]) {
   shards::CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
 
   // Define cubature
-  DefaultCubatureFactory<double>  cubFactoryFace;
-  RCP<Cubature<double> > hexFaceCubature = cubFactoryFace.create(paramQuadFace, 3);
+  Intrepid2::DefaultCubatureFactory  cubFactoryFace;
+  RCP<Intrepid2::Cubature<device_type> > hexFaceCubature = cubFactoryFace.create<device_type>(paramQuadFace, 3);
   int cubFaceDim    = hexFaceCubature -> getDimension();
   int numFacePoints = hexFaceCubature -> getNumPoints();
 
   // Define storage for cubature points and weights on [-1,1]x[-1,1]
-  FieldContainer<double> paramFaceWeights(numFacePoints);
-  FieldContainer<double> paramFacePoints(numFacePoints,cubFaceDim);
+  Intrepid2ScalarViewdouble paramFaceWeights("paramFaceWeights", numFacePoints);
+  Intrepid2ScalarViewdouble paramFacePoints("paramFacePoints", numFacePoints,cubFaceDim);
 
   // Define storage for cubature points on workset faces
   hexFaceCubature -> getCubature(paramFacePoints, paramFaceWeights);
@@ -1143,14 +1152,14 @@ int body(int argc, char *argv[]) {
   shards::CellTopology paramEdge(shards::getCellTopologyData<shards::Line<2> >() );
 
   // Define cubature
-  DefaultCubatureFactory<double>  cubFactoryEdge;
-  RCP<Cubature<double> > hexEdgeCubature = cubFactoryEdge.create(paramEdge, 3);
+  Intrepid2::DefaultCubatureFactory  cubFactoryEdge;
+  RCP<Intrepid2::Cubature<device_type> > hexEdgeCubature = cubFactoryEdge.create<device_type>(paramEdge, 3);
   int cubEdgeDim    = hexEdgeCubature -> getDimension();
   int numEdgePoints = hexEdgeCubature -> getNumPoints();
 
   // Define storage for cubature points and weights on [-1,1]
-  FieldContainer<double> paramEdgeWeights(numEdgePoints);
-  FieldContainer<double> paramEdgePoints(numEdgePoints,cubEdgeDim);
+  Intrepid2ScalarViewdouble paramEdgeWeights("paramEdgeWeights", numEdgePoints);
+  Intrepid2ScalarViewdouble paramEdgePoints("paramEdgePoints", numEdgePoints,cubEdgeDim);
 
   // Define storage for cubature points on workset faces
   hexEdgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
@@ -1164,21 +1173,21 @@ int body(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Define basis
-  Basis_HCURL_HEX_I1_FEM<double, FieldContainer<double> > hexHCurlBasis;
-  Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
+  auto hexHCurlBasis = Intrepid2::getBasis<Intrepid2::DerivedNodalBasisFamily<device_type> >(cellType, Intrepid2::FUNCTION_SPACE_HCURL, 1);
+  auto hexHGradBasis = Intrepid2::getBasis<Intrepid2::DerivedNodalBasisFamily<device_type> >(cellType, Intrepid2::FUNCTION_SPACE_HGRAD, 1);
 
-  int numFieldsC = hexHCurlBasis.getCardinality();
-  int numFieldsG = hexHGradBasis.getCardinality();
+  int numFieldsC = hexHCurlBasis->getCardinality();
+  int numFieldsG = hexHGradBasis->getCardinality();
 
   // Evaluate basis at cubature points
-  FieldContainer<double> HGVals(numFieldsG, numCubPoints);
-  FieldContainer<double> HCVals(numFieldsC, numCubPoints, spaceDim);
-  FieldContainer<double> HCurls(numFieldsC, numCubPoints, spaceDim);
-  FieldContainer<double> worksetCVals(numFieldsC, numFacePoints, spaceDim);
+  Intrepid2ScalarViewdouble HGVals("HGVals", numFieldsG, numCubPoints);
+  Intrepid2ScalarViewdouble HCVals("HCVals", numFieldsC, numCubPoints, spaceDim);
+  Intrepid2ScalarViewdouble HCurls("HCurls", numFieldsC, numCubPoints, spaceDim);
+  Intrepid2ScalarViewdouble worksetCVals("worksetCVals", numFieldsC, numFacePoints, spaceDim);
 
-  hexHCurlBasis.getValues(HCVals, cubPoints, OPERATOR_VALUE);
-  hexHCurlBasis.getValues(HCurls, cubPoints, OPERATOR_CURL);
-  hexHGradBasis.getValues(HGVals, cubPoints, OPERATOR_VALUE);
+  hexHCurlBasis->getValues(HCVals, cubPoints, OPERATOR_VALUE);
+  hexHCurlBasis->getValues(HCurls, cubPoints, OPERATOR_CURL);
+  hexHGradBasis->getValues(HGVals, cubPoints, OPERATOR_VALUE);
 
   if(MyPID==0) {std::cout << "Getting basis                               \n";}
 
@@ -1443,16 +1452,16 @@ int body(int argc, char *argv[]) {
   /******************** INHOMOGENEOUS BOUNDARY CONDITIONS ***************************/
   /**********************************************************************************/
 
-  FieldContainer<double> bndyEdgeVal(numEdgeOnBndy);
-  FieldContainer<int>    bndyEdgeToEdge(numEdges);
-  FieldContainer<bool>   bndyEdgeDone(numEdges);
-  FieldContainer<double> refEdgePoints(numEdgePoints,spaceDim);
-  FieldContainer<double> bndyEdgePoints(1,numEdgePoints,spaceDim);
-  FieldContainer<double> bndyEdgeJacobians(1,numEdgePoints,spaceDim,spaceDim);
-  FieldContainer<double> edgeTan(1,numEdgePoints,spaceDim);
-  FieldContainer<double> uDotTangent(numEdgePoints);
-  FieldContainer<double> uEdge(numEdgePoints,spaceDim);
-  FieldContainer<double> nodes(1, numNodesPerElem, spaceDim);
+  Intrepid2ScalarViewdouble bndyEdgeVal("bndyEdgeVal", numEdgeOnBndy);
+  Intrepid2ScalarViewint    bndyEdgeToEdge("bndyEdgeToEdge", numEdges);
+  Intrepid2ScalarViewbool   bndyEdgeDone("bndyEdgeDone", numEdges);
+  Intrepid2ScalarViewdouble refEdgePoints("refEdgePoints",numEdgePoints,spaceDim);
+  Intrepid2ScalarViewdouble bndyEdgePoints("bndyEdgePoints",1,numEdgePoints,spaceDim);
+  Intrepid2ScalarViewdouble bndyEdgeJacobians("bndyEdgeJacobians",1,numEdgePoints,spaceDim,spaceDim);
+  Intrepid2ScalarViewdouble edgeTan("edgeTan",1,numEdgePoints,spaceDim);
+  Intrepid2ScalarViewdouble uDotTangent("uDotTangent",numEdgePoints);
+  Intrepid2ScalarViewdouble uEdge("uEdge",numEdgePoints,spaceDim);
+  Intrepid2ScalarViewdouble nodes("nodes", 1, numNodesPerElem, spaceDim);
 
   int ibedge=0;
   // Evaluate tangent at edge quadrature points
@@ -1466,21 +1475,21 @@ int body(int argc, char *argv[]) {
       if(edgeOnBoundary(elemToEdge(ielem,iedge)) && !bndyEdgeDone(elemToEdge(ielem,iedge))){
 
         // map evaluation points from reference edge to reference cell
-        IntrepidCTools::mapToReferenceSubcell(refEdgePoints,
+        Intrepid2CTools::mapToReferenceSubcell(refEdgePoints,
                                               paramEdgePoints,
                                               1, iedge, cellType);
 
         // calculate Jacobian
-        IntrepidCTools::setJacobian(bndyEdgeJacobians, refEdgePoints,
+        Intrepid2CTools::setJacobian(bndyEdgeJacobians, refEdgePoints,
                                     nodes, cellType);
 
         // map evaluation points from reference cell to physical cell
-        IntrepidCTools::mapToPhysicalFrame(bndyEdgePoints,
+        Intrepid2CTools::mapToPhysicalFrame(bndyEdgePoints,
                                            refEdgePoints,
                                            nodes, cellType);
 
         // Compute edge tangents
-        IntrepidCTools::getPhysicalEdgeTangents(edgeTan,
+        Intrepid2CTools::getPhysicalEdgeTangents(edgeTan,
                                                 bndyEdgeJacobians,
                                                 iedge, cellType);
 
@@ -1571,8 +1580,8 @@ int body(int argc, char *argv[]) {
 
     // Now we know the actual workset size and can allocate the array for the cell nodes
     worksetSize  = worksetEnd - worksetBegin;
-    FieldContainer<double> cellWorkset(worksetSize, numNodesPerElem, spaceDim);
-    FieldContainer<double> worksetEdgeSigns(worksetSize, numEdgesPerElem);
+    Intrepid2ScalarViewdouble cellWorkset("cellWorkset", worksetSize, numNodesPerElem, spaceDim);
+    Intrepid2ScalarViewdouble worksetEdgeSigns("worksetEdgeSigns", worksetSize, numEdgesPerElem);
 
     // Copy coordinates into cell workset
     int cellCounter = 0;
@@ -1628,62 +1637,62 @@ int body(int argc, char *argv[]) {
     /**********************************************************************************/
 
     // Containers for Jacobian
-    FieldContainer<double> worksetJacobian (worksetSize, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetJacobInv (worksetSize, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetJacobDet (worksetSize, numCubPoints);
+    Intrepid2ScalarViewdouble worksetJacobian ("worksetJacobian", worksetSize, numCubPoints, spaceDim, spaceDim);
+    Intrepid2ScalarViewdouble worksetJacobInv ("worksetJacobInv", worksetSize, numCubPoints, spaceDim, spaceDim);
+    Intrepid2ScalarViewdouble worksetJacobDet ("worksetJacobDet", worksetSize, numCubPoints);
 
     // Container for cubature points in physical space
-    FieldContainer<double> worksetCubPoints (worksetSize,numCubPoints, cubDim);
+    Intrepid2ScalarViewdouble worksetCubPoints ("worksetCubPoints", worksetSize,numCubPoints, cubDim);
 
     // Containers for element HGRAD mass matrix
-    FieldContainer<double> massMatrixHGrad           (worksetSize, numFieldsG, numFieldsG);
-    FieldContainer<double> weightedMeasure           (worksetSize, numCubPoints);
-    FieldContainer<double> weightedMeasureMuInv      (worksetSize, numCubPoints);
-    FieldContainer<double> HGValsTransformed         (worksetSize, numFieldsG, numCubPoints);
-    FieldContainer<double> HGValsTransformedWeighted (worksetSize, numFieldsG, numCubPoints);
+    Intrepid2ScalarViewdouble massMatrixHGrad           ("massMatrixHGrad", worksetSize, numFieldsG, numFieldsG);
+    Intrepid2ScalarViewdouble weightedMeasure           ("weightedMeasure", worksetSize, numCubPoints);
+    Intrepid2ScalarViewdouble weightedMeasureMuInv      ("weightedMeasureMuInv", worksetSize, numCubPoints);
+    Intrepid2ScalarViewdouble HGValsTransformed         ("HGValsTransformed", worksetSize, numFieldsG, numCubPoints);
+    Intrepid2ScalarViewdouble HGValsTransformedWeighted ("HGValsTransformedWeighted", worksetSize, numFieldsG, numCubPoints);
 
     // Containers for element HCURL mass matrix
-    FieldContainer<double> massMatrixHCurl           (worksetSize, numFieldsC, numFieldsC);
-    FieldContainer<double> massMatrixHCurlNoSigma    (worksetSize, numFieldsC, numFieldsC);
-    FieldContainer<double> weightedMeasureSigma      (worksetSize, numCubPoints);
-    FieldContainer<double> HCValsTransformed         (worksetSize, numFieldsC, numCubPoints, spaceDim);
-    FieldContainer<double> HCValsTransformedWeighted (worksetSize, numFieldsC, numCubPoints, spaceDim);
-    FieldContainer<double> HCValsTransformedWeightedNoSigma (worksetSize, numFieldsC, numCubPoints, spaceDim);
+    Intrepid2ScalarViewdouble massMatrixHCurl           ("massMatrixHCurl", worksetSize, numFieldsC, numFieldsC);
+    Intrepid2ScalarViewdouble massMatrixHCurlNoSigma    ("massMatrixHCurlNoSigma", worksetSize, numFieldsC, numFieldsC);
+    Intrepid2ScalarViewdouble weightedMeasureSigma      ("weightedMeasureSigma", worksetSize, numCubPoints);
+    Intrepid2ScalarViewdouble HCValsTransformed         ("HCValsTransformed", worksetSize, numFieldsC, numCubPoints, spaceDim);
+    Intrepid2ScalarViewdouble HCValsTransformedWeighted ("HCValsTransformedWeighted", worksetSize, numFieldsC, numCubPoints, spaceDim);
+    Intrepid2ScalarViewdouble HCValsTransformedWeightedNoSigma ("HCValsTransformedWeightedNoSigma", worksetSize, numFieldsC, numCubPoints, spaceDim);
 
     // Containers for element HCURL stiffness matrix
-    FieldContainer<double> stiffMatrixHCurl          (worksetSize, numFieldsC, numFieldsC);
-    FieldContainer<double> weightedMeasureMu         (worksetSize, numCubPoints);
-    FieldContainer<double> HCurlsTransformed         (worksetSize, numFieldsC, numCubPoints, spaceDim);
-    FieldContainer<double> HCurlsTransformedWeighted (worksetSize, numFieldsC, numCubPoints, spaceDim);
+    Intrepid2ScalarViewdouble stiffMatrixHCurl          ("stiffMatrixHCurl", worksetSize, numFieldsC, numFieldsC);
+    Intrepid2ScalarViewdouble weightedMeasureMu         ("weightedMeasureMu", worksetSize, numCubPoints);
+    Intrepid2ScalarViewdouble HCurlsTransformed         ("HCurlsTransformed", worksetSize, numFieldsC, numCubPoints, spaceDim);
+    Intrepid2ScalarViewdouble HCurlsTransformedWeighted ("HCurlsTransformedWeighted", worksetSize, numFieldsC, numCubPoints, spaceDim);
 
     // Containers for right hand side vectors
-    FieldContainer<double> rhsDatag           (worksetSize, numCubPoints, cubDim);
-    FieldContainer<double> rhsDatah           (worksetSize, numCubPoints, cubDim);
-    FieldContainer<double> gC                 (worksetSize, numFieldsC);
-    FieldContainer<double> hC                 (worksetSize, numFieldsC);
+    Intrepid2ScalarViewdouble rhsDatag           ("rhsDatag", worksetSize, numCubPoints, cubDim);
+    Intrepid2ScalarViewdouble rhsDatah           ("rhsDatah", worksetSize, numCubPoints, cubDim);
+    Intrepid2ScalarViewdouble gC                 ("gC", worksetSize, numFieldsC);
+    Intrepid2ScalarViewdouble hC                 ("hC", worksetSize, numFieldsC);
 
     // Containers for right hand side boundary term
-    FieldContainer<double> hCBoundary         (1, numFieldsC);
-    FieldContainer<double> refFacePoints      (numFacePoints,spaceDim);
-    FieldContainer<double> cellNodes          (1, numNodesPerElem, spaceDim);
-    FieldContainer<double> worksetFacePoints  (1, numFacePoints, spaceDim);
-    FieldContainer<double> faceJacobians      (1, numFacePoints, spaceDim, spaceDim);
-    FieldContainer<double> faceJacobInv       (1, numFacePoints, spaceDim, spaceDim);
-    FieldContainer<double> faceNormal         (1, numFacePoints, spaceDim);
-    FieldContainer<double> bcFaceCVals        (numFieldsC, numFacePoints, spaceDim);
-    FieldContainer<double> faceVFieldVals     (1, numFacePoints, spaceDim);
-    FieldContainer<double> bcCValsTransformed (1, numFieldsC, numFacePoints, spaceDim);
-    FieldContainer<double> bcFieldDotNormal   (1, numFieldsC, numFacePoints);
-    FieldContainer<double> bcEdgeSigns        (1, numFieldsC);
+    Intrepid2ScalarViewdouble hCBoundary         ("hCBoundary", 1, numFieldsC);
+    Intrepid2ScalarViewdouble refFacePoints      ("refFacePoints", numFacePoints,spaceDim);
+    Intrepid2ScalarViewdouble cellNodes          ("cellNodes", 1, numNodesPerElem, spaceDim);
+    Intrepid2ScalarViewdouble worksetFacePoints  ("worksetFacePoints", 1, numFacePoints, spaceDim);
+    Intrepid2ScalarViewdouble faceJacobians      ("faceJacobians", 1, numFacePoints, spaceDim, spaceDim);
+    Intrepid2ScalarViewdouble faceJacobInv       ("faceJacobInv", 1, numFacePoints, spaceDim, spaceDim);
+    Intrepid2ScalarViewdouble faceNormal         ("faceNormal", 1, numFacePoints, spaceDim);
+    Intrepid2ScalarViewdouble bcFaceCVals        ("bcFaceCVals", numFieldsC, numFacePoints, spaceDim);
+    Intrepid2ScalarViewdouble faceVFieldVals     ("faceVFieldVals", 1, numFacePoints, spaceDim);
+    Intrepid2ScalarViewdouble bcCValsTransformed ("bcCValsTransformed", 1, numFieldsC, numFacePoints, spaceDim);
+    Intrepid2ScalarViewdouble bcFieldDotNormal   ("bcFieldDotNormal", 1, numFieldsC, numFacePoints);
+    Intrepid2ScalarViewdouble bcEdgeSigns        ("bcEdgeSigns", 1, numFieldsC);
 
 
     /**********************************************************************************/
     /*                                Calculate Jacobians                             */
     /**********************************************************************************/
 
-    IntrepidCTools::setJacobian   (worksetJacobian, cubPoints, cellWorkset, cellType);
-    IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
-    IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
+    Intrepid2CTools::setJacobian   (worksetJacobian, cubPoints, cellWorkset, cellType);
+    Intrepid2CTools::setJacobianInv(worksetJacobInv, worksetJacobian );
+    Intrepid2CTools::setJacobianDet(worksetJacobDet, worksetJacobian );
 
     if(MyPID==0) {std::cout << "Calculate Jacobians                         \n";}
 
@@ -1694,10 +1703,10 @@ int body(int argc, char *argv[]) {
     /**********************************************************************************/
 
     // transform to physical coordinates
-    IntrepidFSTools::HGRADtransformVALUE<double>(HGValsTransformed, HGVals);
+    Intrepid2FSTools::HGRADtransformVALUE(HGValsTransformed, HGVals);
 
     // compute weighted measure
-    IntrepidFSTools::computeCellMeasure<double>(weightedMeasure, worksetJacobDet, cubWeights);
+    Intrepid2FSTools::computeCellMeasure(weightedMeasure, worksetJacobDet, cubWeights);
 
     // combine mu value with weighted measure
     cellCounter = 0;
@@ -1709,12 +1718,12 @@ int body(int argc, char *argv[]) {
     }
 
     // multiply values with weighted measure
-    IntrepidFSTools::multiplyMeasure<double>(HGValsTransformedWeighted,
+    Intrepid2FSTools::multiplyMeasure(HGValsTransformedWeighted,
                                              weightedMeasureMuInv, HGValsTransformed);
 
     // integrate to compute element mass matrix
-    IntrepidFSTools::integrate<double>(massMatrixHGrad,
-                                       HGValsTransformed, HGValsTransformedWeighted, COMP_BLAS);
+    Intrepid2FSTools::integrate(massMatrixHGrad,
+                                       HGValsTransformed, HGValsTransformedWeighted);
 
     if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   \n";}
 
@@ -1727,7 +1736,7 @@ int body(int argc, char *argv[]) {
     /**********************************************************************************/
 
     // transform to physical coordinates
-    IntrepidFSTools::HCURLtransformVALUE<double>(HCValsTransformed, worksetJacobInv,
+    Intrepid2FSTools::HCURLtransformVALUE(HCValsTransformed, worksetJacobInv,
                                                  HCVals);
 
     // combine sigma value with weighted measure
@@ -1740,27 +1749,25 @@ int body(int argc, char *argv[]) {
     }
 
     // multiply by weighted measure
-    IntrepidFSTools::multiplyMeasure<double>(HCValsTransformedWeighted,
+    Intrepid2FSTools::multiplyMeasure(HCValsTransformedWeighted,
                                              weightedMeasureSigma, HCValsTransformed);
 
     // integrate to compute element mass matrix
-    IntrepidFSTools::integrate<double>(massMatrixHCurl,
-                                       HCValsTransformed, HCValsTransformedWeighted,
-                                       COMP_BLAS);
+    Intrepid2FSTools::integrate(massMatrixHCurl,
+                                       HCValsTransformed, HCValsTransformedWeighted);
 
     // apply edge signs
-    IntrepidFSTools::applyLeftFieldSigns<double> (massMatrixHCurl, worksetEdgeSigns);
-    IntrepidFSTools::applyRightFieldSigns<double>(massMatrixHCurl, worksetEdgeSigns);
+    Intrepid2FSTools::applyLeftFieldSigns (massMatrixHCurl, worksetEdgeSigns);
+    Intrepid2FSTools::applyRightFieldSigns(massMatrixHCurl, worksetEdgeSigns);
 
 
     // Now for the no-sigma version
-    IntrepidFSTools::multiplyMeasure<double>(HCValsTransformedWeightedNoSigma,
+    Intrepid2FSTools::multiplyMeasure(HCValsTransformedWeightedNoSigma,
                                              weightedMeasure, HCValsTransformed);
 
     // integrate to compute element mass matrix
-    IntrepidFSTools::integrate<double>(massMatrixHCurlNoSigma,
-                                       HCValsTransformed, HCValsTransformedWeightedNoSigma,
-                                       COMP_BLAS);
+    Intrepid2FSTools::integrate(massMatrixHCurlNoSigma,
+                                       HCValsTransformed, HCValsTransformedWeightedNoSigma);
 
     if(MyPID==0) {std::cout << "Compute HCURL Mass Matrix                   \n";}
 
@@ -1771,7 +1778,7 @@ int body(int argc, char *argv[]) {
     /**********************************************************************************/
 
     // transform to physical coordinates
-    IntrepidFSTools::HCURLtransformCURL<double>(HCurlsTransformed, worksetJacobian, worksetJacobDet,
+    Intrepid2FSTools::HCURLtransformCURL(HCurlsTransformed, worksetJacobian, worksetJacobDet,
                                                 HCurls);
 
     // combine mu value with weighted measure
@@ -1784,17 +1791,16 @@ int body(int argc, char *argv[]) {
     }
 
     // multiply by weighted measure
-    IntrepidFSTools::multiplyMeasure<double>(HCurlsTransformedWeighted,
+    Intrepid2FSTools::multiplyMeasure(HCurlsTransformedWeighted,
                                              weightedMeasureMuInv, HCurlsTransformed);
 
     // integrate to compute element stiffness matrix
-    IntrepidFSTools::integrate<double>(stiffMatrixHCurl,
-                                       HCurlsTransformed, HCurlsTransformedWeighted,
-                                       COMP_BLAS);
+    Intrepid2FSTools::integrate(stiffMatrixHCurl,
+                                       HCurlsTransformed, HCurlsTransformedWeighted);
 
     // apply edge signs
-    IntrepidFSTools::applyLeftFieldSigns<double> (stiffMatrixHCurl, worksetEdgeSigns);
-    IntrepidFSTools::applyRightFieldSigns<double>(stiffMatrixHCurl, worksetEdgeSigns);
+    Intrepid2FSTools::applyLeftFieldSigns (stiffMatrixHCurl, worksetEdgeSigns);
+    Intrepid2FSTools::applyRightFieldSigns(stiffMatrixHCurl, worksetEdgeSigns);
 
     if(MyPID==0) {std::cout << "Compute HCURL Stiffness Matrix              \n";}
 
@@ -1805,7 +1811,7 @@ int body(int argc, char *argv[]) {
     /**********************************************************************************/
 
     // transform integration points to physical points
-    IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPoints, cellWorkset, cellType);
+    Intrepid2CTools::mapToPhysicalFrame(worksetCubPoints, cubPoints, cellWorkset, cellType);
 
     // evaluate right hand side functions at physical points
     for(int cell = worksetBegin; cell < worksetEnd; cell++){
@@ -1839,14 +1845,14 @@ int body(int argc, char *argv[]) {
     //                             COMP_BLAS);
 
     // integrate (h,w) term
-    IntrepidFSTools::integrate<double>(gC, rhsDatag, HCValsTransformedWeighted, COMP_BLAS);
+    Intrepid2FSTools::integrate(gC, rhsDatag, HCValsTransformedWeighted);
 
-    IntrepidFSTools::integrate<double>(hC, rhsDatah, HCValsTransformedWeighted, COMP_BLAS);
+    Intrepid2FSTools::integrate(hC, rhsDatah, HCValsTransformedWeighted);
 
 
     // apply signs
-    IntrepidFSTools::applyFieldSigns<double>(gC, worksetEdgeSigns);
-    IntrepidFSTools::applyFieldSigns<double>(hC, worksetEdgeSigns);
+    Intrepid2FSTools::applyFieldSigns(gC, worksetEdgeSigns);
+    Intrepid2FSTools::applyFieldSigns(hC, worksetEdgeSigns);
 
 
     // evaluate RHS boundary term
@@ -1872,30 +1878,30 @@ int body(int argc, char *argv[]) {
           }
 
           // map Gauss points on quad to reference face: paramFacePoints -> refFacePoints
-          IntrepidCTools::mapToReferenceSubcell(refFacePoints,
+          Intrepid2CTools::mapToReferenceSubcell(refFacePoints,
                                                 paramFacePoints,
                                                 2, iface, cellType);
 
           // get basis values at points on reference cell
-          hexHCurlBasis.getValues(bcFaceCVals, refFacePoints, OPERATOR_VALUE);
+          hexHCurlBasis->getValues(bcFaceCVals, refFacePoints, OPERATOR_VALUE);
 
           // compute Jacobians at Gauss pts. on reference face for all parent cells
-          IntrepidCTools::setJacobian(faceJacobians,
+          Intrepid2CTools::setJacobian(faceJacobians,
                                       refFacePoints,
                                       cellNodes, cellType);
-          IntrepidCTools::setJacobianInv(faceJacobInv, faceJacobians );
+          Intrepid2CTools::setJacobianInv(faceJacobInv, faceJacobians );
 
           // transform to physical coordinates
-          IntrepidFSTools::HCURLtransformVALUE<double>(bcCValsTransformed, faceJacobInv,
+          Intrepid2FSTools::HCURLtransformVALUE(bcCValsTransformed, faceJacobInv,
                                                        bcFaceCVals);
 
           // map Gauss points on quad from ref. face to face workset: refFacePoints -> worksetFacePoints
-          IntrepidCTools::mapToPhysicalFrame(worksetFacePoints,
+          Intrepid2CTools::mapToPhysicalFrame(worksetFacePoints,
                                              refFacePoints,
                                              cellNodes, cellType);
 
           // Compute face normals
-          IntrepidCTools::getPhysicalFaceNormals(faceNormal,
+          Intrepid2CTools::getPhysicalFaceNormals(faceNormal,
                                                  faceJacobians,
                                                  iface, cellType);
 
@@ -2267,33 +2273,33 @@ int body(int argc, char *argv[]) {
   uCoeff.doImport(xh, solnImporter, Tpetra::INSERT);
 
   int numCells = 1;
-  FieldContainer<double> hexEdgeSigns(numCells, numFieldsC);
-  FieldContainer<double> hexNodes(numCells, numFieldsG, spaceDim);
+  Intrepid2ScalarViewdouble hexEdgeSigns("hexEdgeSigns", numCells, numFieldsC);
+  Intrepid2ScalarViewdouble hexNodes("hexNodes", numCells, numFieldsG, spaceDim);
 
   // Get cubature points and weights for error calc (may be different from previous)
-  DefaultCubatureFactory<double>  cubFactoryErr;
+  Intrepid2::DefaultCubatureFactory  cubFactoryErr;
   int cubDegErr = 3;
-  RCP<Cubature<double> > hexCubErr = cubFactoryErr.create(cellType, cubDegErr);
+  RCP<Intrepid2::Cubature<device_type> > hexCubErr = cubFactoryErr.create<device_type>(cellType, cubDegErr);
   int cubDimErr       = hexCubErr->getDimension();
   int numCubPointsErr = hexCubErr->getNumPoints();
-  FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
-  FieldContainer<double> cubWeightsErr(numCubPointsErr);
+  Intrepid2ScalarViewdouble cubPointsErr("cubPointsErr", numCubPointsErr, cubDimErr);
+  Intrepid2ScalarViewdouble cubWeightsErr("cubWeightsErr", numCubPointsErr);
   hexCubErr->getCubature(cubPointsErr, cubWeightsErr);
-  FieldContainer<double> physCubPointsE(numCells,numCubPointsErr, cubDimErr);
+  Intrepid2ScalarViewdouble physCubPointsE("physCubPointsE",numCells,numCubPointsErr, cubDimErr);
 
   // Containers for Jacobian
-  FieldContainer<double> hexJacobianE(numCells, numCubPointsErr, spaceDim, spaceDim);
-  FieldContainer<double> hexJacobInvE(numCells, numCubPointsErr, spaceDim, spaceDim);
-  FieldContainer<double> hexJacobDetE(numCells, numCubPointsErr);
-  FieldContainer<double> weightedMeasureE(numCells, numCubPointsErr);
+  Intrepid2ScalarViewdouble hexJacobianE("hexJacobianE", numCells, numCubPointsErr, spaceDim, spaceDim);
+  Intrepid2ScalarViewdouble hexJacobInvE("hexJacobInvE", numCells, numCubPointsErr, spaceDim, spaceDim);
+  Intrepid2ScalarViewdouble hexJacobDetE("hexJacobDetE", numCells, numCubPointsErr);
+  Intrepid2ScalarViewdouble weightedMeasureE("weightedMeasureE", numCells, numCubPointsErr);
 
   // Evaluate basis values and curls at cubature points
-  FieldContainer<double> uhCVals(numFieldsC, numCubPointsErr, spaceDim);
-  FieldContainer<double> uhCValsTrans(numCells,numFieldsC, numCubPointsErr, spaceDim);
-  FieldContainer<double> uhCurls(numFieldsC, numCubPointsErr, spaceDim);
-  FieldContainer<double> uhCurlsTrans(numCells, numFieldsC, numCubPointsErr, spaceDim);
-  hexHCurlBasis.getValues(uhCVals, cubPointsErr, OPERATOR_VALUE);
-  hexHCurlBasis.getValues(uhCurls, cubPointsErr, OPERATOR_CURL);
+  Intrepid2ScalarViewdouble uhCVals("uhCVals", numFieldsC, numCubPointsErr, spaceDim);
+  Intrepid2ScalarViewdouble uhCValsTrans("uhCValsTrans", numCells,numFieldsC, numCubPointsErr, spaceDim);
+  Intrepid2ScalarViewdouble uhCurls("uhCurls", numFieldsC, numCubPointsErr, spaceDim);
+  Intrepid2ScalarViewdouble uhCurlsTrans("uhCurlsTrans", numCells, numFieldsC, numCubPointsErr, spaceDim);
+  hexHCurlBasis->getValues(uhCVals, cubPointsErr, OPERATOR_VALUE);
+  hexHCurlBasis->getValues(uhCurls, cubPointsErr, OPERATOR_CURL);
 
   // Loop over elements
   for (int k=0; k<numElems; k++){
@@ -2337,19 +2343,19 @@ int body(int argc, char *argv[]) {
     }
 
     // compute cell Jacobians, their inverses and their determinants
-    IntrepidCTools::setJacobian(hexJacobianE, cubPointsErr, hexNodes, cellType);
-    IntrepidCTools::setJacobianInv(hexJacobInvE, hexJacobianE );
-    IntrepidCTools::setJacobianDet(hexJacobDetE, hexJacobianE );
+    Intrepid2CTools::setJacobian(hexJacobianE, cubPointsErr, hexNodes, cellType);
+    Intrepid2CTools::setJacobianInv(hexJacobInvE, hexJacobianE );
+    Intrepid2CTools::setJacobianDet(hexJacobDetE, hexJacobianE );
 
     // transform integration points to physical points
-    IntrepidCTools::mapToPhysicalFrame(physCubPointsE, cubPointsErr, hexNodes, cellType);
+    Intrepid2CTools::mapToPhysicalFrame(physCubPointsE, cubPointsErr, hexNodes, cellType);
 
     // transform basis values to physical coordinates
-    IntrepidFSTools::HCURLtransformVALUE<double>(uhCValsTrans, hexJacobInvE, uhCVals);
-    IntrepidFSTools::HCURLtransformCURL<double>(uhCurlsTrans, hexJacobianE, hexJacobDetE, uhCurls);
+    Intrepid2FSTools::HCURLtransformVALUE(uhCValsTrans, hexJacobInvE, uhCVals);
+    Intrepid2FSTools::HCURLtransformCURL(uhCurlsTrans, hexJacobianE, hexJacobDetE, uhCurls);
 
     // compute weighted measure
-    IntrepidFSTools::computeCellMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
+    Intrepid2FSTools::computeCellMeasure(weightedMeasureE, hexJacobDetE, cubWeightsErr);
 
     // loop over cubature points
     for (int nPt = 0; nPt < numCubPointsErr; nPt++){
@@ -2383,9 +2389,9 @@ int body(int argc, char *argv[]) {
       }
 
       // evaluate the error at cubature points
-      Linferr = max(Linferr, abs(uExact1 - uApprox1));
-      Linferr = max(Linferr, abs(uExact2 - uApprox2));
-      Linferr = max(Linferr, abs(uExact3 - uApprox3));
+      Linferr = std::max(Linferr, abs(uExact1 - uApprox1));
+      Linferr = std::max(Linferr, abs(uExact2 - uApprox2));
+      Linferr = std::max(Linferr, abs(uExact3 - uApprox3));
       L2errElem+=(uExact1 - uApprox1)*(uExact1 - uApprox1)*weightedMeasureE(0,nPt);
       L2errElem+=(uExact2 - uApprox2)*(uExact2 - uApprox2)*weightedMeasureE(0,nPt);
       L2errElem+=(uExact3 - uApprox3)*(uExact3 - uApprox3)*weightedMeasureE(0,nPt);
