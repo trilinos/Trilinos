@@ -3385,7 +3385,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       isFillComplete () || ! hasColMap (), std::runtime_error, "You may not "
       "call this method unless the graph has a column Map.");
-    auto rowPtrsUnpackedLength = this->getRowPtrsUnpackedHost().extent (0);
+    auto rowPtrsUnpackedLength = this->getRowPtrsUnpackedDevice().extent (0);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       getLocalNumRows () > 0 && rowPtrsUnpackedLength == 0,
       std::runtime_error, "The calling process has getLocalNumRows() = "
