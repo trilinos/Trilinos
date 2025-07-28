@@ -33,8 +33,6 @@
 
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_MutuallyExclusiveTime.hpp>
-
 #include <Epetra_LinearProblem.h>
 #include <AztecOO.h>
 #include <Amesos.h>
