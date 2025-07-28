@@ -24,7 +24,6 @@
 
 // Xpetra
 #include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_MultiVector.hpp>
@@ -35,58 +34,22 @@
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraProblemFactory.hpp>
-#include <Galeri_XpetraUtils.hpp>
-#include <Galeri_XpetraMaps.hpp>
 
 #include <MueLu.hpp>
 
 #include <MueLu_BaseClass.hpp>
-#include "Xpetra_Access.hpp"
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
-#include <MueLu_ExplicitInstantiation.hpp>
-#endif
 #include <MueLu_Level.hpp>
-#include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_Utilities.hpp>
 #include <MueLu_PerfModelReporter.hpp>
 #include <MatrixLoad.hpp>
 #include <DriverCore.hpp>
-
-#ifdef HAVE_MUELU_BELOS
-#include <BelosConfigDefs.hpp>
-#include <BelosBiCGStabSolMgr.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosLinearProblem.hpp>
-#include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosXpetraAdapter.hpp>  // => This header defines Belos::XpetraOp
-#include <BelosMueLuAdapter.hpp>   // => This header defines Belos::MueLuOp
-#include <BelosTpetraAdapter.hpp>  // => This header defines Belos::TpetraOp
-#ifdef HAVE_MUELU_EPETRA
-#include <BelosEpetraAdapter.hpp>  // => This header defines Belos::EpetraPrecOp
-#endif
-#endif
-
-#ifdef HAVE_MUELU_CUDA
-#include "cuda_profiler_api.h"
-#endif
 
 #ifdef HAVE_MUELU_AMGX
 #include <MueLu_AMGXOperator.hpp>
 #include <MueLu_AMGX_Setup.hpp>
 #endif
-#include <MueLu_TpetraOperator.hpp>
-#include <MueLu_CreateTpetraPreconditioner.hpp>
-#include <Xpetra_TpetraOperator.hpp>
-#include "Xpetra_TpetraMultiVector.hpp"
 #include <KokkosBlas1_abs.hpp>
 #include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
-
-#ifdef HAVE_MUELU_EPETRA
-#include "Xpetra_EpetraMultiVector.hpp"
-#endif
 
 /*********************************************************************/
 
