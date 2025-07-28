@@ -161,10 +161,11 @@ namespace Tpetra {
 
     Array<std::string> sendTypes = Details::distributorSendTypes ();
     const Array<Details::EDistributorSendType> sendTypeEnums = Details::distributorSendTypeEnums ();
+    const std::string validatedSendType = Details::validSendTypeOrThrow(Details::Behavior::defaultSendType());
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
-      Details::Behavior::defaultSendType(), "When using MPI, the variant of send to use in "
+      validatedSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
                 "all processes.");
