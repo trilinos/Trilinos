@@ -60,6 +60,7 @@ set(upcoming_warnings
     missing-braces
     shadow
     unused-but-set-variable
+    uninitialized
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
@@ -138,8 +139,6 @@ set(promoted_warnings
     tautological-compare
     trigraphs
     type-limits
-    uninitialized
-    uninitialized
     unknown-pragmas
     unused
     unused-const-variable=1
