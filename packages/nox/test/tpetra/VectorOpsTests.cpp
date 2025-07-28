@@ -25,19 +25,22 @@ using tpetra_vector_t = ::Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, No
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 using nox_tpetra_vector_t = NOX::Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
+template <typename Scalar>
+using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+
 //! Function to check solution.
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 bool checkVectors(
-    const Teuchos::RCP<::Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& a,
-    const Teuchos::RCP<::Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& b,
-    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType expt,
+    const Teuchos::RCP<tpetra_vector_t<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& a,
+    const Teuchos::RCP<tpetra_vector_t<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& b,
+    const magnitude_type<Scalar> expt,
     Teuchos::FancyOStream& out,
     bool success
 )
 {
-    constexpr typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol = 1.0e-14;
+    constexpr magnitude_type<Scalar> tol = 1.0e-14;
     b->update(-1 * Teuchos::ScalarTraits<Scalar>::one(), *a, Teuchos::ScalarTraits<Scalar>::one());
-    TEUCHOS_TEST_EQUALITY(b->norm2() < tol, true, out, success);
+    TEUCHOS_TEST_COMPARE(b->norm2(), <, tol, out, success);
     TEUCHOS_TEST_FLOATING_EQUALITY(a->norm2(), expt, tol, out, success);
     return success;
 }
@@ -89,7 +92,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, ConstructorFromRef, S, LO, G
 
     TEUCHOS_TEST_ASSERT( ! x_nox_deep_copy.getImplicitWeighting(), out, success);
 
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(numGlobalElements);
     success = checkVectors(x_nox_deep_copy.getTpetraVector(), x, expt, out, success);
 
     // Construct NOX vector with copy of Tpetra vector using the flag NOX::ShapeCopy and check.
@@ -124,7 +127,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, CopyConstructor, S, LO, GO, 
 
     TEUCHOS_TEST_ASSERT( ! x_nox_deep_copy.getImplicitWeighting(), out, success);
 
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(numGlobalElements);
     success = checkVectors(x_nox_deep_copy.getTpetraVector(), x, expt, out, success);
 
     // Copy construct NOX vector using the flag NOX::ShapeCopy and check.
@@ -169,7 +172,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, CopyAssignment, S, LO, GO, N
     y_nox = x_nox;
 
     // Check for correct answer.
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(numGlobalElements);
     success = checkVectors(y_nox.getTpetraVector(), x_nox.getTpetraVector(), expt, out, success);
 }
 
@@ -191,7 +194,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, Init, S, LO, GO, N)
     y_nox.init(2 * Teuchos::ScalarTraits<S>::one());
 
     // Check for correct answer.
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(4 * numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(4 * numGlobalElements);
     success = checkVectors(y_nox.getTpetraVector(), x, expt, out, success);
 }
 
@@ -215,7 +218,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, Abs, S, LO, GO, N)
     nox_tpetra_vector_t<S, LO, GO, N> y_nox(y);
     y_nox.abs(y_nox);
 
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(numGlobalElements);
     success = checkVectors(y_nox.getTpetraVector(), x, expt, out, success);
 }
 
@@ -258,7 +261,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, Reciprocal, S, LO, GO, N)
 
     y_nox.reciprocal(y_nox);
 
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(static_cast<S>(0.25) * numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(static_cast<magnitude_type<S>>(0.25) * numGlobalElements);
     success = checkVectors(y_nox.getTpetraVector(), x, expt, out, success);
 }
 
@@ -283,7 +286,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, Scale_Scalar, S, LO, GO, N)
 
     y_nox.scale(2 * Teuchos::ScalarTraits<S>::one());
 
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(4 * numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(4 * numGlobalElements);
     success = checkVectors(y_nox.getTpetraVector(), x, expt, out, success);
 }
 
@@ -311,7 +314,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, Scale_Vector, S, LO, GO, N)
 
     y_nox.scale(z_nox);
 
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(4 * numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(4 * numGlobalElements);
     success = checkVectors(y_nox.getTpetraVector(), x, expt, out, success);
 }
 
@@ -339,7 +342,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, Update_1, S, LO, GO, N)
 
     y_nox.update(2 * Teuchos::ScalarTraits<S>::one(), z_nox, Teuchos::ScalarTraits<S>::one());
 
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(9 * numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(9 * numGlobalElements);
     success = checkVectors(y_nox.getTpetraVector(), x, expt, out, success);
 }
 
@@ -370,7 +373,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, Update_2, S, LO, GO, N)
 
     y_nox.update(2 * Teuchos::ScalarTraits<S>::one(), w_nox, 2 * Teuchos::ScalarTraits<S>::one(), z_nox, Teuchos::ScalarTraits<S>::one());
 
-    const auto expt = Teuchos::ScalarTraits<S>::squareroot(25 * numGlobalElements);
+    const auto expt = Teuchos::ScalarTraits<magnitude_type<S>>::squareroot(25 * numGlobalElements);
     success = checkVectors(y_nox.getTpetraVector(), x, expt, out, success);
 }
 
@@ -564,24 +567,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_VectorOps, InnerProduct, S, LO, GO, N)
 }
 
 #define UNIT_TEST_GROUP(S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Traits,             S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, ConstructorFromRCP, S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, ConstructorFromRef, S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, CopyConstructor,    S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, CopyAssignment,     S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Init,               S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Abs,                S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Random,             S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Reciprocal,         S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Scale_Scalar,       S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Scale_Vector,       S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Update_1,           S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Update_2,           S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, OneNorm,            S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, TwoNorm,            S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, MaxNorm,            S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, NormWeighted,       S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, InnerProduct,       S, LO, GO, N)
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Traits,             S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, ConstructorFromRCP, S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, ConstructorFromRef, S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, CopyConstructor,    S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, CopyAssignment,     S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Init,               S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Abs,                S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Random,             S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Reciprocal,         S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Scale_Scalar,       S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Scale_Vector,       S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Update_1,           S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, Update_2,           S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, OneNorm,            S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, TwoNorm,            S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, MaxNorm,            S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, NormWeighted,       S, LO, GO, N) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_VectorOps, InnerProduct,       S, LO, GO, N)
 
 #include "NOX_Tpetra_ETIHelperMacros.hpp"
 
