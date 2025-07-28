@@ -26,7 +26,6 @@
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MueLu_UseDefaultTypesComplex.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
 
 // Belos
 #include <BelosConfigDefs.hpp>

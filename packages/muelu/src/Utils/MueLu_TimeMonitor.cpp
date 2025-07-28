@@ -87,7 +87,4 @@ TimeMonitor::~TimeMonitor() {
   }
 }  // TimeMonitor::~TimeMonitor()
 
-template class MutuallyExclusiveTimeMonitor<FactoryBase>;
-template class MutuallyExclusiveTimeMonitor<Level>;
-
 }  // namespace MueLu
