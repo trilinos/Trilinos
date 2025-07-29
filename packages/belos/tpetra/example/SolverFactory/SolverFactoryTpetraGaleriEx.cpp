@@ -222,8 +222,6 @@ int run(int argc, char *argv[]) {
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stacked_timer->report(*out, comm, options);
     auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
-    std::cout << "HERE " << watchrProblemName << std::endl;
-    std::cout << "xmlOut: " << xmlOut << std::endl;
     if (xmlOut.length())
       *out << "\nAlso created Watchr performance report " << xmlOut << '\n';
 
