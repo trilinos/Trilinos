@@ -40,7 +40,6 @@ void solve_(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, PViewType& perm
   using Teuchos::TimeMonitor;
 #endif
 
-  using value_type      = typename ZViewType::value_type;
 #ifdef PRINT_STATUS
   using execution_space = typename ZViewType::device_type::execution_space;
   using memory_space    = typename ZViewType::device_type::memory_space;
