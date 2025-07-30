@@ -1,8 +1,0 @@
-#!/bin/bash
-
-echo
-echo "Generating Isorropia doxygen documentation ..."
-echo
-
-doxygen Doxyfile
-

@@ -1,9 +1,0 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* and disclaimer.                                                      */
-/* ******************************************************************** */
-
-This module generally is not called by users directly.  Instead the high
-level functions in ml_struct.c call the functions in this module to set
-up the smoothers.
-  
