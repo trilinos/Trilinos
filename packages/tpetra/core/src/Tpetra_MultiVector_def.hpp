@@ -1492,6 +1492,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   packAndPrepare
   (const SrcDistObject& sourceObj,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+   Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports_parentView,
    Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numExportPacketsPerLID */,
    size_t& constantNumPackets,
@@ -1583,7 +1584,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
          << ", newExportsSize: " << newExportsSize << std::endl;
       std::cerr << os.str ();
     }
-    reallocDualViewIfNeeded (exports,exports, newExportsSize, "exports");
+    reallocDualViewIfNeeded (exports_parentView, exports, newExportsSize, "exports");
 
     // mfh 04 Feb 2019: sourceMV doesn't belong to us, so we can't
     // sync it.  Pack it where it's currently sync'd.
@@ -1756,6 +1757,20 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
 
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  packAndPrepare
+  (const SrcDistObject& sourceObj,
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+   Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
+   Kokkos::DualView<size_t*, buffer_device_type> /* numExportPacketsPerLID */,
+   size_t& constantNumPackets,
+   const execution_space &space)
+  {
+    packAndPrepare(sourceObj, exportLIDs, exports, exports, Kokkos::DualView<size_t*, buffer_device_type>(), constantNumPackets, space);
+  }
+
 // clang-format on
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -1836,7 +1851,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     {
       using ::Tpetra::Details::reallocDualViewIfNeeded;
       reallocated =
-        reallocDualViewIfNeeded (this->unaliased_imports_,this->unaliased_imports_, newSize, "imports");
+        reallocDualViewIfNeeded (this->unaliased_imports_, this->unaliased_imports_, newSize, "imports");
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Finished realloc'ing unaliased_imports_" << std::endl;

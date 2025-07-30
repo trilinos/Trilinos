@@ -902,6 +902,21 @@ namespace Tpetra {
                     size_t& constantNumPackets,
                     const execution_space &space);
 
+    /*! \brief Same as packAndPrepare, but use cached exports_parentView to avoid reallocation
+    */
+    virtual void
+    packAndPrepare (const SrcDistObject& source,
+                    const Kokkos::DualView<const local_ordinal_type*,
+                      buffer_device_type>& exportLIDs,
+                    Kokkos::DualView<packet_type*,
+                      buffer_device_type>& exports_parentView,
+                    Kokkos::DualView<packet_type*,
+                      buffer_device_type>& exports,
+                    Kokkos::DualView<size_t*,
+                      buffer_device_type> numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    const execution_space &space);
+
     /// \brief Perform any unpacking and combining after
     ///   communication.
     ///
@@ -1042,6 +1057,9 @@ namespace Tpetra {
     /// Unfortunately, I had to declare this protected, because
     /// CrsMatrix uses it at one point.  Please, nobody else use it.
     Kokkos::DualView<packet_type*, buffer_device_type> exports_;
+
+    // \brief Parent View for exports_ to avoid reallocation
+    Kokkos::DualView<packet_type*, buffer_device_type> exports_parentView_;
 
     /// \brief Number of packets to send for each send operation.
     ///

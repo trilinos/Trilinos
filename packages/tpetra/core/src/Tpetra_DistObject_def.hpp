@@ -1759,8 +1759,8 @@ namespace Tpetra {
       std::ostringstream lclErrStrm;
       bool lclSuccess = false;
       try {
-        this->packAndPrepare (src, exportLIDs, this->exports_,
-            this->numExportPacketsPerLID_,
+        this->packAndPrepare (src, exportLIDs, this->exports_parentView_,
+            this->exports_, this->numExportPacketsPerLID_,
             constantNumPackets, space);
         lclSuccess = true;
       }
@@ -1781,8 +1781,8 @@ namespace Tpetra {
           gblErrMsgHeader, *comm);
     }
     else {
-      this->packAndPrepare (src, exportLIDs, this->exports_,
-          this->numExportPacketsPerLID_,
+      this->packAndPrepare (src, exportLIDs, this->exports_parentView_,
+          this->exports_, this->numExportPacketsPerLID_,
           constantNumPackets, space);
     }
   }
@@ -1927,6 +1927,39 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
   execution_space().fence(); // TODO: Details::Spaces::exec_space_wait
 }
 // clang-format off
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
+    const SrcDistObject &source,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &exportLIDs,
+    Kokkos::DualView<packet_type *, buffer_device_type> & /* exports_parentView */,
+    Kokkos::DualView<packet_type *, buffer_device_type> &exports,
+    Kokkos::DualView<size_t *, buffer_device_type> numPacketsPerLID,
+    size_t &constantNumPackets, const execution_space &space) {
+  /*
+  This is called if the derived class doesn't know how to pack and prepare in
+  an arbitrary execution space instance, but it was asked to anyway.
+  Provide a safe illusion by actually doing the work in the default instance,
+  and syncing the default instance with the provided instance.
+
+  The caller expects
+  1. any work in the provided instance to complete before this.
+  2. This to complete before any following work in the provided instance.
+  */
+
+  // wait for any work from prior operations in the provided instance to
+  // complete
+  space.fence(); // TODO: Details::Spaces::exec_space_wait
+
+  // pack and prepare in the default instance.
+  packAndPrepare(source, exportLIDs, exports, numPacketsPerLID,
+                 constantNumPackets); // default instance
+
+  // wait for the default instance to complete before returning, so any
+  // following work inserted into the provided instance will be done after this
+  execution_space().fence(); // TODO: Details::Spaces::exec_space_wait
+}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
