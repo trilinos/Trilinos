@@ -40,27 +40,8 @@
 # ***********************************************************************
 # @HEADER
 
-SET(LIB_REQUIRED_DEP_PACKAGES
-  Teuchos
-  )
-SET(LIB_OPTIONAL_DEP_PACKAGES
-  Epetra
-  Triutils
-  Tpetra
-  EpetraExt
-  Domi
-  Isorropia
-  AztecOO
-  Galeri
-  Amesos
-  Ifpack
-  Komplex
-  Anasazi
-  Pliris
-  ML
-  NOX
-  STK
-  )
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos)
+SET(LIB_OPTIONAL_DEP_PACKAGES Tpetra Domi Galeri Komplex Anasazi NOX STK)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES)
 SET(LIB_REQUIRED_DEP_TPLS)
