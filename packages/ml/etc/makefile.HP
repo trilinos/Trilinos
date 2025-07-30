@@ -1,8 +1,0 @@
-OPT_FLAGS=-O 
-ARCH_FLAGS= $(OPT_FLAGS) -Dmatched -DNoChange
-CC=cc
-FC=f77
-RANLIB=ranlib
-LINKER=$(CC)
-ARCH_LIBS=-lm
-AR=ar
