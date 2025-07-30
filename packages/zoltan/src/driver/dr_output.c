@@ -181,7 +181,7 @@ int output_results(const char *cmd_file,
   /* Local declarations. */
   const char  *yo = "output_results";
   char   par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
-  char cmsg[256];
+  char cmsg[4153];
 
   ZOLTAN_ID_TYPE   *global_ids = NULL;
   ZOLTAN_ID_TYPE   *parts = NULL;
