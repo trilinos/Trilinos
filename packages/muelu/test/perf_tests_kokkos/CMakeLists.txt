@@ -45,14 +45,3 @@ TRIBITS_ADD_EXECUTABLE(
 
   ENDIF()
 
-  IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
-
-    TRIBITS_ADD_TEST(
-      Redirection
-      NAME "Redirection_Epetra"
-      ARGS "--linAlgebra=Epetra"
-      NUM_MPI_PROCS 4
-      COMM mpi # HAVE_MPI required
-      )
-
-  ENDIF()

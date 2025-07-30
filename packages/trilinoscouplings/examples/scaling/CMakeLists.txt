@@ -1,244 +1,7 @@
 
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
-   ${PACKAGE_NAME}_ENABLE_Amesos AND ${PACKAGE_NAME}_ENABLE_AztecOO AND
-   ${PACKAGE_NAME}_ENABLE_Intrepid AND ${PACKAGE_NAME}_ENABLE_ML AND
-   ${PACKAGE_NAME}_ENABLE_Pamgen)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_Poisson_NoFE
-    SOURCES example_Poisson_NoFE.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_Poisson
-    SOURCES example_Poisson.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    )
-
-  TRIBITS_ADD_EXECUTABLE(
-    Example_Poisson_BlockMaterials
-    SOURCES example_Poisson_BlockMaterials.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    COMM serial mpi
-    )
-
-  TRIBITS_ADD_TEST(
-   Example_Poisson_BlockMaterials
-   NAME "Poisson2D_BlockMaterials"
-   COMM serial mpi
-   NUM_MPI_PROCS 1
-   )
-
-  TRIBITS_ADD_TEST(
-   Example_Poisson_BlockMaterials
-   NAME "Poisson_BlockMaterials_RTC"
-   ARGS "--meshfile=Poisson_RTC.xml"
-   COMM serial mpi
-   NUM_MPI_PROCS 1
-   )
-
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_Poisson2D
-    SOURCES example_Poisson2D.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_Poisson2D_p2
-    SOURCES example_Poisson2D_p2.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    )
-
-
-  IF(${PACKAGE_NAME}_ENABLE_Kokkos)
-
-    TRIBITS_ADD_EXECUTABLE(
-      Example_Maxwell
-      SOURCES example_Maxwell.cpp
-        TrilinosCouplings_Pamgen_Utils.cpp
-      COMM serial mpi
-    )
-
-    TRIBITS_ADD_TEST(
-      Example_Maxwell
-      NAME Example_Maxwell_ML
-      ARGS "--solverName=ML"
-      NUM_MPI_PROCS 1
-      COMM mpi serial
-    )
-
-    IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
-      TRIBITS_ADD_TEST(
-        Example_Maxwell
-        NAME Example_Maxwell_ML_Stratimikos
-        ARGS "--solverName=ML-Stratimikos"
-        NUM_MPI_PROCS 1
-        COMM mpi serial
-      )
-    ENDIF()
-
-  ENDIF()
-
-
-  IF(${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_MueLu)
-
-    IF(MueLu_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Kokkos)
-      TRIBITS_ADD_TEST(
-        Example_Maxwell
-        NAME Example_Maxwell_MueLu
-        ARGS "--solverName=MueLu"
-        NUM_MPI_PROCS 1
-        COMM mpi serial
-        )
-
-      TRIBITS_ADD_TEST(
-        Example_Maxwell
-        NAME Example_Maxwell_MueLu
-        ARGS "--solverName=MueLu"
-        NUM_MPI_PROCS 4
-        COMM mpi
-        )
-
-      IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
-        TRIBITS_ADD_TEST(
-          Example_Maxwell
-          NAME Example_Maxwell_MueLu_Stratimikos
-          ARGS "--solverName=Stratimikos"
-          NUM_MPI_PROCS 1
-          COMM mpi serial
-          )
-
-        TRIBITS_ADD_TEST(
-          Example_Maxwell
-          NAME Example_Maxwell_MueLu_Stratimikos
-          ARGS "--solverName=Stratimikos"
-          NUM_MPI_PROCS 4
-          COMM mpi
-          )
-
-	ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
-	IF( TPL_ENABLE_AVATAR OR ${PACKAGE_NAME}_ENABLE_AvatarT)
-	  TRIBITS_ADD_TEST(
-	    Example_Maxwell
-	    NAME Example_Maxwell_Avatar
-	    ARGS "--inputParams=Maxwell_avatar.xml"
-	    NUM_MPI_PROCS 1
-	    COMM mpi serial
-	    )
-
-	ENDIF()
-
-      ENDIF()
-    ENDIF() # MueLu_ENABLE_Epetra
-  ENDIF()
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
-    SOURCE_FILES Maxwell.xml Ninja.xml Maxwell_avatar.xml stratimikos.xml
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_GradDiv
-    SOURCES example_GradDiv.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_CVFEM
-    SOURCES example_CVFEM.cpp
-    NUM_MPI_PROCS 1
-    )
-
-  ##### Higher order family of tests #####
-  TRIBITS_ADD_EXECUTABLE(
-    Example_Poisson2D_pn
-    SOURCES example_Poisson2D_pn.cpp
-    TrilinosCouplings_Pamgen_Utils.cpp
-    COMM serial mpi
-    )
-
- TRIBITS_ADD_TEST(
-   Example_Poisson2D_pn
-   NAME "Poisson2D_pn=2"
-   ARGS "Poisson2D.xml"
-   COMM serial mpi
-   NUM_MPI_PROCS 1
-   )
-
- TRIBITS_ADD_TEST(
-   Example_Poisson2D_pn
-   NAME "Poisson2D_pn=3"
-   ARGS "Poisson2D_p3.xml"
-   COMM serial mpi
-   NUM_MPI_PROCS 1
-   )
-
- TRIBITS_ADD_TEST(
-   Example_Poisson2D_pn
-   NAME "Poisson2D_pn=4"
-   ARGS "Poisson2D_p4.xml"
-   COMM serial mpi
-   NUM_MPI_PROCS 1
-   )
 
 
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
-  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml  muelu_ho_lin.xml Poisson_RTC.xml GradDiv.xml Poisson_avatar.xml avatar.names avatar.trees bounds.data
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  )
-ENDIF()
-
-
-
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
-   ${PACKAGE_NAME}_ENABLE_Amesos AND ${PACKAGE_NAME}_ENABLE_AztecOO AND
-   ${PACKAGE_NAME}_ENABLE_Intrepid AND ${PACKAGE_NAME}_ENABLE_ML AND
-   ${PACKAGE_NAME}_ENABLE_Pamgen AND ${PACKAGE_NAME}_ENABLE_Teko)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_Darcy
-    SOURCES example_Darcy.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    )
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_DivLSFEM
-    SOURCES example_DivLSFEM.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    )
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_CurlLSFEM
-    SOURCES example_CurlLSFEM.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    )
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_StabilizatedADR
-    SOURCES example_StabilizedADR.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
-    )
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
-  SOURCE_FILES ADR.xml
-  	       Darcy.xml
-               CurlLSFEMin.xml
-               CurlLSFEMblock_in_block.xml
-               DivLSFEMin.xml
-
-               ML_nonsym.xml
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  )
-ENDIF()
 
 
 IF(TPL_ENABLE_MPI AND ${PACKAGE_NAME}_ENABLE_Tpetra AND
@@ -285,19 +48,6 @@ ENDIF()
 #
 # Intrepid has required dependencies on Teuchos, Shards, and Sacado,
 # so we don't have to name those packages explicitly here.
-IF(${PACKAGE_NAME}_ENABLE_AztecOO AND
-   ${PACKAGE_NAME}_ENABLE_Epetra AND
-   ${PACKAGE_NAME}_ENABLE_EpetraExt AND
-   ${PACKAGE_NAME}_ENABLE_Intrepid AND
-   ${PACKAGE_NAME}_ENABLE_ML AND
-   ${PACKAGE_NAME}_ENABLE_Pamgen)
-  TRIBITS_ADD_EXECUTABLE(
-    Example_Poisson_NoFE_Epetra
-    SOURCES example_Poisson_NoFE_Epetra.cpp
-      TrilinosCouplings_Pamgen_Utils.cpp
-    COMM serial mpi
-    )
-ENDIF()
 
 # mfh 18 May 2012
 #
@@ -378,7 +128,6 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
   # check here whether we are allowed to use MueLu with Epetra.
   IF(${PACKAGE_NAME}_ENABLE_MueLu)
     # This variable only exists if MueLu is enabled.
-    ASSERT_DEFINED(MueLu_ENABLE_Epetra)
     SET(TrilinosCouplings_ENABLE_EXAMPLE_IntrepidPoisson_Pamgen_Epetra ${MueLu_ENABLE_Epetra})
   ELSE()
     # The example can still build without MueLu.
@@ -398,31 +147,6 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
   ENDIF()
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_AztecOO AND
-   ${PACKAGE_NAME}_ENABLE_Intrepid AND
-   ${PACKAGE_NAME}_ENABLE_Pamgen AND
-   ${PACKAGE_NAME}_ENABLE_Epetra AND
-   ${PACKAGE_NAME}_ENABLE_ML AND
-   ${PACKAGE_NAME}_ENABLE_MueLu)
-
-  # The example requires MueLu and needs MueLu to support Tpetra.  It
-  # is possible to enable MueLu, yet turn off MueLu's support for
-  # Epetra, so we have to check here whether we are allowed to use
-  # MueLu with Epetra.  We can't check above because if MueLu is not
-  # enabled, the MueLu_ENABLE_Epetra variable does not exist.
-
-  IF(MueLu_ENABLE_Epetra)
-    TRIBITS_ADD_EXECUTABLE(
-      IntrepidPoisson_Pamgen_EpetraAztecOO
-      SOURCES IntrepidPoisson_Pamgen_EpetraAztecOO_main.cpp
-        TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp
-        TrilinosCouplings_EpetraIntrepidPoissonExample.cpp
-        TrilinosCouplings_EpetraIntrepidPoissonExample_SolveWithAztecOO.cpp
-        TrilinosCouplings_Pamgen_Utils.cpp
-      COMM serial mpi
-      )
-  ENDIF() # MueLu_ENABLE_Epetra
-ENDIF()
 
 # Copy over example xml file for [E|T]petraIntrepidPoisson example
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
@@ -436,13 +160,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyIntrepidPoissonFiles
 # Tpetra has a required dependency on Teuchos and Kokkos,
 # so we don't have to name those packages explicitly here.
 # This test uses the default Kokkos Node type.
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra AND TPETRA_INST_INT_INT)
-  TRIBITS_ADD_EXECUTABLE(
-    epetraTpetraImportBenchmark
-    SOURCES epetraTpetraImportBenchmark.cpp
-    COMM serial mpi
-    )
-ENDIF()
 
 # lbv 22 March 2018
 #

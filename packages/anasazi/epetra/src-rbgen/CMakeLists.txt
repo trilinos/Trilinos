@@ -67,32 +67,6 @@ APPEND_SET(SOURCES
     RBGen_StSVD_RTR.cpp
     )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
-IF(${PACKAGE_NAME}_ENABLE_EpetraExt)
-
-APPEND_SET(HEADERS
-    RBGen_EpetraCrsMatrixFileIOHandler.h
-    RBGen_MatrixMarketFileIOHandler.h
-    )
-
-APPEND_SET(SOURCES
-    RBGen_EpetraCrsMatrixFileIOHandler.cpp
-    RBGen_MatrixMarketFileIOHandler.cpp
-    )
-
-SET(EPETRADRIVER_SOURCES
-    ${SOURCES}
-    RBGenDriver_EpetraMV.cpp
-    )
-
-TRIBITS_ADD_EXECUTABLE(
-    RBGenDriver_EpetraMV
-    NOEXEPREFIX
-    SOURCES ${EPETRADRIVER_SOURCES}
-    COMM serial mpi
-    )
-
-ENDIF()
 
 
 #

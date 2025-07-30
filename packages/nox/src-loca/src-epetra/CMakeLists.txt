@@ -51,36 +51,6 @@ APPEND_SET(SOURCES
   )
 
 # EpetraExt stuff
-IF (NOX_ENABLE_EpetraExt)
-  APPEND_SET(HEADERS
-    LOCA_Epetra_Interface_xyzt.H
-    LOCA_Epetra_Interface_MultiPoint.H
-    LOCA_Epetra_xyztPrec.H
-    LOCA_Epetra_AnasaziOperator_Floquet.H
-    LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.H
-    LOCA_Epetra_ModelEvaluatorInterface.H
-    LOCA_Epetra_AdaptiveStepper.H
-    continuation-manager/ContinuationManager.H
-    continuation-manager/LOCAInterface.H
-    continuation-manager/ProblemNOXPrototype.H
-    continuation-manager/ProblemLOCAPrototype.H
-    continuation-manager/IOContFileUtils.H
-    )
-  APPEND_SET(SOURCES
-    LOCA_Epetra_Interface_xyzt.C
-    LOCA_Epetra_Interface_MultiPoint.C
-    LOCA_Epetra_xyztPrec.C
-    LOCA_Epetra_AnasaziOperator_Floquet.C
-    LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.C
-    LOCA_Epetra_ModelEvaluatorInterface.C
-    LOCA_Epetra_AdaptiveStepper.C
-    continuation-manager/ContinuationManager.C
-    continuation-manager/LOCAInterface.C
-    continuation-manager/ProblemNOXPrototype.C
-    continuation-manager/ProblemLOCAPrototype.C
-    continuation-manager/IOContFileUtils.C
-    )
-ENDIF()
 
 IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
   TRIBITS_ADD_LIBRARY(

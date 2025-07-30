@@ -51,14 +51,6 @@ SET(SOURCES ${SOURCES}
   Galeri_Utils.cpp
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
-  SET(HEADERS ${HEADERS}
-    Galeri_ReadHB.h
-    )
-  SET(SOURCES ${SOURCES}
-    Galeri_ReadHB.cpp
-    )
-ENDIF()
 
 #
 # src/Maps

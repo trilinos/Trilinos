@@ -6,39 +6,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 ASSERT_DEFINED(Tpetra_INST_FLOAT)
 
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
-  IF (Tpetra_INST_FLOAT)
-
-   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-     Tpetra_BlockGMRES_hb_DoubleFloat_test
-     SOURCES test_bl_gmres_hb_df.cpp
-     ARGS "--verbose"
-     COMM serial mpi
-     )
-
-  ENDIF()
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Tpetra_resolve_gmres_hb
-  SOURCES test_resolve_gmres_hb.cpp
-  COMM serial mpi
-  ARGS
-    "--verbose --filename=orsirr1.hb"
-    "--verbose --filename=orsirr1.hb --pseudo"
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Tpetra_pseudo_gmres_hb
-  SOURCES test_pseudo_gmres_hb.cpp
-  COMM serial mpi
-  ARGS "--verbose --filename=orsirr1.hb"
-  STANDARD_PASS_OUTPUT
-  )
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_BlockGMRES_hb_test

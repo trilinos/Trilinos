@@ -34,17 +34,6 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   #  XPETRA_ADD_TEST_TPETRA(MLParameterList 1-4)
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack AND ${PACKAGE_NAME}_ENABLE_Amesos)
-  XPETRA_ADD_TEST_EPETRA(MLParameterList 1-4)
-
-  TRIBITS_ADD_TEST(
-    MLParameterList
-    NAME MLParameterList_Repartition-Epetra
-    ARGS "--xml=ml_RebalancedParameterList.xml --linAlgebra=Epetra --muelu2=0"
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    )
-ENDIF()
 
 
 # TODO: add a test with the --xml option

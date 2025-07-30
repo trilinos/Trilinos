@@ -244,84 +244,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-IF(Stokhos_ENABLE_TriKota)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    SmolyakPseudoSpectralOperatorUnitTest
-    SOURCES Stokhos_SmolyakPseudoSpectralOperatorUnitTest.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
-
-ENDIF()
-
-IF (Stokhos_ENABLE_EpetraExt)
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    MatrixFreeOperatorUnitTest
-    SOURCES Stokhos_MatrixFreeOperatorUnitTest.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    InterlacedOpUnitTest
-    SOURCES Stokhos_InterlacedOpUnitTest.cpp
-            Stokhos_InterlacedTestSupport.cpp
-            Stokhos_InterlacedTestSupport.hpp
-            ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 2
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    BasisInteractionGraphUnitTest
-    SOURCES Stokhos_BasisInteractionGraphUnitTest.cpp
-            Stokhos_InterlacedTestSupport.cpp
-            Stokhos_InterlacedTestSupport.hpp
-            ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    AdaptivityToolsUnitTest
-    SOURCES Stokhos_AdaptivityToolsUnitTest.cpp
-            Stokhos_InterlacedTestSupport.cpp
-            Stokhos_InterlacedTestSupport.hpp
-            ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    BuildColBasisUnitTest
-    SOURCES Stokhos_BuildColBasisUnitTest.cpp
-            Stokhos_InterlacedTestSupport.cpp
-            Stokhos_InterlacedTestSupport.hpp
-            ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 2
-    )
-
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    InterlacedMapUnitTest
-    SOURCES Stokhos_InterlacedMapUnitTest.cpp
-            Stokhos_InterlacedTestSupport.cpp
-            Stokhos_InterlacedTestSupport.hpp
-            ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 2
-    )
-
-ENDIF()
 
 IF(Stokhos_ENABLE_Sacado)
 
@@ -804,63 +727,6 @@ IF(Stokhos_ENABLE_Sacado)
 ENDIF()
 
 # Need to fix these tests so they don't require Epetra
-IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_Kokkos)
-
-  IF (Kokkos_ENABLE_SERIAL)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      KokkosArrayKernelsUnitTest_Serial
-      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
-             Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
-             Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
-             Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      )
-  ENDIF()
-
-  IF (Kokkos_ENABLE_THREADS)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      KokkosArrayKernelsUnitTest_Threads
-      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
-              Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
-              Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
-              Stokhos_KokkosArrayKernelsUnitTest_Threads.cpp
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      RUN_SERIAL
-      )
-  ENDIF()
-
-  IF (Kokkos_ENABLE_OPENMP)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      KokkosArrayKernelsUnitTest_OpenMP
-      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
-              Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
-              Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
-              Stokhos_KokkosArrayKernelsUnitTest_OpenMP.cpp
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      RUN_SERIAL
-      )
-  ENDIF()
-
-  IF (Kokkos_ENABLE_CUDA AND Stokhos_ENABLE_CUSPARSE)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      KokkosArrayKernelsUnitTest_Cuda
-      SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
-              Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
-              Stokhos_KokkosArrayKernelsUnitTest_Cuda.cpp
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      RUN_SERIAL
-      )
-  ENDIF()
-
-ENDIF()
 
 IF (Stokhos_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
