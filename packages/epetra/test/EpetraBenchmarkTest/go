@@ -1,9 +1,0 @@
-mpirun -np 1 ./cxx_main.exe 700 700 1 1 -m -h
-mpirun -np 2 ./cxx_main.exe 700 700 2 1 -m
-mpirun -np 4 ./cxx_main.exe 700 700 2 2 -m
-mpirun -np 8 ./cxx_main.exe 700 700 4 2 -m
-mpirun -np 12 ./cxx_main.exe 700 700 4 3 -m
-mpirun -np 16 ./cxx_main.exe 700 700 4 4 -m
-mpirun -np 20 ./cxx_main.exe 700 700 5 4 -m
-mpirun -np 24 ./cxx_main.exe 700 700 6 4 -m
-mpirun -np 28 ./cxx_main.exe 700 700 7 4 -m

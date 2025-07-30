@@ -1,3 +1,0 @@
-@INCLUDE=epetra/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/new_pacakgeBrowser.tag=$(TRILINOS_HOME)/packages/new_pacakge/browser/doc/html
