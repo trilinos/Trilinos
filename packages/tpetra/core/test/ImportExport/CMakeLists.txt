@@ -103,23 +103,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
   )
 
-IF (Tpetra_ENABLE_DEPRECATED_CODE AND ${PROJECT_NAME}_ENABLE_Epetra)
-  IF(NOT Trilinos_NO_32BIT_GLOBAL_INDICES AND Tpetra_INST_INT_INT)
-    # Tpetra bug 5430:
-    # https://software.sandia.gov/bugzilla/show_bug.cgi?id=5430
-    #
-    # The bug only manifests with 4 MPI processes.  The test currently
-    # requires Epetra; it compares Epetra and Tpetra results.
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      ImportBug5430
-      SOURCES
-      ImportBug5430Test.cpp
-      COMM mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 4
-      )
-  ENDIF ()
-ENDIF ()
 
 IF (Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED_LONG OR Tpetra_INST_INT_UNSIGNED)
   # Test whether Export to a CrsMatrix with a static graph works.

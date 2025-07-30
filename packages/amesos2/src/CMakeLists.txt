@@ -382,30 +382,6 @@ IF (${PACKAGE_NAME}_ENABLE_MUMPS)
 ENDIF()
 
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  APPEND_SET(HEADERS
-    Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.hpp
-    Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_decl.hpp
-    Amesos2_EpetraRowMatrix_AbstractMatrixAdapter_def.hpp
-    Amesos2_EpetraCrsMatrix_MatrixAdapter.hpp
-    Amesos2_EpetraCrsMatrix_MatrixAdapter_decl.hpp
-    Amesos2_EpetraCrsMatrix_MatrixAdapter_def.hpp
-    Amesos2_EpetraMultiVecAdapter.hpp
-    Amesos2_EpetraMultiVecAdapter_decl.hpp
-    Amesos2_EpetraMultiVecAdapter_def.hpp
-    )
-
-  APPEND_SET(SOURCES
-    # Amesos2_EpetraCrsMatrixAdapter.cpp
-    # Amesos2_EpetraJadMatrixAdapter.cpp
-    # Amesos2_EpetraMsrMatrixAdapter.cpp
-    # Amesos2_EpetraRowMatrixAdapter.cpp
-    # Amesos2_EpetraVbrMatrixAdapter.cpp
-    Amesos2_EpetraRowMatrix_AbstractMatrixAdapter.cpp
-    Amesos2_EpetraCrsMatrix_MatrixAdapter.cpp
-    Amesos2_EpetraMultiVecAdapter.cpp
-    )
-ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_TrilinosSS)
     ADD_SUBDIRECTORY(KLU2/Source)

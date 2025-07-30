@@ -168,55 +168,11 @@ ENDIF()
    )
 
 
-IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
- # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "Maxwell_MueLu_Epetra"
-   POSTFIX_AND_ARGS_0 "order1"       --solver=MueLu --numTimeSteps=1 --linAlgebra=Epetra
-   POSTFIX_AND_ARGS_1 "order1_reuse" --solver=MueLu --numTimeSteps=3 --linAlgebra=Epetra --resetSolver
-   NUM_MPI_PROCS 1
-   )
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "Maxwell_MueLu_Epetra"
-   ARGS "--solver=MueLu --numTimeSteps=1 --linAlgebra=Epetra"
-   NUM_MPI_PROCS 4
-   )
-
- # TRIBITS_ADD_TEST(
- #   BlockPrec
- #   NAME "RefMaxwell_Epetra_reuse"
- #   ARGS "--solver=MueLu --numTimeSteps=3 --linAlgebra=Epetra --resetSolver"
- #   COMM mpi
- #   NUM_MPI_PROCS 4
- #   )
-
-ENDIF()
 
 
 #################################################
 # ML RefMaxwell solver
 
-IF (NOT Kokkos_ENABLE_CUDA AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
-
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "Maxwell_ML"
-    ARGS "--solver=ML --numTimeSteps=1 --linAlgebra=Epetra"
-    NUM_MPI_PROCS 1
-    )
-
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "Maxwell_ML"
-    ARGS "--solver=ML --numTimeSteps=1 --linAlgebra=Epetra"
-    NUM_MPI_PROCS 4
-    )
-
-ENDIF()
 
 
 #################################################
@@ -261,45 +217,10 @@ TRIBITS_ADD_TEST(
    )
 
 
-IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
- # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "Darcy_MueLu_Epetra_order1"
-   ARGS "--solver=MueLu --numTimeSteps=1 --linAlgebra=Epetra --inputFile=darcyTet.xml"
-   NUM_MPI_PROCS 1
- )
-
- TRIBITS_ADD_TEST(
-   BlockPrec
-   NAME "Darcy_MueLu_Epetra_order1"
-   ARGS "--solver=MueLu --numTimeSteps=1 --linAlgebra=Epetra --inputFile=darcyTet.xml"
-   NUM_MPI_PROCS 4
- )
-
-ENDIF()
 
 #################################################
 # ML graddiv solver
 
-IF (NOT Kokkos_ENABLE_CUDA AND ${PACKAGE_NAME}_ENABLE_ML AND MueLu_ENABLE_Epetra)
-
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "Darcy_ML"
-    ARGS "--solver=ML --numTimeSteps=1 --linAlgebra=Epetra --inputFile=darcyHex.xml  --x-elements=15  --y-elements=15 --z-elements=15"
-    NUM_MPI_PROCS 1
-    )
-
-  # TRIBITS_ADD_TEST(
-  #   BlockPrec
-  #   NAME "Darcy_ML"
-  #   ARGS "--solver=ML --numTimeSteps=1 --linAlgebra=Epetra --inputFile=darcyHex.xml  --x-elements=15  --y-elements=15 --z-elements=15"
-  #   NUM_MPI_PROCS 4
-  #   )
-
-ENDIF()
 
 
 #################################################

@@ -238,11 +238,6 @@ SET(SOURCES "")
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 # Add path to Dakota headers in installed directory
-IF (${PACKAGE_NAME}_ENABLE_TriKota)
-TRIBITS_INCLUDE_DIRECTORIES(
-    ${CMAKE_CURRENT_BINARY_DIR}/../../TriKota/Dakota/install/include
-  )
-ENDIF()
 
 
 SET(HEADERS ${HEADERS}
@@ -401,120 +396,6 @@ SET(SOURCES ${SOURCES}
 )
 
 # Epetra
-IF (Stokhos_ENABLE_EpetraExt)
-  TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
-  SET(HEADERS ${HEADERS}
-    epetra/Stokhos_Sparse3TensorUtilities.hpp
-    epetra/Stokhos_EpetraSparse3Tensor.hpp
-    epetra/Stokhos_SGOperator.hpp
-    epetra/Stokhos_MatrixFreeOperator.hpp
-    epetra/Stokhos_KLMatrixFreeOperator.hpp
-    epetra/Stokhos_KLReducedMatrixFreeOperator.hpp
-    epetra/Stokhos_FullyAssembledOperator.hpp
-    epetra/Stokhos_SGOperatorFactory.hpp
-    epetra/Stokhos_SGPreconditioner.hpp
-    epetra/Stokhos_MeanBasedPreconditioner.hpp
-    epetra/Stokhos_ApproxGaussSeidelPreconditioner.hpp
-    epetra/Stokhos_ApproxJacobiPreconditioner.hpp
-    epetra/Stokhos_ApproxSchurComplementPreconditioner.hpp
-    epetra/Stokhos_KroneckerProductPreconditioner.hpp
-    epetra/Stokhos_FullyAssembledPreconditioner.hpp
-    epetra/Stokhos_SGPreconditionerFactory.hpp
-    epetra/Stokhos_AbstractPreconditionerFactory.hpp
-    epetra/Stokhos_IfpackPreconditionerFactory.hpp
-    epetra/Stokhos_MLPreconditionerFactory.hpp
-    epetra/Stokhos_PreconditionerFactory.hpp
-    epetra/Stokhos_MLPrecOp.hpp
-    epetra/Stokhos_SGModelEvaluatorBase.hpp
-    epetra/Stokhos_SGModelEvaluator.hpp
-    epetra/Stokhos_SGQuadModelEvaluator.hpp
-    epetra/Stokhos_SGInverseModelEvaluator.hpp
-    epetra/Stokhos_ResponseStatisticModelEvaluator.hpp
-    epetra/Stokhos_Epetra.hpp
-    epetra/Stokhos_ParallelData.hpp
-    epetra/Stokhos_PCECovarianceOp.hpp
-    epetra/Stokhos_PCEAnasaziKL.hpp
-    epetra/Stokhos_ProductContainer.hpp
-    epetra/Stokhos_ProductContainerImp.hpp
-    epetra/Stokhos_VectorOrthogPoly.hpp
-    epetra/Stokhos_VectorOrthogPolyImp.hpp
-    epetra/Stokhos_VectorOrthogPolyTraitsEpetra.hpp
-    epetra/Stokhos_ProductEpetraVector.hpp
-    epetra/Stokhos_ProductEpetraMultiVector.hpp
-    epetra/Stokhos_ProductEpetraOperator.hpp
-    epetra/Stokhos_ProductEpetraMultiVectorOperator.hpp
-    epetra/Stokhos_EpetraVectorOrthogPoly.hpp
-    epetra/Stokhos_EpetraMultiVectorOrthogPoly.hpp
-    epetra/Stokhos_EpetraOperatorOrthogPoly.hpp
-    epetra/Stokhos_EpetraMultiVectorOperatorOrthogPoly.hpp
-    epetra/Stokhos_EpetraMultiVectorOperator.hpp
-    epetra/Stokhos_BlockDiagonalOperator.hpp
-    epetra/Stokhos_MPPreconditioner.hpp
-    epetra/Stokhos_MPBlockDiagonalPreconditioner.hpp
-    epetra/Stokhos_MPMeanBasedPreconditioner.hpp
-    epetra/Stokhos_MPPreconditionerFactory.hpp
-    epetra/Stokhos_MPModelEvaluator.hpp
-    epetra/Stokhos_SGQuadMPModelEvaluator.hpp
-    epetra/Stokhos_MPModelEvaluatorAdapter.hpp
-    epetra/Stokhos_MPInverseModelEvaluator.hpp
-    epetra/Stokhos_InterlacedOperator.hpp
-    epetra/Stokhos_SGModelEvaluator_Interlaced.hpp
-    epetra/Stokhos_SGModelEvaluator_Adaptive.hpp
-    epetra/Stokhos_BasisInteractionGraph.hpp
-    epetra/Stokhos_AdaptivityUtils.hpp
-    epetra/Stokhos_AdaptivityManager.hpp
-    )
-
-  SET(SOURCES ${SOURCES}
-    epetra/Stokhos_EpetraSparse3Tensor.cpp
-    epetra/Stokhos_MatrixFreeOperator.cpp
-    epetra/Stokhos_KLMatrixFreeOperator.cpp
-    epetra/Stokhos_KLReducedMatrixFreeOperator.cpp
-    epetra/Stokhos_FullyAssembledOperator.cpp
-    epetra/Stokhos_SGOperatorFactory.cpp
-    epetra/Stokhos_MeanBasedPreconditioner.cpp
-    epetra/Stokhos_ApproxGaussSeidelPreconditioner.cpp
-    epetra/Stokhos_ApproxJacobiPreconditioner.cpp
-    epetra/Stokhos_ApproxSchurComplementPreconditioner.cpp
-    epetra/Stokhos_KroneckerProductPreconditioner.cpp
-    epetra/Stokhos_FullyAssembledPreconditioner.cpp
-    epetra/Stokhos_SGPreconditionerFactory.cpp
-    epetra/Stokhos_IfpackPreconditionerFactory.cpp
-    epetra/Stokhos_MLPreconditionerFactory.cpp
-    epetra/Stokhos_PreconditionerFactory.cpp
-    epetra/Stokhos_MLPrecOp.cpp
-    epetra/Stokhos_ParallelData.cpp
-    epetra/Stokhos_PCECovarianceOp.cpp
-    epetra/Stokhos_PCEAnasaziKL.cpp
-    epetra/Stokhos_ProductEpetraVector.cpp
-    epetra/Stokhos_ProductEpetraMultiVector.cpp
-    epetra/Stokhos_ProductEpetraOperator.cpp
-    epetra/Stokhos_ProductEpetraMultiVectorOperator.cpp
-    epetra/Stokhos_EpetraVectorOrthogPoly.cpp
-    epetra/Stokhos_EpetraMultiVectorOrthogPoly.cpp
-    epetra/Stokhos_EpetraOperatorOrthogPoly.cpp
-    epetra/Stokhos_EpetraMultiVectorOperatorOrthogPoly.cpp
-    epetra/Stokhos_SGModelEvaluator.cpp
-    epetra/Stokhos_SGQuadModelEvaluator.cpp
-    epetra/Stokhos_SGInverseModelEvaluator.cpp
-    epetra/Stokhos_ResponseStatisticModelEvaluator.cpp
-    epetra/Stokhos_EpetraMultiVectorOperator.cpp
-    epetra/Stokhos_BlockDiagonalOperator.cpp
-    epetra/Stokhos_MPBlockDiagonalPreconditioner.cpp
-    epetra/Stokhos_MPMeanBasedPreconditioner.cpp
-    epetra/Stokhos_MPPreconditionerFactory.cpp
-    epetra/Stokhos_MPModelEvaluator.cpp
-    epetra/Stokhos_SGQuadMPModelEvaluator.cpp
-    epetra/Stokhos_MPModelEvaluatorAdapter.cpp
-    epetra/Stokhos_MPInverseModelEvaluator.cpp
-    epetra/Stokhos_InterlacedOperator.cpp
-    epetra/Stokhos_SGModelEvaluator_Interlaced.cpp
-    epetra/Stokhos_SGModelEvaluator_Adaptive.cpp
-    epetra/Stokhos_BasisInteractionGraph.cpp
-    epetra/Stokhos_AdaptivityUtils.cpp
-    epetra/Stokhos_AdaptivityManager.cpp
-    )
-ENDIF()
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/kl)

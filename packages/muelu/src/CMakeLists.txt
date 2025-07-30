@@ -64,9 +64,6 @@ ENDIF()
 IF(${PACKAGE_NAME}_ENABLE_Thyra)
   TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/thyra)
 ENDIF()
-IF(${PACKAGE_NAME}_ENABLE_Epetra)
-  TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/epetra)
-ENDIF()
 IF(${PACKAGE_NAME}_ENABLE_AmgX)
   TRIBITS_INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
 ENDIF()
@@ -145,13 +142,6 @@ IF(${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
     # check whether both Epetra and Tpetra are enabled
     SET(MueLu_ETI_EpetraGuards "")
     SET(MueLu_ETI_EpetraGuards_END "")
-    IF(${PACKAGE_NAME}_ENABLE_Epetra)
-      # both Epetra and Tpetra are enabled. The Epetra instantiation needs to be guarded
-      SET(MueLu_ETI_EpetraGuards
-          "#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))"
-      )
-      SET(MueLu_ETI_EpetraGuards_END "#endif")
-    ENDIF()
 
     # loop over all ETI_CLASSES
     SET(SRCS "")
@@ -235,15 +225,6 @@ IF(${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
       # Note: no Epetra64 support in MueLu
       # EpetraNode is defined in the template file depending on the enabled
       # Kokkos nodes (either Serial or OpenMP)
-      IF(${PACKAGE_NAME}_ENABLE_Epetra)
-        IF(${SKIP_SCALAR_INSTANTIATION})
-          CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
-          SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_Epetra.cpp)
-        ELSE()
-          CONFIGURE_FILE("${TEMPLATE_FILE_DIR}/MueLu_ETI_SC_LO_GO_NO_Epetra.tmpl" ${FINAL_FILE_NAME}_Epetra.cpp)
-          SET(SRCS ${SRCS} ${FINAL_FILE_NAME}_Epetra.cpp)
-        ENDIF()
-      ENDIF()
 
       # Create the cpp file for all combinations of template parameters
       FOREACH(NT ${MueLu_ETI_NODES})

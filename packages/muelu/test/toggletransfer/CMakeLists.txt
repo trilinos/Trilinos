@@ -7,7 +7,6 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 # first ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
 

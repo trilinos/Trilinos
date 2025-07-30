@@ -50,17 +50,6 @@ APPEND_SET(SOURCES
   NOX_Epetra_AdaptiveSolutionManager.C
   )
 
-IF (NOX_ENABLE_EpetraExt)
-
-  APPEND_SET(HEADERS
-    NOX_Epetra_FiniteDifferenceColoringWithUpdate.H
-  )
-
-  APPEND_SET(SOURCES
-    NOX_Epetra_FiniteDifferenceColoringWithUpdate.C
-  )
-
-ENDIF()
 
 IF (NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
   TRIBITS_ADD_LIBRARY(

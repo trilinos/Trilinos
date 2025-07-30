@@ -308,25 +308,7 @@ IF(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       COMM mpi # HAVE_MPI required
     )
 
-    IF(${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
-      TRIBITS_ADD_TEST(
-        Driver
-        NAME "DriverEpetra_IsorropiaPoisson"
-        ARGS "--linAlgebra=Epetra --xml=isorropia.xml"
-        NUM_MPI_PROCS 4
-        COMM mpi # HAVE_MPI required
-      )
-    ENDIF()
 
-    IF(${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
-      TRIBITS_ADD_TEST(
-        Driver
-        NAME "DriverEpetra_CircNspDependency"
-        ARGS "--linAlgebra=Epetra --xml=circ_nsp_dependency.xml"
-        NUM_MPI_PROCS 4
-        COMM mpi # HAVE_MPI required
-      )
-    ENDIF()
 
   ENDIF()
 
@@ -735,29 +717,6 @@ IF(Tpetra_INST_SERIAL)
   )
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_Epetra)
-  TRIBITS_ADD_TEST(
-    SpMVPerformance
-    NAME_POSTFIX "Epetra"
-    COMM mpi
-    NUM_MPI_PROCS 1
-    ARGS "--linAlgebra=Epetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
-    PASS_REGULAR_EXPRESSION "Complete"
-    RUN_SERIAL
-    CATEGORIES PERFORMANCE
-  )
-
-  TRIBITS_ADD_TEST(
-    SpMVPerformance
-    NAME_POSTFIX "Epetra"
-    COMM mpi
-    NUM_MPI_PROCS 4
-    ARGS "--linAlgebra=Epetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
-    PASS_REGULAR_EXPRESSION "Complete"
-    RUN_SERIAL
-    CATEGORIES PERFORMANCE
-  )
-ENDIF()
 
 # Driver to evaluate low level Matrix Matrix multiply kernels potentially using different TPLs
 # This differs from the existing Matrix Matrix driver that forms parallel random matrices for testing

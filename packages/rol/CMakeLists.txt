@@ -82,9 +82,6 @@ IF( TPL_ENABLE_MPI )
 ADD_SUBDIRECTORY(adapters/mpi)
 ENDIF()
 
-IF( ROL_ENABLE_Epetra )
-ADD_SUBDIRECTORY(adapters/epetra)
-ENDIF()
 
 IF( ROL_ENABLE_Tpetra )
 ADD_SUBDIRECTORY(adapters/tpetra)
@@ -98,9 +95,6 @@ IF( ROL_ENABLE_Thyra )
 ADD_SUBDIRECTORY(adapters/thyra)
 ENDIF()
 
-IF( ROL_ENABLE_TriKota )
-ADD_SUBDIRECTORY(adapters/trikota)
-ENDIF()
 
 IF( ROL_ENABLE_pebbl )
 ADD_SUBDIRECTORY(adapters/pebbl)

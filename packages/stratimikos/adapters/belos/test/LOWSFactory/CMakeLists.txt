@@ -31,27 +31,6 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
-IF (${PACKAGE_NAME}_ENABLE_Ifpack)
-
-TRIBITS_ADD_TEST(
-  test_single_belos_thyra_solver_driver
-  POSTFIX_AND_ARGS_0 nos5_kl190
-    --show-all-tests --gmres-krylov-length=190 --max-solution-error=1e-2 --max-resid=1e-6
-    --matrix-file=nos5.mtx
-  POSTFIX_AND_ARGS_1 nos1
-    --show-all-tests --num-rhs=1 --block-size=1 --gmres-krylov-length=300
-    --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --max-solution-error=1e-6
-    --matrix-file=nos1.mtx
-  POSTFIX_AND_ARGS_2 nos1_nrhs8
-    --show-all-tests --num-rhs=8 --block-size=8 --gmres-krylov-length=300
-    --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --max-solution-error=1e-6
-    --matrix-file=nos1.mtx
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
-
-ENDIF()
 
 ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
 IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")

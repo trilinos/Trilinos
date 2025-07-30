@@ -79,12 +79,6 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES SimpleSolve_IR.cpp
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
-  TRIBITS_ADD_EXECUTABLE(
-    QuickSolveEpetra
-    SOURCES quick_solve_epetra.cpp
-  )
-ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Amesos2_SimpleSolve_File
   SOURCE_FILES arc130.mtx

@@ -1,5 +1,4 @@
 # Ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos ${PACKAGE_NAME}_ENABLE_ML ${PACKAGE_NAME}_ENABLE_Zoltan2Core)
 
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -64,24 +63,6 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
       NUM_MPI_PROCS 2
     )
 
-    IF(${PACKAGE_NAME}_ENABLE_ML AND ${PACKAGE_NAME}_ENABLE_Epetra)
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-Tpetra-ML-RefMaxwell-list"
-        ARGS "--linAlgebra=Tpetra --xml=Maxwell_ML_MueLu.xml"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-      )
-
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-Tpetra-ML-Maxwell1-list"
-        ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_ML1_MueLu.xml"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-      )
-
-    ENDIF()
 
     IF(${PACKAGE_NAME}_INST_DOUBLE_INT_INT AND ${PACKAGE_NAME}_ENABLE_Stratimikos)
       TRIBITS_ADD_TEST(
@@ -96,55 +77,6 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
     ENDIF()
   ENDIF()
 
-  IF(${PACKAGE_NAME}_ENABLE_Epetra)
-
-    TRIBITS_ADD_TEST(
-      Maxwell3D
-      NAME "Maxwell3D-Epetra"
-      ARGS "--linAlgebra=Epetra --reuse --xml=Maxwell.xml"
-      COMM serial mpi
-      NUM_MPI_PROCS 4
-    )
-
-    IF(${PACKAGE_NAME}_ENABLE_Stratimikos)
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-Epetra-Stratimikos"
-        ARGS "--linAlgebra=Epetra --solverName=Stratimikos --reuse --xml=Maxwell.xml"
-        ARGS "--linAlgebra=Epetra --solverName=Stratimikos --reuse --xml=Maxwell3.xml"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-      )
-    ENDIF()
-
-    IF(${PACKAGE_NAME}_ENABLE_ML)
-
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-ML-RefMaxwell"
-        ARGS "--linAlgebra=Epetra --precType=ML-RefMaxwell  --xml=Maxwell_ML.xml"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-      )
-
-      TRIBITS_ADD_TEST(
-        Maxwell3D
-        NAME "Maxwell3D-ML-Maxwell1"
-        ARGS "--linAlgebra=Epetra --precType=ML-Maxwell  --xml=Maxwell_ML1.xml"
-        COMM serial mpi
-        NUM_MPI_PROCS 4
-      )
-
-      # Hiptmair not implemented for MueLu+Epetra
-      # TRIBITS_ADD_TEST(
-      #   Maxwell3D
-      #   NAME "Maxwell3D-ML-list"
-      #   ARGS "--linAlgebra=Epetra --precType=MueLu-Maxwell1  --xml=Maxwell_ML1_muelu.xml"
-      #   COMM serial mpi
-      #   NUM_MPI_PROCS 4
-      #   )
-    ENDIF()
-  ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     Maxwell_cp

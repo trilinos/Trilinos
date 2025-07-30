@@ -8,7 +8,6 @@ TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 # B) Set up package-specific options
 #
 
-ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 ASSERT_DEFINED(Xpetra_INT_LONG_LONG)
 ASSERT_DEFINED(Xpetra_ENABLE_Experimental)
@@ -74,15 +73,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   YES
 )
 
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
-  MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
-ENDIF()
 
 # If you want MueLu Epetra, you need Xpetra Epetra
-ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
-IF(NOT Xpetra_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
-  MESSAGE(FATAL_ERROR "MueLu Epetra support requires Xpetra Epetra support")
-ENDIF()
 
 # If you want MueLu Epetra, you need Xpetra Tpetra
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
@@ -92,13 +84,8 @@ ENDIF()
 
 # Need to do this because Xpetra_ENABLE_Epetra might have been disabled after
 # HAVE_MUELU_EPETRA was first set automatically
-GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
 # Print a warning when we might be lacking a coarse solver.
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
-IF(${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos)
-  MESSAGE(WARNING "MueLu's Epetra backend is enabled, but Amesos is disabled. This means only iterative coarse solves are available when using Epetra.")
-ENDIF()
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
 IF(NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
   MESSAGE(WARNING "MueLu's Amesos2 backend is disabled. This means only iterative coarse solves are available when using Tpetra.")
@@ -311,10 +298,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_CUDA ${Tpetra_INST_CUDA})
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_HIP ${Tpetra_INST_HIP})
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_SYCL ${Tpetra_INST_SYCL})
-  IF(${PACKAGE_NAME}_ENABLE_Epetra)
-    # If Epetra is active, always activate SerialNode
-    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_SERIAL ON)
-  ENDIF()
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_SERIAL       : ${HAVE_${PACKAGE_NAME_UC}_SERIAL}")
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_OPENMP       : ${HAVE_${PACKAGE_NAME_UC}_OPENMP}")
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_CUDA         : ${HAVE_${PACKAGE_NAME_UC}_CUDA}")
@@ -336,10 +319,6 @@ ELSE()
   # If Epetra only is enabled, ETI is off by default. We have to make sure that
   # the HAVE_MUELU_SERIAL variable is set such that the IfpackSmoother and other
   # purely Epetra-related routines are enabled properly
-  IF(${PACKAGE_NAME}_ENABLE_Epetra)
-    # If Epetra only is active, only activate SerialNode by default
-    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_SERIAL ON)
-  ENDIF()
 
   # With ETI off, free to leave int as the default GO
 ENDIF()
@@ -378,9 +357,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Use ML's Matrix-Matrix-Multiply when available"
   OFF
 )
-IF(${PACKAGE_NAME}_ENABLE_ML_MMM AND NOT ${PACKAGE_NAME}_ENABLE_ML)
-  MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_ML_MMM=ON requires MueLu_ENABLE_ML=ON.")
-ENDIF()
 
 #
 # C) Add the libraries, tests, and examples

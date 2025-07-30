@@ -67,17 +67,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
 ###################################################
 # Optional Trilinos Library Support
 ###################################################
-IF(NOX_ENABLE_ML)
-  SET(HAVE_NOX_ML_EPETRA ON)
-ENDIF()
 
-IF(NOX_ENABLE_EpetraExt)
-  SET(HAVE_NOX_EPETRAEXT ON)
-ENDIF()
 
-IF(NOX_ENABLE_Amesos)
-  SET(HAVE_NOX_AMESOS ON)
-ENDIF()
 
 IF(NOX_ENABLE_Anasazi)
   SET(HAVE_LOCA_ANASAZI ON)
