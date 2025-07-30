@@ -1,7 +1,0 @@
-mpiCC -DHAVE_CONFIG_H -I../../src/inout -I/home/mheroux/Trilinos/LINUX_MPI/include -O0 -g -c cxx_main.cpp
-mpiCC -DHAVE_CONFIG_H -I../../src/inout -I/home/mheroux/Trilinos/LINUX_MPI/include -O0 -g -c ../../src/inout/EpetraExt_RowMatrixOut.cpp
-mpiCC -DHAVE_CONFIG_H -I../../src/inout -I/home/mheroux/Trilinos/LINUX_MPI/include -O0 -g -c ../../src/inout/EpetraExt_VectorOut.cpp
-mpiCC -DHAVE_CONFIG_H -I../../src/inout -I/home/mheroux/Trilinos/LINUX_MPI/include -O0 -g -c ../../src/inout/EpetraExt_MultiVectorOut.cpp
-mpiCC -DHAVE_CONFIG_H -I../../src/inout -I/home/mheroux/Trilinos/LINUX_MPI/include -O0 -g -c ../../src/inout/EpetraExt_mmio.cpp
-
-mpiCC -DHAVE_CONFIG_H cxx_main.o EpetraExt_RowMatrixOut.o EpetraExt_mmio.o /home/mheroux/Trilinos/LINUX_MPI/lib/libepetra.a /home/mheroux/Trilinos/LINUX_MPI/lib/libtriutils.a -llapack -lblas_fast -lg2c -lm
