@@ -1,8 +1,0 @@
-OPT_FLAGS=-O2
-ARCH_FLAGS=$(OPT_FLAGS)
-CC=acc-2.0.1
-FC=f77-2.0.1
-RANLIB=ranlib
-LINKER=$(FC)
-ARCH_LIBS= -cg89 -lF77 -lm -lC
-AR=ar
