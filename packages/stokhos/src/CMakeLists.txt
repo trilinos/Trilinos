@@ -12,7 +12,7 @@ FUNCTION(PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_L
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(PROCESS_ETI_TEMPLATE)
 
-FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES SRC_DIR BASE_NAME APPEND_BASE DEPLIBS DEPLIBS_OUT)
+FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES EXTRA_ETI_CLASSES SRC_DIR BASE_NAME APPEND_BASE DEPLIBS DEPLIBS_OUT)
   # Template file name for each cpp file
   string(CONCAT TMPL_FILE ${SRC_DIR} "/" ${BASE_NAME} "_ETI_MP_Vector.tmpl")
   string(TOLOWER "${BASE_NAME}" LOWER_BASE_NAME)
@@ -77,6 +77,13 @@ FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES SRC_DIR BASE_NAME APPEN
           endif()
 
           configure_file(${TMPL_FILE} ${CPP_FILE})
+          list(APPEND SRCS ${CPP_FILE})
+        endforeach()
+
+        # Add in extra cpp files that we don't generate
+        foreach(CLASS ${EXTRA_ETI_CLASSES})
+          string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS}")
+          string(CONCAT CPP_FILE "${SRC_DIR}" "/" ${BASE_NAME} "_" "${CLASS_FILE_NAME}" "_MP_Vector_" "${ENSEMBLE_SIZE}" "_" "${DEVICE}" ".cpp")
           list(APPEND SRCS ${CPP_FILE})
         endforeach()
 
@@ -825,6 +832,7 @@ IF (Stokhos_ENABLE_Sacado)
           PROCESS_ENSEMBLE_ETI(
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${TPETRA_SD_ETI_CLASSES}"
+            ""
             "sacado/kokkos/vector/tpetra"
             "Tpetra_SD"
             TRUE
@@ -838,6 +846,7 @@ IF (Stokhos_ENABLE_Sacado)
         PROCESS_ENSEMBLE_ETI(
           "${Stokhos_ETI_Ensemble_Sizes}"
           "${TPETRA_ETI_CLASSES}"
+          ""
           "sacado/kokkos/vector/tpetra"
           "Tpetra"
           TRUE
@@ -849,6 +858,7 @@ IF (Stokhos_ENABLE_Sacado)
         PROCESS_ENSEMBLE_ETI(
           "${Stokhos_ETI_Ensemble_Sizes}"
           "${TPETRAEXT_ETI_CLASSES}"
+          ""
           "sacado/kokkos/vector/tpetra"
           "TpetraExt"
           TRUE
@@ -966,6 +976,7 @@ IF (Stokhos_ENABLE_Sacado)
           PROCESS_ENSEMBLE_ETI(
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${XPETRA_ALL_ETI_CLASSES}"
+            ""
             "sacado/kokkos/vector/xpetra"
             "Xpetra"
             FALSE
@@ -1023,6 +1034,7 @@ IF (Stokhos_ENABLE_Sacado)
           PROCESS_ENSEMBLE_ETI(
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${AMESOS2_ETI_CLASSES}"
+            ""
             "sacado/kokkos/vector/amesos2"
             "Amesos2"
             TRUE
@@ -1064,6 +1076,7 @@ IF (Stokhos_ENABLE_Sacado)
           PROCESS_ENSEMBLE_ETI(
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${IFPACK2_ETI_CLASSES}"
+            ""
             "sacado/kokkos/vector/ifpack2"
             "Ifpack2"
             TRUE
@@ -1118,6 +1131,12 @@ IF (Stokhos_ENABLE_Sacado)
 
       ENDIF()
 
+      LIST(APPEND MUELU_EXTRA_ETI_CLASSES
+        "ScalarDroppingClassical"
+        "ScalarDroppingDistanceLaplacian"
+        "VectorDroppingClassical"
+        "VectorDroppingDistanceLaplacian")
+
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
         TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu/*.hpp)
@@ -1125,6 +1144,7 @@ IF (Stokhos_ENABLE_Sacado)
           PROCESS_ENSEMBLE_ETI(
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"
+            "${MUELU_EXTRA_ETI_CLASSES}"
             "sacado/kokkos/vector/muelu"
             "MueLu"
             FALSE
@@ -1133,13 +1153,14 @@ IF (Stokhos_ENABLE_Sacado)
           LIST(APPEND STOKHOS_MUELU_DEPLIBS ${DEPLIBS_OUT})
         ENDIF()
       ENDIF()
+
       IF(Stokhos_ENABLE_PCE_Scalar_Type)
         TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu)
         APPEND_GLOB(MUELU_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/muelu/*.hpp)
         IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_PCE_ETI(
             "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"
-            ""
+            "${MUELU_EXTRA_ETI_CLASSES}"
             "sacado/kokkos/pce/muelu"
             "MueLu"
             FALSE
