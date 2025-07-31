@@ -103,10 +103,9 @@ class DropFunctor {
 
           Kokkos::printf("%5f ", ATS::sqrt(aij2 / aiiajj));
         } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
-          auto neg_aij        = -ATS::real(val);
-          auto max_neg_aik    = eps * ATS::real(diag(rlid));
-          results(offset + k) = Kokkos::max((neg_aij < max_neg_aik) ? DROP : KEEP,
-                                            results(offset + k));
+          auto neg_aij     = -ATS::real(val);
+          auto max_neg_aik = eps * ATS::real(diag(rlid));
+
           Kokkos::printf("%5f ", neg_aij / max_neg_aik);
         } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
           auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|

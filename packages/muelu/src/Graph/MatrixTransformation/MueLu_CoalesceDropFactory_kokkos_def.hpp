@@ -26,15 +26,21 @@
 #include "MueLu_LWGraph_kokkos.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Utilities.hpp"
 
 // #define MUELU_COALESCE_DROP_DEBUG 1
 
 #include "MueLu_BoundaryDetection.hpp"
-#include "MueLu_ClassicalDropping.hpp"
-#include "MueLu_CutDrop.hpp"
 #include "MueLu_DroppingCommon.hpp"
-#include "MueLu_DistanceLaplacianDropping.hpp"
 #include "MueLu_MatrixConstruction.hpp"
+
+// The different dropping algorithms are split up over several translation units. This speeds up compilation and also avoids launch latencies on GPU.
+#include "MueLu_ScalarDroppingBase.hpp"
+#include "MueLu_ScalarDroppingClassical.hpp"
+#include "MueLu_ScalarDroppingDistanceLaplacian.hpp"
+#include "MueLu_VectorDroppingBase.hpp"
+#include "MueLu_VectorDroppingClassical.hpp"
+#include "MueLu_VectorDroppingDistanceLaplacian.hpp"
 
 namespace MueLu {
 
@@ -173,36 +179,14 @@ void CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMaterial(Level& currentLevel, size_t spatialDim) const {
-  auto material = Get<RCP<MultiVector>>(currentLevel, "Material");
-
-  if (IsPrint(Runtime0)) {
-    if (material->getNumVectors() == 1) {
-      GetOStream(Runtime0) << "material scalar mean = " << material->getVector(0)->meanValue() << std::endl;
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(spatialDim * spatialDim != material->getNumVectors(), Exceptions::RuntimeError, "Need \"Material\" to have spatialDim^2 vectors.");
-      {
-        Teuchos::Array<Scalar> means(material->getNumVectors());
-        material->meanValue(means());
-        std::stringstream ss;
-        ss << "material tensor mean =" << std::endl;
-        size_t k = 0;
-        for (size_t i = 0; i < spatialDim; ++i) {
-          ss << "   ";
-          for (size_t j = 0; j < spatialDim; ++j) {
-            ss << means[k] << " ";
-            ++k;
-          }
-          ss << std::endl;
-        }
-        GetOStream(Runtime0) << ss.str();
-      }
-    }
-  }
-
-  return material;
+template <class local_matrix_type, class boundary_nodes_view, class... Functors>
+void runBoundaryFunctors(local_matrix_type& lclA, boundary_nodes_view& boundaryNodes, Functors&... functors) {
+  using local_ordinal_type = typename local_matrix_type::ordinal_type;
+  using execution_space    = typename local_matrix_type::execution_space;
+  using range_type         = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
+  auto range               = range_type(0, boundaryNodes.extent(0));
+  auto boundaries          = BoundaryDetection::BoundaryFunctor(lclA, functors...);
+  Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries);
 }
 
 template <class magnitudeType>
@@ -280,7 +264,7 @@ void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppi
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildScalar(Level& currentLevel) const {
-  FactoryMonitor m(*this, "Build", currentLevel);
+  FactoryMonitor m(*this, "BuildScalar", currentLevel);
 
   using MatrixType        = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using GraphType         = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
@@ -291,6 +275,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   using values_type       = typename local_matrix_type::values_type::non_const_type;
   using device_type       = typename Node::device_type;
   using memory_space      = typename device_type::memory_space;
+  using results_view_type = Kokkos::View<DecisionType*, memory_space>;
   using magnitudeType     = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using doubleMultiVector = Xpetra::MultiVector<magnitudeType, LO, GO, NO>;
 
@@ -388,22 +373,14 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     SubFactoryMonitor mBoundary(*this, "Boundary detection", currentLevel);
 
     // macro that applies boundary detection functors
-#define MueLu_runBoundaryFunctors(...)                                          \
-  {                                                                             \
-    auto boundaries = BoundaryDetection::BoundaryFunctor(lclA, __VA_ARGS__);    \
-    Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries); \
-  }
-
     auto dirichlet_detection = BoundaryDetection::PointDirichletFunctor(lclA, boundaryNodes, dirichletThreshold, dirichletNonzeroThreshold);
 
     if (rowSumTol <= 0.) {
-      MueLu_runBoundaryFunctors(dirichlet_detection);
+      runBoundaryFunctors(lclA, boundaryNodes, dirichlet_detection);
     } else {
       auto apply_rowsum = BoundaryDetection::RowSumFunctor(lclA, boundaryNodes, rowSumTol);
-      MueLu_runBoundaryFunctors(dirichlet_detection,
-                                apply_rowsum);
+      runBoundaryFunctors(lclA, boundaryNodes, dirichlet_detection, apply_rowsum);
     }
-#undef MueLu_runBoundaryFunctors
   }
   // In what follows, boundaryNodes can still still get modified if aggregationMayCreateDirichlet == true.
   // Otherwise we're now done with it now.
@@ -430,156 +407,57 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   //
   // For the block diagonal variants we first block diagonalized and then apply "blocksize = 1" algorithms.
 
-  // Macro that applies dropping functors.
-  // If HAVE_MUELU_DEBUG is true, this runs additional debug checks.
-#if !defined(HAVE_MUELU_DEBUG)
-#define MueLu_runDroppingFunctorsImpl(...)                                                                            \
-  {                                                                                                                   \
-    auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__); \
-    Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz_filtered);                 \
-  }
-#else
-#define MueLu_runDroppingFunctorsImpl(...)                                                                                   \
-  {                                                                                                                          \
-    auto debug           = Misc::DebugFunctor(lclA, results);                                                                \
-    auto countingFunctor = MatrixConstruction::PointwiseCountingFunctor(lclA, results, filtered_rowptr, __VA_ARGS__, debug); \
-    Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz_filtered);                        \
-  }
-#endif
-
-  // Macro that handles optional block diagonalization.
-  // Calls MueLu_runDroppingFunctorsImpl
-#define MueLu_runDroppingFunctors(...)                                                    \
-  {                                                                                       \
-    if (useBlocking) {                                                                    \
-      auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber"); \
-      auto block_diagonalize = Misc::BlockDiagonalizeFunctor(*A, *BlockNumber, results);  \
-      MueLu_runDroppingFunctorsImpl(block_diagonalize, __VA_ARGS__);                      \
-    } else                                                                                \
-      MueLu_runDroppingFunctorsImpl(__VA_ARGS__);                                         \
-  }
-
-  // Macro that runs dropping for SoC based on A itself, handling of droppingMethod.
-  // Calls MueLu_runDroppingFunctors
-#define MueLu_runDroppingFunctors_on_A(SoC)                                              \
-  {                                                                                      \
-    if (droppingMethod == "point-wise") {                                                \
-      auto dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results); \
-                                                                                         \
-      if (aggregationMayCreateDirichlet) {                                               \
-        MueLu_runDroppingFunctors(dropping,                                              \
-                                  drop_boundaries,                                       \
-                                  preserve_diagonals,                                    \
-                                  mark_singletons_as_boundary);                          \
-      } else {                                                                           \
-        MueLu_runDroppingFunctors(dropping,                                              \
-                                  drop_boundaries,                                       \
-                                  preserve_diagonals);                                   \
-      }                                                                                  \
-    } else if (droppingMethod == "cut-drop") {                                           \
-      auto comparison = CutDrop::make_comparison_functor<SoC>(*A, results);              \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                  \
-                                                                                         \
-      MueLu_runDroppingFunctors(drop_boundaries,                                         \
-                                preserve_diagonals,                                      \
-                                cut_drop);                                               \
-    }                                                                                    \
-  }
-
-  // Macro that runs on the distance Laplacian, handling of droppingMethod.
-  // Calls MueLu_runDroppingFunctors
-#define MueLu_runDroppingFunctors_on_dlap_inner(SoC)                                                           \
-  {                                                                                                            \
-    if (droppingMethod == "point-wise") {                                                                      \
-      auto dist_laplacian_dropping = DistanceLaplacian::make_drop_functor<SoC>(*A, threshold, dist2, results); \
-                                                                                                               \
-      if (aggregationMayCreateDirichlet) {                                                                     \
-        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                     \
-                                  drop_boundaries,                                                             \
-                                  preserve_diagonals,                                                          \
-                                  mark_singletons_as_boundary);                                                \
-      } else {                                                                                                 \
-        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                     \
-                                  drop_boundaries,                                                             \
-                                  preserve_diagonals);                                                         \
-      }                                                                                                        \
-    } else if (droppingMethod == "cut-drop") {                                                                 \
-      auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(*A, dist2, results);                        \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                        \
-                                                                                                               \
-      MueLu_runDroppingFunctors(drop_boundaries,                                                               \
-                                preserve_diagonals,                                                            \
-                                cut_drop);                                                                     \
-    }                                                                                                          \
-  }
-
-  // Macro that runs on the distance Laplacian, handling of distanceLaplacianMetric.
-  // Calls MueLu_runDroppingFunctors_on_dlap_inner
-#define MueLu_runDroppingFunctors_on_dlap(SoC)                                               \
-  {                                                                                          \
-    if (distanceLaplacianMetric == "unweighted") {                                           \
-      auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(*A, coords);                 \
-      MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                          \
-    } else if (distanceLaplacianMetric == "material") {                                      \
-      auto material = GetMaterial(currentLevel, coords->getNumVectors());                    \
-      if (material->getNumVectors() == 1) {                                                  \
-        auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(*A, coords, material); \
-        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                        \
-      } else {                                                                               \
-        auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(*A, coords, material); \
-        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                        \
-      }                                                                                      \
-    }                                                                                        \
-  }
-
   // rowptr of filtered A
   auto filtered_rowptr = rowptr_type("filtered_rowptr", lclA.numRows() + 1);
   // Number of nonzeros of filtered A
   LocalOrdinal nnz_filtered = 0;
   // dropping decisions for each entry
-  auto results = Kokkos::View<DecisionType*, memory_space>("results", lclA.nnz());  // initialized to UNDECIDED
+  auto results = results_view_type("results", lclA.nnz());  // initialized to UNDECIDED
   {
     SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
 
-    auto drop_boundaries = Misc::PointwiseDropBoundaryFunctor(lclA, boundaryNodes, results);
-
     if (threshold != zero) {
-      auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
-      auto mark_singletons_as_boundary = Misc::MarkSingletonFunctor(lclA, boundaryNodes, results);
-
       if (socUsesMatrix == "A") {
         if (socUsesMeasure == "unscaled") {
-          MueLu_runDroppingFunctors_on_A(Misc::UnscaledMeasure);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+                                                                                                                              aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          MueLu_runDroppingFunctors_on_A(Misc::SmoothedAggregationMeasure);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+                                                                                                                                         aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          MueLu_runDroppingFunctors_on_A(Misc::SignedRugeStuebenMeasure);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+                                                                                                                                       aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          MueLu_runDroppingFunctors_on_A(Misc::SignedSmoothedAggregationMeasure);
+          ScalarDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold,
+                                                                                                                                               aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         }
       } else if (socUsesMatrix == "distance laplacian") {
         auto coords = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
         if (socUsesMeasure == "unscaled") {
-          MueLu_runDroppingFunctors_on_dlap(Misc::UnscaledMeasure);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          MueLu_runDroppingFunctors_on_dlap(Misc::SmoothedAggregationMeasure);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          MueLu_runDroppingFunctors_on_dlap(Misc::SignedRugeStuebenMeasure);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          MueLu_runDroppingFunctors_on_dlap(Misc::SignedSmoothedAggregationMeasure);
+          ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, results, filtered_rowptr, nnz_filtered, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, currentLevel, *this);
         }
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
-      // FIXME: This seems inconsistent
-      // MueLu_runDroppingFunctors(drop_boundaries);
-      auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-      MueLu_runDroppingFunctors(no_op);
+
+      if (symmetrizeDroppedGraph) {
+        auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(*A, boundaryNodes, results);
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
+      } else {
+        auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, no_op);
+      }
     }
 
     if (symmetrizeDroppedGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      MueLu_runDroppingFunctors(symmetrize);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
     }
   }
   GO numDropped = lclA.nnz() - nnz_filtered;
@@ -659,11 +537,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     filtered_rowptr = rowptr_type("rowptr_coloring_graph", lclA.numRows() + 1);
     if (localizeColoringGraph) {
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
-      MueLu_runDroppingFunctors(drop_offrank);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_offrank);
     }
     if (symmetrizeColoringGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      MueLu_runDroppingFunctors(symmetrize);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
@@ -673,12 +551,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     auto colorGraph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "coloring graph"));
     Set(currentLevel, "Coloring Graph", colorGraph);
   }
-
-#undef MueLu_runDroppingFunctors_on_A
-#undef MueLu_runDroppingFunctors_on_dlap_inner
-#undef MueLu_runDroppingFunctors_on_dlap
-#undef MueLu_runDroppingFunctors
-#undef MueLu_runDroppingFunctorsImpl
 
   LO dofsPerNode = 1;
   Set(currentLevel, "DofsPerNode", dofsPerNode);
@@ -691,7 +563,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::boundary_nodes_type> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     BuildVector(Level& currentLevel) const {
-  FactoryMonitor m(*this, "Build", currentLevel);
+  FactoryMonitor m(*this, "BuildVector", currentLevel);
 
   using MatrixType        = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using GraphType         = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
@@ -702,6 +574,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   using values_type       = typename local_matrix_type::values_type::non_const_type;
   using device_type       = typename Node::device_type;
   using memory_space      = typename device_type::memory_space;
+  using results_view_type = Kokkos::View<DecisionType*, memory_space>;
   using magnitudeType     = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using doubleMultiVector = Xpetra::MultiVector<magnitudeType, LO, GO, NO>;
 
@@ -861,20 +734,13 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   {
     SubFactoryMonitor mBoundary(*this, "Boundary detection", currentLevel);
 
-#define MueLu_runBoundaryFunctors(...)                                          \
-  {                                                                             \
-    auto boundaries = BoundaryDetection::BoundaryFunctor(lclA, __VA_ARGS__);    \
-    Kokkos::parallel_for("CoalesceDrop::BoundaryDetection", range, boundaries); \
-  }
-
     if (useGreedyDirichlet) {
       auto dirichlet_detection = BoundaryDetection::VectorDirichletFunctor<local_matrix_type, true>(lclA, blkPartSize, boundaryNodes, dirichletThreshold, dirichletNonzeroThreshold);
-      MueLu_runBoundaryFunctors(dirichlet_detection);
+      runBoundaryFunctors(lclA, boundaryNodes, dirichlet_detection);
     } else {
       auto dirichlet_detection = BoundaryDetection::VectorDirichletFunctor<local_matrix_type, false>(lclA, blkPartSize, boundaryNodes, dirichletThreshold, dirichletNonzeroThreshold);
-      MueLu_runBoundaryFunctors(dirichlet_detection);
+      runBoundaryFunctors(lclA, boundaryNodes, dirichlet_detection);
     }
-#undef MueLu_runBoundaryFunctors
   }
   // In what follows, boundaryNodes can still still get modified if aggregationMayCreateDirichlet == true.
   // Otherwise we're now done with it now.
@@ -897,114 +763,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   // - Misc::MarkSingletonFunctor
   //   Mark singletons after dropping as Dirichlet
 
-#if !defined(HAVE_MUELU_DEBUG)
-#define MueLu_runDroppingFunctorsImpl(...)                                                                                                                    \
-  {                                                                                                                                                           \
-    auto countingFunctor = MatrixConstruction::VectorCountingFunctor(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, __VA_ARGS__); \
-    Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz);                                                                  \
-  }
-#else
-#define MueLu_runDroppingFunctorsImpl(...)                                                                                                                           \
-  {                                                                                                                                                                  \
-    auto debug           = Misc::DebugFunctor(lclA, results);                                                                                                        \
-    auto countingFunctor = MatrixConstruction::VectorCountingFunctor(lclA, blkPartSize, colTranslation, results, filtered_rowptr, graph_rowptr, __VA_ARGS__, debug); \
-    Kokkos::parallel_scan("MueLu::CoalesceDrop::CountEntries", range, countingFunctor, nnz);                                                                         \
-  }
-#endif
-
-  // Macro that handles optional block diagonalization.
-  // Calls MueLu_runDroppingFunctorsImpl
-#define MueLu_runDroppingFunctors(...)                                                                                                       \
-  {                                                                                                                                          \
-    if (useBlocking) {                                                                                                                       \
-      auto BlockNumber       = Get<RCP<LocalOrdinalVector>>(currentLevel, "BlockNumber");                                                    \
-      auto block_diagonalize = Misc::BlockDiagonalizeVectorFunctor(*A, *BlockNumber, nonUniqueMap, results, rowTranslation, colTranslation); \
-      MueLu_runDroppingFunctorsImpl(block_diagonalize, __VA_ARGS__);                                                                         \
-    } else                                                                                                                                   \
-      MueLu_runDroppingFunctorsImpl(__VA_ARGS__);                                                                                            \
-  }
-
-  // Macro that runs dropping for SoC based on A itself, handling of droppingMethod.
-  // Calls MueLu_runDroppingFunctors
-#define MueLu_runDroppingFunctors_on_A(SoC)                                              \
-  {                                                                                      \
-    if (droppingMethod == "point-wise") {                                                \
-      auto dropping = ClassicalDropping::make_drop_functor<SoC>(*A, threshold, results); \
-                                                                                         \
-      if (aggregationMayCreateDirichlet) {                                               \
-        MueLu_runDroppingFunctors(dropping,                                              \
-                                  preserve_diagonals,                                    \
-                                  mark_singletons_as_boundary);                          \
-      } else {                                                                           \
-        MueLu_runDroppingFunctors(dropping,                                              \
-                                  preserve_diagonals);                                   \
-      }                                                                                  \
-    } else if (droppingMethod == "cut-drop") {                                           \
-      auto comparison = CutDrop::make_comparison_functor<SoC>(*A, results);              \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                  \
-                                                                                         \
-      MueLu_runDroppingFunctors(drop_boundaries,                                         \
-                                preserve_diagonals,                                      \
-                                cut_drop);                                               \
-    }                                                                                    \
-  }
-
-  // Macro that runs on the distance Laplacian, handling of droppingMethod.
-  // Calls MueLu_runDroppingFunctors
-#define MueLu_runDroppingFunctors_on_dlap_inner(SoC)                                                                                                            \
-  {                                                                                                                                                             \
-    if (droppingMethod == "point-wise") {                                                                                                                       \
-      auto dist_laplacian_dropping = DistanceLaplacian::make_vector_drop_functor<SoC>(*A, *mergedA, threshold, dist2, results, rowTranslation, colTranslation); \
-                                                                                                                                                                \
-      if (aggregationMayCreateDirichlet) {                                                                                                                      \
-        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                      \
-                                  preserve_diagonals,                                                                                                           \
-                                  mark_singletons_as_boundary);                                                                                                 \
-      } else {                                                                                                                                                  \
-        MueLu_runDroppingFunctors(dist_laplacian_dropping,                                                                                                      \
-                                  preserve_diagonals);                                                                                                          \
-      }                                                                                                                                                         \
-    } else if (droppingMethod == "cut-drop") {                                                                                                                  \
-      auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(*A, dist2, results);                                                                         \
-      auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);                                                                                         \
-                                                                                                                                                                \
-      MueLu_runDroppingFunctors(drop_boundaries,                                                                                                                \
-                                preserve_diagonals,                                                                                                             \
-                                cut_drop);                                                                                                                      \
-    }                                                                                                                                                           \
-  }
-
-  // Macro that runs on the distance Laplacian, handling of distanceLaplacianMetric.
-  // Calls MueLu_runDroppingFunctors_on_dlap_inner
-#define MueLu_runDroppingFunctors_on_dlap(SoC)                                                                                                             \
-  {                                                                                                                                                        \
-    if (distanceLaplacianMetric == "unweighted") {                                                                                                         \
-      auto dist2 = DistanceLaplacian::UnweightedDistanceFunctor(*mergedA, coords);                                                                         \
-      MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                        \
-    } else if (distanceLaplacianMetric == "weighted") {                                                                                                    \
-      auto k_dlap_weights_host = Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(&dlap_weights[0], dlap_weights.size()); \
-      auto k_dlap_weights      = Kokkos::View<double*>("dlap_weights", k_dlap_weights_host.extent(0));                                                     \
-      Kokkos::deep_copy(k_dlap_weights, k_dlap_weights_host);                                                                                              \
-      auto dist2 = DistanceLaplacian::WeightedDistanceFunctor(*mergedA, coords, k_dlap_weights);                                                           \
-      MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                        \
-    } else if (distanceLaplacianMetric == "block weighted") {                                                                                              \
-      auto k_dlap_weights_host = Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(&dlap_weights[0], dlap_weights.size()); \
-      auto k_dlap_weights      = Kokkos::View<double*>("dlap_weights", k_dlap_weights_host.extent(0));                                                     \
-      Kokkos::deep_copy(k_dlap_weights, k_dlap_weights_host);                                                                                              \
-      auto dist2 = DistanceLaplacian::BlockWeightedDistanceFunctor(*mergedA, coords, k_dlap_weights, interleaved_blocksize);                               \
-      MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                        \
-    } else if (distanceLaplacianMetric == "material") {                                                                                                    \
-      auto material = GetMaterial(currentLevel, coords->getNumVectors());                                                                                  \
-      if (material->getNumVectors() == 1) {                                                                                                                \
-        auto dist2 = DistanceLaplacian::ScalarMaterialDistanceFunctor(*mergedA, coords, material);                                                         \
-        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                      \
-      } else {                                                                                                                                             \
-        auto dist2 = DistanceLaplacian::TensorMaterialDistanceFunctor(*mergedA, coords, material);                                                         \
-        MueLu_runDroppingFunctors_on_dlap_inner(SoC);                                                                                                      \
-      }                                                                                                                                                    \
-    }                                                                                                                                                      \
-  }
-
   // rowptr of filtered A
   auto filtered_rowptr = rowptr_type("rowptr", lclA.numRows() + 1);
   auto graph_rowptr    = rowptr_type("rowptr", numNodes + 1);
@@ -1012,25 +770,46 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   Kokkos::pair<LocalOrdinal, LocalOrdinal> nnz = {0, 0};
 
   // dropping decisions for each entry
-  auto results = Kokkos::View<DecisionType*, memory_space>("results", lclA.nnz());  // initialized to UNDECIDED
+  auto results = results_view_type("results", lclA.nnz());  // initialized to UNDECIDED
+
+  RCP<Matrix> mergedA;
   {
     SubFactoryMonitor mDropping(*this, "Dropping decisions", currentLevel);
 
-    auto drop_boundaries = Misc::VectorDropBoundaryFunctor(lclA, rowTranslation, boundaryNodes, results);
+    {
+      // Construct merged A.
+
+      auto merged_rowptr      = rowptr_type("rowptr", numNodes + 1);
+      LocalOrdinal nnz_merged = 0;
+
+      auto functor = MatrixConstruction::MergeCountFunctor(lclA, blkPartSize, colTranslation, merged_rowptr);
+      Kokkos::parallel_scan("MergeCount", range, functor, nnz_merged);
+
+      local_graph_type lclMergedGraph;
+      auto colidx_merged = entries_type("entries", nnz_merged);
+      auto values_merged = values_type("values", nnz_merged);
+
+      local_matrix_type lclMergedA = local_matrix_type("mergedA",
+                                                       numNodes, nonUniqueMap->getLocalNumElements(),
+                                                       nnz_merged,
+                                                       values_merged, merged_rowptr, colidx_merged);
+
+      auto fillFunctor = MatrixConstruction::MergeFillFunctor<local_matrix_type>(lclA, blkSize, colTranslation, lclMergedA);
+      Kokkos::parallel_for("MueLu::CoalesceDrop::MergeFill", range, fillFunctor);
+
+      mergedA = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclMergedA, uniqueMap, nonUniqueMap, uniqueMap, uniqueMap);
+    }
 
     if (threshold != zero) {
-      auto preserve_diagonals          = Misc::KeepDiagonalFunctor(lclA, results);
-      auto mark_singletons_as_boundary = Misc::MarkSingletonVectorFunctor(lclA, rowTranslation, boundaryNodes, results);
-
       if (socUsesMatrix == "A") {
         if (socUsesMeasure == "unscaled") {
-          MueLu_runDroppingFunctors_on_A(Misc::UnscaledMeasure);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          MueLu_runDroppingFunctors_on_A(Misc::SmoothedAggregationMeasure);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          MueLu_runDroppingFunctors_on_A(Misc::SignedRugeStuebenMeasure);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          MueLu_runDroppingFunctors_on_A(Misc::SignedSmoothedAggregationMeasure);
+          VectorDroppingClassical<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_A(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, currentLevel, *this);
         }
       } else if (socUsesMatrix == "distance laplacian") {
         auto coords = Get<RCP<doubleMultiVector>>(currentLevel, "Coordinates");
@@ -1060,51 +839,26 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
           }
         }
 
-        RCP<Matrix> mergedA;
-        {
-          // Construct merged A.
-
-          auto merged_rowptr      = rowptr_type("rowptr", numNodes + 1);
-          LocalOrdinal nnz_merged = 0;
-
-          auto functor = MatrixConstruction::MergeCountFunctor(lclA, blkPartSize, colTranslation, merged_rowptr);
-          Kokkos::parallel_scan("MergeCount", range, functor, nnz_merged);
-
-          local_graph_type lclMergedGraph;
-          auto colidx_merged = entries_type("entries", nnz_merged);
-          auto values_merged = values_type("values", nnz_merged);
-
-          local_matrix_type lclMergedA = local_matrix_type("mergedA",
-                                                           numNodes, nonUniqueMap->getLocalNumElements(),
-                                                           nnz_merged,
-                                                           values_merged, merged_rowptr, colidx_merged);
-
-          auto fillFunctor = MatrixConstruction::MergeFillFunctor<local_matrix_type>(lclA, blkSize, colTranslation, lclMergedA);
-          Kokkos::parallel_for("MueLu::CoalesceDrop::MergeFill", range, fillFunctor);
-
-          mergedA = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclMergedA, uniqueMap, nonUniqueMap, uniqueMap, uniqueMap);
-        }
-
         if (socUsesMeasure == "unscaled") {
-          MueLu_runDroppingFunctors_on_dlap(Misc::UnscaledMeasure);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::UnscaledMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         } else if (socUsesMeasure == "smoothed aggregation") {
-          MueLu_runDroppingFunctors_on_dlap(Misc::SmoothedAggregationMeasure);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         } else if (socUsesMeasure == "signed ruge-stueben") {
-          MueLu_runDroppingFunctors_on_dlap(Misc::SignedRugeStuebenMeasure);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedRugeStuebenMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         } else if (socUsesMeasure == "signed smoothed aggregation") {
-          MueLu_runDroppingFunctors_on_dlap(Misc::SignedSmoothedAggregationMeasure);
+          VectorDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, Misc::SignedSmoothedAggregationMeasure>::runDroppingFunctors_on_dlap(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, boundaryNodes, droppingMethod, threshold, aggregationMayCreateDirichlet, symmetrizeDroppedGraph, useBlocking, distanceLaplacianMetric, dlap_weights, interleaved_blocksize, currentLevel, *this);
         }
       }
     } else {
       Kokkos::deep_copy(results, KEEP);
-      // MueLu_runDroppingFunctors(drop_boundaries);
+
       auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-      MueLu_runDroppingFunctors(no_op);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, no_op);
     }
 
     if (symmetrizeDroppedGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      MueLu_runDroppingFunctors(symmetrize);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     }
   }
   LocalOrdinal nnz_filtered = nnz.first;
@@ -1184,11 +938,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     graph_rowptr    = rowptr_type("rowptr", numNodes + 1);
     if (localizeColoringGraph) {
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
-      MueLu_runDroppingFunctors(drop_offrank);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, drop_offrank);
     }
     if (symmetrizeColoringGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      MueLu_runDroppingFunctors(symmetrize);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
@@ -1198,12 +952,6 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     auto colorGraph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "coloring graph"));
     Set(currentLevel, "Coloring Graph", colorGraph);
   }
-
-#undef MueLu_runDroppingFunctors_on_dlap
-#undef MueLu_runDroppingFunctors_on_dlap_inner
-#undef MueLu_runDroppingFunctors_on_A
-#undef MueLu_runDroppingFunctors
-#undef MueLu_runDroppingFunctorsImpl
 
   LO dofsPerNode = blkSize;
 
