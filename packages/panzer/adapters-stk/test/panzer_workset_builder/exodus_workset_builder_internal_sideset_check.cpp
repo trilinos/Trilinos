@@ -50,7 +50,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
     using Teuchos::make_rcp;
-    using IntrepidBasis = Intrepid2::Basis<PHX::Device::execution_space,double,double>;
 
     auto comm = Teuchos::make_rcp<const Teuchos::MpiComm<int>>(MPI_COMM_WORLD);
     TEST_EQUALITY(comm->getSize(),2);
