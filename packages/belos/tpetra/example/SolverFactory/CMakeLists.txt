@@ -48,6 +48,17 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Xpetra)
 
     TRIBITS_ADD_TEST(
       SolverFactory_Tpetra_Galeri_Ex
+      NAME PerfTest_SingleReduceCG
+      COMM serial mpi
+      ARGS "--verbose --solverName=\"Single-Reduce CG\" --matrixType=Laplace3D --nx=200 --ny=200 --nz=200 --max-iters=100"
+      NUM_MPI_PROCS ${NP}
+      STANDARD_PASS_OUTPUT
+      RUN_SERIAL
+      CATEGORIES PERFORMANCE
+    )
+
+    TRIBITS_ADD_TEST(
+      SolverFactory_Tpetra_Galeri_Ex
       NAME PerfTest_PseudoBlockGMRES
       COMM serial mpi
       ARGS "--verbose --solverName=\"Pseudoblock GMRES\" --matrixType=Laplace3D --nx=200 --ny=200 --nz=200 --max-iters=100"
