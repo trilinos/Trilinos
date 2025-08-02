@@ -1,0 +1,219 @@
+// @HEADER
+// *****************************************************************************
+//          Tpetra: Templated Linear Algebra Services Package
+//
+// Copyright 2008 NTESS and the Tpetra contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#ifndef TPETRA_SOLVERMAP_CRSMATRIX_DEF_HPP
+#define TPETRA_SOLVERMAP_CRSMATRIX_DEF_HPP
+
+/// \file Tpetra_SolverMap_CrsMatrix_def.hpp
+/// \brief Definition of the Tpetra::SolverMap_CrsMatrix class
+///
+/// If you want to use Tpetra::SolverMap_CrsMatrix, include
+/// "Tpetra_SolverMap_CrsMatrix.hpp", a file which CMake generates
+/// and installs for you.
+///
+/// If you only want the declaration of Tpetra::SolverMap_CrsMatrix,
+/// include "Tpetra_SolverMap_CrsMatrix_decl.hpp".
+
+#include <Tpetra_SolverMap_CrsMatrix_decl.hpp>
+
+#include <vector>
+#include <filesystem>
+
+namespace Tpetra {
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SolverMap_CrsMatrix()
+  : newColMap_(Teuchos::null)
+  , newGraph_ (Teuchos::null)
+{
+  // Nothing to do
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~SolverMap_CrsMatrix()
+{
+  // Nothing to do
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+typename SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NewType
+SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( OriginalType const & orig )
+{
+  return construct(orig);
+}
+
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
+typename SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NewType
+SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::construct( OriginalType origMatrix )
+{
+  using map_t = Map<LocalOrdinal, GlobalOrdinal, Node>;
+
+  assert( !origMatrix->isGloballyIndexed() );
+
+  this->origObj_ = origMatrix;
+
+  // *******************************************************************
+  // Step 1/7: Check if domain map and col map are different
+  // *******************************************************************
+  Teuchos::RCP<map_t const> origRowMap    = origMatrix->getRowMap();
+  Teuchos::RCP<map_t const> origDomainMap = origMatrix->getDomainMap();
+  Teuchos::RCP<map_t const> origColMap    = origMatrix->getColMap();
+
+  Teuchos::RCP<Teuchos::Comm<int> const> Comm = origRowMap->getComm();
+
+  size_t origDomainMap_localSize = origDomainMap->getLocalNumElements();
+  size_t localNumDifferences(0);
+  for (size_t i(0); i < origDomainMap_localSize; ++i) {
+    if (origDomainMap->getGlobalElement(i) != origColMap->getGlobalElement(i)) {
+      localNumDifferences += 1;
+      break;
+    }
+  }
+  size_t globalNumDifferences(0);
+  Teuchos::reduceAll(*Comm, Teuchos::REDUCE_SUM, 1, &localNumDifferences, &globalNumDifferences);
+  
+  if (globalNumDifferences == 0) {
+    this->newObj_ = this->origObj_;
+  }
+  else {
+    using cg_t = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    using cm_t = CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // *****************************************************************
+    // Step 2/7: Fill newColMap_globalColIndices with the global indices
+    //           of all entries in origDomainMap
+    // *****************************************************************
+    std::vector<GlobalOrdinal> newColMap_globalColIndices(origDomainMap_localSize);
+    for (size_t i(0); i < origDomainMap_localSize; ++i) {
+      newColMap_globalColIndices[i] = origDomainMap->getGlobalElement(i);
+    }
+
+    // *****************************************************************
+    // Step 3/7: Append newColMap_globalColIndices with those origColMap
+    //           entries that are not in newColMap_globalColIndices yet
+    // *****************************************************************
+    size_t const origColMap_localSize = origColMap->getLocalNumElements();
+    for (size_t i(0); i < origColMap_localSize; ++i) {
+      GlobalOrdinal const globalColIndex( origColMap->getGlobalElement(i) );
+      if (origDomainMap->isNodeGlobalElement( globalColIndex ) == false) {
+        newColMap_globalColIndices.push_back( globalColIndex );
+      }
+    }
+
+    // *****************************************************************
+    // Step 4/7: Create a new column map using newColMap_globalColIndices
+    // *****************************************************************
+    size_t const newColMap_localNumCols = newColMap_globalColIndices.size();
+    size_t newColMap_globalNumCols(0);
+    Teuchos::reduceAll(*Comm, Teuchos::REDUCE_SUM, 1, &newColMap_localNumCols, &newColMap_globalNumCols);
+
+    newColMap_ = Teuchos::rcp<map_t>( new map_t( newColMap_globalNumCols           // global_size_t       numGlobalElements
+                                               , newColMap_globalColIndices.data() // global_ordinal_type indexList[]
+                                               , newColMap_localNumCols            // local_ordinal_type  indexListSize
+                                               , origDomainMap->getIndexBase()     // global_ordinal_type indexBase
+                                               , Comm
+                                               ));
+
+    // *****************************************************************
+    // Step 5/7: Create new graph
+    // *****************************************************************
+    size_t const origRowMap_localSize = origRowMap->getLocalNumElements();
+    std::vector<size_t> origMatrix_numIndicesPerRow_vector(origRowMap_localSize);
+    for (size_t i(0); i < origRowMap_localSize; ++i) {
+      origMatrix_numIndicesPerRow_vector[i] = origMatrix->getNumEntriesInLocalRow(i);
+    }
+    Teuchos::ArrayView<size_t const> origMatrix_numIndicesPerRow_array(origMatrix_numIndicesPerRow_vector.data(), origRowMap_localSize);
+    newGraph_ = Teuchos::rcp<cg_t>( new cg_t( origRowMap                        // const Teuchos::RCP<const map_type>     & rowMap
+                                            , newColMap_                        // const Teuchos::RCP<const map_type>     & colMap
+                                            , origMatrix_numIndicesPerRow_array // const Teuchos::ArrayView<const size_t> & numEntPerRow
+                                            ));
+    
+    size_t const origMatrix_maxNumEntries = origMatrix->getGlobalMaxNumRowEntries();
+    typename cg_t::nonconst_global_inds_host_view_type indicesFromOriginalGraph("origGraphInds",origMatrix_maxNumEntries);
+    std::vector<GlobalOrdinal> newGraph_indices( origMatrix_maxNumEntries );
+    for (size_t i(0); i < origRowMap_localSize; ++i) {
+      GlobalOrdinal globalRowIndex = origRowMap->getGlobalElement(i);
+      size_t numEntries(0);
+      origMatrix->getGraph()->getGlobalRowCopy( globalRowIndex, indicesFromOriginalGraph, numEntries );
+
+      for (size_t j(0); j < numEntries; ++j) {
+        newGraph_indices[j] = indicesFromOriginalGraph[j];
+      }
+      newGraph_->insertGlobalIndices( globalRowIndex, numEntries, newGraph_indices.data() );
+    }
+
+    Teuchos::RCP<map_t const> origRangeMap = origMatrix->getRangeMap();
+    newGraph_->fillComplete(origDomainMap, origRangeMap);
+
+    // *****************************************************************
+    // Step 6/7: Create new CRS matrix
+    // *****************************************************************
+    Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>( new cm_t( newGraph_ ) );
+
+    typename cm_t::local_inds_host_view_type origMatrix_localIndices;
+    typename cm_t::values_host_view_type     origMatrix_localValues;
+    typename cg_t::local_inds_host_view_type newGraph_localIndices;
+
+    std::vector<Scalar>       newMatrix_localValues (origMatrix_maxNumEntries);
+    std::vector<LocalOrdinal> newMatrix_localIndices(origMatrix_maxNumEntries);
+
+    size_t const newMatrix_localNumRows = newMatrix->getLocalNumRows();
+    for (size_t i(0); i < newMatrix_localNumRows; ++i) {
+      origMatrix->getLocalRowView( i, origMatrix_localIndices, origMatrix_localValues );
+      newGraph_->getLocalRowView( i, newGraph_localIndices );
+      assert( origMatrix_localIndices.size() == newGraph_localIndices.size() );
+
+      size_t const numEntries( newGraph_localIndices.size() );
+      for (size_t j(0); j < numEntries; ++j) {
+        newMatrix_localValues [j] = origMatrix_localValues[j];
+        newMatrix_localIndices[j] = newGraph_localIndices[j];
+      }
+
+      newMatrix->replaceLocalValues( i                             // const LocalOrdinal localRow
+                                   , numEntries                    // const LocalOrdinal numEnt
+                                   , newMatrix_localValues.data()  // const Scalar       inputVals[]
+                                   , newMatrix_localIndices.data() // const LocalOrdinal inputCols[]
+                                   );
+    }
+
+    newMatrix->fillComplete(origDomainMap, origRangeMap);
+
+    // *****************************************************************
+    // Step 7/7: Update newObj_
+    // *****************************************************************
+    this->newObj_ = newMatrix;
+  }
+
+  return this->newObj_;
+}
+
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Tpetra namespace!
+//
+
+#define TPETRA_SOLVERMAPCRSMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
+  template class SolverMap_CrsMatrix< SCALAR , LO , GO , NODE >;
+
+} // namespace Tpetra
+
+#endif // TPETRA_SOLVERMAP_CRSMATRIX_DEF_HPP
