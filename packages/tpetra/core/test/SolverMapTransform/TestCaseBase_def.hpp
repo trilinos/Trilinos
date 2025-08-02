@@ -15,13 +15,13 @@
 
 template< class Scalar_t, class LocalId_t, class GlobalId_t, class Node_t > 
 TestCaseBase<Scalar_t, LocalId_t, GlobalId_t, Node_t>::TestCaseBase( Teuchos::RCP<Teuchos::Comm<int> const> comm
-                                                                   , GlobalId_t const globalNumRows
-                                                                   , GlobalId_t const globalNumCols
-                                                                   , GlobalId_t const rowIndexBase
-                                                                   , GlobalId_t const colIndexBase
-                                                                   , GlobalId_t const maxNnzPerRow
-                                                                   , GlobalId_t const globalNumNnz
-                                                                   , Scalar_t   const frobNorm
+                                                                   , global_size_t const globalNumRows
+                                                                   , global_size_t const globalNumCols
+                                                                   , global_size_t const rowIndexBase
+                                                                   , global_size_t const colIndexBase
+                                                                   , global_size_t const maxNnzPerRow
+                                                                   , global_size_t const globalNumNnz
+                                                                   , Scalar_t      const frobNorm
                                                                    )
   : m_comm           ( comm )
   , m_numRanks       ( m_comm->getSize() )
@@ -265,15 +265,15 @@ TestCaseBase<Scalar_t, LocalId_t, GlobalId_t, Node_t>::baseCheckTransformedProbl
     Matrix_t diff( *tmpPtr1, Teuchos::Copy );
 
     Teuchos::RCP<Teuchos::ParameterList> params(Teuchos::null);
-    Teuchos::RCP< Tpetra::RowMatrix<Scalar_t, LocalId_t, GlobalId_t, Node_t> > result = diff.add( -1.0
-                                                                                                , *tmpPtr2
-                                                                                                , 1.0
-                                                                                                , diff.getDomainMap()
-                                                                                                , diff.getRangeMap()
-                                                                                                , params
-                                                                                                );
+    Teuchos::RCP< Tpetra::RowMatrix<Scalar_t, LocalId_t, GlobalId_t, Node_t> > aux = diff.add( -1.0
+                                                                                             , *tmpPtr2
+                                                                                             , 1.0
+                                                                                             , diff.getDomainMap()
+                                                                                             , diff.getRangeMap()
+                                                                                             , params
+                                                                                             );
 
-    Matrix_t * tmpPtr3 = dynamic_cast<Matrix_t *>( result.get() );
+    Matrix_t * tmpPtr3 = dynamic_cast<Matrix_t *>( aux.get() );
     Scalar_t frobNorm_diff( tmpPtr3->getFrobeniusNorm() );
 
     Scalar_t normThershold(1.e-12);

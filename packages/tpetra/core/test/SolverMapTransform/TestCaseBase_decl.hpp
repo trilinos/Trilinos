@@ -16,6 +16,7 @@ template< class Scalar_t, class LocalId_t, class GlobalId_t, class Node_t >
 class TestCaseBase
 {
 public:
+  using global_size_t = Tpetra::global_size_t;
   using Map_t         = Tpetra::Map          <          LocalId_t, GlobalId_t, Node_t>;
   using MultiVector_t = Tpetra::MultiVector  <Scalar_t, LocalId_t, GlobalId_t, Node_t>;
   using Matrix_t      = Tpetra::CrsMatrix    <Scalar_t, LocalId_t, GlobalId_t, Node_t>;
@@ -25,13 +26,13 @@ public:
   TestCaseBase() = delete;
 
   TestCaseBase( Teuchos::RCP<Teuchos::Comm<int> const> comm
-              , GlobalId_t const globalNumRows
-              , GlobalId_t const globalNumCols
-              , GlobalId_t const rowIndexBase
-              , GlobalId_t const colIndexBase
-              , GlobalId_t const maxNnzPerRow
-              , GlobalId_t const globalNumNnz
-              , Scalar_t   const frobNorm
+              , global_size_t const globalNumRows
+              , global_size_t const globalNumCols
+              , global_size_t const rowIndexBase
+              , global_size_t const colIndexBase
+              , global_size_t const maxNnzPerRow
+              , global_size_t const globalNumNnz
+              , Scalar_t      const frobNorm
               );
 
   TestCaseBase( TestCaseBase<Scalar_t, LocalId_t, GlobalId_t, Node_t> const & source ) = delete;
@@ -58,15 +59,15 @@ protected:
   int const m_numRanks;
   int const m_myRank;
 
-  GlobalId_t const m_globalNumRows;
-  GlobalId_t const m_globalNumCols;
+  global_size_t const m_globalNumRows;
+  global_size_t const m_globalNumCols;
 
-  GlobalId_t const m_rowIndexBase;
-  GlobalId_t const m_colIndexBase;
+  global_size_t const m_rowIndexBase;
+  global_size_t const m_colIndexBase;
 
-  GlobalId_t const m_maxNnzPerRow;
-  GlobalId_t const m_globalNumNnz;
-  Scalar_t   const m_frobNorm;
+  global_size_t const m_maxNnzPerRow;
+  global_size_t const m_globalNumNnz;
+  Scalar_t      const m_frobNorm;
 
   std::unique_ptr< Map_t>          m_rowMap;
   std::unique_ptr< Map_t>          m_colMap;
