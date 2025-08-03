@@ -111,15 +111,15 @@ random(bool useSeed, int seed)
     if (!tpetraMultiVec->isDistributed())
     {
         if (tpetraMultiVec->getMap()->getComm()->getRank() == 0) {
-            tpetraMultiVec->randomize(-Teuchos::ScalarTraits<Scalar>::one(), Teuchos::ScalarTraits<Scalar>::one());
+            tpetraMultiVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
         }
         else {
-            tpetraMultiVec->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+            tpetraMultiVec->putScalar(Kokkos::ArithTraits<Scalar>::zero());
         }
         tpetraMultiVec->reduce();
     }
     else {
-        tpetraMultiVec->randomize(-Teuchos::ScalarTraits<Scalar>::one(), Teuchos::ScalarTraits<Scalar>::one());
+        tpetraMultiVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
     }
     return *this;
 }
@@ -190,13 +190,27 @@ update(
     double gamma
 )
 {
+    static_assert(
+        std::is_constructible_v<Scalar, double>,
+        "The case of the scalar type not being constructible from the value type of the dense matrix has not been implemented yet."
+    );
+
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
 
     const auto localMap = Teuchos::make_rcp<map_type>(b.numRows(), 0, tpetraMultiVec->getMap()->getComm(), ::Tpetra::LocallyReplicated);
 
-    // TODO: Handle the case where double is not the scalar type of the NOX::Tpetra::MultiVector.
-    const Teuchos::ArrayView<double> BAV(b.values(), b.stride() * b.numCols());
-    const auto B = Teuchos::make_rcp<multivector_type>(localMap, BAV, b.stride(), b.numCols());
+    const auto B = Teuchos::make_rcp<multivector_type>(localMap, b.numCols());
+
+    {
+        const auto local_B = B->getLocalViewHost(::Tpetra::Access::OverwriteAll);
+        // The dense matrix is assumed to be small, so that copying the values in serial loops is acceptable.
+        for (int irow = 0; irow < b.numRows(); ++irow)
+        {
+            for (int icol = 0; icol < b.numCols(); ++icol) {
+                local_B(irow, icol) = static_cast<Scalar>(b(irow, icol));
+            }
+        }
+    }
 
     tpetraMultiVec->multiply(Teuchos::NO_TRANS, transb, alpha, *a.getTpetraMultiVector(), *B, gamma);
 
@@ -361,7 +375,7 @@ subCopy(const std::vector<int>& indices) const
         [](int idx) { return static_cast<size_t>(idx); }
     );
 
-    auto newTpetraMultiVec = tpetraMultiVec->subCopy(Teuchos::ArrayView<size_t>(indices_transformed));
+    auto newTpetraMultiVec = tpetraMultiVec->subCopy(indices_transformed);
 
     return Teuchos::make_rcp<MultiVector>(std::move(newTpetraMultiVec));
 }
@@ -377,7 +391,7 @@ subView(const std::vector<int>& indices) const
         [](int idx) { return static_cast<size_t>(idx); }
     );
 
-    auto newTpetraMultiVec = tpetraMultiVec->subViewNonConst(Teuchos::ArrayView<size_t>(indices_transformed));
+    auto newTpetraMultiVec = tpetraMultiVec->subViewNonConst(indices_transformed);
 
     return Teuchos::make_rcp<MultiVector>(std::move(newTpetraMultiVec));
 }
