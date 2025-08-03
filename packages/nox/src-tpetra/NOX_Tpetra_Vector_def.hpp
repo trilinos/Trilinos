@@ -114,15 +114,15 @@ random(bool useSeed, int seed)
     if (!tpetraVec->isDistributed())
     {
         if (tpetraVec->getMap()->getComm()->getRank() == 0) {
-            tpetraVec->randomize(-Teuchos::ScalarTraits<Scalar>::one(), Teuchos::ScalarTraits<Scalar>::one());
+            tpetraVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
         }
         else {
-            tpetraVec->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+            tpetraVec->putScalar(Kokkos::ArithTraits<Scalar>::zero());
         }
         tpetraVec->reduce();
     }
     else {
-        tpetraVec->randomize(-Teuchos::ScalarTraits<Scalar>::one(), Teuchos::ScalarTraits<Scalar>::one());
+        tpetraVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
     }
     return *this;
 }
