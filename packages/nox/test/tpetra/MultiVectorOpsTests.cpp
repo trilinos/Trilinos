@@ -57,7 +57,7 @@ bool checkMultiVectors(
         TEUCHOS_TEST_COMPARE(norms_b(idx), <, tol, out, success);
     }
 
-    Kokkos::View<magnitude_t<Scalar>*, Kokkos::HostSpace> norms_a("norms a", a->getNumVectors());
+    const Kokkos::View<magnitude_t<Scalar>*, Kokkos::HostSpace> norms_a("norms a", a->getNumVectors());
     a->norm2(norms_a);
     for (size_t idx = 0; idx < norms_a.extent(0); ++idx) {
         TEUCHOS_TEST_FLOATING_EQUALITY(norms_a(idx), expt(idx), tol, out, success);
