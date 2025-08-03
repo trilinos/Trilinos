@@ -11,6 +11,7 @@
 #define NOX_TPETRA_VECTOR_HPP
 
 #include "Tpetra_Map_fwd.hpp"
+#include "Tpetra_MultiVector_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
 
 #include "NOX_Abstract_ImplicitWeighting.H"
@@ -37,6 +38,9 @@ class Vector : public Abstract::Vector,
 public:
     //! Type of the wrapped @ref ::Tpetra::Vector.
     using vector_type = ::Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    //! Type of a @ref ::Tpetra::MultiVector instantiated with the same quadruple of template parameters.
+    using multivector_type = ::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
 public:
     //! Default constructor.
