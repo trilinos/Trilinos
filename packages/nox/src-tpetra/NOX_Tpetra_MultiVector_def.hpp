@@ -191,8 +191,8 @@ update(
 )
 {
     static_assert(
-        std::is_constructible_v<Scalar, double>,
-        "The case of the scalar type not being constructible from the value type of the dense matrix has not been implemented yet."
+        std::is_constructible_v<typename multivector_type::impl_scalar_type, double>,
+        "The case of the implementation scalar type not being constructible from the value type of the dense matrix has not been implemented yet."
     );
 
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -207,7 +207,7 @@ update(
         for (int irow = 0; irow < b.numRows(); ++irow)
         {
             for (int icol = 0; icol < b.numCols(); ++icol) {
-                local_B(irow, icol) = static_cast<Scalar>(b(irow, icol));
+                local_B(irow, icol) = static_cast<typename multivector_type::impl_scalar_type>(b(irow, icol));
             }
         }
     }
