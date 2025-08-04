@@ -67,6 +67,38 @@ def remove_if_conditions(file_path, regex_pattern):
     with open(file_path, 'w') as file:
         file.writelines(output_lines)
 
+def remove_assert_defineds(file_path, regex_pattern):
+    # Compile the regex pattern
+    pattern = re.compile(regex_pattern)
+
+    # Read the content of the CMake file
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    output_lines = []
+    in_assert_defined = False
+
+    for line in lines:
+        stripped_line = line.strip()
+        # Check for the start of an if block
+        if stripped_line.lower().startswith(('assert_defined(', 'assert_defined ')):
+            in_assert_defined = True
+
+        if in_assert_defined:
+            matches = pattern.findall(line)
+            if matches:
+                continue
+
+        if ")" in line:
+            in_assert_defined = False
+
+        output_lines.append(line)
+
+    # Write the modified content back to the file
+    with open(file_path, 'w') as file:
+        file.writelines(output_lines)
+
+
 def remove_regex(file_path, regex_pattern):
     pattern = re.compile(regex_pattern)
 
@@ -118,6 +150,7 @@ def process_directory(directory):
                 file_path = os.path.join(root, file)
                 remove_if_conditions(file_path, regex_pattern)
                 remove_regex(file_path, regex_pattern_defines)
+                remove_assert_defineds(file_path, regex_pattern)
                 remove_regex(file_path, regex_pattern_global_set)
 
 if __name__ == "__main__":
