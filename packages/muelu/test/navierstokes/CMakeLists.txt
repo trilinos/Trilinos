@@ -5,9 +5,6 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 
 # first ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Epetra
-  ${PACKAGE_NAME}_ENABLE_EpetraExt
-  ${PACKAGE_NAME}_ENABLE_Amesos
   )
 
 
