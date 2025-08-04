@@ -11,6 +11,7 @@
 // 07.08.03 -- Move into Teuchos package/namespace
 
 #include "Teuchos_Time.hpp"
+#include "Teuchos_Behavior.hpp"
 
 #if defined(__INTEL_COMPILER) && defined(_WIN32)
 
@@ -55,7 +56,7 @@ extern void popRegion ();
 } // namespace Kokkos
 #endif
 
-#ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
 #include "Kokkos_Core.hpp"
 #endif
 
@@ -97,8 +98,10 @@ void Time::start(bool reset_in)
     }
 #endif
     startTime_ = wallTime();
-#ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
-    Kokkos::fence();
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+    if (Behavior::fenceTimers()) {
+      Kokkos::fence("timer_fence_begin_"+name_);
+    }
 #endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
     ::Kokkos::Tools::pushRegion (name_);
@@ -123,8 +126,10 @@ double Time::stop()
         numCallsMassifSnapshots_++;
       }
 #endif
-#ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
-      Kokkos::fence();
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+      if (Behavior::fenceTimers()) {
+        Kokkos::fence("timer_fence_end_"+name_);
+      }
 #endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       ::Kokkos::Tools::popRegion ();

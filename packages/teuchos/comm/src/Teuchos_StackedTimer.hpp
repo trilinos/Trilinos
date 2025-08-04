@@ -17,6 +17,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_PerformanceMonitorBase.hpp"
+#include "Teuchos_Behavior.hpp"
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+#include "Kokkos_Core.hpp"
+#endif
 #include <string>
 #include <vector>
 #include <cassert>
@@ -511,6 +515,11 @@ public:
         top_ = timer_.start(name.c_str());
       else
         top_ = top_->start(name.c_str());
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+      if (Behavior::fenceTimers()) {
+        Kokkos::fence("timer_fence_begin_"+name);
+      }
+#endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       if (push_kokkos_profiling_region) {
         ::Kokkos::Tools::pushRegion(name);
@@ -550,6 +559,11 @@ public:
         top_ = top_->stop(name);
       else
         timer_.BaseTimer::stop();
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+      if (Behavior::fenceTimers()) {
+        Kokkos::fence("timer_fence_end_"+name);
+      }
+#endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
       if (pop_kokkos_profiling_region) {
         ::Kokkos::Tools::popRegion();
