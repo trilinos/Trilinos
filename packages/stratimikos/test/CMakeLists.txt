@@ -110,7 +110,6 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraTestMtxFiles
-    ASSERT_DEFINED(Belos_SOURCE_DIR)
     SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES bcsstk12.mtx
     EXEDEPS test_tpetra_belos
