@@ -279,11 +279,15 @@ evaluateFields(panzer::Traits::EvalData d)
 
   Base::evaluateFields(d);
 
+  std::cout << " B4 " << std::endl;
   // grab local data for inputing
   Teuchos::ArrayRCP<double> local_dgdx;
   RCP<SpmdVectorBase<double> > dgdx =
     rcp_dynamic_cast<SpmdVectorBase<double> >(this->responseObj_->getGhostedVector());
+    std::cout << "CAST" << std::endl;
+  // TODO BWR SEEMS TO BE FAILING HERE
   dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
+  std::cout << " DGDX FOO " << std::endl;
   TEUCHOS_ASSERT(!local_dgdx.is_null());
 
   this->scatterObj_->scatterDerivative(this->responseObj_->value,

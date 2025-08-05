@@ -66,6 +66,7 @@ initialize(const Teuchos::RCP<WorksetContainer> & wc,
    wkstContainer_ = wc;
    globalIndexer_ = ugi;
    linObjFactory_ = lof;
+   std::cout << std::boolalpha << " I AM INIT " << nonnull(linObjFactory_) << std::endl;
 }
 
 template <typename TraitsT>
@@ -472,6 +473,7 @@ buildResponseEvaluators(
    // fourth build assembly engine from FMB
    ////////////////////////////////////////////////////////////////////////////////
 
+   std::cout << " B4 RE BUILD " << std::boolalpha << nonnull(linObjFactory_) << std::endl;
    AssemblyEngine_TemplateBuilder builder(fmb2_,linObjFactory_); 
    ae_tm2_.buildObjects(builder);
 

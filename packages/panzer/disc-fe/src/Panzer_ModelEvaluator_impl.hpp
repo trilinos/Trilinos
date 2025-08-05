@@ -387,6 +387,7 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
            bool writeGraph,const std::string & graphPrefix,
            const Teuchos::ParameterList& me_params)
 {
+  std::cout << " I AM SETTING UP " << std::endl;
   // First: build residual assembly engine
   /////////////////////////////////////////////////////////////////////////////////////////////////
   PANZER_FUNC_TIME_MONITOR_DIFF("panzer::ModelEvaluator::setupModel()",setupModel);
@@ -422,11 +423,12 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
         fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
     }
 
-    {
-      PANZER_FUNC_TIME_MONITOR_DIFF("AssemblyEngine_TemplateBuilder::buildObjects()",AETM_BuildObjects);
-      panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof_);
-      ae_tm_.buildObjects(builder);
-    }
+    // TODO BWR this is already done in constructor?? Going to remove here
+    //{
+    //  PANZER_FUNC_TIME_MONITOR_DIFF("AssemblyEngine_TemplateBuilder::buildObjects()",AETM_BuildObjects);
+    //  panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof_);
+    //  ae_tm_.buildObjects(builder);
+    //}
   }
 
   // Second: build the responses
@@ -435,8 +437,11 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("build response library",buildResponses);
 
+    std::cout << std::boolalpha << (lof_ == Teuchos::null) << " LOF " << std::endl;
     responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
 
+    // TODO this already gets called by ModelEvaluatorFactory::buildResponses ...
+    // TODO BWR but me_factory has user_app::addResponsesToModelEvaluatorFactory
     buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
     buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
     buildDistroParamDgDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DgDp_");
@@ -672,16 +677,20 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
              = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
 
           // class must supppot a derivative
+          // TODO BWR THIS IS NOT TRUE !!!
+             std::cout << std::boolalpha << " SETTING UP DGDX " << responses_[i]->name << " " << resp->supportsDerivative() << std::endl;
+             // TODO BWR response does not support a derivative...
           if(resp->supportsDerivative()) {
             outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
 
 
-            for(std::size_t p=0;p<parameters_.size();p++) {
-              if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
-                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
-              if(!parameters_[p]->is_distributed)
-                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
-            }
+            // TODO BWR this seems incorrect should be tangent type? should be removed?
+            //for(std::size_t p=0;p<parameters_.size();p++) {
+            //  if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
+            //    outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+            //  if(!parameters_[p]->is_distributed)
+            //    outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+            //}
           }
         }
       }
@@ -1737,6 +1746,8 @@ evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs
 
   for(std::size_t i=0;i<responses_.size();i++) {
     // get "Vector" out of derivative, if its something else, throw an exception
+    // TODO BWR This is throwing an error Derivative{NULL} when I have more than 
+    // TODO BWR one response. This is probably because only the probe type supports a deriv currently
     MEB::Derivative<Scalar> deriv = outArgs.get_DgDx(i);
     if(deriv.isEmpty())
       continue;
@@ -1746,6 +1757,7 @@ evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs
     if(vec!=Teuchos::null) {
 
       std::string responseName = responses_[i]->name;
+      std::cout << " JAC RESP " << responseName << std::endl;
       Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> > resp
           = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> >(
               responseLibrary_->getResponse<panzer::Traits::Jacobian>(responseName));
@@ -1802,6 +1814,7 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
       if (outArgs.supports(MEB::OUT_ARG_DgDp,i,j).none())
         continue;
       MEB::Derivative<Scalar> deriv = outArgs.get_DgDp(i,j);
+    std::cout << " IN ME " << deriv.getMultiVector()->description() << std::endl;
       if(deriv.isEmpty())
         continue;
 
