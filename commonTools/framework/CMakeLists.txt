@@ -165,15 +165,15 @@ create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos_
   # get enabled (but excluded ST package PyTrilinos does not get included).
 
 
-create_get_changed_trilinos_packages_test(TeuchosCore_NewPackage_Pliris
-  "packages/teuchos/core/CMakeLists.txt\npackages/new_package/anything\npackages/pliris/a.txt"
-  "TeuchosCore,NewPackage,Pliris"
+create_get_changed_trilinos_packages_test(TeuchosCore_PyTrilinos2_Pliris
+  "packages/teuchos/core/CMakeLists.txt\npackages/PyTrilinos2/anything\npackages/pliris/a.txt"
+  "TeuchosCore,PyTrilinos2,Pliris"
   "TeuchosCore,Pliris"
   "Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_Pliris = ON"
   "${ALL_TOPLEVEL_PACKAGES_REGEX}"
   )
   # The above test ensures PT (TeuchosCore) and ST packages (Piro) do get
-  # enabled but EX packages (NewPackage) don't.
+  # enabled but EX packages (PyTrilinos2) don't.
 
 
 create_get_changed_trilinos_packages_test(cmake_std_atdm
