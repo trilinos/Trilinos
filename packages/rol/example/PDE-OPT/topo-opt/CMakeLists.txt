@@ -1,4 +1,0 @@
-ADD_SUBDIRECTORY(elasticity)
-ADD_SUBDIRECTORY(poisson)
-ADD_SUBDIRECTORY(multimat)
-ADD_SUBDIRECTORY(navier-stokes)

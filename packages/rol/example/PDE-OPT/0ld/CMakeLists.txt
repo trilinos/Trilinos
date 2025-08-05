@@ -1,6 +1,0 @@
-ADD_SUBDIRECTORY(poisson)
-ADD_SUBDIRECTORY(stefan-boltzmann)
-ADD_SUBDIRECTORY(elasticity)
-ADD_SUBDIRECTORY(elasticitySIMP_topologyOptimization)
-ADD_SUBDIRECTORY(adv-diff-react)
-ADD_SUBDIRECTORY(stoch-adv-diff)

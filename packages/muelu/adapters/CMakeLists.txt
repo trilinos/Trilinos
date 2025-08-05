@@ -27,10 +27,6 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
 ENDIF()
 
 #
-# Epetra
-#
-
-#
 # Tpetra
 #
 TRIBITS_SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)

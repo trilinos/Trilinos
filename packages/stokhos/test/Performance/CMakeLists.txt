@@ -1,5 +1,4 @@
 
-ADD_SUBDIRECTORY(KokkosArraySPMVKernels)
 IF (Stokhos_ENABLE_KokkosKernels)
   IF (Stokhos_ENABLE_Ensemble_Scalar_Type)
     ADD_SUBDIRECTORY(MPVectorKernels)

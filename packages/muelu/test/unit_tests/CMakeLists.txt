@@ -180,7 +180,12 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
 ENDIF()
 
+
+IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+  SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests ON)
+ELSE()
   SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests OFF)
+ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
   APPEND_SET(SOURCES_CREATEPRECONDITIONER

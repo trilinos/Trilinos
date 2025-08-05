@@ -35,14 +35,6 @@ TRIBITS_ADD_TEST(
   COMM mpi serial
 )
 
-#IF (${PACKAGE_NAME_UC}_HAVE_EPETRA)
-#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#    XpetraEpetraMap
-#    SOURCES XpetraEpetraMap.cpp
-#    COMM serial mpi
-#  )
-#ENDIF()
-
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ddirectoryTest

@@ -1,6 +1,3 @@
-ADD_SUBDIRECTORY(singleFrequency)
-ADD_SUBDIRECTORY(multipleFrequency)
-
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   OEDHelmholtzOCTRealDataCopy
   SOURCE_FILES
