@@ -11,7 +11,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   RTOp                  packages/rtop                     PT
   Sacado                packages/sacado                   PT
   MiniTensor            packages/minitensor               PT
-  Epetra                packages/epetra                   ST
   SCOREClion            SCOREC/lion                       ST
   SCORECpcu             SCOREC/pcu                        ST
   SCORECgmi             SCOREC/gmi                        ST
@@ -24,34 +23,21 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   AvatarT               packages/avatart                  EX
   Zoltan                packages/zoltan                   PT
   Shards                packages/shards                   PT
-  Triutils              packages/triutils                 ST
-  EpetraExt             packages/epetraext                ST
   Tpetra                packages/tpetra                   PT
   TrilinosSS            packages/common/auxiliarySoftware/SuiteSparse PT # Auxiliary software.
-  Domi                  packages/domi                     PT
   Thyra                 packages/thyra                    PT
   Xpetra                packages/xpetra                   PT
-  Isorropia             packages/isorropia                ST
-  Pliris                packages/pliris                   ST
-  AztecOO               packages/aztecoo                  ST
   Galeri                packages/galeri                   PT
-  Amesos                packages/amesos                   ST
   Pamgen                packages/pamgen                   PT
   Zoltan2Core           packages/zoltan2/core             PT
-  Ifpack                packages/ifpack                   ST
-  ML                    packages/ml                       ST
   Belos                 packages/belos                    PT
   ShyLU_Node            packages/shylu/shylu_node         PT
   Amesos2               packages/amesos2                  PT
   SEACAS                packages/seacas                   PT # Depends on netcdf, optionally hdf5, xdmf, pamgen
-  Komplex               packages/komplex                  ST
   Anasazi               packages/anasazi                  PT
   Ifpack2               packages/ifpack2                  PT
   Stratimikos           packages/stratimikos              PT
-  FEI                   packages/fei                      PT
   Teko                  packages/teko                     PT
-  TriKota               packages/TriKota                  ST
-  Intrepid              packages/intrepid                 ST
   Intrepid2             packages/intrepid2                PT
   Compadre              packages/compadre                 ST
   STK                   packages/stk                      PT # Depends on boost
@@ -64,14 +50,12 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SCOREC                SCOREC                            ST
   Phalanx               packages/phalanx                  PT
   NOX                   packages/nox                      PT
-  Moertel               packages/moertel                  ST
   MueLu                 packages/muelu                    PT
   TrilinosLinearSolvers packages/trilinos_linear_solvers  PT
   Zoltan2Sphynx         packages/zoltan2/sphynx           PT
   Zoltan2               packages/zoltan2                  PT
   ShyLU_DD              packages/shylu/shylu_dd           PT
   ShyLU                 packages/shylu                    PT
-  Rythmos               packages/rythmos                  PT
   Tempus                packages/tempus                   PT
   MOOCHO                packages/moocho                   ST
   Stokhos               packages/stokhos                  PT
@@ -81,14 +65,11 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   UMR                   packages/umr                      ST
   Panzer                packages/panzer                   PT
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
-  PyTrilinos            packages/PyTrilinos               ST
   PyTrilinos2           packages/PyTrilinos2              EX
   WebTrilinos           packages/WebTrilinos              EX # Should be ST
-  NewPackage            packages/new_package              EX # Should be ST
   Optika		packages/optika		          EX
   Adelus                packages/adelus                   PT
   TrilinosCouplings     packages/trilinoscouplings        PT
-  Pike                  packages/pike                     PT
   xSDKTrilinos          packages/xSDKTrilinos             ST
   TrilinosBuildStats    commonTools/build_stats           PT
   TrilinosInstallTests  packages/TrilinosInstallTests     PT
@@ -121,29 +102,6 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(xSDKTrilinos)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SGM)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(UMR)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(TrilinosLinearSolvers)
-
-# TRILFRAME-500
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Rythmos)    # 27115 targets
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Pike)       # 27048 targets
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Komplex)    # 27030 targets
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Moertel)    # 26995 targets
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(TriKota)    # 26995 targets
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Domi)       # 26946 targets
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(FEI)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Amesos)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(AztecOO)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Epetra)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(EpetraExt)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Ifpack)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Intrepid)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Isorropia)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(ML)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(NewPackage)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Pliris)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(PyTrilinos)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Triutils)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(ThyraEpetraAdapters)
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(ThyraEpetraExtAdapters)
 
 #
 # Disable certain packages on certain platforms.
