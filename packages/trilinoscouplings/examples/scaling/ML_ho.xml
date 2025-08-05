@@ -1,4 +1,0 @@
-<ParameterList name="ML high order settings">
-  <Parameter name="aux P1" type="bool" value="true"/>
-  <Parameter name="ML output" type="int" value="10"/>
-</ParameterList>

@@ -174,16 +174,17 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
 ENDIF()
 
-IF((${PACKAGE_NAME}_ENABLE_Epetra
-    AND ${PACKAGE_NAME}_ENABLE_EpetraExt
-    AND ${PACKAGE_NAME}_ENABLE_Ifpack
-    AND ${PACKAGE_NAME}_ENABLE_Amesos
-   )
-   OR (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-)
+IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests ON)
 ELSE()
   SET(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests OFF)
+ENDIF()
+
+IF(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)
+  APPEND_SET(SOURCES_CREATEPRECONDITIONER
+    MueLu_UnitTests.cpp
+    MueLu_TestHelpers.cpp
+  )
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_CreatePreconditionerTests)

@@ -73,17 +73,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   YES
 )
 
-
-# If you want MueLu Epetra, you need Xpetra Epetra
-
-# If you want MueLu Epetra, you need Xpetra Tpetra
+# If you want MueLu Tpetra, you need Xpetra Tpetra
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
 IF(NOT Xpetra_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
 ENDIF()
-
-# Need to do this because Xpetra_ENABLE_Epetra might have been disabled after
-# HAVE_MUELU_EPETRA was first set automatically
 
 # Print a warning when we might be lacking a coarse solver.
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
@@ -186,7 +180,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   GLOBAL_SET(${PACKAGE_NAME}_HAVE_GO_LONG_LONG OFF)
 
   # <double, int, int>
-  # Examples and tests need at least this one, also if Epetra is enabled
+  # Examples and tests need at least this one
   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
     GLOBAL_SET(${PACKAGE_NAME}_HAVE_GO_INT ON)
     GLOBAL_SET(${PACKAGE_NAME}_INST_DOUBLE_INT_INT ON)
@@ -199,12 +193,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   #IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PACKAGE_NAME}_ENABLE_TESTS)
   #  IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
   #    MESSAGE(FATAL_ERROR "Error: MueLu examples and tests needs explicit template instantation with <double, int, int>. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable examples and tests.")
-  #  ENDIF()
-  #ENDIF()
-
-  #IF(${PACKAGE_NAME}_ENABLE_Epetra)
-  #  IF (NOT ${PACKAGE_NAME}_INST_DOUBLE_INT_INT)
-  #    MESSAGE(FATAL_ERROR "Error: MueLu needs explicit template instantation with <double, int, int> when enabling Epetra. Turn on the options Tpetra_INST_DOUBLE and Tpetra_INST_INT_INT or disable Epetra.")
   #  ENDIF()
   #ENDIF()
 
@@ -315,12 +303,6 @@ ELSE()
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_FLOAT_INT_INT OFF)
   GLOBAL_SET(${PACKAGE_NAME}_INST_FLOAT_INT_LONG_LONG OFF)
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_FLOAT_INT_LONG_LONG OFF)
-
-  # If Epetra only is enabled, ETI is off by default. We have to make sure that
-  # the HAVE_MUELU_SERIAL variable is set such that the IfpackSmoother and other
-  # purely Epetra-related routines are enabled properly
-
-  # With ETI off, free to leave int as the default GO
 ENDIF()
 
 # HAVE_MUELU_COMPLEX=ON iff:
