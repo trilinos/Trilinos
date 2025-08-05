@@ -140,7 +140,7 @@ test_trilinos_filter_packages_to_test() {
   assertContains "${all_toplevel_packages}" ",Teuchos,"
   assertContains "${all_toplevel_packages}" ",Tpetra,"
   assertContains "${all_toplevel_packages}" ",PyTrilinos,"
-  assertContains "${all_toplevel_packages}" ",NewPackage,"
+  assertContains "${all_toplevel_packages}" ",PyTrilinos2,"
   assertContains "${all_toplevel_packages}" ",Panzer,"
 
 }
