@@ -666,12 +666,12 @@ namespace BaskerNS
     //#endif
 
 
+    // --------------
+    // solve with L
     #ifdef BASKER_INC_LVL
     //Note we have not made a t_back_solve_atomic_selective
     t_back_solve_selective(kid, l,l, k, top, xnnz);
-     
     #else //BASKER_INC_LVL
-
     #ifdef BASKER_ATOMIC_2
     t_back_solve(kid, l, l, k, top, xnnz);
     #else
@@ -681,6 +681,8 @@ namespace BaskerNS
     #endif
     #endif //BASKER_INC_LVL
 
+
+    // --------------
     //move over nnz to U 
     for(Int i = top; i < ws_size && info == BASKER_SUCCESS; ++i)
     {
