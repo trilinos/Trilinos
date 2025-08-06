@@ -15,11 +15,6 @@
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
 
 //Thyra
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOpBase.hpp"
-#endif
 #include "Thyra_SpmdMultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
@@ -46,22 +41,11 @@
 //Xpetra
 #include "Xpetra_MapExtractor.hpp"
 #include <Xpetra_CrsMatrixWrap.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
 #include <Xpetra_Parameters.hpp>
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_ThyraUtils.hpp"
 
 //Epetra
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Epetra_MpiComm.h>
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_RowMatrix.h"
-#endif
 
 
 namespace Thyra {

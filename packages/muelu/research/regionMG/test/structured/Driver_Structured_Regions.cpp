@@ -71,9 +71,6 @@
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
 
 // Xpetra Epetra stack
-#ifdef HAVE_MUELU_EPETRA
-#include "Xpetra_EpetraMultiVector.hpp"
-#endif
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 

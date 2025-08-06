@@ -34,11 +34,6 @@
 #include "Tpetra_CrsMatrix.hpp"
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraMap.hpp"
-#include "Xpetra_EpetraCrsMatrix.hpp"
-#endif
-
 // Define data types
 typedef double SC;
 typedef int LO;
@@ -87,15 +82,6 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-  // Xpetra::EpetraCrsMatrix
-  {
-    RCP<const Xpetra::EpetraMap> map = rcp(new Xpetra::EpetraMap(numGlobalElements, indexBase, comm));
-    RCP<Xpetra::EpetraCrsMatrix> A   = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Xpetra::EpetraMap, Xpetra::EpetraCrsMatrix>(matrixType, map, matrixList);
-    A->describe(*out, Teuchos::VERB_EXTREME);
-  }
-#endif
-
 #ifdef HAVE_XPETRA_TPETRA
   // Xpetra::CrsMatrix (Tpetra)
   {
@@ -105,28 +91,10 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-  // Xpetra::CrsMatrix (Epetra)
-  {
-    RCP<const Xpetra::Map<LO, GO> > map   = rcp(new Xpetra::EpetraMap(numGlobalElements, indexBase, comm));
-    RCP<Xpetra::CrsMatrix<SC, LO, GO> > A = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Xpetra::Map<LO, GO>, Xpetra::CrsMatrix<SC, LO, GO> >(matrixType, map, matrixList);
-    A->describe(*out, Teuchos::VERB_EXTREME);
-  }
-#endif
-
 #ifdef HAVE_XPETRA_TPETRA
   // Xpetra::Matrix (Tpetra)
   {
     RCP<const Xpetra::Map<LO, GO> > map = rcp(new Xpetra::TpetraMap<LO, GO>(numGlobalElements, indexBase, comm));
-    RCP<Xpetra::Matrix<SC, LO, GO> > A  = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Xpetra::Map<LO, GO>, Xpetra::Matrix<SC, LO, GO> >(matrixType, map, matrixList);
-    A->describe(*out, Teuchos::VERB_EXTREME);
-  }
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-  // Xpetra::Matrix (Epetra)
-  {
-    RCP<const Xpetra::Map<LO, GO> > map = rcp(new Xpetra::EpetraMap(numGlobalElements, indexBase, comm));
     RCP<Xpetra::Matrix<SC, LO, GO> > A  = MueLu::Gallery::CreateCrsMatrix<SC, LO, GO, Xpetra::Map<LO, GO>, Xpetra::Matrix<SC, LO, GO> >(matrixType, map, matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   }

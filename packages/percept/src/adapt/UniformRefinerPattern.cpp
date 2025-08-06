@@ -16,12 +16,6 @@
 #include <adapt/UniformRefinerPattern.hpp>
 #include <stk_mesh/base/EntityCommDatabase.hpp>
 
-#if defined(STK_PERCEPT_USE_INTREPID)
-#if !STK_PERCEPT_LITE
-#include <percept/element/intrepid/BasisTable.hpp>
-#endif
-#endif
-
   namespace percept {
 
     bool allow_single_refine = false;
@@ -1387,82 +1381,7 @@
     prolongateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity element, stk::mesh::Entity newElement,  const unsigned *child_nodes,
                       RefTopoX_arr ref_topo_x, stk::mesh::FieldBase *field)
     {
-#if STK_PERCEPT_LITE || !defined(STK_PERCEPT_USE_INTREPID)
       VERIFY_MSG("not available in PerceptMeshLite");
-#else
-      EXCEPTWATCH;
-
-      unsigned *null_u = 0;
-
-      unsigned toTopoKey = getToTypeKey();
-      shards::CellTopology cell_topo(eMesh.get_cell_topology(element));
-
-      // FIXME - need topo dimensions here
-      int topoDim = getTopoDim(cell_topo);
-
-      int fieldStride = 0;
-      stk::mesh::EntityRank fr_type = static_cast<stk::mesh::EntityRank>(field->entity_rank());
-
-      {
-        unsigned nfr = field->restrictions().size();
-        for (unsigned ifr = 0; ifr < nfr; ifr++)
-          {
-            const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
-            fieldStride = fr.num_scalars_per_entity() ;
-            stk::mesh::Selector frselect = fr.selector();
-          }
-        {
-          const stk::mesh::FieldBase::Restriction & r =
-            stk::mesh::find_restriction(*field, fr_type, stk::mesh::MetaData::get(*field).universal_part());
-          fieldStride = r.num_scalars_per_entity();
-        }
-      }
-      // FIXME
-      if (!fieldStride || fr_type != stk::topology::NODE_RANK)
-        return;
-
-      FieldFunction field_func("tmp", field, eMesh, topoDim, fieldStride);
-
-      MDArray input_pts("input_pts",1, topoDim);
-      MDArray input_param_coords("input_param_coords",1, topoDim);
-      MDArray output_pts("input_param_coords",1, fieldStride);
-
-      percept::MyPairIterRelation new_elem_nodes (eMesh, newElement, stk::topology::NODE_RANK);
-      for (unsigned i_new_node = 0; i_new_node < new_elem_nodes.size(); i_new_node++)
-        {
-          unsigned childNodeIdx = child_nodes[i_new_node];
-          double *param_coord = ref_topo_x[childNodeIdx].parametric_coordinates;
-
-          for (int ip=0; ip < topoDim; ip++)
-            {
-              input_param_coords(0, ip) = param_coord[ip];
-            }
-          double time_val=0.0;
-
-          if (toTopoKey == topo_key_wedge15 || toTopoKey == topo_key_quad8 || toTopoKey == topo_key_shellquad8 
-              || toTopoKey == topo_key_line3  || toTopoKey == topo_key_shellline3
-              || toTopoKey == topo_key_hex20
-              || toTopoKey == topo_key_pyramid13 || toTopoKey == topo_key_pyramid5
-              || toTopoKey == topo_key_tet10)
-            {
-              prolongateIntrepid2(eMesh, field, cell_topo, output_pts, element, input_param_coords, time_val);
-            }
-          else
-            {
-              field_func(input_pts, output_pts, element, input_param_coords, time_val);
-            }
-
-          stk::mesh::Entity new_node = new_elem_nodes[i_new_node].entity();
-
-          {
-            double *f_data_new = eMesh.field_data(field, new_node, null_u);
-            for (int ifd=0; ifd < fieldStride; ifd++)
-              {
-                f_data_new[ifd] = output_pts(0, ifd);
-              }
-          }
-        }
-#endif
     }
 
     /// do interpolation for all fields

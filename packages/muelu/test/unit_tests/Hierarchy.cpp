@@ -196,9 +196,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, Iterate, Scalar, LocalOrdinal, Glob
   using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
   using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
 
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -302,9 +300,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, IterateWithFusedProlongationUpdate,
   using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
   using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
 
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -403,9 +399,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, IterateWithImplicitRestriction, Sca
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -555,9 +549,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy1levelv2, Scalar, Loc
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   MUELU_TESTING_SET_OSTREAM;
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -601,71 +593,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy2level, Scalar, Local
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-  RCP<Matrix> A                       = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(299 * comm->getSize());
-
-  // Multigrid Hierarchy
-  Hierarchy H(A);
-  H.setVerbLevel(Teuchos::VERB_HIGH);
-  H.SetMaxCoarseSize(50);
-
-  // Multigrid setup phase (using default parameters)
-  FactoryManager M0;  // how to build aggregates and smoother of the first level
-  M0.SetKokkosRefactor(false);
-
-  FactoryManager M1;  // first coarse level (Plain aggregation)
-  M1.SetKokkosRefactor(false);
-  M1.SetFactory("A", rcp(new RAPFactory()));
-  M1.SetFactory("P", rcp(new TentativePFactory()));
-
-  FactoryManager M2;  // last level (SA)
-  M2.SetKokkosRefactor(false);
-  M2.SetFactory("A", rcp(new RAPFactory()));
-  M2.SetFactory("P", rcp(new SaPFactory()));
-
-  bool r;  // cf. Teuchos Bug 5214
-  r = H.Setup(0, Teuchos::null, rcpFromRef(M0), rcpFromRef(M1));
-  TEST_EQUALITY(r, false);
-  r = H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), Teuchos::null);
-  TEST_EQUALITY(r, true);
-
-  RCP<Level> l0 = H.GetLevel(0);
-  RCP<Level> l1 = H.GetLevel(1);
-
-  /*RCP<Teuchos::FancyOStream> stdout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    l0->print(*stdout,Teuchos::VERB_EXTREME);
-    l1->print(*stdout,Teuchos::VERB_EXTREME);*/
-
-  TEST_EQUALITY(l0->IsAvailable("PreSmoother", MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("PreSmoother", MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false);  // direct solve
-  TEST_EQUALITY(l1->IsAvailable("P", MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("R", MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l0->IsAvailable("A", MueLu::NoFactory::get()), true);
-  TEST_EQUALITY(l1->IsAvailable("A", MueLu::NoFactory::get()), true);
-
-  TEST_EQUALITY(l0->GetKeepFlag("A", MueLu::NoFactory::get()), MueLu::UserData);
-  TEST_EQUALITY(l0->GetKeepFlag("PreSmoother", MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l0->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
-
-  TEST_EQUALITY(l1->GetKeepFlag("A", MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l1->GetKeepFlag("P", MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l1->GetKeepFlag("R", MueLu::NoFactory::get()), MueLu::Final);
-  TEST_EQUALITY(l1->GetKeepFlag("PreSmoother", MueLu::NoFactory::get()), MueLu::Final);
-  // TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
-
-  RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
-  RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
-  RHS->setSeed(846930886);
-  RHS->randomize();
-
-  X->putScalar((Scalar)0.0);
-
-  int iterations = 10;
-  H.Iterate(*RHS, *X, iterations);
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy2level_AggregateSmooth, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -932,9 +859,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy3level, Scalar, Local
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
   typedef typename Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
 
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -1032,9 +957,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy3level_BlockSmooth, S
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
     MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -1132,9 +1055,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy3level_NoPreSmooth, S
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
   typedef typename Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
 
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -1237,9 +1158,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy3levelFacManagers, Sc
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -1359,9 +1278,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchyTestBreakCondition, S
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif

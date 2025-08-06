@@ -71,9 +71,7 @@
 #  if !defined(STK_PERCEPT_HAS_GEOMETRY)
 #    define STK_PERCEPT_HAS_GEOMETRY
 #  endif
-#  if !defined(STK_PERCEPT_USE_INTREPID)
 #    define STK_PERCEPT_USE_INTREPID
-#  endif
 #endif
 
 #if defined(NO_GEOM_SUPPORT) && defined(STK_PERCEPT_HAS_GEOMETRY)
@@ -83,9 +81,6 @@
 #if defined(STK_PERCEPT_LITE) && STK_PERCEPT_LITE == 1
 #if defined(STK_PERCEPT_HAS_GEOMETRY)
 #undef STK_PERCEPT_HAS_GEOMETRY
-#endif
-#if defined(STK_PERCEPT_USE_INTREPID)
-#undef STK_PERCEPT_USE_INTREPID
 #endif
 #endif
 

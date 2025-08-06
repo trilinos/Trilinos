@@ -29,9 +29,6 @@
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
 #endif
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraCrsMatrix.hpp"
-#endif
 
 // Epetra
 #ifdef HAVE_MPI

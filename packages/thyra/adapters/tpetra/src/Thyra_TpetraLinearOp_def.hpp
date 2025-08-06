@@ -18,54 +18,7 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 
-#ifdef HAVE_THYRA_TPETRA_EPETRA
-#  include "Thyra_EpetraThyraWrappers.hpp"
-#endif
-
 namespace Thyra {
-
-
-#ifdef HAVE_THYRA_TPETRA_EPETRA
-
-// Utilites
-
-
-/** \brief Default class returns null. */
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
-class GetTpetraEpetraRowMatrixWrapper {
-public:
-  template<class TpetraMatrixType>
-  static
-  RCP<Tpetra::EpetraRowMatrix<TpetraMatrixType> >
-  get(const RCP<TpetraMatrixType> &tpetraMatrix)
-    {
-      return Teuchos::null;
-    }
-};
-
-
-// NOTE: We could support other ordinal types, but we have to
-// specialize the EpetraRowMatrix
-template<>
-class GetTpetraEpetraRowMatrixWrapper<double, int, int> {
-public:
-  template<class TpetraMatrixType>
-  static
-  RCP<Tpetra::EpetraRowMatrix<TpetraMatrixType> >
-  get(const RCP<TpetraMatrixType> &tpetraMatrix)
-    {
-      return Teuchos::rcp(
-        new Tpetra::EpetraRowMatrix<TpetraMatrixType>(tpetraMatrix,
-          *get_Epetra_Comm(
-            *convertTpetraToThyraComm(tpetraMatrix->getRowMap()->getComm())
-            )
-          )
-        );
-    }
-};
-
-
-#endif // HAVE_THYRA_TPETRA_EPETRA
 
 
 template <class Scalar>
@@ -166,51 +119,6 @@ TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::domain() const
 
 
 // Overridden from EpetraLinearOpBase
-
-
-#ifdef HAVE_THYRA_TPETRA_EPETRA
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNonconstEpetraOpView(
-  const Ptr<RCP<Epetra_Operator> > &epetraOp,
-  const Ptr<EOpTransp> &epetraOpTransp,
-  const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
-  const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
-  )
-{
-  TEUCHOS_TEST_FOR_EXCEPT(true);
-}
-
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getEpetraOpView(
-  const Ptr<RCP<const Epetra_Operator> > &epetraOp,
-  const Ptr<EOpTransp> &epetraOpTransp,
-  const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
-  const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
-  ) const
-{
-  using Teuchos::rcp_dynamic_cast;
-  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraRowMatrix_t;
-  if (nonnull(tpetraOperator_)) {
-    if (is_null(epetraOp_)) {
-      epetraOp_ = GetTpetraEpetraRowMatrixWrapper<Scalar,LocalOrdinal,GlobalOrdinal>::get(
-        rcp_dynamic_cast<const TpetraRowMatrix_t>(tpetraOperator_.getConstObj(), true));
-    }
-    *epetraOp = epetraOp_;
-    *epetraOpTransp = NOTRANS;
-    *epetraOpApplyAs = EPETRA_OP_APPLY_APPLY;
-    *epetraOpAdjointSupport = ( tpetraOperator_->hasTransposeApply()
-      ? EPETRA_OP_ADJOINT_SUPPORTED : EPETRA_OP_ADJOINT_UNSUPPORTED );
-  }
-  else {
-    *epetraOp = Teuchos::null;
-  }
-}
-
-
-#endif // HAVE_THYRA_TPETRA_EPETRA
 
 
 // Protected Overridden functions from LinearOpBase

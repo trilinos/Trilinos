@@ -13,17 +13,6 @@
 
 namespace panzer {
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-template <typename EvalT>
-Epetra_Vector & ResponseMESupport_Default<EvalT>::
-getEpetraVector() const
-{
-   TEUCHOS_ASSERT(useEpetra());
-
-   return *eVector_;
-}
-#endif
-
 template <typename EvalT>
 Thyra::ArrayRCP<double> ResponseMESupport_Default<EvalT>::
 getThyraVector() const
@@ -35,40 +24,6 @@ getThyraVector() const
 
    return data;
 }
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-template <typename EvalT>
-Teuchos::RCP<const Epetra_Map> ResponseMESupport_Default<EvalT>::
-getMap() const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(useThyra_,std::logic_error,
-                             "Reponse field \"" << this->getName() << "\" has previously been initialized as a "
-                             "Thyra object, now trying to initalize as a Epetra! Error!");
-
-  // lazily construct the map only as needed
-  if(map_==Teuchos::null) {
-    if(this->vectorIsDistributed())
-      map_ = Teuchos::rcp(new Epetra_Map(-1,(int) this->localSizeRequired(),0,eComm_));
-    else
-      map_ = Teuchos::rcp(new Epetra_LocalMap((int) this->localSizeRequired(),0,eComm_));
-  }
-
-  return map_;
-}
-
-template <typename EvalT>
-void ResponseMESupport_Default<EvalT>::
-setVector(const Teuchos::RCP<Epetra_Vector> & destVec)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(useThyra_,std::logic_error,
-                             "Reponse field \"" << this->getName() << "\" has previously been initialized as a "
-                             "Thyra object, now trying to initalize as a Epetra! Error!");
-
-  eVector_ = destVec;
-
-  useEpetra_ = true;
-}
-#endif
 
 template <typename EvalT>
 Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ResponseMESupport_Default<EvalT>::

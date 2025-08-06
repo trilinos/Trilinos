@@ -83,7 +83,6 @@
 #endif
 
 /* define if we have Epetra */
-#cmakedefine HAVE_ZOLTAN2CORE_EPETRA
 #ifdef HAVE_ZOLTAN2CORE_EPETRA
 #  define HAVE_ZOLTAN2_EPETRA
 #endif

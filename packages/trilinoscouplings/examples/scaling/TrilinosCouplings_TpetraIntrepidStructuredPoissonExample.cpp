@@ -31,12 +31,8 @@
 #include <pamgen_im_ne_nemesisI_l.h>
 #include <pamgen_extras.h>
 
-#ifdef HAVE_INTREPID_KOKKOS
-#include "Sacado.hpp"
-#else
 // Sacado includes
 #include <Sacado_No_Kokkos.hpp>
-#endif
 
 // My includes
 #include "TrilinosCouplings_TpetraIntrepidStructuredPoissonExample.hpp"

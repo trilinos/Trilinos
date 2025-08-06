@@ -66,22 +66,6 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TrilinosSmoother(co
   }
   triedTpetra_ = true;
 #endif
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-  try {
-    // GetIfpackSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
-    sEpetra_ = GetIfpackSmoother<SC, LO, GO, NO>(TrilinosSmoother::Ifpack2ToIfpack1Type(type_), TrilinosSmoother::Ifpack2ToIfpack1Param(paramList), overlap_);
-    if (sEpetra_.is_null())
-      errorEpetra_ = "Unable to construct Ifpack smoother";
-    else if (!sEpetra_->constructionSuccessful()) {
-      errorEpetra_ = sEpetra_->constructionErrorMsg();
-      sEpetra_     = Teuchos::null;
-    }
-  } catch (Exceptions::RuntimeError& e) {
-    // IfpackSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-    errorEpetra_ = e.what();
-  }
-  triedEpetra_ = true;
-#endif
 #if defined(HAVE_MUELU_BELOS)
   try {
     sBelos_ = rcp(new BelosSmoother(type_, paramList));

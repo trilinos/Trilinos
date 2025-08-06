@@ -81,15 +81,10 @@ typedef float zscalar_t;
 #endif
 
 #if defined HAVE_TPETRA_INT_INT
-#if defined HAVE_EPETRA_SCALAR_TYPE
-#define HAVE_EPETRA_DATA_TYPES
-#endif
 #endif
 
-#ifndef HAVE_ZOLTAN2_EPETRA
 #undef HAVE_EPETRA_SCALAR_TYPE
 #undef HAVE_EPETRA_DATA_TYPES
-#endif
 
 //////////////////////////////////////////////////////////////////////////
 

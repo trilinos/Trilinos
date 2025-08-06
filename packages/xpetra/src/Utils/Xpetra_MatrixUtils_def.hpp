@@ -631,9 +631,6 @@ void MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::extractBlockDiagona
   const UnderlyingLib lib = A.getRowMap()->lib();
 
   if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_XPETRA_EPETRA)
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::extractBlockDiagonal not available for Epetra."));
-#endif  // HAVE_XPETRA_EPETRA
   } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& At = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
@@ -650,9 +647,6 @@ void MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::inverseScaleBlockDi
   const UnderlyingLib lib = blockDiagonal.getMap()->lib();
 
   if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_XPETRA_EPETRA)
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixUtils::inverseScaleBlockDiagonal not available for Epetra."));
-#endif  // HAVE_XPETRA_EPETRA
   } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
     Tpetra::MultiVector<SC, LO, GO, NO>& Dt = Xpetra::toTpetra(blockDiagonal);

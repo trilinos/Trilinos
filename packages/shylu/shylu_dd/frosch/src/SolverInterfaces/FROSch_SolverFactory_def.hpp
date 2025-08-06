@@ -28,23 +28,10 @@ namespace FROSch {
     {
         const string solverType = parameterList->get("SolverType","Amesos2");
         if (!solverType.compare("Amesos")) {
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-            FROSCH_ASSERT(k->getRowMap()->lib()==UseEpetra,"FROSch::SolverFactory: Amesos is not compatible with Tpetra.");
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-            return AmesosSolverEpetraPtr(new AmesosSolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
-#else
-            ThrowErrorMissingPackage("FROSch::SolverFactory","Epetra");
-#endif
-#else
             ThrowErrorMissingPackage("FROSch::SolverFactory","Amesos");
-#endif
         } else if (!solverType.compare("Amesos2")) {
             if (k->getRowMap()->lib()==UseEpetra) {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                return Amesos2SolverEpetraPtr(new Amesos2SolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
-#else
                 ThrowErrorMissingPackage("FROSch::SolverFactory","Epetra");
-#endif
             } else if (k->getRowMap()->lib()==UseTpetra) {
                 return Amesos2SolverTpetraPtr(new Amesos2SolverTpetra<SC,LO,GO,NO>(k,parameterList,description));
             } else {
@@ -53,11 +40,7 @@ namespace FROSch {
         } else if (!solverType.compare("Belos")) {
 #ifdef HAVE_SHYLU_DDFROSCH_BELOS
             if (k->getRowMap()->lib()==UseEpetra) {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                return BelosSolverEpetraPtr(new BelosSolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
-#else
                 ThrowErrorMissingPackage("FROSch::SolverFactory","Epetra");
-#endif
             } else if (k->getRowMap()->lib()==UseTpetra) {
                 return BelosSolverTpetraPtr(new BelosSolverTpetra<SC,LO,GO,NO>(k,parameterList,description));
             } else {

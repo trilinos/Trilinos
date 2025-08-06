@@ -136,43 +136,6 @@ class Amesos2Smoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrd
 
 };  // class Amesos2Smoother
 
-#ifdef HAVE_MUELU_EPETRA
-
-#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
-// Stub specialization for missing Epetra template args
-template <>
-class Amesos2Smoother<double, int, int, Xpetra::EpetraNode> : public SmootherPrototype<double, int, int, Xpetra::EpetraNode> {
-  typedef double Scalar;
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  typedef Xpetra::EpetraNode Node;
-#undef MUELU_AMESOS2SMOOTHER_SHORT
-#include "MueLu_UseShortNames.hpp"
-
- public:
-  Amesos2Smoother(const std::string& type = "", const Teuchos::ParameterList& paramList = Teuchos::ParameterList()) {
-    MUELU_TPETRA_ETI_EXCEPTION("Amesos2Smoother<double,int,int,EpetraNode>", "Amesos2Smoother<double,int,int,EpetraNode>", "int");
-  }
-  virtual ~Amesos2Smoother(){};
-  void DeclareInput(Level& currentLevel) const {};
-  void Setup(Level& currentLevel){};
-  void Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero = false) const {};
-
-  RCP<SmootherPrototype> Copy() const { return Teuchos::null; };
-
-  std::string description() const { return std::string(""); };
-  void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = Default) const {};
-
-  //! Get a rough estimate of cost per iteration
-  size_t getNodeSmootherComplexity() const {
-    size_t cplx = 0;
-    return cplx;
-  };
-};
-#endif
-#endif  // HAVE_MUELU_EPETRA
-
 }  // namespace MueLu
 
 #define MUELU_AMESOS2SMOOTHER_SHORT

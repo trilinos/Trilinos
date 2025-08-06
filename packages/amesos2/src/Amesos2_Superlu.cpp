@@ -17,10 +17,6 @@
 
 namespace Amesos2 {
 
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(Superlu);
-#endif
-
 } // namespace Amesos2
 
 #define AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N) \

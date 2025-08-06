@@ -31,11 +31,7 @@ namespace Details {
 
 class DefaultNode {
  public:
-#ifdef EPETRA_HAVE_OMP
-  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode DefaultNodeType;
-#else
   typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode DefaultNodeType;
-#endif
 };
 
 }  // namespace KokkosClassic

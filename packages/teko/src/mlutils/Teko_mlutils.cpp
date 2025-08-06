@@ -41,13 +41,7 @@ namespace mlutils {
 // build a very simple row map from the ML_Operator
 Teuchos::RCP<Epetra_Map> buildRowMap(ML_Operator *mlOp) {
   ML_Comm *comm = mlOp->comm;
-#ifdef ML_MPI
-  MPI_Comm mpi_comm;
-  mpi_comm = comm->USR_comm;
-  Epetra_MpiComm eComm(mpi_comm);
-#else
   Epetra_SerialComm eComm;
-#endif
 
   // get operators row count, build map...who cares what GIDs are
   int rowCnt = mlOp->outvec_leng;
@@ -60,13 +54,7 @@ Teuchos::RCP<Epetra_Map> buildRowMap(ML_Operator *mlOp) {
 Teuchos::RCP<Epetra_CrsMatrix> convertToCrsMatrix(ML_Operator *mlOp,
                                                   const Teuchos::RCP<Epetra_Map> &rowMapArg) {
   ML_Comm *comm = mlOp->comm;
-#ifdef ML_MPI
-  MPI_Comm mpi_comm;
-  mpi_comm = comm->USR_comm;
-  Epetra_MpiComm eComm(mpi_comm);
-#else
   Epetra_SerialComm eComm;
-#endif
 
   // build a default row map
   Teuchos::RCP<Epetra_Map> rowMap = rowMapArg;

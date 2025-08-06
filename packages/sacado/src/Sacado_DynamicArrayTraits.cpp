@@ -9,14 +9,6 @@
 
 #include "Sacado_DynamicArrayTraits.hpp"
 
-#if 0 && defined(HAVE_SACADO_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
-namespace Sacado {
-  namespace Impl {
-    const Kokkos::MemoryPool<Kokkos::OpenMP>* global_sacado_openmp_memory_pool = 0;
-  }
-}
-#endif
-
 #if defined(HAVE_SACADO_KOKKOS) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(KOKKOS_ENABLE_CUDA) && defined(__CUDACC__)
 namespace Sacado {
   namespace Impl {

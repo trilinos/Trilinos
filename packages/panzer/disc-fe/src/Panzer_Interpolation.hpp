@@ -12,13 +12,6 @@
 #define __Panzer_Interpolation_hpp__
 
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#endif
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Thyra_EpetraThyraWrappers.hpp"
-#endif
 
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_Import.hpp>

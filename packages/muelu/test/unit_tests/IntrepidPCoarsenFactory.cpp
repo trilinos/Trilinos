@@ -1429,9 +1429,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -1494,9 +1492,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -1558,9 +1554,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -2360,9 +2354,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -2424,9 +2416,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -2488,9 +2478,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -2552,9 +2540,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -2632,9 +2618,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -2703,9 +2687,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif
@@ -2776,9 +2758,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory, CreatePreconditioner_
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode);
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
 #if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
   MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
 #endif

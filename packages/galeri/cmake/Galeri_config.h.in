@@ -15,7 +15,6 @@
 #cmakedefine HAVE_EXPORT_MAKEFILES
 
 /* Define if want to build with galeri enabled */
-#cmakedefine HAVE_GALERI_EPETRAEXT
 
 /* Define if want to build galeri-examples */
 #cmakedefine HAVE_GALERI_EXAMPLES
@@ -52,4 +51,3 @@
 #endif
 
 /* Define if want to build with Triutils support enabled. */
-#cmakedefine HAVE_GALERI_TRIUTILS

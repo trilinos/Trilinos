@@ -18,10 +18,6 @@
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziTraceMinBase.hpp"
 
-#ifdef HAVE_ANASAZI_EPETRA
-  #include "Epetra_Operator.h"
-#endif
-
 #include "AnasaziEigensolver.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"

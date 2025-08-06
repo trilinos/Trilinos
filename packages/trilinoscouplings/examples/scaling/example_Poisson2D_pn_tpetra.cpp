@@ -118,12 +118,8 @@
 #  include "MueLu_AvatarInterface.hpp"
 #endif
 
-#ifdef HAVE_INTREPID_KOKKOS
-#include "Sacado.hpp"
-#else
 // Sacado includes
 #include "Sacado_No_Kokkos.hpp"
-#endif
 
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>

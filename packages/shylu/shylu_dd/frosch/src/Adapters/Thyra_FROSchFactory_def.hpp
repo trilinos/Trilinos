@@ -517,9 +517,6 @@ namespace Thyra {
                     RCP<const TpetraMap<LO,GO,NO> > xTpetraRepeatedMap(new const TpetraMap<LO,GO,NO>(repeatedMapTmp));
                     repeatedMap = rcp_dynamic_cast<ConstXMap>(xTpetraRepeatedMap);
                 } else {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                    FROSCH_WARNING("FROSch::FROSchFactory",comm->getRank()==0,"Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead.");
-#endif
                 }
             }
             FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory: repeatedMap.is_null()");
@@ -541,9 +538,6 @@ namespace Thyra {
                     RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraCoordinatesList(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(coordinatesListTmp));
                     coordinatesList = rcp_dynamic_cast<ConstXMultiVector>(xTpetraCoordinatesList);
                 } else {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                    FROSCH_WARNING("FROSch::FROSchFactory",comm->getRank()==0,"Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead.");
-#endif
                 }
             }
             FROSCH_ASSERT(!coordinatesList.is_null(),"FROSch::FROSchFactory: coordinatesList.is_null()");
@@ -565,9 +559,6 @@ namespace Thyra {
                     RCP<const Xpetra::TpetraMultiVector<SC,LO,GO,NO> > xTpetraNullSpaceBasis(new const Xpetra::TpetraMultiVector<SC,LO,GO,NO>(nullSpaceBasisTmp));
                     nullSpaceBasis = rcp_dynamic_cast<ConstXMultiVector>(xTpetraNullSpaceBasis);
                 } else {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                    FROSCH_WARNING("FROSch::FROSchFactory",comm->getRank()==0,"Cannot retrieve Epetra objects from ParameterList. Use Xpetra instead.");
-#endif
                 }
             }
             FROSCH_ASSERT(!nullSpaceBasis.is_null(),"FROSch::FROSchFactory: nullSpaceBasis.is_null()");

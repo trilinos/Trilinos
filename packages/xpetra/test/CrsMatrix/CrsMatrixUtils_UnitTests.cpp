@@ -217,18 +217,4 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP_ORDINAL_TPETRAONLY)
 
 #endif
 
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-UNIT_TEST_GROUP_ORDINAL_EPETRAONLY(double, int, int, EpetraNode)
-#endif
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-UNIT_TEST_GROUP_ORDINAL_EPETRAONLY(double, int, LongLong, EpetraNode)
-#endif
-
-#endif
-
 }  // End of namespace

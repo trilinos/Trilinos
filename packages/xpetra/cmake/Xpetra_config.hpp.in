@@ -8,9 +8,7 @@
 /* Define whether Xpetra enables deprecated code at compile time. */
 #cmakedefine XPETRA_ENABLE_DEPRECATED_CODE
 
-#cmakedefine HAVE_XPETRA_EPETRA
 
-#cmakedefine HAVE_XPETRA_EPETRAEXT
 
 #cmakedefine XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 

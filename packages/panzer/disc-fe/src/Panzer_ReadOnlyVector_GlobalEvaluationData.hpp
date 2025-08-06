@@ -13,9 +13,6 @@
 
 // Panzer
 #include "PanzerDiscFE_config.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_KokkosUtils_VectorToView.hpp"
-#endif
 
 #include "Panzer_GlobalEvaluationData.hpp"
 
@@ -56,44 +53,6 @@ public:
 
   //! Get the ghosted vector
   virtual Teuchos::RCP<Thyra::VectorBase<double> > getGhostedVector() const = 0;
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-  /**
-   *  \brief Element access.
-   *
-   *  Get the `lid`-th element in this `GlobalEvaluationData`.
-   *
-   *  \note This will pull the appropriate element out of either the owned or
-   *        ghosted vector, depending on the value of `lid`.
-   *
-   *  \param[in] lid The local ID of the element you'd like to get.
-   *
-   *  \returns The `lid`-th element in this `GlobalEvaluationData`.
-   */
-  const double&
-  operator[](
-    const int& lid) const
-  {
-    if (lid < static_cast<int>(ownedView_.extent(0)))
-      return ownedView_(lid);
-    else // if (lid >= static_cast<int>(ownedView_.extent(0)))
-      return ghostedView_(lid - ownedView_.extent(0));
-  } // end of operator[]()
-
-protected:
-
-  /**
-   *  \brief The `PHX::View` of the owned vector.
-   */
-  typename panzer::kokkos_utils::VectorToViewTraits<const Epetra_Vector>::View
-  ownedView_;
-
-  /**
-   *  \brief The `PHX::View` of the ghosted vector.
-   */
-  typename panzer::kokkos_utils::VectorToViewTraits<Epetra_Vector>::View
-  ghostedView_;
-#endif
 
 }; // end of class ReadOnlyVector_GlobalEvaluationData
 

@@ -7,7 +7,6 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef __INTREPID_HGRAD_C0_FEM_HPP__
 #define __INTREPID_HGRAD_C0_FEM_HPP__
 
 #include "Intrepid_Basis.hpp"
@@ -63,4 +62,3 @@ namespace Intrepid{
 
 
 #include "Intrepid_HGRAD_C0_FEMDef.hpp"
-#endif

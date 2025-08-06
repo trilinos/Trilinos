@@ -17,10 +17,6 @@
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#endif
-
 namespace panzer {
 
 Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewDomain(const LinearObjFactory<panzer::Traits> & lof,
@@ -56,9 +52,6 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
   typedef BlockedDOFManager<int,panzer::GlobalOrdinal>   BlockedTpetraUGI;
 */
   typedef TpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal>        TpetraLOF;
-#ifdef PANZER_HAVE_EPETRA_STACK
-  typedef BlockedEpetraLinearObjFactory<panzer::Traits,int>                  BlockedEpetraLOF;
-#endif
   typedef BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> BlockedTpetraLOF;
 
   // This proceeds by casting to a number of known LOF types (all explicitly instantiated)
@@ -83,16 +76,6 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
 
     return rcp(new TpetraLOF(mpiComm,rangeUGI,domainUGI));
   }
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-  Ptr<const BlockedEpetraLOF> blk_epetra_lof = ptr_dynamic_cast<const BlockedEpetraLOF>(ptrFromRef(lof));
-  if(blk_epetra_lof!=null) {
-    auto rangeUGI  = (rUgi==null ? blk_epetra_lof->getRangeGlobalIndexer() : rUgi);
-    auto domainUGI = (dUgi==null ? blk_epetra_lof->getDomainGlobalIndexer() : dUgi);
-    RCP<Teuchos::MpiComm<int> > mpiComm = rcp(new Teuchos::MpiComm<int>(blk_epetra_lof->getComm()));
-    return rcp(new BlockedEpetraLOF(mpiComm,rangeUGI,domainUGI));
-  }
-#endif
 
   Ptr<const BlockedTpetraLOF> blk_tpetra_lof = ptr_dynamic_cast<const BlockedTpetraLOF>(ptrFromRef(lof));
   if(blk_tpetra_lof!=null) {

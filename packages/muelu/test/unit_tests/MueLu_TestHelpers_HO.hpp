@@ -17,10 +17,6 @@
 
 #include "MueLu_TestHelpers.hpp"
 
-#ifdef HAVE_MUELU_EPETRA
-#include "Epetra_FECrsMatrix.h"
-#endif
-
 #include "MueLu_Utilities_def.hpp"
 
 namespace MueLuTests {

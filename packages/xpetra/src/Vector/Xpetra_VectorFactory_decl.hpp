@@ -16,10 +16,6 @@
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraVector_decl.hpp"
 #endif
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraVector.hpp"
-#include "Xpetra_EpetraIntVector.hpp"
-#endif
 
 #include "Xpetra_BlockedMap_decl.hpp"
 #include "Xpetra_BlockedVector_decl.hpp"
@@ -66,119 +62,6 @@ class VectorFactory {
 };  // class VectorFactory
 
 #define XPETRA_VECTORFACTORY_SHORT
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-// we need the Epetra specialization only if Epetra is enabled
-#if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
-
-// Specialization for Scalar=double, LO=GO=int and EpetraNode node
-// Used both for Epetra and Tpetra
-// For any other node definition the general default implementation is used which allows Tpetra only
-template <>
-class VectorFactory<double, int, int, EpetraNode> {
-  typedef double Scalar;
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  typedef EpetraNode Node;
-
-#undef XPETRA_VECTORFACTORY_SHORT
-#include "Xpetra_UseShortNames.hpp"
-
- private:
-  //! Private constructor. This is a static class.
-  VectorFactory() = default;
-
- public:
-  static RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-  Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
-        bool zeroOut = true);
-};
-#endif  // #if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
-
-// Specialization for Scalar=double, LO=int, GO=long long and EpetraNode
-// Used both for Epetra and Tpetra
-// For any other node definition the general default implementation is used which allows Tpetra only
-#if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
-
-template <>
-class VectorFactory<double, int, long long, EpetraNode> {
-  typedef double Scalar;
-  typedef int LocalOrdinal;
-  typedef long long GlobalOrdinal;
-  typedef EpetraNode Node;
-
-#undef XPETRA_VECTORFACTORY_SHORT
-#include "Xpetra_UseShortNames.hpp"
-
- private:
-  //! Private constructor. This is a static class.
-  VectorFactory() = default;
-
- public:
-  static RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-  Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
-        bool zeroOut = true);
-};
-#endif  // #if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
-#define XPETRA_VECTORFACTORY_SHORT
-
-// we need the Epetra specialization only if Epetra is enabled
-#if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
-
-// Specialization for Scalar=int, LO=GO=int and EpetraNode
-// Used both for Epetra and Tpetra
-// For any other node definition the general default implementation is used which allows Tpetra only
-template <>
-class VectorFactory<int, int, int, EpetraNode> {
-  typedef int Scalar;
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  typedef EpetraNode Node;
-
-#undef XPETRA_VECTORFACTORY_SHORT
-#include "Xpetra_UseShortNames.hpp"
-
- private:
-  //! Private constructor. This is a static class.
-  VectorFactory() = default;
-
- public:
-  static RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-  Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
-        bool zeroOut = true);
-};
-#endif  // #if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
-
-// we need the Epetra specialization only if Epetra is enabled
-#if !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
-
-// Specialization for Scalar=int, LO=int, GO=long long and Serial node
-// Used both for Epetra and Tpetra
-// For any other node definition the general default implementation is used which allows Tpetra only
-
-template <>
-class VectorFactory<int, int, long long, EpetraNode> {
-  typedef int Scalar;
-  typedef int LocalOrdinal;
-  typedef long long GlobalOrdinal;
-  typedef EpetraNode Node;
-
-#undef XPETRA_VECTORFACTORY_SHORT
-#include "Xpetra_UseShortNames.hpp"
-
- private:
-  //! Private constructor. This is a static class.
-  VectorFactory() = default;
-
- public:
-  static RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-  Build(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
-        bool zeroOut = true);
-};
-#endif  // !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
-
-#endif  // #if defined(HAVE_XPETRA_EPETRA)
 
 }  // namespace Xpetra
 

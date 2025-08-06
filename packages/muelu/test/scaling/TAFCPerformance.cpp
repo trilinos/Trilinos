@@ -39,11 +39,6 @@
 #include <MueLu_Utilities.hpp>
 
 #include <MueLu_CreateTpetraPreconditioner.hpp>
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_CreateEpetraPreconditioner.hpp>
-#include <EpetraExt_MMHelpers.h>
-#include <EpetraExt_RowMatrixOut.h>
-#endif
 
 using Teuchos::RCP;
 using Teuchos::rcp;

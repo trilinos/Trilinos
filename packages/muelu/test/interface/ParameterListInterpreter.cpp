@@ -115,14 +115,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       dirList.push_back(prefix + "FactoryParameterListInterpreter/");
     }
   }
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
-  // The ML interpreter have internal ifdef, which means that the resulting
-  // output would depend on configuration (reguarl interpreter does not have
-  // that). Therefore, we need to stabilize the configuration here.
-  // In addition, we run ML parameter list tests only if KLU is available
-  dirList.push_back(prefix + "MLParameterListInterpreter/");
-  dirList.push_back(prefix + "MLParameterListInterpreter2/");
-#endif
   int numLists = dirList.size();
 
   bool failed  = false;

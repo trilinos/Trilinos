@@ -10,20 +10,6 @@
 #include "Teko_TpetraHelpers.hpp"
 #include "Teko_ConfigDefs.hpp"
 
-#ifdef TEKO_HAVE_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-
-// Epetra includes
-#include "Epetra_Vector.h"
-
-// EpetraExt includes
-#include "EpetraExt_ProductOperator.h"
-#include "EpetraExt_MatrixMatrix.h"
-
-#include "Teko_EpetraOperatorWrapper.hpp"
-#endif
-
 // Thyra Includes
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
@@ -272,89 +258,6 @@ RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > getTpetraCrsMatrix(const LinearOp&
 
   return Teuchos::null;
 }
-
-#ifdef TEKO_HAVE_EPETRA
-RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT> > epetraCrsMatrixToTpetra(
-    const RCP<const Epetra_CrsMatrix> A_e, const RCP<const Teuchos::Comm<int> > comm) {
-  int* ptr;
-  int* ind;
-  double* val;
-
-  int info = A_e->ExtractCrsDataPointers(ptr, ind, val);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                             "Could not extract data from Epetra_CrsMatrix");
-  const LO numRows = A_e->Graph().NumMyRows();
-  const LO nnz     = A_e->Graph().NumMyEntries();
-
-  Teuchos::ArrayRCP<size_t> ptr2(numRows + 1);
-  Teuchos::ArrayRCP<int> ind2(nnz);
-  Teuchos::ArrayRCP<double> val2(nnz);
-
-  std::copy(ptr, ptr + numRows + 1, ptr2.begin());
-  std::copy(ind, ind + nnz, ind2.begin());
-  std::copy(val, val + nnz, val2.begin());
-
-  RCP<const Tpetra::Map<LO, GO, NT> > rowMap = epetraMapToTpetra(A_e->RowMap(), comm);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A_t =
-      Tpetra::createCrsMatrix<ST, LO, GO, NT>(rowMap, A_e->GlobalMaxNumEntries());
-
-  RCP<const Tpetra::Map<LO, GO, NT> > domainMap = epetraMapToTpetra(A_e->OperatorDomainMap(), comm);
-  RCP<const Tpetra::Map<LO, GO, NT> > rangeMap  = epetraMapToTpetra(A_e->OperatorRangeMap(), comm);
-  RCP<const Tpetra::Map<LO, GO, NT> > colMap    = epetraMapToTpetra(A_e->ColMap(), comm);
-
-  A_t->replaceColMap(colMap);
-  A_t->setAllValues(ptr2, ind2, val2);
-  A_t->fillComplete(domainMap, rangeMap);
-  return A_t;
-}
-
-RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > nonConstEpetraCrsMatrixToTpetra(
-    const RCP<Epetra_CrsMatrix> A_e, const RCP<const Teuchos::Comm<int> > comm) {
-  int* ptr;
-  int* ind;
-  double* val;
-
-  int info = A_e->ExtractCrsDataPointers(ptr, ind, val);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                             "Could not extract data from Epetra_CrsMatrix");
-  const LO numRows = A_e->Graph().NumMyRows();
-  const LO nnz     = A_e->Graph().NumMyEntries();
-
-  Teuchos::ArrayRCP<size_t> ptr2(numRows + 1);
-  Teuchos::ArrayRCP<int> ind2(nnz);
-  Teuchos::ArrayRCP<double> val2(nnz);
-
-  std::copy(ptr, ptr + numRows + 1, ptr2.begin());
-  std::copy(ind, ind + nnz, ind2.begin());
-  std::copy(val, val + nnz, val2.begin());
-
-  RCP<const Tpetra::Map<LO, GO, NT> > rowMap = epetraMapToTpetra(A_e->RowMap(), comm);
-  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > A_t =
-      Tpetra::createCrsMatrix<ST, LO, GO, NT>(rowMap, A_e->GlobalMaxNumEntries());
-
-  RCP<const Tpetra::Map<LO, GO, NT> > domainMap = epetraMapToTpetra(A_e->OperatorDomainMap(), comm);
-  RCP<const Tpetra::Map<LO, GO, NT> > rangeMap  = epetraMapToTpetra(A_e->OperatorRangeMap(), comm);
-  RCP<const Tpetra::Map<LO, GO, NT> > colMap    = epetraMapToTpetra(A_e->ColMap(), comm);
-
-  A_t->replaceColMap(colMap);
-  A_t->setAllValues(ptr2, ind2, val2);
-  A_t->fillComplete(domainMap, rangeMap);
-  return A_t;
-}
-
-RCP<const Tpetra::Map<LO, GO, NT> > epetraMapToTpetra(const Epetra_Map eMap,
-                                                      const RCP<const Teuchos::Comm<int> > comm) {
-  std::vector<int> intGIDs(eMap.NumMyElements());
-  eMap.MyGlobalElements(&intGIDs[0]);
-
-  std::vector<GO> myGIDs(eMap.NumMyElements());
-  for (int k = 0; k < eMap.NumMyElements(); k++) myGIDs[k] = (GO)intGIDs[k];
-
-  return rcp(
-      new const Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
-                                        Teuchos::ArrayView<GO>(myGIDs), 0, comm));
-}
-#endif  // TEKO_HAVE_EPETRA
 
 }  // end namespace TpetraHelpers
 }  // end namespace Teko

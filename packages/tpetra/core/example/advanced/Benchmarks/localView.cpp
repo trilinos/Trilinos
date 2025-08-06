@@ -47,17 +47,6 @@
 #  include "Teuchos_DefaultMpiComm.hpp"
 #endif // HAVE_TEUCHOS_MPI
 
-#ifdef HAVE_TPETRACORE_EPETRA
-#  include "Epetra_Comm.h"
-#  include "Epetra_CrsGraph.h"
-#  include "Epetra_CrsMatrix.h"
-#  include "Epetra_Map.h"
-#  include "Epetra_SerialComm.h"
-#  ifdef HAVE_TEUCHOS_MPI
-#    include "Epetra_MpiComm.h"
-#  endif // HAVE_TEUCHOS_MPI
-#endif // HAVE_TPETRACORE_EPETRA
-
 namespace { // (anonymous)
 
   // Options to read in from the command line
@@ -101,11 +90,7 @@ namespace { // (anonymous)
     // This example lives in Tpetra, and has the option to use Epetra,
     // but it does not require Epetra.  Users are not allowed to ask
     // for the Epetra benchmarks to run if Epetra is not available.
-#ifdef HAVE_TPETRACORE_EPETRA
-    const bool testEpetraDefault = true;
-#else
     const bool testEpetraDefault = false;
-#endif //HAVE_TPETRACORE_EPETRA
     opts.testEpetra = testEpetraDefault;
     opts.testEpetraLen = testEpetraDefault;
     opts.testTpetra = true;
@@ -180,14 +165,12 @@ namespace { // (anonymous)
       out << "numEntPerRow = " << opts.numEntPerRow << " < 0." << std::endl;
       err = -3; // LAPACK error reporting convention
     }
-#ifndef HAVE_TPETRACORE_EPETRA
     if (opts.testEpetra || opts.testEpetraLen) {
       out << "If you want to test Epetra, you must enable the Epetra package "
         "when configuring Trilinos, by setting Trilinos_ENABLE_Epetra=ON."
           << std::endl;
       err = -4; // LAPACK error reporting convention
     }
-#endif // ! HAVE_TPETRACORE_EPETRA
 
     return err;
   }
@@ -288,134 +271,6 @@ namespace { // (anonymous)
     return A; // return is a shallow copy (RCP is like std::shared_ptr)
   }
 
-#ifdef HAVE_TPETRACORE_EPETRA
-  // Convert from a Teuchos::Comm MPI communicator wrapper (used by
-  // Tpetra classes) to an Epetra communicator wrapper (used by Epetra
-  // classes).
-  Teuchos::RCP<const Epetra_Comm>
-  makeEpetraComm (const Teuchos::Comm<int>& comm)
-  {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::rcp_implicit_cast;
-
-    // Trilinos uses MPI, but does not require it.  We want to be able
-    // to build and run this benchmark whether or not MPI is enabled.
-#ifdef HAVE_TEUCHOS_MPI
-    const Teuchos::MpiComm<int>* mpiComm =
-      dynamic_cast<const Teuchos::MpiComm<int>* > (&comm);
-    if (mpiComm == NULL) {
-      const Teuchos::SerialComm<int>* serialComm =
-        dynamic_cast<const Teuchos::SerialComm<int>* > (&comm);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (serialComm == NULL, std::logic_error, "Input Teuchos::Comm "
-         "is neither a Teuchos::MpiComm nor a Teuchos::SerialComm.");
-      RCP<const Epetra_SerialComm> epetraComm = rcp (new Epetra_SerialComm ());
-      return rcp_implicit_cast<const Epetra_Comm> (epetraComm);
-    }
-    else {
-      auto rawMpiCommWrapped = mpiComm->getRawMpiComm ();
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (rawMpiCommWrapped.is_null (), std::logic_error, "The input "
-         "Teuchos::Comm is a Teuchos::MpiComm, but its getRawMpiComm() "
-         "method return null.");
-      MPI_Comm rawMpiComm = *rawMpiCommWrapped;
-      RCP<const Epetra_MpiComm> epetraComm =
-        rcp (new Epetra_MpiComm (rawMpiComm));
-      return rcp_implicit_cast<const Epetra_Comm> (epetraComm);
-    }
-#else // ! HAVE_TEUCHOS_MPI
-    RCP<const Epetra_SerialComm> epetraComm = rcp (new Epetra_SerialComm ());
-    return rcp_implicit_cast<const Epetra_Comm> (epetraComm);
-#endif // HAVE_TEUCHOS_MPI
-  }
-
-  // Get an Epetra_CrsMatrix for use in benchmarks.  This method takes
-  // parameters that come from the command-line options read in by
-  // parseCmdLineOpts.  Epetra and Tpetra are similar enough that
-  // reading the comments in getTpetraMatrix() above should help you
-  // understand what this function does inside.
-  Teuchos::RCP<Epetra_CrsMatrix>
-  getEpetraMatrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                   const CmdLineOpts& opts)
-  {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
-    using Teuchos::outArg;
-    typedef Epetra_Map map_type;
-    typedef Epetra_CrsGraph graph_type;
-    typedef Epetra_CrsMatrix matrix_type;
-    typedef double SC;
-    typedef int LO;
-    typedef int GO;
-    typedef double MT;
-
-    const LO lclNumRows = opts.lclNumRows;
-    const GO gblNumRows = static_cast<GO> (opts.lclNumRows) *
-      static_cast<GO> (comm->getSize ());
-    const GO indexBase = 0;
-
-    RCP<const Epetra_Comm> epetraComm = makeEpetraComm (*comm);
-    const map_type rowMap (gblNumRows, lclNumRows, indexBase, *epetraComm);
-    const GO gblNumCols = gblNumRows;
-    const bool staticProfile = true;
-    graph_type G (Copy, rowMap, opts.numEntPerRow, staticProfile);
-
-    Teuchos::Array<GO> gblColInds (opts.numEntPerRow);
-    int lclSuccess = 1;
-    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-      const GO gblInd = rowMap.GID (lclRow);
-      for (LO k = 0; k < static_cast<LO> (opts.numEntPerRow); ++k) {
-        const GO curColInd = (gblInd + static_cast<GO> (3*k)) % gblNumCols;
-        gblColInds[k] = curColInd;
-      }
-      const int err = G.InsertGlobalIndices (gblInd, opts.numEntPerRow,
-                                             gblColInds.getRawPtr ());
-      if (err != 0) {
-        lclSuccess = 0;
-      }
-    }
-
-    int gblSuccess = 0;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (gblSuccess != 1, std::logic_error, "While filling Epetra_CrsGraph, "
-       "error on one or more MPI processes.");
-
-    G.FillComplete ();
-
-    RCP<matrix_type> A = rcp (new matrix_type (Copy, G));
-
-    Teuchos::Array<SC> vals (opts.numEntPerRow);
-    for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-      const GO gblInd = rowMap.GID (lclRow);
-      for (LO k = 0; k < static_cast<LO> (opts.numEntPerRow); ++k) {
-        const GO curColInd = (gblInd + static_cast<GO> (3*k)) % gblNumCols;
-        gblColInds[k] = curColInd;
-        // Cast first to MT, then SC, to avoid issues like
-        // std::complex<double>'s constructor not taking int.
-        vals[k] = static_cast<SC> (static_cast<MT> (gblColInds[k]));
-      }
-      const int err = A->ReplaceGlobalValues (gblInd, opts.numEntPerRow,
-                                              vals.getRawPtr (),
-                                              gblColInds.getRawPtr ());
-      if (err != 0) {
-        lclSuccess = 0;
-      }
-    }
-    gblSuccess = 0;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (gblSuccess != 1, std::logic_error, "While filling Epetra_CrsMatrix, "
-       "error on one or more MPI processes.");
-
-    A->FillComplete ();
-    return A;
-  }
-#endif // HAVE_TPETRACORE_EPETRA
-
 } // namespace (anonymous)
 
 #if defined(CUDA_VERSION) && (CUDA_VERSION < 8000)
@@ -509,30 +364,9 @@ main (int argc, char* argv[])
 
     totalLclNumEnt = 0;
     if (opts.testEpetra) {
-#ifdef HAVE_TPETRACORE_EPETRA
-      typedef int LO;
-
-      auto timer = TimeMonitor::getNewCounter ("Epetra ExtractMyRowView");
-      RCP<const Epetra_CrsMatrix> A = getEpetraMatrix (comm, opts);
-      { // Start timing after matrix creation
-	TimeMonitor timeMon (*timer);
-
-	const LO lclNumRows = opts.lclNumRows;
-	for (int trial = 0; trial < opts.numTrials; ++trial) {
-	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-	    int numEnt;
-	    double* val;
-	    int* ind;
-	    A->ExtractMyRowView (lclRow, numEnt, val, ind);
-	    totalLclNumEnt += numEnt;
-	  }
-	}
-      }
-#else
       // We've already checked this case when checking the command-line arguments.
       TEUCHOS_TEST_FOR_EXCEPTION
 	(true, std::logic_error, "Epetra not enabled; should never get here!");
-#endif // HAVE_TPETRACORE_EPETRA
     }
     lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
     gblSuccess = 0;
@@ -545,31 +379,9 @@ main (int argc, char* argv[])
 
     totalLclNumEnt = 0;
     if (opts.testEpetraLen) {
-#ifdef HAVE_TPETRACORE_EPETRA
-      typedef int LO;
-
-      auto timer = TimeMonitor::getNewCounter ("Epetra NumMyEntries");
-      RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
-      TEUCHOS_TEST_FOR_EXCEPTION
-	(A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
-	 "This should never happen.");
-      const Epetra_CrsMatrix& A = *A_ptr;
-      { // Start timing after matrix creation
-	TimeMonitor timeMon (*timer);
-
-	const LO lclNumRows = opts.lclNumRows;
-	for (int trial = 0; trial < opts.numTrials; ++trial) {
-	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-	    const size_t len = static_cast<size_t> (A.NumMyEntries (lclRow));
-	    totalLclNumEnt += len;
-	  }
-	}
-      }
-#else
       // We've already checked this case when checking the command-line arguments.
       TEUCHOS_TEST_FOR_EXCEPTION
 	(true, std::logic_error, "Epetra not enabled; should never get here!");
-#endif // HAVE_TPETRACORE_EPETRA
     }
     lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
     gblSuccess = 0;
@@ -582,32 +394,9 @@ main (int argc, char* argv[])
 
     totalLclNumEnt = 0;
     if (opts.testEpetraLen) {
-#ifdef HAVE_TPETRACORE_EPETRA
-      typedef int LO;
-
-      auto timer = TimeMonitor::getNewCounter ("Epetra NumMyRowEntries");
-      RCP<const Epetra_CrsMatrix> A_ptr = getEpetraMatrix (comm, opts);
-      TEUCHOS_TEST_FOR_EXCEPTION
-	(A_ptr.is_null (), std::logic_error, "getEpetraMatrix returned null!  "
-	 "This should never happen.");
-      const Epetra_CrsMatrix& A = *A_ptr;
-      { // Start timing after matrix creation
-	TimeMonitor timeMon (*timer);
-
-	const LO lclNumRows = opts.lclNumRows;
-	for (int trial = 0; trial < opts.numTrials; ++trial) {
-	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-	    int numEnt;
-	    (void) A.NumMyRowEntries (lclRow, numEnt); // ignore error code
-	    totalLclNumEnt += static_cast<size_t> (numEnt);
-	  }
-	}
-      }
-#else
       // We've already checked this case when checking the command-line arguments.
       TEUCHOS_TEST_FOR_EXCEPTION
 	(true, std::logic_error, "Epetra not enabled; should never get here!");
-#endif // HAVE_TPETRACORE_EPETRA
     }
     lclSuccess = (totalLclNumEnt == expectedTotalLclNumEnt) ? 1 : 0;
     gblSuccess = 0;

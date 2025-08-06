@@ -16,12 +16,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include "PanzerDiscFE_config.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Operator.h"
-#endif
 
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
@@ -39,19 +33,6 @@ public:
      : ResponseBase(responseName) {}
 
    virtual ~ResponseMESupportBase() {}
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-   // This is the epetra view of the world
-   ///////////////////////////////////////////////////////////
-
-   //! Get the <code>Epetra_Map</code> for this response, map is constructed lazily.
-   virtual Teuchos::RCP<const Epetra_Map> getMap() const = 0;
-
-   /** Set the vector (to be filled) for this response. This must be
-     * constructed from the vector space returned by <code>getMap</code>.
-     */
-   virtual void setVector(const Teuchos::RCP<Epetra_Vector> & destVec) = 0;
-#endif
 
    // This is the Thyra view of the world
    ///////////////////////////////////////////////////////////
@@ -81,18 +62,6 @@ public:
    //! Does this response support derivative evaluation?
    virtual bool supportsDerivative() const = 0;
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-   // This is the epetra view of the world
-   ///////////////////////////////////////////////////////////
-
-   //! Get the <code>Epetra_MultiVector</code> for this response, map is constructed lazily.
-   virtual Teuchos::RCP<Epetra_MultiVector> buildEpetraDerivative() const = 0;
-
-   /** Set the derivative (to be filled) for this response.
-     */
-   virtual void setDerivative(const Teuchos::RCP<Epetra_MultiVector> & derivative) = 0;
-#endif
-
    // This is the Thyra view of the world
    ///////////////////////////////////////////////////////////
 
@@ -117,19 +86,6 @@ public:
      : ResponseBase(responseName) {}
 
    virtual ~ResponseMESupportBase() {}
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-   // This is the epetra view of the world
-   ///////////////////////////////////////////////////////////
-
-   //! Get the <code>Epetra_Map</code> for this response, map is constructed lazily.
-   virtual Teuchos::RCP<const Epetra_Map> getMap() const = 0;
-
-   /** Set the vector (to be filled) for this response. This must be
-     * constructed from the vector space returned by <code>getMap</code>.
-     */
-   virtual void setVector(const Teuchos::RCP<Epetra_MultiVector> & destVec) = 0;
-#endif
 
    // This is the Thyra view of the world
    ///////////////////////////////////////////////////////////

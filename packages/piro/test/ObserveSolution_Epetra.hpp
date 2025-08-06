@@ -7,7 +7,6 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef PIROTEST_OBSERVESOLUTION_EPETRA
 #define PIROTEST_OBSERVESOLUTION_EPETRA
 
 
@@ -41,4 +40,3 @@ private:
 
 };
 
-#endif //PIROTEST_OBSERVESOLUTION_EPETRA

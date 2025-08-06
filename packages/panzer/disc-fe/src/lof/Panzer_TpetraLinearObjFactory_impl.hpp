@@ -13,9 +13,6 @@
 
 // Panzer
 #include "Panzer_ConnManager.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.
-#endif
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalIndexer.hpp"
 
@@ -290,27 +287,6 @@ buildReadOnlyDomainContainer() const
   ged->initialize(getGhostedImport(), getGhostedColMap(), getColMap());
   return ged;
 } // end of buildReadOnlyDomainContainer()
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-///////////////////////////////////////////////////////////////////////////////
-//
-//  buildWriteDomainContainer()
-//
-///////////////////////////////////////////////////////////////////////////////
-template<typename Traits, typename ScalarT, typename LocalOrdinalT,
-  typename GlobalOrdinalT, typename NodeT>
-Teuchos::RCP<WriteVector_GlobalEvaluationData>
-TpetraLinearObjFactory<Traits, ScalarT, LocalOrdinalT, GlobalOrdinalT, NodeT>::
-buildWriteDomainContainer() const
-{
-  using std::logic_error;
-  using Teuchos::rcp;
-  using EVWGED = panzer::EpetraVector_Write_GlobalEvaluationData;
-  auto ged = rcp(new EVWGED);
-  TEUCHOS_TEST_FOR_EXCEPTION(true, logic_error, "NOT IMPLEMENTED YET")
-  return ged;
-} // end of buildWriteDomainContainer()
-#endif // PANZER_HAVE_EPETRA_STACK
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::MpiComm<int> TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::

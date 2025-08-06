@@ -18,12 +18,6 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
-#include "EpetraExt_VectorOut.h"
-#endif // PANZER_HAVE_EPETRA_STACK
-
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 
@@ -230,40 +224,7 @@ namespace {
           }
 
           if(writeCoordinates) {
-#ifdef PANZER_HAVE_EPETRA_STACK
-             // force parameterlistcallback to build coordinates
-             callback->preRequest(Teko::RequestMesg(rcp(new Teuchos::ParameterList())));
-
-             // extract coordinate vectors
-             const std::vector<double> & xcoords = callback->getXCoordsVector();
-             const std::vector<double> & ycoords = callback->getYCoordsVector();
-             const std::vector<double> & zcoords = callback->getZCoordsVector();
-
-             // use epetra to write coordinates to matrix market files
-             Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm()); // this is OK access to RawMpiComm becase its declared on the stack?
-                                                                 // and all users of this object are on the stack (within scope of mpi_comm
-             Epetra_Map map(-1,xcoords.size(),0,ep_comm);
-
-             RCP<Epetra_Vector> vec;
-             switch(spatialDim) {
-             case 3:
-                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
-                EpetraExt::VectorToMatrixMarketFile("zcoords.mm",*vec);
-                // Intentional fall-through.
-             case 2:
-                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
-                EpetraExt::VectorToMatrixMarketFile("ycoords.mm",*vec);
-                // Intentional fall-through.
-             case 1:
-                vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
-                EpetraExt::VectorToMatrixMarketFile("xcoords.mm",*vec);
-                break;
-             default:
-                TEUCHOS_ASSERT(false);
-             }
-#else
              TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: Panzer_STK_SetupLOWSFactory.cpp - writeCoordinates not implemented for Tpetra yet!");
-#endif
           }
 
 #ifdef PANZER_HAVE_MUELU
@@ -335,97 +296,7 @@ namespace {
        Teko::addTekoToStratimikosBuilder(linearSolverBuilder,reqHandler_local);
 
        if(writeCoordinates) {
-#ifdef PANZER_HAVE_EPETRA_STACK
-          RCP<const panzer::BlockedDOFManager> blkDofs =
-             rcp_dynamic_cast<const panzer::BlockedDOFManager>(globalIndexer);
-
-          // loop over blocks
-          const std::vector<RCP<panzer::GlobalIndexer>> & dofVec
-             = blkDofs->getFieldDOFManagers();
-          for(std::size_t i=0;i<dofVec.size();i++) {
-
-            // add in the coordinate parameter list callback handler
-            TEUCHOS_ASSERT(determineCoordinateField(*dofVec[i],fieldName));
-
-            std::map<std::string,RCP<const panzer::Intrepid2FieldPattern> > fieldPatterns;
-            fillFieldPatternMap(*dofVec[i],fieldName,fieldPatterns);
-            panzer_stk::ParameterListCallback plCall(fieldName,fieldPatterns,stkConn_manager,dofVec[i]);
-            plCall.buildArrayToVector();
-            plCall.buildCoordinates();
-
-            // extract coordinate vectors
-            const std::vector<double> & xcoords = plCall.getXCoordsVector();
-            const std::vector<double> & ycoords = plCall.getYCoordsVector();
-            const std::vector<double> & zcoords = plCall.getZCoordsVector();
-
-            // use epetra to write coordinates to matrix market files
-            Epetra_MpiComm ep_comm(*mpi_comm->getRawMpiComm()); // this is OK access to RawMpiComm becase its declared on the stack?
-                                                                // and all users of this object are on the stack (within scope of mpi_comm
-            Epetra_Map map(-1,xcoords.size(),0,ep_comm);
-
-            RCP<Epetra_Vector> vec;
-            switch(spatialDim) {
-            case 3:
-               vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&zcoords[0])));
-               EpetraExt::VectorToMatrixMarketFile((fieldName+"_zcoords.mm").c_str(),*vec);
-               // Intentional fall-through.
-            case 2:
-               vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&ycoords[0])));
-               EpetraExt::VectorToMatrixMarketFile((fieldName+"_ycoords.mm").c_str(),*vec);
-               // Intentional fall-through.
-            case 1:
-               vec = rcp(new Epetra_Vector(Copy,map,const_cast<double *>(&xcoords[0])));
-               EpetraExt::VectorToMatrixMarketFile((fieldName+"_xcoords.mm").c_str(),*vec);
-               break;
-            default:
-               TEUCHOS_ASSERT(false);
-            }
-
-            // TODO add MueLu code...
-            #ifdef PANZER_HAVE_MUELU
-            if(useCoordinates) {
-
-              typedef Xpetra::Map<int,panzer::GlobalOrdinal> Map;
-              typedef Xpetra::MultiVector<double,int,panzer::GlobalOrdinal> MV;
-
-              // TODO This is Epetra-specific
-              RCP<const Map> coords_map = Xpetra::MapFactory<int,panzer::GlobalOrdinal>::Build(Xpetra::UseEpetra,
-                                            Teuchos::OrdinalTraits<panzer::GlobalOrdinal>::invalid(),
-                  //Teuchos::ArrayView<GO>(ownedIndices),
-                  xcoords.size(),
-                  0,
-                  mpi_comm
-              );
-
-              unsigned dim = Teuchos::as<unsigned>(spatialDim);
-
-              RCP<MV> coords = Xpetra::MultiVectorFactory<double,int,panzer::GlobalOrdinal>::Build(coords_map,spatialDim);
-
-              for(unsigned d=0;d<dim;d++) {
-                // sanity check the size
-                TEUCHOS_ASSERT(coords->getLocalLength()==xcoords.size());
-
-                // fill appropriate coords vector
-                Teuchos::ArrayRCP<double> dest = coords->getDataNonConst(d);
-                for(std::size_t j=0;j<coords->getLocalLength();++j) {
-                  if (d == 0) dest[j] = xcoords[j];
-                  if (d == 1) dest[j] = ycoords[j];
-                  if (d == 2) dest[j] = zcoords[j];
-                }
-              }
-
-              // TODO This is Epetra-specific
-              // inject coordinates into parameter list
-              Teuchos::ParameterList & muelu_params = strat_params->sublist("Preconditioner Types").sublist("MueLu");
-              muelu_params.set<RCP<MV> >("Coordinates",coords);
-
-            }
-            #endif
-
-          } /* end loop over all physical fields */
-#else // PANZER_HAVE EPETRA
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: Panzer_STK_SetupLOWSFactory - writeCoordinates not implemented for Tpetra yet!")
-#endif
        }
 
        if(writeTopo) {

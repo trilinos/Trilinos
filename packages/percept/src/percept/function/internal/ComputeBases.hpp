@@ -26,10 +26,6 @@
 
 #include <percept/PerceptMesh.hpp>
 
-#if defined(STK_PERCEPT_USE_INTREPID)
-#include <percept/element/intrepid/BasisTable.hpp>
-#endif
-
   namespace percept
   {
 
