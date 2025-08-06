@@ -27,6 +27,16 @@ IF(Amesos2_ENABLE_SuperLUDist)
     )
 ENDIF()
 
+IF(Amesos2_ENABLE_CSS_MKL)
+  TRIBITS_ADD_TEST(
+    test_single_amesos2_tpetra_solver_driver
+    POSTFIX_AND_ARGS_0 CSSMKL
+    --show-all-tests --solver-type=CSSMKL --verbose --matrix-file=orsirr_2.mtx
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+ENDIF()
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyAmesos2TestFiles
   DEST_FILES
     orsirr_2.mtx
