@@ -192,6 +192,18 @@ class AlgRCM : public Algorithm<Adapter>
 
     }
 
+    bool validPermutation = true;
+    for (size_t i = 0; i < nVtx; ++i) {
+      validPermutation &= (invPerm[i] != INVALID);
+    }
+
+    // Invalid permutation -- let's use the identity permutation.
+    if(!validPermutation){
+      for (size_t i = 0; i < nVtx; ++i) {
+        invPerm[i] = i;
+      }
+    }
+
     solution->setHaveInverse(true);
     return ierr;
   }
