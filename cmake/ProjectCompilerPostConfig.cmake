@@ -57,7 +57,9 @@ set(explicitly_disabled_warnings
 )
 set(upcoming_warnings
     class-memaccess
+    dangling-pointer=2
     missing-braces
+    overloaded-virtual=1
     shadow
     unused-but-set-variable
     ${Trilinos_ADDITIONAL_WARNINGS}
@@ -81,7 +83,6 @@ set(promoted_warnings
     char-subscripts
     comment
     dangling-else
-    dangling-pointer=2
     delete-non-virtual-dtor
     div-by-zero
     duplicate-decl-specifier
@@ -117,7 +118,6 @@ set(promoted_warnings
     nonnull
     nonnull-compare
     openmp-simd
-    overloaded-virtual=1
     packed-not-aligned
     parentheses
     pessimizing-move
