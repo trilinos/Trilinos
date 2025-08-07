@@ -194,7 +194,7 @@ class AlgRCM : public Algorithm<Adapter>
 
     bool validPermutation = true;
     for (size_t i = 0; i < nVtx; ++i) {
-      validPermutation &= (invPerm[i] != INVALID);
+      validPermutation &= (static_cast<Tpetra::global_size_t>(invPerm[i]) != INVALID);
     }
 
     // Invalid permutation -- let's use the identity permutation.
