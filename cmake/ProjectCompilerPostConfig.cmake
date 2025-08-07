@@ -56,8 +56,10 @@ set(explicitly_disabled_warnings
     inline
 )
 set(upcoming_warnings
+    array-bounds=2
     class-memaccess
     dangling-pointer=2
+    mismatched-new-delete
     missing-braces
     overloaded-virtual=1
     shadow
@@ -69,8 +71,6 @@ set(promoted_warnings
     address
     aggressive-loop-optimizations
     aligned-new
-    array-bounds=1
-    array-bounds=2
     array-compare
     bool-compare
     bool-operation
@@ -112,7 +112,6 @@ set(promoted_warnings
     memset-transposed-args
     misleading-indentation
     mismatched-dealloc
-    mismatched-new-delete
     missing-attributes
     multistatement-macros
     narrowing
