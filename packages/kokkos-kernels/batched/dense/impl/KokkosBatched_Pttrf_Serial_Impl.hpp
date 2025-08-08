@@ -22,7 +22,7 @@
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 
 namespace KokkosBatched {
-
+namespace Impl {
 template <typename DViewType, typename EViewType>
 KOKKOS_INLINE_FUNCTION static int checkPttrfInput([[maybe_unused]] const DViewType &d,
                                                   [[maybe_unused]] const EViewType &e) {
@@ -47,20 +47,22 @@ KOKKOS_INLINE_FUNCTION static int checkPttrfInput([[maybe_unused]] const DViewTy
 #endif
   return 0;
 }
+}  // namespace Impl
 
 template <>
 struct SerialPttrf<Algo::Pttrf::Unblocked> {
   template <typename DViewType, typename EViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d, const EViewType &e) {
+    using ScalarType = typename DViewType::non_const_value_type;
     // Quick return if possible
     if (d.extent(0) == 0) return 0;
-    if (d.extent(0) == 1) return (d(0) < 0 ? 1 : 0);
+    if (d.extent(0) == 1) return (d(0) < Kokkos::ArithTraits<ScalarType>::zero() ? 1 : 0);
 
-    auto info = checkPttrfInput(d, e);
+    auto info = Impl::checkPttrfInput(d, e);
     if (info) return info;
 
-    return SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(d.extent(0), d.data(), d.stride(0), e.data(),
-                                                               e.stride(0));
+    return Impl::SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(d.extent(0), d.data(), d.stride(0), e.data(),
+                                                                     e.stride(0));
   }
 };
 }  // namespace KokkosBatched

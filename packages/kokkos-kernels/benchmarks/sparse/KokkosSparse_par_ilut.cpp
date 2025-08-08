@@ -35,7 +35,7 @@
 #include "KokkosKernels_default_types.hpp"
 #include <KokkosKernels_IOUtils.hpp>
 #include <KokkosSparse_IOUtils.hpp>
-#include "KokkosKernels_perf_test_utilities.hpp"
+#include "KokkosKernels_benchmark_utilities.hpp"
 
 #include "Benchmark_Context.hpp"
 #include <benchmark/benchmark.h>
@@ -387,8 +387,8 @@ int main(int argc, char** argv)
   }
 
   // Handle common params
-  perf_test::CommonInputParams common_params;
-  perf_test::parse_common_options(argc, argv, common_params);
+  benchmark::CommonInputParams common_params;
+  benchmark::parse_common_options(argc, argv, common_params);
 
   // Handle user options
   for (int i = 1; i < argc; i++) {

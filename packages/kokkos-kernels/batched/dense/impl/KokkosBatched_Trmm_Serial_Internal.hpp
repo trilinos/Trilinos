@@ -81,31 +81,30 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::i
   //}
   // printf("SerialTrmmInternalLeftLower\n");
 
-  auto dotLowerLeftConj = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0, const int __as1,
-                              const int __left_row, ValueType *KOKKOS_RESTRICT __B, const int __bs0, const int __bs1,
-                              const int __right_col) {
-    auto B_elems   = __left_row;
+  auto dotLowerLeftConj = [&](const ValueType *KOKKOS_RESTRICT _a, const int _as0, const int _as1, const int left_row,
+                              ValueType *KOKKOS_RESTRICT _b, const int _bs0, const int _bs1, const int right_col) {
+    auto B_elems   = left_row;
     ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
     for (int i = 0; i <= B_elems; i++) {
-      // sum += A[left_row, i] * B[i, right_col]
-      sum += AT::conj(__A[__left_row * __as0 + i * __as1]) * __B[i * __bs0 + __bs1 * __right_col];
+      // sum += _a[left_row, i] * B[i, right_col]
+      sum += AT::conj(_a[left_row * _as0 + i * _as1]) * _b[i * _bs0 + _bs1 * right_col];
     }
     return sum;
   };
 
-  auto dotLowerLeft = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0, const int __as1, const int __left_row,
-                          ValueType *KOKKOS_RESTRICT __B, const int __bs0, const int __bs1, const int __right_col) {
-    auto B_elems   = __left_row;
+  auto dotLowerLeft = [&](const ValueType *KOKKOS_RESTRICT _a, const int _as0, const int _as1, const int left_row,
+                          ValueType *KOKKOS_RESTRICT _b, const int _bs0, const int _bs1, const int right_col) {
+    auto B_elems   = left_row;
     ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
     for (int i = 0; i <= B_elems; i++) {
-      // sum += A[left_row, i] * B[i, right_col]
-      sum += __A[__left_row * __as0 + i * __as1] * __B[i * __bs0 + __bs1 * __right_col];
+      // sum += _a[left_row, i] * _b[i, right_col]
+      sum += _a[left_row * _as0 + i * _as1] * _b[i * _bs0 + _bs1 * right_col];
     }
     return sum;
   };
@@ -159,32 +158,32 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::
   // Lower triangular matrix is on RHS with the base facing down.
   // Everytime we compute a new output row of B, we must shift over to the
   // right by one in A's column to ensure we skip the 0's.
-  auto dotLowerRightConj = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0, const int __as1, const int __am,
-                               const int __left_row, ValueType *KOKKOS_RESTRICT __B, const int __bs0, const int __bs1,
-                               const int __right_col) {
-    auto B_elems   = __am - 1;
+  auto dotLowerRightConj = [&](const ValueType *KOKKOS_RESTRICT _a, const int _as0, const int _as1, const int _am,
+                               const int left_row, ValueType *KOKKOS_RESTRICT _b, const int _bs0, const int _bs1,
+                               const int right_col) {
+    auto B_elems   = _am - 1;
     ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-    for (int i = __right_col; i <= B_elems; i++) {
+    for (int i = right_col; i <= B_elems; i++) {
       // sum += B[left_row, i] * A[i, right_col]
-      sum += __B[__bs0 * __left_row + i * __bs1] * AT::conj(__A[i * __as0 + __right_col * __as1]);
+      sum += _b[_bs0 * left_row + i * _bs1] * AT::conj(_a[i * _as0 + right_col * _as1]);
     }
     return sum;
   };
 
-  auto dotLowerRight = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0, const int __as1, const int __am,
-                           const int __left_row, ValueType *KOKKOS_RESTRICT __B, const int __bs0, const int __bs1,
-                           const int __right_col) {
-    auto B_elems   = __am - 1;
+  auto dotLowerRight = [&](const ValueType *KOKKOS_RESTRICT _a, const int _as0, const int _as1, const int _am,
+                           const int left_row, ValueType *KOKKOS_RESTRICT _b, const int _bs0, const int _bs1,
+                           const int right_col) {
+    auto B_elems   = _am - 1;
     ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-    for (int i = __right_col; i <= B_elems; i++) {
+    for (int i = right_col; i <= B_elems; i++) {
       // sum += B[left_row, i] * A[i, right_col]
-      sum += __B[__bs0 * __left_row + i * __bs1] * __A[i * __as0 + __right_col * __as1];
+      sum += _b[_bs0 * left_row + i * _bs1] * _a[i * _as0 + right_col * _as1];
     }
     return sum;
   };
@@ -231,33 +230,32 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::i
   //  conjOp = AT::conj;
   //}
 
-  auto dotUpperLeftConj = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0, const int __as1, const int __an,
-                              const int __left_row, ValueType *KOKKOS_RESTRICT __B, const int __bs0, const int __bs1,
-                              const int __right_col) {
-    auto B_elems   = __an - __left_row - 1;
+  auto dotUpperLeftConj = [&](const ValueType *KOKKOS_RESTRICT _a, const int _as0, const int _as1, const int _an,
+                              const int left_row, ValueType *KOKKOS_RESTRICT _b, const int _bs0, const int _bs1,
+                              const int right_col) {
+    auto B_elems   = _an - left_row - 1;
     ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
     for (int i = 0; i <= B_elems; i++) {
       // sum += A[left_row, i+left_row] * B[i+left_row, right_col]
-      sum += AT::conj(__A[__left_row * __as0 + (i + __left_row) * __as1]) *
-             __B[(i + __left_row) * __bs0 + __bs1 * __right_col];
+      sum += AT::conj(_a[left_row * _as0 + (i + left_row) * _as1]) * _b[(i + left_row) * _bs0 + _bs1 * right_col];
     }
     return sum;
   };
 
-  auto dotUpperLeft = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0, const int __as1, const int __an,
-                          const int __left_row, ValueType *KOKKOS_RESTRICT __B, const int __bs0, const int __bs1,
-                          const int __right_col) {
-    auto B_elems   = __an - __left_row - 1;
+  auto dotUpperLeft = [&](const ValueType *KOKKOS_RESTRICT _a, const int _as0, const int _as1, const int _an,
+                          const int left_row, ValueType *KOKKOS_RESTRICT _b, const int _bs0, const int _bs1,
+                          const int right_col) {
+    auto B_elems   = _an - left_row - 1;
     ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
     for (int i = 0; i <= B_elems; i++) {
       // sum += A[left_row, i+left_row] * B[i+left_row, right_col]
-      sum += __A[__left_row * __as0 + (i + __left_row) * __as1] * __B[(i + __left_row) * __bs0 + __bs1 * __right_col];
+      sum += _a[left_row * _as0 + (i + left_row) * _as1] * _b[(i + left_row) * _bs0 + _bs1 * right_col];
     }
     return sum;
   };
@@ -304,31 +302,30 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::
   //  conjOp = AT::conj;
   //}
 
-  auto dotUpperRightConj = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0, const int __as1,
-                               const int __left_row, ValueType *KOKKOS_RESTRICT __B, const int __bs0, const int __bs1,
-                               const int __right_col) {
-    auto B_elems   = __right_col;
+  auto dotUpperRightConj = [&](const ValueType *KOKKOS_RESTRICT _a, const int _as0, const int _as1, const int left_row,
+                               ValueType *KOKKOS_RESTRICT _b, const int _bs0, const int _bs1, const int right_col) {
+    auto B_elems   = right_col;
     ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
     for (int i = 0; i <= B_elems; i++) {
       // sum += B[left_row, i] * A[i, right_col]
-      sum += __B[__left_row * __bs0 + i * __bs1] * AT::conj(__A[i * __as0 + __right_col * __as1]);
+      sum += _b[left_row * _bs0 + i * _bs1] * AT::conj(_a[i * _as0 + right_col * _as1]);
     }
     return sum;
   };
 
-  auto dotUpperRight = [&](const ValueType *KOKKOS_RESTRICT __A, const int __as0, const int __as1, const int __left_row,
-                           ValueType *KOKKOS_RESTRICT __B, const int __bs0, const int __bs1, const int __right_col) {
-    auto B_elems   = __right_col;
+  auto dotUpperRight = [&](const ValueType *KOKKOS_RESTRICT _a, const int _as0, const int _as1, const int left_row,
+                           ValueType *KOKKOS_RESTRICT _b, const int _bs0, const int _bs1, const int right_col) {
+    auto B_elems   = right_col;
     ScalarType sum = 0;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
     for (int i = 0; i <= B_elems; i++) {
       // sum += B[left_row, i] * A[i, right_col]
-      sum += __B[__left_row * __bs0 + i * __bs1] * __A[i * __as0 + __right_col * __as1];
+      sum += _b[left_row * _bs0 + i * _bs1] * _a[i * _as0 + right_col * _as1];
     }
     return sum;
   };

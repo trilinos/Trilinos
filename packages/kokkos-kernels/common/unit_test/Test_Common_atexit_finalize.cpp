@@ -14,18 +14,18 @@
 //
 //@HEADER
 
-#if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F(TestCategory, test_batched_pttrf_float) {
-  using algo_tag_type = typename Algo::Pttrf::Unblocked;
+#include <iostream>
+#include <cstdlib>
+#include "Kokkos_Core.hpp"
+#include "KokkosKernels_config.h"
+#include "KokkosKernels_EagerInitialize.hpp"
 
-  test_batched_pttrf<TestDevice, float, algo_tag_type>();
+int main() {
+  Kokkos::initialize();
+  // Schedule Kokkos::finalize to run when the program exits.
+  std::atexit(Kokkos::finalize);
+  // Now initialize all TPL singletons.
+  // The test checks that program exits normally in this case.
+  KokkosKernels::eager_initialize();
+  return 0;
 }
-#endif
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F(TestCategory, test_batched_pttrf_double) {
-  using algo_tag_type = typename Algo::Pttrf::Unblocked;
-
-  test_batched_pttrf<TestDevice, double, algo_tag_type>();
-}
-#endif

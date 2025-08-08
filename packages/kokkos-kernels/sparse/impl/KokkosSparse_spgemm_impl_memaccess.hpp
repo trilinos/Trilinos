@@ -335,7 +335,7 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
 
   /*
   isGPU = true;
-  vectorlane = get_suggested_vector__size(b_row_cnt, entriesB.extent(0),
+  vectorlane = kk_get_suggested_vector_size(b_row_cnt, entriesB.extent(0),
   KokkosKernels::Impl::Exec_CUDA); cache_line_size = 32 * 8; cache_size =
   cache_line_size * 7;
   */
@@ -439,7 +439,6 @@ void KokkosSPGEMM<
     nnz_lno_t color_upperbound = KOKKOSKERNELS_MACRO_MIN(num_parallel_colors, i + num_multi_colors);
     std::cout << "i:" << i << " color_upperbound:" << color_upperbound << " num_parallel_colors:" << num_parallel_colors
               << " num_multi_colors:" << num_multi_colors << std::endl;
-    ;
 
     nnz_lno_t color_begin = color_xadj(i);
     nnz_lno_t color_end   = color_xadj(color_upperbound);

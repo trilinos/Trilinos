@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOS_SPGEMM_NUMERIC_HPP
-#define _KOKKOS_SPGEMM_NUMERIC_HPP
+#ifndef KOKKOSSPARSE_SPGEMM_NUMERIC_HPP
+#define KOKKOSSPARSE_SPGEMM_NUMERIC_HPP
 
 #include "KokkosKernels_helpers.hpp"
 #include "KokkosSparse_spgemm_numeric_spec.hpp"

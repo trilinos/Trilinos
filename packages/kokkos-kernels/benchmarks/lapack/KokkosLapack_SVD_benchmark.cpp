@@ -19,7 +19,7 @@
 #include "KokkosKernels_IOUtils.hpp"  // getRandomBounds
 #include "KokkosLapack_svd.hpp"
 #include "KokkosKernels_TestStringUtils.hpp"
-#include "KokkosKernels_perf_test_utilities.hpp"
+#include "KokkosKernels_benchmark_utilities.hpp"
 
 #include <benchmark/benchmark.h>
 #include "Benchmark_Context.hpp"
@@ -35,7 +35,7 @@ struct svd_parameters {
 void print_options() {
   std::cerr << "Options\n" << std::endl;
 
-  std::cerr << perf_test::list_common_options();
+  std::cerr << benchmark::list_common_options();
 
   std::cerr << "\t[Optional] --verbose     :: enable verbose output" << std::endl;
   std::cerr << "\t[Optional] --m           :: number of rows of A" << std::endl;
@@ -44,11 +44,11 @@ void print_options() {
 
 int parse_inputs(svd_parameters& params, int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
-    if (perf_test::check_arg_int(i, argc, argv, "--m", params.numRows)) {
+    if (benchmark::check_arg_int(i, argc, argv, "--m", params.numRows)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.numCols)) {
+    } else if (benchmark::check_arg_int(i, argc, argv, "--n", params.numCols)) {
       ++i;
-    } else if (perf_test::check_arg_bool(i, argc, argv, "--verbose", params.verbose)) {
+    } else if (benchmark::check_arg_bool(i, argc, argv, "--verbose", params.verbose)) {
     } else {
       std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl;
       print_options();
@@ -91,8 +91,8 @@ int main(int argc, char** argv) {
   benchmark::SetDefaultTimeUnit(benchmark::kMillisecond);
   KokkosKernelsBenchmark::add_benchmark_context(true);
 
-  perf_test::CommonInputParams common_params;
-  perf_test::parse_common_options(argc, argv, common_params);
+  benchmark::CommonInputParams common_params;
+  benchmark::parse_common_options(argc, argv, common_params);
   svd_parameters svd_params(0, 0, false);
   parse_inputs(svd_params, argc, argv);
 

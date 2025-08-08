@@ -17,25 +17,25 @@
 #include "KokkosBlas3_gemm.hpp"
 #include <Kokkos_Random.hpp>
 #include "KokkosKernels_TestStringUtils.hpp"
-#include "KokkosKernels_perf_test_utilities.hpp"
+#include "KokkosKernels_benchmark_utilities.hpp"
 #include "Benchmark_Context.hpp"
 #include <benchmark/benchmark.h>
 
-struct blas3_gemm_params : public perf_test::CommonInputParams {
+struct blas3_gemm_params : public benchmark::CommonInputParams {
   int m = 1000;
   int n = 1000;
   int k = 1000;
 
   static blas3_gemm_params get_params(int& argc, char** argv) {
     blas3_gemm_params params;
-    perf_test::parse_common_options(argc, argv, params);
+    benchmark::parse_common_options(argc, argv, params);
 
     for (int i = 1; i < argc; ++i) {
-      if (perf_test::check_arg_int(i, argc, argv, "--m", params.m)) {
+      if (benchmark::check_arg_int(i, argc, argv, "--m", params.m)) {
         ++i;
-      } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.n)) {
+      } else if (benchmark::check_arg_int(i, argc, argv, "--n", params.n)) {
         ++i;
-      } else if (perf_test::check_arg_int(i, argc, argv, "--k", params.k)) {
+      } else if (benchmark::check_arg_int(i, argc, argv, "--k", params.k)) {
         ++i;
       } else if (std::string(argv[i]).find("--benchmark") == 0) {
         continue;  // ignore benchmark arguments
@@ -50,7 +50,7 @@ struct blas3_gemm_params : public perf_test::CommonInputParams {
 
   static void print_options() {
     std::cerr << "Options\n" << std::endl;
-    std::cerr << perf_test::list_common_options();
+    std::cerr << benchmark::list_common_options();
 
     std::cerr << "\t[Optional] --m      :: Rows in A (default 1000)" << std::endl;
     std::cerr << "\t[Optional] --n      :: Columns in A / Rows in B (default 1000)" << std::endl;

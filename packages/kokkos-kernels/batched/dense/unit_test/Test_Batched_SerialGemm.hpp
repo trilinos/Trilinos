@@ -110,9 +110,9 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
   vgemm.B_t   = !std::is_same_v<transB, KokkosBatched::Trans::NoTranspose>;
   vgemm.A_c   = std::is_same_v<transA, KokkosBatched::Trans::ConjTranspose>;
   vgemm.B_c   = std::is_same_v<transB, KokkosBatched::Trans::ConjTranspose>;
-  vgemm.A     = A;
-  vgemm.B     = B;
-  vgemm.C     = C_ref;
+  vgemm.A_    = A;
+  vgemm.B_    = B;
+  vgemm.C_    = C_ref;
   vgemm.alpha = alpha;
   vgemm.beta  = beta;
   vgemm.run();  // Compute C_ref
