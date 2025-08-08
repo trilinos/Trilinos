@@ -88,7 +88,6 @@ void block_pcgsolve(KernelHandle_t &kh, const crsMatrix_t &point_crsMat, const c
 
   // p  = r
   Kokkos::deep_copy(p, r);
-  ;
   double old_rdot = KokkosBlas::dot(r, r);
   norm_res        = sqrt(old_rdot);
 

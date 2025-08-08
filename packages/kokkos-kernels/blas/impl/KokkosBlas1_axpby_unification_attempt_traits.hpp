@@ -745,7 +745,7 @@ size_t getStrideInCoefficient(T const& coeff) {
   size_t result = 1;
   if constexpr (Kokkos::is_view_v<T>) {
     if constexpr ((T::rank == 1) && (std::is_same_v<typename T::array_layout, Kokkos::LayoutStride>)) {
-      result = coeff.stride_0();
+      result = coeff.stride(0);
     }
   }
   return result;
@@ -753,8 +753,8 @@ size_t getStrideInCoefficient(T const& coeff) {
 
 // --------------------------------
 
-template <class T_in, class T_out>
-static void populateRank1Stride1ViewWithScalarOrNonStrideView(T_in const& coeff_in, T_out& coeff_out) {
+template <typename ExecSpace, class T_in, class T_out>
+static void fill_rank1_view(const ExecSpace& exec, T_in const& coeff_in, T_out& coeff_out) {
   // ***********************************************************************
   // 'coeff_out' is assumed to be rank-1, of LayoutLeft or LayoutRight
   //
@@ -769,22 +769,22 @@ static void populateRank1Stride1ViewWithScalarOrNonStrideView(T_in const& coeff_
     // 'coeff_in' is scalar
     // *********************************************************************
     ScalarOutType scalarValue(coeff_in);
-    Kokkos::deep_copy(coeff_out, scalarValue);
+    Kokkos::deep_copy(exec, coeff_out, scalarValue);
   } else if constexpr (T_in::rank == 0) {
     // *********************************************************************
     // 'coeff_in' is rank-0
     // *********************************************************************
     typename T_in::HostMirror h_coeff_in("h_coeff_in");
-    Kokkos::deep_copy(h_coeff_in, coeff_in);
+    Kokkos::deep_copy(h_coeff_in, coeff_in);  // fence before accessing h_coeff_in
     ScalarOutType scalarValue(h_coeff_in());
-    Kokkos::deep_copy(coeff_out, scalarValue);
+    Kokkos::deep_copy(exec, coeff_out, scalarValue);
   } else {
     // *********************************************************************
     // 'coeff_in' is also rank-1
     // *********************************************************************
     if (coeff_out.extent(0) != coeff_in.extent(0)) {
       std::ostringstream msg;
-      msg << "In populateRank1Stride1ViewWithScalarOrNonStrideView()"
+      msg << "In fill_rank1_view()"
           << ": 'in' and 'out' should have the same extent(0)"
           << ", T_in = " << typeid(T_in).name() << ", coeff_in.label() = " << coeff_in.label()
           << ", coeff_in.extent(0) = " << coeff_in.extent(0) << ", T_out = " << typeid(T_out).name()
@@ -797,12 +797,12 @@ static void populateRank1Stride1ViewWithScalarOrNonStrideView(T_in const& coeff_
       coeff_out = coeff_in;
     } else if (coeff_out.extent(0) == 1) {
       typename T_in::HostMirror h_coeff_in("h_coeff_in");
-      Kokkos::deep_copy(h_coeff_in, coeff_in);
+      Kokkos::deep_copy(h_coeff_in, coeff_in);  // fence before accessing h_coeff_in[0]
       ScalarOutType scalarValue(h_coeff_in[0]);
-      Kokkos::deep_copy(coeff_out, scalarValue);
+      Kokkos::deep_copy(exec, coeff_out, scalarValue);
     } else {
       std::ostringstream msg;
-      msg << "In populateRank1Stride1ViewWithScalarOrNonStrideView()"
+      msg << "In fill_rank1_view()"
           << ": scalar types 'in' and 'out' should be the same"
           << ", T_in = " << typeid(T_in).name() << ", ScalarInType = " << typeid(ScalarInType).name()
           << ", coeff_in.label() = " << coeff_in.label() << ", coeff_in.extent(0) = " << coeff_in.extent(0)
@@ -811,7 +811,7 @@ static void populateRank1Stride1ViewWithScalarOrNonStrideView(T_in const& coeff_
       KokkosKernels::Impl::throw_runtime_exception(msg.str());
     }
   }
-}  // populateRank1Stride1ViewWithScalarOrNonStrideView()
+}  // fill_rank1_view()
 
 }  // namespace Impl
 }  // namespace KokkosBlas

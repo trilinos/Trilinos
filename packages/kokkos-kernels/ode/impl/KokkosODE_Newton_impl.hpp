@@ -93,7 +93,6 @@ KOKKOS_FUNCTION KokkosODE::Experimental::newton_solver_status NewtonSolve(
     }
 
     if (linSolverStat == 1) {
-      Kokkos::printf("NewtonFunctor: Linear solve gesv returned failure! \n");
       return newton_solver_status::LIN_SOLVE_FAIL;
     }
 

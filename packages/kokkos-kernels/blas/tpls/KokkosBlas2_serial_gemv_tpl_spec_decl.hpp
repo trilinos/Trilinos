@@ -89,7 +89,7 @@ void kk_mkl_gemv(MKL_TRANSPOSE trans, const ScalarType alpha, const AViewType &A
   static_assert(std::is_same<typename AViewType::value_type::value_type, value_type>::value &&
                     std::is_same<typename xViewType::value_type::value_type, value_type>::value,
                 "scalar type mismatch");
-  if (A.stride_0() != 1 && A.stride_1() != 1 && x.stride_0() != 1 && y.stride_0() != 1) {
+  if (A.stride(0) != 1 && A.stride(1) != 1 && x.stride(0) != 1 && y.stride(0) != 1) {
     Kokkos::abort("Strided inputs are not supported in MKL gemv/gemm");
   }
 
@@ -99,7 +99,7 @@ void kk_mkl_gemv(MKL_TRANSPOSE trans, const ScalarType alpha, const AViewType &A
   const int n           = 1;
   const int k           = A.extent_int(transposed ? 0 : 1);
 
-  const bool col_major          = A.stride_0() == 1;
+  const bool col_major          = A.stride(0) == 1;
   const MKL_LAYOUT layout       = col_major ? MKL_COL_MAJOR : MKL_ROW_MAJOR;
   const MKL_INT A_ld            = KOKKOSKERNELS_MACRO_MAX(1, A.extent(col_major ? 0 : 1));
   const MKL_COMPACT_PACK format = Impl::mkl_compact_format<value_type, vector_type::vector_length>();

@@ -20,26 +20,26 @@
 #include "KokkosBlas2_gemv.hpp"
 
 #include "KokkosKernels_TestStringUtils.hpp"
-#include "KokkosKernels_perf_test_utilities.hpp"
+#include "KokkosKernels_benchmark_utilities.hpp"
 
 #include <Benchmark_Context.hpp>
 #include <benchmark/benchmark.h>
 
-struct blas2_gemv_params : public perf_test::CommonInputParams {
+struct blas2_gemv_params : public benchmark::CommonInputParams {
   int m           = 5000;
   int n           = 5000;
   bool layoutLeft = true;
 
   static blas2_gemv_params get_params(int& argc, char** argv) {
     blas2_gemv_params params;
-    perf_test::parse_common_options(argc, argv, params);
+    benchmark::parse_common_options(argc, argv, params);
 
     for (int i = 1; i < argc; ++i) {
-      if (perf_test::check_arg_int(i, argc, argv, "--m", params.m)) {
+      if (benchmark::check_arg_int(i, argc, argv, "--m", params.m)) {
         ++i;
-      } else if (perf_test::check_arg_int(i, argc, argv, "--n", params.n)) {
+      } else if (benchmark::check_arg_int(i, argc, argv, "--n", params.n)) {
         ++i;
-      } else if (std::string layout; perf_test::check_arg_str(i, argc, argv, "--layout", layout)) {
+      } else if (std::string layout; benchmark::check_arg_str(i, argc, argv, "--layout", layout)) {
         if (0 == Test::string_compare_no_case(layout, "left"))
           params.layoutLeft = true;
         else if (0 == Test::string_compare_no_case(layout, "right"))
@@ -60,7 +60,7 @@ struct blas2_gemv_params : public perf_test::CommonInputParams {
 
   static void print_options() {
     std::cerr << "Options\n" << std::endl;
-    std::cerr << perf_test::list_common_options();
+    std::cerr << benchmark::list_common_options();
 
     std::cerr << "\t[Optional] --m      :: number of rows to generate (default 5000)" << std::endl;
     std::cerr << "\t[Optional] --n      :: number of cols to generate (default 5000)" << std::endl;

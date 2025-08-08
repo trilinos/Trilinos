@@ -22,7 +22,7 @@
 #include <KokkosSparse_IOUtils.hpp>
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_TestStringUtils.hpp"
-#include "KokkosKernels_perf_test_utilities.hpp"
+#include "KokkosKernels_benchmark_utilities.hpp"
 
 // Headers for benchmark library
 #include <benchmark/benchmark.h>
@@ -47,7 +47,7 @@ struct spmv_parameters {
 void print_options() {
   std::cerr << "Options\n" << std::endl;
 
-  std::cerr << perf_test::list_common_options();
+  std::cerr << benchmark::list_common_options();
 
   std::cerr << "\t[Optional] --mode        :: whether to run a suite of "
             << "automated test or manually define one (auto, manual)" << std::endl;
@@ -74,27 +74,27 @@ void print_options() {
 
 void parse_inputs(int argc, char** argv, spmv_parameters& params) {
   for (int i = 1; i < argc; ++i) {
-    if (perf_test::check_arg_int(i, argc, argv, "-n", params.N)) {
+    if (benchmark::check_arg_int(i, argc, argv, "-n", params.N)) {
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--mode", params.alg)) {
+    } else if (benchmark::check_arg_str(i, argc, argv, "--mode", params.alg)) {
       if ((params.mode != "") && (params.mode != "auto") && (params.alg != "manual")) {
         throw std::runtime_error("--mode can only be an empty string, `auto` or `manual`!");
       }
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--alg", params.alg)) {
+    } else if (benchmark::check_arg_str(i, argc, argv, "--alg", params.alg)) {
       if ((params.alg != "") && (params.alg != "default") && (params.alg != "native") && (params.alg != "merge")) {
         throw std::runtime_error(
             "--alg can only be an empty string, `default`, `native` or "
             "`merge`!");
       }
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "--TPL", params.tpl)) {
+    } else if (benchmark::check_arg_str(i, argc, argv, "--TPL", params.tpl)) {
       ++i;
-    } else if (perf_test::check_arg_str(i, argc, argv, "-f", params.filename)) {
+    } else if (benchmark::check_arg_str(i, argc, argv, "-f", params.filename)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--offset", params.offset)) {
+    } else if (benchmark::check_arg_int(i, argc, argv, "--offset", params.offset)) {
       ++i;
-    } else if (perf_test::check_arg_int(i, argc, argv, "--num_vecs", params.numvecs)) {
+    } else if (benchmark::check_arg_int(i, argc, argv, "--num_vecs", params.numvecs)) {
       ++i;
     } else {
       print_options();
@@ -156,8 +156,8 @@ int main(int argc, char** argv) {
   benchmark::SetDefaultTimeUnit(benchmark::kMillisecond);
   KokkosKernelsBenchmark::add_benchmark_context(true);
 
-  perf_test::CommonInputParams common_params;
-  perf_test::parse_common_options(argc, argv, common_params);
+  benchmark::CommonInputParams common_params;
+  benchmark::parse_common_options(argc, argv, common_params);
 
   std::string bench_name = "KokkosSparse_spmv";
 

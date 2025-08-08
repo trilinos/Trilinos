@@ -18,6 +18,7 @@
 #define KOKKOSKERNELS_TPL_HANDLES_DECL_HPP_
 
 #include "KokkosBlas_tpl_spec.hpp"
+#include "KokkosKernels_Singleton.hpp"
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 #include "KokkosSparse_Utils_cusparse.hpp"
@@ -29,12 +30,13 @@ struct CusparseSingleton {
   cusparseHandle_t cusparseHandle;
 
   CusparseSingleton();
+  ~CusparseSingleton();
 
   static bool is_initialized();
   static CusparseSingleton& singleton();
 
  private:
-  static std::unique_ptr<CusparseSingleton>& get_instance();
+  static KokkosKernels::Impl::Singleton<CusparseSingleton>& get_instance();
 };
 
 }  // namespace Impl
@@ -51,12 +53,13 @@ struct RocsparseSingleton {
   rocsparse_handle rocsparseHandle;
 
   RocsparseSingleton();
+  ~RocsparseSingleton();
 
   static bool is_initialized();
   static RocsparseSingleton& singleton();
 
  private:
-  static std::unique_ptr<RocsparseSingleton>& get_instance();
+  static KokkosKernels::Impl::Singleton<RocsparseSingleton>& get_instance();
 };
 
 }  // namespace Impl

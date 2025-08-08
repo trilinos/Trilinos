@@ -507,7 +507,15 @@ int test_svd() {
   ret = Test::impl_analytic_2x2_svd<view_type_a_layout_left, Device>();
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_analytic_2x3_svd<view_type_a_layout_left, Device>();
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
+  if constexpr (!std::is_same_v<typename Device::execution_space, Kokkos::Cuda>) {
+    // cusolver only supports m > n so this should not be tested
+    ret = Test::impl_analytic_2x3_svd<view_type_a_layout_left, Device>();
+    EXPECT_EQ(ret, 0);
+  }
+#endif
+
+  ret = Test::impl_analytic_3x2_svd<view_type_a_layout_left, Device>();
   EXPECT_EQ(ret, 0);
 
   ret = Test::impl_test_svd<view_type_a_layout_left, Device>(0, 0);
@@ -525,37 +533,13 @@ int test_svd() {
   ret = Test::impl_test_svd<view_type_a_layout_left, Device>(100, 70);
   EXPECT_EQ(ret, 0);
 
-  ret = Test::impl_test_svd<view_type_a_layout_left, Device>(70, 100);
-  EXPECT_EQ(ret, 0);
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSOLVER)
+  if constexpr (!std::is_same_v<typename Device::execution_space, Kokkos::Cuda>) {
+    // cusolver only supports m > n so this should not be tested
+    ret = Test::impl_test_svd<view_type_a_layout_left, Device>(70, 100);
+    EXPECT_EQ(ret, 0);
+  }
 #endif
-
-#if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || \
-    (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
-  using view_type_a_layout_right = Kokkos::View<ScalarA**, Kokkos::LayoutRight, Device>;
-
-  ret = Test::impl_analytic_2x2_svd<view_type_a_layout_right, Device>();
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_analytic_2x3_svd<view_type_a_layout_right, Device>();
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(0, 0);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(1, 1);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(15, 15);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(100, 100);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(100, 70);
-  EXPECT_EQ(ret, 0);
-
-  ret = Test::impl_test_svd<view_type_a_layout_right, Device>(70, 100);
-  EXPECT_EQ(ret, 0);
 #endif
 
   return 1;

@@ -27,22 +27,14 @@ MagmaSingleton::MagmaSingleton() {
   if (stat != MAGMA_SUCCESS) Kokkos::abort("MAGMA initialization failed\n");
 }
 
-MagmaSingleton& MagmaSingleton::singleton() {
-  std::unique_ptr<MagmaSingleton>& instance = get_instance();
-  if (!instance) {
-    instance = std::make_unique<MagmaSingleton>();
-    Kokkos::push_finalize_hook([&]() {
-      magma_finalize();
-      instance.reset();
-    });
-  }
-  return *instance;
-}
+MagmaSingleton::~MagmaSingleton() { magma_finalize(); }
 
-bool MagmaSingleton::is_initialized() { return get_instance() != nullptr; }
+MagmaSingleton& MagmaSingleton::singleton() { return get_instance().get(); }
 
-std::unique_ptr<MagmaSingleton>& MagmaSingleton::get_instance() {
-  static std::unique_ptr<MagmaSingleton> s;
+bool MagmaSingleton::is_initialized() { return get_instance().is_initialized(); }
+
+KokkosKernels::Impl::Singleton<MagmaSingleton>& MagmaSingleton::get_instance() {
+  static KokkosKernels::Impl::Singleton<MagmaSingleton> s;
   return s;
 }
 

@@ -27,6 +27,9 @@ namespace KokkosBatched {
 /// symmetric (or complex Hermitian) positive definite tridiagonal matrix A_l
 /// for all l = 0, ..., N
 ///
+/// \tparam ArgAlgo: Type indicating the blocked (KokkosBatched::Algo::Pttrf::Blocked) or unblocked
+/// (KokkosBatched::Algo::Pttrf::Unblocked) algorithm to be used
+///
 /// \tparam DViewType: Input type for the a diagonal matrix, needs to be a 1D
 /// view
 /// \tparam EViewType: Input type for the a upper/lower diagonal matrix,
@@ -40,6 +43,7 @@ namespace KokkosBatched {
 
 template <typename ArgAlgo>
 struct SerialPttrf {
+  static_assert(std::is_same_v<ArgAlgo, Algo::Pttrf::Unblocked>, "KokkosBatched::pttrf: Use Algo::Pttrf::Unblocked");
   template <typename DViewType, typename EViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const DViewType &d, const EViewType &e);
 };

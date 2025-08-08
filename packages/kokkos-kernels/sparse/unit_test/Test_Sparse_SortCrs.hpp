@@ -154,9 +154,6 @@ void testSortCRSUnmanaged(bool doValues, bool doStructInterface) {
   crsMat_Managed_t A_managed =
       KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_Managed_t>(numRows, numCols, nnz, 2, numCols / 2);
   crsMat_t A(A_managed);
-  auto rowmap  = A.graph.row_map;
-  auto entries = A.graph.entries;
-  auto values  = A.values;
   if (doValues) {
     if (doStructInterface) {
       KokkosSparse::sort_crs_matrix(A);

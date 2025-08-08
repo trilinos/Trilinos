@@ -21,8 +21,8 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Error.hpp>
 
-#ifndef _GRAPHCOLORDISTANCE2HANDLE_HPP
-#define _GRAPHCOLORDISTANCE2HANDLE_HPP
+#ifndef KOKKOSGRAPH_GRAPHCOLORDISTANCE2HANDLE_HPP
+#define KOKKOSGRAPH_GRAPHCOLORDISTANCE2HANDLE_HPP
 
 namespace KokkosGraph {
 
@@ -390,4 +390,4 @@ class GraphColorDistance2Handle {
 
 }  // namespace KokkosGraph
 
-#endif  // _GRAPHCOLORHANDLE_HPP
+#endif  // KOKKOSGRAPH_GRAPHCOLORDISTANCE2HANDLE_HPP

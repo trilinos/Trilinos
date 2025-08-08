@@ -204,7 +204,7 @@ void LU(const int NN, const int BlkSize) {
       value_type *aa[N * VectorLength];
 
       for (int k = 0; k < N * VectorLength; ++k) {
-        aa[k] = a.data() + k * a.stride_0();
+        aa[k] = a.data() + k * a.stride(0);
       }
       value_type **aa_device;
       if (cudaMalloc(&aa_device, N * VectorLength * sizeof(value_type *)) != cudaSuccess) {

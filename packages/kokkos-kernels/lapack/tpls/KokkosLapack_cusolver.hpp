@@ -17,6 +17,8 @@
 #ifndef KOKKOSLAPACK_CUSOLVER_HPP_
 #define KOKKOSLAPACK_CUSOLVER_HPP_
 
+#include "KokkosKernels_Singleton.hpp"
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSOLVER
 #include <cusolverDn.h>
 
@@ -30,13 +32,14 @@ struct CudaLapackSingleton {
   cusolverDnHandle_t handle;
 
   CudaLapackSingleton();
+  ~CudaLapackSingleton();
 
   static CudaLapackSingleton& singleton();
 
   static bool is_initialized();
 
  private:
-  static std::unique_ptr<CudaLapackSingleton>& get_instance();
+  static KokkosKernels::Impl::Singleton<CudaLapackSingleton>& get_instance();
 };
 
 inline void cusolver_internal_error_throw(cusolverStatus_t cusolverStatus, const char* name, const char* file,

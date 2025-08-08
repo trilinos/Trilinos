@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSKERNEL_CONTROLS_HPP
-#define _KOKKOSKERNEL_CONTROLS_HPP
+#ifndef KOKKOSKERNELS_CONTROLS_HPP
+#define KOKKOSKERNELS_CONTROLS_HPP
 /// \file  KokkosKernels_Controls.hpp
 /// \brief Mechanism to control internal behavior of kernels
 /// \author Luc Berger-Vergiat (lberge@sandia.gov)
@@ -122,4 +122,4 @@ class Controls {
 }  // namespace Experimental
 }  // namespace KokkosKernels
 
-#endif  // _KOKKOSKERNEL_CONTROLS_HPP
+#endif  // KOKKOSKERNELS_CONTROLS_HPP

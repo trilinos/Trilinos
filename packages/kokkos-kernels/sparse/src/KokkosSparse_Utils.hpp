@@ -797,7 +797,6 @@ inline size_t kk_is_d1_coloring_valid(typename in_nnz_view_t::non_const_value_ty
   KokkosKernels::Impl::ExecSpaceType my_exec_space = KokkosKernels::Impl::kk_get_exec_space_type<MyExecSpace>();
   int vector_size         = kk_get_suggested_vector_size(num_rows, adj.extent(0), my_exec_space);
   int suggested_team_size = kk_get_suggested_team_size(vector_size, my_exec_space);
-  ;
   typename in_nnz_view_t::non_const_value_type team_work_chunk_size = suggested_team_size;
   typedef Kokkos::TeamPolicy<MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic>> dynamic_team_policy;
   typedef typename dynamic_team_policy::member_type team_member_t;
