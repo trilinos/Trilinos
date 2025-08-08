@@ -162,9 +162,9 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
 
 template <typename HandleType, typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
           typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_>
-template <typename a_row_view_t__, typename a_nnz_view_t__, typename a_scalar_view_t__, typename b_row_view_t__,
-          typename b_nnz_view_t__, typename b_scalar_view_t__, typename c_row_view_t__, typename c_nnz_view_t__,
-          typename c_scalar_view_t__, typename c_nnz_tmp_view_t>
+template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t, typename b_row_view_t,
+          typename b_nnz_view_t, typename b_scalar_view_t, typename c_row_view_t, typename c_nnz_view_t,
+          typename c_scalar_view_t, typename c_nnz_tmp_view_t>
 
 struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_, b_lno_row_view_t_,
                      b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::NumericCMEM {
@@ -176,17 +176,17 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
   nnz_lno_t block_dim;
   nnz_lno_t block_size;
 
-  a_row_view_t__ row_mapA;
-  a_nnz_view_t__ entriesA;
-  a_scalar_view_t__ valuesA;
+  a_row_view_t row_mapA;
+  a_nnz_view_t entriesA;
+  a_scalar_view_t valuesA;
 
-  b_row_view_t__ row_mapB;
-  b_nnz_view_t__ entriesB;
-  b_scalar_view_t__ valuesB;
+  b_row_view_t row_mapB;
+  b_nnz_view_t entriesB;
+  b_scalar_view_t valuesB;
 
-  c_row_view_t__ rowmapC;
-  c_nnz_view_t__ entriesC;
-  c_scalar_view_t__ valuesC;
+  c_row_view_t rowmapC;
+  c_nnz_view_t entriesC;
+  c_scalar_view_t valuesC;
 
   c_nnz_tmp_view_t beginsC;
   c_nnz_tmp_view_t nextsC;
@@ -205,12 +205,12 @@ struct KokkosBSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_
   nnz_lno_t shared_memory_hash_func;
   nnz_lno_t shmem_hash_size;
 
-  NumericCMEM(nnz_lno_t m_, nnz_lno_t block_dim_, a_row_view_t__ row_mapA_, a_nnz_view_t__ entriesA_,
-              a_scalar_view_t__ valuesA_,
+  NumericCMEM(nnz_lno_t m_, nnz_lno_t block_dim_, a_row_view_t row_mapA_, a_nnz_view_t entriesA_,
+              a_scalar_view_t valuesA_,
 
-              b_row_view_t__ row_mapB_, b_nnz_view_t__ entriesB_, b_scalar_view_t__ valuesB_,
+              b_row_view_t row_mapB_, b_nnz_view_t entriesB_, b_scalar_view_t valuesB_,
 
-              c_row_view_t__ rowmapC_, c_nnz_view_t__ entriesC_, c_scalar_view_t__ valuesC_,
+              c_row_view_t rowmapC_, c_nnz_view_t entriesC_, c_scalar_view_t valuesC_,
 
               c_nnz_tmp_view_t beginsC_, c_nnz_tmp_view_t nextsC_,
 

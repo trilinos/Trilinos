@@ -228,8 +228,8 @@ KOKKOSSPARSE_SPMV_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
       std::string label = "KokkosSparse::spmv_mv[TPL_MKL,BSRMATRIX," + Kokkos::ArithTraits<SCALAR>::name() + "]";        \
       Kokkos::Profiling::pushRegion(label);                                                                              \
       MKL_INT colx = static_cast<MKL_INT>(X.extent(1));                                                                  \
-      MKL_INT ldx  = static_cast<MKL_INT>(X.stride_1());                                                                 \
-      MKL_INT ldy  = static_cast<MKL_INT>(Y.stride_1());                                                                 \
+      MKL_INT ldx  = static_cast<MKL_INT>(X.stride(1));                                                                  \
+      MKL_INT ldy  = static_cast<MKL_INT>(Y.stride(1));                                                                  \
       spmv_mv_bsr_mkl(handle, mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), A.numCols(), A.blockDim(),              \
                       A.graph.row_map.data(), A.graph.entries.data(), A.values.data(), X.data(), colx, ldx, Y.data(),    \
                       ldy);                                                                                              \

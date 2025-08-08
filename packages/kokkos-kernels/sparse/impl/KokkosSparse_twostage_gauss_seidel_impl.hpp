@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOS_TWOSTAGE_GS_IMP_HPP
-#define _KOKKOS_TWOSTAGE_GS_IMP_HPP
+#ifndef KOKKOSSPARSE_TWOSTAGE_GS_IMP_HPP
+#define KOKKOSSPARSE_TWOSTAGE_GS_IMP_HPP
 
 #include <KokkosKernels_config.h>
 #include "Kokkos_Core.hpp"

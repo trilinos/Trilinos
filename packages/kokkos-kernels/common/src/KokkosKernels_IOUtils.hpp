@@ -24,8 +24,8 @@
 #include <unordered_set>
 #include <stdexcept>
 #include <type_traits>
-#ifndef _KOKKOSKERNELSIOUTILS_HPP
-#define _KOKKOSKERNELSIOUTILS_HPP
+#ifndef KOKKOSKERNELS_IOUTILS_HPP
+#define KOKKOSKERNELS_IOUTILS_HPP
 
 #include "Kokkos_ArithTraits.hpp"
 #include <Kokkos_Core.hpp>

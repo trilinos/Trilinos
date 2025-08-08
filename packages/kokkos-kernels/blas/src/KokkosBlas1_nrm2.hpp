@@ -185,7 +185,7 @@ serial_nrm2(const XMV X) {
   static_assert(XMV::rank == 1, "KokkosBlas::serial_nrm2: XMV must have rank 1");
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL
 
-  return Impl::serial_nrm2(X.extent(0), X.data(), X.stride_0());
+  return Impl::serial_nrm2(X.extent(0), X.data(), X.stride(0));
 }
 
 template <class RV, class XMV>
@@ -215,8 +215,10 @@ KOKKOS_INLINE_FUNCTION int serial_nrm2(const XMV X, const RV& R) {
     return 1;
   }
 #endif  // KOKKOSKERNELS_DEBUG_LEVEL
-
-  Impl::serial_nrm2(X.extent(0), X.extent(1), X.data(), X.stride_0(), X.stride_1(), R.data(), R.stride_0());
+  if constexpr (XMV::rank() == 1)
+    Impl::serial_nrm2(X.extent(0), X.data(), X.stride(0), R.data());
+  else
+    Impl::serial_nrm2(X.extent(0), X.extent(1), X.data(), X.stride(0), X.stride(1), R.data(), R.stride(0));
   return 0;
 }
 

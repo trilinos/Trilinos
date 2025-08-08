@@ -52,6 +52,12 @@ struct MV_Reciprocal_Functor {
                   "MV_Reciprocal_Functor: XMV is not rank 2");
   }
 
+  // disable vectorization in this function
+  // work-around https://github.com/kokkos/kokkos-kernels/issues/2091
+#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
+#pragma GCC push_options
+#pragma GCC optimize("no-tree-vectorize")
+#endif
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -62,6 +68,9 @@ struct MV_Reciprocal_Functor {
     }
   }
 };
+#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
+#pragma GCC pop_options
+#endif
 
 // Entry-wise, in-place reciprocalolute value / magnitude: R(i,j) =
 // reciprocal(R(i,j)).
@@ -82,6 +91,12 @@ struct MV_ReciprocalSelf_Functor {
                   "MV_Reciprocal_Functor: RMV is not rank 2");
   }
 
+  // disable vectorization in this function
+  // work-around https://github.com/kokkos/kokkos-kernels/issues/2091
+#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
+#pragma GCC push_options
+#pragma GCC optimize("no-tree-vectorize")
+#endif
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_type& i) const {
 #ifdef KOKKOS_ENABLE_PRAGMA_IVDEP
@@ -92,6 +107,9 @@ struct MV_ReciprocalSelf_Functor {
     }
   }
 };
+#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
+#pragma GCC pop_options
+#endif
 
 // Single-vector, entry-wise reciprocalolute value / magnitude: R(i) =
 // reciprocal(X(i)).

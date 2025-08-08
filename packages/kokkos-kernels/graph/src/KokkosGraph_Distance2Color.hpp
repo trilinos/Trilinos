@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOS_GRAPH_COLORDISTANCE2_HPP
-#define _KOKKOS_GRAPH_COLORDISTANCE2_HPP
+#ifndef KOKKOSGRAPH_GRAPH_COLORDISTANCE2_HPP
+#define KOKKOSGRAPH_GRAPH_COLORDISTANCE2_HPP
 
 #include "KokkosGraph_Distance2ColorHandle.hpp"
 #include "KokkosGraph_Distance2Color_impl.hpp"
@@ -207,4 +207,4 @@ void bipartite_color_columns(KernelHandle *handle, typename KernelHandle::nnz_ln
 }  // end namespace Experimental
 }  // end namespace KokkosGraph
 
-#endif  //_KOKKOS_GRAPH_COLORDISTANCE2_HPP
+#endif  // KOKKOSGRAPH_GRAPH_COLORDISTANCE2_HPP

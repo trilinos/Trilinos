@@ -30,7 +30,7 @@ namespace Impl {
 /// \tparam YVector Type of the second vector y; 1-D View
 /// \tparam SizeType Type of the row index used in the dot product.
 ///   For best performance, use int instead of size_t here.
-template <class execution_space, class AV, class XVector, class YVector, typename SizeType>
+template <class AV, class XVector, class YVector, typename SizeType>
 struct DotFunctor {
   typedef SizeType size_type;
   typedef typename AV::non_const_value_type avalue_type;
@@ -40,10 +40,9 @@ struct DotFunctor {
   XVector m_x;
   YVector m_y;
 
-  DotFunctor(const XVector& x, const YVector& y) : m_x(x), m_y(y) {}
-
-  void run(const char* label, const execution_space& space, AV result) {
-    Kokkos::RangePolicy<execution_space, size_type> policy(space, 0, m_x.extent(0));
+  template <typename Exec>
+  void run(const char* label, const Exec& exec, AV result) const {
+    Kokkos::RangePolicy<Exec, size_type> policy(exec, 0, m_x.extent(0));
     Kokkos::parallel_reduce(label, policy, *this, result);
   }
 
