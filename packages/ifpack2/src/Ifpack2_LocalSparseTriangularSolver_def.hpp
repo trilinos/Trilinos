@@ -688,37 +688,17 @@ void LocalSparseTriangularSolver<MatrixType>::
         auto A_crs  = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_crs_, true);
         auto Alocal = A_crs->getLocalMatrixDevice();
         auto val    = Alocal.values;
-#if (CUSPARSE_VERSION >= 12100)
-        auto* sptrsv_handle  = kh_->get_sptrsv_handle();
-        auto cusparse_handle = sptrsv_handle->get_cuSparseHandle();
-        cusparseSpSV_updateMatrix(cusparse_handle->handle,
-                                  cusparse_handle->spsvDescr,
-                                  val.data(),
-                                  CUSPARSE_SPSV_UPDATE_GENERAL);
-#else
-        auto ptr = Alocal.graph.row_map;
-        auto ind = Alocal.graph.entries;
+        auto ptr    = Alocal.graph.row_map;
+        auto ind    = Alocal.graph.entries;
         KokkosSparse::sptrsv_symbolic(kh_.getRawPtr(), ptr, ind, val);
-#endif
       } else if (kh_v_nonnull_) {
         for (int i = 0; i < num_streams_; i++) {
           auto A_crs_i  = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_crs_v_[i], true);
           auto Alocal_i = A_crs_i->getLocalMatrixDevice();
           auto val_i    = Alocal_i.values;
-#if (CUSPARSE_VERSION >= 12100)
-          auto* sptrsv_handle  = kh_v_[i]->get_sptrsv_handle();
-          auto cusparse_handle = sptrsv_handle->get_cuSparseHandle();
-          IFPACK2_DETAILS_CUSPARSE_SAFE_CALL(
-              cusparseSetStream(cusparse_handle->handle, exec_space_instances_[i].cuda_stream()));
-          cusparseSpSV_updateMatrix(cusparse_handle->handle,
-                                    cusparse_handle->spsvDescr,
-                                    val_i.data(),
-                                    CUSPARSE_SPSV_UPDATE_GENERAL);
-#else
-          auto ptr_i = Alocal_i.graph.row_map;
-          auto ind_i = Alocal_i.graph.entries;
+          auto ptr_i    = Alocal_i.graph.row_map;
+          auto ind_i    = Alocal_i.graph.entries;
           KokkosSparse::sptrsv_symbolic(exec_space_instances_[i], kh_v_[i].getRawPtr(), ptr_i, ind_i, val_i);
-#endif
         }
       }
     }
@@ -968,7 +948,8 @@ void LocalSparseTriangularSolver<MatrixType>::
       Kokkos::fence();
       KokkosSparse::Experimental::sptrsv_solve_streams(exec_space_instances_, KernelHandle_rawptr_v_,
                                                        ptr_v, ind_v, val_v, y_v, x_v);
-      Kokkos::fence();
+      for (int i = 0; i < num_streams_; i++) exec_space_instances_[i].fence();
+      // Kokkos::fence();
     }
   }  // End using stream interface of Kokkos Kernels Sptrsv
   else {
