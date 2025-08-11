@@ -56,42 +56,146 @@ set(explicitly_disabled_warnings
     inline
 )
 set(upcoming_warnings
+    class-memaccess
+    missing-braces
     shadow
+    unused-but-set-variable
     uninitialized
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
     address
     aggressive-loop-optimizations
+    aligned-new
+    array-bounds=1
+    array-bounds=2
+    array-compare
+    bool-compare
+    bool-operation
     builtin-declaration-mismatch
+    c++11-compat
+    c++14-compat
+    c++17compat
+    c++20compat
     cast-align
+    catch-value
+    char-subscripts
+    comment
+    dangling-else
+    dangling-pointer=2
+    delete-non-virtual-dtor
     div-by-zero
-    format-extra-args
+    duplicate-decl-specifier
+    enum-compare
+    enum-int-mismatch
     format
+    format=1
+    format-contains-nul
+    format-diag
+    format-extra-args
+    format-overflow=1
+    format-truncation=1
     format-zero-length
+    frame-address
+    implicit
+    implicit-function-declaration
+    implicit-int
+    infinite-recursion
     init-self
+    int-in-bool-context
     int-to-pointer-cast
+    logical-not-parentheses
+    main
+    maybe-uninitialized
+    memset-elt-size
+    memset-transposed-args
+    misleading-indentation
+    mismatched-dealloc
+    mismatched-new-delete
+    missing-attributes
+    multistatement-macros
+    narrowing
+    nonnull
+    nonnull-compare
+    openmp-simd
+    overloaded-virtual=1
+    packed-not-aligned
     parentheses
+    pessimizing-move
+    pointer-sign
+    range-loop-construct
     reorder
+    restrict
     return-type
+    self-move
     sequence-point
     sign-compare
+    sizeof-array-div
+    sizeof-pointer-div
+    sizeof-pointer-memaccess
     strict-aliasing
+    strict-overflow=1
     switch
+    tautological-compare
+    trigraphs
     type-limits
+    unknown-pragmas
+    unused
+    unused-const-variable=1
     unused-function
     unused-label
+    unused-local-typedefs
     unused-value
     unused-variable
+    use-after-free=2
     variadic-macros
+    vla-parameter
+    volatile-register-var
     write-strings
+    zero-length-bounds
 )
 
+include(CheckCXXCompilerFlag)
+
+function(filter_valid_warnings warnings output)
+    set(valid_warnings "")
+    foreach(warning ${warnings})
+        # Check if the compiler supports the warning flag
+        string(CONCAT flag "-W" ${warning})
+        check_cxx_compiler_flag("${flag}" COMPILER_SUPPORTS_${warning}_WARNING)
+
+        if(COMPILER_SUPPORTS_${warning}_WARNING)
+            list(APPEND valid_warnings "${warning}")
+        endif()
+    endforeach()
+    set(${output} ${valid_warnings} PARENT_SCOPE)
+endfunction()
+
+
+function(filter_valid_warnings_as_errors warnings output)
+    set(valid_warnings "")
+    foreach(warning ${warnings})
+        # Check if the compiler supports the warning-as-error flag
+        string(CONCAT flag "-Werror=" ${warning})
+        check_cxx_compiler_flag("${flag}" COMPILER_SUPPORTS_${warning}_WARNING_AS_ERROR)
+
+        if(COMPILER_SUPPORTS_${warning}_WARNING_AS_ERROR)
+            list(APPEND valid_warnings "${warning}")
+        endif()
+    endforeach()
+    set(${output} ${valid_warnings} PARENT_SCOPE)
+endfunction()
+
+
 if("${Trilinos_WARNINGS_MODE}" STREQUAL "WARN")
+    filter_valid_warnings("${upcoming_warnings}" upcoming_warnings)
     enable_warnings("${upcoming_warnings}")
+    filter_valid_warnings_as_errors("${promoted_warnings}" promoted_warnings)
     enable_errors("${promoted_warnings}")
     disable_warnings_for_deprecated_packages()
 elseif("${Trilinos_WARNINGS_MODE}" STREQUAL "ERROR")
+    filter_valid_warnings_as_errors("${promoted_warnings}" promoted_warnings)
+    filter_valid_warnings_as_errors("${upcoming_warnings}" upcoming_warnings)
     enable_errors("${promoted_warnings};${upcoming_warnings}")
     disable_warnings_for_deprecated_packages()
 endif()

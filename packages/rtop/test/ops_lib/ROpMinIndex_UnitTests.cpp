@@ -23,7 +23,6 @@ template<class Scalar>
 void basicTest(const int stride, FancyOStream &out, bool &success)
 {
   using Teuchos::as;
-  typedef ScalarTraits<Scalar> ST;
 
   SubVectorView<Scalar> sv = newStridedSubVectorView<Scalar>(3, stride, as<Scalar>(0.0));
 
@@ -65,7 +64,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndex, nonunitStride, Scalar )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndex, reduct, Scalar )
 {
   using Teuchos::dyn_cast;
-  typedef ScalarTraits<Scalar> ST;
 
   const Scalar two = as<Scalar>(2.0);
   const Scalar four = as<Scalar>(4.0);
@@ -94,7 +92,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndex, reduct, Scalar )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndex, reductTie_1, Scalar )
 {
   using Teuchos::dyn_cast;
-  typedef ScalarTraits<Scalar> ST;
 
   const Scalar two = as<Scalar>(2.0);
 
@@ -122,7 +119,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndex, reductTie_1, Scalar )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMinIndex, reductTie_2, Scalar )
 {
   using Teuchos::dyn_cast;
-  typedef ScalarTraits<Scalar> ST;
 
   const Scalar two = as<Scalar>(2.0);
 
