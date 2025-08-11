@@ -186,6 +186,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_DEFAULT)
     typedef Kokkos::DefaultExecutionSpace execution_space;
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
+    typedef Mask<scalar> mask;
 
     using namespace MaskLogic;
 
@@ -219,8 +220,8 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_DEFAULT)
     TEST_EQUALITY((bool) m2, true );
     TEST_EQUALITY((bool) !m2, false );
 
-    TEST_EQUALITY( m2, m3 );
-    TEST_EQUALITY( m2, m4 );
+    TEST_EQUALITY( m2, (const mask)m3 );
+    TEST_EQUALITY( m2, (const mask)m4 );
 }
 
 TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_AND)
@@ -358,6 +359,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_AND_Mask)
     typedef Kokkos::DefaultExecutionSpace execution_space;
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
+    typedef Mask<scalar> mask;
 
     scalar a = (scalar) 1.;
     a[2] = 2.5;
@@ -370,7 +372,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_AND_Mask)
     std::cout << m1 << std::endl;
     std::cout << m2 << std::endl;
     std::cout << m3 << std::endl;
-    TEST_EQUALITY(m3,m1);
+    TEST_EQUALITY(m3,(const mask)m1);
 }
 
 TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_OR_Mask)
@@ -380,6 +382,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_OR_Mask)
     typedef Kokkos::DefaultExecutionSpace execution_space;
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
+    typedef Mask<scalar> mask;
 
     scalar a = (scalar) 1.;
     a[2] = 2.5;
@@ -392,7 +395,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_OR_Mask)
     std::cout << m1 << std::endl;
     std::cout << m2 << std::endl;
     std::cout << m3 << std::endl;
-    TEST_EQUALITY(m3,m2);
+    TEST_EQUALITY(m3,(const mask)m2);
 }
 
 TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_ADD_Mask)
@@ -402,6 +405,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_ADD_Mask)
     typedef Kokkos::DefaultExecutionSpace execution_space;
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
+    typedef Mask<scalar> mask;
 
     scalar a = (scalar) 1.;
     a[2] = 2.5;
@@ -417,7 +421,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_ADD_Mask)
     auto m3 = m1 + m2;
 
     std::cout << m3 << std::endl;
-    TEST_EQUALITY(m3,m2);
+    TEST_EQUALITY(m3,(const mask)m2);
 }
 
 TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_SUB_Mask)
@@ -427,6 +431,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_SUB_Mask)
     typedef Kokkos::DefaultExecutionSpace execution_space;
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
     typedef Sacado::MP::Vector<storage_type> scalar;
+    typedef Mask<scalar> mask;
 
     scalar a = (scalar) 1.;
     a[2] = 2.5;
@@ -438,7 +443,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_SUB_Mask)
     std::cout << m2 << std::endl;
     auto m3 = (a>0.) - (a>b);
     std::cout << m3 << std::endl;
-    TEST_EQUALITY(m3,!m1);
+    TEST_EQUALITY(m3,(const mask)!m1);
 }
 
 TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_signbit_v)
@@ -456,7 +461,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_signbit_v)
     auto m1 = signbit_v(a);
     mask m2;
     m2.set(2,true);
-    TEST_EQUALITY(m1,m2);
+    TEST_EQUALITY(m1,(const mask)m2);
 }
 
 TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_copysign)
@@ -534,7 +539,7 @@ TEUCHOS_UNIT_TEST( MP_Vector_MaskTraits, Mask_div)
 
     typedef Kokkos::DefaultExecutionSpace execution_space;
     typedef Stokhos::StaticFixedStorage<int,double,ensemble_size,execution_space> storage_type;
-    typedef Sacado::MP::Vector<storage_type> scalar;    
+    typedef Sacado::MP::Vector<storage_type> scalar;
 
     scalar a2 = {0.,2.,2.,2.,2.,2.,2.,2.};
     std::cout << a2 << std::endl;
