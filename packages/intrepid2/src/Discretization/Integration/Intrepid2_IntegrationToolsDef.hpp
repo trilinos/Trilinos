@@ -483,11 +483,11 @@ namespace Intrepid2 {
                       const int Gy_index = leftEnumerationIndex_y  * rightEnumerationSpan_y + rightEnumerationIndex_y;
                       
                       const int Gz_index = 0;
-                      const Scalar & Gz = scratchView(scratchOffsetForThread + offsetsForComponentOrdinal_[2] + Gz_index);
+                      const Scalar & aGz = scratchView(scratchOffsetForThread + offsetsForComponentOrdinal_[2] + Gz_index);
                       
                       Scalar & Gy = scratchView(scratchOffsetForThread + offsetsForComponentOrdinal_[1] + Gy_index);
                                             
-                      Gy += leftValue * Gz * rightValue;
+                      Gy += leftValue * aGz * rightValue;
     //                approximateFlopCount += 3; // 2 multiplies, 1 sum
                     }
                   }
@@ -1412,8 +1412,6 @@ namespace Intrepid2 {
                     for (int j2=0; j2<rightFieldBounds_z; j2++)
                     {
                       Scalar Gz = 0.0;
-                      
-                      int Gy_index_offset = GyEntryCount * threadNumber; // thread-relative index into GyIntegrals container; store one value per z coordinate
                       
                       if (fad_size_output_ == 0)
                       {
@@ -2430,8 +2428,6 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
 //    std::cout << "Completed mat-mat in " << timer->totalElapsedTime() << " seconds.\n";
 //    timer->reset();
     
-    const int leftFamilyCount     = basisValuesLeft. basisValues().numFamilies();
-    const int rightFamilyCount    = basisValuesRight.basisValues().numFamilies();
     const int leftComponentCount  = leftIsVectorValued ? basisValuesLeft. vectorData().numComponents() : 1;
     const int rightComponentCount = rightIsVectorValued ? basisValuesRight.vectorData().numComponents() : 1;
     
