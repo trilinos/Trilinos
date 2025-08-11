@@ -82,7 +82,6 @@ namespace Intrepid2 {
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
 #endif
-#if defined(INTREPID2_ENABLE_DEBUG) || defined(NDEBUG) || 1
 #define INTREPID2_TEST_FOR_ABORT(test, msg)                             \
   if (test) {                                                           \
     Kokkos::printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
@@ -90,9 +89,6 @@ namespace Intrepid2 {
     Kokkos::printf("            %s \n", msg);                                   \
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
-#else
-#define INTREPID2_TEST_FOR_ABORT(test, msg) ((void)0)      
-#endif
   // check the first error only
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \

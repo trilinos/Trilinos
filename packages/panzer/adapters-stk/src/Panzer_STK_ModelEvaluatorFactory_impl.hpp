@@ -78,13 +78,6 @@
 #include "Piro_TempusSolverForwardOnly.hpp"
 #endif
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_EpetraLinearObjContainer.hpp"
-#include "Thyra_EpetraModelEvaluator.hpp"
-#include "Panzer_ModelEvaluator_Epetra.hpp"
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#endif
-
 #include <Panzer_NodeType.hpp>
 
 namespace panzer_stk {
@@ -418,51 +411,7 @@ namespace panzer_stk {
 
     if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && !useTpetra) {
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-       // Can't yet handle interface conditions for this system
-       TEUCHOS_TEST_FOR_EXCEPTION(has_interface_condition,
-                                  Teuchos::Exceptions::InvalidParameter,
-                                  "ERROR: Blocked Epetra systems cannot handle interface conditions.");
-
-       // use a blocked DOF manager
-       blockedAssembly = true;
-
-       panzer::BlockedDOFManagerFactory globalIndexerFactory;
-       globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
-
-       Teuchos::RCP<panzer::GlobalIndexer> dofManager
-         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,field_order);
-       globalIndexer = dofManager;
-
-       Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > bloLinObjFactory
-        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,
-                                                          Teuchos::rcp_dynamic_cast<panzer::BlockedDOFManager>(dofManager)));
-
-       // parse any explicitly excluded pairs or blocks
-       const std::string excludedBlocks = assembly_params.get<std::string>("Excluded Blocks");
-       std::vector<std::string> stringPairs;
-       panzer::StringTokenizer(stringPairs,excludedBlocks,";",true);
-       for(std::size_t i=0;i<stringPairs.size();i++) {
-          std::vector<std::string> sPair;
-          std::vector<int> iPair;
-          panzer::StringTokenizer(sPair,stringPairs[i],",",true);
-          panzer::TokensToInts(iPair,sPair);
-
-          TEUCHOS_TEST_FOR_EXCEPTION(iPair.size()!=2,std::logic_error,
-                        "Input Error: The correct format for \"Excluded Blocks\" parameter in \"Assembly\" sub list is:\n"
-                        "   <int>,<int>; <int>,<int>; ...; <int>,<int>\n"
-                        "Failure on string pair " << stringPairs[i] << "!");
-
-          bloLinObjFactory->addExcludedPair(iPair[0],iPair[1]);
-       }
-
-       linObjFactory = bloLinObjFactory;
-
-       // build load balancing string for informative output
-       loadBalanceString = printUGILoadBalancingInformation(*dofManager);
-#else
        TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: buildObjects() - Epetra support is NOT enabled in this build!");
-#endif
     }
     else if(panzer::BlockedDOFManagerFactory::requiresBlocking(field_order) && useTpetra) {
 
@@ -535,30 +484,7 @@ namespace panzer_stk {
     }
     else {
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-       if (has_interface_condition)
-         buildInterfaceConnections(bcs, conn_manager);
-
-       // use a flat DOF manager
-       panzer::DOFManagerFactory globalIndexerFactory;
-       globalIndexerFactory.setUseDOFManagerFEI(use_dofmanager_fei);
-       globalIndexerFactory.setUseTieBreak(use_load_balance);
-       globalIndexerFactory.setUseNeighbors(has_interface_condition);
-       Teuchos::RCP<panzer::GlobalIndexer> dofManager
-         = globalIndexerFactory.buildGlobalIndexer(mpi_comm->getRawMpiComm(),physicsBlocks,conn_manager,
-                                                         field_order);
-       globalIndexer = dofManager;
-
-       if (has_interface_condition)
-         checkInterfaceConnections(conn_manager, dofManager->getComm());
-
-       linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpi_comm,dofManager,useDiscreteAdjoint));
-
-       // build load balancing string for informative output
-       loadBalanceString = printUGILoadBalancingInformation(*dofManager);
-#else
        TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: buildObjects() - Epetra support is NOT enabled in this build!");
-#endif
     }
 
     TEUCHOS_ASSERT(globalIndexer!=Teuchos::null);
@@ -1424,11 +1350,6 @@ namespace panzer_stk {
       Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(physics_me);
 
       bool useThyra = true;
-#ifdef PANZER_HAVE_EPETRA_STACK
-      Teuchos::RCP<Thyra::EpetraModelEvaluator> ep_thyra_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(physics_me);
-      if(ep_thyra_me!=Teuchos::null)
-        useThyra = false;
-#endif
 
       // get parameter names
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(physics_me->Np());
@@ -1479,18 +1400,7 @@ namespace panzer_stk {
   {
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me;
     if(!buildThyraME) {
-#ifdef PANZER_HAVE_EPETRA_STACK
-      Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me
-          = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,lof, p_names,p_values, global_data, is_transient));
-
-      if (is_transient)
-        ep_me->set_t_init(t_init);
-
-      // Build Thyra Model Evaluator
-      thyra_me = Thyra::epetraModelEvaluator(ep_me,solverFactory);
-#else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: buildPhysicsModelEvalautor() - Epetra stack is not enabled!");
-#endif
     }
     else {
       thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double>
@@ -1664,26 +1574,6 @@ namespace panzer_stk {
       panzer_me->buildResponses(m_physics_blocks,*m_eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
       return;
     }
-#ifdef PANZER_HAVE_EPETRA_STACK
-    else {
-      Teuchos::RCP<Thyra::EpetraModelEvaluator> epetra_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
-
-      if(epetra_me!=Teuchos::null) {
-        Teuchos::RCP<const EpetraExt::ModelEvaluator> const_ep_me;
-        Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solveFactory;
-        epetra_me->uninitialize(&const_ep_me,&solveFactory);
-
-        Teuchos::RCP<EpetraExt::ModelEvaluator> ep_me = Teuchos::rcp_const_cast<EpetraExt::ModelEvaluator>(const_ep_me);
-        Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_panzer_me = Teuchos::rcp_dynamic_cast<panzer::ModelEvaluator_Epetra>(ep_me);
-        ep_panzer_me->buildResponses(m_physics_blocks,*m_eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
-
-        // reinitialize the thyra model evaluator, now with the correct responses
-        epetra_me->initialize(ep_me,solveFactory);
-
-        return;
-      }
-    }
-#endif
 
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: buildResponses() - could not cast Physics ME to PanzerME!");
   }

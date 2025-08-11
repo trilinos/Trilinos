@@ -35,12 +35,8 @@
 #include <pamgen_extras.h>
 #include "RTC_FunctionRTC.hh"
 
-#ifdef HAVE_INTREPID_KOKKOS
-#include "Sacado.hpp"
-#else
 // Sacado includes
 #include <Sacado_No_Kokkos.hpp>
-#endif
 
 // My includes
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"

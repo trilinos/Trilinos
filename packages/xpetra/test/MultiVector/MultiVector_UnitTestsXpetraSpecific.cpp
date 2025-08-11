@@ -26,11 +26,6 @@
 #include "Xpetra_TpetraVector.hpp"
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraMultiVector.hpp"
-#include "Xpetra_EpetraVector.hpp"
-#endif
-
 namespace {
 
 TEUCHOS_STATIC_SETUP() {
@@ -169,15 +164,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL(MultiVector, XpetraSpecific_GetHostLocalView, 
 
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-
-#define XPETRA_EPETRA_TYPES(S, LO, GO, N)                              \
-  typedef typename Xpetra::EpetraMapT<GO, N> M##LO##GO##N;             \
-  typedef typename Xpetra::EpetraMultiVectorT<GO, N> MV##S##LO##GO##N; \
-  typedef typename Xpetra::EpetraVectorT<GO, N> V##S##LO##GO##N;
-
-#endif
-
 // List of tests which run only with Tpetra
 #define XP_MULTIVECTOR_INSTANT(S, LO, GO, N)                                                                                                        \
   TEUCHOS_UNIT_TEST_TEMPLATE_7_INSTANT(MultiVector, XpetraSpecific_GetHostLocalView, M##LO##GO##N, MV##S##LO##GO##N, V##S##LO##GO##N, S, LO, GO, N) \
@@ -193,21 +179,6 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XPETRA_TPETRA_TYPES)
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_MULTIVECTOR_INSTANT)
 
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_TYPES(double, int, int, EpetraNode)
-XP_MULTIVECTOR_INSTANT(double, int, int, EpetraNode)
-#endif
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-XPETRA_EPETRA_TYPES(double, int, LongLong, EpetraNode)
-XP_MULTIVECTOR_INSTANT(double, int, LongLong, EpetraNode)
-#endif
 #endif
 
 }  // namespace

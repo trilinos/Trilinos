@@ -1,7 +1,5 @@
 
-#cmakedefine HAVE_THYRA_EPETRA
 
-#cmakedefine HAVE_THYRA_EPETRAEXT
 
 #cmakedefine HAVE_THYRA_TPETRA
 

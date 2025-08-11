@@ -807,60 +807,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, UseTpetraImplementations
 //
 
 
-#ifdef HAVE_THYRA_TPETRA_EPETRA
-
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRowMatrix,
-  Scalar )
-{
-
-  using Teuchos::as;
-  using Teuchos::outArg;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::Array;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-
-  const RCP<Tpetra::Operator<Scalar> > tpetraOp =
-    createTriDiagonalTpetraOperator<Scalar>(g_localDim);
-
-  const RCP<LinearOpBase<Scalar> > thyraOp =
-    Thyra::createLinearOp(tpetraOp);
-
-  const RCP<Thyra::TpetraLinearOp<Scalar> > thyraTpetraOp =
-    Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<Scalar> >(thyraOp);
-
-  RCP<const Epetra_Operator> epetraOp;
-  Thyra::EOpTransp epetraOpTransp;
-  Thyra::EApplyEpetraOpAs epetraOpApplyAs;
-  Thyra::EAdjointEpetraOp epetraOpAdjointSupport;
-
-  thyraTpetraOp->getEpetraOpView( outArg(epetraOp), outArg(epetraOpTransp),
-    outArg(epetraOpApplyAs), outArg(epetraOpAdjointSupport) );
-
-  if (typeid(Scalar) == typeid(double)) {
-    TEST_ASSERT(nonnull(epetraOp));
-    const RCP<const Epetra_RowMatrix> epetraRowMatrix =
-      rcp_dynamic_cast<const Epetra_RowMatrix>(epetraOp, true);
-    int numRowEntries = -1;
-    epetraRowMatrix->NumMyRowEntries(1, numRowEntries);
-    TEST_EQUALITY_CONST(numRowEntries, 3);
-    Array<double> row_values(numRowEntries);
-    Array<int> row_indices(numRowEntries);
-    epetraRowMatrix->ExtractMyRowCopy(1, numRowEntries, numRowEntries,
-      row_values.getRawPtr(), row_indices.getRawPtr());
-    TEST_EQUALITY_CONST(row_values[0], -1.0);
-    TEST_EQUALITY_CONST(row_values[1], 2.0);
-    TEST_EQUALITY_CONST(row_values[2], 1.0);
-    // ToDo: Test column indices!
-  }
-  else {
-    TEST_ASSERT(is_null(epetraOp));
-  }
-
-}
-
-#else
-
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_EpetraRowMatrix,
   Scalar )
 {
@@ -982,8 +928,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TpetraThyraWrappers, TpetraLinearOp_ScaledLin
   rowStatOp->getRowStat(Thyra::RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,row_sums.ptr());
   out << "row_sums after right scaling by inv_row_sum = " << *row_sums;
 }
-
-#endif // HAVE_THYRA_TPETRA_EPETRA
 
 
 //

@@ -56,9 +56,7 @@
 #include <Belos_config.h>
 
 #ifdef HAVE_MPI
-#ifndef EPETRA_MPI
 #define EPETRA_MPI
-#endif
 #endif
 
 #include "Teuchos_ConfigDefs.hpp"

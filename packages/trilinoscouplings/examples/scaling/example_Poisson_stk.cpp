@@ -105,12 +105,8 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 
-#ifdef HAVE_INTREPID_KOKKOS
-#include "Sacado.hpp"
-#else
 // Sacado includes
 #include "Sacado_No_Kokkos.hpp"
-#endif
 
 // STK includes
 #include "Ionit_Initializer.h"

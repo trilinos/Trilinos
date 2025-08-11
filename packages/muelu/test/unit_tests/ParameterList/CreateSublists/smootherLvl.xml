@@ -1,3 +1,0 @@
-<ParameterList name="TestSubLists">
-  <Parameter name="smoother: type (level 2)" type="string" value="Gauss-Seidel"/>
-</ParameterList>

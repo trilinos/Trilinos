@@ -13,19 +13,6 @@
 
 #include "Teko_ConfigDefs.hpp"
 
-#ifdef TEKO_HAVE_EPETRA
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Teko_EpetraOperatorWrapper.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Teko_InverseFactoryOperator.hpp"
-#endif
-
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
@@ -60,45 +47,6 @@ using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 
 ///////////////////////////////////////////////////////////
-
-#ifdef TEKO_HAVE_EPETRA
-const RCP<Epetra_Operator> buildSystem(const Epetra_Comm& comm, int size) {
-  Epetra_Map map(size, 0, comm);
-
-  RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy, map, 0));
-
-  double values[] = {-1.0, 2.0, -1.0};
-  int iTemp[]     = {-1, 0, 1}, indices[3];
-  double* vPtr;
-  int* iPtr;
-
-  for (int i = 0; i < map.NumMyElements(); i++) {
-    int count = 3;
-    int gid   = map.GID(i);
-
-    vPtr = values;
-    iPtr = indices;
-
-    indices[0] = gid + iTemp[0];
-    indices[1] = gid + iTemp[1];
-    indices[2] = gid + iTemp[2];
-
-    if (gid == 0) {
-      vPtr  = &values[1];
-      iPtr  = &indices[1];
-      count = 2;
-    } else if (gid == map.MaxAllGID())
-      count = 2;
-
-    mat->InsertGlobalValues(gid, count, vPtr, iPtr);
-  }
-
-  mat->FillComplete();
-
-  // return Thyra::nonconstEpetraLinearOp(mat);
-  return mat;
-}
-#endif
 
 const RCP<Tpetra::Operator<ST, LO, GO, NT> > buildSystem(
     const Teuchos::RCP<const Teuchos::Comm<int> > comm, GO size) {
@@ -138,64 +86,6 @@ const RCP<Tpetra::Operator<ST, LO, GO, NT> > buildSystem(
   // return
   // Thyra::tpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(mat->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(mat->getDomainMap()),mat);
 }
-
-#ifdef TEKO_HAVE_EPETRA
-TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve) {
-// build global (or serial communicator)
-#ifdef HAVE_MPI
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm comm;
-#endif
-
-  Teuchos::RCP<Teko::InverseLibrary> invLib     = Teko::InverseLibrary::buildFromStratimikos();
-  Teuchos::RCP<Teko::InverseFactory> invFactory = invLib->getInverseFactory("Amesos");
-
-  Teuchos::RCP<Epetra_Operator> eA = buildSystem(comm, 50);
-  Teko::LinearOp A                 = Thyra::epetraLinearOp(eA);
-  Teko::ModifiableLinearOp invA    = Teko::buildInverse(*invFactory, A);
-
-  Teko::Epetra::InverseFactoryOperator invFactOp(invFactory);
-  invFactOp.buildInverseOperator(eA);
-
-  {
-    // because InverseFactoryOperator is a "Preconditioner" then need to
-    // call Epetra_Operator::ApplyInverse
-    Teko::LinearOp testInvA = Thyra::epetraLinearOp(Teuchos::rcpFromRef(invFactOp), Thyra::NOTRANS,
-                                                    Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
-
-    Thyra::LinearOpTester<double> tester;
-    tester.show_all_tests(true);
-    tester.set_all_error_tol(1e-14);
-
-    const bool result = tester.compare(*invA, *testInvA, Teuchos::ptrFromRef(out));
-    if (!result) {
-      out << "Apply 0: FAILURE" << std::endl;
-      success = false;
-    } else
-      out << "Apply 0: SUCCESS" << std::endl;
-  }
-
-  invFactOp.rebuildInverseOperator(eA);
-  {
-    // because InverseFactoryOperator is a "Preconditioner" then need to
-    // call Epetra_Operator::ApplyInverse
-    Teko::LinearOp testInvA = Thyra::epetraLinearOp(Teuchos::rcpFromRef(invFactOp), Thyra::NOTRANS,
-                                                    Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
-
-    Thyra::LinearOpTester<double> tester;
-    tester.show_all_tests(true);
-    tester.set_all_error_tol(1e-14);
-
-    const bool result = tester.compare(*invA, *testInvA, Teuchos::ptrFromRef(out));
-    if (!result) {
-      out << "Apply 0: FAILURE" << std::endl;
-      success = false;
-    } else
-      out << "Apply 0: SUCCESS" << std::endl;
-  }
-}
-#endif
 
 TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve_tpetra) {
   // build global (or serial communicator)
@@ -254,75 +144,6 @@ TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Direct_Solve_tpetra) {
       out << "Apply 0: SUCCESS" << std::endl;
   }
 }
-
-#ifdef TEKO_HAVE_EPETRA
-TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve) {
-// build global (or serial communicator)
-#ifdef HAVE_MPI
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm comm;
-#endif
-
-  Teuchos::RCP<Teko::InverseLibrary> invLib        = Teko::InverseLibrary::buildFromStratimikos();
-  Teuchos::RCP<Teko::InverseFactory> amesosFactory = invLib->getInverseFactory("Amesos");
-
-  Teuchos::RCP<Epetra_Operator> eA00 = buildSystem(comm, 50);
-  Teko::LinearOp A_00                = Thyra::epetraLinearOp(eA00);
-  Teko::ModifiableLinearOp invA_00   = Teko::buildInverse(*amesosFactory, A_00);
-
-  Teko::LinearOp A    = Thyra::block2x2<double>(A_00, Teuchos::null, Teuchos::null, A_00);
-  Teko::LinearOp invA = Thyra::block2x2<double>(invA_00, Teuchos::null, Teuchos::null, invA_00);
-  Teuchos::RCP<Epetra_Operator> eInvA = Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(invA));
-  Teko::LinearOp cmpInvA              = Thyra::epetraLinearOp(eInvA);
-
-  Teuchos::RCP<Teko::PreconditionerFactory> jacFact =
-      Teuchos::rcp(new Teko::JacobiPreconditionerFactory(invA_00, invA_00));
-  Teuchos::RCP<Teko::InverseFactory> invFactory =
-      Teuchos::rcp(new Teko::PreconditionerInverseFactory(jacFact, Teuchos::null));
-  Teuchos::RCP<Epetra_Operator> eA = Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(A));
-
-  Teko::Epetra::InverseFactoryOperator invFactOp(invFactory);
-  invFactOp.buildInverseOperator(eA);
-
-  {
-    // because InverseFactoryOperator is a "Preconditioner" then need to
-    // call Epetra_Operator::ApplyInverse
-    Teko::LinearOp testInvA = Thyra::epetraLinearOp(Teuchos::rcpFromRef(invFactOp), Thyra::NOTRANS,
-                                                    Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
-
-    Thyra::LinearOpTester<double> tester;
-    tester.show_all_tests(true);
-    tester.set_all_error_tol(1e-14);
-
-    const bool result = tester.compare(*cmpInvA, *testInvA, Teuchos::ptrFromRef(out));
-    if (!result) {
-      out << "Apply 0: FAILURE" << std::endl;
-      success = false;
-    } else
-      out << "Apply 0: SUCCESS" << std::endl;
-  }
-
-  invFactOp.rebuildInverseOperator(eA);
-  {
-    // because InverseFactoryOperator is a "Preconditioner" then need to
-    // call Epetra_Operator::ApplyInverse
-    Teko::LinearOp testInvA = Thyra::epetraLinearOp(Teuchos::rcpFromRef(invFactOp), Thyra::NOTRANS,
-                                                    Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
-
-    Thyra::LinearOpTester<double> tester;
-    tester.show_all_tests(true);
-    tester.set_all_error_tol(1e-14);
-
-    const bool result = tester.compare(*cmpInvA, *testInvA, Teuchos::ptrFromRef(out));
-    if (!result) {
-      out << "Apply 0: FAILURE" << std::endl;
-      success = false;
-    } else
-      out << "Apply 0: SUCCESS" << std::endl;
-  }
-}
-#endif
 
 TEUCHOS_UNIT_TEST(tInverseFactoryOperator, test_Block_Solve_tpetra) {
   // build global (or serial communicator)

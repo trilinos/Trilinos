@@ -32,12 +32,6 @@
 
 #include "Teko_Utilities.hpp"
 
-#ifdef TEKO_HAVE_EPETRA
-#include "Thyra_MLPreconditionerFactory.hpp"
-#include "Thyra_IfpackPreconditionerFactory.hpp"
-#include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
-#endif
-
 // Tpetra includes
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -747,38 +741,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_initializeFromParameterList(in
     allPassed &= status;
   }
 
-  {
-#ifdef TEKO_HAVE_EPETRA
-    Teuchos::ParameterList p;
-    p.set("Inverse Type", "ML");
-    p.set("Inverse Type 1", "Amesos");
-    p.set("Inverse Type 3", "Ifpack");
-
-    RCP<PreconditionerFactory> fact =
-        PreconditionerFactory::buildPreconditionerFactory("Block Jacobi", p, invLib);
-    RCP<JacobiPreconditionerFactory> jFact = rcp_dynamic_cast<JacobiPreconditionerFactory>(fact);
-    RCP<const InvFactoryDiagStrategy> diagStrat =
-        rcp_dynamic_cast<const InvFactoryDiagStrategy>(jFact->getInvDiagStrategy());
-
-    // check we have the right factory
-    const std::vector<Teuchos::RCP<InverseFactory> >& facts = diagStrat->getFactories();
-    status                                                  = (facts.size() == 3);
-    if (!status) os << "Incorrect number of factories constructed" << std::endl;
-    allPassed &= status;
-
-    status = (getLowsFactory<Thyra::AmesosLinearOpWithSolveFactory>(facts[0]) != Teuchos::null);
-    if (!status) os << "Checking if Amesos inverse factory was consctructed" << std::endl;
-    allPassed &= status;
-
-    status = (getPrecFactory<Thyra::MLPreconditionerFactory>(facts[1]) != Teuchos::null);
-    if (!status) os << "Checking if ML inverse factory was consctructed" << std::endl;
-    allPassed &= status;
-
-    status = (getPrecFactory<Thyra::IfpackPreconditionerFactory>(facts[2]) != Teuchos::null);
-    if (!status) os << "Checking if ML inverse factory was consctructed" << std::endl;
-    allPassed &= status;
-#endif
-  }
+  {}
 
   return allPassed;
 }

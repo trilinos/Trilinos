@@ -7,7 +7,6 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef __INTREPID_HGRAD_C0_FEM_DEF_HPP__
 #define __INTREPID_HGRAD_C0_FEM_DEF_HPP__
 
 // Define a piecewise constant basis function for quads.
@@ -48,13 +47,6 @@ void Basis_HGRAD_C0_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        out
                                                        const ArrayScalar &  inputPoints,
                                                        const EOperator      operatorType) const {
 
-  #ifdef HAVE_INTREPID_DEBUG
-  Intrepid::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-                                                      inputPoints,
-                                                      operatorType,
-                                                      this -> getBaseCellTopology(),
-                                                      this -> getCardinality() );
-  #endif
   //Number of evaluation points = dim 0 of inputPoints
   int dim0 = inputPoints.dimension(0);
   switch (operatorType){
@@ -122,4 +114,3 @@ void Basis_HGRAD_C0_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & DofCoor
 
 
 }
-#endif

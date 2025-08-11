@@ -30,9 +30,6 @@
 #endif
 
 // unrolling appears to slow everything down
-#if 0 && ( defined(__INTEL_COMPILER) || defined(__CUDA_ARCH__) )
-#define STOKHOS_HAVE_PRAGMA_UNROLL
-#endif
 
 // assume all memory accesses are aligned appropriately for aligned
 // vector loads

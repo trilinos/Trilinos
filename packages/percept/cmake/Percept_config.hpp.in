@@ -4,7 +4,6 @@
 #cmakedefine PERCEPT_DEBUG
 #cmakedefine STK_PERCEPT_HAS_GEOMETRY
 #cmakedefine STK_PERCEPT_LITE
-#cmakedefine STK_PERCEPT_USE_INTREPID
 #cmakedefine HAVE_ACIS
 
 #endif

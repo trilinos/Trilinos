@@ -61,10 +61,6 @@
 #include "BelosMueLuAdapter.hpp"   // this header defines Belos::MueLuOp()
 #endif
 
-#ifdef HAVE_MUELU_ISORROPIA
-#include "MueLu_IsorropiaInterface.hpp"
-#endif
-
 //
 typedef double Scalar;
 typedef int LocalOrdinal;
@@ -394,16 +390,9 @@ int main(int argc, char *argv[]) {
           ZoltanFact->SetFactory("Coordinates", TransferCoordinatesFact);
           RepartitionFact->SetFactory("Partition", ZoltanFact);
         } else if (optRepartition == 2) {
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA)
-          RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
-          isoInterface->SetFactory("A", AFact);
-          // we don't need Coordinates here!
-          RepartitionFact->SetFactory("Partition", isoInterface);
-#else
           if (comm->getRank() == 0)
             std::cout << "Please recompile Trilinos with Isorropia support enabled." << std::endl;
           return EXIT_FAILURE;
-#endif
         }
 
         // Reordering of the transfer operators

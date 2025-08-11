@@ -1,1 +1,0 @@
-matlab -nodisplay -r "processpics; quit"; stty sane

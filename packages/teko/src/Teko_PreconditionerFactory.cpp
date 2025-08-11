@@ -25,18 +25,10 @@
 #include "Teko_DiagonallyScaledPreconditionerFactory.hpp"
 #include "Teko_DiagonalPreconditionerFactory.hpp"
 #include "Teko_AdaptivePreconditionerFactory.hpp"
-#ifdef TEKO_HAVE_EPETRA
-#include "Teko_ProbingPreconditionerFactory.hpp"
-#endif
 #include "Teko_IdentityPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 #include "NS/Teko_TimingsSIMPLEPreconditionerFactory.hpp"
-
-#ifdef Teko_ENABLE_ML_SMOOTHERS
-#include "Teko_SmootherPreconditionerFactory.hpp"
-#include "Teko_MLPreconditionerFactory.hpp"
-#endif
 
 #include "Thyra_DefaultPreconditioner.hpp"
 
@@ -278,16 +270,6 @@ void PreconditionerFactory::initializePrecFactoryBuilder() {
 
   clone = rcp(new AutoClone<AdaptivePreconditionerFactory>());
   precFactoryBuilder_.addClone("Adaptive", clone);
-
-#if defined(Teko_ENABLE_Isorropia) && defined(TEKO_HAVE_EPETRA)
-  clone = rcp(new AutoClone<ProbingPreconditionerFactory>());
-  precFactoryBuilder_.addClone("Probing Preconditioner", clone);
-#endif
-
-#ifdef Teko_ENABLE_ML_SMOOTHERS
-  clone = rcp(new AutoClone<MLPreconditionerFactory>());
-  precFactoryBuilder_.addClone("Blocked ML Preconditioner", clone);
-#endif
 }
 
 void PreconditionerFactory::getPreconditionerFactoryNames(std::vector<std::string> &names) {

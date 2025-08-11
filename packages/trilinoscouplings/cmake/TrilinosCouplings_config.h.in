@@ -1,10 +1,8 @@
 /* src/TrilinosCouplings_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if want to build amesos */
-#cmakedefine HAVE_AMESOS
 
 /* Define if want to build epetraext */
-#cmakedefine HAVE_EPETRAEXT
 
 /* Define if you want to build export makefiles. */
 #cmakedefine HAVE_EXPORT_MAKEFILES
@@ -13,22 +11,18 @@
 #cmakedefine HAVE_GNUMAKE
 
 /* Define if want to build ifpack */
-#cmakedefine HAVE_IFPACK
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
 
 /* Define if want to build isorropia */
-#cmakedefine HAVE_ISORROPIA
 
 /* Define if want to build libcheck */
 #cmakedefine HAVE_LIBCHECK
 
 /* Define if want to build ml */
-#cmakedefine HAVE_ML
 
 /* Define if have ML and Nox */
-#cmakedefine HAVE_ML_NOX
 
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
@@ -55,7 +49,6 @@
 #cmakedefine HAVE_TRILINOSCOUPLINGS_MUELU
 
 /* mfh 10 Apr 2014: Define if ML is enabled in TrilinosCouplings */
-#cmakedefine HAVE_TRILINOSCOUPLINGS_ML
 
 /* Define if Stokhos is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_STOKHOS
@@ -70,13 +63,11 @@
 #cmakedefine HAVE_TRILINOSCOUPLINGS_IFPACK2
 
 /* Define if want to build intrepid */
-#cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID
 
 /* Define if want to build intrepid2 */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID2
 
 /* Define if TriKota is enabled in TrilinosCouplings */
-#cmakedefine HAVE_TRILINOSCOUPLINGS_TRIKOTA
 
 /* Define if Tpetra is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_TPETRA

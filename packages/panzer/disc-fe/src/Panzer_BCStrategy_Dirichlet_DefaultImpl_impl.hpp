@@ -29,11 +29,6 @@
 #include "Panzer_Dirichlet_Residual_EdgeBasis.hpp"
 #include "Panzer_Dirichlet_Residual_FaceBasis.hpp"
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_GatherSolution_Epetra.hpp"
-#include "Panzer_ScatterDirichletResidual_Epetra.hpp"
-#endif
-
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_BasisValues_Evaluator.hpp"
 #include "Panzer_PointValues_Evaluator.hpp"

@@ -31,11 +31,7 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 # unless you enable both Epetra and Tpetra in your Trilinos build.
 # HAVE_BELOS_TSQR will correctly reflect this: it won't be defined 
 # unless both Epetra and Tpetra are enabled in your Trilinos build.
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Tpetra AND Tpetra_ENABLE_TSQR)
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT ON)
-ELSE()
   GLOBAL_SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT OFF)
-ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_BELOS_TSQR
@@ -104,9 +100,6 @@ ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-IF (Belos_ENABLE_Epetra)
-  ADD_SUBDIRECTORY(epetra)
-ENDIF()
 
 IF (Belos_ENABLE_Tpetra)
   ADD_SUBDIRECTORY(tpetra)

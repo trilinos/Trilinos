@@ -67,17 +67,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
 ###################################################
 # Optional Trilinos Library Support
 ###################################################
-IF(NOX_ENABLE_ML)
-  SET(HAVE_NOX_ML_EPETRA ON)
-ENDIF()
 
-IF(NOX_ENABLE_EpetraExt)
-  SET(HAVE_NOX_EPETRAEXT ON)
-ENDIF()
 
-IF(NOX_ENABLE_Amesos)
-  SET(HAVE_NOX_AMESOS ON)
-ENDIF()
 
 IF(NOX_ENABLE_Anasazi)
   SET(HAVE_LOCA_ANASAZI ON)
@@ -200,7 +191,6 @@ MESSAGE(STATUS "Stratimikos/Epetra Stack: ${NOX_ENABLE_STRATIMIKOS_EPETRA_STACK}
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(src-lapack)
-ADD_SUBDIRECTORY(src-epetra)
 ADD_SUBDIRECTORY(src-tpetra)
 ADD_SUBDIRECTORY(src-thyra)
 ADD_SUBDIRECTORY(src-petsc)

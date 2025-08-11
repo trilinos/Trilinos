@@ -10,19 +10,12 @@
 #include "Tempus_ExplicitTemplateInstantiation.hpp"
 
 #ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
-#ifdef TEMPUS_ENABLE_EPETRA_STACK
-#include "CDR_Model.hpp"
-#include "CDR_Model_impl.hpp"
-#endif
 #ifdef TEMPUS_ENABLE_TPETRA_STACK
 #include "CDR_Model_Tpetra.hpp"
 #include "CDR_Model_Tpetra_impl.hpp"
 #endif
 
 namespace Tempus_Test {
-#ifdef TEMPUS_ENABLE_EPETRA_STACK
-TEMPUS_INSTANTIATE_TEMPLATE_CLASS(CDR_Model)
-#endif
 
 #ifdef TEMPUS_ENABLE_TPETRA_STACK
 // Get default Tpetra template types

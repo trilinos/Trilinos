@@ -20,15 +20,6 @@
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_ReorderedLinearOp.hpp"
 
-#ifdef TEKO_HAVE_EPETRA
-#include "Teko_InverseFactoryOperator.hpp"  // an epetra specific object
-#include "Thyra_EpetraOperatorViewExtractorStd.hpp"
-#include "Teko_StridedEpetraOperator.hpp"
-#include "Teko_BlockedEpetraOperator.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#include "EpetraExt_RowMatrixOut.h"
-#endif
-
 namespace Teko {
 
 using Teuchos::ParameterList;
@@ -68,28 +59,10 @@ class TekoFactoryBuilder
 };
 }  // namespace
 
-#ifdef TEKO_HAVE_EPETRA
-
-// Constructors/initializers/accessors
-StratimikosFactory::StratimikosFactory()
-    : epetraFwdOpViewExtractor_(Teuchos::rcp(new Thyra::EpetraOperatorViewExtractorStd())) {}
-
-// Constructors/initializers/accessors
-StratimikosFactory::StratimikosFactory(const Teuchos::RCP<Teko::RequestHandler> &rh)
-    : epetraFwdOpViewExtractor_(Teuchos::rcp(new Thyra::EpetraOperatorViewExtractorStd())) {
-  setRequestHandler(rh);
-}
-
-#endif  // TEKO_HAVE_EPETRA
-
 StratimikosFactory::StratimikosFactory(
     const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> &builder,
     const Teuchos::RCP<Teko::RequestHandler> &rh)
-    :
-#ifdef TEKO_HAVE_EPETRA
-      epetraFwdOpViewExtractor_(Teuchos::rcp(new Thyra::EpetraOperatorViewExtractorStd())),
-#endif
-      builder_(builder) {
+    : builder_(builder) {
   setRequestHandler(rh);
 }
 
@@ -138,12 +111,7 @@ void StratimikosFactory::initializePrec(
     Thyra::PreconditionerBase<double> *prec, const Thyra::ESupportSolveUse supportSolveUse) const {
   Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
 
-#ifdef TEKO_HAVE_EPETRA
-  if (epetraFwdOpViewExtractor_->isCompatible(*fwdOp))
-    initializePrec_Epetra(fwdOpSrc, prec, supportSolveUse);
-  else
-#endif
-    initializePrec_Thyra(fwdOpSrc, prec, supportSolveUse);
+  initializePrec_Thyra(fwdOpSrc, prec, supportSolveUse);
 }
 
 void StratimikosFactory::initializePrec_Thyra(
@@ -245,170 +213,6 @@ void StratimikosFactory::initializePrec_Thyra(
     *out << "\nLeaving Teko::StratimikosFactory::initializePrec_Thyra(...) ...\n";
 }
 
-#ifdef TEKO_HAVE_EPETRA
-void StratimikosFactory::initializePrec_Epetra(
-    const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > &fwdOpSrc,
-    Thyra::PreconditionerBase<double> *prec, const Thyra::ESupportSolveUse /* supportSolveUse */
-) const {
-  using Teuchos::implicit_cast;
-  using Teuchos::outArg;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_dynamic_cast;
-
-  Teuchos::Time totalTimer(""), timer("");
-  totalTimer.start(true);
-
-  const RCP<Teuchos::FancyOStream> out     = this->getOStream();
-  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-
-  bool mediumVerbosity =
-      (out.get() && implicit_cast<int>(verbLevel) > implicit_cast<int>(Teuchos::VERB_LOW));
-
-  Teuchos::OSTab tab(out);
-  if (mediumVerbosity)
-    *out << "\nEntering Teko::StratimikosFactory::initializePrec_Epetra(...) ...\n";
-
-  Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
-#ifdef _DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(fwdOp.get() == NULL);
-  TEUCHOS_TEST_FOR_EXCEPT(prec == NULL);
-#endif
-
-  //
-  // Unwrap and get the forward Epetra_Operator object
-  //
-  Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  Thyra::EOpTransp epetraFwdOpTransp;
-  Thyra::EApplyEpetraOpAs epetraFwdOpApplyAs;
-  Thyra::EAdjointEpetraOp epetraFwdOpAdjointSupport;
-  double epetraFwdOpScalar;
-  epetraFwdOpViewExtractor_->getEpetraOpView(
-      fwdOp, outArg(epetraFwdOp), outArg(epetraFwdOpTransp), outArg(epetraFwdOpApplyAs),
-      outArg(epetraFwdOpAdjointSupport), outArg(epetraFwdOpScalar));
-  // Get the concrete preconditioner object
-  StratimikosFactoryPreconditioner &defaultPrec =
-      Teuchos::dyn_cast<StratimikosFactoryPreconditioner>(*prec);
-
-  // Get the EpetraLinearOp object that is used to implement the preconditoner linear op
-  RCP<Thyra::EpetraLinearOp> epetra_precOp =
-      rcp_dynamic_cast<Thyra::EpetraLinearOp>(defaultPrec.getNonconstUnspecifiedPrecOp(), true);
-
-  // Get the embedded ML_Epetra::MultiLevelPreconditioner object if it exists
-  Teuchos::RCP<Teko::Epetra::InverseFactoryOperator> teko_precOp;
-  if (epetra_precOp != Teuchos::null)
-    teko_precOp =
-        rcp_dynamic_cast<Teko::Epetra::InverseFactoryOperator>(epetra_precOp->epetra_op(), true);
-
-  // Permform initialization if needed
-  const bool startingOver = (teko_precOp == Teuchos::null);
-  if (startingOver) {
-    // start over
-    invLib_     = Teuchos::null;
-    invFactory_ = Teuchos::null;
-    decomp_.clear();
-
-    if (mediumVerbosity)
-      *out << "\nCreating the initial Teko::Epetra::InverseFactoryOperator object...\n";
-
-    timer.start(true);
-
-    std::stringstream ss;
-    ss << paramList_->get<std::string>("Strided Blocking");
-
-    // figure out the decomposition requested by the string
-    while (not ss.eof()) {
-      int num = 0;
-      ss >> num;
-
-      TEUCHOS_ASSERT(num > 0);
-
-      decomp_.push_back(num);
-    }
-
-    // build library, and set request handler (user defined!)
-    invLib_ = Teko::InverseLibrary::buildFromParameterList(
-        paramList_->sublist("Inverse Factory Library"), builder_);
-    invLib_->setRequestHandler(reqHandler_);
-
-    // build preconditioner factory
-    invFactory_ = invLib_->getInverseFactory(paramList_->get<std::string>("Inverse Type"));
-
-    // Create the initial preconditioner: DO NOT compute it yet
-    teko_precOp = rcp(new Teko::Epetra::InverseFactoryOperator(invFactory_));
-
-    timer.stop();
-    if (mediumVerbosity)
-      Teuchos::OSTab(out).o() << "> Creation time = " << timer.totalElapsedTime() << " sec\n";
-  }
-
-  if (mediumVerbosity) *out << "\nComputing the preconditioner ...\n";
-
-  // construct preconditioner
-  {
-    bool writeBlockOps = paramList_->get<bool>("Write Block Operator");
-    timer.start(true);
-    teko_precOp->initInverse();
-
-    if (decomp_.size() == 1) {
-      teko_precOp->rebuildInverseOperator(epetraFwdOp);
-
-      // write out to disk
-      if (writeBlockOps) {
-        std::stringstream ss;
-        ss << "block-" << defaultPrec.getIter() << "_00.mm";
-        EpetraExt::RowMatrixToMatrixMarketFile(
-            ss.str().c_str(), *rcp_dynamic_cast<const Epetra_CrsMatrix>(epetraFwdOp));
-      }
-    } else {
-      Teuchos::RCP<Epetra_Operator> wrappedFwdOp =
-          buildWrappedEpetraOperator(epetraFwdOp, teko_precOp->getNonconstForwardOp(), *out);
-
-      // write out to disk
-      if (writeBlockOps) {
-        std::stringstream ss;
-        ss << "block-" << defaultPrec.getIter();
-        // Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> stridedJac
-        //       = Teuchos::rcp_dynamic_cast<Teko::Epetra::StridedEpetraOperator>(wrappedFwdOp);
-        Teuchos::RCP<Teko::Epetra::BlockedEpetraOperator> stridedJac =
-            Teuchos::rcp_dynamic_cast<Teko::Epetra::BlockedEpetraOperator>(wrappedFwdOp);
-        if (stridedJac != Teuchos::null) {
-          // write out blocks of strided operator
-          stridedJac->WriteBlocks(ss.str());
-        } else
-          TEUCHOS_ASSERT(false);
-      }
-
-      teko_precOp->rebuildInverseOperator(wrappedFwdOp);
-    }
-
-    timer.stop();
-  }
-
-  if (mediumVerbosity)
-    Teuchos::OSTab(out).o() << "=> Preconditioner construction time = " << timer.totalElapsedTime()
-                            << " sec\n";
-
-  // Initialize the output EpetraLinearOp
-  if (startingOver) {
-    epetra_precOp = rcp(new Thyra::EpetraLinearOp);
-  }
-  epetra_precOp->initialize(teko_precOp, epetraFwdOpTransp, Thyra::EPETRA_OP_APPLY_APPLY_INVERSE,
-                            Thyra::EPETRA_OP_ADJOINT_UNSUPPORTED);
-
-  // Initialize the preconditioner
-  defaultPrec.initializeUnspecified(
-      Teuchos::rcp_implicit_cast<LinearOpBase<double> >(epetra_precOp));
-  defaultPrec.incrIter();
-  totalTimer.stop();
-
-  if (out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nTotal time in Teko::StratimikosFactory = " << totalTimer.totalElapsedTime()
-         << " sec\n";
-  if (mediumVerbosity) *out << "\nLeaving Teko::StratimikosFactory::initializePrec(...) ...\n";
-}
-#endif  // TEKO_HAVE_EPETRA
-
 void StratimikosFactory::uninitializePrec(
     Thyra::PreconditionerBase<double> * /* prec */,
     Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > * /* fwdOp */,
@@ -491,108 +295,11 @@ Teuchos::RCP<const Teuchos::ParameterList> StratimikosFactory::getValidParameter
   return validPL;
 }
 
-#ifdef TEKO_HAVE_EPETRA
-/** Build the segregated jacobian operator according to
- * the input parameter list.
- */
-Teuchos::RCP<Epetra_Operator> StratimikosFactory::buildWrappedEpetraOperator(
-    const Teuchos::RCP<const Epetra_Operator> &Jac, const Teuchos::RCP<Epetra_Operator> &wrapInput,
-    std::ostream &out) const {
-  Teuchos::RCP<Epetra_Operator> wrappedOp = wrapInput;
-
-  //    // initialize jacobian
-  //    if(wrappedOp==Teuchos::null)
-  //    {
-  //       wrappedOp = Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(decomp_,Jac));
-  //
-  //       // reorder the blocks if requested
-  //       std::string reorderType = paramList_->get<std::string>("Reorder Type");
-  //       if(reorderType!="") {
-  //          RCP<const Teko::BlockReorderManager> brm =
-  //          Teko::blockedReorderFromString(reorderType);
-  //
-  //          // out << "Teko: Reordering = " << brm->toString() << std::endl;
-  //          Teuchos::rcp_dynamic_cast<Teko::Epetra::StridedEpetraOperator>(wrappedOp)->Reorder(*brm);
-  //       }
-  //    }
-  //    else {
-  //       Teuchos::rcp_dynamic_cast<Teko::Epetra::StridedEpetraOperator>(wrappedOp)->RebuildOps();
-  //    }
-  //
-  //    // test blocked operator for correctness
-  //    if(paramList_->get<bool>("Test Block Operator")) {
-  //       bool result
-  //          =
-  //          Teuchos::rcp_dynamic_cast<Teko::Epetra::StridedEpetraOperator>(wrappedOp)->testAgainstFullOperator(600,1e-14);
-  //
-  //       out << "Teko: Tested operator correctness:  " << (result ? "passed" : "FAILED!") <<
-  //       std::endl;
-  //    }
-
-  // initialize jacobian
-  if (wrappedOp == Teuchos::null) {
-    // build strided vector
-    std::vector<std::vector<int> > vars;
-    buildStridedVectors(*Jac, decomp_, vars);
-    wrappedOp = Teuchos::rcp(new Teko::Epetra::BlockedEpetraOperator(vars, Jac));
-
-    // reorder the blocks if requested
-    std::string reorderType = paramList_->get<std::string>("Reorder Type");
-    if (reorderType != "") {
-      RCP<const Teko::BlockReorderManager> brm = Teko::blockedReorderFromString(reorderType);
-
-      // out << "Teko: Reordering = " << brm->toString() << std::endl;
-      Teuchos::rcp_dynamic_cast<Teko::Epetra::BlockedEpetraOperator>(wrappedOp)->Reorder(*brm);
-    }
-  } else {
-    Teuchos::rcp_dynamic_cast<Teko::Epetra::BlockedEpetraOperator>(wrappedOp)->RebuildOps();
-  }
-
-  // test blocked operator for correctness
-  if (paramList_->get<bool>("Test Block Operator")) {
-    bool result = Teuchos::rcp_dynamic_cast<Teko::Epetra::BlockedEpetraOperator>(wrappedOp)
-                      ->testAgainstFullOperator(600, 1e-14);
-
-    out << "Teko: Tested operator correctness:  " << (result ? "passed" : "FAILED!") << std::endl;
-  }
-
-  return wrappedOp;
-}
-#endif  // TEKO_HAVE_EPETRA
-
 std::string StratimikosFactory::description() const {
   std::ostringstream oss;
   oss << "Teko::StratimikosFactory";
   return oss.str();
 }
-
-#ifdef TEKO_HAVE_EPETRA
-void StratimikosFactory::buildStridedVectors(const Epetra_Operator &Jac,
-                                             const std::vector<int> &decomp,
-                                             std::vector<std::vector<int> > &vars) const {
-  const Epetra_Map &rangeMap = Jac.OperatorRangeMap();
-
-  // compute total number of variables
-  int numVars = 0;
-  for (std::size_t i = 0; i < decomp.size(); i++) numVars += decomp[i];
-
-  // verify that the decomposition is appropriate for this matrix
-  TEUCHOS_ASSERT((rangeMap.NumMyElements() % numVars) == 0);
-  TEUCHOS_ASSERT((rangeMap.NumGlobalElements() % numVars) == 0);
-
-  int *globalIds = rangeMap.MyGlobalElements();
-
-  vars.resize(decomp.size());
-  for (int i = 0; i < rangeMap.NumMyElements();) {
-    // for each "node" copy global ids to vectors
-    for (std::size_t d = 0; d < decomp.size(); d++) {
-      // for this variable copy global ids to variable arrays
-      int current = decomp[d];
-      for (int v = 0; v < current; v++, i++) vars[d].push_back(globalIds[i]);
-    }
-  }
-}
-#endif  // TEKO_HAVE_EPETRA
 
 void addTekoToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder &builder,
                                  const std::string &stratName) {

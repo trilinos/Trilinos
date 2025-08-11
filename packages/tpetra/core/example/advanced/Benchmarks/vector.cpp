@@ -17,18 +17,6 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 
-#ifdef HAVE_TPETRACORE_EPETRA
-#  include <Epetra_Map.h>
-#  include <Epetra_Vector.h>
-#  ifdef EPETRA_MPI
-#    include <Epetra_MpiComm.h>
-#    include <mpi.h>
-#  else
-#    include <Epetra_SerialComm.h>
-#    include <Teuchos_DefaultSerialComm.hpp>
-#  endif // EPETRA_MPI
-#endif // HAVE_TPETRACORE_EPETRA
-
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
@@ -168,111 +156,6 @@ benchmarkTpetra (RCP<const Comm<int> > comm,
             << std::endl;
 }
 
-#ifdef HAVE_TPETRACORE_EPETRA
-void
-benchmarkEpetra (const Epetra_Comm& comm,
-                 const int numIndPerProc,
-                 const int indexBase,
-                 const int numMapCreateTrials,
-                 const int numVecCreateTrials,
-                 const int numVecRandTrials,
-                 const int numVecNormTrials,
-                 const int numVecDotTrials)
-
-{
-  typedef Epetra_Map map_type;
-  typedef Epetra_Vector vector_type;
-  typedef double dot_type;
-  typedef double mag_type;
-  const int INVALID = -1;
-
-  RCP<Time> mapCreateTimer = getTimer ("Epetra: Map: Create");
-  RCP<Time> vecCreateTimer = getTimer ("Epetra: Vector: Create");
-  RCP<Time> vecRandTimer = getTimer ("Epetra: Vector: Rand");
-  RCP<Time> vecNormTimer = getTimer ("Epetra: Vector: Norm");
-  RCP<Time> vecDotTimer = getTimer ("Epetra: Vector: Dot");
-  RCP<Time> vecAxpyTimer = getTimer ("Epetra: Vector: Axpy");
-
-  // Benchmark creation of a Map with a given number of indices per
-  // process, telling the Map to compute the global number of indices.
-  RCP<map_type> map;
-  {
-    TimeMonitor timeMon (*mapCreateTimer);
-    for (int k = 0; k < numMapCreateTrials; ++k) {
-      map = rcp (new map_type (INVALID, numIndPerProc, indexBase, comm));
-    }
-  }
-  if (map.is_null ()) { // no Map create trials means no Map
-    return;
-  }
-
-  // Benchmark creation of a Vector using the above Map.
-  RCP<vector_type> x;
-  {
-    TimeMonitor timeMon (*vecCreateTimer);
-    // This benchmarks both vector creation and vector destruction.
-    for (int k = 0; k < numVecCreateTrials; ++k) {
-      x = rcp (new vector_type (*map));
-    }
-  }
-  if (x.is_null ()) { // no Vector create trials means no Vector
-    return;
-  }
-
-  // Benchmark filling a Vector with random data.
-  {
-    TimeMonitor timeMon (*vecRandTimer);
-    for (int k = 0; k < numVecRandTrials; ++k) {
-      x->Random ();
-    }
-  }
-
-  // Benchmark computing the 2-norm of a Vector.
-  mag_type normResults[2];
-  normResults[0] = 0.0;
-  normResults[1] = 0.0;
-  {
-    TimeMonitor timeMon (*vecNormTimer);
-    for (int k = 0; k < numVecNormTrials; ++k) {
-      // "Confuse" the compiler so it doesn't optimize away the norm2() calls.
-      x->Norm2 (&normResults[k % 2]);
-    }
-  }
-
-  // Benchmark computing the dot product of two Vectors.
-  RCP<vector_type> y = rcp (new vector_type (*map));
-  y->Random ();
-  dot_type dotResults[2];
-  dotResults[0] = 0.0;
-  dotResults[1] = 0.0;
-  {
-    TimeMonitor timeMon (*vecDotTimer);
-    for (int k = 0; k < numVecDotTrials; ++k) {
-      // "Confuse" the compiler so it doesn't optimize away the dot() calls.
-      x->Dot (*y, &dotResults[k % 2]);
-    }
-  }
-
-  // Benchmark axpy (3-argument update).
-  const ST HALF = 0.5;
-  {
-    TimeMonitor timeMon (*vecAxpyTimer);
-    for (int k = 0; k < numVecDotTrials; ++k) {
-      y->Update (HALF, *x, 0.0);
-    }
-  }
-
-  // Trick the compiler into not complaining that normResults and
-  // dotResults never get used, by printing them to the equivalent of
-  // /dev/null.
-  Teuchos::oblackholestream blackHole;
-  blackHole << "Norm results: " << normResults[0] << "," << normResults[1]
-            << std::endl
-            << "Dot results:  " << dotResults[0] << "," << dotResults[1]
-            << std::endl;
-}
-#endif // HAVE_TPETRACORE_EPETRA
-
 
 int
 main (int argc, char* argv[])
@@ -283,17 +166,7 @@ main (int argc, char* argv[])
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
   {
     RCP<const Teuchos::Comm<int> > tpetraComm;
-#ifdef HAVE_TPETRACORE_EPETRA
-#  ifdef EPETRA_MPI
-    Epetra_MpiComm epetraComm (MPI_COMM_WORLD);
     tpetraComm = Tpetra::getDefaultComm ();
-#  else
-    Epetra_SerialComm epetraComm;
-    tpetraComm = rcp (new Teuchos::SerialComm<int>);
-#  endif // EPETRA_MPI
-#else
-    tpetraComm = Tpetra::getDefaultComm ();
-#endif // HAVE_TPETRACORE_EPETRA
 
     //const int numProcs = tpetraComm->getSize (); // unused
     const int myRank = tpetraComm->getRank ();
@@ -303,11 +176,7 @@ main (int argc, char* argv[])
     int numIndsPerProc = 100000;
     int numTrials = 1000;
 
-#ifdef HAVE_TPETRACORE_EPETRA
-    bool runEpetra = true;
-#else
     bool runEpetra = false;
-#endif // HAVE_TPETRACORE_EPETRA
     bool runTpetra = true;
 
     CommandLineProcessor cmdp;
@@ -333,11 +202,9 @@ main (int argc, char* argv[])
       TEUCHOS_TEST_FOR_EXCEPTION
         (numIndsPerProc < 0, std::invalid_argument,
          "numIndsPerProc must be nonnegative.");
-#ifndef HAVE_TPETRACORE_EPETRA
       TEUCHOS_TEST_FOR_EXCEPTION
         (runEpetra, std::invalid_argument, "Tpetra was not built with Epetra "
          "enabled, so you cannot run the Epetra benchmark." );
-#endif // HAVE_TPETRACORE_EPETRA
     }
 
     if (myRank == 0) {
@@ -345,11 +212,7 @@ main (int argc, char* argv[])
            << "Command-line options:" << endl
            << "  numIndsPerProc: " << numIndsPerProc << endl
            << "  numTrials: " << numTrials << endl;
-#ifdef HAVE_TPETRACORE_EPETRA
       cout << "  runEpetra: " << (runEpetra ? "true" : "false") << endl;
-#else
-      cout << "  runEpetra: " << (runEpetra ? "true" : "false") << endl;
-#endif // HAVE_TPETRACORE_EPETRA
       cout << "  runTpetra: " << (runTpetra ? "true" : "false") << endl
            << endl;
     }
@@ -361,16 +224,6 @@ main (int argc, char* argv[])
     const int numVecDotTrials = numTrials;
 
     // Run the benchmark
-#ifdef HAVE_TPETRACORE_EPETRA
-    if (runEpetra) {
-      benchmarkEpetra (epetraComm, numIndsPerProc, indexBase,
-                       numMapCreateTrials,
-                       numVecCreateTrials,
-                       numVecRandTrials,
-                       numVecNormTrials,
-                       numVecDotTrials);
-    }
-#endif // HAVE_TPETRACORE_EPETRA
     if (runTpetra) {
       benchmarkTpetra (tpetraComm, numIndsPerProc, indexBase,
                        numMapCreateTrials,

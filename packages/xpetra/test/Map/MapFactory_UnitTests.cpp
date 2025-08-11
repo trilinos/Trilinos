@@ -25,10 +25,6 @@
 #include "Tpetra_Details_Behavior.hpp"
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraMap.hpp"
-#endif
-
 namespace {
 
 using Teuchos::Array;
@@ -216,13 +212,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MapFactory, TransformNumDofsPerNodeWithOffset,
 
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-
-#define XPETRA_EPETRA_TYPES(LO, GO, N) \
-  typedef typename Xpetra::EpetraMapT<GO, N> M##LO##GO##N;
-
-#endif
-
 // List of tests (which run both on Epetra and Tpetra)
 #define XP_MAP_INSTANT(LO, GO, N)                                                                    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MapFactory, ContigUniformMapFact, M##LO##GO##N, LO, GO, N)    \
@@ -241,21 +230,6 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_LGN(XPETRA_TPETRA_TYPES)
 TPETRA_INSTANTIATE_LGN(XP_MAP_INSTANT)
 
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_TYPES(int, int, EpetraNode)
-XP_MAP_INSTANT(int, int, EpetraNode)
-#endif
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-XPETRA_EPETRA_TYPES(int, LongLong, EpetraNode)
-XP_MAP_INSTANT(int, LongLong, EpetraNode)
-#endif
 #endif
 
 }  // namespace

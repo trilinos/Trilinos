@@ -19,27 +19,15 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#ifdef HAVE_STRATIMIKOS_AMESOS
-#  include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
-#endif
 #ifdef HAVE_STRATIMIKOS_AMESOS2
 #  include "Thyra_Amesos2LinearOpWithSolveFactory.hpp"
-#endif
-#if defined(HAVE_STRATIMIKOS_EPETRAEXT) && defined(HAVE_STRATIMIKOS_AZTECOO)
-#  include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #endif
 #ifdef HAVE_STRATIMIKOS_BELOS
 #  include "Thyra_BelosLinearOpWithSolveFactory.hpp"
 #endif
-#ifdef HAVE_STRATIMIKOS_IFPACK
-#  include "Thyra_IfpackPreconditionerFactory.hpp"
-#endif
 #if defined(HAVE_STRATIMIKOS_IFPACK2) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
 #  include "Thyra_Ifpack2PreconditionerFactory.hpp"
 #  include "Tpetra_CrsMatrix.hpp"
-#endif
-#ifdef HAVE_STRATIMIKOS_ML
-#  include "Thyra_MLPreconditionerFactory.hpp"
 #endif
 
 
@@ -555,56 +543,18 @@ void LinearSolverBuilder<double>::initializeDefaults()
     );
 #endif
 
-#ifdef HAVE_STRATIMIKOS_AMESOS
-  setLinearSolveStrategyFactory(
-    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<Scalar>,
-    Thyra::AmesosLinearOpWithSolveFactory>(),
-    "Amesos", true
-    );
-#endif
-
-#if defined(HAVE_STRATIMIKOS_EPETRAEXT) && defined(HAVE_STRATIMIKOS_AZTECOO)
-  setLinearSolveStrategyFactory(
-    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<Scalar>,
-    Thyra::AztecOOLinearOpWithSolveFactory>(),
-    "AztecOO", true
-    );
-#endif
-
   // Note: Above, the last LOWSF object set will be the default!
   // (unless we have only one processor, see below:)
-
-#ifdef HAVE_STRATIMIKOS_AMESOS
-  if (Teuchos::GlobalMPISession::getNProc() == 1) {
-    setDefaultLinearSolveStrategyFactoryName("Amesos");
-  }
-#endif
 
   //
   // Preconditioners
   //
-
-#ifdef HAVE_STRATIMIKOS_ML
-  setPreconditioningStrategyFactory(
-    abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
-    Thyra::MLPreconditionerFactory>(),
-    "ML", true
-    );
-#endif
 
 #if defined(HAVE_STRATIMIKOS_IFPACK2) && defined(HAVE_STRATIMIKOS_THYRATPETRAADAPTERS)
   setPreconditioningStrategyFactory(
     abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
     Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar>>>(),
     "Ifpack2", true
-    );
-#endif
-
-#ifdef HAVE_STRATIMIKOS_IFPACK
-  setPreconditioningStrategyFactory(
-    abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
-    Thyra::IfpackPreconditionerFactory>(),
-    "Ifpack", true
     );
 #endif
 

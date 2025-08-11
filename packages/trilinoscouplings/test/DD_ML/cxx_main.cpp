@@ -33,10 +33,6 @@
 #include "/data/home/jhu/Trilinos/development-branch/Trilinos/packages/epetraext/src/inout/EpetraExt_RowMatrixOut.h"
 #endif
 
-#ifdef HAVE_IFPACK_ML
-#include "ml_MultiLevelPreconditioner.h"
-#endif
-
 int main(int argc, char *argv[]) {
 
 #ifdef HAVE_MPI

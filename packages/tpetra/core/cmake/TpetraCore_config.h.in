@@ -9,7 +9,6 @@
 #cmakedefine TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT
 
 /* Define if want to build with epetra enabled */
-#cmakedefine HAVE_TPETRACORE_EPETRA
 #ifdef HAVE_TPETRACORE_EPETRA
 #  define HAVE_TPETRA_EPETRA
 #endif // HAVE_TPETRACORE_EPETRA

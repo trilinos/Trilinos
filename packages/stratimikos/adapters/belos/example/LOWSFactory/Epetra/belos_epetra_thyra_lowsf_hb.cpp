@@ -25,9 +25,6 @@
 #include "EpetraExt_readEpetraLinearSystem.h"
 
 // Ifpack includes
-#ifdef HAVE_BELOS_IFPACK
-  #include "Thyra_IfpackPreconditionerFactory.hpp"
-#endif
 
 // Teuchos includes
 #include "Teuchos_ParameterList.hpp"
@@ -70,16 +67,6 @@ int main(int argc, char* argv[])
   belosLOWSFPL_gmres.set("Output Frequency",int(outputFrequency));
   belosLOWSFPL_gmres.set("Show Maximum Residual Norm Only",bool(outputMaxResOnly));
 
-#ifdef HAVE_BELOS_IFPACK
-  //
-  // Set the parameters for the Ifpack Preconditioner Factory and create parameter list
-  //
-  Teuchos::ParameterList &ifpackPFSL = belosLOWSFPL->sublist("IfpackPreconditionerFactory");
-  
-  ifpackPFSL.set("Overlap",int(2));
-  ifpackPFSL.set("Prec Type","ILUT");
-#endif
-
   // Whether the linear solver succeeded.
   // (this will be set during the residual check at the end)
   bool success = true;
@@ -105,15 +92,6 @@ int main(int argc, char* argv[])
   // Create the Belos LOWS factory.
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
     belosLOWSFactory = Teuchos::rcp(new Thyra::BelosLinearOpWithSolveFactory<double>());
-
-#ifdef HAVE_BELOS_IFPACK
-
-  // Set the preconditioner factory for the LOWS factory.
-  belosLOWSFactory->setPreconditionerFactory(
-					     Teuchos::rcp(new Thyra::IfpackPreconditionerFactory())
-					     ,"IfpackPreconditionerFactory"
-					     );
-#endif
 
   // Set the parameter list to specify the behavior of the factory.
   belosLOWSFactory->setParameterList( belosLOWSFPL );

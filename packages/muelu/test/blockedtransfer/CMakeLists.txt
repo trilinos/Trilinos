@@ -13,16 +13,6 @@ TRIBITS_ADD_EXECUTABLE(
     COMM serial mpi
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack)
-
-    TRIBITS_ADD_TEST(
-        BlockedTransfer
-        NAME "BlockedTransfer_Epetra"
-        ARGS "--linAlgebra=Epetra"
-        COMM serial mpi
-      )
-
-ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack2)
 

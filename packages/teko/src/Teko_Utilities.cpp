@@ -25,35 +25,10 @@
 #include "Thyra_SpmdVectorBase.hpp"
 #include <utility>
 
-#ifdef TEKO_HAVE_EPETRA
-#include "Thyra_EpetraExtDiagScaledMatProdTransformer.hpp"
-#include "Thyra_EpetraExtDiagScalingTransformer.hpp"
-#include "Thyra_EpetraExtAddTransformer.hpp"
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraOperatorWrapper.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
-
 // Teuchos includes
 #include "Teuchos_Array.hpp"
 
 // Epetra includes
-#ifdef TEKO_HAVE_EPETRA
-#include "Epetra_Operator.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
-
-#include "EpetraExt_Transpose_RowMatrix.h"
-#include "EpetraExt_MatrixMatrix.h"
-#include <EpetraExt_BlockMapOut.h>
-#include <EpetraExt_RowMatrixOut.h>
-
-#include "Teko_EpetraHelpers.hpp"
-#include "Teko_EpetraOperatorWrapper.hpp"
-#endif
 
 // Anasazi includes
 #include "AnasaziBasicEigenproblem.hpp"
@@ -138,65 +113,6 @@ inline double dist(double *x, double *y, double *z, int stride, int row, int col
  *
  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
  */
-#ifdef TEKO_HAVE_EPETRA
-RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim, double *coords,
-                                          const Epetra_CrsMatrix &stencil) {
-  // allocate a new matrix with storage for the laplacian...in case of diagonals add one extra
-  // storage
-  RCP<Epetra_CrsMatrix> gl = rcp(
-      new Epetra_CrsMatrix(Copy, stencil.RowMap(), stencil.ColMap(), stencil.MaxNumEntries() + 1),
-      true);
-
-  // allocate an additional value for the diagonal, if neccessary
-  std::vector<double> rowData(stencil.GlobalMaxNumEntries() + 1);
-  std::vector<int> rowInd(stencil.GlobalMaxNumEntries() + 1);
-
-  // loop over all the rows
-  for (int j = 0; j < gl->NumMyRows(); j++) {
-    int row          = gl->GRID(j);
-    double diagValue = 0.0;
-    int diagInd      = -1;
-    int rowSz        = 0;
-
-    // extract a copy of this row...put it in rowData, rowIndicies
-    stencil.ExtractGlobalRowCopy(row, stencil.MaxNumEntries(), rowSz, &rowData[0], &rowInd[0]);
-
-    // loop over elements of row
-    for (int i = 0; i < rowSz; i++) {
-      int col = rowInd[i];
-
-      // is this a 0 entry masquerading as some thing else?
-      double value = rowData[i];
-      if (value == 0) continue;
-
-      // for nondiagonal entries
-      if (row != col) {
-        double d   = dist(dim, coords, row, col);
-        rowData[i] = -1.0 / d;
-        diagValue += rowData[i];
-      } else
-        diagInd = i;
-    }
-
-    // handle diagonal entry
-    if (diagInd < 0) {  // diagonal not in row
-      rowData[rowSz] = -diagValue;
-      rowInd[rowSz]  = row;
-      rowSz++;
-    } else {  // diagonal in row
-      rowData[diagInd] = -diagValue;
-      rowInd[diagInd]  = row;
-    }
-
-    // insert row data into graph Laplacian matrix
-    TEUCHOS_TEST_FOR_EXCEPT(gl->InsertGlobalValues(row, rowSz, &rowData[0], &rowInd[0]));
-  }
-
-  gl->FillComplete();
-
-  return gl;
-}
-#endif
 
 RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildGraphLaplacian(
     int dim, ST *coords, const Tpetra::CrsMatrix<ST, LO, GO, NT> &stencil) {
@@ -281,65 +197,6 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildGraphLaplacian(
  *
  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
  */
-#ifdef TEKO_HAVE_EPETRA
-RCP<Epetra_CrsMatrix> buildGraphLaplacian(double *x, double *y, double *z, int stride,
-                                          const Epetra_CrsMatrix &stencil) {
-  // allocate a new matrix with storage for the laplacian...in case of diagonals add one extra
-  // storage
-  RCP<Epetra_CrsMatrix> gl = rcp(
-      new Epetra_CrsMatrix(Copy, stencil.RowMap(), stencil.ColMap(), stencil.MaxNumEntries() + 1),
-      true);
-
-  // allocate an additional value for the diagonal, if neccessary
-  std::vector<double> rowData(stencil.GlobalMaxNumEntries() + 1);
-  std::vector<int> rowInd(stencil.GlobalMaxNumEntries() + 1);
-
-  // loop over all the rows
-  for (int j = 0; j < gl->NumMyRows(); j++) {
-    int row          = gl->GRID(j);
-    double diagValue = 0.0;
-    int diagInd      = -1;
-    int rowSz        = 0;
-
-    // extract a copy of this row...put it in rowData, rowIndicies
-    stencil.ExtractGlobalRowCopy(row, stencil.MaxNumEntries(), rowSz, &rowData[0], &rowInd[0]);
-
-    // loop over elements of row
-    for (int i = 0; i < rowSz; i++) {
-      int col = rowInd[i];
-
-      // is this a 0 entry masquerading as some thing else?
-      double value = rowData[i];
-      if (value == 0) continue;
-
-      // for nondiagonal entries
-      if (row != col) {
-        double d   = dist(x, y, z, stride, row, col);
-        rowData[i] = -1.0 / d;
-        diagValue += rowData[i];
-      } else
-        diagInd = i;
-    }
-
-    // handle diagonal entry
-    if (diagInd < 0) {  // diagonal not in row
-      rowData[rowSz] = -diagValue;
-      rowInd[rowSz]  = row;
-      rowSz++;
-    } else {  // diagonal in row
-      rowData[diagInd] = -diagValue;
-      rowInd[diagInd]  = row;
-    }
-
-    // insert row data into graph Laplacian matrix
-    TEUCHOS_TEST_FOR_EXCEPT(gl->InsertGlobalValues(row, rowSz, &rowData[0], &rowInd[0]));
-  }
-
-  gl->FillComplete();
-
-  return gl;
-}
-#endif
 
 RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> buildGraphLaplacian(
     ST *x, ST *y, ST *z, GO stride, const Tpetra::CrsMatrix<ST, LO, GO, NT> &stencil) {
@@ -595,39 +452,7 @@ bool isZeroOp(const LinearOp op) {
 }
 
 std::pair<ModifiableLinearOp, bool> getAbsRowSumMatrixEpetra(const LinearOp &op) {
-#ifndef TEKO_HAVE_EPETRA
   return std::make_pair(ModifiableLinearOp{}, false);
-#else
-  RCP<const Epetra_CrsMatrix> eCrsOp;
-
-  const auto eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op);
-
-  if (!eOp) {
-    return std::make_pair(ModifiableLinearOp{}, false);
-  }
-
-  eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(), true);
-
-  // extract diagonal
-  const auto ptrDiag  = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-  Epetra_Vector &diag = *ptrDiag;
-
-  // compute absolute value row sum
-  diag.PutScalar(0.0);
-  for (int i = 0; i < eCrsOp->NumMyRows(); i++) {
-    double *values = 0;
-    int numEntries;
-    eCrsOp->ExtractMyRowView(i, numEntries, values);
-
-    // build abs value row sum
-    for (int j = 0; j < numEntries; j++) diag[i] += std::abs(values[j]);
-  }
-
-  // build Thyra diagonal operator
-  return std::make_pair(Teko::Epetra::thyraDiagOp(ptrDiag, eCrsOp->RowMap(),
-                                                  "absRowSum( " + op->getObjectLabel() + " )"),
-                        true);
-#endif
 }
 
 std::pair<ModifiableLinearOp, bool> getAbsRowSumMatrixTpetra(const LinearOp &op) {
@@ -765,35 +590,9 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp &op) {
                                             "absRowSum( " + op->getObjectLabel() + " ))");
 
   } else {
-#ifdef TEKO_HAVE_EPETRA
-    RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op, true);
-    RCP<const Epetra_CrsMatrix> eCrsOp =
-        rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(), true);
-
-    // extract diagonal
-    const RCP<Epetra_Vector> ptrDiag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-    Epetra_Vector &diag              = *ptrDiag;
-
-    // compute absolute value row sum
-    diag.PutScalar(0.0);
-    for (int i = 0; i < eCrsOp->NumMyRows(); i++) {
-      double *values = 0;
-      int numEntries;
-      eCrsOp->ExtractMyRowView(i, numEntries, values);
-
-      // build abs value row sum
-      for (int j = 0; j < numEntries; j++) diag[i] += std::abs(values[j]);
-    }
-    diag.Reciprocal(diag);  // invert entries
-
-    // build Thyra diagonal operator
-    return Teko::Epetra::thyraDiagOp(ptrDiag, eCrsOp->RowMap(),
-                                     "absRowSum( " + op->getObjectLabel() + " )");
-#else
     throw std::logic_error(
         "getAbsRowSumInvMatrix is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -841,27 +640,7 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp &op) {
 }
 
 const std::pair<ModifiableLinearOp, bool> getDiagonalOpEpetra(const LinearOp &op) {
-#ifndef TEKO_HAVE_EPETRA
   return std::make_pair(ModifiableLinearOp{}, false);
-#else
-  RCP<const Epetra_CrsMatrix> eCrsOp;
-
-  const auto eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op);
-  if (!eOp) {
-    return std::make_pair(ModifiableLinearOp{}, false);
-  }
-
-  eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(), true);
-
-  // extract diagonal
-  const auto diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-  TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
-
-  // build Thyra diagonal operator
-  return std::make_pair(Teko::Epetra::thyraDiagOp(diag, eCrsOp->RowMap(),
-                                                  "inv(diag( " + op->getObjectLabel() + " ))"),
-                        true);
-#endif
 }
 
 const std::pair<ModifiableLinearOp, bool> getDiagonalOpTpetra(const LinearOp &op) {
@@ -1034,24 +813,9 @@ const ModifiableLinearOp getInvDiagonalOp(const LinearOp &op) {
                                             "inv(diag( " + op->getObjectLabel() + " ))");
 
   } else {
-#ifdef TEKO_HAVE_EPETRA
-    RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op, true);
-    RCP<const Epetra_CrsMatrix> eCrsOp =
-        rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(), true);
-
-    // extract diagonal
-    const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
-    TEUCHOS_TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
-    diag->Reciprocal(*diag);
-
-    // build Thyra diagonal operator
-    return Teko::Epetra::thyraDiagOp(diag, eCrsOp->RowMap(),
-                                     "inv(diag( " + op->getObjectLabel() + " ))");
-#else
     throw std::logic_error(
         "getInvDiagonalOp is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -1281,26 +1045,9 @@ const LinearOp explicitMultiply(const LinearOp &opl, const LinearOp &opm, const 
     return tExplicitOp;
 
   } else {  // Assume Epetra and we can use transformers
-#ifdef TEKO_HAVE_EPETRA
-    // build implicit multiply
-    const LinearOp implicitOp = Thyra::multiply(opl, opm, opr);
-
-    // build transformer
-    const RCP<Thyra::LinearOpTransformerBase<double>> prodTrans =
-        Thyra::epetraExtDiagScaledMatProdTransformer();
-
-    // build operator and multiply
-    const RCP<Thyra::LinearOpBase<double>> explicitOp = prodTrans->createOutputOp();
-    prodTrans->transform(*implicitOp, explicitOp.ptr());
-    explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() + " * " +
-                               opm->getObjectLabel() + " * " + opr->getObjectLabel() + " )");
-
-    return explicitOp;
-#else
     throw std::logic_error(
         "explicitMultiply is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -1406,36 +1153,9 @@ const ModifiableLinearOp explicitMultiply(const LinearOp &opl, const LinearOp &o
     return tExplicitOp;
 
   } else {  // Assume Epetra and we can use transformers
-#ifdef TEKO_HAVE_EPETRA
-    // build implicit multiply
-    const LinearOp implicitOp = Thyra::multiply(opl, opm, opr);
-
-    // build transformer
-    const RCP<Thyra::LinearOpTransformerBase<double>> prodTrans =
-        Thyra::epetraExtDiagScaledMatProdTransformer();
-
-    // build operator destination operator
-    ModifiableLinearOp explicitOp;
-
-    // if neccessary build a operator to put the explicit multiply into
-    if (destOp == Teuchos::null)
-      explicitOp = prodTrans->createOutputOp();
-    else
-      explicitOp = destOp;
-
-    // perform multiplication
-    prodTrans->transform(*implicitOp, explicitOp.ptr());
-
-    // label it
-    explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() + " * " +
-                               opm->getObjectLabel() + " * " + opr->getObjectLabel() + " )");
-
-    return explicitOp;
-#else
     throw std::logic_error(
         "explicitMultiply is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -1643,31 +1363,9 @@ const LinearOp explicitMultiply(const LinearOp &opl, const LinearOp &opr) {
         Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()), explicitCrsOp);
 
   } else {  // Assume Epetra and we can use transformers
-#ifdef TEKO_HAVE_EPETRA
-    // build implicit multiply
-    const LinearOp implicitOp = Thyra::multiply(opl, opr);
-
-    // build a scaling transformer
-    RCP<Thyra::LinearOpTransformerBase<double>> prodTrans =
-        Thyra::epetraExtDiagScalingTransformer();
-
-    // check to see if a scaling transformer works: if not use the
-    // DiagScaledMatrixProduct transformer
-    if (not prodTrans->isCompatible(*implicitOp))
-      prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
-
-    // build operator and multiply
-    const RCP<Thyra::LinearOpBase<double>> explicitOp = prodTrans->createOutputOp();
-    prodTrans->transform(*implicitOp, explicitOp.ptr());
-    explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() + " * " +
-                               opr->getObjectLabel() + " )");
-
-    return explicitOp;
-#else
     throw std::logic_error(
         "explicitMultiply is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -1875,42 +1573,9 @@ const ModifiableLinearOp explicitMultiply(const LinearOp &opl, const LinearOp &o
         Thyra::tpetraVectorSpace<ST, LO, GO, NT>(explicitCrsOp->getDomainMap()), explicitCrsOp);
 
   } else {  // Assume Epetra and we can use transformers
-#ifdef TEKO_HAVE_EPETRA
-    // build implicit multiply
-    const LinearOp implicitOp = Thyra::multiply(opl, opr);
-
-    // build a scaling transformer
-
-    RCP<Thyra::LinearOpTransformerBase<double>> prodTrans =
-        Thyra::epetraExtDiagScalingTransformer();
-
-    // check to see if a scaling transformer works: if not use the
-    // DiagScaledMatrixProduct transformer
-    if (not prodTrans->isCompatible(*implicitOp))
-      prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
-
-    // build operator destination operator
-    ModifiableLinearOp explicitOp;
-
-    // if neccessary build a operator to put the explicit multiply into
-    if (destOp == Teuchos::null)
-      explicitOp = prodTrans->createOutputOp();
-    else
-      explicitOp = destOp;
-
-    // perform multiplication
-    prodTrans->transform(*implicitOp, explicitOp.ptr());
-
-    // label it
-    explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() + " * " +
-                               opr->getObjectLabel() + " )");
-
-    return explicitOp;
-#else
     throw std::logic_error(
         "explicitMultiply is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -2038,25 +1703,9 @@ const LinearOp explicitAdd(const LinearOp &opl_in, const LinearOp &opr_in) {
     return tExplicitOp;
 
   } else {  // Assume Epetra
-#ifdef TEKO_HAVE_EPETRA
-    // build implicit add
-    const LinearOp implicitOp = Thyra::add(opl, opr);
-
-    // build transformer
-    const RCP<Thyra::LinearOpTransformerBase<double>> prodTrans = Thyra::epetraExtAddTransformer();
-
-    // build operator and add
-    const RCP<Thyra::LinearOpBase<double>> explicitOp = prodTrans->createOutputOp();
-    prodTrans->transform(*implicitOp, explicitOp.ptr());
-    explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() + " + " +
-                               opr->getObjectLabel() + " )");
-
-    return explicitOp;
-#else
     throw std::logic_error(
         "explicitAdd is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -2204,31 +1853,9 @@ const ModifiableLinearOp explicitAdd(const LinearOp &opl_in, const LinearOp &opr
     return tExplicitOp;
 
   } else {  // Assume Epetra
-#ifdef TEKO_HAVE_EPETRA
-    // build implicit add
-    const LinearOp implicitOp = Thyra::add(opl, opr);
-
-    // build transformer
-    const RCP<Thyra::LinearOpTransformerBase<double>> prodTrans = Thyra::epetraExtAddTransformer();
-
-    // build or reuse destination operator
-    RCP<Thyra::LinearOpBase<double>> explicitOp;
-    if (destOp != Teuchos::null)
-      explicitOp = destOp;
-    else
-      explicitOp = prodTrans->createOutputOp();
-
-    // perform add
-    prodTrans->transform(*implicitOp, explicitOp.ptr());
-    explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() + " + " +
-                               opr->getObjectLabel() + " )");
-
-    return explicitOp;
-#else
     throw std::logic_error(
         "explicitAdd is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -2237,28 +1864,9 @@ const ModifiableLinearOp explicitAdd(const LinearOp &opl_in, const LinearOp &opr
  * \returns Matrix sum with a Epetra_CrsMatrix implementation
  */
 const ModifiableLinearOp explicitSum(const LinearOp &op, const ModifiableLinearOp &destOp) {
-#ifdef TEKO_HAVE_EPETRA
-  // convert operators to Epetra_CrsMatrix
-  const RCP<const Epetra_CrsMatrix> epetraOp =
-      rcp_dynamic_cast<const Epetra_CrsMatrix>(get_Epetra_Operator(*op), true);
-
-  if (destOp == Teuchos::null) {
-    Teuchos::RCP<Epetra_Operator> epetraDest = Teuchos::rcp(new Epetra_CrsMatrix(*epetraOp));
-
-    return Thyra::nonconstEpetraLinearOp(epetraDest);
-  }
-
-  const RCP<Epetra_CrsMatrix> epetraDest =
-      rcp_dynamic_cast<Epetra_CrsMatrix>(get_Epetra_Operator(*destOp), true);
-
-  EpetraExt::MatrixMatrix::Add(*epetraOp, false, 1.0, *epetraDest, 1.0);
-
-  return destOp;
-#else
   throw std::logic_error(
       "explicitSum is trying to use Epetra "
       "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
 }
 
 const LinearOp explicitTranspose(const LinearOp &op) {
@@ -2277,30 +1885,9 @@ const LinearOp explicitTranspose(const LinearOp &op) {
         Thyra::tpetraVectorSpace<ST, LO, GO, NT>(transOp->getDomainMap()), transOp);
 
   } else {
-#ifdef TEKO_HAVE_EPETRA
-    RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
-    TEUCHOS_TEST_FOR_EXCEPTION(eOp == Teuchos::null, std::logic_error,
-                               "Teko::explicitTranspose Not an Epetra_Operator");
-    RCP<const Epetra_RowMatrix> eRowMatrixOp =
-        Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(eOp);
-    TEUCHOS_TEST_FOR_EXCEPTION(eRowMatrixOp == Teuchos::null, std::logic_error,
-                               "Teko::explicitTranspose Not an Epetra_RowMatrix");
-
-    // we now have a delete transpose operator
-    EpetraExt::RowMatrix_Transpose tranposeOp;
-    Epetra_RowMatrix &eMat = tranposeOp(const_cast<Epetra_RowMatrix &>(*eRowMatrixOp));
-
-    // this copy is because of a poor implementation of the EpetraExt::Transform
-    // implementation
-    Teuchos::RCP<Epetra_CrsMatrix> crsMat =
-        Teuchos::rcp(new Epetra_CrsMatrix(dynamic_cast<Epetra_CrsMatrix &>(eMat)));
-
-    return Thyra::epetraLinearOp(crsMat);
-#else
     throw std::logic_error(
         "explicitTranspose is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -2317,20 +1904,9 @@ const LinearOp explicitScale(double scalar, const LinearOp &op) {
         Thyra::createVectorSpace<ST, LO, GO, NT>(crsOpNew->getRangeMap()),
         Thyra::createVectorSpace<ST, LO, GO, NT>(crsOpNew->getDomainMap()), crsOpNew);
   } else {
-#ifdef TEKO_HAVE_EPETRA
-    RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op, true);
-    RCP<const Epetra_CrsMatrix> eCrsOp =
-        rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(), true);
-    Teuchos::RCP<Epetra_CrsMatrix> crsMat = Teuchos::rcp(new Epetra_CrsMatrix(*eCrsOp));
-
-    crsMat->Scale(scalar);
-
-    return Thyra::epetraLinearOp(crsMat);
-#else
     throw std::logic_error(
         "explicitScale is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -2357,15 +1933,9 @@ double frobeniusNorm(const LinearOp &op_in) {
                                                                   true);
     return crsOp->getFrobeniusNorm();
   } else {
-#ifdef TEKO_HAVE_EPETRA
-    const RCP<const Epetra_Operator> epOp   = Thyra::get_Epetra_Operator(*op);
-    const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp, true);
-    return crsOp->NormFrobenius();
-#else
     throw std::logic_error(
         "frobeniusNorm is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -2375,15 +1945,9 @@ double oneNorm(const LinearOp &op) {
                                "One norm not currently implemented for Tpetra matrices");
 
   } else {
-#ifdef TEKO_HAVE_EPETRA
-    const RCP<const Epetra_Operator> epOp   = Thyra::get_Epetra_Operator(*op);
-    const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp, true);
-    return crsOp->NormOne();
-#else
     throw std::logic_error(
         "oneNorm is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -2413,15 +1977,9 @@ double infNorm(const LinearOp &op) {
     return diag.normInf() * scalar;
 
   } else {
-#ifdef TEKO_HAVE_EPETRA
-    const RCP<const Epetra_Operator> epOp   = Thyra::get_Epetra_Operator(*op);
-    const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp, true);
-    return crsOp->NormInf();
-#else
     throw std::logic_error(
         "infNorm is trying to use Epetra "
         "code, but TEKO_HAVE_EPETRA is disabled!");
-#endif
   }
 }
 
@@ -2728,23 +2286,6 @@ DiagonalType getDiagonalType(std::string name) {
   return NotDiag;
 }
 
-#ifdef TEKO_HAVE_EPETRA
-LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, const LinearOp &Op) {
-#ifdef Teko_ENABLE_Isorropia
-  Teuchos::ParameterList probeList;
-  Prober prober(G, probeList, true);
-  Teuchos::RCP<Epetra_CrsMatrix> Mat = rcp(new Epetra_CrsMatrix(Copy, *G));
-  Teko::Epetra::EpetraOperatorWrapper Mwrap(Op);
-  prober.probe(Mwrap, *Mat);
-  return Thyra::epetraLinearOp(Mat);
-#else
-  (void)G;
-  (void)Op;
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Probe requires Isorropia");
-#endif
-}
-#endif
-
 double norm_1(const MultiVector &v, std::size_t col) {
   Teuchos::Array<double> n(v->domain()->dim());
   Thyra::norms_1<double>(*v, n);
@@ -2758,33 +2299,6 @@ double norm_2(const MultiVector &v, std::size_t col) {
 
   return n[col];
 }
-
-#ifdef TEKO_HAVE_EPETRA
-void putScalar(const ModifiableLinearOp &op, double scalar) {
-  try {
-    // get Epetra_Operator
-    RCP<Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
-
-    // cast it to a CrsMatrix
-    RCP<Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<Epetra_CrsMatrix>(eOp, true);
-
-    eCrsOp->PutScalar(scalar);
-  } catch (std::exception &e) {
-    RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-
-    *out << "Teko: putScalar requires an Epetra_CrsMatrix\n";
-    *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
-    *out << "           OR\n";
-    *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
-    *out << std::endl;
-    *out << "*** THROWN EXCEPTION ***\n";
-    *out << e.what() << std::endl;
-    *out << "************************\n";
-
-    throw e;
-  }
-}
-#endif
 
 void clipLower(MultiVector &v, double lowerBound) {
   using Teuchos::RCP;
@@ -2933,9 +2447,6 @@ std::string formatBlockName(const std::string &prefix, int i, int j, int nrow) {
 void writeMatrix(const std::string &filename, const Teko::LinearOp &op) {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
-#ifdef TEKO_HAVE_EPETRA
-  const RCP<const Thyra::EpetraLinearOp> eOp = rcp_dynamic_cast<const Thyra::EpetraLinearOp>(op);
-#endif
 
   if (Teko::TpetraHelpers::isTpetraLinearOp(op)) {
     const RCP<const Thyra::TpetraLinearOp<ST, LO, GO, NT>> tOp =
@@ -2949,19 +2460,7 @@ void writeMatrix(const std::string &filename, const Teko::LinearOp &op) {
     Writer::writeMapFile(("domainmap_" + filename).c_str(), *(crsOp->getDomainMap()));
     Writer::writeMapFile(("rangemap_" + filename).c_str(), *(crsOp->getRangeMap()));
     Writer::writeSparseFile(filename.c_str(), crsOp);
-  }
-#ifdef TEKO_HAVE_EPETRA
-  else if (eOp != Teuchos::null) {
-    const RCP<const Epetra_CrsMatrix> crsOp =
-        rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp->epetra_op(), true);
-    EpetraExt::BlockMapToMatrixMarketFile(("rowmap_" + filename).c_str(), crsOp->RowMap());
-    EpetraExt::BlockMapToMatrixMarketFile(("colmap_" + filename).c_str(), crsOp->ColMap());
-    EpetraExt::BlockMapToMatrixMarketFile(("domainmap_" + filename).c_str(), crsOp->DomainMap());
-    EpetraExt::BlockMapToMatrixMarketFile(("rangemap_" + filename).c_str(), crsOp->RangeMap());
-    EpetraExt::RowMatrixToMatrixMarketFile(filename.c_str(), *crsOp);
-  }
-#endif
-  else if (isPhysicallyBlockedLinearOp(op)) {
+  } else if (isPhysicallyBlockedLinearOp(op)) {
     double scalar = 0.0;
     bool transp   = false;
     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double>> blocked_op =

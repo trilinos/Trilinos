@@ -20,10 +20,6 @@
 
 #include "Teko_ConfigDefs.hpp"
 
-#ifdef TEKO_HAVE_EPETRA
-#include "Epetra_CrsMatrix.h"
-#endif
-
 #include "Tpetra_CrsMatrix.hpp"
 
 // Teuchos includes
@@ -86,10 +82,6 @@ using Thyra::zero;  // make it to take one argument (square matrix)
  *
  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
  */
-#ifdef TEKO_HAVE_EPETRA
-Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim, double *coords,
-                                                   const Epetra_CrsMatrix &stencil);
-#endif
 
 Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildGraphLaplacian(
     int dim, ST *coords, const Tpetra::CrsMatrix<ST, LO, GO, NT> &stencil);
@@ -116,10 +108,6 @@ Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildGraphLaplacian(
  *
  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
  */
-#ifdef TEKO_HAVE_EPETRA
-Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(double *x, double *y, double *z, int stride,
-                                                   const Epetra_CrsMatrix &stencil);
-#endif
 
 Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, NT> > buildGraphLaplacian(
     ST *x, ST *y, ST *z, GO stride, const Tpetra::CrsMatrix<ST, LO, GO, NT> &stencil);
@@ -311,9 +299,6 @@ inline LinearOp zero(const VectorSpace &range, const VectorSpace &domain) {
 }
 
 //! Replace nonzeros with a scalar value, used to zero out an operator
-#ifdef TEKO_HAVE_EPETRA
-void putScalar(const ModifiableLinearOp &op, double scalar);
-#endif
 
 //! Get the range space of a linear operator
 inline VectorSpace rangeSpace(const LinearOp &lo) { return lo->range(); }
@@ -862,10 +847,6 @@ std::string getDiagonalName(const DiagonalType &dt);
  *          a <code>NotDiag</code>
  */
 DiagonalType getDiagonalType(std::string name);
-
-#ifdef TEKO_HAVE_EPETRA
-LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, const LinearOp &Op);
-#endif
 
 /** Get the one norm of the vector
  */

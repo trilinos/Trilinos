@@ -13,9 +13,6 @@
 #include "Panzer_IntrepidOrientation.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_LagrangianInterpolation.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Epetra_MpiComm.h"
-#endif
 
 // #define PANZER_INTERPOLATION_DEBUG_OUTPUT = 1
 
@@ -101,24 +98,14 @@ Teuchos::RCP<Thyra::LinearOpBase<double>> buildInterpolation(const Teuchos::RCP<
   using Scalar = double;
 
   using tpetraBlockedLinObjFactory = typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits, Scalar, LocalOrdinal, GlobalOrdinal>;
-#ifdef PANZER_HAVE_EPETRA_STACK
-  using epetraBlockedLinObjFactory = typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits, LocalOrdinal>;
-#endif
   using UGI = panzer::GlobalIndexer;
 
   // must be able to cast to a block linear object factory
   RCP<const tpetraBlockedLinObjFactory > tblof = rcp_dynamic_cast<const tpetraBlockedLinObjFactory >(linObjFactory);
-#ifdef PANZER_HAVE_EPETRA_STACK
-  RCP<const epetraBlockedLinObjFactory > eblof = rcp_dynamic_cast<const epetraBlockedLinObjFactory >(linObjFactory);
-#endif
 
   RCP<const panzer::BlockedDOFManager> blockedDOFMngr;
   if (tblof != Teuchos::null) {
     blockedDOFMngr = tblof->getGlobalIndexer();
-#ifdef PANZER_HAVE_EPETRA_STACK
-  } else if (eblof != Teuchos::null) {
-    blockedDOFMngr = eblof->getGlobalIndexer();
-#endif
   } else {
     TEUCHOS_ASSERT(false);
   }
@@ -171,11 +158,6 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
   using tp_graph = Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal>;
   using tp_matrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>;
   using tp_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal>;
-#ifdef PANZER_HAVE_EPETRA_STACK
-  using ep_linObjContainer = panzer::BlockedEpetraLinearObjContainer;
-  using ep_matrix = Epetra_CrsMatrix;
-  using ep_map = Epetra_Map;
-#endif
 
   if (matrixFree) {
     TEUCHOS_ASSERT(useTpetra);
@@ -210,13 +192,6 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
   RCP<const tp_map> tp_colmap;
   RCP<tp_matrix> tp_interp_matrix;
   typename tp_matrix::local_matrix_device_type lcl_tp_interp_matrix;
-#ifdef PANZER_HAVE_EPETRA_STACK
-  RCP<const ep_map> ep_rangemap;
-  RCP<const ep_map> ep_domainmap;
-  RCP<const ep_map> ep_rowmap;
-  RCP<const ep_map> ep_colmap;
-  RCP<ep_matrix> ep_interp_matrix;
-#endif
 
   auto rangeElementLIDs_d = range_ugi->getLIDs();
   auto domainElementLIDs_d = domain_ugi->getLIDs();
@@ -323,46 +298,6 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
     tp_interp_matrix = rcp(new tp_matrix(tp_interp_graph));
     lcl_tp_interp_matrix = tp_interp_matrix->getLocalMatrixDevice();
   }
-#ifdef PANZER_HAVE_EPETRA_STACK
-  else {
-
-    const RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(range_ugi->getComm());
-    auto ep_comm = Teuchos::rcp(new Epetra_MpiComm(*mpiComm->getRawMpiComm()));
-    std::vector<GlobalOrdinal> gids;
-    range_ugi->getOwnedIndices(gids);
-    ep_rowmap = rcp(new ep_map(OT::invalid(), static_cast<LocalOrdinal>(gids.size()), gids.data(), OT::zero(), *ep_comm));
-    ep_rangemap = ep_rowmap;
-    domain_ugi->getOwnedIndices(gids);
-    ep_domainmap = rcp(new ep_map(OT::invalid(), static_cast<LocalOrdinal>(gids.size()), gids.data(), OT::zero(), *ep_comm));
-    domain_ugi->getOwnedAndGhostedIndices(gids);
-    ep_colmap = rcp(new ep_map(OT::invalid(), static_cast<LocalOrdinal>(gids.size()), gids.data(), OT::zero(), *ep_comm));
-
-    {
-      // loop over element blocks
-      std::vector<std::string> elementBlockIds;
-      range_ugi->getElementBlockIds(elementBlockIds);
-      for(std::size_t blockIter = 0; blockIter < elementBlockIds.size(); ++blockIter) {
-
-        // loop over elements
-        std::vector<int> elementIds = range_ugi->getElementBlock(elementBlockIds[blockIter]);
-        maxNumElementsPerBlock = std::max(maxNumElementsPerBlock, elementIds.size());
-      }
-    }
-
-    // TODO: Fix this.
-    size_t nnzPerRowEstimate = 25*domainCardinality;
-
-    ep_interp_matrix = rcp(new ep_matrix(Copy, *ep_rowmap, *ep_colmap, static_cast<int>(nnzPerRowEstimate), /*StaticProfile=*/true));
-
-    RCP<const Thyra::LinearOpBase<double> > th_ep_interp = Thyra::epetraLinearOp(ep_interp_matrix,
-                                                                                 Thyra::NOTRANS,
-                                                                                 Thyra::EPETRA_OP_APPLY_APPLY,
-                                                                                 Thyra::EPETRA_OP_ADJOINT_SUPPORTED,
-                                                                                 Thyra::create_VectorSpace(ep_rangemap),
-                                                                                 Thyra::create_VectorSpace(ep_domainmap));
-    thyra_interp = Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(th_ep_interp);
-  }
-#endif
 
   // allocate some views
   int numCells;
@@ -481,47 +416,6 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
                            range_basis.get(),
                            elemOrtsWorkset_d);
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-      if (!useTpetra) { // Epetra fill
-
-	Kokkos::View<LocalOrdinal*,DeviceSpace> indices_d("indices", domainCardinality);
-	Kokkos::View<Scalar*,      DeviceSpace> values_d ("values",  domainCardinality);
-
-
-        for (int cellNo = 0; cellNo < endCellRange; cellNo++) {
-          auto elemId = elementIds_d(elemIter+cellNo);
-
-          // get IDs for range and domain dofs
-          auto rangeLIDs_d = Kokkos::subview(rangeElementLIDs_d, elemId, Kokkos::ALL());
-          auto domainLIDs_d = Kokkos::subview(domainElementLIDs_d, elemId, Kokkos::ALL());
-
-          // loop over range LIDs
-          for(size_t rangeIter = 0; rangeIter < rangeCardinality; ++rangeIter) {
-            const LocalOrdinal range_row = rangeLIDs_d(rangeOffsets_d(rangeIter));
-            const bool isOwned = ep_rowmap->MyLID(range_row);
-            if (isOwned) {
-              // filter entries for zeros
-              LocalOrdinal rowNNZ = 0;
-              for(size_t domainIter = 0; domainIter < domainCardinality; domainIter++) {
-                Scalar val = basisCoeffsLIOriented_d(cellNo, rangeIter, domainIter);
-                if (KAT::magnitude(val) > entryFilterTol) {
-                  indices_d(rowNNZ) = domainLIDs_d(domainOffsets_d(domainIter));
-                  values_d(rowNNZ) = val;
-                  ++rowNNZ;
-                }
-              }
-
-              int ret = ep_interp_matrix->ReplaceMyValues(range_row, rowNNZ, values_d.data(), indices_d.data());
-              if (ret != 0) {
-                ret = ep_interp_matrix->InsertMyValues(range_row, rowNNZ, values_d.data(), indices_d.data());
-                TEUCHOS_ASSERT(ret == 0);
-              }
-            } //end if owned
-          } // end range LID loop
-        } //end workset loop
-      } // Epetra fill
-      else
-#endif
       { // Tpetra fill
         Kokkos::parallel_for(
                              "MiniEM_Interpolation::worksetLoop",
@@ -594,10 +488,6 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
                                                                                                           Thyra::createVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal>(tp_domainmap),
                                                                                                           tp_interp_matrix);
   }
-#ifdef PANZER_HAVE_EPETRA_STACK
-  else
-    ep_interp_matrix->FillComplete(*ep_domainmap, *ep_rangemap);
-#endif
 
   return thyra_interp;
 }

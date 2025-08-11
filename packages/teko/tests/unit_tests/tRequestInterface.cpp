@@ -194,48 +194,4 @@ bool PLCallback::handlesRequest(const Teko::RequestMesg& rm) {
     return false;
 }
 
-TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface) {
-#ifdef TEKO_HAVE_EPETRA
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  Teuchos::ParameterList pl;
-  {  // ML-Test requires a handler
-    Teuchos::ParameterList& mlList = pl.sublist("ML-Test");
-    mlList.set<std::string>("Type", "ML");
-    mlList.sublist("ML Settings");
-    mlList.sublist("Required Parameters").set<std::string>("cat", "dog");
-  }
-  {  // ML-Test2 does not require a handler
-    Teuchos::ParameterList& mlList = pl.sublist("ML-Test2");
-    mlList.set<std::string>("Type", "ML");
-    mlList.sublist("ML Settings").set<std::string>("pet", "horse");
-  }
-
-  // make sure it throws if uses haven't set things up correctly
-  {
-    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
-    TEST_NOTHROW(invLib->getInverseFactory("ML-Test2"));  // this one doesn't require a handler
-    TEST_THROW(invLib->getInverseFactory("ML-Test"), std::runtime_error);  // this one does
-  }
-
-  {
-    RCP<Teko::RequestHandler> reqHandler = rcp(new Teko::RequestHandler);
-    reqHandler->addRequestCallback(rcp(new PLCallback));
-
-    // build inverse library and set request handler
-    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
-    invLib->setRequestHandler(reqHandler);
-
-    RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("ML-Test");
-
-    // investigate the parameter list to see if it has bee correctly updated!
-    RCP<Teko::PreconditionerInverseFactory> pInvFact =
-        Teuchos::rcp_dynamic_cast<Teko::PreconditionerInverseFactory>(invFact);
-    Teuchos::RCP<const Teuchos::ParameterList> pl2 = pInvFact->getPrecFactory()->getParameterList();
-
-    TEST_ASSERT(pl2->sublist("ML Settings").isParameter("cat"));
-    TEST_EQUALITY(pl2->sublist("ML Settings").get<int>("cat"), 7);
-  }
-#endif
-}
+TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface) {}

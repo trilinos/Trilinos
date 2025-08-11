@@ -25,11 +25,6 @@
 #include "Xpetra_TpetraVector.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #endif
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraMap.hpp"
-#include "Xpetra_EpetraMultiVector.hpp"
-#include "Xpetra_EpetraVector.hpp"
-#endif  // HAVE_XPETRA_EPETRA
 
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"  // taw: include MultiVectorFactory before VectorFactory (for BlockedMultiVector definition)
@@ -419,28 +414,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL(MultiVector, AssignmentDeepCopies, M, MV, V, S
 
 ////
 TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL(MultiVector, NonMemberConstructorsEpetra, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-#ifdef HAVE_XPETRA_EPETRA
-  // typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
-  const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-  RCP<const Comm<int> > comm  = getDefaultComm();
-  EXTRACT_LIB(comm, M)  // returns mylib
-
-  // create a Map
-  const size_t numLocal = 13;
-  const size_t numVecs  = 7;
-  RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > map =
-      Xpetra::UnitTestHelpers::createContigMapWithNode<LocalOrdinal, GlobalOrdinal, Node>(mylib, INVALID, numLocal, comm);
-  // Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Xpetra::UseEpetra, INVALID, numLocal, 0, comm);
-  if (mylib == Xpetra::UseEpetra) {
-    RCP<const Xpetra::EpetraMapT<GlobalOrdinal, Node> > emap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal, Node> >(map);
-    RCP<Epetra_MultiVector> mvec                             = Teuchos::rcp(new Epetra_MultiVector(emap->getEpetra_Map(), numVecs));
-    RCP<Epetra_Vector> vec                                   = Teuchos::rcp(new Epetra_Vector(emap->getEpetra_Map()));
-    RCP<MV> xmv                                              = Teuchos::rcp_dynamic_cast<MV>(Xpetra::toXpetra<GlobalOrdinal, Node>(mvec));
-    // RCP<V>  xv  = Teuchos::rcp_dynamic_cast<V >(Xpetra::toXpetra<GlobalOrdinal,Node>(vec)); // there is no toXpetra for Vectors!
-    TEST_EQUALITY(xmv->getNumVectors(), numVecs);
-    // TEST_EQUALITY_CONST(xv->getNumVectors(), 1);
-  }
-#endif
 }
 
 ////
@@ -489,10 +462,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL(MultiVector, basic, M, MV, V, Scalar, LocalOrd
   TEST_EQUALITY(mvec.getLocalLength(), numLocal);
   TEST_EQUALITY(mvec.getGlobalLength(), numRanks * numLocal);
 
-// Norms are not computed by Epetra_IntMultiVector so far
-#ifdef HAVE_XPETRA_EPETRA
-  if (!std::is_same_v<typename MV::node_type, Xpetra::EpetraNode>)
-#endif
+  // Norms are not computed by Epetra_IntMultiVector so far
   {
     if (!(std::is_same_v<typename MV::scalar_type, int> || std::is_same_v<typename MV::scalar_type, long long int>)) {
       out << "Running the norm tests!" << std::endl;
@@ -2448,40 +2418,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(MultiVector, BadCombinations, MV, V, Scalar, L
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL(MultiVector, Constructor_Epetra, M, MV, V, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-#ifdef HAVE_XPETRA_EPETRA
-  RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
-
-  {
-    TEST_NOTHROW(M(10, 0, comm));
-    TEST_NOTHROW(MV(Teuchos::rcp(new M(10, 0, comm)), 3));
-  }
-
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_PTHREAD)
-  {
-    typedef Xpetra::EpetraMapT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mm;
-    TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-    typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosThreadsWrapperNode> mx;
-    TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
-  }
-#endif
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_CUDA)
-  {
-    typedef Xpetra::EpetraMapT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mm;
-    TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-    typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosCudaWrapperNode> mx;
-    TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
-  }
-#endif
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_HIP)
-  {
-    typedef Xpetra::EpetraMapT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mm;
-    TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
-    typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode> mx;
-    TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
-  }
-#endif
-
-#endif
 }
 
 ////
@@ -2507,19 +2443,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL(MultiVector, Typedefs, M, MV, V, Scalar, Local
   typedef typename Xpetra::TpetraMap<LO, GO, N> M##LO##GO##N;                \
   typedef typename Xpetra::TpetraMultiVector<S, LO, GO, N> MV##S##LO##GO##N; \
   typedef typename Xpetra::TpetraVector<S, LO, GO, N> V##S##LO##GO##N;
-
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-
-#define XPETRA_EPETRA_NO_ORDINAL_SCALAR_TYPES(S, LO, GO, N)            \
-  typedef typename Xpetra::EpetraMapT<GO, N> M##LO##GO##N;             \
-  typedef typename Xpetra::EpetraMultiVectorT<GO, N> MV##S##LO##GO##N; \
-  typedef typename Xpetra::EpetraVectorT<GO, N> V##S##LO##GO##N;
-
-#define XPETRA_EPETRA_ORDINAL_SCALAR_TYPES(S, LO, GO, N)                  \
-  typedef typename Xpetra::EpetraIntMultiVectorT<GO, N> MV##S##LO##GO##N; \
-  typedef typename Xpetra::EpetraIntVectorT<GO, N> V##S##LO##GO##N;
 
 #endif
 
@@ -2579,27 +2502,6 @@ TPETRA_INSTANTIATE_SLGN(XP_MULTIVECTOR_INSTANT)
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_MULTIVECTOR_NO_ORDINAL_INSTANT)
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_TPETRA_MULTIVECTOR_INSTANT)
 
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_NO_ORDINAL_SCALAR_TYPES(double, int, int, EpetraNode)
-XPETRA_EPETRA_ORDINAL_SCALAR_TYPES(int, int, int, EpetraNode)
-XP_MULTIVECTOR_NO_ORDINAL_INSTANT(double, int, int, EpetraNode)
-XP_MULTIVECTOR_INSTANT(int, int, int, EpetraNode)
-XP_EPETRA_MULTIVECTOR_INSTANT(double, int, int, EpetraNode)
-#endif
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-XPETRA_EPETRA_NO_ORDINAL_SCALAR_TYPES(double, int, LongLong, EpetraNode)
-XPETRA_EPETRA_ORDINAL_SCALAR_TYPES(int, int, LongLong, EpetraNode)
-XP_MULTIVECTOR_INSTANT(int, int, LongLong, EpetraNode)
-XP_MULTIVECTOR_NO_ORDINAL_INSTANT(double, int, LongLong, EpetraNode)
-XP_EPETRA_MULTIVECTOR_INSTANT(double, int, LongLong, EpetraNode)
-#endif
 #endif
 
 }  // namespace

@@ -16,17 +16,11 @@
 #include "Teko_RequestCallback.hpp"
 
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#endif
 
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_LagrangianInterpolation.hpp"
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Thyra_EpetraThyraWrappers.hpp"
-#endif
 #include "MiniEM_Utils.hpp"
 
 

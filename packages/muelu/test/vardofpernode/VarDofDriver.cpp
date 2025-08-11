@@ -437,11 +437,7 @@ int main(int argc, char* argv[]) {
     Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
     if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      return main_<double, int, int, Xpetra::EpetraNode>(clp, lib, argc, argv);
-#else
       throw MueLu::Exceptions::RuntimeError("Epetra is not available");
-#endif
     }
 
     if (lib == Xpetra::UseTpetra) {

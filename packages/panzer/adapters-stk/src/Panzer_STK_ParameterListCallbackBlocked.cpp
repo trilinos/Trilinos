@@ -72,11 +72,6 @@ bool ParameterListCallbackBlocked::handlesRequest(const Teko::RequestMesg & rm)
      if(pl->isType<std::string>("Coordinates")){
        field = pl->get<std::string>("Coordinates");
      }
-#ifdef PANZER_HAVE_EPETRA_STACK
-     if(pl->isType<std::string>("Coordinates-Epetra")){
-       field = pl->get<std::string>("Coordinates-Epetra");
-     }
-#endif
 
      return isHandled;
    }
@@ -111,12 +106,6 @@ void ParameterListCallbackBlocked::preRequest(const Teko::RequestMesg & rm)
     block = blocked_ugi_->getFieldBlock(blocked_ugi_->getFieldNum(field));
 
   // Empty...  Nothing to do.
-#ifdef PANZER_HAVE_EPETRA_STACK
-  if (rm.getParameterList()->isType<std::string>("Coordinates-Epetra")) {
-    buildArrayToVectorEpetra(block, field, useAux);
-    buildCoordinatesEpetra(field, useAux);
-  } else
-#endif
   {
     buildArrayToVectorTpetra(block, field, useAux);
     buildCoordinatesTpetra(field, useAux);
@@ -139,11 +128,6 @@ void ParameterListCallbackBlocked::setFieldByKey(const std::string & key,const s
       pl.set<double*>(key,z);
    } else if(key == "Coordinates") {
      pl.set<Teuchos::RCP<Tpetra::MultiVector<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > >(key,coordsVecTp_);
-#ifdef PANZER_HAVE_EPETRA_STACK
-   } else if(key == "Coordinates-Epetra") {
-      pl.set<Teuchos::RCP<Epetra_MultiVector> >("Coordinates",coordsVecEp_);
-      // pl.remove("Coordinates-Epetra");
-#endif
    }
    else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
@@ -161,20 +145,6 @@ void ParameterListCallbackBlocked::buildArrayToVectorTpetra(int block,const std:
       arrayToVectorTpetra_[field] = Teuchos::rcp(new panzer::ArrayToFieldVector(ugi));
    }
 }
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-void ParameterListCallbackBlocked::buildArrayToVectorEpetra(int block,const std::string & field, const bool useAux)
-{
-   if(arrayToVectorEpetra_[field]==Teuchos::null) {
-      Teuchos::RCP<const panzer::GlobalIndexer> ugi;
-      if(useAux)
-        ugi = aux_blocked_ugi_->getFieldDOFManagers()[block];
-      else
-        ugi = blocked_ugi_->getFieldDOFManagers()[block];
-      arrayToVectorEpetra_[field] = Teuchos::rcp(new panzer::ArrayToFieldVectorEpetra(ugi));
-   }
-}
-#endif
 
 void ParameterListCallbackBlocked::buildCoordinatesTpetra(const std::string & field, const bool useAux)
 {
@@ -233,46 +203,6 @@ void ParameterListCallbackBlocked::buildCoordinatesTpetra(const std::string & fi
    }
 }
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-void ParameterListCallbackBlocked::buildCoordinatesEpetra(const std::string & field, const bool useAux)
-{
-   std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
-
-   Teuchos::RCP<const panzer::Intrepid2FieldPattern> fieldPattern = getFieldPattern(field,useAux);
-
-   std::vector<std::string> elementBlocks;
-   if(useAux)
-     aux_blocked_ugi_->getElementBlockIds(elementBlocks);
-   else
-     blocked_ugi_->getElementBlockIds(elementBlocks);
-   for(std::size_t i=0;i<elementBlocks.size();++i) {
-      std::string blockId = elementBlocks[i];
-      std::vector<std::size_t> localCellIds;
-
-      // allocate block of data to store coordinates
-      Kokkos::DynRankView<double,PHX::Device> & fieldData = data[blockId];
-      fieldData = Kokkos::DynRankView<double,PHX::Device>("fieldData",connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
-
-      if(fieldPattern->supportsInterpolatoryCoordinates()) {
-         // get degree of freedom coordiantes
-         connManager_->getDofCoords(blockId,*fieldPattern,localCellIds,fieldData);
-      }
-      else {
-         Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-         out.setOutputToRootOnly(-1);
-         out << "WARNING: In ParameterListCallback::buildCoordinates(), the Intrepid2::FieldPattern in "
-             << "block \"" << blockId << "\" does not support interpolatory coordinates. "
-             << "This may be fine if coordinates are not actually needed. However if they are then bad things "
-             << "will happen. Enjoy!" << std::endl;
-
-         return;
-      }
-   }
-
-   coordsVecEp_ = arrayToVectorEpetra_[field]->template getDataVector<double>(field,data);
-}
-#endif
-
 std::string ParameterListCallbackBlocked::
 getHandledField(const Teuchos::ParameterList & pl) const
 {
@@ -281,16 +211,8 @@ getHandledField(const Teuchos::ParameterList & pl) const
     return pl.get<std::string>("x-coordinates");
   else if(pl.isType<std::string>("Coordinates"))
     return pl.get<std::string>("Coordinates");
-#ifdef PANZER_HAVE_EPETRA_STACK
-  else if(pl.isType<std::string>("Coordinates-Epetra"))
-    return pl.get<std::string>("Coordinates-Epetra");
-#endif
   else
-#ifdef PANZER_HAVE_EPETRA_STACK
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Neither x-coordinates nor Coordinates or Coordinates-Epetra field provided.");
-#else
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Neither x-coordinates or Coordinates field provided.");
-#endif
 }
 
 const std::vector<double> & ParameterListCallbackBlocked::

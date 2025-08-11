@@ -112,12 +112,8 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTpetraAdapter.hpp"
 
-#ifdef HAVE_INTREPID_KOKKOS
-#include "Sacado.hpp"
-#else
 // Sacado includes
 #include "Sacado_No_Kokkos.hpp"
-#endif
 
 using namespace std;
 using namespace Intrepid;

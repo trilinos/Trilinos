@@ -20,10 +20,6 @@
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_PhysicsBlock.hpp"
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#endif
-
 #include "user_app_EquationSetFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
@@ -176,36 +172,6 @@ namespace panzer {
     TEST_EQUALITY(physics_block->cellData().isSide(), false);
   }
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-  TEUCHOS_UNIT_TEST(physics_block, nontemplate_evaluator_builders)
-  {
-
-    Teuchos::RCP<panzer::GlobalIndexer> ugi
-          = Teuchos::rcp(new panzer::unit_test::GlobalIndexer(0,1));
-    Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
-
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
-      panzer_test_utils::createPhysicsBlock();
-
-    PHX::FieldManager<panzer::Traits> fm;
-
-    Teuchos::ParameterList user_data("User Data");
-
-    physics_block->buildAndRegisterEquationSetEvaluators(fm, user_data);
-    physics_block->buildAndRegisterGatherAndOrientationEvaluators(fm, elof, user_data);
-    physics_block->buildAndRegisterDOFProjectionsToIPEvaluators(fm, Teuchos::null, user_data);
-    physics_block->buildAndRegisterScatterEvaluators(fm, elof, user_data);
-
-    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
-      panzer_test_utils::buildModelFactory();
-
-    Teuchos::RCP<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
-
-    physics_block->buildAndRegisterClosureModelEvaluators(fm,*factory,*models, user_data);
-  }
-#endif
-
   TEUCHOS_UNIT_TEST(physics_block, elementBlockID)
   {
 
@@ -216,43 +182,5 @@ namespace panzer {
 
     TEST_EQUALITY(physics_block->elementBlockID(),"eblock_id");
   }
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-  TEUCHOS_UNIT_TEST(physics_block, templated_evaluator_builders)
-  {
-
-    Teuchos::RCP<panzer::GlobalIndexer> ugi
-          = Teuchos::rcp(new panzer::unit_test::GlobalIndexer(0,1));
-    Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
-
-    Teuchos::RCP<panzer::PhysicsBlock> physics_block =
-      panzer_test_utils::createPhysicsBlock();
-
-    Teuchos::ParameterList user_data("User Data");
-
-    PHX::FieldManager<panzer::Traits> fm;
-
-    physics_block->buildAndRegisterEquationSetEvaluatorsForType<panzer::Traits::Residual>(fm, user_data);
-    physics_block->buildAndRegisterEquationSetEvaluatorsForType<panzer::Traits::Jacobian>(fm, user_data);
-
-    physics_block->buildAndRegisterGatherAndOrientationEvaluatorsForType<panzer::Traits::Residual>(fm, elof, user_data);
-    physics_block->buildAndRegisterGatherAndOrientationEvaluatorsForType<panzer::Traits::Jacobian>(fm, elof, user_data);
-
-    physics_block->buildAndRegisterDOFProjectionsToIPEvaluatorsForType<panzer::Traits::Residual>(fm, Teuchos::null, user_data);
-    physics_block->buildAndRegisterDOFProjectionsToIPEvaluatorsForType<panzer::Traits::Jacobian>(fm, Teuchos::null, user_data);
-
-    physics_block->buildAndRegisterScatterEvaluatorsForType<panzer::Traits::Residual>(fm, elof, user_data);
-    physics_block->buildAndRegisterScatterEvaluatorsForType<panzer::Traits::Jacobian>(fm, elof, user_data);
-
-    Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > factory =
-      panzer_test_utils::buildModelFactory();
-
-    Teuchos::RCP<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
-
-    physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Residual>(fm, *factory, *models, user_data);
-    physics_block->buildAndRegisterClosureModelEvaluatorsForType<panzer::Traits::Jacobian>(fm, *factory, *models, user_data);
-  }
-#endif
 
 }

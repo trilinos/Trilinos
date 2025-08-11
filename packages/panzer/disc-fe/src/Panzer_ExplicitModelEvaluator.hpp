@@ -18,10 +18,6 @@
 
 #include "Panzer_ModelEvaluator.hpp"
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_ModelEvaluator_Epetra.hpp"
-#endif
-
 #include "Panzer_MassMatrixModelEvaluator.hpp"
 
 namespace panzer {
@@ -81,9 +77,6 @@ private: // data members
                          const Teuchos::RCP<Thyra::VectorBase<Scalar> > & f) const
   {
     if(panzerModel_!=Teuchos::null)       { panzerModel_->applyDirichletBCs(x,f); return; }
-#ifdef PANZER_HAVE_EPETRA_STACK
-    if(panzerEpetraModel_!=Teuchos::null) { panzerEpetraModel_->applyDirichletBCs(x,f); return; }
-#endif
 
     TEUCHOS_ASSERT(false);
   }
@@ -122,11 +115,6 @@ private: // data members
 
   //! Access to the panzer model evaluator pointer (thyra version)
   Teuchos::RCP<const panzer::ModelEvaluator<Scalar> > panzerModel_;
-
-#ifdef PANZER_HAVE_EPETRA_STACK
-  //! Access to the epetra panzer model evaluator pointer
-  Teuchos::RCP<const panzer::ModelEvaluator_Epetra> panzerEpetraModel_;
-#endif
 
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > mass_;
   mutable Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > invMassMatrix_;

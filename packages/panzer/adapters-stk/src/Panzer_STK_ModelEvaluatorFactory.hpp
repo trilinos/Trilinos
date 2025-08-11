@@ -35,11 +35,6 @@
 
 #include "Panzer_NodeType.hpp"
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_ModelEvaluator_Epetra.hpp"
-#include "Thyra_EpetraModelEvaluator.hpp"
-#endif
-
 #ifdef PANZER_HAVE_TEKO
 #include "Teko_RequestHandler.hpp"
 #endif
@@ -333,26 +328,10 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
 {
   typedef panzer::ModelEvaluator<double> PanzerME;
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-  Teuchos::RCP<Thyra::EpetraModelEvaluator> thyra_ep_me = Teuchos::rcp_dynamic_cast<Thyra::EpetraModelEvaluator>(m_physics_me);
-  Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
-
-  if(thyra_ep_me!=Teuchos::null && panzer_me==Teuchos::null) {
-    // I don't need no const-ness!
-    Teuchos::RCP<EpetraExt::ModelEvaluator> ep_me = Teuchos::rcp_const_cast<EpetraExt::ModelEvaluator>(thyra_ep_me->getEpetraModel());
-    Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_panzer_me = Teuchos::rcp_dynamic_cast<panzer::ModelEvaluator_Epetra>(ep_me);
-
-    return ep_panzer_me->addResponse(responseName,wkstDesc,builder);
-  }
-  else if(panzer_me!=Teuchos::null && thyra_ep_me==Teuchos::null) {
-    return panzer_me->addResponse(responseName,wkstDesc,builder);
-  }
-#else
   Teuchos::RCP<PanzerME> panzer_me = Teuchos::rcp_dynamic_cast<PanzerME>(m_physics_me);
   if(panzer_me!=Teuchos::null) {
     return panzer_me->addResponse(responseName,wkstDesc,builder);
   }
-#endif
 
   TEUCHOS_ASSERT(false);
   return -1;

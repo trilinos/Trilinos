@@ -104,12 +104,8 @@
 #  include "MueLu_FactoryManagerBase.hpp"
 #endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
-#ifdef HAVE_INTREPID_KOKKOS
-#include "Sacado.hpp"
-#else
 // Sacado includes
 #include "Sacado_No_Kokkos.hpp"
-#endif
 
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>

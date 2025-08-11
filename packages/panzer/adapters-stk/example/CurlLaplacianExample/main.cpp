@@ -50,13 +50,6 @@
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
-#ifdef PANZER_HAVE_EPETRA_STACK
-#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_VectorOut.h"
-#include "AztecOO.h"
-#endif
-
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "Ifpack2_Factory.hpp"
@@ -169,11 +162,9 @@ int main(int argc,char * argv[])
    clp.setOption("basis-order",&basis_order);
    clp.setOption("output-filename",&output_filename);
 
-#ifndef PANZER_HAVE_EPETRA_STACK
   if(!useTpetra) {
     throw std::runtime_error("Panzer is built without Epetra! Either use Panzer_ENABLE_Epetra=ON or run this example with `use-tpetra` flag");
   }
-#endif
 
    // parse commandline argument
    Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
@@ -313,17 +304,6 @@ int main(int argc,char * argv[])
 
    // build the connection manager
    if(!useTpetra) {
-#ifdef PANZER_HAVE_EPETRA_STACK
-     const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-
-     panzer::DOFManagerFactory globalIndexerFactory;
-     RCP<panzer::GlobalIndexer> dofManager_int
-           = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
-     dofManager = dofManager_int;
-
-     // construct some linear algebra object, build object to pass to evaluators
-     linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager_int));
-#endif // PANZER_HAVE_EPETRA_STACK
    }
    else {
      const Teuchos::RCP<panzer::ConnManager> conn_manager
@@ -581,34 +561,6 @@ int main(int argc,char * argv[])
 
 void solveEpetraSystem(panzer::LinearObjContainer & container)
 {
-#ifdef PANZER_HAVE_EPETRA_STACK
-   // convert generic linear object container to epetra container
-   panzer::EpetraLinearObjContainer & ep_container
-         = Teuchos::dyn_cast<panzer::EpetraLinearObjContainer>(container);
-
-   ep_container.get_x()->PutScalar(0.0);
-
-   // Setup the linear solve: notice A is used directly
-   Epetra_LinearProblem problem(&*ep_container.get_A(),&*ep_container.get_x(),&*ep_container.get_f());
-
-   // build the solver
-   AztecOO solver(problem);
-   solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
-   solver.SetAztecOption(AZ_precond,AZ_none);
-   solver.SetAztecOption(AZ_kspace,1000);
-   solver.SetAztecOption(AZ_output,1);
-   solver.SetAztecOption(AZ_precond,AZ_Jacobi);
-
-   // solve the linear system
-   solver.Iterate(5000,1e-9);
-
-   // we have now solved for the residual correction from
-   // zero in the context of a Newton solve.
-   //     J*e = -r = -(f - J*0) where f = J*u
-   // Therefore we have  J*e=-J*u which implies e = -u
-   // thus we will scale the solution vector
-   ep_container.get_x()->Scale(-1.0);
-#endif // PANZER_HAVE_EPETRA_STACK
 }
 
 void solveTpetraSystem(panzer::LinearObjContainer & container)

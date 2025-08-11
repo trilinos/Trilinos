@@ -46,18 +46,7 @@ class Parameters
     documentation << "linear algebra library (";
 
     // Default is Tpetra if available. If not, default is Epetra
-#if defined(HAVE_XPETRA_EPETRA)
-    documentation << "Epetra";
-    lib_                   = Xpetra::UseEpetra;  // set default (if Tpetra support is missing)
-    optionValues[nOptions] = Xpetra::UseEpetra;
-    // optionValues[nOptions] = "epetra"; //TODO: do not break compatibility right now
-    optionNames[nOptions] = "Epetra";
-    nOptions++;
-#endif
 #if defined(HAVE_XPETRA_TPETRA)
-#if defined(HAVE_XPETRA_EPETRA)
-    documentation << ", ";
-#endif
     documentation << "Tpetra";
     lib_                   = Xpetra::UseTpetra;  // set default
     optionValues[nOptions] = Xpetra::UseTpetra;

@@ -19,9 +19,6 @@
 #include "TpetraCore_ETIHelperMacros.h"
 
 namespace Amesos2 {
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(cuSOLVER);
-#endif
 
   #define AMESOS2_CUSOLVER_LOCAL_INSTANT(S,LO,GO,N) \
   template class Amesos2::cuSOLVER<Tpetra::CrsMatrix<S, LO, GO, N>, \

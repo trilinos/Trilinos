@@ -27,10 +27,6 @@
 #include <Xpetra_TpetraMap.hpp>
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
-
 namespace XpetraMapExtractorFactoryTests {
 
 bool testMpi         = true;
@@ -176,14 +172,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(MapExtractorFactory, ConstructFromBlockedMap, 
 
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-
-#define XPETRA_EPETRA_TYPES(S, LO, GO, N)                  \
-  typedef typename Xpetra::EpetraMapT<GO, N> M##LO##GO##N; \
-  typedef typename Xpetra::EpetraCrsMatrixT<GO, N> MA##S##LO##GO##N;
-
-#endif
-
 #define XP_MAPEXTRACTORACTORY_INSTANT(S, LO, GO, N)                                                                                        \
   TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(MapExtractorFactory, ConstructFromFullAndPartialMaps, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N) \
   TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(MapExtractorFactory, ConstructFromBlockedMap, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)
@@ -196,22 +184,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(MapExtractorFactory, ConstructFromBlockedMap, 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XPETRA_TPETRA_TYPES)
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_MAPEXTRACTORACTORY_INSTANT)
-
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_TYPES(double, int, int, EpetraNode)
-XP_MAPEXTRACTORACTORY_INSTANT(double, int, int, EpetraNode)
-#endif
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-XPETRA_EPETRA_TYPES(double, int, LongLong, EpetraNode)
-XP_MAPEXTRACTORACTORY_INSTANT(double, int, LongLong, EpetraNode)
-#endif
 
 #endif
 

@@ -21,9 +21,6 @@
 #include "Thyra_XpetraLinearOp.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
-#ifdef HAVE_MUELU_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
 
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -45,9 +42,6 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <Xpetra_TpetraHalfPrecisionOperator.hpp>
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_EpetraOperator.hpp>
-#endif
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
@@ -64,13 +58,6 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 struct Converters {
   static bool replaceWithXpetra(ParameterList& paramList, std::string parameterName);
 };
-
-#ifdef HAVE_MUELU_EPETRA
-template <class GlobalOrdinal>
-struct Converters<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> {
-  static bool replaceWithXpetra(ParameterList& paramList, std::string parameterName);
-};
-#endif
 
 /** @brief Concrete preconditioner factory subclass for Thyra based on MueLu.
     @ingroup MueLuAdapters

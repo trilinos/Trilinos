@@ -21,11 +21,6 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_RowGraph.hpp>
 
-#ifdef HAVE_ZOLTAN2_EPETRA
-#include <Epetra_CrsMatrix.h>
-#include <Epetra_CrsGraph.h>
-#endif
-
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_RowMatrix.hpp>
 #include <Xpetra_TpetraRowMatrix.hpp>
@@ -264,20 +259,6 @@ struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
-#ifdef HAVE_ZOLTAN2_EPETRA
-template < >
-struct InputTraits<Epetra_CrsMatrix>
-{
-  typedef double scalar_t;
-  typedef int lno_t;
-  typedef int gno_t;
-  typedef size_t offset_t;
-  typedef Zoltan2::default_part_t  part_t;
-  typedef Zoltan2::default_node_t node_t;
-  static inline std::string name() {return "Epetra_CrsMatrix";}
-};
-#endif
-
 template <typename Scalar,
           typename LocalOrdinal,
           typename GlobalOrdinal,
@@ -358,20 +339,6 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
-#ifdef HAVE_ZOLTAN2_EPETRA
-template < >
-struct InputTraits<Epetra_CrsGraph>
-{
-  typedef double scalar_t;
-  typedef int   lno_t;
-  typedef int   gno_t;
-  typedef size_t offset_t;
-  typedef Zoltan2::default_part_t  part_t;
-  typedef Zoltan2::default_node_t node_t;
-  static inline std::string name() {return "Epetra_CrsGraph";}
-};
-#endif
-
 template <typename Scalar,
           typename LocalOrdinal,
           typename GlobalOrdinal,
@@ -409,20 +376,6 @@ struct InputTraits<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   Z2_STATIC_ASSERT_TYPES  // validate the types
 };
 
-#ifdef HAVE_ZOLTAN2_EPETRA
-template < >
-struct InputTraits<Epetra_Vector>
-{
-  typedef double scalar_t;
-  typedef int   lno_t;
-  typedef int   gno_t;
-  typedef size_t offset_t;
-  typedef Zoltan2::default_part_t  part_t;
-  typedef Zoltan2::default_node_t node_t;
-  static inline std::string name() {return "Epetra_Vector";}
-};
-#endif
-
 template <typename Scalar,
           typename LocalOrdinal,
           typename GlobalOrdinal,
@@ -456,20 +409,6 @@ struct InputTraits<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 
   Z2_STATIC_ASSERT_TYPES // validate the types
 };
-
-#ifdef HAVE_ZOLTAN2_EPETRA
-template < >
-struct InputTraits<Epetra_MultiVector>
-{
-  typedef double scalar_t;
-  typedef int   lno_t;
-  typedef int   gno_t;
-  typedef size_t offset_t;
-  typedef Zoltan2::default_part_t  part_t;
-  typedef Zoltan2::default_node_t node_t;
-  static inline std::string name() {return "Epetra_MultiVector";}
-};
-#endif
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

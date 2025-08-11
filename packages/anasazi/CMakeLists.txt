@@ -109,15 +109,8 @@ IF (${PACKAGE_NAME}_ENABLE_RBGen)
   ADD_SUBDIRECTORY(src-rbgen)
 ENDIF()
 
-IF (Anasazi_ENABLE_Epetra)
-  ADD_SUBDIRECTORY(epetra)
-ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
-
-IF (Anasazi_ENABLE_ThyraCore)
-  ADD_SUBDIRECTORY(thyra)
-ENDIF()
 
 IF (Anasazi_ENABLE_Tpetra)
   ADD_SUBDIRECTORY(tpetra)

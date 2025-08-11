@@ -17,15 +17,6 @@
 #include "Tpetra_Operator.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
-#if defined(HAVE_THYRA_EPETRA) && defined(HAVE_TPETRA_EPETRA)
-#  define HAVE_THYRA_TPETRA_EPETRA
-#endif
-
-#ifdef HAVE_THYRA_TPETRA_EPETRA
-#  include "Thyra_EpetraLinearOpBase.hpp"
-#  include "Tpetra_EpetraRowMatrix.hpp"
-#endif
-
 
 namespace Thyra {
 
@@ -42,9 +33,6 @@ class TpetraLinearOp
   : virtual public Thyra::LinearOpDefaultBase<Scalar>,
     virtual public ScaledLinearOpBase<Scalar>,
     virtual public Thyra::RowStatLinearOpBase<Scalar>
-#ifdef HAVE_THYRA_TPETRA_EPETRA
-  , virtual public EpetraLinearOpBase
-#endif
 {
 public:
 
@@ -88,30 +76,6 @@ public:
   RCP<const Thyra::VectorSpaceBase<Scalar> > domain() const;
 
   //@}
-
-#ifdef HAVE_THYRA_TPETRA_EPETRA
-
-  /** \name Overridden from EpetraLinearOpBase */
-  //@{
-
-  /** \brief . */
-  void getNonconstEpetraOpView(
-    const Ptr<RCP<Epetra_Operator> > &epetraOp,
-    const Ptr<EOpTransp> &epetraOpTransp,
-    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
-    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
-    );
-  /** \brief . */
-  void getEpetraOpView(
-    const Ptr<RCP<const Epetra_Operator> > &epetraOp,
-    const Ptr<EOpTransp> &epetraOpTransp,
-    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
-    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
-    ) const;
-
-  //@}
-
-#endif // HAVE_THYRA_TPETRA_EPETRA
 
 protected:
 
@@ -173,10 +137,6 @@ private:
 
   Teuchos::ConstNonconstObjectContainer<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   tpetraOperator_;
-
-#ifdef HAVE_THYRA_TPETRA_EPETRA
-  mutable RCP<Epetra_Operator> epetraOp_;
-#endif
 
   template<class TpetraOperator_t>
   void initializeImpl(

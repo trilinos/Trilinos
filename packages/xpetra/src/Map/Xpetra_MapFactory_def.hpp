@@ -17,9 +17,6 @@
 #ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMap.hpp"
 #endif
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraMap.hpp"
-#endif
 
 #include "Xpetra_BlockedMap.hpp"
 
