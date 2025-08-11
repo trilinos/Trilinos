@@ -143,7 +143,6 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
         preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, material, params));
       else
         preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, params, GmhdA_Matrix));
-
     }
 
     {
@@ -268,8 +267,8 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
           sublist->set(*key_it, Kn_Matrix);
         else if (value == "Coordinates")
           sublist->set(*key_it, coords);
-          // else if (*key_it == "Nullspace")
-          //     sublist->set(*key_it, Nullspace);
+        // else if (*key_it == "Nullspace")
+        //     sublist->set(*key_it, Nullspace);
         else if (value == "tD0") {
           auto tD0 = toTpetra(D0_Matrix);
           sublist->set(*key_it, tD0);

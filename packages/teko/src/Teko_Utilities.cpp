@@ -2460,8 +2460,7 @@ void writeMatrix(const std::string &filename, const Teko::LinearOp &op) {
     Writer::writeMapFile(("domainmap_" + filename).c_str(), *(crsOp->getDomainMap()));
     Writer::writeMapFile(("rangemap_" + filename).c_str(), *(crsOp->getRangeMap()));
     Writer::writeSparseFile(filename.c_str(), crsOp);
-  }
-  else if (isPhysicallyBlockedLinearOp(op)) {
+  } else if (isPhysicallyBlockedLinearOp(op)) {
     double scalar = 0.0;
     bool transp   = false;
     RCP<const Thyra::PhysicallyBlockedLinearOpBase<double>> blocked_op =

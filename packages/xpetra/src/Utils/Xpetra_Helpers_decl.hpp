@@ -47,7 +47,6 @@ class Helpers {
 #include "Xpetra_UseShortNames.hpp"
 
  public:
-
 #ifdef HAVE_XPETRA_TPETRA
   static RCP<const Tpetra::CrsMatrix<SC, LO, GO, NO> > Op2TpetraCrs(RCP<Matrix> Op);
 
@@ -85,7 +84,6 @@ class Helpers {
       const tcrs_matrix_type& A, bool transposeA, const typename tcrs_matrix_type::scalar_type alpha,
       const tcrs_matrix_type& B, bool transposeB, const typename tcrs_matrix_type::scalar_type beta);
 #endif
-
 };
 }  // namespace Xpetra
 

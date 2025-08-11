@@ -165,7 +165,7 @@ void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) 
   crsGraph->fillComplete(nodeMap, nodeMap);
 
 #ifdef HAVE_MPI
-#else   // if we don't have MPI
+#else  // if we don't have MPI
 
   // Running on one processor, so decomposition is the trivial one, all zeros.
   RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);

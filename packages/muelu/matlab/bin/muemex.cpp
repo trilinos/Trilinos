@@ -317,7 +317,7 @@ RCP<Hierarchy_complex> getDatapackHierarchy<complex_t>(MuemexSystem* dp) {
 template <typename Scalar, typename T>
 void setHierarchyData(MuemexSystem* problem, int levelID, T& data, string& dataName) {
   RCP<Level> level;
-      if (problem->type == TPETRA) {
+  if (problem->type == TPETRA) {
     RCP<Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = ((TpetraSystem<double>*)problem)->getHierarchy();
     level                                                             = hier->GetLevel(levelID);
   } else if (problem->type == TPETRA_COMPLEX) {
@@ -913,7 +913,7 @@ void parse_list_item(RCP<ParameterList> List, char* option_name, const mxArray* 
       opt_str  = opt_char;
       List->set(option_name, opt_str);
       if (strcmp(option_name, MUEMEX_INTERFACE) == 0) {
-            if (strcmp(opt_str.c_str(), "tpetra") == 0)
+        if (strcmp(opt_str.c_str(), "tpetra") == 0)
           useEpetra = false;
       }
       mxFree(opt_char);
@@ -1127,7 +1127,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         }
         intf = List->get(MUEMEX_INTERFACE, "tpetra");
         List->remove(MUEMEX_INTERFACE);  // no longer need this parameter
-            if (intf == "tpetra") {
+        if (intf == "tpetra") {
           // infer scalar type from prhs (can be double or complex<double>)
           if (mxIsComplex(prhs[1])) {
 #ifdef HAVE_COMPLEX_SCALARS

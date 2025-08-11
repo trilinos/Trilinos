@@ -58,7 +58,6 @@ class IO {
 #include "Xpetra_UseShortNames.hpp"
 
  public:
-
 #ifdef HAVE_XPETRA_TPETRA
   //! Helper utility to pull out the underlying Tpetra objects from an Xpetra object
   // @{

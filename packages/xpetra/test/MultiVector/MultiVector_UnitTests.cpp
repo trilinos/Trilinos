@@ -462,7 +462,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL(MultiVector, basic, M, MV, V, Scalar, LocalOrd
   TEST_EQUALITY(mvec.getLocalLength(), numLocal);
   TEST_EQUALITY(mvec.getGlobalLength(), numRanks * numLocal);
 
-// Norms are not computed by Epetra_IntMultiVector so far
+  // Norms are not computed by Epetra_IntMultiVector so far
   {
     if (!(std::is_same_v<typename MV::scalar_type, int> || std::is_same_v<typename MV::scalar_type, long long int>)) {
       out << "Running the norm tests!" << std::endl;

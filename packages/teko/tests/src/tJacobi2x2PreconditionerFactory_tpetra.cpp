@@ -741,8 +741,7 @@ bool tJacobi2x2PreconditionerFactory_tpetra::test_initializeFromParameterList(in
     allPassed &= status;
   }
 
-  {
-  }
+  {}
 
   return allPassed;
 }

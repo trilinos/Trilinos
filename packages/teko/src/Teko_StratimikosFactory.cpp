@@ -62,8 +62,7 @@ class TekoFactoryBuilder
 StratimikosFactory::StratimikosFactory(
     const Teuchos::RCP<Stratimikos::DefaultLinearSolverBuilder> &builder,
     const Teuchos::RCP<Teko::RequestHandler> &rh)
-    :
-      builder_(builder) {
+    : builder_(builder) {
   setRequestHandler(rh);
 }
 
@@ -112,7 +111,7 @@ void StratimikosFactory::initializePrec(
     Thyra::PreconditionerBase<double> *prec, const Thyra::ESupportSolveUse supportSolveUse) const {
   Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
 
-    initializePrec_Thyra(fwdOpSrc, prec, supportSolveUse);
+  initializePrec_Thyra(fwdOpSrc, prec, supportSolveUse);
 }
 
 void StratimikosFactory::initializePrec_Thyra(

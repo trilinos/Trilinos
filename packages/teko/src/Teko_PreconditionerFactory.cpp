@@ -270,7 +270,6 @@ void PreconditionerFactory::initializePrecFactoryBuilder() {
 
   clone = rcp(new AutoClone<AdaptivePreconditionerFactory>());
   precFactoryBuilder_.addClone("Adaptive", clone);
-
 }
 
 void PreconditionerFactory::getPreconditionerFactoryNames(std::vector<std::string> &names) {

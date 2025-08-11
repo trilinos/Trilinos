@@ -28,8 +28,7 @@ bool supportsUnsymmetric(const std::string& prec_type) {
       prec_type == "RBILUK" ||
       prec_type == "ILUT" ||
       prec_type == "SCHWARZ" ||
-      prec_type == "KRYLOV"
-  ) {
+      prec_type == "KRYLOV") {
     result = true;
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION(

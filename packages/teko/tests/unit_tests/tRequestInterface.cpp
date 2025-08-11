@@ -194,5 +194,4 @@ bool PLCallback::handlesRequest(const Teko::RequestMesg& rm) {
     return false;
 }
 
-TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface) {
-}
+TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface) {}

@@ -104,7 +104,6 @@ class StratimikosFactory : public Thyra::PreconditionerFactoryBase<double> {
   const std::vector<int> &getDecomposition() const { return decomp_; }
 
  private:
-
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
   mutable Teuchos::RCP<Teko::InverseLibrary> invLib_;

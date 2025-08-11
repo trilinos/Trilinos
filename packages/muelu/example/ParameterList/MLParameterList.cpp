@@ -178,7 +178,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
-    }   // if (translatedmuelu)
+    }  // if (translatedmuelu)
 
     success = true;
   }

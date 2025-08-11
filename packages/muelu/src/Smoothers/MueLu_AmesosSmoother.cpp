@@ -10,4 +10,3 @@
 #include <algorithm>
 
 #include "MueLu_ConfigDefs.hpp"
-

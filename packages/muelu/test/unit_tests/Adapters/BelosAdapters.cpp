@@ -144,7 +144,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BelosAdapters, XpetraOp_EpetraMV, Scalar, Loca
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
-
 }
 
 // TEST:
@@ -156,7 +155,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BelosAdapters, BelosMultiVec_BelosMatrix, Scal
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
-
 }
 
 // TEST:

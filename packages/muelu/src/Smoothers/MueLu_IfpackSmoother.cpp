@@ -8,4 +8,3 @@
 // @HEADER
 
 #include "MueLu_ConfigDefs.hpp"
-
