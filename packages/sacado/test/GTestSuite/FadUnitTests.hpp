@@ -236,10 +236,10 @@ UNARY_ASSIGNOP_TEST(FadOpsUnitTest, testTimesEquals, *=)
 UNARY_ASSIGNOP_TEST(FadOpsUnitTest, testDivideEquals, /=)
 
 TYPED_TEST_P(FadOpsUnitTest, testMax) {
-  typedef decltype(this->a_dfad_) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
+  typedef decltype(this->a_dfad_) lFadType;
+  typedef typename Sacado::ScalarType<lFadType>::type lScalarType;
 
-  ScalarType val;
+  lScalarType val;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
@@ -248,7 +248,7 @@ TYPED_TEST_P(FadOpsUnitTest, testMax) {
   auto b_fad = this->b_fad_;
   auto c_fad = this->c_fad_;
 
-  FadType aa_dfad = a_dfad + 1.0;
+  lFadType aa_dfad = a_dfad + 1.0;
   c_dfad = max(aa_dfad, a_dfad);
   COMPARE_VALUES(c_dfad.val(), aa_dfad.val());
   for (int i=0; i<this->n; i++) {
@@ -307,10 +307,10 @@ TYPED_TEST_P(FadOpsUnitTest, testMax) {
 }
 
 TYPED_TEST_P(FadOpsUnitTest, testMin) {
-  typedef decltype(this->a_dfad_) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
+  typedef decltype(this->a_dfad_) lFadType;
+  typedef typename Sacado::ScalarType<lFadType>::type lScalarType;
 
-  ScalarType val;
+  lScalarType val;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
@@ -319,7 +319,7 @@ TYPED_TEST_P(FadOpsUnitTest, testMin) {
   auto b_fad = this->b_fad_;
   auto c_fad = this->c_fad_;
 
-  FadType aa_dfad = a_dfad - 1.0;
+  lFadType aa_dfad = a_dfad - 1.0;
   c_dfad = min(aa_dfad, a_dfad);
   COMPARE_VALUES(c_dfad.val(), aa_dfad.val());
   for (int i=0; i<this->n; i++) {
@@ -377,16 +377,16 @@ TYPED_TEST_P(FadOpsUnitTest, testComposite1) {
 }
 
 TYPED_TEST_P(FadOpsUnitTest, testPlusLR) {
-  typedef decltype(this->a_dfad_) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
+  typedef decltype(this->a_dfad_) lFadType;
+  typedef typename Sacado::ScalarType<lFadType>::type lScalarType;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
   auto a_fad = this->a_fad_;
   auto b_fad = this->b_fad_;
 
-  FadType aa_dfad = a_dfad;
-  FAD::Fad<ScalarType> aa_fad = a_fad;
+  lFadType aa_dfad = a_dfad;
+  FAD::Fad<lScalarType> aa_fad = a_fad;
   aa_dfad = 1.0;
   aa_fad = 1.0;
   aa_dfad = aa_dfad + b_dfad;
@@ -395,16 +395,16 @@ TYPED_TEST_P(FadOpsUnitTest, testPlusLR) {
 }
 
 TYPED_TEST_P(FadOpsUnitTest, testMinusLR) {
-  typedef decltype(this->a_dfad_) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
+  typedef decltype(this->a_dfad_) lFadType;
+  typedef typename Sacado::ScalarType<lFadType>::type lScalarType;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
   auto a_fad = this->a_fad_;
   auto b_fad = this->b_fad_;
 
-  FadType aa_dfad = a_dfad;
-  FAD::Fad<ScalarType> aa_fad = a_fad;
+  lFadType aa_dfad = a_dfad;
+  FAD::Fad<lScalarType> aa_fad = a_fad;
   aa_dfad = 1.0;
   aa_fad = 1.0;
   aa_dfad = aa_dfad - b_dfad;
@@ -413,16 +413,16 @@ TYPED_TEST_P(FadOpsUnitTest, testMinusLR) {
 }
 
 TYPED_TEST_P(FadOpsUnitTest, testTimesLR) {
-  typedef decltype(this->a_dfad_) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
+  typedef decltype(this->a_dfad_) lFadType;
+  typedef typename Sacado::ScalarType<lFadType>::type lScalarType;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
   auto a_fad = this->a_fad_;
   auto b_fad = this->b_fad_;
 
-  FadType aa_dfad = a_dfad;
-  FAD::Fad<ScalarType> aa_fad = a_fad;
+  lFadType aa_dfad = a_dfad;
+  FAD::Fad<lScalarType> aa_fad = a_fad;
   aa_dfad = 2.0;
   aa_fad = 2.0;
   aa_dfad = aa_dfad * b_dfad;
@@ -431,16 +431,16 @@ TYPED_TEST_P(FadOpsUnitTest, testTimesLR) {
 }
 
 TYPED_TEST_P(FadOpsUnitTest, testDivideLR) {
-  typedef decltype(this->a_dfad_) FadType;
-  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
+  typedef decltype(this->a_dfad_) lFadType;
+  typedef typename Sacado::ScalarType<lFadType>::type lScalarType;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
   auto a_fad = this->a_fad_;
   auto b_fad = this->b_fad_;
 
-  FadType aa_dfad = a_dfad;
-  FAD::Fad<ScalarType> aa_fad = a_fad;
+  lFadType aa_dfad = a_dfad;
+  FAD::Fad<lScalarType> aa_fad = a_fad;
   aa_dfad = 2.0;
   aa_fad = 2.0;
   aa_dfad = aa_dfad / b_dfad;
@@ -450,17 +450,17 @@ TYPED_TEST_P(FadOpsUnitTest, testDivideLR) {
 
   // Check various corner cases for pow()
 TYPED_TEST_P(FadOpsUnitTest, testPowConstB) {
-  typedef decltype(this->a_dfad_) FadType;
+  typedef decltype(this->a_dfad_) lFadType;
 
-  FadType a, b, c, cc;
+  lFadType a, b, c, cc;
 
   // Constant b
-  a = FadType(this->n,1.2345);
+  a = lFadType(this->n,1.2345);
   for (int i=0; i<this->n; ++i)
     a.fastAccessDx(i) = this->urand.number();
   b = 3.456;
   c = pow(a, b);
-  cc = FadType(this->n, pow(a.val(),b.val()));
+  cc = lFadType(this->n, pow(a.val(),b.val()));
   for (int i=0; i<this->n; ++i)
     cc.fastAccessDx(i) = b.val()*pow(a.val(),b.val()-1)*a.dx(i);
   COMPARE_FADS(c, cc);
@@ -510,7 +510,7 @@ TYPED_TEST_P(FadOpsUnitTest, testPowConstB) {
   b = 1.0;
   c = pow(a, b);
   cc = a;
-  if (!Sacado::IsStaticallySized<FadType>::value) {
+  if (!Sacado::IsStaticallySized<lFadType>::value) {
     COMPARE_FADS(c, cc);
   }
   c = pow(a, b.val());
@@ -520,7 +520,7 @@ TYPED_TEST_P(FadOpsUnitTest, testPowConstB) {
   b = 2.0;
   c = pow(a, b);
   cc = a*a;
-  if (!Sacado::IsStaticallySized<FadType>::value) {
+  if (!Sacado::IsStaticallySized<lFadType>::value) {
     COMPARE_FADS(c, cc);
   }
   c = pow(a, b.val());

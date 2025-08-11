@@ -554,10 +554,10 @@ namespace Teuchos {							\
   class BLAS< OrdinalType, FADTYPE<ValueT> > :				\
     public Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT> > {		\
   public:								\
-    BLAS(bool use_default_impl = true,	bool use_dynamic = true,	\
+    BLAS(bool l_use_default_impl = true,	bool use_dynamic = true,	\
 	 OrdinalType static_workspace_size = 0) :			\
       Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT> >(		\
-	use_default_impl, use_dynamic,static_workspace_size) {}		\
+	l_use_default_impl, use_dynamic,static_workspace_size) {}		\
     BLAS(const BLAS& x) :						\
       Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT> >(x) {}		\
     virtual ~BLAS() {}							\
