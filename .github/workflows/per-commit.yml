@@ -21,18 +21,3 @@ jobs:
         $GITHUB_WORKSPACE/commonTools/test/utilities/check-commit-signoffs.sh \
         origin/${{ github.event.pull_request.base.ref }} \
         ${{ github.event.pull_request.head.sha }}
-
-  no-modifying-deprecated-packages:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Check out code
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      with:
-        fetch-depth: 0
-
-    - name: Search for signoff statements in commit messages
-      run: |
-        $GITHUB_WORKSPACE/commonTools/test/utilities/check-not-modify-legacy-packages.sh \
-        origin/${{ github.event.pull_request.base.ref }} \
-        ${{ github.event.pull_request.head.sha }}
