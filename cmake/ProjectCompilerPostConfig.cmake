@@ -56,19 +56,21 @@ set(explicitly_disabled_warnings
     inline
 )
 set(upcoming_warnings
+    aggressive-loop-optimizations
     array-bounds=2
     class-memaccess
     dangling-pointer=2
     mismatched-new-delete
     missing-braces
     overloaded-virtual=1
+    pessimizing-move
+    range-loop-construct
     shadow
     unused-but-set-variable
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
     address
-    aggressive-loop-optimizations
     aligned-new
     array-compare
     bool-compare
@@ -119,9 +121,7 @@ set(promoted_warnings
     openmp-simd
     packed-not-aligned
     parentheses
-    pessimizing-move
     pointer-sign
-    range-loop-construct
     reorder
     restrict
     return-type
