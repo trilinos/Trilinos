@@ -152,9 +152,9 @@ namespace Teuchos {
     typedef Sacado::Tay::Taylor<ValueT> TayType;
     typedef ValueTypeSerializer<Ordinal,ValueT> ValueSerializer;
     typedef Sacado::Tay::SerializerImp< Ordinal,TayType,ValueSerializer> Base;
-    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs,
-                        Ordinal sz = 0) :
-      Base(vs, sz) {}
+    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& avs,
+                        Ordinal asz = 0) :
+      Base(avs, asz) {}
   };
 }
 #endif

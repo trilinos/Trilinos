@@ -51,7 +51,7 @@ void TYPE_CHAIN_A(Teuchos::FancyOStream &out) {
 
   T b;
   // double_type d; // unused
-  out << Teuchos::typeName (b);
+  out << Teuchos::typeName (&b);
   if (! std::is_same_v<T, double_type>) {
     out << " -> ";
     TYPE_CHAIN_A<double_type>(out);
@@ -64,7 +64,7 @@ void TYPE_CHAIN_D(Teuchos::FancyOStream &out) {
 
   T b;
   // half_type d; // unused
-  out << Teuchos::typeName (b);
+  out << Teuchos::typeName (&b);
 
   if (! std::is_same_v<T, half_type>) {
     out << " -> ";
