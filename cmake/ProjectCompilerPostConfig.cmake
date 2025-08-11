@@ -1,14 +1,6 @@
 tribits_get_package_enable_status(Kokkos  KokkosEnable "")
 
 
-macro(disable_warnings_for_deprecated_packages)
-    message(STATUS "Disabling all warnings/errors for deprecated packages")
-    foreach(package ${DEPRECATED_PACKAGES})
-        set(${package}_CXX_FLAGS "-w ${${package}_CXX_FLAGS}")
-    endforeach()
-endmacro()
-
-
 macro(enable_warnings warnings)
     message(STATUS "Trilinos warnings enabled: ${warnings}")
     foreach(warning ${warnings})
@@ -196,12 +188,10 @@ if("${Trilinos_WARNINGS_MODE}" STREQUAL "WARN")
     enable_warnings("${upcoming_warnings}")
     filter_valid_warnings_as_errors("${promoted_warnings}" promoted_warnings)
     enable_errors("${promoted_warnings}")
-    disable_warnings_for_deprecated_packages()
 elseif("${Trilinos_WARNINGS_MODE}" STREQUAL "ERROR")
     filter_valid_warnings_as_errors("${promoted_warnings}" promoted_warnings)
     filter_valid_warnings_as_errors("${upcoming_warnings}" upcoming_warnings)
     enable_errors("${promoted_warnings};${upcoming_warnings}")
-    disable_warnings_for_deprecated_packages()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
