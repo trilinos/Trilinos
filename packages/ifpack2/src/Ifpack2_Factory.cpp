@@ -29,7 +29,7 @@ bool supportsUnsymmetric(const std::string& prec_type) {
       prec_type == "ILUT" ||
       prec_type == "SCHWARZ" ||
       prec_type == "KRYLOV"
-#ifdef HAVE_IFPACK_HYPRE
+#ifdef HAVE_IFPACK2_HYPRE
       || prec_type == "HYPRE"
 #endif
   ) {
