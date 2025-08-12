@@ -29,6 +29,8 @@ public:
   ~TestCase1();
 
   bool checkTransformedProblem( Problem_t const * transformedProblem ) const;
+
+  bool checkAfterFwdRvs( Problem_t const * originalProblem ) const;
 };
 
 #include "TestCase1_def.hpp"

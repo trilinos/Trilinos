@@ -26,13 +26,15 @@ public:
   TestCaseBase() = delete;
 
   TestCaseBase( Teuchos::RCP<Teuchos::Comm<int> const> comm
-              , global_size_t const globalNumRows
-              , global_size_t const globalNumCols
-              , global_size_t const rowIndexBase
-              , global_size_t const colIndexBase
-              , global_size_t const maxNnzPerRow
-              , global_size_t const globalNumNnz
-              , Scalar_t      const frobNorm
+              , global_size_t         const   globalNumRows
+              , global_size_t         const   globalNumCols
+              , global_size_t         const   rowIndexBase
+              , global_size_t         const   colIndexBase
+              , global_size_t         const   maxNnzPerRow
+              , global_size_t         const   globalNumNnz
+              , Scalar_t              const   frobNorm
+              , std::vector<Scalar_t> const & lhsNorms2
+              , std::vector<Scalar_t> const & rhsNorms2
               );
 
   TestCaseBase( TestCaseBase<Scalar_t, LocalId_t, GlobalId_t, Node_t> const & source ) = delete;
@@ -46,14 +48,23 @@ public:
   virtual bool checkTransformedProblem( Problem_t const * transformedProblem ) const = 0;
     
 protected:
-  void baseInstantiateLinearProblem( std::string const & inputFileName );
+  void baseInstantiateLinearProblem( std::string const & matInputFileName
+                                   , std::string const & lhsInputFileName
+                                   , std::string const & rhsInputFileName
+                                   );
 
-  bool internalBasicChecks_beforeOrAfterTransform( Problem_t   const * problem
-                                                 , std::string const & caseString
-                                                 , bool              & solverMapTransformationWouldChangeMatrixMaps
-                                                 ) const;
+  bool baseCheckBeforeOrAfterTransform( Problem_t   const * problem
+                                      , std::string const & caseString
+                                      , bool              & solverMapTransformationWouldChangeMatrixMaps
+                                      ) const;
 
   bool baseCheckTransformedProblem( Problem_t const * transformedProblem ) const;
+
+  bool baseCheckAfterFwdRvs( Problem_t const * originalProblem ) const;
+
+  bool baseCheckMatricesAreEqual( Matrix_t const & mat1
+                                , Matrix_t const & mat2
+                                ) const;
 
   Teuchos::RCP< const Teuchos::Comm<int> > m_comm;
   int const m_numRanks;
@@ -67,12 +78,15 @@ protected:
 
   global_size_t const m_maxNnzPerRow;
   global_size_t const m_globalNumNnz;
-  Scalar_t      const m_frobNorm;
 
-  std::unique_ptr< Map_t>          m_rowMap;
-  std::unique_ptr< Map_t>          m_colMap;
-  std::unique_ptr< Map_t>          m_domainMap;
-  std::unique_ptr< Map_t>          m_rangeMap;
+  Scalar_t              const m_frobNorm;
+  std::vector<Scalar_t> const m_lhsNorms2;
+  std::vector<Scalar_t> const m_rhsNorms2;
+
+  std::unique_ptr< Map_t >         m_rowMap;
+  std::unique_ptr< Map_t >         m_colMap;
+  std::unique_ptr< Map_t >         m_domainMap;
+  std::unique_ptr< Map_t >         m_rangeMap;
   std::unique_ptr< Matrix_t >      m_matrix;
   std::unique_ptr< MultiVector_t > m_lhs;
   std::unique_ptr< MultiVector_t > m_rhs;
@@ -80,7 +94,7 @@ protected:
   Teuchos::RCP< MultiVector_t >    m_lhsRCP;
   Teuchos::RCP< MultiVector_t >    m_rhsRCP;
   std::unique_ptr< Problem_t >     m_linearProblem;
-  bool                             m_mapsShallChange;
+  bool                             m_matrixMapsShallChange;
 };
 
 #include "TestCaseBase_def.hpp"

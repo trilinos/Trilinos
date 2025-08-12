@@ -32,7 +32,8 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SolverMap_CrsMatrix()
-  : newColMap_(Teuchos::null)
+  : StructuralSameTypeTransform< CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >()
+  , newColMap_(Teuchos::null)
   , newGraph_ (Teuchos::null)
 {
   // Nothing to do
@@ -52,9 +53,9 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 typename SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NewType
-SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( OriginalType const & orig )
+SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( OriginalType const & origMatrix )
 {
-  return construct(orig);
+  return construct( origMatrix );
 }
 
 template <class Scalar,
@@ -187,6 +188,9 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::construct( Origi
         newMatrix_localIndices[j] = newGraph_localIndices[j];
       }
 
+      // If we use "newMatrix->insertLocalValues()" below, we get the error
+      // "Cannot insert indices with static graph; use replaceLocalValues()
+      // instead".
       newMatrix->replaceLocalValues( i                             // const LocalOrdinal localRow
                                    , numEntries                    // const LocalOrdinal numEnt
                                    , newMatrix_localValues.data()  // const Scalar       inputVals[]

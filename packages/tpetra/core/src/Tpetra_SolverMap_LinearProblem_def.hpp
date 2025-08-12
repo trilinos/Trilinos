@@ -29,6 +29,8 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 SolverMap_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SolverMap_LinearProblem()
+  : StructuralSameTypeTransform< LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >()
+  , solverMapCrsMatrixTrans_()
 {
   // Nothing to do
 }
@@ -48,17 +50,17 @@ template <class Scalar,
           class Node>
 typename SolverMap_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NewType
 SolverMap_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-operator()( OriginalType const & orig )
+operator()( OriginalType const & origProblem )
 {
   using mv_t = MultiVector  <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using cm_t = CrsMatrix    <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using lp_t = LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-  this->origObj_ = orig;
+  this->origObj_ = origProblem;
 
-  cm_t * oldMatrix = dynamic_cast<cm_t *>(orig->getMatrix().get());
-  Teuchos::RCP<mv_t> oldRHS    = orig->getRHS();
-  Teuchos::RCP<mv_t> oldLHS    = orig->getLHS();
+  cm_t * oldMatrix = dynamic_cast<cm_t *>(origProblem->getMatrix().get());
+  Teuchos::RCP<mv_t> oldRHS    = origProblem->getRHS();
+  Teuchos::RCP<mv_t> oldLHS    = origProblem->getLHS();
   Teuchos::RCP<cm_t> newMatrix = solverMapCrsMatrixTrans_( Teuchos::rcp<cm_t>(oldMatrix, false) );
 
   if (newMatrix.get() == oldMatrix) {

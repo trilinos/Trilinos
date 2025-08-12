@@ -10,6 +10,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverMapTransformFileCopies
-  SOURCE_FILES matA1.txt
+  SOURCE_FILES matA1.txt lhs1.txt rhs1.txt
   EXEDEPS SolverMapTransform_UnitTests
   )

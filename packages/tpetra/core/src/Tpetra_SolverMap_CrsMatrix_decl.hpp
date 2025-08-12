@@ -46,10 +46,10 @@ using OriginalType = typename StructuralSameTypeTransform< CrsMatrix<Scalar, Loc
   ///
   /** Constructs fixed view of CrsMatrix as necessary.
    */
-  NewType operator()( OriginalType const & orig );
+  NewType operator()( OriginalType const & origMatrix );
 
 private:
-  NewType construct( OriginalType orig );
+  NewType construct( OriginalType origMatrix );
 
   // Avoid warning about "hidden overloaded virtual function"
   using StructuralSameTypeTransform< CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::construct;

@@ -22,15 +22,20 @@ TestCase1<Scalar_t, LocalId_t, GlobalId_t, Node_t>::TestCase1( Teuchos::RCP<Teuc
                                                          , 0  // colIndexBase
                                                          , 5  // maxNnzPerRow
                                                          , 43 // globalNumNnz
-                                                         , 4.940647893865e+00 // frobNorm
+                                                         , 4.940647893865e+00                       // frobNorm
+                                                         , {1.000000073665e+00, 1.000000073665e+00} // lhsNorms2
+                                                         , {1.000000075938e+00, 1.000000075938e+00} // rhsNorms2
                                                          )
 {
-  this->baseInstantiateLinearProblem("matA1.txt");
+  this->baseInstantiateLinearProblem( "matA1.txt"
+                                    , "lhs1.txt"
+                                    , "rhs1.txt"
+                                    );
 
-  this->internalBasicChecks_beforeOrAfterTransform( this->m_linearProblem.get()
-                                                  , "Case1_original"
-                                                  , this->m_mapsShallChange
-                                                  );
+  this->baseCheckBeforeOrAfterTransform( this->m_linearProblem.get()   // Input
+                                       , "Case1_original"              // Input
+                                       , this->m_matrixMapsShallChange // Output
+                                       );
 }
 
 template< class Scalar_t, class LocalId_t, class GlobalId_t, class Node_t > 
@@ -44,6 +49,13 @@ bool
 TestCase1<Scalar_t, LocalId_t, GlobalId_t, Node_t>::checkTransformedProblem( Problem_t const * transformedProblem ) const
 {
   return this->baseCheckTransformedProblem( transformedProblem );
+}
+
+template< class Scalar_t, class LocalId_t, class GlobalId_t, class Node_t > 
+bool
+TestCase1<Scalar_t, LocalId_t, GlobalId_t, Node_t>::checkAfterFwdRvs( Problem_t const * originalProblem ) const
+{
+  return this->baseCheckAfterFwdRvs( originalProblem );
 }
 
 #endif // TPETRA_CORE_TEST_SOLVER_MAP_TRANSFORM_TEST_CASE_1_DEF_HPP

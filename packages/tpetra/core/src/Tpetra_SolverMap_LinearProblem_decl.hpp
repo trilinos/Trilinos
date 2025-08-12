@@ -46,7 +46,7 @@ using OriginalType = typename StructuralSameTypeTransform< LinearProblem<Scalar,
   ///
   /** Constructs "fixed" Tpetra::LinearProblem
    */
-  NewType operator()( OriginalType const & orig );
+  NewType operator()( OriginalType const & origProblem );
 
 private:
   SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> solverMapCrsMatrixTrans_;
