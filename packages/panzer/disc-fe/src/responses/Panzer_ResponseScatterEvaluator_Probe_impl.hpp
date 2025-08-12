@@ -30,6 +30,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_ProductVectorBase.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
 #include "Kokkos_ViewFactory.hpp"
@@ -284,7 +285,10 @@ evaluateFields(panzer::Traits::EvalData d)
   Teuchos::ArrayRCP<double> local_dgdx;
   RCP<SpmdVectorBase<double> > dgdx =
     rcp_dynamic_cast<SpmdVectorBase<double> >(this->responseObj_->getGhostedVector());
-    std::cout << "CAST" << std::endl;
+  if (dgdx.is_null()) {
+    auto blocked = rcp_dynamic_cast<Thyra::ProductVectorBase<double>>(this->responseObj_->getGhostedVector());
+    dgdx = rcp_dynamic_cast<SpmdVectorBase<double> >(blocked->getNonconstVectorBlock(0));
+  }
   // TODO BWR SEEMS TO BE FAILING HERE
   dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
   std::cout << " DGDX FOO " << std::endl;
