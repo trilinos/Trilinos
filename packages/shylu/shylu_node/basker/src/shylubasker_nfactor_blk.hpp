@@ -106,7 +106,9 @@ namespace BaskerNS
     void operator()(Int kid) const
     #endif
     {
+      #ifdef BASKER_KOKKOS
       Int kid = thread.league_rank();
+      #endif
       if(thread_start(kid) != BASKER_MAX_IDX)
       {
         #ifdef BASKER_DEBUG_NFACTOR_BLK
@@ -831,7 +833,9 @@ namespace BaskerNS
           #ifdef BASKER_DEBUG_NFACTOR_BLK
           printf("Zeroing element: %d \n", j);
           #endif
-#ifdef VERSION_1
+#ifdef SHYLU_BASKER_WORKER_THREAD_VERSION_1
+          // X(maxindex) store pivot val,
+          // which is also stored as the last entry of U
           if (j != maxindex)
 #endif
           {
@@ -862,27 +866,21 @@ namespace BaskerNS
 
         xnnz = 0;
         top = ws_size;
-
-        //L.col_ptr(k) = cu_ltop;
         L.col_ptr(k+1) = lnnz;
-        //cu_ltop = lnnz;
 
-        //U.col_ptr(k) = cu_utop;
         if (team_size > 1) {
           if (k+1 < M.ncol) {
-            U.col_ptr(k+1) = unnz;
-            //U.col_ptr(M.ncol) = k+1; // counter to cordinate with worker threads
+            U.col_ptr(k+1) = unnz; // set U.col_ptr(k+1) before setting check and lettng worker thread use this column
             atomic_check(0) = k+1; // counter to cordinate with worker threads
             //printf( " > %d:%d: U.col_ptr(%d) = %d, U.col_ptr(%d) = %d\n",league_rank,team_rank,M.ncol,U.col_ptr(M.ncol), k+1,U.col_ptr(k+1) ); fflush(stdout);
           } else {
+            // The last column (just set col_ptr(M.ncol) = unnz)
             atomic_check(0) = unnz; // counter to cordinate with worker threads
-            //U.col_ptr(k+1) = unnz; // counter to cordinate with worker threads
             //printf( " > %d:%d: U.col_ptr(%d) = %d\n",league_rank,team_rank, k+1,U.col_ptr(k+1) ); fflush(stdout);
           }
         } else {
           U.col_ptr(k+1) = unnz;
         }
-        //cu_utop = unnz;
 
         #ifdef MY_DEBUG_BASKER
         if (kid == debug_kid) {
@@ -895,7 +893,7 @@ namespace BaskerNS
         t_prune(kid, 0, 0, k, maxindex);
       }
 
-#ifdef VERSION_1
+#ifdef SHYLU_BASKER_WORKER_THREAD_VERSION_1
       // !! Synch threads !!
       thread.team_barrier();
       if (team_rank == worker_thread_id) {
@@ -917,13 +915,14 @@ namespace BaskerNS
         timer1.reset();
         #endif
 
-#ifndef VERSION_1
+#ifndef SHYLU_BASKER_WORKER_THREAD_VERSION_1
         if (team_size > 1) {
-          // worker thread read pivot, and set X(maxindex) to zero
+          // busy-wait for main thread to finish factoring the column
           Int check_k = atomic_check(0);
           while (check_k <= k) {
             check_k = atomic_check(0); //U.col_ptr(M.ncol);
           }
+          // worker thread read pivot, and set X(maxindex) to zero
           pivot = U.val(U.col_ptr(k+1)-1);
         }
         //printf( " -> %d:%d: pivot = %e (col_ptr(%d)=%d, %d)\n",league_rank,team_rank, pivot, M.ncol,U.col_ptr(M.ncol),k); fflush(stdout);
