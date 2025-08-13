@@ -1869,6 +1869,15 @@ Only used when tentative: calculate qr is set to false.</description>
       <description-ML>Number of rows below which we always repartition to a single rank</description-ML>
     </parameter>
 
+    <parameter>
+      <name>repartition: send type</name>
+      <name-ML>repartition: send type</name-ML>
+      <type>string</type>
+      <visible>false</visible>
+      <default>""</default>
+      <description>Tpetra 'Send type' to use in repartitioning</description>
+      <description-ML>Tpetra 'Send type' to use in repartitioning</description-ML>
+    </parameter>
 
   </rebalancing>
 
