@@ -1871,12 +1871,11 @@ Only used when tentative: calculate qr is set to false.</description>
 
     <parameter>
       <name>repartition: send type</name>
-      <name-ML>repartition: send type</name-ML>
       <type>string</type>
       <visible>false</visible>
       <default>""</default>
       <description>Tpetra 'Send type' to use in repartitioning</description>
-      <description-ML>Tpetra 'Send type' to use in repartitioning</description-ML>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
   </rebalancing>
