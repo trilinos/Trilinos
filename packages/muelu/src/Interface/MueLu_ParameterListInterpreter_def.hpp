@@ -1753,6 +1753,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap parts", bool, repartParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: remap num values", int, repartParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: save importer", bool, repartParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: send type", std::string, repartParams);
     repartFactory->SetParameterList(repartParams);
     repartFactory->SetFactory("A", manager.GetFactory("A"));
     repartFactory->SetFactory("number of partitions", manager.GetFactory("number of partitions"));
