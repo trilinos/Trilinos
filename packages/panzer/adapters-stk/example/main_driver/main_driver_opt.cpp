@@ -188,6 +188,18 @@ int main(int argc, char *argv[])
     *out << e.what() << std::endl;
     *out << "************ Caught Exception: End Error Report ************" << std::endl;
     status = -1;
+
+    Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
+    if (true) {
+      Teuchos::StackedTimer::OutputOptions options;
+      options.output_fraction = true;
+      options.output_minmax = false;
+      options.output_histogram = false;
+      options.num_histogram = 5;
+      std::string timing_file_name = "exception_timing.log";
+      std::fstream timing_file{timing_file_name,std::ios::out | std::ios::trunc};
+      Teuchos::TimeMonitor::getStackedTimer()->report(timing_file, Teuchos::DefaultComm<int>::getComm(), options);
+    }
   }
 
   if (status == 0)

@@ -1,6 +1,10 @@
 #include "user_app_Utilities.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+#include "Panzer_NodeType.hpp"
+#include "Thyra_TpetraMultiVector.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
+
 namespace ROL {
 
 template <typename Real>
@@ -398,6 +402,9 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
   modelInArgs.set_x(x);
   if (modelInArgs.supports(MEB::IN_ARG_x_dot)) modelInArgs.set_x_dot(x_dot);
   if (modelInArgs.supports(MEB::IN_ARG_t)) modelInArgs.set_t(t);
+  // Need to think about how to set these - seems dependent on response
+  if (modelInArgs.supports(MEB::IN_ARG_alpha)) modelInArgs.set_alpha(0.0);
+  if (modelInArgs.supports(MEB::IN_ARG_beta)) modelInArgs.set_beta(1.0);
   RCP<Thyra::MultiVectorBase<Real> > dgdx, dgdxdot;
   MEB::EDerivativeMultiVectorOrientation dgdx_orientation =
     MEB::DERIV_MV_JACOBIAN_FORM;
@@ -463,6 +470,35 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
       dgdxdot->apply(Thyra::TRANS, *dxdotdp, dgdp.ptr(), Real(1.0), Real(1.0));
     else
       dxdotdp->apply(Thyra::TRANS, *dgdxdot, dgdp.ptr(), Real(1.0), Real(1.0));
+  }
+
+  const bool print_debug = false;
+  if (print_debug) {
+    try {
+      {
+        TEUCHOS_ASSERT(nonnull(dxdp));
+        std::cout << "PRINT_DEBUG type=" << typeid(*dxdp).name() << std::endl;
+        auto block = Teuchos::rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<double>>(dxdp,true)->getMultiVectorBlock(0);
+        auto dxdp_t = Thyra::TpetraOperatorVectorExtraction<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>::getConstTpetraMultiVector(block);
+        auto view = dxdp_t->getLocalViewHost(Tpetra::Access::ReadOnly);
+        for (size_t i=0; i < view.extent(0); ++i)
+          for (size_t j=0; j < view.extent(1); ++j)
+            std::cout << "PRINT_DEBUG dxdp(" << i << "," << j << ") = " << view(i,j) << std::endl;
+      }
+      {
+        TEUCHOS_ASSERT(nonnull(dgdx));
+        std::cout << "PRINT_DEBUG type=" << typeid(*dgdx).name() << std::endl;
+        auto block = Teuchos::rcp_dynamic_cast<const Thyra::DefaultProductMultiVector<double>>(dgdx,true)->getMultiVectorBlock(0);
+        auto dxdp_t = Thyra::TpetraOperatorVectorExtraction<double,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>::getConstTpetraMultiVector(block);
+        auto view = dxdp_t->getLocalViewHost(Tpetra::Access::ReadOnly);
+        for (size_t i=0; i < view.extent(0); ++i)
+          for (size_t j=0; j < view.extent(1); ++j)
+            std::cout << "PRINT_DEBUG dgdx(" << i << "," << j << ") = " << view(i,j) << std::endl;
+      }
+    }
+    catch (std::exception& e) {
+      std::cout << "PRINT_DEBUG " << e.what() << std::endl;
+    }
   }
 }
 
