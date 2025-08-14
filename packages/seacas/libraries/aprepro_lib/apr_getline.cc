@@ -1,6 +1,6 @@
 
 /*
- * Copyright (C) 1991, 1992, 1993, 2021, 2022, 2023, 2024 by Chris Thewalt (thewalt@ce.berkeley.edu)
+ * Copyright (C) 1991, 1992, 1993, 2021, 2022, 2023, 2024, 2025 by Chris Thewalt (thewalt@ce.berkeley.edu)
  *
  * Permission to use, copy, modify, and distribute this software
  * for any purpose and without fee is hereby granted, provided
@@ -119,14 +119,14 @@ namespace {
 #endif
 
 namespace {
-#ifdef __unix__
+#if defined(__unix__) && !defined(NO_TERMIOS)
 #include <termios.h>
   struct termios io_new_termios, io_old_termios;
 #endif
 
   void gl_char_init() /* turn off input echo */
   {
-#ifdef __unix__
+#if defined(__unix__) && !defined(NO_TERMIOS)
     tcgetattr(0, &io_old_termios);
     io_new_termios = io_old_termios;
     io_new_termios.c_iflag &= ~(BRKINT | ISTRIP | IXON | IXOFF);
@@ -140,7 +140,7 @@ namespace {
 
   void gl_char_cleanup() /* undo effects of gl_char_init */
   {
-#ifdef __unix__
+#if defined(__unix__) && !defined(NO_TERMIOS)
     tcsetattr(0, TCSANOW, &io_old_termios);
 #endif /* __unix__ */
   }
@@ -197,7 +197,7 @@ namespace {
   int gl_getc()
   /* get a character without echoing it to screen */
   {
-#ifdef __unix__
+#if defined(__unix__)
     char ch;
     while (read(0, &ch, 1) == -1) {
       if (errno != EINTR) {

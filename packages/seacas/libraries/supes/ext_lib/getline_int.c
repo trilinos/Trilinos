@@ -1,6 +1,5 @@
-
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -30,8 +29,6 @@
 #define __unix__ 1
 #endif
 
-#include <termios.h>
-struct termios gl_new_termios, gl_old_termios;
 #endif
 
 /********************* C library headers ********************************/
@@ -111,9 +108,14 @@ static char *copy_string(char *dest, char const *source, long int elements)
 #include <bios.h>
 #endif
 
+#if defined(__unix__) && !defined(NO_TERMIOS)
+#include <termios.h>
+struct termios gl_new_termios, gl_old_termios;
+#endif
+
 static void gl_char_init(void) /* turn off input echo */
 {
-#ifdef __unix__
+#if defined(__unix__) && !defined(NO_TERMIOS)
   tcgetattr(0, &gl_old_termios);
   gl_new_termios = gl_old_termios;
   gl_new_termios.c_iflag &= ~(BRKINT | ISTRIP | IXON | IXOFF);
@@ -127,7 +129,7 @@ static void gl_char_init(void) /* turn off input echo */
 
 static void gl_char_cleanup(void) /* undo effects of gl_char_init */
 {
-#ifdef __unix__
+#if defined(__unix__) && !defined(NO_TERMIOS)
   tcsetattr(0, TCSANOW, &gl_old_termios);
 #endif /* __unix__ */
 }
@@ -184,11 +186,11 @@ static int gl_getc(void)
 /* get a character without echoing it to screen */
 {
   int c;
-#ifdef __unix__
+#if defined(__unix__)
   char ch;
 #endif
 
-#ifdef __unix__
+#if defined(__unix__)
   while ((c = read(0, &ch, 1)) == -1) {
     if (errno != EINTR)
       break;

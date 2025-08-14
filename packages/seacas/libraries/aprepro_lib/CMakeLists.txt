@@ -22,6 +22,10 @@ TRIBITS_INCLUDE_DIRECTORIES(
 option(GENERATE_FLEX_FILES "Generate source files using flex" OFF)
 option(GENERATE_BISON_FILES "Generate source files using bison" OFF)
 
+if(TPL_ENABLE_CUDA)
+SET_SOURCE_FILES_PROPERTIES(apr_getline.cc PROPERTIES COMPILE_DEFINITIONS NO_TERMIOS=1)
+endif()
+
 if(GENERATE_BISON_FILES)
   set(BISON_LIB_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/apr_parser.cc)
 else()
