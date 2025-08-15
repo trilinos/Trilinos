@@ -893,7 +893,7 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
   std::string levelSuffix  = " (level=" + toString(startLevel) + ")";
   std::string levelSuffix1 = " (level=" + toString(startLevel + 1) + ")";
 
-  bool useStackedTimer = !Teuchos::TimeMonitor::getStackedTimer().is_null();
+  bool useStackedTimer = !Teuchos::TimeMonitor::stackedTimerNameIsDefault();
 
   RCP<Monitor> iterateTime;
   RCP<TimeMonitor> iterateTime1;

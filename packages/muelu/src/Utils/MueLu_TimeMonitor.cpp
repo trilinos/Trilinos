@@ -40,23 +40,40 @@ TimeMonitor::TimeMonitor(const BaseClass& object, const std::string& msg, MsgTyp
   SetVerbLevel(object.GetVerbLevel());
   SetProcRankVerbose(object.GetProcRankVerbose());
 
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+  useStackedTimer_ = !Teuchos::TimeMonitor::stackedTimerNameIsDefault();
+#else
+  useStackedTimer_ = false;
+#endif
+
   if (IsPrint(timerLevel) &&
       /* disable timer if never printed: */ (IsPrint(RuntimeTimings) || (!IsPrint(NoTimeReport)))) {
+    label_ = cleanupLabel("MueLu: " + msg);
+
     if (!IsPrint(NoTimeReport)) {
+#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+      if (useStackedTimer_) {
+        const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
+        stackedTimer->start(label_);
+        return;
+      }
+#endif
       // TODO: there is no function to register a timer in Teuchos::TimeMonitor after the creation of the timer. But would be useful...
-      timer_ = Teuchos::TimeMonitor::getNewTimer(cleanupLabel("MueLu: " + msg));
+      static std::map<std::string, RCP<Teuchos::Time>> timers;
+      auto it = timers.find(label_);
+      if (it == timers.end()) {
+        timer_         = Teuchos::TimeMonitor::getNewTimer(label_);
+        timers[label_] = timer_;
+      } else {
+        timer_ = it->second;
+      }
     } else {
-      timer_ = rcp(new Teuchos::Time(cleanupLabel("MueLu: " + msg)));
+      timer_ = rcp(new Teuchos::Time(label_));
     }
 
     // Start the timer (this is what is done by Teuchos::TimeMonitor)
-    timer_->start();
     timer_->incrementNumCalls();
-#ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-    const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
-    if (nonnull(stackedTimer))
-      stackedTimer->start(timer_->name());
-#endif
+    timer_->start();
   }
 }  // TimeMonitor::TimeMonitor()
 
@@ -64,13 +81,12 @@ TimeMonitor::TimeMonitor() {}
 
 TimeMonitor::~TimeMonitor() {
   // Stop the timer if present
-  if (timer_ != Teuchos::null) {
-    timer_->stop();
+
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
+  if (useStackedTimer_) {
     try {
       const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
-      if (nonnull(stackedTimer))
-        stackedTimer->stop(timer_->name());
+      stackedTimer->stop(label_);
     } catch (std::runtime_error&) {
       std::ostringstream warning;
       warning << "\n*********************************************************************\n"
@@ -83,7 +99,11 @@ TimeMonitor::~TimeMonitor() {
       std::cout << warning.str() << std::endl;
       Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
     }
+  }
 #endif
+
+  if (timer_ != Teuchos::null) {
+    timer_->stop();
   }
 }  // TimeMonitor::~TimeMonitor()
 
