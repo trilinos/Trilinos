@@ -19,6 +19,7 @@
 #include "Akri_NodeRefiner.hpp"
 #include "Akri_TransitionElementEdgeMarker.hpp"
 #include <Akri_QuadRefiner.hpp>
+#include <Akri_QualityMetric.hpp>
 #include "Akri_TriRefiner.hpp"
 #include "Akri_NodeRefiner.hpp"
 

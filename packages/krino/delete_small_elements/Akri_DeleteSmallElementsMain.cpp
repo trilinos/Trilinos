@@ -7,6 +7,7 @@
 // license that can be found in the LICENSE file.
 
 #include <Akri_MeshHelpers.hpp>
+#include <Kokkos_Core.hpp>
 #include <stk_io/FillMesh.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -112,9 +113,9 @@ static bool delete_small_elements(const DeleteSmallElementsInputData& inputData,
   stk::io::fill_mesh_with_auto_decomp(inputData.meshIn, *bulk);
 
   // delete infinitesimal elements
-  double minEdgeLength, maxEdgeLength, minElementVolume, maxElementVolume;
-  compute_element_quality(*bulk, minEdgeLength, maxEdgeLength, minElementVolume, maxElementVolume);
-  sierra::Env::outputP0() << "Overall mesh size results: minEdgeLength=" << minEdgeLength << ", maxEdgeLength=" << maxEdgeLength << ", minElementVolume=" << minElementVolume << ", maxElementVolume=" << maxElementVolume << std::endl;
+  double minElementVolume, maxElementVolume;
+  compute_element_volume_range(*bulk, minElementVolume, maxElementVolume);
+  sierra::Env::outputP0() << "Overall mesh size results: minElementVolume=" << minElementVolume << ", maxElementVolume=" << maxElementVolume << std::endl;
 
   stk::mesh::Selector blockSelector = meta.universal_part();
   if (inputData.blockNameSpecified)
@@ -130,7 +131,7 @@ static bool delete_small_elements(const DeleteSmallElementsInputData& inputData,
 
   const double minRetainedElementVolume = inputData.minNodalVolumeSpecified ? inputData.minNodalVolume : (inputData.minRelativeNodalVolume*maxElementVolume);
   if (minElementVolume < minRetainedElementVolume)
-    delete_all_entities_using_nodes_with_nodal_volume_below_threshold(*bulk, blockSelector, minRetainedElementVolume);
+    delete_all_entities_using_vertex_nodes_with_nodal_volume_below_threshold(*bulk, blockSelector, minRetainedElementVolume);
   else
     sierra::Env::outputP0() << "All nodes already have nodal volume larger than " << minRetainedElementVolume << "." << std::endl;
 
@@ -168,6 +169,7 @@ static bool run_delete_small_elements(int argc,  char **argv, stk::ParallelMachi
 int main(int argc,  char **argv)
 {
     stk::ParallelMachine comm{stk::parallel_machine_init(&argc, &argv)};
+    Kokkos::initialize(argc, argv);
 
     bool successfullyRun{false};
 
@@ -182,6 +184,7 @@ int main(int argc,  char **argv)
         MPI_Abort(comm, errorCode);
     }
 
+    Kokkos::finalize();
     stk::parallel_machine_finalize();
 
     return successfullyRun ? 0 : 1;

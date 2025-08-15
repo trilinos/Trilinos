@@ -69,8 +69,13 @@ public:
 
   virtual ~CDMesh();
 
-  static bool decomposition_needs_update(const InterfaceGeometry & interfaceGeometry,
-      const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs);
+  static CDMesh & get_decomposed_mesh(stk::mesh::BulkData & mesh);
+  static const CDMesh & get_decomposed_mesh(const stk::mesh::BulkData & mesh);
+  static bool has_decomposed_mesh(const stk::mesh::BulkData & mesh);
+  static CDMesh & create_decomposed_mesh(stk::mesh::BulkData & mesh);
+  static void clear_decomposed_mesh(stk::mesh::BulkData & mesh);
+
+  static bool decomposition_needs_update(const stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry);
   static void handle_possible_failed_time_step( stk::mesh::BulkData & mesh, const int step_count );
   static int decompose_mesh( stk::mesh::BulkData & mesh,
       const InterfaceGeometry & interfaceGeometry,
@@ -84,10 +89,7 @@ public:
   static void prepare_for_resnapping(const stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry);
   void rebuild_after_rebalance_or_failed_step();
 
-  static CDMesh* get_new_mesh() { return the_new_mesh.get(); }
-
   int decompose_mesh(const InterfaceGeometry & interfaceGeometry, const int stashStepCount);
-  static void reset_new_mesh() { the_new_mesh.reset(); }
 
   void snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
     NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
@@ -235,7 +237,7 @@ private:
   void sync_node_scores_on_constrained_nodes();
   void parallel_sync_node_scores_on_shared_nodes();
 
-  bool decomposition_has_changed(const InterfaceGeometry & interfaceGeometry);
+  bool decomposition_has_changed(const InterfaceGeometry & interfaceGeometry) const;
   bool elem_io_part_changed(const ElementObj & elem) const;
   void determine_element_side_parts(const stk::mesh::Entity side, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
   void stash_field_data(const int step_count) const;
@@ -304,8 +306,6 @@ private:
   RefinementSupport & myRefinementSupport;
   typedef std::unordered_map<stk::mesh::EntityId, const SubElementMeshNode*> NodeMap;
   NodeMap mesh_node_map;
-
-  static std::unique_ptr<CDMesh> the_new_mesh;
 
   std::unordered_map<stk::mesh::EntityId, std::vector<stk::mesh::EntityId> > my_periodic_node_id_map;
 

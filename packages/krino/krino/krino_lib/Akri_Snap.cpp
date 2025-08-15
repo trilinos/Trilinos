@@ -611,17 +611,6 @@ static void interpolate_field_component_on_potentially_conflicting_nodes(const s
   }
 }
 
-static stk::math::Vector3d compute_element_parametric_coords_at_location(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Entity element, const stk::math::Vector3d & location)
-{
-  const int dim = mesh.mesh_meta_data().spatial_dimension();
-  std::vector<stk::math::Vector3d> nodeCoords;
-
-  for (auto node : StkMeshEntities{mesh.begin_nodes(element), mesh.end_nodes(element)})
-    nodeCoords.emplace_back(get_vector_field(mesh, coordsField, node, dim));
-
-  return get_parametric_coordinates_of_point(nodeCoords, location);
-}
-
 static void fill_interpolation_nodes_in_element_at_parametric_coords(const stk::mesh::BulkData & mesh,
     const stk::mesh::Entity containingElem,
     const stk::math::Vector3d & containingElementParametricCoords,
@@ -635,23 +624,27 @@ static void fill_interpolation_nodes_in_element_at_parametric_coords(const stk::
   masterElem.shape_fcn(1, containingElementParametricCoords.data(), interpWeights.data());
 }
 
-void fill_interplation_nodes_and_weights_at_location(const stk::mesh::BulkData & mesh,
+void fill_interpolation_nodes_and_weights_for_node(const stk::mesh::BulkData & mesh,
     const stk::mesh::Part & activePart,
-    const FieldRef coordsField,
     const stk::mesh::Entity node,
-    const stk::math::Vector3d & location,
+    const std::function<stk::math::Vector3d(const stk::mesh::BulkData &, const stk::mesh::Entity node)> & get_node_location,
+    const std::function<void(const stk::mesh::BulkData &, const stk::mesh::Entity, std::vector<stk::math::Vector3d> &)> & fill_element_node_locations,
     std::vector<stk::mesh::Entity> & interpNodes,
     std::vector<double> & interpWeights)
 {
   stk::mesh::Entity containingElem;
   stk::math::Vector3d containingElementParametricCoords;
+  std::vector<stk::math::Vector3d> elementNodeCoords;
+
+  const stk::math::Vector3d nodeLocation = get_node_location(mesh, node);
 
   double minSqrDist = std::numeric_limits<double>::max();
   for (auto elem : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
   {
     if (mesh.bucket(elem).member(activePart))
     {
-      const stk::math::Vector3d elemParamCoords = compute_element_parametric_coords_at_location(mesh, coordsField, elem, location);
+      fill_element_node_locations(mesh, elem, elementNodeCoords);
+      const stk::math::Vector3d elemParamCoords = get_parametric_coordinates_of_point(elementNodeCoords, nodeLocation);
       const double elemParamSqrDist = compute_parametric_square_distance(elemParamCoords);
       if (elemParamSqrDist < minSqrDist)
       {
@@ -665,6 +658,30 @@ void fill_interplation_nodes_and_weights_at_location(const stk::mesh::BulkData &
   fill_interpolation_nodes_in_element_at_parametric_coords(mesh, containingElem, containingElementParametricCoords, interpNodes, interpWeights);
 }
 
+std::function<stk::math::Vector3d(const stk::mesh::BulkData &, const stk::mesh::Entity node)>
+build_get_unsnapped_node_location(const unsigned dim, const FieldRef coordsField, const FieldRef snapDisplacements)
+{
+  auto fn = [=](const stk::mesh::BulkData & mesh, const stk::mesh::Entity node)
+  {
+    return get_vector_field(mesh, coordsField, node, dim) - get_vector_field(mesh, snapDisplacements, node, dim);
+  };
+  return fn;
+}
+
+std::function<void(const stk::mesh::BulkData &, const stk::mesh::Entity, std::vector<stk::math::Vector3d> &)>
+build_fill_current_element_node_locations(const unsigned dim, const FieldRef coordsField)
+{
+  auto fn = [=](const stk::mesh::BulkData & mesh, const stk::mesh::Entity elem, std::vector<stk::math::Vector3d> & elemNodeCoords)
+  {
+    const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
+    elemNodeCoords.resize(elemNodes.size());
+
+    for (size_t i=0; i<elemNodes.size(); ++i)
+      fill_vector_from_field(mesh, coordsField, elemNodes[i], dim, elemNodeCoords[i]);
+  };
+  return fn;
+}
+
 static std::vector<InterpolationPoint> build_interpolation_points_for_unsnapping(const stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart, const FieldRef coordsField,  const FieldRef cdfemSnapField, const std::vector<stk::mesh::Entity> & snapNodes)
 {
   FieldRef oldSnapDisplacements = cdfemSnapField.field_state(stk::mesh::StateOld);
@@ -676,12 +693,12 @@ static std::vector<InterpolationPoint> build_interpolation_points_for_unsnapping
   std::vector<InterpolationPoint> interpolationPoints;
   interpolationPoints.reserve(snapNodes.size());
 
+  const auto & get_node_location = build_get_unsnapped_node_location(dim, coordsField, oldSnapDisplacements);
+  const auto & fill_element_node_locations = build_fill_current_element_node_locations(dim, coordsField);
+
   for (auto && node : snapNodes)
   {
-    const stk::math::Vector3d oldSnap = get_vector_field(mesh, oldSnapDisplacements, node, dim);
-    const stk::math::Vector3d currentLoc = get_vector_field(mesh, coordsField, node, dim);
-    const stk::math::Vector3d unsnappedLoc = currentLoc - oldSnap;
-    fill_interplation_nodes_and_weights_at_location(mesh, activePart, coordsField, node, unsnappedLoc, interpNodes, interpWeights);
+    fill_interpolation_nodes_and_weights_for_node(mesh, activePart, node, get_node_location, fill_element_node_locations, interpNodes, interpWeights);
     interpolationPoints.emplace_back(interpNodes, interpWeights);
   }
 

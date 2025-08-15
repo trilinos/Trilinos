@@ -40,6 +40,9 @@ private:
   void build_levelset_facets_if_needed(const stk::mesh::BulkData & mesh) const;
   void build_levelset_facets(const stk::mesh::BulkData & mesh) const;
 
+  void set_node_signs_from_nodal_levelsets(const stk::mesh::BulkData & mesh,
+      const NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
+
   std::vector<LS_Field> myLSFields;
   std::vector<Surface_Identifier> mySurfaceIdentifiers;
   mutable std::vector<std::unique_ptr<FacetedSurfaceBase>> myLSSurfaces;

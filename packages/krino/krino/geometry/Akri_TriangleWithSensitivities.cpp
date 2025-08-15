@@ -13,8 +13,8 @@
 
 #include <stk_math/StkVector.hpp>
 
-namespace krino
-{
+namespace krino {
+namespace TriangleWithSens {
 
 using TriSens = Sacado::Fad::SFad<double,9>;
 using Vector3TriSens = stk::math::Vec<TriSens,3>;
@@ -86,4 +86,5 @@ stk::math::Vector3d area_vector_and_optional_sensitivities(const stk::math::Vect
   return stk::math::Vector3d(areaVectorDx[0].val(), areaVectorDx[1].val(), areaVectorDx[2].val());
 }
 
+} // namespace TriangleWithSens
 } // namespace krino

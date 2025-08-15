@@ -9,7 +9,7 @@
 #ifndef Akri_AnalyticSurfaceInterfaceGeometry_h
 #define Akri_AnalyticSurfaceInterfaceGeometry_h
 
-#include <Akri_DetermineElementSign.hpp>
+#include <Akri_DetermineNodeSign.hpp>
 #include <Akri_InterfaceGeometry.hpp>
 #include <Akri_InterfaceID.hpp>
 #include <Akri_Surface.hpp>
@@ -130,10 +130,11 @@ protected:
   const Phase_Support & get_phase_support() const { return myPhaseSupport; }
   void set_elements_to_intersect_and_prepare_to_compute_with_surfaces(const stk::mesh::BulkData & mesh,
       const std::vector<stk::mesh::Entity> & elementsToIntersect) const;
-  void set_element_signs(const stk::mesh::BulkData & mesh,
-      const std::vector<stk::mesh::Selector> & perSurfaceElementSelector) const;
+
   stk::mesh::Selector get_mesh_parent_element_selector() const;
   std::vector<stk::mesh::Entity> get_mesh_parent_elements(const stk::mesh::BulkData & mesh) const;
+  void set_node_signs(NodeToSignsMap & nodesToSigns) const;
+  void set_node_signs_from_surfaces(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Selector> & perSurfaceElementSelector, const NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
 
 private:
   unsigned get_index_of_surface_with_identifer(const Surface_Identifier surfaceIdentifier) const;
@@ -142,13 +143,12 @@ private:
 
   std::vector<const Surface*> mySurfaces;
   bool myMightHaveInteriorOrFaceCrossings;
-  bool myFlagSurfacesCanComputeSign;
   const stk::mesh::Part & myActivePart;
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;
   std::vector<Surface_Identifier> mySurfaceIdentifiers;
   double myEdgeCrossingTol;
-  mutable ElementToSignsMap myElementsToSigns;
+  mutable NodeToSignsMap myNodesToSigns;
   mutable ElementToDomainMap myUncutElementPhases;
   mutable std::vector<stk::mesh::Entity> myElementsToIntersect;
   mutable std::vector<stk::mesh::Selector> mySurfaceElementSelectors;
