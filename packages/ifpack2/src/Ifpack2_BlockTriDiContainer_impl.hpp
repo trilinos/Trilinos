@@ -1977,6 +1977,9 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
     const auto colmap = g->getColMap();
     const auto dommap = g->getDomainMap();
     TEUCHOS_ASSERT(!(rowmap.is_null() || colmap.is_null() || dommap.is_null()));
+    rowmap->lazyPushToHost();
+    colmap->lazyPushToHost();
+    dommap->lazyPushToHost();
 
 #if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__) && !defined(__SYCL_DEVICE_ONLY__)
     const Kokkos::RangePolicy<host_execution_space> policy(0, nrows);
