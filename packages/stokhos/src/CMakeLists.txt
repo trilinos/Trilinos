@@ -12,7 +12,7 @@ FUNCTION(PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_L
   SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
 ENDFUNCTION(PROCESS_ETI_TEMPLATE)
 
-FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES EXTRA_ETI_CLASSES SRC_DIR BASE_NAME APPEND_BASE DEPLIBS DEPLIBS_OUT)
+FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES EXTRA_ETI_CLASSES EXTRA_ETI_COMPILE_OPTIONS SRC_DIR BASE_NAME APPEND_BASE DEPLIBS DEPLIBS_OUT)
   # Template file name for each cpp file
   string(CONCAT TMPL_FILE ${SRC_DIR} "/" ${BASE_NAME} "_ETI_MP_Vector.tmpl")
   string(TOLOWER "${BASE_NAME}" LOWER_BASE_NAME)
@@ -44,7 +44,14 @@ FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES EXTRA_ETI_CLASSES SRC_D
 
         # Generate cpp file for each CLASS
         set(SRCS "")
+        list(APPEND ETI_CLASSES ${EXTRA_ETI_CLASSES})
         foreach(CLASS ${ETI_CLASSES})
+          if("${CLASS}" IN_LIST EXTRA_ETI_CLASSES)
+            # Set extra eti compile options
+            foreach(EXTRA_ETI_COMPILE_OPTION ${EXTRA_ETI_COMPILE_OPTIONS})
+              set(${EXTRA_ETI_COMPILE_OPTION} "ON")
+            endforeach()
+          endif()
 
           # find spearator of class name and (optional) conditions
           string(FIND ${CLASS} "-" DASHPOS)
@@ -78,13 +85,13 @@ FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES EXTRA_ETI_CLASSES SRC_D
 
           configure_file(${TMPL_FILE} ${CPP_FILE})
           list(APPEND SRCS ${CPP_FILE})
-        endforeach()
 
-        # Add in extra cpp files that we don't generate
-        foreach(CLASS ${EXTRA_ETI_CLASSES})
-          string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS}")
-          string(CONCAT CPP_FILE "${SRC_DIR}" "/" ${BASE_NAME} "_" "${CLASS_FILE_NAME}" "_MP_Vector_" "${ENSEMBLE_SIZE}" "_" "${DEVICE}" ".cpp")
-          list(APPEND SRCS ${CPP_FILE})
+          if("${CLASS}" IN_LIST EXTRA_ETI_CLASSES)
+            # Unset extra eti compile options
+            foreach(EXTRA_ETI_COMPILE_OPTION ${EXTRA_ETI_COMPILE_OPTIONS})
+              unset(${EXTRA_ETI_COMPILE_OPTION})
+            endforeach()
+          endif()
         endforeach()
 
         # Create library for each ensemble size
@@ -102,7 +109,7 @@ FUNCTION(PROCESS_ENSEMBLE_ETI ENSEMBLE_SIZES ETI_CLASSES EXTRA_ETI_CLASSES SRC_D
   set(${DEPLIBS_OUT} ${ADDED_LIBS} PARENT_SCOPE)
 ENDFUNCTION(PROCESS_ENSEMBLE_ETI)
 
-FUNCTION(PROCESS_PCE_ETI ETI_CLASSES EXTRA_ETI_CLASSES SRC_DIR BASE_NAME APPEND_BASE DEPLIBS DEPLIBS_OUT)
+FUNCTION(PROCESS_PCE_ETI ETI_CLASSES EXTRA_ETI_CLASSES EXTRA_ETI_COMPILE_OPTIONS EXTRA_ETI_CLASSES_NOT_USING_CONFIGURE SRC_DIR BASE_NAME APPEND_BASE DEPLIBS DEPLIBS_OUT)
   # Template file name for each cpp file
   string(CONCAT TMPL_FILE ${SRC_DIR} "/" ${BASE_NAME} "_ETI_UQ_PCE.tmpl")
   string(TOLOWER "${BASE_NAME}" LOWER_BASE_NAME)
@@ -130,7 +137,14 @@ FUNCTION(PROCESS_PCE_ETI ETI_CLASSES EXTRA_ETI_CLASSES SRC_DIR BASE_NAME APPEND_
 
       # Generate cpp file for each CLASS
       set(SRCS "")
+      list(APPEND ETI_CLASSES ${EXTRA_ETI_CLASSES})
       foreach(CLASS ${ETI_CLASSES})
+        if("${CLASS}" IN_LIST EXTRA_ETI_CLASSES)
+          # Set extra eti compile options
+          foreach(EXTRA_ETI_COMPILE_OPTION ${EXTRA_ETI_COMPILE_OPTIONS})
+            set(${EXTRA_ETI_COMPILE_OPTION} "ON")
+          endforeach()
+        endif()
 
         # find spearator of class name and (optional) conditions
         string(FIND ${CLASS} "-" DASHPOS)
@@ -164,10 +178,17 @@ FUNCTION(PROCESS_PCE_ETI ETI_CLASSES EXTRA_ETI_CLASSES SRC_DIR BASE_NAME APPEND_
 
         configure_file(${TMPL_FILE} ${CPP_FILE})
         list(APPEND SRCS ${CPP_FILE})
+
+        if("${CLASS}" IN_LIST EXTRA_ETI_CLASSES)
+          # Unset extra eti compile options
+          foreach(EXTRA_ETI_COMPILE_OPTION ${EXTRA_ETI_COMPILE_OPTIONS})
+            unset(${EXTRA_ETI_COMPILE_OPTION})
+          endforeach()
+        endif()
       endforeach()
 
       # Add in extra cpp files that we don't generate
-      foreach(CLASS ${EXTRA_ETI_CLASSES})
+      foreach(CLASS ${EXTRA_ETI_CLASSES_NOT_USING_CONFIGURE})
         string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS}")
         string(CONCAT CPP_FILE "${SRC_DIR}" "/" ${BASE_NAME} "_" "${CLASS_FILE_NAME}" "_UQ_PCE_" "${DEVICE}" ".cpp")
         list(APPEND SRCS ${CPP_FILE})
@@ -833,6 +854,7 @@ IF (Stokhos_ENABLE_Sacado)
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${TPETRA_SD_ETI_CLASSES}"
             ""
+            ""
             "sacado/kokkos/vector/tpetra"
             "Tpetra_SD"
             TRUE
@@ -847,6 +869,7 @@ IF (Stokhos_ENABLE_Sacado)
           "${Stokhos_ETI_Ensemble_Sizes}"
           "${TPETRA_ETI_CLASSES}"
           ""
+          ""
           "sacado/kokkos/vector/tpetra"
           "Tpetra"
           TRUE
@@ -858,6 +881,7 @@ IF (Stokhos_ENABLE_Sacado)
         PROCESS_ENSEMBLE_ETI(
           "${Stokhos_ETI_Ensemble_Sizes}"
           "${TPETRAEXT_ETI_CLASSES}"
+          ""
           ""
           "sacado/kokkos/vector/tpetra"
           "TpetraExt"
@@ -873,12 +897,14 @@ IF (Stokhos_ENABLE_Sacado)
       IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
         # We have manually written cpp files for CrsMatrix
         LIST(REMOVE_ITEM TPETRA_ETI_CLASSES CrsMatrix)
-        SET(EXTRA_TPETRA_ETI_CLASSES
+        SET(TPETRA_ETI_CLASSES_NOT_USING_CONFIGURE
           CrsMatrix
           )
         IF (NOT ("${TPETRA_SD_ETI_CLASSES}" STREQUAL ""))
           PROCESS_PCE_ETI(
             "${TPETRA_SD_ETI_CLASSES}"
+            ""
+            ""
             ""
             "sacado/kokkos/pce/tpetra"
             "Tpetra_SD"
@@ -892,7 +918,9 @@ IF (Stokhos_ENABLE_Sacado)
         SET(STOKHOS_TPETRA_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
         PROCESS_PCE_ETI(
           "${TPETRA_ETI_CLASSES}"
-          "${EXTRA_TPETRA_ETI_CLASSES}"
+          ""
+          ""
+          "${TPETRA_ETI_CLASSES_NOT_USING_CONFIGURE}"
           "sacado/kokkos/pce/tpetra"
           "Tpetra"
           TRUE
@@ -903,6 +931,8 @@ IF (Stokhos_ENABLE_Sacado)
         SET(STOKHOS_TPETRAEXT_DEPS ${STOKHOS_DEPLIBS} ${STOKHOS_TPETRA_DEPLIBS})
         PROCESS_PCE_ETI(
           "${TPETRAEXT_ETI_CLASSES}"
+          ""
+          ""
           ""
           "sacado/kokkos/pce/tpetra"
           "TpetraExt"
@@ -977,6 +1007,7 @@ IF (Stokhos_ENABLE_Sacado)
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${XPETRA_ALL_ETI_CLASSES}"
             ""
+            ""
             "sacado/kokkos/vector/xpetra"
             "Xpetra"
             FALSE
@@ -991,6 +1022,8 @@ IF (Stokhos_ENABLE_Sacado)
         IF(Xpetra_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_PCE_ETI(
             "${XPETRA_ALL_ETI_CLASSES}"
+            ""
+            ""
             ""
             "sacado/kokkos/pce/xpetra"
             "Xpetra"
@@ -1035,6 +1068,7 @@ IF (Stokhos_ENABLE_Sacado)
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${AMESOS2_ETI_CLASSES}"
             ""
+            ""
             "sacado/kokkos/vector/amesos2"
             "Amesos2"
             TRUE
@@ -1077,6 +1111,7 @@ IF (Stokhos_ENABLE_Sacado)
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${IFPACK2_ETI_CLASSES}"
             ""
+            ""
             "sacado/kokkos/vector/ifpack2"
             "Ifpack2"
             TRUE
@@ -1092,6 +1127,8 @@ IF (Stokhos_ENABLE_Sacado)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.cpp)
           PROCESS_PCE_ETI(
             "${IFPACK2_ETI_CLASSES}"
+            ""
+            ""
             ""
             "sacado/kokkos/pce/ifpack2"
             "Ifpack2"
@@ -1131,11 +1168,11 @@ IF (Stokhos_ENABLE_Sacado)
 
       ENDIF()
 
-      LIST(APPEND MUELU_EXTRA_ETI_CLASSES
-        "ScalarDroppingClassical"
-        "ScalarDroppingDistanceLaplacian"
-        "VectorDroppingClassical"
-        "VectorDroppingDistanceLaplacian")
+      LIST(APPEND MUELU_ETI_CLASSES_USING_GROUPED_INSTANTIATION
+        "MueLu::ScalarDroppingClassical"
+        "MueLu::ScalarDroppingDistanceLaplacian"
+        "MueLu::VectorDroppingClassical"
+        "MueLu::VectorDroppingDistanceLaplacian")
 
       IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
         TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/muelu)
@@ -1144,7 +1181,8 @@ IF (Stokhos_ENABLE_Sacado)
           PROCESS_ENSEMBLE_ETI(
             "${Stokhos_ETI_Ensemble_Sizes}"
             "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"
-            "${MUELU_EXTRA_ETI_CLASSES}"
+            "${MUELU_ETI_CLASSES_USING_GROUPED_INSTANTIATION}"
+            "USE_MUELU_INST_S_LO_GO_N_GROUPED_INSTANTIATION"
             "sacado/kokkos/vector/muelu"
             "MueLu"
             FALSE
@@ -1160,7 +1198,9 @@ IF (Stokhos_ENABLE_Sacado)
         IF(MueLu_ENABLE_EXPLICIT_INSTANTIATION)
           PROCESS_PCE_ETI(
             "${MUELU_SC_LO_GO_NO_ETI_CLASSES}"
-            "${MUELU_EXTRA_ETI_CLASSES}"
+            "${MUELU_ETI_CLASSES_USING_GROUPED_INSTANTIATION}"
+            "USE_MUELU_INST_S_LO_GO_N_GROUPED_INSTANTIATION"
+            ""
             "sacado/kokkos/pce/muelu"
             "MueLu"
             FALSE
