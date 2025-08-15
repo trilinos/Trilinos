@@ -66,6 +66,7 @@ initialize(const Teuchos::RCP<WorksetContainer> & wc,
    wkstContainer_ = wc;
    globalIndexer_ = ugi;
    linObjFactory_ = lof;
+   std::cout << std::boolalpha << " I AM INIT " << nonnull(linObjFactory_) << std::endl;
 }
 
 template <typename TraitsT>
@@ -472,6 +473,7 @@ buildResponseEvaluators(
    // fourth build assembly engine from FMB
    ////////////////////////////////////////////////////////////////////////////////
 
+   std::cout << " B4 RE BUILD " << std::boolalpha << nonnull(linObjFactory_) << std::endl;
    AssemblyEngine_TemplateBuilder builder(fmb2_,linObjFactory_); 
    ae_tm2_.buildObjects(builder);
 
@@ -719,6 +721,19 @@ print(std::ostream & os) const
      Sacado::mpl::for_each<typename Response_TemplateManager::types_vector>(Printer(itr->second,os));
      os << std::endl;
    }
+}
+
+template <typename TraitsT>
+template <typename EvalT>
+void ResponseLibrary<TraitsT>::
+writeGraphvizFiles(const std::string& prefix)
+{
+  auto mb = ae_tm2_.template getAsObject<EvalT>()->getManagerBuilder();
+  auto workset_descriptors = mb->getVolumeWorksetDescriptors();
+  for (auto& w : workset_descriptors) {
+    std::string prefix_with_eb_info = prefix+"element_block_"+w.getElementBlock();
+    mb->getVolumeFieldManager(w)->writeGraphvizFile(prefix_with_eb_info);
+  }
 }
 
 }
