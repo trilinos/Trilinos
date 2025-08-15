@@ -39,6 +39,8 @@ class TimeMonitor : public BaseClass {
 
  private:
   RCP<Teuchos::Time> timer_;
+  bool useStackedTimer_;
+  std::string label_;
 };  // class TimeMonitor
 
 }  // namespace MueLu
