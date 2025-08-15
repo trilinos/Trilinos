@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSKERNELS_SIMPLEUTILS_HPP
-#define _KOKKOSKERNELS_SIMPLEUTILS_HPP
+#ifndef KOKKOSKERNELS_SIMPLEUTILS_HPP
+#define KOKKOSKERNELS_SIMPLEUTILS_HPP
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include <type_traits>

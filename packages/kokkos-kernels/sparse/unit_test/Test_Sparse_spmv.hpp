@@ -1013,7 +1013,7 @@ void test_spmv_all_interfaces_light() {
   execution_space space;
   std::vector<execution_space> space_partitions;
   if (space.concurrency() > 1) {
-    space_partitions = Kokkos::Experimental::partition_space(space, 1, 1);
+    space_partitions = Kokkos::Experimental::partition_space(space, std::vector<int>(2, 1));
     space            = space_partitions[1];
   }
 

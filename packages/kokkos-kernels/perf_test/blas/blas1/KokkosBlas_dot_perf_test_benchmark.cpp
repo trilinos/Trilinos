@@ -77,16 +77,11 @@
 
 template <class ExecSpace>
 static void run(benchmark::State& state) {
-  const auto m      = state.range(0);
-  const auto repeat = state.range(1);
+  const auto m = state.range(0);
   // Declare type aliases
   using Scalar   = double;
   using MemSpace = typename ExecSpace::memory_space;
   using Device   = Kokkos::Device<ExecSpace, MemSpace>;
-
-  std::cout << "Running BLAS Level 1 DOT performance experiment (" << ExecSpace::name() << ")\n";
-
-  std::cout << "Each test input vector has a length of " << m << std::endl;
 
   // Create 1D view w/ Device as the ExecSpace; this is an input vector
   // A(view_alloc(WithoutInitializing, "label"), m, n);
@@ -102,36 +97,23 @@ static void run(benchmark::State& state) {
 
   Kokkos::fill_random(x, pool, 10.0);
   Kokkos::fill_random(y, pool, 10.0);
+  ExecSpace space;
 
+  Kokkos::fence();
   for (auto _ : state) {
-    // do a warm up run of dot:
-    KokkosBlas::dot(x, y);
-
-    // The live test of dot:
-    Kokkos::fence();
-    Kokkos::Timer timer;
-
-    for (int i = 0; i < repeat; i++) {
-      KokkosBlas::dot(x, y);
-      ExecSpace().fence();
-    }
-
-    // Kokkos Timer set up
-    double total = timer.seconds();
-    double avg   = total / repeat;
-    // Flops calculation for a 1D matrix dot product per test run;
-    size_t flopsPerRun = (size_t)2 * m;
-    printf("Avg DOT time: %f s.\n", avg);
-    printf("Avg DOT FLOP/s: %.3e\n", flopsPerRun / avg);
-    state.SetIterationTime(timer.seconds());
-
-    state.counters["Avg DOT time (s):"] = benchmark::Counter(avg, benchmark::Counter::kDefaults);
-    state.counters["Avg DOT FLOP/s:"]   = benchmark::Counter(flopsPerRun / avg, benchmark::Counter::kDefaults);
+    KokkosBlas::dot(space, x, y);
+    space.fence();
   }
+  const size_t iterFlop   = (size_t)2 * m;
+  const size_t totalFlop  = iterFlop * state.iterations();
+  state.counters["FLOP"]  = benchmark::Counter(iterFlop);
+  state.counters["FLOPS"] = benchmark::Counter(totalFlop, benchmark::Counter::kIsRate);
 }
 
 BENCHMARK(run<Kokkos::DefaultExecutionSpace>)
     ->Name("KokkosBlas_dot")
-    ->ArgNames({"m", "repeat"})
-    ->Args({100000, 1})
-    ->UseManualTime();
+    ->Unit(benchmark::kMicrosecond)
+    ->UseRealTime()
+    ->ArgName("m")
+    ->RangeMultiplier(10)
+    ->Range(100000, 100000000);

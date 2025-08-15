@@ -53,6 +53,7 @@ Type Requirements
 - the vector of singular values has the following requirements:
 
   - ``Kokkos::is_view_v<SVector> && SVector::rank() == 1 && Kokkos::SpaceAccessibility<ExecutionSpace, typename SVector::memory_space>::accessible``
+  - ``std::is_same_v<typename SVector::array_layout, Kokkos::LayoutStride> && S.span_is_contiguous()`` only contiguous strided spans are allowed.
 
 .. note::
 

@@ -23,11 +23,11 @@ The `Kokkos Ecosystem <https://github.com/kokkos>`_ includes:
      -
 
    * - ``kokkos``
-     - (this library) Programming Model - Parallel Execution and Memory Abstraction
+     - Programming Model - Parallel Execution and Memory Abstraction
      - `GitHub link <https://github.com/kokkos/kokkos>`__
 
    * - ``kokkos-kernels``
-     - Sparse, dense, batched math kernels
+     - (this library) Sparse, dense, batched math kernels
      - `GitHub link <https://github.com/kokkos/kokkos-kernels>`__
 
    * - ``kokkos-tools``

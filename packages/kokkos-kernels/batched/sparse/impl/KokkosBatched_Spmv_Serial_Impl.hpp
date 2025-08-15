@@ -166,9 +166,9 @@ struct SerialSpmv<Trans::NoTranspose> {
     return SerialSpmvInternal::template invoke<
         typename alphaViewType::non_const_value_type, typename ValuesViewType::non_const_value_type,
         typename IntView::non_const_value_type, typename ValuesViewType::array_layout, dobeta>(
-        X.extent(0), X.extent(1), alpha.data(), alpha.stride_0(), values.data(), values.stride_0(), values.stride_1(),
-        row_ptr.data(), row_ptr.stride_0(), colIndices.data(), colIndices.stride_0(), X.data(), X.stride_0(),
-        X.stride_1(), beta.data(), beta.stride_0(), Y.data(), Y.stride_0(), Y.stride_1());
+        X.extent(0), X.extent(1), alpha.data(), alpha.stride(0), values.data(), values.stride(0), values.stride(1),
+        row_ptr.data(), row_ptr.stride(0), colIndices.data(), colIndices.stride(0), X.data(), X.stride(0), X.stride(1),
+        beta.data(), beta.stride(0), Y.data(), Y.stride(0), Y.stride(1));
   }
 
   template <typename ValuesViewType, typename IntView, typename xViewType, typename yViewType, int dobeta>
@@ -223,10 +223,10 @@ struct SerialSpmv<Trans::NoTranspose> {
     return SerialSpmvInternal::template invoke<
         typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type,
         typename ValuesViewType::non_const_value_type, typename IntView::non_const_value_type,
-        typename ValuesViewType::array_layout, dobeta>(
-        X.extent(0), X.extent(1), alpha, values.data(), values.stride_0(), values.stride_1(), row_ptr.data(),
-        row_ptr.stride_0(), colIndices.data(), colIndices.stride_0(), X.data(), X.stride_0(), X.stride_1(), beta,
-        Y.data(), Y.stride_0(), Y.stride_1());
+        typename ValuesViewType::array_layout, dobeta>(X.extent(0), X.extent(1), alpha, values.data(), values.stride(0),
+                                                       values.stride(1), row_ptr.data(), row_ptr.stride(0),
+                                                       colIndices.data(), colIndices.stride(0), X.data(), X.stride(0),
+                                                       X.stride(1), beta, Y.data(), Y.stride(0), Y.stride(1));
   }
 };
 

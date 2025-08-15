@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSCGSIMP_HPP
-#define _KOKKOSCGSIMP_HPP
+#ifndef KOKKOSSPARSE_CGS_IMPL_HPP
+#define KOKKOSSPARSE_CGS_IMPL_HPP
 
 #include "KokkosKernels_Utils.hpp"
 #include <Kokkos_Core.hpp>
@@ -125,8 +125,8 @@ class ClusterGaussSeidel {
     const_scalar_nnz_view_t _adj_vals;
 
     // Input/output vectors, as in Ax = y
-    x_value_array_type _Xvector;
-    y_value_array_type _Yvector;
+    x_value_array_type Xvector_;
+    y_value_array_type Yvector_;
     nnz_lno_persistent_work_view_t _color_adj;
     nnz_lno_persistent_work_view_t _cluster_offsets;
     nnz_lno_persistent_work_view_t _cluster_verts;
@@ -138,14 +138,14 @@ class ClusterGaussSeidel {
     bool _forward_direction;
 
     PSGS(const_lno_row_view_t xadj_, const_lno_nnz_view_t adj_, const_scalar_nnz_view_t adj_vals_,
-         x_value_array_type Xvector_, y_value_array_type Yvector_, nnz_lno_persistent_work_view_t color_adj_,
+         x_value_array_type Xvector, y_value_array_type Yvector, nnz_lno_persistent_work_view_t color_adj_,
          nnz_lno_persistent_work_view_t cluster_offsets_, nnz_lno_persistent_work_view_t cluster_verts_,
          nnz_scalar_t omega_, scalar_persistent_work_view_t inverse_diagonal_)
         : _xadj(xadj_),
           _adj(adj_),
           _adj_vals(adj_vals_),
-          _Xvector(Xvector_),
-          _Yvector(Yvector_),
+          Xvector_(Xvector),
+          Yvector_(Yvector),
           _color_adj(color_adj_),
           _cluster_offsets(cluster_offsets_),
           _cluster_verts(cluster_verts_),
@@ -159,20 +159,20 @@ class ClusterGaussSeidel {
     void rowApply(nnz_scalar_t* sum, const nnz_lno_t row) const {
       size_type row_begin = _xadj(row);
       size_type row_end   = _xadj(row + 1);
-      nnz_lno_t num_vecs  = _Xvector.extent(1);
+      nnz_lno_t num_vecs  = Xvector_.extent(1);
       for (nnz_lno_t batch_start = 0; batch_start < num_vecs; batch_start += apply_batch_size) {
         nnz_lno_t this_batch_size = apply_batch_size;
         if (batch_start + this_batch_size >= num_vecs) this_batch_size = num_vecs - batch_start;
         // the current batch of columns given by: batch_start, this_batch_size
-        for (nnz_lno_t i = 0; i < this_batch_size; i++) sum[i] = _Yvector(row, batch_start + i);
+        for (nnz_lno_t i = 0; i < this_batch_size; i++) sum[i] = Yvector_(row, batch_start + i);
         for (size_type adjind = row_begin; adjind < row_end; ++adjind) {
           nnz_lno_t col    = _adj(adjind);
           nnz_scalar_t val = _adj_vals(adjind);
-          for (nnz_lno_t i = 0; i < this_batch_size; i++) sum[i] -= val * _Xvector(col, batch_start + i);
+          for (nnz_lno_t i = 0; i < this_batch_size; i++) sum[i] -= val * Xvector_(col, batch_start + i);
         }
         nnz_scalar_t invDiagonalVal = _inverse_diagonal(row);
         for (nnz_lno_t i = 0; i < this_batch_size; i++)
-          _Xvector(row, batch_start + i) += _omega * sum[i] * invDiagonalVal;
+          Xvector_(row, batch_start + i) += _omega * sum[i] * invDiagonalVal;
       }
     }
 
@@ -207,8 +207,8 @@ class ClusterGaussSeidel {
     const_scalar_nnz_view_t _adj_vals;
 
     // X,Y vectors, as in Ax = y
-    x_value_array_type _Xvector;
-    y_value_array_type _Yvector;
+    x_value_array_type Xvector_;
+    y_value_array_type Yvector_;
     nnz_lno_t _color_set_begin;
     nnz_lno_t _color_set_end;
     nnz_lno_persistent_work_view_t _color_adj;
@@ -226,7 +226,7 @@ class ClusterGaussSeidel {
     nnz_scalar_t _omega;
 
     Team_PSGS(const_lno_row_view_t xadj_, const_lno_nnz_view_t adj_, const_scalar_nnz_view_t adj_vals_,
-              x_value_array_type Xvector_, y_value_array_type Yvector_, nnz_lno_t color_set_begin_,
+              x_value_array_type Xvector, y_value_array_type Yvector, nnz_lno_t color_set_begin_,
               nnz_lno_t color_set_end_, nnz_lno_persistent_work_view_t color_adj_,
               nnz_lno_persistent_work_view_t cluster_offsets_, nnz_lno_persistent_work_view_t cluster_verts_,
               scalar_persistent_work_view_t inverse_diagonal_, nnz_lno_t clusters_per_team_,
@@ -234,8 +234,8 @@ class ClusterGaussSeidel {
         : _xadj(xadj_),
           _adj(adj_),
           _adj_vals(adj_vals_),
-          _Xvector(Xvector_),
-          _Yvector(Yvector_),
+          Xvector_(Xvector),
+          Yvector_(Yvector),
           _color_set_begin(color_set_begin_),
           _color_set_end(color_set_end_),
           _color_adj(color_adj_),
@@ -258,13 +258,13 @@ class ClusterGaussSeidel {
             size_type adjind   = row_begin + i;
             nnz_lno_t colIndex = _adj(adjind);
             nnz_scalar_t val   = _adj_vals(adjind);
-            for (int j = 0; j < N; j++) lsum.data[j] += val * _Xvector(colIndex, colStart + j);
+            for (int j = 0; j < N; j++) lsum.data[j] += val * Xvector_(colIndex, colStart + j);
           },
           sum);
       Kokkos::single(Kokkos::PerThread(teamMember), [&]() {
         nnz_scalar_t invDiagonalVal = _inverse_diagonal(row);
         for (int i = 0; i < N; i++) {
-          _Xvector(row, colStart + i) += _omega * (_Yvector(row, colStart + i) - sum.data[i]) * invDiagonalVal;
+          Xvector_(row, colStart + i) += _omega * (Yvector_(row, colStart + i) - sum.data[i]) * invDiagonalVal;
         }
       });
     }
@@ -280,7 +280,7 @@ class ClusterGaussSeidel {
         for (nnz_lno_t jcount = 0; jcount < clusterEnd - clusterBegin; jcount++) {
           nnz_lno_t j        = _is_backward ? (clusterEnd - 1 - jcount) : clusterBegin + jcount;
           nnz_lno_t row      = _cluster_verts(j);
-          nnz_lno_t num_vecs = _Xvector.extent(1);
+          nnz_lno_t num_vecs = Xvector_.extent(1);
           for (nnz_lno_t batch_start = 0; batch_start < num_vecs;) {
             switch (num_vecs - batch_start) {
 #define COL_BATCH_CASE(n)                         \

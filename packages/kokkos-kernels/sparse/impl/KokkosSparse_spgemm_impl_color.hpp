@@ -387,7 +387,6 @@ void KokkosSPGEMM<HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_vie
   nnz_lno_persistent_work_view_t color_xadj;
 
   size_type c_nnz_size = this->handle->get_spgemm_handle()->get_c_nnz();
-  ;
 
   // first we need to transpose the C graph.
   // allocate memory for that.

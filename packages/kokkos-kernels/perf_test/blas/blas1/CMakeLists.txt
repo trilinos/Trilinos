@@ -8,7 +8,4 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
     KokkosBlas_dot_perf_test SOURCES KokkosBlas_dot_perf_test.cpp)
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
-    KokkosBlas_dot_mv_perf_test SOURCES KokkosBlas_dot_mv_perf_test.cpp)
-
-KOKKOSKERNELS_ADD_EXECUTABLE(
     KokkosBlas_team_dot_perf_test SOURCES KokkosBlas_team_dot_perf_test.cpp)
