@@ -69,7 +69,6 @@ namespace
         }
         
         // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
-        auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
         Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
         {
           Intrepid2::Polylib::Serial::JacobiPolynomial(numPoints, inputPoints, jacobiValue, null, i-derivativeOrder, alpha+derivativeOrder, beta+derivativeOrder);

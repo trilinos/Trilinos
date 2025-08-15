@@ -273,11 +273,10 @@ namespace
         if (!valuesMatch)
         {
           pointPassed = false;
-          PointScalar x = inputPointsViewHost(pointOrdinal,0);
           if (op == OPERATOR_VALUE) out << "values";
           else
           {
-            int derivativeOrder = getOperatorOrder(op);
+            derivativeOrder = getOperatorOrder(op);
             if (derivativeOrder == 1)
             {
               out << "first ";
@@ -411,7 +410,6 @@ namespace
         if (!valuesMatch)
         {
           pointPassed = false;
-          double x = inputPointsViewHost(pointOrdinal,0);
           if (op == OPERATOR_VALUE) out << "values";
           else
           {
@@ -535,9 +533,9 @@ namespace
             double alpha = i * 2.0;
             for (int j=1; i+j<=polyOrder; j++)
             {
-              const PointScalar  &x = lambda[2];
+              const PointScalar  &cx = lambda[2];
               const PointScalar   t = 1.0;
-              const OutputScalar jacobiValue = integratedJacobi(x, t, alpha, j);
+              const OutputScalar jacobiValue = integratedJacobi(cx, t, alpha, j);
               expectedValuesViewHost(fieldOrdinalOffset,pointOrdinal) = edgeFunctionValue * jacobiValue;
               fieldOrdinalOffset++;
             }
@@ -611,8 +609,6 @@ namespace
           if (!valuesMatch)
           {
             pointPassed = false;
-            PointScalar x = inputPointsViewHost(pointOrdinal,0);
-            PointScalar y = inputPointsViewHost(pointOrdinal,1);
             if (op == OPERATOR_VALUE) out << "values";
             else
             {
