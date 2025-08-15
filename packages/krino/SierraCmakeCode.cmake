@@ -77,6 +77,78 @@ install(
         INCLUDES DESTINATION include/krino
 )
 
+add_library(krino_quality_metric)
+FILE(GLOB krino_quality_metric_headers krino/quality_metric/*.hpp)
+FILE(GLOB krino_quality_metric_sources krino/quality_metric/*.cpp)
+target_sources(krino_quality_metric PRIVATE ${krino_quality_metric_sources})
+find_package(stk REQUIRED)
+target_link_libraries(krino_quality_metric PUBLIC stk::stk_math)
+target_link_libraries(krino_quality_metric PUBLIC stk::stk_topology)
+target_include_directories(krino_quality_metric PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/quality_metric>
+    $<INSTALL_INTERFACE:include/krino>
+    $<INSTALL_INTERFACE:include/krino/krino/quality_metric>)
+target_sources(krino_quality_metric PUBLIC
+    FILE_SET krino_quality_metric_headers
+    TYPE HEADERS
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES ${krino_quality_metric_headers})
+target_compile_definitions(krino_quality_metric PUBLIC KRINO_BUILT_IN_SIERRA)
+if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+    target_compile_definitions(krino_quality_metric PUBLIC Build64)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    target_compile_options(krino_quality_metric PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    target_compile_options(krino_quality_metric PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
+endif ()
+install(
+    TARGETS krino_quality_metric
+    EXPORT krinoTargets
+    FILE_SET krino_quality_metric_headers
+        DESTINATION include/krino
+        INCLUDES DESTINATION include/krino
+)
+
+add_library(krino_quality_metric_sens)
+FILE(GLOB krino_quality_metric_sens_headers krino/quality_metric_sens/*.hpp)
+FILE(GLOB krino_quality_metric_sens_sources krino/quality_metric_sens/*.cpp)
+target_sources(krino_quality_metric_sens PRIVATE ${krino_quality_metric_sens_sources})
+find_package(stk REQUIRED)
+find_package(Sacado REQUIRED)
+target_link_libraries(krino_quality_metric_sens PUBLIC stk::stk_math)
+target_link_libraries(krino_quality_metric_sens PUBLIC Sacado::all_libs)
+target_link_libraries(krino_quality_metric_sens PUBLIC krino_quality_metric)
+target_include_directories(krino_quality_metric_sens PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/quality_metric_sens>
+    $<INSTALL_INTERFACE:include/krino>
+    $<INSTALL_INTERFACE:include/krino/krino/quality_metric_sens>)
+target_sources(krino_quality_metric_sens PUBLIC
+    FILE_SET krino_quality_metric_sens_headers
+    TYPE HEADERS
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES ${krino_quality_metric_sens_headers})
+target_compile_definitions(krino_quality_metric_sens PUBLIC KRINO_BUILT_IN_SIERRA)
+if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+    target_compile_definitions(krino_quality_metric_sens PUBLIC Build64)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    target_compile_options(krino_quality_metric_sens PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    target_compile_options(krino_quality_metric_sens PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
+endif ()
+install(
+    TARGETS krino_quality_metric_sens
+    EXPORT krinoTargets
+    FILE_SET krino_quality_metric_sens_headers
+        DESTINATION include/krino
+        INCLUDES DESTINATION include/krino
+)
+
 add_library(krino_surface)
 FILE(GLOB krino_surface_headers krino/surface/*.hpp)
 FILE(GLOB krino_surface_sources krino/surface/*.cpp)
@@ -84,6 +156,7 @@ target_sources(krino_surface PRIVATE ${krino_surface_sources})
 target_link_libraries(krino_surface PUBLIC krino_diagwriter)
 target_link_libraries(krino_surface PUBLIC krino_geometry)
 target_link_libraries(krino_surface PUBLIC krino_math_utils)
+target_link_libraries(krino_surface PUBLIC krino_quality_metric)
 find_package(stk REQUIRED)
 target_link_libraries(krino_surface PUBLIC stk::stk_expreval)
 target_include_directories(krino_surface PUBLIC
@@ -257,78 +330,6 @@ install(
     TARGETS krino_mesh_utils
     EXPORT krinoTargets
     FILE_SET krino_mesh_utils_headers
-        DESTINATION include/krino
-        INCLUDES DESTINATION include/krino
-)
-
-add_library(krino_quality_metric)
-FILE(GLOB krino_quality_metric_headers krino/quality_metric/*.hpp)
-FILE(GLOB krino_quality_metric_sources krino/quality_metric/*.cpp)
-target_sources(krino_quality_metric PRIVATE ${krino_quality_metric_sources})
-find_package(stk REQUIRED)
-target_link_libraries(krino_quality_metric PUBLIC stk::stk_math)
-target_link_libraries(krino_quality_metric PUBLIC stk::stk_topology)
-target_include_directories(krino_quality_metric PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/quality_metric>
-    $<INSTALL_INTERFACE:include/krino>
-    $<INSTALL_INTERFACE:include/krino/krino/quality_metric>)
-target_sources(krino_quality_metric PUBLIC
-    FILE_SET krino_quality_metric_headers
-    TYPE HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-    FILES ${krino_quality_metric_headers})
-target_compile_definitions(krino_quality_metric PUBLIC KRINO_BUILT_IN_SIERRA)
-if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
-    target_compile_definitions(krino_quality_metric PUBLIC Build64)
-endif ()
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    target_compile_options(krino_quality_metric PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
-endif ()
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    target_compile_options(krino_quality_metric PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
-endif ()
-install(
-    TARGETS krino_quality_metric
-    EXPORT krinoTargets
-    FILE_SET krino_quality_metric_headers
-        DESTINATION include/krino
-        INCLUDES DESTINATION include/krino
-)
-
-add_library(krino_quality_metric_sens)
-FILE(GLOB krino_quality_metric_sens_headers krino/quality_metric_sens/*.hpp)
-FILE(GLOB krino_quality_metric_sens_sources krino/quality_metric_sens/*.cpp)
-target_sources(krino_quality_metric_sens PRIVATE ${krino_quality_metric_sens_sources})
-find_package(stk REQUIRED)
-find_package(Sacado REQUIRED)
-target_link_libraries(krino_quality_metric_sens PUBLIC stk::stk_math)
-target_link_libraries(krino_quality_metric_sens PUBLIC Sacado::all_libs)
-target_link_libraries(krino_quality_metric_sens PUBLIC krino_quality_metric)
-target_include_directories(krino_quality_metric_sens PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/quality_metric_sens>
-    $<INSTALL_INTERFACE:include/krino>
-    $<INSTALL_INTERFACE:include/krino/krino/quality_metric_sens>)
-target_sources(krino_quality_metric_sens PUBLIC
-    FILE_SET krino_quality_metric_sens_headers
-    TYPE HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-    FILES ${krino_quality_metric_sens_headers})
-target_compile_definitions(krino_quality_metric_sens PUBLIC KRINO_BUILT_IN_SIERRA)
-if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
-    target_compile_definitions(krino_quality_metric_sens PUBLIC Build64)
-endif ()
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    target_compile_options(krino_quality_metric_sens PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
-endif ()
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    target_compile_options(krino_quality_metric_sens PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
-endif ()
-install(
-    TARGETS krino_quality_metric_sens
-    EXPORT krinoTargets
-    FILE_SET krino_quality_metric_sens_headers
         DESTINATION include/krino
         INCLUDES DESTINATION include/krino
 )

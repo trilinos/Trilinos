@@ -14,6 +14,7 @@
 #include <stk_math/StkPlane.hpp>
 #include <Akri_Plane_Intersections.hpp>
 #include <Akri_Segment.hpp>
+#include <Akri_SegmentWithSensitivities.hpp>
 #include <Akri_Triangle.hpp>
 #include <Akri_TriangleWithSensitivities.hpp>
 #include <Akri_UnitTestUtils.hpp>
@@ -98,6 +99,53 @@ namespace analytic_detail
   }
 }
 
+namespace analytic_detail
+{
+stk::math::Vector3d difference_and_sensitivity(const stk::math::Vector3d v0, const stk::math::Vector3d v1, double *dDiff)
+{
+  for(unsigned n=0;n<2;n++)
+    for(unsigned i=0;i<3;i++)
+      for(unsigned j=0;j<3;j++)
+        dDiff[6*i + (3*n+j)] = ((n==0)?(-1.):(1.)) * ((i==j)?(1.):(0.));
+
+  return v1-v0;
+}
+
+double length_and_gradient(const stk::math::Vector3d v0, const stk::math::Vector3d v1, double *dLength)
+{
+  double dDiff[3*2*3];
+  const stk::math::Vector3d diff = difference_and_sensitivity(v0, v1, dDiff);
+
+  const double length = diff.length();
+
+  std::fill_n(dLength, 3*2, 0.0);
+
+  for(unsigned n=0;n<2;n++)
+    for(unsigned i=0;i<3;i++)
+      for(unsigned j=0;j<3;j++)
+        dLength[3*n + j] += diff[i]*dDiff[6*i + (3*n+j)] / length;
+
+  return length;
+}
+
+stk::math::Vector3d normal2d_and_gradient(const stk::math::Vector3d v0, const stk::math::Vector3d v1, double *dNormal)
+{
+  // use 3d calc
+  const stk::math::Vector3d p0(v0[0], v0[1], 0.);
+  const stk::math::Vector3d p1(v1[0], v1[1], 0.);
+  const stk::math::Vector3d p2(v0[0], v0[1], 1.);
+
+  double dNormalAnalytic[27];
+  const stk::math::Vector3d normalAnalytic = analytic_detail::normal_and_gradient(p0, p1, p2, dNormalAnalytic);
+
+  for(unsigned i=0;i<3;i++)
+    for(unsigned j=0;j<6;j++)
+      dNormal[j*3+i] = ((i==2) ? 0. : dNormalAnalytic[j*3+i]);
+
+  return normalAnalytic;
+}
+}
+
 TEST(Triangle_Calcs, Cartesian_normal_and_area)
 {
   const double tol = 1.e-9;
@@ -123,13 +171,13 @@ void expect_matching_area_and_normal_values_and_sensitivities(const stk::math::V
   const double tol = 1.e-9;
 
   double dNormal[27];
-  const stk::math::Vector3d normal = normal_and_optional_sensitivities(v0, v1, v2, dNormal);
+  const stk::math::Vector3d normal = TriangleWithSens::normal_and_optional_sensitivities(v0, v1, v2, dNormal);
 
   double dArea[9];
-  const double area = area_and_optional_sensitivities(v0, v1, v2, dArea);
+  const double area = TriangleWithSens::area_and_optional_sensitivities(v0, v1, v2, dArea);
 
   double dAreaVector[27];
-  const stk::math::Vector3d areaVector = area_vector_and_optional_sensitivities(v0, v1, v2, dAreaVector);
+  const stk::math::Vector3d areaVector = TriangleWithSens::area_vector_and_optional_sensitivities(v0, v1, v2, dAreaVector);
 
   double dNormalAnalytic[27];
   const stk::math::Vector3d normalAnalytic = analytic_detail::normal_and_gradient(v0, v1, v2, dNormalAnalytic);
@@ -212,33 +260,60 @@ TEST(Triangle_Calcs, normal_and_area_performance_check)
       const stk::math::Vector3d pt1(coord(mt), coord(mt), coord(mt));
       const stk::math::Vector3d pt2(coord(mt), coord(mt), coord(mt));
 
-      normal_and_optional_sensitivities(pt0, pt1, pt2, dNormal);
-      area_and_optional_sensitivities(pt0, pt1, pt2, dArea);
+      TriangleWithSens::normal_and_optional_sensitivities(pt0, pt1, pt2, dNormal);
+      TriangleWithSens::area_and_optional_sensitivities(pt0, pt1, pt2, dArea);
     }
   }
   std::cout << "Using FAD, " << numCases << " cases uses time = " << timer.getMetric<stk::diag::CPUTime>().getLap() << std::endl;
 }
 
+void expect_matching_length_and_normal2d_values_and_sensitivities(const stk::math::Vector3d v0, const stk::math::Vector3d v1)
+{
+  const double tol = 1.e-9;
 
-TEST(Triangle_Calcs, normal_and_area_perf_check_B)
+  double dNormal[18];
+  const stk::math::Vector3d normal = SegmentWithSens::normal2d_and_optional_sensitivities(v0, v1, dNormal);
+
+  double dLength[6];
+  const double length = SegmentWithSens::length_and_optional_sensitivities(v0, v1, dLength);
+
+  double dNormalAnalytic[18];
+  const stk::math::Vector3d normalAnalytic = analytic_detail::normal2d_and_gradient(v0, v1, dNormalAnalytic);
+
+  double dLengthAnalytic[9];
+  const double lengthAnalytic = analytic_detail::length_and_gradient(v0, v1, dLengthAnalytic);
+
+  for (unsigned i=0; i<3; ++i)
+  {
+    EXPECT_NEAR(normalAnalytic[i], normal[i], tol);
+
+    for (unsigned j=0; j<6; ++j)
+    {
+      EXPECT_NEAR(dNormalAnalytic[j*3+i], dNormal[j*3+i], tol);
+    }
+  }
+
+  EXPECT_NEAR(lengthAnalytic, length, tol);
+  for (unsigned j=0; j<6; ++j)
+  {
+    EXPECT_NEAR(dLengthAnalytic[j], dLength[j], tol);
+  }
+}
+
+TEST(Segment_Calcs, normal2d_and_length_sens_check)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   const int parallel_rank = stk::parallel_machine_rank(pm);
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
   std::uniform_real_distribution<double> coord(-1., 1.);
 
-  double dnormal[27];
-  double dtwoArea[9];
-
-  const int num_cases = 100000;
+  const int num_cases = 100;
   for (int icase=0; icase<num_cases; ++icase)
   {
-    const stk::math::Vector3d pt0(coord(mt), coord(mt), coord(mt));
-    const stk::math::Vector3d pt1(coord(mt), coord(mt), coord(mt));
-    const stk::math::Vector3d pt2(coord(mt), coord(mt), coord(mt));
+    const stk::math::Vector3d pt0(coord(mt), coord(mt), 0.);
+    const stk::math::Vector3d pt1(coord(mt), coord(mt), 0.);
 
-    analytic_detail::normal_and_gradient(pt0, pt1, pt2, dnormal);
-    analytic_detail::two_area_and_gradient(pt0, pt1, pt2, dtwoArea);
+    expect_matching_length_and_normal2d_values_and_sensitivities(pt0, pt1);
   }
 }
 
