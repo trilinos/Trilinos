@@ -307,7 +307,8 @@ do_time_fad(const size_t m, const size_t n, const size_t p, const size_t nloop,
   perf.flops = m*n*(2+4*p);
   perf.throughput = perf.flops / perf.time / 1.0e9;
 
-#ifndef SACADO_DISABLE_FAD_VIEW_SPEC
+// FIXME: this needs a new way of getting a flattened Kokkos::View from FadView
+#if !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
   if (check) {
     typename ViewTypeA::array_type A_flat = A;
     typename ViewTypeB::array_type b_flat = b;
@@ -362,7 +363,8 @@ do_time_scratch(const size_t m, const size_t n, const size_t p, const size_t nlo
   perf.flops = m*n*(2+4*p);
   perf.throughput = perf.flops / perf.time / 1.0e9;
 
-#ifndef SACADO_DISABLE_FAD_VIEW_SPEC
+// FIXME: this needs a new way of getting a flattened Kokkos::View from FadView
+#if !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
   if (check) {
     typename ViewTypeA::array_type A_flat = A;
     typename ViewTypeB::array_type b_flat = b;

@@ -389,6 +389,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
 using Kokkos::LayoutLeft;
 using Kokkos::LayoutRight;
+
+#ifndef SACADO_DISABLE_FAD_VIEW_SPEC
 typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft> LeftContiguous;
 typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight> RightContiguous;
 
@@ -397,6 +399,11 @@ typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight> RightContiguous;
   VIEW_FAD_TESTS_FLD( F, LayoutRight, D )                               \
   VIEW_FAD_TESTS_FLD( F, LeftContiguous, D )                            \
   VIEW_FAD_TESTS_FLD( F, RightContiguous, D )
+#else
+#define VIEW_FAD_TESTS_FD( F, D )                                       \
+  VIEW_FAD_TESTS_FLD( F, LayoutLeft, D )                                \
+  VIEW_FAD_TESTS_FLD( F, LayoutRight, D )
+#endif
 
 // Full set of atomics only implemented for new design
 #if SACADO_ENABLE_NEW_DESIGN
