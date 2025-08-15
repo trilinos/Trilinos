@@ -483,6 +483,10 @@ public:
     }
   }
 
+  std::string name() {
+    return timer_.get_full_name();
+  }
+
   /**
    * Start the base level timer only
    */
