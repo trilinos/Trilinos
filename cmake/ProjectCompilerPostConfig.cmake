@@ -56,8 +56,15 @@ set(explicitly_disabled_warnings
     inline
 )
 set(upcoming_warnings
+    aggressive-loop-optimizations
+    array-bounds=2
     class-memaccess
+    dangling-pointer=2
+    mismatched-new-delete
     missing-braces
+    overloaded-virtual=1
+    pessimizing-move
+    range-loop-construct
     shadow
     unused-but-set-variable
     uninitialized
@@ -65,10 +72,7 @@ set(upcoming_warnings
 )
 set(promoted_warnings
     address
-    aggressive-loop-optimizations
     aligned-new
-    array-bounds=1
-    array-bounds=2
     array-compare
     bool-compare
     bool-operation
@@ -82,7 +86,6 @@ set(promoted_warnings
     char-subscripts
     comment
     dangling-else
-    dangling-pointer=2
     delete-non-virtual-dtor
     div-by-zero
     duplicate-decl-specifier
@@ -111,19 +114,15 @@ set(promoted_warnings
     memset-transposed-args
     misleading-indentation
     mismatched-dealloc
-    mismatched-new-delete
     missing-attributes
     multistatement-macros
     narrowing
     nonnull
     nonnull-compare
     openmp-simd
-    overloaded-virtual=1
     packed-not-aligned
     parentheses
-    pessimizing-move
     pointer-sign
-    range-loop-construct
     reorder
     restrict
     return-type

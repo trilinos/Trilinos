@@ -416,16 +416,14 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             DistanceFunctorType& distFunctor) {
-  using scalar_type         = Scalar;
-  using local_ordinal_type  = LocalOrdinal;
-  using global_ordinal_type = GlobalOrdinal;
-  using node_type           = Node;
-  using ATS                 = Kokkos::ArithTraits<scalar_type>;
-  using impl_scalar_type    = typename ATS::val_type;
-  using implATS             = Kokkos::ArithTraits<impl_scalar_type>;
-  using magnitudeType       = typename implATS::magnitudeType;
-  using execution_space     = typename Node::execution_space;
-  using range_type          = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
+  using scalar_type        = Scalar;
+  using local_ordinal_type = LocalOrdinal;
+  using ATS                = Kokkos::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using execution_space    = typename Node::execution_space;
+  using range_type         = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
 
   auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1);
   {
@@ -470,17 +468,14 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 getMaxMinusOffDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
                        DistanceFunctorType& distFunctor) {
-  using scalar_type         = Scalar;
-  using local_ordinal_type  = LocalOrdinal;
-  using global_ordinal_type = GlobalOrdinal;
-  using node_type           = Node;
-  using ATS                 = Kokkos::ArithTraits<scalar_type>;
-  using impl_scalar_type    = typename ATS::val_type;
-  using implATS             = Kokkos::ArithTraits<impl_scalar_type>;
-  using magnitudeType       = typename implATS::magnitudeType;
-  using execution_space     = typename Node::execution_space;
-  using range_type          = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
-  using mATS                = Kokkos::ArithTraits<magnitudeType>;
+  using scalar_type        = Scalar;
+  using local_ordinal_type = LocalOrdinal;
+  using ATS                = Kokkos::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using execution_space    = typename Node::execution_space;
+  using range_type         = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
 
   auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1);
   {

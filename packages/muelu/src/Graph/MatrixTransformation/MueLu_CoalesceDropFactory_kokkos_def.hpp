@@ -448,16 +448,16 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
       if (symmetrizeDroppedGraph) {
         auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(*A, boundaryNodes, results);
-        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
       } else {
         auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, no_op);
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, no_op);
       }
     }
 
     if (symmetrizeDroppedGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
     }
   }
   GO numDropped = lclA.nnz() - nnz_filtered;
@@ -537,11 +537,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     filtered_rowptr = rowptr_type("rowptr_coloring_graph", lclA.numRows() + 1);
     if (localizeColoringGraph) {
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
-      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_offrank);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_offrank);
     }
     if (symmetrizeColoringGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
@@ -853,12 +853,12 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       Kokkos::deep_copy(results, KEEP);
 
       auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, no_op);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, no_op);
     }
 
     if (symmetrizeDroppedGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     }
   }
   LocalOrdinal nnz_filtered = nnz.first;
@@ -938,11 +938,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     graph_rowptr    = rowptr_type("rowptr", numNodes + 1);
     if (localizeColoringGraph) {
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
-      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, drop_offrank);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, drop_offrank);
     }
     if (symmetrizeColoringGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
