@@ -135,7 +135,7 @@ namespace BaskerNS
 
  
     BASKER_INLINE
-    int t_nfactor_blk(Int kid);
+    int t_nfactor_blk(const TeamMember &thread);
 
     BASKER_INLINE
     int t_nfactor_blk_inc_lvl(Int kid);
@@ -858,7 +858,7 @@ namespace BaskerNS
     int t_back_solve_offdiag(Int kid,
                              Int blkcol, Int blkrow,
                              Int X_col, Int X_row,
-                             Int k, Int &view_offset,
+                             Int k,
                              ENTRY_1DARRAY x,
                              INT_1DARRAY x_indx,
                              Int x_size, Int x_offset,

@@ -106,9 +106,10 @@ namespace BaskerNS
 
       // -------------------------------------------------------- //
       // -----------------------Domain--------------------------- //
+      Int nworker_threads = (Options.worker_threads ? 2 : 1);
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("Factoring Dom num_threads: %ld \n", (long)num_threads);
+        printf("Factoring Dom num_threads: %ld with %ld worker threads\n", (long)num_threads,(long)nworker_threads);
         //for (int tid = 0; tid < num_threads; tid ++) {
         //  printf( " error[%d] = %d\n",tid,thread_array(tid).error_type );
         //}
@@ -119,7 +120,7 @@ namespace BaskerNS
       Int domain_restart = 0;
       kokkos_nfactor_domain <Int,Entry,Exe_Space>
         domain_nfactor(this);
-      Kokkos::parallel_for(TeamPolicy(num_threads,1), 
+      Kokkos::parallel_for(TeamPolicy(num_threads,nworker_threads),
           domain_nfactor);
       Kokkos::fence();
 
