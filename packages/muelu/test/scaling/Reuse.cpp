@@ -29,8 +29,6 @@
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>  // TODO: move into MueLu.hpp
 
-#include <MueLu_MutuallyExclusiveTime.hpp>
-
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
