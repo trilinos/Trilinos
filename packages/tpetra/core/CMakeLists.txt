@@ -114,6 +114,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_Legacy_Import_Shrink
+  HAVE_TPETRA_LEGACY_IMPORT_SHRINK
+  "Switches reallocDualViewIfNeeded to use the legacy shrink behavior, where a shrink > 2x triggers a realloc"
+  OFF
+  )
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_Threaded_MKL

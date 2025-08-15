@@ -622,7 +622,7 @@ namespace Tpetra {
     }
     using ::Tpetra::Details::reallocDualViewIfNeeded;
     const bool reallocated =
-      reallocDualViewIfNeeded (this->imports_, newSize, "imports");
+      reallocDualViewIfNeeded (this->imports_parentView_,this->imports_, newSize, "imports");
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Finished realloc'ing imports_" << std::endl;
@@ -672,6 +672,7 @@ namespace Tpetra {
     // Reallocate numExportPacketsPerLID_ if needed.
     const bool firstReallocated =
       reallocDualViewIfNeeded (this->numExportPacketsPerLID_,
+                               this->numExportPacketsPerLID_,
                                numExportLIDs,
                                "numExportPacketsPerLID",
                                tooBigFactor,
@@ -683,6 +684,7 @@ namespace Tpetra {
     const bool needFenceBeforeNextAlloc = ! firstReallocated;
     const bool secondReallocated =
       reallocDualViewIfNeeded (this->numImportPacketsPerLID_,
+                               this->numImportPacketsPerLID_,
                                numImportLIDs,
                                "numImportPacketsPerLID",
                                tooBigFactor,
@@ -1757,8 +1759,8 @@ namespace Tpetra {
       std::ostringstream lclErrStrm;
       bool lclSuccess = false;
       try {
-        this->packAndPrepare (src, exportLIDs, this->exports_,
-            this->numExportPacketsPerLID_,
+        this->packAndPrepare (src, exportLIDs, this->exports_parentView_,
+            this->exports_, this->numExportPacketsPerLID_,
             constantNumPackets, space);
         lclSuccess = true;
       }
@@ -1779,8 +1781,8 @@ namespace Tpetra {
           gblErrMsgHeader, *comm);
     }
     else {
-      this->packAndPrepare (src, exportLIDs, this->exports_,
-          this->numExportPacketsPerLID_,
+      this->packAndPrepare (src, exportLIDs, this->exports_parentView_,
+          this->exports_, this->numExportPacketsPerLID_,
           constantNumPackets, space);
     }
   }
@@ -1926,6 +1928,39 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
 }
 // clang-format off
 
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
+    const SrcDistObject &source,
+    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
+        &exportLIDs,
+    Kokkos::DualView<packet_type *, buffer_device_type> & /* exports_parentView */,
+    Kokkos::DualView<packet_type *, buffer_device_type> &exports,
+    Kokkos::DualView<size_t *, buffer_device_type> numPacketsPerLID,
+    size_t &constantNumPackets, const execution_space &space) {
+  /*
+  This is called if the derived class doesn't know how to pack and prepare in
+  an arbitrary execution space instance, but it was asked to anyway.
+  Provide a safe illusion by actually doing the work in the default instance,
+  and syncing the default instance with the provided instance.
+
+  The caller expects
+  1. any work in the provided instance to complete before this.
+  2. This to complete before any following work in the provided instance.
+  */
+
+  // wait for any work from prior operations in the provided instance to
+  // complete
+  space.fence(); // TODO: Details::Spaces::exec_space_wait
+
+  // pack and prepare in the default instance.
+  packAndPrepare(source, exportLIDs, exports, numPacketsPerLID,
+                 constantNumPackets); // default instance
+
+  // wait for the default instance to complete before returning, so any
+  // following work inserted into the provided instance will be done after this
+  execution_space().fence(); // TODO: Details::Spaces::exec_space_wait
+}
+
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1985,6 +2020,29 @@ DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::createPrefix(
   auto comm = map.is_null() ? Teuchos::null : map->getComm();
   return Details::createPrefix(comm.getRawPtr(), className, methodName);
 }
+
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::getSizeOfImports() const {
+  return this->imports_parentView_.view_device().extent(0);
+}
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::getSizeOfExports() const {
+  return this->exports_.view_device().extent(0);
+}
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::clearImports() {
+  this->imports_parentView_.realloc(0);
+  this->imports_ = this->imports_parentView_;
+}
+
+template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::clearExports() {
+  this->exports_.realloc(0);
+}
+
 
 template <class DistObjectType>
 void removeEmptyProcessesInPlace(
