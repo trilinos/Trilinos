@@ -12,6 +12,7 @@
 #include <stk_math/StkVector.hpp>
 #include <Akri_Facet.hpp>
 #include <Akri_Sign.hpp>
+#include <Akri_QualityMetric.hpp>
 
 namespace krino {
 
@@ -66,24 +67,7 @@ static double compute_point_distance_squared(const stk::math::Vector3d &x, const
   return minSqrDist;
 }
 
-template<class FACET>
-stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets)
-{
-  double minSqrDist = std::numeric_limits<double>::max();
-  stk::math::Vector3d closestPt;
-  stk::math::Vector3d facetClosestPt;
-  for ( auto&& facet : nearestFacets )
-  {
-    facet->closest_point(x, facetClosestPt);
-    const double sqrDist = (x-facetClosestPt).length_squared();
-    if (sqrDist < minSqrDist)
-    {
-      minSqrDist = sqrDist;
-      closestPt = facetClosestPt;
-    }
-  }
-  return closestPt;
-}
+
 
 template <class FACET>
 double point_distance_given_nearest_facets(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance)
@@ -132,24 +116,74 @@ std::vector<FacetDistanceQuery<FACET>> build_distance_queries(const stk::math::V
 }
 
 template<class FACET>
-unsigned find_index_of_closest_facet(const std::vector<FacetDistanceQuery<FACET>> & facetDistQueries)
+bool wins_tie_breaker(const FACET & a, const FACET & b)
 {
-  unsigned closest = 0;
-  for ( unsigned index=0; index<facetDistQueries.size(); ++index )
-    if ( facetDistQueries[index].distance_squared() < facetDistQueries[closest].distance_squared() )
-      closest = index;
-  return closest;
+  return is_less_than_in_x_then_y_then_z(a.centroid(), b.centroid());
 }
 
 template<class FACET>
-stk::math::Vector3d compute_pseudo_normal(const std::vector<FacetDistanceQuery<FACET>> & facet_queries, const unsigned nearest)
+bool is_closer(const double sqrDistA, const FACET * a, const double sqrDistB, const FACET * b)
 {
-  const double tol = 1.e-6;
+  // The tie breaker in the test below is to guarantee that the resulting closest facet is independent of the order
+  // in which the facets are stored/traversed.
+  return sqrDistA < sqrDistB ||
+    (sqrDistA == sqrDistB && is_less_than_in_x_then_y_then_z(a->centroid(), b->centroid()));
+}
+
+template<class FACET>
+bool is_closer(const FacetDistanceQuery<FACET> & a, const FacetDistanceQuery<FACET> & b)
+{
+  return is_closer(a.distance_squared(), &a.facet(), b.distance_squared(), &b.facet());
+}
+
+template<class FACET>
+stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets)
+{
+  double minSqrDist = std::numeric_limits<double>::max();
+  const FACET* closestFacet = nullptr;
+  stk::math::Vector3d closestFacetPt;
+  stk::math::Vector3d facetPt;
+  for ( auto&& facet : nearestFacets )
+  {
+    facet->closest_point(x, facetPt);
+    const double sqrDist = (x-facetPt).length_squared();
+    if (is_closer(sqrDist, facet, minSqrDist, closestFacet))
+    {
+      closestFacet = facet;
+      minSqrDist = sqrDist;
+      closestFacetPt = facetPt;
+    }
+  }
+  return closestFacetPt;
+}
+
+template<class FACET>
+const FacetDistanceQuery<FACET> & find_closest_facet(const std::vector<FacetDistanceQuery<FACET>> & facetDistQueries)
+{
+  // The tie breaker in the test below is to guarantee that the resulting closest facet is independent of the order
+  // in which the queries are stored.
+  unsigned closestIndex = 0;
+  for ( unsigned index=1; index<facetDistQueries.size(); ++index )
+    if ( is_closer(facetDistQueries[index], facetDistQueries[closestIndex]) )
+      closestIndex = index;
+  return facetDistQueries[closestIndex];
+}
+
+template<class FACET>
+stk::math::Vector3d compute_pseudo_normal(const std::vector<FacetDistanceQuery<FACET>> & facet_queries, const FacetDistanceQuery<FACET> & closestQuery)
+{
+  constexpr double tol = 1.e-6;
   stk::math::Vector3d pseudo_normal = stk::math::Vector3d::ZERO;
   stk::math::Vector3d average_normal = stk::math::Vector3d::ZERO;
 
-  const stk::math::Vector3d nearest_closest_point = facet_queries[nearest].closest_point();
-  const double nearest_size2 = facet_queries[nearest].facet().mean_squared_edge_length();
+  // NOTE: Because the facets are not sorted here, it is possible that different results can be obtained in the last
+  // digits on procs with different facet order.  Rather than sort the facets, this is managed by using a very
+  // small tolerance to check if the query point is on the nearest facet (sqrTolSoCloseThatItIsOnClosestFacet below).
+  // It is expected that this should make it unnecessary for the pseudo_normal come out to exactly the same value
+  // on all procs.
+
+  const stk::math::Vector3d nearest_closest_point = closestQuery.closest_point();
+  const double nearest_size2 = closestQuery.facet().mean_squared_edge_length();
   unsigned close_count = 0;
   for ( auto&& query : facet_queries )
   {
@@ -183,46 +217,42 @@ stk::math::Vector3d compute_pseudo_normal(const std::vector<FacetDistanceQuery<F
   return (3 == FACET::DIM && close_count > 2) ? pseudo_normal : average_normal;
 }
 
+static bool is_closest_point_on_facet_edge_or_vertex(const stk::math::Vector3d & closestFacetWeights, const int dim)
+{
+  // If the closest_point weights are all larger than this value, then the closest point
+  // is considered to be on the face of the closest facet rather than on the edges of the facet.
+  constexpr double edgeTol = 1.e-6;
+
+  for (int d=0; d<dim; ++d)
+    if (closestFacetWeights[d] < edgeTol)
+      return true;
+  return false;
+}
+
 template<class FACET>
 double compute_point_to_facets_distance_by_average_normal(const stk::math::Vector3d &x, const std::vector<const FACET*> & facets)
 {
-
-  // If the closest_point weights are all larger than this value, then the closest point
-  // is considered to be on the face of the closest facet rather than on the edges of the facet, and
-  // therefore only the closest facet is considered in the distance calculation.  Otherwise, all of the
-  // facets are considered to compute an average normal in order to compute the distance.
-  const double edge_tol = 1.e-6;
-
   const std::vector<FacetDistanceQuery<FACET>> facetDistQueries = build_distance_queries(x, facets);
   STK_ThrowRequireMsg(!facetDistQueries.empty(), "All facets are degenerate in compute_point_to_facets_distance_by_average_normal.");
 
-  const unsigned nearest = find_index_of_closest_facet(facetDistQueries);
+  const FacetDistanceQuery<FACET> & closestQuery = find_closest_facet(facetDistQueries);
+  constexpr double sqrTolSoCloseThatItIsOnClosestFacet = 1.e-18;
 
-  if ( facetDistQueries[nearest].distance_squared() == 0. )
+  if ( closestQuery.distance_squared()/closestQuery.facet().mean_squared_edge_length() < sqrTolSoCloseThatItIsOnClosestFacet )
   {
     return 0.0;
   }
 
-  const stk::math::Vector3d closest_pt_wts = facetDistQueries[nearest].closest_point_weights();
-  const int dim = FACET::DIM;
+  // If closest point is on the facet of the closest facet then only that facet is considered in the distance calculation.
+  // Otherwise, all of the facets are considered to compute an average normal in order to compute the distance.
 
-  bool closest_point_on_edge = false;
-  for (int d=0; d<dim; ++d)
+  if (!is_closest_point_on_facet_edge_or_vertex(closestQuery.closest_point_weights(), FACET::DIM))
   {
-    if (closest_pt_wts[d] < edge_tol)
-    {
-      closest_point_on_edge = true;
-      break;
-    }
+    return closestQuery.signed_distance(x);
   }
 
-  if (!closest_point_on_edge)
-  {
-    return facetDistQueries[nearest].signed_distance(x);
-  }
-
-  const double min_sqr_dist = facetDistQueries[nearest].distance_squared();
-  const stk::math::Vector3d pseudo_normal = compute_pseudo_normal(facetDistQueries, nearest);
+  const double min_sqr_dist = closestQuery.distance_squared();
+  const stk::math::Vector3d pseudo_normal = compute_pseudo_normal(facetDistQueries, closestQuery);
 
   if (pseudo_normal.length_squared() == 0.0)
   {
@@ -232,7 +262,7 @@ double compute_point_to_facets_distance_by_average_normal(const stk::math::Vecto
   }
   else
   {
-    if (Dot(pseudo_normal, x-facetDistQueries[nearest].closest_point()) > 0)
+    if (Dot(pseudo_normal, x-closestQuery.closest_point()) > 0)
     {
       return std::sqrt(min_sqr_dist);
     }
@@ -319,9 +349,9 @@ stk::math::Vector3d compute_pseudo_normal(const stk::math::Vector3d &x, const st
   const std::vector<FacetDistanceQuery<FACET>> facetDistQueries = build_distance_queries(x, nearestFacets);
   STK_ThrowRequireMsg(!facetDistQueries.empty(), "All facets are degenerate in compute_pseudo_normal.");
 
-  const unsigned nearest = find_index_of_closest_facet(facetDistQueries);
+  const FacetDistanceQuery<FACET> & closestQuery = find_closest_facet(facetDistQueries);
 
-  return compute_pseudo_normal(facetDistQueries, nearest);
+  return compute_pseudo_normal(facetDistQueries, closestQuery);
 }
 
 // Explicit template instantiation

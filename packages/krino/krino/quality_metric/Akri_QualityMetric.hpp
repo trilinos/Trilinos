@@ -77,6 +77,8 @@ public:
   virtual double get_acceptable_value_for_metric() const override { return 0.1; }
 };
 
+bool is_less_than_in_x_then_y_then_z(const stk::math::Vector3d& A, const stk::math::Vector3d &B);
+
 }
 
 #endif
