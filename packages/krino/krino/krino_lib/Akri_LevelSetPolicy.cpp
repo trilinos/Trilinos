@@ -55,6 +55,7 @@ static void register_blocks_for_decomposition_by_levelsets(Phase_Support & phase
   DecompositionPackage decomps;
   decomps.add_levelset_decomposition(blocks, namedPhases);
   phaseSupport.decompose_blocks(decomps);
+  phaseSupport.build_decomposed_block_surface_connectivity();
 }
 
 static PhaseVec create_named_phases_for_levelset_per_phase(const unsigned numLevelSets)

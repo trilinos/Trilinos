@@ -31,9 +31,9 @@ update_package() {
   exe git add --all packages/$1
 }
 
-export SIERRA=${SIERRA:-/fgs/$USER/trilinos-snapshot/code}
+export SIERRA=${SIERRA:-/fgs/$USER/projects/code}
 export SIERRA_BRANCH=master
-export TRILINOS=${TRILINOS:-/fgs/$USER/trilinos-snapshot/Trilinos}
+export TRILINOS=${TRILINOS:-/fgs/$USER/projects/Trilinos}
 export TRILINOS_BRANCH=develop
 
 export SNAPSHOT_BRANCH=krino-snapshot
@@ -60,7 +60,8 @@ exe git merge upstream/master
 exe git push origin master
 
 if git branch --list $SNAPSHOT_BRANCH > /dev/null; then
-    git branch -D $SNAPSHOT_BRANCH
+    exe git branch -D $SNAPSHOT_BRANCH
+    exe git push origin --delete $SNAPSHOT_BRANCH
 fi
 exe git checkout -b $SNAPSHOT_BRANCH
 exe git reset --hard upstream/$TRILINOS_BRANCH

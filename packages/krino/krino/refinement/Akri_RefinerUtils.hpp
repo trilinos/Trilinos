@@ -21,7 +21,11 @@ void append_child_elements(const std::array<unsigned,NUMREFINEDPARENTNODES> & pe
     for (std::size_t iSide=0; iSide<NUMSIDES; ++iSide)
     {
       const int childElementSideId = childElementSideIndices[i][iSide];
-      childElemDescs[oldSize + i].sideIds[iSide] = (childElementSideId<0) ? -1 : permutedParentSideOrdinals[childElementSideId];
+      //Buggy nvidia compiler flags this as "integer conversion resulted in a change of sign": childElemDescs[oldSize + i].sideIds[iSide] = (childElementSideId<0) ? -1 : permutedParentSideOrdinals[childElementSideId];
+      if (childElementSideId >= 0)
+        childElemDescs[oldSize + i].sideIds[iSide] = permutedParentSideOrdinals[childElementSideId];
+      else
+        childElemDescs[oldSize + i].sideIds[iSide] = -1;
     }
   }
 }

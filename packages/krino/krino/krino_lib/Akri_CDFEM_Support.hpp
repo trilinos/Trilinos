@@ -119,6 +119,9 @@ public:
   void add_edge_interpolation_field(const FieldRef field);
 
   void set_coords_field(const FieldRef coords_field) { my_coords_field = coords_field; }
+  void setup_levelset_field_stash(const FieldSet &  levelSetFields);
+  const std::map<FieldRef, FieldRef> & get_stashed_levelsets() const { return myStashedLevelSetFields; }
+
   const FieldRef get_coords_field() const { return my_coords_field; }
   const FieldRef get_cdfem_displacements_field() { return my_cdfem_displacements_field; }
   const FieldRef get_cdfem_snap_displacements_field() const { return myCDFEMSnapDisplacementsField; }
@@ -238,6 +241,7 @@ private:
   FieldSet my_element_fields;
   FieldSet mySnapFields;
   FieldSet myLevelSetFields;
+  std::map<FieldRef, FieldRef> myStashedLevelSetFields;
   std::map<std::string, std::string> my_initial_prolongation_field_name_map;
   std::map<FieldRef, FieldRef> my_initial_prolongation_field_map;
   static Edge_Interpolation_Model the_edge_interpolation_model;
