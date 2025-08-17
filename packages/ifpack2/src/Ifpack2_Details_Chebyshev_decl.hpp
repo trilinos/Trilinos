@@ -543,6 +543,15 @@ class Chebyshev : public Teuchos::Describable {
                                          const MV& B,
                                          MV& X);
 
+  void
+  firstIterationWithZeroStartingSolution(MV& Z,
+                                         const ScalarType& alpha,
+                                         const V& D_inv,
+                                         const MV& B,
+                                         MV& X4,
+                                         const ScalarType& beta0,
+                                         MV& X);
+
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   static void
   computeResidual(MV& R, const MV& B, const op_type& A, const MV& X,

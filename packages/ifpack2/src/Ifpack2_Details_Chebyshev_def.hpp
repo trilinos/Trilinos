@@ -1012,6 +1012,29 @@ void Chebyshev<ScalarType, MV>::
                  Teuchos::VERB_MEDIUM);
 }
 
+template <class MV, class V, class Scalar>
+void fused_first_iteration(MV& W,
+                           const Scalar &alpha,
+                           const V &D_inv,
+                           const MV &B,
+                           MV& X) {
+  using execution_space = typename MV::node_type::execution_space;
+  using range_type = Kokkos::RangePolicy<typename MV::local_ordinal_type, execution_space>;
+
+  auto lclX = X.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclW = W.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclD_inv = D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto lclB = B.getLocalViewDevice(Tpetra::Access::ReadOnly);
+
+  Kokkos::parallel_for("Ifpack2::Details_Chebychev::firstIterationWithZeroStartingSolution",
+                       range_type(0, lclX.extent(0)),
+                       KOKKOS_LAMBDA(const typename MV::local_ordinal_type i) {
+    auto t = alpha*lclD_inv(i, 0)*lclB(i, 0);
+    lclW(i, 0) = t;
+    lclX(i, 0) = t;
+  });
+}
+
 template <class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::
     firstIterationWithZeroStartingSolution(MV& W,
@@ -1019,8 +1042,57 @@ void Chebyshev<ScalarType, MV>::
                                            const V& D_inv,
                                            const MV& B,
                                            MV& X) {
-  solve(W, alpha, D_inv, B);  // W = alpha*D_inv*B
-  Tpetra::deep_copy(X, W);    // X = 0 + W
+  if (B.getNumVectors() == 1) {
+    fused_first_iteration(W, alpha, D_inv, B, X);
+  } else {
+    solve(W, alpha, D_inv, B);  // W = alpha*D_inv*B
+    Tpetra::deep_copy(X, W);    // X = 0 + W
+  }
+}
+
+template <class MV, class V, class Scalar>
+void fused_first_iteration(MV& Z,
+                           const Scalar &alpha,
+                           const V &D_inv,
+                           const MV &B,
+                           MV& X4,
+                           const Scalar &beta0,
+                           MV& X) {
+  using execution_space = typename MV::node_type::execution_space;
+  using range_type = Kokkos::RangePolicy<typename MV::local_ordinal_type, execution_space>;
+
+  auto lclX = X.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclX4 = X4.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclZ = Z.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclD_inv = D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto lclB = B.getLocalViewDevice(Tpetra::Access::ReadOnly);
+
+  Kokkos::parallel_for("Ifpack2::Details_Chebychev::firstIterationWithZeroStartingSolution4th",
+                       range_type(0, lclX.extent(0)),
+                       KOKKOS_LAMBDA(const typename MV::local_ordinal_type i) {
+    auto t = alpha*lclD_inv(i, 0)*lclB(i, 0);
+    lclZ(i, 0) = t;
+    lclX4(i, 0) = t;
+    lclX(i, 0) = beta0*t;
+  });
+}
+
+template <class ScalarType, class MV>
+void Chebyshev<ScalarType, MV>::
+  firstIterationWithZeroStartingSolution(MV& Z,
+                                         const ScalarType& alpha,
+                                         const V& D_inv,
+                                         const MV& B,
+                                         MV& X4,
+                                         const ScalarType& beta0,
+                                         MV& X) {
+  if (B.getNumVectors() == 1) {
+    fused_first_iteration(Z, alpha, D_inv, B, X4, beta0, X);
+  } else {
+    solve(Z, alpha, D_inv, B);  // Z := alpha*D_inv*B
+    Tpetra::deep_copy(X4, Z);    // X4 := 0 + Z
+    X.update(beta0, Z, STS::zero()); // X := 0 + beta0 * Z
+  }
 }
 
 template <class ScalarType, class MV>
@@ -1287,17 +1359,13 @@ void Chebyshev<ScalarType, MV>::
     }
     // Z := (4/3 * invEig)*D_inv*(B-A*X4)
     // X4 := X4 + Z
-    ck_->compute(Z, MT(4.0 / 3.0) * invEig, const_cast<V&>(D_inv),
-                 const_cast<MV&>(B), X4, STS::zero());
-
     // X := X + beta[0] * Z
-    X.update(betas[0], Z, STS::one());
+    ck_->compute(Z, MT(4.0 / 3.0) * invEig, const_cast<V&>(D_inv),
+                 const_cast<MV&>(B), X4, X, STS::zero(), betas[0]);
   } else {
     // Z := (4/3 * invEig)*D_inv*B and X := 0 + Z.
-    firstIterationWithZeroStartingSolution(Z, MT(4.0 / 3.0) * invEig, D_inv, B, X4);
-
     // X := 0 + beta * Z
-    X.update(betas[0], Z, STS::zero());
+    firstIterationWithZeroStartingSolution(Z, MT(4.0 / 3.0) * invEig, D_inv, B, X4, betas[0], X);
   }
 
   if (numIters > 1 && ck_.is_null()) {
@@ -1311,11 +1379,9 @@ void Chebyshev<ScalarType, MV>::
 
     // Z := rScale*D_inv*(B - A*X4) + zScale*Z.
     // X4 := X4 + Z
-    ck_->compute(Z, rScale, const_cast<V&>(D_inv),
-                 const_cast<MV&>(B), (X4), zScale);
-
     // X := X + beta[i] * Z
-    X.update(betas[i], Z, STS::one());
+    ck_->compute(Z, rScale, const_cast<V&>(D_inv),
+                 const_cast<MV&>(B), X4, X, zScale, betas[i]);
   }
 }
 
