@@ -42,8 +42,7 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(
 }
 
 //! Initialize from a parameter list
-void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList& pl)
-{
+void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList& pl) {
   Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::initializeFromParameterList", 10);
   Teko_DEBUG_MSG_BEGIN(9);
   DEBUG_STREAM << "Parameter list: " << std::endl;
@@ -135,7 +134,8 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   if (inverses.size() == 0) inverses.push_back(defaultInverse);
 
   // based on parameter type build a strategy
-  invOpsStrategy_ = buildStrategy(strategyStr, inverses, preconditioners, defaultInverse, defaultPrec);
+  invOpsStrategy_ =
+      buildStrategy(strategyStr, inverses, preconditioners, defaultInverse, defaultPrec);
 }
 
 //! for creating the preconditioner factories objects
@@ -154,12 +154,10 @@ CloneFactory<BlockInvDiagonalStrategy> JacobiPreconditionerFactory::strategyBuil
  *          a pointer is returned, otherwise Teuchos::null is returned.
  */
 RCP<BlockInvDiagonalStrategy> JacobiPreconditionerFactory::buildStrategy(
-  const std::string& name,
-  const std::vector<Teuchos::RCP<InverseFactory> > &inverseFactories,
-  const std::vector<Teuchos::RCP<InverseFactory> > &preconditionerFactories,
-  const Teuchos::RCP<InverseFactory> &defaultInverseFact,
-  const Teuchos::RCP<InverseFactory> &defaultPreconditionerFact)
-{
+    const std::string& name, const std::vector<Teuchos::RCP<InverseFactory> >& inverseFactories,
+    const std::vector<Teuchos::RCP<InverseFactory> >& preconditionerFactories,
+    const Teuchos::RCP<InverseFactory>& defaultInverseFact,
+    const Teuchos::RCP<InverseFactory>& defaultPreconditionerFact) {
   Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::buildStrategy", 0);
 
   // initialize the defaults if necessary
@@ -172,8 +170,9 @@ RCP<BlockInvDiagonalStrategy> JacobiPreconditionerFactory::buildStrategy(
   DEBUG_STREAM << std::endl;
   Teko_DEBUG_MSG_END()
 
-  // request the preconditioner factory from the CloneFactory
-  RCP<BlockInvDiagonalStrategy> strategy = strategyBuilder_.build(name);
+      // request the preconditioner factory from the CloneFactory
+      RCP<BlockInvDiagonalStrategy>
+          strategy = strategyBuilder_.build(name);
 
   if (strategy == Teuchos::null) {
     Teko_DEBUG_MSG("Warning: Could not build BlockInvDiagonalStrategy named \""
@@ -182,7 +181,8 @@ RCP<BlockInvDiagonalStrategy> JacobiPreconditionerFactory::buildStrategy(
   }
 
   // now that inverse library has been set, pass in the parameter list
-  strategy->initialize(inverseFactories, preconditionerFactories, defaultInverseFact, defaultPreconditionerFact);
+  strategy->initialize(inverseFactories, preconditionerFactories, defaultInverseFact,
+                       defaultPreconditionerFact);
 
   return strategy;
 }
@@ -200,7 +200,8 @@ RCP<BlockInvDiagonalStrategy> JacobiPreconditionerFactory::buildStrategy(
  * \param[in] name String to associate with this object
  * \param[in] clone Pointer to Cloneable object
  */
-void JacobiPreconditionerFactory::addStrategy(const std::string& name, const RCP<Cloneable>& clone) {
+void JacobiPreconditionerFactory::addStrategy(const std::string& name,
+                                              const RCP<Cloneable>& clone) {
   Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::addStrategy", 10);
 
   // initialize the defaults if necessary
