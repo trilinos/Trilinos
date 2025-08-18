@@ -143,7 +143,7 @@ namespace MueLu {
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
   "<Parameter name=\"W cycle start level\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=\"1.0\"/>"
-  "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"number of vectors\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
