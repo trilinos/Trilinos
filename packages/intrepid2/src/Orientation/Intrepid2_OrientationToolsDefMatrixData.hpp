@@ -269,10 +269,10 @@ namespace Intrepid2 {
   typename OrientationTools<DT>::CoeffMatrixDataViewType
   OrientationTools<DT>::createCoeffMatrix(const BasisType* basis) {
     Kokkos::push_finalize_hook( [=] {
-      ortCoeffData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::CoeffMatrixDataViewType>();
+      ortCoeffData=OrientationTools<DT>::OrtCoeffDataType();
     });
 
-    const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
+    const KeyType key(basis->getName(), basis->getDegree());
     const auto found = ortCoeffData.find(key);
     
     CoeffMatrixDataViewType matData;
@@ -294,10 +294,10 @@ namespace Intrepid2 {
   typename OrientationTools<DT>::CoeffMatrixDataViewType
   OrientationTools<DT>::createInvCoeffMatrix(const BasisType* basis) {
     Kokkos::push_finalize_hook( [=] {
-      ortInvCoeffData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::CoeffMatrixDataViewType>();
+      ortInvCoeffData=OrientationTools<DT>::OrtCoeffDataType();
     });
 
-    const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
+    const KeyType key(basis->getName(), basis->getDegree());
     const auto found = ortInvCoeffData.find(key);
     
     CoeffMatrixDataViewType matData;
