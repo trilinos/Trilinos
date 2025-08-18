@@ -826,7 +826,7 @@ namespace Intrepid2 {
     //typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),DeviceType> gradViewType;
 
     auto vcprop = Kokkos::common_view_alloc_prop(points);
-    using GradViewType = Kokkos::DynRankView<typename decltype(vcprop)::value_type,DeviceType>;
+    using GradViewType = Kokkos::DynRankView<typename decltype(points)::value_type,DeviceType>;
 
     GradViewType grads;
 
