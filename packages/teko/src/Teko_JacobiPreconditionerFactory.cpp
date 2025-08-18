@@ -43,22 +43,6 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(
 
 //! Initialize from a parameter list
 void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList& pl)
-#if 0
-{
-   RCP<const InverseLibrary> invLib = getInverseLibrary();
-
-   // get string specifying inverse
-   std::string invStr = pl.get<std::string>("Inverse Type");
-#if defined(Teko_ENABLE_Amesos)
-   if(invStr=="") invStr = "Amesos";
-#elif defined(Teko_ENABLE_Amesos2)
-   if(invStr=="") invStr= "Amesos2";
-#endif
-
-   // based on parameter type build a strategy
-   invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(invLib->getInverseFactory(invStr)));
-}
-#endif
 {
   Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::initializeFromParameterList", 10);
   Teko_DEBUG_MSG_BEGIN(9);
@@ -67,6 +51,7 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   Teko_DEBUG_MSG_END();
 
   const std::string inverse_type        = "Inverse Type";
+  const std::string strategy_name       = "Strategy Name";
   const std::string preconditioner_type = "Preconditioner Type";
   std::vector<RCP<InverseFactory> > inverses;
   std::vector<RCP<InverseFactory> > preconditioners;
@@ -85,6 +70,9 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   if (pl.isParameter(inverse_type)) invStr = pl.get<std::string>(inverse_type);
   RCP<InverseFactory> defaultPrec;
   if (precStr != "None") defaultPrec = invLib->getInverseFactory(precStr);
+
+  std::string strategyStr = "Jacobi Strategy";
+  if (pl.isParameter(strategy_name)) strategyStr = pl.get<std::string>(strategy_name);
 
   Teko_DEBUG_MSG("JacobiPrecFact: Building default inverse \"" << invStr << "\"", 5);
   RCP<InverseFactory> defaultInverse = invLib->getInverseFactory(invStr);
@@ -147,8 +135,90 @@ void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
   if (inverses.size() == 0) inverses.push_back(defaultInverse);
 
   // based on parameter type build a strategy
-  invOpsStrategy_ =
-      rcp(new InvFactoryDiagStrategy(inverses, preconditioners, defaultInverse, defaultPrec));
+  invOpsStrategy_ = buildStrategy(strategyStr, inverses, preconditioners, defaultInverse, defaultPrec);
+}
+
+//! for creating the preconditioner factories objects
+CloneFactory<BlockInvDiagonalStrategy> JacobiPreconditionerFactory::strategyBuilder_;
+
+/** \brief Builder function for creating strategies.
+ *
+ * Builder function for creating strategies.
+ *
+ * \param[in] name     String name of strategy to build
+ * \param[in] settings Parameter list describing the parameters for the
+ *                     strategy to build
+ * \param[in] invLib   Inverse library for the strategy to use.
+ *
+ * \returns If the name is associated with a strategy
+ *          a pointer is returned, otherwise Teuchos::null is returned.
+ */
+RCP<BlockInvDiagonalStrategy> JacobiPreconditionerFactory::buildStrategy(
+  const std::string& name,
+  const std::vector<Teuchos::RCP<InverseFactory> > &inverseFactories,
+  const std::vector<Teuchos::RCP<InverseFactory> > &preconditionerFactories,
+  const Teuchos::RCP<InverseFactory> &defaultInverseFact,
+  const Teuchos::RCP<InverseFactory> &defaultPreconditionerFact)
+{
+  Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::buildStrategy", 0);
+
+  // initialize the defaults if necessary
+  if (strategyBuilder_.cloneCount() == 0) initializeStrategyBuilder();
+
+  Teko_DEBUG_MSG_BEGIN(1) std::vector<std::string> names;
+  strategyBuilder_.getCloneNames(names);
+  DEBUG_STREAM << "Strategy names = ";
+  for (std::size_t i = 0; i < names.size(); i++) DEBUG_STREAM << names[i] << ", ";
+  DEBUG_STREAM << std::endl;
+  Teko_DEBUG_MSG_END()
+
+  // request the preconditioner factory from the CloneFactory
+  RCP<BlockInvDiagonalStrategy> strategy = strategyBuilder_.build(name);
+
+  if (strategy == Teuchos::null) {
+    Teko_DEBUG_MSG("Warning: Could not build BlockInvDiagonalStrategy named \""
+                       << name << "\"...pressing on, failure expected",
+                   0) return Teuchos::null;
+  }
+
+  // now that inverse library has been set, pass in the parameter list
+  strategy->initialize(inverseFactories, preconditionerFactories, defaultInverseFact, defaultPreconditionerFact);
+
+  return strategy;
+}
+
+/** \brief Add a strategy to the builder. This is done using the
+ *        clone pattern.
+ *
+ * Add a strategy to the builder. This is done using the
+ * clone pattern. If your class does not support the Cloneable interface then
+ * you can use the AutoClone class to construct your object.
+ *
+ * \note If this method is called twice with the same string, the latter clone pointer
+ *       will be used.
+ *
+ * \param[in] name String to associate with this object
+ * \param[in] clone Pointer to Cloneable object
+ */
+void JacobiPreconditionerFactory::addStrategy(const std::string& name, const RCP<Cloneable>& clone) {
+  Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::addStrategy", 10);
+
+  // initialize the defaults if necessary
+  if (strategyBuilder_.cloneCount() == 0) initializeStrategyBuilder();
+
+  // add clone to builder
+  strategyBuilder_.addClone(name, clone);
+}
+
+//! This is where the default objects are put into the strategyBuilder_
+void JacobiPreconditionerFactory::initializeStrategyBuilder() {
+  Teko_DEBUG_SCOPE("JacobiPreconditionerFactory::initializeStrategyBuilder", 10);
+
+  RCP<Cloneable> clone;
+
+  // add various strategies to the factory
+  clone = rcp(new AutoClone<InvFactoryDiagStrategy>());
+  strategyBuilder_.addClone("Jacobi Strategy", clone);
 }
 
 }  // namespace Teko
