@@ -300,6 +300,15 @@ void ChebyshevKernel<TpetraOperatorType>::
 
 template <class TpetraOperatorType>
 void ChebyshevKernel<TpetraOperatorType>::
+    setAuxiliaryVectors(size_t numVectors) {
+  if ((V1_.get() == nullptr) || V1_->getNumVectors() != numVectors) {
+    using MV = multivector_type;
+    V1_      = std::unique_ptr<MV>(new MV(A_op_->getRangeMap(), numVectors));
+  }
+}
+
+template <class TpetraOperatorType>
+void ChebyshevKernel<TpetraOperatorType>::
     compute(multivector_type& W,
             const SC& alpha,
             vector_type& D_inv,
@@ -357,11 +366,8 @@ void ChebyshevKernel<TpetraOperatorType>::
                 multivector_type& X,
                 const SC& beta) {
   using STS = Teuchos::ScalarTraits<SC>;
-  if (V1_.get() == nullptr) {
-    using MV             = multivector_type;
-    const size_t numVecs = B.getNumVectors();
-    V1_                  = std::unique_ptr<MV>(new MV(B.getMap(), numVecs));
-  }
+  setAuxiliaryVectors(B.getNumVectors());
+
   const SC one = Teuchos::ScalarTraits<SC>::one();
 
   // V1 = B - A*X
