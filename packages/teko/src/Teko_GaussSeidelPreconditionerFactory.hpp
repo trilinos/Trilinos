@@ -103,6 +103,49 @@ class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
 
   //! Initialize from a parameter list
   virtual void initializeFromParameterList(const Teuchos::ParameterList& pl);
+
+public:
+
+  /** \brief Builder function for creating strategies.
+   *
+   * Builder function for creating strategies.
+   *
+   * \param[in] name     String name of strategy to build
+   * \param[in] settings Parameter list describing the parameters for the
+   *                     strategy to build
+   * \param[in] invLib   Inverse library for the strategy to use.
+   *
+   * \returns If the name is associated with a strategy
+   *          a pointer is returned, otherwise Teuchos::null is returned.
+   */
+  static RCP<BlockInvDiagonalStrategy> buildStrategy(
+        const std::string& name,
+        const std::vector<Teuchos::RCP<InverseFactory> > &inverseFactories,
+        const std::vector<Teuchos::RCP<InverseFactory> > &preconditionerFactories,
+        const Teuchos::RCP<InverseFactory> &defaultInverseFact,
+        const Teuchos::RCP<InverseFactory> &defaultPreconditionerFact);
+
+  /** \brief Add a strategy to the builder. This is done using the
+   *        clone pattern.
+   *
+   * Add a strategy to the builder. This is done using the
+   * clone pattern. If your class does not support the Cloneable interface then
+   * you can use the AutoClone class to construct your object.
+   *
+   * \note If this method is called twice with the same string, the latter clone pointer
+   *       will be used.
+   *
+   * \param[in] name String to associate with this object
+   * \param[in] clone Pointer to Cloneable object
+   */
+  static void addStrategy(const std::string& name, const RCP<Cloneable>& clone);
+
+private:
+  //! for creating the strategy objects
+  static CloneFactory<BlockInvDiagonalStrategy> strategyBuilder_;
+
+  //! This is where the default objects are put into the strategyBuilder_
+  static void initializeStrategyBuilder();
 };
 
 }  // end namespace Teko
