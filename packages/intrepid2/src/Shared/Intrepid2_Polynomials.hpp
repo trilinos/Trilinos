@@ -18,6 +18,9 @@
 #include "Intrepid2_Polylib.hpp"
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
+#if defined(HAVE_INTREPID2_SACADO) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+#include <Sacado.hpp>
+#endif
 
 namespace Intrepid2
 {
@@ -104,8 +107,14 @@ namespace Intrepid2
       using Layout = typename NaturalLayoutForType<PointScalarType>::layout;
       
       using UnmanagedPointScalarView = Kokkos::View<PointScalarType*, Layout, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
-      UnmanagedPointScalarView pointView = UnmanagedPointScalarView(&x,numPoints);
-      
+      UnmanagedPointScalarView pointView;
+#if defined(HAVE_INTREPID2_SACADO) && defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
+      if constexpr (Sacado::is_view_fad<UnmanagedPointScalarView>::value) {
+        // This is super weird and doesn't actually wrap the Sacado derivatives
+        pointView = UnmanagedPointScalarView(&x.val(), numPoints, 1);
+      } else
+#endif
+      pointView = UnmanagedPointScalarView(&x, numPoints);
       for (int i=0; i<=n; i++)
       {
         auto jacobiValue = Kokkos::subview(outputValues,Kokkos::pair<Intrepid2::ordinal_type,Intrepid2::ordinal_type>(i,i+1));
