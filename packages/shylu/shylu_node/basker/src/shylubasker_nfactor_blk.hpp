@@ -628,6 +628,8 @@ namespace BaskerNS
               thread_array(kid).error_blk    = b;
               thread_array(kid).error_subblk = 0; 
               thread_array(kid).error_info   = k;
+              // let worker thread know something went wrong
+              atomic_check(0) = k+1;
               return BASKER_ERROR;
             }
           }
@@ -701,12 +703,16 @@ namespace BaskerNS
           if(Options.realloc == BASKER_FALSE)
           {
             thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
+            // let worker thread know something went wrong
+            atomic_check(0) = k+1;
             return BASKER_ERROR;
           }
           else
           {
             thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
             thread_array(kid).error_info = newsize;
+            // let worker thread know something went wrong
+            atomic_check(0) = k+1;
             return BASKER_ERROR;
           }
         }
@@ -725,12 +731,16 @@ namespace BaskerNS
           if(Options.realloc == BASKER_FALSE)
           {
             thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
+            // let worker thread know something went wrong
+            atomic_check(0) = k+1;
             return BASKER_ERROR;
           }
           else
           {
             thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
             thread_array(kid).error_info = newsize;
+            // let worker thread know something went wrong
+            atomic_check(0) = k+1;
             return BASKER_ERROR;
           }
         }
@@ -924,6 +934,9 @@ namespace BaskerNS
           }
           // worker thread read pivot, and set X(maxindex) to zero
           pivot = U.val(U.col_ptr(k+1)-1);
+          if (thread_array(kid).error_type != BASKER_ERROR_NOERROR) {
+            return BASKER_ERROR;
+          }
         }
         //printf( " -> %d:%d: pivot = %e (col_ptr(%d)=%d, %d)\n",league_rank,team_rank, pivot, M.ncol,U.col_ptr(M.ncol),k); fflush(stdout);
 #endif
