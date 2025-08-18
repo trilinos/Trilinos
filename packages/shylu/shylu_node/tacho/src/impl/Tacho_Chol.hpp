@@ -26,6 +26,7 @@ namespace Tacho {
 
 /// various implementation for different uplo and algo parameters
 template <typename ArgUplo, typename ArgAlgo> struct Chol;
+template <typename ArgUplo, typename ArgAlgo> struct LDL_nopiv;
 
 struct CholAlgorithm {
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;

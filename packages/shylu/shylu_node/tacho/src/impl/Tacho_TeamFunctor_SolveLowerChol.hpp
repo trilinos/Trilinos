@@ -42,6 +42,7 @@ private:
   ConstUnmanagedViewType<ordinal_pair_type_array> _sid_block_colidx;
   ConstUnmanagedViewType<ordinal_type_array> _gid_colidx;
 
+  bool _ldl;
   ConstUnmanagedViewType<ordinal_type_array> _compute_mode, _level_sids;
   ordinal_type _pbeg, _pend;
 
@@ -59,7 +60,7 @@ public:
   TeamFunctor_SolveLowerChol(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                              const ordinal_type_array &level_sids, const value_type_matrix t,
                              const value_type_array buf)
-      : _supernodes(info.supernodes), _sid_block_colidx(info.sid_block_colidx), _gid_colidx(info.gid_colidx),
+      : _supernodes(info.supernodes), _sid_block_colidx(info.sid_block_colidx), _gid_colidx(info.gid_colidx), _ldl(false),
         _compute_mode(compute_mode), _level_sids(level_sids), _t(t), _nrhs(t.extent(1)), _buf(buf) {}
 
   inline void setRange(const ordinal_type pbeg, const ordinal_type pend) {
@@ -68,6 +69,7 @@ public:
   }
 
   inline void setBufferPtr(const size_type_array &buf_ptr) { _buf_ptr = buf_ptr; }
+  inline void setIndefiniteFactorization(const bool ldl) { _ldl = ldl; }
 
   ///
   /// Algorithm Variant 0: trsv - gemv
@@ -88,7 +90,11 @@ public:
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
+        if (_ldl) {
+          Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
+        } else {
+          Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
+        }
 
         if (n_m > 0) {
           // update
@@ -96,6 +102,16 @@ public:
           UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
           Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, tT, zero, bB);
+        }
+
+        if (_ldl) {
+          // TODO: replace it with a kernel call
+          ordinal_type nrhs = tT.extent(1);
+          for (ordinal_type j=0; j<nrhs; j++) {
+            for (ordinal_type i=0; i<m; i++) {
+              tT(i, j) /= ATL(i,i);
+            }
+          }
         }
       }
     }

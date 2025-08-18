@@ -41,6 +41,7 @@ private:
   ConstUnmanagedViewType<supernode_type_array> _supernodes;
   ConstUnmanagedViewType<ordinal_type_array> _gid_colidx;
 
+  bool _ldl;
   ConstUnmanagedViewType<ordinal_type_array> _compute_mode, _level_sids;
   ordinal_type _pbeg, _pend;
 
@@ -58,7 +59,7 @@ public:
   TeamFunctor_SolveUpperChol(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                              const ordinal_type_array &level_sids, const value_type_matrix t,
                              const value_type_array buf)
-      : _supernodes(info.supernodes), _gid_colidx(info.gid_colidx), _compute_mode(compute_mode),
+      : _supernodes(info.supernodes), _gid_colidx(info.gid_colidx), _ldl(false), _compute_mode(compute_mode),
         _level_sids(level_sids), _t(t), _nrhs(t.extent(1)), _buf(buf) {}
 
   inline void setRange(const ordinal_type pbeg, const ordinal_type pend) {
@@ -67,6 +68,7 @@ public:
   }
 
   inline void setBufferPtr(const size_type_array &buf_ptr) { _buf_ptr = buf_ptr; }
+  inline void setIndefiniteFactorization(const bool ldl) { _ldl = ldl; }
 
   ///
   /// Algorithm Variant 0: gemv - trsv
@@ -94,7 +96,11 @@ public:
           Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
           member.team_barrier();
         }
-        Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
+        if (_ldl) {
+          Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
+        } else {
+          Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
+        }
       }
     }
   }

@@ -46,6 +46,7 @@ private:
   size_type_array _buf_ptr;
   value_type_array _buf;
 
+  bool _ldl;
   mag_type _tol;
   int *_rval;
 
@@ -56,7 +57,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   TeamFunctor_FactorizeChol(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                             const ordinal_type_array &level_sids, const value_type_array buf, int *rval)
-      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _buf(buf), _tol(0.0), _rval(rval) {}
+      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _buf(buf), _ldl(false), _tol(0.0), _rval(rval) {}
 
   inline void setGlobalSize(const ordinal_type m) {
     _m = m;
@@ -69,6 +70,7 @@ public:
 
   inline void setBufferPtr(const size_type_array &buf_ptr) { _buf_ptr = buf_ptr; }
   inline void setDiagPertubationTol(const mag_type tol) { _tol = tol; }
+  inline void setIndefiniteFactorization(const bool ldl) { _ldl = ldl; }
 
   ///
   /// Main functions
@@ -86,24 +88,49 @@ public:
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      if (_tol > 0.0)
-        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
-      else
-        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
-      member.team_barrier();
-      if (err != 0) {
-        Kokkos::atomic_add(_rval, 1);
-        return;
+      if (_ldl) {
+        err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      } else {
+        if (_tol > 0.0)
+          err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
+        else
+          err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+
+        member.team_barrier();
+        if (err != 0) {
+          Kokkos::atomic_add(_rval, 1);
+          return;
+        }
       }
 
       if (n_m > 0) {
         const value_type one(1), minus_one(-1), zero(0);
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
-                                                                                  ATR);
+        if (_ldl) {
+          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                    ATR);
+          // TODO: replace it with a kernel call
+          for (ordinal_type j=0; j<n_m; j++) {
+            for (ordinal_type i=0; i<m; i++) {
+              ATR(i, j) /= ATL(i,i);
+            }
+          }
+          // TODO: replace it with a kernel call
+          for (ordinal_type j=0; j<n_m; j++) {
+            for (ordinal_type i=0; i<n_m; i++) {
+              ABR(i, j) = zero;
+              for (ordinal_type k=0; k<m; k++) {
+                ABR(i, j) -= ATR(k, i) * ATL(k, k) * ATR(k, j);
+              }
+            }
+          }
+        } else {
+          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
+                                                                                    ATR);
 
-        member.team_barrier();
-        Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
+          member.team_barrier();
+          Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
+        }
       }
     }
   }

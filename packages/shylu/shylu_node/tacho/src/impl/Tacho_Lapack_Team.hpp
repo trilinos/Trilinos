@@ -21,6 +21,7 @@ namespace Tacho {
 
 template <typename T> struct LapackTeam {
   struct Impl {
+
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void potrf_upper(const MemberType &member, const int m, T *KOKKOS_RESTRICT A,
                                                    const int as0, const int as1, int *info) {

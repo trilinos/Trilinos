@@ -334,7 +334,8 @@ private:
     base_type::print_stat_factor();
     double flop = 0;
     switch (this->getSolutionMethod()) {
-    case 1: {
+    case 0:   /// LDL no-pivot
+    case 1: { /// Cholesky
       for (ordinal_type sid = 0; sid < _nsupernodes; ++sid) {
         auto &s = _h_supernodes(sid);
         const ordinal_type m = s.m, n = s.n - s.m;
@@ -383,7 +384,7 @@ private:
       break;
     }
     default: {
-      TACHO_TEST_FOR_EXCEPTION(false, std::logic_error, "The solution method is not supported");
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "The solution method is not supported");
     }
     }
     const double kilo(1024);
@@ -519,7 +520,8 @@ public:
                                                             lu_solve_work_size,
                                                             lu_solve_work_size};
 
-          const ordinal_type index_work_size = this->getSolutionMethod() - 1;
+          const ordinal_type method_id = (this->getSolutionMethod()-1 < 0 ? 0 : this->getSolutionMethod()-1);
+          const ordinal_type index_work_size = method_id;
           const ordinal_type factor_work_size = factor_work_size_variants[index_work_size];
           const ordinal_type solve_work_size = solve_work_size_variants[index_work_size];
 
@@ -574,6 +576,7 @@ public:
     // pre-allocate work
     _worksize = 0;
     switch (this->getSolutionMethod()) {
+    case 0:   /// LDL no-pivot
     case 1: { /// Cholesky
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
@@ -613,6 +616,11 @@ public:
     _device_level_cut = min(device_level_cut, _nlevel);
     _device_factorize_thres = device_factorize_thres;
     _device_solve_thres = (variant == 3 ? 0 : device_solve_thres);
+    if (this->getSolutionMethod() == 0) {
+      _device_factorize_thres = _info.max_supernode_size;
+      _device_solve_thres = _info.max_supernode_size;
+      printf( "\n\n set device threshold = max_supernode_size (%d) for LDL no-pivot\n\n",_info.max_supernode_size );
+    }
 
     _h_factorize_mode = ordinal_type_array_host(do_not_initialize_tag("h_factorize_mode"), _nsupernodes);
     Kokkos::deep_copy(_h_factorize_mode, -1);
@@ -669,6 +677,11 @@ public:
     stat.t_mode_classification = timer.seconds();
     if (verbose) {
       switch (this->getSolutionMethod()) {
+      case 0: {
+        printf("Summary: LevelSetTools-Variant-%d (InitializeLDL (no pivot))\n", variant);
+        printf("============================================================\n");
+        break;
+      }
       case 1: {
         printf("Summary: LevelSetTools-Variant-%d (InitializeCholesky)\n", variant);
         printf("======================================================\n");
@@ -2146,7 +2159,8 @@ public:
   ///
   /// Level set factorize
   ///
-  inline void factorizeCholesky(const value_type_array &ax, const bool store_transpose, const mag_type pivot_tol, const ordinal_type verbose) {
+  inline void factorizeCholesky(const value_type_array &ax, const bool store_transpose,
+                                const mag_type pivot_tol, const ordinal_type verbose) {
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
     Kokkos::Timer tick;
@@ -2201,6 +2215,9 @@ public:
         functor_type functor(_info, _factorize_mode, _level_sids, _buf, d_rval.data());
         if (pivot_tol > 0.0) {
           functor.setDiagPertubationTol(pivot_tol);
+        }
+        if (this->getSolutionMethod() == 0) {
+          functor.setIndefiniteFactorization(true);
         }
 
 #if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
@@ -2270,7 +2287,7 @@ public:
             Kokkos::deep_copy(h_rval, d_rval);
             int rval = h_rval(0);
             if (rval != 0) {
-              TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "POTRF (team) returns non-zero error code.");
+              TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "POTRF (team) returns non-zero error code.");
             }
 
             Kokkos::parallel_for("update factor", policy_update, functor);
@@ -3760,6 +3777,9 @@ public:
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, t, _buf);
+        if (this->getSolutionMethod() == 0) {
+          functor.setIndefiniteFactorization(true);
+        }
 
         team_policy_solve policy_solve(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
@@ -3826,6 +3846,9 @@ public:
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, t, _buf);
+        if (this->getSolutionMethod() == 0) {
+          functor.setIndefiniteFactorization(true);
+        }
 
         team_policy_solve policy_solve(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
@@ -4613,9 +4636,11 @@ public:
     }
   }
 
-  inline void factorize(const value_type_array &ax, const bool store_transpose, const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) override {
+  inline void factorize(const value_type_array &ax, const bool store_transpose,
+                        const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) override {
     Kokkos::deep_copy(_superpanel_buf, value_type(0));
     switch (this->getSolutionMethod()) {
+    case 0:   /// LDL no-pivot
     case 1: { /// Cholesky
       factorizeCholesky(ax, store_transpose, pivot_tol, verbose);
       break;
@@ -4653,7 +4678,7 @@ public:
       break;
     }
     default: {
-      TACHO_TEST_FOR_EXCEPTION(false, std::logic_error, "The solution method is not supported");
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "The solution method is not supported");
       break;
     }
     }
@@ -4664,6 +4689,7 @@ public:
                     const value_type_matrix &t, // temporary workspace (store permuted vectors)
                     const ordinal_type verbose = 0) override {
     switch (this->getSolutionMethod()) {
+    case 0:   /// LDL no-pivot
     case 1: { /// Cholesky
       solveCholesky(x, b, t, verbose);
       break;
@@ -4677,7 +4703,7 @@ public:
       break;
     }
     default: {
-      TACHO_TEST_FOR_EXCEPTION(false, std::logic_error, "The solution method is not supported");
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "The solution method is not supported");
       break;
     }
     }
