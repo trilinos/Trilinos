@@ -104,8 +104,7 @@ class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
   //! Initialize from a parameter list
   virtual void initializeFromParameterList(const Teuchos::ParameterList& pl);
 
-public:
-
+ public:
   /** \brief Builder function for creating strategies.
    *
    * Builder function for creating strategies.
@@ -119,11 +118,10 @@ public:
    *          a pointer is returned, otherwise Teuchos::null is returned.
    */
   static RCP<BlockInvDiagonalStrategy> buildStrategy(
-        const std::string& name,
-        const std::vector<Teuchos::RCP<InverseFactory> > &inverseFactories,
-        const std::vector<Teuchos::RCP<InverseFactory> > &preconditionerFactories,
-        const Teuchos::RCP<InverseFactory> &defaultInverseFact,
-        const Teuchos::RCP<InverseFactory> &defaultPreconditionerFact);
+      const std::string& name, const std::vector<Teuchos::RCP<InverseFactory> >& inverseFactories,
+      const std::vector<Teuchos::RCP<InverseFactory> >& preconditionerFactories,
+      const Teuchos::RCP<InverseFactory>& defaultInverseFact,
+      const Teuchos::RCP<InverseFactory>& defaultPreconditionerFact);
 
   /** \brief Add a strategy to the builder. This is done using the
    *        clone pattern.
@@ -140,7 +138,7 @@ public:
    */
   static void addStrategy(const std::string& name, const RCP<Cloneable>& clone);
 
-private:
+ private:
   //! for creating the strategy objects
   static CloneFactory<BlockInvDiagonalStrategy> strategyBuilder_;
 
