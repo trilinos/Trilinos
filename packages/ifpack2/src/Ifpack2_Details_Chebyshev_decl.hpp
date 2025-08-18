@@ -493,6 +493,11 @@ class Chebyshev : public Teuchos::Describable {
   /// and insead use native blas/SpMV operators
   bool ckUseNativeSpMV_;
 
+  /// Whether the temporary multivector should be pre-allocated (for a single vector)
+  /// in compute(). Otherwise this will happen the first time apply is called,
+  /// slowing it down.
+  bool preAllocateTempVector_;
+
   /// \brief Output stream for debug output ONLY.
   ///
   /// This is ONLY valid if debug_ is true.

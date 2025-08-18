@@ -284,6 +284,7 @@ Chebyshev<ScalarType, MV>::
   , computeMaxResNorm_(false)
   , computeSpectralRadius_(true)
   , ckUseNativeSpMV_(MV::node_type::is_gpu)
+  , preAllocateTempVector_(true)
   , debug_(false) {
   checkConstructorInput();
 }
@@ -316,6 +317,7 @@ Chebyshev<ScalarType, MV>::
   , computeMaxResNorm_(false)
   , computeSpectralRadius_(true)
   , ckUseNativeSpMV_(MV::node_type::is_gpu)
+  , preAllocateTempVector_(true)
   , debug_(false) {
   checkConstructorInput();
   setParameters(params);
@@ -360,6 +362,7 @@ void Chebyshev<ScalarType, MV>::
   const bool defaultComputeMaxResNorm         = false;
   const bool defaultComputeSpectralRadius     = true;
   const bool defaultCkUseNativeSpMV           = MV::node_type::is_gpu;
+  const bool defaultPreAllocateTempVector     = true;
   const bool defaultDebug                     = false;
 
   // We'll set the instance data transactionally, after all reads
@@ -383,6 +386,7 @@ void Chebyshev<ScalarType, MV>::
   bool computeMaxResNorm         = defaultComputeMaxResNorm;
   bool computeSpectralRadius     = defaultComputeSpectralRadius;
   bool ckUseNativeSpMV           = defaultCkUseNativeSpMV;
+  bool preAllocateTempVector     = defaultPreAllocateTempVector;
   bool debug                     = defaultDebug;
 
   // Fetch the parameters from the ParameterList.  Defer all
@@ -458,6 +462,10 @@ void Chebyshev<ScalarType, MV>::
   // Load the kernel fuse override from the parameter list
   if (plist.isParameter("chebyshev: use native spmv"))
     ckUseNativeSpMV = plist.get("chebyshev: use native spmv", ckUseNativeSpMV);
+
+  // Load the pre-allocate overrride from the parameter list
+  if (plist.isParameter("chebyshev: pre-allocate temp vector"))
+    preAllocateTempVector = plist.get("chebyshev: pre-allocate temp vector", preAllocateTempVector);
 
   // Don't fill in defaults for the max or min eigenvalue, because
   // this class uses the existence of those parameters to determine
@@ -690,6 +698,7 @@ void Chebyshev<ScalarType, MV>::
   computeMaxResNorm_     = computeMaxResNorm;
   computeSpectralRadius_ = computeSpectralRadius;
   ckUseNativeSpMV_       = ckUseNativeSpMV;
+  preAllocateTempVector_ = preAllocateTempVector;
   debug_                 = debug;
 
   if (debug_) {
@@ -945,6 +954,11 @@ void Chebyshev<ScalarType, MV>::compute() {
       eigRatioForApply_  = one;  // Ifpack doesn't include this line.
     }
   }
+
+  // Allocate temporary vector
+  if (preAllocateTempVector_ && !D_.is_null()) {
+    makeTempMultiVector(*D_);
+  }
 }
 
 template <class ScalarType, class MV>
@@ -1014,25 +1028,26 @@ void Chebyshev<ScalarType, MV>::
 
 template <class MV, class V, class Scalar>
 void fused_first_iteration(MV& W,
-                           const Scalar &alpha,
-                           const V &D_inv,
-                           const MV &B,
+                           const Scalar& alpha,
+                           const V& D_inv,
+                           const MV& B,
                            MV& X) {
   using execution_space = typename MV::node_type::execution_space;
-  using range_type = Kokkos::RangePolicy<typename MV::local_ordinal_type, execution_space>;
+  using range_type      = Kokkos::RangePolicy<typename MV::local_ordinal_type, execution_space>;
 
-  auto lclX = X.getLocalViewDevice(Tpetra::Access::OverwriteAll);
-  auto lclW = W.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclX     = X.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclW     = W.getLocalViewDevice(Tpetra::Access::OverwriteAll);
   auto lclD_inv = D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly);
-  auto lclB = B.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto lclB     = B.getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-  Kokkos::parallel_for("Ifpack2::Details_Chebychev::firstIterationWithZeroStartingSolution",
-                       range_type(0, lclX.extent(0)),
-                       KOKKOS_LAMBDA(const typename MV::local_ordinal_type i) {
-    auto t = alpha*lclD_inv(i, 0)*lclB(i, 0);
-    lclW(i, 0) = t;
-    lclX(i, 0) = t;
-  });
+  Kokkos::parallel_for(
+      "Ifpack2::Details_Chebychev::firstIterationWithZeroStartingSolution",
+      range_type(0, lclX.extent(0)),
+      KOKKOS_LAMBDA(const typename MV::local_ordinal_type i) {
+        auto t     = alpha * lclD_inv(i, 0) * lclB(i, 0);
+        lclW(i, 0) = t;
+        lclX(i, 0) = t;
+      });
 }
 
 template <class ScalarType, class MV>
@@ -1052,46 +1067,47 @@ void Chebyshev<ScalarType, MV>::
 
 template <class MV, class V, class Scalar>
 void fused_first_iteration(MV& Z,
-                           const Scalar &alpha,
-                           const V &D_inv,
-                           const MV &B,
+                           const Scalar& alpha,
+                           const V& D_inv,
+                           const MV& B,
                            MV& X4,
-                           const Scalar &beta0,
+                           const Scalar& beta0,
                            MV& X) {
   using execution_space = typename MV::node_type::execution_space;
-  using range_type = Kokkos::RangePolicy<typename MV::local_ordinal_type, execution_space>;
+  using range_type      = Kokkos::RangePolicy<typename MV::local_ordinal_type, execution_space>;
 
-  auto lclX = X.getLocalViewDevice(Tpetra::Access::OverwriteAll);
-  auto lclX4 = X4.getLocalViewDevice(Tpetra::Access::OverwriteAll);
-  auto lclZ = Z.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclX     = X.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclX4    = X4.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclZ     = Z.getLocalViewDevice(Tpetra::Access::OverwriteAll);
   auto lclD_inv = D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly);
-  auto lclB = B.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto lclB     = B.getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-  Kokkos::parallel_for("Ifpack2::Details_Chebychev::firstIterationWithZeroStartingSolution4th",
-                       range_type(0, lclX.extent(0)),
-                       KOKKOS_LAMBDA(const typename MV::local_ordinal_type i) {
-    auto t = alpha*lclD_inv(i, 0)*lclB(i, 0);
-    lclZ(i, 0) = t;
-    lclX4(i, 0) = t;
-    lclX(i, 0) = beta0*t;
-  });
+  Kokkos::parallel_for(
+      "Ifpack2::Details_Chebychev::firstIterationWithZeroStartingSolution4th",
+      range_type(0, lclX.extent(0)),
+      KOKKOS_LAMBDA(const typename MV::local_ordinal_type i) {
+        auto t      = alpha * lclD_inv(i, 0) * lclB(i, 0);
+        lclZ(i, 0)  = t;
+        lclX4(i, 0) = t;
+        lclX(i, 0)  = beta0 * t;
+      });
 }
 
 template <class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::
-  firstIterationWithZeroStartingSolution(MV& Z,
-                                         const ScalarType& alpha,
-                                         const V& D_inv,
-                                         const MV& B,
-                                         MV& X4,
-                                         const ScalarType& beta0,
-                                         MV& X) {
+    firstIterationWithZeroStartingSolution(MV& Z,
+                                           const ScalarType& alpha,
+                                           const V& D_inv,
+                                           const MV& B,
+                                           MV& X4,
+                                           const ScalarType& beta0,
+                                           MV& X) {
   if (B.getNumVectors() == 1) {
     fused_first_iteration(Z, alpha, D_inv, B, X4, beta0, X);
   } else {
-    solve(Z, alpha, D_inv, B);  // Z := alpha*D_inv*B
-    Tpetra::deep_copy(X4, Z);    // X4 := 0 + Z
-    X.update(beta0, Z, STS::zero()); // X := 0 + beta0 * Z
+    solve(Z, alpha, D_inv, B);        // Z := alpha*D_inv*B
+    Tpetra::deep_copy(X4, Z);         // X4 := 0 + Z
+    X.update(beta0, Z, STS::zero());  // X := 0 + beta0 * Z
   }
 }
 
