@@ -387,7 +387,6 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
            bool writeGraph,const std::string & graphPrefix,
            const Teuchos::ParameterList& me_params)
 {
-  std::cout << " I AM SETTING UP " << std::endl;
   // First: build residual assembly engine
   /////////////////////////////////////////////////////////////////////////////////////////////////
   PANZER_FUNC_TIME_MONITOR_DIFF("panzer::ModelEvaluator::setupModel()",setupModel);
@@ -423,12 +422,11 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
         fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
     }
 
-    // TODO BWR this is already done in constructor?? Going to remove here
-    //{
-    //  PANZER_FUNC_TIME_MONITOR_DIFF("AssemblyEngine_TemplateBuilder::buildObjects()",AETM_BuildObjects);
-    //  panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof_);
-    //  ae_tm_.buildObjects(builder);
-    //}
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("AssemblyEngine_TemplateBuilder::buildObjects()",AETM_BuildObjects);
+      panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof_);
+      ae_tm_.buildObjects(builder);
+    }
   }
 
   // Second: build the responses
