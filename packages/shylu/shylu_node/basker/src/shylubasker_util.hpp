@@ -862,7 +862,6 @@ namespace BaskerNS
               if (ews_size*ews_mult > 0) {
                 BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
                 MALLOC_ENTRY_1DARRAY(LL(b)(l).ews, ews_size*ews_mult);
-
                 for(Int i=0; i<ews_mult*ews_size; i++)
                 {
                   LL(b)(l).ews(i) = 0;
