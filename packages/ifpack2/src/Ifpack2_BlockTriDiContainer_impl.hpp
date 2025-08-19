@@ -1981,9 +1981,6 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
       auto rowmapHost = g->getRowMap();
       auto colmapHost = g->getColMap();
       auto dommapHost = g->getDomainMap();
-      rowmapHost->lazyPushToHost();
-      colmapHost->lazyPushToHost();
-      dommapHost->lazyPushToHost();
       for (local_ordinal_type lr = 0; lr < nrows; lr++) {
         const global_ordinal_type gid = rowmapHost->getGlobalElement(lr);
         TEUCHOS_ASSERT(gid != Teuchos::OrdinalTraits<global_ordinal_type>::invalid());
