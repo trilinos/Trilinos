@@ -598,7 +598,7 @@ integer {D}+({E})?
                              file_must_exist = true; }
 <INITIAL>(?i:{WS}"{cinclude"){WS}"("          { BEGIN(GET_FILENAME);
                              file_must_exist = false; }
-<GET_FILENAME>.+")"{WS}"}"[^\n]*{NL}  {
+<GET_FILENAME>.+")"{WS}"}"  {
   aprepro.ap_file_list.top().lineno++;
   BEGIN(INITIAL);
   {
@@ -607,6 +607,9 @@ integer {D}+({E})?
     char *pt = strchr(yytext, ')');
     *pt = '\0';
     /* Check to see if surrounded by double quote */
+    if (aprepro.ap_options.debugging) {
+      fmt::print(stderr, "DEBUG GET_FILENAME: yytext = '{}'\n", yytext);
+    }
     if ((pt = strchr(yytext, '"')) != nullptr) {
       yytext++;
       quoted = 1;
@@ -628,6 +631,9 @@ integer {D}+({E})?
       pt = yytext;
     }
 
+    if (aprepro.ap_options.debugging) {
+      fmt::print(stderr, "DEBUG GET_FILENAME: filename = '{}'\n", pt);
+    }
     bool added = add_include_file(pt, file_must_exist);
 
     if(added && !aprepro.doIncludeSubstitution)
@@ -844,7 +850,9 @@ integer {D}+({E})?
       }
 
       yyin = yytmp;
-      aprepro.info("Included File: '" + filename + "'", true);
+      if (aprepro.ap_options.debugging) {
+	fmt::print(stderr, "DEBUG add_include_file: '{}'\n",filename);
+      }
 
       SEAMS::file_rec new_file(filename.c_str(), 0, false, 0);
       aprepro.ap_file_list.push(new_file);
@@ -950,7 +958,9 @@ integer {D}+({E})?
       /* We are in an included or looping file */
       if (aprepro.ap_file_list.top().tmp_file) {
         if (aprepro.ap_options.debugging) {
-          std::cerr << "DEBUG LOOP: Loop count = " << aprepro.ap_file_list.top().loop_count << "\n";
+	  fmt::print(stderr, "DEBUG LOOP: Loop count = {}, Filename = {}\n", 
+		     aprepro.ap_file_list.top().loop_count,
+		     aprepro.ap_file_list.top().name);
         }
         if (--aprepro.ap_file_list.top().loop_count <= 0) {
           // On Windows, you can't remove the temp file until all the references to the
@@ -1083,6 +1093,10 @@ integer {D}+({E})?
       std::string new_string("}");
       new_string += string;
 
+      if (aprepro.ap_options.debugging) {
+	fmt::print(stderr, "DEBUG RESCAN: '{}'\n",
+		   new_string);
+      }
       auto ins = new std::istringstream(new_string); // Declare an input string stream.
       yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(ins, new_string.size()));
     }

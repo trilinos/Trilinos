@@ -118,7 +118,7 @@ namespace {
   // options.  See https://github.com/CGNS/CGNS/issues/835
   struct ParallelGuard
   {
-    ParallelGuard(bool yes_no)
+    ParallelGuard(IOSS_MAYBE_UNUSED bool yes_no)
     {
 #if CG_BUILD_PARALLEL
       m_wasSet = strcmp(ctx_cgio.hdf5_access, "PARALLEL") == 0;

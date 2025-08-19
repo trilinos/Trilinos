@@ -2,7 +2,7 @@
 """
 This file performs unit tests of functions within Exomerge.
 
-Copyright 2018, 2021, 2022 National Technology and Engineering
+Copyright 2018, 2021, 2022, 2025 National Technology and Engineering
 Solutions of Sandia.  Under the terms of Contract DE-NA-0003525, there
 is a non-exclusive license for use of this work by or on behalf of the
 U.S. Government.  Export of this program may require a license from
@@ -1749,7 +1749,7 @@ class ExomergeUnitTester:
         """
         source_code = inspect.getsource(source)
         return bool(
-            re.search("[^A-Za-z0-9_]" + target.__name__ + "[ \t\n\r]*\(", source_code)
+            re.search(r"[^A-Za-z0-9_]" + target.__name__ + r"[ \t\n\r]*\(", source_code)
         )
 
     def test(self):
@@ -1873,9 +1873,68 @@ class ExomergeUnitTester:
         print(("\nRan %d tests in %g seconds." % (tests, time.time() - start_time)))
         print("\nSuccess")
 
+    # The following functions are unit tests for private functions of exomerge.
+    def _test_sort_field_names(self):
+        """Unittest for _sort_field_names method.
+
+        In this test, we will create a list of field names that are sorted according to
+        SIERRA conventions, then randomly shuffle them to simulate unsorted input.
+
+        Both naming conventions with and without underscores will be tested.
+        """
+
+        # List of all possible field names sorted according to SIERRA conventions.
+        sorted_names = [
+            "Displacement_X", "Displacement_Y", "Displacement_Z",
+            "ln_strain_1", "ln_strain_2", "ln_strain_3", "ln_strain_4",  # scalar field defined in integration points
+            "quat_x", "quat_y", "quat_z", "quat_q",  # 3D Quaternion (using IOSS convention.  Not sure why `q` and not `w`
+            "quat_2d_s", "quat_2d_q",  # 2D Quaternion (using IOSS convention)
+            "SIGMA_XX", "SIGMA_YY", "SIGMA_ZZ", "SIGMA_XY", "SIGMA_YZ", "SIGMA_ZX", "SIGMA_YX", "SIGMA_ZY", "SIGMA_XZ",  # asymmetric tensor
+            "unrotated_stress_xx_1", "unrotated_stress_yy_1", "unrotated_stress_zz_1", "unrotated_stress_xy_1", "unrotated_stress_yz_1", "unrotated_stress_zx_1",  # Symmetric tensor with integration points
+            "unrotated_stress_xx_2", "unrotated_stress_yy_2", "unrotated_stress_zz_2", "unrotated_stress_xy_2", "unrotated_stress_yz_2", "unrotated_stress_zx_2",
+            "unrotated_stress_xx_3", "unrotated_stress_yy_3", "unrotated_stress_zz_3", "unrotated_stress_xy_3", "unrotated_stress_yz_3", "unrotated_stress_zx_3",
+            "unrotated_stress_xx_12", "unrotated_stress_yy_12", "unrotated_stress_zz_12", "unrotated_stress_xy_12", "unrotated_stress_yz_12", "unrotated_stress_zx_12",  # Try with a number bigger than 9
+            "velocity",  # scalar field
+            "x", "x_1_1", "y", "y_1_1", "z", "z_1_1"  # make sure regex not too greedy (no basename)
+        ]
+
+        # Randomly shuffle the names to simulate unsorted input
+        unsorted_names = sorted_names.copy()
+        random.shuffle(unsorted_names)
+        assert sorted_names == self.model._sort_field_names(unsorted_names), "Failed to sort names with underscores.\nExpected: {}\nGot: {}".format(
+            sorted_names, self.model._sort_field_names(unsorted_names)
+        )
+
+        # Test sorting names without underscores
+        sorted_names_no_underscores = [name.replace("_", "") for name in sorted_names]
+        unsorted_names_no_underscores = sorted_names_no_underscores.copy()
+        random.shuffle(unsorted_names_no_underscores)
+        assert sorted_names_no_underscores == self.model._sort_field_names(unsorted_names_no_underscores), "Failed to sort names without underscores. \nExpected: {}\nGot: {}".format(
+            sorted_names_no_underscores, self.model._sort_field_names(unsorted_names_no_underscores)
+        )
+
+        # Cannot sort the field names with two numeric suffices without underscores...
+        sorted_ip_ip_names = [
+            "_x", "_y", "_z",  # Make sure this isn't a 3D vector with no base name...
+            "state_dsa_01_1", "state_dsa_02_1", "state_dsa_03_1", "state_dsa_04_1", "state_dsa_05_1",
+            "state_dsa_06_1", "state_dsa_07_1", "state_dsa_08_1", "state_dsa_09_1", "state_dsa_10_1",
+            "state_dsa_01_2", "state_dsa_02_2", "state_dsa_03_2", "state_dsa_04_2", "state_dsa_05_2",
+            "state_dsa_06_2", "state_dsa_07_2", "state_dsa_08_2", "state_dsa_09_2", "state_dsa_10_2",
+            "state_dsa_01_3", "state_dsa_02_3", "state_dsa_03_3", "state_dsa_04_3", "state_dsa_05_3",
+            "state_dsa_06_3", "state_dsa_07_3", "state_dsa_08_3", "state_dsa_09_3", "state_dsa_10_3"  # Two sets of numeric suffices...
+        ]
+
+        # Randomly shuffle the names to simulate unsorted input
+        unsorted_ip_names = sorted_ip_ip_names.copy()
+        random.shuffle(unsorted_ip_names)
+        assert sorted_ip_ip_names == self.model._sort_field_names(unsorted_ip_names), "Failed to sort names with underscores.\nExpected: {}\nGot: {}".format(
+            sorted_ip_ip_names, self.model._sort_field_names(unsorted_ip_names)
+        )
+
 
 # if this module is executed (as opposed to imported), run the tests
 if __name__ == "__main__":
+
     if len(sys.argv) > 2:
         sys.stderr.write("Invalid syntax.\n")
         exit(1)
@@ -1885,3 +1944,12 @@ if __name__ == "__main__":
         tester.min_tests = int(sys.argv[1])
         tester.max_tests = tester.min_tests
     tester.test()
+
+    # Run unittest for private functions
+    print("\nRunning unittest for private functions in exomerge.py...")
+    input_dir = os.path.dirname(__file__)
+    temp_exo_path = os.path.join(input_dir, "exomerge_unit_test.e")
+    tester = ExomergeUnitTester()
+    tester.model = exomerge.import_model(temp_exo_path)
+    print("[1]_test_sort_field_names")
+    tester._test_sort_field_names()

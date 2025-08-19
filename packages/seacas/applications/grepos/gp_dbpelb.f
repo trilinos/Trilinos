@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -6,7 +6,7 @@ C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE DBPELB (OPTION, NELBLK, IDELB, NUMELB, NUMLNK, NUMATR,
-     &   BLKTYP, EBNAME, ATNAME, NVAREL, NAMEEV, ISEVOK, LISEV)
+     &   BLKTYP, EBNAME, ATNAME, NVAREL, NAMEEV, ISEVOK, LISEV, STAT)
 C=======================================================================
 
 C   --*** DBPELB *** (EXOLIB) Print database element block summary
@@ -38,6 +38,7 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
       INTEGER NUMELB(*)
       INTEGER NUMLNK(*)
       INTEGER NUMATR(*)
+      INTEGER STAT(*)
       CHARACTER*(MXSTLN) BLKTYP(*)
       CHARACTER*(maxnam) EBNAME(*)
       CHARACTER*(maxnam) NAMEEV(*)
@@ -60,17 +61,21 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
       LSTRA = LENSTR (STRA)
 
       isatn = 1
-      DO 110 IELB = 1, NELBLK
+      DO IELB = 1, NELBLK
          IF (ISABRT ()) RETURN
 
          WRITE (STRA, 10000, IOSTAT=IDUM) IELB
          CALL PCKSTR (1, STRA)
-         WRITE (*, 10010, IOSTAT=IDUM) IDELB(IELB), STRA(:LSTRA),
-     &      NUMELB(IELB), NUMLNK(IELB), NUMATR(IELB)
-
+            if (stat(ielb) .lt. 0) then
+               WRITE (*, 10010, IOSTAT=IDUM) IDELB(IELB), STRA(:LSTRA),
+     &              NUMELB(IELB), NUMLNK(IELB), NUMATR(IELB), 'DELETED'
+            else
+               WRITE (*, 10010, IOSTAT=IDUM) IDELB(IELB), STRA(:LSTRA),
+     &              NUMELB(IELB), NUMLNK(IELB), NUMATR(IELB), ''
+            end if
          IF (DONAM) THEN
-            WRITE (*, 10020) EBNAME(IELB)(:LENSTR(EBNAME(IELB))),
-     $           BLKTYP(IELB)(:LENSTR(BLKTYP(IELB)))
+               WRITE (*, 10020) EBNAME(IELB)(:LENSTR(EBNAME(IELB))),
+     $              BLKTYP(IELB)(:LENSTR(BLKTYP(IELB)))
          END IF
 
          if (numatr(ielb) .gt. 0) then
@@ -89,22 +94,22 @@ C   --   LISEV - SCRATCH - size = NVAREL (if 'V' in OPTION)
 
          IF (DOVTBL) THEN
             NSEL = 0
-            DO 100 I = 1, NVAREL
+            DO I = 1, NVAREL
                IF (ISEVOK( (IELB-1)*NELBLK+I )) THEN
                   NSEL = NSEL + 1
                   LISEV(NSEL) = I
                END IF
-  100       CONTINUE
+            END DO
 
             WRITE (*, 10030, IOSTAT=IDUM) (NAMEEV(LISEV(I)), I=1,NSEL)
          END IF
-  110 CONTINUE
+      END DO
 
       RETURN
 
 10010  FORMAT (1X, 'Block', I11, 1X, A, ':',
      &   I10, ' elements',
-     &   I10, '-node', I8, ' attributes')
+     &   I10, '-node', I8, ' attributes',2X,A)
 10020  FORMAT (4X, 'Element block name = "',A,
      $      '", Element type = "', A, '"')
 10030  FORMAT (4X, 'Defined variables:', :, 3X, 4 (2X, A), :, /
