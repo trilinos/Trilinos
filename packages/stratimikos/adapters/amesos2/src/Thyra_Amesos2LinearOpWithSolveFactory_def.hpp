@@ -177,6 +177,11 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
           amesos2Solver = ::Amesos2::create<MAT,MV>("pardiso_mkl", tpetraCrsMat);
           break;
 #endif
+#ifdef HAVE_AMESOS2_CSS_MKL
+        case Thyra::Amesos2::CSS_MKL:
+          amesos2Solver = ::Amesos2::create<MAT,MV>("css_mkl", tpetraCrsMat);
+          break;
+#endif
 #ifdef HAVE_AMESOS2_CHOLMOD
         case Thyra::Amesos2::CHOLMOD:
           amesos2Solver = ::Amesos2::create<MAT,MV>("cholmod", tpetraCrsMat);

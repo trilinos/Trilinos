@@ -1457,13 +1457,20 @@ namespace Tpetra {
           return false; // We already checked above, but check just in case
         }
         else {
-          ArrayView<const GO> lhsElts =     getLocalElementList ();
-          ArrayView<const GO> rhsElts = map.getLocalElementList ();
+          using range_type = Kokkos::RangePolicy<LocalOrdinal, typename node_type::execution_space>;
 
-          // std::equal requires that the latter range is as large as
-          // the former.  We know the ranges have equal length, because
-          // they have the same number of local entries.
-          return std::equal (lhsElts.begin (), lhsElts.end (), rhsElts.begin ());
+          auto lhsLclMap = getLocalMap();
+          auto rhsLclMap = map.getLocalMap();
+
+          LocalOrdinal numMismatchedElements = 0;
+          Kokkos::parallel_reduce("Tpetra::Map::locallySameAs",
+                                  range_type(0, this->getLocalNumElements()),
+                                  KOKKOS_LAMBDA(const LocalOrdinal lid, LocalOrdinal& numMismatches) {
+            if (lhsLclMap.getGlobalElement(lid) != rhsLclMap.getGlobalElement(lid))
+              ++numMismatches;
+          }, numMismatchedElements);
+
+          return (numMismatchedElements == 0);
         }
       }
     }

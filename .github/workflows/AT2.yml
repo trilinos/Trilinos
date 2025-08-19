@@ -721,7 +721,7 @@ jobs:
 
   framework-tests:
     needs: pre-checks
-    runs-on: [self-hosted, python-3.9]
+    runs-on: [self-hosted, python-3.9, 20250811]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
