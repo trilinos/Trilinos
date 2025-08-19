@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,15 +37,10 @@
  *
  */
 #include "fortranc.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h> /* getenv */
 #include <string.h> /* strlen */
-
-#define TRUE  1
-#define FALSE 0
-
-#define INSYMBOL "FOR0"
-#define EXSYMBOL "EXT"
 
 static char *copy_string(char *dest, char const *source, long int elements)
 {
@@ -63,30 +58,25 @@ void exname_(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
 void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
 #endif
 {
-  char string[3];
-  char symbol[7];
-  int  ExtSymbol;
-
+  char  symbol[32];
   char *darg;
 
-  if (*iunit > -100 && *iunit < 100) {
-#if Build64
-    snprintf(string, 3, "%02ld", labs(*iunit));
-#else
-    snprintf(string, 3, "%02d", abs(*iunit));
-#endif
+  *name = '\0';
+  *ln   = 0;
 
-    if (*iunit > 0) {
-      ExtSymbol = FALSE;
-      snprintf(symbol, 7, "%s%s", INSYMBOL, string);
+  bool ExtSymbol = (*iunit <= 0);
+
+  int unit = abs((int)*iunit);
+  if (unit < 100) {
+    if (ExtSymbol) {
+      snprintf(symbol, 32, "EXT%02d", unit);
     }
     else {
-      ExtSymbol = TRUE;
-      snprintf(symbol, 7, "%s%s", EXSYMBOL, string);
+      snprintf(symbol, 32, "FOR0%02d", unit);
     }
 
-    if ((darg = (char *)getenv(symbol)) != (char *)NULL) {
-      unsigned int DargLen = strlen(darg);
+    if ((darg = getenv(symbol)) != (char *)NULL) {
+      size_t DargLen = strlen(darg);
       /* We need this to give us the length of the ENVIRONMENT
        * variable while calling strlen() only once.
        */
@@ -94,31 +84,13 @@ void exname(FTNINT *iunit, char *name, FTNINT *ln, long int nlen)
       *ln = DargLen;
     }
     else if (!ExtSymbol) {
-#if Build64
-      snprintf(name, nlen, "fort.%ld", labs(*iunit));
-#else
-      snprintf(name, nlen, "fort.%d", abs(*iunit));
-#endif
+      snprintf(name, nlen, "fort.%d", unit);
       *ln = strlen(name);
-    }
-    else {
-      /* Then I have referenced an external symbol that has not been
-       *  defined...
-       */
-      *name = '\0';
-      *ln   = 0;
     }
   }
   else {
-#if Build64
     fprintf(stderr,
-            "ERROR: SUPES exname - invalid unit number %ld.  Must be between -100 and 100.\n",
-            *iunit);
-#else
-    fprintf(stderr,
-            "ERROR: SUPES exname - invalid unit number %d.  Must be between -100 and 100.\n",
-            *iunit);
-#endif
+            "ERROR: SUPES exname - invalid unit number %d.  Must be between -100 and 100.\n", unit);
   }
 }
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,6 +19,7 @@
 #include "fortyp.h"
 #include "stdtyp.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /* ifdefc.h - ifdef file for cgi routines
  * This file is used to define the system dependent ways C is
@@ -233,6 +234,10 @@ void ci_(f_integer *pds)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)pds;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -250,6 +255,10 @@ void ct_(void)
   /* set up parameter array */
   in_params[0] = (anything *)&func_id;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -267,6 +276,10 @@ void cxdfac_(void)
   /* set up parameter array */
   in_params[0] = (anything *)&func_id;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -285,6 +298,10 @@ void cpds_(f_integer *clear)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)clear;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -302,6 +319,10 @@ void cendpg_(void)
   /* set up parameter array */
   in_params[0] = (anything *)&func_id;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -322,6 +343,10 @@ void cbc_(f_integer *red, f_integer *green, f_integer *blue)
   in_params[2] = (anything *)green;
   in_params[3] = (anything *)blue;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -343,6 +368,10 @@ void cvdcx_(f_real *x1, f_real *y1, f_real *x2, f_real *y2)
   in_params[3] = (anything *)x2;
   in_params[4] = (anything *)y2;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -364,6 +393,10 @@ void cv_(f_real *x1, f_real *y1, f_real *x2, f_real *y2)
   in_params[3] = (anything *)x2;
   in_params[4] = (anything *)y2;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -382,6 +415,10 @@ void ccl_(f_integer *clipi)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)clipi;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -400,6 +437,10 @@ void cdscl_(f_integer *clipi)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)clipi;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -428,6 +469,10 @@ void cdqerr_(f_integer *nreq, f_integer *vstat, f_integer *nrem, f_integer *nret
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -460,6 +505,10 @@ void cerhct_(f_integer *n, f_integer *erclas, f_integer *hflag)
   in_params[2] = (anything *)erclas;
   in_params[3] = (anything *)hflag;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -478,6 +527,10 @@ void ccixp_(f_integer *cip)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)cip;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -507,6 +560,10 @@ void cesc1_(f_integer *funcid, f_integer *ldr, char *data, f_integer *drec_size)
   in_params[3] = (anything *)data1;
   in_params[4] = (anything *)drec_size;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -531,6 +588,10 @@ void cqid_(f_integer *maxchr, f_integer *vstat, f_integer *dclass, char *devid)
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -578,6 +639,10 @@ void cqd_(f_integer *vstat, f_integer *hscopy, f_integer *disp, f_integer *bcolo
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -615,6 +680,10 @@ void clf_(f_integer *n, f_integer *funccl, f_integer *funcid, f_integer *vstat, 
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -652,6 +721,10 @@ void clpr_(f_integer *n, char *profid, f_integer *profid_size, f_integer *vstat,
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -706,6 +779,10 @@ void cqsp_(f_integer *vstat, f_integer *nvip, f_integer *vip, f_integer *nvrp, f
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -742,6 +819,10 @@ void clesc_(f_integer *n, f_integer *escid, f_integer *vstat, f_integer *supprt)
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -789,6 +870,10 @@ void cqp_(f_integer *vstat, f_integer *vip, f_integer *vrfmt, f_integer *vrexp, 
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -827,6 +912,10 @@ void cqcl_(f_integer *vstat, f_integer *clip1, f_integer *clipr, f_integer *scli
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -859,6 +948,10 @@ void cpl_(f_integer *np, f_real *px, f_real *py)
   in_params[2] = (anything *)px;
   in_params[3] = (anything *)py;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -879,6 +972,10 @@ void cdjpl_(f_integer *np, f_real *px, f_real *py)
   in_params[2] = (anything *)px;
   in_params[3] = (anything *)py;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -899,6 +996,10 @@ void cpm_(f_integer *np, f_real *px, f_real *py)
   in_params[2] = (anything *)px;
   in_params[3] = (anything *)py;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -924,6 +1025,10 @@ void ctx1_(f_real *x, f_real *y, f_integer *flag, char *text, f_integer *text_si
   in_params[4] = (anything *)text1;
   in_params[5] = (anything *)text_size;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -944,6 +1049,10 @@ void cpg_(f_integer *np, f_real *px, f_real *py)
   in_params[2] = (anything *)px;
   in_params[3] = (anything *)py;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -972,6 +1081,10 @@ void cca_(f_real *x1, f_real *y1, f_real *x2, f_real *y2, f_real *x3, f_real *y3
   in_params[9]  = (anything *)lcp;
   in_params[10] = (anything *)cells;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -990,6 +1103,10 @@ void clnt_(f_integer *lntyp)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)lntyp;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1008,6 +1125,10 @@ void clnw_(f_real *lnwid)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)lnwid;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1026,6 +1147,10 @@ void clnc_(f_integer *lnclr)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)lnclr;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1044,6 +1169,10 @@ void cmkt_(f_integer *mktyp)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)mktyp;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1062,6 +1191,10 @@ void cmkc_(f_integer *mkclr)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)mkclr;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1080,6 +1213,10 @@ void ctxp_(f_integer *txp)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)txp;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1098,6 +1235,10 @@ void ctxc_(f_integer *txclr)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)txclr;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1116,6 +1257,10 @@ void cchh_(f_real *chhit)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)chhit;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1137,6 +1282,10 @@ void ccho_(f_integer *xup, f_integer *yup, f_integer *xbase, f_integer *ybase)
   in_params[3] = (anything *)xbase;
   in_params[4] = (anything *)ybase;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1155,6 +1304,10 @@ void cis_(f_integer *instyl)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)instyl;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1173,6 +1326,10 @@ void cflc_(f_integer *fclr)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)fclr;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1191,6 +1348,10 @@ void ccsm_(f_integer *csmode)
   in_params[0] = (anything *)&func_id;
   in_params[1] = (anything *)csmode;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1211,6 +1372,10 @@ void cct_(f_integer *starti, f_integer *nclrs, f_integer *clrs)
   in_params[2] = (anything *)nclrs;
   in_params[3] = (anything *)clrs;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
@@ -1252,6 +1417,10 @@ void cgtxx1_(f_real *x, f_real *y, char *string, f_integer *vstat, f_integer *vc
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1300,6 +1469,10 @@ void cqprl_(f_integer *vstat, f_integer *maxpl, f_integer *maxdpl, f_integer *ma
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1341,6 +1514,10 @@ void cqln_(f_integer *vstat, f_integer *npdefb, f_integer *nsetb, f_integer *max
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1380,6 +1557,10 @@ void cqlnt_(f_integer *nreq, f_integer *first, f_integer *vstat, f_integer *ntot
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1425,6 +1606,10 @@ void cqchh1_(char *font, f_integer *txp, f_integer *nreq, f_integer *first, f_in
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1474,6 +1659,10 @@ void cqfl_(f_integer *vstat, f_integer *npdefb, f_integer *nsetb, f_integer *max
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1515,6 +1704,10 @@ void cqc_(f_integer *vstat, f_integer *nsimul, f_integer *navail, f_integer *nin
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1556,6 +1749,10 @@ void cqlna_(f_integer *vstat, f_integer *lnbi, f_integer *lntyp, f_integer *lwmo
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1608,6 +1805,10 @@ void cqtxa_(f_integer *vstat, f_integer *txbi, f_integer *fonti, f_integer *font
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1647,6 +1848,10 @@ void cqcte_(f_integer *nreq, f_integer *first, f_integer *vstat, f_integer *ntot
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1681,6 +1886,10 @@ void cili_(f_integer *iclass, f_integer *idev)
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1722,6 +1931,10 @@ void crqlc_(f_integer *idev, f_real *timeout, f_integer *vstat, f_integer *rstat
 
   /* search active devices for this surface */
   short dev_found = -1;
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
     for (short surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
       if (sol_surf == devices[dev].statelist[surf]) {
@@ -1761,6 +1974,10 @@ void cpxa_(f_real *x, f_real *y, f_integer *nx, f_integer *ny, f_integer *xscal,
   in_params[8] = (anything *)ydir;
   in_params[9] = (anything *)pxclrs;
 
+  if (num_devices > MAX_DEVICES) {
+    fprintf(stderr, "Too many devices.  Max = %d, Current value = %d\n", MAX_DEVICES, num_devices);
+    exit(EXIT_FAILURE);
+  }
   for (short i = 0; i < num_devices; ++i) {
     (*devices[i].device_fn)(in_params, devices[i].num_on_surfaces, devices[i].statelist);
   } /* end for all devices */
