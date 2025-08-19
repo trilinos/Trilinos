@@ -1984,11 +1984,11 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
       rowmapHost->lazyPushToHost();
       colmapHost->lazyPushToHost();
       dommapHost->lazyPushToHost();
-      for (local_ordinal_type i = 0; i < nrows; i++) {
-        const global_ordinal_type gid = rowmap.getGlobalElement(lr);
+      for (local_ordinal_type lr = 0; lr < nrows; lr++) {
+        const global_ordinal_type gid = rowmapHost->getGlobalElement(lr);
         TEUCHOS_ASSERT(gid != Teuchos::OrdinalTraits<global_ordinal_type>::invalid());
-        if (dommap.isNodeGlobalElement(gid)) {
-          const local_ordinal_type lc = colmap.getLocalElement(gid);
+        if (dommapHost->isNodeGlobalElement(gid)) {
+          const local_ordinal_type lc = colmapHost->getLocalElement(gid);
           TEUCHOS_TEST_FOR_EXCEPT_MSG(lc == Teuchos::OrdinalTraits<local_ordinal_type>::invalid(),
                                       BlockHelperDetails::get_msg_prefix(comm) << "GID " << gid
                                                                                << " gives an invalid local column.");
