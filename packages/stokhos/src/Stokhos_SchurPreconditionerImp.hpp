@@ -44,24 +44,24 @@ fact (ordinal_type n) const
 template <typename ordinal_type, typename value_type>
 ordinal_type 
 Stokhos::SchurPreconditioner<ordinal_type,value_type>::
-size (ordinal_type n, ordinal_type m) const
+size (ordinal_type n, ordinal_type lm) const
 {
-  //n is the polynomial order and m is the number of random variables
-  // return (fact(n+m)/(fact(n)*fact(m)));
+  //n is the polynomial order and lm is the number of random variables
+  // return (fact(n+lm)/(fact(n)*fact(lm)));
   ordinal_type min;
   if (n == 0 ) 
     return 1;
   else {
-    if (n<=m){
+    if (n<=lm){
       min = n;
     }
     else {
-      min = m;
+      min = lm;
     }
     
-    ordinal_type num = n+m;
+    ordinal_type num = n+lm;
     for (ordinal_type i=1; i<=min-1; i++)
-      num = num*(n+m-i);
+      num = num*(n+lm-i);
     return num/fact(min); 
   }
 }

@@ -643,8 +643,8 @@ int main(int argc, char **argv)
 
         std::cout << "i = " << i << "j = " << j << std::endl;
 
-        double s1 = x1.evaluate(point);
-        double s2 = x2.evaluate(point);
+        s1 = x1.evaluate(point);
+        s2 = x2.evaluate(point);
         coupledSolver.solve(s1, s2, rho0, gamma0);
         coupled << s1 << " " << s2 << " " << rho0 << " " << gamma0 << std::endl;
 
