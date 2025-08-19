@@ -328,6 +328,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: save importer\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"repartition: send type\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
@@ -930,6 +931,8 @@ namespace MueLu {
          ("repartition: save importer","repartition: save importer")
       
          ("repartition: put on single proc","repartition: put on single proc")
+      
+         ("repartition: send type","repartition: send type")
       
          ("rap: relative diagonal floor","rap: relative diagonal floor")
       

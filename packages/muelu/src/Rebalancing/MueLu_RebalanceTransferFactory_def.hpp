@@ -50,6 +50,7 @@ RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOr
   SET_VALID_ENTRY("repartition: rebalance Nullspace");
   SET_VALID_ENTRY("transpose: use implicit");
   SET_VALID_ENTRY("repartition: use subcommunicators");
+  SET_VALID_ENTRY("repartition: send type");
 #undef SET_VALID_ENTRY
 
   {
@@ -192,7 +193,16 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
 
           {
             RCP<Import> trivialImporter = ImportFactory::Build(originalP->getRowMap(), originalP->getRowMap());
-            SubFactoryMonitor m2(*this, "Rebalancing prolongator -- import only", coarseLevel);
+
+            std::string monitorLabel{"Rebalancing prolongator -- import only"};
+            if (auto sendType = pL.get<std::string>("repartition: send type"); sendType != "") {
+              auto sendTypeList = Teuchos::rcp(new Teuchos::ParameterList());
+              sendTypeList->set("Send type", sendType);
+              trivialImporter->setDistributorParameters(sendTypeList);
+              monitorLabel += " [" + sendType + "]";
+            }
+
+            SubFactoryMonitor m2(*this, monitorLabel.c_str(), coarseLevel);
             rebalancedP->doImport(*originalP, *trivialImporter, Xpetra::INSERT);
           }
           rebalancedP->fillComplete(importer->getTargetMap(), originalP->getRangeMap());
