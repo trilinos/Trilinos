@@ -78,7 +78,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 #else
   num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
 #endif
-  ShyLUbasker->Options.worker_threads = BASKER_FALSE;
+  ShyLUbasker->Options.worker_threads = false;
 
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
@@ -126,11 +126,17 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
   int info = 0;
   if(this->root_)
   {
+    int nthreads = num_threads;
     if (ShyLUbasker->Options.worker_threads) {
-      // keep one worker-thread / subdomain (where originally subdomain = num_threads)
-      num_threads /= 2;
+      if (nthreads > 1) {
+        // keep one worker-thread / subdomain (where originally subdomain = num_threads)
+        nthreads /= 2;
+      } else {
+        // turn off worker threads if one thread
+        ShyLUbasker->Options.worker_threads = false;
+      }
     }
-    ShyLUbasker->SetThreads(num_threads); 
+    ShyLUbasker->SetThreads(nthreads);
 
 
     // NDE: Special case 
