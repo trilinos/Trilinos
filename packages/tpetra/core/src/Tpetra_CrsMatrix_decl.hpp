@@ -1070,6 +1070,13 @@ private:
                              const GlobalOrdinal inds[],
                              const impl_scalar_type newVals[],
                              const LocalOrdinal numElts);
+    LocalOrdinal
+    replaceGlobalValuesImplNew (impl_scalar_type rowVals[],
+                             const crs_graph_type& graph,
+                             const RowInfo& rowInfo,
+                             const GlobalOrdinal inds[],
+                             const impl_scalar_type newVals[],
+                             const LocalOrdinal numElts);
 
   public:
     /// \brief Replace one or more entries' values, using global indices.

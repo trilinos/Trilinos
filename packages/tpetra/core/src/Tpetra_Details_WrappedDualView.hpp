@@ -143,7 +143,7 @@ public:
     : originalDualView(src.originalDualView),
       dualView(src.dualView)
   { }
-
+  
   //! Conversion assignment operator.
   template <class SrcDualViewType>
   WrappedDualView& operator=(const WrappedDualView<SrcDualViewType>& src) {
@@ -233,7 +233,7 @@ public:
   ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadOnly");
-
+    
     if(needsSyncPath()) {
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
@@ -657,14 +657,22 @@ private:
 
     // We check to see if the memory is not aliased *or* if it is a supported
     // (heterogeneous memory) accelerator (for shared host/device memory).
-    return !memoryIsAliased() || Spaces::is_gpu_exec_space<typename DualViewType::execution_space>();
+    if constexpr(Spaces::is_gpu_exec_space<typename DualViewType::execution_space>()) {
+      return true;
+    } else {
+      if constexpr(!deviceMemoryIsHostAccessible) {
+        return true;
+      } else {
+        return getRawHostView().data() != getRawDeviceView().data();
+      }
+    }
   }
 
 
-  void throwIfViewsAreDifferentSizes() const {
+  void throwIfViewsAreDifferentSizes() const {    
     // Here we check *size* (the product of extents) rather than each extent individually.
     // This is mostly designed to catch people resizing one view, but not the other.
-    if(getRawDeviceView().size() != getRawHostView().size()) {
+    if(getRawDeviceView().size() != getRawHostView().size()) {    
         std::ostringstream msg;
         msg << "Tpetra::Details::WrappedDualView (name = " << getRawDeviceView().label()
             << "; host and device views are different sizes: "
@@ -696,7 +704,7 @@ private:
       throw std::runtime_error(msg.str());
     }
   }
-
+ 
   bool iAmASubview() {
     return getRawHostOriginalView() != getRawHostView();
   }
