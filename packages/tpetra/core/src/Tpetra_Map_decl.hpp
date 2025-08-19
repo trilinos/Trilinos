@@ -642,6 +642,11 @@ namespace Tpetra {
     ///   the same value as
     ///   Teuchos::OrdinalTraits<global_ordinal_type>::invalid().
     global_ordinal_type getGlobalElement (local_ordinal_type localIndex) const;
+    bool getGlobalElements(
+      const local_ordinal_type localIndices[],
+      size_t numEntries,
+      global_ordinal_type globalIndices[]
+    ) const;
 
     /// \brief Get the LocalMap for Kokkos-Kernels.
     ///
