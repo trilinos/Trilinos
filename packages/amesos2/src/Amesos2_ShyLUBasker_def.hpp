@@ -57,7 +57,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.verbose        = BASKER_FALSE;
   ShyLUbasker->Options.prune          = BASKER_TRUE;
   ShyLUbasker->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
-  ShyLUbasker->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
+  ShyLUbasker->Options.blk_matching   = 0; // NOT use max-weight matching from Basker on each diagonal block
   ShyLUbasker->Options.matrix_scaling = 0; // use matrix scaling on a big A block
   ShyLUbasker->Options.min_block_size = 0; // no merging small blocks
   ShyLUbasker->Options.amd_dom           = BASKER_TRUE;  // use block-wise AMD
@@ -78,6 +78,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 #else
   num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
 #endif
+  ShyLUbasker->Options.worker_threads = false;
 
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
@@ -125,7 +126,17 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
   int info = 0;
   if(this->root_)
   {
-    ShyLUbasker->SetThreads(num_threads); 
+    int nthreads = num_threads;
+    if (ShyLUbasker->Options.worker_threads) {
+      if (nthreads > 1) {
+        // keep one worker-thread / subdomain (where originally subdomain = num_threads)
+        nthreads /= 2;
+      } else {
+        // turn off worker threads if one thread
+        ShyLUbasker->Options.worker_threads = false;
+      }
+    }
+    ShyLUbasker->SetThreads(nthreads);
 
 
     // NDE: Special case 
@@ -159,7 +170,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
           sp_rowptr.data(),
           sp_colind.data(),
           sp_values,
-          true);
+          true); // true = _crs_transpose_needed
 
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
           std::runtime_error, "Error in ShyLUBasker Symbolic");
@@ -404,6 +415,10 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       num_threads = parameterList->get<int>("num_threads");
     }
+  if(parameterList->isParameter("worker_threads"))
+    {
+      ShyLUbasker->Options.worker_threads = parameterList->get<bool>("worker_threads");
+    }
   if(parameterList->isParameter("pivot"))
     {
       ShyLUbasker->Options.no_pivot = (!parameterList->get<bool>("pivot"));
@@ -547,7 +562,7 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Use prune on BTF blocks (Not Supported)");
       pl->set("btf_matching",  2, 
               "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
-      pl->set("blk_matching", 1, 
+      pl->set("blk_matching", 0, 
               "Matching optioon for block: 0 = none, 1 or anything else = Basker (default), (2 = MC64 if enabled)");
       pl->set("matrix_scaling", 0, 
               "Use matrix scaling to biig A BTF block: 0 = no-scaling, 1 = symmetric diagonal scaling, 2 = row-max, and then col-max scaling");
@@ -571,6 +586,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Solve the transpose A");
       pl->set("threaded_solve", false,
               "Use threads for forward/backward solves");
+      pl->set("worker_threads", false,
+              "Use worker thread for ND factorization");
       pl->set("use_sequential_diag_facto", false,
               "Use sequential algorithm to factor each diagonal block");
       pl->set("user_fill", (double)BASKER_FILL_USER,

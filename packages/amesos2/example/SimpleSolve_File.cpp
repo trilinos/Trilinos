@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
 
   size_t numVectors = 1;
+  size_t numSolves = 1;
   bool multi_solve     = false;
   bool printMatrix     = false;
   bool printSolution   = false;
@@ -87,6 +88,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("filename",&mat_filename,"Filename for Matrix-Market test matrix.");
   cmdp.setOption("map_filename",&map_filename,"Filename for matrix rowmap.");
+  cmdp.setOption("numSolves",&numSolves,"Number of computes & solves.");
   cmdp.setOption("nrhs",&numVectors,"Number of right-hand-side vectors.");
   cmdp.setOption("rhs_filename",&rhs_filename,"Filename for Matrix-Market right-hand-side.");
   cmdp.setOption("solvername",&solvername,"Name of solver.");
@@ -241,70 +243,74 @@ int main(int argc, char *argv[]) {
     Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
   }
   solver->symbolicFactorization(); comm->barrier();
-  solver->numericFactorization();  comm->barrier();
-  solver->solve(); comm->barrier();
-  if (multi_solve) {
+  for (size_t s = 0; s < numSolves; s++) {
+    if (multi_solve && s > 0)
     {
-      // change (1,1) diagonal entry value
+      // perturb (1,1) diagonal entry value
       Teuchos::Array<GO> gblColIndsBuf (1);
       Teuchos::Array<Scalar> valsBuf (1);
-      valsBuf[0] = 7.0;
+      valsBuf[0] = Scalar(s);
       gblColIndsBuf[0] = 0;
 
       Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf.view (0, 1);
       Teuchos::ArrayView<Scalar> vals = valsBuf.view (0, 1);
 
       A->resumeFill();
-      A->replaceGlobalValues (0, gblColInds, vals);
+      if (myRank == 0)
+      {
+        A->sumIntoGlobalValues (0, gblColInds, vals);
+      }
       A->fillComplete();
     }
-    // perform numeric for the second time
+    // perform numeric
+    //A->describe(*fos,Teuchos::VERB_EXTREME);
     solver->numericFactorization();
+    comm->barrier();
 
-    // chage RHS, and re-do solve
-    B->putScalar(10);
+    // perform solve
     solver->solve();
-  }
-  if(useStackedTimer) {
-    stackedTimer->stopBaseTimer();
-  }
-  if( printSolution ){
-    // Print the solution
-    RCP<Map<LO,GO> > root_map
-      = rcp( new Map<LO,GO>(nrows,myRank == 0 ? nrows : 0,0,comm) );
-    RCP<MV> Xhat = rcp( new MV(root_map,numVectors) );
-    RCP<Import<LO,GO> > importer = rcp( new Import<LO,GO>(rngmap,root_map) );
-    if( allprint ){
-      if( myRank == 0 ) *fos << "Solution :" << std::endl;
-      Xhat->describe(*fos,Teuchos::VERB_EXTREME);
-      *fos << std::endl;
-    } else {
-      Xhat->doImport(*X,*importer,Tpetra::REPLACE);
-      if( myRank == 0 ){
-        *fos << "Solution :" << std::endl;
+    comm->barrier();
+
+    if(printSolution) {
+      // Print the solution
+      RCP<Map<LO,GO> > root_map
+        = rcp( new Map<LO,GO>(nrows,myRank == 0 ? nrows : 0,0,comm) );
+      RCP<MV> Xhat = rcp( new MV(root_map,numVectors) );
+      RCP<Import<LO,GO> > importer = rcp( new Import<LO,GO>(rngmap,root_map) );
+      if( allprint ){
+        if( myRank == 0 ) *fos << "Solution :" << std::endl;
         Xhat->describe(*fos,Teuchos::VERB_EXTREME);
         *fos << std::endl;
+      } else {
+        Xhat->doImport(*X,*importer,Tpetra::REPLACE);
+        if( myRank == 0 ){
+          *fos << "Solution :" << std::endl;
+          Xhat->describe(*fos,Teuchos::VERB_EXTREME);
+          *fos << std::endl;
+        }
       }
     }
-  }
 
-  if( checkSolution ){
-    const Scalar one = Teuchos::ScalarTraits<Scalar>::one ();
-    RCP<MV> R = rcp(new MV(rngmap,numVectors));
-    A->apply(*X, *R);
-    R->update(one, *B, -one);
-    for (size_t j = 0; j < numVectors; ++j) {
-      auto Rj = R->getVector(j);
-      auto Bj = B->getVector(j);
-      auto r_norm = Rj->norm2();
-      auto b_norm = Bj->norm2();
-      if (myRank == 0) {
-        *fos << "Relative Residual norm = " << r_norm << " / " << b_norm << " = "
-             << r_norm / b_norm << std::endl;
+    if(checkSolution){
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one ();
+      RCP<MV> R = rcp(new MV(rngmap,numVectors));
+      A->apply(*X, *R);
+      R->update(one, *B, -one);
+      for (size_t j = 0; j < numVectors; ++j) {
+        auto Xj = X->getVector(j);
+        auto Rj = R->getVector(j);
+        auto Bj = B->getVector(j);
+        auto r_norm = Rj->norm2();
+        auto b_norm = Bj->norm2();
+        auto x_norm = Xj->norm2();
+        if (myRank == 0) {
+          *fos << "Relative Residual norm = " << r_norm << " / " << b_norm << " = "
+               << r_norm / b_norm << "  (xnorm = " << x_norm << ")" << std::endl;
+        }
       }
     }
-    if (myRank == 0) *fos << std::endl;
   }
+  if (checkSolution && myRank == 0) *fos << std::endl;
 
   if(useStackedTimer) {
     Teuchos::StackedTimer::OutputOptions options;
@@ -313,6 +319,7 @@ int main(int argc, char *argv[]) {
     options.output_histogram = true;
     options.output_fraction=true;
     options.output_minmax = true;
+    stackedTimer->stopBaseTimer();
     stackedTimer->report(std::cout, comm, options);
   } else if( printTiming ){
     // Print some timing statistics

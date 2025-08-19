@@ -1073,7 +1073,7 @@ namespace BaskerNS
       }
       BTF_A.gnorm = A.anorm;
       if(Options.verbose == BASKER_TRUE) {
-         cout<< " Basker Factor: Time to compute " 
+         cout<< " Basker Factor: Time to compute" 
              << " norm(A) = "     << BTF_A.gnorm << " with n = " << A.ncol << ", and "
              << " norm(BTF_A) = " << BTF_A.anorm << " with n = " << BTF_A.ncol
              << " : " << normA_timer.seconds() << std::endl;

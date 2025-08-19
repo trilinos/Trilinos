@@ -47,8 +47,8 @@ namespace BaskerNS
       {}
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const int j) const {
-        Int b = post2downtop[j];
+      void operator()(const int id) const {
+        Int b = post2downtop[id];
         BASKER_MATRIX &L = LL(b)(0);
 
         const Int bcol = L.scol + offset;
@@ -92,8 +92,8 @@ namespace BaskerNS
       {}
 
       KOKKOS_INLINE_FUNCTION
-      void operator()(const int j) const {
-        Int b = post2downtop(j);
+      void operator()(const int id) const {
+        Int b = post2downtop(id);
         BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
 
         const Int bcol = U.scol + offset;
