@@ -1933,7 +1933,7 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
 
   using impl_type = BlockHelperDetails::ImplType<MatrixType>;
 
-  using execution_space      = typename impl_type::execution_space;
+  using execution_space = typename impl_type::execution_space;
 
   using local_ordinal_type         = typename impl_type::local_ordinal_type;
   using global_ordinal_type        = typename impl_type::global_ordinal_type;
@@ -1945,7 +1945,7 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
   using crs_matrix_type            = typename impl_type::tpetra_crs_matrix_type;
   using block_crs_matrix_type      = typename impl_type::tpetra_block_crs_matrix_type;
   using btdm_scalar_type_3d_view   = typename impl_type::btdm_scalar_type_3d_view;
-  using lo_traits = Tpetra::Details::OrdinalTraits<local_ordinal_type>;
+  using lo_traits                  = Tpetra::Details::OrdinalTraits<local_ordinal_type>;
 
   constexpr int vector_length = impl_type::vector_length;
 
@@ -1984,7 +1984,7 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
       rowmapHost->lazyPushToHost();
       colmapHost->lazyPushToHost();
       dommapHost->lazyPushToHost();
-      for(local_ordinal_type i = 0; i < nrows; i++) {
+      for (local_ordinal_type i = 0; i < nrows; i++) {
         const global_ordinal_type gid = rowmap.getGlobalElement(lr);
         TEUCHOS_ASSERT(gid != Teuchos::OrdinalTraits<global_ordinal_type>::invalid());
         if (dommap.isNodeGlobalElement(gid)) {
@@ -2007,7 +2007,7 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
           const global_ordinal_type gid = rowmap.getGlobalElement(lr);
           if (dommap.getLocalElement(gid) != lo_traits::invalid()) {
             const local_ordinal_type lc = colmap.getLocalElement(gid);
-            col2row(lc) = lr;
+            col2row(lc)                 = lr;
           }
         });
   }
@@ -2038,7 +2038,7 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
       Kokkos::parallel_reduce
           // profiling interface does not work
           (  //"performSymbolicPhase::RangePolicy::count_nnz",
-              policy, KOKKOS_LAMBDA(const local_ordinal_type &lr, size_type& update_D_nnz, size_type& update_R_nnz_owned, size_type& update_R_nnz_remote) {
+              policy, KOKKOS_LAMBDA(const local_ordinal_type &lr, size_type &update_D_nnz, size_type &update_R_nnz_owned, size_type &update_R_nnz_remote) {
                 // LID -> index.
                 const local_ordinal_type ri0 = lclrow2idx(lr);
                 const local_ordinal_type pi0 = rowidx2part(ri0);
