@@ -484,6 +484,7 @@ public:
     _h_buf_factor_ptr = size_type_array_host(do_not_initialize_tag("h_buf_factor_ptr"), _h_buf_level_ptr(_nlevel));
     _h_buf_solve_ptr = size_type_array_host(do_not_initialize_tag("h_buf_solve_ptr"), _h_buf_level_ptr(_nlevel));
     {
+      const ordinal_type method_id = this->getSolutionMethod();
       for (ordinal_type i = 0; i < _nlevel; ++i) {
         const ordinal_type lbeg = _h_buf_level_ptr(i);
         const ordinal_type pbeg = _h_level_ptr(i), pend = _h_level_ptr(i + 1);
@@ -495,10 +496,11 @@ public:
           const auto s = _h_supernodes(sid);
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           const ordinal_type schur_work_size = n_m * (n_m + max_factor_team_size);
-          const ordinal_type chol_factor_work_size_variants[4] = {schur_work_size, max(m * m, schur_work_size),
+          const ordinal_type chol_factor_work_size_variants[4] = {schur_work_size,
+                                                                  max(m * m, schur_work_size),
                                                                   m * m + schur_work_size,
                                                                   m * m + schur_work_size};
-          const ordinal_type chol_factor_work_size = chol_factor_work_size_variants[variant];
+          const ordinal_type chol_factor_work_size = chol_factor_work_size_variants[variant] + (method_id == 0 ? m*n_m : 0);
           const ordinal_type ldl_factor_work_size_variant_0 = chol_factor_work_size_variants[0] + max(32 * m, m * n);
           const ordinal_type ldl_factor_work_size_variants[4] = {ldl_factor_work_size_variant_0,
                                                                  max(m * m, ldl_factor_work_size_variant_0 + m * n_m),
@@ -520,8 +522,7 @@ public:
                                                             lu_solve_work_size,
                                                             lu_solve_work_size};
 
-          const ordinal_type method_id = (this->getSolutionMethod()-1 < 0 ? 0 : this->getSolutionMethod()-1);
-          const ordinal_type index_work_size = method_id;
+          const ordinal_type index_work_size = (method_id-1 < 0 ? 0 : method_id-1);
           const ordinal_type factor_work_size = factor_work_size_variants[index_work_size];
           const ordinal_type solve_work_size = solve_work_size_variants[index_work_size];
 

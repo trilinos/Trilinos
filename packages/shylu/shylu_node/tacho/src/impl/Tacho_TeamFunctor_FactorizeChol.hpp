@@ -77,10 +77,11 @@ public:
   ///
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void factorize_var0(MemberType &member, const supernode_type &s,
-                                             const value_type_matrix &ABR) const {
+                                             const value_type_matrix &ABR, const value_type_matrix &W) const {
     using CholAlgoType = typename CholAlgorithm_Team::type;
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using HerkAlgoType = typename HerkAlgorithm_Team::type;
+    using GemmAlgoType = typename GemmAlgorithm_Team::type;
 
     int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -107,23 +108,20 @@ public:
         const value_type one(1), minus_one(-1), zero(0);
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         if (_ldl) {
+          // Apply L^{-T} on off-diagonal
           Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
                                                                                     ATR);
-          // TODO: replace it with a kernel call
-          for (ordinal_type j=0; j<n_m; j++) {
-            for (ordinal_type i=0; i<m; i++) {
-              ATR(i, j) /= ATL(i,i);
-            }
-          }
-          // TODO: replace it with a kernel call
-          for (ordinal_type j=0; j<n_m; j++) {
-            for (ordinal_type i=0; i<n_m; i++) {
-              ABR(i, j) = zero;
-              for (ordinal_type k=0; k<m; k++) {
-                ABR(i, j) -= ATR(k, i) * ATL(k, k) * ATR(k, j);
-              }
-            }
-          }
+
+          // Save in workspace
+          Copy<Algo::Internal>::invoke(member, W, ATR);
+
+          // Apply D^{-1} on off-diagonal
+          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+            ::invoke(member, ATL, ATR);
+
+          // ABR = -ATR*W
+          GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
+                                                                                                  W, zero, ABR);
         } else {
           Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                     ATR);
@@ -387,7 +385,8 @@ public:
       const auto bufptr = _buf.data() + _buf_ptr(lid);
       if (factorize_tag_type::variant == 0) {
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-        factorize_var0(member, s, ABR);
+        UnmanagedViewType<value_type_matrix> W(bufptr + (n_m*n_m), (_ldl ? m : 0), (_ldl ? n_m : 0));
+        factorize_var0(member, s, ABR, W);
       } else if (factorize_tag_type::variant == 1) {
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
