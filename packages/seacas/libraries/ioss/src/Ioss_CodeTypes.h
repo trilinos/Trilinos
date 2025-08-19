@@ -101,6 +101,12 @@ using Kokkos_Complex = Kokkos::complex<double>;
 #define IOSS_DEBUG_OUTPUT 0
 #endif
 
+#ifdef NDEBUG
+#define IOSS_ASSERT_USED(x) (void)x
+#else
+#define IOSS_ASSERT_USED(x)
+#endif
+
 // For use to create a no-op get or put_field_internal function...
 #define IOSS_NOOP_GFI(type)                                                                        \
   int64_t get_field_internal(const type *, const Ioss::Field &, void *, size_t) const override     \

@@ -340,6 +340,7 @@ const char *ex_strerror(int err_num)
   case EX_LOOKUPFAIL:
     return "Id lookup failed for specified entity type. Could not find entity with specified id.";
   case EX_BADFILENAME: return "Empty or null filename specified.";
+  case EX_LONGFIELDNAME: return "Field name is too long to generate a field metadata attribute.";
   case EX_DUPLICATEID: return "Duplicate entity id found.";
   case EX_DUPLICATEOPEN: return "File is open multiple times for both read and write.";
   case EX_BADPARAM: return "Bad parameter.";
