@@ -1,7 +1,10 @@
+#include <Akri_AuxMetaData.hpp>
+#include <Akri_BoundingBoxMesh.hpp>
 #include <Akri_UnitMeshUtils.hpp>
 
 #include <Akri_FieldRef.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_OutputUtils.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_math/StkVector.hpp>
@@ -30,6 +33,21 @@ stk::mesh::Entity find_local_node_closest_to_location(const stk::mesh::BulkData&
   }
 
   return closest;
+}
+
+void populate_bounding_box_mesh_and_activate(BoundingBoxMesh & bboxMesh, const stk::math::Vector3d & minCorner, const stk::math::Vector3d & maxCorner, const double meshSize)
+{
+  bboxMesh.set_domain(krino::BoundingBoxMesh::BoundingBoxType(minCorner, maxCorner), meshSize);
+  bboxMesh.populate_mesh();
+  stk::mesh::BulkData & mesh = bboxMesh.bulk_data();
+  activate_all_entities(mesh, AuxMetaData::get(bboxMesh.meta_data()).active_part());
+}
+
+void generate_and_write_bounding_box_mesh(const stk::topology elemTopology, const stk::math::Vector3d & minCorner, const stk::math::Vector3d & maxCorner, const double meshSize, const std::string & filename)
+{
+  BoundingBoxMesh bboxMesh(elemTopology, MPI_COMM_WORLD);
+  populate_bounding_box_mesh_and_activate(bboxMesh, minCorner, maxCorner, meshSize);
+  output_mesh_with_fields(bboxMesh.bulk_data(), AuxMetaData::get(bboxMesh.meta_data()).active_part(), filename, 1, 0.0);
 }
 
 }

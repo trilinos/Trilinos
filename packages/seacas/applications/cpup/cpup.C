@@ -44,7 +44,7 @@ namespace {
   using GlobalBcMap    = std::map<std::pair<std::string, std::string>, Ioss::BoundaryCondition>;
   using GlobalBlockMap = std::map<const std::string, const Ioss::StructuredBlock *>;
   using GlobalIJKMap   = std::map<const std::string, Ioss::IJK_t>;
-  using GlobalAssembly = std::map<std::string, std::vector<std::string>>;
+  using GlobalAssembly = std::map<std::string, std::vector<std::string>, std::less<>>;
   using PartVector     = std::vector<std::unique_ptr<Ioss::Region>>;
 
   GlobalZgcMap generate_global_zgc(const PartVector &part_mesh);
@@ -746,7 +746,7 @@ namespace {
       const auto &blocks = part->get_structured_blocks();
       for (const auto &block : blocks) {
         const auto [part_name, proc] = Iocgns::Utils::decompose_name(block->name(), true);
-        auto &cur_global             = global_block[part_name];
+        const auto &cur_global       = global_block[part_name];
         block->set_ijk_global(cur_global);
       }
       if (debug_level & 4) {

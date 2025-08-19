@@ -12,7 +12,6 @@
 #include <gtest/gtest.h>
 
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
-#include <Akri_Unit_LogRedirecter.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_PhaseTag.hpp>
 #include <Akri_AuxMetaData.hpp>
@@ -75,7 +74,6 @@ private:
   void set_death_phases();
 
   SimpleStkFixture fixture;
-  LogRedirecter log;
   AuxMetaData & myAuxMeta;
   PhaseVec myPhases;
 };

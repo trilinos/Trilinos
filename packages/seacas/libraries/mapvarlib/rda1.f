@@ -69,7 +69,9 @@ C QA
         NQAREC = MAXQA
       END IF
 
-      CALL EXGQA (NTP2EX,QALINE,IERR)
+      if (nqarec .gt. 0) then
+         CALL EXGQA (NTP2EX,QALINE,IERR)
+      end if
       IF (NQAREC .EQ. MAXQA)THEN
         DO IQ = 1,4
            DO NQ = 2,MAXQA
@@ -84,7 +86,9 @@ C QA
       QALINE(2,NQAREC) = QAINFO(3)
       QALINE(3,NQAREC) = QAINFO(5)
       QALINE(4,NQAREC) = QAINFO(6)
-      CALL EXPQA (NTP4EX,NQAREC,QALINE,IERR)
+      if (NQAREC .gt. 0) then
+         CALL EXPQA (NTP4EX,NQAREC,QALINE,IERR)
+      end if
 
 C VARIABLE NAMES
 

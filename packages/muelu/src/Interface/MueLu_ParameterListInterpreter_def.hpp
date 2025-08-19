@@ -1792,6 +1792,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (changedPRViaCopyrebalance_)
         newPparams.set("repartition: explicit via new copy rebalance P and R", true);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: send type", std::string, newPparams);
       newP->SetParameterList(newPparams);
       newP->SetFactory("Importer", manager.GetFactory("Importer"));
       newP->SetFactory("P", manager.GetFactory("P"));
@@ -1818,6 +1819,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       ParameterList newRparams;
       newRparams.set("type", "Restriction");
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: send type", std::string, newRparams);
       if (changedPRrebalance_)
         newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
       if (changedPRViaCopyrebalance_)

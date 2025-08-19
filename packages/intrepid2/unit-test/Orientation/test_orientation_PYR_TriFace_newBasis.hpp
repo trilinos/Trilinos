@@ -245,7 +245,6 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
   typedef std::array<ordinal_type,3> faceType;
   typedef CellTools<DeviceType> ct;
   typedef OrientationTools<DeviceType> ots;
-  typedef RealSpaceTools<DeviceType> rst;
   typedef FunctionSpaceTools<DeviceType> fst;
 
   using  basisType = Basis<DeviceType,ValueType,ValueType>;

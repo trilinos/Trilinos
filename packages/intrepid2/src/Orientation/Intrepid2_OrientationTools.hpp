@@ -385,7 +385,8 @@ namespace Intrepid2 {
     // 
     /** \brief  key :: basis name, order, value :: matrix data view type 
      */
-    using OrtCoeffDataType = std::map<std::pair<std::string,ordinal_type>,Kokkos::View<double****,DeviceType> >;
+    using KeyType = std::pair<const std::string,ordinal_type>;
+    using OrtCoeffDataType = std::map<KeyType,Kokkos::View<double****,DeviceType> >;
 
     static OrtCoeffDataType ortCoeffData;
     static OrtCoeffDataType ortInvCoeffData;

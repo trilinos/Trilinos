@@ -143,7 +143,7 @@ namespace MueLu {
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
   "<Parameter name=\"W cycle start level\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=\"1.0\"/>"
-  "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"number of vectors\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
@@ -328,6 +328,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: save importer\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"repartition: send type\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
@@ -930,6 +931,8 @@ namespace MueLu {
          ("repartition: save importer","repartition: save importer")
       
          ("repartition: put on single proc","repartition: put on single proc")
+      
+         ("repartition: send type","repartition: send type")
       
          ("rap: relative diagonal floor","rap: relative diagonal floor")
       

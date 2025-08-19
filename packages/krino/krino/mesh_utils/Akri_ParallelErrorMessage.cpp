@@ -13,7 +13,7 @@
 namespace krino
 {
 
-ParallelErrorMessage::ParallelErrorMessage(const stk::Parallel & c) : comm(c) {local_message.precision(16);}
+ParallelErrorMessage::ParallelErrorMessage(const stk::Parallel & c, const unsigned precision) : comm(c) {local_message.precision(precision);}
 
 std::pair<bool, std::string> gather_messages(const stk::ParallelMachine comm, const std::string & localMsg)
 {
