@@ -14,8 +14,8 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::GaussPattersonLegendreBasis<ordinal_type, value_type>::
-GaussPattersonLegendreBasis(ordinal_type p, bool normalize, bool isotropic_) :
-  LegendreBasis<ordinal_type, value_type>(p, normalize),
+GaussPattersonLegendreBasis(ordinal_type ap, bool anormalize, bool isotropic_) :
+  LegendreBasis<ordinal_type, value_type>(ap, anormalize),
   isotropic(isotropic_)
 {
 #ifdef HAVE_STOKHOS_DAKOTA
@@ -25,9 +25,9 @@ GaussPattersonLegendreBasis(ordinal_type p, bool normalize, bool isotropic_) :
 
 template <typename ordinal_type, typename value_type>
 Stokhos::GaussPattersonLegendreBasis<ordinal_type, value_type>::
-GaussPattersonLegendreBasis(ordinal_type p, 
+GaussPattersonLegendreBasis(ordinal_type ap, 
 			    const GaussPattersonLegendreBasis& basis) :
-  LegendreBasis<ordinal_type, value_type>(p, basis),
+  LegendreBasis<ordinal_type, value_type>(ap, basis),
   isotropic(basis.isotropic)
 {
 }
@@ -104,10 +104,10 @@ quadDegreeOfExactness(ordinal_type n) const
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
 Stokhos::GaussPattersonLegendreBasis<ordinal_type,value_type>::
-cloneWithOrder(ordinal_type p) const
+cloneWithOrder(ordinal_type ap) const
 {
   return 
-    Teuchos::rcp(new Stokhos::GaussPattersonLegendreBasis<ordinal_type,value_type>(p,*this));
+    Teuchos::rcp(new Stokhos::GaussPattersonLegendreBasis<ordinal_type,value_type>(ap,*this));
 }
 
 template <typename ordinal_type, typename value_type>

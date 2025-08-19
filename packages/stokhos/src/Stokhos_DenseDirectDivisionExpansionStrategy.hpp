@@ -148,7 +148,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 
     // Compute B
     B->putScalar(0.0);
-    for (ordinal_type i=0; i<pa; i++)
+    for (i=0; i<pa; i++)
       (*B)(i,0) = ca[i]*basis->norm_squared(i);
 
     // Setup solver
@@ -167,7 +167,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
     // std::cout << "kappa = " << 1.0/kappa << std::endl;
 
     // Compute c
-    for (ordinal_type i=0; i<pc; i++)
+    for (i=0; i<pc; i++)
       cc[i] = alpha*(*X)(i,0) + beta*cc[i];
   }
   else {

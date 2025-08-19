@@ -149,7 +149,7 @@ namespace Stokhos {
 	for (ordinal_type i=0; i<coeff_sz; ++i)
 	  reorder_map[product_basis.term(i)] = i;
 	perm.resize(coeff_sz);
-	ordinal_type idx = 0;
+	idx = 0;
 	for (typename reorder_type::iterator it = reorder_map.begin();
 	     it != reorder_map.end(); ++it)
 	  perm[idx++] = it->second;
