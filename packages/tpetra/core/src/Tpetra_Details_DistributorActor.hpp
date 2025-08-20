@@ -254,7 +254,7 @@ void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan &plan,
   using size_type = Teuchos::Array<size_t>::size_type;
   using ExportValue = typename ExpView::non_const_value_type;
 
-  ProfilingRegion pr("Tpetra::Distributor: doPostsIalltofewvImpl");
+  ProfilingRegion pr("Tpetra::Distributor::doPostsIalltofewvImpl");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       !plan.getIndicesTo().is_null(), std::runtime_error,
