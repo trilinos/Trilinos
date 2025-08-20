@@ -4870,14 +4870,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
       return;
     }
-    else if (beta == ZERO) {
-      //Thyra was implicitly assuming that Y gets set to zero / or is overwritten
-      //when bets==0. This was not the case with transpose in a multithreaded
-      //environment where a multiplication with subsequent atomic_adds is used
-      //since 0 is effectively not special cased. Doing the explicit set to zero here
-      //This catches cases where Y is nan or inf.
-      Y_in.putScalar (ZERO);
-    }
 
     const size_t numVectors = X_in.getNumVectors ();
 
