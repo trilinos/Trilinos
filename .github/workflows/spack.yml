@@ -27,9 +27,11 @@ jobs:
       - name: Spack build
         shell: bash -l {0}
         run: |
-          cd /home/runner/spack && git checkout develop && git pull --quiet
-          sed -i 's/.*- gh.*//g' /home/runner/environment/spack.yaml
-          cat /home/runner/environment/spack.yaml
+          cd /home/runner/spack
+          git checkout develop && git pull --quiet
+          echo -n "Spack version is: "
+          git rev-parse HEAD
+          spack repo update
           spack reindex
           spack develop --no-clone --path $GITHUB_WORKSPACE trilinos@develop
           spack add trilinos@develop
