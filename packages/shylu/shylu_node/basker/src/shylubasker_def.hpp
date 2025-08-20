@@ -2150,29 +2150,35 @@ namespace BaskerNS
   {
     //Need to test if power of nparts
     //TODO: hard-coded to be two. It is also hard-coded in shylubasker_structs.hpp
-    if (pow(2, log2(nthreads)) != nthreads)
+    int check_value = pow(2, log2(nthreads));
+    if (check_value != nthreads)
     {
-      BASKER_ASSERT(0==1, "Basker SetThreads Assert: Number of thread error - not a power of 2");
-      //Set default 1
-      num_threads = 1;
-      return BASKER_ERROR;
+      if(Options.verbose == BASKER_TRUE) {
+        printf("Basker SetThreads Assert: Number of thread error - not a power of 2. Re-setting from %d to %d.",
+               nthreads, check_value);
+      }
+      nthreads = check_value;
     }
 
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
     #ifdef KOKKOS_ENABLE_OPENMP
-    int check_value = Kokkos::OpenMP::impl_max_hardware_threads();
+    check_value = Kokkos::OpenMP::impl_max_hardware_threads();
+    #else
+    check_value = 1;
+    #endif
     if(nthreads > check_value)
     {
-      BASKER_ASSERT(0==1, "Basker SetThreads Assert: Number of thread not available");
-      num_threads =  1;
-      return BASKER_ERROR;
+      if(Options.verbose == BASKER_TRUE) {
+        printf("Basker SetThreads Assert: Number of thread not available (%d > %d). Resetting to %d.",
+                nthreads, check_value, check_value);
+      }
+      nthreads = check_value;
     }
-    #else
-    nthreads = 1;
-    #endif
 
+    // Finally, set the internal number of threads used by ShyLU-Basker.
     num_threads = nthreads;
+
     return BASKER_SUCCESS;
   }//end SetThreads()
 
