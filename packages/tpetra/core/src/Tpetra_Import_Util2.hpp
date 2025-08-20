@@ -700,7 +700,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
                         const Teuchos::ArrayView<Ordinal> & CRS_colind)
 {
   Teuchos::ArrayView<Tpetra::Details::DefaultTypes::scalar_type> CRS_vals;
-  return sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+  return sortAndMergeCrsEntries<Tpetra::Details::DefaultTypes::scalar_type, Ordinal>(CRS_rowptr, CRS_colind, CRS_vals);
 }
 
 template<class rowptr_view_type, class colind_view_type, class vals_view_type>
