@@ -22,6 +22,7 @@
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 110200
+#define FMT_HEADER_ONLY
 
 // Detect compiler versions.
 #if defined(__clang__) && !defined(__ibmxl__)
