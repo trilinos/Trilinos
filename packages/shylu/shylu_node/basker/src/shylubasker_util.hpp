@@ -251,7 +251,7 @@ namespace BaskerNS
     #ifdef BASKER_KOKKOS
     Kokkos::parallel_for(
                          TeamPolicy(Exe_Space::thread_pool_size(),1),
-                         KOKKOS_LAMBDA(const TeamMember& thread)
+                         BASKER_LAMBDA(const TeamMember& thread)
     #else
     #pragma omp parallel
     #endif
@@ -288,7 +288,7 @@ namespace BaskerNS
 
     #ifdef BASKER_KOKKOS
     Kokkos::parallel_for(TeamPolicy(Exe_Space::thread_pool_size(),1),
-                         KOKKOS_LAMBDA(const TeamMember& thread)
+                         BASKER_LAMBDA(const TeamMember& thread)
     #else
     #pragma omp parallel
     #endif

@@ -133,6 +133,8 @@ enum BASKER_INCOMPLETE_CODE
 //Execution Space
 #include <Kokkos_Core.hpp>
 #define BASKER_EXE_SPACE     Kokkos::OpenMP
+#define BASKER_RANGE_POLICY  Kokkos::RangePolicy
+#define BASKER_TEAM_POLICY   Kokkos::TeamPolicy
 //ReMacro Basker Classes
 #define BASKER_SOLVER        Basker<BASKER_INT,BASKER_ENTRY,BASKER_EXE_SPACE>
 #define BASKER_MATRIX        BaskerMatrix<BASKER_INT, BASKER_ENTRY, BASKER_EXE_SPACE>
@@ -501,13 +503,8 @@ enum BASKER_INCOMPLETE_CODE
 #endif //end ifdef BASKER_KOKKOS
 
 //Inline command
-#ifdef BASKER_KOKKOS
-#define BASKER_INLINE   KOKKOS_INLINE_FUNCTION
-#else
-#define BASKER_INLINE    inline
-#endif
-
-#define BASKER_FINLINE  inline
+#define BASKER_INLINE   inline
+#define BASKER_LAMBDA   [&]
 
 //Time Macro
 #ifdef BASKER_TIME

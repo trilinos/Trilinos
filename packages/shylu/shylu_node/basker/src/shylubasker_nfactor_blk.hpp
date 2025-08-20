@@ -1037,7 +1037,7 @@ namespace BaskerNS
 
  
   template<class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
+  BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::t_local_reach_short
   (
    const Int kid, 
@@ -1322,7 +1322,7 @@ namespace BaskerNS
    //Note: need to fix indexing for color
   //Uses local idx for local blks
   template <class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
+  BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::t_local_reach_old
   (Int kid, Int lvl, Int l,
    Int j, Int *top)
@@ -1467,7 +1467,7 @@ namespace BaskerNS
 
   //local idx for local blks
   template <class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
+  BASKER_INLINE
   int Basker<Int, Entry,Exe_Space>::t_back_solve
   (
    Int kid, 

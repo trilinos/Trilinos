@@ -1298,8 +1298,8 @@ namespace BaskerNS
           nd_sizes(0) = 0;
           Kokkos::fence();
           Kokkos::parallel_for(
-            "ndsort_matrix_store_valperms", num_threads,
-            KOKKOS_LAMBDA(const int id) {
+            "ndsort_matrix_store_valperms", RangePolicy(0, num_threads),
+            BASKER_LAMBDA(const int id) {
               for (Int k = id; k < nblks; k += num_threads) {
                 for (Int i = part_tree.row_tabs[k]; i < part_tree.row_tabs[k+1]; i++) {
                   nd_map(i) = k;
@@ -1473,7 +1473,7 @@ namespace BaskerNS
             Int nleaves = num_threads;
             kokkos_amd_order<Int> amd_functor(nleaves, nblks, tree.col_tabs, AAT.col_ptr, AAT.row_idx,
                                               tempp, temp_col, temp_row, order_nd_amd, Options.verbose);
-            Kokkos::parallel_for("BLK_AMD on A", Kokkos::RangePolicy<Exe_Space>(0, nleaves), amd_functor);
+            Kokkos::parallel_for("BLK_AMD on A", RangePolicy(0, nleaves), amd_functor);
             Kokkos::fence();
             #else
             for(Int b = 0; b < tree.nblks; ++b) {
@@ -1562,8 +1562,8 @@ namespace BaskerNS
             }
             #else
             Kokkos::parallel_for(
-              "reset ndbtfa", BTF_A.nrow,
-              KOKKOS_LAMBDA(const int i) {
+              "reset ndbtfa", RangePolicy(0, BTF_A.nrow),
+              BASKER_LAMBDA(const int i) {
                 order_nd_mwm(i) += nfirst;
                 order_nd_amd(i) += nfirst;
               });
@@ -1578,8 +1578,8 @@ namespace BaskerNS
           }
           #else
           Kokkos::parallel_for(
-            "reset ndbtfa", BTF_A.nnz,
-            KOKKOS_LAMBDA(const int i) {
+            "reset ndbtfa", RangePolicy(0, BTF_A.nnz),
+            BASKER_LAMBDA(const int i) {
               vals_order_ndbtfa_array(i) = i;
             });
           Kokkos::fence();

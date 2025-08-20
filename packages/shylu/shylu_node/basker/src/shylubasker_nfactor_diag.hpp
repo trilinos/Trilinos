@@ -937,7 +937,7 @@ namespace BaskerNS
 
 
   template <class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
+  BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::t_local_reach_short_btf
   (
    const Int kid,

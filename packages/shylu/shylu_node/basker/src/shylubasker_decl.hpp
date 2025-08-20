@@ -40,6 +40,7 @@ namespace BaskerNS
 
     #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
+    typedef Kokkos::RangePolicy<Exe_Space>   RangePolicy;
     typedef typename TeamPolicy::member_type TeamMember;
     #endif
 
@@ -1057,7 +1058,7 @@ namespace BaskerNS
     BASKER_INLINE
     int t_blk_nfactor(Int kid, Int c);
 
-    BASKER_FINLINE
+    BASKER_INLINE
     void t_local_reach_short_btf(const Int, const Int, Int &);
 
     BASKER_INLINE

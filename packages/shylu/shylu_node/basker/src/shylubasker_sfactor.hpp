@@ -327,7 +327,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     #ifdef SHYLU_BASKER_STREE_LIST
     Kokkos::parallel_for(
       "permute_col", num_threads,
-      KOKKOS_LAMBDA(const int p)
+      BASKER_LAMBDA(const int p)
     #else
     for(Int p = 0; p < num_threads; ++p)
     #endif
@@ -535,7 +535,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #ifdef SHYLU_BASKER_STREE_LIST
       //printf( " parallel for \n" );
       Kokkos::parallel_for(
-        "permute_col", p, KOKKOS_LAMBDA(const int pp)
+        "permute_col", p, BASKER_LAMBDA(const int pp)
       #else
       //printf( " serial for \n" );
       for(Int pp = 0; pp < p; pp++)
