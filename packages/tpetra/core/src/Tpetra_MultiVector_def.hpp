@@ -4778,9 +4778,9 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     // DualView::modify to complain about "concurrent modification" of
     // host and device Views.
 
-    /// KJ: this is problematic. assign funtion is used to construct a subvector
-    ///     if the sync flag is reset here, it lose all our control over getLocalView interface
-    ///this->clear_sync_state();
+    // KJ: this is problematic. assign funtion is used to construct a subvector
+    //     if the sync flag is reset here, it lose all our control over getLocalView interface
+    //this->clear_sync_state();
 
     // If need sync to device, then host has most recent version.
     const bool src_last_updated_on_host = src.need_sync_device ();
