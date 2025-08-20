@@ -8,8 +8,6 @@
 // *****************************************************************************
 // @HEADER
 
-#include <stk_mesh/base/GetBuckets.hpp>
-
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include "Teuchos_DefaultComm.hpp"
