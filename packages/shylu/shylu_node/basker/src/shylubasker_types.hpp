@@ -133,8 +133,6 @@ enum BASKER_INCOMPLETE_CODE
 //Execution Space
 #include <Kokkos_Core.hpp>
 #define BASKER_EXE_SPACE     Kokkos::DefaultHostExecutionSpace
-#define BASKER_RANGE_POLICY  Kokkos::RangePolicy
-#define BASKER_TEAM_POLICY   Kokkos::TeamPolicy
 //ReMacro Basker Classes
 #define BASKER_SOLVER        Basker<BASKER_INT,BASKER_ENTRY,BASKER_EXE_SPACE>
 #define BASKER_MATRIX        BaskerMatrix<BASKER_INT, BASKER_ENTRY, BASKER_EXE_SPACE>
