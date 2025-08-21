@@ -611,7 +611,10 @@ void testVoV(VoVType& vov, OstreamType& out, bool& success)
   PHX::Device::execution_space().fence();
 
   // Check the results
-  auto c_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),c);
+  // FIXME: breaks with new view implementation in 4.7.1
+  //auto c_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),c);
+  auto c_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),c);
+  Kokkos::deep_copy(c_h, c);
   const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
   for (size_t cell=0; cell < c.extent(0); ++cell) {
     for (size_t pt=0; pt < c.extent(1); ++pt) {
@@ -723,7 +726,10 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,FadHierarchicMDRangeBug) {
 
   PHX::exec_space().fence();
 
-  auto b_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),b);
+  // FIXME: breaks with new view implementation in 4.7.1
+  // auto b_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),b);
+  auto b_h = Kokkos::create_mirror_view(Kokkos::HostSpace(),b);
+  Kokkos::deep_copy(b_h, b);
   const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
   for (size_t cell=0; cell < a.extent(0); ++cell) {
     for (size_t pt=0; pt < a.extent(1); ++pt) {
