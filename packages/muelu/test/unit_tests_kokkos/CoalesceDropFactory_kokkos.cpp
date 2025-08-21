@@ -650,7 +650,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacianT
     coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("distance laplacian")));
     coalesceDropFact.SetParameter("aggregation: distance laplacian metric", Teuchos::ParameterEntry(std::string("material")));
     coalesceDropFact.SetParameter("filtered matrix: reuse graph", Teuchos::ParameterEntry(false));
-    coalesceDropFact.SetParameter("filtered matrix: use lumping", Teuchos::ParameterEntry(false));
+    coalesceDropFact.SetParameter("filtered matrix: lumping choice", Teuchos::ParameterEntry(std::string("no lumping")));
     fineLevel.Request("Graph", &coalesceDropFact);
     fineLevel.Request("A", &coalesceDropFact);
     fineLevel.Request("DofsPerNode", &coalesceDropFact);

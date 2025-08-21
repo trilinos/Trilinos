@@ -65,12 +65,12 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
   SET_VALID_ENTRY("aggregation: distance laplacian algo");
   SET_VALID_ENTRY("aggregation: classical algo");
+  SET_VALID_ENTRY("filtered matrix: use lumping");
 #endif
   SET_VALID_ENTRY("aggregation: symmetrize graph after dropping");
   SET_VALID_ENTRY("aggregation: coloring: use color graph");
   SET_VALID_ENTRY("aggregation: coloring: localize color graph");
 
-  SET_VALID_ENTRY("filtered matrix: use lumping");
   SET_VALID_ENTRY("filtered matrix: reuse graph");
   SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
 
@@ -191,7 +191,7 @@ void runBoundaryFunctors(local_matrix_type& lclA, boundary_nodes_view& boundaryN
 }
 
 template <class magnitudeType>
-void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppingMethod, bool& useBlocking, std::string& socUsesMatrix, std::string& socUsesMeasure, bool& symmetrizeDroppedGraph, bool& generateColoringGraph, magnitudeType& threshold, MueLu::MatrixConstruction::lumpingType lumpingChoice) {
+void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppingMethod, bool& useBlocking, std::string& socUsesMatrix, std::string& socUsesMeasure, bool& symmetrizeDroppedGraph, bool& generateColoringGraph, magnitudeType& threshold, MueLu::MatrixConstruction::lumpingType& lumpingChoice) {
   std::set<std::string> validDroppingMethods = {"piece-wise", "cut-drop"};
 
   if (!pL.get<bool>("filtered matrix: use lumping")) lumpingChoice = MueLu::MatrixConstruction::no_lumping;
