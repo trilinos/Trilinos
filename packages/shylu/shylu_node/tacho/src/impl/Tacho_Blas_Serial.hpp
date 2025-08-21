@@ -62,7 +62,8 @@ template <typename T> struct BlasSerial {
   }
 
   // TRMV
-  inline static void trmv(const char uplo, const char trans, const char diag, int n,
+  inline static void trmv(const char uplo, const char trans, const char diag,
+                          int m, int n,
                           const T alpha, const T *A, int lda,
                                          const T *x, int incx,
                           const T beta,  /* */ T *y, int incy) {
@@ -70,59 +71,96 @@ template <typename T> struct BlasSerial {
     typedef ArithTraits<T> arith_traits;
     const T one(1), zero(0);
 
-    if (n <= 0)
+    if (n <= 0 || m <= 0)
       return;
 
     {
+      int mt = (trans == 'N' || trans == 'n' ?  m : n);
       if (beta == zero) {
-        for (int i = 0; i < n; i++) y[i*incy] = zero;
+        for (int i = 0; i < mt; i++) y[i*incy] = zero;
       } else if (beta != one) {
-        for (int i = 0; i < n; i++) y[i*incy] *= beta;
+        for (int i = 0; i < mt; i++) y[i*incy] *= beta;
       }
     }
     if (alpha == zero)
       return;
 
+    int mn = (m < n ? m : n);
     if (trans == 'N' || trans == 'n') {
-      for (int j = 0; j < n; j++) {
-        T val = alpha*x[j*incx] ;
+      // y = A x
+      if (uplo == 'U' || uplo == 'u') {
+        // upper
+        for (int j = 0; j < n; j++) {
+          T val = alpha*x[j*incx] ;
+          if (j < mn) {
+            // diagonal A(j,j)
+            if (diag == 'U' || diag == 'u')
+              y[j*incy] += val;
+            else
+              y[j*incy] += (A[j + j*lda] * val);
 
-        // diagonal A(j,j)
-        if (diag == 'U' || diag == 'u')
-          y[j*incy] += val;
-        else
-          y[j*incy] += (A[j + j*lda] * val);
-
-        // off-diagonals of A(:,j)
-        if (uplo == 'U' || uplo == 'u') {
-          for (int i = 0; i < j; i++) {
-            y[i*incy] += (A[i + j*lda] * val);
+            // upper off-diagonals of A(:,j)
+            for (int i = 0; i < j; i++) {
+              y[i*incy] += (A[i + j*lda] * val);
+            }
+          } else {
+            for (int i = 0; i < m; i++) {
+              y[i*incy] += (A[i + j*lda] * val);
+            }
           }
-        } else {
-          for (int i = j+1; i < n; i++) {
+        }
+      } else {
+        // lower
+        for (int j = 0; j < mn; j++) {
+          T val = alpha*x[j*incx] ;
+
+          // diagonal A(j,j)
+          if (diag == 'U' || diag == 'u')
+            y[j*incy] += val;
+          else
+            y[j*incy] += (A[j + j*lda] * val);
+
+          // off-diagonals of A(:,j)
+          for (int i = j+1; i < m; i++) {
             y[i*incy] += (A[i + j*lda] * val);
           }
         }
       }
     } else {
-      for (int j = 0; j < n; j++) {
-        T val = x[j*incx];
+      if (uplo == 'U' || uplo == 'u') {
+        // upper
+        for (int j = 0; j < n; j++) {
+          T val = zero;
+          if (j < mn) {
+            // diagonal A(j,j)
+            val = x[j*incx];
+            if (diag != 'U' && diag != 'u')
+              val *= (arith_traits::conj(A[j + j*lda]));
 
-        // diagonal A(j,j)
-        if (diag != 'U' && diag != 'u')
-          val *= (arith_traits::conj(A[j + j*lda]));
-
-        // off-diagonals of A(:,j)
-        if (uplo == 'U' || uplo == 'u') {
-          for (int i = 0; i < j; i++) {
-            val += (arith_traits::conj(A[i + j*lda]) * x[i*incx]);
+            // off-diagonals of A(:,j)
+            for (int i = 0; i < j; i++) {
+              val += (arith_traits::conj(A[i + j*lda]) * x[i*incx]);
+            }
+          } else {
+            for (int i = 0; i < m; i++) {
+              val += (arith_traits::conj(A[i + j*lda]) * x[i*incx]);
+            }
           }
-        } else {
-          for (int i = j+1; i < n; i++) {
-            val += (arith_traits::conj(A[i + j*lda]) * x[i*incx]);
-          }
+          y[j*incy] += alpha * val;
         }
-        y[j*incy] += alpha * val;
+      } else {
+        for (int j = 0; j < mn; j++) {
+          // diagonal A(j,j)
+          T val = x[j*incx];
+          if (diag != 'U' && diag != 'u')
+            val *= (arith_traits::conj(A[j + j*lda]));
+
+          // off-diagonals of A(:,j)
+          for (int i = j+1; i < m; i++) {
+            val += (arith_traits::conj(A[i + j*lda]) * x[i*incx]);
+          }
+          y[j*incy] += alpha * val;
+        }
       }
     }
   }

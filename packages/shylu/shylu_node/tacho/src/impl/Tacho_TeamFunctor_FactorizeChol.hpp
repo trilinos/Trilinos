@@ -233,7 +233,7 @@ public:
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void factorize_var2(MemberType &member, const supernode_type &s, const value_type_matrix &T,
-                                             const value_type_matrix &ABR) const {
+                                             const value_type_matrix &ABR, const value_type_matrix &W) const {
     using CholAlgoType = typename CholAlgorithm_Team::type;
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using HerkAlgoType = typename HerkAlgorithm_Team::type;
@@ -245,40 +245,65 @@ public:
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
-      member.team_barrier();
-      if (err != 0) {
-        Kokkos::atomic_add(_rval, 1);
-        return;
+      // Factor diagonal block
+      if (_ldl) {
+        err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+        member.team_barrier();
+      } else {
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+        member.team_barrier();
+        if (err != 0) {
+          Kokkos::atomic_add(_rval, 1);
+          return;
+        }
       }
 
       if (n_m > 0) {
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
-                                                                                  ATR);
-        member.team_barrier();
+        if (_ldl) {
+          // * Update off-diagonal block
+          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                    ATR);
 
-        Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
-        member.team_barrier();
+          // Save ATR in workspace
+          Copy<Algo::Internal>::invoke(member, W, ATR);
 
-        Copy<Algo::Internal>::invoke(member, T, ATL);
-        member.team_barrier();
+          // Apply D^{-1} on off-diagonal
+          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+            ::invoke(member, ATL, ATR);
 
-        SetIdentity<Algo::Internal>::invoke(member, ATL, minus_one);
-        member.team_barrier();
+          // * Update remaining block
+          // ABR = -ATR*W
+          GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, HerkAlgoType>::invoke(member, minus_one, ATR,
+                                                                                                  W, zero, ABR);
+        } else {
+          // * Update off-diagonal block
+          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
+                                                                                    ATR);
+          member.team_barrier();
 
-        UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
+          // * Update remaining
+          Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
+          member.team_barrier();
+        }
+      }
+      // * Invert the whole block row
+      Copy<Algo::Internal>::invoke(member, T, ATL);
+      member.team_barrier();
+      // Set diagonal block to -I
+      SetIdentity<Algo::Internal>::invoke(member, ATL, minus_one);
+      member.team_barrier();
+
+      // Apply -L^{-1} to the whole block row
+      UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
+      if (_ldl) {
+        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), minus_one, T,
+                                                                                AT);
+        // copy diagonal back
+        for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+      } else {
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), minus_one, T,
                                                                                 AT);
-      } else {
-        // member.team_barrier();
-        Copy<Algo::Internal>::invoke(member, T, ATL);
-        member.team_barrier();
-
-        SetIdentity<Algo::Internal>::invoke(member, ATL, one);
-        member.team_barrier();
-
-        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
       }
     }
   }
@@ -445,8 +470,8 @@ public:
         factorize_var1(member, s, T, ABR, W);
       } else if (factorize_tag_type::variant == 2 || factorize_tag_type::variant == 3) {
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-        UnmanagedViewType<value_type_matrix> T(bufptr + ABR.span(), m, m);
-        factorize_var2(member, s, T, ABR);
+        UnmanagedViewType<value_type_matrix> T(bufptr + ABR.span() + W.span(), m, m);
+        factorize_var2(member, s, T, ABR, W);
       }
     } else if (mode == -1) {
       Kokkos::printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");

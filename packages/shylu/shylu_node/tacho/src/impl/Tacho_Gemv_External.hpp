@@ -94,12 +94,12 @@ template <typename ArgUplo, typename ArgTrans> struct Trmv<ArgUplo, ArgTrans, Al
       static_assert(ViewTypeC::rank == 2, "C is not rank 2 view.");
       static_assert(std::is_same<value_type, value_type_b>::value && std::is_same<value_type_b, value_type_c>::value,
                     "A, B and C do not have the same value type.");
-      if (A.extent(0) != A.extent(1)) TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed for square A.");
 
       const int m = C.extent(0), n = C.extent(1);
       if (m > 0 && n > 0) {
+        const int mA = A.extent(0), nA = A.extent(1);
         if (n == 1) {
-          BlasSerial<value_type>::trmv(ArgUplo::param, ArgTrans::param, diag.param, m,
+          BlasSerial<value_type>::trmv(ArgUplo::param, ArgTrans::param, diag.param, mA, nA,
                                        value_type(alpha), A.data(), A.stride_1(),
                                                           B.data(), B.stride_0(), 
                                        value_type(beta),  C.data(), C.stride_0());

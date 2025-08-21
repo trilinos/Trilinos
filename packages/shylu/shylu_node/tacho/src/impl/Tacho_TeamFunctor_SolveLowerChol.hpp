@@ -252,7 +252,17 @@ public:
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
-        Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, AT, tT, zero, b);
+        if (_ldl) {
+          Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, AT, tT, zero, b);
+
+          // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
+          UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+          UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs);
+          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+                                 ::invoke(member, ATL, bT);
+        } else {
+          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, AT, tT, zero, b);
+        }
       }
     }
   }

@@ -213,7 +213,11 @@ public:
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AT, b, zero, tT);
+        if (_ldl) {
+          Trmv<Uplo::Upper, Trans::NoTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, AT, b, zero, tT);
+        } else {
+          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AT, b, zero, tT);
+        }
       }
     }
   }
