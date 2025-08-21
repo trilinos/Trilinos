@@ -8,7 +8,12 @@
 // *****************************************************************************
 // @HEADER
 
+#include <Kokkos_Core_fwd.hpp>
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+#include "Sacado.hpp"
+#else
 #include "Kokkos_DynRankView_Fad.hpp"
+#endif
 #include "Phalanx_KokkosViewFactory.hpp"
 #include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
