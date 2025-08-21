@@ -104,15 +104,6 @@ namespace {
     clp.setOption("test-mpi", "test-serial", &testMpi,
                   "Test MPI by default or force serial test.  In a serial build,"
                   " this option is ignored and a serial comm is always used." );
-
-    auto out = getDefaultOStream();
-    auto comm = getDefaultComm();
-    auto numRanks = comm->getSize();
-    auto myRank = comm->getRank();
-    if (myRank == 0) {
-      using std::endl;
-      *out << endl << "TEUCHOS_STATIC_SETUP with " << numRanks << " MPI processes" << endl << endl;
-    }
   }
 
 
