@@ -35,22 +35,26 @@ namespace Ioss {
   enum class ElementShape : unsigned int;
 } // namespace Ioss
 
-[[noreturn]] inline void IOSS_ERROR(const std::string &errmsg)
+[[noreturn]] inline void IOSS_ERROR(const std::string &errmsg) { throw std::runtime_error(errmsg); }
+
+[[noreturn]] inline void IOSS_ERROR(const std::ostringstream &errmsg) { IOSS_ERROR(errmsg.str()); }
+
+[[noreturn]] inline void IOSS_ABORT(const std::string &errmsg)
 {
+  std::cerr << "ERROR: " << errmsg << "\n";
 #if defined(SEACAS_HAVE_MPI)
   int parallelSize = 1;
   MPI_Comm_size(MPI_COMM_WORLD, &parallelSize); // CHECK: ALLOW MPI_COMM_WORLD
   if (parallelSize > 1) {
-    std::cerr << "ERROR: " << errmsg << "\n";
     MPI_Abort(MPI_COMM_WORLD, 1); // CHECK: ALLOW MPI_COMM_WORLD
     // MPI_Abort should not return, but if it does, we throw the exception...
     // This helps quiet the compiler also.
   }
 #endif
-  throw std::runtime_error(errmsg);
+  exit(EXIT_FAILURE);
 }
 
-[[noreturn]] inline void IOSS_ERROR(const std::ostringstream &errmsg) { IOSS_ERROR(errmsg.str()); }
+[[noreturn]] inline void IOSS_ABORT(const std::ostringstream &errmsg) { IOSS_ABORT(errmsg.str()); }
 
 // We have been relying on the assumption that calling `.data()` on an empty vector
 // will return `nullptr`.  However, according to cppreference (based on the standard):
