@@ -2153,12 +2153,12 @@ namespace BaskerNS
   {
     //Need to test if power of nparts
     //TODO: hard-coded to be two. It is also hard-coded in shylubasker_structs.hpp
-    int check_value = pow(2, log2(nthreads));
+    Int check_value = pow(2, log2(nthreads));
     if (check_value != nthreads)
     {
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker SetThreads Assert: Number of thread error - not a power of 2. Re-setting from %d to %d.",
-               nthreads, check_value);
+               int(nthreads), int(check_value));
       }
       nthreads = check_value;
     }
@@ -2174,7 +2174,7 @@ namespace BaskerNS
     {
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker SetThreads Assert: Number of thread not available (%d > %d). Resetting to %d.",
-                nthreads, check_value, check_value);
+                int(nthreads), int(check_value), int(check_value));
       }
       nthreads = check_value;
     }
