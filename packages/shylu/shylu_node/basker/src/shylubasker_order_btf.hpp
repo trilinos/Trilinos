@@ -34,15 +34,15 @@ namespace BaskerNS
     Int total_work_estimate = 0;
     for(Int b = btf_tabs_offset; b < nblks; b++)
     {
-     	total_work_estimate += btf_blk_work(b);
+      total_work_estimate += btf_blk_work(b);
     }
    
     //Int break_size    = ceil((double)total_work_estimate*(
-    //			      ((double)1/num_threads)));
+    //                              ((double)1/num_threads)));
 
-    Int break_size    = ceil(  (double)total_work_estimate*(
-			                        ((double)1/num_threads) + 
-                              ((double)BASKER_BTF_IMBALANCE)) );
+    Int break_size = ceil(  (double)total_work_estimate*(
+                           ((double)1/num_threads) +
+                           ((double)BASKER_BTF_IMBALANCE)) );
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Total schedul size: %ld \n", (long)total_work_estimate);
@@ -120,7 +120,7 @@ namespace BaskerNS
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("------------BTF CUT: %d --------------\n", 
-	  btf_tabs(btf_tabs_offset));
+           btf_tabs(btf_tabs_offset));
     #endif
 
     return 0;
@@ -708,9 +708,9 @@ namespace BaskerNS
       //Set a class variable to use later
       btf_total_work = total_work_estimate;
       //printf("num_threads: %d epsilon: %f \n",
-      //	   num_threads, 
-      //	   ((double)1/num_threads) +
-      //	   ((double)BASKER_BTF_IMBALANCE));
+      //           num_threads,
+      //           ((double)1/num_threads) +
+      //           ((double)BASKER_BTF_IMBALANCE));
       #if 0 // forcing to have the big A bloock for debug
       double break_work_size = 0.0;
       //double break_block_size = 0.0;
@@ -734,6 +734,11 @@ namespace BaskerNS
 
       Int t_size            = 0;      //total size of cols from 'small' blocks in BTF_C: matrix ncols - t_size = BTF_A ncols
       BASKER_BOOL  move_fwd = BASKER_TRUE;
+      #if !defined (HAVE_SHYLU_NODEBASKER_METIS) & !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+      if(Options.verbose == BASKER_TRUE) {
+        printf("\n ** Basker: no big ND block since neither METIS nor SCOTCH is enabled ** \n");
+      }
+      #endif
       while(move_fwd==BASKER_TRUE)
       {
         Int blk_work = btf_blk_work(blk_idx-1);
@@ -765,7 +770,9 @@ namespace BaskerNS
           blk_idx = blk_idx-1;
           scol    = _btf_tabs[blk_idx];
         }
+        #if defined (HAVE_SHYLU_NODEBASKER_METIS) || defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
         //break due to size i.e. entered non-trivial large BTF_A block
+        // (if no metis and scotch, then no big block)
         else if( blk_work > break_work_size && blk_size >= break_block_size)
         {
           if(Options.verbose == BASKER_TRUE) {
@@ -779,6 +786,7 @@ namespace BaskerNS
           }
           move_fwd = BASKER_FALSE;
         }
+        #endif
         //break due to end i.e. no 'large' BTF_A block for ND; only fine BTF structure
         else if(blk_idx == 1)
         {
@@ -1157,12 +1165,12 @@ namespace BaskerNS
     }
 
     BaskerSSWrapper<Int>::my_strong_component(M.ncol,
-			&(M.col_ptr(0)),
-			&(M.row_idx(0)),
-			nblks,
-			&(perm(0)),
-			&(perm_in(0)), 
-			&(CC(0)));
+                        &(M.col_ptr(0)),
+                        &(M.row_idx(0)),
+                        nblks,
+                        &(perm(0)),
+                        &(perm_in(0)),
+                        &(CC(0)));
 
     if (Options.min_block_size > 0 && nblks > 1) {
       for (Int blk = 0; blk < nblks-1; blk++) {
