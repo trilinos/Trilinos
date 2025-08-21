@@ -48,6 +48,25 @@ Array<std::string> StrUtils::splitIntoLines(const std::string& input)
   return rtn;
 }
 
+  Array<std::string> StrUtils::splitString(const std::string_view s, const char sep) {
+    typedef std::string::size_type size_type;
+    Array<std::string> rtn;
+    size_type cur_pos, last_pos = 0, length = s.length();
+    while (last_pos < length + 1) {
+      cur_pos = s.find_first_of(sep, last_pos);
+      if (cur_pos == std::string::npos) {
+        cur_pos = length;
+      }
+      if (cur_pos != last_pos) {
+        auto token =
+          std::string(s.data() + last_pos, (size_type)cur_pos - last_pos);
+        rtn.append(token);
+      }
+      last_pos = cur_pos + 1;
+    }
+    return rtn;
+  }
+
 
 Array<Array<std::string> > StrUtils::tokenizeFile(std::istream& is, char comment)
 {
