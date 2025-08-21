@@ -142,7 +142,30 @@ template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> {
           A(i, j) /= D(i, i);
         }
       }
-    } else if (n == ordinal_type(D.extent(0))) {
+    } else {
+      return -1;
+    }
+    return 0;
+  }
+
+  template <typename MemberType, typename ViewTypeD, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeD &D, const ViewTypeA &A) {
+    KOKKOS_IF_ON_DEVICE((
+      Kokkos::printf("Error: Diagonal scaling not implemented on DEVICE");
+    ))
+    KOKKOS_IF_ON_HOST((
+      invoke(D, A);
+    ))
+    return 0;
+ }
+};
+
+template <> struct Scale_BlockInverseDiagonals<Side::Right, Algo::Internal> {
+  template <typename ViewTypeD, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ViewTypeD &D, const ViewTypeA &A) {
+    ordinal_type m = A.extent(0);
+    ordinal_type n = A.extent(1);
+    if (n == ordinal_type(D.extent(0))) {
       // apply from right
       for (ordinal_type j=0; j<n; j++) {
         for (ordinal_type i=0; i<m; i++) {

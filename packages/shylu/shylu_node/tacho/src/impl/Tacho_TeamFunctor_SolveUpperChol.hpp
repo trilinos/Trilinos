@@ -155,7 +155,11 @@ public:
           Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
           member.team_barrier();
         }
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
+        if (_ldl) {
+          Trmv<Uplo::Upper, Trans::NoTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
+        } else {
+          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
+        }
         member.team_barrier();
         // copy to t
         Kokkos::parallel_for(

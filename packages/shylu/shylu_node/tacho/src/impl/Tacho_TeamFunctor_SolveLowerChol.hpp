@@ -84,7 +84,7 @@ public:
       const ordinal_type m = s.m, n = s.n, n_m = n - m;
       if (m > 0) {
         value_type *aptr = s.u_buf;
-        // solve
+        // solve with current block
         UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
         aptr += m * m;
 
@@ -97,7 +97,7 @@ public:
         }
 
         if (n_m > 0) {
-          // update
+          // update remaining
           member.team_barrier();
           UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
@@ -105,13 +105,9 @@ public:
         }
 
         if (_ldl) {
-          // TODO: replace it with a kernel call
-          ordinal_type nrhs = tT.extent(1);
-          for (ordinal_type j=0; j<nrhs; j++) {
-            for (ordinal_type i=0; i<m; i++) {
-              tT(i, j) /= ATL(i,i);
-            }
-          }
+          // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
+          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+                                 ::invoke(member, ATL, tT);
         }
       }
     }
@@ -167,15 +163,25 @@ public:
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
-        Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
+        if (_ldl) {
+          Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
+        } else {
+          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
+        }
 
         if (n_m > 0) {
-          // solve offdiag
+          // update offdiag
           member.team_barrier();
           UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
 
           Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bT, zero, bB);
+        }
+
+        if (_ldl) {
+          // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
+          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+                                 ::invoke(member, ATL, bT);
         }
       }
     }

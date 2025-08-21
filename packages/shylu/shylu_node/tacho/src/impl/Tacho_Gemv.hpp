@@ -25,6 +25,7 @@ namespace Tacho {
 
 /// various implementation for different uplo and algo parameters
 template <typename ArgTrans, typename ArgAlgo> struct Gemv;
+template <typename ArgUplo, typename ArgTrans, typename ArgAlgo> struct Trmv;
 
 struct GemvAlgorithm {
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
