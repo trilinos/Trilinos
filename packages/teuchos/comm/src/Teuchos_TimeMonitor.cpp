@@ -212,6 +212,8 @@ namespace Teuchos {
     }
   };
 
+  constexpr const std::string_view defaultStackedTimerName = "Teuchos::StackedTimer";
+
   // Typedef used internally by TimeMonitor::summarize() and its
   // helper functions.  The map is keyed on timer label (a string).
   // Each value is a pair: (total number of seconds over all calls to
@@ -219,8 +221,8 @@ namespace Teuchos {
   typedef std::map<std::string, std::pair<double, int> > timer_map_t;
 
   // static initialization
-  Teuchos::RCP<Teuchos::StackedTimer> TimeMonitor::stackedTimer_ = Teuchos::rcp(new Teuchos::StackedTimer("Teuchos::StackedTimer"));
-  
+  Teuchos::RCP<Teuchos::StackedTimer> TimeMonitor::stackedTimer_ = Teuchos::rcp(new Teuchos::StackedTimer(std::string(defaultStackedTimerName).c_str()));
+
   TimeMonitor::TimeMonitor (Time& timer, bool reset)
     : PerformanceMonitorBase<Time>(timer, reset)
   {
@@ -1386,7 +1388,7 @@ namespace Teuchos {
   bool TimeMonitor::alwaysWriteLocal_ = false;
   bool TimeMonitor::writeGlobalStats_ = true;
   bool TimeMonitor::writeZeroTimers_ = true;
-  
+
   void
   TimeMonitor::setReportFormatParameter (ParameterList& plist)
   {
@@ -1468,6 +1470,11 @@ namespace Teuchos {
   TimeMonitor::getStackedTimer()
   {
     return stackedTimer_;
+  }
+
+  bool
+  TimeMonitor::stackedTimerNameIsDefault() {
+    return stackedTimer_.is_null() || (stackedTimer_->name() == defaultStackedTimerName);
   }
 
   RCP<const ParameterList>
