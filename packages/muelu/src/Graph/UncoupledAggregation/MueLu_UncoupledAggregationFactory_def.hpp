@@ -38,6 +38,7 @@
 #include "KokkosGraph_Distance2ColorHandle.hpp"
 #include "KokkosGraph_Distance2Color.hpp"
 #include "KokkosGraph_MIS2.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 
 namespace MueLu {
 
@@ -340,28 +341,40 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
     {
       {
         // find aggregates that are not empty
-        Kokkos::View<bool*, typename device_t::memory_space> has_nodes("has_nodes", numAggs);
+        Kokkos::UnorderedMap<LocalOrdinal, void, exec_space> used_labels(numAggs);
         Kokkos::parallel_for(
+            "MueLu::UncoupledAggregationFactory::MIS2::nonempty_aggs",
             Kokkos::RangePolicy<exec_space>(0, numRows),
             KOKKOS_LAMBDA(lno_t i) {
               if (aggStat(i) == READY)
-                Kokkos::atomic_assign(&has_nodes(labels(i)), true);
+                used_labels.insert(labels(i));
             });
+        Kokkos::fence();
+        TEUCHOS_ASSERT(!used_labels.failed_insert());
 
         // compute aggIds for non-empty aggs
         Kokkos::View<LO*, typename device_t::memory_space> new_labels("new_labels", numAggs);
         Kokkos::parallel_scan(
-            Kokkos::RangePolicy<exec_space>(0, numAggs),
+            "MueLu::UncoupledAggregationFactory::MIS2::set_new_labels",
+            Kokkos::RangePolicy<exec_space>(0, used_labels.capacity()),
             KOKKOS_LAMBDA(lno_t i, lno_t & update, const bool is_final) {
-              if (is_final)
-                new_labels(i) = update;
-              if (has_nodes(i))
+              if (used_labels.valid_at(i)) {
+                auto label = used_labels.key_at(i);
+                if (is_final) {
+                  new_labels(label) = update;
+                }
                 ++update;
+              }
             },
             numAggs);
 
+        // We no longer need the hashmap.
+        used_labels.clear();
+        used_labels.rehash(0);
+
         // reassign aggIds
         Kokkos::parallel_for(
+            "MueLu::UncoupledAggregationFactory::MIS2::reassign_labels",
             Kokkos::RangePolicy<exec_space>(0, numRows),
             KOKKOS_LAMBDA(lno_t i) {
               labels(i) = new_labels(labels(i));
