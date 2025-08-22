@@ -33,9 +33,12 @@ macro(enable_errors errors)
 endmacro()
 
 
-IF (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+IF (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" AND UNIX)
   MESSAGE("-- " "Adding '-fp-model=precise' to C++ compiler flags because Trilinos needs it when using the Intel OneAPI C++ compiler.")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fp-model=precise")
+ELSEIF (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" AND WIN32)
+  MESSAGE("-- " "Adding '/fp:precise' to C++ compiler flags because Trilinos needs it when using the Intel OneAPI C++ compiler.")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:precise")
 ENDIF()
 
 IF (KokkosEnable)
