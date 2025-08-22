@@ -112,6 +112,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     clp.setOption("multivector", &numVectors, "number of rhs to solve simultaneously");
     int numSolves = 1;
     clp.setOption("numSolves", &numSolves, "number of times the system should be solved");
+    bool useGaleriForMatrixConstruction = true;
+    clp.setOption("useGaleriForMatrixConstruction", "useDirectMatrixConstruction", &useGaleriForMatrixConstruction, "Use matrices from Galeri or from direct inline assembly");
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;
@@ -151,16 +153,252 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<LOVector> blocknumber;
     RCP<MultiVector> X, B;
 
-    std::ostringstream galeriStream;
-    MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, matrixParameters, xpetraParameters, galeriStream);
-    out << galeriStream.str();
-    X->putScalar(0);
+    if (useGaleriForMatrixConstruction) {
+      /////////////////////////////////////////////////////////////////////////
+      // Use Galeri package for assembly of matrix and vectors.
+      std::ostringstream galeriStream;
+      MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, matrixParameters, xpetraParameters, galeriStream);
+      out << galeriStream.str();
+      X->putScalar(0);
+
+    } else {
+      /////////////////////////////////////////////////////////////////////////
+      // We demonstrate how to set up a sparse matrix using 3 arrays.
+      // This can serve as a starting point for using Trilinos solvers with a
+      // matrix that has been assembled outside of Trilinos.
+
+      // We need to provide the following inputs:
+      //
+      // - three arrays describing the local part of the sparse CRS matrix
+      //   (row offsets, column indices, values),
+      // - mappings from local indices to global indices for rows and columns.
+
+      // The type of the Tpetra sparse matrix.
+      using TpCrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+      // The type of the Tpetra map, describing mapping between rank-local and global ids.
+      using TpMap = typename TpCrsMatrix::map_type;
+      // Kokkos memory space
+      using memory_space = typename Node::memory_space;
+
+      // Types of the three data arrays.
+      using rowptr_type  = typename TpCrsMatrix::row_ptrs_device_view_type::non_const_type;
+      using indices_type = typename TpCrsMatrix::local_inds_device_view_type::non_const_type;
+      using values_type  = typename TpCrsMatrix::values_device_view_type::non_const_type;
+
+      // The three arrays describing the sparse matrix.
+      // These could just be unmanaged views for the memory locations of user provided data, see:
+      // https://kokkos.org/kokkos-core-wiki/ProgrammingGuide/View.html#unmanaged-views
+      rowptr_type rowptr;
+      indices_type indices;
+      values_type values;
+
+      // The mappings between local indices and global indices for rows and columns of the matrix.
+      RCP<const TpMap> tpetra_rowmap;
+      RCP<const TpMap> tpetra_colmap;
+
+      // In this example, we set up a 1D Laplacian with Dirichlet conditions eliminated from
+      // the system. This is a tri-diagonal matrix:
+      //
+      //  |  2 -1           |
+      //  | -1  2 -1        |
+      //  |    -1  2 -1     |
+      //  |        ...      |
+      //  |        -1  2 -1 |
+      //  |           -1  2 |
+
+      // This matrix is distributed row-wise over the ranks of the MPI
+      // communicator, i.e. like this
+      //
+      //  |  2 -1             |  rank 0
+      //  | -1  2 -1          |
+      //  |    -1  2 -1       |
+      //  |        ...        |
+      // -----------------------------------------
+      //  |           ...     |
+      //  |         -1  2 -1  |  rank 1
+      //  |             ...   |
+      // -----------------------------------------
+      //  ...
+      // -----------------------------------------
+      //  |        ...        |  rank P-1
+      //  |        -1  2 -1   |
+      //  |           -1  2   |
+
+      // Each rank will own the same number of rows, so we split the global
+      // index space into equal size parts. This information will get encode in the
+      // row map of the matrix.
+      //
+      // Each rank (expect rank 0 and P-1) also has two off-rank column indices.
+      // This information gets encode in the column map of the operator. For more
+      // details regarding the concept of maps, have a look at the Tpetra documentation.
+
+      // number of rows on each rank
+      LocalOrdinal localNumRows = matrixParameters.GetNumGlobalElements() / comm->getSize();
+
+      // Each row has 3 entries:
+      LocalOrdinal localNNZ = 3 * localNumRows;
+      // Except for the first and last row.
+      if (comm->getRank() == 0)
+        --localNNZ;
+      if (comm->getRank() + 1 == comm->getSize())
+        --localNNZ;
+
+      // Allocate memory for local matrix
+      rowptr  = rowptr_type(Kokkos::ViewAllocateWithoutInitializing("rowptr"), localNumRows + 1);
+      indices = indices_type(Kokkos::ViewAllocateWithoutInitializing("indices"), localNNZ);
+      values  = values_type(Kokkos::ViewAllocateWithoutInitializing("values"), localNNZ);
+
+      {
+        // Set up the map for the row indices.
+        //
+        // Simple map construction:
+        // The data is distributed in contiguous fashion, i.e.
+        // that the global ids are
+        // on rank 0: [0, 1, ..., numLocalElements-1]
+        // on rank 1: [numLocalElements, numLocalElements+1, ..., 2*numLocalElements-1]
+        // ....
+        tpetra_rowmap = rcp(new TpMap(
+            /*numGlobalElements=*/Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
+            localNumRows,
+            /*indexBase=*/0, comm));
+      }
+
+      {
+        // Set up the map for the column indices.
+        //
+        // This map is slightly more tricky because we need to keep track of the off-rank indices.
+
+        // Each rank has 2 off-rank entries, except for first and last rank.
+        LocalOrdinal localNumColumnMapEntries = localNumRows + 2;
+        if (comm->getRank() == 0)
+          --localNumColumnMapEntries;
+        if (comm->getRank() + 1 == comm->getSize())
+          --localNumColumnMapEntries;
+        Kokkos::View<GlobalOrdinal *, memory_space> columnMapEntries("columnMap_entries",
+                                                                     localNumColumnMapEntries);
+        // We use the same local indices for the on-rank entries of the row map and the column map.
+        // Copy global indices over for on-rank entries.
+        Kokkos::deep_copy(
+            Kokkos::subview(columnMapEntries, Kokkos::make_pair(0, localNumRows)),
+            tpetra_rowmap->getMyGlobalIndicesDevice());
+
+        // For the off-rank entries, we use local indices localNumRows and localNumRows+1.
+        auto offset = localNumRows;
+        if (comm->getRank() > 0) {
+          Kokkos::deep_copy(Kokkos::subview(columnMapEntries, offset), tpetra_rowmap->getGlobalElement(0) - 1);
+          ++offset;
+        }
+        if (comm->getRank() + 1 < comm->getSize()) {
+          Kokkos::deep_copy(Kokkos::subview(columnMapEntries, offset), tpetra_rowmap->getGlobalElement(localNumRows - 1) + 1);
+          ++offset;
+        }
+
+        // We now have constructed our local mapping between local indices and global indices
+        // and call the Tpetra::Map constructor.
+        tpetra_colmap = rcp(new TpMap(
+            /*numGlobalElements=*/Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
+            columnMapEntries,
+            /*indexBase=*/0, comm));
+      }
+
+      {
+        // We fill the arrays describing the local part of the matrix.
+        // This step can obviously be skipped if the user has pre-assembled arrays.
+
+        using ATS      = Kokkos::ArithTraits<Scalar>;
+        using impl_SC  = typename ATS::val_type;
+        using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+
+        LocalOrdinal offset         = (comm->getRank() == 0) ? 2 : 3;
+        GlobalOrdinal numGlobalRows = tpetra_rowmap->getGlobalNumElements();
+        auto lclRowMap              = tpetra_rowmap->getLocalMap();
+        LocalOrdinal comm_rank      = comm->getRank();
+        Kokkos::parallel_for(
+            "matrix_construction",
+            Kokkos::RangePolicy(0, localNumRows + 1),
+            KOKKOS_LAMBDA(const LocalOrdinal &row) {
+              if (row < localNumRows) {
+                GlobalOrdinal globalRow = lclRowMap.getGlobalElement(row);
+
+                LocalOrdinal k = (offset + (row - 1) * 3 >= 0) ? (offset + (row - 1) * 3) : 0;
+
+                rowptr(row) = k;
+
+                // left neighbor
+                if (globalRow - 1 >= 0) {
+                  LocalOrdinal col = (row - 1 >= 0) ? row - 1 : localNumRows;
+                  indices(k)       = col;
+                  values(k)        = -impl_ATS::one();
+                  ++k;
+                }
+
+                // diagonal entry
+                {
+                  indices(k) = row;
+                  values(k)  = 2 * impl_ATS::one();
+                  ++k;
+                }
+
+                // right neighbor
+                if (globalRow + 1 < numGlobalRows) {
+                  LocalOrdinal col;
+                  if (row + 1 < localNumRows)
+                    col = row + 1;
+                  else {
+                    col = (comm_rank == 0) ? localNumRows : localNumRows + 1;
+                  }
+                  indices(k) = col;
+                  values(k)  = -impl_ATS::one();
+                }
+              } else {
+                // Set last entry of the rowptr.
+                rowptr(row) = localNNZ;
+              }
+            });
+      }
+
+      // Construct the Tpetra::CrsMatrix
+      auto tpetraA = rcp(new TpCrsMatrix(tpetra_rowmap, tpetra_colmap,
+                                         rowptr, indices, values));
+      tpetraA->fillComplete();
+
+      // Print out the matrix that we just constructed:
+      // tpetraA->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
+
+      // Wrap everything as Xpetra objects.
+      A   = Xpetra::toXpetra(tpetraA);
+      map = Xpetra::toXpetra(tpetra_rowmap);
+
+      // Set up left-hand side and right-hand side of the linear system.
+      X = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+      B = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+      B->putScalar(1.);
+
+      // Set up a near-nullspace for the linear system. (Only needed for multigrid)
+      nullspace = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+      nullspace->putScalar(1.);
+
+      // Set up coordinates for the linear system. (Only needed for multigrid)
+      coordinates = Xpetra::MultiVectorFactory<double, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+      {
+        GlobalOrdinal numGlobalRows = tpetra_rowmap->getGlobalNumElements();
+        auto lclCoordinates         = coordinates->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+        auto lclMap                 = map->getLocalMap();
+        Kokkos::parallel_for(
+            "fill_coords",
+            Kokkos::RangePolicy(0, map->getLocalNumElements()),
+            KOKKOS_LAMBDA(const LocalOrdinal &i) {
+              lclCoordinates(i, 0) = ((Scalar)lclMap.getGlobalElement(i)) / ((Scalar)numGlobalRows);
+            });
+      }
+    }
 
     //
     // Build Thyra linear algebra objects
     //
 
-    RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpCrsA = Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(A);
+    RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpCrsA = Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(A, true);
 
     RCP<const Thyra::LinearOpBase<Scalar> > thyraA    = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyra(xpCrsA->getCrsMatrix());
     RCP<Thyra::MultiVectorBase<Scalar> > thyraX       = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyraMultiVector(X));
