@@ -747,15 +747,12 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
     }
   }
 
-  typedef KokkosSparse::CrsMatrix<typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
-                                  typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                                  typename AMatrix::const_size_type>
-      AMatrix_Internal;
-
-  AMatrix_Internal A_i = A;
-
   // Call single-vector version if appropriate
   if (x.extent(1) == 1) {
+    typedef KokkosSparse::CrsMatrix<typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
+                                    typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                                    typename AMatrix::const_size_type>
+        AMatrix_Internal;
     typedef Kokkos::View<typename XVector::const_value_type*, typename YVector::array_layout,
                          typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
         XVector_SubInternal;
@@ -763,13 +760,14 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
                          typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
         YVector_SubInternal;
 
+    AMatrix_Internal A_i    = A;
     XVector_SubInternal x_i = Kokkos::subview(x, Kokkos::ALL(), 0);
     YVector_SubInternal y_i = Kokkos::subview(y, Kokkos::ALL(), 0);
 
     // spmv_struct (mode, alpha, A, x_i, beta, y_i);
     if (Impl::SPMV2D1D_STRUCT<AlphaType, AMatrix_Internal, XVector_SubInternal, BetaType, YVector_SubInternal,
                               typename XVector_SubInternal::array_layout>::spmv2d1d_struct(space, mode, stencil_type,
-                                                                                           structure, alpha, A, x_i,
+                                                                                           structure, alpha, A_i, x_i,
                                                                                            beta, y_i)) {
       return;
     }

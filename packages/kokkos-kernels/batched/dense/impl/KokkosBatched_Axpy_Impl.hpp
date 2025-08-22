@@ -183,8 +183,8 @@ KOKKOS_INLINE_FUNCTION int SerialAxpy::invoke(const alphaViewType& alpha, const 
 
   return SerialAxpyInternal::template invoke<typename alphaViewType::non_const_value_type,
                                              typename XViewType::non_const_value_type>(
-      X.extent(0), X.extent(1), alpha.data(), alpha.stride_0(), X.data(), X.stride_0(), X.stride_1(), Y.data(),
-      Y.stride_0(), Y.stride_1());
+      X.extent(0), X.extent(1), alpha.data(), alpha.stride(0), X.data(), X.stride(0), X.stride(1), Y.data(),
+      Y.stride(0), Y.stride(1));
 }
 
 ///
@@ -228,8 +228,8 @@ KOKKOS_INLINE_FUNCTION int TeamAxpy<MemberType>::invoke(const MemberType& member
 
   return TeamAxpyInternal::template invoke<MemberType, typename alphaViewType::non_const_value_type,
                                            typename XViewType::non_const_value_type>(
-      member, X.extent(0), X.extent(1), alpha.data(), alpha.stride_0(), X.data(), X.stride_0(), X.stride_1(), Y.data(),
-      Y.stride_0(), Y.stride_1());
+      member, X.extent(0), X.extent(1), alpha.data(), alpha.stride(0), X.data(), X.stride(0), X.stride(1), Y.data(),
+      Y.stride(0), Y.stride(1));
 }
 
 ///
@@ -273,8 +273,8 @@ KOKKOS_INLINE_FUNCTION int TeamVectorAxpy<MemberType>::invoke(const MemberType& 
 
   return TeamVectorAxpyInternal::invoke<MemberType, typename alphaViewType::non_const_value_type,
                                         typename XViewType::non_const_value_type, typename XViewType::array_layout>(
-      member, X.extent(0), X.extent(1), alpha.data(), alpha.stride_0(), X.data(), X.stride_0(), X.stride_1(), Y.data(),
-      Y.stride_0(), Y.stride_1());
+      member, X.extent(0), X.extent(1), alpha.data(), alpha.stride(0), X.data(), X.stride(0), X.stride(1), Y.data(),
+      Y.stride(0), Y.stride(1));
 }
 
 }  // namespace KokkosBatched

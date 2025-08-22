@@ -55,8 +55,8 @@ struct TeamVectorGemv<MemberType, Trans::NoTranspose, Algo::Gemv::Unblocked> {
     }
     return TeamVectorGemvInternal<Algo::Gemv::Unblocked>::template invoke<
         MemberType, ScalarType, typename AViewType::array_layout, typename AViewType::non_const_value_type>(
-        member, A.extent(0), A.extent(1), A.extent(2), alpha, A.data(), A.stride_0(), A.stride_1(), A.stride_2(),
-        x.data(), x.stride_0(), x.stride_1(), beta, y.data(), y.stride_0(), y.stride_1());
+        member, A.extent(0), A.extent(1), A.extent(2), alpha, A.data(), A.stride(0), A.stride(1), A.stride(2), x.data(),
+        x.stride(0), x.stride(1), beta, y.data(), y.stride(0), y.stride(1));
   }
 };
 
@@ -89,8 +89,8 @@ struct TeamVectorGemv<MemberType, Trans::Transpose, Algo::Gemv::Unblocked> {
                   "KokkosBlas::TeamVectorGemv for regular rank-2 matrix)");
     return TeamVectorGemvInternal<Algo::Gemv::Unblocked>::template invoke<
         MemberType, ScalarType, typename AViewType::array_layout, typename AViewType::non_const_value_type>(
-        member, A.extent(0), A.extent(2), A.extent(1), alpha, A.data(), A.stride_0(), A.stride_2(), A.stride_1(),
-        x.data(), x.stride_0(), x.stride_1(), beta, y.data(), y.stride_0(), y.stride_1());
+        member, A.extent(0), A.extent(2), A.extent(1), alpha, A.data(), A.stride(0), A.stride(2), A.stride(1), x.data(),
+        x.stride(0), x.stride(1), beta, y.data(), y.stride(0), y.stride(1));
   }
 };
 

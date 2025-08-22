@@ -23,10 +23,10 @@
 #include "KokkosKernels_Macros.hpp"
 
 #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) || defined(__SYCL_DEVICE_ONLY__)
-#undef __KOKKOSBATCHED_ENABLE_AVX__
-#else
 // compiler bug with AVX in some architectures
-#define __KOKKOSBATCHED_ENABLE_AVX__
+#undef KOKKOSBATCHED_IMPL_ENABLE_AVX
+#else
+#define KOKKOSBATCHED_IMPL_ENABLE_AVX
 #endif
 
 namespace KokkosBatched {
@@ -498,7 +498,7 @@ class Vector<SIMD<double>, 4> {
 }  // namespace KokkosBatched
 #endif
 
-#if defined(__KOKKOSBATCHED_ENABLE_AVX__)
+#if defined(KOKKOSBATCHED_IMPL_ENABLE_AVX)
 #if defined(__AVX__) || defined(__AVX2__)
 
 #if CUDA_VERSION < 12022
@@ -790,7 +790,7 @@ class Vector<SIMD<Kokkos::complex<double> >, 4> {
 }  // namespace KokkosBatched
 
 #endif /* #if defined(__AVX512F__) */
-#endif /* #if defined(__KOKKOSBATCHED_ENABLE_AVX__) */
+#endif /* #if defined(KOKKOSBATCHED_IMPL_ENABLE_AVX) */
 
 #include "KokkosBatched_Vector_SIMD_Arith.hpp"
 #include "KokkosBatched_Vector_SIMD_Logical.hpp"

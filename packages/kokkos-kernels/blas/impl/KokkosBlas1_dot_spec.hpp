@@ -227,11 +227,11 @@ struct Dot<execution_space, RV, XV, YV, 1, 1, false, KOKKOSKERNELS_IMPL_COMPILE_
 
     if (numElems < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      DotFunctor<execution_space, RV, XV, YV, index_type> f(X, Y);
+      DotFunctor<RV, XV, YV, index_type> f{X, Y};
       f.run("KokkosBlas::dot<1D>", space, R);
     } else {
       typedef int64_t index_type;
-      DotFunctor<execution_space, RV, XV, YV, index_type> f(X, Y);
+      DotFunctor<RV, XV, YV, index_type> f{X, Y};
       f.run("KokkosBlas::dot<1D>", space, R);
     }
     Kokkos::Profiling::popRegion();
@@ -289,11 +289,11 @@ struct DotSpecialAccumulator<execution_space, RV, XV, YV, KOKKOSKERNELS_IMPL_COM
 
     if (numElems < static_cast<size_type>(INT_MAX)) {
       typedef int index_type;
-      DotFunctor<execution_space, RV_Result, XV, YV, index_type> f(X, Y);
+      DotFunctor<RV_Result, XV, YV, index_type> f{X, Y};
       f.run("KokkosBlas::dot<1D>", space, R);
     } else {
       typedef int64_t index_type;
-      DotFunctor<execution_space, RV_Result, XV, YV, index_type> f(X, Y);
+      DotFunctor<RV_Result, XV, YV, index_type> f{X, Y};
       f.run("KokkosBlas::dot<1D>", space, R);
     }
     Kokkos::Profiling::popRegion();
@@ -347,11 +347,11 @@ struct Dot<execution_space, RV, XV, YV, X_Rank, Y_Rank, false, KOKKOSKERNELS_IMP
       auto Y0 = getFirstColumn(Y);
       if (numRows < static_cast<size_type>(INT_MAX)) {
         typedef int index_type;
-        DotFunctor<execution_space, decltype(R0), decltype(X0), decltype(Y0), index_type> f(X0, Y0);
+        DotFunctor<decltype(R0), decltype(X0), decltype(Y0), index_type> f{X0, Y0};
         f.run("KokkosBlas::dot<1D>", space, R0);
       } else {
         typedef int64_t index_type;
-        DotFunctor<execution_space, decltype(R0), decltype(X0), decltype(Y0), index_type> f(X0, Y0);
+        DotFunctor<decltype(R0), decltype(X0), decltype(Y0), index_type> f{X0, Y0};
         f.run("KokkosBlas::dot<1D>", space, R0);
       }
     } else {

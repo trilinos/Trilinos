@@ -1,7 +1,7 @@
 Quick Start
 ###########
 
-This document gives a brief introduction to start using Kokkos Kernels in your external project. The first step to use Kokkos Kernels is to install the Kokkos programming model, a quick-start on how to obtain and install Kokkos is available `here <https://kokkos.org/kokkos-core-wiki/quick_start.html>`_. For the rest of this guide, we will assume that :code:`<kokkos-install-directory>` refers to the directory in which you have installed Kokkos.
+This document gives a brief introduction to start using Kokkos Kernels in your external project. The first step to use Kokkos Kernels is to install the Kokkos programming model, a quick-start on how to obtain and install Kokkos is available `here <https://kokkos.org/kokkos-core-wiki/get-started/quick-start.html>`_. For the rest of this guide, we will assume that :code:`<kokkos-install-directory>` refers to the directory in which you have installed Kokkos.
 
 Download a release
 ==================

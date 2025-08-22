@@ -48,3 +48,7 @@ No type requirements will be asserted.
 
 Example
 =======
+
+.. literalinclude:: ../../../../example/wiki/graph/KokkosGraph_wiki_coloring.cpp
+  :language: c++
+  :lines: 16-
