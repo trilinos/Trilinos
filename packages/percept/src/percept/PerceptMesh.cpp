@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 #include <percept/Percept.hpp>
-
+#include <percept/Percept_GlobalComm.hpp>
 #include <percept/PerceptMesh.hpp>
 #include <percept/PEnums.hpp>
 #include <percept/Util.hpp>
@@ -465,7 +465,7 @@
       checkStateSpec("print_info", m_isOpen, m_isInitialized);
       PerceptMesh& eMesh = *this;
 
-      const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
+      const unsigned p_rank = stk::parallel_machine_rank( percept::get_global_comm() );
 
       stream
         << ""<<NL<<""<<NL<< "P[" << p_rank << "] ======================================================== "<<NL
@@ -3499,7 +3499,7 @@
 
       bool diff = false;
 
-      const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
+      const unsigned p_rank = stk::parallel_machine_rank( percept::get_global_comm() );
 
       if (print)
         {

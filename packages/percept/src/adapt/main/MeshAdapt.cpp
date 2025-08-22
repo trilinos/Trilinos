@@ -16,6 +16,7 @@
 #include <adapt/ExcludeWedgesNotConnectedToPyramids.hpp>
 
 #include <percept/PerceptUtils.hpp>
+#include <percept/Percept_GlobalComm.hpp>
 
 #include <stk_util/registry/ProductRegistry.hpp>
 #include <stk_util/util/string_case_compare.hpp>
@@ -60,8 +61,8 @@ namespace percept {
     timer.stop();
     stk::diag::printTimersTable(str, timer,
                                 stk::diag::METRICS_ALL, false,
-                                MPI_COMM_WORLD);
-    if (0 == stk::parallel_machine_rank(MPI_COMM_WORLD))
+                                percept::get_global_comm());
+    if (0 == stk::parallel_machine_rank(percept::get_global_comm()))
       {
         std::cout << str.str() << std::endl;
       }
@@ -562,7 +563,7 @@ namespace percept {
     {
 
 #if defined( STK_HAS_MPI )
-      MPI_Barrier( MPI_COMM_WORLD );
+      MPI_Barrier( percept::get_global_comm() );
 #endif
 
       // 3dm == opennurbs
@@ -2241,7 +2242,7 @@ void MeshAdapt::initialize_m2g_geometry(std::string input_geometry)
 
   std::string m2gFile = input_geometry.substr(0,input_geometry.length()-3) + "m2g";
 
-  int THIS_PROC_NUM = stk::parallel_machine_rank( MPI_COMM_WORLD);
+  int THIS_PROC_NUM = stk::parallel_machine_rank( percept::get_global_comm());
 
   stk::mesh::MetaData* md = eMeshP->get_fem_meta_data();
   stk::mesh::BulkData* bd = eMeshP->get_bulk_data();
