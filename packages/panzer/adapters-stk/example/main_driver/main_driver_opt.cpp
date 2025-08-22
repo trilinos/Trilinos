@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 
     {
       RCP<ParameterList> tempus_params = parameterList(input_params->sublist("Solution Control",true).sublist("Tempus",true));
-      auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,comm,objective_params,out);
+      auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,tempus_params,comm,objective_params,out);
 
       // Create target -- do forward integration with perturbed parameter values
       RCP<ROL::Vector<double>> p = objective->create_design_vector();
@@ -188,6 +188,18 @@ int main(int argc, char *argv[])
     *out << e.what() << std::endl;
     *out << "************ Caught Exception: End Error Report ************" << std::endl;
     status = -1;
+
+    Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
+    if (true) {
+      Teuchos::StackedTimer::OutputOptions options;
+      options.output_fraction = true;
+      options.output_minmax = false;
+      options.output_histogram = false;
+      options.num_histogram = 5;
+      std::string timing_file_name = "exception_timing.log";
+      std::fstream timing_file{timing_file_name,std::ios::out | std::ios::trunc};
+      Teuchos::TimeMonitor::getStackedTimer()->report(timing_file, Teuchos::DefaultComm<int>::getComm(), options);
+    }
   }
 
   if (status == 0)
