@@ -242,11 +242,6 @@ template <typename T> struct LapackSerial {
     for (int i = 0; i < m; ++i) {
       // skip check pivot
       T alpha = A[i + i*lda];
-      //if (arith_traits::real(alpha) <= zero) {
-      //  *info = 1+i;
-      //  return *info;     
-      //}
-      //alpha = sqrt(arith_traits::real(alpha));
       alpha = arith_traits::real(alpha);
       A[i + i*lda] = alpha;
   
@@ -255,10 +250,10 @@ template <typename T> struct LapackSerial {
     
       // update
       for (int j = i+1; j < m; j++) {
-        const T aa = A[i + j*lda];
+        const T aa = alpha * A[i + j*lda];
         for (int l = i+1; l <= j; l++) {
           const T bb = arith_traits::conj(A[i + l*lda]);
-          A[l + j*lda] -= aa * alpha * bb;
+          A[l + j*lda] -= aa * bb;
         }
       }
     }   

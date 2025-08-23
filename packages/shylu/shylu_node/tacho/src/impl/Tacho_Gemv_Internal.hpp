@@ -53,13 +53,13 @@ template <typename ArgTrans> struct Gemv<ArgTrans, Algo::Internal> {
   }
 };
 
-/*
+
 template <typename ArgUplo, typename ArgTrans> struct Trmv<ArgUplo, ArgTrans, Algo::Internal> {
   template <typename MemberType, typename DiagType, typename ScalarType, typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const DiagType diag,
                                            const ScalarType alpha, const ViewTypeA &A,
                                                                    const ViewTypeB &B,
-                                            const ScalarType beta, const ViewTypeC &C) {
+                                           const ScalarType beta,  const ViewTypeC &C) {
 
     typedef typename ViewTypeA::non_const_value_type value_type;
     typedef typename ViewTypeB::non_const_value_type value_type_b;
@@ -75,20 +75,19 @@ template <typename ArgUplo, typename ArgTrans> struct Trmv<ArgUplo, ArgTrans, Al
     const ordinal_type m = C.extent(0), n = C.extent(1);
 
     if (m > 0 && n > 0) {
+      const int mA = A.extent(0), nA = A.extent(1);
       if (n == 1) {
-        const int mm = A.extent(0), nn = A.extent(1);
-        BlasTeam<value_type>::gemv(member, ArgTrans::param, mm, nn, value_type(alpha), A.data(), A.stride_1(), B.data(),
-                                   B.stride_0(), value_type(beta), C.data(), C.stride_0());
+        BlasTeam<value_type>::trmv(member, ArgUplo::param, ArgTrans::param, diag.param,
+                                   mA, nA, value_type(alpha), A.data(), A.stride_1(),
+                                                              B.data(), B.stride_0(),
+                                           value_type(beta),  C.data(), C.stride_0());
       } else {
-        const int mm = C.extent(0), nn = C.extent(1), kk = B.extent(0);
-        BlasTeam<value_type>::gemm(member, ArgTrans::param, Trans::NoTranspose::param, mm, nn, kk, value_type(alpha),
-                                   A.data(), A.stride_1(), B.data(), B.stride_1(), value_type(beta), C.data(),
-                                   C.stride_1());
+        TACHO_TEST_FOR_ABORT(true, ">> :Internal::TRMM.");
       }
     }
     return 0;
   }
-};*/
+};
 
 } // namespace Tacho
 #endif

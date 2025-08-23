@@ -106,6 +106,7 @@ public:
 
         if (_ldl) {
           // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
+          member.team_barrier();
           Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
                                  ::invoke(member, ATL, tT);
         }
@@ -163,6 +164,7 @@ public:
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
+        // solve with diag L
         if (_ldl) {
           Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
         } else {
@@ -171,15 +173,16 @@ public:
 
         if (n_m > 0) {
           // update offdiag
-          member.team_barrier();
           UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
 
+          member.team_barrier();
           Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bT, zero, bB);
         }
 
         if (_ldl) {
           // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
+          member.team_barrier();
           Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
                                  ::invoke(member, ATL, bT);
         }

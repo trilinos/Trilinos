@@ -151,7 +151,13 @@ template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> {
   template <typename MemberType, typename ViewTypeD, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeD &D, const ViewTypeA &A) {
     KOKKOS_IF_ON_DEVICE((
-      Kokkos::printf("Error: Diagonal scaling not implemented on DEVICE");
+      ordinal_type m = A.extent(0);
+      ordinal_type n = A.extent(1);
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const ordinal_type &i) {
+        for (ordinal_type j=0; j<n; j++) {
+          A(i, j) /= D(i, i);
+        }
+      });
     ))
     KOKKOS_IF_ON_HOST((
       invoke(D, A);
@@ -181,7 +187,13 @@ template <> struct Scale_BlockInverseDiagonals<Side::Right, Algo::Internal> {
   template <typename MemberType, typename ViewTypeD, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeD &D, const ViewTypeA &A) {
     KOKKOS_IF_ON_DEVICE((
-      Kokkos::printf("Error: Diagonal scaling not implemented on DEVICE");
+      ordinal_type m = A.extent(0);
+      ordinal_type n = A.extent(1);
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const ordinal_type &i) {
+        for (ordinal_type j=0; j<n; j++) {
+          A(i, j) /= D(j, j);
+        }
+      });
     ))
     KOKKOS_IF_ON_HOST((
       invoke(D, A);

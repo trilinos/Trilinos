@@ -104,9 +104,7 @@ template <typename ArgUplo, typename ArgTrans> struct Trmv<ArgUplo, ArgTrans, Al
                                                           B.data(), B.stride_0(), 
                                        value_type(beta),  C.data(), C.stride_0());
         } else {
-          //const int mm = C.extent(0), nn = C.extent(1), kk = B.extent(0);
-          //Blas<value_type>::gemm(ArgTrans::param, Trans::NoTranspose::param, mm, nn, kk, value_type(alpha), A.data(),
-          //                       A.stride_1(), B.data(), B.stride_1(), value_type(beta), C.data(), C.stride_1());
+          TACHO_TEST_FOR_ABORT(true, ">> :External::TRMM.");
         }
       }
     } else {

@@ -155,13 +155,14 @@ public:
           Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
           member.team_barrier();
         }
+        // solve
         if (_ldl) {
           Trmv<Uplo::Upper, Trans::NoTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
         } else {
           Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
         }
         member.team_barrier();
-        // copy to t
+        // copy to t (TODO: trmv could be in place, to avoid this copy)
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(member, m * _nrhs),
             [&, m](const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14

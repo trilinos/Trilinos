@@ -71,9 +71,6 @@ template <typename T> struct BlasSerial {
     typedef ArithTraits<T> arith_traits;
     const T one(1), zero(0);
 
-    if (n <= 0 || m <= 0)
-      return;
-
     {
       int mt = (trans == 'N' || trans == 'n' ?  m : n);
       if (beta == zero) {
@@ -83,6 +80,8 @@ template <typename T> struct BlasSerial {
       }
     }
     if (alpha == zero)
+      return;
+    if (n <= 0 || m <= 0)
       return;
 
     int mn = (m < n ? m : n);

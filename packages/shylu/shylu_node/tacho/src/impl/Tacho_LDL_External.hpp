@@ -167,6 +167,13 @@ template <> struct LDL<Uplo::Lower, Algo::External> {
   }
 };
 
+template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::External> {
+  // just call serial for now
+  template <typename MemberType, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A) {
+    return LDL_nopiv<ArgUplo, Algo::Serial>::invoke(member, A);
+  }
+};
 } // namespace Tacho
 
 #endif

@@ -78,7 +78,7 @@ public:
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void factorize_var0(MemberType &member, const supernode_type &s,
                                              const value_type_matrix &ABR, const value_type_matrix &W) const {
-    using CholAlgoType = typename CholAlgorithm_Team::type;
+    using CholAlgoType = typename CholAlgorithm_Team::type; // Internal (on device), External (on host with CUDA/HIP enabled, TODO: Serial?), Serial (on host without CUDA/HIP)
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using HerkAlgoType = typename HerkAlgorithm_Team::type;
     using GemmAlgoType = typename GemmAlgorithm_Team::type;
@@ -91,6 +91,7 @@ public:
       aptr += m * m;
       if (_ldl) {
         err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+        member.team_barrier();
       } else {
         if (_tol > 0.0)
           err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
@@ -111,12 +112,16 @@ public:
           // Apply L^{-T} on off-diagonal
           Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
                                                                                     ATR);
+          member.team_barrier();
+
           // Save in workspace
           Copy<Algo::Internal>::invoke(member, W, ATR);
+          member.team_barrier();
 
           // Apply D^{-1} on off-diagonal
           Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
             ::invoke(member, ATL, ATR);
+          member.team_barrier();
 
           // ABR = -ATR*W
           GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
@@ -173,22 +178,31 @@ public:
           // Apply L^{-T} on off-diagonal (TODO: should we gemm after inversion?)
           Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
                                                                                     ATR);
+          member.team_barrier();
 
           // compute Inverse of diagobal block (NOTE: T and ABR point to the same address = need to compute inverse before gemm)
           Copy<Algo::Internal>::invoke(member, T, ATL);
           member.team_barrier();
           SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+          member.team_barrier();
           Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL);
           member.team_barrier();
-          // copy diagonal back
-          for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+
+          // TODO: copy diagonal back
+          //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
+            ATL(i,i) = T(i,i);
+          });
+          member.team_barrier();
 
           // Save ATR in workspace
           Copy<Algo::Internal>::invoke(member, W, ATR);
+          member.team_barrier();
 
           // Apply D^{-1} on off-diagonal
           Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
             ::invoke(member, ATL, ATR);
+          member.team_barrier();
 
           // * Update remaining block
           // ABR = -ATR*W
@@ -204,6 +218,7 @@ public:
           Copy<Algo::Internal>::invoke(member, T, ATL);
           member.team_barrier();
           SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+          member.team_barrier();
           Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
           member.team_barrier();
 
@@ -211,7 +226,6 @@ public:
           // ABR = -ATR'*ATR
           Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
         }
-        member.team_barrier();
       } else {
         // compute Inverse of diagobal block
         Copy<Algo::Internal>::invoke(member, T, ATL);
@@ -222,8 +236,12 @@ public:
 
         if (_ldl) {
           Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL);
-          // copy diagonal back
-          for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+          member.team_barrier();
+          // TODO: copy diagonal back
+          //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
+            ATL(i,i) = T(i,i);
+          });
         } else {
           Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
         }
@@ -264,18 +282,22 @@ public:
           // * Update off-diagonal block
           Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
                                                                                     ATR);
+          member.team_barrier();
 
           // Save ATR in workspace
           Copy<Algo::Internal>::invoke(member, W, ATR);
+          member.team_barrier();
 
           // Apply D^{-1} on off-diagonal
           Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
             ::invoke(member, ATL, ATR);
+          member.team_barrier();
 
           // * Update remaining block
           // ABR = -ATR*W
           GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, HerkAlgoType>::invoke(member, minus_one, ATR,
                                                                                                   W, zero, ABR);
+          member.team_barrier();
         } else {
           // * Update off-diagonal block
           Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
@@ -299,8 +321,12 @@ public:
       if (_ldl) {
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), minus_one, T,
                                                                                 AT);
-        // copy diagonal back
-        for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+        // TODO: copy diagonal back
+        //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+        member.team_barrier();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
+          ATL(i,i) = T(i,i);
+        });
       } else {
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), minus_one, T,
                                                                                 AT);

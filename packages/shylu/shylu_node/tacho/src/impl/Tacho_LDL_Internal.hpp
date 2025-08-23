@@ -153,6 +153,21 @@ template <> struct LDL<Uplo::Lower, Algo::Internal> {
   }
 };
 
+template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Internal> {
+  template <typename MemberType, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A) {
+
+    typedef typename ViewTypeA::non_const_value_type value_type;
+    static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
+
+    int r_val = 0;
+    const ordinal_type m = A.extent(0);
+    if (m > 0)
+      LapackTeam<value_type>::sytrf_nopiv(member, ArgUplo::param, m, A.data(), A.stride_1(), &r_val);
+    return r_val;
+  }
+};
+
 } // namespace Tacho
 
 #endif
