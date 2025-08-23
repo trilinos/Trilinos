@@ -599,7 +599,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //A.print_matrix("A.dat");
 
       Entry one(1.0);
-      int num_match = min(A.nrow, A.ncol);
+      int num_match = std::min(A.nrow, A.ncol);
       MALLOC_INT_1DARRAY(order_match_array, A.nrow);
       MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
       MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
@@ -682,7 +682,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //printf( " match_array\n" );
       //for(Int j = 0; j < A.ncol; j++) printf( " > %d\n",order_match_array(j) );
       //A.print_matrix("B.dat");
-      if(num_match < min(A.nrow, A.ncol)) {
+      if(num_match < std::min(A.nrow, A.ncol)) {
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " ++ Num of matches returned " << num_match
                     << " is less than nrow = " << A.nrow << " or ncol = " << A.ncol

@@ -91,10 +91,10 @@ namespace {
     return ret;
   }
 
-  RCP<FancyOStream> getDefaultOStream()
-  {
-    return( VerboseObjectBase::getDefaultOStream() );
-  }
+  //RCP<FancyOStream> getDefaultOStream()
+  //{
+  //  return( VerboseObjectBase::getDefaultOStream() );
+  //}
 
   TEUCHOS_STATIC_SETUP()
   {

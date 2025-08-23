@@ -57,7 +57,7 @@ namespace BaskerNS
     ~Basker();
 
     BASKER_INLINE
-    int InitMatrix(string filename);
+    int InitMatrix(std::string filename);
 
     BASKER_INLINE
     int InitMatrix(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);

@@ -32,8 +32,6 @@
 //#define BASKER_DEBUG_SOLVE_RHS
 //#define BASKER_TIMER
 
-using namespace std;
-
 namespace BaskerNS
 {
   // ================================= //

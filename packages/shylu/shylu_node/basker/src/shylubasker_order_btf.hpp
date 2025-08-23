@@ -647,7 +647,9 @@ namespace BaskerNS
     //Short circuit, 
     //If nblks  == 1, than only BTF_A exists
     // NDE: In this case, vals_block_map_perm_pair is not allocated nor used - A is assigned to BTF_A directly
+    #if defined (HAVE_SHYLU_NODEBASKER_METIS) || defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
     bool replace_zero_pivot_in = Options.replace_zero_pivot;
+    #endif
     if(nblks == 1)
     {
     #ifdef BASKER_DEBUG_ORDER_BTF

@@ -29,7 +29,6 @@
 #include "shylubasker_util.hpp"
 
 #include <iostream>
-using namespace std;
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
@@ -1131,7 +1130,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int k=MV.ncol;
         for(Int p = Mt.col_ptr(i); p < Mt.col_ptr(i+1); ++p)
         {
-          k = min(k,ws(Mt.row_idx(p)));
+          k = std::min(k,ws(Mt.row_idx(p)));
         }
 
         next[i] = head[k];
@@ -1283,7 +1282,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int k=MV.ncol;
         for(Int p = Mt.col_ptr[i]; p < Mt.col_ptr[i+1]; p++)
         {
-          k = min(k,ws[Mt.row_idx[p]]);
+          k = std::min(k,ws[Mt.row_idx[p]]);
         }
 
         next[i] = head[k];
@@ -1781,7 +1780,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int min_i = MV.nrow;
         for(Int k = MV.col_ptr(j); k < MV.col_ptr(j+1); ++k) {
           Int i = MV.row_idx(k);
-          min_i = min(i, min_i);
+          min_i = std::min(i, min_i);
         }
         ST.L_row_counts(j) = MV.nrow - min_i;
         ST.U_col_counts(j) = MV.nrow - min_i;
@@ -2442,7 +2441,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #endif
 
       double old_nnz = M.nnz;
-      Int temp = min(M.nrow*M.ncol, Int(fill_factor*double(t_nnz)));
+      Int temp = std::min(M.nrow*M.ncol, Int(fill_factor*double(t_nnz)));
       if (temp >= t_nnz) {
         M.nnz = temp;
       } else {

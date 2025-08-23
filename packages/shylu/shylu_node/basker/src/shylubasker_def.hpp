@@ -186,7 +186,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::InitMatrix(string filename)
+  int Basker<Int, Entry, Exe_Space>::InitMatrix(std::string filename)
   { 
     //Note: jdb comeback to add trans option
     readMTX(filename, A);
@@ -1076,10 +1076,10 @@ namespace BaskerNS
       }
       BTF_A.gnorm = A.anorm;
       if(Options.verbose == BASKER_TRUE) {
-         cout<< " Basker Factor: Time to compute" 
-             << " norm(A) = "     << BTF_A.gnorm << " with n = " << A.ncol << ", and "
-             << " norm(BTF_A) = " << BTF_A.anorm << " with n = " << BTF_A.ncol
-             << " : " << normA_timer.seconds() << std::endl;
+        std::cout<< " Basker Factor: Time to compute" 
+                 << " norm(A) = "     << BTF_A.gnorm << " with n = " << A.ncol << ", and "
+                 << " norm(BTF_A) = " << BTF_A.anorm << " with n = " << BTF_A.ncol
+                 << " : " << normA_timer.seconds() << std::endl;
       }
     }
 
