@@ -341,7 +341,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       //printf("\n\n STREE SIZE: %d \n", AL[blk][0].ncol);
       //printf("Here 0\n");
       //Find nnz_counts for leafs
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       timer1.reset();
       #endif
       #ifdef SHYLU_BASKER_STREE_LIST
@@ -350,7 +350,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #else
       e_tree    (ALM(blk)(0), stree, 1);
       #endif
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       time1_2 += timer1.seconds();
       timer1.reset();
       #endif
@@ -359,7 +359,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #else
       post_order(ALM(blk)(0), stree);
       #endif
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       time1_3 += timer1.seconds();
       timer1.reset();
       #endif
@@ -368,14 +368,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #else
       col_count (ALM(blk)(0), stree);
       #endif
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       time1 += timer1.seconds();
       #endif
 
       //Assign nnz here
       //leaf_assign_nnz(LL(blk)(0), stree, 0);
       //leaf_assign_nnz(LU(blk)(LU_size[blk]-1), stree, 0);
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       timer1.reset();
       #endif
       if (!Options.run_nd_on_leaves && Options.run_amd_on_leaves) {
@@ -404,7 +404,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree, 0);
         #endif
       }
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       time2 += timer1.seconds();
       #endif
     }

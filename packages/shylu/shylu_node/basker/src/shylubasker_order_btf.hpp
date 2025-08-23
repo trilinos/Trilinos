@@ -655,7 +655,7 @@ namespace BaskerNS
     #ifdef BASKER_DEBUG_ORDER_BTF
       printf("Basker: break_into_parts2 - short circuit for single block case\n");
     #endif
-      #if !defined (HAVE_SHYLU_NODEBASKER_METIS) & !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+      #if !defined (HAVE_SHYLU_NODEBASKER_METIS) && !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
       if (Options.run_nd_on_leaves == BASKER_TRUE) {
         if(Options.verbose == BASKER_TRUE) {
           printf("Basker: turning off ND-on-leaves option since no METIS nor SCOTCH (hence sequential)\n");
@@ -686,7 +686,7 @@ namespace BaskerNS
     Int scol_top          = 0;      // starting column of the BTF_A bloc
     Int scol              = M.ncol; // starting column of the BTF_C blocks (end of BTF_A block)
     Int blk_idx           = nblks;  // start at lower right corner block, move left and up the diagonal
-    #if !defined (HAVE_SHYLU_NODEBASKER_METIS) & !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+    #if !defined (HAVE_SHYLU_NODEBASKER_METIS) && !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
     // use Metis on a large block even with one thread
     if (num_threads == 1) {
       // Short circuit for single thread = no big block A
@@ -736,9 +736,10 @@ namespace BaskerNS
 
       Int t_size            = 0;      //total size of cols from 'small' blocks in BTF_C: matrix ncols - t_size = BTF_A ncols
       BASKER_BOOL  move_fwd = BASKER_TRUE;
-      #if !defined (HAVE_SHYLU_NODEBASKER_METIS) & !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+      #if !defined (HAVE_SHYLU_NODEBASKER_METIS) && !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+      Options.use_sequential_diag_facto = BASKER_TRUE;
       if(Options.verbose == BASKER_TRUE) {
-        printf("\n ** Basker: no big ND block since neither METIS nor SCOTCH is enabled ** \n");
+        printf("\n ** Basker: no big ND block (only BTF diag factorization) since neither METIS nor SCOTCH is enabled ** \n");
       }
       #endif
       while(move_fwd==BASKER_TRUE)
