@@ -29,7 +29,6 @@
 #include "shylubasker_util.hpp"
 
 #include <iostream>
-using namespace std;
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
@@ -327,7 +326,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     #ifdef SHYLU_BASKER_STREE_LIST
     Kokkos::parallel_for(
       "permute_col", num_threads,
-      KOKKOS_LAMBDA(const int p)
+      BASKER_LAMBDA(const int p)
     #else
     for(Int p = 0; p < num_threads; ++p)
     #endif
@@ -342,7 +341,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       //printf("\n\n STREE SIZE: %d \n", AL[blk][0].ncol);
       //printf("Here 0\n");
       //Find nnz_counts for leafs
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       timer1.reset();
       #endif
       #ifdef SHYLU_BASKER_STREE_LIST
@@ -351,7 +350,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #else
       e_tree    (ALM(blk)(0), stree, 1);
       #endif
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       time1_2 += timer1.seconds();
       timer1.reset();
       #endif
@@ -360,7 +359,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #else
       post_order(ALM(blk)(0), stree);
       #endif
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       time1_3 += timer1.seconds();
       timer1.reset();
       #endif
@@ -369,14 +368,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #else
       col_count (ALM(blk)(0), stree);
       #endif
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       time1 += timer1.seconds();
       #endif
 
       //Assign nnz here
       //leaf_assign_nnz(LL(blk)(0), stree, 0);
       //leaf_assign_nnz(LU(blk)(LU_size[blk]-1), stree, 0);
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       timer1.reset();
       #endif
       if (!Options.run_nd_on_leaves && Options.run_amd_on_leaves) {
@@ -405,7 +404,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         leaf_assign_nnz(LU(blk)(LU_size(blk)-1), stree, 0);
         #endif
       }
-      #if defined(BASKER_TIMER) & !defined(SHYLU_BASKER_STREE_LIST)
+      #if defined(BASKER_TIMER) && !defined(SHYLU_BASKER_STREE_LIST)
       time2 += timer1.seconds();
       #endif
     }
@@ -535,7 +534,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #ifdef SHYLU_BASKER_STREE_LIST
       //printf( " parallel for \n" );
       Kokkos::parallel_for(
-        "permute_col", p, KOKKOS_LAMBDA(const int pp)
+        "permute_col", p, BASKER_LAMBDA(const int pp)
       #else
       //printf( " serial for \n" );
       for(Int pp = 0; pp < p; pp++)
@@ -1131,7 +1130,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int k=MV.ncol;
         for(Int p = Mt.col_ptr(i); p < Mt.col_ptr(i+1); ++p)
         {
-          k = min(k,ws(Mt.row_idx(p)));
+          k = std::min(k,ws(Mt.row_idx(p)));
         }
 
         next[i] = head[k];
@@ -1283,7 +1282,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int k=MV.ncol;
         for(Int p = Mt.col_ptr[i]; p < Mt.col_ptr[i+1]; p++)
         {
-          k = min(k,ws[Mt.row_idx[p]]);
+          k = std::min(k,ws[Mt.row_idx[p]]);
         }
 
         next[i] = head[k];
@@ -1781,7 +1780,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         Int min_i = MV.nrow;
         for(Int k = MV.col_ptr(j); k < MV.col_ptr(j+1); ++k) {
           Int i = MV.row_idx(k);
-          min_i = min(i, min_i);
+          min_i = std::min(i, min_i);
         }
         ST.L_row_counts(j) = MV.nrow - min_i;
         ST.U_col_counts(j) = MV.nrow - min_i;
@@ -2442,7 +2441,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #endif
 
       double old_nnz = M.nnz;
-      Int temp = min(M.nrow*M.ncol, Int(fill_factor*double(t_nnz)));
+      Int temp = std::min(M.nrow*M.ncol, Int(fill_factor*double(t_nnz)));
       if (temp >= t_nnz) {
         M.nnz = temp;
       } else {
