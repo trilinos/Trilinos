@@ -24,7 +24,6 @@ namespace phalanx_test {
 
   using real = double;
   using dfad = Sacado::Fad::DFad<double>;
-  using elrcdfad = Sacado::ELRCacheFad::DFad<double>;
   using slfad = Sacado::Fad::SLFad<double,32>;
   using sfad = Sacado::Fad::SFad<double,32>;
 
@@ -148,8 +147,6 @@ namespace phalanx_test {
 
     static_assert(PHX::requires_dynamic_hidden_dimension<dfad>::value,
                   "ERROR: dfad requires a dynamic hidden dimension");
-    static_assert(PHX::requires_dynamic_hidden_dimension<elrcdfad>::value,
-                  "ERROR: elrcdfad requires a dynamic hidden dimension");
     static_assert(PHX::requires_dynamic_hidden_dimension<slfad>::value,
                   "ERROR: slfad requires a dynamic hidden dimension");
   }
@@ -162,11 +159,6 @@ namespace phalanx_test {
   TEUCHOS_UNIT_TEST(ViewAllocationSize, type_dfad)
   {
     test_span<dfad>(out, success);
-  }
-
-  TEUCHOS_UNIT_TEST(ViewAllocationSize, type_elrcdfad)
-  {
-    test_span<elrcdfad>(out, success);
   }
 
   TEUCHOS_UNIT_TEST(ViewAllocationSize, type_slfad)
