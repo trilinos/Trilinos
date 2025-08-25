@@ -37,7 +37,7 @@ private:
   using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<ScalarT> field_;
   Kokkos::Random_XorShift64_Pool<PHX::Device> random_pool_;
-  
+
 public:
   RandomFieldEvaluator(const std::string & name,
                        const Teuchos::RCP<PHX::DataLayout> & dl)
@@ -53,10 +53,12 @@ evaluateFields(typename Traits::EvalData workset)
 {
   auto field = field_;
   auto random_pool = random_pool_;
-  
+
   Kokkos::parallel_for("panzer::RandomFieldEvalautor",workset.num_cells,KOKKOS_LAMBDA(const int i){
     auto generator = random_pool.get_state();
-    field(i) = generator.drand(0.0,1.0);
+    for (size_t j=0; j < field.extent(1); ++j) {
+      field(i,j) = generator.drand(0.0,1.0);
+    }
     random_pool.free_state(generator);
   });
 }
