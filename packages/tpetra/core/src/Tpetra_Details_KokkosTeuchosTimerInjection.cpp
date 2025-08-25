@@ -110,12 +110,13 @@ namespace Details {
       if (!Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
         const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
         stackedTimer->start(label_);
-        return;
-      }
+      } else
 #endif
-      timer_ = Teuchos::TimeMonitor::getNewTimer(label_);
-      timer_->start();
-      timer_->incrementNumCalls();
+      {
+        timer_ = Teuchos::TimeMonitor::getNewTimer(label_);
+        timer_->start();
+        timer_->incrementNumCalls();
+      }
     }
 
     void kokkosp_end_deep_copy() {
@@ -130,12 +131,14 @@ namespace Details {
             overlappingWarning();
             Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
           }
-      }
+      } else
 #endif
-      if (timer_ != Teuchos::null) {
-        timer_->stop();
+      {
+        if (timer_ != Teuchos::null) {
+          timer_->stop();
+        }
+        timer_ = Teuchos::null;
       }
-      timer_ = Teuchos::null;
     }
 
   }// end DeepCopyTimerInjection
@@ -176,13 +179,13 @@ namespace Details {
       if (!Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
         const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
         stackedTimer->start(label_);
-        return;
-      }
+      } else
 #endif
-
-      timer_ = Teuchos::TimeMonitor::getNewTimer(label_);
-      timer_->start();
-      timer_->incrementNumCalls();
+      {
+        timer_ = Teuchos::TimeMonitor::getNewTimer(label_);
+        timer_->start();
+        timer_->incrementNumCalls();
+      }
     }
 
 
@@ -200,14 +203,14 @@ namespace Details {
               overlappingWarning();
               Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
             }
-        }
+        } else
 #endif
-
-        if (timer_ != Teuchos::null) {
-          timer_->stop();
+        {
+          if (timer_ != Teuchos::null) {
+            timer_->stop();
+          }
+          timer_ = Teuchos::null;
         }
-        timer_ = Teuchos::null;
-        label_ = "";
       }
       // Else: We've nested our fences, and we need to ignore the inner fences
     }
@@ -244,13 +247,13 @@ namespace Details {
       if (!Teuchos::TimeMonitor::stackedTimerNameIsDefault()) {
         const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
         stackedTimer->start(label_);
-        return;
-      }
+      } else
 #endif
-
-      timer_ = Teuchos::TimeMonitor::getNewTimer(label_);
-      timer_->start();
-      timer_->incrementNumCalls();
+      {
+        timer_ = Teuchos::TimeMonitor::getNewTimer(label_);
+        timer_->start();
+        timer_->incrementNumCalls();
+      }
     }
 
     void kokkosp_begin_for(const char* kernelPrefix, const uint32_t devID, uint64_t* kernelID) {
@@ -277,13 +280,14 @@ namespace Details {
             overlappingWarning();
             Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
           }
-      }
+      } else
 #endif
-
-      if (timer_ != Teuchos::null) {
-        timer_->stop();
+      {
+        if (timer_ != Teuchos::null) {
+          timer_->stop();
+        }
+        timer_ = Teuchos::null;
       }
-      timer_ = Teuchos::null;
     }
   }//end FunctionsInjection
 
