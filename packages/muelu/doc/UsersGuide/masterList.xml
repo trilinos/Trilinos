@@ -1507,6 +1507,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>filtered matrix: lumping choice</name>
+      <type>string</type>
+      <default>"diag lumping"</default>
+      <description>Can be no lumping (no modification to kept entries), diag lumping (modify diagonal to maintain row sums), or distributred lumping (modify kept nonzeros in a fashion proportional to their magnitude to preserve row sums). </description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>filtered matrix: use spread lumping</name>
       <type>bool</type>
       <default>false</default>
