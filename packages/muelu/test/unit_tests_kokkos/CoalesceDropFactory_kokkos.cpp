@@ -309,7 +309,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacianS
   // Doctor coordinates with the goal that the filtered matrix drops all entries in of the lower triangular portion of the matrix (except for final row).
 
   auto vals = coordinates->getDataNonConst(0);
-  SC delta  = 1.1;
+  double delta  = 1.1;
   for (size_t i = 0; i < coordinates->getMap()->getLocalNumElements(); i++) vals[i] = pow(delta, coordinates->getMap()->getGlobalElement((LO)i)) / 35.;
 
   fineLevel.Set("Coordinates", coordinates);
