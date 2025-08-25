@@ -37,6 +37,8 @@ namespace BaskerNS
   class Basker
   {
   public:
+    static_assert(std::is_same_v<Exe_Space, Kokkos::DefaultHostExecutionSpace>,
+                  "ShyLU-Basker: invalid device execution space provided as template parameter - only the host backend is supported");
 
     #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;

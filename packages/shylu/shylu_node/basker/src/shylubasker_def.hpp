@@ -52,9 +52,6 @@ namespace BaskerNS
   BASKER_INLINE
   Basker<Int, Entry, Exe_Space>::Basker()
   {
-    static_assert(std::is_same_v<Exe_Space, Kokkos::DefaultHostExecutionSpace>,
-                  "ShyLU-Basker: invalid device execution space provided as template parameter - only the host backend is supported");
-
     //Presetup flags
     matrix_flag       = BASKER_FALSE;
     order_flag        = BASKER_FALSE;
