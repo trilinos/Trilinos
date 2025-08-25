@@ -1051,8 +1051,8 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
 
   CGERR(cg_goto(file_ptr, base, "end"));
   std::time_t t    = std::time(nullptr);
-  std::string date = fmt::format("{:%Y/%m/%d}", fmt::localtime(t));
-  std::string time = fmt::format("{:%H:%M:%S}", fmt::localtime(t));
+  std::string date = fmt::format("{:%Y/%m/%d}", *std::localtime(&t));
+  std::string time = fmt::format("{:%H:%M:%S}", *std::localtime(&t));
 
   std::string code_version = region.get_optional_property("code_version", "unknown");
   std::string code_name    = region.get_optional_property("code_name", "unknown");

@@ -40,10 +40,10 @@ namespace Stokhos {
      * \param c defines domain of support of weight function
      * \param normalize whether polynomials should be given unit norm
      */
-    RysBasis(ordinal_type p, value_type c, bool normalize, 
-	     GrowthPolicy growth = SLOW_GROWTH) :
+    RysBasis(ordinal_type ap, value_type c, bool anormalize, 
+	     GrowthPolicy agrowth = SLOW_GROWTH) :
       DiscretizedStieltjesBasis<ordinal_type,value_type>(
-	"Rys", p, rysWeight, -c, c, normalize, growth) {}
+	"Rys", ap, rysWeight, -c, c, anormalize, agrowth) {}
     
     //! Destructor
     ~RysBasis() {}
@@ -63,14 +63,14 @@ namespace Stokhos {
      * otherwise an exact copy is formed. The use case for this is creating basis functions
      * for column indices in a spatially varying adaptive refinement context.
      */
-    virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type p) const
-    { return Teuchos::rcp(new RysBasis<ordinal_type,value_type>(p,*this)); }
+    virtual Teuchos::RCP<OneDOrthogPolyBasis<ordinal_type,value_type> > cloneWithOrder(ordinal_type ap) const
+    { return Teuchos::rcp(new RysBasis<ordinal_type,value_type>(ap,*this)); }
 
   protected:
 
     //! Copy constructor with specified order
-    RysBasis(ordinal_type p, const RysBasis& basis) : 
-      DiscretizedStieltjesBasis<ordinal_type,value_type>(p, basis) {}
+    RysBasis(ordinal_type ap, const RysBasis& basis) : 
+      DiscretizedStieltjesBasis<ordinal_type,value_type>(ap, basis) {}
 
   private:
 

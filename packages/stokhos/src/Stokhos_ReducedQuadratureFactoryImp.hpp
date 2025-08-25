@@ -400,7 +400,7 @@ reducedQuadrature_Q_Squared_CPQR2(
     Z, R, piv);
   bool restrict_r = params.get("Restrict Rank", false);
   if (restrict_r) {
-    ordinal_type d = F.numCols();
+    d = F.numCols();
     ordinal_type p = params.get<ordinal_type>("Order Restriction");
     ordinal_type n = n_choose_k(p+d,d);
     if (r > n) {

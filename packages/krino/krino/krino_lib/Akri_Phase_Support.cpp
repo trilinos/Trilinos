@@ -118,6 +118,14 @@ namespace krino{
 
 std::map<std::string,std::unique_ptr<Phase_Support>> Phase_Support::theModeltoPhaseSupportMap;
 
+FieldSet get_levelset_fields(const std::vector<LS_Field> & lsFields)
+{
+  FieldSet levelSetFields;
+  for (auto& lsField : lsFields)
+    levelSetFields.insert(lsField.isovar);
+  return levelSetFields;
+}
+
 void Phase_Support::check_phase_parts() const
 {
   const Surface_Manager & surfaceManager = Surface_Manager::get(meta());

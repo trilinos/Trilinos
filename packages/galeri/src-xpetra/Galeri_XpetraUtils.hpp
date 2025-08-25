@@ -76,8 +76,7 @@ class Utils {
         nz = list.get<GlobalOrdinal>("nz");
     }
 
-    size_t NumMyElements                                     = map->getLocalNumElements();
-    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
+    size_t NumMyElements = map->getLocalNumElements();
 
 #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
     using Node             = typename Map::node_type;
@@ -146,6 +145,8 @@ class Utils {
     } else
 #endif
     {
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
+
       GlobalOrdinal ix, iy, iz;
 
       if (coordType == "1D") {

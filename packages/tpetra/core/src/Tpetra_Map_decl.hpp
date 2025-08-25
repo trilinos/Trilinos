@@ -1096,7 +1096,7 @@ namespace Tpetra {
       const global_ordinal_type indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 
-    /// \brief Push the device data to host, if needed
+    //! Copy the local map from device to host, if it's not on host already
     void lazyPushToHost() const;
 
     //! The communicator over which this Map is distributed.

@@ -9,8 +9,8 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::LegendreBasis<ordinal_type, value_type>::
-LegendreBasis(ordinal_type p, bool normalize, Stokhos::GrowthPolicy growth) :
-  RecurrenceBasis<ordinal_type, value_type>("Legendre", p, normalize, growth)
+LegendreBasis(ordinal_type ap, bool anormalize, Stokhos::GrowthPolicy agrowth) :
+  RecurrenceBasis<ordinal_type, value_type>("Legendre", ap, anormalize, agrowth)
 {
   this->setup();
 
@@ -21,11 +21,11 @@ LegendreBasis(ordinal_type p, bool normalize, Stokhos::GrowthPolicy growth) :
 
 template <typename ordinal_type, typename value_type>
 Stokhos::LegendreBasis<ordinal_type, value_type>::
-LegendreBasis(ordinal_type p, const LegendreBasis& basis) :
-  RecurrenceBasis<ordinal_type, value_type>(p, basis)
+LegendreBasis(ordinal_type ap, const LegendreBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>(ap, basis)
 {
   // Compute coefficients in 3-term recurrsion
-  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta,
+  computeRecurrenceCoefficients(ap+1, this->alpha, this->beta, this->delta,
                                 this->gamma);
 
   // Setup rest of recurrence basis

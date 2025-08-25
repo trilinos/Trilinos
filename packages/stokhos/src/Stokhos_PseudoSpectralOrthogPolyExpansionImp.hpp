@@ -27,11 +27,11 @@ PseudoSpectralOrthogPolyExpansion(
   bvals(nqp),
   fvals(nqp)
 {
-  Teuchos::RCP<Teuchos::ParameterList> params = params_;
-  if (params == Teuchos::null)
-    params = Teuchos::rcp(new Teuchos::ParameterList);
-  use_quad_for_times = params->get("Use Quadrature for Times", false);
-  use_quad_for_division = params->get("Use Quadrature for Division", true);
+  Teuchos::RCP<Teuchos::ParameterList> aparams = params_;
+  if (aparams == Teuchos::null)
+    aparams = Teuchos::rcp(new Teuchos::ParameterList);
+  use_quad_for_times = aparams->get("Use Quadrature for Times", false);
+  use_quad_for_division = aparams->get("Use Quadrature for Division", true);
 }
 
 template <typename ordinal_type, typename value_type, typename point_compare_type, typename node_type> 

@@ -1660,12 +1660,25 @@ namespace Ioex {
                                                       Ioex::VariableNameMap &variables)
   {
     int nvar = 0;
+
     {
       Ioss::SerializeIO serializeIO_(this);
 
       int ierr = ex_get_variable_param(get_file_pointer(), type, &nvar);
       if (ierr < 0) {
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
+      }
+    }
+
+    // Synchronize among all processors....
+    if (isParallel) {
+      std::vector<int> var_count{nvar, -nvar};
+      util().global_array_minmax(var_count, Ioss::ParallelUtils::DO_MAX);
+
+      if (var_count[0] != -var_count[1]) {
+        IOSS_ABORT(fmt::format("ERROR: Inconsistent number of {} fields ({} to {}) on file '{}'.\n",
+                               Ioss::Utils::entity_type_to_string(Ioex::map_exodus_type(type)),
+                               -var_count[1], var_count[0], get_filename()));
       }
     }
 

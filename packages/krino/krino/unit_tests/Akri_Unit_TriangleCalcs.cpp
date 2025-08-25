@@ -15,15 +15,23 @@
 namespace
 {
 
+std::array<stk::math::Vector3d,3> triAtXPlus1
+{{
+    {1,0,-1},
+    {1,1,1},
+    {1,-1,1}
+}};
+std::array<stk::math::Vector3d,3> triAtXMinus1
+{{
+    {-1,0,-1},
+    {-1,1,1},
+    {-1,-1,1}
+}};
+
 class TriAtXEqualsOne : public ::testing::Test
 {
 protected:
-    std::array<stk::math::Vector3d,3> triNodeLocations
-    {{
-        {1,0,-1},
-        {1,1,1},
-        {1,-1,1}
-    }};
+    std::array<stk::math::Vector3d,3> triNodeLocations{triAtXPlus1};
 };
 
 void expect_tri_edge_intersection(const stk::math::Vector3d& edgePt1,
@@ -163,6 +171,87 @@ TEST(SixTetsInHaloAroundCentralEdge, whenCalculatingIntersectionsForStraightCurv
           ++numIntersections;
     }
     EXPECT_EQ(4u, numIntersections);
+}
+
+void expect_closest_point(const stk::math::Vector3d& queryPt,
+    const std::vector<const krino::Facet3d*> & nearestFacets,
+    const stk::math::Vector3d& goldClosestPt)
+{
+  const stk::math::Vector3d closestPt = krino::compute_closest_point(queryPt, nearestFacets);
+  krino::expect_near(goldClosestPt, closestPt);
+}
+
+void expect_same_closest_point_regardless_of_facet_order(const stk::math::Vector3d& queryPt,
+    const krino::Facet3d & facetA,
+    const krino::Facet3d & facetB)
+{
+  const std::vector<const krino::Facet3d*> facetsAB{&facetA, &facetB};
+  const std::vector<const krino::Facet3d*> facetsBA{&facetB, &facetA};
+
+  const stk::math::Vector3d closestPtAB = krino::compute_closest_point(queryPt, facetsAB);
+  const stk::math::Vector3d closestPtBA = krino::compute_closest_point(queryPt, facetsBA);
+  krino::expect_near(closestPtAB, closestPtBA);
+}
+
+void expect_same_signed_distance_regardless_of_facet_order(const stk::math::Vector3d& queryPt,
+    const krino::Facet3d & facetA,
+    const krino::Facet3d & facetB)
+{
+  const std::vector<const krino::Facet3d*> facetsAB{&facetA, &facetB};
+  const std::vector<const krino::Facet3d*> facetsBA{&facetB, &facetA};
+
+  const double signedDistanceAB = krino::compute_point_to_facets_distance_by_average_normal(queryPt, facetsAB);
+  const double signedDistanceBA = krino::compute_point_to_facets_distance_by_average_normal(queryPt, facetsBA);
+  EXPECT_EQ(signedDistanceAB, signedDistanceBA);
+}
+
+TEST(closest_facets, evalClosestPoint_getCorrectAnswerRegardlessOfFacetOrder)
+{
+  krino::Facet3d facetAtXMinus1(triAtXMinus1[0], triAtXMinus1[1], triAtXMinus1[2]);
+  krino::Facet3d facetAtXPlus1(triAtXPlus1[0], triAtXPlus1[1], triAtXPlus1[2]);
+  std::vector<const krino::Facet3d*> facets{&facetAtXMinus1, &facetAtXPlus1};
+
+  expect_closest_point(stk::math::Vector3d(-0.1,0,0), facets, stk::math::Vector3d(-1,0,0));
+  expect_closest_point(stk::math::Vector3d(0.1,0,0), facets, stk::math::Vector3d(1,0,0));
+
+  const stk::math::Vector3d midPt(0,0,0);
+  expect_same_closest_point_regardless_of_facet_order(midPt, facetAtXMinus1, facetAtXPlus1);
+}
+
+TEST(closest_facets, evalClosestPointAndSignedDistance_facetsThatWereGivingOppositeSignsForDistanceInParallel_getSameAnswerRegardlessOfFacetOrder)
+{
+  krino::Facet3d facet0(stk::math::Vector3d(0.588142308404064562,0.161857691595935382,0.488142308404064584),
+      stk::math::Vector3d(0.588142308404064562,0.161857691595935382,0.511857691595935416),
+      stk::math::Vector3d(0.599999999999999978,0.164656927944478504,0.5));
+  krino::Facet3d facet1(stk::math::Vector3d(0.623499950831233773,0.173499950831233707,0.476500049168766204),
+      stk::math::Vector3d(0.599999999999999867,0.164656927944478504,0.5),
+      stk::math::Vector3d(0.623499950831233773,0.173499950831233707,0.523499950831233796));
+
+  const stk::math::Vector3d queryPt(0.599999999999999978, 0.164656927944478532, 0.5);
+  expect_same_closest_point_regardless_of_facet_order(queryPt, facet0, facet1);
+  expect_same_signed_distance_regardless_of_facet_order(queryPt, facet0, facet1);
+}
+
+void expect_distance_sign(const krino::Facet3d & facet, const stk::math::Vector3d& queryPt, const int goldNegPosOrZero)
+{
+  const double signedDistance = krino::compute_point_to_facets_distance_by_average_normal(queryPt, std::vector<const krino::Facet3d*>{&facet});
+  const bool match = (goldNegPosOrZero == 0) ? (signedDistance==0.) : ((goldNegPosOrZero<0) ? (signedDistance < 0.) : (signedDistance > 0.));
+  EXPECT_TRUE(match) << "Expected sign " << goldNegPosOrZero << " and got distance " << signedDistance;
+}
+
+TEST(point_distance, evalSignedDistance_queryPointsThatAreJustAboveAndBelowOnFacetTolerance_getZeroIfBelowOnFacetTolerance)
+{
+  const krino::Facet3d facet(stk::math::Vector3d(1,0,0),stk::math::Vector3d(0,1,0), stk::math::Vector3d(0,0,1));
+  const stk::math::Vector3d facetCentroid = facet.centroid();
+  const stk::math::Vector3d facetNormal = facet.facet_normal();
+  const double magGreaterThanOnFacetTol = 1.e-8;
+  const double magLessThanOnFacetTol = 1.e-10;
+
+  expect_distance_sign(facet, facetCentroid-magGreaterThanOnFacetTol*facetNormal, -1);
+  expect_distance_sign(facet, facetCentroid+magGreaterThanOnFacetTol*facetNormal, +1);
+
+  expect_distance_sign(facet, facetCentroid-magLessThanOnFacetTol*facetNormal, 0);
+  expect_distance_sign(facet, facetCentroid+magLessThanOnFacetTol*facetNormal, 0);
 }
 
 }
