@@ -308,9 +308,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacianS
 
   // Doctor coordinates with the goal that the filtered matrix drops all entries in of the lower triangular portion of the matrix (except for final row).
 
-  auto vals = coordinates->getDataNonConst(0);
-  double delta  = 1.1;
-  for (size_t i = 0; i < coordinates->getMap()->getLocalNumElements(); i++) vals[i] = pow(delta, coordinates->getMap()->getGlobalElement((LO)i)) / 35.;
+  {
+    auto vals    = coordinates->getDataNonConst(0);
+    double delta = 1.1;
+    for (size_t i = 0; i < coordinates->getMap()->getLocalNumElements(); i++) vals[i] = pow(delta, coordinates->getMap()->getGlobalElement((LO)i)) / 35.;
+  }
 
   fineLevel.Set("Coordinates", coordinates);
 
@@ -2517,7 +2519,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithFi
 #endif
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, AggresiveDroppingIsMarkedAsBoundary, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-  // Test that when everything but the diagonal is dropped, the node is marked as boundary
+// Test that when everything but the diagonal is dropped, the node is marked as boundary
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
@@ -2840,7 +2842,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalDis
   Teuchos::ParameterList matrixList;
   matrixList.set("nx", nx);
   matrixList.set("matrixType", "Laplace1D");
-  auto [A, coords, nullspace, dofsPerNode] = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrixCoordsNullspace(matrixList, lib);
+  auto[A, coords, nullspace, dofsPerNode] = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrixCoordsNullspace(matrixList, lib);
   // coords are uniform on [0, 1].
   if (comm->getRank() == 0) {  // move first dof to -1e3
     auto lclCoords  = coords->getLocalViewHost(Xpetra::Access::ReadWrite);
@@ -2891,7 +2893,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalSAD
   Teuchos::ParameterList matrixList;
   matrixList.set("nx", nx);
   matrixList.set("matrixType", "Laplace1D");
-  auto [A, coords, nullspace, dofsPerNode] = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrixCoordsNullspace(matrixList, lib);
+  auto[A, coords, nullspace, dofsPerNode] = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrixCoordsNullspace(matrixList, lib);
   // coords are uniform on [0, 1].
   if (comm->getRank() == 0) {  // move first dof to -1e3
     auto lclCoords  = coords->getLocalViewHost(Xpetra::Access::ReadWrite);
@@ -2966,7 +2968,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalSAD
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, SignedClassicalDistanceLaplacian, SC, LO, GO, NO)            \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, SignedClassicalSADistanceLaplacian, SC, LO, GO, NO)
 
-// TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithFiltering,     SC, LO, GO, NO) // not implemented yet
+  // TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithFiltering,     SC, LO, GO, NO) // not implemented yet
 
 #include <MueLu_ETI_4arg.hpp>
 
