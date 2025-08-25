@@ -53,10 +53,10 @@
 
 namespace {
 
-class FieldBytesAccess : public stk::unit_test_util::MeshFixture
+class FieldDataBytesAccess : public stk::unit_test_util::MeshFixture
 {
 public:
-  FieldBytesAccess()
+  FieldDataBytesAccess()
     : batchTimer(get_comm())
   { }
 
@@ -171,8 +171,6 @@ protected:
   stk::mesh::Field<double, stk::mesh::Layout::Right> *m_elementFieldRight;
 };
 
-class LegacyFieldBytesAccess : public FieldBytesAccess {};
-
 auto verify_initialized_field = [](const stk::mesh::Selector& selector, auto& elementField)
 {
   const stk::mesh::BulkData& bulk = elementField.get_mesh();
@@ -192,6 +190,9 @@ auto verify_initialized_field = [](const stk::mesh::Selector& selector, auto& el
 };
 
 
+#ifndef STK_UNIFIED_MEMORY
+class LegacyFieldBytesAccess : public FieldDataBytesAccess {};
+
 auto legacy_initialize_field_entity_bytes = [](const stk::mesh::Selector& selector,
                                                stk::mesh::Field<double>& elementField)
 {
@@ -206,69 +207,6 @@ auto legacy_initialize_field_entity_bytes = [](const stk::mesh::Selector& select
     for (stk::mesh::Entity elem : *bucket) {
       std::byte* entityBytes = reinterpret_cast<std::byte*>(stk::mesh::field_data(elementField, elem));
       std::memcpy(entityBytes, initValueBytes, bytesPerEntity);
-    }
-  }
-};
-
-auto initialize_field_entity_bytes = [](const stk::mesh::Selector& selector,
-                                        stk::mesh::Field<double>& elementField)
-{
-  const stk::mesh::BulkData& bulk = elementField.get_mesh();
-  const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
-
-  std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
-  const std::byte* initValueBytes = reinterpret_cast<std::byte*>(initValue.data());
-
-  auto& fieldBytes = elementField.bytes();
-
-  for (const stk::mesh::Bucket* bucket : buckets) {
-    for (stk::mesh::Entity elem : *bucket) {
-      auto entityBytes = fieldBytes.entity_bytes(elem);
-      for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
-        entityBytes(byte) = initValueBytes[byte];
-      }
-    }
-  }
-};
-
-auto initialize_field_entity_bytes_left = [](const stk::mesh::Selector& selector,
-                                             stk::mesh::Field<double, stk::mesh::Layout::Left>& elementField)
-{
-  const stk::mesh::BulkData& bulk = elementField.get_mesh();
-  const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
-
-  std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
-  const std::byte* initValueBytes = reinterpret_cast<std::byte*>(initValue.data());
-
-  auto& fieldBytes = elementField.bytes();
-
-  for (const stk::mesh::Bucket* bucket : buckets) {
-    for (stk::mesh::Entity elem : *bucket) {
-      auto entityBytes = fieldBytes.entity_bytes_left(elem);
-      for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
-        entityBytes(byte) = initValueBytes[byte];
-      }
-    }
-  }
-};
-
-auto initialize_field_entity_bytes_right = [](const stk::mesh::Selector& selector,
-                                              stk::mesh::Field<double, stk::mesh::Layout::Right>& elementField)
-{
-  const stk::mesh::BulkData& bulk = elementField.get_mesh();
-  const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
-
-  std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
-  const std::byte* initValueBytes = reinterpret_cast<std::byte*>(initValue.data());
-
-  auto& fieldBytes = elementField.bytes();
-
-  for (const stk::mesh::Bucket* bucket : buckets) {
-    for (stk::mesh::Entity elem : *bucket) {
-      auto entityBytes = fieldBytes.entity_bytes_right(elem);
-      for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
-        entityBytes(byte) = initValueBytes[byte];
-      }
     }
   }
 };
@@ -292,6 +230,86 @@ auto legacy_initialize_field_bucket_bytes = [](const stk::mesh::Selector& select
   }
 };
 
+//------------------------------------------------------------------------------
+TEST_F(LegacyFieldBytesAccess, initializeFieldEntityBytes)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_test(100, legacy_initialize_field_entity_bytes, verify_initialized_field);
+}
+
+TEST_F(LegacyFieldBytesAccess, initializeFieldBucketBytes)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_test(100, legacy_initialize_field_bucket_bytes, verify_initialized_field);
+}
+#endif  // For not STK_UNIFIED_MEMORY
+
+
+auto initialize_field_entity_bytes = [](const stk::mesh::Selector& selector,
+                                        stk::mesh::Field<double>& elementField)
+{
+  const stk::mesh::BulkData& bulk = elementField.get_mesh();
+  const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
+
+  std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
+  const std::byte* initValueBytes = reinterpret_cast<std::byte*>(initValue.data());
+
+  auto& fieldDataBytes = elementField.data_bytes<std::byte>();
+
+  for (const stk::mesh::Bucket* bucket : buckets) {
+    for (stk::mesh::Entity elem : *bucket) {
+      auto entityBytes = fieldDataBytes.entity_bytes(elem);
+      for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
+        entityBytes(byte) = initValueBytes[byte];
+      }
+    }
+  }
+};
+
+auto initialize_field_entity_bytes_left = [](const stk::mesh::Selector& selector,
+                                             stk::mesh::Field<double, stk::mesh::Layout::Left>& elementField)
+{
+  const stk::mesh::BulkData& bulk = elementField.get_mesh();
+  const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
+
+  std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
+  const std::byte* initValueBytes = reinterpret_cast<std::byte*>(initValue.data());
+
+  auto& fieldDataBytes = elementField.data_bytes<std::byte>();
+
+  for (const stk::mesh::Bucket* bucket : buckets) {
+    for (stk::mesh::Entity elem : *bucket) {
+      auto entityBytes = fieldDataBytes.entity_bytes<stk::mesh::Layout::Left>(elem);
+      for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
+        entityBytes(byte) = initValueBytes[byte];
+      }
+    }
+  }
+};
+
+auto initialize_field_entity_bytes_right = [](const stk::mesh::Selector& selector,
+                                              stk::mesh::Field<double, stk::mesh::Layout::Right>& elementField)
+{
+  const stk::mesh::BulkData& bulk = elementField.get_mesh();
+  const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
+
+  std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
+  const std::byte* initValueBytes = reinterpret_cast<std::byte*>(initValue.data());
+
+  auto& fieldDataBytes = elementField.data_bytes<std::byte>();
+
+  for (const stk::mesh::Bucket* bucket : buckets) {
+    for (stk::mesh::Entity elem : *bucket) {
+      auto entityBytes = fieldDataBytes.entity_bytes<stk::mesh::Layout::Right>(elem);
+      for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
+        entityBytes(byte) = initValueBytes[byte];
+      }
+    }
+  }
+};
+
 auto initialize_field_bucket_bytes = [](const stk::mesh::Selector& selector,
                                         stk::mesh::Field<double>& elementField)
 {
@@ -301,10 +319,10 @@ auto initialize_field_bucket_bytes = [](const stk::mesh::Selector& selector,
   std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
   const std::byte* initValueBytes = reinterpret_cast<std::byte*>(initValue.data());
 
-  auto& fieldBytes = elementField.bytes();
+  auto& fieldDataBytes = elementField.data_bytes<std::byte>();
 
   for (const stk::mesh::Bucket* bucket : buckets) {
-    auto bucketBytes = fieldBytes.bucket_bytes(*bucket);
+    auto bucketBytes = fieldDataBytes.bucket_bytes(*bucket);
     for (stk::mesh::EntityIdx elem : bucket->entities()) {
       for (stk::mesh::ByteIdx byte : bucketBytes.bytes()) {
         bucketBytes(elem, byte) = initValueBytes[byte];
@@ -322,10 +340,10 @@ auto initialize_field_bucket_bytes_left = [](const stk::mesh::Selector& selector
   std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
   const std::byte* initValueBytes = reinterpret_cast<std::byte*>(initValue.data());
 
-  auto& fieldBytes = elementField.bytes();
+  auto& fieldDataBytes = elementField.data_bytes<std::byte>();
 
   for (const stk::mesh::Bucket* bucket : buckets) {
-    auto bucketBytes = fieldBytes.bucket_bytes_left(*bucket);
+    auto bucketBytes = fieldDataBytes.bucket_bytes<stk::mesh::Layout::Left>(*bucket);
     for (stk::mesh::EntityIdx elem : bucket->entities()) {
       for (stk::mesh::ByteIdx byte : bucketBytes.bytes()) {
         bucketBytes(elem, byte) = initValueBytes[byte];
@@ -343,10 +361,10 @@ auto initialize_field_bucket_bytes_right = [](const stk::mesh::Selector& selecto
   std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
   const std::byte* initValueBytes = reinterpret_cast<std::byte*>(initValue.data());
 
-  auto& fieldBytes = elementField.bytes();
+  auto& fieldDataBytes = elementField.data_bytes<std::byte>();
 
   for (const stk::mesh::Bucket* bucket : buckets) {
-    auto bucketBytes = fieldBytes.bucket_bytes_right(*bucket);
+    auto bucketBytes = fieldDataBytes.bucket_bytes<stk::mesh::Layout::Right>(*bucket);
     for (stk::mesh::EntityIdx elem : bucket->entities()) {
       for (stk::mesh::ByteIdx byte : bucketBytes.bytes()) {
         bucketBytes(elem, byte) = initValueBytes[byte];
@@ -355,39 +373,22 @@ auto initialize_field_bucket_bytes_right = [](const stk::mesh::Selector& selecto
   }
 };
 
-
 //------------------------------------------------------------------------------
-TEST_F(LegacyFieldBytesAccess, initializeFieldEntityBytes)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_test(100, legacy_initialize_field_entity_bytes, verify_initialized_field);
-}
-
-TEST_F(LegacyFieldBytesAccess, initializeFieldBucketBytes)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_test(100, legacy_initialize_field_bucket_bytes, verify_initialized_field);
-}
-
-
-//------------------------------------------------------------------------------
-TEST_F(FieldBytesAccess, initializeFieldEntityBytes)
+TEST_F(FieldDataBytesAccess, initializeFieldEntityBytes)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
   run_test(100, initialize_field_entity_bytes, verify_initialized_field);
 }
 
-TEST_F(FieldBytesAccess, initializeFieldEntityBytesLeft)
+TEST_F(FieldDataBytesAccess, initializeFieldEntityBytesLeft)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
   run_test_left(100, initialize_field_entity_bytes_left, verify_initialized_field);
 }
 
-TEST_F(FieldBytesAccess, initializeFieldEntityBytesRight)
+TEST_F(FieldDataBytesAccess, initializeFieldEntityBytesRight)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
@@ -396,21 +397,21 @@ TEST_F(FieldBytesAccess, initializeFieldEntityBytesRight)
 
 
 //------------------------------------------------------------------------------
-TEST_F(FieldBytesAccess, initializeFieldBucketBytes)
+TEST_F(FieldDataBytesAccess, initializeFieldBucketBytes)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
   run_test(100, initialize_field_bucket_bytes, verify_initialized_field);
 }
 
-TEST_F(FieldBytesAccess, initializeFieldBucketBytesLeft)
+TEST_F(FieldDataBytesAccess, initializeFieldBucketBytesLeft)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 
   run_test_left(100, initialize_field_bucket_bytes_left, verify_initialized_field);
 }
 
-TEST_F(FieldBytesAccess, initializeFieldBucketBytesRight)
+TEST_F(FieldDataBytesAccess, initializeFieldBucketBytesRight)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
 

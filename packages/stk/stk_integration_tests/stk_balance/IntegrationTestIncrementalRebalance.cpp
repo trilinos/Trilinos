@@ -654,12 +654,6 @@ TEST_F(IncrementalRebalance, rib_then_parmetis_case2)
 }
 #endif
 
-//TEST_F(IncrementalRebalance, hypergraph_case1)
-//{
-//    if(stk::parallel_machine_size(get_comm())==2)
-//        decompose1x1x10beamThenRebalanceWithLast2ElementChanges("zoltan"); // hypergraph
-//}
-
 TEST_F(IncrementalRebalance, rcb_to_parmetis_check_migration)
 {
   if(stk::parallel_machine_size(get_comm())==5)

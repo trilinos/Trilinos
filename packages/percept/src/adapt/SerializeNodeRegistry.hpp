@@ -1337,7 +1337,7 @@
       }
 
       // use id_max values as a simple id server to reset new element ids
-      void resetNewElementIds(PerceptMesh& eMesh, NodeRegistry& nodeRegistry)
+      void resetNewElementIds(PerceptMesh& eMesh, NodeRegistry& /*nodeRegistry*/)
       {
 
         typedef std::pair<stk::mesh::EntityId, stk::mesh::EntityId> EntityPair;
@@ -1512,7 +1512,7 @@
       }
 
 
-      static void serialize_write(NodeRegistry& nodeRegistry, YAML::Emitter& emitter, NodeMap *nodeMapFilter = 0, std::string msg="")
+      static void serialize_write(NodeRegistry& nodeRegistry, YAML::Emitter& emitter, NodeMap *nodeMapFilter = 0, std::string /*msg*/="")
       {
         SubDimCellToDataMap::iterator iter;
         SubDimCellToDataMap& map = nodeRegistry.getMap();
@@ -1591,7 +1591,7 @@
 
       }
 
-      static void serialize_read(NodeRegistry& nodeRegistry, std::ifstream& file_in,  std::string msg="", bool force_have_node=false)
+      static void serialize_read(NodeRegistry& nodeRegistry, std::ifstream& file_in,  std::string /*msg*/="", bool force_have_node=false)
       {
         PerceptMesh& eMesh = nodeRegistry.getMesh();
         eMesh.get_bulk_data()->modification_begin();

@@ -32,67 +32,42 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef STK_UTIL_UTIL_POOL_HPP
-#define STK_UTIL_UTIL_POOL_HPP
+#include "gtest/gtest.h"                // for ASSERT_TRUE, TEST
+#include "stk_mesh/baseImpl/DoOp.hpp"
+#include <limits>
+#include <iomanip>
 
-#ifndef STK_UTIL_POOL_ALLOC_CHUNK_SIZE_K
-#define STK_UTIL_POOL_ALLOC_CHUNK_SIZE_K 512
-#endif
-
-//The macro STK_UTIL_POOL_ALLOC_CHUNK_SIZE_K determines the number
-//of kilobytes that each internally-allocated chunk of memory will
-//occupy. The Pool object will then dispense "sub-chunks"
-//of memory having size determined by the argument to the class
-//constructor.
-
-namespace stk {
-namespace util {
-class Pool {
- public:
-  Pool(unsigned int nbytes); // nbytes is the size of elements
-  ~Pool();
-
-  void* alloc(); //allocate one element
-  void free(void* b); //put an element back into the pool
-  struct Link { Link* next; };
-
- private:
-  struct Chunk {
-    //Stroustrup's comment:
-    //slightly less than specified K so that a chunk will fit in
-    //allocation area first to get stringent alignment
-    enum { size = STK_UTIL_POOL_ALLOC_CHUNK_SIZE_K*1024-16 };
-    char mem[size];
-    Chunk* next;
-  };
-
-  Chunk* chunks;
-  const unsigned int esize;
-  Link* head;
-
-  Pool(const Pool&);//private copy constructor
-  Pool& operator=(const Pool&);//private assignment operator
-  void grow(); //make pool larger
-};
-
-inline void* Pool::alloc()
+TEST(UnitTestDoOp, basic_sum)
 {
-  if (head == nullptr) {
-    grow();
-  }
-  Link* p = head; //return first element
-  head = p->next;
-  return p;
+  EXPECT_FLOAT_EQ(5.9, (stk::mesh::impl::DoOp<float,stk::mesh::Operation::SUM>()(2.2, 3.7)));
+  EXPECT_DOUBLE_EQ(5.9, (stk::mesh::impl::DoOp<double,stk::mesh::Operation::SUM>()(2.2, 3.7)));
+  EXPECT_EQ(5, (stk::mesh::impl::DoOp<int,stk::mesh::Operation::SUM>()(2, 3)));
 }
 
-inline void Pool::free(void* b)
+TEST(UnitTestDoOp, basic_min)
 {
-  Link* p = static_cast<Link*>(b);
-  p->next = head; //put b back as first element
-  head = p;
+  EXPECT_FLOAT_EQ(2.2, (stk::mesh::impl::DoOp<float,stk::mesh::Operation::MIN>()(2.2, 3.7)));
+  EXPECT_DOUBLE_EQ(2.2, (stk::mesh::impl::DoOp<double,stk::mesh::Operation::MIN>()(2.2, 3.7)));
+  EXPECT_EQ(2, (stk::mesh::impl::DoOp<int,stk::mesh::Operation::MIN>()(2, 3)));
 }
 
-}//namespace util
-}//namespace stk
+TEST(UnitTestDoOp, basic_max)
+{
+  EXPECT_FLOAT_EQ(3.7, (stk::mesh::impl::DoOp<float,stk::mesh::Operation::MAX>()(2.2, 3.7)));
+  EXPECT_DOUBLE_EQ(3.7, (stk::mesh::impl::DoOp<double,stk::mesh::Operation::MAX>()(2.2, 3.7)));
+  EXPECT_EQ(3, (stk::mesh::impl::DoOp<int,stk::mesh::Operation::MAX>()(2, 3)));
+}
 
-#endif
+TEST(UnitTestDoOp, sum_large_small)
+{
+  double small = -2.0518531544667047e-02;
+  double large = 2.5372303414487405e+03;
+  
+  double sum = stk::mesh::impl::DoOp<double,stk::mesh::Operation::SUM>()(large, small);
+
+  const double expectedSum = 2.5372098229171961e+03;
+  const double error = std::abs(expectedSum - sum);
+  constexpr double expectedError = 2.e-13;
+
+  EXPECT_TRUE(error <= expectedError);
+}

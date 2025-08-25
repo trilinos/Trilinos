@@ -30,16 +30,6 @@ namespace
 {
 using stk::unit_test_util::build_mesh;
 
-TEST(Stkbalance, DISABLED_Ticket15830)
-{
-  std::string filename = stk::unit_test_util::get_option("-i", "rs1.rsout");
-
-  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
-  stk::mesh::BulkData& bulk = *bulkPtr;
-
-  EXPECT_NO_THROW(stk::io::fill_mesh_with_auto_decomp(filename, bulk));
-}
-
 void getMaxMinForNodes(stk::mesh::BulkData& bulk, stk::mesh::EntityVector& nodes, std::vector<double>& minCoord, std::vector<double>& maxCoord, const stk::mesh::FieldBase & coordField)
 {
   auto coordFieldData = coordField.data<double, stk::mesh::ReadOnly>();

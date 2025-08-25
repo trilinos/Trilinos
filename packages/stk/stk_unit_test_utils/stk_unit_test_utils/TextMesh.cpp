@@ -359,7 +359,7 @@ public:
     stk::topology invalidTopo = stk::topology::INVALID_TOPOLOGY;
     stk::topology blockSideTopo = stk::topology::INVALID_TOPOLOGY;
     int heterogenousTopo = 0;
-    
+
     for (size_t sideIndex : sideIndices) {
       stk::mesh::EntityId elemId = ss.data[sideIndex].first;
       int elemSide = ss.data[sideIndex].second - 1;
@@ -373,10 +373,10 @@ public:
       if(stk::topology::INVALID_TOPOLOGY != blockSideTopo && sideTopo.topology != blockSideTopo) {
 	blockSideTopo = stk::topology::INVALID_TOPOLOGY;
 	heterogenousTopo = 1;
-	break;      
+	break;
       }
 
-      blockSideTopo = sideTopo.topology;	
+      blockSideTopo = sideTopo.topology;
     }
 
     int topoId = (stk::topology::topology_t) blockSideTopo;
@@ -412,22 +412,22 @@ public:
 	  return false;
 	}
       }
-	
+
       stk::mesh::set_topology(*part, stkTopology);
-      return true;      
+      return true;
     }
 
-    return false;    
+    return false;
   }
 
-  
+
   void setup_sideset_topology(const SidesetData& ss, stk::mesh::Part* part)
   {
     if(nullptr == part) return;
-    
+
     std::vector<SideBlockInfo> sideBlocks = ss.get_side_block_info();
     if(sideBlocks.size() != 1u) return;
-    
+
     const SideBlockInfo& sideBlock = sideBlocks[0];
 
     if(sideBlock.name != ss.name) {
@@ -438,7 +438,7 @@ public:
     stk::topology blockSideTopo = get_side_block_topology_from_entries(ss, sideBlock);
     set_sideset_topology(ss, part, sideBlock.sideTopology, blockSideTopo);
   }
-  
+
   void setup_sidesets()
   {
     const bool fromInput = true;
@@ -447,7 +447,7 @@ public:
       stk::mesh::SideSet& stkSideSet = m_bulk.create_sideset(*part, fromInput);
 
       setup_sideset_topology(sidesetData, part);
-      
+
       std::vector<SideBlockInfo> sideBlocks = sidesetData.get_side_block_info();
 
       for (const auto& sideBlock : sideBlocks) {
@@ -565,17 +565,22 @@ private:
 
   void fill_coordinate_field(const Coordinates& coordinates)
   {
-    for (stk::mesh::Entity& node : m_nodes) {
-      stk::mesh::EntityId nodeId = m_bulk.identifier(node);
-      double* nodalCoordsLocation = static_cast<double*>(stk::mesh::field_data(m_coordsField, node));
-      copy_coordinates(coordinates[nodeId], nodalCoordsLocation);
-    }
+    stk::mesh::field_data_execute<double, stk::mesh::ReadWrite>(m_coordsField,
+      [&](auto& coordsFieldData) {
+        for (stk::mesh::Entity& node : m_nodes) {
+          stk::mesh::EntityId nodeId = m_bulk.identifier(node);
+          auto nodalCoordsLocation = coordsFieldData.entity_values(node);
+          copy_coordinates(coordinates[nodeId], nodalCoordsLocation);
+        }
+      }
+    );
   }
 
-  void copy_coordinates(const std::vector<double>& coords, double* dest)
+  template <typename EntityValuesType>
+  void copy_coordinates(const std::vector<double>& coords, EntityValuesType& dest)
   {
-    for (unsigned i=0; i<coords.size(); i++) {
-      dest[i] = coords[i];
+    for (stk::mesh::ComponentIdx i : dest.components()) {
+      dest(i) = coords[i];
     }
   }
 

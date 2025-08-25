@@ -93,17 +93,18 @@ void ConstructedMesh::populate_bulk_data(stk::mesh::BulkData& bulk)
       elemIdOffset += m_elemBlocks[i].connectivityIndex.size();
     }
 
+    auto coordData = coordsField.data();
     for(size_t nodeIndex=0; nodeIndex < m_nodeIds.size(); nodeIndex++)
     {
       stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, m_nodeIds[nodeIndex]);
       ASSERT_TRUE(bulk.is_valid(node)) << "Invalid node id: " << m_nodeIds[nodeIndex];
-      double * nodalCoords = stk::mesh::field_data(coordsField, node);
+      auto nodalCoords = coordData.entity_values(node);
 
-      nodalCoords[0] = m_xCoords[nodeIndex];
-      nodalCoords[1] = m_yCoords[nodeIndex];
+      nodalCoords(0_comp) = m_xCoords[nodeIndex];
+      nodalCoords(1_comp) = m_yCoords[nodeIndex];
 
       if(m_spatialDimension == 3) {
-        nodalCoords[2] = m_zCoords[nodeIndex];
+        nodalCoords(2_comp) = m_zCoords[nodeIndex];
       }
     }
   }

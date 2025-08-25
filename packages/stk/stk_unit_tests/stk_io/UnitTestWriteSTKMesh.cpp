@@ -81,6 +81,7 @@ void fill_node_ids_and_coords(const stk::mesh::BulkData& bulk,
     int spatial_dim = meta.spatial_dimension();
 
     STK_ThrowAssert(coordField != NULL);
+    auto coordFieldData = coordField->data<stk::mesh::ReadOnly>();
 
     stk::mesh::Selector locallyOwned = meta.locally_owned_part();
 
@@ -91,9 +92,9 @@ void fill_node_ids_and_coords(const stk::mesh::BulkData& bulk,
           int node_id = mesh.identifier(node);
           node_ids[node_counter] = node_id;
 
-          const double* coords = stk::mesh::field_data(*coordField, node);
-          for(int k=0;k<spatial_dim;++k) {
-              coordinates[spatial_dim*node_counter+k] = coords[k];
+          auto coords = coordFieldData.entity_values(node);
+          for(stk::mesh::ComponentIdx k=0_comp;k<spatial_dim;++k) {
+              coordinates[spatial_dim*node_counter+k] = coords(k);
           }
           node_counter++;
       });

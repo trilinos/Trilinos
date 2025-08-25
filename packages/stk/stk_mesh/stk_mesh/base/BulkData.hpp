@@ -331,11 +331,6 @@ public:
   template<typename PARTVECTOR>
   Entity declare_element(EntityId id, const PARTVECTOR& parts);
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2025
-  template<typename PARTVECTOR>
-  STK_DEPRECATED_MSG("Prefer BulkData::declare_entity(stk::topology::CONSTRAINT_RANK, ...)") Entity declare_constraint(EntityId id, const PARTVECTOR& parts);
-#endif
-
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id , Part& part); // Mod Mark
 
   template<typename IDVECTOR>
@@ -356,10 +351,6 @@ public:
   Entity declare_node(EntityId ent_id);
   Entity declare_element(EntityId ent_id);
   Entity declare_edge(EntityId ent_id);
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2025
-  STK_DEPRECATED_MSG("Prefer BulkData::declare_entity(stk::topology::CONSTRAINT_RANK, ...)") Entity declare_constraint(EntityId ent_id);
-#endif
 
   EntityId get_solo_side_id();
 
@@ -742,10 +733,6 @@ public:
   inline Entity const* end_faces(Entity entity) const;
   inline Entity const* end_elements(Entity entity) const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2025
-  STK_DEPRECATED_MSG("Prefer BulkData::end(entity, stk::topology::CONSTRAINT_RANK)") Entity const* end_constraints(Entity entity) const
-  { return end(entity, stk::topology::CONSTRAINT_RANK); }
-#endif
   inline ConnectivityOrdinal const* end_ordinals(Entity entity, EntityRank rank) const;
   inline ConnectivityOrdinal const* end_node_ordinals(Entity entity) const;
   inline ConnectivityOrdinal const* end_edge_ordinals(Entity entity) const;
@@ -1057,6 +1044,7 @@ protected: //functions
                                                                                stk::mesh::Entity e_to,
                                                                                OrdinalVector &to_add);
 
+  bool internal_modification_begin(const std::string& description, bool resetSymGhostInfo = true);
   bool internal_modification_end_for_change_entity_owner(ModEndOptimizationFlag opt );
   bool internal_modification_end_for_change_parts(ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT);
   void internal_modification_end_for_change_ghosting();
@@ -1216,7 +1204,8 @@ protected: //functions
 
   void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, const stk::mesh::Selector& selectedToSkin, bool connectFacesToPreexistingGhosts);
 
-  void internal_finish_modification_end(ModEndOptimizationFlag opt); // Mod Mark
+  void internal_finish_modification_end(ModEndOptimizationFlag opt,
+                                        bool resetSymGhostInfo = true);
 
   void internal_set_owner(Entity entity, int new_owner);
 
@@ -1991,28 +1980,24 @@ void BulkData::internal_update_ngp_fast_comm_maps() const
         const EntityCommDatabase& commDB = internal_comm_db();
 
         // Assemble map, find all shared and ghost entities and pack into volatile fast map
-        std::vector<std::vector<unsigned> > shared_entity_counts(num_ranks);
-        std::vector<std::vector<unsigned> > ghost_entity_counts(num_ranks);
-        for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
-            shared_entity_counts[r].assign(parallel_size(), 0);
-            ghost_entity_counts[r].assign(parallel_size(), 0);
-        }
+        Kokkos::View<unsigned**,stk::ngp::HostMemSpace> shared_entity_counts("shared_entity_counts", num_ranks,parallel_size());
+        Kokkos::View<unsigned**,stk::ngp::HostMemSpace> ghost_entity_counts("ghost_entity_counts", num_ranks,parallel_size());
 
         std::vector<int> commProcs;
         for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
-            EntityKey const key   = all_comm[i].key;
-            EntityRank const rank = key.rank();
-
             if (all_comm[i].entity_comm != -1) {
                 PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
                 const unsigned numShared = impl::fill_procs_shared_then_ghosted(ec, commProcs);
+                EntityKey const key   = all_comm[i].key;
+                EntityRank const rank = key.rank();
+
                 unsigned idx = 0;
                 while(idx<numShared) {
-                    shared_entity_counts[rank][commProcs[idx]]++;
+                    shared_entity_counts(rank,commProcs[idx])++;
                     ++idx;
                 }
                 while(idx<commProcs.size()) {
-                    ghost_entity_counts[rank][commProcs[idx]]++;
+                    ghost_entity_counts(rank,commProcs[idx])++;
                     ++idx;
                 }
             }
@@ -2024,37 +2009,39 @@ void BulkData::internal_update_ngp_fast_comm_maps() const
             unsigned offset = 0;
             for(int p=0; p<parallel_size(); ++p) {
                 ngpHostData->hostVolatileFastSharedCommMapOffset[r](p) = offset;
-                ngpHostData->hostVolatileFastSharedCommMapNumShared[r](p) = shared_entity_counts[r][p];
-                offset += shared_entity_counts[r][p] + ghost_entity_counts[r][p];
+                ngpHostData->hostVolatileFastSharedCommMapNumShared[r](p) = shared_entity_counts(r,p);
+                offset += shared_entity_counts(r,p) + ghost_entity_counts(r,p);
             }
             ngpHostData->hostVolatileFastSharedCommMapOffset[r](parallel_size()) = offset;
             Kokkos::resize(Kokkos::WithoutInitializing, ngpHostData->hostVolatileFastSharedCommMap[r], offset);
-            shared_entity_counts[r].assign(parallel_size(), 0);
-            ghost_entity_counts[r].assign(parallel_size(), 0);
         }
 
+        Kokkos::deep_copy(shared_entity_counts,0);
+        Kokkos::deep_copy(ghost_entity_counts,0);
+
         for (size_t i = 0, ie = all_comm.size(); i < ie; ++i) {
-            Entity const e        = all_comm[i].entity;
-            MeshIndex const& meshIdx  = mesh_index(e);
             if (all_comm[i].entity_comm != -1) {
+              PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
+              const unsigned numShared = impl::fill_procs_shared_then_ghosted(ec, commProcs);
+              Entity const e        = all_comm[i].entity;
+              MeshIndex const& meshIdx  = mesh_index(e);
               const unsigned bucket_id  = meshIdx.bucket->bucket_id();
               const unsigned bucket_ord = meshIdx.bucket_ordinal;
+              const FastMeshIndex fmi{bucket_id, bucket_ord};
 
               const EntityKey key   = all_comm[i].key;
               const EntityRank rank = key.rank();
 
-              PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
-              const unsigned numShared = impl::fill_procs_shared_then_ghosted(ec, commProcs);
               unsigned idx = 0;
               while(idx<numShared) {
-                const unsigned index = ngpHostData->hostVolatileFastSharedCommMapOffset[rank](commProcs[idx]) + shared_entity_counts[rank][commProcs[idx]]++;
-                ngpHostData->hostVolatileFastSharedCommMap[rank](index) = FastMeshIndex{bucket_id, bucket_ord};
+                const unsigned index = ngpHostData->hostVolatileFastSharedCommMapOffset[rank](commProcs[idx]) + shared_entity_counts(rank,commProcs[idx])++;
+                ngpHostData->hostVolatileFastSharedCommMap[rank](index) = fmi;
                 ++idx;
               }
               while(idx<commProcs.size()) {
                 const unsigned index = ngpHostData->hostVolatileFastSharedCommMapOffset[rank](commProcs[idx])
-                                     + ngpHostData->hostVolatileFastSharedCommMapNumShared[rank](commProcs[idx]) + ghost_entity_counts[rank][commProcs[idx]]++;
-                ngpHostData->hostVolatileFastSharedCommMap[rank](index) = FastMeshIndex{bucket_id, bucket_ord};
+                                     + ngpHostData->hostVolatileFastSharedCommMapNumShared[rank](commProcs[idx]) + ghost_entity_counts(rank,commProcs[idx])++;
+                ngpHostData->hostVolatileFastSharedCommMap[rank](index) = fmi;
                 ++idx;
               }
             }

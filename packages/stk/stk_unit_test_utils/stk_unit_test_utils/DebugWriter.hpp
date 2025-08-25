@@ -6,15 +6,15 @@
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
- // 
+ //
  //     * Redistributions of source code must retain the above copyright
  //       notice, this list of conditions and the following disclaimer.
- // 
+ //
  //     * Redistributions in binary form must reproduce the above
  //       copyright notice, this list of conditions and the following
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
- // 
+ //
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -45,9 +45,11 @@
 #include "stk_mesh/base/Bucket.hpp"                  // for Bucket
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/NgpFieldParallel.hpp"
 #include "stk_mesh/base/Part.hpp"                    // for Part
 #include "stk_mesh/base/Selector.hpp"                // for Selector
 #include "stk_topology/topology.hpp"                 // for operator<<, etc
+#include "stk_util/ngp/NgpSpaces.hpp"
 
 namespace stk {
 namespace debug {
@@ -109,6 +111,9 @@ protected:
     }
 
 private:
+    using DoubleField = stk::mesh::ConstFieldData<double, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>;
+    using IntField    = stk::mesh::ConstFieldData<int, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>;
+
     void writeLocationInformation(std::ofstream &out, const std::string& callingFile, int lineNumber)
     {
         static int counter = 0;
@@ -158,6 +163,23 @@ private:
         stk::mesh::EntityVector entities;
         stk::mesh::get_selected_entities(selector, meshBulk.buckets(entityRank), entities);
 
+        std::vector<DoubleField> doubleFields;
+        std::vector<IntField> intFields;
+        std::vector<std::string> doubleFieldNames;
+        std::vector<std::string> intFieldNames;
+        for (stk::mesh::FieldBase* field : fields)
+        {
+            if (is_double_field(field))
+            {
+                doubleFields.push_back(field->data<double, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                doubleFieldNames.push_back(field->name());
+            } else if (is_int_field(field))
+            {
+                intFields.push_back(field->data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                intFieldNames.push_back(field->name());
+            }
+        }
+
         for(size_t entityIndex = 0; entityIndex < entities.size(); entityIndex++)
         {
             stk::mesh::Entity entity = entities[entityIndex];
@@ -165,7 +187,8 @@ private:
 
             write_connectivity(meshBulk, entity);
 
-            write_fields(fields, entity, entityRank);
+            write_fields(doubleFields, doubleFieldNames, entity, entityRank);
+            write_fields(intFields,    intFieldNames,    entity, entityRank);
         }
     }
 
@@ -191,22 +214,25 @@ private:
         m_out << std::endl;
     }
 
-    void write_fields(const stk::mesh::FieldVector &fields,
+    template <typename FieldDataType>
+    void write_fields(const std::vector<FieldDataType> &fields,
+                      const std::vector<std::string>& fieldNames,
                       stk::mesh::Entity entity,
                       stk::mesh::EntityRank entityRank)
     {
-        for(size_t fieldIndex = 0; fieldIndex < fields.size(); fieldIndex++)
+        static_assert(std::is_same_v<FieldDataType, DoubleField> || std::is_same_v<FieldDataType, IntField>);
+
+        for (size_t i=0; i < fields.size(); ++i)
         {
-            stk::mesh::FieldBase *field = fields[fieldIndex];
-            if(field->name() != "nodeClosureCount" && field->name() != "faceClosureCount")
+            if(fieldNames[i] != "nodeClosureCount" && fieldNames[i] != "faceClosureCount")
             {
-                if(field->entity_rank() == entityRank)
+                if(fields[i].entity_rank() == entityRank)
                 {
-                    int numScalars = stk::mesh::field_scalars_per_entity(*field, entity);
-                    if(numScalars > 0)
+                    auto entityValues = fields[i].entity_values(entity);
+                    if(entityValues.num_scalars() > 0)
                     {
-                        m_out << "    " << field->name();
-                        write_field_values(entity, field, numScalars);
+                        m_out << "    " << fieldNames[i];
+                        write_field_values(entityValues);
                     }
                 }
             }
@@ -214,22 +240,6 @@ private:
         m_out << std::endl;
     }
 
-    void write_field_values(stk::mesh::Entity entity, stk::mesh::FieldBase *field, int numScalars)
-    {
-        void *fieldData = stk::mesh::field_data(*field, entity);
-        if(is_double_field(field))
-        {
-            write_field_values_of_type<double>(fieldData, numScalars);
-        }
-        else if(is_int_field(field))
-        {
-            write_field_values_of_type<int>(fieldData, numScalars);
-        }
-        else
-        {
-            m_out << "    Unknown field type!!!!!!";
-        }
-    }
 
     bool is_double_field(stk::mesh::FieldBase *field)
     {
@@ -241,13 +251,16 @@ private:
         return (field->data_traits().is_integral && field->data_traits().size_of == 4);
     }
 
-    template <typename Scalar>
-    void write_field_values_of_type(void *fieldData, int numScalars)
+    template <typename EntityValues>
+    void write_field_values(EntityValues values)
     {
-        Scalar *values = static_cast<Scalar*>(fieldData);
-        for(int i = 0; i < numScalars; i++)
+        //for(int i = 0; i < numScalars; i++)
+        for (stk::mesh::CopyIdx copy : values.copies())
         {
-            m_out << " " << values[i];
+            for (stk::mesh::ComponentIdx comp : values.components())
+            {
+                m_out << " " << values(copy, comp);
+            }
         }
     }
 

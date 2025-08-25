@@ -103,30 +103,24 @@ void test_faces_have_edges(stk::mesh::BulkData& bulk, const std::vector<stk::mes
 
 void test_third_node_is_midpoint(stk::mesh::BulkData& bulk)
 {
-  std::vector<stk::mesh::Entity> edgeNodes;
   std::vector<std::array<double, 3>> edgeNodeCoords;
   const stk::mesh::FieldBase* coordField = bulk.mesh_meta_data().coordinate_field();
+  auto coordFieldData = coordField->data<double,stk::mesh::ReadOnly>();
 
-  for (stk::mesh::Bucket* bucket : bulk.buckets(stk::topology::EDGE_RANK))
-  {
-    for (stk::mesh::Entity edge : *bucket)
-    {
-      edgeNodes.clear();
-      for (stk::mesh::Entity const* node = bulk.begin_nodes(edge); node != bulk.end_nodes(edge); ++node)
-      {
-        edgeNodes.push_back(*node);
-        double* coordData = static_cast<double*>(stk::mesh::field_data(*coordField, *node));
-        edgeNodeCoords.emplace_back(std::array<double, 3>{coordData[0], coordData[1], coordData[2]});
+  for (const stk::mesh::Bucket* bucket : bulk.buckets(stk::topology::EDGE_RANK)) {
+    for (stk::mesh::Entity edge : *bucket) {
+      stk::mesh::ConnectedEntities edgeNodes = bulk.get_connected_entities(edge, stk::topology::NODE_RANK);
+      for (stk::mesh::Entity node : edgeNodes) {
+        auto coordData = coordFieldData.entity_values(node);
+        edgeNodeCoords.emplace_back(std::array<double, 3>{coordData(0_comp), coordData(1_comp), coordData(2_comp)});
       }
 
       EXPECT_EQ(edgeNodes.size(), 3U);
-      for (int i=0; i < 3; ++i)
-      {
+      for (int i=0; i < 3; ++i) {
         EXPECT_FLOAT_EQ(edgeNodeCoords[2][i], 0.5*(edgeNodeCoords[0][i] + edgeNodeCoords[1][i]));
       }
     }
   }
-
 }
 
 }

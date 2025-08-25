@@ -145,20 +145,6 @@ struct topology
   STK_INLINE_FUNCTION
   bool is_shell() const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 2025
-  STK_DEPRECATED
-  STK_INLINE_FUNCTION
-  bool is_shell_side_ordinal(unsigned ord) const;
-
-  STK_DEPRECATED
-  STK_INLINE_FUNCTION
-  bool is_shell_with_face_sides() const;
-
-  STK_DEPRECATED_MSG("Please use side_topology() instead")
-  STK_INLINE_FUNCTION
-  topology shell_side_topology(unsigned shell_side_ordinal = 0) const;
-#endif
-
   /// what is the rank of this topology
   STK_INLINE_FUNCTION
   rank_t rank() const;

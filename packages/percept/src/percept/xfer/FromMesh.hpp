@@ -18,7 +18,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -107,9 +106,9 @@ public:
 
   template<class FM>
   static void
-  modify_bounding_box(const FM& fromMesh,
-                      stk::search::Point<double>& min_corner,
-                      stk::search::Point<double>& max_corner)
+  modify_bounding_box(const FM& /*fromMesh*/,
+                      stk::search::Point<double>& /*min_corner*/,
+                      stk::search::Point<double>& /*max_corner*/)
   {
   }
 

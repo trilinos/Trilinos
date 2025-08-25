@@ -45,8 +45,8 @@
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/ConstFieldData.hpp>
-#include <stk_mesh/base/FieldBytes.hpp>
-#include <stk_mesh/base/ConstFieldBytes.hpp>
+#include <stk_mesh/base/FieldDataBytes.hpp>
+#include <stk_mesh/base/ConstFieldDataBytes.hpp>
 #include <stk_mesh/base/FieldDataBase.hpp>
 #include <stk_mesh/base/FieldIndexTypes.hpp>
 
@@ -77,10 +77,10 @@ TEST(FieldLayout, ostreamOperator)
 }
 
 //==============================================================================
-class FieldBytesAccess : public stk::unit_test_util::MeshFixture
+class FieldDataBytesAccess : public stk::unit_test_util::MeshFixture
 {
 public:
-  FieldBytesAccess()
+  FieldDataBytesAccess()
     : m_field(nullptr),
       m_leftField(nullptr)
   {}
@@ -113,7 +113,7 @@ protected:
 
 
 //==============================================================================
-TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes)
+TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_entityBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -122,7 +122,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes)
   stk::mesh::put_field_on_mesh(*m_field, get_meta().universal_part(), 3, 2, nullptr);
   build_two_element_mesh(m_field);
 
-  auto fieldBytes = m_field->bytes();
+  auto fieldDataBytes = m_field->data_bytes<std::byte>();
   const stk::mesh::BucketVector& buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
 
   for (stk::mesh::Bucket* bucket : buckets) {
@@ -132,7 +132,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes)
                                    2*elemId, 20*elemId, 200*elemId};
       const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue.data());
 
-      auto entityBytes = fieldBytes.entity_bytes(elem);
+      auto entityBytes = fieldDataBytes.entity_bytes(elem);
       for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
         entityBytes(byte) = setValueBytes[byte];
       }
@@ -140,7 +140,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes)
   }
 
   auto fieldData = m_field->data<stk::mesh::ReadOnly>();
-  auto constFieldBytes = m_field->const_bytes();
+  auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
     for (stk::mesh::Entity elem : *bucket) {
@@ -156,7 +156,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes)
         }
       }
 
-      auto constEntityBytes = constFieldBytes.entity_bytes(elem);
+      auto constEntityBytes = constFieldDataBytes.entity_bytes(elem);
       for (stk::mesh::ByteIdx byte : constEntityBytes.bytes()) {
         EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
       }
@@ -164,7 +164,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes)
   }
 }
 
-TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes_traditionalForLoop)
+TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_entityBytes_traditionalForLoop)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -173,7 +173,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes_traditionalFor
   stk::mesh::put_field_on_mesh(*m_field, get_meta().universal_part(), 3, 2, nullptr);
   build_two_element_mesh(m_field);
 
-  auto fieldBytes = m_field->bytes();
+  auto fieldDataBytes = m_field->data_bytes<std::byte>();
   const stk::mesh::BucketVector& buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
 
   for (stk::mesh::Bucket* bucket : buckets) {
@@ -183,7 +183,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes_traditionalFor
                                    2*elemId, 20*elemId, 200*elemId};
       const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue.data());
 
-      auto entityBytes = fieldBytes.entity_bytes(elem);
+      auto entityBytes = fieldDataBytes.entity_bytes(elem);
       for (stk::mesh::ByteIdx byte(0); byte < entityBytes.num_bytes(); ++byte) {
         entityBytes(byte) = setValueBytes[byte];
       }
@@ -191,7 +191,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes_traditionalFor
   }
 
   auto fieldData = m_field->data<stk::mesh::ReadOnly>();
-  auto constFieldBytes = m_field->const_bytes();
+  auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
     for (stk::mesh::Entity elem : *bucket) {
@@ -207,7 +207,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes_traditionalFor
         }
       }
 
-      auto constEntityBytes = constFieldBytes.entity_bytes(elem);
+      auto constEntityBytes = constFieldDataBytes.entity_bytes(elem);
       for (stk::mesh::ByteIdx byte : constEntityBytes.bytes()) {
         EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
       }
@@ -215,7 +215,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_entityBytes_traditionalFor
   }
 }
 
-TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes)
+TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -224,11 +224,11 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes)
   stk::mesh::put_field_on_mesh(*m_field, get_meta().universal_part(), 3, 2, nullptr);
   build_two_element_mesh(m_field);
 
-  auto& fieldBytes = m_field->bytes();
+  auto& fieldDataBytes = m_field->data_bytes<std::byte>();
   const stk::mesh::BucketVector& buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
 
   for (stk::mesh::Bucket* bucket : buckets) {
-    auto bucketBytes = fieldBytes.bucket_bytes(*bucket);
+    auto bucketBytes = fieldDataBytes.bucket_bytes(*bucket);
     for (stk::mesh::EntityIdx elem : bucket->entities()) {
       const int elemId = get_bulk().identifier((*bucket)[elem]);
       std::array<int, 6> setValue {1*elemId, 10*elemId, 100*elemId,
@@ -242,11 +242,11 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes)
   }
 
   auto constFieldData = m_field->data<stk::mesh::ReadOnly>();
-  auto constFieldBytes = m_field->const_bytes();
+  auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
     auto constBucketValues = constFieldData.bucket_values(*bucket);
-    auto constBucketBytes = constFieldBytes.bucket_bytes(*bucket);
+    auto constBucketBytes = constFieldDataBytes.bucket_bytes(*bucket);
 
     for (stk::mesh::EntityIdx elem : bucket->entities()) {
       const int elemId = get_bulk().identifier((*bucket)[elem]);
@@ -267,7 +267,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes)
   }
 }
 
-TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes_traditionalForLoop)
+TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes_traditionalForLoop)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -276,11 +276,11 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes_traditionalFor
   stk::mesh::put_field_on_mesh(*m_field, get_meta().universal_part(), 3, 2, nullptr);
   build_two_element_mesh(m_field);
 
-  auto& fieldBytes = m_field->bytes();
+  auto& fieldDataBytes = m_field->data_bytes<std::byte>();
   const stk::mesh::BucketVector& buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
 
   for (stk::mesh::Bucket* bucket : buckets) {
-    auto bucketBytes = fieldBytes.bucket_bytes(*bucket);
+    auto bucketBytes = fieldDataBytes.bucket_bytes(*bucket);
     for (stk::mesh::EntityIdx elem(0); elem < bucket->num_entities(); ++elem) {
       const int elemId = get_bulk().identifier((*bucket)[elem]);
       std::array<int, 6> setValue {1*elemId, 10*elemId, 100*elemId,
@@ -294,11 +294,11 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes_traditionalFor
   }
 
   auto constFieldData = m_field->data<stk::mesh::ReadOnly>();
-  auto constFieldBytes = m_field->const_bytes();
+  auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
     auto constBucketValues = constFieldData.bucket_values(*bucket);
-    auto constBucketBytes = constFieldBytes.bucket_bytes(*bucket);
+    auto constBucketBytes = constFieldDataBytes.bucket_bytes(*bucket);
 
     for (stk::mesh::EntityIdx elem(0); elem < bucket->num_entities(); ++elem) {
       const int elemId = get_bulk().identifier((*bucket)[elem]);
@@ -319,7 +319,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes_traditionalFor
   }
 }
 
-TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes_fieldBytesIndexing)
+TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes_fieldBytesIndexing)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -328,11 +328,11 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes_fieldBytesInde
   stk::mesh::put_field_on_mesh(*m_field, get_meta().universal_part(), 3, 2, nullptr);
   build_two_element_mesh(m_field);
 
-  auto& fieldBytes = m_field->bytes();
+  auto& fieldDataBytes = m_field->data_bytes<std::byte>();
   const stk::mesh::BucketVector& buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
 
   for (stk::mesh::Bucket* bucket : buckets) {
-    auto bucketBytes = fieldBytes.bucket_bytes(*bucket);
+    auto bucketBytes = fieldDataBytes.bucket_bytes(*bucket);
     for (stk::mesh::EntityIdx elem : bucketBytes.entities()) {
       const int elemId = get_bulk().identifier((*bucket)[elem]);
       std::array<int, 6> setValue {1*elemId, 10*elemId, 100*elemId,
@@ -346,11 +346,11 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes_fieldBytesInde
   }
 
   auto constFieldData = m_field->data<stk::mesh::ReadOnly>();
-  auto constFieldBytes = m_field->const_bytes();
+  auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
     auto constBucketValues = constFieldData.bucket_values(*bucket);
-    auto constBucketBytes = constFieldBytes.bucket_bytes(*bucket);
+    auto constBucketBytes = constFieldDataBytes.bucket_bytes(*bucket);
 
     for (stk::mesh::EntityIdx elem : constBucketBytes.entities()) {
       const int elemId = get_bulk().identifier((*bucket)[elem]);
@@ -376,7 +376,7 @@ TEST_F(FieldBytesAccess, host_multiCopyMultiComponent_bucketBytes_fieldBytesInde
 void test_device_entity_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& field)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  auto& fieldBytes = field.bytes<stk::ngp::MemSpace>();
+  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -385,7 +385,7 @@ void test_device_entity_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
                                2*elemId, 20*elemId, 200*elemId};
       const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue);
 
-      auto entityBytes = fieldBytes.entity_bytes(elem);
+      auto entityBytes = fieldDataBytes.entity_bytes(elem);
       for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
         entityBytes(byte) = setValueBytes[byte];
       }
@@ -393,7 +393,7 @@ void test_device_entity_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
   );
 
   auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-  auto& constFieldBytes = field.const_bytes<stk::ngp::MemSpace>();
+  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
       const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
@@ -410,7 +410,7 @@ void test_device_entity_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
         }
       }
 
-      auto constEntityBytes = constFieldBytes.entity_bytes(elem);
+      auto constEntityBytes = constFieldDataBytes.entity_bytes(elem);
       for (stk::mesh::ByteIdx byte : constEntityBytes.bytes()) {
         NGP_EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
       }
@@ -418,7 +418,7 @@ void test_device_entity_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
   );
 }
 
-TEST_F(FieldBytesAccess, device_multiCopyMultiComponent_entityBytes)
+TEST_F(FieldDataBytesAccess, device_multiCopyMultiComponent_entityBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -434,7 +434,7 @@ TEST_F(FieldBytesAccess, device_multiCopyMultiComponent_entityBytes)
 void test_device_entity_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& field)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  auto& fieldBytes = field.bytes<stk::ngp::MemSpace>();
+  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -443,7 +443,7 @@ void test_device_entity_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
                                2*elemId, 20*elemId, 200*elemId};
       const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue);
 
-      auto entityBytes = fieldBytes.entity_bytes(elem);
+      auto entityBytes = fieldDataBytes.entity_bytes(elem);
       for (stk::mesh::ByteIdx byte(0); byte <entityBytes.num_bytes(); ++byte) {
         entityBytes(byte) = setValueBytes[byte];
       }
@@ -451,7 +451,7 @@ void test_device_entity_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
   );
 
   auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-  auto& constFieldBytes = field.const_bytes<stk::ngp::MemSpace>();
+  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
       const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
@@ -468,7 +468,7 @@ void test_device_entity_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
         }
       }
 
-      auto constEntityBytes = constFieldBytes.entity_bytes(elem);
+      auto constEntityBytes = constFieldDataBytes.entity_bytes(elem);
       for (stk::mesh::ByteIdx byte(0); byte < constEntityBytes.num_bytes(); ++byte) {
         NGP_EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
       }
@@ -476,7 +476,7 @@ void test_device_entity_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
   );
 }
 
-TEST_F(FieldBytesAccess, device_multiCopyMultiComponent_entityBytes_traditionalForLoop)
+TEST_F(FieldDataBytesAccess, device_multiCopyMultiComponent_entityBytes_traditionalForLoop)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -493,7 +493,7 @@ void test_device_bucket_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-  auto& fieldBytes = field.bytes<stk::ngp::MemSpace>();
+  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
 
   stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
   unsigned numBuckets = bucketIds.size();
@@ -502,7 +502,7 @@ void test_device_bucket_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
   Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
     KOKKOS_LAMBDA(const TeamHandleType& team) {
       const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
-      auto bucketBytes = fieldBytes.bucket_bytes(bucketId);
+      auto bucketBytes = fieldDataBytes.bucket_bytes(bucketId);
 
       const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
@@ -522,12 +522,12 @@ void test_device_bucket_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
     }
   );
 
-  auto& constFieldBytes = field.const_bytes<stk::ngp::MemSpace>();
+  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
   Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
     KOKKOS_LAMBDA(const TeamHandleType& team) {
       const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
       auto bucketValues = constFieldData.bucket_values(bucketId);
-      auto bucketBytes = constFieldBytes.bucket_bytes(bucketId);
+      auto bucketBytes = constFieldDataBytes.bucket_bytes(bucketId);
 
       const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
@@ -556,7 +556,7 @@ void test_device_bucket_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
   );
 }
 
-TEST_F(FieldBytesAccess, device_multiCopyMultiComponent_bucketBytes)
+TEST_F(FieldDataBytesAccess, device_multiCopyMultiComponent_bucketBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -573,7 +573,7 @@ void test_device_bucket_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-  auto& fieldBytes = field.bytes<stk::ngp::MemSpace>();
+  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
 
   stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
   unsigned numBuckets = bucketIds.size();
@@ -582,7 +582,7 @@ void test_device_bucket_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
   Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
     KOKKOS_LAMBDA(const TeamHandleType& team) {
       const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
-      auto bucketBytes = fieldBytes.bucket_bytes(bucketId);
+      auto bucketBytes = fieldDataBytes.bucket_bytes(bucketId);
 
       const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
@@ -602,12 +602,12 @@ void test_device_bucket_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
     }
   );
 
-  auto& constFieldBytes = field.const_bytes<stk::ngp::MemSpace>();
+  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
   Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
     KOKKOS_LAMBDA(const TeamHandleType& team) {
       const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
       auto bucketValues = constFieldData.bucket_values(bucketId);
-      auto bucketBytes = constFieldBytes.bucket_bytes(bucketId);
+      auto bucketBytes = constFieldDataBytes.bucket_bytes(bucketId);
 
       const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
@@ -636,7 +636,7 @@ void test_device_bucket_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
   );
 }
 
-TEST_F(FieldBytesAccess, device_multiCopyMultiComponent_bucketBytes_traditionalForLoop)
+TEST_F(FieldDataBytesAccess, device_multiCopyMultiComponent_bucketBytes_traditionalForLoop)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -657,7 +657,7 @@ void test_host_to_device_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
 
   {
     field.template synchronize<stk::mesh::ReadWrite>();  // Mark it as modified so that we will sync on the other side
-    auto fieldBytes = field.bytes();
+    auto fieldDataBytes = field.template data_bytes<std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
@@ -667,7 +667,7 @@ void test_host_to_device_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
                                      2*elemId, 20*elemId, 200*elemId};
         const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue.data());
 
-        auto entityBytes = fieldBytes.entity_bytes(elem);
+        auto entityBytes = fieldDataBytes.entity_bytes(elem);
         for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
           entityBytes(byte) = setValueBytes[byte];
         }
@@ -677,7 +677,7 @@ void test_host_to_device_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
 
   {
     auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldBytes = field.template const_bytes<stk::ngp::MemSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
         const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
@@ -694,7 +694,7 @@ void test_host_to_device_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
           }
         }
 
-        auto constEntityBytes = constFieldBytes.entity_bytes(elem);
+        auto constEntityBytes = constFieldDataBytes.entity_bytes(elem);
         for (stk::mesh::ByteIdx byte : constEntityBytes.bytes()) {
           NGP_EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
         }
@@ -703,7 +703,7 @@ void test_host_to_device_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   }
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -715,7 +715,7 @@ TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes)
   test_host_to_device_entity_bytes(get_bulk(), *m_field);
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_automaticLayoutLeft)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_automaticLayoutLeft)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -727,7 +727,7 @@ TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_a
   test_host_to_device_entity_bytes(get_bulk(), *m_leftField);
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_automaticLayoutRight)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_automaticLayoutRight)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -747,7 +747,7 @@ void test_host_to_device_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
 
   {
     field.template synchronize<stk::mesh::ReadWrite>();  // Mark it as modified so that we will sync on the other side
-    auto fieldBytes = field.bytes();
+    auto fieldDataBytes = field.template data_bytes<std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
@@ -757,14 +757,14 @@ void test_host_to_device_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
                                      2*elemId, 20*elemId, 200*elemId};
         const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue.data());
 
-        if (fieldBytes.data_layout() == stk::mesh::Layout::Left) {
-          auto entityBytes = fieldBytes.entity_bytes_left(elem);
+        if (fieldDataBytes.data_layout() == stk::mesh::Layout::Left) {
+          auto entityBytes = fieldDataBytes.template entity_bytes<stk::mesh::Layout::Left>(elem);
           for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
             entityBytes(byte) = setValueBytes[byte];
           }
         }
         else {
-          auto entityBytes = fieldBytes.entity_bytes_right(elem);
+          auto entityBytes = fieldDataBytes.template entity_bytes<stk::mesh::Layout::Right>(elem);
           for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
             entityBytes(byte) = setValueBytes[byte];
           }
@@ -775,7 +775,7 @@ void test_host_to_device_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
 
   {
     auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldBytes = field.template const_bytes<stk::ngp::MemSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
         const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
@@ -792,7 +792,7 @@ void test_host_to_device_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
           }
         }
 
-        auto constEntityBytes = constFieldBytes.entity_bytes(elem);
+        auto constEntityBytes = constFieldDataBytes.entity_bytes(elem);
         for (stk::mesh::ByteIdx byte : constEntityBytes.bytes()) {
           NGP_EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
         }
@@ -801,7 +801,7 @@ void test_host_to_device_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   }
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_forcedLayoutLeft)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_forcedLayoutLeft)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -813,7 +813,7 @@ TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_f
   test_host_to_device_entity_bytes_forced_layout(get_bulk(), *m_leftField);
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_forcedLayoutRight)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_forcedLayoutRight)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -823,6 +823,117 @@ TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytes_f
   build_two_element_mesh(m_rightField);
 
   test_host_to_device_entity_bytes_forced_layout(get_bulk(), *m_rightField);
+}
+
+//------------------------------------------------------------------------------
+template <stk::mesh::Layout DataLayout, typename FieldType>
+void test_host_to_device_entity_bytes_pointer_and_stride(stk::mesh::BulkData& bulk, FieldType& field)
+{
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+
+  {
+    field.template synchronize<stk::mesh::ReadWrite>();  // Mark it as modified so that we will sync on the other side
+    auto fieldDataBytes = field.template data_bytes<std::byte>();
+    const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
+
+    for (stk::mesh::Bucket* bucket : buckets) {
+      for (stk::mesh::Entity elem : *bucket) {
+        const int elemId = bulk.identifier(elem);
+        std::array<int, 6> setValue {1*elemId, 10*elemId, 100*elemId,
+                                     2*elemId, 20*elemId, 200*elemId};
+        const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue.data());
+
+        auto entityBytes = fieldDataBytes.template entity_bytes<DataLayout>(elem);
+        std::byte* entityPtr = entityBytes.pointer();
+        int numBytes = entityBytes.num_bytes();
+        const int bytesPerScalar = entityBytes.bytes_per_scalar();
+        const int scalarByteStride = entityBytes.scalar_byte_stride();
+        while (numBytes) {
+          for (int scalarByteIdx = 0; scalarByteIdx < bytesPerScalar; ++scalarByteIdx) {
+            entityPtr[scalarByteIdx] = setValueBytes[scalarByteIdx];
+          }
+          numBytes -= bytesPerScalar;
+          setValueBytes += bytesPerScalar;
+          entityPtr += scalarByteStride;
+        }
+      }
+    }
+  }
+
+  {
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
+      KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
+        const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
+        const int expectedValue[6] = {1*elemId, 10*elemId, 100*elemId,
+                                      2*elemId, 20*elemId, 200*elemId};
+        const std::byte* expectedValueBytes = reinterpret_cast<const std::byte*>(expectedValue);
+
+        auto constFieldValues = constFieldData.entity_values(elem);
+        const int numComponents = constFieldValues.num_components();
+        for (stk::mesh::CopyIdx copy : constFieldValues.copies()) {
+          for (stk::mesh::ComponentIdx component : constFieldValues.components()) {
+            NGP_EXPECT_EQ(constFieldValues(copy, component),
+                          expectedValue[static_cast<int>(copy)*numComponents + component]);
+          }
+        }
+
+        auto constEntityBytes = constFieldDataBytes.entity_bytes(elem);
+        for (stk::mesh::ByteIdx byte : constEntityBytes.bytes()) {
+          NGP_EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
+        }
+      }
+    );
+  }
+}
+
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytesPointerAndStride_forcedLayoutLeft)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 4, 4);
+  m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::ELEM_RANK, "leftField1");
+  stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_element_mesh(m_leftField);
+
+  test_host_to_device_entity_bytes_pointer_and_stride<stk::mesh::Layout::Left>(get_bulk(), *m_leftField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytesPointerAndStride_forcedLayoutRight)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 4, 4);
+  m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::ELEM_RANK, "leftField1");
+  stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_element_mesh(m_rightField);
+
+  test_host_to_device_entity_bytes_pointer_and_stride<stk::mesh::Layout::Right>(get_bulk(), *m_rightField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytesPointerAndStride_autoLayoutLeft)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 4, 4);
+  m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::ELEM_RANK, "leftField1");
+  stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_element_mesh(m_leftField);
+
+  test_host_to_device_entity_bytes_pointer_and_stride<stk::mesh::Layout::Auto>(get_bulk(), *m_leftField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_entityBytesPointerAndStride_autoLayoutRight)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 4, 4);
+  m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::ELEM_RANK, "leftField1");
+  stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_element_mesh(m_rightField);
+
+  test_host_to_device_entity_bytes_pointer_and_stride<stk::mesh::Layout::Auto>(get_bulk(), *m_rightField);
 }
 
 //------------------------------------------------------------------------------
@@ -836,11 +947,11 @@ void test_host_to_device_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
 
   {
     field.template synchronize<stk::mesh::ReadWrite>();  // Mark it as modified so that we will sync on the other side
-    auto& fieldBytes = field.bytes();
+    auto& fieldDataBytes = field.template data_bytes<std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
-      auto bucketBytes = fieldBytes.bucket_bytes(*bucket);
+      auto bucketBytes = fieldDataBytes.bucket_bytes(*bucket);
       for (stk::mesh::EntityIdx elem : bucket->entities()) {
         const int elemId = bulk.identifier((*bucket)[elem]);
         std::array<int, 6> setValue {1*elemId, 10*elemId, 100*elemId,
@@ -856,12 +967,12 @@ void test_host_to_device_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
 
   {
     auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldBytes = field.template const_bytes<stk::ngp::MemSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
     Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
       KOKKOS_LAMBDA(const TeamHandleType& team) {
         const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
         auto bucketValues = constFieldData.bucket_values(bucketId);
-        auto bucketBytes = constFieldBytes.bucket_bytes(bucketId);
+        auto bucketBytes = constFieldDataBytes.bucket_bytes(bucketId);
 
         const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
@@ -892,7 +1003,7 @@ void test_host_to_device_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   }
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -904,7 +1015,7 @@ TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes)
   test_host_to_device_bucket_bytes(get_bulk(), *m_field);
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_automaticLayoutLeft)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_automaticLayoutLeft)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -916,7 +1027,7 @@ TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_a
   test_host_to_device_bucket_bytes(get_bulk(), *m_leftField);
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_automaticLayoutRight)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_automaticLayoutRight)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -939,12 +1050,12 @@ void test_host_to_device_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
 
   {
     field.template synchronize<stk::mesh::ReadWrite>();  // Mark it as modified so that we will sync on the other side
-    auto& fieldBytes = field.bytes();
+    auto& fieldDataBytes = field.template data_bytes<std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
-      if (fieldBytes.data_layout() == stk::mesh::Layout::Left) {
-        auto bucketBytes = fieldBytes.bucket_bytes_left(*bucket);
+      if (fieldDataBytes.data_layout() == stk::mesh::Layout::Left) {
+        auto bucketBytes = fieldDataBytes.template bucket_bytes<stk::mesh::Layout::Left>(*bucket);
         for (stk::mesh::EntityIdx elem : bucket->entities()) {
           const int elemId = bulk.identifier((*bucket)[elem]);
           std::array<int, 6> setValue {1*elemId, 10*elemId, 100*elemId,
@@ -957,7 +1068,7 @@ void test_host_to_device_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
         }
       }
       else {
-        auto bucketBytes = fieldBytes.bucket_bytes_right(*bucket);
+        auto bucketBytes = fieldDataBytes.template bucket_bytes<stk::mesh::Layout::Right>(*bucket);
         for (stk::mesh::EntityIdx elem : bucket->entities()) {
           const int elemId = bulk.identifier((*bucket)[elem]);
           std::array<int, 6> setValue {1*elemId, 10*elemId, 100*elemId,
@@ -974,12 +1085,12 @@ void test_host_to_device_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
 
   {
     auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldBytes = field.template const_bytes<stk::ngp::MemSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
     Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
       KOKKOS_LAMBDA(const TeamHandleType& team) {
         const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
         auto bucketValues = constFieldData.bucket_values(bucketId);
-        auto bucketBytes = constFieldBytes.bucket_bytes(bucketId);
+        auto bucketBytes = constFieldDataBytes.bucket_bytes(bucketId);
 
         const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
@@ -1010,7 +1121,7 @@ void test_host_to_device_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   }
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_forcedLayoutLeft)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_forcedLayoutLeft)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1022,7 +1133,7 @@ TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_f
   test_host_to_device_bucket_bytes_forced_layout(get_bulk(), *m_leftField);
 }
 
-TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_forcedLayoutRight)
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_forcedLayoutRight)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1034,6 +1145,129 @@ TEST_F(FieldBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytes_f
   test_host_to_device_bucket_bytes_forced_layout(get_bulk(), *m_rightField);
 }
 
+//------------------------------------------------------------------------------
+template <stk::mesh::Layout DataLayout, typename FieldType>
+void test_host_to_device_bucket_bytes_pointer_and_stride(stk::mesh::BulkData& bulk, FieldType& field)
+{
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+  stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
+  unsigned numBuckets = bucketIds.size();
+  using TeamHandleType = typename stk::ngp::TeamPolicy<stk::ngp::ExecSpace>::member_type;
+
+  {
+    field.template synchronize<stk::mesh::ReadWrite>();  // Mark it as modified so that we will sync on the other side
+    auto& fieldDataBytes = field.template data_bytes<std::byte>();
+    const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
+
+    for (stk::mesh::Bucket* bucket : buckets) {
+      auto bucketBytes = fieldDataBytes.bucket_bytes(*bucket);
+      for (stk::mesh::EntityIdx elem : bucket->entities()) {
+        const int elemId = bulk.identifier((*bucket)[elem]);
+        std::array<int, 6> setValue {1*elemId, 10*elemId, 100*elemId,
+                                     2*elemId, 20*elemId, 200*elemId};
+        const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue.data());
+
+        std::byte* entityPtr = bucketBytes.pointer(elem);
+        int numBytes = bucketBytes.num_bytes();
+        const int bytesPerScalar = bucketBytes.bytes_per_scalar();
+        const int scalarByteStride = bucketBytes.scalar_byte_stride();
+        while (numBytes) {
+          for (int scalarByteIdx = 0; scalarByteIdx < bytesPerScalar; ++scalarByteIdx) {
+            entityPtr[scalarByteIdx] = setValueBytes[scalarByteIdx];
+          }
+          numBytes -= bytesPerScalar;
+          setValueBytes += bytesPerScalar;
+          entityPtr += scalarByteStride;
+        }
+      }
+    }
+  }
+
+  {
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
+      KOKKOS_LAMBDA(const TeamHandleType& team) {
+        const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
+        auto bucketValues = constFieldData.bucket_values(bucketId);
+        auto bucketBytes = constFieldDataBytes.bucket_bytes(bucketId);
+
+        const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
+          [&](stk::mesh::EntityIdx elem) {
+            const int elemId = ngpMesh.identifier(
+                  ngpMesh.get_entity(stk::topology::ELEM_RANK,
+                  stk::mesh::FastMeshIndex{static_cast<unsigned>(bucketId),
+                                           static_cast<unsigned>(elem)}));
+            const int expectedValue[6] = {1*elemId, 10*elemId, 100*elemId,
+                                          2*elemId, 20*elemId, 200*elemId};
+            const std::byte* expectedValueBytes = reinterpret_cast<const std::byte*>(expectedValue);
+
+            const int numComponents = bucketValues.num_components();
+            for (stk::mesh::CopyIdx copy : bucketValues.copies()) {
+              for (stk::mesh::ComponentIdx component : bucketValues.components()) {
+                NGP_EXPECT_EQ(bucketValues(elem, copy, component),
+                              expectedValue[static_cast<int>(copy)*numComponents + component]);
+              }
+            }
+
+            for (stk::mesh::ByteIdx byte : bucketBytes.bytes()) {
+              NGP_EXPECT_EQ(bucketBytes(elem, byte), expectedValueBytes[byte]);
+            }
+          }
+        );
+      }
+    );
+  }
+}
+
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytesPointerAndStride_forcedLayoutLeft)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_bucket_mesh(m_leftField);
+
+  test_host_to_device_bucket_bytes_pointer_and_stride<stk::mesh::Layout::Left>(get_bulk(), *m_leftField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytesPointerAndStride_forcedLayoutRight)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_bucket_mesh(m_rightField);
+
+  test_host_to_device_bucket_bytes_pointer_and_stride<stk::mesh::Layout::Right>(get_bulk(), *m_rightField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytesPointerAndStride_autoLayoutLeft)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_bucket_mesh(m_leftField);
+
+  test_host_to_device_bucket_bytes_pointer_and_stride<stk::mesh::Layout::Auto>(get_bulk(), *m_leftField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedHostToDevice_multiCopyMultiComponent_bucketBytesPointerAndStride_autoLayoutRight)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_bucket_mesh(m_rightField);
+
+  test_host_to_device_bucket_bytes_pointer_and_stride<stk::mesh::Layout::Auto>(get_bulk(), *m_rightField);
+}
 
 
 //==============================================================================
@@ -1044,7 +1278,7 @@ void test_device_to_host_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
 
   {
     field.template synchronize<stk::mesh::OverwriteAll, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldBytes = field.template bytes<stk::ngp::MemSpace>();
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -1053,7 +1287,7 @@ void test_device_to_host_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
                                  2*elemId, 20*elemId, 200*elemId};
         const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue);
 
-        auto entityBytes = fieldBytes.entity_bytes(elem);
+        auto entityBytes = fieldDataBytes.entity_bytes(elem);
         for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
           entityBytes(byte) = setValueBytes[byte];
         }
@@ -1063,7 +1297,7 @@ void test_device_to_host_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
 
   {
     auto constFieldData = field.template data<stk::mesh::ReadOnly>();
-    auto constFieldBytes = field.const_bytes();
+    auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
@@ -1080,7 +1314,7 @@ void test_device_to_host_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
           }
         }
 
-        auto constEntityBytes = constFieldBytes.entity_bytes(elem);
+        auto constEntityBytes = constFieldDataBytes.entity_bytes(elem);
         for (stk::mesh::ByteIdx byte : constEntityBytes.bytes()) {
           EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
         }
@@ -1089,7 +1323,7 @@ void test_device_to_host_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   }
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1101,7 +1335,7 @@ TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes)
   test_device_to_host_entity_bytes(get_bulk(), *m_field);
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_automaticLayoutLeft)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_automaticLayoutLeft)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1113,7 +1347,7 @@ TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_a
   test_device_to_host_entity_bytes(get_bulk(), *m_leftField);
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_automaticLayoutRight)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_automaticLayoutRight)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1125,15 +1359,15 @@ TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_a
   test_device_to_host_entity_bytes(get_bulk(), *m_rightField);
 }
 
-//------------------------------------------------------------------------------
-template <typename FieldType>
-void test_device_to_host_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, FieldType& field)
+//==============================================================================
+template <stk::mesh::Layout DataLayout, typename FieldType>
+void test_device_to_host_entity_bytes_pointer_and_stride(stk::mesh::BulkData& bulk, FieldType& field)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   {
     field.template synchronize<stk::mesh::OverwriteAll, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldBytes = field.template bytes<stk::ngp::MemSpace>();
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -1142,7 +1376,7 @@ void test_device_to_host_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
                                  2*elemId, 20*elemId, 200*elemId};
         const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue);
 
-        auto entityBytes = fieldBytes.entity_bytes(elem);
+        auto entityBytes = fieldDataBytes.entity_bytes(elem);
         for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
           entityBytes(byte) = setValueBytes[byte];
         }
@@ -1152,7 +1386,110 @@ void test_device_to_host_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
 
   {
     auto constFieldData = field.template data<stk::mesh::ReadOnly>();
-    auto constFieldBytes = field.const_bytes();
+    auto constFieldDataBytes = field.template data_bytes<const std::byte>();
+    const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
+
+    for (stk::mesh::Bucket* bucket : buckets) {
+      for (stk::mesh::Entity elem : *bucket) {
+        const int elemId = bulk.identifier(elem);
+        std::array<int, 6> expectedValue {1*elemId, 10*elemId, 100*elemId,
+                                          2*elemId, 20*elemId, 200*elemId};
+        const std::byte* expectedValueBytes = reinterpret_cast<const std::byte*>(expectedValue.data());
+
+        auto entityBytes = constFieldDataBytes.template entity_bytes<DataLayout>(elem);
+        const std::byte* entityPtr = entityBytes.pointer();
+        int numBytes = entityBytes.num_bytes();
+        const int bytesPerScalar = entityBytes.bytes_per_scalar();
+        const int scalarByteStride = entityBytes.scalar_byte_stride();
+        while (numBytes) {
+          for (int scalarByteIdx = 0; scalarByteIdx < bytesPerScalar; ++scalarByteIdx) {
+            EXPECT_EQ(entityPtr[scalarByteIdx], expectedValueBytes[scalarByteIdx]);
+          }
+          numBytes -= bytesPerScalar;
+          expectedValueBytes += bytesPerScalar;
+          entityPtr += scalarByteStride;
+        }
+      }
+    }
+  }
+}
+
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytesPointerAndStride_forcedLayoutLeft)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 4, 4);
+  m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_element_mesh(m_leftField);
+
+  test_device_to_host_entity_bytes_pointer_and_stride<stk::mesh::Layout::Left>(get_bulk(), *m_leftField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytesPointerAndStride_forcedLayoutRight)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 4, 4);
+  m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_element_mesh(m_rightField);
+
+  test_device_to_host_entity_bytes_pointer_and_stride<stk::mesh::Layout::Right>(get_bulk(), *m_rightField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytesPointerAndStride_autoLayoutLeft)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 4, 4);
+  m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_element_mesh(m_leftField);
+
+  test_device_to_host_entity_bytes_pointer_and_stride<stk::mesh::Layout::Auto>(get_bulk(), *m_leftField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytesPointerAndStride_autoLayoutRight)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 4, 4);
+  m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_element_mesh(m_rightField);
+
+  test_device_to_host_entity_bytes_pointer_and_stride<stk::mesh::Layout::Auto>(get_bulk(), *m_rightField);
+}
+
+//------------------------------------------------------------------------------
+template <typename FieldType>
+void test_device_to_host_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, FieldType& field)
+{
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+
+  {
+    field.template synchronize<stk::mesh::OverwriteAll, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
+      KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
+        const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
+        const int setValue[6] = {1*elemId, 10*elemId, 100*elemId,
+                                 2*elemId, 20*elemId, 200*elemId};
+        const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue);
+
+        auto entityBytes = fieldDataBytes.entity_bytes(elem);
+        for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
+          entityBytes(byte) = setValueBytes[byte];
+        }
+      }
+    );
+  }
+
+  {
+    auto constFieldData = field.template data<stk::mesh::ReadOnly>();
+    auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
@@ -1169,14 +1506,14 @@ void test_device_to_host_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
           }
         }
 
-        if (constFieldBytes.data_layout() == stk::mesh::Layout::Left) {
-          auto constEntityBytes = constFieldBytes.entity_bytes_left(elem);
+        if (constFieldDataBytes.data_layout() == stk::mesh::Layout::Left) {
+          auto constEntityBytes = constFieldDataBytes.template entity_bytes<stk::mesh::Layout::Left>(elem);
           for (stk::mesh::ByteIdx byte : constEntityBytes.bytes()) {
             EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
           }
         }
         else {
-          auto constEntityBytes = constFieldBytes.entity_bytes_right(elem);
+          auto constEntityBytes = constFieldDataBytes.template entity_bytes<stk::mesh::Layout::Right>(elem);
           for (stk::mesh::ByteIdx byte : constEntityBytes.bytes()) {
             EXPECT_EQ(constEntityBytes(byte), expectedValueBytes[byte]);
           }
@@ -1186,7 +1523,7 @@ void test_device_to_host_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   }
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_forcedLayoutLeft)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_forcedLayoutLeft)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1198,7 +1535,7 @@ TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_f
   test_device_to_host_entity_bytes_forced_layout(get_bulk(), *m_leftField);
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_forcedLayoutRight)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_entityBytes_forcedLayoutRight)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1218,7 +1555,7 @@ void test_device_to_host_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
 
   {
     field.template synchronize<stk::mesh::ReadWrite, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldBytes = field.template bytes<stk::ngp::MemSpace>();
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
 
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
     unsigned numBuckets = bucketIds.size();
@@ -1227,7 +1564,7 @@ void test_device_to_host_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
     Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
       KOKKOS_LAMBDA(const TeamHandleType& team) {
         const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
-        auto bucketBytes = fieldBytes.bucket_bytes(bucketId);
+        auto bucketBytes = fieldDataBytes.bucket_bytes(bucketId);
 
         const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
@@ -1250,12 +1587,12 @@ void test_device_to_host_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
 
   {
     auto constFieldData = field.template data<stk::mesh::ReadOnly>();
-    auto constFieldBytes = field.const_bytes();
+    auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
       auto constBucketValues = constFieldData.bucket_values(*bucket);
-      auto constBucketBytes = constFieldBytes.bucket_bytes(*bucket);
+      auto constBucketBytes = constFieldDataBytes.bucket_bytes(*bucket);
 
       for (stk::mesh::EntityIdx elem : bucket->entities()) {
         const int elemId = bulk.identifier((*bucket)[elem]);
@@ -1277,7 +1614,7 @@ void test_device_to_host_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   }
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1289,7 +1626,7 @@ TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes)
   test_device_to_host_bucket_bytes(get_bulk(), *m_field);
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_automaticLayoutLeft)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_automaticLayoutLeft)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1301,7 +1638,7 @@ TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_a
   test_device_to_host_bucket_bytes(get_bulk(), *m_leftField);
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_automaticLayoutRight)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_automaticLayoutRight)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1321,7 +1658,7 @@ void test_device_to_host_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
 
   {
     field.template synchronize<stk::mesh::ReadWrite, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldBytes = field.template bytes<stk::ngp::MemSpace>();
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
 
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
     unsigned numBuckets = bucketIds.size();
@@ -1330,7 +1667,7 @@ void test_device_to_host_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
     Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
       KOKKOS_LAMBDA(const TeamHandleType& team) {
         const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
-        auto bucketBytes = fieldBytes.bucket_bytes(bucketId);
+        auto bucketBytes = fieldDataBytes.bucket_bytes(bucketId);
 
         const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
@@ -1353,13 +1690,13 @@ void test_device_to_host_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
 
   {
     auto constFieldData = field.template data<stk::mesh::ReadOnly>();
-    auto constFieldBytes = field.const_bytes();
+    auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
-      if (constFieldBytes.data_layout() == stk::mesh::Layout::Left) {
+      if (constFieldDataBytes.data_layout() == stk::mesh::Layout::Left) {
         auto constBucketValues = constFieldData.bucket_values(*bucket);
-        auto constBucketBytes = constFieldBytes.bucket_bytes_left(*bucket);
+        auto constBucketBytes = constFieldDataBytes.template bucket_bytes<stk::mesh::Layout::Left>(*bucket);
 
         for (stk::mesh::EntityIdx elem : bucket->entities()) {
           const int elemId = bulk.identifier((*bucket)[elem]);
@@ -1380,7 +1717,7 @@ void test_device_to_host_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
       }
       else {
         auto constBucketValues = constFieldData.bucket_values(*bucket);
-        auto constBucketBytes = constFieldBytes.bucket_bytes_right(*bucket);
+        auto constBucketBytes = constFieldDataBytes.template bucket_bytes<stk::mesh::Layout::Right>(*bucket);
 
         for (stk::mesh::EntityIdx elem : bucket->entities()) {
           const int elemId = bulk.identifier((*bucket)[elem]);
@@ -1403,7 +1740,7 @@ void test_device_to_host_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   }
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_forcedLayoutLeft)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_forcedLayoutLeft)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1415,7 +1752,7 @@ TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_f
   test_device_to_host_bucket_bytes_forced_layout(get_bulk(), *m_leftField);
 }
 
-TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_forcedLayoutRight)
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_forcedLayoutRight)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1427,9 +1764,126 @@ TEST_F(FieldBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytes_f
   test_device_to_host_bucket_bytes_forced_layout(get_bulk(), *m_rightField);
 }
 
+//------------------------------------------------------------------------------
+template <stk::mesh::Layout DataLayout, typename FieldType>
+void test_device_to_host_bucket_bytes_pointer_and_stride(stk::mesh::BulkData& bulk, FieldType& field)
+{
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+
+  {
+    field.template synchronize<stk::mesh::ReadWrite, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+
+    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
+    unsigned numBuckets = bucketIds.size();
+    using TeamHandleType = typename stk::ngp::TeamPolicy<stk::ngp::ExecSpace>::member_type;
+
+    Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
+      KOKKOS_LAMBDA(const TeamHandleType& team) {
+        const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
+        auto bucketBytes = fieldDataBytes.bucket_bytes(bucketId);
+
+        const stk::mesh::EntityIdx numElems = bucketBytes.num_entities();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0_entity, numElems),
+          [&](stk::mesh::EntityIdx elem) {
+            const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK,
+                                                                     stk::mesh::FastMeshIndex{static_cast<unsigned>(bucketId),
+                                                                                              static_cast<unsigned>(elem)}));
+            const int setValue[6] = {1*elemId, 10*elemId, 100*elemId,
+                                     2*elemId, 20*elemId, 200*elemId};
+            const std::byte* setValueBytes = reinterpret_cast<const std::byte*>(setValue);
+
+            for (stk::mesh::ByteIdx byte : bucketBytes.bytes()) {
+              bucketBytes(elem, byte) = setValueBytes[byte];
+            }
+          }
+        );
+      }
+    );
+  }
+
+  {
+    auto constFieldData = field.template data<stk::mesh::ReadOnly>();
+    auto constFieldDataBytes = field.template data_bytes<const std::byte>();
+    const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
+
+    for (stk::mesh::Bucket* bucket : buckets) {
+      auto constBucketBytes = constFieldDataBytes.bucket_bytes(*bucket);
+
+      for (stk::mesh::EntityIdx elem : bucket->entities()) {
+        const int elemId = bulk.identifier((*bucket)[elem]);
+        std::array<int, 6> expectedValue {1*elemId, 10*elemId, 100*elemId,
+                                          2*elemId, 20*elemId, 200*elemId};
+        const std::byte* expectedValueBytes = reinterpret_cast<const std::byte*>(expectedValue.data());
+
+        const std::byte* entityPtr = constBucketBytes.pointer(elem);
+        int numBytes = constBucketBytes.num_bytes();
+        const int bytesPerScalar = constBucketBytes.bytes_per_scalar();
+        const int scalarByteStride = constBucketBytes.scalar_byte_stride();
+        while (numBytes) {
+          for (int scalarByteIdx = 0; scalarByteIdx < bytesPerScalar; ++scalarByteIdx) {
+            EXPECT_EQ(entityPtr[scalarByteIdx], expectedValueBytes[scalarByteIdx]);
+          }
+          numBytes -= bytesPerScalar;
+          expectedValueBytes += bytesPerScalar;
+          entityPtr += scalarByteStride;
+        }
+      }
+    }
+  }
+}
+
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytesPointerAndStride_forcedLayoutLeft)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_bucket_mesh(m_leftField);
+
+  test_device_to_host_bucket_bytes_pointer_and_stride<stk::mesh::Layout::Left>(get_bulk(), *m_leftField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytesPointerAndStride_forcedLayoutRight)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_bucket_mesh(m_rightField);
+
+  test_device_to_host_bucket_bytes_pointer_and_stride<stk::mesh::Layout::Right>(get_bulk(), *m_rightField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytesPointerAndStride_autoLayoutLeft)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  m_leftField = &get_meta().declare_field<int, stk::mesh::Layout::Left>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_leftField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_bucket_mesh(m_leftField);
+
+  test_device_to_host_bucket_bytes_pointer_and_stride<stk::mesh::Layout::Auto>(get_bulk(), *m_leftField);
+}
+
+TEST_F(FieldDataBytesAccess, mixedDeviceToHost_multiCopyMultiComponent_bucketBytesPointerAndStride_autoLayoutRight)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  m_rightField = &get_meta().declare_field<int, stk::mesh::Layout::Right>(stk::topology::ELEM_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*m_rightField, get_meta().universal_part(), 3, 2, nullptr);
+  build_two_bucket_mesh(m_rightField);
+
+  test_device_to_host_bucket_bytes_pointer_and_stride<stk::mesh::Layout::Auto>(get_bulk(), *m_rightField);
+}
+
 
 //==============================================================================
-TEST_F(FieldBytesAccess, host_isFieldDefined)
+TEST_F(FieldDataBytesAccess, host_isFieldDefined)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -1450,17 +1904,17 @@ TEST_F(FieldBytesAccess, host_isFieldDefined)
 
   stk::mesh::Field<int>& field = *m_field;
 
-  auto fieldBytes = field.const_bytes();
-  auto elem1Bytes = fieldBytes.entity_bytes(elem1);
-  auto elem2Bytes = fieldBytes.entity_bytes(elem2);
+  auto fieldDataBytes = field.data_bytes<const std::byte>();
+  auto elem1Bytes = fieldDataBytes.entity_bytes(elem1);
+  auto elem2Bytes = fieldDataBytes.entity_bytes(elem2);
 
   EXPECT_EQ(elem1Bytes.is_field_defined(), true);
   EXPECT_EQ(elem2Bytes.is_field_defined(), false);
 
   const stk::mesh::BucketVector& buckets1 = get_bulk().get_buckets(stk::topology::ELEM_RANK, part1);
   const stk::mesh::BucketVector& buckets2 = get_bulk().get_buckets(stk::topology::ELEM_RANK, part2);
-  auto bucket1Bytes = fieldBytes.bucket_bytes(*buckets1.front());
-  auto bucket2Bytes = fieldBytes.bucket_bytes(*buckets2.front());
+  auto bucket1Bytes = fieldDataBytes.bucket_bytes(*buckets1.front());
+  auto bucket2Bytes = fieldDataBytes.bucket_bytes(*buckets2.front());
 
   EXPECT_EQ(bucket1Bytes.is_field_defined(), true);
   EXPECT_EQ(bucket2Bytes.is_field_defined(), false);
@@ -1472,30 +1926,30 @@ void device_is_field_defined(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& f
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   field.data<stk::mesh::Unsynchronized, stk::ngp::MemSpace>();  // Trigger device FieldData creation before accessing bytes
-  auto fieldBytes = field.const_bytes<stk::ngp::MemSpace>();
+  auto fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, part1,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-      auto elemBytes = fieldBytes.entity_bytes(entity);
+      auto elemBytes = fieldDataBytes.entity_bytes(entity);
       NGP_EXPECT_EQ(elemBytes.is_field_defined(), true);
 
-      auto bucketBytes = fieldBytes.bucket_bytes(entity.bucket_id);
+      auto bucketBytes = fieldDataBytes.bucket_bytes(entity.bucket_id);
       NGP_EXPECT_EQ(bucketBytes.is_field_defined(), true);
     }
   );
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, part2,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-      auto elemBytes = fieldBytes.entity_bytes(entity);
+      auto elemBytes = fieldDataBytes.entity_bytes(entity);
       NGP_EXPECT_EQ(elemBytes.is_field_defined(), false);
 
-      auto bucketBytes = fieldBytes.bucket_bytes(entity.bucket_id);
+      auto bucketBytes = fieldDataBytes.bucket_bytes(entity.bucket_id);
       NGP_EXPECT_EQ(bucketBytes.is_field_defined(), false);
     }
   );
 }
 
-TEST_F(FieldBytesAccess, device_isFieldDefined)
+TEST_F(FieldDataBytesAccess, device_isFieldDefined)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -1525,7 +1979,7 @@ TEST_F(FieldBytesAccess, device_isFieldDefined)
 #ifdef STK_FIELD_BOUNDS_CHECK
 
 //==============================================================================
-TEST_F(FieldBytesAccess, host_consistencyCheck_entity)
+TEST_F(FieldDataBytesAccess, host_consistencyCheck_entity)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 1, 1);  // Small Buckets to force creation of many
@@ -1539,16 +1993,16 @@ TEST_F(FieldBytesAccess, host_consistencyCheck_entity)
   stk::io::fill_mesh("generated:1x1x1", get_bulk());
   const stk::mesh::Entity node1 = get_bulk().get_entity(stk::topology::NODE_RANK, 1);
 
-  EXPECT_ANY_THROW(elemField.bytes().entity_bytes(node1));                   // Wrong rank entity
-  EXPECT_ANY_THROW(elemField.const_bytes().entity_bytes(node1));             // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldLeft.bytes().entity_bytes_left(node1));          // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldLeft.const_bytes().entity_bytes_left(node1));    // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldRight.bytes().entity_bytes_right(node1));        // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldRight.const_bytes().entity_bytes_right(node1));  // Wrong rank entity
+  EXPECT_ANY_THROW(elemField.data_bytes<std::byte>().entity_bytes(node1));                   // Wrong rank entity
+  EXPECT_ANY_THROW(elemField.data_bytes<const std::byte>().entity_bytes(node1));             // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<std::byte>().entity_bytes<stk::mesh::Layout::Left>(node1));          // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<const std::byte>().entity_bytes<stk::mesh::Layout::Left>(node1));    // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<std::byte>().entity_bytes<stk::mesh::Layout::Right>(node1));        // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<const std::byte>().entity_bytes<stk::mesh::Layout::Right>(node1));  // Wrong rank entity
 }
 
 //==============================================================================
-TEST_F(FieldBytesAccess, host_consistencyCheck_meshIndex)
+TEST_F(FieldDataBytesAccess, host_consistencyCheck_meshIndex)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 1, 1);  // Small Buckets to force creation of many
@@ -1563,28 +2017,28 @@ TEST_F(FieldBytesAccess, host_consistencyCheck_meshIndex)
   const stk::mesh::Entity node1 = get_bulk().get_entity(stk::topology::NODE_RANK, 1);
 
   const stk::mesh::MeshIndex node1_mi = get_bulk().mesh_index(node1);
-  EXPECT_ANY_THROW(elemField.bytes().entity_bytes(node1_mi));                   // Wrong rank entity
-  EXPECT_ANY_THROW(elemField.const_bytes().entity_bytes(node1_mi));             // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldLeft.bytes().entity_bytes_left(node1_mi));          // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldLeft.const_bytes().entity_bytes_left(node1_mi));    // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldRight.bytes().entity_bytes_right(node1_mi));        // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldRight.const_bytes().entity_bytes_right(node1_mi));  // Wrong rank entity
+  EXPECT_ANY_THROW(elemField.data_bytes<std::byte>().entity_bytes(node1_mi));                   // Wrong rank entity
+  EXPECT_ANY_THROW(elemField.data_bytes<const std::byte>().entity_bytes(node1_mi));             // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<std::byte>().entity_bytes<stk::mesh::Layout::Left>(node1_mi));          // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<const std::byte>().entity_bytes<stk::mesh::Layout::Left>(node1_mi));    // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<std::byte>().entity_bytes<stk::mesh::Layout::Right>(node1_mi));        // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<const std::byte>().entity_bytes<stk::mesh::Layout::Right>(node1_mi));  // Wrong rank entity
 
   auto secondMesh = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_initial_bucket_capacity(1)
                                                           .set_maximum_bucket_capacity(1).create();
   stk::io::fill_mesh("generated:1x1x1", *secondMesh);  // Create two-element mesh
   const stk::mesh::Entity elem1 = secondMesh->get_entity(stk::topology::ELEM_RANK, 1);
   const stk::mesh::MeshIndex elem1_mi = secondMesh->mesh_index(elem1);
-  EXPECT_ANY_THROW(elemField.bytes().entity_bytes(elem1_mi));                   // Entity from different mesh
-  EXPECT_ANY_THROW(elemField.const_bytes().entity_bytes(elem1_mi));             // Entity from different mesh
-  EXPECT_ANY_THROW(elemFieldLeft.bytes().entity_bytes_left(elem1_mi));          // Entity from different mesh
-  EXPECT_ANY_THROW(elemFieldLeft.const_bytes().entity_bytes_left(elem1_mi));    // Entity from different mesh
-  EXPECT_ANY_THROW(elemFieldRight.bytes().entity_bytes_right(elem1_mi));        // Entity from different mesh
-  EXPECT_ANY_THROW(elemFieldRight.const_bytes().entity_bytes_right(elem1_mi));  // Entity from different mesh
+  EXPECT_ANY_THROW(elemField.data_bytes<std::byte>().entity_bytes(elem1_mi));                   // Entity from different mesh
+  EXPECT_ANY_THROW(elemField.data_bytes<const std::byte>().entity_bytes(elem1_mi));             // Entity from different mesh
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<std::byte>().entity_bytes<stk::mesh::Layout::Left>(elem1_mi));          // Entity from different mesh
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<const std::byte>().entity_bytes<stk::mesh::Layout::Left>(elem1_mi));    // Entity from different mesh
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<std::byte>().entity_bytes<stk::mesh::Layout::Right>(elem1_mi));        // Entity from different mesh
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<const std::byte>().entity_bytes<stk::mesh::Layout::Right>(elem1_mi));  // Entity from different mesh
 }
 
 //------------------------------------------------------------------------------
-TEST_F(FieldBytesAccess, host_consistencyCheck_fastMeshIndex)
+TEST_F(FieldDataBytesAccess, host_consistencyCheck_fastMeshIndex)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 1, 1);  // Small Buckets to force creation of many
@@ -1598,16 +2052,16 @@ TEST_F(FieldBytesAccess, host_consistencyCheck_fastMeshIndex)
   stk::io::fill_mesh("generated:1x1x1", get_bulk());
 
   const stk::mesh::FastMeshIndex elem1_badFmi{1, 0};
-  EXPECT_ANY_THROW(elemField.bytes().entity_bytes(elem1_badFmi));                   // Bad Bucket Id
-  EXPECT_ANY_THROW(elemField.const_bytes().entity_bytes(elem1_badFmi));             // Bad Bucket Id
-  EXPECT_ANY_THROW(elemFieldLeft.bytes().entity_bytes_left(elem1_badFmi));          // Bad Bucket Id
-  EXPECT_ANY_THROW(elemFieldLeft.const_bytes().entity_bytes_left(elem1_badFmi));    // Bad Bucket Id
-  EXPECT_ANY_THROW(elemFieldRight.bytes().entity_bytes_right(elem1_badFmi));        // Bad Bucket Id
-  EXPECT_ANY_THROW(elemFieldRight.const_bytes().entity_bytes_right(elem1_badFmi));  // Bad Bucket Id
+  EXPECT_ANY_THROW(elemField.data_bytes<std::byte>().entity_bytes(elem1_badFmi));                   // Bad Bucket Id
+  EXPECT_ANY_THROW(elemField.data_bytes<const std::byte>().entity_bytes(elem1_badFmi));             // Bad Bucket Id
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<std::byte>().entity_bytes<stk::mesh::Layout::Left>(elem1_badFmi));          // Bad Bucket Id
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<const std::byte>().entity_bytes<stk::mesh::Layout::Left>(elem1_badFmi));    // Bad Bucket Id
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<std::byte>().entity_bytes<stk::mesh::Layout::Right>(elem1_badFmi));        // Bad Bucket Id
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<const std::byte>().entity_bytes<stk::mesh::Layout::Right>(elem1_badFmi));  // Bad Bucket Id
 }
 
 //------------------------------------------------------------------------------
-TEST_F(FieldBytesAccess, host_consistencyCheck_bucket)
+TEST_F(FieldDataBytesAccess, host_consistencyCheck_bucket)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 1, 1);  // Small Buckets to force creation of many
@@ -1622,28 +2076,28 @@ TEST_F(FieldBytesAccess, host_consistencyCheck_bucket)
   const stk::mesh::Entity node1 = get_bulk().get_entity(stk::topology::NODE_RANK, 1);
 
   const stk::mesh::Bucket& bucket_node1 = get_bulk().bucket(node1);
-  EXPECT_ANY_THROW(elemField.bytes().bucket_bytes(bucket_node1));                   // Wrong rank entity
-  EXPECT_ANY_THROW(elemField.const_bytes().bucket_bytes(bucket_node1));             // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldLeft.bytes().bucket_bytes_left(bucket_node1));          // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldLeft.const_bytes().bucket_bytes_left(bucket_node1));    // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldRight.bytes().bucket_bytes_right(bucket_node1));        // Wrong rank entity
-  EXPECT_ANY_THROW(elemFieldRight.const_bytes().bucket_bytes_right(bucket_node1));  // Wrong rank entity
+  EXPECT_ANY_THROW(elemField.data_bytes<std::byte>().bucket_bytes(bucket_node1));                   // Wrong rank entity
+  EXPECT_ANY_THROW(elemField.data_bytes<const std::byte>().bucket_bytes(bucket_node1));             // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<std::byte>().bucket_bytes<stk::mesh::Layout::Left>(bucket_node1));          // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<const std::byte>().bucket_bytes<stk::mesh::Layout::Left>(bucket_node1));    // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<std::byte>().bucket_bytes<stk::mesh::Layout::Right>(bucket_node1));        // Wrong rank entity
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<const std::byte>().bucket_bytes<stk::mesh::Layout::Right>(bucket_node1));  // Wrong rank entity
 
   auto secondMesh = stk::mesh::MeshBuilder(MPI_COMM_WORLD).set_initial_bucket_capacity(1)
                                                           .set_maximum_bucket_capacity(1).create();
   stk::io::fill_mesh("generated:1x1x1", *secondMesh);  // Create two-element mesh
   const stk::mesh::Entity elem1 = secondMesh->get_entity(stk::topology::ELEM_RANK, 1);
   const stk::mesh::Bucket& bucket_elem1 = secondMesh->bucket(elem1);
-  EXPECT_ANY_THROW(elemField.bytes().bucket_bytes(bucket_elem1));                   // Bucket from different mesh
-  EXPECT_ANY_THROW(elemField.const_bytes().bucket_bytes(bucket_elem1));             // Bucket from different mesh
-  EXPECT_ANY_THROW(elemFieldLeft.bytes().bucket_bytes_left(bucket_elem1));          // Bucket from different mesh
-  EXPECT_ANY_THROW(elemFieldLeft.const_bytes().bucket_bytes_left(bucket_elem1));    // Bucket from different mesh
-  EXPECT_ANY_THROW(elemFieldRight.bytes().bucket_bytes_right(bucket_elem1));        // Bucket from different mesh
-  EXPECT_ANY_THROW(elemFieldRight.const_bytes().bucket_bytes_right(bucket_elem1));  // Bucket from different mesh
+  EXPECT_ANY_THROW(elemField.data_bytes<std::byte>().bucket_bytes(bucket_elem1));                   // Bucket from different mesh
+  EXPECT_ANY_THROW(elemField.data_bytes<const std::byte>().bucket_bytes(bucket_elem1));             // Bucket from different mesh
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<std::byte>().bucket_bytes<stk::mesh::Layout::Left>(bucket_elem1));          // Bucket from different mesh
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<const std::byte>().bucket_bytes<stk::mesh::Layout::Left>(bucket_elem1));    // Bucket from different mesh
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<std::byte>().bucket_bytes<stk::mesh::Layout::Right>(bucket_elem1));        // Bucket from different mesh
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<const std::byte>().bucket_bytes<stk::mesh::Layout::Right>(bucket_elem1));  // Bucket from different mesh
 }
 
 //------------------------------------------------------------------------------
-TEST_F(FieldBytesAccess, host_consistencyCheck_bucketId)
+TEST_F(FieldDataBytesAccess, host_consistencyCheck_bucketId)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, 1, 1);  // Small Buckets to force creation of many
@@ -1656,12 +2110,12 @@ TEST_F(FieldBytesAccess, host_consistencyCheck_bucketId)
   stk::mesh::put_field_on_mesh(elemFieldRight, get_meta().universal_part(), nullptr);
   stk::io::fill_mesh("generated:1x1x1", get_bulk());
 
-  EXPECT_ANY_THROW(elemField.bytes().bucket_bytes(1));                   // Bad Bucket Id
-  EXPECT_ANY_THROW(elemField.const_bytes().bucket_bytes(1));             // Bad Bucket Id
-  EXPECT_ANY_THROW(elemFieldLeft.bytes().bucket_bytes_left(1));          // Bad Bucket Id
-  EXPECT_ANY_THROW(elemFieldLeft.const_bytes().bucket_bytes_left(1));    // Bad Bucket Id
-  EXPECT_ANY_THROW(elemFieldRight.bytes().bucket_bytes_right(1));        // Bad Bucket Id
-  EXPECT_ANY_THROW(elemFieldRight.const_bytes().bucket_bytes_right(1));  // Bad Bucket Id
+  EXPECT_ANY_THROW(elemField.data_bytes<std::byte>().bucket_bytes(1));                   // Bad Bucket Id
+  EXPECT_ANY_THROW(elemField.data_bytes<const std::byte>().bucket_bytes(1));             // Bad Bucket Id
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<std::byte>().bucket_bytes<stk::mesh::Layout::Left>(1));          // Bad Bucket Id
+  EXPECT_ANY_THROW(elemFieldLeft.data_bytes<const std::byte>().bucket_bytes<stk::mesh::Layout::Left>(1));    // Bad Bucket Id
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<std::byte>().bucket_bytes<stk::mesh::Layout::Right>(1));        // Bad Bucket Id
+  EXPECT_ANY_THROW(elemFieldRight.data_bytes<const std::byte>().bucket_bytes<stk::mesh::Layout::Right>(1));  // Bad Bucket Id
 }
 
 #endif

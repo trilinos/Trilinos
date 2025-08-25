@@ -123,29 +123,16 @@ void pack_distribution_factor(const stk::mesh::BulkData& bulk,
   stk::mesh::EntityKey key = bulk.entity_key(side);
   buf.pack<stk::mesh::EntityKey>(key);
 
-  auto fieldBytes = distFact->const_bytes();
-
-  if (distFact->host_data_layout() == stk::mesh::Layout::Right) {
-    auto entityBytes = fieldBytes.entity_bytes_right(side);
-    const unsigned size = entityBytes.num_bytes();
-    if (size) {
-      for (stk::mesh::ByteIdx idx : entityBytes.bytes()) {
-        buf.pack<std::byte>(entityBytes(idx));
+  stk::mesh::entity_bytes_execute<const std::byte>(*distFact, side,
+    [&](auto& entityBytes) {
+      const unsigned size = entityBytes.num_bytes();
+      if (size) {
+        for (stk::mesh::ByteIdx idx : entityBytes.bytes()) {
+          buf.pack<std::byte>(entityBytes(idx));
+        }
       }
     }
-  }
-  else if (distFact->host_data_layout() == stk::mesh::Layout::Left) {
-    auto entityBytes = fieldBytes.entity_bytes_left(side);
-    const unsigned size = entityBytes.num_bytes();
-    if (size) {
-      for (stk::mesh::ByteIdx idx : entityBytes.bytes()) {
-        buf.pack<std::byte>(entityBytes(idx));
-      }
-    }
-  }
-  else {
-    STK_ThrowErrorMsg("Unsupported host Field data layout: " << distFact->host_data_layout());
-  }
+  );
 }
 
 void unpack_distribution_factor(const stk::mesh::BulkData& bulk,
@@ -157,33 +144,19 @@ void unpack_distribution_factor(const stk::mesh::BulkData& bulk,
 
   stk::mesh::Entity side = bulk.get_entity(key);
   STK_ThrowRequire(bulk.is_valid(side));
-  auto fieldBytes = distFact->bytes();
 
-  if (distFact->host_data_layout() == stk::mesh::Layout::Right) {
-    auto entityBytes = fieldBytes.entity_bytes_right(side);
-    const unsigned size = entityBytes.num_bytes();
-    if (size) {
-      for(stk::mesh::ByteIdx idx : entityBytes.bytes()) {
-        std::byte thisByte;
-        buf.unpack<std::byte>(thisByte);
-        entityBytes(idx) = thisByte;
+  stk::mesh::entity_bytes_execute<std::byte>(*distFact, side,
+    [&](auto& entityBytes) {
+      const unsigned size = entityBytes.num_bytes();
+      if (size) {
+        for(stk::mesh::ByteIdx idx : entityBytes.bytes()) {
+          std::byte thisByte;
+          buf.unpack<std::byte>(thisByte);
+          entityBytes(idx) = thisByte;
+        }
       }
     }
-  }
-  else if (distFact->host_data_layout() == stk::mesh::Layout::Left) {
-    auto entityBytes = fieldBytes.entity_bytes_left(side);
-    const unsigned size = entityBytes.num_bytes();
-    if (size) {
-      for(stk::mesh::ByteIdx idx : entityBytes.bytes()) {
-        std::byte thisByte;
-        buf.unpack<std::byte>(thisByte);
-        entityBytes(idx) = thisByte;
-      }
-    }
-  }
-  else {
-    STK_ThrowErrorMsg("Unsupported host Field data layout: " << distFact->host_data_layout());
-  }
+  );
 }
 
 void communicate_shared_side_entity_fields(const stk::mesh::BulkData& bulk,

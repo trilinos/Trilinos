@@ -47,6 +47,7 @@
 
 namespace stk {
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Aug 2025
 /** Given the send sizes determine the receive sizes and also
  * set output vectors of send-procs and recv-procs.
  * Send and receive size arrays are dimensioned to
@@ -55,13 +56,14 @@ namespace stk {
  * Output vectors for send-procs and recv-procs will have
  * length num-send-procs and num-recv-procs respectively.
  */
-// delete coupling version 5 is deprecated
+STK_DEPRECATED
 void comm_recv_procs_and_msg_sizes(ParallelMachine comm,
                      const unsigned * const send_size,
                      unsigned * const recv_size,
                      std::vector<int>& output_send_procs,
                      std::vector<int>& output_recv_procs);
 
+STK_DEPRECATED
 void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
                                    const std::vector<CommBuffer>& send_bufs ,
                                          std::vector<CommBuffer>& recv_bufs,
@@ -73,17 +75,20 @@ void comm_recv_procs_and_msg_sizes(ParallelMachine comm ,
  * set recv sizes (recv_size array has length number-of-MPI-processor-ranks).
  */
 
+STK_DEPRECATED
 void comm_recv_msg_sizes(ParallelMachine comm ,
                      const unsigned * const send_size ,
                      const std::vector<int>& send_procs,
                      const std::vector<int>& recv_procs,
                      unsigned * const recv_size);
 
+STK_DEPRECATED
 void comm_recv_msg_sizes(ParallelMachine comm ,
                      const std::vector<int>& send_procs,
                      const std::vector<int>& recv_procs,
                      const std::vector<CommBuffer>& send_bufs,
                      std::vector<CommBuffer>& recv_bufs);
+#endif // STK_HIDE_DEPRECATED_CODE
 
 class CommSparse {
 public:
@@ -96,32 +101,22 @@ public:
   CommBuffer & send_buffer( int p )
   {
     STK_ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
-    stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
-    if (stk::util::get_common_coupling_version() >= 6) {
-      if (m_exchanger) {
-        return m_exchanger->get_send_buf(p);
-      } else {
-        return m_null_comm_send_buffer;
-      }
+    if (m_exchanger) {
+      return m_exchanger->get_send_buf(p);
     } else {
-      return m_send[p] ;
+      return m_null_comm_send_buffer;
     }
   }
 
   const CommBuffer & send_buffer( int p ) const
   {
     STK_ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
-    stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
-    if (stk::util::get_common_coupling_version() >= 6) {
-      if (m_exchanger) {
-        return m_exchanger->get_send_buf(p);
-      } else {
-        return m_null_comm_send_buffer;
-      }
+    if (m_exchanger) {
+      return m_exchanger->get_send_buf(p);
     } else {
-      return m_send[p] ;
+      return m_null_comm_send_buffer;
     }
   }
 
@@ -129,16 +124,11 @@ public:
   CommBuffer & recv_buffer( int p )
   {
     STK_ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
-    stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
-    if (stk::util::get_common_coupling_version() >= 6) {
-      if (m_exchanger) {
-        return m_exchanger->get_recv_buf(p);
-      } else {
-        return m_null_comm_recv_buffer;
-      }
+    if (m_exchanger) {
+      return m_exchanger->get_recv_buf(p);
     } else {
-      return m_recv[p] ;
+      return m_null_comm_recv_buffer;
     }
   }
 
@@ -146,16 +136,11 @@ public:
   const CommBuffer & recv_buffer( int p ) const
   {
     STK_ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
-    stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
 
-    if (stk::util::get_common_coupling_version() >= 6) {
-      if (m_exchanger) {
-        return m_exchanger->get_recv_buf(p);
-      } else {
-        return m_null_comm_recv_buffer;
-      }
+    if (m_exchanger) {
+      return m_exchanger->get_recv_buf(p);
     } else {
-      return m_recv[p] ;
+      return m_null_comm_recv_buffer;
     }
   }
 
@@ -185,7 +170,7 @@ public:
 #endif
       m_exchanger(nullptr)
   {
-    if (comm != MPI_COMM_NULL  && stk::util::get_common_coupling_version() >= 6) {
+    if (comm != MPI_COMM_NULL) {
       m_exchanger = std::make_shared<DataExchangeUnknownPatternNonBlockingCommBuffer>(comm);
     }
   }
@@ -273,22 +258,10 @@ private:
 template<typename PACK_ALGORITHM>
 bool pack_and_communicate(stk::CommSparse & comm, const PACK_ALGORITHM & algorithm, bool deallocateSendBuffers = true)
 {
-  stk::util::print_unsupported_version_warning(5, __LINE__, __FILE__);
-
-  if (stk::util::get_common_coupling_version() >= 6) {
-    algorithm();
-    comm.allocate_buffers();
-    algorithm();
-    return comm.communicate(deallocateSendBuffers);
-  } else {
-    algorithm();
-    const bool actuallySendingOrReceiving = comm.allocate_buffers();
-    if (actuallySendingOrReceiving) {
-        algorithm();
-        comm.communicate(deallocateSendBuffers);
-    }
-    return actuallySendingOrReceiving; 
-  }
+  algorithm();
+  comm.allocate_buffers();
+  algorithm();
+  return comm.communicate(deallocateSendBuffers);
 }
 
 template<typename UNPACK_ALGORITHM>
