@@ -55,25 +55,28 @@ TimeMonitor::TimeMonitor(const BaseClass& object, const std::string& msg, MsgTyp
       if (useStackedTimer_) {
         const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
         stackedTimer->start(label_);
-        return;
-      }
+      } else
 #endif
-      // TODO: there is no function to register a timer in Teuchos::TimeMonitor after the creation of the timer. But would be useful...
-      static std::map<std::string, RCP<Teuchos::Time>> timers;
-      auto it = timers.find(label_);
-      if (it == timers.end()) {
-        timer_         = Teuchos::TimeMonitor::getNewTimer(label_);
-        timers[label_] = timer_;
-      } else {
-        timer_ = it->second;
+      {
+        // TODO: there is no function to register a timer in Teuchos::TimeMonitor after the creation of the timer. But would be useful...
+        static std::map<std::string, RCP<Teuchos::Time>> timers;
+        auto it = timers.find(label_);
+        if (it == timers.end()) {
+          timer_         = Teuchos::TimeMonitor::getNewTimer(label_);
+          timers[label_] = timer_;
+        } else {
+          timer_ = it->second;
+          // Start the timer (this is what is done by Teuchos::TimeMonitor)
+          timer_->incrementNumCalls();
+          timer_->start();
+        }
       }
     } else {
       timer_ = rcp(new Teuchos::Time(label_));
+      // Start the timer (this is what is done by Teuchos::TimeMonitor)
+      timer_->incrementNumCalls();
+      timer_->start();
     }
-
-    // Start the timer (this is what is done by Teuchos::TimeMonitor)
-    timer_->incrementNumCalls();
-    timer_->start();
   }
 }  // TimeMonitor::TimeMonitor()
 
@@ -99,11 +102,12 @@ TimeMonitor::~TimeMonitor() {
       std::cout << warning.str() << std::endl;
       Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
     }
-  }
+  } else
 #endif
-
-  if (timer_ != Teuchos::null) {
-    timer_->stop();
+  {
+    if (timer_ != Teuchos::null) {
+      timer_->stop();
+    }
   }
 }  // TimeMonitor::~TimeMonitor()
 
