@@ -411,7 +411,7 @@ namespace Intrepid2 {
     // Storage for constant reference edge tangent: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
     auto vcprop = Kokkos::common_view_alloc_prop(edgeTangents);
-    using common_value_type = typename decltype(vcprop)::value_type;
+    using common_value_type = typename decltype(edgeTangents)::value_type;
     Kokkos::DynRankView< common_value_type, DeviceType > refEdgeTan ( Kokkos::view_alloc("CellTools::getPhysicalEdgeTangents::refEdgeTan", vcprop), dim);
     getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
     
@@ -565,7 +565,7 @@ namespace Intrepid2 {
     const auto dim = parentCell.getDimension();
 
     auto vcprop = Kokkos::common_view_alloc_prop(faceTanU);
-    using common_value_type = typename decltype(vcprop)::value_type;
+    using common_value_type = typename decltype(faceTanU)::value_type;
     Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanU", vcprop), dim);
     Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanV", vcprop), dim);
 
@@ -738,7 +738,7 @@ namespace Intrepid2 {
     if (dim == 2) {
       // compute edge tangents and rotate it
       auto vcprop = Kokkos::common_view_alloc_prop(sideNormals);
-      using common_value_type = typename decltype(vcprop)::value_type;
+      using common_value_type = typename decltype(sideNormals)::value_type;
       Kokkos::DynRankView< common_value_type, DeviceType > edgeTangents ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::edgeTan", vcprop),
                                                               sideNormals.extent(0),
                                                               sideNormals.extent(1),
@@ -853,7 +853,7 @@ namespace Intrepid2 {
     const auto dim = parentCell.getDimension();
 
     auto vcprop = Kokkos::common_view_alloc_prop(faceNormals);
-    using common_value_type = typename decltype(vcprop)::value_type;
+    using common_value_type = typename decltype(faceNormals)::value_type;
     Kokkos::DynRankView< common_value_type, DeviceType > faceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanU", vcprop), worksetSize, facePtCount, dim);
     Kokkos::DynRankView< common_value_type, DeviceType > faceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanV", vcprop), worksetSize, facePtCount, dim);
 
