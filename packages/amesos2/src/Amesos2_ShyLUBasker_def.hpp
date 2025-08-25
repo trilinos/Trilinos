@@ -73,12 +73,8 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 
   ShyLUbasker->Options.user_fill     = (double)BASKER_FILL_USER;
   ShyLUbasker->Options.use_sequential_diag_facto = BASKER_FALSE;
-#ifdef KOKKOS_ENABLE_OPENMP  
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  num_threads = Kokkos::OpenMP::max_hardware_threads();
-  #else
+#ifdef KOKKOS_ENABLE_OPENMP // TODO: check for KOKKOS_ENABLE_THREADS when ready
   num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
-  #endif
 #else
   num_threads = 1;
 #endif
