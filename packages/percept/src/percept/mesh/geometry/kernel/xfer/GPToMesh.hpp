@@ -87,7 +87,6 @@ namespace percept {
           const stk::mesh::EntityKey thePt  = ii->first;
           const stk::mesh::EntityKey theBox = ii->second;
 
-          //const std::vector<double> &isoParCoords_ = ToPoints.TransferInfo_[thePt];
           stk::mesh::Entity node =   toBulkData.get_entity(thePt);
           stk::mesh::Entity face = fromBulkData.get_entity(theBox);
 
@@ -107,9 +106,9 @@ namespace percept {
     // return true to skip the standard processing
     template<class FromMesh, class ToMesh>
     bool
-    filter_to_nearest(const EntityKeyMap &RangeToDomain,
-                      const FromMesh  &FromElem,
-                      ToMesh &ToPoints)
+    filter_to_nearest(const EntityKeyMap &/*RangeToDomain*/,
+                      const FromMesh  &/*FromElem*/,
+                      ToMesh &/*ToPoints*/)
     {
       // no-op for this specialization
       return true;

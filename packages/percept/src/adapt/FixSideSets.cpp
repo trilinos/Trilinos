@@ -287,7 +287,7 @@ namespace percept {
 
     // if the element (element) has a side that matches  the given side (side), connect them but first delete old connections
     std::pair<bool,bool> FixSideSets::connectSidesForced(stk::mesh::Entity element, stk::mesh::Entity side, bool& valid_side_part_map,
-                                         stk::mesh::ConnectivityOrdinal *k_element_side_ret, bool onlyPosPerm )
+                                         stk::mesh::ConnectivityOrdinal *k_element_side_ret, bool /*onlyPosPerm*/ )
     {
       //EXCEPTWATCH;
       bool use_coordinate_compare=false;

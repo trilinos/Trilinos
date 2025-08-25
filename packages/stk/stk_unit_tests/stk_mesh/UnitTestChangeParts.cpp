@@ -279,18 +279,13 @@ TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
   EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
   EXPECT_TRUE(bulkData.bucket(node2).member(subsetPart2));
 
-  double* node1Data = (double*) stk::mesh::field_data(field, node1);
-  double* node2Data = (double*) stk::mesh::field_data(field, node1);
-
-  EXPECT_TRUE(node1Data != nullptr);
-  EXPECT_TRUE(node2Data != nullptr);
-
+  EXPECT_TRUE(field.defined_on(node1));
+  EXPECT_TRUE(field.defined_on(node2));
 
   for(unsigned i=3; i<8u; ++i) {
     stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, i);
     EXPECT_TRUE(bulkData.is_valid(node));
-    double* nodeData = (double*) stk::mesh::field_data(field, node);
-    EXPECT_TRUE(nodeData == nullptr);
+    EXPECT_FALSE(field.defined_on(node));
   }
 }
 

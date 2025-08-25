@@ -25,7 +25,7 @@
     public:
       IdentityFunction() : Function("Identity") {}
       using Function::operator();
-      virtual void operator()(MDArray& domain, MDArray& codomain, double time )
+      virtual void operator()(MDArray& /*domain*/, MDArray& codomain, double /*time*/ )
       {
         Kokkos::deep_copy(codomain,1.0);
       }

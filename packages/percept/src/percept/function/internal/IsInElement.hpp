@@ -41,9 +41,9 @@
       IsInElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates);
 
       bool operator()(const stk::mesh::Entity element, const stk::mesh::BulkData& bulkData);
-      bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase* field, const stk::mesh::BulkData& bulkData);
-      void init_elementOp();
-      void fini_elementOp();
+      bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase* field, const stk::mesh::BulkData& bulkData) override;
+      void init_elementOp() override;
+      void fini_elementOp() override;
 
     private:
 

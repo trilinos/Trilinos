@@ -32,15 +32,15 @@ public:
   // given a value between thresholdMin,Max, return an estimate of
   //   how many new elements the mesh will have after refining based
   //   on the value of @param errIndRefineThreshold
-  virtual size_t estimateNewElements(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec);
-  virtual void getThresholdMinMax(double& min, double& max);
+  virtual size_t estimateNewElements(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec) override;
+  virtual void getThresholdMinMax(double& min, double& max) override;
 
-  virtual bool refine_element(const double error);
-  virtual bool unrefine_element(const double error);
+  virtual bool refine_element(const double error) override;
+  virtual bool unrefine_element(const double error) override;
 
   // given the errIndRefFieldVec data, set its values based on the given
   //   errIndRefineThreshold
-  virtual void markUsing(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec, bool do_refine);
+  virtual void markUsing(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec, bool do_refine) override;
 };
 
 

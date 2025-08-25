@@ -86,24 +86,24 @@
         m_accumulation_buffer.assign(m_nDOFs, 0.0);
       }
 
-      std::vector<double>& getValue(void) { return m_accumulation_buffer; }
+      std::vector<double>& getValue(void) override { return m_accumulation_buffer; }
       unsigned getElementCount() { return m_count_elems; }
 
       /// innermost operation of an bucket-based loop; return value of true forces the enclosing loop to terminate and this class'
       ///   derived classes can return info back to the loop invoker
-      virtual bool operator()(const stk::mesh::Bucket& bucket,  stk::mesh::FieldBase *field,  const stk::mesh::BulkData& bulkData);
+      virtual bool operator()(const stk::mesh::Bucket& bucket,  stk::mesh::FieldBase *field,  const stk::mesh::BulkData& bulkData) override;
 
       /// innermost operation of an element-based loop; return value of true forces the enclosing loop to terminate and this class'
       ///   derived classes can return info back to the loop invoker
-      virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const stk::mesh::BulkData& bulkData);
-      void init_elementOp() { init(); }
-      void fini_elementOp() {}
+      virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const stk::mesh::BulkData& bulkData) override;
+      void init_elementOp() override { init(); }
+      void fini_elementOp() override {}
 
     private:
 
-      const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& bulkData, const stk::mesh::Bucket& bucket_or_element) const { return bucket_or_element; }
+      const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& /*bulkData*/, const stk::mesh::Bucket& bucket_or_element) const { return bucket_or_element; }
       const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& bucket_or_element) const { return bulkData.bucket(bucket_or_element); }
-      stk::mesh::Bucket& mybucket( stk::mesh::BulkData& bulkData,  stk::mesh::Bucket& bucket_or_element)  { return bucket_or_element; }
+      stk::mesh::Bucket& mybucket( stk::mesh::BulkData& /*bulkData*/,  stk::mesh::Bucket& bucket_or_element)  { return bucket_or_element; }
       stk::mesh::Bucket& mybucket( stk::mesh::BulkData& bulkData,  stk::mesh::Entity& bucket_or_element)  { return bulkData.bucket(bucket_or_element); }
 
 
@@ -305,7 +305,7 @@
         return false;
       }
 
-      bool helperSubDim(const stk::mesh::Entity child_element, stk::mesh::FieldBase *field,  const stk::mesh::BulkData& bulkData)
+      bool helperSubDim(const stk::mesh::Entity child_element, stk::mesh::FieldBase */*field*/,  const stk::mesh::BulkData& bulkData)
       {
         EXCEPTWATCH;
 

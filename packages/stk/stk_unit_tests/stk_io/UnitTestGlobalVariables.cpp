@@ -362,11 +362,12 @@ void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Field<d
 {
   std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
+  auto fieldData = field0.data<stk::mesh::ReadWrite>();
   for(size_t i=0; i<nodes.size(); i++)
   {
-    double *fieldDataForNode = stk::mesh::field_data(field0, nodes[i]);
-    *fieldDataForNode = static_cast<double>(stkMeshBulkData.identifier(nodes[i]));
-    nodalFieldValues.push_back(*fieldDataForNode);
+    auto fieldDataForNode = fieldData.entity_values(nodes[i]);
+    fieldDataForNode() = static_cast<double>(stkMeshBulkData.identifier(nodes[i]));
+    nodalFieldValues.push_back(fieldDataForNode());
   }
 }
 

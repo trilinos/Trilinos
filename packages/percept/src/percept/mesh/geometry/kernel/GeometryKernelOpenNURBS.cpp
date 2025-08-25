@@ -115,7 +115,7 @@ bool GeometryKernelOpenNURBS::read_file(const std::string& file_name, std::vecto
   return rc;
 }
 
-void GeometryKernelOpenNURBS::snap_to(KernelPoint& point, GeometryHandle geom, double *converged_tolerance, double *uvw_computed, double *uvw_hint, void *extra_hint)
+void GeometryKernelOpenNURBS::snap_to(KernelPoint& point, GeometryHandle geom, double *converged_tolerance, double *uvw_computed, double */*uvw_hint*/, void */*extra_hint*/)
 {
   const ON_Surface* surface = dynamic_cast<const ON_Surface*>(onModel.m_object_table[geom.m_id].m_object);
   const ON_Curve* curve = dynamic_cast<const ON_Curve*>(onModel.m_object_table[geom.m_id].m_object);
@@ -149,7 +149,7 @@ void GeometryKernelOpenNURBS::snap_to(KernelPoint& point, GeometryHandle geom, d
   }
 }
 
-void GeometryKernelOpenNURBS::normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal, void *hint)
+void GeometryKernelOpenNURBS::normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal, void */*hint*/)
 {
   const ON_Surface* surface = dynamic_cast<const ON_Surface*>(onModel.m_object_table[geom.m_id].m_object);
   const ON_Curve* curve = dynamic_cast<const ON_Curve*>(onModel.m_object_table[geom.m_id].m_object);

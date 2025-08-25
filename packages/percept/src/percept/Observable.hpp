@@ -29,7 +29,7 @@ public:
       observable.addObserver(*this);
     }
 
-  ~Observer()
+  virtual ~Observer()
     {
       m_observable.removeObserver(*this);
     }
@@ -53,7 +53,7 @@ public:
       m_observers.push_back(&observer);
     }
 
-  void removeObserver(Observer<DATA_TYPE>& observer)
+  void removeObserver(Observer<DATA_TYPE>& /*observer*/)
     {
 #if 0
       std::vector<Observer*>::iterator found;

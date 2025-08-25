@@ -85,7 +85,7 @@
   {}
 
   template<>
-    void ReferenceMeshSmootherBaseImpl<STKMesh>::sync_fields(int iter)
+    void ReferenceMeshSmootherBaseImpl<STKMesh>::sync_fields(int /*iter*/)
     {
       std::vector< const stk::mesh::FieldBase *> fields;
       fields.push_back(m_eMesh->get_coordinates_field());

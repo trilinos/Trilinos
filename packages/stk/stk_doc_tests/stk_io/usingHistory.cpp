@@ -228,18 +228,20 @@ void writeHistoryFile(const std::string& historyFilename, stk::mesh::BulkData& b
   stk::mesh::EntityVector nodeEntities;
   stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodeHistoryPart & bulk.mesh_meta_data().locally_owned_part(), nodeEntities);
 
+  auto elemFieldData = elementField.data<stk::mesh::ReadWrite>();
+  auto nodeFieldData = nodalField.data<stk::mesh::ReadWrite>();
   for(int step = 1; step < 10; step++)
   {
     for(stk::mesh::Entity entity : elementEntities)
     {
-      double *data = stk::mesh::field_data(elementField, entity);
-      *data = getValue(bulk.identifier(entity), step);
+      auto data = elemFieldData.entity_values(entity);
+      data() = getValue(bulk.identifier(entity), step);
     }
 
     for(stk::mesh::Entity entity : nodeEntities)
     {
-      double *data = stk::mesh::field_data(nodalField, entity);
-      *data = getValue(bulk.identifier(entity), step);
+      auto data = nodeFieldData.entity_values(entity);
+      data() = getValue(bulk.identifier(entity), step);
     }
 
     double time = 0.4*step;
@@ -253,14 +255,15 @@ void verify_data(stk::mesh::BulkData& bulk, stk::mesh::Field<double>& field, stk
 {
   stk::mesh::EntityVector entities;
   stk::mesh::get_entities(bulk, rank, bulk.mesh_meta_data().locally_owned_part(), entities);
+  auto fieldData = field.data<stk::mesh::ReadOnly>();
 
   for(stk::mesh::Entity entity : entities)
   {
-    double *data = stk::mesh::field_data(field, entity);
+    auto data = fieldData.entity_values(entity);
     double goldValue = getValue(bulk.identifier(entity), stepNum);
-    if(*data != initialValue())
+    if(data() != initialValue())
     {
-      EXPECT_EQ(goldValue, *data);
+      EXPECT_EQ(goldValue, data());
     }
   }
 }

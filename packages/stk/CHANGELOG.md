@@ -1,5 +1,12 @@
 # CHANGELOG
 
+5.25.6-01 (STK_VERSION 5250601) 8/25/2025
+  stk_mesh: mostly minor refinements to the new Field Data API
+            most stk sub-modules now converted to new Field APIs
+            removed deprecated header stk_mesh/base/GetBuckets.hpp
+  stk_util: deleted unused stk_util/parallel/DebugTool.hpp
+            deleted unused stk_util/util/Pool.hpp
+
 5.25.6 (STK_VERSION 5250600) 7/14/2025
   stk_mesh: Fix Release/Debug hybrid build inconsistency in new
   Field data access.

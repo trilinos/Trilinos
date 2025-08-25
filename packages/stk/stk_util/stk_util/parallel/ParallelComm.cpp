@@ -132,10 +132,8 @@ void CommBroadcast::communicate()
 //
 //  Determine the number of items each other process will send to the current processor
 //
-std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator) {
-
-  stk::util::print_unsupported_version_warning(3, __LINE__, __FILE__);
-
+std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator)
+{
   auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10240);
   int num_procs = sendSizeArray.size();
   int my_proc;

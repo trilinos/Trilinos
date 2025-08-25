@@ -79,10 +79,6 @@ public:
 
   static void deleteRootTimer(TimerImpl *root_timer);
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
-STK_DEPRECATED static void findTimer(TimerImpl *timer, std::vector<std::string> &path_tail_vector, std::vector<Timer> &found_timers);
-#endif
-
 private:
   /**
    * Static function <b>reg</b> returns a reference to an existing timer or newly
@@ -273,19 +269,6 @@ public:
 
   Timer getSubtimer(const std::string &name);
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
-public:
-  /**
-   * Member function <b>dump</b> writes the timer to the specified
-   * diagnostic writer.
-   *
-   * @param dout    a <b>Writer</b> variable reference to write the timer to.
-   *
-   * @return      a <b>Writer</b> reference to <it>dout</it>.
-   */
-  STK_DEPRECATED Writer &dump(Writer &dout) const;
-#endif
-
 private:
   /**
    * Member function <b>addSubtimer</b> returns a reference to an existing or new
@@ -321,14 +304,6 @@ private:
   Timer::Metric<MPIByteCount>   m_MPIByteCount; ///< MPI byte count
   Timer::Metric<HeapAlloc>      m_heapAlloc;    ///< Heap allocated
 };
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
-STK_DEPRECATED inline Writer &operator<<(Writer &dout, const TimerImpl &timer) {
-  return timer.dump(dout);
-}
-#endif
-
-
 
 template<>
 inline const Timer::Metric<LapCount> &

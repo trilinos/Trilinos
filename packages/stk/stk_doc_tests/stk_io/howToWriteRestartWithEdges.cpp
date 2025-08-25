@@ -36,10 +36,12 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
     stk::mesh::EntityVector edges;
     stk::mesh::get_entities(*bulk, stk::topology::EDGE_RANK, meta.universal_part(), edges);
 
-    for(auto edge : edges) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(edgeField, edge));
+    auto edgeFieldData = edgeField.data<stk::mesh::ReadWrite>();
 
-      *data = bulk->identifier(edge);
+    for(auto edge : edges) {
+      auto data = edgeFieldData.entity_values(edge);
+
+      data() = bulk->identifier(edge);
     }
 
     stk::io::StkMeshIoBroker ioBroker;
@@ -65,11 +67,13 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
     stk::mesh::EntityVector edges;
     stk::mesh::get_entities(*bulk, stk::topology::EDGE_RANK, edges);
 
+    auto edgeFieldData = edgeField.data<stk::mesh::ReadOnly>();
+
     for(auto edge : edges) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(edgeField, edge));
+      auto data = edgeFieldData.entity_values(edge);
       double expectedValue = bulk->identifier(edge);
 
-      EXPECT_EQ(expectedValue, *data);
+      EXPECT_EQ(expectedValue, data());
     }
   }
 

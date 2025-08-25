@@ -78,7 +78,7 @@
 
     public:
 
-      virtual bool edgeMarkIsEnough() { return false; }
+      virtual bool edgeMarkIsEnough() override { return false; }
 
       UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) : URP<shards::Pyramid<5>, shards::Tetrahedron<4> >(eMesh)
       {
@@ -96,16 +96,16 @@
         if (m_face_breaker) delete m_face_breaker;
       }
 
-      virtual void doBreak() {}
+      virtual void doBreak() override {}
 
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(1);
         needed_entities[0].first = stk::topology::ELEMENT_RANK;
         setToOne(needed_entities);
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
       {
         EXCEPTWATCH;
         bp.resize(2);
@@ -114,13 +114,13 @@
       }
 
       /// NOTE: we create additional un-used elements if the Pyramid5 can be broken into 6 tets
-      virtual unsigned getNumNewElemPerElem() { return 2u; }
+      virtual unsigned getNumNewElemPerElem() override { return 2u; }
 
       void
-      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                        stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
+      createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& /*nodeRegistry*/,
+                        stk::mesh::Entity element,  NewSubEntityNodesType& /*new_sub_entity_nodes*/, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         EXCEPTWATCH;
         typedef std::array<stk::mesh::EntityId, 4> tet_tuple_type;

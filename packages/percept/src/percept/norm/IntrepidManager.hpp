@@ -58,7 +58,7 @@ using namespace Intrepid2;
 #define IM_SHARDS_ARRAY_DIM_TAG_DECLARATION( ADT )  \
   class ADT  : public shards::ArrayDimTag {         \
   public:                                           \
-    const char * name() const ;                     \
+    const char * name() const override;                     \
     static const ADT & tag();                       \
     int num;                                        \
     ADT(int n);                                     \
@@ -78,7 +78,7 @@ using namespace Intrepid2;
   const ADT & ADT::tag() { static const ADT self ; return self ; }      \
   ADT::ADT(int n) { num =n;}                                            \
   ADT::  ~ADT() {}                                                      \
-  ADT::ADT( const ADT & adt) { num=adt.num;}                            \
+  ADT::ADT( const ADT & adt) : shards::ArrayDimTag() { num=adt.num;}    \
   ADT & ADT::operator = ( const ADT & adt) {num=adt.num; return *this;} \
   ADT::ADT() {}                                                         
 

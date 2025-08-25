@@ -119,7 +119,7 @@
     /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
     void UniformRefinerPatternBase::set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity parent_elem, stk::mesh::Entity newElement,
                                                                stk::mesh::Entity familyTreeNewElement,
-                                                               unsigned ordinal, unsigned *numChild)
+                                                               unsigned ordinal, unsigned */*numChild*/)
     {
       bool debug = false;
       VERIFY_OP(parent_elem, != , stk::mesh::Entity(), "set_parent_child_relations: parent_elem is null");
@@ -255,7 +255,7 @@
           else
             {
               //std::cout << "family_tree_id = " << family_tree_id << std::endl;
-              family_tree = eMesh.get_bulk_data()->declare_constraint(family_tree_id, add);
+              family_tree = eMesh.get_bulk_data()->declare_entity(stk::topology::CONSTRAINT_RANK, family_tree_id, add);
             }
 
           // make the parent be the first relation; children are at the end
@@ -642,7 +642,7 @@
         }
     }
 
-    void addDistributionFactorToNewPart(stk::mesh::MetaData & meta, stk::mesh::Part * old_part, stk::mesh::Part * new_part)
+    void addDistributionFactorToNewPart(stk::mesh::MetaData & /*meta*/, stk::mesh::Part * old_part, stk::mesh::Part * new_part)
     {
       stk::mesh::FieldBase *df_field = const_cast<stk::mesh::FieldBase*>(stk::io::get_distribution_factor_field(*old_part));
       if (df_field) {
@@ -653,7 +653,7 @@
       }
     }
 
-    void UniformRefinerPatternBase::setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology, bool skipConvertedParts)
+    void UniformRefinerPatternBase::setNeededParts(percept::PerceptMesh& eMesh, BlockNamesType block_names_ranks, bool sameTopology, bool /*skipConvertedParts*/)
     {
       EXCEPTWATCH;
 
@@ -934,10 +934,10 @@
     genericEnrich_createNewElementsBase(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                                        const unsigned fromTopoKey_in, const unsigned toTopoKey_in,
+                                        const unsigned /*fromTopoKey_in*/, const unsigned toTopoKey_in,
                                         const int ToTopology_node_count,
                                         const int FromTopology_vertex_count,
-                                        Elem::CellTopology elem_celltopo_in,
+                                        Elem::CellTopology /*elem_celltopo_in*/,
                                         const CellTopologyData * const cell_topo_data_toTopo_in,
                                         vector< vector<stk::mesh::EntityId> >& elems,
                                         stk::mesh::FieldBase *proc_rank_field)
@@ -1487,7 +1487,7 @@
 
     void UniformRefinerPatternBase::
     prolongateIntrepid2(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
-                        MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double time_val)
+                        MDArray& output_pts, stk::mesh::Entity element, MDArray& input_param_coords, double /*time_val*/)
     {
 #if STK_PERCEPT_LITE
       VERIFY_MSG("not available in PerceptMeshLite");
@@ -1551,7 +1551,7 @@
 
 
     stk::mesh::Entity UniformRefinerPatternBase::
-    createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk::mesh::EntityId eid)
+    createOrGetNode(NodeRegistry& /*nodeRegistry*/, PerceptMesh& eMesh, stk::mesh::EntityId eid)
     {
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
       stk::mesh::Entity node_p = nodeRegistry.get_entity_node_Ib(*eMesh.get_bulk_data(), stk::topology::NODE_RANK, eid);
@@ -1663,7 +1663,7 @@
      */
 
     int UniformRefinerPatternBase::
-    getPermutation(PerceptMesh& eMesh, int num_verts, stk::mesh::Entity element, shards::CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
+    getPermutation(PerceptMesh& eMesh, int /*num_verts*/, stk::mesh::Entity element, shards::CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
     {
       if (rank_of_subcell == 0 || rank_of_subcell == 3) return 0;
 
@@ -1855,7 +1855,7 @@
 
     /// optionally overridden (must be overridden if sidesets are to work properly) to provide info on which sub pattern
     /// should be used to refine side sets (and edge sets)
-    void UniformRefinerPatternBase::setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+    void UniformRefinerPatternBase::setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ )
     {
       /// default is only this pattern
       bp.resize(1); // = std::vector<UniformRefinerPatternBase *>(1u, 0);
@@ -1875,7 +1875,7 @@
       return map;
     }
 
-    size_t UniformRefinerPatternBase::estimateNumberOfNewElements(percept::PerceptMesh& eMesh, stk::mesh::EntityRank rank, NodeRegistry& nodeRegistry, size_t num_elem_not_ghost)
+    size_t UniformRefinerPatternBase::estimateNumberOfNewElements(percept::PerceptMesh& eMesh, stk::mesh::EntityRank rank, NodeRegistry& nodeRegistry, size_t /*num_elem_not_ghost*/)
     {
       EXCEPTWATCH;
 

@@ -273,7 +273,7 @@
     /// this:     ([C], [DOF])
     void
     IntrepidManager::IntegralDOF::
-    operator()(IntegrandValuesDOF& iv, WeightedMeasure& wXdOmega)
+    operator()([[maybe_unused]] IntegrandValuesDOF& iv, [[maybe_unused]] WeightedMeasure& wXdOmega)
     {
       VERIFY_OP(iv.rank(),       == , 3,                     "IntrepidManager::Integral::operator() bad iv rank");
       VERIFY_OP(wXdOmega.rank(), == , 2,                     "IntrepidManager::Integral::operator() bad wXdOmega rank");
@@ -333,7 +333,7 @@
 
     void
     IntrepidManager::Bases::
-    operator()(const stk::mesh::BulkData& bulk, const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates)
+    operator()(const stk::mesh::BulkData& /*bulk*/, const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates)
     {
       m_cb.getBases(bucket, parametric_coordinates, *this);
     }

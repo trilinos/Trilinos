@@ -35,7 +35,7 @@
 #ifndef STK_CONSTFIELDDATA_HPP
 #define STK_CONSTFIELDDATA_HPP
 
-#include "FieldBytes.hpp"
+#include "FieldDataBytes.hpp"
 #include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_mesh/base/Ngp.hpp"
 #include "stk_mesh/base/NgpTypes.hpp"
@@ -53,14 +53,14 @@ namespace stk::mesh {
 template <typename T,
           typename MemSpace = stk::ngp::HostMemSpace,
           Layout DataLayout = DefaultLayoutSelector<MemSpace>::layout>
-class ConstFieldData : public FieldBytes<MemSpace>
+class ConstFieldData : public FieldDataBytes<MemSpace>
 {
 public:
   using value_type = T;
   static constexpr Layout layout = DataLayout;
 
   KOKKOS_FUNCTION ConstFieldData();
-  ConstFieldData(FieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes);
+  ConstFieldData(FieldDataBytes<stk::ngp::HostMemSpace>* hostFieldBytes);
   KOKKOS_FUNCTION virtual ~ConstFieldData() override;
 
   ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag);
@@ -99,7 +99,7 @@ protected:
 //==============================================================================
 
 template <typename T>
-class ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right> : public FieldBytes<stk::ngp::HostMemSpace>
+class ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right> : public FieldDataBytes<stk::ngp::HostMemSpace>
 {
 public:
   using value_type = T;
@@ -152,7 +152,7 @@ protected:
 
 //------------------------------------------------------------------------------
 template <typename T>
-class ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left> : public FieldBytes<stk::ngp::HostMemSpace>
+class ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left> : public FieldDataBytes<stk::ngp::HostMemSpace>
 {
 public:
   using value_type = T;
@@ -205,14 +205,14 @@ protected:
 
 //------------------------------------------------------------------------------
 template <typename T>
-class ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto> : public FieldBytes<stk::ngp::HostMemSpace>
+class ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto> : public FieldDataBytes<stk::ngp::HostMemSpace>
 {
 public:
   using value_type = T;
   static constexpr Layout layout = Layout::Auto;
 
   ConstFieldData();
-  ConstFieldData(const FieldBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag);
+  ConstFieldData(const FieldDataBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag);
   KOKKOS_FUNCTION ~ConstFieldData() override;
 
   KOKKOS_FUNCTION ConstFieldData(const ConstFieldData& fieldData);
@@ -262,13 +262,13 @@ protected:
 template <typename T, typename MemSpace, Layout DataLayout>
 KOKKOS_FUNCTION
 ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData()
-  : FieldBytes<MemSpace>()
+  : FieldDataBytes<MemSpace>()
 {}
 
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, Layout DataLayout>
-ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData(FieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes)
-  : FieldBytes<MemSpace>(hostFieldBytes, DataLayout)
+ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData(FieldDataBytes<stk::ngp::HostMemSpace>* hostFieldBytes)
+  : FieldDataBytes<MemSpace>(hostFieldBytes, DataLayout)
 {}
 
 //------------------------------------------------------------------------------
@@ -284,7 +284,7 @@ ConstFieldData<T, MemSpace, DataLayout>::~ConstFieldData()
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, Layout DataLayout>
 ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData(const ConstFieldData& fieldData, FieldAccessTag accessTag)
-  : FieldBytes<MemSpace>(fieldData)
+  : FieldDataBytes<MemSpace>(fieldData)
 {
   this->track_copy(accessTag);
   this->update_field_meta_data_mod_count();
@@ -294,7 +294,7 @@ ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData(const ConstFieldData& fi
 template <typename T, typename MemSpace, Layout DataLayout>
 KOKKOS_FUNCTION
 ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData(const ConstFieldData& fieldData)
-  : FieldBytes<MemSpace>(fieldData)
+  : FieldDataBytes<MemSpace>(fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->track_copy(this->access_tag());
@@ -305,7 +305,7 @@ ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData(const ConstFieldData& fi
 template <typename T, typename MemSpace, Layout DataLayout>
 KOKKOS_FUNCTION
 ConstFieldData<T, MemSpace, DataLayout>::ConstFieldData(ConstFieldData&& fieldData)
-  : FieldBytes<MemSpace>(fieldData)
+  : FieldDataBytes<MemSpace>(fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->track_copy(this->access_tag());
@@ -319,12 +319,12 @@ ConstFieldData<T, MemSpace, DataLayout>::operator=(const ConstFieldData& fieldDa
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
-    FieldBytes<MemSpace>::operator=(fieldData);
+    FieldDataBytes<MemSpace>::operator=(fieldData);
     this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
   )
 
   KOKKOS_IF_ON_DEVICE(
-    FieldBytes<MemSpace>::operator=(fieldData);
+    FieldDataBytes<MemSpace>::operator=(fieldData);
   )
 
   return *this;
@@ -337,12 +337,12 @@ ConstFieldData<T, MemSpace, DataLayout>::operator=(ConstFieldData&& fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
-    FieldBytes<MemSpace>::operator=(fieldData);
+    FieldDataBytes<MemSpace>::operator=(fieldData);
     this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
   )
 
   KOKKOS_IF_ON_DEVICE(
-    FieldBytes<MemSpace>::operator=(fieldData);
+    FieldDataBytes<MemSpace>::operator=(fieldData);
   )
 
   return *this;
@@ -475,7 +475,7 @@ ConstFieldData<T, MemSpace, DataLayout>::fence(const stk::ngp::ExecSpace& execSp
 
 template <typename T>
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::ConstFieldData()
-  : FieldBytes<stk::ngp::HostMemSpace>()
+  : FieldDataBytes<stk::ngp::HostMemSpace>()
 {}
 
 //------------------------------------------------------------------------------
@@ -483,7 +483,7 @@ template <typename T>
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::ConstFieldData(EntityRank entityRank, Ordinal fieldOrdinal,
                                                                          const std::string& fieldName,
                                                                          const DataTraits& dataTraits)
-  : FieldBytes<stk::ngp::HostMemSpace>(entityRank, fieldOrdinal, fieldName, dataTraits, Layout::Right)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(entityRank, fieldOrdinal, fieldName, dataTraits, Layout::Right)
 {}
 
 //------------------------------------------------------------------------------
@@ -500,7 +500,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::~ConstFieldData()
 template <typename T>
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::ConstFieldData(const ConstFieldData& fieldData,
                                                                          FieldAccessTag accessTag)
-  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(fieldData)
 {
   this->track_copy(accessTag);
   this->update_field_meta_data_mod_count();
@@ -510,7 +510,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::ConstFieldData(const C
 template <typename T>
 KOKKOS_FUNCTION
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::ConstFieldData(const ConstFieldData& fieldData)
-  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->track_copy(this->access_tag());
@@ -521,7 +521,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::ConstFieldData(const C
 template <typename T>
 KOKKOS_FUNCTION
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::ConstFieldData(ConstFieldData&& fieldData)
-  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->track_copy(this->access_tag());
@@ -536,7 +536,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::operator=(const ConstF
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
-    FieldBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
+    FieldDataBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
     this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
   )
 
@@ -551,7 +551,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::operator=(ConstFieldDa
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
-    FieldBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
+    FieldDataBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
     this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
   )
 
@@ -666,7 +666,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>::update(const stk::ngp:
 
 template <typename T>
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::ConstFieldData()
-  : FieldBytes<stk::ngp::HostMemSpace>()
+  : FieldDataBytes<stk::ngp::HostMemSpace>()
 {}
 
 //------------------------------------------------------------------------------
@@ -674,7 +674,7 @@ template <typename T>
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::ConstFieldData(EntityRank entityRank, Ordinal fieldOrdinal,
                                                                         const std::string& fieldName,
                                                                         const DataTraits& dataTraits)
-  : FieldBytes<stk::ngp::HostMemSpace>(entityRank, fieldOrdinal, fieldName, dataTraits, Layout::Left)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(entityRank, fieldOrdinal, fieldName, dataTraits, Layout::Left)
 {}
 
 //------------------------------------------------------------------------------
@@ -691,7 +691,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::~ConstFieldData()
 template <typename T>
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::ConstFieldData(const ConstFieldData& fieldData,
                                                                         FieldAccessTag accessTag)
-  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(fieldData)
 {
   this->track_copy(accessTag);
   this->update_field_meta_data_mod_count();
@@ -701,7 +701,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::ConstFieldData(const Co
 template <typename T>
 KOKKOS_FUNCTION
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::ConstFieldData(const ConstFieldData& fieldData)
-  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->track_copy(this->access_tag());
@@ -712,7 +712,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::ConstFieldData(const Co
 template <typename T>
 KOKKOS_FUNCTION
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::ConstFieldData(ConstFieldData&& fieldData)
-  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->track_copy(this->access_tag());
@@ -727,7 +727,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::operator=(const ConstFi
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
-    FieldBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
+    FieldDataBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
     this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
   )
 
@@ -742,7 +742,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::operator=(ConstFieldDat
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
-    FieldBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
+    FieldDataBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
     this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
   )
 
@@ -862,14 +862,14 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>::update(const stk::ngp::
 
 template <typename T>
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::ConstFieldData()
-  : FieldBytes<stk::ngp::HostMemSpace>()
+  : FieldDataBytes<stk::ngp::HostMemSpace>()
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::ConstFieldData(
-    const FieldBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag)
-  : FieldBytes<stk::ngp::HostMemSpace>(hostFieldBytes)
+    const FieldDataBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(hostFieldBytes)
 {
   this->track_copy(accessTag);
   this->update_field_meta_data_mod_count();
@@ -889,7 +889,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::~ConstFieldData()
 template <typename T>
 KOKKOS_FUNCTION
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::ConstFieldData(const ConstFieldData& fieldData)
-  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->track_copy(this->access_tag());
@@ -900,7 +900,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::ConstFieldData(const Co
 template <typename T>
 KOKKOS_FUNCTION
 ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::ConstFieldData(ConstFieldData&& fieldData)
-  : FieldBytes<stk::ngp::HostMemSpace>(fieldData)
+  : FieldDataBytes<stk::ngp::HostMemSpace>(fieldData)
 {
   KOKKOS_IF_ON_HOST(
     this->track_copy(this->access_tag());
@@ -915,7 +915,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::operator=(const ConstFi
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
-    FieldBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
+    FieldDataBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
     this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
   )
 
@@ -930,7 +930,7 @@ ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::operator=(ConstFieldDat
 {
   KOKKOS_IF_ON_HOST(
     this->release_copy();  // Decrement first if becoming untracked
-    FieldBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
+    FieldDataBytes<stk::ngp::HostMemSpace>::operator=(fieldData);
     this->track_copy(fieldData.access_tag());  // Increment after if becoming tracked
   )
 

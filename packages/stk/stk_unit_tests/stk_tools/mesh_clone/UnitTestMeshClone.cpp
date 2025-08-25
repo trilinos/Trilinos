@@ -146,8 +146,8 @@ void expect_equal_field_restrictions(stk::mesh::MetaData &newMeta, stk::mesh::Fi
 void expect_equal_field_initial_values(stk::mesh::FieldBase &oldField, stk::mesh::FieldBase &newField)
 {
   ASSERT_EQ(oldField.get_initial_value_num_bytes(), newField.get_initial_value_num_bytes());
-  const char *oldInitValPtr = static_cast<const char *>(oldField.get_initial_value());
-  const char *newInitValPtr = static_cast<const char *>(newField.get_initial_value());
+  const std::byte* oldInitValPtr = oldField.get_initial_value();
+  const std::byte* newInitValPtr = newField.get_initial_value();
   for(unsigned j=0; j<oldField.get_initial_value_num_bytes(); j++)
     EXPECT_EQ(oldInitValPtr[j], newInitValPtr[j]);
 }

@@ -272,7 +272,7 @@
       return Teuchos::rcp(new StringFunction(out_str.c_str(), Name(new_name), Dimensions(3), Dimensions(outputDim) ));
     }
 
-    Teuchos::RCP<Function > StringFunction::derivative(MDArrayString& deriv_spec)
+    Teuchos::RCP<Function > StringFunction::derivative(MDArrayString& /*deriv_spec*/)
     {
       if (m_gradient_string.length() == 0)
         {

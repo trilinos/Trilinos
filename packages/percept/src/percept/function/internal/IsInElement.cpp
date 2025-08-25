@@ -50,7 +50,7 @@
         return false;
     }
       
-    bool IsInElement::operator()(const stk::mesh::Entity element, stk::mesh::FieldBase* field, const stk::mesh::BulkData& bulkData)
+    bool IsInElement::operator()(const stk::mesh::Entity element, stk::mesh::FieldBase* /*field*/, const stk::mesh::BulkData& bulkData)
     {
       return (*this)(element, bulkData);
     }
