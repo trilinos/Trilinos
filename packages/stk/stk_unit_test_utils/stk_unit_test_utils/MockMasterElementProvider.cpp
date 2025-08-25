@@ -110,22 +110,27 @@ namespace unit_test_util {
 
     fieldData.resize(static_cast<size_t>(numFieldComponents) * numNodes, 0.0);
 
-    for(unsigned ni = 0u; ni < numNodes; ++ni) {
-      stk::mesh::Entity node = nodes[ni];
+    stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(field,
+      [&](auto& meFieldData) {
+        for (unsigned ni = 0u; ni < numNodes; ++ni) {
+          stk::mesh::Entity node = nodes[ni];
 
-      const double* data = static_cast<const double *>(stk::mesh::field_data(field, node));
-      if(nullptr != data) {
-        for(unsigned j = 0; j < numFieldComponents; ++j) {
-          const auto offSet = ni + j * numNodes;
-          fieldData[offSet] = meField.transform(data[j]);
-        }
-      } else {
-        for(unsigned j = 0; j < numFieldComponents; ++j) {
-          const auto offSet = ni + j * numNodes;
-          fieldData[offSet] = meField.default_value();
+          if (field.defined_on(node)) {
+            auto data = meFieldData.entity_values(node);
+            for (stk::mesh::ComponentIdx j(0); j < static_cast<int>(numFieldComponents); ++j) {
+              const auto offSet = ni + j * numNodes;
+              fieldData[offSet] = meField.transform(data(j));
+            }
+          }
+          else {
+            for (unsigned j = 0; j < numFieldComponents; ++j) {
+              const auto offSet = ni + j * numNodes;
+              fieldData[offSet] = meField.default_value();
+            }
+          }
         }
       }
-    }
+    );
   }
 
   void MasterElementProvider::nodal_field_data(const std::vector<stk::search::spmd::EntityKeyPair>& nodeKeys,
@@ -139,24 +144,29 @@ namespace unit_test_util {
     numFieldComponents = numNodes > 0 ? stk::mesh::field_extent0_per_entity(field, nodeKeys[0]) : 0;
     fieldData.resize(static_cast<size_t>(numFieldComponents) * numNodes, 0.0);
 
-    for(unsigned ni = 0u; ni < numNodes; ++ni) {
-      stk::mesh::Entity node = nodeKeys[ni];
+    stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(field,
+      [&](auto& meFieldData) {
+        for (unsigned ni = 0u; ni < numNodes; ++ni) {
+          stk::mesh::Entity node = nodeKeys[ni];
 
-      unsigned numNodeFieldComponents = stk::mesh::field_extent0_per_entity(field, node);
+          unsigned numNodeFieldComponents = stk::mesh::field_extent0_per_entity(field, node);
 
-      const double* data = static_cast<const double *>(stk::mesh::field_data(field, node));
-      if(nullptr != data) {
-        for(unsigned j = 0; j < numNodeFieldComponents; ++j) {
-          const auto offSet = ni + j * numNodes;
-          fieldData[offSet] = meField.transform(data[j]);
-        }
-      } else {
-        for(unsigned j = 0; j < numNodeFieldComponents; ++j) {
-          const auto offSet = ni + j * numNodes;
-          fieldData[offSet] = meField.default_value();
+          if (field.defined_on(node)) {
+            auto data = meFieldData.entity_values(node);
+            for (stk::mesh::ComponentIdx j = 0_comp; j < static_cast<int>(numNodeFieldComponents); ++j) {
+              const auto offSet = ni + j * numNodes;
+              fieldData[offSet] = meField.transform(data(j));
+            }
+          }
+          else {
+            for (unsigned j = 0; j < numNodeFieldComponents; ++j) {
+              const auto offSet = ni + j * numNodes;
+              fieldData[offSet] = meField.default_value();
+            }
+          }
         }
       }
-    }
+    );
   }
 
   void MasterElementProvider::find_parametric_coordinates(const stk::search::SearchTopology& meTopo,

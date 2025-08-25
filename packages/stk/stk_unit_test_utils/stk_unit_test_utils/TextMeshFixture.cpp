@@ -14,6 +14,7 @@
 
 #include "gtest/gtest.h"
 #include "mpi.h"
+#include "stk_mesh/base/Types.hpp"
 
 namespace stk
 {
@@ -274,15 +275,19 @@ void TextMeshFixture::CoordinateVerifier::verify()
 {
   verify_num_nodes();
 
-  for (size_t nodeIndex = 0; nodeIndex < goldNodeIds.size(); nodeIndex++) {
-    stk::mesh::EntityId nodeId = goldNodeIds[nodeIndex];
-    EXPECT_TRUE(bulk.is_valid(get_node(nodeId)));
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(*meta.coordinate_field(),
+    [&](auto& coordFieldData) {
+      for (size_t nodeIndex = 0; nodeIndex < goldNodeIds.size(); nodeIndex++) {
+        stk::mesh::EntityId nodeId = goldNodeIds[nodeIndex];
+        EXPECT_TRUE(bulk.is_valid(get_node(nodeId)));
 
-    const double* nodalCoords = get_nodal_coordinates(nodeId);
-    const double* goldCoords = &goldCoordinates[nodeIndex * spatialDim];
+        auto nodalCoords = coordFieldData.entity_values(get_node(nodeId));
+        const double* goldCoords = &goldCoordinates[nodeIndex * spatialDim];
 
-    verify_nodal_coordinates(nodeId, goldCoords, nodalCoords);
-  }
+        verify_nodal_coordinates(nodeId, goldCoords, nodalCoords);
+      }
+    }
+  );
 }
 
 void TextMeshFixture::CoordinateVerifier::verify_num_nodes()
@@ -292,24 +297,9 @@ void TextMeshFixture::CoordinateVerifier::verify_num_nodes()
   EXPECT_EQ(goldNodeIds.size(), nodes.size());
 }
 
-const double* TextMeshFixture::CoordinateVerifier::get_nodal_coordinates(const stk::mesh::EntityId& nodeId)
-{
-  const stk::mesh::Field<double>& coordsField =
-      static_cast<const stk::mesh::Field<double>&>(*meta.coordinate_field());
-  return stk::mesh::field_data(coordsField, get_node(nodeId));
-}
-
 const stk::mesh::Entity TextMeshFixture::CoordinateVerifier::get_node(const stk::mesh::EntityId& nodeId)
 {
   return bulk.get_entity(stk::topology::NODE_RANK, nodeId);
-}
-
-void TextMeshFixture::CoordinateVerifier::verify_nodal_coordinates(
-    const stk::mesh::EntityId& nodeId, const double* goldCoords, const double* nodalCoords)
-{
-  for (unsigned i = 0; i < spatialDim; i++) {
-    EXPECT_NEAR(goldCoords[i], nodalCoords[i], 1.0e-9) << error_message(nodeId, i);
-  }
 }
 
 std::string TextMeshFixture::CoordinateVerifier::error_message(const stk::mesh::EntityId& nodeId, unsigned coordIndex)

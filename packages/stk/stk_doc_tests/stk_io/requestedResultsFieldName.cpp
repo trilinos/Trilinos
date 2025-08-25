@@ -106,6 +106,7 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
 
     std::vector<stk::mesh::Entity> nodes;
     stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
+    auto fieldData = field.data<stk::mesh::ReadWrite>();
 
     // Iterate the application's execute loop five times and output
     // field data each iteration.
@@ -115,8 +116,8 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
       // Application execution...
       double value = 10.0 * time;
       for(size_t i=0; i<nodes.size(); i++) {
-        double *node_data = stk::mesh::field_data(field, nodes[i]);
-        *node_data = value;
+        auto node_data = fieldData.entity_values(nodes[i]);
+        node_data() = value;
       }
 
       //+ Output the field data calculated by the application.

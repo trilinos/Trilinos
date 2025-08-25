@@ -37,6 +37,7 @@
     class SplineFit
     {
     public:
+      virtual ~SplineFit() = default;
 
       /// create an OpenNURBS curve that fits the given input points
       virtual ON_Curve * fit(Vectors2D& input) = 0;

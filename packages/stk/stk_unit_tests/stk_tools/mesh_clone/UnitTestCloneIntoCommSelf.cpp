@@ -34,7 +34,6 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stddef.h>                     // for size_t, NULL
-#include <string.h>                     // for memcpy
 #include <unistd.h>                     // for unlink
 #include <iostream>                     // for operator<<, etc
 #include <map>                          // for map, etc

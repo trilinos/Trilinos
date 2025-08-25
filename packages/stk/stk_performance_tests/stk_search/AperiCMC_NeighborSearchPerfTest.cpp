@@ -381,12 +381,13 @@ public:
     }
 
     const stk::mesh::BucketVector& nodeBuckets = m_bulkData->get_buckets(stk::topology::NODE_RANK, m_owned_selector);
+    auto numNeighborsData = m_numNeighborsField->data<stk::mesh::ReadOnly>();
     for(const stk::mesh::Bucket* bptr : nodeBuckets) {
       for(stk::mesh::Entity node : *bptr) {
-        const double* numNeighbors = reinterpret_cast<const double*>(stk::mesh::field_data(*m_numNeighborsField, node));
-        max_num_neighbors = std::max(max_num_neighbors, numNeighbors[0]);
-        min_num_neighbors = std::min(min_num_neighbors, numNeighbors[0]);
-        total_num_neighbors += numNeighbors[0];
+        auto numNeighbors = numNeighborsData.entity_values(node);
+        max_num_neighbors = std::max(max_num_neighbors, numNeighbors(0_comp));
+        min_num_neighbors = std::min(min_num_neighbors, numNeighbors(0_comp));
+        total_num_neighbors += numNeighbors(0_comp);
       }
     }
 

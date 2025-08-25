@@ -200,15 +200,15 @@ public:
 };
 
 namespace {
-std::vector<double> func1(const double* coords)
+std::vector<double> func1(stk::mesh::EntityValues<const double> coords)
 {
-  double v = coords[0] + 2*coords[1] + 3*coords[2];
+  double v = coords(0_comp) + 2*coords(1_comp) + 3*coords(2_comp);
   return {v, v + 1, v + 2, v + 3, v + 4, v + 5, v + 6, v + 7};
 }
 
-std::vector<double> func2(const double* coords)
+std::vector<double> func2(stk::mesh::EntityValues<const double> coords)
 {
-  double v = coords[0] + 2*coords[1] + 3*coords[2];
+  double v = coords(0_comp) + 2*coords(1_comp) + 3*coords(2_comp);
   return {v + 8, v + 9, v + 10, v + 11, v + 12, v + 13, v + 14, v + 15};
 }
 
@@ -232,10 +232,6 @@ TEST_F(NgpFieldBLAS, field_fill_device)
   stk::mesh::Selector selector(*stkField1);
   ngp_field_test_utils::check_field_data_on_device(ngpMesh, ngpField1, selector, myConstantValue);
 
-  const double initialValue = -1;
-  ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, initialValue);
-
-  stkField1->sync_to_host();
   ngp_field_test_utils::check_field_data_on_host(get_bulk(), *stkField1, selector, myConstantValue);
 }
 
@@ -258,10 +254,6 @@ TEST_F(NgpFieldBLAS, field_fill_device_multiple)
     stk::mesh::Selector selector(*field);
     ngp_field_test_utils::check_field_data_on_device(ngpMesh, ngpField, selector, myConstantValue);
 
-    const double initialValue = -1;
-    ngp_field_test_utils::check_field_data_on_host(get_bulk(), *field, selector, initialValue);
-
-    field->sync_to_host();
     ngp_field_test_utils::check_field_data_on_host(get_bulk(), *field, selector, myConstantValue);
   }
 }
@@ -573,7 +565,7 @@ TEST_F(NgpFieldBLASNode, field_axpbyz_device)
 
   double alpha = 2.0;
   double beta = 5.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -604,7 +596,7 @@ TEST_F(NgpFieldBLASNode, field_axpbyz_host)
 
   double alpha = 2.0;
   double beta = 5.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -642,7 +634,7 @@ TEST_F(NgpFieldBLASNode, field_axpbyz_exec_space)
 
   double alpha = 2.0;
   double beta = 5.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -673,7 +665,7 @@ TEST_F(NgpFieldBLASNode, field_axpbyz_no_selector)
 
   double alpha = 2.0;
   double beta = 5.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -708,7 +700,7 @@ TEST_F(NgpFieldBLASNode, field_axpby_device)
 
   double alpha = 2.0;
   double beta = 5.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -739,7 +731,7 @@ TEST_F(NgpFieldBLASNode, field_axpby_host)
 
   double alpha = 2.0;
   double beta = 5.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -777,7 +769,7 @@ TEST_F(NgpFieldBLASNode, field_axpby_exec_space)
 
   double alpha = 2.0;
   double beta = 5.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -808,7 +800,7 @@ TEST_F(NgpFieldBLASNode, field_axpby_no_selector)
 
   double alpha = 2.0;
   double beta = 5.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -842,7 +834,7 @@ TEST_F(NgpFieldBLASNode, field_axpy_device)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
 
   double alpha = 2.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> result = func1(coords);
     for (size_t i=0; i < result.size(); ++i)
@@ -869,7 +861,7 @@ TEST_F(NgpFieldBLASNode, field_axpy_host)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
 
   double alpha = 2.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> result = func1(coords);
     for (size_t i=0; i < result.size(); ++i)
@@ -903,7 +895,7 @@ TEST_F(NgpFieldBLASNode, field_axpy_exec_space)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
 
   double alpha = 2.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> result = func1(coords);
     for (size_t i=0; i < result.size(); ++i)
@@ -929,7 +921,7 @@ TEST_F(NgpFieldBLASNode, field_axpy_no_selector)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
 
   double alpha = 2.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> result = func1(coords);
     for (size_t i=0; i < result.size(); ++i)
@@ -960,7 +952,7 @@ TEST_F(NgpFieldBLASNode, field_product_device)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField2, selectRule, &func2);
 
 
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -989,7 +981,7 @@ TEST_F(NgpFieldBLASNode, field_product_host)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField2, selectRule, &func2);
 
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -1025,7 +1017,7 @@ TEST_F(NgpFieldBLASNode, field_product_exec_space)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField2, selectRule, &func2);
 
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -1054,7 +1046,7 @@ TEST_F(NgpFieldBLASNode, field_product_no_selector)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField2, selectRule, &func2);
 
 
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> vals1 = func1(coords);
     std::vector<double> vals2 = func2(coords);
@@ -1104,7 +1096,7 @@ TEST_F(NgpFieldBLASNode, field_scale_device)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
 
   double alpha = 2.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> result = func1(coords);
     for (size_t i=0; i < result.size(); ++i)
@@ -1131,7 +1123,7 @@ TEST_F(NgpFieldBLASNode, field_scale_host)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
 
   double alpha = 2.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> result = func1(coords);
     for (size_t i=0; i < result.size(); ++i)
@@ -1165,7 +1157,7 @@ TEST_F(NgpFieldBLASNode, field_scale_exec_space)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
 
   double alpha = 2.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> result = func1(coords);
     for (size_t i=0; i < result.size(); ++i)
@@ -1191,7 +1183,7 @@ TEST_F(NgpFieldBLASNode, field_scale_no_selector)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
 
   double alpha = 2.0;
-  auto f_expected = [&](const double* coords)
+  auto f_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     std::vector<double> result = func1(coords);
     for (size_t i=0; i < result.size(); ++i)
@@ -1221,12 +1213,12 @@ TEST_F(NgpFieldBLASNode, field_swap_device)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField2, selectRule, &func2);
 
-  auto f1_expected = [&](const double* coords)
+  auto f1_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     return func2(coords);
   };
 
-  auto f2_expected = [&](const double* coords)
+  auto f2_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     return func1(coords);
   };
@@ -1249,12 +1241,12 @@ TEST_F(NgpFieldBLASNode, field_swap_host)
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField2, selectRule, &func2);
 
-  auto f1_expected = [&](const double* coords)
+  auto f1_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     return func2(coords);
   };
 
-  auto f2_expected = [&](const double* coords)
+  auto f2_expected = [&](stk::mesh::EntityValues<const double> coords)
   {
     return func1(coords);
   };
@@ -1278,6 +1270,16 @@ TEST_F(NgpFieldBLASNode, field_swap_host)
 
 #else
 
+auto f1_expected = [](stk::mesh::EntityValues<const double> coords)
+{
+  return func2(coords);
+};
+
+auto f2_expected = [](stk::mesh::EntityValues<const double> coords)
+{
+  return func1(coords);
+};
+
 TEST_F(NgpFieldBLASNode, field_swap_exec_space)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();
@@ -1285,16 +1287,6 @@ TEST_F(NgpFieldBLASNode, field_swap_exec_space)
   stk::mesh::Selector selectRule(*stkField1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField2, selectRule, &func2);
-
-  auto f1_expected = [&](const double* coords)
-  {
-    return func2(coords);
-  };
-
-  auto f2_expected = [&](const double* coords)
-  {
-    return func1(coords);
-  };
 
   stk::mesh::field_swap(get_bulk(), *stkField1, *stkField2, selectRule, stk::ngp::ExecSpace());
   EXPECT_FALSE(stkField1->need_sync_to_host());
@@ -1313,16 +1305,6 @@ TEST_F(NgpFieldBLASNode, field_swap_no_selector)
   stk::mesh::Selector selectRule(*stkField1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
   ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField2, selectRule, &func2);
-
-  auto f1_expected = [&](const double* coords)
-  {
-    return func2(coords);
-  };
-
-  auto f2_expected = [&](const double* coords)
-  {
-    return func1(coords);
-  };
 
   stk::mesh::field_swap(get_bulk(), *stkField1, *stkField2, stk::ngp::ExecSpace());
   EXPECT_FALSE(stkField1->need_sync_to_host());
@@ -1351,11 +1333,11 @@ TEST_F(NgpFieldBLASNode, field_amax_device)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
   for (auto& n : nodes) {
-    double* myVal = static_cast<double*>(stk::mesh::field_data(*stkField1, n));
-    const int numComponents = stk::mesh::field_scalars_per_entity(*stkField1, n);
-    for (int i = 0; i < numComponents; ++i) {
-      hostAMaxVal = std::max(hostAMaxVal, myVal[i]);
+    auto myVal = stkField1Data.entity_values(n);
+    for (stk::mesh::ComponentIdx i : myVal.components()) {
+      hostAMaxVal = std::max(hostAMaxVal, myVal(i));
     }
   }
 
@@ -1379,11 +1361,11 @@ TEST_F(NgpFieldBLASNode, field_amax_host)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
   for (auto& n : nodes) {
-    double* myVal = static_cast<double*>(stk::mesh::field_data(*stkField1, n));
-    const int numComponents = stk::mesh::field_scalars_per_entity(*stkField1, n);
-    for (int i = 0; i < numComponents; ++i) {
-      hostAMaxVal = std::max(hostAMaxVal, myVal[i]);
+    auto myVal = stkField1Data.entity_values(n);
+    for (stk::mesh::ComponentIdx i : myVal.components()) {
+      hostAMaxVal = std::max(hostAMaxVal, myVal(i));
     }
   }
 
@@ -1409,11 +1391,11 @@ TEST_F(NgpFieldBLASNode, field_amax_exec_space)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  auto stkField1Data = stkField1->template data<stk::mesh::ReadOnly>();
   for (auto& n : nodes) {
-    double* myVal = static_cast<double*>(stk::mesh::field_data(*stkField1, n));
-    const int numComponents = stk::mesh::field_scalars_per_entity(*stkField1, n);
-    for (int i = 0; i < numComponents; ++i) {
-      hostAMaxVal = std::max(hostAMaxVal, myVal[i]);
+    auto myVal = stkField1Data.entity_values(n);
+    for (stk::mesh::ComponentIdx i : myVal.components()) {
+      hostAMaxVal = std::max(hostAMaxVal, myVal(i));
     }
   }
 
@@ -1434,11 +1416,11 @@ TEST_F(NgpFieldBLASNode, field_amax_no_selector)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  auto stkField1Data = stkField1->template data<stk::mesh::ReadOnly>();
   for (auto& n : nodes) {
-    double* myVal = static_cast<double*>(stk::mesh::field_data(*stkField1, n));
-    const int numComponents = stk::mesh::field_scalars_per_entity(*stkField1, n);
-    for (int i = 0; i < numComponents; ++i) {
-      hostAMaxVal = std::max(hostAMaxVal, myVal[i]);
+    auto myVal = stkField1Data.entity_values(n);
+    for (stk::mesh::ComponentIdx i : myVal.components()) {
+      hostAMaxVal = std::max(hostAMaxVal, myVal(i));
     }
   }
 

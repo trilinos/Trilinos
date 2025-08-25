@@ -98,6 +98,7 @@ public:
   Bucket *get_bucket(EntityRank entity_rank, int bucket_id) const;
 
   friend class Partition;
+  template<typename NgpMemSpace> friend class stk::mesh::DeviceMeshT;
 
   void add_entity_with_part_memberships(const Entity entity,
                                         const EntityRank arg_entity_rank,

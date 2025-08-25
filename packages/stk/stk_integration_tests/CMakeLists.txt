@@ -61,8 +61,6 @@ else()
     target_link_libraries(stk_middle_mesh_integration_tester stk_middle_mesh_test_util)
     target_link_libraries(stk_middle_mesh_integration_tester stk_unit_main)
     target_link_libraries(stk_middle_mesh_integration_tester stk_unit_test_utils)
-    target_include_directories(stk_middle_mesh_integration_tester PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../stk_unit_tests/stk_middle_mesh)
-    target_include_directories(stk_middle_mesh_integration_tester PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../stk_middle_mesh_util/stk_middle_mesh_util)
   endif()
 
   if (STK_HAS_MPI)

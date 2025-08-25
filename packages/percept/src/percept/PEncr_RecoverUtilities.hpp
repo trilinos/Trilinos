@@ -30,7 +30,7 @@
       // FIXME tmp
       class Filter {
       public:
-        bool pass(stk::mesh::Entity entity) const { return true; }
+        bool pass(stk::mesh::Entity /*entity*/) const { return true; }
       };
 
       void object_patch_if(const stk::mesh::BulkData& bulk_data,

@@ -147,7 +147,7 @@ run(bool calc_deltas)
 
 }
 
-template class GenericAlgorithm_update_coordinates<STKMesh>;
+template struct GenericAlgorithm_update_coordinates<STKMesh>;
 
 } // namespace percept
 

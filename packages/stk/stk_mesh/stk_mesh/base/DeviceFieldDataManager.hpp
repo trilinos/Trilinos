@@ -42,7 +42,7 @@
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
-#include "stk_mesh/base/FieldBytes.hpp"
+#include "stk_mesh/base/FieldDataBytes.hpp"
 #include "stk_mesh/base/FindRestriction.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/NgpTypes.hpp"
@@ -306,10 +306,10 @@ template <typename NgpMemSpace>
 void
 DeviceFieldDataManager<NgpMemSpace>::set_device_field_meta_data(FieldDataBase& fieldDataBase)
 {
-  FieldBytes<NgpMemSpace>& fieldBytes = dynamic_cast<FieldBytes<NgpMemSpace>&>(fieldDataBase);
-  const Ordinal fieldOrdinal = fieldBytes.field_ordinal();
+  FieldDataBytes<NgpMemSpace>& fieldDataBytes = dynamic_cast<FieldDataBytes<NgpMemSpace>&>(fieldDataBase);
+  const Ordinal fieldOrdinal = fieldDataBytes.field_ordinal();
 
-  fieldBytes.m_deviceFieldMetaData = m_deviceFieldMetaData[fieldOrdinal];
+  fieldDataBytes.m_deviceFieldMetaData = m_deviceFieldMetaData[fieldOrdinal];
 }
 
 template <typename NgpMemSpace>

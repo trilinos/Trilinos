@@ -85,10 +85,11 @@ std::vector<double> get_attributes_of_first_element(const stk::mesh::BulkData &b
   std::vector<double> attributes;
   if(!elements.empty()) {
     for(const stk::mesh::FieldBase *field : attributeFields) {
-      unsigned numAttribute = stk::mesh::field_scalars_per_entity(*field, elements[0]);
-      double *dataForElement = static_cast<double*> (stk::mesh::field_data(*field, elements[0]));
-      for(unsigned i=0; i<numAttribute; ++i)
-        attributes.push_back(dataForElement[i]);
+      auto fieldData = field->data<double,stk::mesh::ReadOnly>();
+      auto dataForElement = fieldData.entity_values(elements[0]);
+      for(stk::mesh::ComponentIdx i : dataForElement.components()) {
+        attributes.push_back(dataForElement(i));
+      }
     }
   }
   return attributes;

@@ -101,7 +101,7 @@
 
       virtual ~FieldFunction();
 
-      virtual Teuchos::RCP<Function > derivative(MDArrayString& deriv_spec)
+      virtual Teuchos::RCP<Function > derivative(MDArrayString& deriv_spec) override
       {
         m_deriv_spec = deriv_spec;
         Dimensions domain_dimensions = getDomainDimensions();
@@ -122,7 +122,7 @@
         return deriv_rcp;
       }
 
-      virtual Teuchos::RCP<Function > gradient(int spatialDim=3)
+      virtual Teuchos::RCP<Function > gradient(int spatialDim=3) override
       {
         int meta_dimension = m_bulkData->mesh_meta_data().spatial_dimension();
         VERIFY_OP_ON(meta_dimension, ==, spatialDim, "gradient: mismatch in spatial dimensions");
@@ -135,11 +135,11 @@
         return derivative(mda);
       }
 
-      virtual void operator()(MDArray& in, MDArray& out, double time_value_optional=0.0);
+      virtual void operator()(MDArray& in, MDArray& out, double time_value_optional =0.0) override;
       virtual void localEvaluation(MDArray& in, MDArray& out, double time_value_optional=0.0);
 
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0);
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0);
+      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional =0.0) override;
+      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional =0.0) override;
 
       void setup_searcher(int D_);
 
@@ -152,9 +152,9 @@
       //void setBulkData(stk::mesh::BulkData *bulk) { m_bulkData = bulk; }
       bool getFoundOnLocalOwnedPart() { return m_found_on_local_owned_part; }
 
-      const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& bulkData, const stk::mesh::Bucket& bucket_or_element) const { return bucket_or_element; }
+      const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& /*bulkData*/, const stk::mesh::Bucket& bucket_or_element) const { return bucket_or_element; }
       const stk::mesh::Bucket& mybucket(const stk::mesh::BulkData& bulkData, const stk::mesh::Entity& bucket_or_element) const { return bulkData.bucket(bucket_or_element); }
-      stk::mesh::Bucket& mybucket( stk::mesh::BulkData& bulkData,  stk::mesh::Bucket& bucket_or_element)  { return bucket_or_element; }
+      stk::mesh::Bucket& mybucket( stk::mesh::BulkData& /*bulkData*/,  stk::mesh::Bucket& bucket_or_element)  { return bucket_or_element; }
       stk::mesh::Bucket& mybucket( stk::mesh::BulkData& bulkData,  stk::mesh::Entity& bucket_or_element)  { return bulkData.bucket(bucket_or_element); }
 
 
@@ -189,8 +189,8 @@
      */
 #define EXTRA_PRINT_FF_HELPER 0
     template<class BucketOrEntity>
-    void FieldFunction::helper(const stk::mesh::BulkData& bulk, MDArray& input_phy_points, MDArray& output_field_values,
-                               const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double time_value_optional)
+    void FieldFunction::helper(const stk::mesh::BulkData& bulk, MDArray& /*input_phy_points*/, MDArray& output_field_values,
+                               const BucketOrEntity& bucket_or_element, const MDArray& parametric_coordinates, double /*time_value_optional*/)
     {
       //VERIFY_OP_ON(parametric_coordinates.rank(), ==, 2, "FieldFunction::operator() parametric_coordinates bad rank");
       //VERIFY_OP_ON(output_field_values.rank(), <=, 3, "FieldFunction::operator() output_field_values bad rank");

@@ -5,7 +5,6 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/parallel/CommNeighbors.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_util/diag/Timer.hpp>
@@ -154,16 +153,6 @@ protected:
     stk::diag::deleteRootTimer(rootTimer);
   }
 
-  void run_comm_neighbors_performance_test()
-  {
-    stk::parallel_machine_barrier(get_bulk().parallel());
-    for(int i=0; i<num_times; ++i) {
-      set_initial_shared_values();
-      time_comm_neighbors();
-    }
-    print_stats();
-  }
-
   void run_comm_sparse_performance_test()
   {
     stk::parallel_machine_barrier(get_bulk().parallel());
@@ -185,12 +174,6 @@ protected:
   }
 
   void unpack_and_check_entity_key(stk::CommBuffer& buf) {
-    stk::mesh::EntityKey key;
-    buf.unpack<stk::mesh::EntityKey>(key);
-    expect_entity_shared_and_owned(key);
-  }
-
-  void unpack_and_check_entity_key(stk::CommBufferV& buf) {
     stk::mesh::EntityKey key;
     buf.unpack<stk::mesh::EntityKey>(key);
     expect_entity_shared_and_owned(key);
@@ -270,39 +253,6 @@ protected:
     }
   }
 
-  void comm_neighbors()
-  {
-    stk::mesh::Selector shared = get_meta().globally_shared_part();
-    stk::mesh::Selector owned = get_meta().locally_owned_part();
-    const stk::mesh::BucketVector& shared_not_owned = get_bulk().get_buckets(stk::topology::NODE_RANK, shared & !owned);
-    const std::vector<int>& procs = get_bulk().all_sharing_procs(stk::topology::NODE_RANK);
-    stk::CommNeighbors commNeighbors(get_bulk().parallel(), procs);
-    for(int p : procs) {
-      const stk::mesh::HostCommMapIndices<stk::ngp::MemSpace> sharedCommMap =
-          get_bulk().volatile_fast_shared_comm_map<stk::ngp::MemSpace>(stk::topology::NODE_RANK, p);
-      size_t numEntities = sharedCommMap.extent(0);
-      commNeighbors.send_buffer(p).reserve(numEntities*sizeof(stk::mesh::EntityKey));
-    }
-
-    for(const stk::mesh::Bucket* bptr : shared_not_owned) {
-      const stk::mesh::Bucket& bkt = *bptr;
-      for(size_t i=0; i<bkt.size(); ++i) {
-        int owner = get_bulk().parallel_owner_rank(bkt[i]);
-        stk::CommBufferV& buf = commNeighbors.send_buffer(owner);
-        buf.pack<stk::mesh::EntityKey>(get_bulk().entity_key(bkt[i]));
-      }
-    }
-
-    commNeighbors.communicate();
-
-    for(int p : procs) {
-      stk::CommBufferV& buf = commNeighbors.recv_buffer(p);
-      while(buf.size_in_bytes() > 0) {
-        unpack_and_check_entity_key(buf);
-      }
-    }
-  }
-
   void time_comm_sparse_votd()
   {
     stk::diag::TimeBlock timerStart(timerCommSparse, get_bulk().parallel());
@@ -321,30 +271,23 @@ protected:
     duration += stk::wall_time() - startTime;
   }
 
-  void time_comm_neighbors()
-  {
-    stk::diag::TimeBlock timerStart(timerCommNeighbors, get_bulk().parallel());
-    rootTimer.start();
-    double startTime = stk::wall_time();
-    comm_neighbors();
-    duration += stk::wall_time() - startTime;
-  }
-
   void set_initial_shared_values()
   {
+    auto scalarFieldData = nodeFieldScalar.data<stk::mesh::ReadWrite>();
+    auto vectorFieldData = nodeFieldVector.data<stk::mesh::ReadWrite>();
+
     const stk::mesh::MetaData& meta = get_meta();
     const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, meta.globally_shared_part());
-    for(const stk::mesh::Bucket* bucket : buckets) {
-      const stk::mesh::Bucket& bkt = *bucket;
-      double* scalarFieldData = stk::mesh::field_data(nodeFieldScalar, bkt);
-      double* vectorFieldData = stk::mesh::field_data(nodeFieldVector, bkt);
-      for(size_t i=0; i<bkt.size(); ++i) {
-        stk::mesh::EntityId id = get_bulk().identifier(bkt[i]);
-        double value = id;
-        scalarFieldData[i] = value;
-        vectorFieldData[3*i+0] = value;
-        vectorFieldData[3*i+1] = value;
-        vectorFieldData[3*i+2] = value;
+    for (const stk::mesh::Bucket* bucketPtr : buckets) {
+      const stk::mesh::Bucket& bucket = *bucketPtr;
+      auto scalarBucketValues = scalarFieldData.bucket_values(bucket);
+      auto vectorBucketValues = vectorFieldData.bucket_values(bucket);
+      for (stk::mesh::EntityIdx entityIdx : bucket.entities()) {
+        const stk::mesh::EntityId id = get_bulk().identifier(bucket[entityIdx]);
+        scalarBucketValues(entityIdx) = id;
+        vectorBucketValues(entityIdx, 0_comp) = id;
+        vectorBucketValues(entityIdx, 1_comp) = id;
+        vectorBucketValues(entityIdx, 2_comp) = id;
       }
     }
   }
@@ -461,21 +404,6 @@ protected:
   double duration;
   int num_times;
 };
-
-TEST_F(StkPerfComm, generated_then_rebalance_comm_neighbors)
-{
-  std::string mesh_spec = get_mesh_spec();
-  if (mesh_spec != "NO_MESH_SPECIFIED") {
-    generate_and_rebalance_mesh(mesh_spec);
-    MPI_Pcontrol(1);
-    run_comm_neighbors_performance_test();
-  }
-  else {
-    if (stk::parallel_machine_rank(get_comm()) == 0) {
-      std::cout<<"No mesh specified, exiting."<<std::endl;
-    }
-  }
-}
 
 TEST_F(StkPerfComm, generated_then_rebalance_comm_sparse)
 {

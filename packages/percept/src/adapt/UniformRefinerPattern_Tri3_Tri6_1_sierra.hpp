@@ -54,9 +54,9 @@
       }
 
 
-      virtual void doBreak() {}
+      virtual void doBreak() override {}
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh ) override
       {
         EXCEPTWATCH;
         bp.resize(2);
@@ -75,7 +75,7 @@
 
       }
 
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(1);
         needed_entities[0].first = m_eMesh.edge_rank();
@@ -83,13 +83,13 @@
         setToOne(needed_entities);
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 1; }
+      virtual unsigned getNumNewElemPerElem() override { return 1; }
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         genericEnrich_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool, ft_element_pool, 

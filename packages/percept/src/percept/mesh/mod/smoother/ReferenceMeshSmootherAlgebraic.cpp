@@ -29,7 +29,7 @@
 
 namespace percept {
 
-  int ReferenceMeshSmootherAlgebraic::find_new_value(stk::mesh::Entity node, int valOld, WallDistanceFieldType *wall_distance_field, stk::mesh::FieldBase *coord_field_orig)
+  int ReferenceMeshSmootherAlgebraic::find_new_value(stk::mesh::Entity node, int valOld, WallDistanceFieldType *wall_distance_field, stk::mesh::FieldBase */*coord_field_orig*/)
   {
     int valNew = valOld;
     typedef std::set<stk::mesh::Entity> EntitySet;

@@ -57,7 +57,7 @@ ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
 
   template<typename MeshType>
   void ReferenceMeshSmootherConjugateGradientImpl< MeshType >::
-  debug_print(double alpha)
+  debug_print(double /*alpha*/)
   {
   }
 
@@ -228,7 +228,7 @@ ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
 
 template<typename MeshType>
 Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
-        Double alpha, double multiplicative_edge_scaling, bool& valid,
+        Double alpha, double /*multiplicative_edge_scaling*/, bool& valid,
         size_t* num_invalid) {
     Double mtot = Double(0.0);
     size_t n_invalid = 0;

@@ -30,21 +30,21 @@
         setNeededParts(eMesh, block_names, true);
       }
 
-      virtual void doBreak() {}
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      virtual void doBreak() override {}
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(1);
         needed_entities[0].first = m_eMesh.edge_rank();
         needed_entities[0].second = 3u;
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 2; }
+      virtual unsigned getNumNewElemPerElem() override { return 2; }
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         genericRefine_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool, ft_element_pool, 

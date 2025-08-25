@@ -122,19 +122,8 @@ void all_reduce( ParallelMachine  arg_comm ,
   MPI_Op mpi_op = MPI_OP_NULL ;
   MPI_Op_create(arg_op, 0 , &mpi_op);
 
-  if (stk::util::get_common_coupling_version() >= 5) {
-    const int errCode = MPI_Allreduce(arg_in, arg_out, arg_len, MPI_BYTE, mpi_op, arg_comm);
-    STK_ThrowRequireMsg(MPI_SUCCESS == errCode,"MPI_Allreduce returned error code " << errCode);
-  } else
-  {
-    const int result_reduce =
-      MPI_Reduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,0,arg_comm);
-
-    const int result_bcast =
-      MPI_Bcast(arg_out,arg_len,MPI_BYTE,0,arg_comm);
-
-    STK_ThrowRequireMsg( MPI_SUCCESS == result_reduce && MPI_SUCCESS == result_bcast,"stk::all_reduce FAILED: MPI_Reduce = " << result_reduce << " MPI_Bcast = " << result_bcast);
-  }
+  const int errCode = MPI_Allreduce(arg_in, arg_out, arg_len, MPI_BYTE, mpi_op, arg_comm);
+  STK_ThrowRequireMsg(MPI_SUCCESS == errCode,"MPI_Allreduce returned error code " << errCode);
 
   MPI_Op_free( & mpi_op );
 }

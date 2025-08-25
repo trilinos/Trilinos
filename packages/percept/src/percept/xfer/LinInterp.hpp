@@ -188,11 +188,11 @@ LinInterp<FROM,TO>::filter_to_nearest (
 
         best_dist = dist;
 
-	for ( unsigned j = 0; j < nDim; ++j ) {
-	  isoParCoords[j] = outputParametricPoints(0,0,j);
-	}
+        for ( unsigned j = 0; j < nDim; ++j ) {
+          isoParCoords[j] = outputParametricPoints(0,0,j);
+        }
 
-        ToPoints.TransferInfo_[thePt] = isoParCoords;
+        ToPoints.set_entity_parametric_coords(thePt, isoParCoords);
         nearest = ii;
       }
     }
@@ -227,14 +227,7 @@ LinInterp<FROM,TO>::apply(
     const stk::mesh::EntityKey thePt  = ii->first;
     const stk::mesh::EntityKey theBox = ii->second;
 
-    if (1 != ToPoints.TransferInfo_.count(thePt)) {
-      if (0 == ToPoints.TransferInfo_.count(thePt))
-        throw std::runtime_error("Key not found in database");
-      else
-        throw std::runtime_error("Too many Keys found in database");
-    }
-
-    const std::vector<double> &isoParCoords_ = ToPoints.TransferInfo_[thePt];
+    const auto& isoParCoords_ = ToPoints.get_entity_parametric_coords(thePt);
     stk::mesh::Entity theNode =   toBulkData.get_entity(thePt);
     stk::mesh::Entity theElem = fromBulkData.get_entity(theBox);
 

@@ -16,7 +16,7 @@
 namespace stk {
 struct topology;
 namespace mesh {
-  class Entity;
+  struct Entity;
   class FieldBase;
 }
 namespace diag {
@@ -24,7 +24,7 @@ namespace diag {
 }
 }
 
-class CellTopologyData;
+struct CellTopologyData;
 
 namespace percept {
   

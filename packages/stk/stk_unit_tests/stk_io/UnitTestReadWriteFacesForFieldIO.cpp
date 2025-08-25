@@ -59,13 +59,14 @@ public:
 
   void initialize_face_field(stk::mesh::FieldBase* faceField, stk::mesh::EntityVector& faces)
   {
-    for(auto face : faces) {
-      for(unsigned i = 0; i < faceField->number_of_states(); i++) {
-        stk::mesh::FieldState state = stk::mesh::FieldState(i+stk::mesh::StateNP1);
-        stk::mesh::FieldBase* field = faceField->field_state(state);
-        double* data = reinterpret_cast<double*>(stk::mesh::field_data(*field, face));
+    for(unsigned i = 0; i < faceField->number_of_states(); i++) {
+      stk::mesh::FieldState state = stk::mesh::FieldState(i+stk::mesh::StateNP1);
+      stk::mesh::FieldBase* field = faceField->field_state(state);
+      auto fieldData = field->data<double,stk::mesh::ReadWrite>();
+      for(auto face : faces) {
+        auto data = fieldData.entity_values(face);
 
-        *data = get_bulk().identifier(face) + i*100;
+        data() = get_bulk().identifier(face) + i*100;
       }
     }
   }
@@ -113,9 +114,10 @@ public:
     stk::mesh::EntityVector faces;
     stk::mesh::get_entities(bulk, stk::topology::FACE_RANK, faces);
 
+    auto fieldData = field->data<double,stk::mesh::ReadOnly>();
     for(stk::mesh::Entity& face : faces) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(*field, face));
-      EXPECT_EQ((double)bulk.identifier(face), *data);
+      auto data = fieldData.entity_values(face);
+      EXPECT_EQ((double)bulk.identifier(face), data());
     }
   }
 
@@ -174,15 +176,17 @@ public:
 
     stk::mesh::FieldBase* fieldStateN   = field->field_state(stk::mesh::StateN);
     stk::mesh::FieldBase* fieldStateNM1 = field->field_state(stk::mesh::StateNM1);
+    auto fieldStateNData = fieldStateN->data<double,stk::mesh::ReadOnly>();
+    auto fieldStateNM1Data = fieldStateNM1->data<double,stk::mesh::ReadOnly>();
 
     for(auto face : faces) {
-      double* dataN   = reinterpret_cast<double*>(stk::mesh::field_data(*fieldStateN, face));
-      double* dataNM1 = reinterpret_cast<double*>(stk::mesh::field_data(*fieldStateNM1, face));
+      auto dataN   = fieldStateNData.entity_values(face);
+      auto dataNM1 = fieldStateNM1Data.entity_values(face);
 
       double expectedDataNValue   = bulk.identifier(face);
       double expectedDataNM1Value = bulk.identifier(face) + 100;
-      EXPECT_EQ(expectedDataNValue, *dataN);
-      EXPECT_EQ(expectedDataNM1Value, *dataNM1);
+      EXPECT_EQ(expectedDataNValue, dataN());
+      EXPECT_EQ(expectedDataNM1Value, dataNM1());
     }
   }
 

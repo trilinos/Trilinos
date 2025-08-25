@@ -65,7 +65,7 @@ void IbarrierReplacement::finishBarrier()
 
 bool IbarrierReplacement::useReplacementIbarrier() const
 {
-  return USE_IBARRIER_REPLACEMENT && stk::util::get_common_coupling_version() >= 9;
+  return USE_IBARRIER_REPLACEMENT;
 }
 
 }

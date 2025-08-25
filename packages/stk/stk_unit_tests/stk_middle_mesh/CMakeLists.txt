@@ -15,6 +15,13 @@ if(HAVE_STK_Trilinos)
     NOEXEPREFIX
     )
 else()
+  FILE(GLOB TEST_UTIL_SOURCES CONFIGURE_DEPENDS util/*.cpp)
+  add_library(stk_middle_mesh_test_util ${TEST_UTIL_SOURCES})
+  target_link_libraries(stk_middle_mesh_test_util stk_middle_mesh)
+  target_link_libraries(stk_middle_mesh_test_util GTest::gtest)
+  target_include_directories(stk_middle_mesh_test_util PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(stk_middle_mesh_test_util PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/util)
+
   add_executable(stk_middle_mesh_utest ${SOURCES})
   target_link_libraries(stk_middle_mesh_utest stk_middle_mesh)
   target_link_libraries(stk_middle_mesh_utest stk_unit_test_utils)

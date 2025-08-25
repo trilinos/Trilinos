@@ -47,11 +47,13 @@
 
 namespace {
 
+#ifndef STK_UNIFIED_MEMORY
+
 //==============================================================================
-class LegacyFieldBytesAccess : public stk::unit_test_util::MeshFixture
+class LegacyFieldDataBytesAccess : public stk::unit_test_util::MeshFixture
 {
 public:
-  LegacyFieldBytesAccess()
+  LegacyFieldDataBytesAccess()
     : m_field(nullptr)
   {}
 
@@ -70,7 +72,7 @@ protected:
 };
 
 //==============================================================================
-TEST_F(LegacyFieldBytesAccess, host_multiCopyMultiComponent_entityBytes)
+TEST_F(LegacyFieldDataBytesAccess, host_multiCopyMultiComponent_entityBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -107,7 +109,7 @@ TEST_F(LegacyFieldBytesAccess, host_multiCopyMultiComponent_entityBytes)
   }
 }
 
-TEST_F(LegacyFieldBytesAccess, host_multiCopyMultiComponent_bucketBytes)
+TEST_F(LegacyFieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -209,7 +211,7 @@ void test_legacy_device_entity_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field
   );
 }
 
-TEST_F(LegacyFieldBytesAccess, device_multiCopyMultiComponent_entityBytes)
+TEST_F(LegacyFieldDataBytesAccess, device_multiCopyMultiComponent_entityBytes)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -223,12 +225,14 @@ TEST_F(LegacyFieldBytesAccess, device_multiCopyMultiComponent_entityBytes)
 
 
 //------------------------------------------------------------------------------
-TEST_F(LegacyFieldBytesAccess, device_multiCopyMultiComponent_bucketBytes)
+TEST_F(LegacyFieldDataBytesAccess, device_multiCopyMultiComponent_bucketBytes)
 {
   // We don't have a legacy Bucket-based device-side byte access method
   // that is equivalent to the new API.
 }
 
 //==============================================================================
+
+#endif
 
 }

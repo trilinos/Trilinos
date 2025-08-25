@@ -27,18 +27,18 @@ public:
   virtual ~GeometryKernelGregoryPatch();
 
   virtual bool read_file(const std::string& file_name,
-                         std::vector<GeometryHandle>& geometry_entities);
+                         std::vector<GeometryHandle>& geometry_entities) override;
 
-  virtual void pre_process(percept::PerceptMesh *eMeshWithNode, const stk::mesh::PartVector& parts);
+  virtual void pre_process(percept::PerceptMesh *eMeshWithNode, const stk::mesh::PartVector& parts) override;
 
-  virtual bool debug_dump_file(const std::string& file_name);
+  virtual bool debug_dump_file(const std::string& file_name) override;
 
   virtual void snap_to(KernelPoint& point, GeometryHandle geom,
                        double *converged_tolerance = NULL,
                        double *uvw_computed = NULL,
                        double *uvw_hint = NULL,
-                       void *extra_hint = NULL);
-  virtual void normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal, void *extra_hint = NULL);
+                       void *extra_hint = NULL) override;
+  virtual void normal_at(KernelPoint& point, GeometryHandle geom, std::vector<double>& normal, void *extra_hint = NULL) override;
 
   bool in_face(stk::mesh::Entity face, double *uv) const;
 

@@ -594,7 +594,7 @@ fitRibbon(MDArray& pin, MDArray& q, MDArray& rin, MDArray& qh, bool pIsTri, bool
 }
 
 void  GregoryPatch::
-fitRibbonNoNeighbor(MDArray& pin, MDArray& q, MDArray& qh, bool pIsTri)
+fitRibbonNoNeighbor(MDArray& pin, MDArray& q, MDArray& /*qh*/, bool pIsTri)
 {
   MDArray p("ploc",pin.layout());
   Kokkos::deep_copy(p,pin);

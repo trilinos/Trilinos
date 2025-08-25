@@ -50,7 +50,7 @@
 
     const stk::mesh::Entity
     STKSearcher::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
-                                         unsigned& found_it, const stk::mesh::Entity hint_element )
+                                         unsigned& found_it, const stk::mesh::Entity /*hint_element*/ )
     {
       //return 0;
       const stk::mesh::MetaData& metaData = m_bulk->mesh_meta_data();

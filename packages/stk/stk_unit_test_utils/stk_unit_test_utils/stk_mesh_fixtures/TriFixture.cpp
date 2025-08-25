@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
@@ -183,13 +183,10 @@ void TriFixtureImpl<DIM>::generate_mesh(std::vector<size_t> & quad_range_on_this
     int tri_vert[][3] = { {0,1,2}, {0,2,3} };
 
     // Declare the elements that belong on this process
-    std::vector<size_t>::iterator ib = quad_range_on_this_processor.begin();
-    const std::vector<size_t>::iterator ie = quad_range_on_this_processor.end();
     stk::mesh::EntityIdVector elem_nodes(4);
     stk::mesh::EntityIdVector tri_nodes(3);
 
-    for (; ib != ie; ++ib) {
-      size_t quad_id = *ib;
+    for (size_t quad_id : quad_range_on_this_processor) {
       size_t ix = 0, iy = 0;
       quad_x_y(quad_id, ix, iy);
 
@@ -219,15 +216,15 @@ void TriFixtureImpl<DIM>::generate_mesh(std::vector<size_t> & quad_range_on_this
           size_t nx = 0, ny = 0;
           node_x_y(tri_nodes[i], nx, ny);
 
-          Scalar * data = stk::mesh::field_data( *m_coord_field , node );
+          auto data = m_coord_field->data().entity_values(node);
 
           // The CoordinateMappings are used for 2D and 3D so make sure we give it enough space to write to.
           std::array<double, 3> temp;
           coordMap.getNodeCoordinates(temp.data(), nx, ny, 0);
 
-          data[0] = temp[0];
-          data[1] = temp[1] ;
-          if(DIM == 3) data[2] = 0.;
+          data(0_comp) = temp[0];
+          data(1_comp) = temp[1];
+          if(DIM == 3) data(2_comp) = 0.;
         }
       }
     }

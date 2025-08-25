@@ -146,9 +146,11 @@ TEST(UnitTestField, fieldDataAccess_rankMustMatch)
   ASSERT_TRUE(!nodes.empty());
   ASSERT_TRUE(!faces.empty());
 
-  EXPECT_NO_THROW(stk::mesh::field_data(nodalField, nodes[0]));
+  auto nodalFieldData = nodalField.data<stk::mesh::ReadOnly>();
+
+  EXPECT_NO_THROW(nodalFieldData.entity_values(nodes[0]));
 #ifndef NDEBUG
-  EXPECT_THROW(stk::mesh::field_data(nodalField, faces[0]), std::logic_error);
+  EXPECT_ANY_THROW(nodalFieldData.entity_values(faces[0]));
 #endif
 }
 
@@ -483,21 +485,23 @@ TEST(UnitTestField, writeFieldsWithSameName)
     stk::mesh::BulkData &mesh = stkIo.bulk_data();
     stk::mesh::MetaData &metaData = stkIo.meta_data();
 
+    auto nodeFieldData = nodeField.data<stk::mesh::ReadOnly>();
     const stk::mesh::BucketVector &nodeBuckets = mesh.get_buckets(stk::topology::NODE_RANK, metaData.locally_owned_part());
     for (size_t bucket_i=0 ; bucket_i<nodeBuckets.size() ; ++bucket_i) {
       stk::mesh::Bucket &nodeBucket = *nodeBuckets[bucket_i];
-      for (size_t node_i=0 ; node_i<nodeBucket.size() ; ++node_i) {
-        double * nodeData = stk::mesh::field_data(nodeField,nodeBucket.bucket_id(),node_i);
-        EXPECT_EQ(nodeInitialValue, *nodeData);
+      auto nodeBucketData = nodeFieldData.bucket_values(nodeBucket);
+      for (stk::mesh::EntityIdx node_i : nodeBucket.entities()) {
+        EXPECT_EQ(nodeInitialValue, nodeBucketData(node_i,0_comp));
       }
     }
 
+    auto elemFieldData = elemField.data<stk::mesh::ReadOnly>();
     const stk::mesh::BucketVector &elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, metaData.locally_owned_part());
     for (size_t bucket_i=0 ; bucket_i<elemBuckets.size() ; ++bucket_i) {
       stk::mesh::Bucket &elemBucket = *elemBuckets[bucket_i];
-      for (size_t elem_i=0 ; elem_i<elemBucket.size() ; ++elem_i) {
-        double * elemData = stk::mesh::field_data(elemField,elemBucket.bucket_id(),elem_i);
-        EXPECT_EQ(elemInitialValue, *elemData);
+      auto elemBucketData = elemFieldData.bucket_values(elemBucket);
+      for (stk::mesh::EntityIdx elem_i : elemBucket.entities()) {
+        EXPECT_EQ(elemInitialValue, elemBucketData(elem_i,0_comp));
       }
     }
 
@@ -629,10 +633,11 @@ void move_entities_into_solution_part(int soln_index, stk::mesh::BulkData& bulk,
   bulk.batch_change_entity_parts(nodes, addPartsPerEntity, removePartsPerEntity);
 
   stk::mesh::Field<double> *dispField = bulk.mesh_meta_data().get_field<double>(rank, "displacement");
+  auto dispFieldData = dispField->data<stk::mesh::ReadWrite>();
   for(size_t j=soln_index; j<nodes.size(); ++j)
   {
-    double *data = stk::mesh::field_data(*dispField, nodes[j]);
-    *data = static_cast<double>(soln_index);
+    auto data = dispFieldData.entity_values(nodes[j]);
+    data(0_comp) = static_cast<double>(soln_index);
   }
 }
 
@@ -822,10 +827,11 @@ protected:
   void set_field_values_with_scale_factor(stk::mesh::Field<T> & field, T scaleFactor)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(field.entity_rank(), field);
+    auto fieldData = field.template data<stk::mesh::ReadWrite>();
     for (stk::mesh::Bucket * bucket : buckets) {
-      for (stk::mesh::Entity node : *bucket) {
-        T * data = stk::mesh::field_data(field, node);
-        data[0] = get_bulk().identifier(node) * scaleFactor;
+      auto bucketFieldData = fieldData.bucket_values(*bucket);
+      for (stk::mesh::EntityIdx nodeIdx : bucket->entities()) {
+        bucketFieldData(nodeIdx,0_comp) = get_bulk().identifier((*bucket)[nodeIdx]) * scaleFactor;
       }
     }
   }
@@ -834,10 +840,11 @@ protected:
   void expect_field_values_with_scale_factor(stk::mesh::Field<T> & field, T scaleFactor)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(field.entity_rank(), field);
+    auto fieldData = field.template data<stk::mesh::ReadOnly>();
     for (stk::mesh::Bucket * bucket : buckets) {
-      for (stk::mesh::Entity node : *bucket) {
-        const T * data = stk::mesh::field_data(field, node);
-        EXPECT_EQ(static_cast<T>(get_bulk().identifier(node) * scaleFactor), data[0]) << "For field: " << field.name();
+      auto bucketFieldData = fieldData.bucket_values(*bucket);
+      for (stk::mesh::EntityIdx nodeIdx : bucket->entities()) {
+        EXPECT_EQ(static_cast<T>(get_bulk().identifier((*bucket)[nodeIdx]) * scaleFactor), bucketFieldData(nodeIdx,0_comp)) << "For field: " << field.name();
       }
     }
   }
@@ -1311,19 +1318,17 @@ TEST(SharedSidesetField, verifySidesetFieldAfterMeshRead) {
 
       stkIo.populate_bulk_data();
 
+      stk::mesh::FieldBase* field = meta.get_field(stk::topology::FACE_RANK, fieldName);
+      ASSERT_NE(nullptr, field);
+      auto fieldData = field->data<double,stk::mesh::ReadOnly>();
       const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::FACE_RANK, meta.universal_part());
       ASSERT_EQ(1u, buckets.size());
-      for (stk::mesh::Bucket* bucket : buckets)
-      {
+      for (const stk::mesh::Bucket* bucket : buckets) {
         ASSERT_EQ(1u, bucket->size());
         stk::mesh::Entity face = (*bucket)[0];
-        stk::mesh::FieldBase* field = meta.get_field(stk::topology::FACE_RANK, fieldName);
-        EXPECT_NE(nullptr, field);
-        unsigned numEntries = stk::mesh::field_scalars_per_entity(*field, face);
-        double* fieldData = reinterpret_cast<double*>(stk::mesh::field_data(*field, face));
-        for (unsigned entry = 0; entry < numEntries; ++entry)
-        {
-          EXPECT_NEAR(initValue, fieldData[entry], 1e-12);
+        auto faceFieldData = fieldData.entity_values(face);
+        for (stk::mesh::ComponentIdx entry : faceFieldData.components()) {
+          EXPECT_NEAR(initValue, faceFieldData(entry), 1e-12);
         }
       }
     }
@@ -1686,11 +1691,12 @@ stk::mesh::Entity create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::E
   stk::mesh::Entity node = bulk.declare_node(nodeId);
   bulk.modification_end();
 
-  const unsigned fieldExtent = stk::mesh::field_extent0_per_entity(field, node);
-  STK_ThrowRequire(values.size() == fieldExtent);
+  auto fieldData = field.data<stk::mesh::ReadWrite>();
+  auto nodeFieldData = fieldData.entity_values(node);
+  STK_ThrowRequire(static_cast<int>(values.size()) == nodeFieldData.num_components());
 
-  for (unsigned i = 0; i < fieldExtent; ++i) {
-    stk::mesh::field_data(field, node)[i] = values[i];
+  for (stk::mesh::ComponentIdx i : nodeFieldData.components()) {
+    nodeFieldData(i) = values[i];
   }
 
   return node;
@@ -1703,8 +1709,12 @@ void create_node_with_multistate_data(stk::mesh::BulkData & bulk, stk::mesh::Ent
   const stk::mesh::Entity node = bulk.declare_node(nodeId);
   bulk.modification_end();
 
-  *stk::mesh::field_data(field1, node) = 100 + nodeId;
-  *stk::mesh::field_data(field2, node) = 200 + nodeId;
+  auto field1Data = field1.data<stk::mesh::ReadWrite>();
+  auto field2Data = field2.data<stk::mesh::ReadWrite>();
+  auto nodeField1Data = field1Data.entity_values(node);
+  auto nodeField2Data = field2Data.entity_values(node);
+  nodeField1Data(0_comp) = 100 + nodeId;
+  nodeField2Data(0_comp) = 200 + nodeId;
 }
 
 void create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
@@ -1714,7 +1724,9 @@ void create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeI
   const stk::mesh::Entity node = bulk.declare_node(nodeId, stk::mesh::PartVector{&part});
   bulk.modification_end();
 
-  *stk::mesh::field_data(field, node) = nodeId;
+  auto fieldData = field.data<stk::mesh::ReadWrite>();
+  auto nodeFieldData = fieldData.entity_values(node);
+  nodeFieldData(0_comp) = nodeId;
 }
 
 class CustomBulkData : public stk::mesh::BulkData
@@ -1851,11 +1863,12 @@ public:
   void check_field_values(const stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & stkField)
   {
     const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
-    unsigned nodeIdx = 0;
+    auto stkFieldDataHost = stkField.data<FieldDataType,stk::mesh::ReadOnly>();
     for (const stk::mesh::Bucket * bucket : buckets) {
-      for (stk::mesh::Entity node : *bucket) {
-        const FieldDataType fieldValue = *static_cast<FieldDataType*>(stk::mesh::field_data(stkField, node));
-        const FieldDataType expectedValue = bulk.identifier(node);
+      auto bucketFieldValues = stkFieldDataHost.bucket_values(*bucket);
+      for (stk::mesh::EntityIdx nodeIdx : bucket->entities()) {
+        const FieldDataType fieldValue = bucketFieldValues(nodeIdx,0_comp);
+        const FieldDataType expectedValue = bulk.identifier((*bucket)[nodeIdx]);
         EXPECT_EQ(fieldValue, expectedValue);
       }
     }
@@ -1866,7 +1879,7 @@ public:
     Kokkos::View<FieldDataType*>::HostMirror hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
 
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-    stk::mesh::NgpField<FieldDataType> ngpField = stk::mesh::get_updated_ngp_field<FieldDataType>(stkField);
+    auto stkFieldDataDevice = stkField.data<FieldDataType,stk::mesh::ReadOnly,stk::ngp::MemSpace>();
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(size_t /*index*/) {
         unsigned nodeGlobalIndex = 0;
@@ -1876,14 +1889,15 @@ public:
           const unsigned numNodesInBucket = deviceBucket.size();
           for (unsigned nodeOrdinal = 0; nodeOrdinal < numNodesInBucket; ++nodeOrdinal) {
             const stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(deviceBucket[nodeOrdinal]);
-            deviceValues[nodeGlobalIndex++] = ngpField.get(nodeIndex, 0);
+            auto nodeFieldDataDevice = stkFieldDataDevice.entity_values(nodeIndex);
+            deviceValues[nodeGlobalIndex++] = nodeFieldDataDevice(0_comp);
           }
         }
       });
 
     Kokkos::deep_copy(hostValuesFromDevice, deviceValues);
 
-    nodeIdx = 0;
+    unsigned nodeIdx = 0;
     for (const stk::mesh::Bucket * bucket : buckets) {
       for (stk::mesh::Entity node : *bucket) {
         const FieldDataType expectedValue = bulk.identifier(node);
@@ -1896,17 +1910,19 @@ public:
                          const stk::mesh::EntityId nodeId, const int expectedValue)
   {
     stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
-    const FieldDataType fieldValue = *static_cast<FieldDataType*>(stk::mesh::field_data(stkField, node));
+    auto stkFieldDataHost = stkField.data<FieldDataType,stk::mesh::ReadOnly>();
+    auto nodeFieldDataHost = stkFieldDataHost.entity_values(node);
+    const FieldDataType fieldValue = nodeFieldDataHost(0_comp);
     EXPECT_EQ(fieldValue, expectedValue);
 
     Kokkos::View<FieldDataType*> deviceValue("deviceValues", 1);
     Kokkos::View<FieldDataType*>::HostMirror hostValueFromDevice = Kokkos::create_mirror_view(deviceValue);
 
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-    stk::mesh::NgpField<FieldDataType> ngpField = stk::mesh::get_updated_ngp_field<FieldDataType>(stkField);
+    auto stkFieldDataDevice = stkField.data<FieldDataType,stk::mesh::ReadOnly,stk::ngp::MemSpace>();
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(size_t /*index*/) {
-        deviceValue[0] = ngpField.get(ngpMesh, node, 0);
+        auto nodeFieldDataDevice = stkFieldDataDevice.entity_values(node);
+        deviceValue[0] = nodeFieldDataDevice(0_comp);
       });
 
     Kokkos::deep_copy(hostValueFromDevice, deviceValue);

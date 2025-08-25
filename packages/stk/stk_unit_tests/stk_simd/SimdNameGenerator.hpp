@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,19 +30,21 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
 
-#include <stk_search_util/PeriodicBoundarySearch.hpp>
-#include <stk_search_util/ObjectCoordinates.hpp>
-#include <stk_search/DistanceComparison.hpp>
+#ifndef SIMD_NAME_GENERATOR_HPP
+#define SIMD_NAME_GENERATOR_HPP
 
-#include <iostream>
+#include "stk_simd/Simd.hpp"
+#include <type_traits>
 
-namespace impl_hack {
-
-void really_dumb_func()
-{
-  std::cout << "There has to be a better way to deal with header only libraries" << std::endl;
+struct SimdNameGenerator {
+template<class T>
+static std::string GetName(int) {
+  if constexpr (std::is_same_v<stk::simd::Double, T>) return "Double";
+  if constexpr (std::is_same_v<stk::simd::Float, T>) return "Float";
+  if constexpr (std::is_same_v<stk::simd::Bool, T>) return "Bool";
+  if constexpr (std::is_same_v<stk::simd::Boolf, T>) return "Boolf";
 }
+};
 
-} //namespace impl_hack
+#endif

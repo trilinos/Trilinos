@@ -163,16 +163,18 @@ void unpack_search_results_into_field(stk::mesh::BulkData& mesh,
 
   const int myRank = mesh.parallel_rank();
 
+  auto neighborFieldData = neighborField.data<stk::mesh::ReadWrite>();
+
   for(size_t i=0; i<hostSearchResults.size(); ++i) {
     auto result = hostSearchResults(i);
     if (result.domainIdentProc.proc() == myRank) {
       stk::mesh::Entity elem(result.domainIdentProc.id());
       stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, result.rangeIdentProc.id());
       ASSERT_TRUE(mesh.is_valid(node));
-      unsigned* neighborData = stk::mesh::field_data(neighborField, elem);
-      unsigned& numNeighbors = neighborData[0];
+      auto neighborData = neighborFieldData.entity_values(elem);
+      unsigned& numNeighbors = neighborData(0_comp);
       ASSERT_TRUE(numNeighbors < maxNumNeighbors);
-      neighborData[1+numNeighbors] = node.local_offset();
+      neighborData(stk::mesh::ComponentIdx(1+numNeighbors)) = node.local_offset();
       ++numNeighbors;
     }
   }
@@ -181,10 +183,12 @@ void unpack_search_results_into_field(stk::mesh::BulkData& mesh,
 void verify_8_neighbors_per_element(const stk::mesh::BulkData& mesh,
                                     const stk::mesh::Field<unsigned>& neighborField)
 {
+  auto neighborFieldData = neighborField.data<stk::mesh::ReadWrite>();
+
   stk::mesh::for_each_entity_run(mesh, stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part(),
   [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity elem) {
-    const unsigned* neighborData = stk::mesh::field_data(neighborField, elem);
-    EXPECT_EQ(8u, neighborData[0]);
+    auto neighborData = neighborFieldData.entity_values(elem);
+    EXPECT_EQ(8u, neighborData(0_comp));
   });
 }
 
