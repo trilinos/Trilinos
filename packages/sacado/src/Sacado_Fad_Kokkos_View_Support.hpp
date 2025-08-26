@@ -135,8 +135,13 @@ public:
 
   template <class OtherElementType, class OtherSpace,
             size_t OtherFadStaticStride, size_t OtherPartitionedFadStride,
-            class = std::enable_if_t<std::is_convertible_v<
-                OtherElementType (*)[], element_type (*)[]>>>
+            class =
+	       std::enable_if_t<std::is_same_v<std::remove_cv_t<ElementType>,
+	                        std::remove_cv_t<OtherElementType>>>
+		// In ISO C++ we generally don't allow const->non-const conversion
+		//std::enable_if_t<std::is_convertible_v<
+                //                 OtherElementType (*)[], element_type (*)[]>>
+		    >
   KOKKOS_FUNCTION constexpr FadAccessor(
       const FadAccessor<OtherElementType, OtherSpace, OtherFadStaticStride,
                         OtherPartitionedFadStride> &other) {
