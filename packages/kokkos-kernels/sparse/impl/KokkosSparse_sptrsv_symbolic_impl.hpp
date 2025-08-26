@@ -137,7 +137,6 @@ void symbolic_chain_phase(TriSolveHandle& thandle, const NPLViewType& nodes_per_
 
 #ifdef TRISOLVE_SYMB_TIMERS
   std::cout << "  Symbolic Chain Phase Total Time: " << timer_sym_chain_total.seconds() << std::endl;
-  ;
 #endif
 }  // end symbolic_chain_phase
 
@@ -563,7 +562,6 @@ void lower_tri_symbolic(ExecSpaceIn& space, TriSolveHandle& thandle, const RowMa
 
 #ifdef TRISOLVE_SYMB_TIMERS
   std::cout << "  Symbolic (lower tri) Total Time: " << timer_sym_lowertri_total.seconds() << std::endl;
-  ;
 #endif
 }  // end lower_tri_symbolic
 
@@ -1008,7 +1006,6 @@ void upper_tri_symbolic(ExecutionSpace& space, TriSolveHandle& thandle, const Ro
 
 #ifdef TRISOLVE_SYMB_TIMERS
   std::cout << "  Symbolic (upper tri) Total Time: " << timer_sym_uppertri_total.seconds() << std::endl;
-  ;
 #endif
 }  // end upper_tri_symbolic
 

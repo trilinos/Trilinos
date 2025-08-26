@@ -18,8 +18,8 @@
 #include <iostream>
 #include <string>
 
-#ifndef _SPADDHANDLE_HPP
-#define _SPADDHANDLE_HPP
+#ifndef KOKKOSSPARSE_SPADDHANDLE_HPP
+#define KOKKOSSPARSE_SPADDHANDLE_HPP
 
 namespace KokkosSparse {
 

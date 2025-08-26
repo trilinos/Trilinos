@@ -60,28 +60,5 @@ Type Requirements
 Example
 =======
 
-.. code:: c++
-
-  #include <Kokkos_Core.hpp>
-  #include <KokkosBlas2_ger.hpp>
-
-  int main(int argc, char* argv[]) {
-    Kokkos::initialize(argc, argv);
-    {
-
-      const int M = atoi(argv[1]);
-      const int N = atoi(argv[2]);
-
-      Kokkos::View<double**> A("A", M, N);
-      Kokkos::View<double*> x("X", M);
-      Kokkos::View<double*> y("Y", N);
-
-      Kokkos::deep_copy(A, 1.0);
-      Kokkos::deep_copy(x, 3.0);
-      Kokkos::deep_copy(y, 1.3);
-
-      const double alpha = double(1.0);
-      KokkosBlas::ger("T", alpha, x, y, A);
-    }
-    Kokkos::finalize();
-  }
+.. literalinclude:: ../../../../example/wiki/blas/KokkosBlas2_wiki_ger.cpp
+  :language: c++
