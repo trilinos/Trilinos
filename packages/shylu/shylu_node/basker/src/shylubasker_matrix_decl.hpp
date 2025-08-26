@@ -24,7 +24,6 @@
 #include <omp.h>
 #endif
 
-using std::string;
 
 namespace BaskerNS
 {
@@ -38,12 +37,12 @@ namespace BaskerNS
     BASKER_INLINE
     BaskerMatrix();
     BASKER_INLINE
-    BaskerMatrix(string _label);
+    BaskerMatrix(std::string _label);
     BASKER_INLINE
-    BaskerMatrix(Int _m, Int _n, Int _nnz, 
+    BaskerMatrix(Int _m, Int _n, Int _nnz,
                  Int *col_ptr, Int *row_idx, Entry *val);
     BASKER_INLINE
-    BaskerMatrix(string _label, Int _m, Int _n, Int _nnz, 
+    BaskerMatrix(std::string _label, Int _m, Int _n, Int _nnz,
                  Int *col_ptr, Int *row_idx, Entry *val);
     BASKER_INLINE
     ~BaskerMatrix();
@@ -55,14 +54,14 @@ namespace BaskerNS
 
     //init_matrix (want to change these to malloc_matrix)
     BASKER_INLINE
-    void init_matrix(string _label, Int _m, Int _n, Int _nnz);
+    void init_matrix(std::string _label, Int _m, Int _n, Int _nnz);
 
     BASKER_INLINE
-    void init_matrix(string _label, Int _m, Int _n, Int _nnz,
-                    Int *_col_ptr, Int *_row_idx, Entry *_val);
+    void init_matrix(std::string _label, Int _m, Int _n, Int _nnz,
+                     Int *_col_ptr, Int *_row_idx, Entry *_val);
     BASKER_INLINE
-    void init_matrix(string _label, Int _sr, Int _m, 
-                    Int _sc, Int _n, Int _nnz);
+    void init_matrix(std::string _label, Int _sr, Int _m,
+                     Int _sc, Int _n, Int _nnz);
 
     //finalize, used to delete any array structure that where created
     BASKER_INLINE
@@ -137,7 +136,7 @@ namespace BaskerNS
     //Note: These need to be reordered to make better use of 
     //Class size.
 
-    string label;
+    std::string label;
     BASKER_BOOL v_fill;
 
     Int srow, scol; //start col (wrt global matrix, if a block)

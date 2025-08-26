@@ -1,4 +1,4 @@
-IF(Kokkos_ENABLE_OPENMP)
+#IF(Kokkos_ENABLE_OPENMP)
 
     TRIBITS_ADD_EXECUTABLE(
         simple_test_check
@@ -90,8 +90,7 @@ IF(Kokkos_ENABLE_OPENMP)
           OVERALL_NUM_MPI_PROCS 1
      )
 
-
-ENDIF() ##END Kokkos_ENABLE_OPENMP
+#ENDIF() ##END Kokkos_ENABLE_OPENMP
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(${PACKAGE_NAME}_Test_Files
         SOURCE_FILES matrix1.mtx coverage.mtx 
