@@ -176,6 +176,7 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
         KOKKOS_LAMBDA(size_t idx) {
           auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iProc, includeGhosts);
           auto fastMeshIndex = deviceSharedCommMap(idx);
+
           int sendBufferStartIdx = deviceMeshIndicesOffsets(baseProcOffset+meshIndicesCounter+idx);
           const auto& ngpFieldsOnDevice = exchangeHandler.get_ngp_fields_on_device();
 
@@ -183,7 +184,6 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
             NgpFieldType const& field = ngpFieldsOnDevice(fieldIdx);
             if (field.get_rank() == fieldRank) {
               size_t numComponents = field.get_num_components_per_entity(fastMeshIndex);
-
               for (size_t comp = 0; comp < numComponents; ++comp) {
                 deviceSendData(dataBegin + sendBufferStartIdx++) = field.get(fastMeshIndex, comp);
               }
@@ -243,7 +243,8 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
               size_t numComponents = field.get_num_components_per_entity(fastMeshIndex);
 
               for (size_t comp = 0; comp < numComponents; ++comp) {
-                field.get(fastMeshIndex, comp) = doOperation(field.get(fastMeshIndex, comp), deviceRecvData(dataBegin + recvBufferStartIdx++));
+                auto rcv = deviceRecvData(dataBegin + recvBufferStartIdx++);
+                field.get(fastMeshIndex, comp) = doOperation(field.get(fastMeshIndex, comp), rcv);
               }
             }
           }
@@ -256,6 +257,7 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   }
 
   MPI_Waitall(static_cast<int>(num_comm_procs), sendRequests.data(), statuses.data());
+  Kokkos::Profiling::popRegion();
 #endif
 }
 

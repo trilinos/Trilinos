@@ -44,8 +44,6 @@
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/ConstFieldData.hpp>
-#include <stk_mesh/base/FieldBytes.hpp>
-#include <stk_mesh/base/ConstFieldBytes.hpp>
 #include <stk_mesh/base/FieldDataBase.hpp>
 #include <stk_mesh/base/FieldIndexTypes.hpp>
 #include <stk_io/FillMesh.hpp>
@@ -65,18 +63,24 @@ TEST_F(FieldDataEntityAccess, inconsistentTemplateParameters)
   EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostMemSpace, stk::mesh::Layout::Left>()));  // Correct
   EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>()));  // Correct
 
+  // We only do a static_cast() in release builds and don't do any template parameter checking, so this will
+  // not detect any problems and may lead to memory corruption.
+#ifdef STK_FIELD_BOUNDS_CHECK
   EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly,  stk::ngp::HostMemSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
   EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
   EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostMemSpace, stk::mesh::Layout::Right>()));  // Wrong layout
   EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>()));  // Wrong layout
+#endif
 
   EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::MemSpace, stk::mesh::Layout::Left>()));  // Correct
   EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace, stk::mesh::Layout::Left>()));  // Correct
 
+#ifdef STK_FIELD_BOUNDS_CHECK
   EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly,  stk::ngp::MemSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
   EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::MemSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
   //EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::MemSpace, stk::mesh::Layout::Right>()));  // Trapped by static_assert()
   //EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace, stk::mesh::Layout::Right>()));  // Trapped by static_assert()
+#endif
 }
 
 TEST_F(FieldDataEntityAccess, inconsistentTemplateParameters_async)
@@ -91,6 +95,9 @@ TEST_F(FieldDataEntityAccess, inconsistentTemplateParameters_async)
   EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace,
                                   stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Correct
 
+  // We only do a static_cast() in release builds and don't do any template parameter checking, so this will
+  // not detect any problems and may lead to memory corruption.
+#ifdef STK_FIELD_BOUNDS_CHECK
   EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly, stk::ngp::HostMemSpace,
                                    stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Wrong datatype
   EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostMemSpace,
@@ -99,13 +106,14 @@ TEST_F(FieldDataEntityAccess, inconsistentTemplateParameters_async)
                                    stk::mesh::Layout::Right>(stk::ngp::ExecSpace())));  // Wrong layout
   EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace,
                                    stk::mesh::Layout::Right>(stk::ngp::ExecSpace())));  // Wrong layout
+#endif
 
   EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::MemSpace,
                                   stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Correct
   EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace,
                                   stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Correct
 
-
+#ifdef STK_FIELD_BOUNDS_CHECK
   EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly,  stk::ngp::MemSpace,
                                    stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Wrong datatype
   EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::MemSpace,
@@ -114,6 +122,7 @@ TEST_F(FieldDataEntityAccess, inconsistentTemplateParameters_async)
   //                                  stk::mesh::Layout::Right>(stk::ngp::ExecSpace())));  // Trapped by static_assert()
   // EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace,
   //                                  stk::mesh::Layout::Right>(stk::ngp::ExecSpace())));  // Trapped by static_assert()
+#endif
 }
 
 //==============================================================================

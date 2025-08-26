@@ -44,8 +44,6 @@
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/ConstFieldData.hpp>
-#include <stk_mesh/base/FieldBytes.hpp>
-#include <stk_mesh/base/ConstFieldBytes.hpp>
 #include <stk_mesh/base/FieldDataBase.hpp>
 #include <stk_mesh/base/FieldIndexTypes.hpp>
 

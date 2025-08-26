@@ -104,10 +104,29 @@ TEST(FieldIndexTypes, constructionAndArgumentPassing_entity)
 
 
 using TestTypes = ::testing::Types<stk::mesh::ComponentIdx, stk::mesh::CopyIdx, stk::mesh::EntityIdx>;
+using TestTypesInterop = ::testing::Types<std::pair<stk::mesh::ComponentIdx, int>,
+                                        std::pair<stk::mesh::ComponentIdx, unsigned int>,
+                                        std::pair<stk::mesh::ComponentIdx, long>,
+                                        std::pair<stk::mesh::ComponentIdx, unsigned int>,
+
+                                        std::pair<stk::mesh::CopyIdx, int>,
+                                        std::pair<stk::mesh::CopyIdx, unsigned int>,
+                                        std::pair<stk::mesh::CopyIdx, long>,
+                                        std::pair<stk::mesh::CopyIdx, unsigned int>,
+
+                                        std::pair<stk::mesh::EntityIdx, int>,
+                                        std::pair<stk::mesh::EntityIdx, unsigned int>,
+                                        std::pair<stk::mesh::EntityIdx, long>,
+                                        std::pair<stk::mesh::EntityIdx, unsigned int>>;
+
 
 template <typename T>
 class TestFieldIndexTypes : public testing::Test {};
 TYPED_TEST_SUITE(TestFieldIndexTypes, TestTypes,);
+
+template <typename T>
+class TestFieldIndexTypesInterop : public testing::Test {};
+TYPED_TEST_SUITE(TestFieldIndexTypesInterop, TestTypesInterop,);
 
 TYPED_TEST(TestFieldIndexTypes, implicitConversionOperators)
 {
@@ -252,6 +271,49 @@ TYPED_TEST(TestFieldIndexTypes, arithmeticOperators)
 
   value = 20 / value;
   EXPECT_EQ(static_cast<int>(value), 1);
+}
+
+TYPED_TEST(TestFieldIndexTypesInterop, arithmeticOperators)
+{
+  using IndexType   = typename TypeParam::first_type;
+  using BuiltinType = typename TypeParam::second_type;
+
+  IndexType value(3);
+  BuiltinType value2 = 4;
+  BuiltinType value3 = 2;
+
+
+  EXPECT_EQ(value  + value2, 7);
+  EXPECT_EQ(value2 + value,  7);
+
+  EXPECT_EQ(value  - value3, 1);
+  EXPECT_EQ(value2 - value,  1);
+
+  EXPECT_EQ(value  * value2, 12);
+  EXPECT_EQ(value2 * value,  12);
+
+  EXPECT_EQ(value  / value3, 1);
+  EXPECT_EQ(value2 / value,  1);
+
+  IndexType value_copy = value;
+  BuiltinType value2_copy = value2;
+  EXPECT_EQ(value_copy  += value2, IndexType(7));
+  EXPECT_EQ(value2_copy += value,  BuiltinType(7));
+
+  value_copy = value;
+  value2_copy = value2;
+  EXPECT_EQ(value_copy  -= value3, IndexType(1));
+  EXPECT_EQ(value2_copy -= value,  BuiltinType(1));
+
+  value_copy = value;
+  value2_copy = value2;
+  EXPECT_EQ(value_copy  *= value2, IndexType(12));
+  EXPECT_EQ(value2_copy *= value,  BuiltinType(12));
+
+  value_copy = value;
+  value2_copy = value2;
+  EXPECT_EQ(value_copy  /= value3, IndexType(1));
+  EXPECT_EQ(value2_copy /= value,  BuiltinType(1));
 }
 
 TYPED_TEST(TestFieldIndexTypes, comparisonOperators)

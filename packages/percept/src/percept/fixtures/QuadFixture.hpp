@@ -66,7 +66,7 @@
 //        typedef Topology QuadOrTriTopo ;
         enum { NodesPerElem = stk::topology_detail::topology_data<Topology>::num_nodes };
 
-        static std::vector<std::string> get_entity_rank_names(unsigned dim)
+        static std::vector<std::string> get_entity_rank_names(unsigned /*dim*/)
         {
           std::vector<std::string> names = stk::mesh::entity_rank_names();
 #if PERCEPT_USE_FAMILY_TREE

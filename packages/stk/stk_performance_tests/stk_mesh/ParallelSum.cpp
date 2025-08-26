@@ -15,7 +15,7 @@
 #include <stk_mesh/base/Bucket.hpp>            // for Bucket
 #include <stk_mesh/base/BulkData.hpp>          // for BulkData, BulkData::NO...
 #include <stk_mesh/base/MeshBuilder.hpp>
-#include <stk_mesh/base/FieldBase.hpp>         // for field_data, FieldBase
+#include <stk_mesh/base/FieldBase.hpp>         // for FieldBase
 #include <stk_mesh/base/FieldParallel.hpp>     // for parallel_sum, parallel...
 #include <stk_mesh/base/NgpFieldParallel.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
@@ -168,13 +168,14 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
 
   // populate field data
   stk::mesh::BucketVector const& node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, communicated_nodes);
-  for (int b = 0, be = node_buckets.size(); b < be; ++b) {
-    stk::mesh::Bucket const& bucket = *node_buckets[b];
-    for (int i = 0; i < numFields; ++i) {
-      const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
-      double* data = stk::mesh::field_data(field, bucket);
-      for (int n = 0, ne = bucket.size(); n < ne; ++n) {
-        data[n] = static_cast<double>(i+1);
+
+  for (int i = 0; i < numFields; ++i) {
+    const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
+    auto fieldData = field.data<stk::mesh::ReadWrite>();
+    for (stk::mesh::Bucket* bucket : node_buckets) {
+      auto bucketValues = fieldData.bucket_values(*bucket);
+      for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        bucketValues(entityIdx) = (i+1);
       }
     }
   }
@@ -237,22 +238,27 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
   }
 
   // Sanity check
-  size_t num_comm_nodes = 0;
-  for (int b = 0, be = node_buckets.size(); b < be; ++b) {
-    stk::mesh::Bucket const& bucket = *node_buckets[b];
-    const bool isShared = bucket.shared();
-    num_comm_nodes += bucket.size();
-    for (int f = 0; f < numFields; ++f) {
-      const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[f]);
-      const double* stk_data = stk::mesh::field_data(field, bucket);
-      const double expected_shared_value = static_cast<double>(f+1) * power2;
-      const double expected_ghosted_value = static_cast<double>(f+1) * power3;
+  for (int i = 0; i < numFields; ++i) {
+    const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
+    auto fieldData = field.data<stk::mesh::ReadOnly>();
+    for (stk::mesh::Bucket* bucket : node_buckets) {
+      const bool isShared = bucket->shared();
+      auto bucketValues = fieldData.bucket_values(*bucket);
+      const double expected_shared_value = static_cast<double>(i+1) * power2;
+      const double expected_ghosted_value = static_cast<double>(i+1) * power3;
       const double expected = isShared ? expected_shared_value : expected_ghosted_value;
-      for (int n = 0, ne = bucket.size(); n < ne; ++n) {
-        const double relativeError = std::abs(stk_data[n] - expected) / expected;
-        EXPECT_NEAR(0.0, relativeError, tolerance)<<"node "<<bulk.identifier(bucket[n])<<", expected="<<expected<<", stk_data="<<stk_data[n];
+      for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        const double relativeError = std::abs(bucketValues(entityIdx) - expected) / expected;
+        EXPECT_NEAR(0.0, relativeError, tolerance) << "node " << bulk.identifier((*bucket)[entityIdx]) <<
+                                                      ", expected=" << expected << ", stk_data= "<<
+                                                      bucketValues(entityIdx);
       }
     }
+  }
+
+  size_t num_comm_nodes = 0;
+  for (stk::mesh::Bucket* bucket : node_buckets) {
+    num_comm_nodes += bucket->size();
   }
 
   size_t expected_num_shared_nodes = (xdim+1) * (ydim+1);

@@ -46,9 +46,9 @@
       set_gradient_strings(MDArrayString& gstring);
 
       virtual Teuchos::RCP<Function >
-      derivative(MDArrayString& deriv_spec);
+      derivative(MDArrayString& deriv_spec) override;
 
-      Teuchos::RCP<Function > gradient(int spatialDim=3);
+      Teuchos::RCP<Function > gradient(int spatialDim=3) override;
 
       void set_current_time(double time) {current_time=time; using_current_time=true;}
       void unset_time() {using_current_time=true;}
@@ -62,14 +62,14 @@
 
       StringFunction(const StringFunction& s);
 
-      void resolve(stk::expreval::VariableMap::iterator & var_it);
+      void resolve(stk::expreval::VariableMap::iterator & var_it) override;
 
       Teuchos::RCP<Function > derivative_test(MDArrayString& deriv_spec);
       Teuchos::RCP<Function > derivative_test_fd(MDArrayString& deriv_spec, double eps=1.e-6);
 
-      virtual void operator()(MDArray& in, MDArray& out, double time_value_optional=0.0);
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0);
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0);
+      virtual void operator()(MDArray& in, MDArray& out, double time_value_optional=0.0) override;
+      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0) override;
+      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0) override;
 
     private:
       void evalFunctions(MDArray& in, double time_value_optional=0.0);

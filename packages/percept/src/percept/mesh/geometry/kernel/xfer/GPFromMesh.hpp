@@ -66,7 +66,7 @@ namespace percept{
 
     template<class FM>
     static void
-    get_entities(const FM& fromMeshIn, stk::mesh::EntityRank rank, std::vector<stk::mesh::Entity>& vecFaces)
+    get_entities(const FM& fromMeshIn, stk::mesh::EntityRank /*rank*/, std::vector<stk::mesh::Entity>& vecFaces)
     {
       // Maybe use a ptr here before casting? and then verify that the cast
       // was successful, followed by a VERIFY_OP_ON check.

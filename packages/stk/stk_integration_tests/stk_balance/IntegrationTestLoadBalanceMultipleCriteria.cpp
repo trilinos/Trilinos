@@ -21,13 +21,6 @@ void set_criteria_on_mesh(std::vector<const stk::mesh::Field<double>*> critField
   for(size_t i=0;i<buckets.size();++i)
   {
     const stk::mesh::Bucket& bucket = *buckets[i];
-   /* 
-    double* data = stk::mesh::field_data(*(critFields[bulkData.parallel_rank()]), bucket);
-    for(size_t j=0;j<bucket.size();++j)
-    {
-      data[j] = 1.0 + bulkData.parallel_rank();
-    }
-    */
 
     auto data = critFieldData.bucket_values(bucket);
     for(stk::mesh::EntityIdx j : bucket.entities())

@@ -84,14 +84,14 @@ class StkIoSideset : public stk::io::unit_test::IOMeshFixture
 protected:
   using VecField = stk::mesh::Field<double>;
 
-  void set_face_field_data(VecField& ssFieldArg, stk::mesh::Entity face)
+  void set_face_field_data(stk::mesh::FieldData<double>& ssFieldData, stk::mesh::Entity face)
   {
-    const stk::mesh::Entity* faceNodes = get_bulk().begin_nodes(face);
-    unsigned numFaceNodes = get_bulk().num_nodes(face);
-    EXPECT_EQ(numFaceNodes, stk::mesh::field_scalars_per_entity(ssFieldArg, face));
-    double* fieldData = stk::mesh::field_data(ssFieldArg, face);
-    for (unsigned n=0; n<numFaceNodes; ++n) {
-      fieldData[n] = static_cast<double>(get_bulk().identifier(faceNodes[n]));
+    const stk::mesh::ConnectedEntities faceNodes = get_bulk().get_connected_entities(face, stk::topology::NODE_RANK);
+    const int numFaceNodes = faceNodes.size();
+    auto ssFieldValues = ssFieldData.entity_values(face);
+    EXPECT_EQ(numFaceNodes, ssFieldValues.num_components());
+    for (stk::mesh::ComponentIdx n : ssFieldValues.components()) {
+      ssFieldValues(n) = static_cast<double>(get_bulk().identifier(faceNodes[n]));
     }
   }
 
@@ -111,14 +111,16 @@ protected:
     stk::mesh::get_entities(bulk, meta.side_rank(), selector, faces);
     EXPECT_EQ(expectedNumFaces, faces.size());
 
+    auto ssFieldData = ssFieldExtracted->data<double,stk::mesh::ReadOnly>();
     for(stk::mesh::Entity face : faces) {
-      unsigned numFaceNodes = bulk.num_nodes(face);
-      unsigned numScalars = stk::mesh::field_scalars_per_entity(*ssFieldExtracted, face);
+      stk::mesh::ConnectedEntities faceNodes = bulk.get_connected_entities(face, stk::topology::NODE_RANK);
+      unsigned numFaceNodes = faceNodes.size();
+      auto ssFieldValues = ssFieldData.entity_values(face);
+      unsigned numScalars = ssFieldValues.num_components();
       ASSERT_TRUE(numFaceNodes <= numScalars);
-      const stk::mesh::Entity* faceNodes = bulk.begin_nodes(face);
-      const double* fieldData = static_cast<const double*>(stk::mesh::field_data(*ssFieldExtracted, face));
       for(unsigned n=0; n<numFaceNodes; ++n) {
-        EXPECT_NEAR(fieldData[n], static_cast<double>(bulk.identifier(faceNodes[n])), 1.e-6);
+        stk::mesh::ComponentIdx nidx(n);
+        EXPECT_NEAR(ssFieldValues(nidx), static_cast<double>(bulk.identifier(faceNodes[n])), 1.e-6);
       }
     }
   }
@@ -174,12 +176,13 @@ protected:
     const unsigned spatialDim = bulk.mesh_meta_data().spatial_dimension();
     ASSERT_EQ(coords.size(), spatialDim*nodeIds.size());
     unsigned offset = 0;
+    auto coordFieldData = coordFieldArg.data<stk::mesh::ReadWrite>();
     for(stk::mesh::EntityId id : nodeIds) {
       stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, id);
       ASSERT_TRUE(bulk.is_valid(node));
-      double* coordData = stk::mesh::field_data(coordFieldArg, node);
-      for(unsigned d=0; d<spatialDim; ++d) {
-        coordData[d] = coords[offset++];
+      auto coordData = coordFieldData.entity_values(node);
+      for(stk::mesh::ComponentIdx d=0_comp; d<static_cast<int>(spatialDim); ++d) {
+        coordData(d) = coords[offset++];
       }
     }
   }
@@ -228,7 +231,8 @@ protected:
     stk::mesh::ConnectivityOrdinal faceOrd = 0;
     stk::mesh::Entity face11 = get_bulk().declare_element_side(elem1, faceOrd, quadFaceParts);
     EXPECT_EQ(stk::topology::QUAD_4, get_bulk().bucket(face11).topology());
-    set_face_field_data(*ssField, face11);
+    auto ssFieldData = ssField->data<stk::mesh::ReadWrite>();
+    set_face_field_data(ssFieldData, face11);
   }
 
   void create_tet_with_face()
@@ -245,7 +249,8 @@ protected:
     stk::mesh::ConnectivityOrdinal faceOrd = 0;
     stk::mesh::Entity face21 = get_bulk().declare_element_side(elem2, faceOrd, triFaceParts);
     EXPECT_EQ(stk::topology::TRI_3, get_bulk().bucket(face21).topology());
-    set_face_field_data(*ssField, face21);
+    auto ssFieldData = ssField->data<stk::mesh::ReadWrite>();
+    set_face_field_data(ssFieldData, face21);
   }
 
   void setup_mesh_hex_tet_quad_tri()

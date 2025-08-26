@@ -41,8 +41,8 @@ static_assert(false, "Do not include simd impl files directly. Only include stk_
 #define STK_SIMD_DOUBLELOADSTORE_HPP
 
 namespace stk {
-namespace simd {
-
+namespace simd
+{
 namespace impl {
 
 template<int N>
@@ -70,8 +70,12 @@ template<>
 STK_MATH_FORCE_INLINE
 void store_strided<8>(double* x, const simd::Double& z, const int offset)
 {
+#ifdef STK_USE_AVX512_SPECIALIZATION
+  specialized::avx512_scatter(x, specialized::avx512_make_index<double>(offset), z);
+#else
   x[0] = z[0]; x[offset] = z[1]; x[2*offset] = z[2]; x[3*offset] = z[3];
   x[4*offset] = z[4]; x[5*offset] = z[5]; x[6*offset] = z[6]; x[7*offset] = z[7];
+#endif
 }
 
 } // namespace impl
@@ -102,8 +106,7 @@ STK_MATH_FORCE_INLINE void store(double* x, const simd::Double& z, const int off
   impl::store_strided<ndoubles>(x, z, offset);
 }
 
-} // namespace simd
+}  // namespace simd
 } // namespace stk
 
 #endif
-

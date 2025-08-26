@@ -89,10 +89,11 @@ inline void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, const doubl
 {
   std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
+  auto fieldData = field.data<double,stk::mesh::ReadWrite>();
   for(size_t i=0; i<nodes.size(); i++)
   {
-    double *fieldDataForNode = reinterpret_cast<double*>(stk::mesh::field_data(field, nodes[i]));
-    *fieldDataForNode = value;
+    auto fieldDataForNode = fieldData.entity_values(nodes[i]);
+    fieldDataForNode() = value;
   }
 }
 
@@ -100,10 +101,11 @@ inline void testDataOnField(stk::mesh::BulkData &stkMeshBulkData, const double g
 {
   std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
+  auto fieldData = field.data<double,stk::mesh::ReadOnly>();
   for(size_t i=0; i<nodes.size(); i++)
   {
-    double *fieldDataForNode = reinterpret_cast<double*>(stk::mesh::field_data(field, nodes[i]));
-    EXPECT_DOUBLE_EQ(goldValue, *fieldDataForNode);
+    auto fieldDataForNode = fieldData.entity_values(nodes[i]);
+    EXPECT_DOUBLE_EQ(goldValue, fieldDataForNode());
   }
 }
 

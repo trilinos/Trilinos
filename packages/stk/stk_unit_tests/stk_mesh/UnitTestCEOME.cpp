@@ -456,10 +456,11 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
     Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
     stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
-    double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
-    *elem_field_data_node5 = 5.0;
-    double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
-    *elem_field_data_node6 = 6.0;
+    auto elemFieldData = elem_field->data<double,stk::mesh::ReadWrite>();
+    auto elemFieldDataNode5 = elemFieldData.entity_values(node5);
+    elemFieldDataNode5(0_comp) = 5.0;
+    auto elemFieldDataNode6 = elemFieldData.entity_values(node6);
+    elemFieldDataNode6(0_comp) = 6.0;
   }
 
   std::vector<EntityProc> change;
@@ -505,12 +506,15 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
     Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
     stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
-    double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
+    auto elemFieldData = elem_field->data<double,stk::mesh::ReadWrite>();
+    auto elemFieldDataNode5 = elemFieldData.entity_values(node5);
+    elemFieldDataNode5(0_comp) = 5.0;
+    auto elemFieldDataNode6 = elemFieldData.entity_values(node6);
+    elemFieldDataNode6(0_comp) = 6.0;
     const double expectedNode5Data = 5.0;
-    EXPECT_EQ( expectedNode5Data, *elem_field_data_node5 );
-    double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
     const double expectedNode6Data = 6.0;
-    EXPECT_EQ( expectedNode6Data, *elem_field_data_node6 );
+    EXPECT_EQ( expectedNode5Data, elemFieldDataNode5(0_comp) );
+    EXPECT_EQ( expectedNode6Data, elemFieldDataNode6(0_comp) );
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -525,12 +529,15 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
     Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
     stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
-    double * elem_field_data_node5 = static_cast<double*>(stk::mesh::field_data(*elem_field,node5));
+    auto elemFieldData = elem_field->data<double,stk::mesh::ReadWrite>();
+    auto elemFieldDataNode5 = elemFieldData.entity_values(node5);
+    elemFieldDataNode5(0_comp) = 5.0;
+    auto elemFieldDataNode6 = elemFieldData.entity_values(node6);
+    elemFieldDataNode6(0_comp) = 6.0;
     const double expectedNode5Data = 5.0;
-    EXPECT_EQ( expectedNode5Data, *elem_field_data_node5 );
-    double * elem_field_data_node6 = static_cast<double*>(stk::mesh::field_data(*elem_field,node6));
     const double expectedNode6Data = 6.0;
-    EXPECT_EQ( expectedNode6Data, *elem_field_data_node6 );
+    EXPECT_EQ( expectedNode5Data, elemFieldDataNode5(0_comp) );
+    EXPECT_EQ( expectedNode6Data, elemFieldDataNode6(0_comp) );
   }
 
 }

@@ -48,7 +48,7 @@
         setCodomainDimensions(func_2.getCodomainDimensions());
       }
 
-      virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, double time_value_optional=0.0) override
       {
         EXCEPTWATCH;
         m_func1(domain, codomain, time_value_optional);
@@ -57,7 +57,7 @@
         m_func2(input, codomain, time_value_optional);
       }
       
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0) override
       {
         EXCEPTWATCH;
         m_func1(domain, codomain, element, parametric_coords, time_value_optional);
@@ -67,7 +67,7 @@
       }
 
 
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0) override
       {
         EXCEPTWATCH;
         m_func1(domain, codomain, bucket, parametric_coords, time_value_optional);

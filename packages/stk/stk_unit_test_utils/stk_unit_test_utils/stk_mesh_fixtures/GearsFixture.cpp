@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stk_util/stk_config.h>        // for STK_HAS_MPI
 #include <algorithm>                    // for min
@@ -190,6 +190,7 @@ double scale_angle_2pi(double angle) {
 
 void select_nodal_data(const BulkData& mesh,
                        GearsFixture::CylindricalField & cylindrical_coord_field,
+                       stk::mesh::
                        Entity element,
                        double & radius,
                        double & angle,
@@ -199,17 +200,15 @@ void select_nodal_data(const BulkData& mesh,
   angle = TWO_PI;
   height = 0.0;
 
+  auto cylindrical_field_data = cylindrical_coord_field.data<stk::mesh::ReadOnly>();
   int numNodes = mesh.num_nodes(element);
   Entity const *elem_nodes = mesh.begin_nodes(element);
   for (int i = 0; i < numNodes; ++i)
   {
-    Entity node = elem_nodes[i];
-    const MeshIndex& mi = mesh.mesh_index(node);
-    const Bucket& bucket = *mi.bucket;
-    double *cylindrical_data = stk::mesh::field_data(cylindrical_coord_field, bucket, mi.bucket_ordinal);
-    radius += cylindrical_data[0];
-    angle  = std::min(angle,cylindrical_data[1]);
-    height += cylindrical_data[2];
+    auto cylindrical_data = cylindrical_field_data.entity_values(elem_nodes[i]);
+    radius += cylindrical_data(0_comp);
+    angle  = std::min(angle,cylindrical_data(1_comp));
+    height += cylindrical_data(2_comp);
   }
   radius /= numNodes;
   height /= numNodes;

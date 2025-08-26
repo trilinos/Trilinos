@@ -344,15 +344,17 @@ createArborXBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
 
   std::vector<double> boxCoordinates(6);
 
+  auto coordsData = coords->data<double,stk::mesh::ReadOnly>();
+
   for (size_t i = 0; i < entities.size(); ++i) {
     unsigned num_nodes = bulk.num_nodes(entities[i]);
     std::vector<double> coordinates(3*num_nodes,0);
     const stk::mesh::Entity* nodes = bulk.begin_nodes(entities[i]);
     for (unsigned j = 0; j < num_nodes; ++j) {
-      double* data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[j]));
-      coordinates[3*j] = data[0];
-      coordinates[3*j+1] = data[1];
-      coordinates[3*j+2] = data[2];
+      auto data = coordsData.entity_values(nodes[j]);
+      coordinates[3*j] = data(0_comp);
+      coordinates[3*j+1] = data(1_comp);
+      coordinates[3*j+2] = data(2_comp);
     }
     findBoundingBoxCoordinates(coordinates, boxCoordinates);
     ArborX::Point min_point(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2]);

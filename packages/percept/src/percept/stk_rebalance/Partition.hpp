@@ -149,13 +149,13 @@ public:
   /** \brief Query whether element dependents need to be rebalanced outside this Partition. */
   virtual bool partition_dependents_needed() const = 0;
 
-  virtual int evaluate ( int      print_stats,
-                 int     *nentity,
-                 double  *entity_wgt,
-                 int     *ncuts,
-                 double  *cut_wgt,
-                 int     *nboundary,
-                 int     *nadj  )
+  virtual int evaluate ( int      /*print_stats*/,
+                 int     */*nentity*/,
+                 double  */*entity_wgt*/,
+                 int     */*ncuts*/,
+                 double  */*cut_wgt*/,
+                 int     */*nboundary*/,
+                 int     */*nadj*/  )
   {
     return 0;
   }

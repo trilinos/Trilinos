@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,34 +30,40 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#ifndef stk_mesh_GetBucket_hpp
-#define stk_mesh_GetBucket_hpp
+#include <cstddef>
 
-#include <stk_mesh/base/Types.hpp>      // for PartVector
-namespace stk { namespace mesh { class Bucket; } }
+#include "gtest/gtest.h"
+#include "stk_util/util/AlignedAllocator.hpp"
 
-namespace stk {
-namespace mesh {
+TEST(HostAlignedAllocator, address_divisible_by_alignment)
+{
+  constexpr size_t alignment = 32;
+  non_std::HostAlignedAllocator<std::byte, alignment> alloc;
+  auto* ptr = alloc.allocate(alignment);
+  auto addr = reinterpret_cast<uintptr_t>(ptr);
+  EXPECT_EQ(0U, addr % alignment);
+  alloc.deallocate(ptr, 0);
+}
 
-/** \addtogroup stk_mesh_module
- *  \{
- */
+TEST(HostAlignedAllocator, allocate_pads_requested_size_to_multiple_of_alignment)
+{
+  // according to [cppreference](https://en.cppreference.com/w/cpp/memory/c/aligned_alloc),
+  // it is up to the implementation on whether the requested allocation must be a strict
+  // multiple of the alignment.
+  //
+  // At least with address sanitizer included in llvm-14.0.6, an error is emitted if the
+  // requested allocation is not a multiple of the alignment. Note that this is an ASAN error
+  // and **not** an exception. The padding is broken if an ASAN build fails this test.
+  constexpr size_t alignment = 32;
+  non_std::HostAlignedAllocator<std::byte, alignment> alloc;
+  std::byte* ptr = nullptr;
+  EXPECT_NO_THROW(ptr = alloc.allocate(7));
+  alloc.deallocate(ptr, 0);
+}
 
-/* \brief  Get the parts from the union part vector that the bucket is
- *         contained in.
- */
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 15 2025
-STK_DEPRECATED void get_involved_parts( const PartVector & union_parts,
-                         const Bucket & candidate,
-                         PartVector & involved_parts);
-#endif
-
-/** \} */
-
-} // namespace mesh
-} // namespace stk
-
-#endif
-
+// TEST(HostAlignedAllocator, alignment_of_non_pow2_is_compile_error)
+// {
+//   non_std::HostAlignedAllocator<std::byte, 7> alloc;
+// }

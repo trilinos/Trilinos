@@ -40,7 +40,7 @@ public:
                          std::vector<double> &start, 
                          std::vector<double> &end);
   
-  bool withinGeometricLimits(stk::mesh::Entity elem);
+  bool withinGeometricLimits(stk::mesh::Entity elem) override;
   
 private:
   double radius_, length_;
@@ -53,7 +53,7 @@ public:
   SphereBoundingRegion(CoordinatesFieldType * coords, double radius, 
                        std::vector<double> &center); 
   
-  bool withinGeometricLimits(stk::mesh::Entity elem);
+  bool withinGeometricLimits(stk::mesh::Entity elem) override;
   
 private:
   double radius_;
@@ -67,7 +67,7 @@ public:
                     std::vector<double> &start, 
                     std::vector<double> &end);
   
-  bool withinGeometricLimits(stk::mesh::Entity elem);
+  bool withinGeometricLimits(stk::mesh::Entity elem) override;
   
 private:
   std::vector<double> start_, end_;

@@ -278,65 +278,66 @@ void unpack_sideset_info(
 
 //----------------------------------------------------------------------
 
-void pack_field_values(const BulkData& mesh, CommBuffer & buf , Entity entity )
+void pack_field_values(const BulkData& mesh, CommBuffer& buf, Entity entity)
 {
-    if (!mesh.is_field_updating_active()) {
-        return;
-    }
-    const Bucket   & bucket = mesh.bucket(entity);
-    const MetaData & mesh_meta_data = mesh.mesh_meta_data();
-    const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
-    for ( FieldBase* field : fields ) {
-        if ( field->data_traits().is_pod ) {
-            const unsigned size = field_bytes_per_entity( *field, bucket );
+  if (!mesh.is_field_updating_active()) {
+    return;
+  }
+  const Bucket& bucket = mesh.bucket(entity);
+  const MetaData& mesh_meta_data = mesh.mesh_meta_data();
+  const std::vector<FieldBase*>& fields = mesh_meta_data.get_fields(bucket.entity_rank());
+  for (FieldBase* field : fields) {
+    if (field->data_traits().is_pod) {
+      auto& fieldDataBytes = field->data_bytes<const std::byte>();
+      auto entityBytes = fieldDataBytes.entity_bytes(entity);
+      const int numBytes = entityBytes.num_bytes();
+
 #ifndef NDEBUG
-            buf.pack<unsigned>( size );
+      buf.pack<int>(numBytes);
 #endif
-            if ( size ) {
-                unsigned char * const ptr =
-                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( *field , entity ) );
-                buf.pack<unsigned char>( ptr , size );
-            }
-        }
+      if (numBytes) {
+        buf.pack_bytes(entityBytes.pointer(), numBytes, entityBytes.bytes_per_scalar(),
+                       entityBytes.scalar_byte_stride());
+      }
     }
+  }
 }
 
-bool unpack_field_values(const BulkData& mesh,
-                         CommBuffer & buf , Entity entity , [[maybe_unused]] std::ostream & error_msg )
+bool unpack_field_values(const BulkData& mesh, CommBuffer& buf, Entity entity, [[maybe_unused]] std::ostream& error_msg)
 {
-    if (!mesh.is_field_updating_active()) {
-        return true;
-    }
-    const Bucket   & bucket = mesh.bucket(entity);
-    const MetaData & mesh_meta_data = mesh.mesh_meta_data();
-    const std::vector< FieldBase * > & fields = mesh_meta_data.get_fields(bucket.entity_rank());
-    bool ok = true ;
-    for ( const FieldBase* f : fields) {
-        if ( f->data_traits().is_pod ) {
-            const unsigned size = field_bytes_per_entity( *f, bucket );
+  if (!mesh.is_field_updating_active()) {
+    return true;
+  }
+  const Bucket& bucket = mesh.bucket(entity);
+  const MetaData& mesh_meta_data = mesh.mesh_meta_data();
+  const std::vector<FieldBase*>& fields = mesh_meta_data.get_fields(bucket.entity_rank());
+  bool ok = true;
+  for (const FieldBase* field : fields) {
+    if (field->data_traits().is_pod) {
+      auto& fieldDataBytes = field->data_bytes<std::byte>();
+      auto entityBytes = fieldDataBytes.entity_bytes(entity);
+      const int numBytes = entityBytes.num_bytes();
+
 #ifndef NDEBUG
-            unsigned recv_data_size = 0 ;
-            buf.unpack<unsigned>( recv_data_size );
-            if ( size != recv_data_size ) {
-                if ( ok ) {
-                    ok = false ;
-                    error_msg << mesh.identifier(entity);
-                }
-                error_msg << " " << f->name();
-                error_msg << " " << size ;
-                error_msg << " != " << recv_data_size ;
-                buf.skip<unsigned char>( recv_data_size );
-            }
-#endif
-            if ( size )
-            { // Non-zero and equal
-                unsigned char * ptr =
-                        reinterpret_cast<unsigned char *>( stk::mesh::field_data( *f , entity ) );
-                buf.unpack<unsigned char>( ptr , size );
-            }
+      int receivedNumBytes = 0;
+      buf.unpack<int>(receivedNumBytes);
+      if (numBytes != receivedNumBytes) {
+        if (ok) {
+          ok = false;
+          error_msg << mesh.identifier(entity);
         }
+        error_msg << " " << field->name() << " " << numBytes << " != " << receivedNumBytes;
+        buf.skip<unsigned char>(receivedNumBytes);
+      }
+#endif
+
+      if (numBytes) {
+        buf.unpack_bytes(entityBytes.pointer(), numBytes, entityBytes.bytes_per_scalar(),
+                         entityBytes.scalar_byte_stride());
+      }
     }
-    return ok ;
+  }
+  return ok;
 }
 
 //----------------------------------------------------------------------

@@ -47,6 +47,9 @@ else()
   target_link_libraries(stk_ngp_test PUBLIC stk_util_ngp)
   target_link_libraries(stk_ngp_test PUBLIC Kokkos::kokkos)
 
+  find_package(GTest REQUIRED)
+  target_link_libraries(stk_ngp_test PUBLIC GTest::gtest)
+
   add_library(stk_ngp_test_main ${MAIN_SOURCES})
   target_link_libraries(stk_ngp_test_main PUBLIC stk_ngp_test)
   target_link_libraries(stk_ngp_test_main PUBLIC stk_util_ngp)
