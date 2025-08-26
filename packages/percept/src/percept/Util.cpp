@@ -28,6 +28,7 @@
 #include <sys/malloc.h>
 #endif
 
+#include <percept/Percept_GlobalComm.hpp>
 #include <percept/Util.hpp>
 #include <percept/PerceptMesh.hpp>
 #include <sys/resource.h>
@@ -244,7 +245,7 @@ namespace shards {
     void Util::debug_stop()
     {
       int pRank = 0;
-      MPI_Comm_rank(MPI_COMM_WORLD, &pRank);
+      MPI_Comm_rank(percept::get_global_comm(), &pRank);
 
       std::cout << "P[" << pRank << "] in debug_stop\n" << PerceptMesh::demangled_stacktrace(30) << std::endl;
       std::cerr << "P[" << pRank << "] in debug_stop\n" << PerceptMesh::demangled_stacktrace(30) << std::endl;

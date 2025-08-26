@@ -12,6 +12,7 @@
 #include "MeshSmoother.hpp"
 #include <percept/mesh/mod/smoother/SmootherMetric.hpp>
 #include <percept/mesh/geometry/kernel/GeometryKernel.hpp>
+#include <percept/Percept_GlobalComm.hpp>
 #include <array>
 
 #define DEBUG_PRINT 0
@@ -167,14 +168,14 @@
             GenericAlgorithm_parallel_count_invalid_elements<MeshType> ga(eMesh);
             ga.run();
 
-            stk::all_reduce( MPI_COMM_WORLD, stk::ReduceSum<1>( &ga.num_invalid ) );
+            stk::all_reduce( percept::get_global_comm(), stk::ReduceSum<1>( &ga.num_invalid ) );
 
             if (ga.get_mesh_diagnostics)
             {
-                stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMin<1>( &ga.detA_min ) );
-                stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMin<1>( &ga.detW_min ) );
-                stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMax<1>( &ga.shapeA_max ) );
-                stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMax<1>( &ga.shapeW_max ) );
+                stk::all_reduce( percept::get_global_comm(), stk::ReduceMin<1>( &ga.detA_min ) );
+                stk::all_reduce( percept::get_global_comm(), stk::ReduceMin<1>( &ga.detW_min ) );
+                stk::all_reduce( percept::get_global_comm(), stk::ReduceMax<1>( &ga.shapeA_max ) );
+                stk::all_reduce( percept::get_global_comm(), stk::ReduceMax<1>( &ga.shapeW_max ) );
                 if (eMesh->get_rank() == 0)
                 {
                     std::cout << "P[0] detA_min= " << ga.detA_min << " detW_min= " << ga.detW_min
