@@ -80,10 +80,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Basker
    OFF
 )
 
-IF (NOT Kokkos_ENABLE_OPENMP OR Kokkos_ENABLE_CUDA OR Kokkos_ENABLE_HIP)
-  tribits_disable_optional_dependency(ShyLU_NodeBasker "NOTE: Disabling ${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker because CUDA or HIP is enabled in Kokkos or OpenMP is not enabled in Kokkos")
-ENDIF()
-
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Experimental
   HAVE_AMESOS2_EXPERIMENTAL
   "Enable building and installation of experimental Amesos2 features."

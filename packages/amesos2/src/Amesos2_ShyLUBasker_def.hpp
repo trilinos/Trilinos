@@ -44,7 +44,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 
   // Override some default options
   // TODO: use data_ here to init
-#if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
+#if defined(HAVE_AMESOS2_KOKKOS)
   /*
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   "Kokkos node type not supported by experimental ShyLUBasker Amesos2");
@@ -73,17 +73,17 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
 
   ShyLUbasker->Options.user_fill     = (double)BASKER_FILL_USER;
   ShyLUbasker->Options.use_sequential_diag_facto = BASKER_FALSE;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  num_threads = Kokkos::OpenMP::max_hardware_threads();
-#else
+#ifdef KOKKOS_ENABLE_OPENMP // TODO: check for KOKKOS_ENABLE_THREADS when ready
   num_threads = Kokkos::OpenMP::impl_max_hardware_threads();
+#else
+  num_threads = 1;
 #endif
   ShyLUbasker->Options.worker_threads = false;
 
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
      std::runtime_error,
-     "Amesos2_ShyLUBasker Exception: Do not have supported Kokkos node type (OpenMP) enabled for ShyLUBasker");
+     "Amesos2_ShyLUBasker Exception: Do not have Kokkos enabled for ShyLUBasker");
 #endif
 }
 
@@ -92,7 +92,7 @@ template <class Matrix, class Vector>
 ShyLUBasker<Matrix,Vector>::~ShyLUBasker( )
 {  
   /* ShyLUBasker will cleanup its own internal memory*/
-#if defined(HAVE_AMESOS2_KOKKOS) && defined(KOKKOS_ENABLE_OPENMP)
+#if defined(HAVE_AMESOS2_KOKKOS)
   ShyLUbasker->Finalize();
   delete ShyLUbasker;
 #endif

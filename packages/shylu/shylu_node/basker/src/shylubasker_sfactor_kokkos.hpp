@@ -50,11 +50,11 @@ namespace BaskerNS
     INT_2DARRAY   S;
     Int           lvl;
 
-    KOKKOS_INLINE_FUNCTION
+    BASKER_INLINE
     workspace_init_funct()
     {}
 
-    KOKKOS_INLINE_FUNCTION
+    BASKER_INLINE
     workspace_init_funct
     (
      INT_2DARRAY   _ws,
@@ -71,7 +71,7 @@ namespace BaskerNS
       lvl  = _lvl;
     }// workspace_init_funct()
 
-    KOKKOS_INLINE_FUNCTION
+    BASKER_INLINE
     void operator()(const int i) const
     {
       printf("Kokkos: workspace: %d lvl: %d \n", i, lvl);
