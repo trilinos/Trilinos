@@ -278,6 +278,12 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
       if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
         useNative = useNative || (Conjugate[0] == mode[0]);
       }
+      // cuSPARSE 12 requires that the output (y) vector is 16-byte aligned for
+      // all scalar types
+#if defined(CUSPARSE_VER_MAJOR) && (CUSPARSE_VER_MAJOR == 12)
+      uintptr_t yptr = uintptr_t((void*)y.data());
+      if (yptr % 16 != 0) useNative = true;
+#endif
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
       if constexpr (std::is_same_v<ExecutionSpace, Kokkos::HIP>) {
