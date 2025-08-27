@@ -21,7 +21,7 @@ namespace percept {
   }
 
   template<>
-  const typename STKMesh::MTNode * get_nodes<STKMesh>(PerceptMesh *eMesh, typename STKMesh::MTElement element, std::vector<typename STKMesh::MTNode > *nodes )
+  const typename STKMesh::MTNode * get_nodes<STKMesh>(PerceptMesh *eMesh, typename STKMesh::MTElement element, std::vector<typename STKMesh::MTNode > */*nodes*/ )
   {
     return eMesh->get_bulk_data()->begin_nodes(element);
   }
@@ -63,7 +63,7 @@ namespace percept {
 
   /// gets @param field data from @param node into @param fld[@param index]
   template<>
-  void get_field<STKMesh>(double *fld, unsigned size, int index, PerceptMesh *eMesh, typename STKMesh::MTField *field, typename STKMesh::MTNode node)
+  void get_field<STKMesh>(double *fld, unsigned /*size*/, int index, PerceptMesh *eMesh, typename STKMesh::MTField *field, typename STKMesh::MTNode node)
   {
     double *data = eMesh->field_data(field, node);
     fld[index] = data[index];
@@ -82,7 +82,7 @@ namespace percept {
 
   /// sets @param field data from @param fld[@param index] into @param node
   template<>
-  void set_field<STKMesh>(const double *fld, unsigned size, int index, PerceptMesh *eMesh, typename STKMesh::MTField *field, typename STKMesh::MTNode node)
+  void set_field<STKMesh>(const double *fld, unsigned /*size*/, int index, PerceptMesh *eMesh, typename STKMesh::MTField *field, typename STKMesh::MTNode node)
   {
     double *data = eMesh->field_data(field, node);
     data[index] = fld[index];

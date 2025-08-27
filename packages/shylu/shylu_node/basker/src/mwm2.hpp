@@ -618,7 +618,7 @@ namespace mwm_order
     //Update BV with smallest of all largest max |val| row
     for(i = 0; i < n; i++)
     {
-      bv = min(bv,d[i]);
+      bv = std::min(bv,d[i]);
     }
 
     if(num == n)
@@ -874,7 +874,7 @@ namespace mwm_order
             continue;
           }
 
-          dnew = min(dq0, abs(val[k]));
+          dnew = std::min(dq0, abs(val[k]));
           
           if(csp >= dnew)
           {
@@ -938,7 +938,7 @@ L160:
       //(160)
       if(csp != MINONE)
       {
-        bv = min(bv,csp);
+        bv = std::min(bv,csp);
         num++;
         i = isp;
         j = jsp;

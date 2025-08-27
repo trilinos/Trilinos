@@ -47,6 +47,13 @@ namespace simd {
 struct Double {
   using native_simd_t = SIMD_NAMESPACE::native_simd<double>;
 
+#if !defined(STK_VOLATILE_SIMD)
+  static_assert(std::is_trivially_copyable<native_simd_t>::value,
+                 "native_simd<double> must be trivially copyable");
+  static_assert(std::is_trivially_destructible<native_simd_t>::value,
+                 "native_simd<double> must be trivially destructible");
+#endif
+
   STK_MATH_FORCE_INLINE Double() {}
 
   template <typename T>
@@ -55,7 +62,7 @@ struct Double {
   }
 
   STK_MATH_FORCE_INLINE Double(const native_simd_t& x)
-    : _data(x.get()) {
+    : _data(x) {
   }
 
   STK_MATH_FORCE_INLINE Double(const Double& x)
@@ -106,27 +113,27 @@ struct Double {
   }
 
   STK_MATH_FORCE_INLINE Double& operator+= (const double a) {
-    _data = _data + a; //DI-QUESTION: operator+= ?
+    _data += native_simd_t(a);
     return *this;
   }
 
   STK_MATH_FORCE_INLINE Double& operator-= (const double a) {
-    _data = _data - a; //DI-QUESTION: operator-= ?
+    _data -= native_simd_t(a);
     return *this;
   }
 
   STK_MATH_FORCE_INLINE Double& operator*= (const double a) {
-    _data = _data * a; //DI-QUESTION: operator*= ?
+    _data *= native_simd_t(a);
     return *this;
   }
 
   STK_MATH_FORCE_INLINE Double& operator/= (const double a) {
-    _data = _data / a; //DI-QUESTION: operator/= ?
+    _data /= native_simd_t(a);
     return *this;
   }
 
   STK_MATH_FORCE_INLINE Double operator-() const {
-    return - _data;
+    return Double(-_data);
   }
 
   STK_MATH_FORCE_INLINE double& operator[](int i) {return (reinterpret_cast<double*>(&_data))[i];}

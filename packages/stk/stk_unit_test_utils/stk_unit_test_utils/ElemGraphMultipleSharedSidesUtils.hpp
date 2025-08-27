@@ -186,18 +186,19 @@ public:
         stk::io::put_io_part_attribute(block1);
         stk::io::put_io_part_attribute(skinPart);
 
+        stk::mesh::FieldData<double> coordData = coordField->data();
         for(size_t i = 0; i < twoElemTwoSharedSideCoordinates.size(); i++)
-            set_node_coords(*coordField, i+1, twoElemTwoSharedSideCoordinates[i]);
+            set_node_coords(coordData, i+1, twoElemTwoSharedSideCoordinates[i]);
     }
 
-    void set_node_coords(stk::mesh::Field<double>& coordFieldArg, stk::mesh::EntityId id, const std::vector<double> &coords)
+    void set_node_coords(stk::mesh::FieldData<double>& coordData, stk::mesh::EntityId id, const std::vector<double> &coords)
     {
         stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, id);
         if(bulkData.is_valid(node) && bulkData.bucket(node).owned())
         {
-            double* nodeCoords = stk::mesh::field_data(coordFieldArg, node);
-            for(int i = 0; i < 3; i++)
-                nodeCoords[i] = coords[i];
+            auto nodeCoords = coordData.entity_values(node);
+            for(stk::mesh::ComponentIdx i = 0_comp; i < 3; i++)
+                nodeCoords(i) = coords[i];
         }
     }
 

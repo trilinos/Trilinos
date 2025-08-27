@@ -36,7 +36,7 @@
 #include "stk_util/stk_config.h"               // for STK_HAS_MPI
 #if defined ( STK_HAS_MPI )
 
-#include "stk_util/parallel/CommSparse.hpp"    // for CommSparse, comm_recv_msg_sizes, comm_recv...
+#include "stk_util/parallel/CommSparse.hpp"    // for CommSparse
 #include "stk_util/parallel/Parallel.hpp"      // for parallel_machine_rank, parallel_machine_size
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
 #include "stk_util/util/ReportHandler.hpp"     // for ThrowRequireMsg

@@ -70,7 +70,7 @@ class KrylovHandle {
   norm_type max_tolerance;
   int max_iteration;
   int batched_size;
-  const int N_team;
+  const int N_team_;
   int n_teams;
   int ortho_strategy;
   int scratch_pad_level;
@@ -80,10 +80,10 @@ class KrylovHandle {
   bool host_synchronised;
 
  public:
-  KrylovHandle(int _batched_size, int _N_team, int _max_iteration = 200, bool _monitor_residual = false)
+  KrylovHandle(int _batched_size, int N_team, int _max_iteration = 200, bool _monitor_residual = false)
       : max_iteration(_max_iteration),
         batched_size(_batched_size),
-        N_team(_N_team),
+        N_team_(N_team),
         monitor_residual(_monitor_residual) {
     tolerance     = Kokkos::ArithTraits<norm_type>::epsilon();
     max_tolerance = 1e-30;
@@ -94,7 +94,7 @@ class KrylovHandle {
     iteration_numbers = IntViewType("", batched_size);
     Kokkos::deep_copy(iteration_numbers, -1);
 
-    n_teams     = ceil(static_cast<double>(batched_size) / N_team);
+    n_teams     = ceil(static_cast<double>(batched_size) / N_team_);
     first_index = IntViewType("", n_teams);
     last_index  = IntViewType("", n_teams);
 
@@ -102,10 +102,10 @@ class KrylovHandle {
     auto last_index_host  = Kokkos::create_mirror_view(last_index);
 
     first_index_host(0) = 0;
-    last_index_host(0)  = N_team;
+    last_index_host(0)  = N_team_;
     for (int i = 1; i < n_teams; ++i) {
       first_index_host(i) = last_index_host(i - 1);
-      last_index_host(i)  = first_index_host(i) + N_team;
+      last_index_host(i)  = first_index_host(i) + N_team_;
     }
     last_index_host(n_teams - 1) = batched_size;
 
@@ -121,7 +121,7 @@ class KrylovHandle {
   }
 
   /// \brief get_number_of_systems_per_team
-  int get_number_of_systems_per_team() { return N_team; }
+  int get_number_of_systems_per_team() { return N_team_; }
 
   /// \brief get_number_of_teams
   int get_number_of_teams() { return n_teams; }
@@ -402,7 +402,7 @@ class KrylovHandle {
 
   KOKKOS_INLINE_FUNCTION
   void set_norm(int team_id, int batched_id, int iteration_id, norm_type norm_i) const {
-    if (monitor_residual) residual_norms(team_id * N_team + batched_id, iteration_id) = norm_i;
+    if (monitor_residual) residual_norms(team_id * N_team_ + batched_id, iteration_id) = norm_i;
   }
 
   /// \brief set_last_norm
@@ -425,7 +425,7 @@ class KrylovHandle {
 
   KOKKOS_INLINE_FUNCTION
   void set_last_norm(int team_id, int batched_id, norm_type norm_i) const {
-    if (monitor_residual) residual_norms(team_id * N_team + batched_id, max_iteration + 1) = norm_i;
+    if (monitor_residual) residual_norms(team_id * N_team_ + batched_id, max_iteration + 1) = norm_i;
   }
 
   /// \brief set_iteration
@@ -446,7 +446,7 @@ class KrylovHandle {
 
   KOKKOS_INLINE_FUNCTION
   void set_iteration(int team_id, int batched_id, int iteration_id) const {
-    iteration_numbers(team_id * N_team + batched_id) = iteration_id;
+    iteration_numbers(team_id * N_team_ + batched_id) = iteration_id;
   }
 
  public:

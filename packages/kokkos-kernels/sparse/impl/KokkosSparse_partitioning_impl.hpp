@@ -22,8 +22,8 @@
 #include "KokkosGraph_Distance1Color.hpp"
 #include "KokkosKernels_Uniform_Initialized_MemoryPool.hpp"
 
-#ifndef _KOKKOS_PARTITIONING_IMP_HPP
-#define _KOKKOS_PARTITIONING_IMP_HPP
+#ifndef KOKKOSSPARSE_PARTITIONING_IMPL_HPP
+#define KOKKOSSPARSE_PARTITIONING_IMPL_HPP
 
 namespace KokkosSparse {
 

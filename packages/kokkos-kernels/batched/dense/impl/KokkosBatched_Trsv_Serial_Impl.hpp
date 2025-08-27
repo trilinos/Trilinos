@@ -68,7 +68,7 @@ KOKKOS_INLINE_FUNCTION static int checkTrsvInput([[maybe_unused]] const AViewTyp
 
 //// Lower non-transpose ////
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsv<Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsv::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename bViewType>
@@ -93,14 +93,14 @@ struct SerialTrsv<Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsv::CompactM
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1) {
+    if (A.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_LOWER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)b.data(), b.stride_0(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1) {
+                        A.stride(0), (double *)b.data(), b.stride(0), format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_LOWER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)b.data(), b.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)b.data(), b.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -119,8 +119,7 @@ struct SerialTrsv<Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsv::Unblocke
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), b.data(),
-        b.stride_0());
+        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride(0), A.stride(1), b.data(), b.stride(0));
   }
 };
 
@@ -134,14 +133,13 @@ struct SerialTrsv<Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsv::Blocked>
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), b.data(),
-        b.stride_0());
+        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride(0), A.stride(1), b.data(), b.stride(0));
   }
 };
 
 //// Lower transpose ////
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsv<Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsv::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename bViewType>
@@ -166,13 +164,13 @@ struct SerialTrsv<Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsv::CompactMKL
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1) {
+    if (A.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_LOWER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_0(), (double *)b.data(), b.stride_0(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(0), (double *)b.data(), b.stride(0), format,
                         (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1) {
+    } else if (A.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_LOWER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_0(), (double *)b.data(), b.stride_0(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(0), (double *)b.data(), b.stride(0), format,
                         (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
@@ -192,8 +190,7 @@ struct SerialTrsv<Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsv::Unblocked>
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), b.data(),
-        b.stride_0());
+        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
   }
 };
 
@@ -207,8 +204,7 @@ struct SerialTrsv<Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsv::Blocked> {
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), b.data(),
-        b.stride_0());
+        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
   }
 };
 
@@ -239,14 +235,14 @@ struct SerialTrsv<Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Compac
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1) {
+    if (A.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_LOWER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)b.data(), b.stride_0(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1) {
+                        A.stride(0), (double *)b.data(), b.stride(0), format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_LOWER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)b.data(), b.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)b.data(), b.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -265,7 +261,7 @@ struct SerialTrsv<Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Unbloc
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), b.data(), b.stride_0());
+        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
   }
 };
 
@@ -279,13 +275,13 @@ struct SerialTrsv<Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Blocke
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), b.data(), b.stride_0());
+        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
   }
 };
 
 //// Upper non-transpose ////
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsv<Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsv::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename bViewType>
@@ -310,14 +306,14 @@ struct SerialTrsv<Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsv::CompactM
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1) {
+    if (A.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_UPPER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)b.data(), b.stride_0(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1) {
+                        A.stride(0), (double *)b.data(), b.stride(0), format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_UPPER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)b.data(), b.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)b.data(), b.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -336,8 +332,7 @@ struct SerialTrsv<Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsv::Unblocke
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), b.data(),
-        b.stride_0());
+        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride(0), A.stride(1), b.data(), b.stride(0));
   }
 };
 
@@ -351,14 +346,13 @@ struct SerialTrsv<Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsv::Blocked>
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), b.data(),
-        b.stride_0());
+        ArgDiag::use_unit_diag, false, A.extent(0), alpha, A.data(), A.stride(0), A.stride(1), b.data(), b.stride(0));
   }
 };
 
 //// Upper transpose ////
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsv<Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsv::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename bViewType>
@@ -383,13 +377,13 @@ struct SerialTrsv<Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsv::CompactMKL
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1) {
+    if (A.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_UPPER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_0(), (double *)b.data(), b.stride_0(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(0), (double *)b.data(), b.stride(0), format,
                         (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1) {
+    } else if (A.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_UPPER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_0(), (double *)b.data(), b.stride_0(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(0), (double *)b.data(), b.stride(0), format,
                         (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
@@ -409,8 +403,7 @@ struct SerialTrsv<Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsv::Unblocked>
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), b.data(),
-        b.stride_0());
+        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
   }
 };
 
@@ -424,8 +417,7 @@ struct SerialTrsv<Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsv::Blocked> {
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), b.data(),
-        b.stride_0());
+        ArgDiag::use_unit_diag, false, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
   }
 };
 
@@ -456,14 +448,14 @@ struct SerialTrsv<Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Compac
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1) {
+    if (A.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_UPPER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)b.data(), b.stride_0(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1) {
+                        A.stride(0), (double *)b.data(), b.stride(0), format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_UPPER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)b.data(), b.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)b.data(), b.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -482,7 +474,7 @@ struct SerialTrsv<Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Unbloc
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), b.data(), b.stride_0());
+        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
   }
 };
 
@@ -496,7 +488,7 @@ struct SerialTrsv<Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Trsv::Blocke
     auto info = KokkosBatched::Impl::checkTrsvInput(A, b);
     if (info) return info;
     return KokkosBatched::Impl::SerialTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
-        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), b.data(), b.stride_0());
+        ArgDiag::use_unit_diag, true, A.extent(1), alpha, A.data(), A.stride(1), A.stride(0), b.data(), b.stride(0));
   }
 };
 

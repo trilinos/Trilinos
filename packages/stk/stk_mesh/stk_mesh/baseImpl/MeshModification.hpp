@@ -84,7 +84,7 @@ public:
       m_synchronizedCount = syncCount;
     }
 
-    bool modification_begin(const std::string description);
+    bool modification_begin(const std::string description, bool resetSymGhostInfo);
 
     bool modification_end(modification_optimization opt=MOD_END_SORT);
     bool resolve_node_sharing();

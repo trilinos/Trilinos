@@ -183,8 +183,8 @@ void expect_equal_field_data(const stk::mesh::BulkData &oldBulk, stk::mesh::Enti
 
   for(unsigned i=0; i<oldFields.size(); ++i)
   {
-    auto oldFieldBytes = oldFields[i]->const_bytes();
-    auto newFieldBytes = newFields[i]->const_bytes();
+    auto oldFieldBytes = oldFields[i]->data_bytes<const std::byte>();
+    auto newFieldBytes = newFields[i]->data_bytes<const std::byte>();
 
     auto oldEntityBytes = oldFieldBytes.entity_bytes(oldEntity);
     auto newEntityBytes = newFieldBytes.entity_bytes(newEntity);

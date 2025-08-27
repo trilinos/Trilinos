@@ -93,17 +93,14 @@ void print_comm_data_for_entity(const BulkData & mesh, const EntityKey & entityK
 
 void print_field_data_for_entity(const BulkData & mesh, const MeshIndex & meshIndex, std::ostream & out)
 {
-  const Bucket * bucket = meshIndex.bucket;
-  size_t b_ord = meshIndex.bucket_ordinal;
+  const Bucket* bucket = meshIndex.bucket;
   const FieldVector & all_fields = mesh.mesh_meta_data().get_fields();
+
   for (FieldBase * field : all_fields) {
     if (field->entity_rank() != bucket->entity_rank()) continue;
-    FieldMetaData field_meta_data = field->get_meta_data_for_field()[bucket->bucket_id()];
-    unsigned data_size = field_meta_data.m_bytesPerEntity;
-    if (data_size > 0) { // entity has this field?
-      void* data = field_meta_data.m_data + field_meta_data.m_bytesPerEntity * b_ord;
+    if (field_bytes_per_entity(*field, *bucket) > 0) {
       out << "        " << *field << ", ";
-      field->print_data(out, data, data_size);
+      field->print_data(out, meshIndex);
       out << std::endl;
     }
   }

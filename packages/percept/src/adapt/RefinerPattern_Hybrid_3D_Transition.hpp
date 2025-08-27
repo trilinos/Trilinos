@@ -138,61 +138,61 @@ namespace percept {
         }
     }
 
-    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
     {
       bp = m_bp;
     }
 
-    virtual void doBreak()
+    virtual void doBreak() override
     {
       throw std::runtime_error("shouldn't call RefinerPattern_Hybrid_3D_Transition::doBreak()");
 
     }
-    virtual unsigned getFromTypeKey()
+    virtual unsigned getFromTypeKey() override
     {
       throw std::runtime_error("shouldn't call RefinerPattern_Hybrid_3D_Transition::getFromTypeKey()");
 
     }
-    virtual unsigned getToTypeKey()
+    virtual unsigned getToTypeKey() override
     {
       throw std::runtime_error("shouldn't call RefinerPattern_Hybrid_3D_Transition::getToTypeKey()");
 
     }
 
-    virtual std::string getFromTopoPartName() {
+    virtual std::string getFromTopoPartName() override {
       shards::CellTopology cell_topo(getFromTopology());
       return cell_topo.getName();
     }
-    virtual std::string getToTopoPartName() {
+    virtual std::string getToTopoPartName() override {
       shards::CellTopology cell_topo(getToTopology());
       return cell_topo.getName();
     }
 
-    virtual const CellTopologyData *  getFromTopology()
+    virtual const CellTopologyData *  getFromTopology() override
     {
       throw std::runtime_error("shouldn't call RefinerPattern_Hybrid_3D_Transition::getFromTopology()");
     }
 
-    virtual const CellTopologyData *  getToTopology() {
+    virtual const CellTopologyData *  getToTopology() override {
       throw std::runtime_error("shouldn't call RefinerPattern_Hybrid_3D_Transition::getToTopology()");
     }
 
-    void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+    void fillNeededEntities(std::vector<NeededEntityType>& /*needed_entities*/) override
     {
       throw std::runtime_error("shouldn't call RefinerPattern_Hybrid_3D_Transition::fillNeededEntities()");
     }
 
-    virtual unsigned getNumNewElemPerElem()
+    virtual unsigned getNumNewElemPerElem() override
     {
       throw std::runtime_error("shouldn't call RefinerPattern_Hybrid_3D_Transition::getNumNewElemPerElem()");
       return 8;
     }
 
     void
-    createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                      stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
-                      vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                      stk::mesh::FieldBase *proc_rank_field=0)
+    createNewElements(percept::PerceptMesh& /*eMesh*/, NodeRegistry& /*nodeRegistry*/,
+                      stk::mesh::Entity /*element*/,  NewSubEntityNodesType& /*new_sub_entity_nodes*/, vector<stk::mesh::Entity>::iterator& /*element_pool*/,
+                      vector<stk::mesh::Entity>::iterator& /*ft_element_pool*/,
+                      stk::mesh::FieldBase */*proc_rank_field*/=0) override
     {
       throw std::runtime_error("shouldn't call RefinerPattern_Hybrid_3D_Transition::createNewElements()");
     }

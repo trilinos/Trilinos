@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSGRAPH_RCM_HPP
-#define _KOKKOSGRAPH_RCM_HPP
+#ifndef KOKKOSGRAPH_RCM_HPP
+#define KOKKOSGRAPH_RCM_HPP
 
 #include "KokkosGraph_BFS_impl.hpp"
 

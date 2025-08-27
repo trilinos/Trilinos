@@ -156,50 +156,44 @@ void copy_field_data(const stk::mesh::BulkData & inMesh, stk::mesh::BulkData & o
 
   STK_ThrowRequire(inBuckets.size() == outBuckets.size());
 
-    auto inFieldBytes = inField.const_bytes();
-    auto outFieldBytes = outField.bytes();
+  auto copy_bytes = [&](auto& inBucketBytes, auto& outBucketBytes) {
+    STK_ThrowRequireMsg(inBucketBytes.num_bytes() == outBucketBytes.num_bytes(),
+                        "Mismatched field size for field " << inField.name() << " inLength = "
+                        << inBucketBytes.num_bytes() << " outLength = " << outBucketBytes.num_bytes() << "\n");
 
-    if (inField.host_data_layout() == stk::mesh::Layout::Right) {
-      for (size_t i = 0; i<inBuckets.size(); ++i) {
-        auto inBucketBytes = inFieldBytes.bucket_bytes_right(*inBuckets[i]);
-        auto outBucketBytes = outFieldBytes.bucket_bytes_right(*outBuckets[i]);
+    STK_ThrowRequireMsg(inBucketBytes.num_entities() == outBucketBytes.num_entities(),
+                        "Mismatched bucket length for field " << inField.name() << " inLength = "
+                        << inBucketBytes.num_entities() << " outLength = " << outBucketBytes.num_entities() << "\n");
 
-        STK_ThrowRequireMsg(inBucketBytes.num_bytes() == outBucketBytes.num_bytes(),
-          "Mismatched field size for field " << inField.name() << " inLength = " << inBucketBytes.num_bytes() << " outLength = " << outBucketBytes.num_bytes() << "\n");
-
-        STK_ThrowRequireMsg(inBucketBytes.num_entities() == outBucketBytes.num_entities(),
-          "Mismatched bucket length for field " << inField.name() << " inLength = " << inBucketBytes.num_entities() << " outLength = " << outBucketBytes.num_entities() << "\n");
-
-        for (stk::mesh::EntityIdx entity : inBucketBytes.entities()) {
-          for (stk::mesh::ByteIdx idx : inBucketBytes.bytes()) {
-            outBucketBytes(entity,idx) = inBucketBytes(entity,idx);
-          }
-        }
-      } 
+    for (stk::mesh::EntityIdx entity : inBucketBytes.entities()) {
+      for (stk::mesh::ByteIdx idx : inBucketBytes.bytes()) {
+        outBucketBytes(entity,idx) = inBucketBytes(entity,idx);
+      }
     }
+  };
 
-    else if (inField.host_data_layout() == stk::mesh::Layout::Left) {
-      for (size_t i = 0; i<inBuckets.size(); ++i) {
-        auto inBucketBytes = inFieldBytes.bucket_bytes_left(*inBuckets[i]);
-        auto outBucketBytes = outFieldBytes.bucket_bytes_left(*outBuckets[i]);
+  auto inFieldBytes = inField.data_bytes<const std::byte>();
+  auto outFieldBytes = outField.data_bytes<std::byte>();
 
-        STK_ThrowRequireMsg(inBucketBytes.num_bytes() == outBucketBytes.num_bytes(),
-          "Mismatched field size for field " << inField.name() << " inLength = " << inBucketBytes.num_bytes() << " outLength = " << outBucketBytes.num_bytes() << "\n");
-
-        STK_ThrowRequireMsg(inBucketBytes.num_entities() == outBucketBytes.num_entities(),
-          "Mismatched bucket length for field " << inField.name() << " inLength = " << inBucketBytes.num_entities() << " outLength = " << outBucketBytes.num_entities() << "\n");
-
-        for (stk::mesh::EntityIdx entity : inBucketBytes.entities()) {
-          for (stk::mesh::ByteIdx idx : inBucketBytes.bytes()) {
-            outBucketBytes(entity,idx) = inBucketBytes(entity,idx);
-          }
-        }
-      } 
+  if (inField.host_data_layout() == stk::mesh::Layout::Right) {
+    for (size_t i = 0; i<inBuckets.size(); ++i) {
+      auto inBucketBytes = inFieldBytes.bucket_bytes<stk::mesh::Layout::Right>(*inBuckets[i]);
+      auto outBucketBytes = outFieldBytes.bucket_bytes<stk::mesh::Layout::Right>(*outBuckets[i]);
+      copy_bytes(inBucketBytes, outBucketBytes);
     }
+  }
 
-    else {
-      STK_ThrowErrorMsg("Unsupported host Field data layout: " << inField.host_data_layout());
+  else if (inField.host_data_layout() == stk::mesh::Layout::Left) {
+    for (size_t i = 0; i<inBuckets.size(); ++i) {
+      auto inBucketBytes = inFieldBytes.bucket_bytes<stk::mesh::Layout::Left>(*inBuckets[i]);
+      auto outBucketBytes = outFieldBytes.bucket_bytes<stk::mesh::Layout::Left>(*outBuckets[i]);
+      copy_bytes(inBucketBytes, outBucketBytes);
     }
+  }
+
+  else {
+    STK_ThrowErrorMsg("Unsupported host Field data layout: " << inField.host_data_layout());
+  }
 }
 
 void copy_field_data(const stk::mesh::BulkData & inMesh, stk::mesh::BulkData & outMesh)

@@ -42,7 +42,7 @@ class ProgressMeter : public Observer<ProgressMeterData>
 public:
   ProgressMeter(Observable<ProgressMeterData>& observable);
 
-  virtual void notify(ProgressMeterData *data) ;
+  virtual void notify(ProgressMeterData *data) override;
 
 };
 

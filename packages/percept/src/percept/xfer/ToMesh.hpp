@@ -17,7 +17,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
@@ -71,6 +70,17 @@ public :
 
   void bounding_boxes (std::vector<BoundingBox> &v) const;
 
+  void set_entity_parametric_coords(const EntityKey& key, const std::vector<double>& coords) {
+    par_coords_[key] = coords;
+  }
+
+  [[nodiscard]] const std::vector<double>& get_entity_parametric_coords(const EntityKey& key) const {
+    if( par_coords_.count(key) != 1 ) {
+      throw std::runtime_error("Key not found in database");
+    }
+    return par_coords_.at(key);
+  }
+
   const stk::mesh::MetaData    &toMetaData_;
   stk::mesh::BulkData    &toBulkData_;
   stk::mesh::FieldBase         *tocoordinates_;
@@ -81,7 +91,7 @@ public :
   const double                 radius_;
 
   typedef std::map<stk::mesh::EntityKey, std::vector<double> > TransferInfo;
-  TransferInfo TransferInfo_;
+  TransferInfo par_coords_;
 };
 
 class ToMeshAdaptor {
@@ -92,9 +102,9 @@ public:
   // return true to skip the standard processing
   template<class FromMesh, class ToMesh>
   bool
-  apply(ToMesh &ToPoints,
-        const FromMesh  &FromElem,
-        const EntityKeyMap &RangeToDomain)
+  apply(ToMesh &/*ToPoints*/,
+        const FromMesh  &/*FromElem*/,
+        const EntityKeyMap &/*RangeToDomain*/)
   {
     return false;
   }
@@ -102,20 +112,20 @@ public:
   // return true to skip the standard processing
   template<class FromMesh, class ToMesh>
   bool
-  filter_to_nearest(const EntityKeyMap &RangeToDomain,
-                    const FromMesh  &FromElem,
-                    ToMesh &ToPoints)
+  filter_to_nearest(const EntityKeyMap &/*RangeToDomain*/,
+                    const FromMesh  &/*FromElem*/,
+                    ToMesh &/*ToPoints*/)
   {
     return false;
   }
 
   void
-  modify_bounding_box(stk::search::Point<double>& min_corner,
-                      stk::search::Point<double>& max_corner) {}
+  modify_bounding_box(stk::search::Point<double>& /*min_corner*/,
+                      stk::search::Point<double>& /*max_corner*/) {}
 
   template<class ToMesh>
   void
-  modify_selector(const ToMesh& ToPoints, stk::mesh::Selector &sel) {}
+  modify_selector(const ToMesh& /*ToPoints*/, stk::mesh::Selector &/*sel*/) {}
 
 };
 

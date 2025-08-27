@@ -239,20 +239,21 @@ TransientVerifier::verify_transient_field_values(const stk::mesh::BulkData& bulk
 {
   const stk::mesh::BucketVector & entityBuckets = bulk.get_buckets(field->entity_rank(),bulk.mesh_meta_data().locally_owned_part());
 
-  for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-    stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(*field,
+    [&](auto& fieldData) {
+      for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
+        stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
+        auto bucketValues = fieldData.bucket_values(entityBucket);
+        for (stk::mesh::EntityIdx entityIndex : entityBucket.entities()) {
+          stk::mesh::Entity entity = entityBucket[entityIndex];
 
-    for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-      stk::mesh::Entity entity = entityBucket[entityIndex];
-
-      double * data = static_cast<double*> (stk::mesh::field_data(*field, entity));
-      unsigned numEntriesPerEntity = stk::mesh::field_scalars_per_entity(*field, entity);
-
-      for(unsigned i=0; i<numEntriesPerEntity; i++) {
-        EXPECT_EQ(i + 100*timeStep + static_cast<double>(bulk.identifier(entity)), data[i]);
+          for (stk::mesh::ComponentIdx i : bucketValues.components()) {
+            EXPECT_EQ(static_cast<int>(i) + 100*timeStep + static_cast<double>(bulk.identifier(entity)), bucketValues(entityIndex, i));
+          }
+        }
       }
     }
-  }
+  );
 }
 
 void generated_mesh_with_transient_data_to_file_in_serial(const std::string &meshSizeSpec,
@@ -283,26 +284,30 @@ void read_from_serial_file_and_decompose(const std::string& fileName, stk::mesh:
     broker.populate_bulk_data();
 }
 
-void IdAndTimeFieldValueSetter::populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned /*step*/, const double time) const
+void IdAndTimeFieldValueSetter::populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field,
+                                               const unsigned /*step*/, const double time) const
 {
-    stk::mesh::EntityRank fieldRank = field->entity_rank();
+  stk::mesh::EntityRank fieldRank = field->entity_rank();
 
-    std::vector<stk::mesh::Entity> entities;
-    stk::mesh::get_entities(bulk, fieldRank, entities);
+  std::vector<stk::mesh::Entity> entities;
+  stk::mesh::get_entities(bulk, fieldRank, entities);
 
-    stk::mesh::FieldVector allTransientFields = stk::io::get_transient_fields(bulk.mesh_meta_data());
+  stk::mesh::FieldVector allTransientFields = stk::io::get_transient_fields(bulk.mesh_meta_data());
 
-    for(stk::mesh::FieldBase * transientField : allTransientFields)
-    {
-        for(size_t i = 0; i < entities.size(); i++)
-        {
-            unsigned numEntriesPerEntity = stk::mesh::field_scalars_per_entity(*transientField, entities[i]);
-            double value = 100.0 * time + static_cast<double>(bulk.identifier(entities[i]));
-            double *data = static_cast<double*> (stk::mesh::field_data(*transientField, entities[i]));
-            for(unsigned j=0; j<numEntriesPerEntity; j++)
-                data[j] = value + j;
+  for (stk::mesh::FieldBase* transientField : allTransientFields)
+  {
+    stk::mesh::field_data_execute<double, stk::mesh::ReadWrite>(*transientField,
+      [&](auto& fieldData) {
+        for (size_t i = 0; i < entities.size(); ++i) {
+          double value = 100.0 * time + static_cast<double>(bulk.identifier(entities[i]));
+          auto data = fieldData.entity_values(entities[i]);
+          for (stk::mesh::ComponentIdx j : data.components()) {
+            data(j) = value + static_cast<int>(j);
+          }
         }
-    }
+      }
+    );
+  }
 }
 
 } // namespace unit_test_util

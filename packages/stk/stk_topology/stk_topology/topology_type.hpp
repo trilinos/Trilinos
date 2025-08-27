@@ -171,25 +171,6 @@ struct topology::topology_type
     return INVALID_TOPOLOGY;
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 2025
-  STK_DEPRECATED STK_FUNCTION
-  static topology shell_side_topology(unsigned shell_side_ordinal = 0)
-  {
-    switch (shell_side_ordinal)
-    {
-      case 0:  return topology_detail::shell_side_topology_<data, 0>();
-      case 1:  return topology_detail::shell_side_topology_<data, 1>();
-      case 2:  return topology_detail::shell_side_topology_<data, 2>();
-      case 3:  return topology_detail::shell_side_topology_<data, 3>();
-      case 4:  return topology_detail::shell_side_topology_<data, 4>();
-      case 5:  return topology_detail::shell_side_topology_<data, 5>();
-      default: break;
-    }
-
-    return INVALID_TOPOLOGY;
-  }
-#endif
-
   /// node ordinals that make up the given edge
   template <typename OrdinalOutputIterator>
   STK_FUNCTION

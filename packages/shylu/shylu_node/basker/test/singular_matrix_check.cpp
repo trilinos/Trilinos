@@ -17,9 +17,9 @@ int main(int argc, char* argv[])
 
   using Int = int;
   using Entry = double;
-  using Exe_Space = Kokkos::OpenMP;
-  using Entry_ViewType = Kokkos::View<Entry*, Kokkos::HostSpace>;
-  using Int_ViewType = Kokkos::View<Int*, Kokkos::HostSpace>;
+  using Exe_Space = Kokkos::DefaultHostExecutionSpace;
+  using Entry_ViewType = Kokkos::View<Entry*, Exe_Space>;
+  using Int_ViewType = Kokkos::View<Int*, Exe_Space>;
 
   Int m = 2;
   Int n = 2;

@@ -18,8 +18,8 @@
 #include <iostream>
 #include <string>
 
-#ifndef _PAR_ILUTHANDLE_HPP
-#define _PAR_ILUTHANDLE_HPP
+#ifndef KOKKOSSPARSE_PAR_ILUTHANDLE_HPP
+#define KOKKOSSPARSE_PAR_ILUTHANDLE_HPP
 
 namespace KokkosSparse {
 namespace Experimental {

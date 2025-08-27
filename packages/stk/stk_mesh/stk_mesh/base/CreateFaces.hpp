@@ -44,16 +44,6 @@ namespace stk {
     class Selector;
     class Part;
     
-    namespace experimental {
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2025
-    STK_DEPRECATED_MSG("use create_all_sides in SkinBoundary.hpp") void create_faces( BulkData & mesh );
-    STK_DEPRECATED_MSG("use create_all_sides in SkinBoundary.hpp") void create_faces( BulkData & mesh, const Selector & element_selector);
-    STK_DEPRECATED_MSG("use create_all_sides in SkinBoundary.hpp") void create_faces( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_faces );
-    STK_DEPRECATED_MSG("use create_all_sides in SkinBoundary.hpp") void create_faces( BulkData & mesh, bool connect_faces_to_edges);
-    STK_DEPRECATED_MSG("use create_all_sides in SkinBoundary.hpp") void create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges);
-#endif
-    }
-
     /** Create faces for all elements in "element_selector" and attach them to
          * existing elements.
          *

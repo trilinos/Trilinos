@@ -352,24 +352,26 @@ struct CubicFieldEvaluatorWithCoefficients : public TriPolynomialFieldEvaluator 
   CubicFieldEvaluatorWithCoefficients() {}
 };
 
-inline void determine_centroid(const unsigned spatialDimension, stk::mesh::Entity entity,
+inline void determine_centroid(const int spatialDimension, stk::mesh::Entity entity,
                                const stk::mesh::FieldBase& nodalCoordField, double* centroid)
 {
   const stk::mesh::BulkData& bulkData = nodalCoordField.get_mesh();
   const stk::mesh::Entity* const nodes = bulkData.begin_nodes(entity);
   const unsigned numNodes = bulkData.num_nodes(entity);
 
-  for(unsigned i = 0; i < spatialDimension; ++i) {
-    for(unsigned iNode = 0; iNode < numNodes; ++iNode) {
-      stk::mesh::Entity node = nodes[iNode];
-      double* coor = static_cast<double*>(stk::mesh::field_data(nodalCoordField, node));
-      STK_ThrowRequire(coor);
-      centroid[i] += coor[i];
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(nodalCoordField,
+    [&](auto& coordData) {
+      for(stk::mesh::ComponentIdx i = 0_comp; i < spatialDimension; ++i) {
+        for(unsigned iNode = 0; iNode < numNodes; ++iNode) {
+          auto coords = coordData.entity_values(nodes[iNode]);
+          centroid[i] += coords(i);
+        }
+      }
+      for(int i = 0; i < spatialDimension; ++i) {
+        centroid[i] /= numNodes;
+      }
     }
-  }
-  for(unsigned i = 0; i < spatialDimension; ++i) {
-    centroid[i] /= numNodes;
-  }
+  );
 }
 
 inline void determine_centroid(const unsigned spatialDimension, stk::mesh::Entity entity,
@@ -395,20 +397,24 @@ inline void set_entity_field(const stk::mesh::BulkData& bulk,
 
   const unsigned spatialDimension = bulk.mesh_meta_data().spatial_dimension();
   stk::mesh::FieldBase const* coord = bulk.mesh_meta_data().coordinate_field();
-  for(stk::mesh::Entity entity : entities) {
-    std::vector<double> centroid;
-    determine_centroid(spatialDimension, entity, *coord, centroid);
 
-    double* data = static_cast<double*>(stk::mesh::field_data(stkField, entity));
-    unsigned fieldLength = stk::mesh::field_scalars_per_entity(stkField, entity);
-    double x = centroid[0];
-    double y = centroid[1];
-    double z = (spatialDimension == 2 ? 0.0 : centroid[2]);
+  stk::mesh::field_data_execute<double, stk::mesh::ReadWrite>(stkField,
+    [&](auto& stkFieldData) {
+      for(stk::mesh::Entity entity : entities) {
+        std::vector<double> centroid;
+        determine_centroid(spatialDimension, entity, *coord, centroid);
 
-    for(unsigned i = 0; i < fieldLength; ++i) {
-      data[i] = eval(entity, x, y, z, i + 1);
+        double x = centroid[0];
+        double y = centroid[1];
+        double z = (spatialDimension == 2 ? 0.0 : centroid[2]);
+
+        auto data = stkFieldData.entity_values(entity);
+        for(stk::mesh::ComponentIdx i : data.components()) {
+          data(i) = eval(entity, x, y, z, i + 1);
+        }
+      }
     }
-  }
+  );
 }
 
 inline void set_node_field(const stk::mesh::BulkData& bulk,
@@ -423,19 +429,23 @@ inline void set_node_field(const stk::mesh::BulkData& bulk,
   stk::mesh::get_selected_entities(selector, bulk.buckets(rank), entities);
 
   const unsigned spatialDimension = bulk.mesh_meta_data().spatial_dimension();
-  stk::mesh::FieldBase const* coord = bulk.mesh_meta_data().coordinate_field();
-  for(stk::mesh::Entity entity : entities) {
-    double* data = static_cast<double*>(stk::mesh::field_data(stkField, entity));
-    double* coordData = static_cast<double*>(stk::mesh::field_data(*coord, entity));
-    unsigned fieldLength = stk::mesh::field_scalars_per_entity(stkField, entity);
-    double x = coordData[0];
-    double y = coordData[1];
-    double z = (spatialDimension == 2 ? 0.0 : coordData[2]);
+  const auto& coordField = *bulk.mesh_meta_data().coordinate_field();
 
-    for(unsigned i = 0; i < fieldLength; ++i) {
-      data[i] = eval(entity, x, y, z, i + 1);
+  stk::mesh::field_data_execute<double, double, stk::mesh::ReadOnly, stk::mesh::ReadWrite>(coordField, stkField,
+    [&](auto& coordFieldData, auto& stkFieldData) {
+      for(stk::mesh::Entity entity : entities) {
+        auto coordData = coordFieldData.entity_values(entity);
+        auto fieldData = stkFieldData.entity_values(entity);
+        double x = coordData(0_comp);
+        double y = coordData(1_comp);
+        double z = (spatialDimension == 2 ? 0.0 : coordData(2_comp));
+
+        for(stk::mesh::ComponentIdx i : fieldData.components()) {
+          fieldData(i) = eval(entity, x, y, z, i + 1);
+        }
+      }
     }
-  }
+  );
 }
 
 

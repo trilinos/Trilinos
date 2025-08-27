@@ -38,12 +38,13 @@ void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, s
 
   stk::mesh::EntityVector nodes;
   stk::mesh::get_selected_entities(fixture.m_meta.universal_part(), fixture.m_bulk_data.buckets(stk::topology::NODE_RANK), nodes);
+  auto coordFieldData = coordField.data<stk::mesh::ReadWrite>();
   for(stk::mesh::Entity node : nodes )
   {
-    double* coords = stk::mesh::field_data(coordField, node);
+    auto coords = coordFieldData.entity_values(node);
     unsigned id = fixture.m_bulk_data.identifier(node);
-    coords[0] = x[id-1];
-    coords[1] = y[id-1];
+    coords(0_comp) = x[id-1];
+    coords(1_comp) = y[id-1];
   }
 
   fixture.m_bulk_data.modification_begin();

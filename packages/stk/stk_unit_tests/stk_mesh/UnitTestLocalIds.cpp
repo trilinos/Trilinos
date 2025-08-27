@@ -116,10 +116,10 @@ public:
     return node_conn;
   }
 
-  double* get_coordinates(unsigned node_index) const
+  stk::mesh::EntityValues<const double> get_coordinates(unsigned node_index) const
   {
     stk::mesh::Entity node = m_localIdToNode[node_index];
-    return stk::mesh::field_data(*m_coords, node);
+    return m_coords->data<stk::mesh::ReadOnly>().entity_values(node);
   }
 
   void reset_local_ids()
@@ -191,8 +191,8 @@ TEST_F(LocalIds, using_local_ids)
       std::vector<unsigned> connectivity = localIdBulkData.get_nodes(i);
       for(size_t j=0;j<connectivity.size();++j)
       {
-        double* node_data = localIdBulkData.get_coordinates(connectivity[j]);
-        EXPECT_NEAR(gold_x_coordinates[i][j], node_data[0], 1.e-6);
+        auto node_data = localIdBulkData.get_coordinates(connectivity[j]);
+        EXPECT_NEAR(gold_x_coordinates[i][j], node_data(0_comp), 1.e-6);
       }
     }
   }
@@ -223,6 +223,7 @@ TEST_F(LocalIds, using_entities)
 
     typedef stk::mesh::Field<double> CoordFieldType;
     CoordFieldType *coords = get_meta().get_field<double>(stk::topology::NODE_RANK, "coordinates");
+    auto coordData = coords->data<stk::mesh::ReadOnly>();
 
     unsigned elemIndex = 0;
     const stk::mesh::BucketVector& elemBuckets = get_bulk().buckets(stk::topology::ELEM_RANK);
@@ -234,8 +235,8 @@ TEST_F(LocalIds, using_entities)
         Entities nodes = bulkDataHelper.get_nodes(bucket[j]);
         for(unsigned k=0;k<nodes.size();++k)
         {
-          double *node_data = stk::mesh::field_data(*coords, nodes[k]);
-          EXPECT_NEAR(gold_x_coordinates[elemIndex][k], node_data[0], 1.e-6);
+          auto nodeData = coordData.entity_values(nodes[k]);
+          EXPECT_NEAR(gold_x_coordinates[elemIndex][k], nodeData(0_comp), 1.e-6);
         }
         ++elemIndex;
       }

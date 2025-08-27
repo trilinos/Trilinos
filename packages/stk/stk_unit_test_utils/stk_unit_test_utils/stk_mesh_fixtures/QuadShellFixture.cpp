@@ -207,12 +207,9 @@ void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this
   {
     // Declare the elements that belong on this process
 
-    std::vector<EntityId>::const_iterator ib = element_ids_on_this_processor.begin();
-    const std::vector<EntityId>::const_iterator ie = element_ids_on_this_processor.end();
     stk::mesh::EntityIdVector elem_nodes(4) ;
 
-    for (; ib != ie; ++ib) {
-      EntityId entity_id = *ib;
+    for (EntityId entity_id : element_ids_on_this_processor) {
       unsigned ix = 0, iy = 0;
       elem_x_y(entity_id, ix, iy);
 
@@ -236,9 +233,13 @@ void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this
         unsigned nx = 0, ny = 0;
         node_x_y(elem_nodes[i], nx, ny);
 
-        Scalar * data = stk::mesh::field_data( *m_coord_field , node );
+        auto data = m_coord_field->data().entity_values(node);
+        std::array<double, 3> data_array{data(0_comp), data(1_comp), data(2_comp)};
+        coordMap.getNodeCoordinates(data_array.data(), nx, ny, 0);
 
-        coordMap.getNodeCoordinates(data, nx, ny, 0);
+        for (stk::mesh::ComponentIdx d : data.components()) {
+          data(d) = data_array[d];
+        }
       }
     }
   }

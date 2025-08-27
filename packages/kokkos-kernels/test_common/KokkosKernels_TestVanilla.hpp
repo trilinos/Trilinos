@@ -30,9 +30,9 @@ template <class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpac
 struct SharedVanillaGEMM {
   bool A_t, B_t, A_c, B_c;
   int C_rows, C_cols, A_cols;
-  ViewTypeA A;
-  ViewTypeB B;
-  ViewTypeC C;
+  ViewTypeA A_;
+  ViewTypeB B_;
+  ViewTypeC C_;
 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
@@ -50,24 +50,24 @@ struct SharedVanillaGEMM {
       // Give each kokkos thread a vector of A
       SubviewTypeA a_vec;
       if (A_t)
-        a_vec = Kokkos::subview(A, Kokkos::ALL(), i);
+        a_vec = Kokkos::subview(A_, Kokkos::ALL(), i);
       else
-        a_vec = Kokkos::subview(A, i, Kokkos::ALL());
+        a_vec = Kokkos::subview(A_, i, Kokkos::ALL());
 
       // Have all vector lanes perform the dot product
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, C_cols), [&](const int& j) {
         SubviewTypeB b_vec;
         if (B_t)
-          b_vec = Kokkos::subview(B, j, Kokkos::ALL());
+          b_vec = Kokkos::subview(B_, j, Kokkos::ALL());
         else
-          b_vec = Kokkos::subview(B, Kokkos::ALL(), j);
+          b_vec = Kokkos::subview(B_, Kokkos::ALL(), j);
         ScalarC ab = ScalarC(0);
         for (int k = 0; k < A_cols; k++) {
           auto a = A_c ? APT::conj(a_vec(k)) : a_vec(k);
           auto b = B_c ? APT::conj(b_vec(k)) : b_vec(k);
           ab += a * b;
         }
-        C(i, j) = beta * C(i, j) + alpha * ab;
+        C_(i, j) = beta * C_(i, j) + alpha * ab;
       });
     });
   }
@@ -76,9 +76,9 @@ struct SharedVanillaGEMM {
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
 struct Functor_BatchedVanillaGEMM {
   bool A_t, B_t, A_c, B_c, batch_size_last_dim = false;
-  ViewTypeA A;
-  ViewTypeB B;
-  ViewTypeC C;
+  ViewTypeA A_;
+  ViewTypeB B_;
+  ViewTypeC C_;
 
   using ScalarA      = typename ViewTypeA::value_type;
   using ScalarB      = typename ViewTypeB::value_type;
@@ -93,30 +93,30 @@ struct Functor_BatchedVanillaGEMM {
   KOKKOS_INLINE_FUNCTION
   void operator()(const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
     int i = team.league_rank();
-    SubviewTypeA _A;
-    SubviewTypeB _B;
-    SubviewTypeC _C;
+    SubviewTypeA A;
+    SubviewTypeB B;
+    SubviewTypeC C;
 
     if (batch_size_last_dim) {
-      _A = Kokkos::subview(A, Kokkos::ALL(), Kokkos::ALL(), i);
-      _B = Kokkos::subview(B, Kokkos::ALL(), Kokkos::ALL(), i);
-      _C = Kokkos::subview(C, Kokkos::ALL(), Kokkos::ALL(), i);
+      A = Kokkos::subview(A_, Kokkos::ALL(), Kokkos::ALL(), i);
+      B = Kokkos::subview(B_, Kokkos::ALL(), Kokkos::ALL(), i);
+      C = Kokkos::subview(C_, Kokkos::ALL(), Kokkos::ALL(), i);
     } else {
-      _A = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-      _B = Kokkos::subview(B, i, Kokkos::ALL(), Kokkos::ALL());
-      _C = Kokkos::subview(C, i, Kokkos::ALL(), Kokkos::ALL());
+      A = Kokkos::subview(A_, i, Kokkos::ALL(), Kokkos::ALL());
+      B = Kokkos::subview(B_, i, Kokkos::ALL(), Kokkos::ALL());
+      C = Kokkos::subview(C_, i, Kokkos::ALL(), Kokkos::ALL());
     }
     struct SharedVanillaGEMM<SubviewTypeA, SubviewTypeB, SubviewTypeC, ExecutionSpace> vgemm;
     vgemm.A_t    = A_t;
     vgemm.B_t    = B_t;
     vgemm.A_c    = A_c;
     vgemm.B_c    = B_c;
-    vgemm.C_rows = batch_size_last_dim ? C.extent(0) : C.extent(1);
-    vgemm.C_cols = batch_size_last_dim ? C.extent(1) : C.extent(2);
-    vgemm.A_cols = batch_size_last_dim ? (A_t ? A.extent(0) : A.extent(1)) : (A_t ? A.extent(1) : A.extent(2));
-    vgemm.A      = _A;
-    vgemm.B      = _B;
-    vgemm.C      = _C;
+    vgemm.C_rows = batch_size_last_dim ? C_.extent(0) : C_.extent(1);
+    vgemm.C_cols = batch_size_last_dim ? C_.extent(1) : C_.extent(2);
+    vgemm.A_cols = batch_size_last_dim ? (A_t ? A_.extent(0) : A_.extent(1)) : (A_t ? A_.extent(1) : A_.extent(2));
+    vgemm.A_     = A;
+    vgemm.B_     = B;
+    vgemm.C_     = C;
     vgemm.alpha  = alpha;
     vgemm.beta   = beta;
     vgemm(team);
@@ -125,7 +125,7 @@ struct Functor_BatchedVanillaGEMM {
   inline void run() {
     Kokkos::parallel_for(
         "Test::VanillaGEMM",
-        Kokkos::TeamPolicy<ExecutionSpace>(batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO,
+        Kokkos::TeamPolicy<ExecutionSpace>(batch_size_last_dim ? C_.extent(2) : C_.extent(0), Kokkos::AUTO,
                                            KokkosKernels::Impl::kk_get_max_vector_size<ExecutionSpace>()),
         *this);
   }

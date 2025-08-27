@@ -1762,6 +1762,22 @@ void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face)
                   "Face with id: " << bulk.identifier(face) << " has no valid connectivity to elements");
 }
 
+bool part_is_on_upward_entity_except(const stk::mesh::BulkData& bulk,
+                                     stk::mesh::Entity entity,
+                                     stk::mesh::EntityRank upwardRank,
+                                     const stk::mesh::Part& part,
+                                     stk::mesh::Entity entityToSkip)
+{
+  const stk::mesh::ConnectedEntities conn = bulk.get_connected_entities(entity, upwardRank);
+  for(unsigned i=0; i<conn.size(); ++i) {
+    if (conn[i] != entityToSkip && bulk.bucket(conn[i]).member(part)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 bool has_upward_recv_ghost_connectivity(const stk::mesh::BulkData &bulk,
                                         const stk::mesh::Ghosting& ghosting,
                                         stk::mesh::Entity entity)

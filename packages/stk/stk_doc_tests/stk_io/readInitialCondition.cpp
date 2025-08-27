@@ -123,10 +123,11 @@ TEST(StkMeshIoBrokerHowTo, readInitialCondition)
     // ============================================================
     //+ VERIFICATION
     //+ The value of the field at all nodes should be 2.0
+    auto temperatureData = temperature.data<stk::mesh::ReadOnly>();
     stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
         [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
-          double *fieldDataForNode = stk::mesh::field_data(temperature, node);
-          EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
+          auto fieldDataForNode = temperatureData.entity_values(node);
+          EXPECT_DOUBLE_EQ(2.0, fieldDataForNode());
         }
     );
     //-END

@@ -84,7 +84,6 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
           .invoke();
       FAIL() << (fmsg + fmsg_rhs);
     } catch (const std::runtime_error& error) {
-      ;
     }
 
     // Check for DblBuf runtime errors related to vector_len
@@ -96,7 +95,6 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
           .invoke();
       FAIL() << (fmsg + fmsg_rhs);
     } catch (const std::runtime_error& error) {
-      ;
     }
   }
 
@@ -116,7 +114,6 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
   } catch (const std::runtime_error& error) {
     std::string error_msg = error.what();
     if (algo_type == BaseHeuristicAlgos::SQUARE && matCdim1 != matCdim2) {
-      ;
     } else if (algo_type == BaseTplAlgos::ARMPL) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) && ARMPL_BUILD >= 1058
       auto ninter = batchedGemmHandle->get_tpl_params()[0];
@@ -140,9 +137,9 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
   vgemm.B_t                 = std::is_same<transB, Trans::Transpose>::value;
   vgemm.batch_size_last_dim = std::is_same<batchLayout, BatchLayout::Right>::value;
   vgemm.A_c = vgemm.B_c = false;
-  vgemm.A               = a_expected;
-  vgemm.B               = b_expected;
-  vgemm.C               = c_expected;
+  vgemm.A_              = a_expected;
+  vgemm.B_              = b_expected;
+  vgemm.C_              = c_expected;
   vgemm.alpha           = alpha;
   vgemm.beta            = beta;
   vgemm.run();  // Compute c_expected
@@ -256,13 +253,11 @@ void impl_test_batched_gemm(const int N, const int matAdim1, const int matAdim2,
             std::string fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
             FAIL() << fmsg;
           } catch (const std::runtime_error& error) {
-            ;
           }
         }
       } catch (const std::runtime_error& error) {
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || (ARMPL_BUILD < 1058)
         if (algo_type == BaseTplAlgos::ARMPL) {
-          ;
         } else {
           std::string fmsg = kk_failure_str(__FILE__, __FUNCTION__, __LINE__);
           FAIL() << fmsg;

@@ -318,7 +318,7 @@ namespace {
             amesos2_paramlist.setName("Amesos2");
             Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("Basker");
 
-            shylubasker_paramlist.set("num_threads", 1,
+            shylubasker_paramlist.set("num_threads", 4,
                 "Number of threads");
             shylubasker_paramlist.set("pivot", false,
                 "Should not pivot");

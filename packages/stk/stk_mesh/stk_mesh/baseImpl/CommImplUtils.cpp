@@ -117,30 +117,30 @@ unsigned fill_procs_shared_then_ghosted(PairIterEntityComm ec, std::vector<int>&
 //
   procs.clear();
   procs.reserve(ec.size());
-  unsigned numShared = 0;
   
-  for(; !ec.empty(); ++ec) {
-    if (ec->ghost_id == BulkData::SHARED) {
-      ++numShared;
-    }
+  while(!ec.empty() && ec->ghost_id == BulkData::SHARED) {
     procs.push_back( ec->proc );
+    ++ec;
   }
 
-  //At this point we can safely assume the first 'numShared' procs
-  //are sorted and unique.
-  //So now we will remove any ghost procs that are also shared, and
-  //then we will sort and unique the ghost procs.
- 
-  std::vector<int>::iterator endShared = procs.begin()+numShared;
-  std::vector<int>::iterator beginGhosts = endShared;
-  std::vector<int>::iterator newEnd =
-      std::remove_if(beginGhosts, procs.end(),
-        [&](int x) { return std::find(procs.begin(), endShared, x) != endShared; });
-  procs.erase(newEnd, procs.end());
+  const unsigned numShared = procs.size();
 
-  std::sort(beginGhosts, newEnd);
-  newEnd = std::unique(beginGhosts, newEnd);
-  procs.erase(newEnd, procs.end());
+  //At this point we can safely assume the 'numShared' procs
+  //are sorted and unique.
+  //So now we will add any ghost procs that are not also shared.
+ 
+  while(!ec.empty()) {
+    if (std::find(procs.begin(), procs.end(), ec->proc) == procs.end()) {
+      procs.push_back(ec->proc);
+    }
+    ++ec;
+  }
+
+  const unsigned numGhosts = procs.size() - numShared;
+  if (numGhosts >= 2) {
+    std::vector<int>::iterator beginGhosts = procs.begin()+numShared;
+    std::sort(beginGhosts, procs.end());
+  }
  
   return numShared;
 }

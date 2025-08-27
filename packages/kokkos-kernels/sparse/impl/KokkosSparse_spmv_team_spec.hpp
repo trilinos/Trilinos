@@ -35,8 +35,8 @@ struct TeamSpmv {
                                            const yViewType& y) {
     return Impl::TeamSpmvInternal::invoke<MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
                                           typename IntView::non_const_value_type, dobeta>(
-        member, y.extent(0), alpha, values.data(), values.stride_0(), row_ptr.data(), row_ptr.stride_0(),
-        colIndices.data(), colIndices.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+        member, y.extent(0), alpha, values.data(), values.stride(0), row_ptr.data(), row_ptr.stride(0),
+        colIndices.data(), colIndices.stride(0), x.data(), x.stride(0), beta, y.data(), y.stride(0));
   }
 };
 
@@ -50,8 +50,8 @@ struct TeamVectorSpmv {
                                            const yViewType& y) {
     return Impl::TeamVectorSpmvInternal::invoke<MemberType, ScalarType, typename ValuesViewType::non_const_value_type,
                                                 typename IntView::non_const_value_type, dobeta>(
-        member, y.extent(0), alpha, values.data(), values.stride_0(), row_ptr.data(), row_ptr.stride_0(),
-        colIndices.data(), colIndices.stride_0(), x.data(), x.stride_0(), beta, y.data(), y.stride_0());
+        member, y.extent(0), alpha, values.data(), values.stride(0), row_ptr.data(), row_ptr.stride(0),
+        colIndices.data(), colIndices.stride(0), x.data(), x.stride(0), beta, y.data(), y.stride(0));
   }
 };
 

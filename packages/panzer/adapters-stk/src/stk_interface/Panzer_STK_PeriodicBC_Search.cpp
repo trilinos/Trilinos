@@ -11,7 +11,6 @@
 #include "Panzer_STK_PeriodicBC_Matcher.hpp"
 
 #include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 
 #include "Panzer_NodeType.hpp"

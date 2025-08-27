@@ -47,18 +47,21 @@ protected:
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().globally_shared_part());
     std::vector<int> sharingProcs;
+    auto goldData = goldValues.data<double,stk::mesh::ReadWrite>();
+    auto userFieldData = userField.data<double,stk::mesh::ReadWrite>();
+
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
         double id = static_cast<double>(get_bulk().identifier(node));
-        double * gold = static_cast<double*>(stk::mesh::field_data(goldValues, node));
-        *gold = id;
+        auto gold = goldData.entity_values(node);
+        gold(0_comp) = id;
 
-        double * user = static_cast<double*>(stk::mesh::field_data(userField, node));
+        auto user = userFieldData.entity_values(node);
         get_bulk().comm_procs(node, sharingProcs);
         const size_t numSharers = sharingProcs.size() + 1;
-        *user = id / numSharers;
+        user(0_comp) = id / numSharers;
         if (leaveGoldValuesNotSummed) {
-          *gold = *user;
+          gold(0_comp) = user(0_comp);
         }
       }
     }
@@ -99,16 +102,19 @@ protected:
                                       bool leaveGoldValuesZero=false)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().globally_shared_part());
+    auto goldData = goldValues.data<double,stk::mesh::ReadWrite>();
+    auto userFieldData = userField.data<double,stk::mesh::ReadWrite>();
+
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
         double id = static_cast<double>(get_bulk().identifier(node));
-        double * gold = static_cast<double*>(stk::mesh::field_data(goldValues, node));
-        *gold = id;
+        auto gold = goldData.entity_values(node);
+        gold(0_comp) = id;
 
-        double * user = static_cast<double*>(stk::mesh::field_data(userField, node));
-        *user = bucket->owned() ? id : 0;
+        auto user = userFieldData.entity_values(node);
+        user(0_comp) = bucket->owned() ? id : 0;
         if (leaveGoldValuesZero) {
-          *gold = *user;
+          gold(0_comp) = user(0_comp);
         }
       }
     }
@@ -128,16 +134,18 @@ protected:
                                        bool leaveGoldValuesZero=false)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK, (get_meta().locally_owned_part() & !get_meta().globally_shared_part()) | get_meta().aura_part());
+    auto goldValuesData = goldValues.data<double,stk::mesh::ReadWrite>();
+    auto userFieldData = userField.data<double,stk::mesh::ReadWrite>();
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & node : *bucket) {
         double id = static_cast<double>(get_bulk().identifier(node));
-        double * gold = static_cast<double*>(stk::mesh::field_data(goldValues, node));
-        *gold = id;
+        auto gold = goldValuesData.entity_values(node);
+        gold(0_comp) = id;
 
-        double * user = static_cast<double*>(stk::mesh::field_data(userField, node));
-        *user = bucket->owned() ? id : 0;
+        auto user = userFieldData.entity_values(node);
+        user(0_comp) = bucket->owned() ? id : 0;
         if (leaveGoldValuesZero) {
-          *gold = *user;
+          gold(0_comp) = user(0_comp);
         }
       }
     }
@@ -717,10 +725,11 @@ protected:
   {
     stk::mesh::Selector shared = bulkPtr->mesh_meta_data().globally_shared_part();
     const stk::mesh::BucketVector& sharedNodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, shared);
+    auto nodeFieldData = nodeField->data<stk::mesh::ReadWrite>();
     for(const stk::mesh::Bucket* bptr : sharedNodeBuckets) {
       for(stk::mesh::Entity node : *bptr) {
-        double* value = stk::mesh::field_data(*nodeField, node);
-        *value = bulkPtr->identifier(node);
+        auto value = nodeFieldData.entity_values(node);
+        value(0_comp) = bulkPtr->identifier(node);
       }
     }
   }
@@ -732,18 +741,19 @@ protected:
     std::vector<int> shProcs;
     constexpr double tol = std::numeric_limits<double>::epsilon();
     const stk::mesh::BucketVector& sharedNodeBuckets = bulkPtr->get_buckets(stk::topology::NODE_RANK, shared);
+    auto nodeFieldData = nodeField->data<stk::mesh::ReadOnly>();
     for(const stk::mesh::Bucket* bptr : sharedNodeBuckets) {
       for(stk::mesh::Entity node : *bptr) {
         if (skipID != 0 && bulkPtr->identifier(node) == skipID) {
           continue;
         }
         bulkPtr->comm_shared_procs(node, shProcs);
-        const double* value = stk::mesh::field_data(*nodeField, node);
+        auto value = nodeFieldData.entity_values(node);
         double expectedValue = (shProcs.size()+1) * bulkPtr->identifier(node);
         if (op == stk::mesh::Operation::MIN || op == stk::mesh::Operation::MAX) {
           expectedValue = bulkPtr->identifier(node);
         }
-        EXPECT_NEAR(expectedValue, *value, tol)<<bulkPtr->entity_key(node);
+        EXPECT_NEAR(expectedValue, value(0_comp), tol)<<bulkPtr->entity_key(node);
       }
     }
   }
@@ -767,9 +777,10 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_host)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  double* value = stk::mesh::field_data(*nodeField, node1);
+  auto nodeFieldData = nodeField->data<stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   const double initValue = (myProc+1);
-  *value = initValue;
+  value(0_comp) = initValue;
 
   stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
   using HostNgpField = stk::mesh::HostField<double,stk::ngp::HostMemSpace>;
@@ -786,8 +797,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_host)
 
   check_shared_field_values_on_host(stk::mesh::Operation::SUM);
 
-  value = stk::mesh::field_data(*nodeField, node1);
-  EXPECT_NEAR(*value, expectedValue, tolerance);
+  value = nodeFieldData.entity_values(node1);
+  EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
 NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node_and_elem_field)
@@ -804,15 +815,17 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node_and_elem_field)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  double* value = stk::mesh::field_data(*nodeField, node1);
+  auto nodeFieldData = nodeField->data<stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   const double initValue = (myProc+1);
-  *value = initValue;
+  value(0_comp) = initValue;
 
   stk::mesh::Entity elem1 = bulkPtr->get_entity(stk::topology::ELEM_RANK, 1);
   if (bulkPtr->is_valid(elem1)) {
-    double* elemValue = stk::mesh::field_data(*elemField, elem1);
+    auto elemFieldData = elemField->data<stk::mesh::ReadWrite>();
+    auto elemValue = elemFieldData.entity_values(elem1);
     const double initVal = 1.0;
-    *elemValue = initVal;
+    elemValue(0_comp) = initVal;
   }
 
   stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
@@ -831,17 +844,18 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node_and_elem_field)
 
   check_shared_field_values_on_host(stk::mesh::Operation::SUM);
 
-  value = stk::mesh::field_data(*nodeField, node1);
-  EXPECT_NEAR(*value, expectedValue, tolerance);
+  value = nodeFieldData.entity_values(node1);
+  EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 
   elem1 = bulkPtr->get_entity(stk::topology::ELEM_RANK, 1);
   if (bulkPtr->is_valid(elem1)) {
     std::vector<int> commProcs;
     bulkPtr->comm_procs(elem1, commProcs);
     EXPECT_EQ(1u, commProcs.size());
-    const double* elemValue = stk::mesh::field_data(*elemField, elem1);
+    auto elemFieldData = elemField->data<stk::mesh::ReadWrite>();
+    auto elemValue = elemFieldData.entity_values(elem1);
     const double expectedVal = commProcs.size()+1.0;
-    EXPECT_NEAR(*elemValue, expectedVal, 1.e-9);
+    EXPECT_NEAR(elemValue(0_comp), expectedVal, 1.e-9);
   }
 }
 
@@ -859,9 +873,10 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, max_hex_3procs_1ghostNode_host)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  double* value = stk::mesh::field_data(*nodeField, node1);
+  auto nodeFieldData = nodeField->data<stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   const double initValue = (myProc+1);
-  *value = initValue;
+  value(0_comp) = initValue;
 
   stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
   using HostNgpField = stk::mesh::HostField<double,stk::ngp::HostMemSpace>;
@@ -875,8 +890,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, max_hex_3procs_1ghostNode_host)
 
   check_shared_field_values_on_host(stk::mesh::Operation::MAX);
 
-  value = stk::mesh::field_data(*nodeField, node1);
-  EXPECT_NEAR(*value, expectedValue, tolerance);
+  value = nodeFieldData.entity_values(node1);
+  EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
 NGP_TEST_F(NgpParallelOpIncludingGhosts, min_hex_3procs_1ghostNode_host)
@@ -893,9 +908,10 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, min_hex_3procs_1ghostNode_host)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  double* value = stk::mesh::field_data(*nodeField, node1);
+  auto nodeFieldData = nodeField->data<stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   const double initValue = (myProc+1);
-  *value = initValue;
+  value(0_comp) = initValue;
 
   stk::mesh::HostMesh hostNgpMesh(*bulkPtr);
   using HostNgpField = stk::mesh::HostField<double,stk::ngp::HostMemSpace>;
@@ -909,8 +925,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, min_hex_3procs_1ghostNode_host)
 
   check_shared_field_values_on_host(stk::mesh::Operation::MAX);
 
-  value = stk::mesh::field_data(*nodeField, node1);
-  EXPECT_NEAR(*value, expectedValue, tolerance);
+  value = nodeFieldData.entity_values(node1);
+  EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
 NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_device)
@@ -930,9 +946,10 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_device)
   stk::mesh::Entity node1 = bulkPtr->get_entity(stk::topology::NODE_RANK, 1);
   EXPECT_TRUE(bulkPtr->is_valid(node1));
 
-  double* value = stk::mesh::field_data(*nodeField, node1);
+  auto nodeFieldData = nodeField->data<stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node1);
   const double initValue = (myProc+1);
-  *value = initValue;
+  value(0_comp) = initValue;
 
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
   stk::mesh::NgpField<double> & ngpNodeField = stk::mesh::get_updated_ngp_field<double>(*nodeField);
@@ -950,8 +967,8 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_device)
 
   check_shared_field_values_on_host(stk::mesh::Operation::SUM);
 
-  value = stk::mesh::field_data(*nodeField, node1);
-  EXPECT_NEAR(*value, expectedValue, tolerance);
+  value = nodeFieldData.entity_values(node1);
+  EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
 NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node5_sharedAndGhosted_device)
@@ -972,9 +989,10 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node5_sharedAndGhosted_d
   EXPECT_TRUE(bulkPtr->is_valid(node5));
 
   if (myProc == 2) {
-    double* value = stk::mesh::field_data(*nodeField, node5);
+    auto nodeFieldData = nodeField->data<stk::mesh::ReadWrite>();
+    auto value = nodeFieldData.entity_values(node5);
     const double initValue = 5;
-    *value = initValue;
+    value(0_comp) = initValue;
   }
 
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
@@ -991,8 +1009,9 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node5_sharedAndGhosted_d
 
   double expectedValue = numProcs*5;
 
-  double* value = stk::mesh::field_data(*nodeField, node5);
-  EXPECT_NEAR(*value, expectedValue, tolerance);
+  auto nodeFieldData = nodeField->data<stk::mesh::ReadWrite>();
+  auto value = nodeFieldData.entity_values(node5);
+  EXPECT_NEAR(value(0_comp), expectedValue, tolerance);
 }
 
 }

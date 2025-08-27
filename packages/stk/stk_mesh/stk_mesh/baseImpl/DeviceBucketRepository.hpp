@@ -34,6 +34,9 @@
 #ifndef STK_MESH_DEVICE_BUCKET_REPOSITORY_HPP
 #define STK_MESH_DEVICE_BUCKET_REPOSITORY_HPP
 
+#include <limits>
+#include "Kokkos_Macros.hpp"
+#include "View/Kokkos_ViewCtor.hpp"
 #include "stk_util/stk_config.h"
 #include "stk_mesh/base/NgpMeshBase.hpp"
 #include "stk_mesh/base/Bucket.hpp"
@@ -47,6 +50,7 @@
 #include "stk_mesh/baseImpl/DevicePartition.hpp"
 #include "stk_mesh/baseImpl/NgpMeshImpl.hpp"
 #include "Kokkos_Core.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace mesh {
@@ -55,6 +59,167 @@ template <typename NgpMemSpace>
 class DeviceMeshT;
 
 namespace impl {
+
+template <typename NgpMemSpace>
+struct DeviceBucketRepoMetadata
+{
+  using DevPartition = DevicePartition<NgpMemSpace>;
+  using DevBucket = DeviceBucketT<NgpMemSpace>;
+
+  static constexpr unsigned INVALID_INDEX = std::numeric_limits<unsigned>::max();
+
+  KOKKOS_FUNCTION
+  DeviceBucketRepoMetadata()
+  {
+    m_deviceNumActiveBuckets = UnsignedViewType<NgpMemSpace>("NumBuckets", stk::topology::NUM_RANKS);
+
+    for (unsigned i = 0; i < stk::topology::END_RANK; ++i) {
+      m_bucketViewLastActiveBucketIdx[i] = INVALID_INDEX;
+      m_partitionViewLastActivePartitionIdx[i] = INVALID_INDEX;
+      m_bucketViewLastInitBucketIdx[i] = INVALID_INDEX;
+    }
+  }
+
+  void update_repo_meta_bucket_added(DevBucket const& newBucket)
+  {
+    EntityRank rank = newBucket.entity_rank();
+    m_numActiveBuckets[rank]++;
+    m_bucketViewLastActiveBucketIdx[rank] = newBucket.bucket_id();
+    m_bucketViewLastInitBucketIdx[rank] = newBucket.bucket_id();
+  }
+
+  void update_repo_meta_partition_added(DevPartition const& newPartition)
+  {
+    EntityRank rank = newPartition.get_rank();
+    m_numActivePartitions[rank]++;
+    m_partitionViewLastActivePartitionIdx[rank] = newPartition.partition_id();
+  }
+
+  void update_repo_meta_bucket_removed(DevBucket const& removedBucket)
+  {
+    EntityRank rank = removedBucket.entity_rank();
+    m_numActiveBuckets[rank]--;
+  }
+
+  void update_repo_meta_partition_removed(DevPartition const& removedPartition)
+  {
+    EntityRank rank = removedPartition.get_rank();
+    m_numActivePartitions[rank]--;
+  }
+
+  KOKKOS_FUNCTION
+  unsigned num_buckets(EntityRank rank) const {
+    KOKKOS_IF_ON_HOST((
+      return m_numActiveBuckets[rank];
+    ))
+    KOKKOS_IF_ON_DEVICE((
+      return m_deviceNumActiveBuckets(rank);
+    ))
+  }
+
+  KOKKOS_FUNCTION
+  unsigned num_partitions(EntityRank rank) const {
+    KOKKOS_IF_ON_HOST((
+      return m_numActivePartitions[rank];
+    ))
+    KOKKOS_IF_ON_DEVICE((
+      return m_deviceNumActivePartitions(rank);
+    ))
+  }
+
+  unsigned get_last_active_bucket_idx(EntityRank rank) const {
+    return m_bucketViewLastActiveBucketIdx[rank];
+  }
+
+  unsigned get_last_active_partition_idx(EntityRank rank) const {
+    return m_partitionViewLastActivePartitionIdx[rank];
+  }
+
+  unsigned get_active_bucket_span(EntityRank rank) const
+  {
+    auto lastBucketIdx = m_bucketViewLastActiveBucketIdx[rank];
+    auto modBucketCount = (lastBucketIdx == INVALID_INDEX) ? 0 : lastBucketIdx+1;
+    return modBucketCount;
+  }
+
+  unsigned get_active_partition_span(EntityRank rank) const
+  {
+    auto lastPartitionIdx = m_partitionViewLastActivePartitionIdx[rank];
+    auto modPartitionCount = (lastPartitionIdx == INVALID_INDEX) ? 0 : lastPartitionIdx+1;
+    return modPartitionCount;
+  }
+
+  unsigned get_next_avail_bucket_idx(EntityRank rank) const
+  {
+    auto lastBucketIdx = m_bucketViewLastActiveBucketIdx[rank];
+    auto nextBucketIdx = (lastBucketIdx == INVALID_INDEX) ? 0 : lastBucketIdx+1;
+    return nextBucketIdx;
+  }
+
+  unsigned get_next_avail_partition_idx(EntityRank rank) const
+  {
+    auto lastPartitionIdx = m_partitionViewLastActivePartitionIdx[rank];
+    auto nextPartitionIdx = (lastPartitionIdx == INVALID_INDEX) ? 0 : lastPartitionIdx+1;
+    return nextPartitionIdx;
+  }
+
+  void set_to_match_active_buckets(EntityRank rank)
+  {
+    STK_ThrowRequire(m_numActiveBuckets[rank] > 0);
+    m_bucketViewLastActiveBucketIdx[rank] = m_numActiveBuckets[rank]-1;
+  }
+
+  void set_to_match_active_partitions(EntityRank rank)
+  {
+    STK_ThrowRequire(m_numActivePartitions[rank] > 0);
+    m_partitionViewLastActivePartitionIdx[rank] = m_numActivePartitions[rank]-1;
+  }
+
+  bool need_sync_from_partition(EntityRank rank) const { return m_needSyncFromPartitions[rank]; }
+
+  void set_need_sync_from_partition(EntityRank rank, bool needSync) {
+    m_needSyncFromPartitions[rank] = m_needSyncFromPartitions[rank] | needSync;
+  }
+
+  void sync_num_buckets_host_to_device()
+  {
+    auto hostNumActiveBuckets = Kokkos::create_mirror_view(m_deviceNumActiveBuckets);
+    for (unsigned i = 0; i < hostNumActiveBuckets.extent(0); ++i) {
+      hostNumActiveBuckets(i) = m_numActiveBuckets[i];
+    }
+    Kokkos::deep_copy(m_deviceNumActiveBuckets, hostNumActiveBuckets);
+  }
+
+  void sync_num_partitions_host_to_device()
+  {
+    auto hostNumActivePartitions = Kokkos::create_mirror_view(m_deviceNumActivePartitions);
+    for (unsigned i = 0; i < hostNumActivePartitions.extent(0); ++i) {
+      hostNumActivePartitions(i) = m_numActivePartitions[i];
+    }
+    Kokkos::deep_copy(m_deviceNumActivePartitions, hostNumActivePartitions);
+  }
+
+  void reset_bucket_counts(EntityRank rank)
+  {
+    m_numActiveBuckets[rank] = 0;
+    m_bucketViewLastActiveBucketIdx[rank] = INVALID_INDEX;
+  }
+
+  void reset_partition_counts(EntityRank rank)
+  {
+    m_numActivePartitions[rank] = 0;
+    m_partitionViewLastActivePartitionIdx[rank] = INVALID_INDEX;
+  }
+
+  UnsignedViewType<NgpMemSpace> m_deviceNumActiveBuckets;
+  UnsignedViewType<NgpMemSpace> m_deviceNumActivePartitions;
+  Kokkos::Array<unsigned, stk::topology::NUM_RANKS> m_numActiveBuckets{0};
+  Kokkos::Array<unsigned, stk::topology::NUM_RANKS> m_numActivePartitions{0};
+  Kokkos::Array<unsigned, stk::topology::NUM_RANKS> m_bucketViewLastActiveBucketIdx{0};
+  Kokkos::Array<unsigned, stk::topology::NUM_RANKS> m_partitionViewLastActivePartitionIdx{0};
+  Kokkos::Array<unsigned, stk::topology::NUM_RANKS> m_bucketViewLastInitBucketIdx{0};
+  Kokkos::Array<bool, stk::topology::NUM_RANKS> m_needSyncFromPartitions{false};
+};
 
 template <typename NgpMemSpace>
 class DeviceBucketRepository
@@ -70,7 +235,7 @@ class DeviceBucketRepository
   KOKKOS_DEFAULTED_FUNCTION
   DeviceBucketRepository() = default;
 
-  DeviceBucketRepository(DeviceMeshT<NgpMemSpace>* deviceMesh, [[maybe_unused]] unsigned entityRankCount,
+  DeviceBucketRepository(DeviceMeshT<NgpMemSpace>* deviceMesh,
                          unsigned initialBucketCapacity = get_default_initial_bucket_capacity(),
                          unsigned maximumBucketCapacity = get_default_maximum_bucket_capacity())
     : m_mesh(deviceMesh),
@@ -82,6 +247,11 @@ class DeviceBucketRepository
   KOKKOS_DEFAULTED_FUNCTION DeviceBucketRepository(DeviceBucketRepository&&) = default;
   KOKKOS_DEFAULTED_FUNCTION DeviceBucketRepository& operator=(DeviceBucketRepository&) = default;
   KOKKOS_DEFAULTED_FUNCTION DeviceBucketRepository& operator=(DeviceBucketRepository const&) = default;
+
+  KOKKOS_FUNCTION
+  ~DeviceBucketRepository() {
+    clear_device_buckets_and_partitions();
+  }
 
   DevicePartitionView& get_partitions(const EntityRank rank)
   {
@@ -110,11 +280,13 @@ class DeviceBucketRepository
   DevicePartition<NgpMemSpace>* get_partition(const EntityRank rank,
                                               PartOrdinalViewType<NgpMemSpace> const& partOrdinals)
   {
+    Kokkos::Profiling::pushRegion("get_partition");
     STK_ThrowRequireMsg(rank <= stk::topology::NUM_RANKS, "Invalid rank.");
 
-    auto policy = Kokkos::RangePolicy(0, num_partitions(rank));
-    DevicePartitionUView compactPartitionUView(m_partitions[rank].data(), m_numPartitions[rank]);
+    auto policy = Kokkos::RangePolicy(0, get_active_partition_span(rank));
+    DevicePartitionUView compactPartitionUView(m_partitions[rank].data(), get_active_partition_span(rank));
     auto partitionId = search_matching_device_partitions(policy, compactPartitionUView, partOrdinals);
+    Kokkos::Profiling::popRegion();
 
     return (partitionId != INVALID_BUCKET_ID) ? &(m_partitions[rank](partitionId)) : nullptr;
   }
@@ -127,19 +299,22 @@ class DeviceBucketRepository
     return get_partition(entityRank, partitionId);
   }
 
-  DevicePartition<NgpMemSpace>* create_partition(const EntityRank rank,
-                                                 PartOrdinalViewType<NgpMemSpace> const& partOrdinals)
+  template <typename PartOrdinals>
+  DevicePartition<NgpMemSpace>* create_partition(const EntityRank rank, PartOrdinals const& partOrdinals)
   {
-    init_or_resize_partition_view(rank);
+    Kokkos::Profiling::pushRegion("create_partition");
+    init_or_expand_partition_view(rank);
 
     DevicePartitionView& resizedPartitions = m_partitions[rank];
-    auto endIndex = m_partitionViewEndIdx[rank];
+    auto newPartitionIdx = get_next_avail_partition_idx(rank);
 
-    DevicePartition<NgpMemSpace>* newPartition = new (&resizedPartitions(endIndex)) DevicePartition<NgpMemSpace>(m_mesh, this, partOrdinals, rank, endIndex);
-    m_numPartitions[rank]++;
-    m_partitionViewEndIdx[rank]++;
+    new (&resizedPartitions(newPartitionIdx)) DevicePartition<NgpMemSpace>(m_mesh, this, partOrdinals, rank, newPartitionIdx);
+    auto& newPartition = resizedPartitions(newPartitionIdx);
 
-    return newPartition;
+    m_repoMeta.update_repo_meta_partition_added(newPartition);
+    Kokkos::Profiling::popRegion();
+
+    return &newPartition;
   }
 
   DeviceBucket* get_bucket(const EntityRank rank, int bucketId) const
@@ -150,36 +325,56 @@ class DeviceBucketRepository
     return &(m_buckets[rank](bucketId));
   }
 
-  DeviceBucket* allocate_bucket(const EntityRank rank,
-                                PartOrdinalViewType<NgpMemSpace> const& /*partOrdinals*/)
+  DeviceBucket* construct_new_bucket_without_part_ordinals(const EntityRank rank)
   {
-    init_or_resize_bucket_view(rank);
+    init_or_expand_bucket_view(rank);
 
     DeviceBucketView& buckets = m_buckets[rank];
-    auto endIndex = m_bucketViewEndIdx[rank];
-    DeviceBucket* newBucket = new (&buckets[endIndex]) DeviceBucket();
-    newBucket->m_bucketSize = 0;
-    newBucket->m_bucketCapacity = get_bucket_capacity();
-    newBucket->m_bucketId = endIndex;
-    newBucket->m_entityRank = rank;
+    auto newBucketIdx = get_next_avail_bucket_idx(rank);
 
-    m_numBuckets[rank]++;
-    m_bucketViewEndIdx[rank]++;
-    m_needSyncFromPartitions[rank] = true;
+    new (&buckets[newBucketIdx]) DeviceBucket();
+    DeviceBucket& newBucket = buckets[newBucketIdx];
 
+    newBucket.m_bucketSize = 0;
+    newBucket.m_bucketCapacity = get_bucket_capacity();
+    newBucket.m_bucketId = newBucketIdx;
+    newBucket.m_entityRank = rank;
+
+    m_repoMeta.update_repo_meta_bucket_added(newBucket);
+    m_repoMeta.set_need_sync_from_partition(rank, true);
+    
+    return &newBucket;
+  }
+
+  DeviceBucket* construct_new_bucket(const EntityRank rank,
+                                     PartOrdinalViewType<NgpMemSpace> const& partOrdinals)
+  {
+    Kokkos::Profiling::pushRegion("construct_bucket");
+    auto newBucket = construct_new_bucket_without_part_ordinals(rank);
+    newBucket->m_partOrdinals = partOrdinals;
+    Kokkos::Profiling::popRegion();
     return newBucket;
   }
 
-  void deallocate_bucket(DeviceBucket* bucket)
+  void invalidate_bucket(DeviceBucket* bucket)
   {
-    STK_ThrowRequireMsg(bucket != nullptr, "DeviceBucketRepository::deallocate_bucket(): Invalid bucket.");
+    STK_ThrowRequireMsg(bucket != nullptr, "DeviceBucketRepository::invalidate_bucket(): Invalid bucket pointer.");
 
     auto bucketId = bucket->bucket_id();
     auto bucketRank = bucket->entity_rank();
 
-    m_buckets[bucketRank](bucketId).m_bucketId = INVALID_BUCKET_ID;
-    m_needSyncFromPartitions[bucketRank] = true;
-    m_numBuckets[bucketRank]--;
+    auto& removedBucket = m_buckets[bucketRank](bucketId);
+    removedBucket.m_bucketId = INVALID_BUCKET_ID;
+    m_repoMeta.update_repo_meta_bucket_removed(removedBucket);
+    m_repoMeta.set_need_sync_from_partition(bucketRank, true);
+  }
+
+  void sync_num_buckets_host_to_device() {
+    m_repoMeta.sync_num_buckets_host_to_device();
+  }
+
+  void sync_num_partitions_host_to_device() {
+    m_repoMeta.sync_num_partitions_host_to_device();
   }
 
   void sync_from_partitions()
@@ -187,11 +382,14 @@ class DeviceBucketRepository
     for (auto rank = stk::topology::NODE_RANK; rank < stk::topology::NUM_RANKS; ++rank) {
       sync_from_partitions(rank);
     }
+    sync_num_buckets_host_to_device();
+    sync_num_partitions_host_to_device();
   }
 
   void sync_from_partitions(EntityRank rank)
   {
-    if (m_needSyncFromPartitions[rank]) {
+    Kokkos::Profiling::pushRegion("sync_from_partiitons");
+    if (m_repoMeta.need_sync_from_partition(rank)) {
       reset_partition_bucket_count(rank);
 
       sync_and_sort_bucket_ids(rank);
@@ -204,50 +402,34 @@ class DeviceBucketRepository
 
       sort_buckets_in_partitions(rank);
     }
+    Kokkos::Profiling::popRegion();
 
-    // TODO: refactor DeviceMesh first
+    // TODO
     // if (m_mesh->get_bulk_on_host().should_sort_buckets_by_first_entity_identifier()) {
     // }
 
-    // TODO: refactor DeviceMesh first
-    // update_mesh_indices();
-  }
-
-  void reset_partition_bucket_count(EntityRank rank)
-  {
-    auto& buckets = m_buckets[rank];
-    auto& partitions = m_partitions[rank]; 
-    auto numPartitions = m_numPartitions[rank];
-
-    for (unsigned i = 0; i < numPartitions; ++i) {
-      auto& partition = partitions(i);
-      partition.reset_bucket_count();
-
-      if (partition.partition_id() == INVALID_PARTITION_ID) {
-        --m_numPartitions[rank];
-      }
-    }
+    // TODO
+    // update_buckets_mesh_indices(rank);
   }
 
   void sync_and_sort_bucket_ids(EntityRank rank)
   {
     auto& buckets = m_buckets[rank];
-    DeviceBucketUView compactBucketUView(buckets.data(), m_bucketViewEndIdx[rank]);
+    DeviceBucketUView compactBucketUView(buckets.data(), get_active_bucket_span(rank));
 
     if (!Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactBucketUView)) {
       Kokkos::sort(compactBucketUView);
     }
     
-    // TODO: call removed buckets' destructors here (need to refactor DeviceMesh first)
-
     m_buckets[rank] = buckets;
-    m_bucketViewEndIdx[rank] = m_numBuckets[rank];
+    m_repoMeta.set_to_match_active_buckets(rank);
   }
 
   void reassign_bucket_ids(EntityRank rank)
   {
     auto& buckets = m_buckets[rank];
-    for (unsigned i = 0; i < m_numBuckets[rank]; ++i) {
+    auto numActiveBuckets = num_buckets(rank);
+    for (unsigned i = 0; i < numActiveBuckets; ++i) {
       buckets(i).m_bucketId = i;
     }
   }
@@ -255,8 +437,8 @@ class DeviceBucketRepository
   void reassign_buckets_owning_partition_ids(EntityRank rank)
   {
     auto& buckets = m_buckets[rank];
-    auto numBuckets = m_numBuckets[rank];
-    for (unsigned i = 0; i < numBuckets; ++i) {
+    auto numActiveBuckets = num_buckets(rank);
+    for (unsigned i = 0; i < numActiveBuckets; ++i) {
       auto bucket = buckets(i);
       auto& partition = m_partitions[rank](bucket.m_owningPartitionId);
       partition.add_bucket(&bucket);
@@ -266,27 +448,20 @@ class DeviceBucketRepository
   void sync_and_sort_partition_ids(EntityRank rank)
   {
     auto& partitions = m_partitions[rank];
-    DevicePartitionUView compactPartitionUView(partitions.data(), m_partitionViewEndIdx[rank]);
+    DevicePartitionUView compactPartitionUView(partitions.data(), get_active_partition_span(rank));
 
     if (!Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactPartitionUView)) {
       Kokkos::sort(compactPartitionUView);
     }
     
-    auto endIdx = m_partitionViewEndIdx[rank];
-    for (unsigned i = m_numPartitions[rank]; i < endIdx; ++i) {
-      if (m_partitions[rank].use_count() == 1) {
-        m_partitions[rank](i).~DevicePartition();
-      }
-    }
-
     m_partitions[rank] = partitions;
-    m_partitionViewEndIdx[rank] = m_numPartitions[rank];
+    m_repoMeta.set_to_match_active_partitions(rank);
   }
 
   void sort_buckets_in_partitions(EntityRank rank)
   {
     auto& partitions = m_partitions[rank];
-    auto numPartitions = m_numPartitions[rank];
+    auto numPartitions = num_partitions(rank);
     for (unsigned i = 0; i < numPartitions; ++i) {
       auto& partition = partitions(i);
       partition.reset_partition_id_in_owned_buckets();
@@ -294,29 +469,84 @@ class DeviceBucketRepository
     }
   }
 
-  void init_or_resize_partition_view(unsigned rank) { 
+  void init_or_expand_partition_view(EntityRank rank, unsigned hostPartitionVectorCapcity = initialDevicePartitionViewCapacity)
+  { 
+    Kokkos::Profiling::pushRegion("init_or_expand_partition_view");
     if (m_partitions[rank].extent(0) == 0) {
-      m_partitions[rank] = DevicePartitionView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DevicePartitionView"), initialPartitionViewCapacity);
-    } else if (m_numPartitions[rank] >= m_partitions[rank].extent(0)) {
-      Kokkos::resize(m_partitions[rank], m_partitions[rank].extent(0)*2);
+      m_partitions[rank] = DevicePartitionView(Kokkos::view_alloc("DevicePartitionView", Kokkos::WithoutInitializing), hostPartitionVectorCapcity);
+    } else if (get_next_avail_partition_idx(rank) >= m_partitions[rank].extent(0)) {
+      Kokkos::resize(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_partitions[rank], m_partitions[rank].extent(0)*2);
     }
+    Kokkos::Profiling::popRegion();
   }
 
-  void init_or_resize_bucket_view(unsigned rank)
+  void init_or_expand_bucket_view(EntityRank rank, unsigned hostBucketVectorCapacity = initialDeviceBucketViewCapacity)
   {
+    Kokkos::Profiling::pushRegion("init_or_expand_bucket_view");
     if (m_buckets[rank].extent(0) == 0) {
-      m_buckets[rank] = DeviceBucketView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketView"), initialBucketViewCapacity);
-    } else if (m_numBuckets[rank] >= m_buckets[rank].extent(0)) {
-      Kokkos::resize(m_buckets[rank], m_buckets[rank].extent(0)*2);
+      m_buckets[rank] = DeviceBucketView(Kokkos::view_alloc("DeviceBucketView", Kokkos::WithoutInitializing), hostBucketVectorCapacity);
+    } else if (get_next_avail_bucket_idx(rank) >= m_buckets[rank].extent(0)) {
+      Kokkos::resize(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_buckets[rank], m_buckets[rank].extent(0)*2);
+    }
+    Kokkos::Profiling::popRegion();
+  }
+
+  // void resize_compact_partition_view(EntityRank rank) { 
+  //   // Kokkos::resize(Kokkos::view_alloc(Kokkos::SequentialHostInit), m_partitions[rank], m_numActivePartitions[rank]);
+  //   Kokkos::resize(m_partitions[rank], m_numActivePartitions[rank]);
+  //   // FIXME destroy removed partitions
+  // }
+
+  // void resize_compact_bucket_view(EntityRank rank) { 
+  //   // Kokkos::resize(Kokkos::view_alloc(Kokkos::SequentialHostInit), m_buckets[rank], m_numActiveBuckets[rank]);
+  //   Kokkos::resize(m_buckets[rank], m_numActiveBuckets[rank]);
+  //   // FIXME destroy removed buckets
+  // }
+
+  void reset_partition_bucket_count(EntityRank rank)
+  {
+    auto& buckets = m_buckets[rank];
+    auto& partitions = m_partitions[rank]; 
+    auto numPartitions = num_partitions(rank);
+
+    for (unsigned i = 0; i < numPartitions; ++i) {
+      auto& partition = partitions(i);
+      partition.reset_bucket_count();
+
+      if (partition.partition_id() == INVALID_PARTITION_ID) {
+        m_repoMeta.update_repo_meta_partition_removed(partition);
+      }
     }
   }
 
-  void resize_compact_partition_view(unsigned rank) { 
-    Kokkos::resize(m_partitions[rank], m_numPartitions[rank]);
+  void reset_and_invalidate_all_buckets(EntityRank rank)
+  {
+    auto& buckets = m_buckets[rank];
+    auto bucketCount = get_active_bucket_span(rank);
+
+    for (unsigned i = 0; i < bucketCount; ++i) {
+      auto& bucket = buckets(i);
+      bucket.m_bucketId = INVALID_BUCKET_ID;
+    }
+    m_repoMeta.reset_bucket_counts(rank);
   }
 
-  void resize_compact_bucket_view(unsigned rank) { 
-    Kokkos::resize(m_buckets[rank], m_numBuckets[rank]);
+  void reset_and_invalidate_all_partitions(EntityRank rank)
+  {
+    auto& partitions = m_partitions[rank];
+    auto partitionCount = get_active_partition_span(rank);
+
+    for (unsigned i = 0; i < partitionCount; ++i) {
+      auto& partition = partitions(i);
+      partition.m_partitionId = INVALID_PARTITION_ID;
+    }
+    m_repoMeta.reset_partition_counts(rank);
+  }
+
+  void reset_and_invalidate_all(EntityRank rank)
+  {
+    reset_and_invalidate_all_buckets(rank);
+    reset_and_invalidate_all_partitions(rank);
   }
 
   // TODO
@@ -352,22 +582,162 @@ class DeviceBucketRepository
   KOKKOS_FUNCTION
   unsigned get_maximum_bucket_capacity() const { return m_maximumBucketCapacity; }
 
-  size_t num_buckets(EntityRank rank) const { return m_numBuckets[rank]; }
-  size_t num_partitions(EntityRank rank) const { return m_numPartitions[rank]; }
+  KOKKOS_FUNCTION
+  unsigned num_buckets(EntityRank rank) const {
+    return m_repoMeta.num_buckets(rank);
+  }
 
-  DeviceMeshT<NgpMemSpace>* m_mesh;
+  KOKKOS_FUNCTION
+  unsigned num_partitions(EntityRank rank) const {
+    return m_repoMeta.num_partitions(rank);
+  }
+
+  unsigned get_last_active_bucket_idx(EntityRank rank) const {
+    return m_repoMeta.get_last_active_bucket_idx(rank);
+  }
+
+  unsigned get_last_active_partition_idx(EntityRank rank) const {
+    return m_repoMeta.get_last_active_partition_idx(rank);
+  }
+
+  unsigned get_active_bucket_span(EntityRank rank) const {
+    return m_repoMeta.get_active_bucket_span(rank);
+  }
+
+  unsigned get_active_partition_span(EntityRank rank) const {
+    return m_repoMeta.get_active_partition_span(rank);
+  }
+
+  unsigned get_next_avail_bucket_idx(EntityRank rank) const
+  {
+    return m_repoMeta.get_next_avail_bucket_idx(rank);
+  }
+
+  unsigned get_next_avail_partition_idx(EntityRank rank) const {
+    return m_repoMeta.get_next_avail_partition_idx(rank);
+  }
+
+  KOKKOS_FUNCTION
+  bool is_last_partition_reference(unsigned rank = stk::topology::NODE_RANK) const {
+    return (m_partitions[rank].use_count() == 1);
+  }
+
+  KOKKOS_FUNCTION
+  bool is_last_bucket_reference(unsigned rank = stk::topology::NODE_RANK) const {
+    return (m_buckets[rank].use_count() == 1);
+  }
+
+  KOKKOS_FUNCTION
+  void clear_device_buckets_and_partitions()
+  {
+    KOKKOS_IF_ON_HOST((
+      for (EntityRank rank = stk::topology::NODE_RANK; rank < stk::topology::END_RANK; rank++) {
+        if (is_last_partition_reference(rank)) {
+          auto partitions = std::max(get_active_partition_span(rank), num_partitions(rank));
+          for (unsigned iPartition = 0; iPartition < partitions; ++iPartition) {
+            m_partitions[rank](iPartition).~DevicePartition();
+          }
+          if (is_last_bucket_reference(rank)) {
+            auto buckets = std::max(get_active_bucket_span(rank), num_buckets(rank));
+            for (unsigned iBucket = 0; iBucket < buckets; ++iBucket) {
+              m_buckets[rank](iBucket).~DeviceBucket();
+            }
+          }
+        }
+      }
+    ))
+  }
+
+  // copy from host
+  template <typename HostBuckets, typename HostPartitions>
+  void copy_buckets_and_partitions_from_host(EntityRank rank, HostBuckets const& hostBuckets, HostPartitions const& hostPartitions, bool& anyBucketChanges)
+  {
+    Kokkos::Profiling::pushRegion("copy_buckets_and_partitions_from_host");
+    auto numHostPartitions = hostPartitions.size();
+
+    if (hostBuckets.size() != num_buckets(rank)) {
+      anyBucketChanges = true;
+    }
+
+    reset_and_invalidate_all(rank);
+
+    auto bucketCapacityToInit = hostBuckets.size();
+    auto partitionCapacityToInit = hostPartitions.size();
+    DeviceBucketView bucketBuffer(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketBuffer"), bucketCapacityToInit);
+    DevicePartitionView partitionBuffer(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PartitionBuffer"), partitionCapacityToInit);
+
+    for (unsigned partitionIdx = 0, bucketIdxInView = 0; partitionIdx < numHostPartitions; ++partitionIdx) {
+      auto hostPartition = hostPartitions[partitionIdx];
+      auto& partitionParts = hostPartition->get_legacy_partition_id();
+
+      new (&partitionBuffer[partitionIdx]) impl::DevicePartition<NgpMemSpace>(m_mesh, this, partitionParts, rank, partitionIdx);
+
+      // Init partition inner bucketPtr view
+      partitionBuffer[partitionIdx].init_bucket_view(hostPartition->num_buckets());
+
+      auto numBucketsInPartition = hostPartition->num_buckets();
+      for (unsigned i = 0; i < numBucketsInPartition; ++i, ++bucketIdxInView) {
+        auto& iBucket = bucketIdxInView;
+        stk::mesh::Bucket& stkBucket = *hostBuckets[iBucket];
+        const int ngpBucketId = stkBucket.ngp_mesh_bucket_id();
+
+        if (ngpBucketId == INVALID_BUCKET_ID) {
+          new (&bucketBuffer[iBucket]) DeviceBucketT<NgpMemSpace>();
+          bucketBuffer[iBucket].initialize_bucket_attributes(stkBucket);
+          bucketBuffer[iBucket].initialize_part_ordinals_from_host(stkBucket);
+          bucketBuffer[iBucket].update_entity_data_from_host(stkBucket);
+          bucketBuffer[iBucket].update_sparse_connectivity_from_host(stkBucket);
+          anyBucketChanges = true;
+        } else {
+          new (&bucketBuffer[iBucket]) DeviceBucketT(m_buckets[rank][ngpBucketId]);
+          if (stkBucket.ngp_mesh_bucket_is_modified()) {
+            bucketBuffer[iBucket].update_entity_data_from_host(stkBucket);
+            bucketBuffer[iBucket].update_sparse_connectivity_from_host(stkBucket);
+            anyBucketChanges = true;
+          }
+          bucketBuffer[iBucket].m_bucketId = stkBucket.bucket_id();
+        }
+
+        stkBucket.set_ngp_mesh_bucket_id(iBucket);
+
+        // Update Device Bucket View metadata
+        STK_ThrowRequire(iBucket == stkBucket.bucket_id());
+        m_repoMeta.update_repo_meta_bucket_added(bucketBuffer[iBucket]);
+
+        // Update device buckets in partition
+        STK_ThrowRequire(i == partitionBuffer[partitionIdx].get_next_avail_bucket_idx());
+        partitionBuffer[partitionIdx].add_bucket(&bucketBuffer[iBucket]);
+      }
+
+      // Update Device Partition View metadata
+      m_repoMeta.update_repo_meta_partition_added(partitionBuffer[partitionIdx]);
+    }
+
+    if (is_last_bucket_reference(rank)) {
+      for (unsigned i = 0; i < m_buckets[rank].size(); ++i) {
+        m_buckets[rank][i].~DeviceBucketT();
+      }
+    }
+
+    if (is_last_partition_reference(rank)) {
+      for (unsigned i = 0; i < m_partitions[rank].size(); ++i) {
+        m_partitions[rank][i].~DevicePartition();
+      }
+    }
+
+    m_buckets[rank] = bucketBuffer;
+    m_partitions[rank] = partitionBuffer;
+    Kokkos::Profiling::popRegion();
+  }
+
   unsigned m_initialBucketCapacity;
   unsigned m_maximumBucketCapacity;
 
-  unsigned m_numBuckets[stk::topology::NUM_RANKS] = {0};
-  unsigned m_numPartitions[stk::topology::NUM_RANKS] = {0};
-
-  unsigned m_bucketViewEndIdx[stk::topology::NUM_RANKS] = {0};
-  unsigned m_partitionViewEndIdx[stk::topology::NUM_RANKS] = {0};
-
+  DeviceMeshT<NgpMemSpace>* m_mesh;
+  DeviceBucketRepoMetadata<NgpMemSpace> m_repoMeta;
+  
   DeviceBucketView m_buckets[stk::topology::NUM_RANKS];
   DevicePartitionView m_partitions[stk::topology::NUM_RANKS];
-  bool m_needSyncFromPartitions[stk::topology::NUM_RANKS] = {false};
 };
 
 } } }
