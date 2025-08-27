@@ -345,7 +345,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
             Kokkos::RangePolicy<exec_space>(0, numRows),
             KOKKOS_LAMBDA(lno_t i) {
               if (aggStat(i) == READY)
-                Kokkos::atomic_assign(&has_nodes(labels(i)), true);
+                Kokkos::atomic_store(&has_nodes(labels(i)), true);
             });
 
         // compute aggIds for non-empty aggs
