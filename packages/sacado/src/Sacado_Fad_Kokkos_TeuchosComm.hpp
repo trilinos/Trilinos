@@ -133,7 +133,6 @@ template <typename Ordinal, class D, class... P>
 typename std::enable_if<Kokkos::is_view_fad<Kokkos::View<D, P...>>::value>::type
 broadcast(const Comm<Ordinal> &comm, const int rootRank, const Ordinal count,
           const Kokkos::View<D, P...> &buffer) {
-  typedef Kokkos::View<D, P...> view_type;
   auto array_buffer = Sacado::as_scalar_view(buffer);
   Ordinal array_count = count * Sacado::dimension_scalar(buffer);
   broadcast(comm, rootRank, array_count, array_buffer);
@@ -144,7 +143,6 @@ typename std::enable_if<Kokkos::is_view_fad<Kokkos::View<D, P...>>::value>::type
 broadcast(const Comm<Ordinal> &comm, const Serializer &serializer,
           const int rootRank, const Ordinal count,
           const Kokkos::View<D, P...> &buffer) {
-  typedef Kokkos::View<D, P...> view_type;
   auto array_buffer = Sacado::as_scalar_view(buffer);
   Ordinal array_count = count * Sacado::dimension_scalar(buffer);
   broadcast(comm, *(serializer.getValueSerializer()), rootRank, array_count,

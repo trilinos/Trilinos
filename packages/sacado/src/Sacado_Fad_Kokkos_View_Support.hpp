@@ -53,7 +53,7 @@ namespace Exp {
 
 // PartitionedFadStride > 0 implies LayoutContiguous
 template <class ElementType, class MemorySpace, size_t FadStaticStride,
-          size_t PartitionedFadStride>
+          size_t PartitionedFadStride, bool IsUnmanaged>
 class FadAccessor {
   using fad_type = ElementType;
   using fad_value_type = typename Sacado::ValueType<fad_type>::type;
@@ -63,7 +63,10 @@ class FadAccessor {
 public:
   using element_type = ElementType;
   using data_handle_type =
-      Kokkos::Impl::ReferenceCountedDataHandle<fad_value_type, MemorySpace>;
+      std::conditional_t<IsUnmanaged,
+      fad_value_type*,
+      Kokkos::Impl::ReferenceCountedDataHandle<fad_value_type, MemorySpace>>;
+
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) &&                                  \
     (defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__))
   // avoid division by zero later
@@ -104,7 +107,7 @@ public:
 #endif
 
   using offset_policy = FadAccessor<ElementType, MemorySpace, FadStaticStride,
-                                    PartitionedFadStride>;
+                                    PartitionedFadStride, IsUnmanaged>;
   using memory_space = MemorySpace;
 
   using scalar_type = fad_value_type;
@@ -135,6 +138,7 @@ public:
 
   template <class OtherElementType, class OtherSpace,
             size_t OtherFadStaticStride, size_t OtherPartitionedFadStride,
+	    bool OtherIsUnmanaged,
             class =
 	       std::enable_if_t<std::is_same_v<std::remove_cv_t<ElementType>,
 	                        std::remove_cv_t<OtherElementType>>>
@@ -144,31 +148,42 @@ public:
 		    >
   KOKKOS_FUNCTION constexpr FadAccessor(
       const FadAccessor<OtherElementType, OtherSpace, OtherFadStaticStride,
-                        OtherPartitionedFadStride> &other) {
+                        OtherPartitionedFadStride, OtherIsUnmanaged> &other) {
     m_fad_size = other.m_fad_size;
     m_fad_stride = (OtherPartitionedFadStride == 0)
                        ? static_cast<sacado_stride_type>(other.m_fad_stride)
                        : static_cast<sacado_stride_type>(1);
   }
 
+private:
+  KOKKOS_FUNCTION 
+  fad_value_type* get_ptr(const data_handle_type &p) const {
+    if constexpr (IsUnmanaged) {
+      return p;
+    } else {
+      return p.get();
+    }
+  }
+public:
+
   KOKKOS_FUNCTION
   constexpr reference access(const data_handle_type &p, size_t i) const {
     if constexpr (PartitionedFadStride == 0)
       return reference(
-          p.get() + i * (m_fad_stride.value <= 1 ? m_fad_size.value + 1 : 1),
+          get_ptr(p) + i * (m_fad_stride.value <= 1 ? m_fad_size.value + 1 : 1),
           m_fad_size.value, m_fad_stride.value != 0 ? m_fad_stride.value : 1);
     else {
       size_t base_offset = i * (m_fad_size.value + 1);
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) &&                                  \
     (defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__))
-      return reference(p.get() + base_offset + threadIdx.x,
-                       p.get() + base_offset + m_fad_size.value,
+      return reference(get_ptr(p) + base_offset + threadIdx.x,
+                       get_ptr(p) + base_offset + m_fad_size.value,
                        (m_fad_size.value + blockDim.x - threadIdx.x - 1) /
                            blockDim.x,
                        blockDim.x);
 #else
-      return reference(p.get() + base_offset,
-                       p.get() + base_offset + m_fad_size.value,
+      return reference(get_ptr(p) + base_offset,
+                       get_ptr(p) + base_offset + m_fad_size.value,
                        m_fad_size.value, 1);
 #endif
     }
@@ -184,22 +199,20 @@ public:
 #endif
       size_t i) const {
     if constexpr (PartitionedFadStride != 0)
-      return data_handle_type(p, p.get() + i * (m_fad_size.value + 1));
+      return data_handle_type(p, get_ptr(p) + i * (m_fad_size.value + 1));
     else
       return data_handle_type(
           p,
-          p.get() + i * (m_fad_stride.value <= 1 ? m_fad_size.value + 1 : 1));
+          get_ptr(p) + i * (m_fad_stride.value <= 1 ? m_fad_size.value + 1 : 1));
   }
 };
 
 template <class MappingType, class ElementType, class MemorySpace,
-          size_t FadStaticStride, size_t PartitionedFadStride>
+          size_t FadStaticStride, size_t PartitionedFadStride, bool IsUnmanaged>
 KOKKOS_INLINE_FUNCTION size_t allocation_size_from_mapping_and_accessor(
     const MappingType &mapping,
     const FadAccessor<ElementType, MemorySpace, FadStaticStride,
-                      PartitionedFadStride> &acc) {
-  using acc_t = FadAccessor<ElementType, MemorySpace, FadStaticStride,
-                            PartitionedFadStride>;
+                      PartitionedFadStride, IsUnmanaged> &acc) {
   size_t element_size = acc.m_fad_size.value + 1;
   return mapping.required_span_size() * element_size;
 }
@@ -221,7 +234,7 @@ KOKKOS_INLINE_FUNCTION constexpr auto customize_view_arguments(
 
   return Kokkos::Impl::ViewCustomArguments<
       size_t, FadAccessor<GeneralFad<T>, typename DeviceType::memory_space,
-                          static_stride, partitioned_fad_stride>>();
+                          static_stride, partitioned_fad_stride, MemoryTraits::is_unmanaged>>();
 }
 
 template <class T, class LayoutType, class DeviceType, class MemoryTraits>
@@ -240,18 +253,18 @@ KOKKOS_INLINE_FUNCTION constexpr auto customize_view_arguments(
   return Kokkos::Impl::ViewCustomArguments<
       size_t,
       FadAccessor<const GeneralFad<T>, typename DeviceType::memory_space,
-                  static_stride, partitioned_fad_stride>>();
+                  static_stride, partitioned_fad_stride, MemoryTraits::is_unmanaged>>();
 }
 
 template <class MappingType, class ElementType, class MemorySpace,
-          size_t FadStaticStride, size_t PartitionedFadStride>
+          size_t FadStaticStride, size_t PartitionedFadStride, bool IsUnmanaged>
 KOKKOS_INLINE_FUNCTION auto accessor_from_mapping_and_accessor_arg(
     const Kokkos::Impl::AccessorTypeTag<FadAccessor<
-        ElementType, MemorySpace, FadStaticStride, PartitionedFadStride>> &,
+        ElementType, MemorySpace, FadStaticStride, PartitionedFadStride, IsUnmanaged>> &,
     const MappingType &mapping,
     const Kokkos::Impl::AccessorArg_t &accessor_arg) {
   using fad_acc_t = FadAccessor<ElementType, MemorySpace, FadStaticStride,
-                                PartitionedFadStride>;
+                                PartitionedFadStride, IsUnmanaged>;
   return fad_acc_t(accessor_arg.value, mapping.required_span_size());
 }
 
