@@ -93,6 +93,14 @@ IF (Sacado_ENABLE_TeuchosCore)
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         )
+      
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+	FadKokkosTests_ViewCornerCases
+	SOURCES Fad_KokkosTests_ViewCornerCases.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        )
 
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         FadKokkosTests_NoViewSpec_Serial
