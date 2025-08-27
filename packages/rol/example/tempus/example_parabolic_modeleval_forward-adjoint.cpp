@@ -50,7 +50,7 @@
 int main(int argc, char *argv[]) {
   //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   using RealT = double;
-  using uint  = std::vector<RealT>::size_type;
+  using luint  = std::vector<RealT>::size_type;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     ROL::ParameterList pl_tempus = pl->sublist("Tempus");
     ROL::ParameterList pl_rol = pl->sublist("ROL");
     bool derivCheck = pl_prb.get("Derivative Check",        true); // Check derivatives.
-    uint nt         = pl_prb.get("Temporal Discretization",  100); // Set temporal discretization.
+    luint nt         = pl_prb.get("Temporal Discretization",  100); // Set temporal discretization.
     RealT T         = pl_prb.get("End Time",                 1.0); // Set end time.
     RealT dt        = T/(static_cast<RealT>(nt)-1.0);
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 
     // Construct reduced dynamic objective
     std::vector<ROL::TimeStamp<RealT>> timeStamp(nt);
-    for( uint k=0; k<nt; ++k ) {
+    for( luint k=0; k<nt; ++k ) {
       timeStamp.at(k).t.resize(2);
       timeStamp.at(k).t.at(0) = k*dt;
       timeStamp.at(k).t.at(1) = (k+1)*dt;

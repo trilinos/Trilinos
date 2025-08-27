@@ -222,7 +222,7 @@ public:
 
      con_->applyInverseAdjointJacobian_un( *(iajvp.get(k)), *(vp.get(k)), *(up.get(k-1)), *(up.get(k)), *(zp.get(k)), ts_ );
 
-     for( size_type k=Nt_-2; k>0; --k ) {
+     for( k=Nt_-2; k>0; --k ) {
        con_->applyAdjointJacobian_uo( *(tmpp.get(k)), *(iajvp.get(k+1)), *(up.get(k)), *(up.get(k+1)), *(zp.get(k+1)), ts_ );
        tmpp.get(k)->scale(-1.0);
        tmpp.get(k)->plus( *(vp.get(k) ) );

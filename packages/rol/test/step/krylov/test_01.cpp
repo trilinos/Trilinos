@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   typedef std::vector<RealT>            vector;
   typedef ROL::StdVector<RealT>         SV;
 
-  typedef typename vector::size_type    uint;
+  typedef typename vector::size_type    luint;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     kList.set("Relative Tolerance",1.e-6);
     kList.set("Use Initial Guess",false);
 
-    uint dim = 10;
+    luint dim = 10;
 
     ROL::Ptr<vector> xp = ROL::makePtr<vector>(dim,0.0);
     ROL::Ptr<vector> yp = ROL::makePtr<vector>(dim,0.0);
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
                << std::setw(10) << "GMRES " << std::endl;
     *outStream << "---------------------------------" << std::endl;
 
-    for(uint k=0;k<dim;++k) {
+    for(luint k=0;k<dim;++k) {
       *outStream << std::setw(10) << (*xp)[k] << " "
                  << std::setw(10) << (*yp)[k] << " "
                  << std::setw(10) << (*zp)[k] << " " << std::endl;

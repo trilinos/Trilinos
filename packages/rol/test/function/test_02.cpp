@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
 
-  typedef typename vector::size_type uint;
+  typedef typename vector::size_type luint;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    uint dim = 30;
+    luint dim = 30;
     RealT xmin = 0.5;
     RealT xmax = 2.5;
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<V> lo = ROL::makePtr<SV>(l_ptr);
     ROL::Ptr<V> up = ROL::makePtr<SV>(u_ptr);  
 
-    for(uint i=0; i<dim; ++i) {
+    for(luint i=0; i<dim; ++i) {
       RealT t = static_cast<RealT>(i)/static_cast<RealT>(dim-1);
       (*x_ptr)[i] = xmin*(1-t) + xmax*t;
     }    
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
                  << std::endl;
     *outStream   << std::string(140,'-') << std::endl;
 
-    for(uint i=0; i<dim; ++i) {
+    for(luint i=0; i<dim; ++i) {
       *outStream << std::setw(14) << (*x_ptr)[i] 
                  << std::setw(14) << (*xlog0_ptr)[i] 
                  << std::setw(14) << (*xlog1_ptr)[i]

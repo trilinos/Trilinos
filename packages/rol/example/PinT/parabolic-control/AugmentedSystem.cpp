@@ -104,7 +104,6 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-  using RealT             = double;
   // using size_type         = std::vector<RealT>::size_type;  // Unused
   // using Bounds            = ROL::Bounds<RealT>;
   using PartitionedVector = ROL::PartitionedVector<RealT>;
