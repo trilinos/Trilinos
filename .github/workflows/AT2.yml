@@ -679,7 +679,7 @@ jobs:
             --workspace-dir /home/runner/_work/Trilinos \
             --source-dir ${GITHUB_WORKSPACE} \
             --build-dir /home/Trilinos/build \
-            --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static \
+            --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_release_static_uvm \
             --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
             --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
             --filename-subprojects ./package_subproject_list.cmake \
