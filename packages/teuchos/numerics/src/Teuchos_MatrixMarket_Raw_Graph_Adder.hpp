@@ -64,12 +64,12 @@ namespace Teuchos {
           rowIndex_ (i), colIndex_ (j) {}
 
         //! Compare row and column indices.
-        bool operator== (const GraphElement& rhs) {
+        bool operator== (const GraphElement& rhs) const {
           return rowIndex_ == rhs.rowIndex_ && colIndex_ == rhs.colIndex_;
         }
 
         //! Compare row and column indices.
-        bool operator!= (const GraphElement& rhs) {
+        bool operator!= (const GraphElement& rhs) const {
           return ! (*this == rhs);
         }
 
