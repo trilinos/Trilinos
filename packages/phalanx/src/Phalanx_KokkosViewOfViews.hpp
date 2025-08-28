@@ -135,14 +135,14 @@ namespace PHX {
 
   private:
     // Inner views are managed - used to prevent early deletion
-    std::shared_ptr<typename OuterViewType::HostMirror> view_host_;
+    std::shared_ptr<typename OuterViewType::host_mirror_type> view_host_;
     // Device view
     std::shared_ptr<OuterViewType> view_device_;
     // Inner views are unmanaged by runtime construction with pointer
     // (avoids template parameter). Used to correctly initialize outer
     // device view on device.
     static constexpr bool device_view_is_accessible_from_host = Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename OuterViewType::memory_space>::accessible;
-    std::conditional_t<device_view_is_accessible_from_host, std::shared_ptr<OuterViewType>, std::shared_ptr<typename OuterViewType::HostMirror>> view_host_unmanaged_;
+    std::conditional_t<device_view_is_accessible_from_host, std::shared_ptr<OuterViewType>, std::shared_ptr<typename OuterViewType::host_mirror_type>> view_host_unmanaged_;
     // True if the host view has not been synced to device
     bool device_view_is_synced_;
     // True if the outer view has been initialized
@@ -154,7 +154,7 @@ namespace PHX {
     /// Ctor that uses the default execution space instance.
     template<typename... Extents>
     ViewOfViews(const std::string name,Extents... extents)
-      : view_host_(details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(name,extents...)),
+      : view_host_(details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(name,extents...)),
         view_device_(details::ViewOfViewsMaker<OuterViewType>::make_shared(name,extents...)),
         device_view_is_synced_(false),
         is_initialized_(true),
@@ -163,7 +163,7 @@ namespace PHX {
       if constexpr (device_view_is_accessible_from_host) {
         view_host_unmanaged_ = view_device_;
       } else {
-        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::create_mirror_view(*view_device_));
+        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::create_mirror_view(*view_device_));
       }
 
       std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
@@ -175,7 +175,7 @@ namespace PHX {
     /// fence. Be sure to manually fence as needed.
     template<typename ExecSpace,typename... Extents>
     ViewOfViews(const ExecSpace& e_space,const std::string name,Extents... extents)
-      : view_host_(details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...)),
+      : view_host_(details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space(),name),extents...)),
         view_device_(details::ViewOfViewsMaker<OuterViewType>::make_shared(Kokkos::view_alloc(e_space,name),extents...)),
         device_view_is_synced_(false),
         is_initialized_(true),
@@ -184,7 +184,7 @@ namespace PHX {
       if constexpr (device_view_is_accessible_from_host) {
         view_host_unmanaged_ = view_device_;
       } else {
-        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),*view_device_));
+        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space()),*view_device_));
       }
 
       std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
@@ -216,12 +216,12 @@ namespace PHX {
     template<typename... Extents>
     void initialize(const std::string name,Extents... extents)
     {
-      view_host_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(name,extents...);
+      view_host_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(name,extents...);
       view_device_ = details::ViewOfViewsMaker<OuterViewType>::make_shared(name,extents...);
       if constexpr (device_view_is_accessible_from_host) {
         view_host_unmanaged_ = view_device_;
       } else {
-        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::create_mirror_view(*view_device_));
+        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::create_mirror_view(*view_device_));
       }
 
       std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
@@ -238,12 +238,12 @@ namespace PHX {
     template<typename ExecSpace,typename... Extents>
     void initialize(const ExecSpace& e_space,const std::string name,Extents... extents)
     {
-      view_host_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space(),name),extents...);
+      view_host_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space(),name),extents...);
       view_device_ = details::ViewOfViewsMaker<OuterViewType>::make_shared(Kokkos::view_alloc(e_space,name),extents...);
       if constexpr (device_view_is_accessible_from_host) {
         view_host_unmanaged_ = view_device_;
       } else {
-        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::HostMirror>::make_shared(Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::HostMirror::execution_space()),*view_device_));
+        view_host_unmanaged_ = details::ViewOfViewsMaker<typename OuterViewType::host_mirror_type>::make_shared(Kokkos::create_mirror_view(Kokkos::view_alloc(typename OuterViewType::host_mirror_type::execution_space()),*view_device_));
       }
 
       std::get_deleter<details::ViewOfViewsDeleter>(view_device_)->do_safety_check_ = check_use_count_;
