@@ -41,7 +41,7 @@ int ex_update(int exoid)
 #endif
 
   int status;
-  if ((status = nc_sync(exoid)) != NC_NOERR) {
+  if ((status = nc_sync(exoid)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to update file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

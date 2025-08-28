@@ -646,10 +646,10 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrd
       kh.create_spgemm_handle(alg_enum);
       kh.set_team_work_size(team_work_size);
 
-      KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
-                                                  Arowptr, Acolind, false,
-                                                  Browptr, Bcolind, false,
-                                                  Crowptr);
+      KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+                                    Arowptr, Acolind, false,
+                                    Browptr, Bcolind, false,
+                                    Crowptr);
 
       size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
       if (c_nnz_size) {
@@ -657,10 +657,10 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrd
         Ccolind            = lno_nnz_view_t(no_init_view("entriesC"), c_nnz_size);
         Cvals              = scalar_view_t(no_init_view("valuesC"), c_nnz_size);
       }
-      KokkosSparse::Experimental::spgemm_numeric(&kh, AnumRows, BnumRows, BnumCols,
-                                                 Arowptr, Acolind, Avals, false,
-                                                 Browptr, Bcolind, Bvals, false,
-                                                 Crowptr, Ccolind, Cvals);
+      KokkosSparse::spgemm_numeric(&kh, AnumRows, BnumRows, BnumCols,
+                                   Arowptr, Acolind, Avals, false,
+                                   Browptr, Bcolind, Bvals, false,
+                                   Crowptr, Ccolind, Cvals);
       kh.destroy_spgemm_handle();
       typename KCRS::execution_space().fence();
 

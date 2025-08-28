@@ -383,7 +383,7 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
       COMM mpi serial
     )
 
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellInputFile
       SOURCE_FILES Maxwell.xml
       DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )

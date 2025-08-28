@@ -36,6 +36,7 @@
 #define  STK_GEOMETRICTRANSFER_HPP
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <set>
 #include <string>

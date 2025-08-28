@@ -27,7 +27,6 @@
 #endif
 
 int main(int argc, char *argv[]) {
-
   using Teuchos::RCP;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
@@ -40,11 +39,11 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor clp(false);
     ::Xpetra::Parameters xpetraParameters(clp);
 
-    switch (clp.parse(argc,argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-    case Teuchos::CommandLineProcessor::PARSE_ERROR:
-    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    switch (clp.parse(argc, argv)) {
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
     }
     if (comm->getRank() == 0) std::cout << xpetraParameters;
 
@@ -55,23 +54,23 @@ int main(int argc, char *argv[]) {
     // Creates an Xpetra::Map corresponding to a 2D Cartesian grid
     // on the unit square. For parallel runs, the nodes are divided into
     // strips, so that the total number of subdomains is comm->getSize() x 1.
-    
+
     // Type of the object
     std::string mapType = "Cartesian2D";
-    
+
     // Container for parameters
     Teuchos::ParameterList galeriList;
-    galeriList.set("nx", (GO) 2 * comm->getSize()); 
-    galeriList.set("ny", (GO) 2);
-    galeriList.set("mx", (GO) comm->getSize());
-    galeriList.set("my", (GO) 1);
-    
+    galeriList.set("nx", (GO)2 * comm->getSize());
+    galeriList.set("ny", (GO)2);
+    galeriList.set("mx", (GO)comm->getSize());
+    galeriList.set("my", (GO)1);
+
     // Creation of the map
     RCP< ::Xpetra::Map<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian2D", comm, galeriList);
 
     // Print out the parameters
     cout << galeriList;
-  
+
     // Print out the map
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     map->describe(*fos, Teuchos::VERB_EXTREME);
@@ -79,22 +78,22 @@ int main(int argc, char *argv[]) {
 
   {
     // Creates an Xpetra::Map corresponding to a 3D Cartesian grid
-    
+
     // Type of the object
     std::string mapType = "Cartesian3D";
-    
+
     // Container for parameters
     Teuchos::ParameterList galeriList;
-    galeriList.set("nx", (GO) 2 * comm->getSize()); 
-    galeriList.set("ny", (GO) 2);
-    galeriList.set("nz", (GO) 2);
-    
+    galeriList.set("nx", (GO)2 * comm->getSize());
+    galeriList.set("ny", (GO)2);
+    galeriList.set("nz", (GO)2);
+
     // Creation of the map
     RCP< ::Xpetra::Map<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian3D", comm, galeriList);
 
     // Print out the parameters
     cout << galeriList;
-  
+
     // Print out the map
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     map->describe(*fos, Teuchos::VERB_EXTREME);

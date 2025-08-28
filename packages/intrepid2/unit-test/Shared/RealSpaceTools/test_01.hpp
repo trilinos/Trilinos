@@ -464,23 +464,19 @@ namespace Intrepid2 {
             const auto iend = ma_x_d_d.extent(0);
             const auto jend = ma_x_d_d.extent(1);
             const auto kend = ma_x_d_d.extent(2);
-            const auto lend = ma_x_d_d.extent(3);
             
             for (size_type i=0;i<iend;++i)
               for (size_type j=0;j<jend;++j)
                 for (size_type k=0;k<kend;++k)
-                  for (size_type l=0;l<lend;++l)
-                    ma_x_d_d_host(i,j,k,l) = Teuchos::ScalarTraits<value_type>::random();
+                  ma_x_d_d_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
           }
           {
             const auto iend = va_x_d.extent(0);
             const auto jend = va_x_d.extent(1);
-            const auto kend = va_x_d.extent(2);
             
             for (size_type i=0;i<iend;++i)
               for (size_type j=0;j<jend;++j)
-                for (size_type k=0;k<kend;++k)
-                  va_x_d_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+                va_x_d_host(i,j) = Teuchos::ScalarTraits<value_type>::random();
           }
 
           Kokkos::deep_copy(ma_x_d_d, ma_x_d_d_host);

@@ -24,6 +24,7 @@ API: Sparse
    sparse/gauss_seidel_apply_backward
    sparse/spiluk_symbolic
    sparse/spiluk_numeric
+   sparse/par_ilut
 
 Containers
 ==========
@@ -71,3 +72,4 @@ Linear Solver / Preconditioners
 
   - :doc:`spiluk_symbolic <sparse/spiluk_symbolic>`
   - :doc:`spiluk_numeric <sparse/spiluk_numeric>`
+  - :doc:`par_ilut <sparse/par_ilut>`

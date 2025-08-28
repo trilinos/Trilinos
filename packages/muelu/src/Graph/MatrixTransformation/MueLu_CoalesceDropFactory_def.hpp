@@ -561,7 +561,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           using implATS          = Kokkos::ArithTraits<impl_scalar_type>;
 
           // move from host to device
-          auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getDeviceLocalView(Xpetra::Access::ReadOnly), Kokkos::ALL(), 0);
+          auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getLocalViewDevice(Xpetra::Access::ReadOnly), Kokkos::ALL(), 0);
           auto thresholdKokkos     = static_cast<impl_scalar_type>(threshold);
           auto realThresholdKokkos = implATS::magnitude(thresholdKokkos);
           auto columnsDevice       = Kokkos::create_mirror_view(ExecSpace(), columns);
@@ -580,7 +580,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           } else {
             boundaryColumnVector = boundaryNodesVector;
           }
-          auto boundaryColumn = boundaryColumnVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
+          auto boundaryColumn = boundaryColumnVector->getLocalViewDevice(Xpetra::Access::ReadOnly);
           auto boundary       = Kokkos::subview(boundaryColumn, Kokkos::ALL(), 0);
 
           Kokkos::View<LO*, ExecSpace> rownnzView("rownnzView", A_device.numRows());

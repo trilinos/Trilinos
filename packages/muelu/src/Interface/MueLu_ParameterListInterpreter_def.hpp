@@ -315,6 +315,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // and not present in the list, but it is better than nothing.
   useCoordinates_ = false;
   useBlockNumber_ = false;
+  if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: strength-of-connection: matrix", std::string, "distance laplacian"))
+    useCoordinates_ = true;
+  if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: use blocking", bool, true))
+    useBlockNumber_ = true;
   if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
       MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type", std::string, "brick") ||
       MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: export visualization data", bool, true)) {
@@ -1056,6 +1060,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring: localize color graph", bool, dropParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: dropping may create Dirichlet", bool, dropParams);
     if (useKokkos_) {
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: use blocking", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: symmetrize graph after dropping", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: strength-of-connection: matrix", std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: strength-of-connection: measure", std::string, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, dropParams);
@@ -1441,10 +1449,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       RCP<Factory> materialTransfer = rcp(new MultiVectorTransferFactory());
       ParameterList materialTransferParameters;
       materialTransferParameters.set("Vector name", "Material");
-      materialTransferParameters.set("Transfer name", "P");
+      materialTransferParameters.set("Transfer name", "Aggregates");
       materialTransferParameters.set("Normalize", true);
       materialTransfer->SetParameterList(materialTransferParameters);
-      materialTransfer->SetFactory("Transfer factory", manager.GetFactory("Ptent"));
+      materialTransfer->SetFactory("Transfer factory", manager.GetFactory("Aggregates"));
+      materialTransfer->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
       manager.SetFactory("Material", materialTransfer);
 
       auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
@@ -1656,6 +1665,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: min rows per thread", int, repartheurParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: target rows per thread", int, repartheurParams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: max imbalance", double, repartheurParams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: put on single proc", int, repartheurParams);
     repartheurFactory->SetParameterList(repartheurParams);
     repartheurFactory->SetFactory("A", manager.GetFactory("A"));
     manager.SetFactory("number of partitions", repartheurFactory);
@@ -2060,16 +2070,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: pattern order", int, patternParams);
   patternFactory->SetParameterList(patternParams);
   patternFactory->SetFactory("P", manager.GetFactory("Ptent"));
-  manager.SetFactory("Ppattern", patternFactory);
 
-  // Constraint
-  auto constraintFactory = rcp(new ConstraintFactory());
-  constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
-  constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
-  manager.SetFactory("Constraint", constraintFactory);
-
-  // Emin Factory
-  auto P = rcp(new EminPFactory());
   // Filtering
   MUELU_SET_VAR_2LIST(paramList, defaultList, "emin: use filtered matrix", bool, useFiltering);
   if (useFiltering) {
@@ -2095,12 +2096,20 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
       filterFactory->SetFactory("Filtering", manager.GetFactory("Graph"));
 
-      P->SetFactory("A", filterFactory);
+      patternFactory->SetFactory("A", filterFactory);
 
     } else {
-      P->SetFactory("A", manager.GetFactory("Graph"));
+      patternFactory->SetFactory("A", manager.GetFactory("Graph"));
     }
   }
+
+  manager.SetFactory("Ppattern", patternFactory);
+
+  // Constraint
+  auto constraintFactory = rcp(new ConstraintFactory());
+  constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
+  constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
+  manager.SetFactory("Constraint", constraintFactory);
 
   // Energy minimization
   ParameterList Pparams;
@@ -2111,6 +2120,9 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Pparams.set("Keep P0", true);
     Pparams.set("Keep Constraint0", true);
   }
+
+  // Emin Factory
+  auto P = rcp(new EminPFactory());
   P->SetParameterList(Pparams);
   P->SetFactory("P", manager.GetFactory("Ptent"));
   P->SetFactory("Constraint", manager.GetFactory("Constraint"));

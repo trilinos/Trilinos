@@ -32,17 +32,17 @@ namespace Details {
 /// See Ifpack2::Details::UserPartitioner::setPartitionParameters for a list of supported parameters.
 /// \tparam GraphType Specialization of Tpetra::CrsGraph or
 ///   Tpetra::RowGraph.
-template<class GraphType>
+template <class GraphType>
 class UserPartitioner : public OverlappingPartitioner<GraphType> {
-public:
+ public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
-  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> 
-    row_graph_type;
+  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type>
+      row_graph_type;
 
   //! Constructor.
-  UserPartitioner (const Teuchos::RCP<const row_graph_type>& graph);
+  UserPartitioner(const Teuchos::RCP<const row_graph_type>& graph);
 
   //! Destructor.
   virtual ~UserPartitioner();
@@ -58,16 +58,16 @@ public:
   /// rows (local IDs) in part (block) i. In this case, you are specifying OverlappingPartitioner::Parts_.
   ///     <li> "partitioner: global ID parts" (Teuchos::Array<Teuchos::ArrayRCP<global ordinal>>)
   /// The i'th entry in the Array is an ArrayRCP that contains all the
-  /// rows (global IDs) in part (block) i. In this case, you are specifying a translated version of 
+  /// rows (global IDs) in part (block) i. In this case, you are specifying a translated version of
   //  OverlappingPartitioner::Parts_.
   ///   </ul>
   /// You may set only one of these parameters.  Setting both will results in a runtime exception.
-  void setPartitionParameters (Teuchos::ParameterList& List);
+  void setPartitionParameters(Teuchos::ParameterList& List);
 
   //! Compute the partitions.
-  void computePartitions ();
+  void computePartitions();
 
-private:
+ private:
   Teuchos::ArrayRCP<local_ordinal_type> map_;
   //! @brief True if user has provided list of parts.  False otherwise.
   bool userProvidedParts_;
@@ -75,7 +75,7 @@ private:
   bool userProvidedMap_;
 };
 
-}// namespace Details
-}// namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_USER_PARTITIONER_DECL_HPP
+#endif  // IFPACK2_USER_PARTITIONER_DECL_HPP

@@ -145,7 +145,7 @@ typedef struct add_test_results_struct{
   double epsilon;
 } add_test_results;
 
-typedef struct mult_test_results_struct{  
+typedef struct mult_test_results_struct{
   mult_test_results_struct():epsilon(1e10),cNorm(-1.0),compNorm(-1.0){}
 
   double epsilon;
@@ -315,7 +315,7 @@ mult_test_results multiply_test_kernel(
   RCP<Matrix_t> Aeff,  Beff;
   if(AT) {
     transposer_type transposer(A);
-    Aeff = transposer.createTranspose();   
+    Aeff = transposer.createTranspose();
   }
   else
     Aeff=A;
@@ -355,13 +355,13 @@ mult_test_results multiply_test_kernel(
 
     // Copy colind/vals
     for(size_t i=0; i<Be2_rowmap->getLocalNumElements(); i++) {
-      LO lrid_1 = Be1_rowmap->getLocalElement(Be2_rowmap->getGlobalElement(i));      
+      LO lrid_1 = Be1_rowmap->getLocalElement(Be2_rowmap->getGlobalElement(i));
       // NOTE: Invalid rows will be length zero, so this will always work
       for(size_t j=Be2_rowptr[i]; j<Be2_rowptr[i+1]; j++) {
 	size_t j1 = j-Be2_rowptr[i] + Be1_rowptr[lrid_1];
 	Be2_colind[j] = Be1_colind[j1];
 	Be2_vals[j]   = Be1_vals[j1];
-      }      
+      }
     }
 
     // Make new Beff
@@ -372,14 +372,14 @@ mult_test_results multiply_test_kernel(
   }
 
   // Extract Kokkos CrsMatrices
-  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_device_type 
+  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_device_type
                    KCRS;
   typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type, 
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
           typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrix-es
@@ -394,30 +394,30 @@ mult_test_results multiply_test_kernel(
   for(int alg = 0; alg < (int)ALGORITHMS.size(); alg++) {
     std::string myalg = ALGORITHMS[alg];
     printf("Testing algorithm %s on %s\n",myalg.c_str(),name.c_str());
-    
+
     KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
     typename KernelHandle::nnz_lno_t AnumRows = Ak.numRows();
     typename KernelHandle::nnz_lno_t BnumRows = Bk.numRows();
-    typename KernelHandle::nnz_lno_t BnumCols = Bk.numCols();  
+    typename KernelHandle::nnz_lno_t BnumCols = Bk.numCols();
     lno_view_t      row_mapC ("non_const_lnow_row", AnumRows + 1);
     lno_nnz_view_t  entriesC;
     scalar_view_t   valuesC;
     KernelHandle kh;
     kh.create_spgemm_handle(alg_enum);
-    
+
     // Symbolic
-    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bk.graph.row_map,Bk.graph.entries,false,row_mapC);
+    KokkosSparse::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bk.graph.row_map,Bk.graph.entries,false,row_mapC);
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     //    printf("DEBUG: c_nnz_size = %d\n",c_nnz_size); // This isn't relevant for MKL
     if (c_nnz_size){
       entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
-    
+
     // Numeric
-    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bk.graph.row_map,Bk.graph.entries,Bk.values,false,row_mapC,entriesC,valuesC);
+    KokkosSparse::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bk.graph.row_map,Bk.graph.entries,Bk.values,false,row_mapC,entriesC,valuesC);
     kh.destroy_spgemm_handle();
-    
+
     // Sort
     Tpetra::Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
 
@@ -428,14 +428,14 @@ mult_test_results multiply_test_kernel(
 
     // Check number of rows
     if((size_t)Real_rowptr.size() != (size_t)row_mapC.size()) throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap size mismatch");
-  
+
     // Check row sizes
     bool has_mismatch=false;
     for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) {
       if(Real_rowptr()[i] !=row_mapC[i]) {has_mismatch=true;break;}
     }
     if(has_mismatch) {
-#if 0     
+#if 0
       if(AT) {
 	std::string fname(name + "_AT.out");
 	Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile (fname,Aeff,"AT","AT");
@@ -446,38 +446,38 @@ mult_test_results multiply_test_kernel(
       }
 
       printf("Real rowgids = ");
-      for(size_t i=0; i<(size_t) C->getGraph()->getRowMap()->getLocalNumElements(); i++) 
+      for(size_t i=0; i<(size_t) C->getGraph()->getRowMap()->getLocalNumElements(); i++)
 	printf("%d ",(int)C->getGraph()->getRowMap()->getGlobalElement(i));
       printf("\n");
       printf("Aeff rowgids = ");
-      for(size_t i=0; i<(size_t) Aeff->getGraph()->getRowMap()->getLocalNumElements(); i++) 
+      for(size_t i=0; i<(size_t) Aeff->getGraph()->getRowMap()->getLocalNumElements(); i++)
 	printf("%d ",(int)Aeff->getGraph()->getRowMap()->getGlobalElement(i));
       printf("\n");
 
       printf("Real rowptr = ");
-      for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) 
+      for(size_t i=0; i<(size_t) Real_rowptr.size(); i++)
 	printf("%d ",(int)Real_rowptr()[i]);
       printf("\nCalc rowptr = ");
-      for(size_t i=0; i<(size_t) row_mapC.size(); i++) 
+      for(size_t i=0; i<(size_t) row_mapC.size(); i++)
 	printf("%d ",(int)row_mapC[i]);
       printf("\n");
-      
+
       printf("Real colind = ");
-      for(size_t i=0; i<(size_t) Real_colind.size(); i++) 
+      for(size_t i=0; i<(size_t) Real_colind.size(); i++)
 	printf("%d(%6.1f) ",(int)Real_colind()[i],Real_vals()[i]);
       printf("\nCalc colind = ");
-      for(size_t i=0; i<(size_t) entriesC.size(); i++) 
+      for(size_t i=0; i<(size_t) entriesC.size(); i++)
 	printf("%d(%6.1f) ",(int)entriesC[i],valuesC[i]);
       printf("\n");
 #endif
       throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap entries mismatch");
-    } 
+    }
 
     // Check graphs & entries (sorted by GID)
     results.cNorm=0.0;
     results.compNorm=0.0;
     results.epsilon=0.0;
-    for(size_t i=0; i<(size_t) Real_rowptr.size()-1; i++) {      
+    for(size_t i=0; i<(size_t) Real_rowptr.size()-1; i++) {
       size_t nnz = Real_rowptr()[i+1] - Real_rowptr()[i];
       if(nnz==0) continue;
       std::vector<std::pair<LO,SC> > R_sorted(nnz), C_sorted(nnz);
@@ -497,16 +497,16 @@ mult_test_results multiply_test_kernel(
       }
     }
     if(has_mismatch) {
-#if 0     
+#if 0
       printf("Real colmap = ");
-      for(size_t i=0; i<(size_t) C->getGraph()->getColMap()->getLocalNumElements(); i++) 
+      for(size_t i=0; i<(size_t) C->getGraph()->getColMap()->getLocalNumElements(); i++)
 	printf("%d ",(int)C->getGraph()->getColMap()->getGlobalElement(i));
       printf("\n");
       printf("   B colmap = ");
-      for(size_t i=0; i<(size_t) Beff->getGraph()->getColMap()->getLocalNumElements(); i++) 
+      for(size_t i=0; i<(size_t) Beff->getGraph()->getColMap()->getLocalNumElements(); i++)
 	printf("%d ",(int)Beff->getGraph()->getColMap()->getGlobalElement(i));
       printf("\n");
- 
+
       if(AT) {
 	std::string fname(name + "_AT.out");
 	Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile (fname,Aeff,"AT","AT");
@@ -516,24 +516,24 @@ mult_test_results multiply_test_kernel(
 	Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile (fname,Beff,"BT","BT");
       }
       printf("Real rowptr = ");
-      for(size_t i=0; i<(size_t) Real_rowptr.size(); i++) 
+      for(size_t i=0; i<(size_t) Real_rowptr.size(); i++)
 	printf("%d ",(int)Real_rowptr()[i]);
       printf("\nCalc rowptr = ");
-      for(size_t i=0; i<(size_t) row_mapC.size(); i++) 
+      for(size_t i=0; i<(size_t) row_mapC.size(); i++)
 	printf("%d ",(int)row_mapC[i]);
       printf("\n");
-      
+
       printf("Real colind = ");
-      for(size_t i=0; i<(size_t) Real_colind.size(); i++) 
+      for(size_t i=0; i<(size_t) Real_colind.size(); i++)
 	printf("%d(%6.1f) ",(int)Real_colind()[i],Real_vals()[i]);
       printf("\nCalc colind = ");
-      for(size_t i=0; i<(size_t) entriesC.size(); i++) 
+      for(size_t i=0; i<(size_t) entriesC.size(); i++)
 	printf("%d(%6.1f) ",(int)entriesC[i],valuesC[i]);
       printf("\n");
 #endif
       throw std::runtime_error("mult_test_results multiply_test_kernel: colmap entries mismatch");
-    } 
-    
+    }
+
     if(results.cNorm>1e-10) results.epsilon = results.epsilon / results.cNorm;
 
     if(results.epsilon>1e-10)
@@ -729,7 +729,7 @@ mult_test_results jacobi_reuse_test(
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, GO, NT)  {
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-  
+
   // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
   typedef CrsMatrix<MT,LO,GO,NT> Matrix_t;
@@ -762,7 +762,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
       "Bad tag's name: " << it->first <<
       "Type name: " << it->second.getAny().typeName() <<
       endl << endl);
- 
+
     ParameterList currentSystem = matrixSystems->sublist (it->first);
     std::string name = currentSystem.name();
     std::string A_file = currentSystem.get<std::string> ("A");
@@ -787,7 +787,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
     if (op == "multiply") {
       if (verbose)
         newOut << "Running multiply test (kernel) for " << currentSystem.name() << endl;
-      mult_test_results results;	
+      mult_test_results results;
       try {
 	results = multiply_test_kernel(name, A, B, AT, BT, C, comm, newOut);
       }
@@ -801,7 +801,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
         newOut << "\tcompNorm: " << results.compNorm << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
-    }    
+    }
       // NOTE: Re-enable these tests when we get kernels for these things
       /*
       if (verbose)
@@ -896,9 +896,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
         newOut << "\tComputed norm: " << results.computedNorm << endl;
         newOut << "\tEpsilon: " << results.epsilon << endl;
       }
-    }   
+    }
       */
-  } 
+  }
 
   const int lclSuccess = success ? 1 : 0;
   int gblSuccess = 0;
@@ -922,4 +922,3 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
 
 
   } //namespace Tpetra
-

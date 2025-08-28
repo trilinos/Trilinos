@@ -498,7 +498,7 @@ namespace FROSch {
                 auto localRepeatedMap = repeatedMap->getLocalMap();
                 auto localBasisMap = basisMap->getLocalMap();
 
-                auto localMVBasis = asembledBasis->getDeviceLocalView(Xpetra::Access::ReadOnly);
+                auto localMVBasis = asembledBasis->getLocalViewDevice(Xpetra::Access::ReadOnly);
 
                 // Array for scaling the columns of PhiGamma (1/norm(PhiGamma(:,i)))
                 using execution_space = typename Map<LO,GO,NO>::local_map_type::execution_space;
@@ -1186,7 +1186,7 @@ namespace FROSch {
             ExtensionSolver_->initialize();
         }
     }
-    
+
 }
 
 #endif

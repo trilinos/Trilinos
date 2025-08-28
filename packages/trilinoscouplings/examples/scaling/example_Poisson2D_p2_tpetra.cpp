@@ -1595,15 +1595,15 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   if (amgType == "ML") {
     throw std::runtime_error("Error: ML does not support Tpetra objects");
   } else if (amgType == "MueLu") {
-    // Turns a Tpetra::CrsMatrix into a MueLu::Matrix
-    RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> mueluA = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(A0);
+    // Turns a Tpetra::CrsMatrix into a Xpetra::Matrix
+    RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> mueluA = Xpetra::toXpetra(A0);
     // Multigrid Hierarchy
     crs_matrix_type * A1;
     RCP<Xpetra::Matrix <scalar_type, local_ordinal_type, global_ordinal_type> > xA1;
     bool userCoarseA = false;
     if (amgList.isParameter("user coarse matrix")) {
       A1=amgList.get<crs_matrix_type*>("user coarse matrix");
-      xA1 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(rcpFromRef(*A1));
+      xA1 = Xpetra::toXpetra(rcpFromRef(*A1));
       amgList.remove("user coarse matrix");
       userCoarseA = true;
     }
@@ -1614,10 +1614,10 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     MueLu::FactoryManager<scalar_type,local_ordinal_type,global_ordinal_type,NO> M1, M2;
     if (P0 != Teuchos::null) {
       H->AddNewLevel();
-      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xP0 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(P0);
+      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xP0 = Xpetra::toXpetra(P0);
       H->GetLevel(1)->AddKeepFlag("P",MueLu::NoFactory::get(),MueLu::UserData);
       H->GetLevel(1)->Set("P", xP0);
-      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xR0 = MueLu::TpetraCrs_To_XpetraMatrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>(R0);
+      RCP<Xpetra::Matrix<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xR0 = Xpetra::toXpetra(R0);
       H->GetLevel(1)->AddKeepFlag("R",MueLu::NoFactory::get(),MueLu::UserData);
       H->GetLevel(1)->Set("R", xR0);
       if (mypid==0) std::cout << ">>>>>>>>>>>>>>>>>>>>> "
@@ -1636,7 +1636,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
       for (int i=0; i<data.size(); ++i)
         data[i] = 1.0;
       data = Teuchos::null;
-      RCP<Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xnullspace = MueLu::TpetraMultiVector_To_XpetraMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>(nullspace);
+      RCP<Xpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO>> xnullspace = Xpetra::toXpetra(nullspace);
       H->GetLevel(1)->Set("Nullspace", xnullspace);
     }
     // Multigrid setup phase

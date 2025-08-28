@@ -49,7 +49,9 @@ MeshBuilder::MeshBuilder()
    m_maximumBucketCapacity(stk::mesh::get_default_maximum_bucket_capacity()),
    m_spatialDimension(0),
    m_entityRankNames(),
-   m_upwardConnectivity(true)
+   m_upwardConnectivity(true),
+   m_symmetricGhostInfo(true),
+   m_maintainLocalIds(false)
 {
 }
 
@@ -62,7 +64,9 @@ MeshBuilder::MeshBuilder(ParallelMachine comm)
    m_maximumBucketCapacity(stk::mesh::get_default_maximum_bucket_capacity()),
    m_spatialDimension(0),
    m_entityRankNames(),
-   m_upwardConnectivity(true)
+   m_upwardConnectivity(true),
+   m_symmetricGhostInfo(true),
+   m_maintainLocalIds(false)
 {
 }
 
@@ -128,6 +132,18 @@ MeshBuilder& MeshBuilder::set_upward_connectivity(bool onOrOff)
   return *this;
 }
 
+MeshBuilder& MeshBuilder::set_symmetric_ghost_info(bool onOrOff)
+{
+  m_symmetricGhostInfo = onOrOff;
+  return *this;
+}
+
+MeshBuilder& MeshBuilder::set_maintain_local_ids(bool onOrOff)
+{
+  m_maintainLocalIds = onOrOff;
+  return *this;
+}
+
 std::shared_ptr<MetaData> MeshBuilder::create_meta_data()
 {
   if (m_spatialDimension > 0 || !m_entityRankNames.empty()) {
@@ -149,7 +165,7 @@ std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData
 {
   STK_ThrowRequireMsg(m_haveComm, "MeshBuilder must be given an MPI communicator before creating BulkData");
 
-  return std::unique_ptr<BulkData>(new BulkData(metaData,
+  std::unique_ptr<BulkData> bulkPtr(new BulkData(metaData,
                                                 m_comm,
                                                 m_auraOption,
 #ifdef SIERRA_MIGRATION
@@ -160,6 +176,9 @@ std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData
                                                 m_maximumBucketCapacity,
                                                 create_aura_ghosting(),
                                                 m_upwardConnectivity));
+  bulkPtr->set_symmetric_ghost_info(m_symmetricGhostInfo);
+  bulkPtr->set_maintain_local_ids(m_maintainLocalIds);
+  return bulkPtr;
 }
 
 std::unique_ptr<BulkData> MeshBuilder::create()

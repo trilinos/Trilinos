@@ -11,7 +11,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleLSQRFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES orsirr1_scaled.hb
     EXEDEPS LSQR_Epetra_File_Ex
     )

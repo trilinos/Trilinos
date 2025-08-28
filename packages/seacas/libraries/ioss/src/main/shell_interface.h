@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -61,10 +61,21 @@ namespace IOShell {
     //! If non-empty, then it is a list of times that should be transferred to the output file.
     std::vector<double> selected_times{};
 
+    //! If non-empty, then it is a list of steps that should be transferred to the output file.
+    //  A negative value counts from end. -1 is last, -2 is second last...
+    std::vector<int> selected_steps{};
+
     //! If non-empty, then it is a list of element blocks, nodesets,
     //! sidesets that should be omitted from the output file
     std::vector<std::string> omitted_blocks{};
     std::vector<std::string> omitted_sets{};
+
+    //! If non-empty, a list of element block ids and/or names that
+    //! should be omitted in a parallel decomposition. The blocks will
+    //! still appear in the decomposed files, but will not affect the
+    //! balance. Only active element blocks will be load-balanced.
+    std::vector<int> decomp_omitted_block_ids{};
+    std::string      decomp_omitted_block_names{};
 
     //! If non-zero, then put `split_times` timesteps in each file. Then close file and start new
     //! file.
@@ -99,7 +110,8 @@ namespace IOShell {
     bool quiet{false};
     bool in_memory_read{false};
     bool in_memory_write{false};
-    bool lower_case_variable_names{true};
+    bool lowercase_variable_names{false};
+    bool lowercase_database_names{false};
     bool delete_timesteps{false};
     bool minimize_open_files{false};
     bool disable_field_recognition{false};
@@ -119,6 +131,8 @@ namespace IOShell {
     bool delete_qa{false};
     bool delete_info{false};
     bool line_decomp{false};
+    bool sort_times{false};
+    bool shuffle_times{false};
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell

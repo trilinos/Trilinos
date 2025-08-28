@@ -175,6 +175,50 @@ TEST(selector_timings, get_buckets)
   batchTimer.print_batch_timing(numIterations);
 }
 
+TEST(selector_timings, selectPart)
+{
+  MPI_Comm comm = stk::parallel_machine_world();
+  if (stk::parallel_machine_size(comm) > 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(comm).set_spatial_dimension(3).create();
+
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  const int numParts = 5000;
+  create_elem_block_parts(numParts, meta);
+
+  stk::io::fill_mesh("generated:100x100x100", *bulkPtr);
+  const int numElems = 100*100*100;
+  const int elemsPerPart = numElems/numParts;
+  move_elems_to_each_part(*bulkPtr, elemsPerPart);
+
+  stk::unit_test_util::BatchTimer batchTimer(MPI_COMM_WORLD);
+  batchTimer.initialize_batch_timer();
+
+  stk::mesh::PartVector blocks = stk::mesh::ExodusTranslator(*bulkPtr).get_element_block_parts();
+  stk::mesh::Selector selector = stk::mesh::selectUnion(blocks);
+  stk::mesh::PartVector blockSubsets;
+  unsigned counter = 1;
+  for(stk::mesh::Part* blockPtr : blocks) {
+    stk::mesh::Part& blkSubset = meta.declare_part("sub"+std::to_string(counter), stk::topology::ELEM_RANK);
+    ++counter;
+    blockSubsets.push_back(&blkSubset);
+    meta.declare_part_subset(*blockPtr, blkSubset);
+  }
+
+  batchTimer.start_batch_timer();
+
+  for(int n=0; n<100; ++n) {
+    for(stk::mesh::Part* partPtr : blockSubsets) {
+      STK_ThrowRequire((selector(*partPtr)));
+    }
+  }
+
+  batchTimer.stop_batch_timer();
+
+  const int numIterations = 1;
+  batchTimer.print_batch_timing(numIterations);
+}
+
 TEST(Verify, selectorAlgorithmicComplexity)
 {
   //

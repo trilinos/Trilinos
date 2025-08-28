@@ -15,6 +15,7 @@ IF(COMMAND TRIBITS_PACKAGE_DECL)
     TRIBITS_PACKAGE_POSTPROCESS()
 ELSE()
     MESSAGE("*** Building Krino as a stand-alone cmake package. ***")
+    project(krino LANGUAGES C CXX)
 
     include(SierraCmakeCode.cmake)
 ENDIF()

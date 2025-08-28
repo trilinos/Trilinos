@@ -80,7 +80,7 @@ void X_FACTOR_ (DATA_TYPE *matrix,int *matrixsize,
   DATA_TYPE *mat;
   int *permutations;
   double run_secs;              /* time (in secs) during which the prog ran */
-  double seconds();             /* function to generate timings */
+  double seconds(double);       /* function to generate timings */
   double tsecs;                 /* intermediate storage of timing info */
 
   int totmem1;

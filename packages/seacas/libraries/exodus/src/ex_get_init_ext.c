@@ -36,7 +36,7 @@ static void exi_get_entity_count(int exoid, ex_init_params *info)
   nc_inq(exoid, &ndims, NULL, NULL, NULL);
 #endif
   for (int dimid = 0; dimid < ndims; dimid++) {
-    char   dim_nm[NC_MAX_NAME + 1] = {'\0'};
+    char   dim_nm[EX_MAX_NAME + 1] = {'\0'};
     size_t dim_sz;
 #if NC_HAS_HDF5
     nc_inq_dim(exoid, dimids[dimid], dim_nm, &dim_sz);
@@ -60,14 +60,14 @@ static void exi_get_entity_count(int exoid, ex_init_params *info)
 static int ex_get_dim_value(int exoid, const char *name, const char *dimension_name, int dimension,
                             int64_t *value)
 {
-  if (nc_inq_dimid(exoid, dimension_name, &dimension) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dimension_name, &dimension) != EX_NOERR) {
     /* optional and default to zero. */
     *value = 0;
   }
   else {
     size_t tmp;
     int    status;
-    if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimension, &tmp)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s in file id %d", name,
                exoid);
@@ -190,13 +190,13 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
   int     status;
   size_t  title_len  = 0;
   nc_type title_type = 0;
-  if ((status = nc_inq_att(rootid, NC_GLOBAL, ATT_TITLE, &title_type, &title_len)) == NC_NOERR) {
+  if ((status = nc_inq_att(rootid, NC_GLOBAL, ATT_TITLE, &title_type, &title_len)) == EX_NOERR) {
     /* Check title length to avoid overrunning clients memory space; include
      * trailing null */
     if (title_len > 0) {
       if (title_len > MAX_LINE_LENGTH) {
         char *title = malloc(title_len + 1);
-        if ((status = nc_get_att_text(rootid, NC_GLOBAL, ATT_TITLE, title)) == NC_NOERR) {
+        if ((status = nc_get_att_text(rootid, NC_GLOBAL, ATT_TITLE, title)) == EX_NOERR) {
           ex_copy_string(info->title, title, MAX_LINE_LENGTH + 1);
           info->title[MAX_LINE_LENGTH] = '\0';
         }
@@ -206,7 +206,7 @@ int ex_get_init_ext(int exoid, ex_init_params *info)
         status                 = nc_get_att_text(rootid, NC_GLOBAL, ATT_TITLE, info->title);
         info->title[title_len] = '\0';
       }
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get title in file id %d", rootid);
         ex_err_fn(exoid, __func__, errmsg, status);

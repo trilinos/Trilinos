@@ -7,9 +7,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     SOURCES test_fp_hb.cpp
     )
 
-  ASSERT_DEFINED(Anasazi_SOURCE_DIR)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestFPFiles
-    SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES bcsstk14.hb
     EXEDEPS fp_hb
   )

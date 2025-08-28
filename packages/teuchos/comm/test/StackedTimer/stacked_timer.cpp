@@ -506,6 +506,82 @@ TEUCHOS_UNIT_TEST(StackedTimer, proc_minmax)
   }
 }
 
+TEUCHOS_UNIT_TEST(StackedTimer, proc_stddev)
+{
+
+  Teuchos::StackedTimer timer("L0");
+  timer.stopBaseTimer();
+
+  const Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+  if (comm->getSize() != 2)
+    return;
+  const int myRank = Teuchos::rank(*comm);
+  auto t = const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("L0"));
+
+  if (myRank == 0) {
+    t->overrideNumCallsForUnitTesting(1);
+    t->setAccumulatedTime(1.0);
+    t->setAccumulatedTimeSquared(1.0);
+    // 1 call, elapsed time 1. => stddev=0
+  } else {
+    t->overrideNumCallsForUnitTesting(1);
+    t->setAccumulatedTime(2.0);
+    t->setAccumulatedTimeSquared(4.0);
+    // 1 call, elapsed time 2. => stddev=0
+  }
+
+  Teuchos::StackedTimer::OutputOptions options;
+
+  out << "\n### Printing default report ###" << std::endl;
+  options.output_per_proc_stddev=true;
+  options.output_minmax=true;
+  options.output_proc_minmax=true;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("std dev per proc min/max=0/0") != std::string::npos);
+    }
+  }
+
+  if (myRank == 0) {
+    t->overrideNumCallsForUnitTesting(2);
+    t->setAccumulatedTime(1.0+2.0);
+    t->setAccumulatedTimeSquared(1.0+4.0);
+    // 2 calls, elapsed times 1. and 2. => stddev=sqrt((1+4)/2 - ((1+2)/2)^2)=0.5
+  }
+
+  out << "\n### Printing default report ###" << std::endl;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("std dev per proc min/max=0/0.5") != std::string::npos);
+    }
+  }
+
+  if (myRank == 1) {
+    t->overrideNumCallsForUnitTesting(2);
+    t->setAccumulatedTime(2.0+3.0);
+    t->setAccumulatedTimeSquared(4.0+9.0);
+    // 2 calls, elapsed times 2. and 3. => stddev=sqrt((4+9)/2 - ((2+3)/2)^2)=0.5
+  }
+
+  out << "\n### Printing default report ###" << std::endl;
+  timer.report(out, comm, options);
+  {
+    std::ostringstream os;
+    timer.report(os, comm, options);
+    if (myRank == 0) {
+      TEST_ASSERT(os.str().find("std dev per proc min/max=0.5/0.5") != std::string::npos);
+    }
+  }
+
+}
+
+
 
 // Overlapping timers are not allowed in a StackedTimer, but are in
 // TimeMonitor. Since StackedTimer is automatically used in

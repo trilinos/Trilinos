@@ -7,7 +7,6 @@
 // *****************************************************************************
 // @HEADER
 
-
 /*! \file Ifpack2_UnitTestMain.cpp
 
 \brief Ifpack2 Unit testing main program.
@@ -20,7 +19,6 @@ specific unit test suites.
 
 */
 
-
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Teuchos_UnitTestRepository.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -29,11 +27,10 @@ specific unit test suites.
 #include <qd/dd_real.h>
 #endif
 
-int main( int argc, char* argv[] )
-{
+int main(int argc, char* argv[]) {
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-  //If we're using extended-precision types, we have to run a QD-specific
-  //function at the beginning and end of our main:
+  // If we're using extended-precision types, we have to run a QD-specific
+  // function at the beginning and end of our main:
   unsigned int old_cw;
   fpu_fix_start(&old_cw);
 #endif

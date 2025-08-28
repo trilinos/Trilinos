@@ -24,7 +24,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleMtxFiles
-  SOURCE_DIR ${Belos_SOURCE_DIR}/kokkos/example
+  SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk12.mtx
   EXEDEPS Kokkos_BlockCGEx Kokkos_BlockGmresEx Kokkos_GCRODREx
   )
@@ -39,7 +39,7 @@ IF(Teuchos_ENABLE_COMPLEX)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleComplexMtxFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/kokkos/example
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES mhd1280b.mtx
     EXEDEPS Kokkos_GCRODRComplexEx
     )

@@ -14,7 +14,7 @@
 namespace stk { namespace balance { class DecompositionChangeList; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace krino { class CDMesh; }
-namespace krino { class RefinementInterface; }
+namespace krino { class RefinementManager; }
 
 namespace krino {
 namespace rebalance_utils {
@@ -22,7 +22,7 @@ namespace impl {
 
 void
 update_rebalance_for_adaptivity(stk::balance::DecompositionChangeList & decomp,
-    const RefinementInterface& refinement,
+    const RefinementManager& refinement,
     const stk::mesh::BulkData & bulk_data);
 
 void
@@ -36,7 +36,7 @@ accumulate_cdfem_child_weights_to_parents(const stk::mesh::BulkData & bulk_data,
     const CDMesh & cdmesh);
 
 void accumulate_adaptivity_child_weights_to_parents(
-    const stk::mesh::BulkData & bulk_data, const RefinementInterface& refinement, stk::mesh::Field<double> & element_weights_field);
+    const stk::mesh::BulkData & bulk_data, const RefinementManager& refinement, stk::mesh::Field<double> & element_weights_field);
 
 bool check_family_tree_element_and_side_ownership(const stk::mesh::BulkData & bulk_data);
 }

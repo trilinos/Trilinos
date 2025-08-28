@@ -1,5 +1,5 @@
 # Trilinos
-![Trilinos Logo](https://trilinos.github.io/images/trilinos.jpg)
+![Trilinos Logo](https://github.com/trilinos/Logos/blob/master/current/RGB/Horizontal/Navy/Trilinos_Logo_RGB_Horizontal_Navy.png)
 
 [Website](https://trilinos.github.io) |
 [Documentation](https://trilinos.github.io/documentation.html) |

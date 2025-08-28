@@ -43,6 +43,28 @@ DistributorSendTypeEnumToString (EDistributorSendType sendType)
   }
 }
 
+EDistributorSendType
+DistributorSendTypeStringToEnum (const std::string_view s)
+{
+  if (s == "Isend") return DISTRIBUTOR_ISEND;
+  if (s == "Send") return DISTRIBUTOR_SEND;
+  if (s == "Alltoall") return DISTRIBUTOR_ALLTOALL;
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  if (s == "MpiAdvanceAlltoall") return DISTRIBUTOR_MPIADVANCE_ALLTOALL;
+  if (s == "MpiAdvanceNbralltoallv") return DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV;
+#endif
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string to convert to EDistributorSendType enum value: " << s);
+}
+
+/// \brief Valid enum values of distributor send types.
+const std::string &validSendTypeOrThrow(const std::string &s) {
+  const auto valids = distributorSendTypes();
+  if (std::find(valids.begin(), valids.end(), s) == valids.end()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string for EDistributorSendType enum value: " << s);
+  }
+  return s;
+}
+
 std::string
 DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
 {
@@ -71,7 +93,7 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
 #endif
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
     reversePlan_(Teuchos::null),
-    sendType_(DISTRIBUTOR_SEND),
+    sendType_(DistributorSendTypeStringToEnum(Behavior::defaultSendType())),
     sendMessageToSelf_(false),
     numSendsToOtherProcs_(0),
     maxSendLength_(0),
@@ -378,10 +400,6 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // Invert map to see what msgs are received and what length
   computeReceives();
 
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  initializeMpiAdvance();
-#endif
-
   // createFromRecvs() calls createFromSends(), but will set
   // howInitialized_ again after calling createFromSends().
   howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS;
@@ -577,10 +595,6 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
   totalReceiveLength_ = remoteProcIDs.size();
   indicesFrom_.clear ();
   numReceives_-=sendMessageToSelf_;
-
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  initializeMpiAdvance();
-#endif
 }
 
 Teuchos::RCP<DistributorPlan> DistributorPlan::getReversePlan() const {
@@ -880,6 +894,10 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
 
+    #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+      initializeMpiAdvance();
+    #endif
+
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
     this->setMyParamList (plist);
@@ -899,6 +917,18 @@ Teuchos::Array<std::string> distributorSendTypes()
   return sendTypes;
 }
 
+Teuchos::Array<EDistributorSendType> distributorSendTypeEnums() {
+  Teuchos::Array<EDistributorSendType> res;
+  res.push_back (DISTRIBUTOR_ISEND);
+  res.push_back (DISTRIBUTOR_SEND);
+  res.push_back (DISTRIBUTOR_ALLTOALL);
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  res.push_back (DISTRIBUTOR_MPIADVANCE_ALLTOALL);
+  res.push_back (DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
+#endif
+  return res;
+}
+
 Teuchos::RCP<const Teuchos::ParameterList>
 DistributorPlan::getValidParameters() const
 {
@@ -909,20 +939,14 @@ DistributorPlan::getValidParameters() const
   using Teuchos::setStringToIntegralParameter;
 
   Array<std::string> sendTypes = distributorSendTypes ();
-  const std::string defaultSendType ("Send");
-  Array<Details::EDistributorSendType> sendTypeEnums;
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
-#endif
+  const Array<Details::EDistributorSendType> sendTypeEnums = distributorSendTypeEnums ();
+
+  const std::string validatedSendType = validSendTypeOrThrow(Behavior::defaultSendType());
 
   RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
 
   setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
-      defaultSendType, "When using MPI, the variant of send to use in "
+      validatedSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
   plist->set ("Timer Label","","Label for Time Monitor output");
 
@@ -934,7 +958,7 @@ DistributorPlan::getValidParameters() const
 // Used by Teuchos::RCP to clean up an owned MPIX_Comm*
 struct MpixCommDeallocator {
   void free(MPIX_Comm **comm) const {
-    MPIX_Comm_free(*comm);
+    MPIX_Comm_free(comm);
   }
 };
 
@@ -947,28 +971,10 @@ void DistributorPlan::initializeMpiAdvance() {
   Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm_);
   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
   int err = 0;
-  if (sendType_ == DISTRIBUTOR_MPIADVANCE_ALLTOALL) {
+  if (sendType_ == DISTRIBUTOR_MPIADVANCE_ALLTOALL ||
+        sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV ) {
     MPIX_Comm **mpixComm = new(MPIX_Comm*);
     err = MPIX_Comm_init(mpixComm, (*rawComm)());
-    mpixComm_ = Teuchos::RCP(mpixComm,
-      MpixCommDeallocator(),
-      true /*take ownership*/
-    );
-  }
-  else if (sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
-    int numRecvs = (int)(numReceives_ + (sendMessageToSelf_ ? 1 : 0));
-    int *sourceRanks = procsFrom_.data();
-
-    // int *sourceWeights = static_cast<int*>(lengthsFrom_.data());// lengthsFrom_ may not be int
-    const int *sourceWeights = MPI_UNWEIGHTED;
-    int numSends = (int)(numSendsToOtherProcs_ + (sendMessageToSelf_ ? 1 : 0));
-    int *destRanks = procIdsToSendTo_.data();
-
-    // int *destWeights = static_cast<int*>(lengthsTo_.data()); // lengthsTo_ may not be int
-    const int *destWeights = MPI_UNWEIGHTED; // lengthsTo_ may not be int
-
-    MPIX_Comm **mpixComm = new(MPIX_Comm*);
-    err = MPIX_Dist_graph_create_adjacent((*rawComm)(), numRecvs, sourceRanks, sourceWeights, numSends, destRanks, destWeights, MPI_INFO_NULL, false, mpixComm);
     mpixComm_ = Teuchos::RCP(mpixComm,
       MpixCommDeallocator(),
       true /*take ownership*/

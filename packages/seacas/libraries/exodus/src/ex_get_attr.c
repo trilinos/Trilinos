@@ -88,7 +88,7 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *a
   }
 
   /* inquire id's of previously defined dimensions  */
-  if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
@@ -104,7 +104,7 @@ int ex_get_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, void *a
     status = nc_get_var_double(exoid, attrid, attrib);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);

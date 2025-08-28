@@ -481,8 +481,8 @@ TEST(LoadBalance, DISABLED_createGraphEdgesUsingNodeConnectivity)
 
     Zoltan2ParallelGraph myGraph;
 
-    size_t numElements = 0;
-    std::vector<stk::balance::GraphEdge> graphEdges;
+    constexpr size_t numElements = 2u;
+    std::vector<stk::balance::GraphEdge> graphEdges(3);
     stk::balance::GraphCreationSettings graphSettings;
     std::vector<int> adjacencyProcs;
 
@@ -1025,10 +1025,6 @@ TEST(LoadBalance, testGraphCreationUsingSearchForContact)
     loadBalanceSettings.setToleranceForFaceSearch(options.getToleranceForFaceSearch());
     loadBalanceSettings.setToleranceForParticleSearch(options.getToleranceForParticleSearch());
 
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
-
-    std::vector<double> vertexWeights(numElements, 1);
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
     unsigned numEdgesCreated = 2;
@@ -1147,9 +1143,6 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticles)
 
     loadBalanceSettings.setToleranceForParticleSearch(2.01);
 
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
-    std::vector<double> vertexWeights(numElements, 1);
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
     unsigned numEdgesCreated = 2;
@@ -1204,10 +1197,6 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticlesAndSkin)
     loadBalanceSettings.setToleranceForFaceSearch(0.21);
     loadBalanceSettings.setToleranceForParticleSearch(2.01);
 
-    size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
-                                                            stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
-
-    std::vector<double> vertexWeights(numElements, 1);
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
     unsigned numEdgesCreated = 12;
@@ -1265,13 +1254,15 @@ void putCoordinatesOnElement(stk::mesh::BulkData& bulk, stk::mesh::Entity elemen
   unsigned spatialDim = bulk.mesh_meta_data().spatial_dimension();
   const stk::mesh::Entity* nodes = bulk.begin_nodes(element);
   unsigned numNodes = bulk.num_nodes(element);
+
+  auto coordFieldData = coordField.data();
   for(size_t j = 0; j < numNodes; j++)
   {
-    double* coordsXyzForNode = stk::mesh::field_data(coordField, nodes[j]);
+    auto coordsXyzForNode = coordFieldData.entity_values(nodes[j]);
 
-    coordsXyzForNode[0] = nodalCoords[j * spatialDim + 0];
-    coordsXyzForNode[1] = nodalCoords[j * spatialDim + 1];
-    coordsXyzForNode[2] = nodalCoords[j * spatialDim + 2];
+    coordsXyzForNode(0_comp) = nodalCoords[j * spatialDim + 0];
+    coordsXyzForNode(1_comp) = nodalCoords[j * spatialDim + 1];
+    coordsXyzForNode(2_comp) = nodalCoords[j * spatialDim + 2];
   }
 }
 

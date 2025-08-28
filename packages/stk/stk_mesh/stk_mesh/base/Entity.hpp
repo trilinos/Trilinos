@@ -79,12 +79,12 @@ struct Entity
     KOKKOS_FUNCTION
     Entity operator=(entity_value_type val) { m_value = val; return *this;}
 
-    /** \brief local_offset is this entity's offset into all local entities of the same rank.
+    /** \brief local_offset is this entity's offset into all local entities.
      * An entity's local_offset will generally remain unchanged through mesh-modification cycles,
-     * which means that the set of local_offsets may not be compact or contiguous if some
+     * meaning that the set of local_offsets may not be compact or contiguous if some
      * entities have been deleted. (local_offsets for deleted entities are no longer valid.)
      * Thus, local_offset is not suitable for use as an equation index for linear-system operations.
-     * See local_id() below.
+     * See BulkData::local_id().
      */
     KOKKOS_FUNCTION
     entity_value_type local_offset() const { return m_value; }

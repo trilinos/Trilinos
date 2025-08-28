@@ -41,7 +41,7 @@ ResultsOutput_Parser::parse(const Parser::Node & region_node, Region & region)
       options->set_title(results_title);
     }
 
-    bool compose_results;
+    bool compose_results{false};
     if (results_node.get_if_present("compose_results", compose_results))
     {
       if (compose_results) options->add_property(Ioss::Property("COMPOSE_RESULTS", 1));

@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.6.01](https://github.com/kokkos/kokkos-kernels/tree/4.6.01)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.6.00...4.6.01)
+
+### Bug Fixes:
+- Par_ilut enhancements and fixes [\#2605](https://github.com/kokkos/kokkos-kernels/pull/2605)
+
 ## [4.6.00](https://github.com/kokkos/kokkos-kernels/tree/4.6.00)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.5.01...4.6.00)
 

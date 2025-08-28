@@ -18,22 +18,22 @@ FILE(GLOB HEADERS_IMPL CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/copy_by_id/
 FILE(GLOB SOURCES_IMPL CONFIGURE_DEPENDS  ${CMAKE_CURRENT_SOURCE_DIR}/copy_by_id/*.cpp)
 
 if(HAVE_STK_Trilinos)
-  TRIBITS_ADD_LIBRARY(stk_transfer
+  TRIBITS_ADD_LIBRARY(stk_transfer_lib
     NOINSTALLHEADERS ${HEADERS} ${HEADERS_IMPL}
     SOURCES  ${SOURCES} ${SOURCES_IMPL}
   )
 else()
-  add_library(stk_transfer ${SOURCES} ${SOURCES_IMPL})
-  target_link_libraries(stk_transfer PUBLIC stk_search)
-  target_link_libraries(stk_transfer PUBLIC stk_util_env)
-  target_link_libraries(stk_transfer PUBLIC stk_util_parallel)
+  add_library(stk_transfer_lib ${SOURCES} ${SOURCES_IMPL})
+  target_link_libraries(stk_transfer_lib PUBLIC stk_search)
+  target_link_libraries(stk_transfer_lib PUBLIC stk_util_env)
+  target_link_libraries(stk_transfer_lib PUBLIC stk_util_parallel)
   if (STK_ENABLE_STKMiddle_mesh)
-    target_link_libraries(stk_transfer PUBLIC stk_middle_mesh)
+    target_link_libraries(stk_transfer_lib PUBLIC stk_middle_mesh)
   endif()
-  INSTALL(TARGETS stk_transfer EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
+  INSTALL(TARGETS stk_transfer_lib EXPORT stkTargets DESTINATION ${STK_INSTALL_LIBDIR})
 endif()
 
-target_include_directories(stk_transfer PUBLIC
+target_include_directories(stk_transfer_lib PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_transfer>
   $<INSTALL_INTERFACE:include>
 )

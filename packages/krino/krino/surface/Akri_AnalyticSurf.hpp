@@ -191,7 +191,7 @@ public:
 
   virtual Surface_Type type() const override { return RANDOM; }
   virtual size_t storage_size() const override { return sizeof(Random); }
-  virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) override
+  virtual void prepare_to_compute(const double /*time*/, const BoundingBox & /*point_bbox*/, const double truncation_length) override
   {
     if (truncation_length > 0.0) my_amplitude = truncation_length;
   }
@@ -199,6 +199,7 @@ public:
   virtual double point_signed_distance(const stk::math::Vector3d &x) const override;
   void insert_into(BoundingBox & bbox) const override;
   bool does_intersect(const BoundingBox & bbox) const override;
+  unsigned long get_seed() const { return iseed; }
 
 private:
   mutable unsigned long iseed;

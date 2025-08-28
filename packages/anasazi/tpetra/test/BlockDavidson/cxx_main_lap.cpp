@@ -22,11 +22,10 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-using Tpetra::CrsMatrix;
-using Tpetra::Map;
-
 int main(int argc, char *argv[])
 {
+  using Tpetra::CrsMatrix;
+  using Tpetra::Map;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;

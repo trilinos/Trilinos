@@ -16,6 +16,15 @@
 #include <catalyst/Iocatalyst_DatabaseIO.h>
 #include <catalyst_tests/Iocatalyst_DatabaseIOTest.h>
 
+TEST_F(Iocatalyst_DatabaseIOTest, WriteOneBlockWith1Cell)
+{
+  Iocatalyst::BlockMesh bmOne;
+  setBlockMeshSize(1, 1, 1);
+  addBlockMesh(bmOne);
+
+  runUnstructuredTest("test_eb_1_cell_1");
+}
+
 TEST_F(Iocatalyst_DatabaseIOTest, WriteThreeElementBlocksWith24Cells)
 {
   Iocatalyst::BlockMesh bmOne;
@@ -41,6 +50,30 @@ TEST_F(Iocatalyst_DatabaseIOTest, WriteOneElementBlockWith8Cells)
   setBlockMeshSize(2, 2, 2);
   addBlockMesh(bm);
   runUnstructuredTest("test_eb_1_cells_8");
+}
+
+TEST_F(Iocatalyst_DatabaseIOTest, WriteOneElementBlockWith8CellsConnRawNodeBlock1)
+{
+  Iocatalyst::BlockMesh bm;
+  setBlockMeshSize(2, 2, 2);
+  addBlockMesh(bm);
+  runUnstructuredTest("test_eb_1_cells_8_ConnRaw_nodeblock_1", true, "nodeblock_1");
+}
+
+TEST_F(Iocatalyst_DatabaseIOTest, WriteOneElementBlockWith8CellsConnRawPointsBlockOne)
+{
+  Iocatalyst::BlockMesh bm;
+  setBlockMeshSize(2, 2, 2);
+  addBlockMesh(bm);
+  runUnstructuredTest("test_eb_1_cells_8_ConnRaw_pointsBlockOne", true, "pointsBlockOne");
+}
+
+TEST_F(Iocatalyst_DatabaseIOTest, WriteOneElementBlockWith8CellsPointsBlock)
+{
+  Iocatalyst::BlockMesh bm;
+  setBlockMeshSize(2, 2, 2);
+  addBlockMesh(bm);
+  runUnstructuredTest("test_eb_1_cells_8_pointsBlock", false, "pointsBlock");
 }
 
 TEST_F(Iocatalyst_DatabaseIOTest, WriteOneElementBlockWith300Cells)

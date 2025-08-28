@@ -37,12 +37,14 @@
 #include <stk_util/stk_config.h>
 #include <stk_util/util/PairIter.hpp>
 #include "Kokkos_Macros.hpp"
+#include <iterator>
+#include <cstddef>
 
 namespace stk
 {
 namespace util
 {
-constexpr unsigned defaultStride = 512;
+constexpr unsigned defaultStride = 1;
 
 template <typename T>
 class StridedArray
@@ -71,11 +73,8 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  StridedArray(PairIter<T*> data
-#ifdef STK_ENABLE_GPU
-               , int stride_in=defaultStride
-#endif
-              )
+  StridedArray(PairIter<T*> data,
+               [[maybe_unused]] int stride_in=defaultStride)
   : dataPointer(data.begin()),
     length(data.size())
 #ifdef STK_ENABLE_GPU
@@ -125,6 +124,70 @@ public:
   bool operator!=(const StridedArray<T>& rhs) const
   {
     return !(*this == rhs);
+  }
+
+  // Begin and end methods for range-based for loops
+  class Iterator {
+  public:
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = T*;
+    using reference = T&;
+
+    KOKKOS_INLINE_FUNCTION
+    Iterator(T* ptr,
+             [[maybe_unused]] int stride_in=defaultStride)
+    : m_ptr(ptr)
+#ifdef STK_ENABLE_GPU
+      , m_stride(stride_in)
+#endif
+    {}
+
+    KOKKOS_INLINE_FUNCTION
+    const T& operator*() const { return *m_ptr; }
+
+    KOKKOS_INLINE_FUNCTION
+    Iterator& operator++() {
+#ifdef STK_ENABLE_GPU
+      m_ptr += m_stride;
+#else
+      ++m_ptr;
+#endif
+      return *this;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    difference_type operator-(const Iterator& other) const { return m_ptr - other.m_ptr; }
+
+    KOKKOS_INLINE_FUNCTION
+    bool operator!=(const Iterator& other) const { return m_ptr != other.m_ptr; }
+    KOKKOS_INLINE_FUNCTION
+    bool operator==(const Iterator& other) const { return m_ptr == other.m_ptr; }
+
+  private:
+    T* m_ptr;
+#ifdef STK_ENABLE_GPU
+    int m_stride;
+#endif
+  };
+
+  KOKKOS_INLINE_FUNCTION
+  Iterator begin() const {
+#ifdef STK_ENABLE_GPU
+    return Iterator(dataPointer, stride);
+#else
+    return Iterator(dataPointer);
+#endif
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  Iterator end() const {
+#ifdef STK_ENABLE_GPU
+    return Iterator(dataPointer + stride * length, stride);
+#else
+    return Iterator(dataPointer + length, 1);
+#endif
   }
 
 private:

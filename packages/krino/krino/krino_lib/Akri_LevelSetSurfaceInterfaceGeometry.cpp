@@ -48,7 +48,7 @@ std::vector<stk::mesh::Selector> LevelSetSurfaceInterfaceGeometry::get_levelset_
 }
 
 void LevelSetSurfaceInterfaceGeometry::prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
 {
   build_levelset_facets_if_needed(mesh);
 

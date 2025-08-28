@@ -66,12 +66,12 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
   }
 
   /* See if any entries are stored in this file */
-  if (nc_inq_dimid(exoid, dim_map_size, &dimid) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dim_map_size, &dimid) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
   /* first check if any maps have been defined */
-  if ((status = nc_inq_dimid(exoid, dim_num_maps, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dim_num_maps, &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined in file id %d",
              ex_name_of_object(map_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -89,7 +89,7 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
   }
 
   /* inquire id's of previously defined dimensions and variables */
-  if ((status = nc_inq_varid(exoid, exi_name_of_map(map_type, id_ndx), &var_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, exi_name_of_map(map_type, id_ndx), &var_id)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s %" PRId64 " in file id %d",
              ex_name_of_object(map_type), map_id, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -104,7 +104,7 @@ int ex_get_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, void
     status = nc_get_var_int(exoid, var_id, map);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s in file id %d",
              ex_name_of_object(map_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

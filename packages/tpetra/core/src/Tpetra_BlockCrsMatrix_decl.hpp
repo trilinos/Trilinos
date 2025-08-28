@@ -21,9 +21,7 @@
 
 #include "KokkosSparse_BsrMatrix.hpp"
 
-#if KOKKOSKERNELS_VERSION >= 40299
 #include "Tpetra_Details_MatrixApplyHelper.hpp"
-#endif
 
 namespace Tpetra {
 
@@ -236,7 +234,6 @@ public:
                           void,
                           typename local_graph_device_type::size_type>;
 
-#if KOKKOSKERNELS_VERSION >= 40299
 private:
   // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
   // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
@@ -270,8 +267,6 @@ public:
       }
       return applyHelper;
     }
-
-#endif
 
   using local_matrix_host_type =
     typename local_matrix_device_type::HostMirror;
@@ -542,7 +537,7 @@ public:
   getLocalRowViewNonConst (LO LocalRow,
                            local_inds_host_view_type &indices,
                            nonconst_values_host_view_type &values) const;
-  
+
   /// \brief Not implemented.
   virtual void
   getLocalRowCopy (LO LocalRow,
@@ -623,7 +618,7 @@ public:
 
 
   /// Get KokkosSparce::Experimental::BsrMatrix representation
-  /// of this BlockCrsMatrix 
+  /// of this BlockCrsMatrix
   local_matrix_device_type getLocalMatrixDevice () const;
 
   /// \brief Whether this object had an error on the calling process.

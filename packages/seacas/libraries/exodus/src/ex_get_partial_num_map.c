@@ -69,11 +69,11 @@ int ex_get_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   }
 
   /* See if file contains any elements...*/
-  if (nc_inq_dimid(exoid, dim_map_size, &dimid) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dim_map_size, &dimid) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
-  if ((status = nc_inq_dimlen(exoid, dimid, &num_mobj)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, dimid, &num_mobj)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of mesh objects in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -101,7 +101,7 @@ int ex_get_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   }
 
   /* first check if any maps have been defined */
-  if ((status = nc_inq_dimid(exoid, dim_num_maps, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dim_num_maps, &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined in file id %d",
              ex_name_of_object(map_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -119,7 +119,7 @@ int ex_get_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
   }
 
   /* inquire id's of previously defined dimensions and variables */
-  if ((status = nc_inq_varid(exoid, exi_name_of_map(map_type, id_ndx), &var_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, exi_name_of_map(map_type, id_ndx), &var_id)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s %" PRId64 " in file id %d",
              ex_name_of_object(map_type), map_id, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

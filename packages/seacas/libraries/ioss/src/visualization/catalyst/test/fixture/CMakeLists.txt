@@ -3,7 +3,7 @@ FILE(COPY test_data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 SET(TEST_DATA_DIRECTORY_PATH ${CMAKE_CURRENT_BINARY_DIR}/test_data/)
 CONFIGURE_FILE(TestDataDirectoryPath.h.in TestDataDirectoryPath.h @ONLY)
 
-ADD_LIBRARY(catalystiosstest SHARED
+ADD_LIBRARY(catalystiosstest STATIC
             CatalystTestFixture.cxx
             TestDriverMain.cxx)
 

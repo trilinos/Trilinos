@@ -10,10 +10,9 @@
 #ifndef IFPACK2_BLOCKHELPER_TIMERS_HPP
 #define IFPACK2_BLOCKHELPER_TIMERS_HPP
 
-
 namespace Ifpack2 {
 
-  namespace BlockHelperDetails {
+namespace BlockHelperDetails {
 
 #if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS)
 #define IFPACK2_BLOCKHELPER_TIMER(label, varname) TEUCHOS_FUNC_TIME_MONITOR_DIFF(label, varname);
@@ -26,11 +25,11 @@ namespace Ifpack2 {
 #endif
 
 #define IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE(label, varname, execution_space) \
-  IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space) \
+  IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)                            \
   IFPACK2_BLOCKHELPER_TIMER(label, varname)
 
-  } // namespace BlockHelperDetails
+}  // namespace BlockHelperDetails
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif

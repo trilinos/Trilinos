@@ -113,7 +113,7 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
     EX_FUNC_LEAVE(EX_WARN);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -145,13 +145,13 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (statust != NC_NOERR) {
+  if (statust != EX_NOERR) {
     /* since truth vector isn't stored in the data file, derive it dynamically
      */
     for (int i = 0; i < num_var; i++) {
       /* NOTE: names are 1-based */
       if (nc_inq_varid(exoid, exi_catstr2(var_name, i + 1, ent_type, ent_ndx), &tabid) !=
-          NC_NOERR) {
+          EX_NOERR) {
         /* variable doesn't exist; put a 0 in the truth vector */
         var_vec[i] = 0;
       }
@@ -174,7 +174,7 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
 
     status = nc_get_vara_int(exoid, tabid, start, count, var_vec);
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get truth vector from file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);

@@ -42,7 +42,7 @@ class DistributorActor {
 
 public:
   DistributorActor();
-  DistributorActor(const DistributorActor& otherActor);
+  DistributorActor(const DistributorActor& otherActor) = default;
 
   template <class ExpView, class ImpView>
   void doPostsAndWaits(const DistributorPlan& plan,
@@ -322,6 +322,7 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
 
   const int myRank = plan.getComm()->getRank();
   MPIX_Comm *mpixComm = *plan.getMPIXComm();
+  using size_type = Teuchos::Array<size_t>::size_type;
 
   const size_t numSends = plan.getNumSends() + plan.hasSelfMessage();
   const size_t numRecvs = plan.getNumReceives() + plan.hasSelfMessage();
@@ -333,8 +334,8 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
   auto& [importStarts, importLengths] = importSubViewLimits;
   auto& [exportStarts, exportLengths] = exportSubViewLimits;
 
-  for (size_t pp = 0; pp < plan.getNumSends(); ++pp) {
-    sdispls[plan.getProcsTo()[pp]] = exportStarts[pp];
+  for (size_t pp = 0; pp < numSends; ++pp) {
+    sdispls[pp] = exportStarts[pp];
     size_t numPackets = exportLengths[pp];
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
@@ -343,16 +344,12 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
                                    << pp << " (" << numPackets
                                    << ") is too large "
                                       "to be represented as int.");
-    sendcounts[plan.getProcsTo()[pp]] = static_cast<int>(numPackets);
+    sendcounts[pp] = static_cast<int>(numPackets);
   }
 
-  const size_type actualNumReceives =
-      Teuchos::as<size_type>(plan.getNumReceives()) +
-      Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
-
-  for (size_type i = 0; i < actualNumReceives; ++i) {
-    rdispls[plan.getProcsFrom()[i]] = importStarts(i);
-    size_t totalPacketsFrom_i = importLengths(i);
+  for (size_type i = 0; i < numRecvs; ++i) {
+    rdispls[i] = importStarts[i];
+    size_t totalPacketsFrom_i = importLengths[i];
     // totalPacketsFrom_i is converted down to int, so make sure it can be
     // represented
     TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
@@ -362,15 +359,22 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
                                    << i << " (" << totalPacketsFrom_i
                                    << ") is too large "
                                       "to be represented as int.");
-    recvcounts[plan.getProcsFrom()[i]] = static_cast<int>(totalPacketsFrom_i);
+    recvcounts[i] = static_cast<int>(totalPacketsFrom_i);
   }
 
   using T = typename ExpView::non_const_value_type;
   MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType(T());
 
-  const int err = MPIX_Neighbor_alltoallv(
+  MPIX_Info* xinfo;
+  MPIX_Topo* xtopo;
+  MPIX_Info_init(&xinfo);
+  MPIX_Topo_init(numRecvs, plan.getProcsFrom().data(), recvcounts.data(),
+      numSends, plan.getProcsTo().data(), sendcounts.data(), xinfo, &xtopo);
+  const int err = MPIX_Neighbor_alltoallv_topo(
       exports.data(), sendcounts.data(), sdispls.data(), rawType,
-      imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
+      imports.data(), recvcounts.data(), rdispls.data(), rawType, xtopo, mpixComm);
+  MPIX_Topo_free(&xtopo);
+  MPIX_Info_free(&xinfo);
 
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
                              "MPIX_Neighbor_alltoallv failed with error \""
@@ -441,7 +445,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   }
 #endif // HAVE_TPETRA_MPI
 
-  ProfilingRegion pr("Tpetra::Distributor: doPostRecvs");
+  ProfilingRegion pr("Tpetra::Distributor::doPostRecvs");
 
   const int myProcID = plan.getComm()->getRank ();
 
@@ -488,7 +492,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   // to the "unexpected queue" (of arrived messages not yet matched
   // with a receive).
   {
-    ProfilingRegion prr("Tpetra::Distributor: doPostRecvs recvs");
+    ProfilingRegion prr("Tpetra::Distributor::doPostRecvs MPI_Irecv");
 
     for (size_type i = 0; i < actualNumReceives; ++i) {
       size_t totalPacketsFrom_i = importLengths[Teuchos::as<size_t>(i)];
@@ -571,7 +575,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
        "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
 #endif // KOKKOS_ENABLE_SYCL
 
-  ProfilingRegion ps("Tpetra::Distributor: doPostSends");
+  ProfilingRegion ps("Tpetra::Distributor::doPostSends");
 
   const int myRank = plan.getComm()->getRank ();
   // Run-time configurable parameters that come from the input
@@ -594,7 +598,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
     doPostsAllToAllImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
     return;
   } else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
-    doPostsNbrAllToAllVImpl(plan, exports,numPackets, imports);
+    doPostsNbrAllToAllVImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
     return;
   }
 #endif // defined(HAVE_TPETRACORE_MPI_ADVANCE)
@@ -653,7 +657,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
     }
   }
 
-  ProfilingRegion pss("Tpetra::Distributor: doPostSends sends");
+  ProfilingRegion pss("Tpetra::Distributor::doPostSends sends");
 
   // setup scan through getProcsTo() list starting with higher numbered procs
   // (should help balance message traffic)
@@ -673,7 +677,9 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
   size_t selfIndex = 0;
 
   if (plan.getIndicesTo().is_null()) {
-    ProfilingRegion pssf("Tpetra::Distributor: doPostSends sends FAST");
+    const char isend_region[] = "Tpetra::Distributor::doPostSends MPI_Isend FAST";
+    const char send_region[] = "Tpetra::Distributor::doPostSends MPI_Send FAST";
+    ProfilingRegion pssf((sendType == Details::DISTRIBUTOR_ISEND) ? isend_region : send_region);
 
     // Data are already blocked (laid out) by process, so we don't
     // need a separate send buffer (besides the exports array).
@@ -725,7 +731,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
 
   }
   else { // data are not blocked by proc, use send buffer
-    ProfilingRegion psss("Tpetra::Distributor: doPostSends: sends SLOW");
+    ProfilingRegion psss("Tpetra::Distributor::doPostSends: MPI_Send SLOW");
 
     using Packet = typename ExpView::non_const_value_type;
     using Layout = typename ExpView::array_layout;

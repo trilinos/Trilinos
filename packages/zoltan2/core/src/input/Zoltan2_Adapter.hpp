@@ -14,7 +14,6 @@
 #ifndef _ZOLTAN2_ADAPTER_HPP_
 #define _ZOLTAN2_ADAPTER_HPP_
 
-#include "Kokkos_StaticCrsGraph.hpp"
 #include <Kokkos_Core.hpp>
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>

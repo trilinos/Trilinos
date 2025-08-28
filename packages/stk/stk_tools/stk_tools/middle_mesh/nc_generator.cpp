@@ -3,6 +3,7 @@
 #include "mpi.h"
 #include "stk_middle_mesh/parser.hpp"
 #include "stk_middle_mesh_util/stk_interface.hpp"
+#include "stk_util/parallel/Parallel.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -14,7 +15,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  MPI_Init(&argc, &argv);
+  stk::initialize(&argc, &argv);
 
   stk::middle_mesh::mesh::impl::MeshInput input;
   input.fnameIn    = argv[1];
@@ -30,7 +31,7 @@ int main(int argc, char* argv[])
   stkInterface.compute_interface(opts);
   stkInterface.write_output();
 
-  MPI_Finalize();
+  stk::finalize();
 
   return 0;
 }

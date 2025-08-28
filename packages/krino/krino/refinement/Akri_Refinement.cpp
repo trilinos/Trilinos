@@ -321,7 +321,7 @@ template<size_t NUMREFINEDPARENTNODES, size_t NUMCHILDNODES>
 static stk::mesh::Entity declare_child_element(stk::mesh::BulkData & mesh,
     EntityIdPool & entityIdPool,
     const stk::mesh::PartVector & childParts,
-    const stk::mesh::Entity elem,
+    const stk::mesh::Entity /*elem*/,
     const std::array<stk::mesh::Entity,NUMREFINEDPARENTNODES> & parentNodes,
     const std::array<int,NUMCHILDNODES> & childNodeIndices)
 {
@@ -677,7 +677,7 @@ void Refinement::refine_beam_2_and_append_sides_to_create(const stk::mesh::PartV
     const stk::topology elemTopology,
     const stk::mesh::Entity parentElem,
     const std::vector<stk::mesh::Entity> & elemChildEdgeNodes,
-    const int caseId,
+    const int /*caseId*/,
     std::vector<ChildSideDescription> & childSides)
 {
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
@@ -1470,7 +1470,7 @@ void Refinement::finalize()
   stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
   activate_selected_entities_touching_active_elements(
       mesh, myMeta.side_rank(), myMeta.universal_part(), *myActivePart);
-  fix_node_owners_to_assure_active_owned_element_for_node(mesh, *myActivePart);
+  fix_node_ownership_to_assure_selected_owned_element(mesh, *myActivePart);
 }
 
 bool Refinement::does_mesh_have_only_vertex_elements() const
@@ -1687,7 +1687,7 @@ struct OriginatingProcParentIdChildId {
 }
 
 static
-void pack_parent_and_child_ids_for_originating_proc(const stk::mesh::BulkData & mesh,
+void pack_parent_and_child_ids_for_originating_proc(const stk::mesh::BulkData & /*mesh*/,
     const std::vector<OriginatingProcParentIdChildId> & originatingProcsParentIdChildId,
     stk::CommSparse &commSparse)
 {

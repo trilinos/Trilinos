@@ -18,7 +18,7 @@ C      --   (6) = time of current run
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
-      QAINFO(2) = '2025/02/03                      '
-      QAINFO(3) = ' 1.55                           '
+      QAINFO(2) = '2025/04/30                      '
+      QAINFO(3) = ' 1.56                           '
 
 c ------------------------.-.

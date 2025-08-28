@@ -125,10 +125,10 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
 
   const ConnectedEntities get_connected_entities(unsigned bucket_ordinal) const
   { impl::check_bucket_ordinal(bucket_ordinal, this);
-    return ConnectedEntities(&m_targets[bucket_ordinal * m_num_connectivity], m_num_connectivity); }
+    return ConnectedEntities(&m_targets[bucket_ordinal * m_num_connectivity], m_num_connectivity, 1); }
   ConnectedEntities get_connected_entities(unsigned bucket_ordinal)
   { impl::check_bucket_ordinal(bucket_ordinal, this);
-    return ConnectedEntities(&m_targets[bucket_ordinal * m_num_connectivity], m_num_connectivity); }
+    return ConnectedEntities(&m_targets[bucket_ordinal * m_num_connectivity], m_num_connectivity, 1); }
 
   Entity const* begin(unsigned bucket_ordinal) const
   { impl::check_bucket_ordinal(bucket_ordinal, this);

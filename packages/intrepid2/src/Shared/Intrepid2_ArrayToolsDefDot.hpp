@@ -74,7 +74,7 @@ namespace Intrepid2 {
         value_type tmp(0);
         for(ordinal_type i = 0; i < iend; ++i)
           for(ordinal_type j = 0; j < jend; ++j)
-            tmp += left(i, j)*right(i, j);
+            tmp += left.access(i, j)*right.access(i, j);
         result() = tmp;
       }
     };

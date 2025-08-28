@@ -141,7 +141,6 @@ matrix.  The typical use case is a single upper bound, which we
 illustrate below.
 \code
 RCP<const Map<LO, GO, NT> > rowMap = ...; // whatever row Map you want
-// With dynamic profile, this is only a hint, not a hard constraint.
 const size_t maxEntriesPerRow = 3;
 RCP<CrsMatrix<ST, LO, GO, NT> > A = 
   rcp (new CrsMatrix<ST, LO, GO, NT> (rowMap, maxEntriesPerRow));
@@ -178,7 +177,7 @@ RCP<CrsMatrix<ST, LO, GO, NT> > A = rcp (new CrsMatrix<ST, LO, GO, NT> (graph));
 \endcode
 Filling the CrsGraph works much like filling a CrsMatrix, except that
 you only specify structure, not values.  Furthermore, the same size
-hint and dynamic profile vs. static profile options apply to CrsGraph.
+hint applies to CrsGraph.
 
 \section Tpetra_Lesson04_local_vs_global Local vs. global indices
 

@@ -13,7 +13,7 @@
 #include "Ifpack2_Container.hpp"
 #include "Ifpack2_Partitioner.hpp"
 #ifdef HAVE_IFPACK2_AMESOS2
-#  include "Ifpack2_Details_Amesos2Wrapper.hpp"
+#include "Ifpack2_Details_Amesos2Wrapper.hpp"
 #endif
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_RCP.hpp"
@@ -27,46 +27,45 @@
 namespace Ifpack2 {
 namespace Details {
 
-//The default container type names:
+// The default container type names:
 //
-//Dense
-//SparseILUT
-//SparseAmesos, alias SparseAmesos2
-//TriDi
-//Banded
+// Dense
+// SparseILUT
+// SparseAmesos, alias SparseAmesos2
+// TriDi
+// Banded
 
-template<typename MatrixType>
-struct ContainerFactoryEntryBase
-{
+template <typename MatrixType>
+struct ContainerFactoryEntryBase {
   virtual Teuchos::RCP<Ifpack2::Container<MatrixType>> build(
       const Teuchos::RCP<const MatrixType>& A,
       const Teuchos::Array<Teuchos::Array<typename MatrixType::local_ordinal_type>>& partitions,
       const Teuchos::RCP<const Tpetra::Import<
-        typename MatrixType::local_ordinal_type,
-        typename MatrixType::global_ordinal_type,
-        typename MatrixType::node_type>> importer,
+          typename MatrixType::local_ordinal_type,
+          typename MatrixType::global_ordinal_type,
+          typename MatrixType::node_type>>
+          importer,
       bool pointIndexed) = 0;
   virtual ~ContainerFactoryEntryBase() {}
 };
 
-template<typename MatrixType, typename ContainerType>
-struct ContainerFactoryEntry : public ContainerFactoryEntryBase<MatrixType>
-{
+template <typename MatrixType, typename ContainerType>
+struct ContainerFactoryEntry : public ContainerFactoryEntryBase<MatrixType> {
   Teuchos::RCP<Ifpack2::Container<MatrixType>> build(
       const Teuchos::RCP<const MatrixType>& A,
       const Teuchos::Array<Teuchos::Array<typename MatrixType::local_ordinal_type>>& partitions,
       const Teuchos::RCP<const Tpetra::Import<
-        typename MatrixType::local_ordinal_type,
-        typename MatrixType::global_ordinal_type,
-        typename MatrixType::node_type>> importer,
-      bool pointIndexed)
-  {
+          typename MatrixType::local_ordinal_type,
+          typename MatrixType::global_ordinal_type,
+          typename MatrixType::node_type>>
+          importer,
+      bool pointIndexed) {
     return Teuchos::rcp(new ContainerType(A, partitions, importer, pointIndexed));
   }
   ~ContainerFactoryEntry() {}
 };
 
-} // namespace Details
+}  // namespace Details
 
 /// \class ContainerFactory
 /// \brief A static "factory" that provides a way to register
@@ -74,9 +73,8 @@ struct ContainerFactoryEntry : public ContainerFactoryEntryBase<MatrixType>
 ///   string keys.
 /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 
-template<typename MatrixType>
-struct ContainerFactory
-{
+template <typename MatrixType>
+struct ContainerFactory {
   //! \name Typedefs
   //@{
 
@@ -96,8 +94,8 @@ struct ContainerFactory
   typedef Ifpack2::Container<MatrixType> BaseContainer;
   //@}
 
-  static_assert (std::is_same<typename std::decay<MatrixType>::type, row_matrix_type>::value,
-                 "MatrixType must be a Tpetra::RowMatrix specialization.");
+  static_assert(std::is_same<typename std::decay<MatrixType>::type, row_matrix_type>::value,
+                "MatrixType must be a Tpetra::RowMatrix specialization.");
 
   // \name Functions
   //@{
@@ -106,7 +104,7 @@ struct ContainerFactory
     \tparam ContainerType The Container specialization to register.
     \param containerType The key to pair with ContainerType. After registering, the key can be used to construct a ContainerType.
     */
-  template<typename ContainerType>
+  template <typename ContainerType>
   static void registerContainer(std::string containerType);
 
   //! Build a specialization of Ifpack2::Container given a key that has been registered.
@@ -118,7 +116,7 @@ struct ContainerFactory
     \param pointIndexed If A is a BlockCrsMatrix, whether partitions contains the indices of individual DOFs instead of nodes/blocks.
     */
   static Teuchos::RCP<BaseContainer> build(std::string containerType, const Teuchos::RCP<const MatrixType>& A,
-      const Teuchos::Array<Teuchos::Array<local_ordinal_type>>& partitions, const Teuchos::RCP<const import_type> importer, bool pointIndexed);
+                                           const Teuchos::Array<Teuchos::Array<local_ordinal_type>>& partitions, const Teuchos::RCP<const import_type> importer, bool pointIndexed);
 
   //! Registers a specialization of Ifpack2::Container by binding a key (string) to it.
   /*!
@@ -127,12 +125,12 @@ struct ContainerFactory
   static void deregisterContainer(std::string containerType);
   //@}
 
-  private:
+ private:
   static std::map<std::string, Teuchos::RCP<Details::ContainerFactoryEntryBase<MatrixType>>> table;
-  static bool registeredDefaults;     //this will initially be false
+  static bool registeredDefaults;  // this will initially be false
   static void registerDefaults();
 };
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_CONTAINERFACTORY_H
+#endif  // IFPACK2_DETAILS_CONTAINERFACTORY_H

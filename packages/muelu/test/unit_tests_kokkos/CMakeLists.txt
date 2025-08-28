@@ -37,6 +37,8 @@ APPEND_SET(SOURCES
   Utilities_kokkos.cpp
 )
 
+APPEND_SET(SOURCES Galeri.cpp)
+
 ### Tests that require other Trilinos packages
 
 # First ensure that these cmake boolean variables are defined

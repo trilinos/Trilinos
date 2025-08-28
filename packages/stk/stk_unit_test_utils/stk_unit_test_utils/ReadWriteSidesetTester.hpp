@@ -95,6 +95,8 @@ struct ElemIdSideLess {
       else
           return false;
   }
+  inline ElemIdSideLess() = default;
+  inline ElemIdSideLess(const ElemIdSideLess&) = default;
   inline ElemIdSideLess& operator=(const ElemIdSideLess& rhs);
 };
 

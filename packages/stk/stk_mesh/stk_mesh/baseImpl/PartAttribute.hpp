@@ -37,6 +37,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 #include <string>
 #include <vector>
 #include <utility>
@@ -77,13 +78,8 @@ void set_part_attribute(stk::mesh::Part& part, const decltype(T::value)& value)
     meta.declare_attribute_with_delete(part, altAttr1);
   } else {
     if (value != altAttr->value) {
-      bool success = meta.remove_attribute(part, altAttr);
-      if (!success)
-        throw std::runtime_error(std::string("stk::mesh::impl::set_part_attribute failed to remove") +
-                                 typeid(T).name() + " attribute, part= " + part.name());
-      T* altAttr1 = new T();
-      altAttr1->value = value;
-      meta.declare_attribute_with_delete(part, altAttr1);
+      T* nonconstAttr = const_cast<T*>(altAttr);
+      nonconstAttr->value = value;
     }
   }
 }

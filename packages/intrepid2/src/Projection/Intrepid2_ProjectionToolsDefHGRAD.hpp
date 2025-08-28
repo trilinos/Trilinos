@@ -51,7 +51,7 @@ struct ComputeBasisCoeffsOnVertices_HGRAD {
       ordinal_type idof = tagToOrdinal_(0, iv, 0);
       ordinal_type pt = targetEPointsRange_(0,iv).first;
       //the value of the basis at the vertex might be different than 1; HGrad basis, so the function is scalar
-      basisCoeffs_(ic,idof) = targetAtTargetEPoints_(ic,pt)/basisAtTargetEPoints_(idof,pt,0);
+      basisCoeffs_(ic,idof) = targetAtTargetEPoints_(ic,pt)/basisAtTargetEPoints_(idof,pt);
     }
   }
 };

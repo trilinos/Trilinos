@@ -217,7 +217,7 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
   }
 #endif
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     if (my_mode & EX_NETCDF4) {
 #if NC_HAS_PARALLEL4
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s.", canon_path);

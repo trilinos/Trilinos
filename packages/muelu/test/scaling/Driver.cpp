@@ -110,6 +110,10 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
   bool equilibrate_diag  = (equilibrate == "diag");
   bool equilibrate_no    = (equilibrate == "no");
   bool assumeSymmetric   = false;
+
+  if (equilibrate_no)
+    return;
+
   typedef typename Tpetra::Details::EquilibrationInfo<typename Kokkos::ArithTraits<Scalar>::val_type, typename Node::device_type> equil_type;
 
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A = toTpetra(Axpetra);
@@ -140,8 +144,6 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
                                    colScalingFactors, true, true,
                                    equibResult_.assumeSymmetric,
                                    Tpetra::SCALING_DIVIDE);
-    } else if (equilibrate_no) {
-      // no-op
     } else
       throw std::runtime_error("Invalid 'equilibrate' option '" + equilibrate + "'");
   }
@@ -239,6 +241,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("coordsmap", &coordMapFile, "coordinates map data file");
   std::string nullFile;
   clp.setOption("nullspace", &nullFile, "nullspace data file");
+  std::string blockNumberFile;
+  clp.setOption("blocknumber", &blockNumberFile, "block number data file");
   std::string materialFile;
   clp.setOption("material", &materialFile, "material data file");
   bool tensorMaterialCoefficient = true;
@@ -400,11 +404,12 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<RealValuedMultiVector> coordinates;
   RCP<Xpetra::MultiVector<SC, LO, GO, NO> > nullspace;
   RCP<Xpetra::MultiVector<SC, LO, GO, NO> > material;
+  RCP<Xpetra::Vector<LO, LO, GO, NO> > blocknumber;
   RCP<MultiVector> X;
   RCP<MultiVector> B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
+  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
   comm->barrier();
   tm = Teuchos::null;
 
@@ -561,7 +566,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         if (solvePreconditioned) {
           MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
 
-          PreconditionerSetup(A, coordinates, nullspace, material, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
+          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
         }
         comm->barrier();
         tm = Teuchos::null;
@@ -646,6 +651,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
           if (xmlOut.length())
             std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
+          if (rerunCount < numReruns) {
+            stacked_timer = rcp(new Teuchos::StackedTimer("MueLu_Driver"));
+            Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+          }
         } else {
           std::ios_base::fmtflags ff(out2.flags());
           if (timingsFormat == "table-fixed")

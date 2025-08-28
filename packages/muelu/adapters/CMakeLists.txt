@@ -12,7 +12,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   APPEND_GLOB(HEADERS ${BDIR}/MueLu_ExplicitInstantiation.hpp)
 ENDIF()
 
-ASSERT_DEFINED(Tpetra_INST_INT_INT)
 #
 # Belos
 #
@@ -61,7 +60,7 @@ APPEND_SET(HEADERS
   tpetra/MueLu_TpetraOperatorAsRowMatrix.hpp
 )
 
-IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT AND ${PACKAGE_NAME}_ENABLE_Experimental)
+IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND HAVE_TPETRA_COMPLEX_DOUBLE)
 
   APPEND_SET(HEADERS
     tpetra/MueLu_ShiftedLaplacian_decl.hpp
@@ -164,7 +163,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Set the list of classes in MueLu adapters that are templated
   # on <Scalar, LO, GO, Node> for which we want to do ETI using this system.
   GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES  )
-  IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+  IF (${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
       Thyra::MueLuPreconditionerFactory
       Thyra::XpetraLinearOp

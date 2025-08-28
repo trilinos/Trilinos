@@ -220,8 +220,8 @@ namespace {
       if (mem_stats) {
         dbi->progress("Database Creation");
       }
-      if (!interFace.lower_case_variable_names) {
-        dbi->set_lower_case_variable_names(false);
+      if (!interFace.lowercase_variable_names) {
+        dbi->set_lowercase_variable_names(false);
       }
       dbi->set_surface_split_type(Ioss::int_to_surface_split(interFace.surface_split_type));
       dbi->set_field_separator(interFace.fieldSuffixSeparator);

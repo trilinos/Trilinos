@@ -127,46 +127,6 @@ protected:
 };
 typedef std::vector< NamedPhase > PhaseVec;
 
-class PhasePartTag {
-public:
-  // For non-interface phase parts
-  PhasePartTag(const unsigned & conformal_part_ordinal, const unsigned & nonconformal_part_ordinal, const unsigned & original_part_ordinal, const PhaseTag & vol_phase)
-    : my_conformal_part_ordinal(conformal_part_ordinal),
-      my_nonconformal_part_ordinal(nonconformal_part_ordinal),
-      my_original_part_ordinal(original_part_ordinal),
-      my_touching_vol_phase(vol_phase)  { STK_ThrowRequire(!vol_phase.empty()); }
-  // For interface phase parts defined as intersection of touching_vol_phase and opposite_vol_phase
-  PhasePartTag(const unsigned & conformal_part_ordinal, const unsigned & nonconformal_part_ordinal, const unsigned & original_part_ordinal, const PhaseTag & touching_vol_phase, const PhaseTag & opposite_vol_phase)
-    : my_conformal_part_ordinal(conformal_part_ordinal),
-      my_nonconformal_part_ordinal(nonconformal_part_ordinal),
-      my_original_part_ordinal(original_part_ordinal),
-      my_touching_vol_phase(touching_vol_phase),
-      my_opposite_vol_phase(opposite_vol_phase) { STK_ThrowRequire(!touching_vol_phase.empty() && !opposite_vol_phase.empty()); }
-  ~PhasePartTag() {}
-public:
-  unsigned get_conformal_part_ordinal() const { return my_conformal_part_ordinal; }
-  unsigned get_nonconformal_part_ordinal() const { return my_nonconformal_part_ordinal; }
-  unsigned get_original_part_ordinal() const { return my_original_part_ordinal; }
-  bool is_interface() const { return !my_opposite_vol_phase.empty(); }
-  const PhaseTag & get_phase() const { STK_ThrowRequire(!is_interface()); return my_touching_vol_phase; }
-  const PhaseTag & get_touching_phase() const { STK_ThrowRequire(is_interface()); return my_touching_vol_phase; }
-  const PhaseTag & get_opposite_phase() const { STK_ThrowRequire(is_interface()); return my_opposite_vol_phase; }
-  bool operator<(PhasePartTag rhs) const
-  {
-    // There must be a 1-1 mapping between conformal parts and PhasePartTags
-    // therefore the conformal part ordinal must be a unique identifier for the PhasePartTag and
-    // we can sort on just it.
-    return my_conformal_part_ordinal < rhs.my_conformal_part_ordinal;
-  }
-protected:
-  unsigned my_conformal_part_ordinal;
-  unsigned my_nonconformal_part_ordinal;
-  unsigned my_original_part_ordinal;
-  PhaseTag my_touching_vol_phase;
-  PhaseTag my_opposite_vol_phase;
-};
-typedef std::set< PhasePartTag > PhasePartSet;
-
 } // namespace krino
 
 #endif // Akri_PhaseTag_h

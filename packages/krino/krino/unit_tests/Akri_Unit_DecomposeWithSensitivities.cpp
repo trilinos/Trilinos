@@ -69,8 +69,8 @@ static void create_extra_phase_per_block(stk::mesh::MetaData & meta, const std::
     if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
         stk::io::is_part_io_part(*part))
     {
-      const stk::mesh::Part * originalPartPtr = phaseSupport.find_original_part(*part);
-      if (originalPartPtr && originalPartPtr->name() == part->name())
+      const stk::mesh::Part & originalPart = phaseSupport.find_original_part(*part);
+      if (originalPart.name() == part->name())
       {
         const std::string phasePartName = part->name() + "_" + phaseName;
         if (!auxMeta.has_part(phasePartName))
@@ -151,7 +151,7 @@ std::vector<stk::math::Vector3d> get_parent_node_coordinates_for_sensitivitiy(co
 }
 
 void test_sensitivity_for_sphere_at_origin(const krino::LevelSetShapeSensitivity & sens, stk::mesh::BulkData & bulk, 
-  krino::FieldRef isovar)
+  krino::FieldRef /*isovar*/)
 {
   static constexpr int DIM = 3;
   ASSERT_EQ(sens.parentNodeIds.size() , 2u);
@@ -233,10 +233,10 @@ stk::mesh::Selector build_output_selector(const stk::mesh::MetaData & meta, cons
   return activePart & stk::mesh::selectUnion(outputParts);
 }
 
-void output_mesh(const stk::mesh::BulkData & mesh, const std::string & fileName, int step, double time)
+void output_mesh(stk::mesh::BulkData & mesh, const std::string & fileName, int step, double time)
 {
   stk::mesh::Selector outputSelector = build_output_selector(mesh.mesh_meta_data(), krino::AuxMetaData::get(mesh.mesh_meta_data()).active_part());
-  krino::output_composed_mesh_with_fields(mesh, outputSelector, fileName, step, time);
+  krino::fix_ownership_and_output_composed_mesh_with_fields(mesh, outputSelector, fileName, step, time);
 }
 
 TEST(DecomposeMeshAndComputeSensitivities, createDecomposedMeshForPlaneNotThroughAnyBackgroundNodes_testSensitivities)
@@ -561,12 +561,11 @@ std::map<int,int> get_nonvoid_to_phase_part_ordinal_map(const stk::mesh::MetaDat
   const std::string phaseSuffix = "_" + phaseName;
 
   std::map<int,int> partOrdinalMapping;
-  for (auto * part : meta.get_parts())
+  for (auto * part : meta.get_mesh_parts())
   {
-    if ((part->primary_entity_rank() == stk::topology::ELEMENT_RANK || part->primary_entity_rank() == meta.side_rank()) &&
-        stk::io::is_part_io_part(*part))
+    if ((part->primary_entity_rank() == stk::topology::ELEMENT_RANK || part->primary_entity_rank() == meta.side_rank()))
     {
-      if (phaseSupport.is_interface(part))
+      if (phaseSupport.is_interface(*part))
       {
         partOrdinalMapping[part->mesh_meta_data_ordinal()] = -1; // negative value used to indicate that we will remove interface parts
       }
@@ -719,3 +718,4 @@ TEST(DecomposeMeshAndComputeSensitivities, readMeshInitializeDecomposeAndMoveVol
   auto island_removal_method = [=](stk::mesh::BulkData& mesh){ move_elements_not_in_largest_group_to_phase(mesh, islandPhaseName); };
   test_moving_islands_to_separate_phase(island_removal_method, islandPhaseName);
 }
+

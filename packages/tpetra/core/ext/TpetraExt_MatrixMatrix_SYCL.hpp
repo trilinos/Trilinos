@@ -188,8 +188,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
   // static_assert(std::is_void_v<typename KCRS::row_map_type::non_const_value_type>, "");
   // static_assert(std::is_void_v<typename decltype(Bmerged)::row_map_type::non_const_value_type>, "");
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-  const bool useIntRowptrs = 
-     irph.shouldUseIntRowptrs() && 
+  const bool useIntRowptrs =
+     irph.shouldUseIntRowptrs() &&
      Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
   if (useIntRowptrs) {
@@ -201,14 +201,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
 
     auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
     auto Bint = irph.getIntRowptrMatrix(Bmerged);
-    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,false,Bint.graph.row_map,Bint.graph.entries,false, int_row_mapC);
+    KokkosSparse::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,false,Bint.graph.row_map,Bint.graph.entries,false, int_row_mapC);
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
       entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
-    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,Aint.values,false,Bint.graph.row_map,Bint.graph.entries,Bint.values,false,int_row_mapC,entriesC,valuesC);
+    KokkosSparse::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Aint.graph.row_map,Aint.graph.entries,Aint.values,false,Bint.graph.row_map,Bint.graph.entries,Bint.values,false,int_row_mapC,entriesC,valuesC);
     // transfer the integer rowptrs back to the correct rowptr type
     Kokkos::parallel_for(int_row_mapC.size(), KOKKOS_LAMBDA(int i){ row_mapC(i) = int_row_mapC(i);});
     kh.destroy_spgemm_handle();
@@ -218,7 +218,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
     kh.create_spgemm_handle(alg_enum);
     kh.set_team_work_size(team_work_size);
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
+    KokkosSparse::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
@@ -226,7 +226,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kokk
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
 
-    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,Amat.values,false,Bmerged.graph.row_map,Bmerged.graph.entries,Bmerged.values,false,row_mapC,entriesC,valuesC);
+    KokkosSparse::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,Amat.values,false,Bmerged.graph.row_map,Bmerged.graph.entries,Bmerged.values,false,row_mapC,entriesC,valuesC);
     kh.destroy_spgemm_handle();
   }
 
@@ -762,8 +762,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
 
   // decide whether to use integer-typed row pointers for this spgemm
   Tpetra::Details::IntRowPtrHelper<decltype(Bmerged)> irph(Bmerged.nnz(), Bmerged.graph.row_map);
-  const bool useIntRowptrs = 
-    irph.shouldUseIntRowptrs() && 
+  const bool useIntRowptrs =
+    irph.shouldUseIntRowptrs() &&
     Aview.origMatrix->getApplyHelper()->shouldUseIntRowptrs();
 
   if (useIntRowptrs) {
@@ -776,7 +776,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     auto Aint = Aview.origMatrix->getApplyHelper()->getIntRowptrMatrix(Amat);
     auto Bint = irph.getIntRowptrMatrix(Bmerged);
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+    KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
                   Aint.graph.row_map, Aint.graph.entries, false,
                   Bint.graph.row_map, Bint.graph.entries, false,
                   int_row_mapC);
@@ -802,7 +802,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Tpetra::KokkosCompat::Kok
     kh.create_spgemm_handle(alg_enum);
     kh.set_team_work_size(team_work_size);
 
-    KokkosSparse::Experimental::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
+    KokkosSparse::spgemm_symbolic(&kh, AnumRows, BnumRows, BnumCols,
                   Amat.graph.row_map, Amat.graph.entries, false,
                   Bmerged.graph.row_map, Bmerged.graph.entries, false,
                   row_mapC);

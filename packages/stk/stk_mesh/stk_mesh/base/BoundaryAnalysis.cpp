@@ -41,9 +41,9 @@
 #include <stk_mesh/base/FEMHelpers.hpp>  // for get_entity_subcell_id, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, get_cell_topology
 #include <stk_mesh/base/Part.hpp>       // for Part
+#include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <vector>                       // for vector, etc
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
-#include "stk_mesh/base/Relation.hpp"
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator|
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -136,9 +136,7 @@ void get_adjacent_entities( const BulkData& mesh,  const Entity entity ,
   // with the same rank that have a relation to all of these nodes
   EntityVector potentially_adjacent_entities;
 
-  get_entities_through_relations(mesh, subcell_nodes,
-                                 mesh.entity_rank(entity),
-                                 potentially_adjacent_entities);
+  impl::find_entities_these_nodes_have_in_common(mesh, mesh.entity_rank(entity), subcell_nodes.size(), subcell_nodes.data(), potentially_adjacent_entities);
 
   // We don't want to include entities that are superimposed with
   // the input entity

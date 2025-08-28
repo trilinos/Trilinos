@@ -32,20 +32,19 @@
 #include "Tpetra_Map.hpp"
 #include <type_traits>
 
-namespace { // (anonymous)
+namespace {  // (anonymous)
 
 // Issue #234 only relates to the Scalar type (SC), so we only need to
 // template on that.
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Chebyshev, Issue234, SC)
-{
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Chebyshev, Issue234, SC) {
   // We are now in a class method declared by the above macro.
   // The method has these input arguments:
   // (Teuchos::FancyOStream& out, bool& success)
 
+  using std::endl;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
-  using std::endl;
   typedef Tpetra::Map<>::local_ordinal_type LO;
   typedef Tpetra::Map<>::global_ordinal_type GO;
   typedef Tpetra::Map<>::node_type NT;
@@ -54,29 +53,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Chebyshev, Issue234, SC)
   typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
-  const SC ONE = Teuchos::ScalarTraits<SC>::one ();
+  const SC ONE = Teuchos::ScalarTraits<SC>::one();
 
-  static_assert (! Teuchos::ScalarTraits<SC>::isComplex,
-                 "This test only makes sense when the Scalar type SC is real.");
+  static_assert(!Teuchos::ScalarTraits<SC>::isComplex,
+                "This test only makes sense when the Scalar type SC is real.");
 
   out << "Test fix for #234 (\"chebyshev: boost factor\" parameter)" << endl;
-  Teuchos::OSTab tab0 (out);
+  Teuchos::OSTab tab0(out);
 
   out << "Create test matrix A" << endl;
 
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // Create a nonzero diagonal matrix with a single row per process.
   // We won't actually do anything with it; we just need to give the
   // ContainerFactory a nontrivial matrix.
 
   const LO lclNumRows = 3;
-  const GO gblNumRows = comm->getSize () * lclNumRows;
-  const GO indexBase = 0;
+  const GO gblNumRows = comm->getSize() * lclNumRows;
+  const GO indexBase  = 0;
 
   RCP<const map_type> rowMap =
-    rcp (new map_type (static_cast<GST> (gblNumRows),
-                       static_cast<size_t> (lclNumRows),
+      rcp(new map_type(static_cast<GST>(gblNumRows),
+                       static_cast<size_t>(lclNumRows),
                        indexBase, comm));
   RCP<const map_type> colMap = rowMap;
   RCP<const map_type> domMap = rowMap;
@@ -85,11 +84,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Chebyshev, Issue234, SC)
   // For a diagonal matrix, we can use the row Map as the column Map.
   const size_t maxNumEntPerRow = 1;
   RCP<crs_matrix_type> A =
-    rcp (new crs_matrix_type (rowMap, colMap, maxNumEntPerRow));
+      rcp(new crs_matrix_type(rowMap, colMap, maxNumEntPerRow));
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-    A->insertLocalValues (lclRow, tuple (lclRow), tuple (ONE));
+    A->insertLocalValues(lclRow, tuple(lclRow), tuple(ONE));
   }
-  A->fillComplete (domMap, ranMap);
+  A->fillComplete(domMap, ranMap);
 
   // 2.1 is not a reasonable value of this parameter.  We just want
   // to use a value here that could not reasonably be a default
@@ -99,29 +98,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Chebyshev, Issue234, SC)
   // Create the Chebyshev instance with a matrix, and set the
   // "chebyshev: boost factor" parameter, using double as the
   // parameter's type.  Setting the parameter should not throw.
-  if (! std::is_same<double, magnitude_type>::value) {
-    Ifpack2::Chebyshev<row_matrix_type> prec (A);
+  if (!std::is_same<double, magnitude_type>::value) {
+    Ifpack2::Chebyshev<row_matrix_type> prec(A);
     Teuchos::ParameterList params;
 
-    params.set ("chebyshev: boost factor", static_cast<double> (boostFactor));
-    TEST_NOTHROW( prec.setParameters (params) );
+    params.set("chebyshev: boost factor", static_cast<double>(boostFactor));
+    TEST_NOTHROW(prec.setParameters(params));
   }
 
   // Create the Chebyshev instance with a matrix, and set the
   // "chebyshev: boost factor" parameter, using magnitude_type as the
   // parameter's type.  Setting the parameter should not throw.
   {
-    Ifpack2::Chebyshev<row_matrix_type> prec (A);
+    Ifpack2::Chebyshev<row_matrix_type> prec(A);
     Teuchos::ParameterList params;
 
-    params.set ("chebyshev: boost factor", static_cast<magnitude_type> (boostFactor));
-    TEST_NOTHROW( prec.setParameters (params) );
+    params.set("chebyshev: boost factor", static_cast<magnitude_type>(boostFactor));
+    TEST_NOTHROW(prec.setParameters(params));
   }
 }
 
 // Define the set of unit tests to instantiate in this file.
-#define UNIT_TEST_GROUP_SC( SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Chebyshev, Issue234, SC )
+#define UNIT_TEST_GROUP_SC(SC) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Chebyshev, Issue234, SC)
 
 #include "Ifpack2_ETIHelperMacros.h"
 
@@ -131,12 +130,11 @@ IFPACK2_ETI_MANGLING_TYPEDEFS()
 // only these two Scalar types.
 
 #ifdef HAVE_TPETRA_INST_FLOAT
-UNIT_TEST_GROUP_SC( float )
-#endif // HAVE_TPETRA_FLOAT
+UNIT_TEST_GROUP_SC(float)
+#endif  // HAVE_TPETRA_FLOAT
 
 #ifdef HAVE_TPETRA_INST_DOUBLE
-UNIT_TEST_GROUP_SC( double )
-#endif // HAVE_TPETRA_DOUBLE
+UNIT_TEST_GROUP_SC(double)
+#endif  // HAVE_TPETRA_DOUBLE
 
-} // namespace (anonymous)
-
+}  // namespace

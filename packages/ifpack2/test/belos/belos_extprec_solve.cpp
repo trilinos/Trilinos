@@ -28,54 +28,53 @@
 #include "build_problem.hpp"
 #include "build_solver.hpp"
 
-void process_command_line(int argc, char*argv[], std::string& xml_file);
+void process_command_line(int argc, char* argv[], std::string& xml_file);
 
-int main(int argc, char*argv[])
-{
+int main(int argc, char* argv[]) {
   unsigned int old_cw;
   fpu_fix_start(&old_cw);
 
   Teuchos::Time timer("total");
   timer.start();
 
-  Tpetra::ScopeGuard tpetraScope(&argc,&argv);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   typedef dd_real Scalar;
-  typedef Tpetra::Map<>::local_ordinal_type LO; //LocalOrdinal
-  typedef Tpetra::Map<>::global_ordinal_type GO; //GlobalOrdinal
+  typedef Tpetra::Map<>::local_ordinal_type LO;   // LocalOrdinal
+  typedef Tpetra::Map<>::global_ordinal_type GO;  // GlobalOrdinal
   typedef Tpetra::Map<>::node_type Node;
   typedef Tpetra::MultiVector<Scalar> TMV;
-  typedef Tpetra::Operator<Scalar>    TOP;
-  typedef Belos::LinearProblem<Scalar,TMV,TOP>   BLinProb;
-  typedef Belos::SolverManager<Scalar,TMV,TOP>   BSolverMgr;
+  typedef Tpetra::Operator<Scalar> TOP;
+  typedef Belos::LinearProblem<Scalar, TMV, TOP> BLinProb;
+  typedef Belos::SolverManager<Scalar, TMV, TOP> BSolverMgr;
 
-  //Just get one parameter from the command-line: the name of an xml file
-  //to get parameters from.
+  // Just get one parameter from the command-line: the name of an xml file
+  // to get parameters from.
 
   std::string xml_file("calore1_mm.xml");
   process_command_line(argc, argv, xml_file);
 
-  //Read the contents of the xml file into a ParameterList. That parameter list
-  //should specify a matrix-file and optionally which Belos solver to use, and
-  //which Ifpack2 preconditioner to use, etc. If there are sublists of parameters
-  //for Belos and Ifpack2, those will be passed to the respective destinations
-  //from within the build_problem and build_solver functions.
+  // Read the contents of the xml file into a ParameterList. That parameter list
+  // should specify a matrix-file and optionally which Belos solver to use, and
+  // which Ifpack2 preconditioner to use, etc. If there are sublists of parameters
+  // for Belos and Ifpack2, those will be passed to the respective destinations
+  // from within the build_problem and build_solver functions.
 
   std::cout << "Every proc reading parameters from xml_file: "
             << xml_file << std::endl;
   Teuchos::ParameterList test_params =
       Teuchos::ParameterXMLFileReader(xml_file).getParameters();
 
-  //The build_problem function is located in build_problem.hpp.
-  //Note that build_problem calls build_precond and sets a preconditioner on the
-  //linear-problem, if a preconditioner is specified.
+  // The build_problem function is located in build_problem.hpp.
+  // Note that build_problem calls build_precond and sets a preconditioner on the
+  // linear-problem, if a preconditioner is specified.
 
-  Teuchos::RCP<BLinProb> problem = build_problem<Scalar,LO,GO,Node>(test_params, comm);
+  Teuchos::RCP<BLinProb> problem = build_problem<Scalar, LO, GO, Node>(test_params, comm);
 
-  //The build_solver function is located in build_solver.hpp:
+  // The build_solver function is located in build_solver.hpp:
 
-  Teuchos::RCP<BSolverMgr> solver = build_solver<Scalar,TMV,TOP>(test_params, problem);
+  Teuchos::RCP<BSolverMgr> solver = build_solver<Scalar, TMV, TOP>(test_params, problem);
 
   Belos::ReturnType ret = solver->solve();
 
@@ -83,7 +82,7 @@ int main(int argc, char*argv[])
     std::cout << "Converged in " << solver->getNumIters() << " iterations." << std::endl;
   }
 
-  //Next compute residual vector and then 2-norm of residual:
+  // Next compute residual vector and then 2-norm of residual:
 
   Teuchos::RCP<TMV> R = Teuchos::rcp(new TMV(*problem->getRHS()));
   problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());
@@ -98,8 +97,8 @@ int main(int argc, char*argv[])
     std::cout << "2-Norm of 0th residual vec: " << norms[0] << std::endl;
   }
 
-  //If the xml file specified a number of iterations to expect, then we will
-  //use that as a test pass/fail criteria.
+  // If the xml file specified a number of iterations to expect, then we will
+  // use that as a test pass/fail criteria.
 
   if (test_params.isParameter("expectNumIters")) {
     int expected_iters = 0;
@@ -109,12 +108,11 @@ int main(int argc, char*argv[])
       if (comm->getRank() == 0) {
         std::cout << "End Result: TEST PASSED" << std::endl;
       }
-    }
-    else {
+    } else {
       if (comm->getRank() == 0) {
-        std::cout << "Actual iters("<<actual_iters
-              <<") != expected number of iterations ("
-            <<expected_iters<<"), or resid-norm(" << norms[0] << ") >= 1.e-7"<<std::endl;
+        std::cout << "Actual iters(" << actual_iters
+                  << ") != expected number of iterations ("
+                  << expected_iters << "), or resid-norm(" << norms[0] << ") >= 1.e-7" << std::endl;
       }
     }
   }
@@ -124,30 +122,27 @@ int main(int argc, char*argv[])
   timer.stop();
   if (comm->getRank() == 0) {
     std::cout << "proc 0 total program time: " << timer.totalElapsedTime()
-        << std::endl;
+              << std::endl;
   }
 
   return 0;
 }
 
-void process_command_line(int argc, char*argv[], std::string& xml_file)
-{
-  Teuchos::CommandLineProcessor cmdp(false,true);
+void process_command_line(int argc, char* argv[], std::string& xml_file) {
+  Teuchos::CommandLineProcessor cmdp(false, true);
   cmdp.setOption("xml_file", &xml_file, "XML Parameters file");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+  if (cmdp.parse(argc, argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     throw std::runtime_error("Error parsing command-line.");
   }
 }
 
 #else
-//else HAVE_IFPACK2_QD is not defined:
+// else HAVE_IFPACK2_QD is not defined:
 
 #include <iostream>
-int main(int argc, char*argv[])
-{
+int main(int argc, char* argv[]) {
   std::cout << "belos_extprec_solve.cpp can't be compiled or run without the QD library." << std::endl;
   return 0;
 }
 
 #endif
-

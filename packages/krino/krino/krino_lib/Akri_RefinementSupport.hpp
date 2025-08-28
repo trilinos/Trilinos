@@ -14,7 +14,7 @@ namespace stk { namespace mesh { class MetaData; } }
 
 namespace krino {
 
-class RefinementInterface;
+class RefinementManager;
 
 class RefinementSupport {
 public:
@@ -39,9 +39,9 @@ public:
   FieldRef get_nonconforming_refinement_node_marker_field() const { return myNonInterfaceConformingRefinementNodeMarkerField; }
   const std::string & get_nonconformal_adapt_indicator_name() const { return my_nonconformal_adapt_indicator_name; }
 
-  void set_non_interface_conforming_refinement(RefinementInterface & refinement) { myNonInterfaceConformingRefinement = &refinement; }
+  void set_non_interface_conforming_refinement(RefinementManager & refinement) { myNonInterfaceConformingRefinement = &refinement; }
   bool has_non_interface_conforming_refinement() const { return nullptr != myNonInterfaceConformingRefinement; }
-  RefinementInterface & get_non_interface_conforming_refinement() const { return *myNonInterfaceConformingRefinement; }
+  RefinementManager & get_non_interface_conforming_refinement() const { return *myNonInterfaceConformingRefinement; }
   stk::mesh::Selector get_do_not_refine_or_unrefine_selector() const;
 
   void do_nearby_refinement_before_interface_refinement(bool flag) { myFlagDoNearbyRefinementBeforeInterfaceRefinement = flag; }
@@ -71,7 +71,7 @@ private:
   std::array<double,2> myRefinementInterval{1.,-1.}; // bad initial interval
   FieldRef myNonInterfaceConformingRefinementNodeMarkerField;
   std::string my_nonconformal_adapt_indicator_name;
-  RefinementInterface * myNonInterfaceConformingRefinement{nullptr};
+  RefinementManager * myNonInterfaceConformingRefinement{nullptr};
   bool myFlagDoNearbyRefinementBeforeInterfaceRefinement{false};
   mutable stk::diag::Timer myTimer;
 };

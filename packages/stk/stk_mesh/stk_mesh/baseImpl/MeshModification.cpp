@@ -52,17 +52,13 @@ bool MeshModification::modification_begin(const std::string /*description*/)
     this->set_sync_state_modifiable();
     this->reset_shared_entity_changed_parts();
 
+    if (m_bulkData.has_symmetric_ghost_info() && m_bulkData.parallel_size() > 2) {
+      m_bulkData.remove_symmetric_ghost_info();
+    }
+
     const stk::mesh::FieldVector allFields = m_bulkData.mesh_meta_data().get_fields();
     for (FieldBase * stkField : allFields) {
       stkField->sync_to_host();
-    }
-
-    if (m_bulkData.mesh_meta_data().is_field_sync_debugger_enabled()) {
-      for (FieldBase * stkField : allFields) {
-        if (stkField->has_ngp_field()) {
-          impl::get_ngp_field(*stkField)->debug_modification_begin();
-        }
-      }
     }
 
     this->increment_sync_count();

@@ -4,35 +4,11 @@
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_unit_test_utils/ioUtils.hpp"
 #include "stk_unit_test_utils/GeneratedMeshToFile.hpp"
+#include "stk_unit_test_utils/CommandLineArgs.hpp"
 #include <vector>
 #include <unistd.h>
 
-class Args
-{
-public:
-  Args(const std::vector<std::string> & arguments)
-    : m_stringArgs(arguments),
-      m_argc(m_stringArgs.size()),
-      m_argv(arguments.empty() ? nullptr : new const char*[m_argc])
-  {
-    for (int i = 0; i < m_argc; ++i) {
-      m_argv[i] = m_stringArgs[i].c_str();
-    }
-  }
-
-  ~Args()
-  {
-    delete [] m_argv;
-  }
-
-  int argc() { return m_argc; }
-  const char** argv() { return m_argv; }
-
-private:
-  const std::vector<std::string> m_stringArgs;
-  int m_argc;
-  const char** m_argv;
-};
+using stk::unit_test_util::Args;
 
 class TestLifeCycle : public stk::unit_test_util::MeshFixture
 {

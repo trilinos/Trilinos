@@ -65,13 +65,12 @@ namespace Ifpack2 {
 /// between local row and column indices, instead of just assuming
 /// that they are the same.
 
-template<class MatrixType, class LocalScalarType>
+template <class MatrixType, class LocalScalarType>
 class BandedContainer
-: public ContainerImpl<MatrixType, LocalScalarType>
-{
+  : public ContainerImpl<MatrixType, LocalScalarType> {
   //! @name Internal typedefs (private)
   //@{
-private:
+ private:
   /// \brief The first template parameter of this class.
   ///
   /// This must be either a Tpetra::RowMatrix specialization or a
@@ -104,11 +103,11 @@ private:
   using typename Container<MatrixType>::HostView;
   using typename ContainerImpl<MatrixType, LSC>::HostSubviewLocal;
   using typename ContainerImpl<MatrixType, LSC>::ConstHostSubviewLocal;
-  using typename ContainerImpl<MatrixType,LSC>::block_crs_matrix_type;
+  using typename ContainerImpl<MatrixType, LSC>::block_crs_matrix_type;
   using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
-                  Tpetra::RowMatrix<SC, LO, GO, NO> >::value,
+                             Tpetra::RowMatrix<SC, LO, GO, NO> >::value,
                 "Ifpack2::BandedContainer: Please use MatrixType = Tpetra::RowMatrix.");
 
   /// \brief The (base class) type of the input matrix.
@@ -122,7 +121,7 @@ private:
   using typename Container<MatrixType>::row_matrix_type;
 
   //@}
-public:
+ public:
   //! \name Constructor and destructor
   //@{
 
@@ -136,32 +135,32 @@ public:
   /// \param pointIndexed [in] If the input matrix is a \c Tpetra::BlockCrsMatrix,
   ///    whether elements of \c partitions[k] identify rows within blocks (true) or
   ///    whole blocks (false).
-  BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::Array<Teuchos::Array<LO> >& partitions,
-                   const Teuchos::RCP<const import_type>&,
-                   bool pointIndexed);
+  BandedContainer(const Teuchos::RCP<const row_matrix_type>& matrix,
+                  const Teuchos::Array<Teuchos::Array<LO> >& partitions,
+                  const Teuchos::RCP<const import_type>&,
+                  bool pointIndexed);
 
-  BandedContainer (const BandedContainer<MatrixType, LSC>& rhs) = delete;
+  BandedContainer(const BandedContainer<MatrixType, LSC>& rhs) = delete;
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~BandedContainer ();
+  virtual ~BandedContainer();
 
   //@}
   //! \name Get and set methods
   //@{
 
   //! Set all necessary parameters (super- and sub-diagonal bandwidth)
-  virtual void setParameters (const Teuchos::ParameterList& List) override;
+  virtual void setParameters(const Teuchos::ParameterList& List) override;
 
   //@}
   //! \name Mathematical functions
   //@{
 
   //! Do all set-up operations that only require matrix structure.
-  virtual void initialize () override;
+  virtual void initialize() override;
 
   //! Initialize and compute each block.
-  virtual void compute () override;
+  virtual void compute() override;
 
   //! Compute the bandwidth (kl_, ku_) of each block from the input matrix,
   //! unless the bandwidth has already been set through setParameters().
@@ -176,35 +175,34 @@ public:
   /// \brief Print information about this object to the given output stream.
   ///
   /// operator<< uses this method.
-  virtual std::ostream& print (std::ostream& os) const override;
+  virtual std::ostream& print(std::ostream& os) const override;
 
   //@}
   //! @name Implementation of Teuchos::Describable
   //@{
 
   //! A one-line description of this object.
-  virtual std::string description () const override;
+  virtual std::string description() const override;
 
   //! Print the object with some verbosity level to the given FancyOStream.
   virtual void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const override;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const override;
 
   //@}
 
   /// \brief Get the name of this container type for Details::constructContainer()
   static std::string getName();
 
-private:
-
+ private:
   //! Populate the diagonal blocks
   void extract() override;
 
   /// \brief Factor the extracted submatrix.
   ///
   /// Call this after calling extract().
-  void factor ();
+  void factor();
 
   /// \brief Post-permutation, post-view version of apply().
   ///
@@ -228,8 +226,8 @@ private:
   //! Permutation array from LAPACK (GETRF).
   Teuchos::Array<int> ipiv_;
 
-  Teuchos::Array<LO> kl_; //< number of subdiagonals
-  Teuchos::Array<LO> ku_; //< number of superdiagonals
+  Teuchos::Array<LO> kl_;  //< number of subdiagonals
+  Teuchos::Array<LO> ku_;  //< number of superdiagonals
 
   //! Scalar data for all blocks
   Teuchos::Array<LSC> scalars_;
@@ -238,6 +236,6 @@ private:
   Teuchos::Array<LO> scalarOffsets_;
 };
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_BANDEDCONTAINER_DECL_HPP
+#endif  // IFPACK2_BANDEDCONTAINER_DECL_HPP

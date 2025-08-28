@@ -118,6 +118,9 @@ protected:
 
   //! Group that contains the "frozen Jacobian" if updateJacobian is false.
   Teuchos::RCP<NOX::Abstract::Group> frozenJacobianPtr;
+
+  //! Direction vector (pointer).
+  Teuchos::RCP<NOX::Abstract::Vector> dirVecPtr;
 };
 } // namespace Solver
 } // namespace NOX

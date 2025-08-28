@@ -62,7 +62,7 @@ static int exi_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity
   if (obj_type == EX_GLOBAL) {
     *varid = NC_GLOBAL;
 
-    if ((status = nc_inq(exoid, NULL, NULL, &att_count, NULL)) != NC_NOERR) {
+    if ((status = nc_inq(exoid, NULL, NULL, &att_count, NULL)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get GLOBAL attribute count in file id %d",
                exoid);
@@ -77,7 +77,7 @@ static int exi_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity
       return 0;
     }
 
-    if ((status = nc_inq_var(exoid, *varid, NULL, NULL, NULL, NULL, &att_count)) != NC_NOERR) {
+    if ((status = nc_inq_var(exoid, *varid, NULL, NULL, NULL, NULL, &att_count)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get attribute count on %s with id %" PRId64 " in file id %d",
@@ -113,9 +113,9 @@ int ex_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity_id id)
   /* Get names of each attribute and see if it is an 'internal' name */
   int count = att_count;
   for (int i = 0; i < count; i++) {
-    char name[NC_MAX_NAME + 1];
+    char name[EX_MAX_NAME + 1];
     int  status;
-    if ((status = nc_inq_attname(exoid, varid, i, name)) != NC_NOERR) {
+    if ((status = nc_inq_attname(exoid, varid, i, name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get attribute named %s on %s with id %" PRId64 " in file id %d",
@@ -162,9 +162,9 @@ int ex_get_attribute_param(int exoid, ex_entity_type obj_type, ex_entity_id id, 
   */
   count = 0;
   for (int i = 0; i < att_count; i++) {
-    char name[NC_MAX_NAME + 1];
+    char name[EX_MAX_NAME + 1];
     int  status;
-    if ((status = nc_inq_attname(exoid, varid, i, name)) != NC_NOERR) {
+    if ((status = nc_inq_attname(exoid, varid, i, name)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get attribute named %s on %s with id %" PRId64 " in file id %d",
                name, ex_name_of_object(obj_type), id, exoid);
@@ -175,7 +175,7 @@ int ex_get_attribute_param(int exoid, ex_entity_type obj_type, ex_entity_id id, 
       nc_type type;
       size_t  val_count;
 
-      if ((status = nc_inq_att(exoid, varid, name, &type, &val_count)) != NC_NOERR) {
+      if ((status = nc_inq_att(exoid, varid, name, &type, &val_count)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get parameters for attribute named %s on %s with id %" PRId64
                  " in file id %d",
@@ -236,7 +236,7 @@ int ex_get_attribute(int exoid, ex_attribute *attr)
   }
 
   int status;
-  if ((status = nc_get_att(exoid, varid, attr->name, attr->values)) != NC_NOERR) {
+  if ((status = nc_get_att(exoid, varid, attr->name, attr->values)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to read attribute %s on %s with id %" PRId64 " in file id %d",

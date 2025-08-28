@@ -22,7 +22,13 @@
 #include <functional>
 #include <stdexcept>
 #include <numeric>
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include <string.h>
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#else
 #include <strings.h>
+#endif
 
 #include "Iotm_TextMeshFuncs.h"
 #include "Iotm_TextMeshDataTypes.h"

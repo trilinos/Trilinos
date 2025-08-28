@@ -28,17 +28,16 @@
 #include <type_traits>
 
 namespace Teuchos {
-  // forward declaration
-  class ParameterList;
-}
+// forward declaration
+class ParameterList;
+}  // namespace Teuchos
 
 namespace Trilinos {
 namespace Details {
-  template<class MV, class OP, class NormType>
-  class LinearSolver; // forward declaration
-} // namespace Details
-} // namespace Trilinos
-
+template <class MV, class OP, class NormType>
+class LinearSolver;  // forward declaration
+}  // namespace Details
+}  // namespace Trilinos
 
 namespace Ifpack2 {
 namespace Details {
@@ -65,18 +64,16 @@ namespace Details {
 ///   deep copy is required by Amesos2, and is in addition to any data
 ///   copying that Amesos2 may do internally to satisfy TPL storage
 ///   formats.
-template<class MatrixType>
-class Amesos2Wrapper :
-    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                           typename MatrixType::local_ordinal_type,
-                                           typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{
-public:
+template <class MatrixType>
+class Amesos2Wrapper : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                              typename MatrixType::local_ordinal_type,
+                                                              typename MatrixType::global_ordinal_type,
+                                                              typename MatrixType::node_type>,
+                       virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                          typename MatrixType::local_ordinal_type,
+                                                                                          typename MatrixType::global_ordinal_type,
+                                                                                          typename MatrixType::node_type> > {
+ public:
   //! \name Typedefs
   //@{
 
@@ -99,7 +96,8 @@ public:
   typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
-                            node_type> row_matrix_type;
+                            node_type>
+      row_matrix_type;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,
                 "Ifpack2::Details::Amesos2Wrapper: Please use MatrixType = Tpetra::RowMatrix.");
@@ -107,13 +105,15 @@ public:
   //! Type of the Tpetra::Map specialization that this class uses.
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
-                      node_type> map_type;
+                      node_type>
+      map_type;
 
   //! Type of the Tpetra::CrsMatrix specialization that this class uses.
   typedef Tpetra::CrsMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
-                            node_type> crs_matrix_type;
+                            node_type>
+      crs_matrix_type;
   //@}
   //! \name Constructors and destructor
   //@{
@@ -123,7 +123,7 @@ public:
   /// \param A [in] The sparse matrix to factor, as a
   ///   Tpetra::RowMatrix.  (Tpetra::CrsMatrix inherits from this, so
   ///   you may use a Tpetra::CrsMatrix here instead.)
-  explicit Amesos2Wrapper (const Teuchos::RCP<const row_matrix_type>& A);
+  explicit Amesos2Wrapper(const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
   virtual ~Amesos2Wrapper();
@@ -133,7 +133,7 @@ public:
   //@{
 
   /// \brief Set parameters.
-  void setParameters (const Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   /// \brief Compute the preordering and symbolic factorization of the matrix.
   ///
@@ -147,7 +147,7 @@ public:
   /// Please also see the documentation of compute() for the
   /// conditions under which you must call compute() before calling
   /// apply().
-  void initialize ();
+  void initialize();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
@@ -199,7 +199,7 @@ public:
   /// The new matrix A need not necessarily have the same Maps or even
   /// the same communicator as the original matrix.
   virtual void
-  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
 
   //@}
   //! \name Implementation of Tpetra::Operator
@@ -221,64 +221,64 @@ public:
   ///   preconditioner.
   /// \param alpha [in] Scaling factor for Y.
   void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Tpetra::Map representing the domain of this operator.
-  Teuchos::RCP<const map_type> getDomainMap () const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! Tpetra::Map representing the range of this operator.
-  Teuchos::RCP<const map_type> getRangeMap () const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   //! Whether this object's apply() method can apply the transpose (or conjugate transpose, if applicable).
-  bool hasTransposeApply () const;
+  bool hasTransposeApply() const;
 
   //@}
   //! \name Mathematical functions
   //@{
 
   //! The input matrix's communicator.
-  Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The input matrix; the matrix to be preconditioned.
-  Teuchos::RCP<const row_matrix_type> getMatrix () const;
+  Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
   //! The total number of successful calls to initialize().
-  int getNumInitialize () const;
+  int getNumInitialize() const;
 
   //! The total number of successful calls to compute().
-  int getNumCompute () const;
+  int getNumCompute() const;
 
   //! The total number of successful calls to apply().
-  int getNumApply () const;
+  int getNumApply() const;
 
   //! The total time in seconds spent in successful calls to initialize().
-  double getInitializeTime () const;
+  double getInitializeTime() const;
 
   //! The total time in seconds spent in successful calls to compute().
-  double getComputeTime () const;
+  double getComputeTime() const;
 
   //! The total time in seconds spent in successful calls to apply().
-  double getApplyTime () const;
+  double getApplyTime() const;
 
   //@}
   //! \name Implementation of Teuchos::Describable
   //@{
 
   //! A one-line description of this object.
-  std::string description () const;
+  std::string description() const;
 
   //! Print the object with some verbosity level to the given output stream.
   void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
   //@}
 
-private:
+ private:
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef typename Teuchos::Array<local_ordinal_type>::size_type size_type;
@@ -289,10 +289,10 @@ private:
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
 
   //! Copy constructor (declared private and undefined; may not be used)
-  Amesos2Wrapper (const Amesos2Wrapper<MatrixType>& RHS);
+  Amesos2Wrapper(const Amesos2Wrapper<MatrixType>& RHS);
 
   //! operator= (declared private and undefined; may not be used)
-  Amesos2Wrapper<MatrixType>& operator= (const Amesos2Wrapper<MatrixType>& RHS);
+  Amesos2Wrapper<MatrixType>& operator=(const Amesos2Wrapper<MatrixType>& RHS);
 
   //! Amesos2 solver; it contains the factorization of the matrix A_.
   Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, typename MV::mag_type> > solver_;
@@ -303,10 +303,10 @@ private:
   /// its communicator only has one process, then we don't need to
   /// wrap it, so we just return A.
   static Teuchos::RCP<const row_matrix_type>
-  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+  makeLocalFilter(const Teuchos::RCP<const row_matrix_type>& A);
 
   //! The (original) input matrix to be preconditioned.
-  //Teuchos::RCP<const MatrixType> A_;
+  // Teuchos::RCP<const MatrixType> A_;
   Teuchos::RCP<const row_matrix_type> A_;
 
   /// \brief The matrix used to compute the Amesos2 preconditioner.
@@ -351,11 +351,11 @@ private:
   //! See the Amesos2 documentation for valid names.
   std::string SolverName_;
   //@}
-}; // class Amesos2Wrapper
+};  // class Amesos2Wrapper
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // HAVE_IFPACK2_AMESOS2
+#endif  // HAVE_IFPACK2_AMESOS2
 
-#endif // IFPACK2_DETAILS_AMESOS2WRAPPER_DECL_HPP
+#endif  // IFPACK2_DETAILS_AMESOS2WRAPPER_DECL_HPP

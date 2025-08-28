@@ -32,11 +32,10 @@
 
 namespace Trilinos {
 namespace Details {
-template<class MV, class OP, class NormType>
-class LinearSolver; // forward declaration
-} // namespace Details
-} // namespace Trilinos
-
+template <class MV, class OP, class NormType>
+class LinearSolver;  // forward declaration
+}  // namespace Details
+}  // namespace Trilinos
 
 namespace Ifpack2 {
 
@@ -241,38 +240,38 @@ Ifpack2::Preconditioner instance, and give it to setInnerPreconditioner().
 Please refer to the documentation of setParameters for a complete
 discussion of subdomain solvers and their parameters.
 */
-template<class MatrixType,
-         class LocalInverseType =
-         Preconditioner<typename MatrixType::scalar_type,
-                        typename MatrixType::local_ordinal_type,
-                        typename MatrixType::global_ordinal_type,
-                        typename MatrixType::node_type> >
-class AdditiveSchwarz :
-    virtual public Preconditioner<typename MatrixType::scalar_type,
-                                  typename MatrixType::local_ordinal_type,
-                                  typename MatrixType::global_ordinal_type,
-                                  typename MatrixType::node_type>,
-    virtual public Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                              typename MatrixType::local_ordinal_type,
-                                                              typename MatrixType::global_ordinal_type,
-                                                              typename MatrixType::node_type> >,
-    virtual public Details::NestedPreconditioner<Preconditioner<typename MatrixType::scalar_type,
-                                                                typename MatrixType::local_ordinal_type,
-                                                                typename MatrixType::global_ordinal_type,
-                                                                typename MatrixType::node_type> >
-{
-public:
+template <class MatrixType,
+          class LocalInverseType =
+              Preconditioner<typename MatrixType::scalar_type,
+                             typename MatrixType::local_ordinal_type,
+                             typename MatrixType::global_ordinal_type,
+                             typename MatrixType::node_type>>
+class AdditiveSchwarz : virtual public Preconditioner<typename MatrixType::scalar_type,
+                                                      typename MatrixType::local_ordinal_type,
+                                                      typename MatrixType::global_ordinal_type,
+                                                      typename MatrixType::node_type>,
+                        virtual public Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                  typename MatrixType::local_ordinal_type,
+                                                                                  typename MatrixType::global_ordinal_type,
+                                                                                  typename MatrixType::node_type>>,
+                        virtual public Details::NestedPreconditioner<Preconditioner<typename MatrixType::scalar_type,
+                                                                                    typename MatrixType::local_ordinal_type,
+                                                                                    typename MatrixType::global_ordinal_type,
+                                                                                    typename MatrixType::node_type>> {
+ public:
   static_assert(std::is_same<LocalInverseType,
-                  Preconditioner<typename MatrixType::scalar_type,
-                    typename MatrixType::local_ordinal_type,
-                    typename MatrixType::global_ordinal_type,
-                    typename MatrixType::node_type> >::value, "Ifpack2::AdditiveSchwarz: You are not allowed to use nondefault values for the LocalInverseType template parameter.  Please stop specifying this explicitly.  The default template parameter is perfectly fine.");
+                             Preconditioner<typename MatrixType::scalar_type,
+                                            typename MatrixType::local_ordinal_type,
+                                            typename MatrixType::global_ordinal_type,
+                                            typename MatrixType::node_type>>::value,
+                "Ifpack2::AdditiveSchwarz: You are not allowed to use nondefault values for the LocalInverseType template parameter.  Please stop specifying this explicitly.  The default template parameter is perfectly fine.");
 
   static_assert(std::is_same<MatrixType,
-                  Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                    typename MatrixType::local_ordinal_type,
-                    typename MatrixType::global_ordinal_type,
-                    typename MatrixType::node_type> >::value, "Ifpack2::AdditiveSchwarz: Please use MatrixType = Tpetra::RowMatrix instead of MatrixType = Tpetra::CrsMatrix.  Don't worry, AdditiveSchwarz's constructor can take either type of matrix; it does a dynamic cast if necessary inside.  Restricting the set of allowed types here will improve build times and reduce library and executable sizes.");
+                             Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                               typename MatrixType::local_ordinal_type,
+                                               typename MatrixType::global_ordinal_type,
+                                               typename MatrixType::node_type>>::value,
+                "Ifpack2::AdditiveSchwarz: Please use MatrixType = Tpetra::RowMatrix instead of MatrixType = Tpetra::CrsMatrix.  Don't worry, AdditiveSchwarz's constructor can take either type of matrix; it does a dynamic cast if necessary inside.  Restricting the set of allowed types here will improve build times and reduce library and executable sizes.");
 
   //! \name Typedefs
   //@{
@@ -291,17 +290,17 @@ public:
 
   //! The type of the magnitude (absolute value) of a matrix entry.
   using magnitude_type =
-    typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
+      typename Teuchos::ScalarTraits<scalar_type>::magnitudeType;
 
   //! The Tpetra::RowMatrix specialization matching MatrixType.
   using row_matrix_type =
-    Tpetra::RowMatrix<scalar_type, local_ordinal_type,
-                      global_ordinal_type, node_type>;
+      Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+                        global_ordinal_type, node_type>;
 
   //! The Tpetra::CrsMatrix specialization that is a subclass of MatrixType.
   using crs_matrix_type =
-    Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-                      global_ordinal_type, node_type>;
+      Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
+                        global_ordinal_type, node_type>;
 
   //@}
   // \name Constructors and destructor
@@ -310,7 +309,7 @@ public:
   /// \brief Constructor that takes a matrix.
   ///
   /// \param A [in] The matrix to be preconditioned.
-  AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A);
+  AdditiveSchwarz(const Teuchos::RCP<const row_matrix_type>& A);
 
   /// \brief Constructor that takes a matrix and the level of overlap.
   ///
@@ -321,29 +320,29 @@ public:
   /// \param A [in] The matrix to be preconditioned.
   /// \param overlapLevel [in] The level of overlap.  Must be
   ///   nonnegative.  Zero means no overlap.
-  AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
-                   const int overlapLevel);
+  AdditiveSchwarz(const Teuchos::RCP<const row_matrix_type>& A,
+                  const int overlapLevel);
 
   //! Destructor
-  virtual ~AdditiveSchwarz () = default;
+  virtual ~AdditiveSchwarz() = default;
 
   //@}
   //! \name Implementation of Tpetra::Operator
   //@{
 
   //! The domain Map of this operator.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>> getDomainMap() const;
 
   //! The range Map of this operator.
-  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>> getRangeMap() const;
 
   //! Apply the preconditioner to X, putting the result in Y.
   virtual void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //@}
   //! \name Implementation of Ifpack2::Details::NestedPreconditioner
@@ -384,10 +383,10 @@ public:
   /// synchronize the inner preconditioner's state with that of the
   /// AdditiveSchwarz instance.
   virtual void
-  setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
-                                                            local_ordinal_type,
-                                                            global_ordinal_type,
-                                                            node_type> >& innerPrec);
+  setInnerPreconditioner(const Teuchos::RCP<Preconditioner<scalar_type,
+                                                           local_ordinal_type,
+                                                           global_ordinal_type,
+                                                           node_type>>& innerPrec);
 
   //@}
   //! \name Implementation of Ifpack2::Details::CanChangeMatrix
@@ -416,7 +415,7 @@ public:
   /// The new matrix A need not necessarily have the same Maps or even
   /// the same communicator as the original matrix.
   virtual void
-  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
   //@}
 
   //! The input matrix.
@@ -591,7 +590,7 @@ public:
   /// values.)  If the user didn't specify a sublist for the inner
   /// solver, we assume that the user doesn't want to change the inner
   /// solver's parameters.
-  virtual void setParameters (const Teuchos::ParameterList& plist);
+  virtual void setParameters(const Teuchos::ParameterList& plist);
 
   /// \brief Set the preconditioner's parameters.
   ///
@@ -617,17 +616,17 @@ public:
   /// See the documentation of setParameters() for a list of the
   /// parameters this method accepts, and their default values.
   void
-  setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
+  setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
   bool supportsZeroStartingSolution() { return true; }
 
-  void setZeroStartingSolution (bool zeroStartingSolution) { ZeroStartingSolution_ = zeroStartingSolution; };
+  void setZeroStartingSolution(bool zeroStartingSolution) { ZeroStartingSolution_ = zeroStartingSolution; };
 
   /// \brief Get a list of the preconditioner's default parameters.
   ///
   /// See the documentation of setParameters() for a list of the
   /// parameters that AdditiveSchwarz accepts.
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters () const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //! Computes all (graph-related) data necessary to initialize the preconditioner.
   virtual void initialize();
@@ -666,7 +665,7 @@ public:
   std::string description() const;
 
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
   //@}
 
@@ -676,69 +675,72 @@ public:
   //! Returns the level of overlap.
   virtual int getOverlapLevel() const;
 
-
-private:
+ private:
   //! Specialization of Tpetra::Map.
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
-                      node_type> map_type;
+                      node_type>
+      map_type;
   //! Specialization of Tpetra::Import.
   typedef Tpetra::Import<local_ordinal_type,
                          global_ordinal_type,
-                         node_type> import_type;
+                         node_type>
+      import_type;
   //! Specialization of Tpetra::MultiVector.
   typedef Tpetra::MultiVector<scalar_type,
                               local_ordinal_type,
                               global_ordinal_type,
-                              node_type> MV;
+                              node_type>
+      MV;
   //! Specialization of Tpetra::Operator.
   typedef Tpetra::Operator<scalar_type,
                            local_ordinal_type,
                            global_ordinal_type,
-                           node_type> OP;
+                           node_type>
+      OP;
   //! Specialization of Preconditioner.
   typedef Preconditioner<scalar_type,
                          local_ordinal_type,
                          global_ordinal_type,
-                         node_type> prec_type;
+                         node_type>
+      prec_type;
 
   //! Type of the inner (subdomain) solver.
   typedef Trilinos::Details::LinearSolver<MV, OP, typename MV::mag_type> inner_solver_type;
 
   //! Copy constructor (unimplemented; do not use)
-  AdditiveSchwarz (const AdditiveSchwarz& RHS);
+  AdditiveSchwarz(const AdditiveSchwarz& RHS);
 
   //! Set up the localized matrix and the singleton filter.
-  void setup ();
+  void setup();
 
   //! Local portion of the apply.
-  void localApply(MV &OverlappingX, MV &OverlappingY) const;
+  void localApply(MV& OverlappingX, MV& OverlappingY) const;
 
   /// \brief Whether the current ParameterList has a parameter for the
   ///   inner preconditioner's name.
-  bool hasInnerPrecName () const;
-
+  bool hasInnerPrecName() const;
 
   //! The current inner preconditioner name.
-  std::string innerPrecName () const;
+  std::string innerPrecName() const;
 
   /// \brief Remove the inner preconditioner name parameter, if it
   ///   exists, from the current ParameterList.
-  void removeInnerPrecName ();
+  void removeInnerPrecName();
 
   /// \brief Parameters to give to the inner preconditioner.
   ///
   /// \return The parameters, and whether the current ParameterList
   ///   actually has a sublist for the inner preconditioner's
   ///   parameters.  That sublist may be empty.
-  std::pair<Teuchos::ParameterList, bool> innerPrecParams () const;
+  std::pair<Teuchos::ParameterList, bool> innerPrecParams() const;
 
   /// \brief Remove the inner preconditioner's sublist of parameters,
   ///   if it exists, from the current ParameterList.
-  void removeInnerPrecParams ();
+  void removeInnerPrecParams();
 
   //! The default inner preconditioner name.
-  static std::string defaultInnerPrecName ();
+  static std::string defaultInnerPrecName();
 
   /// \brief The matrix to be preconditioned.
   ///
@@ -781,7 +783,7 @@ private:
   //! param list by setting "schwarz: combine mode" to "AVG")
   //! Don't average with CG as preconditioner is nonsymmetric.
   Tpetra::CombineMode CombineMode_ = Tpetra::ZERO;
-  bool AvgOverlap_ = false;
+  bool AvgOverlap_                 = false;
   //! If \c true, reorder the local matrix.
   bool UseReordering_ = false;
   //! Record reordering for output purposes.
@@ -795,7 +797,7 @@ private:
   //! True if and only if the initial guess is zero.
   bool ZeroStartingSolution_ = true;
   //! Damping for inner update, if used
-  scalar_type UpdateDamping_ = Teuchos::ScalarTraits<scalar_type>::one ();
+  scalar_type UpdateDamping_ = Teuchos::ScalarTraits<scalar_type>::one();
 
   //! The total number of successful calls to initialize().
   int NumInitialize_ = 0;
@@ -849,8 +851,8 @@ private:
   /// is created on demand if necessary.  This explains why this is
   /// marked \c mutable.
   mutable Teuchos::RCP<const import_type> DistributedImporter_;
-}; // class AdditiveSchwarz
+};  // class AdditiveSchwarz
 
-}// end namespace
+}  // namespace Ifpack2
 
-#endif // IFPACK2_ADDITIVESCHWARZ_DECL_HPP
+#endif  // IFPACK2_ADDITIVESCHWARZ_DECL_HPP

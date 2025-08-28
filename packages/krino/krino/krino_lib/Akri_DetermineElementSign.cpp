@@ -26,7 +26,7 @@ static ElementToSignsMap initialize_element_signs(const stk::mesh::BulkData & me
   return elementsToSigns;
 }
 
-static void assign_element_sign_if_not_already_assigned(const stk::mesh::BulkData & mesh,
+static void assign_element_sign_if_not_already_assigned(const stk::mesh::BulkData & /*mesh*/,
     const unsigned surfIndex,
     const stk::mesh::Entity element,
     const int8_t sign,
@@ -59,12 +59,6 @@ static void assign_interface_element_sign(const unsigned surfIndex,
   elementSign = 0;
 }
 
-static void fill_edge_elements(const stk::mesh::BulkData & mesh, const Edge & edge, std::vector<stk::mesh::Entity> & edgeElements)
-{
-  const std::array<stk::mesh::Entity,2> & edgeNodes = get_edge_nodes(edge);
-  stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edgeNodes[0], edgeNodes[1]}, stk::topology::ELEMENT_RANK, edgeElements);
-}
-
 static void check_edge_intersections_to_assign_crossed_elements_and_find_nodes_on_either_side_of_surface(const stk::mesh::BulkData & mesh,
     const FieldRef coordsField,
     const stk::mesh::Selector & elementSelector,
@@ -91,8 +85,9 @@ static void check_edge_intersections_to_assign_crossed_elements_and_find_nodes_o
       nodesAndSigns.emplace(edgeNodes[1], crossingSign);
 
       fill_edge_elements(mesh, edge, edgeElements);
+
       for (auto edgeElem : edgeElements)
-        if (elementSelector(mesh.bucket(edgeElem)))
+        if (is_entity_selected(mesh, elementSelector, edgeElem))
           assign_interface_element_sign(surfIndex, edgeElem, elementsToSigns);
     }
   }

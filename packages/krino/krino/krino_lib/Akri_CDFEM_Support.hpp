@@ -24,7 +24,7 @@
 namespace krino {
 
 class Phase_Support;
-class RefinementInterface;
+class RefinementManager;
 
 enum Prolongation_Model
 {

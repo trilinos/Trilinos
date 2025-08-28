@@ -94,7 +94,7 @@ public:
   unsigned num_subelements() const { return my_subelements.size(); }
   bool have_refined_edges() const;
 
-  virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs) { STK_ThrowRequire(false); }
+  virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & /*surfaceIDs*/) { STK_ThrowRequire(false); }
   virtual void cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains);
   virtual void cut_face_intersection_point(const int iFace, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains);
   bool have_edges_with_children() const;

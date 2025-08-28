@@ -454,7 +454,7 @@ namespace Iogn {
      */
     virtual void sideset_elem_sides(int64_t id, Ioss::Int64Vector &elem_sides) const;
 
-    virtual Ioss::NameList sideset_touching_blocks(int64_t set_id) const;
+    IOSS_NODISCARD virtual Ioss::NameList sideset_touching_blocks(int64_t set_id) const;
 
     IOSS_NODISCARD int64_t get_num_x() const { return numX; }
     IOSS_NODISCARD int64_t get_num_y() const { return numY; }

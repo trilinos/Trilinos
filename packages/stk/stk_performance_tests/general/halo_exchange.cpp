@@ -1203,7 +1203,7 @@ TEST(HeatEquationHaloTest, Exactness)
     double yMin = 0;
     double yMax = 1;
 
-    RunConfig config{MPI_COMM_WORLD, nptsPerDirection, nghost, stencilSize, exSol, xMin, xMax, yMin, yMax};
+    RunConfig config{MPI_COMM_WORLD, nptsPerDirection, nghost, stencilSize, exSol, xMin, xMax, yMin, yMax, 0.0};
 
     HeatEquationHaloSerial tester(config);
 

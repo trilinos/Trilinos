@@ -1,4 +1,4 @@
-#!/usr/env python
+#!/usr/bin/env python
 # @HEADER
 # *****************************************************************************
 #          PyTrilinos2: Automatic Python Interfaces to Trilinos Packages
@@ -19,7 +19,6 @@ try:
     from PyTrilinos2 import Thyra
     # Unified solver & preconditioner interface
     from PyTrilinos2 import Stratimikos
-    from PyTrilinos2.getTpetraTypeName import getTypeName, getDefaultNodeType
 except ImportError:
     print("\nFailed to import PyTrilinos2. Consider setting the Python load path in your environment with\n export PYTHONPATH=${TRILINOS_BUILD_DIR}/packages/PyTrilinos2:${PYTHONPATH}\nwhere TRILINOS_BUILD_DIR is the build directory of your Trilinos build.\n")
     raise
@@ -35,9 +34,9 @@ except:
 
 
 def assemble1DLaplacian(globalNumRows, comm):
-    Tpetra_Map = getTypeName('Map')
-    Tpetra_CrsGraph = getTypeName('CrsGraph')
-    Tpetra_CrsMatrix = getTypeName('CrsMatrix')
+    Tpetra_Map = Tpetra.Map()
+    Tpetra_CrsGraph = Tpetra.CrsGraph()
+    Tpetra_CrsMatrix = Tpetra.CrsMatrix()
 
     rowmap = Tpetra_Map(globalNumRows, 0, comm)
 
@@ -69,14 +68,30 @@ def assemble1DLaplacian(globalNumRows, comm):
 
 
 def main():
-    comm = Teuchos.getTeuchosComm(MPI.COMM_WORLD)
+    commMpi4py = MPI.COMM_WORLD
+    comm = Teuchos.getTeuchosComm(commMpi4py)
 
     parser = ArgumentParser()
     parser.add_argument("--problemSize", default=1000, help="Global problem size", type=int)
     parser.add_argument("--solver", default="GMRES", choices=["LU", "CG", "BiCGStab", "GMRES"], help="Linear solver")
     parser.add_argument("--prec", default="None", choices=["None", "Jacobi", "Chebyshev", "ILU", "multigrid"], help="Preconditioner")
     parser.add_argument("--maxIts", default=100, help="Maximum number of iterations", type=int)
-    args = parser.parse_args()
+
+    # do a little dance to avoid redundant output
+    doTerminate = False
+    if comm.getRank() == 0:
+        try:
+            args = parser.parse_args()
+        except SystemExit:
+            doTerminate = True
+        doTerminate = commMpi4py.bcast(doTerminate, root=0)
+        if doTerminate:
+            exit()
+    else:
+        doTerminate = commMpi4py.bcast(doTerminate, root=0)
+        if doTerminate:
+            exit()
+        args = parser.parse_args()
 
     # Set up timers
     timer = Teuchos.StackedTimer("Main")
@@ -87,10 +102,11 @@ def main():
     out = Teuchos.fancyOStream(cout)
 
     # Set up Tpetra matrices and vectors
-    Tpetra_Map = getTypeName('Map')
-    Tpetra_Vector = getTypeName('Vector')
-    Tpetra_Export = getTypeName('Export')
+    Tpetra_Map = Tpetra.Map()
+    Tpetra_Vector = Tpetra.Vector()
+    Tpetra_Export = Tpetra.Export()
 
+    timer.start("Build matrix and vectors")
     tpetra_A = assemble1DLaplacian(args.problemSize, comm)
     tpetra_map = tpetra_A.getRowMap()
 
@@ -104,6 +120,7 @@ def main():
     tpetra_b.putScalar(1.)
 
     tpetra_A.describe(out)
+    timer.stop("Build matrix and vectors")
 
     # Wrap Tpetra objects as Thyra objects
     thyra_map = Thyra.tpetraVectorSpace(tpetra_map)
@@ -113,7 +130,7 @@ def main():
     thyra_A = Thyra.tpetraLinearOp(thyra_map, thyra_map, tpetra_A)
 
     # Set up linear solver
-    linearSolverBuilder = Stratimikos.LinearSolverBuilder_double_t()
+    linearSolverBuilder = Stratimikos.LinearSolverBuilder['double']()
 
     # Hook up preconditioners that are not enabled by default
     if hasattr(Stratimikos, "enableMueLu"):
@@ -243,7 +260,8 @@ def main():
 
 if __name__ == "__main__":
     # initialize kokkos
-    if getDefaultNodeType() == 'cuda':
+    defaultNode = Tpetra.Map.defaults['Node']
+    if defaultNode in ('cuda', 'cuda_uvm', 'hip', 'hip_managed'):
         Tpetra.initialize_Kokkos(device_id=rank)
     else:
         Tpetra.initialize_Kokkos(num_threads=12)

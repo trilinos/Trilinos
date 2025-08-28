@@ -41,15 +41,15 @@ Supported parameters:
 */
 /// \tparam GraphType Specialization of Tpetra::RowGraph or Tpetra::CrsGraph.
 
-  template<class GraphType,class Scalar>
+template <class GraphType, class Scalar>
 class LinePartitioner : public OverlappingPartitioner<GraphType> {
-public:
+ public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
-  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type>  row_graph_type;
+  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
-  typedef Tpetra::MultiVector<magnitude_type,local_ordinal_type, global_ordinal_type, node_type>  multivector_type;
+  typedef Tpetra::MultiVector<magnitude_type, local_ordinal_type, global_ordinal_type, node_type> multivector_type;
 
   typedef typename row_graph_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
   typedef typename row_graph_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
@@ -66,20 +66,17 @@ public:
   //! Compute the partitions.
   void computePartitions();
 
-private:
-    // Useful functions
+ private:
+  // Useful functions
   int Compute_Blocks_AutoLine(Teuchos::ArrayView<local_ordinal_type> blockIndices) const;
-  void local_automatic_line_search(int NumEqns, Teuchos::ArrayView <local_ordinal_type> blockIndices, local_ordinal_type last, local_ordinal_type next, local_ordinal_type LineID, double tol, Teuchos::Array<local_ordinal_type> itemp, Teuchos::Array<magnitude_type> dtemp) const;
-
-
+  void local_automatic_line_search(int NumEqns, Teuchos::ArrayView<local_ordinal_type> blockIndices, local_ordinal_type last, local_ordinal_type next, local_ordinal_type LineID, double tol, Teuchos::Array<local_ordinal_type> itemp, Teuchos::Array<magnitude_type> dtemp) const;
 
   // User data
   int NumEqns_;
   Teuchos::RCP<multivector_type> coord_;
   double threshold_;
-
 };
 
-}// namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_LINEPARTITIONER_DECL_HPP
+#endif  // IFPACK2_LINEPARTITIONER_DECL_HPP

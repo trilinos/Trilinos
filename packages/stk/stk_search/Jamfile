@@ -151,7 +151,7 @@ lib stk_search
     /sierra/stk_util//stk_util_diag
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_math//stk_math
-    /tpl/ArborX//arborx
+    /tpl/arborx//arborx
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

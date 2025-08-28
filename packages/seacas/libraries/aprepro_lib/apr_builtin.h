@@ -79,6 +79,7 @@ namespace SEAMS {
   double do_cols(const array *arr);
   double do_time();
 
+  const char *do_use_legacy_output_format();
   const char *do_dumpsym();
   const char *do_dumpsym_json();
   const char *do_dumpfunc();

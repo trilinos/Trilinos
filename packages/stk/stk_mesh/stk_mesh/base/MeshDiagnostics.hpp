@@ -34,8 +34,12 @@
 #ifndef MESH_DIAGNOSTICS_HPP
 #define MESH_DIAGNOSTICS_HPP
 
+#include <stk_util/stk_config.h>
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <string>
+#include <vector>
 #include <map>
-#include "Types.hpp"
 
 namespace stk { namespace mesh {
 

@@ -52,7 +52,7 @@ int exi_get_partial_nodal_var(int exoid, int time_step, int nodal_var_index, int
 
   if (ex_large_model(exoid) == 0) {
     /* read values of the nodal variable */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variables in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -70,7 +70,7 @@ int exi_get_partial_nodal_var(int exoid, int time_step, int nodal_var_index, int
   else {
     /* read values of the nodal variable  -- stored as separate variables... */
     /* Get the varid.... */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
                nodal_var_index, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -94,7 +94,7 @@ int exi_get_partial_nodal_var(int exoid, int time_step, int nodal_var_index, int
     status = nc_get_vara_double(exoid, varid, start, count, var_vals);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get nodal variables in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);

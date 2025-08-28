@@ -58,7 +58,7 @@ int ex_put_partial_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, 
   }
 
   /* first check if any sets are specified */
-  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss defined in file id %d",
              ex_name_of_object(set_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -107,7 +107,7 @@ int ex_put_partial_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, 
   }
 
   /* inquire id's of previously defined variables  */
-  if ((status = nc_inq_varid(exoid, entryptr, &entry_list_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, entryptr, &entry_list_id)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate entry list for %s %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);
@@ -130,7 +130,7 @@ int ex_put_partial_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, 
       status = nc_put_vara_int(exoid, entry_list_id, start, count, set_entry_list);
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to store entry list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
@@ -141,7 +141,7 @@ int ex_put_partial_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, 
 
   /* only do for edge, face and side sets */
   if (extraptr && (set_extra_list != NULL || exi_is_parallel(exoid))) {
-    if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate extra list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
@@ -161,7 +161,7 @@ int ex_put_partial_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, 
       status = nc_put_vara_int(exoid, extra_list_id, start, count, set_extra_list);
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to store extra list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);

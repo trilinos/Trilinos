@@ -57,6 +57,22 @@ enum EDistributorSendType {
 std::string
 DistributorSendTypeEnumToString (EDistributorSendType sendType);
 
+/// \brief Convert a string to an EDistributorSendType. Throw on error.
+EDistributorSendType
+DistributorSendTypeStringToEnum (const std::string_view s);
+
+/// \brief Valid string values for Distributor's "Send type" parameter.
+Teuchos::Array<std::string> distributorSendTypes ();
+
+/// \brief Valid enum values of distributor send types.
+Teuchos::Array<EDistributorSendType> distributorSendTypeEnums ();
+
+/// \brief Valid string values of distributor send types.
+Teuchos::Array<std::string> distributorSendTypes ();
+
+/// \brief Return the provided argument. Throw if it's not a valid send type.
+const std::string &validSendTypeOrThrow (const std::string &s);
+
 /// \brief Enum indicating how and whether a Distributor was initialized.
 ///
 /// This is an implementation detail of Distributor.  Please do

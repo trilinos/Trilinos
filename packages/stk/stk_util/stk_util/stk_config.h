@@ -40,7 +40,6 @@
 #define STK_HAS_MPI
 #define STK_HAS_ARBORX
 #define STK_HAVE_BOOST
-#define STK_HAVE_KOKKOS
 #define STK_HAVE_INTREPID2
 #define STK_HAVE_STKMESH
 #define STK_16BIT_CONNECTIVITY_ORDINAL
@@ -86,12 +85,17 @@
 #  endif
 #endif
 
+#ifndef NDEBUG
+#define STK_FIELD_BOUNDS_CHECK
+#endif
+
 //----------------------------------------------------------------------
 
 // Use macro below to deprecate:
 //   classes (class STK_DEPRECATED Class;), 
 //   structs (struct STK_DEPRECATED Struct;), 
-//   typedefs (STK_DEPRECATED typedef Type 1 Type2;, using Type1 STK_DEPRECATED = Type2;), 
+//   typedefs (STK_DEPRECATED typedef Type 1 Type2;),
+//   using (using Type1 STK_DEPRECATED = Type2;), 
 //   variables (STK_DEPRECATED int variable;), 
 //   non-static data members (union Union { STK_DEPRECATED int variable; }), 
 //   functions (STK_DEPRECATED void function();),

@@ -117,7 +117,7 @@ public:
   const FACET * get_closest_facet(const stk::math::Vector3d &x) const;
 
 private:
-  virtual void build_local_facets(const BoundingBox & proc_bbox) {}
+  virtual void build_local_facets(const BoundingBox & /*proc_bbox*/) {}
   
   std::vector<FACET> myLocalFacets;
 

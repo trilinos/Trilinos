@@ -10,9 +10,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestRCGFiles
-  SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+  SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
   SOURCE_FILES bcsstk14.hb
   EXEDEPS Tpetra_rcg_hb_test
   )

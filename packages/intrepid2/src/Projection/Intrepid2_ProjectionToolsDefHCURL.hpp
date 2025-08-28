@@ -369,18 +369,18 @@ struct ComputeBasisCoeffsOnCell_HCurl {
 
       for(ordinal_type d=0; d <derDim_; ++d) {
         for(ordinal_type iq=0; iq <numBasisCurlPoints; ++iq) {
-          cellBasisCurlAtBasisCurlEPoints_(0,j,iq,d)=basisCurlAtBasisCurlEPoints_(idof,offsetBasisCurl_+iq,d);
+          cellBasisCurlAtBasisCurlEPoints_(0,j,iq,d)=basisCurlAtBasisCurlEPoints_.access(idof,offsetBasisCurl_+iq,d);
           wBasisCurlAtBasisCurlEPoints_(ic,j,iq,d)=cellBasisCurlAtBasisCurlEPoints_(0,j,iq,d)*basisCurlEWeights_(iq);
         }
         for(ordinal_type iq=0; iq <numTargetCurlPoints; ++iq)
-          wBasisCurlAtTargetCurlEPoints_(ic,j,iq,d) = basisCurlAtTargetCurlEPoints_(idof,offsetTargetCurl_+iq,d)*targetCurlEWeights_(iq);
+          wBasisCurlAtTargetCurlEPoints_(ic,j,iq,d) = basisCurlAtTargetCurlEPoints_.access(idof,offsetTargetCurl_+iq,d)*targetCurlEWeights_(iq);
       }
     }
     for(ordinal_type j=0; j < numEdgeFaceDofs_; ++j) {
       ordinal_type jdof = computedDofs_(j);
       for(ordinal_type d=0; d <derDim_; ++d)
         for(ordinal_type iq=0; iq <numBasisCurlPoints; ++iq)
-          negPartialProjCurl_(ic,iq,d) -=  basisCoeffs_(ic,jdof)*basisCurlAtBasisCurlEPoints_(jdof,offsetBasisCurl_+iq,d);
+          negPartialProjCurl_(ic,iq,d) -=  basisCoeffs_(ic,jdof)*basisCurlAtBasisCurlEPoints_.access(jdof,offsetBasisCurl_+iq,d);
       for(ordinal_type d=0; d <dim_; ++d)
         for(ordinal_type iq=0; iq <numBasisPoints; ++iq)
           negPartialProj_(ic,iq,d) -=  basisCoeffs_(ic,jdof)*basisAtBasisEPoints_(jdof,offsetBasis_+iq,d);

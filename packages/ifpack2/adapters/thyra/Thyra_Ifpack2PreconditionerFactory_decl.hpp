@@ -16,9 +16,8 @@ namespace Thyra {
 /** \brief Concrete preconditioner factory subclass based on Ifpack2.
  */
 template <typename MatrixType>
-class Ifpack2PreconditionerFactory :
-  public PreconditionerFactoryBase<typename MatrixType::scalar_type> {
-public:
+class Ifpack2PreconditionerFactory : public PreconditionerFactoryBase<typename MatrixType::scalar_type> {
+ public:
   /** \brief . */
   typedef MatrixType fwd_op_type;
 
@@ -43,17 +42,15 @@ public:
 
   /** \brief . */
   void initializePrec(
-    const Teuchos::RCP<const LinearOpSourceBase<scalar_type> > &fwdOp,
-    PreconditionerBase<scalar_type> *prec,
-    const ESupportSolveUse supportSolveUse
-    ) const;
+      const Teuchos::RCP<const LinearOpSourceBase<scalar_type> > &fwdOp,
+      PreconditionerBase<scalar_type> *prec,
+      const ESupportSolveUse supportSolveUse) const;
 
   /** \brief . */
   void uninitializePrec(
-    PreconditionerBase<scalar_type> *prec,
-    Teuchos::RCP<const LinearOpSourceBase<scalar_type> > *fwdOp,
-    ESupportSolveUse *supportSolveUse
-    ) const;
+      PreconditionerBase<scalar_type> *prec,
+      Teuchos::RCP<const LinearOpSourceBase<scalar_type> > *fwdOp,
+      ESupportSolveUse *supportSolveUse) const;
 
   //@}
 
@@ -82,12 +79,10 @@ public:
 
   //@}
 
-private:
-
+ private:
   Teuchos::RCP<Teuchos::ParameterList> paramList_;
-
 };
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_IFPACK2_PRECONDITIONERFACTORY_DECL_HPP
+#endif  // THYRA_IFPACK2_PRECONDITIONERFACTORY_DECL_HPP

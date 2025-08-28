@@ -103,7 +103,7 @@ void solve_system_belos(
   typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_Vector;
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_MultiVector;
 
-  RCP<Tpetra_Operator> At    = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraRow(A);
+  RCP<Tpetra_Operator> At    = Xpetra::toTpetraRowMatrix(A);
   RCP<Tpetra_Operator> Mt    = MueLu::CreateTpetraPreconditioner(At, MueLuList);
   RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
   RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
@@ -141,7 +141,7 @@ void solve_system_ifpack2(
   typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_Vector;
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_MultiVector;
 
-  RCP<Tpetra_RowMatrix> At   = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstTpetraRow(A);
+  RCP<Tpetra_RowMatrix> At   = Xpetra::toTpetraRowMatrix(A);
   RCP<Tpetra_MultiVector> Xt = Xpetra::toTpetra(*X);
   RCP<Tpetra_MultiVector> Bt = Xpetra::toTpetra(*B);
 

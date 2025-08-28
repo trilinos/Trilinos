@@ -116,6 +116,7 @@ namespace MueLu {
     if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: put on single proc") { ss << "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "maxwell1: dump matrices") { ss << "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
@@ -169,7 +170,11 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: phase 1 algorithm\" type=\"string\" value=\"Distance2\"/>"
+  "<Parameter name=\"aggregation: symmetrize graph after dropping\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: use blocking\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: strength-of-connection: matrix\" type=\"string\" value=\"A\"/>"
+  "<Parameter name=\"aggregation: strength-of-connection: measure\" type=\"string\" value=\"smoothed aggregation\"/>"
   "<Parameter name=\"aggregation: classical scheme\" type=\"string\" value=\"direct\"/>"
   "<Parameter name=\"aggregation: row sum drop tol\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"aggregation: block diagonal: interleaved blocksize\" type=\"int\" value=\"3\"/>"
@@ -322,6 +327,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance Nullspace\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: save importer\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
@@ -609,7 +615,15 @@ namespace MueLu {
       
          ("aggregation: phase 1 algorithm","aggregation: phase 1 algorithm")
       
+         ("aggregation: symmetrize graph after dropping","aggregation: symmetrize graph after dropping")
+      
+         ("aggregation: use blocking","aggregation: use blocking")
+      
          ("aggregation: drop scheme","aggregation: drop scheme")
+      
+         ("aggregation: strength-of-connection: matrix","aggregation: strength-of-connection: matrix")
+      
+         ("aggregation: strength-of-connection: measure","aggregation: strength-of-connection: measure")
       
          ("aggregation: classical scheme","aggregation: classical scheme")
       
@@ -914,6 +928,8 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       
          ("repartition: save importer","repartition: save importer")
+      
+         ("repartition: put on single proc","repartition: put on single proc")
       
          ("rap: relative diagonal floor","rap: relative diagonal floor")
       

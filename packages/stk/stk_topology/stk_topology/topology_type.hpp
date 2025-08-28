@@ -97,6 +97,12 @@ struct topology::topology_type
   }
 
   STK_FUNCTION
+  static unsigned num_side_ranks()
+  {
+    return topology_detail::num_side_ranks_<data>();
+  }
+
+  STK_FUNCTION
   static rank_t side_topology_rank(unsigned side_ordinal = 0)
   {
     switch (side_ordinal)
@@ -413,6 +419,12 @@ struct topology::topology_type
   operator topology_t() const
   { return Topology; }
 
+  template <typename SideRankOutputIterator>
+  STK_FUNCTION
+  static void side_ranks(SideRankOutputIterator output_ranks)
+  {
+    topology_detail::side_ranks_<data>(output_ranks);
+  }
 };
 
 } //namespace stk

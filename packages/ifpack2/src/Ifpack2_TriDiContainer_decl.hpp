@@ -68,13 +68,12 @@ namespace Ifpack2 {
 /// translates explicitly between local row and column indices,
 /// instead of just assuming that they are the same.
 
-template<class MatrixType, class LocalScalarType>
+template <class MatrixType, class LocalScalarType>
 class TriDiContainer
-: public ContainerImpl<MatrixType, LocalScalarType>
-{
+  : public ContainerImpl<MatrixType, LocalScalarType> {
   //! @name Internal typedefs (private)
   //@{
-private:
+ private:
   /// \brief The first template parameter of this class.
   ///
   /// This must be a Tpetra::RowMatrix specialization.  It may have
@@ -106,8 +105,8 @@ private:
   using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubviewLocal;
   using typename ContainerImpl<MatrixType, LocalScalarType>::ConstHostSubviewLocal;
   using typename ContainerImpl<MatrixType, LocalScalarType>::block_crs_matrix_type;
-  static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
-                 "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
+  static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
+                "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
 
   /// \brief The (base class) type of the input matrix.
   ///
@@ -119,7 +118,7 @@ private:
   /// specialization of Tpetra::RowMatrix.
   using typename Container<MatrixType>::row_matrix_type;
   //@}
-public:
+ public:
   //! \name Constructor and destructor
   //@{
 
@@ -133,15 +132,15 @@ public:
   /// \param pointIndexed [in] If the input matrix is a \c Tpetra::BlockCrsMatrix,
   ///    whether elements of \c partitions[k] identify rows within blocks (true) or
   ///    whole blocks (false).
-  TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::Array<Teuchos::Array<LO> >& partitions,
-                  const Teuchos::RCP<const import_type>& importer,
-                  bool pointIndexed);
+  TriDiContainer(const Teuchos::RCP<const row_matrix_type>& matrix,
+                 const Teuchos::Array<Teuchos::Array<LO>>& partitions,
+                 const Teuchos::RCP<const import_type>& importer,
+                 bool pointIndexed);
 
-  TriDiContainer (const TriDiContainer<MatrixType, LocalScalarType>& rhs) = delete;
+  TriDiContainer(const TriDiContainer<MatrixType, LocalScalarType>& rhs) = delete;
 
   //! Destructor (declared virtual for memory safety of derived classes).
-  virtual ~TriDiContainer ();
+  virtual ~TriDiContainer();
 
   //@}
   //! \name Get and set methods
@@ -152,10 +151,10 @@ public:
   //@{
 
   //! Do all set-up operations that only require matrix structure.
-  virtual void initialize ();
+  virtual void initialize();
 
   //! Extract the local diagonal block and prepare the solver.
-  virtual void compute ();
+  virtual void compute();
 
   void clearBlocks();
 
@@ -173,33 +172,34 @@ public:
   /// \brief Print information about this object to the given output stream.
   ///
   /// operator<< uses this method.
-  virtual std::ostream& print (std::ostream& os) const;
+  virtual std::ostream& print(std::ostream& os) const;
 
   //@}
   //! @name Implementation of Teuchos::Describable
   //@{
 
   //! A one-line description of this object.
-  virtual std::string description () const;
+  virtual std::string description() const;
 
   //! Print the object with some verbosity level to the given FancyOStream.
   virtual void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
 
   //@}
 
   /// \brief Get the name of this container type for Details::constructContainer()
   static std::string getName();
-private:
+
+ private:
   //! Populate the diagonal blocks
   void extract();
 
   /// \brief Factor the extracted submatrix.
   ///
   /// Call this after calling extract().
-  void factor ();
+  void factor();
 
   //! The local diagonal blocks, which compute() extracts.
   std::vector<Teuchos::SerialTriDiMatrix<int, LSC>> diagBlocks_;
@@ -214,6 +214,6 @@ private:
   Teuchos::Array<int> scalarOffsets_;
 };
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_TRIDICONTAINER_DECL_HPP
+#endif  // IFPACK2_TRIDICONTAINER_DECL_HPP

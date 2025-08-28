@@ -17,17 +17,17 @@ namespace Ifpack2 {
 
 //! Ifpack2 scaling type selector.
 /*! Selects the type of scaling used (if any) for Ifpack2 preconditioners.
-*/
+ */
 enum ScalingType {
   None,
   LeftDiagonal,
-  RightDiagonal, 
+  RightDiagonal,
   SymmetricDiagonal,
   RowSum,
-  ColSum, 
+  ColSum,
   RowAndColSum
 };
 
-}//namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif /* _IFPACK2_SCALINGTYPE_HPP_ */

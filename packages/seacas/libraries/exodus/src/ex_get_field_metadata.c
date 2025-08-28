@@ -55,7 +55,7 @@ static int exi_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity
   if (obj_type == EX_GLOBAL) {
     *varid = NC_GLOBAL;
 
-    if ((status = nc_inq(exoid, NULL, NULL, &att_count, NULL)) != NC_NOERR) {
+    if ((status = nc_inq(exoid, NULL, NULL, &att_count, NULL)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get GLOBAL attribute count");
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -69,7 +69,7 @@ static int exi_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity
       return 0;
     }
 
-    if ((status = nc_inq_var(exoid, *varid, NULL, NULL, NULL, NULL, &att_count)) != NC_NOERR) {
+    if ((status = nc_inq_var(exoid, *varid, NULL, NULL, NULL, NULL, &att_count)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get attribute count on %s with id %" PRId64,
@@ -100,7 +100,7 @@ int ex_get_field_metadata_count(int exoid, ex_entity_type obj_type, ex_entity_id
   for (int i = 0; i < att_count; i++) {
     char name[EX_MAX_NAME + 1];
     int  status;
-    if ((status = nc_inq_attname(exoid, varid, i, name)) != NC_NOERR) {
+    if ((status = nc_inq_attname(exoid, varid, i, name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get attribute named %s on %s with id %" PRId64, name,
@@ -136,7 +136,7 @@ int ex_get_field_metadata(int exoid, ex_field *field)
   for (int i = 0; i < att_count; i++) {
     char attr_name[EX_MAX_NAME + 1];
     int  status;
-    if ((status = nc_inq_attname(exoid, varid, i, attr_name)) != NC_NOERR) {
+    if ((status = nc_inq_attname(exoid, varid, i, attr_name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get attribute named %s on %s with id %" PRId64, attr_name,
@@ -174,7 +174,7 @@ int ex_get_field_metadata(int exoid, ex_field *field)
 
       nc_type type;      /* integer, double, character, ... */
       size_t  val_count; /* how many `type` values */
-      if ((status = nc_inq_att(exoid, varid, attr_name, &type, &val_count)) != NC_NOERR) {
+      if ((status = nc_inq_att(exoid, varid, attr_name, &type, &val_count)) != EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get parameters for attribute named %s on %s with id %" PRId64,
@@ -213,7 +213,7 @@ int ex_get_field_metadata(int exoid, ex_field *field)
         ex_err_fn(exoid, __func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to read field metadata attribute type %s on field %s on %s with id "
@@ -246,7 +246,7 @@ int exi_get_metadata_count(int exoid, const char *which)
   for (int i = 0; i < att_count; i++) {
     char name[EX_MAX_NAME + 1];
     int  status;
-    if ((status = nc_inq_attname(exoid, varid, i, name)) != NC_NOERR) {
+    if ((status = nc_inq_attname(exoid, varid, i, name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get attribute named %s", name);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -309,7 +309,7 @@ int ex_get_basis(int exoid, ex_basis **pbasis, int *num_basis)
   for (int att = 0; att < att_count; att++) {
     char attr_name[EX_MAX_NAME + 1];
     int  status;
-    if ((status = nc_inq_attname(exoid, varid, att, attr_name)) != NC_NOERR) {
+    if ((status = nc_inq_attname(exoid, varid, att, attr_name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get attribute named %s", attr_name);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -352,7 +352,7 @@ int ex_get_basis(int exoid, ex_basis **pbasis, int *num_basis)
   for (int att = 0; att < att_count; att++) {
     char attr_name[EX_MAX_NAME + 1];
     int  status;
-    if ((status = nc_inq_attname(exoid, varid, att, attr_name)) != NC_NOERR) {
+    if ((status = nc_inq_attname(exoid, varid, att, attr_name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get attribute named %s", attr_name);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -389,26 +389,26 @@ int ex_get_basis(int exoid, ex_basis **pbasis, int *num_basis)
       else if (strcmp(basis_type, "subc_dim") == 0) {
         status = nc_get_att_int(exoid, varid, attr_name, basis[which].subc_dim);
       }
-      else if (status == NC_NOERR && strcmp(basis_type, "subc_ordinal") == 0) {
+      else if (status == EX_NOERR && strcmp(basis_type, "subc_ordinal") == 0) {
         status = nc_get_att_int(exoid, varid, attr_name, basis[which].subc_ordinal);
       }
-      else if (status == NC_NOERR && strcmp(basis_type, "subc_dof_ordinal") == 0) {
+      else if (status == EX_NOERR && strcmp(basis_type, "subc_dof_ordinal") == 0) {
         status = nc_get_att_int(exoid, varid, attr_name, basis[which].subc_dof_ordinal);
       }
-      else if (status == NC_NOERR && strcmp(basis_type, "subc_num_dof") == 0) {
+      else if (status == EX_NOERR && strcmp(basis_type, "subc_num_dof") == 0) {
         status = nc_get_att_int(exoid, varid, attr_name, basis[which].subc_num_dof);
       }
-      else if (status == NC_NOERR && strcmp(basis_type, "xi") == 0) {
+      else if (status == EX_NOERR && strcmp(basis_type, "xi") == 0) {
         status = nc_get_att_double(exoid, varid, attr_name, basis[which].xi);
       }
-      else if (status == NC_NOERR && strcmp(basis_type, "eta") == 0) {
+      else if (status == EX_NOERR && strcmp(basis_type, "eta") == 0) {
         status = nc_get_att_double(exoid, varid, attr_name, basis[which].eta);
       }
-      else if (status == NC_NOERR && strcmp(basis_type, "zeta") == 0) {
+      else if (status == EX_NOERR && strcmp(basis_type, "zeta") == 0) {
         status = nc_get_att_double(exoid, varid, attr_name, basis[which].zeta);
       }
 
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to read Basis %s metadata",
                  basis[which].name);
@@ -466,7 +466,7 @@ int ex_get_quadrature(int exoid, ex_quadrature **pquad, int *num_quad)
   for (int att = 0; att < att_count; att++) {
     char attr_name[EX_MAX_NAME + 1];
     int  status;
-    if ((status = nc_inq_attname(exoid, varid, att, attr_name)) != NC_NOERR) {
+    if ((status = nc_inq_attname(exoid, varid, att, attr_name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get attribute named %s", attr_name);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -509,7 +509,7 @@ int ex_get_quadrature(int exoid, ex_quadrature **pquad, int *num_quad)
   for (int att = 0; att < att_count; att++) {
     char attr_name[EX_MAX_NAME + 1];
     int  status;
-    if ((status = nc_inq_attname(exoid, varid, att, attr_name)) != NC_NOERR) {
+    if ((status = nc_inq_attname(exoid, varid, att, attr_name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get attribute named %s", attr_name);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -547,19 +547,19 @@ int ex_get_quadrature(int exoid, ex_quadrature **pquad, int *num_quad)
       else if (strcmp(quadrature_type, "xi") == 0) {
         status = nc_get_att_double(exoid, varid, attr_name, quad[which].xi);
       }
-      else if (status == NC_NOERR && strcmp(quadrature_type, "eta") == 0) {
+      else if (status == EX_NOERR && strcmp(quadrature_type, "eta") == 0) {
         status = nc_get_att_double(exoid, varid, attr_name, quad[which].eta);
       }
-      else if (status == NC_NOERR && strcmp(quadrature_type, "zeta") == 0) {
+      else if (status == EX_NOERR && strcmp(quadrature_type, "zeta") == 0) {
         status = nc_get_att_double(exoid, varid, attr_name, quad[which].zeta);
       }
-      else if (status == NC_NOERR && strcmp(quadrature_type, "weight") == 0) {
+      else if (status == EX_NOERR && strcmp(quadrature_type, "weight") == 0) {
         status = nc_get_att_double(exoid, varid, attr_name, quad[which].weight);
       }
       // NOTE: Do not put an else since will fall through if the
       // arrays are NULL even though quadrature_type is valid.
 
-      if (status != NC_NOERR) {
+      if (status != EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to read Quadrature %s metadata",
                  quad[which].name);

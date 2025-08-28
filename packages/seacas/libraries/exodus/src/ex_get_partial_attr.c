@@ -146,7 +146,7 @@ int ex_get_partial_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
 
   /* inquire id's of previously defined dimensions  */
   if (exi_get_dimension(exoid, dnumobjent, "entries", &num_entries_this_obj, &temp, __func__) !=
-      NC_NOERR) {
+      EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -159,11 +159,11 @@ int ex_get_partial_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (exi_get_dimension(exoid, dnumobjatt, "attributes", &num_attr, &temp, __func__) != NC_NOERR) {
+  if (exi_get_dimension(exoid, dnumobjatt, "attributes", &num_attr, &temp, __func__) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vattrbname, &attrid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
@@ -188,7 +188,7 @@ int ex_get_partial_attr(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
     status = nc_get_vara_double(exoid, attrid, start, count, attrib);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);

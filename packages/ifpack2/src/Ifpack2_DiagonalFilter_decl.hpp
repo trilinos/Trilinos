@@ -38,10 +38,9 @@ Note: This operation only really makes sense if the Thresholds are not complex.
 
 */
 
-template<class MatrixType>
-class DiagonalFilter :
-    virtual public Ifpack2::Details::RowMatrix<MatrixType> {
-public:
+template <class MatrixType>
+class DiagonalFilter : virtual public Ifpack2::Details::RowMatrix<MatrixType> {
+ public:
   typedef typename MatrixType::scalar_type Scalar;
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
   typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
@@ -64,7 +63,7 @@ public:
   //@{
 
   //! Constructor.
-  explicit DiagonalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
+  explicit DiagonalFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &Matrix,
                           magnitudeType AbsoluteThreshold,
                           magnitudeType RelativeThreshold);
 
@@ -79,21 +78,20 @@ public:
   //! Returns the communicator.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
-
   //! Returns the Map that describes the row distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRowMap() const;
 
   //! \brief Returns the Map that describes the column distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getColMap() const;
 
   //! Returns the Map that describes the domain distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getDomainMap() const;
 
   //! \brief Returns the Map that describes the range distribution in this matrix.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getRangeMap() const;
 
   //! Returns the RowGraph associated with this matrix.
-  virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
+  virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal, GlobalOrdinal, Node> > getGraph() const;
 
   //! Returns the number of global rows in this matrix.
   virtual global_size_t getGlobalNumRows() const;
@@ -131,7 +129,7 @@ public:
   virtual size_t getLocalMaxNumRowEntries() const;
 
   //! The number of degrees of freedom per mesh point.
-  virtual LocalOrdinal getBlockSize () const;
+  virtual LocalOrdinal getBlockSize() const;
 
   //! \brief Indicates whether this matrix has a well-defined column map.
   virtual bool hasColMap() const;
@@ -145,7 +143,7 @@ public:
   //! Returns \c true if fillComplete() has been called.
   virtual bool isFillComplete() const;
 
-   //! Returns \c true if RowViews are supported.
+  //! Returns \c true if RowViews are supported.
   virtual bool supportsRowViews() const;
 
   //@}
@@ -165,10 +163,10 @@ public:
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
   virtual void
-  getGlobalRowCopy (GlobalOrdinal GlobalRow,
+  getGlobalRowCopy(GlobalOrdinal GlobalRow,
                    nonconst_global_inds_host_view_type &Indices,
                    nonconst_values_host_view_type &Values,
-                   size_t& NumEntries) const;
+                   size_t &NumEntries) const;
 
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
@@ -182,10 +180,10 @@ public:
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
   virtual void
-  getLocalRowCopy (LocalOrdinal LocalRow,
-                   nonconst_local_inds_host_view_type &Indices,
-                   nonconst_values_host_view_type &Values,
-                   size_t& NumEntries) const;
+  getLocalRowCopy(LocalOrdinal LocalRow,
+                  nonconst_local_inds_host_view_type &Indices,
+                  nonconst_values_host_view_type &Values,
+                  size_t &NumEntries) const;
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -198,9 +196,9 @@ public:
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
   virtual void
-  getGlobalRowView (GlobalOrdinal GlobalRow,
-                    global_inds_host_view_type &indices,
-                    values_host_view_type &values) const;
+  getGlobalRowView(GlobalOrdinal GlobalRow,
+                   global_inds_host_view_type &indices,
+                   values_host_view_type &values) const;
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
@@ -213,14 +211,14 @@ public:
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
   virtual void
-  getLocalRowView (LocalOrdinal LocalRow,
-                   local_inds_host_view_type & indices,
-                   values_host_view_type & values) const;
+  getLocalRowView(LocalOrdinal LocalRow,
+                  local_inds_host_view_type &indices,
+                  values_host_view_type &values) const;
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
-  virtual void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
+  virtual void getLocalDiagCopy(Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const;
 
   //@}
 
@@ -236,7 +234,7 @@ public:
    *
    * \param x A vector to left scale this matrix.
    */
-  virtual void leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+  virtual void leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &x);
 
   /**
    * \brief Scales the RowMatrix on the right with the Vector x.
@@ -247,7 +245,7 @@ public:
    *
    * \param x A vector to right scale this matrix.
    */
-  virtual void rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+  virtual void rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &x);
 
   //! Returns the Frobenius norm of the matrix.
   /** Computes and returns the Frobenius norm of the matrix, defined as:
@@ -263,31 +261,30 @@ public:
 
     This is analagous to the *Multiply* function in Ifpack, not the *Apply*
   */
-  virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+  virtual void apply(const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X,
+                     Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &Y,
                      Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+                     Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
+                     Scalar beta           = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
   //! Indicates whether this operator supports applying the adjoint operator.
   virtual bool hasTransposeApply() const;
 
   //@}
-private:
-
+ private:
   //! Pointer to the matrix to be filtered
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
+  Teuchos::RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A_;
   //! This value (times the sgn(A(i,i)) is added to the diagonal elements
-  magnitudeType  AbsoluteThreshold_;
+  magnitudeType AbsoluteThreshold_;
   //! Multiplies A(i,i) by this value.
   magnitudeType RelativeThreshold_;
   //! Stores the position of the diagonal element, or -1 if not present.
   std::vector<LocalOrdinal> pos_;
   //! Stores as additional diagonal contribution due to the filter.
-  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > val_;
+  Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > val_;
 
-};// class DiagonalFilter
+};  // class DiagonalFilter
 
-}// namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif /* IFPACK2_DIAGONALFILTER_DECL_HPP */

@@ -52,9 +52,6 @@ void* CUDAPinnedAndMappedAlignedAllocate(size_t size)
 
 void CUDAPinnedAndMappedAlignedDeallocate(void* p)
 {
-  if (!Kokkos::is_initialized())
-    std::cerr << "Error during CUDAPinnedAndMappedAlignedDeallocate::cudaFreeHost: Kokkos not initialized"<< std::endl;
-
   cudaError_t status = cudaFreeHost(p);
   STK_ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAlignedDellocate: " + std::string(cudaGetErrorString(status)));
 }

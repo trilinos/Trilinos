@@ -35,7 +35,6 @@
 #ifndef  STK_TRANSFERUTIL_HPP
 #define  STK_TRANSFERUTIL_HPP
 
-
 namespace stk {
 namespace transfer {
 
@@ -48,6 +47,7 @@ int get_next_transfer_id();
 void exchange_transfer_ids(ReducedDependencyCommData& commData);
 
 }
+
 }
 }
 #endif

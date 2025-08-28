@@ -134,6 +134,9 @@ namespace SEAMS {
                                             {nullptr, nullptr, nullptr, nullptr}};
 
   const str_init string_fncts[] = {
+      {"use_legacy_output_format", do_use_legacy_output_format, "use_legacy_output_format()",
+       "Use the output format of `%.10g` which was the default before the full-precision output "
+       "became the default."},
       {"DUMP", do_dumpsym, "DUMP()",
        "Output a list of all user-defined variables and their value."},
       {"DUMP_JSON", do_dumpsym_json, "DUMP_JSON()",
@@ -210,13 +213,9 @@ namespace SEAMS {
        "systems:\n\t\t\t'si', 'cgs', 'cgs-ev', 'shock', 'swap', "
        "'ft-lbf-s', 'ft-lbm-s', 'in-lbf-s'"},
       {"delete", do_delete, "delete(var_name)", "Delete the variable with name 'var_name'."},
-      {"if", do_str_if, "if(x)",
+      {"_if", do_str_if, "if(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"If", do_str_if, "If(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"elseif", do_str_elseif, "elseif(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"Elseif", do_str_elseif, "Elseif(x)",
+      {"_elseif", do_str_elseif, "elseif(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
       {"_ifdef", do_str_if, "ifdef(x)",
        "Handles the if statements. x can be any valid expression; "
@@ -249,13 +248,9 @@ namespace SEAMS {
        "Returns a string representation of the numerical variable x. The variable x is unchanged."},
       {"tostring", do_tostring, "tostring(x)",
        "Returns a string representation of the numerical variable x. The variable x is unchanged."},
-      {"if", do_if, "if(x)",
+      {"_if", do_if, "if(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"If", do_if, "If(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"elseif", do_elseif, "elseif(x)",
-       "Handles the if statements. x can be any valid expression; nonzero is true"},
-      {"Elseif", do_elseif, "Elseif(x)",
+      {"_elseif", do_elseif, "elseif(x)",
        "Handles the if statements. x can be any valid expression; nonzero is true"},
       {"_ifdef", do_if, "ifdef(x)",
        "Handles the if statements. x can be any valid expression; "
@@ -381,7 +376,7 @@ namespace SEAMS {
   };
   // clang-format on
 
-  const svar_init svariables[] = {{"_FORMAT", "%.10g"}, /* Default output format */
+  const svar_init svariables[] = {{"_FORMAT", ""}, /* Default output format if full-precision */
                                   {"_UNITS_SYSTEM", "none"},
                                   {nullptr, nullptr}};
   /* NOTE: The current comment is stored in "_C_"

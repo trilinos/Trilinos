@@ -65,11 +65,9 @@ public:
     Block_Surface_Connectivity block_surface_info;
     phase_support.set_input_block_surface_connectivity(block_surface_info);
     phase_support.register_blocks_for_level_set(surfaceIdentifier, blocks);
-    std::vector<std::tuple<stk::mesh::PartVector, 
-      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
-    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-    ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
-    phase_support.decompose_blocks(ls_sets);
+    DecompositionPackage decomps;
+    decomps.add_levelset_decomposition(blocks, named_phases);
+    phase_support.decompose_blocks(decomps);
   }
 
   void setup_phase_support_on_block1()

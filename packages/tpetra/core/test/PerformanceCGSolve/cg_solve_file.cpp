@@ -246,6 +246,7 @@ int run()
   timer->stopBaseTimer();
   StackedTimer::OutputOptions options;
   options.print_warnings = false;
+  options.output_fraction = options.output_histogram = options.output_minmax = true;
   timer->report(std::cout, comm, options);
 
   std::string testBaseName = "Tpetra CGSolve ";

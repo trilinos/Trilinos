@@ -205,9 +205,9 @@ void MueLu::HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHi
   ExportDataSetKeepFlags(H, elementToNodeMapsToPrint_, "pcoarsen: element to node map");
 #endif
 
-  // Data to save only (these do not have a level, so we do all levels)
-  for (int i = 0; i < dataToSave_.size(); i++)
-    ExportDataSetKeepFlagsAll(H, dataToSave_[i]);
+  // Data to keep only (these do not have a level, so we do all levels)
+  for (int i = 0; i < dataToKeep_.size(); i++)
+    ExportDataSetKeepFlagsAll(H, dataToKeep_[i]);
 
   int levelID      = 0;
   int lastLevelID  = numDesiredLevel_ - 1;

@@ -81,7 +81,7 @@ IntersectionPointFilter
 keep_all_intersection_points_filter()
 {
   auto filter =
-  [](const std::vector<stk::mesh::Entity> & intersectionPointNodes, const std::vector<int> & intersectionPointSortedDomains)
+  [](const std::vector<stk::mesh::Entity> & /*intersectionPointNodes*/, const std::vector<int> & /*intersectionPointSortedDomains*/)
   {
     return true;
   };

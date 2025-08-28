@@ -43,7 +43,9 @@
 #include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
 #include <stk_unit_test_utils/MeshUtilsForBoundingVolumes.hpp>
 #include <stk_unit_test_utils/timer.hpp>
+#ifdef STK_HAS_ARBORX
 #include <ArborX.hpp>
+#endif
 
 namespace {
 
@@ -325,6 +327,7 @@ TEST(StkSearch_VolumeToSurface, casaMesh_floatBox_local_with_views_ARBORX)
 using ExecSpace = stk::ngp::ExecSpace;
 using MemSpace = stk::ngp::ExecSpace::memory_space;
 
+#ifdef STK_HAS_ARBORX
 inline Kokkos::View<ArborX::Box *, MemSpace>
 createArborXBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
                                      stk::mesh::EntityRank rank)
@@ -481,6 +484,7 @@ TEST(StkSearch_VolumeToSurface, casaMesh_floatBox_distributed_rawARBORX) {
 
   run_search_test_distributed_arborx(meshFileName);
 }
+#endif
 
 } // namespace
 

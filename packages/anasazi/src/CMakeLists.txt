@@ -4,12 +4,6 @@
 # A) Package-specific configuration options
 #
 
-# Enabling a define if the Thyra Epetra adapter is defined.
-ASSERT_DEFINED(Anasazi_ENABLE_ThyraEpetraAdapters)
-IF(Anasazi_ENABLE_ThyraEpetraAdapters)
-  SET(HAVE_EPETRA_THYRA 1)
-ENDIF()
-
 IF(Anasazi_ENABLE_ThyraCore)
   SET(HAVE_ANASAZI_THYRA 1)
 ENDIF()

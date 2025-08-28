@@ -19,7 +19,7 @@ public:
 
     void modifyDecomposition(stk::balance::DecompositionChangeList & decomp_changes) const override;
     bool shouldPrintMetrics() const override { return true; }
-    virtual double getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index) const override
+    virtual double getFieldVertexWeight(const stk::mesh::BulkData &/*bulkData*/, stk::mesh::Entity entity, int /*criteria_index*/) const override
     {
       return 1.0 * mRefinement.rebalance_element_count_incorporating_parallel_owner_constraints(entity);
     }

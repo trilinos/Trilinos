@@ -139,6 +139,7 @@ lib stk_search_util_base
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(stk_search_util-root)/stk_search_util/*.cpp ]
+        [ glob $(stk_search_util-root)/stk_search_util/spmd/*.cpp ]
     ]
     /sierra/stk_search//stk_search
     /sierra/stk_mesh//stk_mesh_base

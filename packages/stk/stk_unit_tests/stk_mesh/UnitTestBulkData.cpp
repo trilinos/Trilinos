@@ -148,12 +148,14 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
   ASSERT_TRUE( mesh.is_valid(node));
 
   const stk::mesh::ConnectedEntities node_elems = mesh.get_connected_entities(node, stk::topology::ELEM_RANK);
-  for(unsigned i=0; i<node_elems.size() && !mesh.is_valid(elem); ++i)
-  {
-    elem = node_elems[i];
+  for(stk::mesh::Entity node_elem : node_elems) {
+    elem = node_elem;
     if(mesh.parallel_owner_rank(elem) != p_rank)
     {
       elem = Entity();
+    }
+    if (mesh.is_valid(elem)) {
+      break;
     }
   }
 
@@ -2413,12 +2415,24 @@ std::string printGhostDataByRank(stk::mesh::BulkData & bulkData, stk::topology::
   return oss.str();
 }
 
-TEST(BulkData, EntityGhostData)
+TEST(BulkData, EntityGhostData_SEND_LOCALLY_OWNED)
 {
   std::string gold_result = "(Entity_lid=0, direction=SEND, processor=128, ghosting level=LOCALLY_OWNED)";
   stk::mesh::impl::EntityGhostData data;
   data.direction = stk::mesh::impl::EntityGhostData::SEND;
   data.ghostingLevel = stk::mesh::impl::EntityGhostData::LOCALLY_OWNED;
+  data.processor = 128;
+  std::ostringstream oss;
+  oss << data;
+  EXPECT_EQ( gold_result, oss.str());
+}
+
+TEST(BulkData, EntityGhostData_INVALID_CUSTOM)
+{
+  std::string gold_result = "(Entity_lid=0, direction=INVALID, processor=128, ghosting level=CUSTOM_1)";
+  stk::mesh::impl::EntityGhostData data;
+  data.direction = stk::mesh::impl::EntityGhostData::INVALID;
+  data.ghostingLevel = 2;
   data.processor = 128;
   std::ostringstream oss;
   oss << data;

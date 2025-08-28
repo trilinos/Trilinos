@@ -622,7 +622,7 @@ int & num_node_cmaps)
 void GenerateMapIds(const int my_node_neighbor[26], int ctype[],
 int node_map_node_cnts[], const int num_nodes_neighbors[26],
 int node_cmap_ids[],
-int num_node_cmaps, [[maybe_unused]] int num_elem_cmaps,
+[[maybe_unused]] int num_node_cmaps, [[maybe_unused]] int num_elem_cmaps,
 int exoid, const int my_proc_id)
 {
   int counter = 0;

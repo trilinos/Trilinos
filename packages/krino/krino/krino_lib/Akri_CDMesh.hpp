@@ -211,7 +211,6 @@ public:
 
 public: // for unit testing
   void update_adaptivity_parent_entities();
-  void determine_conformal_parts(stk::mesh::Entity entity, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
   void clear();
 
 private:
@@ -238,11 +237,7 @@ private:
 
   bool decomposition_has_changed(const InterfaceGeometry & interfaceGeometry);
   bool elem_io_part_changed(const ElementObj & elem) const;
-  void determine_nonconformal_parts(stk::mesh::Entity entity, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  void determine_conformal_parts(const stk::mesh::PartVector & current_parts, const stk::mesh::EntityRank entity_rank, const PhaseTag & phase, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  void determine_child_conformal_parts(stk::topology topology, const stk::mesh::PartVector & parent_parts, const PhaseTag & phase, stk::mesh::PartVector & child_parts) const;
   void determine_element_side_parts(const stk::mesh::Entity side, stk::mesh::PartVector & add_parts, stk::mesh::PartVector & remove_parts) const;
-  bool element_side_should_be_active(const stk::mesh::Entity side) const;
   void stash_field_data(const int step_count) const;
   void stash_nodal_field_data() const;
   void stash_elemental_field_data() const;

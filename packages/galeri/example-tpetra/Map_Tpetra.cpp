@@ -20,8 +20,7 @@
 
 using namespace Galeri;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -47,19 +46,15 @@ int main(int argc, char *argv[])
   galeriList.set("mx", comm->getSize());
   galeriList.set("my", 1);
 
-  try
-  {
+  try {
     // Creation of the map
     auto map = Galeri::Xpetra::CreateMap<int, GO, Tpetra_Map>(mapType, comm, galeriList);
 
     // print out the map
     auto out = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     map->describe(*out, Teuchos::EVerbosityLevel::VERB_EXTREME);
-  }
-  catch (Exception &rhs)
-  {
-    if (comm->getRank() == 0)
-    {
+  } catch (Exception &rhs) {
+    if (comm->getRank() == 0) {
       cerr << "Caught exception: ";
       rhs.Print();
 

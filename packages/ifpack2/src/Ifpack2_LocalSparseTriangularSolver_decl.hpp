@@ -42,20 +42,20 @@ namespace Ifpack2 {
 /// If you are writing a new Ifpack2 class that needs to solve local
 /// sparse triangular systems stored as Tpetra::CrsMatrix, use this
 /// class <i>only</i>.
-template<class MatrixType>
-class LocalSparseTriangularSolver :
-    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                           typename MatrixType::local_ordinal_type,
-                                           typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{
-public:
-  //! Type of the entries of the input matrix.
+template <class MatrixType>
+class LocalSparseTriangularSolver : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                                           typename MatrixType::local_ordinal_type,
+                                                                           typename MatrixType::global_ordinal_type,
+                                                                           typename MatrixType::node_type>,
+                                    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                                       typename MatrixType::local_ordinal_type,
+                                                                                                       typename MatrixType::global_ordinal_type,
+                                                                                                       typename MatrixType::node_type> > {
+ public:
+  //! Scalar type of the entries of the input matrix.
   typedef typename MatrixType::scalar_type scalar_type;
+  //! Implementation scalar type of the entries of the input matrix.
+  typedef typename MatrixType::impl_scalar_type impl_scalar_type;
   //! Type of the local indices of the input matrix.
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   //! Type of the global indices of the input matrix.
@@ -69,28 +69,30 @@ public:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   //! Specialization of Tpetra::RowMatrix used by this class.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> row_matrix_type;
+                            global_ordinal_type, node_type>
+      row_matrix_type;
   //! Specialization of Tpetra::CrsMatrix used by this class.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> crs_matrix_type;
+                            global_ordinal_type, node_type>
+      crs_matrix_type;
 
-  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
-                 "Ifpack2::LocalSparseTriangularSolver: The template parameter "
-                 "MatrixType must be a Tpetra::RowMatrix specialization.  "
-                 "Please don't use Tpetra::CrsMatrix (a subclass of "
-                 "Tpetra::RowMatrix) here anymore.  The constructor can take "
-                 "either a RowMatrix or a CrsMatrix just fine.");
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::LocalSparseTriangularSolver: The template parameter "
+                "MatrixType must be a Tpetra::RowMatrix specialization.  "
+                "Please don't use Tpetra::CrsMatrix (a subclass of "
+                "Tpetra::RowMatrix) here anymore.  The constructor can take "
+                "either a RowMatrix or a CrsMatrix just fine.");
 
   // Use the local matrix types
-  using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
+  using local_matrix_device_type       = typename crs_matrix_type::local_matrix_device_type;
   using local_matrix_graph_device_type = typename local_matrix_device_type::StaticCrsGraphType;
-  using lno_row_view_t = typename local_matrix_graph_device_type::row_map_type;
-  using lno_nonzero_view_t = typename local_matrix_graph_device_type::entries_type;
-  using scalar_nonzero_view_t = typename local_matrix_device_type::values_type;
-  using TemporaryMemorySpace = typename local_matrix_graph_device_type::device_type::memory_space;
-  using PersistentMemorySpace = typename local_matrix_graph_device_type::device_type::memory_space;
-  using HandleExecSpace = typename local_matrix_graph_device_type::device_type::execution_space;
-  using k_handle = typename KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type, HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace >;
+  using lno_row_view_t                 = typename local_matrix_graph_device_type::row_map_type;
+  using lno_nonzero_view_t             = typename local_matrix_graph_device_type::entries_type;
+  using scalar_nonzero_view_t          = typename local_matrix_device_type::values_type;
+  using TemporaryMemorySpace           = typename local_matrix_graph_device_type::device_type::memory_space;
+  using PersistentMemorySpace          = typename local_matrix_graph_device_type::device_type::memory_space;
+  using HandleExecSpace                = typename local_matrix_graph_device_type::device_type::execution_space;
+  using k_handle                       = typename KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type, HandleExecSpace, TemporaryMemorySpace, PersistentMemorySpace>;
 
   /// \brief Constructor
   ///
@@ -119,7 +121,7 @@ public:
   /// these properties and the user does not specify them, then this
   /// class is responsible for figuring out whether the matrix has
   /// those properties.
-  LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A);
+  LocalSparseTriangularSolver(const Teuchos::RCP<const row_matrix_type>& A);
 
   /// \brief Constructor that takes an optional debug output stream.
   ///
@@ -129,13 +131,13 @@ public:
   ///
   /// \param out [in/out] Optional debug output stream.  If nonnull,
   ///   this solver will print copious debug output to the stream.
-  LocalSparseTriangularSolver (const Teuchos::RCP<const row_matrix_type>& A,
-                               const Teuchos::RCP<Teuchos::FancyOStream>& out);
+  LocalSparseTriangularSolver(const Teuchos::RCP<const row_matrix_type>& A,
+                              const Teuchos::RCP<Teuchos::FancyOStream>& out);
 
   /// \brief Constructor that takes no input matrix.
   ///
   /// Call setMatrix to initialize the matrix.
-  LocalSparseTriangularSolver ();
+  LocalSparseTriangularSolver();
 
   /// \brief Constructor that takes no input matrix.
   ///
@@ -148,10 +150,10 @@ public:
   ///
   /// \param out [in/out] Optional debug output stream.  If nonnull,
   ///   this solver will print copious debug output to the stream.
-  LocalSparseTriangularSolver (const bool /* unused */, const Teuchos::RCP<Teuchos::FancyOStream>& out);
+  LocalSparseTriangularSolver(const bool /* unused */, const Teuchos::RCP<Teuchos::FancyOStream>& out);
 
   //! Destructor (virtual for memory safety).
-  virtual ~LocalSparseTriangularSolver ();
+  virtual ~LocalSparseTriangularSolver();
 
   /// \brief Set this object's parameters.
   ///
@@ -165,17 +167,17 @@ public:
   ///   - "trisolver: block size" (\c int): The triangular matrix can usefully be
   ///     thought of as being blocked int little blocks of this size. Default
   ///     is 1.
-  void setParameters (const Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   /// \brief "Symbolic" phase of setup
   ///
   /// Call this before calling compute() or apply() if the matrix
   /// object itself changes, or if the matrix's graph structure may
   /// have changed.
-  void initialize ();
+  void initialize();
 
   //! Return \c true if the preconditioner has been successfully initialized.
-  inline bool isInitialized () const {
+  inline bool isInitialized() const {
     return isInitialized_;
   }
 
@@ -183,10 +185,10 @@ public:
   ///
   /// Call this before calling apply() if the values in the matrix may
   /// have changed.
-  void compute ();
+  void compute();
 
   //! Return true if compute() has been called.
-  inline bool isComputed () const {
+  inline bool isComputed() const {
     return isComputed_;
   }
 
@@ -209,17 +211,17 @@ public:
   ///   of applying this operator to X.
   /// \param beta [in] Scalar factor for Y.
   void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one (),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero ()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The domain of this operator.
-  Teuchos::RCP<const map_type> getDomainMap () const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! The range of this operator.
-  Teuchos::RCP<const map_type> getRangeMap () const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   /// \brief Apply the original input matrix.
   ///
@@ -230,43 +232,43 @@ public:
   ///   (<tt>mode == Teuchos::CONJ_TRANS</tt>)
   /// \param mode [in] See above.
   void
-  applyMat (const Tpetra::MultiVector<scalar_type, local_ordinal_type,
-              global_ordinal_type, node_type>& X,
-            Tpetra::MultiVector<scalar_type, local_ordinal_type,
-              global_ordinal_type, node_type>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  applyMat(const Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                                     global_ordinal_type, node_type>& X,
+           Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                               global_ordinal_type, node_type>& Y,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //! This operator's communicator.
-  Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! The original input matrix.
-  Teuchos::RCP<const row_matrix_type> getMatrix () const {
+  Teuchos::RCP<const row_matrix_type> getMatrix() const {
     return A_;
   }
 
   //! Return the number of flops in the computation phase.
-  double getComputeFlops () const;
+  double getComputeFlops() const;
 
   //! Return the number of flops for the application of the preconditioner.
-  double getApplyFlops () const;
+  double getApplyFlops() const;
 
   //! Return the number of calls to initialize().
-  int getNumInitialize () const;
+  int getNumInitialize() const;
 
   //! Return the number of calls to compute().
-  int getNumCompute () const;
+  int getNumCompute() const;
 
   //! Return the number of calls to apply().
-  int getNumApply () const;
+  int getNumApply() const;
 
   //! Return the time spent in initialize().
-  double getInitializeTime () const;
+  double getInitializeTime() const;
 
   //! Return the time spent in compute().
-  double getComputeTime () const;
+  double getComputeTime() const;
 
   //! Return the time spent in apply().
-  double getApplyTime () const;
+  double getApplyTime() const;
 
   //@}
   //! @name Implementation of Teuchos::Describable
@@ -297,36 +299,36 @@ public:
   /// std::cout << osPtr->str () << std::endl;
   /// \endcode
   void
-  describe (Teuchos::FancyOStream& out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
 
   /// \brief Set this preconditioner's matrix.
   ///
   /// After calling this method, you must call first initialize(),
   /// then compute(), before you may call apply().
-  virtual void setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  virtual void setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
 
   /// \brief Set this triangular solver's stream information.
   ///
-  void setStreamInfo (const bool& isKokkosKernelsStream, const int& num_streams, const std::vector<HandleExecSpace>& exec_space_instances);
+  void setStreamInfo(const bool& isKokkosKernelsStream, const int& num_streams, const std::vector<HandleExecSpace>& exec_space_instances);
 
   /// \brief Set this preconditioner's matrices (used by stream interface of triangular solve).
   ///
   /// After calling this method, you must call first initialize(),
   /// then compute(), before you may call apply().
-  void setMatrices (const std::vector< Teuchos::RCP<crs_matrix_type> >& A_crs_v);
+  void setMatrices(const std::vector<Teuchos::RCP<crs_matrix_type> >& A_crs_v);
 
   //@}
 
-private:
+ private:
   //! The original input matrix.
   Teuchos::RCP<const row_matrix_type> A_;
   //! Debug output stream; may be null (not used in that case)
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   //! The original input matrix, as a Tpetra::CrsMatrix.
   Teuchos::RCP<const crs_matrix_type> A_crs_;
-  std::vector< Teuchos::RCP<crs_matrix_type> > A_crs_v_;
+  std::vector<Teuchos::RCP<crs_matrix_type> > A_crs_v_;
 
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   mutable Teuchos::RCP<MV> X_colMap_;
@@ -361,7 +363,7 @@ private:
   //! Optional KokkosKernels implementation.
   bool isKokkosKernelsSptrsv_;
   Teuchos::RCP<k_handle> kh_;
-  std::vector< Teuchos::RCP<k_handle> > kh_v_;
+  std::vector<Teuchos::RCP<k_handle> > kh_v_;
   int num_streams_;
   bool isKokkosKernelsStream_;
   bool kh_v_nonnull_;
@@ -394,23 +396,23 @@ private:
   ///   of applying this operator to X.
   /// \param beta [in] Scalar factor for Y.
   void
-  localApply (const MV& X,
-              MV& Y,
-              const Teuchos::ETransp mode,
-              const scalar_type& alpha,
-              const scalar_type& beta) const;
+  localApply(const MV& X,
+             MV& Y,
+             const Teuchos::ETransp mode,
+             const scalar_type& alpha,
+             const scalar_type& beta) const;
 
   //! Replacement for Tpetra::CrsMatrix::localSolve.
   void
-  localTriangularSolve (const MV& Y,
-                        MV& X,
-                        const Teuchos::ETransp mode) const;
+  localTriangularSolve(const MV& Y,
+                       MV& X,
+                       const Teuchos::ETransp mode) const;
 
   void initializeState();
 
   KokkosSparse::Experimental::SPTRSVAlgorithm kokkosKernelsAlgorithm() const;
 };
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_LOCALSPARSETRIANGULARSOLVER_DECL_HPP
+#endif  // IFPACK2_LOCALSPARSETRIANGULARSOLVER_DECL_HPP

@@ -47,7 +47,7 @@ public:
   virtual void fill_tetrahedron_face_interior_intersections(const std::array<stk::math::Vector3d,3> & faceNodeParamCoords,
     const ElementIntersectionPointFilter & intersectionPointFilter,
     std::vector<ElementIntersection> & faceIntersections) const override;
-  virtual std::string visualize(const stk::mesh::BulkData & mesh) const override { std::string empty; return empty; }
+  virtual std::string visualize(const stk::mesh::BulkData & /*mesh*/) const override { std::string empty; return empty; }
   virtual int interface_sign_for_uncrossed_element(const InterfaceID interface, const std::vector<stk::math::Vector3d> & elemNodesCoords) const override;
   virtual std::pair<int, double> interface_edge_crossing_sign_and_position(const InterfaceID interface, const std::array<stk::math::Vector3d,2> & edgeNodeCoords) const override;
   virtual int get_starting_phase_for_cutting_surfaces() const override { return 0; }
@@ -98,7 +98,7 @@ public:
   virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const override;
   virtual void fill_elements_that_intersect_distance_interval(const stk::mesh::BulkData & mesh, const Surface_Identifier surfaceIdentifier, const std::array<double,2> loAndHi, std::vector<stk::mesh::Entity> & elementsThaIntersectInterval) const override;
 
-  virtual bool snapped_elements_may_have_new_intersections() const override { return false; }
+  virtual bool snapped_elements_may_have_new_intersections() const override;
 
   virtual std::vector<IntersectionPoint> get_edge_intersection_points(const stk::mesh::BulkData & mesh,
       const NodeToCapturedDomainsMap & nodesToSnappedDomains) const override;
@@ -108,7 +108,7 @@ public:
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints) const override;
 
-  virtual void store_phase_for_uncut_elements(const stk::mesh::BulkData & mesh) const override {}
+  virtual void store_phase_for_uncut_elements(const stk::mesh::BulkData & /*mesh*/) const override {}
   virtual void store_phase_for_elements_that_will_be_uncut_after_snapping(const stk::mesh::BulkData & mesh,
       const std::vector<IntersectionPoint> & intersectionPoints,
       const std::vector<SnapInfo> & independentSnapInfos,
@@ -138,9 +138,11 @@ protected:
 private:
   unsigned get_index_of_surface_with_identifer(const Surface_Identifier surfaceIdentifier) const;
   bool does_element_possibly_have_cut_edge(const stk::mesh::BulkData & mesh, stk::topology elemTopology, const stk::mesh::Entity elem, const std::vector<stk::math::Vector3d> & elemNodeCoords, std::vector<double> & elemNodeDistWorkspace) const;
+  bool have_enough_surfaces_to_have_interior_intersections_or_multiple_crossings() const;
 
   std::vector<const Surface*> mySurfaces;
   bool myMightHaveInteriorOrFaceCrossings;
+  bool myFlagSurfacesCanComputeSign;
   const stk::mesh::Part & myActivePart;
   const CDFEM_Support & myCdfemSupport;
   const Phase_Support & myPhaseSupport;

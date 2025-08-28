@@ -336,7 +336,7 @@ lib stk_util_util
         [ glob $(stk_util-root)/stk_util/util/*.cpp ]
     ]
     /mpi//mpi
-    /tpl/trilinos//kokkoscore
+    /tpl/kokkos//kokkoscore
     /tpl/boost//boost_header_only_libs
     /tpl/lapack//lapack_interface
   :

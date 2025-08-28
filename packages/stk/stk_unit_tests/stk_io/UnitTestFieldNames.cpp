@@ -38,6 +38,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_util/util/string_case_compare.hpp>
 #include <gtest/gtest.h>
 #include <string>                       // for string, basic_string
 #include <algorithm>
@@ -69,15 +70,12 @@ void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm /*communicator*/, 
   Ioss::NodeBlock *nodeBlockAssociatedWithField0 = ioRegion.get_node_blocks()[0];
   Ioss::NameList fieldNames;
   nodeBlockAssociatedWithField0->field_describe(Ioss::Field::TRANSIENT, &fieldNames);
-  for (std::string & name : goldFieldNames) {
-    for (char & c : name) {
-      c = tolower(c);
-    }
-  }
 
   ASSERT_EQ(goldFieldNames.size(), fieldNames.size());
-  for (auto goldFieldName : goldFieldNames) {
-    auto entry = std::find(fieldNames.begin(), fieldNames.end(), goldFieldName.c_str());
+  for (const auto &goldFieldName : goldFieldNames) {
+    auto entry = std::find_if(fieldNames.begin(), fieldNames.end(), 
+			   [goldFieldName](const std::string &a)
+			   {return stk::equal_case(a, goldFieldName);});
     if (entry == fieldNames.end()) {
       EXPECT_TRUE(false) << "Field " << goldFieldName << " not found in file" << std::endl;
     }

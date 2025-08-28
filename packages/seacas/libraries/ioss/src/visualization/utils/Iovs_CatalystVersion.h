@@ -20,7 +20,7 @@ namespace Iovs {
   class IOVS_EXPORT CatalystVersion
   {
   public:
-    const std::string iossCatalystInterfaceVersion = "2.0.0";
+    const std::string iossCatalystInterfaceVersion = "3.0.0";
     std::string       getIOSSCatalystInterfaceVersion();
 
     // The IOSS interface and IOSS Catalyst plugin are versioned

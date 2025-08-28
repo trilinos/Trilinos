@@ -149,7 +149,7 @@ public:
   const double & get_isoval() const { return my_threshold; }
 
   bool get_reinitialize_every_step() const { return my_needs_reinitialize_every_step; }
-  void set_reinitialize_every_step(const bool reinit) { set_keep_IC_surfaces(); my_needs_reinitialize_every_step = true; }
+  void set_reinitialize_every_step(const bool /*reinit*/) { set_keep_IC_surfaces(); my_needs_reinitialize_every_step = true; }
 
   Redistance_Method get_redistance_method() const { return my_redistance_method; }
   void set_redistance_method( const Redistance_Method type ) { my_redistance_method = type; }

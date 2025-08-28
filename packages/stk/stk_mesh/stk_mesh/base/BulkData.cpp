@@ -72,6 +72,7 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
 #include <stk_mesh/base/FaceCreator.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SideSetHelper.hpp>
@@ -354,15 +355,12 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
 #ifdef SIERRA_MIGRATION
     m_add_fmwk_data(add_fmwk_data),
     m_fmwk_global_ids(),
-    m_fmwk_aux_relations(),
     m_shouldSortFacesByNodeIds(false),
 #endif
     m_autoAuraOption(auto_aura_option),
     m_turningOffAutoAura(false),
     m_meshModification(*this),
     m_parallel( parallel ),
-    m_volatile_fast_shared_comm_map(),
-    m_volatile_fast_shared_comm_map_sync_count(0),
     m_ngpMeshHostDataBase(),
     m_all_sharing_procs(mesh_meta_data->entity_rank_count()),
     m_all_sharing_procs_sync_count(0),
@@ -378,7 +376,10 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
     m_ngpMeshBase(nullptr),
     m_isDeviceMeshRegistered(false),
     m_ngpFieldSyncBufferModCount(0),
+    m_deviceFastMeshIndicesSynchronizedCount(0),
     m_runConsistencyCheck(false),
+    m_symmetricGhostInfo(false),
+    m_maintainLocalIds(false),
     m_soloSideIdGenerator(stk::parallel_machine_size(parallel), stk::parallel_machine_rank(parallel), std::numeric_limits<stk::mesh::EntityId>::max()),
     m_supportsLargeIds(false)
 {
@@ -408,18 +409,14 @@ BulkData::BulkData(std::shared_ptr<MetaData> mesh_meta_data,
 
 BulkData::~BulkData()
 {
-#ifdef SIERRA_MIGRATION
-  for(size_t i=0; i<m_fmwk_aux_relations.size(); ++i) {
-    delete m_fmwk_aux_relations[i];
-  }
-#endif
-
   while ( ! m_ghosting.empty() ) {
     delete m_ghosting.back();
     m_ghosting.pop_back();
   }
 
-  mesh_meta_data().set_mesh_bulk_data(nullptr);
+  if (this == &mesh_meta_data().mesh_bulk_data()) {
+    mesh_meta_data().set_mesh_bulk_data(nullptr);
+  }
 
   delete m_elemElemGraph;
 
@@ -596,7 +593,6 @@ Entity BulkData::generate_new_entity(unsigned preferred_offset)
 
 #ifdef SIERRA_MIGRATION
     if (add_fmwk_data()) {
-      m_fmwk_aux_relations.push_back(nullptr);
       m_fmwk_global_ids.push_back(0);
     }
 #endif
@@ -615,9 +611,6 @@ Entity BulkData::generate_new_entity(unsigned preferred_offset)
 
 #ifdef SIERRA_MIGRATION
     if (add_fmwk_data()) {
-      //bulk-data allocated aux-relation vector, so delete it here.
-      delete m_fmwk_aux_relations[new_local_offset];
-      m_fmwk_aux_relations[new_local_offset] = nullptr;
       m_fmwk_global_ids[new_local_offset] = 0;
     }
 #endif
@@ -645,7 +638,6 @@ void BulkData::initialize_arrays()
 
 #ifdef SIERRA_MIGRATION
   if (add_fmwk_data()) {
-    m_fmwk_aux_relations.push_back(nullptr);
     m_fmwk_global_ids.push_back(0);
   }
 #endif
@@ -664,13 +656,6 @@ BulkData::initialize_global_ids()
       }
     }
   }
-}
-
-void
-BulkData::initialize_aux_relations()
-{
-  m_fmwk_aux_relations.clear();
-  m_fmwk_aux_relations.resize(m_entity_keys.size(), nullptr);
 }
 #endif
 
@@ -811,13 +796,17 @@ Entity BulkData::create_and_connect_side(const stk::mesh::EntityId globalSideId,
                                          const unsigned localSideId,
                                          const PARTVECTOR& parts)
 {
-  stk::topology sideTop = bucket(elem).topology().side_topology(localSideId);
+  stk::topology elemTop = bucket(elem).topology();
+  stk::topology sideTop = elemTop.side_topology(localSideId);
   Entity side = internal_declare_entity(sideTop.rank(), globalSideId, add_root_topology_part(parts, mesh_meta_data().get_topology_root_part(sideTop)));
+
   if (has_face_adjacent_element_graph()) {
     use_graph_to_connect_side(get_face_adjacent_element_graph(), side, elem, localSideId);
   }
   else {
-    impl::connect_element_to_entity(*this, elem, side, localSideId, parts, sideTop);
+    impl::connect_element_to_side(*this, elem, side, localSideId, parts, sideTop);
+
+    impl::connect_side_to_other_elements(*this, side, elem, localSideId);
   }
   if(this->num_edges(elem) != 0) {
     impl::connect_face_to_edges(*this, side);
@@ -879,14 +868,11 @@ Entity BulkData::declare_element_side_with_id(const stk::mesh::EntityId globalSi
           internal_set_owner(side, parallel_rank());
         }
 
-        bool isShellEdgeSide = elemTop.is_shell() &&
-                               elemTop.has_mixed_rank_sides() &&
-                               (elemTop.side_topology(0) != elemTop.side_topology(sideOrd));
-        if (has_face_adjacent_element_graph() && !isShellEdgeSide) {
+        if (has_face_adjacent_element_graph()) {
           use_graph_to_connect_side(get_face_adjacent_element_graph(), side, elem, sideOrd);
         }
         else {
-          impl::connect_element_to_entity(*this, elem, side, sideOrd, parts, sideTop);
+          impl::connect_element_to_side(*this, elem, side, sideOrd, parts, sideTop);
 
           impl::connect_side_to_other_elements(*this, side, elem, sideOrd);
         }
@@ -1285,68 +1271,6 @@ uint64_t  BulkData::get_max_allowed_id() const {
   return stk::mesh::EntityKey::MAX_ID;
 }
 
-#ifdef SIERRA_MIGRATION
-
-const RelationVector&
-BulkData::aux_relations(Entity entity) const
-{
-  STK_ThrowAssert(add_fmwk_data());
-  STK_ThrowAssert(entity.local_offset() > 0);
-
-  if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
-    m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
-  }
-  return *m_fmwk_aux_relations[entity.local_offset()];
-}
-
-RelationVector&
-BulkData::aux_relations(Entity entity)
-{
-  STK_ThrowAssert(add_fmwk_data());
-  STK_ThrowAssert(entity.local_offset() > 0);
-
-  if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
-    m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
-  }
-  return *m_fmwk_aux_relations[entity.local_offset()];
-}
-
-RelationIterator
-BulkData::internal_begin_relation(Entity entity, const RelationType relation_type) const
-{
-  STK_ThrowAssert(add_fmwk_data());
-  if (impl::internal_is_handled_generically(relation_type)) {
-    STK_ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
-    return RelationIterator();
-  }
-  else {
-    return aux_relations(entity).begin();
-  }
-}
-
-RelationIterator
-BulkData::internal_end_relation(Entity entity, const RelationType relation_type) const
-{
-  STK_ThrowAssert(add_fmwk_data());
-  if (impl::internal_is_handled_generically(relation_type)) {
-    STK_ThrowErrorMsg("stk::Mesh::BulkData::internal_begin_relation(..) requests native stk::mesh relation type");
-    return RelationIterator();
-  }
-  else {
-    return aux_relations(entity).end();
-  }
-}
-
-void
-BulkData::compress_relation_capacity(Entity entity)
-{
-  RelationVector &rels = aux_relations(entity);
-  RelationVector tmp(rels);
-  tmp.swap(rels);
-}
-
-#endif
-
 void BulkData::generate_new_ids_given_reserved_ids(stk::topology::rank_t rank, size_t numIdsNeeded, const std::vector<stk::mesh::EntityId>& reserved_ids, std::vector<stk::mesh::EntityId>& requestedIds) const
 {
     size_t maxNumNeeded = get_max_num_ids_needed_across_all_procs(*this, numIdsNeeded);
@@ -1526,6 +1450,8 @@ template
 void BulkData::declare_entities(stk::topology::rank_t rank, const std::vector<int64_t>& newIds, const PartVector& parts, std::vector<Entity>& requested_entities);
 template
 void BulkData::declare_entities(stk::topology::rank_t rank, const std::vector<unsigned long>& newIds, const PartVector& parts, std::vector<Entity>& requested_entities);
+template
+void BulkData::declare_entities(stk::topology::rank_t rank, const std::vector<unsigned long long>& newIds, const PartVector& parts, std::vector<Entity>& requested_entities);
 
 bool BulkData::in_shared(EntityKey key, int proc) const
 {
@@ -1827,14 +1753,12 @@ void BulkData::allocate_field_data()
 
 void BulkData::reallocate_field_data(stk::mesh::FieldBase & field)
 {
-  const std::vector<FieldBase *> & field_set = mesh_meta_data().get_fields();
-  for(EntityRank rank = stk::topology::NODE_RANK; rank < mesh_meta_data().entity_rank_count(); ++rank) {
-    const std::vector<Bucket*>& buckets = this->buckets(rank);
-    m_field_data_manager->reallocate_field_data(rank, buckets, field, field_set);
-    for (Bucket * bucket : buckets) {
-      bucket->grow_ngp_field_bucket_ids();
-      bucket->mark_for_modification();
-    }
+  const std::vector<FieldBase *> & allFields = mesh_meta_data().get_fields();
+  const EntityRank fieldRank = field.entity_rank();
+  const std::vector<Bucket*>& bucketsOfRank = this->buckets(fieldRank);
+  m_field_data_manager->reallocate_field_data(fieldRank, bucketsOfRank, field, allFields);
+  for (Bucket * bucket : bucketsOfRank) {
+    bucket->mark_for_modification();
   }
   m_meshModification.increment_sync_count();
 }
@@ -1914,9 +1838,9 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
         for(const FieldBase* field : *field_set) {
             const FieldMetaData& srcFieldMeta = field->get_meta_data_for_field()[src_bucket_id];
             const int src_size = srcFieldMeta.m_bytesPerEntity;
-            unsigned char * const src = srcFieldMeta.m_data;
+            std::byte* const src = srcFieldMeta.m_data;
             const FieldMetaData& dstFieldMeta = field->get_meta_data_for_field()[dst_bucket_id];
-            unsigned char * const dst = dstFieldMeta.m_data;
+            std::byte* const dst = dstFieldMeta.m_data;
 
             STK_ThrowAssert(src_size == dstFieldMeta.m_bytesPerEntity);
 
@@ -1944,8 +1868,8 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
 
                 if (src_size) {
                     STK_ThrowAssertMsg( dst_size == src_size, "Incompatible field sizes: " << dst_size << " != " << src_size);
-                    unsigned char * const src = srcFieldMeta.m_data;
-                    unsigned char * const dst = dstFieldMeta.m_data;
+                    std::byte* const src = srcFieldMeta.m_data;
+                    std::byte* const dst = dstFieldMeta.m_data;
 
                     std::memcpy(dst + dst_size * dst_bucket_ord,
                             src + src_size * src_bucket_ord,
@@ -1956,7 +1880,8 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
     }
 }
 
-void BulkData::add_entity_callback(EntityRank rank, unsigned bucketId, unsigned bucketCapacity, unsigned indexInBucket)
+void BulkData::add_entity_callback(EntityRank rank, unsigned bucketId, unsigned newBucketSize, unsigned bucketCapacity,
+                                   unsigned indexInBucket)
 {
   if (not m_keep_fields_updated) {
     return;
@@ -1968,16 +1893,17 @@ void BulkData::add_entity_callback(EntityRank rank, unsigned bucketId, unsigned 
     m_field_data_manager->grow_bucket_capacity(fields, rank, bucketId, indexInBucket, bucketCapacity);
   }
 
-  m_field_data_manager->add_field_data_for_entity(fields, rank, bucketId, indexInBucket);
+  m_field_data_manager->add_field_data_for_entity(fields, rank, bucketId, indexInBucket, newBucketSize);
 }
 
-void BulkData::remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord)
+void BulkData::remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, unsigned newBucketSize,
+                                                 unsigned bucket_ord)
 {
     if (!m_keep_fields_updated) {
       return;
     }
     const std::vector<FieldBase *> &fields = mesh_meta_data().get_fields();
-    m_field_data_manager->remove_field_data_for_entity(rank, bucket_id, bucket_ord, fields);
+    m_field_data_manager->remove_field_data_for_entity(rank, bucket_id, bucket_ord, newBucketSize, fields);
 }
 
 void BulkData::remove_entity_callback(EntityRank /*rank*/, unsigned /*bucket_id*/, unsigned /*bucket_ord*/)
@@ -2088,33 +2014,6 @@ void BulkData::reorder_buckets_callback(EntityRank rank, const std::vector<unsig
   const std::vector<FieldBase*>  fields = mesh_meta_data().get_fields();
   m_field_data_manager->reorder_bucket_field_data(rank, fields, reorderedBucketIds);
 }
-
-#ifdef SIERRA_MIGRATION
-
-void BulkData::reserve_relation(Entity entity, const unsigned num)
-{
-  if (num == 0 && aux_relations(entity).empty()) {
-    RelationVector tmp;
-    aux_relations(entity).swap(tmp); // clear memory of m_relations.
-  }
-  else {
-    aux_relations(entity).reserve(num);
-  }
-}
-
-void BulkData::erase_and_clear_if_empty(Entity entity, RelationIterator rel_itr)
-{
-  STK_ThrowAssert(!impl::internal_is_handled_generically(rel_itr->getRelationType()));
-
-  RelationVector& aux_rels = aux_relations(entity);
-  aux_rels.erase(aux_rels.begin() + (rel_itr - aux_rels.begin())); // Need to convert to non-const iterator
-
-  if (aux_rels.empty()) {
-    reserve_relation(entity, 0);
-  }
-}
-
-#endif
 
 BucketVector const& BulkData::get_buckets(EntityRank rank, Selector const& selector) const
 {
@@ -3478,12 +3377,13 @@ void BulkData::change_connectivity_for_edge_or_face(stk::mesh::Entity side, cons
     }
 }
 
-void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
+void BulkData::resolve_parallel_side_connections(stk::mesh::EntityRank rank,
+                                                 std::vector<SideSharingData>& sideSharingDataToSend,
                                                  std::vector<SideSharingData>& sideSharingDataReceived)
 {
     std::vector<stk::mesh::impl::IdViaSidePair> idAndSides;
 
-    stk::mesh::EntityVector sharedSides = fill_shared_entities_that_need_fixing(*this);
+    stk::mesh::EntityVector sharedSides = fill_shared_entities_that_need_fixing(*this, rank);
 
     fill_sharing_data(*this, *m_elemElemGraph, sharedSides, sideSharingDataToSend, idAndSides);
 
@@ -3506,7 +3406,7 @@ void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& s
         {
             if (parallel_rank() != sideSharingData.owningProc)
             {
-                stk::mesh::EntityKey newKey(mesh_meta_data().side_rank(), sideSharingData.chosenSideId);
+                stk::mesh::EntityKey newKey(rank, sideSharingData.chosenSideId);
                 stk::mesh::EntityKey existingKey = entity_key(side);
                 if(newKey != existingKey)
                     internal_change_entity_key(existingKey, newKey, side);
@@ -3530,12 +3430,13 @@ void BulkData::add_comm_map_for_sharing(const std::vector<SideSharingData>& side
     }
 }
 
-void BulkData::use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities)
+void BulkData::use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities,
+                                                                stk::mesh::EntityRank rank)
 {
     std::vector<SideSharingData> sideSharingDataReceived;
     std::vector<SideSharingData> sideSharingDataToSend;
 
-    resolve_parallel_side_connections(sideSharingDataToSend, sideSharingDataReceived);
+    resolve_parallel_side_connections(rank, sideSharingDataToSend, sideSharingDataReceived);
 
     add_comm_map_for_sharing(sideSharingDataToSend, shared_entities);
     add_comm_map_for_sharing(sideSharingDataReceived, shared_entities);
@@ -3553,9 +3454,9 @@ void BulkData::use_nodes_to_resolve_sharing(stk::mesh::EntityRank rank, std::vec
 
 void BulkData::fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new)
 {
-    if (this->has_face_adjacent_element_graph() && rank == mesh_meta_data().side_rank())
+    if (this->has_face_adjacent_element_graph() && (rank == stk::topology::EDGE_RANK || rank == stk::topology::FACE_RANK))
     {
-        use_elem_elem_graph_to_determine_shared_entities(shared_new);
+        use_elem_elem_graph_to_determine_shared_entities(shared_new, rank);
         const bool onlyConsiderSoloSides = true;
         use_nodes_to_resolve_sharing(rank, shared_new, onlyConsiderSoloSides);
     }
@@ -4093,6 +3994,91 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(Ent
     stk::mesh::impl::comm_sync_send_recv(*this, entitiesToGhostOntoOtherProcessors, entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
 }
 
+void BulkData::make_ghost_info_symmetric()
+{
+  remove_symmetric_ghost_info();
+
+  const EntityCommListInfoVector& all_comm = m_entity_comm_list;
+  const EntityCommDatabase& commDB = m_entity_comm_map;
+
+  stk::CommSparse commSparse(parallel());
+  stk::pack_and_communicate(commSparse,
+    [this, &commSparse, &commDB, all_comm]() {
+      for(size_t i=0; i<all_comm.size(); ++i) {
+
+        if (this->parallel_owner_rank(all_comm[i].entity) == this->parallel_rank()) {
+          PairIterEntityComm ec = commDB.comm(all_comm[i].entity_comm);
+          PairIterEntityComm ecSh = shared_comm_info_range(ec);
+
+          const bool sharedAndGhostedOrMultipleGhosted =
+                 (ecSh.size() > 0 && ecSh.size() < ec.size()) ||
+                 (ecSh.size() == 0 && ec.size() > 1);
+
+          if (sharedAndGhostedOrMultipleGhosted) {
+            for(unsigned ii=0; ii<ec.size(); ++ii) {
+              const int proc_ii = ec[ii].proc;
+              commSparse.send_buffer(proc_ii).pack<EntityKey>(all_comm[i].key);
+              commSparse.send_buffer(proc_ii).pack<unsigned>(ec.size()-1);
+
+              for(unsigned jj=0; jj<ec.size(); ++jj) {
+                if (ii != jj) {
+                  const int proc_jj = ec[jj].proc;
+                  commSparse.send_buffer(proc_ii).pack<unsigned>(ec[jj].ghost_id);
+                  commSparse.send_buffer(proc_ii).pack<int>(proc_jj);
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+  EntityCommListInfoVector newCommListEntries;
+
+  for(int p=0; p<parallel_size(); ++p) {
+    CommBuffer& buf = commSparse.recv_buffer(p);
+    while(buf.remaining()) {
+      EntityKey key;
+      buf.unpack<EntityKey>(key);
+      Entity entity = get_entity(key);
+
+      unsigned numOtherProcs = 0;
+      buf.unpack<unsigned>(numOtherProcs);
+
+      for(unsigned i=0; i<numOtherProcs; ++i) {
+        unsigned ghostId = 0;
+        buf.unpack<unsigned>(ghostId);
+        int otherProc = -1;
+        buf.unpack<int>(otherProc);
+ 
+        if (otherProc != parallel_rank()) {
+          EntityCommInfo entityCommInfo(SYMM_INFO+ghostId, otherProc);
+
+          std::pair<int,bool> result = entity_comm_map_insert(entity, entityCommInfo);
+          if (result.second) {
+            const int entityCommIndex = result.first;
+            EntityCommListInfo commListInfo = {key, entity, entityCommIndex};
+            newCommListEntries.push_back(commListInfo);
+          }
+        }
+      }
+    }
+  }
+
+  internal_add_comm_list_entries(newCommListEntries);
+}
+
+void BulkData::remove_symmetric_ghost_info()
+{
+  const EntityCommListInfoVector& all_comm = m_entity_comm_list;
+  EntityCommDatabase& commDB = m_entity_comm_map;
+  for(size_t i=0; i<all_comm.size(); ++i) {
+    if (all_comm[i].entity_comm != -1) {
+      commDB.erase(all_comm[i].entity_comm, all_comm[i].key, SYMM_INFO);
+    }
+  }
+}
+
 void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
 {
   if(opt == impl::MeshModification::MOD_END_SORT) {
@@ -4117,18 +4103,18 @@ void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
     }
   }
 
+  if (has_symmetric_ghost_info() && parallel_size() > 2) {
+    make_ghost_info_symmetric();
+  }
+
+  if (get_maintain_local_ids()) {
+    impl::set_local_ids(*this);
+  }
+
   notify_finished_mod_end();
 
   if(parallel_size() > 1) {
     check_mesh_consistency();
-  }
-
-  if (mesh_meta_data().is_field_sync_debugger_enabled()) {
-    for (FieldBase * stkField : mesh_meta_data().get_fields()) {
-      if (stkField->has_ngp_field()) {
-        impl::get_ngp_field(*stkField)->debug_modification_end(synchronized_count());
-      }
-    }
   }
 }
 
@@ -4265,6 +4251,7 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
     STK_ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
     EntityProcVec auraEntitiesToResend;
+    EntityVector newlyShared;
     {
       stk::CommSparse comm(parallel());
       const bool anythingToUnpack = impl::pack_and_send_modified_shared_entity_states(
@@ -4279,6 +4266,14 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
             buf.unpack<EntityKey>(key);
             buf.unpack<EntityState>(remoteState);
             Entity entity = get_entity(key);
+            int isShared = 0;
+            buf.unpack<int>(isShared);
+            if (isShared == 1) {
+              auto rslt = entity_comm_map_insert(entity, EntityCommInfo(SHARED, p));
+              if (rslt.second){
+                newlyShared.push_back(entity);
+              }
+            }
             int numSharingProcs = 0;
             buf.unpack<int>(numSharingProcs);
             for(int sp=0; sp<numSharingProcs; ++sp) {
@@ -4358,6 +4353,15 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
 #endif
 
     OrdinalVector scratch, scratch2;
+    part_storage.induced_part_ordinals.clear();
+    part_storage.removeParts.clear();
+    part_storage.induced_part_ordinals.push_back(mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal());
+    OrdinalVector& sharedPart = part_storage.induced_part_ordinals;
+
+    for(Entity ent : newlyShared) {
+      internal_change_entity_parts(ent, sharedPart, part_storage.removeParts, scratch, scratch2);
+    }
+
     for (stk::mesh::Entity entity : entitiesNoLongerShared) {
       part_storage.induced_part_ordinals.clear();
       part_storage.removeParts.clear();
@@ -4484,16 +4488,6 @@ void BulkData::internal_resolve_send_ghost_membership()
 {
     // This virtual method can be removed when we no longer need the
     // StkTransitionBulkData derived class in Framework.
-}
-
-void add_bucket_and_ord(unsigned bucket_id, unsigned bucket_ord, BucketIndices& bktIndices)
-{
-  if (bktIndices.bucket_info.empty() || bktIndices.bucket_info.back().bucket_id != bucket_id) {
-    bktIndices.bucket_info.push_back(BucketInfo(bucket_id, 0u));
-  }
-
-  bktIndices.bucket_info.back().num_entities_this_bucket += 1;
-  bktIndices.ords.push_back(bucket_ord);
 }
 
 const std::vector<int>& BulkData::all_sharing_procs(stk::mesh::EntityRank rank) const
@@ -5120,6 +5114,27 @@ void BulkData::sortNodesIfNeeded(std::vector<stk::mesh::EntityKey>& nodes)
     std::sort(nodes.begin(),nodes.end());
 }
 
+inline bool determine_if_is_side(const BulkData& bulk, Entity entity, EntityRank entityRank)
+{
+  if(entityRank == bulk.mesh_meta_data().side_rank()) {
+    return true;
+  }
+
+  if(stk::topology::EDGE_RANK == entityRank) {
+    // Check if edge is connected to a shell
+    auto elements = bulk.begin_elements(entity);
+    unsigned numElements = bulk.num_elements(entity);
+
+    for(unsigned i=0; i<numElements; i++) {
+      if(bulk.bucket(elements[i]).topology().is_shell()) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 //----------------------------------------------------------------------
 void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, bool onlyConsiderSoloSides, std::vector<shared_entity_type>& shared_entities)
 {
@@ -5144,7 +5159,7 @@ void BulkData::markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRa
               continue;
             }
 
-            const bool isSide = entityRank==this->mesh_meta_data().side_rank();
+            const bool isSide = determine_if_is_side(*this, entity, entityRank);
             const bool isSoloSide = isSide && (this->num_elements(entity)==0);
             if (isSide && onlyConsiderSoloSides && !isSoloSide) {
                 continue;
@@ -5334,11 +5349,6 @@ void BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
 {
     if(!in_synchronized_state())
     {
-        for(size_t i = 0; i < deletedSides.size(); ++i)
-        {
-            STK_ThrowAssertMsg(entity_rank(deletedSides[i]) == mesh_meta_data().side_rank(), "ERROR, modification_end_for_face_deletion only handles faces");
-        }
-
         STK_ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
         STK_ThrowAssertMsg(add_fmwk_data() || stk::mesh::impl::check_no_shared_elements_or_higher(*this)==0,

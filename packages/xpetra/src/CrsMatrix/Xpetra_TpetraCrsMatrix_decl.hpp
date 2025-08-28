@@ -19,6 +19,7 @@
 #include "Xpetra_TpetraConfigDefs.hpp"
 
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
 #include "Tpetra_replaceDiagonalCrsMatrix.hpp"
 
 #include "Xpetra_CrsMatrix.hpp"

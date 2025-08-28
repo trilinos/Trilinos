@@ -195,18 +195,22 @@ inline void calculate_centroid_using_host_coord_fields(const stk::mesh::BulkData
   stk::mesh::for_each_entity_run_with_nodes(bulk, stk::topology::ELEM_RANK, selector, centroidCalculator);
 }
 
+template <typename CentroidFieldType>
 inline
-std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, stk::mesh::Field<double> &centroid, const stk::mesh::Selector& selector)
+std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, CentroidFieldType& centroid,
+                                                   const stk::mesh::Selector& selector)
 {
   std::vector<double> average = {0, 0, 0};
   size_t numElems = 0;
   stk::mesh::Selector fieldSelector(centroid);
   fieldSelector &= selector;
+  auto centroidData = centroid.template data<stk::mesh::ReadOnly>();
+
   for (const stk::mesh::Bucket *bucket : bulk.get_buckets(stk::topology::ELEM_RANK, fieldSelector)) {
     for (stk::mesh::Entity elem : *bucket) {
-      double *elemCentroid = stk::mesh::field_data(centroid, elem);
-      for(size_t dim = 0; dim < 3; dim++) {
-        average[dim] += elemCentroid[dim];
+      auto centroidValues = centroidData.entity_values(elem);
+      for (stk::mesh::ComponentIdx component : centroidValues.components()) {
+        average[component] += centroidValues(component);
       }
       numElems++;
     }
@@ -222,7 +226,8 @@ std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, st
 }
 
 inline
-std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, stk::mesh::Field<double> &centroid, const stk::mesh::Selector& selector)
+std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, stk::mesh::Field<double> &centroid,
+                                                     const stk::mesh::Selector& selector)
 {
   stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(centroid);
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);

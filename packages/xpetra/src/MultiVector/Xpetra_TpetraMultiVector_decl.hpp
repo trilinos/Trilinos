@@ -253,17 +253,17 @@ class TpetraMultiVector
 
   typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
-  virtual typename dual_view_type::t_host_const_um getHostLocalView(Access::ReadOnlyStruct) const;
+  virtual typename dual_view_type::t_host_const_um getLocalViewHost(Access::ReadOnlyStruct) const;
 
-  virtual typename dual_view_type::t_dev_const_um getDeviceLocalView(Access::ReadOnlyStruct) const;
+  virtual typename dual_view_type::t_dev_const_um getLocalViewDevice(Access::ReadOnlyStruct) const;
 
-  virtual typename dual_view_type::t_host_um getHostLocalView(Access::OverwriteAllStruct) const;
+  virtual typename dual_view_type::t_host_um getLocalViewHost(Access::OverwriteAllStruct) const;
 
-  virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::OverwriteAllStruct) const;
+  virtual typename dual_view_type::t_dev_um getLocalViewDevice(Access::OverwriteAllStruct) const;
 
-  virtual typename dual_view_type::t_host_um getHostLocalView(Access::ReadWriteStruct) const;
+  virtual typename dual_view_type::t_host_um getLocalViewHost(Access::ReadWriteStruct) const;
 
-  virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const;
+  virtual typename dual_view_type::t_dev_um getLocalViewDevice(Access::ReadWriteStruct) const;
 
  protected:
   /// \brief Implementation of the assignment operator (operator=);
@@ -290,6 +290,22 @@ RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<Tpetra:
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
+  if (!vec.is_null())
+    return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+
+  return Teuchos::null;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<Tpetra::FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
+  if (!vec.is_null())
+    return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+
+  return Teuchos::null;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> toXpetra(RCP<const Tpetra::FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> vec) {
   if (!vec.is_null())
     return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
 

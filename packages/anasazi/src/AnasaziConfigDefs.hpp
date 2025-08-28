@@ -58,7 +58,7 @@
 
 #  include <Anasazi_config.h>
 
-#  ifdef HAVE_MPI
+#  if defined(HAVE_ANASAZI_MPI) && defined(HAVE_ANASAZI_EPETRA)
 #    ifndef EPETRA_MPI
 #      define EPETRA_MPI
 #    endif

@@ -344,11 +344,7 @@ std::string field_prefix(stk::mesh::EntityRank rank)
 
 using SearchByIdTypes = ::testing::Types<stk::transfer::SearchByIdCommAll, stk::transfer::SearchByIdGeometric>;
 
-#ifdef TYPED_TEST_SUITE
-  TYPED_TEST_SUITE(CopyTransferFixture, SearchByIdTypes);
-#else
-  TYPED_TEST_CASE(CopyTransferFixture, SearchByIdTypes);
-#endif
+TYPED_TEST_SUITE(CopyTransferFixture, SearchByIdTypes, );
 
 template <class SearchById>
 class CopyTransferFixture : public ::testing::Test

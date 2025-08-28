@@ -82,7 +82,7 @@ void EntityCentroidLinearRecoverField::sample_patch(const std::vector<stk::mesh:
       int entityCount;
       for(entityCount = 0, entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++entityCount) {
         stk::mesh::Entity entity = *entityIter;
-        double* entityData = (double*)stk::mesh::field_data(*var, entity);
+        double* entityData = static_cast<double *>(stk::mesh::field_data(*var, entity));
         double data = 0.0;
         if(nullptr != entityData) {
           data = m_transform(entityData[nfi]);
@@ -112,20 +112,19 @@ void EntityCentroidLinearRecoverField::sample_patch(const std::vector<stk::mesh:
                                               << RecoverField::TRILINEAR
                                               << " The recovery type found was: " << m_recoveryType);
 
-  const int ndim = m_nodeVar.mesh_meta_data().spatial_dimension();
+  const unsigned ndim = m_nodeVar.mesh_meta_data().spatial_dimension();
 
   int sampCount = 0;
 
-  std::vector<double> centroid;
   for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++sampCount) {
     stk::mesh::Entity entity = *entityIter;
 
-    centroid.clear();
-    stk::search::compute_entity_centroid(entity, m_nodeVar, centroid);
+    m_scratchSpace.clear();
+    stk::search::determine_centroid(ndim, entity, m_nodeVar, m_scratchSpace);
 
-    double x = centroid[0];
-    double y = 1 < ndim ? centroid[1] : 0;
-    double z = 2 < ndim ? centroid[2] : 0;
+    double x = m_scratchSpace[0];
+    double y = 1 < ndim ? m_scratchSpace[1] : 0;
+    double z = 2 < ndim ? m_scratchSpace[2] : 0;
 
     evaluate_trilinear_basis(x, y, z, basisSample + sampCount, nSampPatch);
   }
@@ -194,7 +193,7 @@ void EntityCentroidQuadraticRecoverField::sample_patch(const std::vector<stk::me
       int entityCount;
       for(entityCount = 0, entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++entityCount) {
         stk::mesh::Entity entity = *entityIter;
-        double* entityData = (double*)stk::mesh::field_data(*var, entity);
+        double* entityData = static_cast<double *>(stk::mesh::field_data(*var, entity));
         double data = 0.0;
         if(nullptr != entityData) {
           data = m_transform(entityData[nfi]);
@@ -229,16 +228,15 @@ void EntityCentroidQuadraticRecoverField::sample_patch(const std::vector<stk::me
 
   int sampCount = 0;
 
-  std::vector<double> centroid;
   for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++sampCount) {
     stk::mesh::Entity entity = *entityIter;
 
-    centroid.clear();
-    stk::search::compute_entity_centroid(entity, m_nodeVar, centroid);
+    m_scratchSpace.clear();
+    stk::search::determine_centroid(ndim, entity, m_nodeVar, m_scratchSpace);
 
-    double x = centroid[0];
-    double y = 1 < ndim ? centroid[1] : 0;
-    double z = 2 < ndim ? centroid[2] : 0;
+    double x = m_scratchSpace[0];
+    double y = 1 < ndim ? m_scratchSpace[1] : 0;
+    double z = 2 < ndim ? m_scratchSpace[2] : 0;
 
     evaluate_triquadratic_basis(x, y, z, basisSample + sampCount, nSampPatch);
   }
@@ -307,7 +305,7 @@ void EntityCentroidCubicRecoverField::sample_patch(const std::vector<stk::mesh::
       int entityCount;
       for(entityCount = 0, entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++entityCount) {
         stk::mesh::Entity entity = *entityIter;
-        double* entityData = (double*)stk::mesh::field_data(*var, entity);
+        double* entityData = static_cast<double *>(stk::mesh::field_data(*var, entity));
         double data = 0.0;
         if(nullptr != entityData) {
           data = m_transform(entityData[nfi]);
@@ -342,16 +340,15 @@ void EntityCentroidCubicRecoverField::sample_patch(const std::vector<stk::mesh::
 
   int sampCount = 0;
 
-  std::vector<double> centroid;
   for(entityIter = entityBeg; entityIter != entityEnd; ++entityIter, ++sampCount) {
     stk::mesh::Entity entity = *entityIter;
 
-    centroid.clear();
-    stk::search::compute_entity_centroid(entity, m_nodeVar, centroid);
+    m_scratchSpace.clear();
+    stk::search::determine_centroid(ndim, entity, m_nodeVar, m_scratchSpace);
 
-    double x = centroid[0];
-    double y = 1 < ndim ? centroid[1] : 0;
-    double z = 2 < ndim ? centroid[2] : 0;
+    double x = m_scratchSpace[0];
+    double y = 1 < ndim ? m_scratchSpace[1] : 0;
+    double z = 2 < ndim ? m_scratchSpace[2] : 0;
 
     evaluate_tricubic_basis(x, y, z, basisSample + sampCount, nSampPatch);
   }

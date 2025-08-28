@@ -104,6 +104,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     clp.setOption("coordsmap", &coordMapFile, "coordinates map data file");
     std::string nullFile;
     clp.setOption("nullspace", &nullFile, "nullspace data file");
+    std::string blockNumberFile;
+    clp.setOption("blocknumber", &blockNumberFile, "block number data file");
     std::string materialFile;
     clp.setOption("material", &materialFile, "material data file");
     int numVectors = 1;
@@ -146,10 +148,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<RealValuedMultiVector> coordinates;
     RCP<MultiVector> nullspace;
     RCP<MultiVector> material;
+    RCP<LOVector> blocknumber;
     RCP<MultiVector> X, B;
 
     std::ostringstream galeriStream;
-    MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, X, B, numVectors, matrixParameters, xpetraParameters, galeriStream);
+    MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, matrixParameters, xpetraParameters, galeriStream);
     out << galeriStream.str();
     X->putScalar(0);
 
@@ -176,8 +179,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     if (paramList->isSublist("Preconditioner Types") &&
         paramList->sublist("Preconditioner Types").isSublist("MueLu")) {
       ParameterList &userParamList = paramList->sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
-      userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
-      userParamList.set<RCP<MultiVector> >("Nullspace", nullspace);
+      if (!coordinates.is_null())
+        userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+      if (!nullspace.is_null())
+        userParamList.set<RCP<MultiVector> >("Nullspace", nullspace);
     }
 
     // Setup solver parameters using a Stratimikos parameter list.

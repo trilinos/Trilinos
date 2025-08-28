@@ -17,6 +17,8 @@
 /// documentation, please see
 /// Tpetra_computeRowAndColumnOneNorms_decl.hpp in this directory.
 
+#include "Kokkos_ArithTraits.hpp"
+#include "Kokkos_Macros.hpp"
 #include "Tpetra_Details_copyConvert.hpp"
 #include "Tpetra_Details_EquilibrationInfo.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -148,13 +150,16 @@ computeLocalRowOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, NT>& A)
   equib_info_type result (lclNumRows, lclNumCols, assumeSymmetric);
   auto result_h = result.createMirrorView ();
 
+  const auto val_zero = KAV::zero();
+  const auto mag_zero = KAM::zero();
+
   forEachLocalRowMatrixRow<SC, LO, GO, NT> (A,
     [&] (const LO lclRow,
          const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type& ind,
          const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type& val,
          std::size_t numEnt) {
-      mag_type rowNorm {0.0};
-      val_type diagVal {0.0};
+      mag_type rowNorm = mag_zero;
+      val_type diagVal = val_zero;
       const GO gblRow = rowMap.getGlobalElement (lclRow);
       // OK if invalid(); then we simply won't find the diagonal entry.
       const GO lclDiagColInd = colMap.getLocalElement (gblRow);
@@ -218,13 +223,16 @@ computeLocalRowAndColumnOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, 
     (lclNumRows, lclNumCols, assumeSymmetric);
   auto result_h = result.createMirrorView ();
 
+  const auto val_zero = KAV::zero();
+  const auto mag_zero = KAM::zero();
+
   forEachLocalRowMatrixRow<SC, LO, GO, NT> (A,
     [&] (const LO lclRow,
          const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type& ind,
          const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type& val,
          std::size_t numEnt) {
-      mag_type rowNorm {0.0};
-      val_type diagVal {0.0};
+      mag_type rowNorm = mag_zero;
+      val_type diagVal = val_zero;
       const GO gblRow = rowMap.getGlobalElement (lclRow);
       // OK if invalid(); then we simply won't find the diagonal entry.
       const GO lclDiagColInd = colMap.getLocalElement (gblRow);
@@ -425,8 +433,11 @@ public:
     const auto curRow = A_lcl_.rowConst (lclRow);
     const LO numEnt = curRow.length;
 
-    mag_type rowNorm {0.0};
-    val_type diagVal {0.0};
+    const auto val_zero = KAT::zero();
+    const auto mag_zero = KAM::zero();
+
+    mag_type rowNorm = mag_zero;
+    val_type diagVal = val_zero;
     value_type dstThread {0};
 
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, numEnt), [&](const LO k, mag_type &normContrib, val_type& diagContrib, value_type& dstContrib) {
@@ -524,8 +535,11 @@ public:
     const auto curRow = A_lcl_.rowConst (lclRow);
     const LO numEnt = curRow.length;
 
-    mag_type rowNorm {0.0};
-    val_type diagVal {0.0};
+    const auto val_zero = KAT::zero();
+    const auto mag_zero = KAM::zero();
+
+    mag_type rowNorm = mag_zero;
+    val_type diagVal = val_zero;
     value_type dstThread {0};
 
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, numEnt), [&](const LO k, mag_type &normContrib, val_type& diagContrib, value_type& dstContrib) {
@@ -717,7 +731,7 @@ auto getLocalView_1d_readOnly (
                             Kokkos::ALL (), 0);
   }
 }
- 
+
 template<class SC, class LO, class GO, class NT>
 auto getLocalView_1d_writeOnly (
   Tpetra::MultiVector<SC, LO, GO, NT>& X,
@@ -735,7 +749,7 @@ auto getLocalView_1d_writeOnly (
                            Kokkos::ALL (), 0);
   }
 }
- 
+
 template<class SC, class LO, class GO, class NT, class ViewValueType>
 void
 copy1DViewIntoMultiVectorColumn (
@@ -749,6 +763,24 @@ copy1DViewIntoMultiVectorColumn (
 
 template<class SC, class LO, class GO, class NT, class ViewValueType>
 void
+copy1DViewIntoMultiVectorColumn_mag (
+  Tpetra::MultiVector<SC, LO, GO, NT>& X,
+  const LO whichColumn,
+  const Kokkos::View<ViewValueType*, typename NT::device_type>& view)
+{
+  using KAT = Kokkos::ArithTraits<ViewValueType>;
+  using execution_space = typename NT::execution_space;
+  using range_type = Kokkos::RangePolicy<execution_space, LO>;
+  auto X_lcl = getLocalView_1d_writeOnly (X, whichColumn);
+  Kokkos::parallel_for("",
+                       range_type(0, X_lcl.extent(0)),
+                       KOKKOS_LAMBDA(const LO i) {
+                         X_lcl(i) = KAT::magnitude(view(i));
+                       });
+}
+
+template<class SC, class LO, class GO, class NT, class ViewValueType>
+void
 copyMultiVectorColumnInto1DView (
   const Kokkos::View<ViewValueType*, typename NT::device_type>& view,
   Tpetra::MultiVector<SC, LO, GO, NT>& X,
@@ -757,6 +789,25 @@ copyMultiVectorColumnInto1DView (
   auto X_lcl = getLocalView_1d_readOnly (X, whichColumn);
   Tpetra::Details::copyConvert (view, X_lcl);
 }
+
+template<class SC, class LO, class GO, class NT, class ViewValueType>
+void
+copyMultiVectorColumnInto1DView_mag (
+  const Kokkos::View<ViewValueType*, typename NT::device_type>& view,
+  Tpetra::MultiVector<SC, LO, GO, NT>& X,
+  const LO whichColumn)
+{
+  using implScalar = typename Kokkos::ArithTraits<SC>::val_type;
+  using KAT = Kokkos::ArithTraits<implScalar>;
+  using range_type = Kokkos::RangePolicy<typename NT::execution_space, LO>;
+  auto X_lcl = getLocalView_1d_readOnly (X, whichColumn);
+  Kokkos::parallel_for("",
+                       range_type(0, X_lcl.extent(0)),
+                       KOKKOS_LAMBDA(LO i) {
+                         view(i) = KAT::magnitude(X_lcl(i));
+                       });
+}
+
 
 template<class OneDViewType, class IndexType>
 class FindZero {
@@ -830,7 +881,7 @@ globalizeRowOneNorms (EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_ty
       rangeMapMV.doExport (rowMapMV, *exp, Tpetra::ADD); // forward mode
       rowMapMV.doImport (rangeMapMV, *exp, Tpetra::REPLACE); // reverse mode
     }
-    copyMultiVectorColumnInto1DView (equib.rowNorms, rowMapMV, 0);
+    copyMultiVectorColumnInto1DView_mag (equib.rowNorms, rowMapMV, 0);
     copyMultiVectorColumnInto1DView (equib.rowDiagonalEntries, rowMapMV, 1);
 
     // It's not common for users to solve linear systems with a
@@ -892,7 +943,7 @@ globalizeColumnOneNorms (EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val
     const bool rowMapSameAsDomainMap = G->getRowMap ()->isSameAs (* (G->getDomainMap ()));
     if (rowMapSameAsDomainMap) {
       copy1DViewIntoMultiVectorColumn (rowNorms_domMap, 0, equib.rowNorms);
-      copy1DViewIntoMultiVectorColumn (rowNorms_domMap, 1, equib.rowDiagonalEntries);
+      copy1DViewIntoMultiVectorColumn_mag (rowNorms_domMap, 1, equib.rowDiagonalEntries);
     }
     else {
       // This is not a common case; it would normally arise when the
@@ -900,7 +951,7 @@ globalizeColumnOneNorms (EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val
       Tpetra::Export<LO, GO, NT> rowToDom (G->getRowMap (), G->getDomainMap ());
       mv_type rowNorms_rowMap (G->getRowMap (), numCols, true);
       copy1DViewIntoMultiVectorColumn (rowNorms_rowMap, 0, equib.rowNorms);
-      copy1DViewIntoMultiVectorColumn (rowNorms_rowMap, 1, equib.rowDiagonalEntries);
+      copy1DViewIntoMultiVectorColumn_mag (rowNorms_rowMap, 1, equib.rowDiagonalEntries);
       rowNorms_domMap.doExport (rowNorms_rowMap, rowToDom, Tpetra::REPLACE);
     }
 
@@ -949,7 +1000,7 @@ globalizeColumnOneNorms (EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val
       mv_type colMapMV (G->getColMap (), numCols, false);
 
       copy1DViewIntoMultiVectorColumn (colMapMV, 0, equib.colNorms);
-      copy1DViewIntoMultiVectorColumn (colMapMV, 1, equib.colDiagonalEntries);
+      copy1DViewIntoMultiVectorColumn_mag (colMapMV, 1, equib.colDiagonalEntries);
       copy1DViewIntoMultiVectorColumn (colMapMV, 2, equib.rowScaledColNorms);
       {
         mv_type domainMapMV (G->getDomainMap (), numCols, true);

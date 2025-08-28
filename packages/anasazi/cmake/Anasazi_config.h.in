@@ -36,9 +36,6 @@
 /* Define if want to build with triutils enabled */
 #cmakedefine HAVE_ANASAZI_TRIUTILS
 
-/* Define if want to build with epetra enabled */
-#cmakedefine HAVE_EPETRA_THYRA @HAVE_EPETRA_THYRA@
-
 /* Define if want to build anasazi-examples */
 #cmakedefine HAVE_ANASAZI_EXAMPLES
 
@@ -53,6 +50,8 @@
 
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
+
+#cmakedefine HAVE_ANASAZI_MPI
 
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX

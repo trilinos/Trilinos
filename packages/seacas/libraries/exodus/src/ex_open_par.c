@@ -189,7 +189,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   else {
     status = nc_open_par(canon_path, nc_mode, comm, info, &exoid);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     /* It is possible that the user is trying to open a netcdf4
        file, but the netcdf4 capabilities aren't available in the
        netcdf linked to this library. Note that we can't just use a
@@ -325,7 +325,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   if (mode & EX_WRITE) { /* Appending */
     /* turn off automatic filling of netCDF variables */
     if (is_pnetcdf) {
-      if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
+      if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
         free(canon_path);
@@ -334,7 +334,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
       in_redef = true;
     }
 
-    if ((status = nc_set_fill(exoid, NC_NOFILL, &old_fill)) != NC_NOERR) {
+    if ((status = nc_set_fill(exoid, NC_NOFILL, &old_fill)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to set nofill mode in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       free(canon_path);
@@ -345,9 +345,9 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
     size_t  att_len  = 0;
     int     stat_att = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
     int     stat_dim = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name);
-    if (stat_att != NC_NOERR || stat_dim != NC_NOERR) {
+    if (stat_att != EX_NOERR || stat_dim != EX_NOERR) {
       if (!in_redef) {
-        if ((status = nc_redef(exoid)) != NC_NOERR) {
+        if ((status = nc_redef(exoid)) != EX_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode",
                    exoid);
           ex_err_fn(exoid, __func__, errmsg, status);
@@ -356,14 +356,14 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
         }
         in_redef = true;
       }
-      if (stat_att != NC_NOERR) {
+      if (stat_att != EX_NOERR) {
         int max_so_far = 32;
         nc_put_att_int(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, NC_INT, 1, &max_so_far);
       }
 
       /* If the DIM_STR_NAME variable does not exist on the database, we need to
        * add it now. */
-      if (stat_dim != NC_NOERR) {
+      if (stat_dim != EX_NOERR) {
         /* Not found; set to default value of 32+1. */
         int max_name = exi_default_max_name_length < 32 ? 32 : exi_default_max_name_length;
         nc_def_dim(exoid, DIM_STR_NAME, max_name + 1, &dim_str_name);
@@ -371,7 +371,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
     }
 
     if (in_redef) {
-      if ((status = nc_enddef(exoid)) != NC_NOERR) {
+      if ((status = nc_enddef(exoid)) != EX_NOERR) {
         free(canon_path);
         EX_FUNC_LEAVE(EX_FATAL);
       }
@@ -417,7 +417,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
    * floating point and integer values stored in the file
    */
 
-  if ((status = nc_get_att_float(exoid, NC_GLOBAL, ATT_VERSION, version)) != NC_NOERR) {
+  if ((status = nc_get_att_float(exoid, NC_GLOBAL, ATT_VERSION, version)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get database version for file id: %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -435,9 +435,9 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   }
 
   if (nc_get_att_int(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, &file_wordsize) !=
-      NC_NOERR) { /* try old (prior to db version 2.02) attribute name */
+      EX_NOERR) { /* try old (prior to db version 2.02) attribute name */
     if ((status = nc_get_att_int(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE_BLANK, &file_wordsize)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get file wordsize from file id: %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -451,7 +451,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
    * Older files don't have the attribute, so it is not an error if it is
    * missing
    */
-  if (nc_get_att_int(exoid, NC_GLOBAL, ATT_INT64_STATUS, &int64_status) != NC_NOERR) {
+  if (nc_get_att_int(exoid, NC_GLOBAL, ATT_INT64_STATUS, &int64_status) != EX_NOERR) {
     int64_status = 0; /* Just in case it gets munged by a failed get_att_int call */
   }
 

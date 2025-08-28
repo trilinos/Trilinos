@@ -25,7 +25,7 @@
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBlockDavidsonSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
   bool boolret;
   int MyPID;
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -65,7 +65,6 @@ int main(int argc, char *argv[])
   bool testFailed = false;
   bool verbose = false;
   bool debug = false;
-  string filename("mhd1280b.cua");
   string which("LM");
   bool printOnAllProcs = false;
   string outputfn = "";
@@ -77,7 +76,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("allprint","oneprint",&printOnAllProcs,"Print output on all processors.");
   cmdp.setOption("outputfn",&outputfn,"File template for printing, ""%d"" substitues for processor rank, blank implies standard out.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -331,7 +330,7 @@ int main(int argc, char *argv[])
     }
   }
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 

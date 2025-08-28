@@ -118,7 +118,7 @@ ContourSubElement::dump_details() const
 }
 
 int
-ContourSubElement::side_facets( FacetedSurfaceBase & facets, int side ) const
+ContourSubElement::side_facets( FacetedSurfaceBase & /*facets*/, int /*side*/ ) const
 {
   const std::string & owner_type = my_owner->dist_topology().name();
   const std::string & sub_type = topology().name();
@@ -129,7 +129,7 @@ ContourSubElement::side_facets( FacetedSurfaceBase & facets, int side ) const
 }
 
 double
-ContourSubElement::side_area( int side ) const
+ContourSubElement::side_area( int /*side*/ ) const
 {
   const std::string & owner_type = my_owner->dist_topology().name();
   const std::string & sub_type = topology().name();

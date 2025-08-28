@@ -53,7 +53,7 @@ public:
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key);
 
   void handle_hanging_children(CDMesh & mesh, const InterfaceID & interface);
-  virtual void fix_hanging_children(CDMesh & mesh, const InterfaceID & interface, const std::vector<int> & edges_with_children) {}
+  virtual void fix_hanging_children(CDMesh & /*mesh*/, const InterfaceID & /*interface*/, const std::vector<int> & /*edges_with_children*/) {}
 
   virtual void build_quadratic_subelements(CDMesh & mesh);
   virtual void cut_face_interior_intersection_points(CDMesh & mesh, int level = 0);
@@ -341,9 +341,9 @@ public:
   : SubElementChildNode(in_owner, parents, weights) {}
 
   virtual ~SubElementSteinerNode() {}
-  virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override { return false; }
+  virtual bool needs_to_be_ale_prolonged(const CDMesh & /*mesh*/) const override { return false; }
   virtual void prolongate_fields(const CDMesh & mesh) const override;
-  virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * owner ) const override {
+  virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * /*owner*/ ) const override {
     throw std::runtime_error("Incorrect usage of SubElementSteinerNode.  The type of node only has one owner.");
   }
 };
@@ -359,7 +359,7 @@ public:
   virtual ~SubElementEdgeNode() {}
 
   double get_position() const { STK_ThrowAssert(get_num_parents() == 2); return get_parent_weights()[1]; }
-  double get_position(const SubElementNode *parent1, const SubElementNode *parent2) const { STK_ThrowAssert(check_parents(parent1,parent2)); return ((parent1==get_parents()[0]) ? get_parent_weights()[1] : get_parent_weights()[0]); }
+  double get_position(const SubElementNode *parent1, [[maybe_unused]] const SubElementNode *parent2) const { STK_ThrowAssert(check_parents(parent1,parent2)); return ((parent1==get_parents()[0]) ? get_parent_weights()[1] : get_parent_weights()[0]); }
 
 private:
   bool check_parents(const SubElementNode *parent1, const SubElementNode *parent2) const {
@@ -380,7 +380,7 @@ public:
       stk::mesh::EntityId meshNodeId);
 
   virtual ~SubElementMidSideNode() {}
-  virtual bool needs_to_be_ale_prolonged(const CDMesh & mesh) const override { return false; }
+  virtual bool needs_to_be_ale_prolonged(const CDMesh & /*mesh*/) const override { return false; }
   virtual void prolongate_fields(const CDMesh & mesh) const override;
   virtual stk::math::Vector3d compute_owner_coords( const Mesh_Element * in_owner ) const override {
     return 0.5 * my_parent1->owner_coords(in_owner) + 0.5 * my_parent2->owner_coords(in_owner);

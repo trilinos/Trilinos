@@ -99,6 +99,7 @@
 #include "Shards_CellTopology.hpp"
 
 // Pamgen includes
+#include "Xpetra_CrsMatrixWrap_decl.hpp"
 #include "create_inline_mesh.h"
 #include "pamgen_im_exodusII_l.h"
 #include "pamgen_im_ne_nemesisI_l.h"

@@ -81,7 +81,7 @@ int ex_get_block_id_map(int exoid, ex_entity_type obj_type, ex_entity_id entity_
       ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
       EX_FUNC_LEAVE(EX_FATAL);
     }
-    if ((status = nc_inq_dimid(exoid, dnument, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, dnument, &dimid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate number of entities in %s  %" PRId64 " in file id %d",
                ex_name_of_object(obj_type), entity_id, exoid);
@@ -89,7 +89,7 @@ int ex_get_block_id_map(int exoid, ex_entity_type obj_type, ex_entity_id entity_
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_inq_dimlen(exoid, dimid, &len)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, &len)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of %ss in block  %" PRId64 " in file id %d",
                ex_name_of_object(obj_type), entity_id, exoid);

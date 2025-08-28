@@ -23,39 +23,38 @@ namespace Ifpack2 {
 /// This class is mainly useful for testing.  It implements the
 /// identity operator; its apply() method just copies the input to the
 /// output.
-template<class MatrixType>
-class IdentitySolver :
-    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                           typename MatrixType::local_ordinal_type,
-                                           typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{
-public:
+template <class MatrixType>
+class IdentitySolver : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                              typename MatrixType::local_ordinal_type,
+                                                              typename MatrixType::global_ordinal_type,
+                                                              typename MatrixType::node_type>,
+                       virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                          typename MatrixType::local_ordinal_type,
+                                                                                          typename MatrixType::global_ordinal_type,
+                                                                                          typename MatrixType::node_type> > {
+ public:
   //! Type of the entries of the input matrix.
-  typedef typename MatrixType::scalar_type                                scalar_type;
+  typedef typename MatrixType::scalar_type scalar_type;
   //! Type of the local indices of the input matrix.
-  typedef typename MatrixType::local_ordinal_type                         local_ordinal_type;
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   //! Type of the global indices of the input matrix.
-  typedef typename MatrixType::global_ordinal_type                        global_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   //! Node type of the input matrix.
-  typedef typename MatrixType::node_type                                  node_type;
+  typedef typename MatrixType::node_type node_type;
 
   //! Type of the absolute value (magnitude) of a \c scalar_type value.
-  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType      magnitude_type;
+  typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
   //! Specialization of Tpetra::Map used by this class.
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   //! Specialization of Tpetra::RowMatrix used by this class.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> row_matrix_type;
+                            global_ordinal_type, node_type>
+      row_matrix_type;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::IdentitySolver: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
   //! Constructor: Takes the matrix to precondition.
-  IdentitySolver (const Teuchos::RCP<const row_matrix_type>& A);
+  IdentitySolver(const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor.
   virtual ~IdentitySolver();
@@ -63,14 +62,14 @@ public:
   /// \brief Set this object's parameters.
   ///
   /// This object does not currently take any parameters.
-  void setParameters (const Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   //! Initialize
   void initialize();
 
   //! Return \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
-    return(isInitialized_);
+    return (isInitialized_);
   }
 
   //! Compute the preconditioner
@@ -78,7 +77,7 @@ public:
 
   //! Return true if compute() has been called.
   inline bool isComputed() const {
-    return(isComputed_);
+    return (isComputed_);
   }
 
   //! @name Implementation of Tpetra::Operator
@@ -91,32 +90,32 @@ public:
   /// \param Y [in/out] On input: Initial guess, if applicable.
   ///   On poutput: Result of applying the preconditioner.
   void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Return the Tpetra::Map object associated with the domain of this operator.
-  Teuchos::RCP<const map_type> getDomainMap () const;
+  Teuchos::RCP<const map_type> getDomainMap() const;
 
   //! Return the Tpetra::Map object associated with the range of this operator.
-  Teuchos::RCP<const map_type> getRangeMap () const;
+  Teuchos::RCP<const map_type> getRangeMap() const;
 
   /// \brief Apply the original input matrix.
   ///
   /// \param X [in] MultiVector input.
   /// \param Y [in/out] Result of applying the matrix A to X.
   void
-  applyMat (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  applyMat(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+           Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+           Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //! Return the communicator associated with this matrix operator.
-  Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
+  Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Return a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const row_matrix_type> getMatrix () const {
+  Teuchos::RCP<const row_matrix_type> getMatrix() const {
     return matrix_;
   }
 
@@ -152,17 +151,17 @@ public:
   std::string description() const;
 
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
   /// \brief Set this preconditioner's matrix.
   ///
   /// After calling this method, you must call first initialize(),
   /// then compute(), before you may call apply().
-  virtual void setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  virtual void setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
 
   //@}
 
-private:
+ private:
   //! Specialization of Tpetra::Export used by this preconditioner.
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
 
@@ -189,6 +188,6 @@ private:
   double applyTime_;
 };
 
-}//namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif

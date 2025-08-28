@@ -28,7 +28,7 @@
 
 #include "AnasaziLOBPCG.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #endif
 
@@ -44,7 +44,7 @@ class get_out : public std::logic_error {
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Init(&argc,&argv);
 #endif
 
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nodebug",&debug,"Print debugging info.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
       MPI_Finalize();
 #endif
       return -1;
@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize();
 #endif
 

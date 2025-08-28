@@ -99,7 +99,7 @@ void IOShell::Interface::enroll_options()
                   nullptr);
 
   options_.enroll("float", Ioss::GetLongOption::OptType::NoValue,
-                  "Use 32-bit floating point values on output database; default is 64-bits",
+                  "Use 32-bit floating point values on output database; default is 64-bit doubles",
                   nullptr);
 
   options_.enroll("netcdf3", Ioss::GetLongOption::OptType::NoValue,
@@ -239,12 +239,26 @@ void IOShell::Interface::enroll_options()
   options_.enroll("serialize_io_size", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
                   "a parallel run;\n\t\t0 to disable",
-                  nullptr, nullptr, true);
+                  nullptr);
+
+  options_.enroll(
+      "decomp_omit_block_ids", Ioss::GetLongOption::OptType::MandatoryValue,
+      "comma-separated list of element block ids that should be ignored "
+      "in\n"
+      "\t\tthe parallel decomposition. Only valid for zoltan decomp methods: rcb, rib, hsfc",
+      nullptr);
+  options_.enroll(
+      "decomp_omit_block_names", Ioss::GetLongOption::OptType::MandatoryValue,
+      "comma-separated list of element block names that should be ignored "
+      "in\n"
+      "\t\tthe parallel decomposition. Only valid for zoltan decomp methods: rcb, rib, hsfc",
+      nullptr, nullptr, true);
 #endif
 
   options_.enroll("select_change_sets", Ioss::GetLongOption::OptType::MandatoryValue,
                   "Read only the specified change set(s) (comma-separated list) from the input "
-                  "file.  Use \"ALL\" for all change sets (default).",
+                  "file.\n"
+                  "\t\tUse \"ALL\" for all change sets (default).",
                   nullptr);
   options_.enroll(
       "extract_change_set", Ioss::GetLongOption::OptType::MandatoryValue,
@@ -281,9 +295,19 @@ void IOShell::Interface::enroll_options()
   options_.enroll("time_offset", Ioss::GetLongOption::OptType::MandatoryValue,
                   "The output time = input_time * time_scale + time_offset", nullptr);
 
+  options_.enroll("sort_timesteps", Ioss::GetLongOption::OptType::NoValue,
+                  "The output database will have monotonically increasing timestep time values.",
+                  nullptr);
+
   options_.enroll("select_times", Ioss::GetLongOption::OptType::MandatoryValue,
                   "comma-separated list of times that should be transferred to output database",
                   nullptr);
+
+  options_.enroll(
+      "select_steps", Ioss::GetLongOption::OptType::MandatoryValue,
+      "comma-separated 1-based list of steps that should be transferred to output database\n"
+      "\t\tEnter a negative value to count from end. -1 is last, -2 is second last.",
+      nullptr);
 
   options_.enroll("append_after_time", Ioss::GetLongOption::OptType::MandatoryValue,
                   "add steps on input database after specified time on output database", nullptr);
@@ -326,8 +350,23 @@ void IOShell::Interface::enroll_options()
                   "\t\tOptions are: TOPOLOGY(default), BLOCK, NO_SPLIT",
                   nullptr);
 
+  options_.enroll("lowercase_variable_names", Ioss::GetLongOption::OptType::NoValue,
+                  "Convert input variable names to lowercase and replace spaces with underscores.\n"
+                  "\t\tDefault is variable names are left as they appear in the input mesh file",
+                  nullptr);
+
+  options_.enroll(
+      "lowercase_database_names", Ioss::GetLongOption::OptType::NoValue,
+      "Convert all block/set/assembly names to lowercase and replace spaces with underscores.\n"
+      "\t\tDefault is block/set/assembly names are left as they appear in the input mesh file",
+      nullptr);
+
+  options_.enroll("lower_case_database_names", Ioss::GetLongOption::OptType::NoValue,
+                  "[Deprecated] Use lowercase_database_names", nullptr);
+
   options_.enroll("native_variable_names", Ioss::GetLongOption::OptType::NoValue,
-                  "Do not lowercase variable names and replace spaces with underscores.\n"
+                  "[deprecated, now default] Do not lowercase variable names and replace spaces "
+                  "with underscores.\n"
                   "\t\tVariable names are left as they appear in the input mesh file",
                   nullptr);
 
@@ -381,6 +420,10 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("memory_statistics", Ioss::GetLongOption::OptType::NoValue,
                   "output memory usage throughout code execution", nullptr);
+
+  options_.enroll("Shuffle_timesteps", Ioss::GetLongOption::OptType::NoValue,
+                  "The output database will have randomly ordered timestep time values. (TEST)",
+                  nullptr);
 
   options_.enroll(
       "memory_read", Ioss::GetLongOption::OptType::NoValue,
@@ -665,7 +708,11 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
   in_memory_read            = (options_.retrieve("memory_read") != nullptr);
   in_memory_write           = (options_.retrieve("memory_write") != nullptr);
   delete_timesteps          = (options_.retrieve("delete_timesteps") != nullptr);
-  lower_case_variable_names = (options_.retrieve("native_variable_names") == nullptr);
+  sort_times                = (options_.retrieve("sort_timesteps") != nullptr);
+  shuffle_times             = (options_.retrieve("Shuffle_timesteps") != nullptr);
+  lowercase_variable_names  = (options_.retrieve("lowercase_variable_names") != nullptr);
+  lowercase_database_names  = (options_.retrieve("lowercase_database_names") != nullptr);
+  lowercase_database_names  = (options_.retrieve("lower_case_database_names") != nullptr);
   disable_field_recognition = (options_.retrieve("disable_field_recognition") != nullptr);
   retain_empty_blocks       = (options_.retrieve("retain_empty_blocks") != nullptr);
   boundary_sideset          = (options_.retrieve("boundary_sideset") != nullptr);
@@ -716,6 +763,25 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
       }
     }
   }
+
+#if defined(SEACAS_HAVE_MPI)
+  {
+    const char *temp = options_.retrieve("decomp_omit_block_ids");
+    if (temp != nullptr) {
+      auto omit_str = Ioss::tokenize(std::string(temp), ",");
+      for (const auto &str : omit_str) {
+        auto id = std::stoi(str);
+        decomp_omitted_block_ids.push_back(id);
+      }
+    }
+  }
+  {
+    const char *temp = options_.retrieve("decomp_omit_block_names");
+    if (temp != nullptr) {
+      decomp_omitted_block_names = std::string(temp);
+    }
+  }
+#endif
 
   {
     const char *temp = options_.retrieve("surface_split_scheme");
@@ -783,6 +849,24 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
         selected_times.push_back(time);
       }
       Ioss::sort(selected_times.begin(), selected_times.end());
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("select_steps");
+    if (temp != nullptr) {
+      if (!selected_times.empty()) {
+        if (my_processor == 0) {
+          fmt::print(stderr, "ERROR: Can not use both select_times and select_steps.\n");
+        }
+        return false;
+      }
+
+      auto step_str = Ioss::tokenize(std::string(temp), ",");
+      for (const auto &str : step_str) {
+        auto step = std::stoi(str);
+        selected_steps.push_back(step);
+      }
     }
   }
 

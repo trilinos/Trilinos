@@ -111,7 +111,7 @@ ContourElement::coordinates( const stk::math::Vector3d & p_coords ) const
     return coords;
   }
 
-double ContourElement::compute_domain_integral(const sierra::ArrayContainer<double, DIM, NINT> & intgPtLocations,
+double ContourElement::compute_domain_integral(const sierra::ArrayContainer<double, DIM, NINT> & /*intgPtLocations*/,
     const sierra::ArrayContainer<double, NINT> & intgWeights,
     const sierra::ArrayContainer<double, NINT> &  determinants)
 {

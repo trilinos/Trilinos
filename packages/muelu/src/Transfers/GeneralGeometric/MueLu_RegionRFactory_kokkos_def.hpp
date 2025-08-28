@@ -211,8 +211,8 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                                                numDimensions);
 
   // Get device views of coordinates
-  auto fineCoordsView   = fineCoordinates->getDeviceLocalView(Xpetra::Access::ReadOnly);
-  auto coarseCoordsView = coarseCoordinates->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+  auto fineCoordsView   = fineCoordinates->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto coarseCoordsView = coarseCoordinates->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
   Array<ArrayRCP<const real_type> > fineCoordData(numDimensions);
   Array<ArrayRCP<real_type> > coarseCoordData(numDimensions);

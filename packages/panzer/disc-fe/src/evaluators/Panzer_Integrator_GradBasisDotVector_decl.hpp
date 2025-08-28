@@ -147,8 +147,8 @@ namespace panzer
        *               - "Vector Data Layout" is the vector data layout that
        *                 you'd like to use.
        */
-      Integrator_GradBasisDotVector(
-        const Teuchos::ParameterList& p);
+      Integrator_GradBasisDotVector(const Teuchos::ParameterList& p,
+                                    const panzer::EvaluatorStyle = panzer::EvaluatorStyle::EVALUATES);
 
       /**
        *  \brief Post-Registration Setup.

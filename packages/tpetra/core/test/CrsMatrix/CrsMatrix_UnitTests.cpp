@@ -7,6 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
+#include "Teuchos_LocalTestingHelpers.hpp"
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
@@ -513,6 +514,68 @@ namespace { // (anonymous)
     TEST_EQUALITY(kValsView(numLocalColumns-1), one);
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Norms, LO, GO, Scalar, Node )
+  {
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typedef typename ST::magnitudeType Mag;
+    typedef Teuchos::ScalarTraits<Mag> MT;
+    const size_t ONE = Teuchos::OrdinalTraits<size_t>::one();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const size_t numImages = comm->getSize();
+    const size_t myImageID = comm->getRank();
+    if (numImages < 2) return;
+    // create a Map
+    RCP<const Tpetra::Map<LO,GO,Node> > map =
+      createContigMapWithNode<LO,GO,Node>(INVALID,ONE,comm);
+    /* create the following matrix:
+       [2 -2           ]
+       [1 1 1         ]
+       [  1 1 1       ]
+       [   . . .      ]
+       [     . . .    ]
+       [       . . .  ]
+       [         1 1 1]
+       [           -3 2]
+    */
+    MAT A(map,3);
+    if (myImageID == 0) {
+      Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*ST::one(), static_cast<Scalar>(-2)*ST::one()));
+      Array<GO> cols(tuple<GO>(myImageID, myImageID+1));
+      A.insertGlobalValues(myImageID,cols(),vals());
+    }
+    else if (myImageID == numImages-1) {
+      Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(-3)*ST::one(), static_cast<Scalar>(2)*ST::one()));
+      Array<GO> cols(tuple<GO>(myImageID-1,myImageID));
+      A.insertGlobalValues(myImageID,cols(),vals());
+    }
+    else {
+      Array<Scalar> vals(3,ST::one());
+      Array<GO> cols(tuple<GO>(myImageID-1, myImageID, myImageID+1));
+      A.insertGlobalValues(myImageID,cols(),vals());
+    }
+    A.fillComplete();
+    // test the properties
+    Mag expectedNormInf = 5*MT::one();;
+    Mag expectedNorm1;
+    if (numImages == 2)
+      expectedNorm1 = 5*MT::one();
+    else if (numImages == 3)
+      expectedNorm1 = 6*MT::one();
+    else
+      expectedNorm1 = 5*MT::one();
+    if constexpr (MT::isOrdinal) {
+      TEST_EQUALITY(A.getNormInf(), expectedNormInf);
+      TEST_EQUALITY(A.getNorm1(), expectedNorm1);
+    } else {
+      Mag tol = MT::eps();
+      TEST_FLOATING_EQUALITY(A.getNormInf(), expectedNormInf, tol);
+      TEST_FLOATING_EQUALITY(A.getNorm1(), expectedNorm1, tol);
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -524,7 +587,8 @@ namespace { // (anonymous)
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ZeroMatrix,     LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, BadCalls,       LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SimpleEigTest,  LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, InsertLocalValuesCombineModes,  LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, InsertLocalValuesCombineModes,  LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Norms,  LO, GO, SCALAR, NODE )
 #else
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth,  LO, GO, SCALAR, NODE ) \
@@ -533,7 +597,8 @@ namespace { // (anonymous)
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ApplyOverwriteNan, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, BadCalls,       LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SimpleEigTest,  LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, InsertLocalValuesCombineModes,  LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, InsertLocalValuesCombineModes,  LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Norms,  LO, GO, SCALAR, NODE )
 #endif
 
   TPETRA_ETI_MANGLING_TYPEDEFS()

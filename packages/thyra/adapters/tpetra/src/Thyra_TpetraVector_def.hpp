@@ -13,6 +13,7 @@
 
 #include "Thyra_TpetraVector_decl.hpp"
 #include "Thyra_TpetraMultiVector.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace Thyra {
 

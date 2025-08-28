@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -45,12 +45,7 @@ namespace Iovs {
     }
 #ifdef IOSS_DLOPEN_ENABLED
     if (this->dlHandle != nullptr) {
-      // when loading both libOSMesa.so and the plugin using dlopen,
-      // dlclose seg faults. Only call dlclose() if we only made one
-      // dlopen call
-      if (this->dlHandleLibOSMesa == nullptr) {
-        dlclose(this->dlHandle);
-      }
+      dlclose(this->dlHandle);
     }
 #endif
   }
@@ -165,23 +160,6 @@ namespace Iovs {
       }
       else {
         this->broadCastString(cmInit.catalystBlockJSON, dbinfo);
-      }
-    }
-    else if (props.exists("PHACTORI_INPUT_SYNTAX_SCRIPT")) {
-      std::string phactoriFilePath = props.get("PHACTORI_INPUT_SYNTAX_SCRIPT").get_string();
-      CatalystManagerBase::ParseResult pres;
-      if (dbinfo.parallelUtils->parallel_rank() == 0) {
-        this->getCatalystManager().parsePhactoriFile(phactoriFilePath, pres);
-      }
-      this->broadCastStatusCode(pres.parseFailed, dbinfo);
-      if (pres.parseFailed) {
-        std::ostringstream errmsg;
-        errmsg << "Unable to parse input file: " << phactoriFilePath << "\n";
-        IOSS_ERROR(errmsg);
-      }
-      else {
-        this->broadCastString(pres.jsonParseResult, dbinfo);
-        cmInit.catalystBlockJSON = pres.jsonParseResult;
       }
     }
 
@@ -299,65 +277,33 @@ namespace Iovs {
   {
 
     std::string pluginLibraryPath;
-    bool        callDlopenLibOSMesa{};
-    std::string libOSMesaPath;
 
-    callDlopenLibOSMesa = this->getCatalystPluginPath(pluginLibraryPath, libOSMesaPath);
+    this->getCatalystPluginPath(pluginLibraryPath);
 
 #ifdef IOSS_DLOPEN_ENABLED
-    if (callDlopenLibOSMesa) {
-      this->dlHandleLibOSMesa = dlopen(libOSMesaPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
-      if (this->dlHandleLibOSMesa == nullptr) {
-        throw std::runtime_error(dlerror());
-      }
-    }
-    else {
-      this->dlHandleLibOSMesa = nullptr;
-    }
     this->dlHandle = dlopen(pluginLibraryPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (this->dlHandle == nullptr) {
       throw std::runtime_error(dlerror());
     }
 #else
-    this->dlHandle          = nullptr;
-    this->dlHandleLibOSMesa = nullptr;
+    this->dlHandle = nullptr;
 #endif
   }
 
-  bool Utils::getCatalystPluginPath(std::string &catalystPluginPath, std::string &libOSMesaPath)
+  void Utils::getCatalystPluginPath(std::string &catalystPluginPath)
   {
-    bool callDlopenLibOSMesa = false;
-
-    if (getenv("CATALYST_PLUGIN") != nullptr) {
-      catalystPluginPath  = getenv("CATALYST_PLUGIN");
-      callDlopenLibOSMesa = false;
-      libOSMesaPath       = CATALYST_LIB_OSMESA;
-      return callDlopenLibOSMesa;
-    }
-
     std::string catalystInsDir = this->getCatalystAdapterInstallDirectory();
 
-    if (!catalystInsDir.empty()) {
-      catalystPluginPath =
-          catalystInsDir + std::string(CATALYST_INSTALL_LIB_DIR) + CATALYST_PLUGIN_DYNAMIC_LIBRARY;
-      callDlopenLibOSMesa = false;
-      libOSMesaPath       = CATALYST_LIB_OSMESA;
-      return callDlopenLibOSMesa;
+    if (catalystInsDir.empty()) {
+      std::ostringstream errmsg;
+      errmsg << "Environment variable CATALYST_ADAPTER_INSTALL_DIR not set.\n"
+             << "Unable to find IOSS ParaView Catalyst plugin dynamic library:\n"
+             << "  CATALYST_PLUGIN_DYNAMIC_LIBRARY\n";
+      IOSS_ERROR(errmsg);
     }
 
     catalystPluginPath =
-        this->getSierraInstallDirectory() + "/" + std::string(CATALYST_PLUGIN_DYNAMIC_LIBRARY);
-    callDlopenLibOSMesa = true;
-    libOSMesaPath =
-        this->getSierraInstallDirectory() + CATALYST_LIB_OSMESA_DIR + CATALYST_LIB_OSMESA;
-
-    // to avoid depending on name python-3.7, python-3.8, etc., we
-    // expect a link to the python directory inside the sierra catalyst
-    // install along CATALYST_PARAVIEW_PYTHON_ZIP_FILE
-    std::string paraviewPythonZipFile =
-        this->getSierraInstallDirectory() + CATALYST_PARAVIEW_PYTHON_ZIP_FILE;
-    setPythonPathForParaViewPythonZipFile(paraviewPythonZipFile);
-    return callDlopenLibOSMesa;
+        catalystInsDir + std::string(CATALYST_INSTALL_LIB_DIR) + CATALYST_PLUGIN_DYNAMIC_LIBRARY;
   }
 
   void Utils::setPythonPathForParaViewPythonZipFile(std::string &paraviewPythonZipFilePath)
@@ -378,101 +324,31 @@ namespace Iovs {
 
   std::string Utils::getCatalystPythonDriverPath()
   {
-
     std::string catalystInsDir = this->getCatalystAdapterInstallDirectory();
 
-    if (!catalystInsDir.empty()) {
-      return catalystInsDir + std::string(CATALYST_INSTALL_PHACTORI_DIR) +
-             CATALYST_PLUGIN_PYTHON_MODULE;
-    }
-
-    return this->getSierraInstallDirectory() + "/" + std::string(CATALYST_PLUGIN_PYTHON_MODULE);
-  }
-
-  std::string Utils::getSierraInstallDirectory()
-  {
-
-    std::string sierraInsDir;
-    if (getenv("SIERRA_INSTALL_DIR") != nullptr) {
-      sierraInsDir = getenv("SIERRA_INSTALL_DIR");
-    }
-    else {
-      std::ostringstream errmsg;
-      errmsg << "Environment variable SIERRA_INSTALL_DIR not set.\n"
-             << " Unable to find ParaView catalyst dynamic library.\n";
-      IOSS_ERROR(errmsg);
-    }
-
-    std::string sierraSystem;
-    if (getenv("SIERRA_SYSTEM") != nullptr) {
-      sierraSystem = getenv("SIERRA_SYSTEM");
-    }
-    else {
-      std::ostringstream errmsg;
-      errmsg << "Environment variable SIERRA_SYSTEM not set.\n"
-             << " Unable to find ParaView catalyst dynamic library.\n";
-      IOSS_ERROR(errmsg);
-    }
-
-#if defined(__IOSS_WINDOWS__)
-    char *cbuf = _fullpath(nullptr, sierraInsDir.c_str(), _MAX_PATH);
-#else
-    char *cbuf = realpath(sierraInsDir.c_str(), nullptr);
-#endif
-    std::string sierraInsPath = cbuf;
-    free(cbuf);
-
-    if (!fileExists(sierraInsPath)) {
-      std::ostringstream errmsg;
-      errmsg << "SIERRA_INSTALL_DIR directory does not exist.\n"
-             << "Directory path: " << sierraInsPath << "\n"
-             << " Unable to find ParaView catalyst dynamic library.\n";
-      IOSS_ERROR(errmsg);
-    }
-
-#if defined(__IOSS_WINDOWS__)
-    {
-      std::ostringstream errmsg;
-      errmsg << "This code is not yet supported on windows...\n";
-      IOSS_ERROR(errmsg);
-    }
-#else
-    char *cbase = strdup(sierraInsPath.c_str());
-    char *cdir  = strdup(sierraInsPath.c_str());
-    char *bname = basename(cbase);
-    char *dname = dirname(cdir);
-
-    while (strcmp(dname, "/") != 0 && strcmp(dname, ".") != 0 && strcmp(bname, "sierra") != 0) {
-      bname = basename(dname);
-      dname = dirname(dname);
-    }
-
-    if (strcmp(bname, "sierra") == 0) {
-      sierraInsPath = dname;
-    }
-
-    free(cbase);
-    free(cdir);
-#endif
-
-    return sierraInsPath + "/" + CATALYST_PLUGIN_PATH + "/" + sierraSystem +
-           CATALYST_IOSS_CATALYST_PLUGIN_DIR;
+    return catalystInsDir + std::string(CATALYST_INSTALL_PHACTORI_DIR) +
+           CATALYST_PLUGIN_PYTHON_MODULE;
   }
 
   std::string Utils::getCatalystAdapterInstallDirectory()
   {
-    std::string catalystInsDir = "";
-    if (getenv("CATALYST_ADAPTER_INSTALL_DIR") != nullptr) {
-      catalystInsDir = getenv("CATALYST_ADAPTER_INSTALL_DIR");
-
-      if (!fileExists(catalystInsDir)) {
-        std::ostringstream errmsg;
-        errmsg << "CATALYST_ADAPTER_INSTALL_DIR directory does\n"
-               << "not exist. Directory path: " << catalystInsDir << "\n"
-               << "Unable to find ParaView catalyst dynamic library.\n";
-        IOSS_ERROR(errmsg);
-      }
+    if (getenv("CATALYST_ADAPTER_INSTALL_DIR") == nullptr) {
+      std::ostringstream errmsg;
+      errmsg << "CATALYST_ADAPTER_INSTALL_DIR environment variable is not set\n"
+             << "Unable to find ParaView Catalyst dynamic library.\n";
+      IOSS_ERROR(errmsg);
     }
+
+    std::string catalystInsDir = getenv("CATALYST_ADAPTER_INSTALL_DIR");
+
+    if (!fileExists(catalystInsDir)) {
+      std::ostringstream errmsg;
+      errmsg << "CATALYST_ADAPTER_INSTALL_DIR directory does\n"
+             << "not exist. Directory path: " << catalystInsDir << "\n"
+             << "Unable to find ParaView Catalyst dynamic library.\n";
+      IOSS_ERROR(errmsg);
+    }
+
     return catalystInsDir;
   }
 
@@ -542,8 +418,6 @@ namespace Iovs {
   void Utils::broadCastString(IOSS_MAYBE_UNUSED std::string        &s,
                               IOSS_MAYBE_UNUSED const DatabaseInfo &dbinfo)
   {
-    IOSS_PAR_UNUSED(s);
-    IOSS_PAR_UNUSED(dbinfo);
 #ifdef SEACAS_HAVE_MPI
     int size = s.size();
     dbinfo.parallelUtils->broadcast(size);
@@ -557,8 +431,6 @@ namespace Iovs {
   void Utils::broadCastStatusCode(IOSS_MAYBE_UNUSED bool               &statusCode,
                                   IOSS_MAYBE_UNUSED const DatabaseInfo &dbinfo)
   {
-    IOSS_PAR_UNUSED(statusCode);
-    IOSS_PAR_UNUSED(dbinfo);
 #ifdef SEACAS_HAVE_MPI
 
     int code = statusCode;

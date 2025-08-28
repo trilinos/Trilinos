@@ -18,7 +18,7 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 #ifdef PHX_DEBUG
-#include "Phalanx_Kokkos_PrintViewValues.hpp"
+#include "Phalanx_PrintValues.hpp"
 #endif
 
 namespace PHX {
@@ -91,8 +91,7 @@ namespace PHX {
     typename std::enable_if<!Kokkos::is_view<T>::value,void>::type
     operator()(std::ostream& os)
     {
-      PHX::PrintViewValues<typename FieldType::array_type,FieldType::rank_value> p;
-      p.print(field_->get_static_view(),os);
+      PHX::printValues(*field_,os,field_->fieldTag().name());
     }
 
     // Use SFINAE to select this for Kokkos::View.
@@ -100,8 +99,7 @@ namespace PHX {
     typename std::enable_if<Kokkos::is_view<T>::value,void>::type
     operator()(std::ostream& os)
     {
-      PHX::PrintViewValues<FieldType,FieldType::rank> p;
-      p.print(*field_,os);
+      PHX::printValues(*field_,os,field_->label());
     }
   };
 
@@ -146,12 +144,7 @@ template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::FieldTag& ft)
 {
-  PHX::FTPredRef pred(ft);
-  std::vector< Teuchos::RCP<FieldTag> >::iterator test =
-    std::find_if(evaluated_.begin(), evaluated_.end(), pred);
-
-  if ( test == evaluated_.end() )
-    evaluated_.push_back(ft.clone());
+  this->addEvaluatedFieldTagIfNotAlreadyRegistered(ft);
 
   this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
 
@@ -166,7 +159,7 @@ template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::MDField<DataT,Props...>& f)
 {
-  this->addEvaluatedField(f.fieldTag());
+  this->addEvaluatedFieldTagIfNotAlreadyRegistered(f.fieldTag());
 
   using NCF = PHX::MDField<DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
@@ -184,7 +177,7 @@ template<typename DataT,int Rank,typename Layout>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::Field<DataT,Rank,Layout>& f)
 {
-  this->addEvaluatedField(f.fieldTag());
+  this->addEvaluatedFieldTagIfNotAlreadyRegistered(f.fieldTag());
 
   using NCF = PHX::Field<DataT,Rank,Layout>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
@@ -203,7 +196,7 @@ void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::FieldTag& ft,
                   const Kokkos::View<DataT,Properties...>& f)
 {
-  this->addEvaluatedField(ft);
+  this->addEvaluatedFieldTagIfNotAlreadyRegistered(ft);
 
   using NCF = Kokkos::View<DataT,Properties...>;
   this->field_binders_.emplace(ft.identifier(),
@@ -220,12 +213,7 @@ template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addContributedField(const PHX::FieldTag& ft)
 {
-  PHX::FTPredRef pred(ft);
-  std::vector< Teuchos::RCP<FieldTag> >::iterator test =
-    std::find_if(contributed_.begin(), contributed_.end(), pred);
-
-  if ( test == contributed_.end() )
-    contributed_.push_back(ft.clone());
+  this->addContributedFieldTagIfNotAlreadyRegistered(ft);
 
   this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
 
@@ -240,7 +228,7 @@ template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addContributedField(const PHX::MDField<DataT,Props...>& f)
 {
-  this->addContributedField(f.fieldTag());
+  this->addContributedFieldTagIfNotAlreadyRegistered(f.fieldTag());
 
   using NCF = PHX::MDField<DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
@@ -257,7 +245,7 @@ template<typename DataT,int Rank,typename Layout>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addContributedField(const PHX::Field<DataT,Rank,Layout>& f)
 {
-  this->addContributedField(f.fieldTag());
+  this->addContributedFieldTagIfNotAlreadyRegistered(f.fieldTag());
 
   using NCF = PHX::Field<DataT,Rank,Layout>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
@@ -275,7 +263,7 @@ void PHX::EvaluatorWithBaseImpl<Traits>::
 addContributedField(const PHX::FieldTag& ft,
                     const Kokkos::View<DataT,Properties...>& f)
 {
-  this->addContributedField(ft);
+  this->addContributedFieldTagIfNotAlreadyRegistered(ft);
 
   using NCF = Kokkos::View<DataT,Properties...>;
   this->field_binders_.emplace(ft.identifier(),
@@ -291,12 +279,7 @@ template<typename Traits>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addDependentField(const PHX::FieldTag& ft)
 {
-  PHX::FTPredRef pred(ft);
-  std::vector< Teuchos::RCP<FieldTag> >::iterator test =
-    std::find_if(required_.begin(), required_.end(), pred);
-
-  if ( test == required_.end() )
-    required_.push_back(ft.clone());
+  this->addDependentFieldTagIfNotAlreadyRegistered(ft);
 
   this->field_binders_.emplace(ft.identifier(),PHX::DummyMemoryBinder());
 
@@ -311,7 +294,7 @@ template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addNonConstDependentField(const PHX::MDField<DataT,Props...>& f)
 {
-  this->addDependentField(f.fieldTag());
+  this->addDependentFieldTagIfNotAlreadyRegistered(f.fieldTag());
 
   using NCF = PHX::MDField<typename std::remove_const<DataT>::type,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
@@ -328,7 +311,7 @@ template<typename DataT,typename...Props>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addDependentField(const PHX::MDField<const DataT,Props...>& f)
 {
-  this->addDependentField(f.fieldTag());
+  this->addDependentFieldTagIfNotAlreadyRegistered(f.fieldTag());
 
   using NCF = PHX::MDField<const DataT,Props...>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
@@ -345,7 +328,7 @@ template<typename DataT,int Rank,typename Layout>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addDependentField(const PHX::Field<const DataT,Rank,Layout>& f)
 {
-  this->addDependentField(f.fieldTag());
+  this->addDependentFieldTagIfNotAlreadyRegistered(f.fieldTag());
 
   using NCF = PHX::Field<const DataT,Rank,Layout>;
   this->field_binders_.emplace(f.fieldTag().identifier(),
@@ -379,7 +362,7 @@ addDependentField(const PHX::FieldTag& ft,
   static_assert(std::is_const<typename PHX::remove_all_pointers<DataT>::type>::value,
                 "PHX::EvaluatorWithBaseImpl - addDependentfield() requires a Kokkos::View with a const DataType!");
 
-  this->addDependentField(ft);
+  this->addDependentFieldTagIfNotAlreadyRegistered(ft);
 
   using NCF = Kokkos::View<DataT,Properties...>;
   this->field_binders_.emplace(ft.identifier(),
@@ -531,6 +514,48 @@ PHX::EvaluatorWithBaseImpl<Traits>::printFieldValues(std::ostream& os) const
     (it->second)(os);
   }
 #endif
+}
+
+//**********************************************************************
+template<typename Traits>
+void
+PHX::EvaluatorWithBaseImpl<Traits>::
+addEvaluatedFieldTagIfNotAlreadyRegistered(const PHX::FieldTag& ft)
+{
+  PHX::FTPredRef pred(ft);
+  std::vector<Teuchos::RCP<PHX::FieldTag>>::iterator test =
+    std::find_if(evaluated_.begin(), evaluated_.end(), pred);
+
+  if ( test == evaluated_.end() )
+    evaluated_.push_back(ft.clone());
+}
+
+//**********************************************************************
+template<typename Traits>
+void
+PHX::EvaluatorWithBaseImpl<Traits>::
+addContributedFieldTagIfNotAlreadyRegistered(const PHX::FieldTag& ft)
+{
+  PHX::FTPredRef pred(ft);
+  std::vector<Teuchos::RCP<PHX::FieldTag>>::iterator test =
+    std::find_if(contributed_.begin(), contributed_.end(), pred);
+
+  if ( test == contributed_.end() )
+    contributed_.push_back(ft.clone());
+}
+
+//**********************************************************************
+template<typename Traits>
+void
+PHX::EvaluatorWithBaseImpl<Traits>::
+addDependentFieldTagIfNotAlreadyRegistered(const PHX::FieldTag& ft)
+{
+  PHX::FTPredRef pred(ft);
+  std::vector<Teuchos::RCP<PHX::FieldTag>>::iterator test =
+    std::find_if(required_.begin(), required_.end(), pred);
+
+  if ( test == required_.end() )
+    required_.push_back(ft.clone());
 }
 
 //**********************************************************************

@@ -1,5 +1,5 @@
 """
-exodus.py v 1.21.3 (seacas-py3) is a python wrapper of some of the exodus library
+exodus.py v 1.21.5 (seacas-py3) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -78,10 +78,10 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.21.3 (seacas-py3)"
+EXODUS_PY_VERSION = "1.21.5 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.21.3 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.21.5 (seacas-py3), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013-2023 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -704,6 +704,7 @@ class exodus:
         else:
             self.use_numpy = False
 
+        self.numBlob = numBlob
         self.EXODUS_LIB = EXODUS_LIB
         self.fileName = str(file)
         self.basename = basename(file)
@@ -2354,7 +2355,7 @@ class exodus:
         objType   : ex_entity_type
             type of object being queried
         entityid : ex_entity_id
-            id of the entity (block, set) *ID* (not *INDEX*)
+            index/id of the entity (element, node)
         var_name : string
             name of variable
         start_step : int
@@ -2411,6 +2412,45 @@ class exodus:
         numVals = self.get_entity_count(objType, entityId)
 
         values = self.__ex_get_var(step, objType, var_id, entityId, numVals)
+        if self.use_numpy:
+            values = ctype_to_numpy(self, values)
+        return values
+
+    def get_variable_values_multi_time(self, objType, entityId, name, begin_step, end_step):
+        """
+        get list of `objType` variable values for a specified object id
+        block, variable name, and 1-based range of time steps
+
+        >>> evar_vals = exo.get_variable_values_multi_time('EX_ELEM_BLOCK', elem_blk_id,
+        ...                                            evar_name, 1, 10)
+
+        Parameters
+        ----------
+        objType   : ex_entity_type
+            type of object being queried
+        entityid : ex_entity_id
+            id of the entity (block, set) *ID* (not *INDEX*)
+        name : string
+            name of variable
+        begin_step : int
+            1-based index of time step at beginning of range
+        end_step : int
+            1-based index of time step at end of range
+
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<ctypes.c_double>>  evar_vals
+
+            if array_type == 'numpy':
+              <np_array<double>>  evar_vals
+        """
+        names = self.get_variable_names(objType)
+        var_id = names.index(name) + 1
+        numVals = self.get_entity_count(objType, entityId)
+
+        values = self.__ex_get_var(begin_step, end_step, objType, var_id, entityId, numVals)
         if self.use_numpy:
             values = ctype_to_numpy(self, values)
         return values
@@ -2552,12 +2592,16 @@ class exodus:
         """
         get the number of blobs in the model
 
-        >>> num_assembly = exo.num_blob()
+        >>> num_blob = exo.num_blob()
 
         Returns
         -------
         num_blob : int
         """
+        if self.numBlob is None:
+            return 0
+        if (isinstance(self.numBlob, int)):
+            return self.numBlob
         return self.numBlob.value
 
     def get_blob(self, object_id):
@@ -5935,6 +5979,26 @@ class exodus:
             var_id,
             block_id,
             num_values,
+            var_vals)
+        return var_vals
+
+    def __ex_get_var_multi_time(self, start_step, end_step, varType, varId, blkId, numValues):
+        s_step = ctypes.c_int(start_step)
+        e_step = ctypes.c_int(end_step)
+        var_type = ctypes.c_int(get_entity_type(varType))
+        var_id = ctypes.c_int(varId)
+        block_id = ctypes.c_longlong(blkId)
+        num_values = ctypes.c_longlong(numValues)
+        num_steps = end_step - start_step + 1
+        var_vals = (ctypes.c_double * num_values.value * num_steps)()
+        EXODUS_LIB.ex_get_var_multi_time(
+            self.fileId,
+            var_type,
+            var_id,
+            block_id,
+            num_values,
+            s_step,
+            e_step,
             var_vals)
         return var_vals
 

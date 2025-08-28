@@ -60,25 +60,65 @@ bool are_side_nodes_degenerate(const stk::mesh::EntityVector &sideNodes)
     return returnVal;
 }
 
-bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, const stk::mesh::EntityVector& localElemSideNodes, unsigned sideIndex, const stk::mesh::EntityVector &otherElemSideNodes)
+bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, unsigned sideIndex, const stk::mesh::EntityVector &otherElemSideNodes)
 {
     EquivAndPositive result = stk::mesh::is_side_equivalent_and_positive(bulkData, localElem, sideIndex, otherElemSideNodes);
     return result.is_equiv && result.is_positive;
 }
 
+// TODO: deprecate this version as it does not work for paved shells
 bool is_nondegenerate_coincident_connection(const stk::mesh::BulkData &bulkData,
                                             stk::mesh::Entity localElem,
-                                            const stk::mesh::EntityVector& localElemSideNodes,
+                                            const stk::mesh::EntityVector& /*localElemSideNodes*/,
                                             unsigned sideIndex,
                                             stk::topology otherElemTopology,
                                             const stk::mesh::EntityVector &otherElemSideNodes)
 {
     stk::topology localTopology = bulkData.bucket(localElem).topology();
     TopologyChecker topologyChecker {localTopology, otherElemTopology};
-    if(topologyChecker.are_both_shells())
+    if(topologyChecker.are_both_shells()) {
         return true;
-    if(topologyChecker.are_both_not_shells())
-        return is_side_node_permutation_positive(bulkData, localElem, localElemSideNodes, sideIndex, otherElemSideNodes);
+    }
+    if(topologyChecker.are_both_not_shells()) {
+        return is_side_node_permutation_positive(bulkData, localElem, sideIndex, otherElemSideNodes);
+    }
+    return false;
+}
+
+// TODO: deprecate this version as it does not work for paved shells
+bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
+                              stk::mesh::Entity localElem,
+                              const stk::mesh::EntityVector& localElemSideNodes,
+                              unsigned sideIndex,
+                              stk::topology otherElemTopology,
+                              const stk::mesh::EntityVector &otherElemSideNodes)
+{
+    if(are_side_nodes_degenerate(otherElemSideNodes)) {
+        return false;
+    }
+    return is_nondegenerate_coincident_connection(bulkData, localElem, localElemSideNodes, sideIndex, otherElemTopology, otherElemSideNodes);
+}
+
+bool is_nondegenerate_coincident_connection(const stk::mesh::BulkData &bulkData,
+                                            stk::mesh::Entity localElem,
+                                            const stk::mesh::EntityVector& /*localElemSideNodes*/,
+                                            unsigned sideIndex,
+                                            stk::topology otherElemTopology,
+                                            const stk::mesh::EntityVector &otherElemSideNodes,
+                                            unsigned otherSideIndex)
+{
+    stk::topology elemTopology = bulkData.bucket(localElem).topology();
+    TopologyChecker topologyChecker {elemTopology, otherElemTopology};
+    if(topologyChecker.are_both_shells()) {
+        bool samePolarity = is_side_node_permutation_positive(bulkData, localElem, sideIndex, otherElemSideNodes);
+        return(ShellConnectionConfiguration::STACKED == get_shell_configuration(     elemTopology,      sideIndex,
+                                                                                otherElemTopology, otherSideIndex, samePolarity));
+    }
+
+    if(topologyChecker.are_both_not_shells()) {
+        return is_side_node_permutation_positive(bulkData, localElem, sideIndex, otherElemSideNodes);
+    }
+
     return false;
 }
 
@@ -87,11 +127,33 @@ bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
                               const stk::mesh::EntityVector& localElemSideNodes,
                               unsigned sideIndex,
                               stk::topology otherElemTopology,
-                              const stk::mesh::EntityVector &otherElemSideNodes)
+                              const stk::mesh::EntityVector &otherElemSideNodes,
+                              unsigned otherSideIndex)
 {
     if(are_side_nodes_degenerate(otherElemSideNodes))
         return false;
-    return is_nondegenerate_coincident_connection(bulkData, localElem, localElemSideNodes, sideIndex, otherElemTopology, otherElemSideNodes);
+    return is_nondegenerate_coincident_connection(bulkData,
+                                                  localElem, localElemSideNodes, sideIndex,
+                                                  otherElemTopology, otherElemSideNodes, otherSideIndex);
+}
+
+bool is_coincident_connection(const stk::topology& elemTopology,
+                              const unsigned sideIndex,
+                              const stk::mesh::Permutation& elemPerm,
+                              const stk::topology& otherElemTopology,
+                              const unsigned otherSideIndex,
+                              const stk::mesh::Permutation& otherElemPerm)
+{
+  TopologyChecker topoChecker{elemTopology, otherElemTopology};
+
+  if (topoChecker.are_both_shells()) {
+    return(ShellConnectionConfiguration::STACKED == get_shell_configuration(     elemTopology,      sideIndex,      elemPerm,
+                                                                            otherElemTopology, otherSideIndex, otherElemPerm));
+  }
+
+  const bool elemIsPos = elemTopology.side_topology(sideIndex).is_positive_polarity(elemPerm);
+  const bool otherElemIsPos = otherElemTopology.side_topology(otherSideIndex).is_positive_polarity(otherElemPerm);
+  return elemIsPos == otherElemIsPos;
 }
 
 }}} // end namespaces stk mesh impl

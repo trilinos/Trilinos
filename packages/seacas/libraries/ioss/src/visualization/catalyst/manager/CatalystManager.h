@@ -27,17 +27,13 @@ namespace Iovs {
   {
 
   public:
-    const std::string catalystPluginVersion = "2.0.0";
+    const std::string catalystPluginVersion = "3.0.0";
     using CatalystPipelineID                = unsigned int;
     using CatalystInputName                 = std::string;
     using CatalystMultiInputPipelineName    = std::string;
 
     CatalystManager();
     ~CatalystManager();
-
-    void parsePhactoriFile(const std::string &filepath, ParseResult &pres);
-
-    void parsePhactoriString(const std::string &phactori, ParseResult &pres);
 
     std::string getCatalystPluginVersion();
 

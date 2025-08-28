@@ -21,7 +21,7 @@ static int exi_prepare_result_var(int exoid, int num_vars, char *type_name, char
 
   char errmsg[MAX_ERR_LENGTH];
 
-  if ((status = nc_def_dim(exoid, dim_name, num_vars, &dimid)) != NC_NOERR) {
+  if ((status = nc_def_dim(exoid, dim_name, num_vars, &dimid)) != EX_NOERR) {
     if (status == NC_ENAMEINUSE) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: %s variable name parameters are already defined "
@@ -38,7 +38,7 @@ static int exi_prepare_result_var(int exoid, int num_vars, char *type_name, char
   }
 
   /* Now define type_name variable name variable */
-  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get string length in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     return EX_FATAL;
@@ -46,7 +46,7 @@ static int exi_prepare_result_var(int exoid, int num_vars, char *type_name, char
 
   dims[0] = dimid;
   dims[1] = dim_str_name;
-  if ((status = nc_def_var(exoid, variable_name, NC_CHAR, 2, dims, &varid)) != NC_NOERR) {
+  if ((status = nc_def_var(exoid, variable_name, NC_CHAR, 2, dims, &varid)) != EX_NOERR) {
     if (status == NC_ENAMEINUSE) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s variable names are already defined in file id %d",
                type_name, exoid);
@@ -151,7 +151,7 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
   }
 
   /* inquire previously defined dimensions  */
-  if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -165,7 +165,7 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
   }
 
   /* put file into define mode  */
-  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
@@ -178,7 +178,7 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
       goto error_ret;
     }
 
-    if ((status = nc_inq_dimid(exoid, DIM_NUM_GLO_VAR, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, DIM_NUM_GLO_VAR, &dimid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get global variable count in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -187,7 +187,7 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
     dims[0] = time_dim;
     dims[1] = dimid;
     if ((status = nc_def_var(exoid, VAR_GLO_VAR, nc_flt_code(exoid), 2, dims, &varid)) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define global variables in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -263,7 +263,7 @@ int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_
   }
 
   /* leave define mode  */
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);

@@ -63,7 +63,7 @@ int ex_get_all_times(int exoid, void *time_values)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_WHOLE_TIME, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time variable %s in file id %d",
              VAR_WHOLE_TIME, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -78,7 +78,7 @@ int ex_get_all_times(int exoid, void *time_values)
     status = nc_get_var_double(exoid, varid, time_values);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get time values from file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
