@@ -207,10 +207,10 @@ protected:
   HostBucketRawDataCollectionType goldHostFieldData;
 
   stk::mesh::DeviceFieldMetaDataArrayType<stk::mesh::NgpMeshDefaultMemSpace> deviceFieldMetaData;
-  stk::mesh::DeviceFieldMetaDataArrayType<stk::mesh::NgpMeshDefaultMemSpace>::HostMirror hostFieldMetaData;
+  stk::mesh::DeviceFieldMetaDataArrayType<stk::mesh::NgpMeshDefaultMemSpace>::host_mirror_type hostFieldMetaData;
 
   stk::mesh::DeviceBucketsModifiedCollectionType<stk::mesh::NgpMeshDefaultMemSpace> deviceBucketsMarkedModified;
-  stk::mesh::DeviceBucketsModifiedCollectionType<stk::mesh::NgpMeshDefaultMemSpace>::HostMirror hostBucketsMarkedModified;
+  stk::mesh::DeviceBucketsModifiedCollectionType<stk::mesh::NgpMeshDefaultMemSpace>::host_mirror_type hostBucketsMarkedModified;
 };
 
 TEST_F(TestTranspose, transpose_from)

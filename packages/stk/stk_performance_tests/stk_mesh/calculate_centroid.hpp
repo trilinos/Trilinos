@@ -110,7 +110,7 @@ std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   typedef Kokkos::View<double*, stk::ngp::MemSpace> DeviceAverageView;
-  typedef typename DeviceAverageView::HostMirror HostAverageView;
+  typedef typename DeviceAverageView::host_mirror_type HostAverageView;
 
   DeviceAverageView deviceAverageView("averageVew", 4);
   HostAverageView hostAverageView = Kokkos::create_mirror_view(deviceAverageView);

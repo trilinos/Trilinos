@@ -43,7 +43,7 @@
 #define INVALID UINT8_MAX
 
 using OrdinalType = Kokkos::View<uint8_t**, stk::ngp::MemSpace>;
-using OrdinalTypeHost = OrdinalType::HostMirror;
+using OrdinalTypeHost = OrdinalType::host_mirror_type;
 
 inline OrdinalType fillGoldOrdinals(const std::vector<std::vector<uint8_t>> & goldOrdinals) {
   const unsigned numPermutations = goldOrdinals.size();

@@ -1876,7 +1876,7 @@ public:
     const unsigned numNodes = stk::mesh::count_entities(bulk, stk::topology::NODE_RANK,
                                                         bulk.mesh_meta_data().universal_part());
     Kokkos::View<FieldDataType*> deviceValues("deviceValues", numNodes);
-    Kokkos::View<FieldDataType*>::HostMirror hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
+    Kokkos::View<FieldDataType*>::host_mirror_type hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
 
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
     auto stkFieldDataDevice = stkField.data<FieldDataType,stk::mesh::ReadOnly,stk::ngp::MemSpace>();
@@ -1916,7 +1916,7 @@ public:
     EXPECT_EQ(fieldValue, expectedValue);
 
     Kokkos::View<FieldDataType*> deviceValue("deviceValues", 1);
-    Kokkos::View<FieldDataType*>::HostMirror hostValueFromDevice = Kokkos::create_mirror_view(deviceValue);
+    Kokkos::View<FieldDataType*>::host_mirror_type hostValueFromDevice = Kokkos::create_mirror_view(deviceValue);
 
     auto stkFieldDataDevice = stkField.data<FieldDataType,stk::mesh::ReadOnly,stk::ngp::MemSpace>();
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
