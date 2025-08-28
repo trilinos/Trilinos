@@ -241,8 +241,8 @@ int main(int argc, char *argv[])
   ViewMatrixType A( "A", myrows, mycols );
   ViewMatrixType B( "B", myrows, myrhs + 6 );
 
-  ViewMatrixType::HostMirror h_A = Kokkos::create_mirror( A );
-  ViewMatrixType::HostMirror h_B = Kokkos::create_mirror( B );
+  ViewMatrixType::host_mirror_type h_A = Kokkos::create_mirror( A );
+  ViewMatrixType::host_mirror_type h_B = Kokkos::create_mirror( B );
 
   // Some temp arrays
 
