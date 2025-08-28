@@ -726,7 +726,7 @@ main (int argc, char* argv[])
       using LO = Tpetra::CrsMatrix<>::local_ordinal_type;
       using DT = Tpetra::CrsMatrix<>::device_type;
       using host_execution_space =
-	Kokkos::View<LO*, DT>::HostMirror::execution_space;
+	Kokkos::View<LO*, DT>::host_mirror_type::execution_space;
       using policy_type = Kokkos::RangePolicy<host_execution_space, LO>;
 
       auto timer = TimeMonitor::getNewCounter ("Kokkos parallel");

@@ -4476,7 +4476,7 @@ namespace Tpetra {
     using std::endl;
     using LO = LocalOrdinal;
     using host_execution_space =
-      typename Kokkos::View<LO*, device_type>::HostMirror::
+      typename Kokkos::View<LO*, device_type>::host_mirror_type::
         execution_space;
     using range_type = Kokkos::RangePolicy<host_execution_space, LO>;
     const char tfecfFuncName[] = "sortAndMergeAllIndices";
@@ -5604,7 +5604,7 @@ namespace Tpetra {
     using GO = GlobalOrdinal;
     using host_execution_space =
       typename Kokkos::View<size_t*, device_type>::
-        HostMirror::execution_space;
+        host_mirror_type::execution_space;
     const char tfecfFuncName[] = "packFillActive: ";
     const bool verbose = verbose_;
 
@@ -5793,7 +5793,7 @@ namespace Tpetra {
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
     using host_execution_space = typename Kokkos::View<size_t*,
-      device_type>::HostMirror::execution_space;
+      device_type>::host_mirror_type::execution_space;
     using host_device_type =
       Kokkos::Device<host_execution_space, Kokkos::HostSpace>;
     using exports_dv_type =
@@ -7455,8 +7455,8 @@ namespace Tpetra {
     // nonlocals_ isa std::map<GO, std::vector<GO> >
     output = compare_nonlocals(this->nonlocals_, graph.nonlocals_) ? output : false;
 
-    // Compare k_numAllocPerRow_ isa Kokkos::View::HostMirror
-    // - since this is a HostMirror type, it should be in host memory already
+    // Compare k_numAllocPerRow_ isa Kokkos::View::host_mirror_type
+    // - since this is a host_mirror_type type, it should be in host memory already
     output = this->k_numAllocPerRow_.extent(0) == graph.k_numAllocPerRow_.extent(0) ? output : false;
     if(output && this->k_numAllocPerRow_.extent(0) > 0)
     {
@@ -7464,8 +7464,8 @@ namespace Tpetra {
         output = this->k_numAllocPerRow_(i) == graph.k_numAllocPerRow_(i) ? output : false;
     }
 
-    // Compare k_numRowEntries_ isa Kokkos::View::HostMirror
-    // - since this is a HostMirror type, it should be in host memory already
+    // Compare k_numRowEntries_ isa Kokkos::View::host_mirror_type
+    // - since this is a host_mirror_type type, it should be in host memory already
     output = this->k_numRowEntries_.extent(0) == graph.k_numRowEntries_.extent(0) ? output : false;
     if(output && this->k_numRowEntries_.extent(0) > 0)
     {

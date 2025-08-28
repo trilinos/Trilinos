@@ -49,7 +49,7 @@ namespace {
     typedef Tpetra::CrsGraph<LO,GO,NT>  graph_type;
     typedef Tpetra::global_size_t GST;
     typedef typename matrix_type::device_type device_type;
-    typedef typename Kokkos::View<Scalar**, Kokkos::LayoutRight, device_type>::HostMirror block_type;
+    typedef typename Kokkos::View<Scalar**, Kokkos::LayoutRight, device_type>::host_mirror_type block_type;
 
     Teuchos::OSTab tab0 (out);
     Teuchos::OSTab tab1 (out);

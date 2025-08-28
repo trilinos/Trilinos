@@ -187,7 +187,7 @@ public:
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_block_type;
-  typedef typename little_block_type::HostMirror little_block_host_type;
+  typedef typename little_block_type::host_mirror_type little_block_host_type;
 
   //! The type used to access const matrix blocks.
   typedef Kokkos::View<const impl_scalar_type**,
@@ -268,8 +268,13 @@ public:
       return applyHelper;
     }
 
+#if KOKKOS_VERSION > 40799
+  using local_matrix_host_type =
+    typename local_matrix_device_type::host_mirror_type;
+#else
   using local_matrix_host_type =
     typename local_matrix_device_type::HostMirror;
+#endif
 
   //@}
   //! \name Constructors and destructor
@@ -847,7 +852,7 @@ private:
   /// Kokkos::DualView has extra Views in it for the "modified" flags,
   /// and we don't want the (modest) overhead of creating and storing
   /// those.
-  using graph_row_offset_host_type = typename crs_graph_type::local_graph_device_type::row_map_type::HostMirror;
+  using graph_row_offset_host_type = typename crs_graph_type::local_graph_device_type::row_map_type::host_mirror_type;
   graph_row_offset_host_type ptrHost_;
 
   /// \brief Host version of the graph's array of column indices.
@@ -855,7 +860,7 @@ private:
   /// The device version of this is already stored in the graph.  We
   /// need the host version here, because this class' interface needs
   /// to access it on host.  See notes on ptrHost_ above.
-  using graph_column_indices_host_type =   typename crs_graph_type::local_graph_device_type::entries_type::HostMirror;
+  using graph_column_indices_host_type =   typename crs_graph_type::local_graph_device_type::entries_type::host_mirror_type;
   graph_column_indices_host_type indHost_;
 
   /// \brief The array of values in the matrix.

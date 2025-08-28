@@ -475,8 +475,13 @@ private:
                               device_type,
                               void,
                               typename local_graph_device_type::size_type>;
+#if KOKKOS_VERSION > 40799
+    using local_matrix_host_type =
+          typename local_matrix_device_type::host_mirror_type;
+#else
     using local_matrix_host_type =
           typename local_matrix_device_type::HostMirror;
+#endif
 
     using row_ptrs_device_view_type =
           typename row_matrix_type::row_ptrs_device_view_type;

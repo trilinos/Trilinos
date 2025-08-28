@@ -837,7 +837,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 
   using device_type = typename CrsMatrix<ST,LO,GO,NT>::local_matrix_device_type::device_type;
   using buffer_device_type = typename DistObject<char, LO, GO, NT>::buffer_device_type;
-  using host_exec_space = typename Kokkos::View<size_t*, device_type>::HostMirror::execution_space;
+  using host_exec_space = typename Kokkos::View<size_t*, device_type>::host_mirror_type::execution_space;
   using device_exec_space = typename device_type::execution_space;
   using host_dev_type = Kokkos::Device<host_exec_space, Kokkos::HostSpace>;
 
