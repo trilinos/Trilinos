@@ -46,7 +46,7 @@ Integrator_Scalar(
     const std::vector<std::string>& field_multiplier_names = 
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
-    field_multipliers_h = typename PHX::View<PHX::UnmanagedView<const ScalarT**>* >::HostMirror("FieldMultipliersHost", field_multiplier_names.size());
+    field_multipliers_h = typename PHX::View<PHX::UnmanagedView<const ScalarT**>* >::host_mirror_type("FieldMultipliersHost", field_multiplier_names.size());
     field_multipliers = PHX::View<PHX::UnmanagedView<const ScalarT**>* >("FieldMultipliersDevice", field_multiplier_names.size());
 
     int cnt=0;

@@ -230,7 +230,7 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
       }
     }
     // Now lets compute the face normals
-    typename PHX::View<double**>::HostMirror edges("temp::Edges",40, dimension_);  // overkill on 40 size
+    typename PHX::View<double**>::host_mirror_type edges("temp::Edges",40, dimension_);  // overkill on 40 size
     for (int c=0; c<num_cells; ++c) {
 
       std::vector<double> center(3,0.);
