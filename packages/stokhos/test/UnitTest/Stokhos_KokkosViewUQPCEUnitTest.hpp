@@ -72,7 +72,7 @@ bool
 checkPCEView(const ViewType& v, Teuchos::FancyOStream& out) {
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
-  typedef typename view_type::HostMirror host_view_type;
+  typedef typename view_type::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
   typedef typename host_array_type::value_type scalar_type;
 
@@ -129,7 +129,7 @@ checkConstantPCEView(const ViewType& v,
                      Teuchos::FancyOStream& out) {
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
-  typedef typename view_type::HostMirror host_view_type;
+  typedef typename view_type::host_mirror_type host_view_type;
   typedef typename Kokkos::IntrinsicScalarType<host_view_type>::type scalar_type;
 
   // Copy to host
@@ -197,7 +197,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy, Storage, Layout )
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
   typedef typename PCE::cijk_type Cijk;
 
@@ -350,7 +350,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_PCE, DeepCopy_Subview_Range, Stor
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE**,Kokkos::LayoutLeft,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
   typedef typename PCE::cijk_type Cijk;
 
   // Build Cijk tensor
@@ -402,7 +402,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_HostArray, Storage,
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
   typedef typename PCE::cijk_type Cijk;
 
@@ -442,7 +442,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_DeviceArray, Storag
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
   typedef typename ViewType::array_type array_type;
   typedef typename PCE::cijk_type Cijk;
@@ -475,7 +475,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Unmanaged, Storage, Layout )
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
   typedef typename PCE::cijk_type Cijk;
 
