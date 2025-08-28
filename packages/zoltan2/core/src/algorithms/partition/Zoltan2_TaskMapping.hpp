@@ -1516,7 +1516,7 @@ public:
 
     Kokkos::View<part_t*, device_t> initial_selected_coords_output_permutation_pcoords(
       "initial_selected_coords_output_permutation_pcoords", this->no_procs);
-    typename Kokkos::View<part_t*, device_t>::HostMirror
+    typename Kokkos::View<part_t*, device_t>::host_mirror_type
       host_initial_selected_coords_output_permutation_pcoords =
         Kokkos::create_mirror_view(initial_selected_coords_output_permutation_pcoords);
     for(int n = 0; n < this->no_procs; ++n) {
@@ -1597,7 +1597,7 @@ public:
 
     Kokkos::View<part_t*, device_t> initial_selected_coords_output_permutation_tcoords(
       "initial_selected_coords_output_permutation_tcoords", this->no_tasks);
-    typename Kokkos::View<part_t*, device_t>::HostMirror
+    typename Kokkos::View<part_t*, device_t>::host_mirror_type
       host_initial_selected_coords_output_permutation_tcoords =
         Kokkos::create_mirror_view(initial_selected_coords_output_permutation_tcoords);
     for(int n = 0; n < this->no_tasks; ++n) {

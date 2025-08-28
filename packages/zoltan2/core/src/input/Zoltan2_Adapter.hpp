@@ -79,34 +79,34 @@ public:
   using device_t = typename node_t::device_type;
 
   using ConstIdsDeviceView = Kokkos::View<const gno_t *, device_t>;
-  using ConstIdsHostView = typename ConstIdsDeviceView::HostMirror;
+  using ConstIdsHostView = typename ConstIdsDeviceView::host_mirror_type;
 
   using IdsDeviceView = Kokkos::View<gno_t *, device_t>;
-  using IdsHostView = typename IdsDeviceView::HostMirror;
+  using IdsHostView = typename IdsDeviceView::host_mirror_type;
 
   using ConstOffsetsDeviceView = Kokkos::View<const offset_t *, device_t>;
-  using ConstOffsetsHostView = typename ConstOffsetsDeviceView::HostMirror;
+  using ConstOffsetsHostView = typename ConstOffsetsDeviceView::host_mirror_type;
 
   using OffsetsDeviceView = Kokkos::View<offset_t *, device_t>;
-  using OffsetsHostView = typename OffsetsDeviceView::HostMirror;
+  using OffsetsHostView = typename OffsetsDeviceView::host_mirror_type;
 
   using ConstScalarsDeviceView = Kokkos::View<const scalar_t *, device_t>;
-  using ConstScalarsHostView = typename ConstScalarsDeviceView::HostMirror;
+  using ConstScalarsHostView = typename ConstScalarsDeviceView::host_mirror_type;
 
   using ScalarsDeviceView = Kokkos::View<scalar_t *, device_t>;
-  using ScalarsHostView = typename ScalarsDeviceView::HostMirror;
+  using ScalarsHostView = typename ScalarsDeviceView::host_mirror_type;
 
   using ConstWeightsDeviceView1D = Kokkos::View<const scalar_t *, device_t>;
-  using ConstWeightsHostView1D = typename ConstWeightsDeviceView1D::HostMirror;
+  using ConstWeightsHostView1D = typename ConstWeightsDeviceView1D::host_mirror_type;
 
   using WeightsDeviceView1D = Kokkos::View<scalar_t *, device_t>;
-  using WeightsHostView1D = typename WeightsDeviceView1D::HostMirror;
+  using WeightsHostView1D = typename WeightsDeviceView1D::host_mirror_type;
 
   using ConstWeightsDeviceView = Kokkos::View<const scalar_t **, device_t>;
-  using ConstWeightsHostView = typename ConstWeightsDeviceView::HostMirror;
+  using ConstWeightsHostView = typename ConstWeightsDeviceView::host_mirror_type;
 
   using WeightsDeviceView = Kokkos::View<scalar_t **, device_t>;
-  using WeightsHostView = typename WeightsDeviceView::HostMirror;
+  using WeightsHostView = typename WeightsDeviceView::host_mirror_type;
 
   /*! \brief Returns the type of adapter.
    */
@@ -309,7 +309,7 @@ public:
 
   // Coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
   using CoordsDeviceView = Kokkos::View<scalar_t **, Kokkos::LayoutLeft, device_t>;
-  using CoordsHostView = typename CoordsDeviceView::HostMirror;
+  using CoordsHostView = typename CoordsDeviceView::host_mirror_type;
 
 public:
   virtual void getCoordinatesView(const scalar_t *&coords, int &stride,
