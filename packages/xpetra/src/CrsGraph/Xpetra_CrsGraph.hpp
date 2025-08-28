@@ -203,7 +203,11 @@ class CrsGraph
   ///
   /// This is only a valid representation of the local graph if the
   /// (global) graph is fill complete.
+#if KOKKOS_VERSION > 40799
+  virtual typename local_graph_type::host_mirror_type getLocalGraphHost() const = 0;
+#else
   virtual typename local_graph_type::HostMirror getLocalGraphHost() const = 0;
+#endif
   virtual local_graph_type getLocalGraphDevice() const                    = 0;
 
   //! Get offsets of the diagonal entries in the matrix.

@@ -289,7 +289,11 @@ class CrsMatrix
                                                     typename local_graph_type::size_type>;
 
   virtual local_matrix_type getLocalMatrixDevice() const                    = 0;
+#if KOKKOS_VERSION > 40799
+  virtual typename local_matrix_type::host_mirror_type getLocalMatrixHost() const = 0;
+#else
   virtual typename local_matrix_type::HostMirror getLocalMatrixHost() const = 0;
+#endif
 
   virtual void setAllValues(const typename local_matrix_type::row_map_type &ptr,
                             const typename local_graph_type::entries_type::non_const_type &ind,

@@ -266,11 +266,19 @@ class XPETRA_DEPRECATED EpetraCrsGraphT
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const {}
 
 #ifdef HAVE_XPETRA_TPETRA
+#if KOKKOS_VERSION > 40799
+  typename local_graph_type::host_mirror_type getLocalGraphHost() const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
+                               "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+    TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::host_mirror_type()));
+  }
+#else
   typename local_graph_type::HostMirror getLocalGraphHost() const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::HostMirror()));
   }
+#endif
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsGraph is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -769,10 +777,18 @@ class EpetraCrsGraphT<int, EpetraNode>
   }
 
 #ifdef HAVE_XPETRA_TPETRA
+#if KOKKOS_VERSION > 40799
+  typename local_graph_type::host_mirror_type getLocalGraphHost() const {
+#else
   typename local_graph_type::HostMirror getLocalGraphHost() const {
+#endif
     RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(getEpetra_CrsGraph());
 
+#if KOKKOS_VERSION > 40799
+    using local_graph_type_host = typename local_graph_type::host_mirror_type;
+#else
     using local_graph_type_host = typename local_graph_type::HostMirror;
+#endif
 
     const int numRows = graph->NumMyRows();
     const int nnz     = graph->NumMyNonzeros();
@@ -1334,10 +1350,18 @@ class EpetraCrsGraphT<long long, EpetraNode>
   }
 
 #ifdef HAVE_XPETRA_TPETRA
+#if KOKKOS_VERSION > 40799
+  typename local_graph_type::host_mirror_type getLocalGraphHost() const {
+#else
   typename local_graph_type::HostMirror getLocalGraphHost() const {
+#endif
     RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(getEpetra_CrsGraph());
 
+#if KOKKOS_VERSION > 40799
+    using local_graph_type_host = typename local_graph_type::host_mirror_type;
+#else
     using local_graph_type_host = typename local_graph_type::HostMirror;
+#endif
 
     const int numRows = graph->NumMyRows();
     const int nnz     = graph->NumMyNonzeros();

@@ -1252,7 +1252,11 @@ typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_mat
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+#if KOKKOS_VERSION > 40799
+typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::host_mirror_type BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalMatrixHost() const {
+#else
 typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalMatrixHost() const {
+#endif
   if (Rows() == 1 && Cols() == 1) {
     return getMatrix(0, 0)->getLocalMatrixHost();
   }
