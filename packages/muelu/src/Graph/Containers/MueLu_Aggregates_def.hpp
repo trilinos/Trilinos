@@ -251,7 +251,7 @@ std::string Aggregates<LocalOrdinal, GlobalOrdinal, Node>::description() const {
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
   MUELU_DESCRIBE;
 
   if (verbLevel & Statistics1) {
