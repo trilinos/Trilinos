@@ -492,9 +492,6 @@ public:
    */
   void startBaseTimer() {
     timer_.BaseTimer::start();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-    ::Kokkos::Tools::pushRegion(timer_.get_full_name());
-#endif
   }
 
   /**
@@ -502,9 +499,6 @@ public:
    */
   void stopBaseTimer() {
     timer_.BaseTimer::stop();
-#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-    ::Kokkos::Tools::popRegion();
-#endif
   }
 
   /**
@@ -515,20 +509,21 @@ public:
   void start(const std::string name,
              const bool push_kokkos_profiling_region = true) {
     if (enable_timers_) {
-      if (top_ == nullptr)
+      if (top_ == nullptr) {
         top_ = timer_.start(name.c_str());
-      else
+      } else {
         top_ = top_->start(name.c_str());
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
-      if (Behavior::fenceTimers()) {
-        Kokkos::fence("timer_fence_begin_"+name);
-      }
+        if (Behavior::fenceTimers()) {
+          Kokkos::fence("timer_fence_begin_"+name);
+        }
 #endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-      if (push_kokkos_profiling_region) {
-        ::Kokkos::Tools::pushRegion(name);
-      }
+        if (push_kokkos_profiling_region) {
+          ::Kokkos::Tools::pushRegion(name);
+        }
 #endif
+      }
     }
     if (enable_verbose_) {
       if (!verbose_timestamp_levels_) {
@@ -559,20 +554,21 @@ public:
   void stop(const std::string &name,
             const bool pop_kokkos_profiling_region = true) {
     if (enable_timers_) {
-      if (top_)
+      if (top_) {
         top_ = top_->stop(name);
-      else
-        timer_.BaseTimer::stop();
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
-      if (Behavior::fenceTimers()) {
-        Kokkos::fence("timer_fence_end_"+name);
-      }
+        if (Behavior::fenceTimers()) {
+          Kokkos::fence("timer_fence_end_"+name);
+        }
 #endif
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
-      if (pop_kokkos_profiling_region) {
-        ::Kokkos::Tools::popRegion();
-      }
+        if (pop_kokkos_profiling_region) {
+          ::Kokkos::Tools::popRegion();
+        }
 #endif
+      } else {
+        timer_.BaseTimer::stop();
+      }
     }
     if (enable_verbose_) {
       if (!verbose_timestamp_levels_) {
