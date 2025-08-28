@@ -421,7 +421,11 @@ class CrsMatrixWrap : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 
 #ifdef HAVE_XPETRA_TPETRA
   virtual local_matrix_type getLocalMatrixDevice() const;
+#if KOKKOS_VERSION > 40799
+  virtual typename local_matrix_type::host_mirror_type getLocalMatrixHost() const;
+#else
   virtual typename local_matrix_type::HostMirror getLocalMatrixHost() const;
+#endif
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
