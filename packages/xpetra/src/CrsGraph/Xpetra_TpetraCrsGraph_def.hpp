@@ -337,7 +337,7 @@ void TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getLocalRowView(LocalOrd
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type::host_mirror_type TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getLocalGraphHost() const {
 #else
 typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type::HostMirror TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getLocalGraphHost() const {
@@ -1075,7 +1075,7 @@ class TpetraCrsGraph<int, long long, EpetraNode>
                                "Epetra does not support getLocalDiagOffsets!");
   }
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename local_graph_type::host_mirror_type getLocalGraphHost() const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Epetra does not support Kokkos::StaticCrsGraph!");

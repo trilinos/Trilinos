@@ -227,7 +227,7 @@ namespace Tpetra {
                                   device_type, void, size_t>;
 
     //! The type of the part of the sparse graph on each MPI process.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     using local_graph_host_type = typename local_graph_device_type::host_mirror_type;
 #else
     using local_graph_host_type = typename local_graph_device_type::HostMirror;

@@ -693,7 +693,7 @@ TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::host_mirror_type
 #else
 typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror
@@ -703,7 +703,7 @@ TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support getLocalMatrix due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation in " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 
 #ifndef __NVCC__
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename local_matrix_type::host_mirror_type ret;
 #else
   typename local_matrix_type::HostMirror ret;

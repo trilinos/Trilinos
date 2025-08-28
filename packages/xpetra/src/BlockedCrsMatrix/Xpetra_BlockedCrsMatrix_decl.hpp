@@ -534,7 +534,7 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
   /// \brief Access the underlying local Kokkos::CrsMatrix object
   local_matrix_type getLocalMatrixDevice() const;
   /// \brief Access the underlying local Kokkos::CrsMatrix object
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename local_matrix_type::host_mirror_type getLocalMatrixHost() const;
 #else
   typename local_matrix_type::HostMirror getLocalMatrixHost() const;

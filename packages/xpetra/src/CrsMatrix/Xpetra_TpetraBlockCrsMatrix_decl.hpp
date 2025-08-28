@@ -340,7 +340,7 @@ class TpetraBlockCrsMatrix
   using local_matrix_type = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
 
   local_matrix_type getLocalMatrixDevice() const;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename local_matrix_type::host_mirror_type getLocalMatrixHost() const;
 #else
   typename local_matrix_type::HostMirror getLocalMatrixHost() const;

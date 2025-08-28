@@ -268,7 +268,7 @@ public:
       return applyHelper;
     }
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using local_matrix_host_type =
     typename local_matrix_device_type::host_mirror_type;
 #else
