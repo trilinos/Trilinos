@@ -163,7 +163,7 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetGraph() const {
   size_type numNNZ;
   {
     Kokkos::View<size_type, device_type> numNNZ_device                    = Kokkos::subview(rows, numAggregates);
-    typename Kokkos::View<size_type, device_type>::HostMirror numNNZ_host = Kokkos::create_mirror_view(numNNZ_device);
+    typename Kokkos::View<size_type, device_type>::host_mirror_type numNNZ_host = Kokkos::create_mirror_view(numNNZ_device);
     Kokkos::deep_copy(numNNZ_host, numNNZ_device);
     numNNZ = numNNZ_host();
   }

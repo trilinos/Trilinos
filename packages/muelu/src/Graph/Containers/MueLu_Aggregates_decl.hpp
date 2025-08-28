@@ -317,7 +317,7 @@ class Aggregates : public BaseClass {
    * from different parts of MueLu that require such data on the host device.
    */
   mutable
-      typename aggregates_sizes_type::HostMirror aggregateSizesHost_;
+      typename aggregates_sizes_type::host_mirror_type aggregateSizesHost_;
 
   //! Aggregates represented as Kokkos graph type
   mutable local_graph_type graph_;

@@ -221,9 +221,15 @@ class TestFactory {
     return std::make_tuple(Op, Coords, Nullspace, DofsPerNode);
   }  // BuildMatrixCoordsNullspace()
 
+#if KOKKOS_VERSION > 40799
+  static typename Matrix::local_matrix_type::host_mirror_type buildLocal2x2Host(Scalar a00, Scalar a01, Scalar a10, Scalar a11, const bool keepZeros) {
+    using local_matrix_type = typename Matrix::local_matrix_type::host_mirror_type;
+    using local_graph_type  = typename CrsGraph::local_graph_type::host_mirror_type;
+#else
   static typename Matrix::local_matrix_type::HostMirror buildLocal2x2Host(Scalar a00, Scalar a01, Scalar a10, Scalar a11, const bool keepZeros) {
     using local_matrix_type = typename Matrix::local_matrix_type::HostMirror;
     using local_graph_type  = typename CrsGraph::local_graph_type::HostMirror;
+#endif
     using rowptr_type       = typename local_graph_type::row_map_type::non_const_type;
     using entries_type      = typename local_graph_type::entries_type::non_const_type;
     using values_type       = typename local_matrix_type::values_type::non_const_type;
