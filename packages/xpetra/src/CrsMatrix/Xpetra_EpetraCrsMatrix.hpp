@@ -211,7 +211,7 @@ class XPETRA_DEPRECATED EpetraCrsMatrixT
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename local_matrix_type::host_mirror_type getLocalMatrixHost() const {
 #else
   typename local_matrix_type::HostMirror getLocalMatrixHost() const {
@@ -1267,7 +1267,7 @@ class EpetraCrsMatrixT<int, EpetraNode>
     return getLocalMatrixHost();
   }
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename local_matrix_type::host_mirror_type getLocalMatrixHost() const {
 #else
   typename local_matrix_type::HostMirror getLocalMatrixHost() const {

@@ -87,7 +87,7 @@ class LWGraphBase {
                                                                Kokkos::LayoutLeft,
                                                                typename Node::device_type,
                                                                void, size_t>;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using local_graph_type        = typename std::conditional<OnHost, typename local_graph_device_type::host_mirror_type, local_graph_device_type>::type;
 #else
   using local_graph_type        = typename std::conditional<OnHost, typename local_graph_device_type::HostMirror, local_graph_device_type>::type;

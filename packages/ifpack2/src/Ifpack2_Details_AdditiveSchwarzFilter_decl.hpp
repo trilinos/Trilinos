@@ -69,7 +69,7 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   typedef typename row_map_type::host_mirror_type host_row_map_type;
   typedef typename entries_type::host_mirror_type host_entries_type;
   typedef typename values_type::host_mirror_type host_values_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename local_matrix_type::host_mirror_type host_local_matrix_type;
 #else
   typedef typename local_matrix_type::HostMirror host_local_matrix_type;

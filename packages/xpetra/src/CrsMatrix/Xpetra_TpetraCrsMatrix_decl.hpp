@@ -396,7 +396,7 @@ class TpetraCrsMatrix
 
 #ifdef HAVE_XPETRA_TPETRA
   /// \brief Access the local Kokkos::CrsMatrix data
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename local_matrix_type::host_mirror_type getLocalMatrixHost() const {
 #else
   typename local_matrix_type::HostMirror getLocalMatrixHost() const {
@@ -1199,7 +1199,7 @@ class TpetraCrsMatrix<Scalar, int, long long, EpetraNode>
   }
 
   /// \brief Access the local Kokkos::CrsMatrix data
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename local_matrix_type::host_mirror_type getLocalMatrixHost() const {
     TEUCHOS_UNREACHABLE_RETURN(typename local_matrix_type::host_mirror_type());
   }

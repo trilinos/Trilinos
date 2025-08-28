@@ -421,7 +421,7 @@ class CrsMatrixWrap : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 
 #ifdef HAVE_XPETRA_TPETRA
   virtual local_matrix_type getLocalMatrixDevice() const;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   virtual typename local_matrix_type::host_mirror_type getLocalMatrixHost() const;
 #else
   virtual typename local_matrix_type::HostMirror getLocalMatrixHost() const;

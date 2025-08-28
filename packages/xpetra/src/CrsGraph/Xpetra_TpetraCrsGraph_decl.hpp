@@ -282,7 +282,7 @@ class TpetraCrsGraph
   void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal>& indices) const;
 
   /// \brief Access the local KokkosSparse::StaticCrsGraph data for host use
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename local_graph_type::host_mirror_type getLocalGraphHost() const;
 #else
   typename local_graph_type::HostMirror getLocalGraphHost() const;
