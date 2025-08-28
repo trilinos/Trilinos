@@ -67,7 +67,7 @@ namespace Kokkos {
 
 template< class T , class ... P >
 inline
-typename Kokkos::DynRankView<T,P...>::HostMirror
+typename Kokkos::DynRankView<T,P...>::host_mirror_type
 create_mirror(
   const Kokkos::DynRankView<T,P...> & src,
   typename std::enable_if<
@@ -81,7 +81,7 @@ create_mirror(
 
 template< class T , class ... P >
 inline
-typename Kokkos::DynRankView<T,P...>::HostMirror
+typename Kokkos::DynRankView<T,P...>::host_mirror_type
 create_mirror(
   const Kokkos::DynRankView<T,P...> & src,
   typename std::enable_if<
@@ -1198,7 +1198,7 @@ void deep_copy
 
 template< class T , class ... P >
 inline
-typename Kokkos::DynRankView<T,P...>::HostMirror
+typename Kokkos::DynRankView<T,P...>::host_mirror_type
 create_mirror( const Kokkos::DynRankView<T,P...> & src
              , typename std::enable_if<
                  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
@@ -1212,7 +1212,7 @@ create_mirror( const Kokkos::DynRankView<T,P...> & src
              )
 {
   typedef DynRankView<T,P...>            src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src.rank()] = Kokkos::dimension_scalar(src);
@@ -1223,7 +1223,7 @@ create_mirror( const Kokkos::DynRankView<T,P...> & src
 
 template< class T , class ... P >
 inline
-typename Kokkos::DynRankView<T,P...>::HostMirror
+typename Kokkos::DynRankView<T,P...>::host_mirror_type
 create_mirror( const Kokkos::DynRankView<T,P...> & src
              , typename std::enable_if<
                  ( std::is_same< typename ViewTraits<T,P...>::specialize ,
@@ -1237,7 +1237,7 @@ create_mirror( const Kokkos::DynRankView<T,P...> & src
              )
 {
   typedef DynRankView<T,P...>            src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   Kokkos::LayoutStride layout ;
 
