@@ -217,7 +217,7 @@ void AggregationPhase2aAlgorithm<LO, GO, Node>::
   // If we can avoid this and use a simple LO that would be
   // simpler for later maintenance.
   Kokkos::View<LO, device_type> numLocalAggregates("numLocalAggregates");
-  typename Kokkos::View<LO, device_type>::HostMirror h_numLocalAggregates =
+  typename Kokkos::View<LO, device_type>::host_mirror_type h_numLocalAggregates =
       Kokkos::create_mirror_view(numLocalAggregates);
   h_numLocalAggregates() = aggregates.GetNumAggregates();
   Kokkos::deep_copy(numLocalAggregates, h_numLocalAggregates);
@@ -333,7 +333,7 @@ void AggregationPhase2aAlgorithm<LO, GO, Node>::
   factor                 = pow(factor, aggFactor);
 
   Kokkos::View<LO, device_type> numLocalAggregates("numLocalAggregates");
-  typename Kokkos::View<LO, device_type>::HostMirror h_numLocalAggregates =
+  typename Kokkos::View<LO, device_type>::host_mirror_type h_numLocalAggregates =
       Kokkos::create_mirror_view(numLocalAggregates);
   h_numLocalAggregates() = aggregates.GetNumAggregates();
   Kokkos::deep_copy(numLocalAggregates, h_numLocalAggregates);

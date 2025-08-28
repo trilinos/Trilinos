@@ -2637,7 +2637,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, 2x2, Scalar, Local
   }
 
   using TF                = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>;
+#if KOKKOS_VERSION > 40799
+  using local_matrix_type = typename Matrix::local_matrix_type::host_mirror_type;
+#else
   using local_matrix_type = typename Matrix::local_matrix_type::HostMirror;
+#endif
 
   std::vector<Teuchos::ParameterList> params;
   std::vector<local_matrix_type> expectedFilteredMatrices;
