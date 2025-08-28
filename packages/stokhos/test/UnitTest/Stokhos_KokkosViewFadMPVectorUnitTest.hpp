@@ -46,7 +46,7 @@ checkVectorView(const ViewType& v,
                 Teuchos::FancyOStream& out) {
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
-  typedef typename view_type::HostMirror host_view_type;
+  typedef typename view_type::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
   typedef typename host_array_type::value_type scalar_type;
 
@@ -106,7 +106,7 @@ checkConstantFadVectorView(const ViewType& view,
   typedef typename fad_vector_type::value_type vector_type;
   typedef typename vector_type::storage_type storage_type;
   typedef typename view_type::size_type size_type;
-  typedef typename view_type::HostMirror host_view_type;
+  typedef typename view_type::host_mirror_type host_view_type;
 
   // Copy to host
   host_view_type h_view = Kokkos::create_mirror_view(view);
@@ -138,7 +138,7 @@ checkConstantFadVectorView2(const ViewType& view,
   typedef typename fad_vector_type::value_type vector_type;
   typedef typename vector_type::storage_type storage_type;
   typedef typename view_type::size_type size_type;
-  typedef typename view_type::HostMirror host_view_type;
+  typedef typename view_type::host_mirror_type host_view_type;
 
   // Copy to host
   host_view_type h_view = Kokkos::create_mirror_view(view);

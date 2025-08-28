@@ -57,6 +57,7 @@ public:
 #endif
 
   typedef CrsMatrix< ValueType, typename values_type::host_mirror_space, Layout> HostMirror;
+  typedef HostMirror host_mirror_type;
 
   values_type values;
   graph_type graph;

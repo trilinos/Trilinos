@@ -173,11 +173,11 @@ typename std::enable_if<
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
   !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
     Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
@@ -193,11 +193,11 @@ typename std::enable_if<
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
   std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
     Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   Kokkos::LayoutStride layout ;
 
@@ -246,12 +246,12 @@ typename std::enable_if<
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
   !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
@@ -267,12 +267,12 @@ typename std::enable_if<
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
   std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
     Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   Kokkos::LayoutStride layout ;
 
