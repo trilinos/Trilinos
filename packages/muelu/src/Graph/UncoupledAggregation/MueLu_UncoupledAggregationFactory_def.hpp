@@ -408,6 +408,9 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
       SubFactoryMonitor sfm2(*this, "Algo \"" + phase + "\"" + (numNonAggregatedNodes == 0 ? " [skipped since no nodes are left to aggregate]" : ""), currentLevel);
       int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
+
+      algos_[a]->SetupPhase(pL, comm, numRows, numNonAggregatedNodes);
+
       if (numNonAggregatedNodes > 0) {
         if (runOnHost)
           algos_[a]->BuildAggregatesNonKokkos(pL, *graph, *aggregates, aggStatHost, numNonAggregatedNodes);
