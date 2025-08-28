@@ -126,9 +126,9 @@ namespace Intrepid2
   }
 
   template<class DeviceViewType>
-  typename DeviceViewType::HostMirror getHostCopy(const DeviceViewType &deviceView)
+  typename DeviceViewType::host_mirror_type getHostCopy(const DeviceViewType &deviceView)
   {
-    typename DeviceViewType::HostMirror hostView = Kokkos::create_mirror(deviceView);
+    typename DeviceViewType::host_mirror_type hostView = Kokkos::create_mirror(deviceView);
     Kokkos::deep_copy(hostView, deviceView);
     return hostView;
   }
@@ -397,7 +397,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
 
   //! Copy the values for the specified functor
   template<class Functor, class Scalar, int rank>
-  typename ViewType<Scalar,DefaultTestDeviceType>::HostMirror copyFunctorToHostView(const Functor &deviceFunctor)
+  typename ViewType<Scalar,DefaultTestDeviceType>::host_mirror_type copyFunctorToHostView(const Functor &deviceFunctor)
   {
     INTREPID2_TEST_FOR_EXCEPTION(rank != getFunctorRank(deviceFunctor), std::invalid_argument, "functor rank must match the template argument");
     
@@ -554,7 +554,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
   void printView(const View &view, std::ostream &out, const std::string &viewName = "")
   {
     using Scalar   = typename View::value_type;
-    using HostView = typename View::HostMirror;
+    using HostView = typename View::host_mirror_type;
     using HostViewIteratorScalar = Intrepid2::ViewIterator<HostView, Scalar>;
     
     auto hostView = getHostCopy(view);

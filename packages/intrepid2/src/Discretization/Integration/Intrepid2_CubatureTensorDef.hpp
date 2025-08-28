@@ -72,13 +72,13 @@ namespace Intrepid2 {
         const ordinal_type dim [] = { this->cubatures_[0].getDimension(), this->cubatures_[1].getDimension() };
 
         /// here create mirror view and copy does not work        
-        typename cubWeightViewType::HostMirror tmpWeights_host[2];
+        typename cubWeightViewType::host_mirror_type tmpWeights_host[2];
         tmpWeights_host[0] = Kokkos::create_mirror_view(tmpWeights[0]);
         tmpWeights_host[1] = Kokkos::create_mirror_view(tmpWeights[1]);
         Kokkos::deep_copy(tmpWeights_host[0], tmpWeights[0]);
         Kokkos::deep_copy(tmpWeights_host[1], tmpWeights[1]);
 
-        typename cubPointViewType::HostMirror tmpPoints_host[2];
+        typename cubPointViewType::host_mirror_type tmpPoints_host[2];
         tmpPoints_host[0] = Kokkos::create_mirror_view(tmpPoints[0]);
         tmpPoints_host[1] = Kokkos::create_mirror_view(tmpPoints[1]);
 
@@ -101,7 +101,7 @@ namespace Intrepid2 {
         const ordinal_type dim [] = { this->cubatures_[0].getDimension(), this->cubatures_[1].getDimension(), this->cubatures_[2].getDimension() };
 
         /// here create mirror view and copy does not work        
-        typename cubWeightViewType::HostMirror tmpWeights_host[3];
+        typename cubWeightViewType::host_mirror_type tmpWeights_host[3];
         tmpWeights_host[0] = Kokkos::create_mirror_view(tmpWeights[0]);
         tmpWeights_host[1] = Kokkos::create_mirror_view(tmpWeights[1]);
         tmpWeights_host[2] = Kokkos::create_mirror_view(tmpWeights[2]);
@@ -110,7 +110,7 @@ namespace Intrepid2 {
         Kokkos::deep_copy(tmpWeights_host[1], tmpWeights[1]);
         Kokkos::deep_copy(tmpWeights_host[2], tmpWeights[2]);
 
-        typename cubPointViewType::HostMirror tmpPoints_host[3];
+        typename cubPointViewType::host_mirror_type tmpPoints_host[3];
         tmpPoints_host[0] = Kokkos::create_mirror_view(tmpPoints[0]);
         tmpPoints_host[1] = Kokkos::create_mirror_view(tmpPoints[1]);
         tmpPoints_host[2] = Kokkos::create_mirror_view(tmpPoints[2]);
