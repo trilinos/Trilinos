@@ -173,9 +173,9 @@ bool check_assembly(const VectorType& analytic_residual,
   std::stringstream buf;
   Teuchos::FancyOStream fbuf(Teuchos::rcp(&buf,false));
 
-  typename VectorType::HostMirror host_analytic_residual =
+  typename VectorType::host_mirror_type host_analytic_residual =
     Kokkos::create_mirror_view(analytic_residual);
-  typename VectorType::HostMirror host_fad_residual =
+  typename VectorType::host_mirror_type host_fad_residual =
     Kokkos::create_mirror_view(fad_residual);
   Kokkos::deep_copy( host_analytic_residual, analytic_residual );
   Kokkos::deep_copy( host_fad_residual, fad_residual );
@@ -199,9 +199,9 @@ bool check_assembly(const VectorType& analytic_residual,
     }
   }
 
-  typename MatrixType::HostMirror host_analytic_jacobian =
+  typename MatrixType::host_mirror_type host_analytic_jacobian =
     Kokkos::create_mirror_view(analytic_jacobian);
-  typename MatrixType::HostMirror host_fad_jacobian =
+  typename MatrixType::host_mirror_type host_fad_jacobian =
     Kokkos::create_mirror_view(fad_jacobian);
   Kokkos::deep_copy( host_analytic_jacobian, analytic_jacobian );
   Kokkos::deep_copy( host_fad_jacobian, fad_jacobian );

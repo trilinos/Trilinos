@@ -906,7 +906,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_Broadcast ) {        \
     rcp(new ValueTypeSerializer<int,double>), p);                       \
                                                                         \
   typedef Kokkos::View<FadType*,Device> ViewType;                       \
-  typedef ViewType::HostMirror HostViewType;                            \
+  typedef ViewType::host_mirror_type HostViewType;                            \
   ViewType x("x",n,p+1), x2("x2",n,p+1), x3("x3",n,p+1);                \
   HostViewType h_x = Kokkos::create_mirror_view(x);                     \
   HostViewType h_x2 = Kokkos::create_mirror_view(x2);                   \
@@ -969,7 +969,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_SumAll ) {           \
     rcp(new ValueTypeSerializer<int,double>), p);                       \
                                                                         \
   typedef Kokkos::View<FadType*,Device> ViewType;                       \
-  typedef ViewType::HostMirror HostViewType;                            \
+  typedef ViewType::host_mirror_type HostViewType;                            \
   ViewType x("x",n,p+1), sums("sums",n,p+1),                            \
     sums2("sums2",n,p+1), sums3("sums3",n,p+1);                         \
   HostViewType h_x = Kokkos::create_mirror_view(x);                     \
@@ -1035,7 +1035,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MaxAll ) {           \
     rcp(new ValueTypeSerializer<int,double>), p);                       \
                                                                         \
   typedef Kokkos::View<FadType*,Device> ViewType;                       \
-  typedef ViewType::HostMirror HostViewType;                            \
+  typedef ViewType::host_mirror_type HostViewType;                            \
   ViewType x("x",n,p+1), maxs("maxs",n,p+1),                            \
     maxs2("maxs2",n,p+1), maxs3("maxs3",n,p+1);                         \
   HostViewType h_x = Kokkos::create_mirror_view(x);                     \
@@ -1100,7 +1100,7 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
     rcp(new ValueTypeSerializer<int,double>), p);                       \
                                                                         \
   typedef Kokkos::View<FadType*,Device> ViewType;                       \
-  typedef ViewType::HostMirror HostViewType;                            \
+  typedef ViewType::host_mirror_type HostViewType;                            \
   ViewType x("x",n,p+1), mins("mins",n,p+1),                            \
     mins2("mins2",n,p+1), mins3("mins3",n,p+1);                         \
   HostViewType h_x = Kokkos::create_mirror_view(x);                     \
