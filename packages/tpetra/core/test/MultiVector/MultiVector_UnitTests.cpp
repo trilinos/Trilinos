@@ -4470,7 +4470,7 @@ namespace {
     // check the contents of X_lcl, by copying to host and checking
     // there.  Once Tpetra can use C++11, we should instead check on
     // device, by using a parallel_reduce functor.
-    typename dual_view_type::t_dev::HostMirror X_lcl_host =
+    typename dual_view_type::t_dev::host_mirror_type X_lcl_host =
       Kokkos::create_mirror_view (X_lcl);
     Kokkos::deep_copy(X_lcl_host,X_lcl);
 

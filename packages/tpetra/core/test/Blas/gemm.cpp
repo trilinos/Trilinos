@@ -103,7 +103,7 @@ namespace {
     // Teuchos::BLAS only works with LayoutLeft matrices.
     typedef Kokkos::LayoutLeft layout_type;
     typedef Kokkos::View<entry_type**, layout_type, DeviceType> mat_type;
-    typedef typename mat_type::HostMirror::execution_space host_exec_space;
+    typedef typename mat_type::host_mirror_type::execution_space host_exec_space;
     typedef Kokkos::Device<host_exec_space, Kokkos::HostSpace> host_dev_type;
     typedef Kokkos::View<entry_type**, layout_type, host_dev_type> host_mat_type;
     typedef PseudorandomPoolType<DeviceType> pool_type;

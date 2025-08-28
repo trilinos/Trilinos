@@ -29,7 +29,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
                                    Kokkos::DefaultExecutionSpace::memory_space>;
 
   using view_t = Kokkos::View<double*, device_t>;
-  using view_mirror_t = typename view_t::HostMirror;
+  using view_mirror_t = typename view_t::host_mirror_type;
 
   using dualview_t = Kokkos::DualView<double*, device_t>;
   using wrapped_t = Tpetra::Details::WrappedDualView<dualview_t>;
@@ -55,7 +55,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
     // But for non-UVM CUDA builds, use_h == 2 and use_d == 0.
     // This difference is bad for WrappedDualView.
     // Thus, WrappedDualView's constructor needs to check for a 
-    // null device view before creating the HostMirror.
+    // null device view before creating the host_mirror_type.
   }
 
   {
@@ -91,7 +91,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
   }
 
   {
-    // Unhappy case:  null device view won't work with HostMirror in
+    // Unhappy case:  null device view won't work with host_mirror_type in
     //                DualView constructor in WrappedDualView constructor
     wrapped_t wrapped;
     {

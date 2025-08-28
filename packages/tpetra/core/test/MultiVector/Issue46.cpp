@@ -34,7 +34,7 @@ auto getHostViewOfVector (const VectorType& X) ->
   typedef typename VectorType::device_type device_type;
   typedef typename device_type::memory_space dev_memory_space;
   typedef typename Kokkos::View<IST*, array_layout,
-    device_type>::HostMirror host_view_type;
+    device_type>::host_mirror_type host_view_type;
   typedef typename host_view_type::memory_space host_memory_space;
 
   if (std::is_same<dev_memory_space, host_memory_space>::value ||
@@ -70,7 +70,7 @@ auto getHostViewOfMultiVector (const MultiVectorType& X) ->
   typedef typename MultiVectorType::device_type device_type;
   typedef typename device_type::memory_space dev_memory_space;
   typedef typename Kokkos::View<IST**, array_layout,
-    device_type>::HostMirror::memory_space host_memory_space;
+    device_type>::host_mirror_type::memory_space host_memory_space;
   typedef typename MultiVectorType::dual_view_type::t_host host_view_type;
 
   if (std::is_same<dev_memory_space, host_memory_space>::value ||
