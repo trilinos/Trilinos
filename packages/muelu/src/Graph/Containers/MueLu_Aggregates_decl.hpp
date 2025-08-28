@@ -265,7 +265,7 @@ class Aggregates : public BaseClass {
 
   //! Print the object with some verbosity level to an FancyOStream object.
   // using MueLu::Describable::describe; // overloading, not hiding
-  void print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
+  void print(Teuchos::FancyOStream& out, const VerbLevel verbLevel = verbLevel_default) const;
 
  private:
   LO numAggregates_;        ///< Number of aggregates on this processor
