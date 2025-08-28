@@ -31,9 +31,9 @@ struct NeighborLists {
     view_type _cr_neighbor_lists;
     view_type _number_of_neighbors_list;
 
-    typename internal_row_offsets_view_type::HostMirror _host_row_offsets;
-    typename view_type::HostMirror _host_cr_neighbor_lists;
-    typename view_type::HostMirror _host_number_of_neighbors_list;
+    typename internal_row_offsets_view_type::host_mirror_type _host_row_offsets;
+    typename view_type::host_mirror_type _host_cr_neighbor_lists;
+    typename view_type::host_mirror_type _host_number_of_neighbors_list;
 
 /** @name Constructors
  *  Ways to initialize a NeighborLists object
