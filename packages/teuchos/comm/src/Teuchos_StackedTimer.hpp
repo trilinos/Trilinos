@@ -60,7 +60,7 @@ public:
 
   using Clock = std::chrono::high_resolution_clock;
 
-  BaseTimer() : accumulation_(0.0), count_started_(0), count_updates_(0), running_(false) {}
+  BaseTimer() : accumulation_(0.0), accumulationSquared_(0.0), count_started_(0), count_updates_(0), running_(false) {}
 
   /// Start a currently stopped timer
   void start(){
