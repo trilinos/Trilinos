@@ -42,8 +42,8 @@ TEUCHOS_UNIT_TEST(ViewOfViews,from_separate_views) {
   using InnerViewUnmanaged = Kokkos::View<double***,mem_t,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using InnerViewManaged = Kokkos::View<double***,mem_t>;
   using OuterViewDeviceUnmanaged = Kokkos::View<InnerViewUnmanaged*,mem_t>;
-  using OuterViewHostMirrorUnmanaged = Kokkos::View<InnerViewUnmanaged*,mem_t>::HostMirror; // all inner view args must match for deep_copy to device
-  using OuterViewHostMirrorManaged = Kokkos::View<InnerViewManaged*,mem_t>::HostMirror; // used to store views so they don't go out of scope
+  using OuterViewHostMirrorUnmanaged = Kokkos::View<InnerViewUnmanaged*,mem_t>::host_mirror_type; // all inner view args must match for deep_copy to device
+  using OuterViewHostMirrorManaged = Kokkos::View<InnerViewManaged*,mem_t>::host_mirror_type; // used to store views so they don't go out of scope
 
   // Requirement 2: The host view must exist for the life of the
   // device view! Need to make sure the views are managed on
