@@ -40,7 +40,7 @@ struct CrsArrayReader {
   typedef KokkosSparse::CrsMatrix<ImplScalar, LocalOrdinal, execution_space> KCrsMatrix;
   typedef Kokkos::View<LocalOrdinal*, execution_space> OrdinalArray;
   typedef Kokkos::View<ImplScalar*, execution_space> ScalarArray;
-  typedef typename OrdinalArray::HostMirror OrdinalArrayHost;
+  typedef typename OrdinalArray::host_mirror_type OrdinalArrayHost;
   //! The execution space to used to run the row access functors.
   typedef Kokkos::Serial functor_space;
   typedef Kokkos::RangePolicy<functor_space, int> RangePol;

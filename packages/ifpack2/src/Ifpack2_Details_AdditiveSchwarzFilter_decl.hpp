@@ -66,10 +66,14 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   typedef typename local_matrix_type::row_map_type::non_const_type row_map_type;
   typedef typename local_matrix_type::index_type entries_type;
   typedef typename local_matrix_type::values_type values_type;
-  typedef typename row_map_type::HostMirror host_row_map_type;
-  typedef typename entries_type::HostMirror host_entries_type;
-  typedef typename values_type::HostMirror host_values_type;
+  typedef typename row_map_type::host_mirror_type host_row_map_type;
+  typedef typename entries_type::host_mirror_type host_entries_type;
+  typedef typename values_type::host_mirror_type host_values_type;
+#if KOKKOS_VERSION > 40799
+  typedef typename local_matrix_type::host_mirror_type host_local_matrix_type;
+#else
   typedef typename local_matrix_type::HostMirror host_local_matrix_type;
+#endif
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::AdditiveSchwarzFilter: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
