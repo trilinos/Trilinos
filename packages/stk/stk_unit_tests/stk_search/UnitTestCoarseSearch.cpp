@@ -402,7 +402,7 @@ void device_local_test_coarse_search_for_algorithm(stk::search::SearchMethod alg
   bool sortSearchResults = true;
   stk::search::local_coarse_search(domain, range, algorithm, intersections, execSpace, sortSearchResults);
 
-  Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentIntersection*>::host_mirror_type hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   local_expect_search_results(hostIntersections);
@@ -722,7 +722,7 @@ void test_ident_proc_with_search_with_views(stk::search::SearchMethod searchMeth
     auto hostSearchResults = Kokkos::create_mirror_view(searchResults);
     Kokkos::deep_copy(hostSearchResults, searchResults);
 
-    SearchResultsViewType::HostMirror goldResults("goldResults", 3);
+    SearchResultsViewType::host_mirror_type goldResults("goldResults", 3);
 
     IdentProc goldId1(1, 0);
     IdentProc goldId2(1, 1);

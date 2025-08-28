@@ -266,12 +266,12 @@ void DeviceBucketT<BucketNgpMemSpace>::update_sparse_connectivity_from_host(cons
 {
   Kokkos::Profiling::pushRegion("update_sparse_connectivity_from_host()");
 
-  typename Unsigned2dViewType<BucketNgpMemSpace>::HostMirror hostConnectivityOffsets("hostConnectivityOffsets", 0,0); 
+  typename Unsigned2dViewType<BucketNgpMemSpace>::host_mirror_type hostConnectivityOffsets("hostConnectivityOffsets", 0,0);
   Kokkos::resize(Kokkos::WithoutInitializing, hostConnectivityOffsets, stk::topology::NUM_RANKS, bucket.size()+1);
   Kokkos::resize(Kokkos::WithoutInitializing, m_sparseConnectivityOffsets, stk::topology::NUM_RANKS, bucket.size()+1);
-  typename BucketConnectivityType<BucketNgpMemSpace>::HostMirror hostConnectivity("hostConnectivity", 0);
-  typename OrdinalViewType<BucketNgpMemSpace>::HostMirror hostConnectivityOrdinals("hostConnectivityOrdinals", 0);
-  typename PermutationViewType<BucketNgpMemSpace>::HostMirror hostConnectivityPermutations("hostConnectivityPermutations", 0);
+  typename BucketConnectivityType<BucketNgpMemSpace>::host_mirror_type hostConnectivity("hostConnectivity", 0);
+  typename OrdinalViewType<BucketNgpMemSpace>::host_mirror_type hostConnectivityOrdinals("hostConnectivityOrdinals", 0);
+  typename PermutationViewType<BucketNgpMemSpace>::host_mirror_type hostConnectivityPermutations("hostConnectivityPermutations", 0);
 
   const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bucket.mesh().mesh_meta_data().entity_rank_count());
 

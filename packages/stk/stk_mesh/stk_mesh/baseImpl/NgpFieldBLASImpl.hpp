@@ -173,7 +173,7 @@ public:
   }
 
   using FieldView = Kokkos::View<NGP_FIELD_TYPE*, ExecSpace>;
-  using FieldHostView = typename FieldView::HostMirror;
+  using FieldHostView = typename FieldView::host_mirror_type;
   using MemorySpace = typename FieldView::traits::memory_space;
   static constexpr int STATIC_FIELD_LIMIT = 4;
   NGP_FIELD_TYPE ngpFieldsStatic[STATIC_FIELD_LIMIT];
@@ -249,7 +249,7 @@ public:
   }
 
   using FieldView = Kokkos::View<NGP_FIELD_TYPE*, ExecSpace>;
-  using FieldHostView = typename FieldView::HostMirror;
+  using FieldHostView = typename FieldView::host_mirror_type;
   using MemorySpace = typename FieldView::traits::memory_space;
   static constexpr int STATIC_FIELD_LIMIT = 4;
   NGP_FIELD_TYPE ngpFieldsStatic[STATIC_FIELD_LIMIT];

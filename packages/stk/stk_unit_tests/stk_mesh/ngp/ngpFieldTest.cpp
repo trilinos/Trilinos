@@ -308,10 +308,10 @@ public:
     unsigned numElems = elements.size();
     unsigned numPerEntity = stkField.max_size();
     FieldData deviceData = FieldData("deviceData", numElems, numPerEntity);
-    typename FieldData::HostMirror hostData = Kokkos::create_mirror_view(deviceData);
+    typename FieldData::host_mirror_type hostData = Kokkos::create_mirror_view(deviceData);
 
-    get_field_data_from_device<T, FieldData, typename FieldData::HostMirror>(elements, ngpField, deviceData, hostData);
-    verify_field_data_on_device<T, typename FieldData::HostMirror>(elements, stkField, hostData, checkFunc);
+    get_field_data_from_device<T, FieldData, typename FieldData::host_mirror_type>(elements, ngpField, deviceData, hostData);
+    verify_field_data_on_device<T, typename FieldData::host_mirror_type>(elements, stkField, hostData, checkFunc);
   }
 
   template<typename T>
@@ -2193,7 +2193,7 @@ public:
 
       const unsigned numNodes = stk::mesh::count_entities(*m_bulk, stk::topology::NODE_RANK, *field);
       Kokkos::View<int*> deviceValues("deviceValues", numNodes);
-      Kokkos::View<int*>::HostMirror hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
+      Kokkos::View<int*>::host_mirror_type hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
 
       stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
       stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(*field);
