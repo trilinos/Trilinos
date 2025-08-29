@@ -13,6 +13,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 #include <string>
 #include <iostream>
@@ -52,15 +53,8 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 {
-
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
-   // panzer::pauseToAttach();
-
-   using Teuchos::RCP;
-   using Teuchos::rcp;
-   using Teuchos::rcp_dynamic_cast;
 
    int myRank = comm->getRank();
    int numProc = comm->getSize();
@@ -96,15 +90,10 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    TEST_ASSERT(dofManager.getElementBlock("block_0")==connManager->getElementBlock("block_0"));
    TEST_ASSERT(dofManager.getElementBlock("block_1")==connManager->getElementBlock("block_1"));
    TEST_ASSERT(dofManager.getElementBlock("block_2")==connManager->getElementBlock("block_2"));
-
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 {
-
-   using Teuchos::RCP;
-   using Teuchos::rcp;
-   using Teuchos::rcp_dynamic_cast;
 
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -222,22 +211,14 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
    TEST_EQUALITY(blk2fn[0],4);
    TEST_EQUALITY(blk2fn[1],5);
-
 }
 
 /* NOTE: disabled as Blocked manager doesn't handle gids anymore.
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 {
-
-   // panzer::pauseToAttach();
-
-   using Teuchos::RCP;
-   using Teuchos::rcp;
-   using Teuchos::rcp_dynamic_cast;
-
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
    int myRank = comm->getRank();
    int numProc = comm->getSize();
@@ -343,15 +324,8 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 {
-
-   // panzer::pauseToAttach();
-
-   using Teuchos::RCP;
-   using Teuchos::rcp;
-   using Teuchos::rcp_dynamic_cast;
-
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
    int myRank = comm->getRank();
    int numProc = comm->getSize();
@@ -382,14 +356,12 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    dofManager.setFieldOrder(fieldOrder);
 
    dofManager.buildGlobalUnknowns();
-
-   /* NOTE: disabled since BlockManager can't do this anymore...
-
+/* NOTE: disabled since BlockManager can't do this anymore...
    // check from element block 0
    std::vector<std::pair<int,int> > gids;
    if(myRank==0) {
       // std::vector<std::pair<int,int> > gids;
-      dofManager.getElementGIDs(1,gids);
+      dofManager.getElementGIDsPair(1,gids);
 
       TEST_EQUALITY(gids.size(),16);
       for(std::size_t i=0; i<8;i++) TEST_EQUALITY(gids[i].first,0);
@@ -398,7 +370,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    }
    else if(myRank==1) {
       // std::vector<std::pair<int,int> > gids;
-      dofManager.getElementGIDs(1,gids);
+      dofManager.getElementGIDsPair(1,gids);
 
       TEST_EQUALITY(gids.size(),16);
       for(std::size_t i=0; i<8;i++) TEST_EQUALITY(gids[i].first,0);
@@ -409,7 +381,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    // check from element block 1
    if(myRank==0) {
       // std::vector<std::pair<int,int> > gids;
-      dofManager.getElementGIDs(4,gids);
+      dofManager.getElementGIDsPair(4,gids);
 
       TEST_EQUALITY(gids.size(),4);
       for(std::size_t i=0;i<4;i++)
@@ -417,7 +389,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    }
    else if(myRank==1) {
       // std::vector<std::pair<int,int> > gids;
-      dofManager.getElementGIDs(3,gids);
+      dofManager.getElementGIDsPair(3,gids);
 
       TEST_EQUALITY(gids.size(),4);
       for(std::size_t i=0;i<4;i++)
@@ -427,7 +399,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    // check from element block 2
    if(myRank==0) {
       // std::vector<std::pair<int,int> > gids;
-      dofManager.getElementGIDs(3,gids);
+      dofManager.getElementGIDsPair(3,gids);
 
       TEST_EQUALITY(gids.size(),8);
       for(std::size_t i=0;i<4;i++) {
@@ -608,18 +580,12 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 
       TEST_ASSERT(!dofManager.validFieldOrder(order,validFields));
    }
-
 }
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
 {
-
-   using Teuchos::RCP;
-   using Teuchos::rcp;
-   using Teuchos::rcp_dynamic_cast;
-
    // build global (or serial communicator)
-   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
    int myRank = comm->getRank();
    int numProc = comm->getSize();

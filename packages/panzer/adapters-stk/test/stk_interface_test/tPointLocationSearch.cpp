@@ -21,12 +21,6 @@
 
 #include "Shards_BasicTopologies.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 // STK_search objects
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/BoundingBox.hpp>
