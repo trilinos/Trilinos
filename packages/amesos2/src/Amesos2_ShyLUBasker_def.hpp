@@ -298,7 +298,8 @@ ShyLUBasker<Matrix,Vector>::solve_impl(
   const bool do_not_initialize_data = false;
   bool use_gather = use_gather_; // user param
   use_gather = (use_gather && this->matrixA_->getComm()->getSize() > 1); // only with multiple MPIs
-  use_gather = (use_gather && (std::is_same<scalar_type, float>::value || std::is_same<scalar_type, double>::value)); // only for double or float
+  use_gather = (use_gather && (std::is_same<vector_scalar_type, float>::value ||
+                               std::is_same<vector_scalar_type, double>::value)); // only for double or float vectors
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
