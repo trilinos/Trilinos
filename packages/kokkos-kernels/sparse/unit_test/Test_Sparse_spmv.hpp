@@ -180,17 +180,14 @@ void check_spmv(handle_t *handle, crsMat_t input_mat, x_vector_type x, y_vector_
 
   const y_value_mag_type eps = 10 * Kokkos::ArithTraits<y_value_mag_type>::eps();
 
-  y_vector_type actual_y("actual_y", y.extent(0));
   y_vector_type expected_y("expected_y", y.extent(0));
   Kokkos::deep_copy(expected_y, y);
-  Kokkos::deep_copy(actual_y, y);
-  Kokkos::fence();
-
   sequential_spmv(input_mat, x, expected_y, alpha, beta, mode);
+
   bool threw = false;
   std::string msg;
   try {
-    KokkosSparse::spmv(handle, mode.data(), alpha, input_mat, x, beta, actual_y);
+    KokkosSparse::spmv(handle, mode.data(), alpha, input_mat, x, beta, y);
     Kokkos::fence();
   } catch (std::exception &e) {
     threw = true;
@@ -199,8 +196,8 @@ void check_spmv(handle_t *handle, crsMat_t input_mat, x_vector_type x, y_vector_
   ASSERT_FALSE(threw) << "KokkosSparse::Test::spmv 1D, mode " << mode << ": threw exception:\n" << msg << '\n';
 
   int num_errors = 0;
-  Kokkos::parallel_reduce("KokkosSparse::Test::spmv", my_exec_space(0, actual_y.extent(0)),
-                          fSPMV(expected_y, actual_y, eps, max_val), num_errors);
+  Kokkos::parallel_reduce("KokkosSparse::Test::spmv", my_exec_space(0, y.extent(0)), fSPMV(expected_y, y, eps, max_val),
+                          num_errors);
   if (num_errors > 0)
     printf("KokkosSparse::Test::spmv: %i errors of %i with params: %lf %lf\n", num_errors, y.extent_int(0),
            y_value_trait::abs(alpha), y_value_trait::abs(beta));
@@ -587,7 +584,6 @@ void test_spmv_mv_heavy(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandw
     Test::check_spmv_mv(&handle, input_mat, b_xt, b_yt, b_yt_copy, 1.0, 0.0, nv, "T",
                         max_nnz_per_row * max_val * max_x);
     Test::check_spmv_mv(&handle, input_mat, b_xt, b_yt, b_yt_copy, 0.0, 1.0, nv, "T", max_y);
-    // Testing all modes together, since matrix is square
     std::vector<const char *> modes   = {"N", "C", "T", "H"};
     std::vector<double> testAlphaBeta = {0.0, 1.0, -1.0, 2.5};
     for (auto mode : modes) {
@@ -598,6 +594,103 @@ void test_spmv_mv_heavy(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandw
             Test::check_spmv_mv(&handle, input_mat, b_x, b_y, b_y_copy, alpha, beta, nv, mode, max_error);
           } else {
             Test::check_spmv_mv(&handle, input_mat, b_xt, b_yt, b_yt_copy, alpha, beta, nv, mode, max_error);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Test spmv and spmv_mv, where the x and y vectors are padded and only aligned to their datatype size
+// (and not the larger 16+ byte alignment of a Kokkos::View allocation)
+template <typename scalar_t, typename lno_t, typename size_type, class Device>
+void test_spmv_padded_sizealigned(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandwidth, lno_t row_size_variance,
+                                  int numMV) {
+  using crsMat_t     = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type>;
+  using ViewTypeX    = Kokkos::View<scalar_t **, Kokkos::LayoutLeft, Device>;
+  using ViewTypeY    = Kokkos::View<scalar_t **, Kokkos::LayoutLeft, Device>;
+  using ViewTypeX_1D = Kokkos::View<scalar_t *, Kokkos::LayoutLeft, Device>;
+  using ViewTypeY_1D = Kokkos::View<scalar_t *, Kokkos::LayoutLeft, Device>;
+  using mag_t        = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using handle_t     = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
+  using handle_r1_t  = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX_1D, ViewTypeY_1D>;
+
+  constexpr mag_t max_x   = static_cast<mag_t>(10);
+  constexpr mag_t max_y   = static_cast<mag_t>(10);
+  constexpr mag_t max_val = static_cast<mag_t>(10);
+
+  Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
+
+  crsMat_t input_mat =
+      KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(numRows, numCols, nnz, row_size_variance, bandwidth);
+  Kokkos::fill_random(input_mat.values, rand_pool, scalar_t(10));
+
+  const lno_t max_nnz_per_row = numRows ? (nnz / numRows + row_size_variance) : 0;
+
+  auto rowRange = Kokkos::make_pair(1, (int)numRows + 1);
+  auto colRange = Kokkos::make_pair(1, (int)numCols + 1);
+  // Test both even and odd padding amounts (measured in elements)
+  for (int pad = 8; pad <= 9; pad++) {
+    for (int nv = 1; nv <= numMV; nv++) {
+      ViewTypeX b_x("A", numCols + pad, nv);
+      ViewTypeY b_y("B", numRows + pad, nv);
+      ViewTypeY b_y_copy("B", numRows + pad, nv);
+
+      ViewTypeX b_xt("A", numRows + pad, nv);
+      ViewTypeY b_yt("B", numCols + pad, nv);
+      ViewTypeY b_yt_copy("B", numCols + pad, nv);
+
+      ViewTypeX x      = Kokkos::subview(b_x, colRange, Kokkos::ALL());
+      ViewTypeY y      = Kokkos::subview(b_y, rowRange, Kokkos::ALL());
+      ViewTypeY y_copy = Kokkos::subview(b_y_copy, rowRange, Kokkos::ALL());
+
+      ViewTypeX xt      = Kokkos::subview(b_xt, rowRange, Kokkos::ALL());
+      ViewTypeY yt      = Kokkos::subview(b_yt, colRange, Kokkos::ALL());
+      ViewTypeY yt_copy = Kokkos::subview(b_yt_copy, colRange, Kokkos::ALL());
+
+      Kokkos::fill_random(x, rand_pool, scalar_t(10));
+      Kokkos::fill_random(y, rand_pool, scalar_t(10));
+      Kokkos::fill_random(xt, rand_pool, scalar_t(10));
+      Kokkos::fill_random(yt, rand_pool, scalar_t(10));
+
+      Kokkos::deep_copy(y_copy, y);
+      Kokkos::deep_copy(yt_copy, yt);
+
+      handle_t handle;
+
+      Test::check_spmv_mv(&handle, input_mat, x, y, y_copy, 1.0, 0.0, nv, "N", max_nnz_per_row * max_val * max_x);
+      Test::check_spmv_mv(&handle, input_mat, x, y, y_copy, 0.0, 1.0, nv, "N", max_y);
+      Test::check_spmv_mv(&handle, input_mat, x, y, y_copy, 1.0, 1.0, nv, "N",
+                          max_y + max_nnz_per_row * max_val * max_x);
+      Test::check_spmv_mv(&handle, input_mat, xt, yt, yt_copy, 1.0, 0.0, nv, "T", max_nnz_per_row * max_val * max_x);
+      Test::check_spmv_mv(&handle, input_mat, xt, yt, yt_copy, 0.0, 1.0, nv, "T", max_y);
+
+      if (nv == 1) {
+        // Also check rank-1 version of spmv with the same data.
+        handle_r1_t handle_r1;
+        ViewTypeX_1D x_r1 = Kokkos::subview(b_x, colRange, 0);
+        ViewTypeY_1D y_r1 = Kokkos::subview(b_y, rowRange, 0);
+
+        ViewTypeX_1D xt_r1 = Kokkos::subview(b_xt, rowRange, 0);
+        ViewTypeY_1D yt_r1 = Kokkos::subview(b_yt, colRange, 0);
+
+        Test::check_spmv(&handle_r1, input_mat, x_r1, y_r1, 1.0, 0.0, "N", max_nnz_per_row * max_val * max_x);
+        Test::check_spmv(&handle_r1, input_mat, x_r1, y_r1, 0.0, 1.0, "N", max_y);
+        Test::check_spmv(&handle_r1, input_mat, x_r1, y_r1, 1.0, 1.0, "N", max_y + max_nnz_per_row * max_val * max_x);
+        Test::check_spmv(&handle_r1, input_mat, xt_r1, yt_r1, 1.0, 0.0, "T", max_nnz_per_row * max_val * max_x);
+        Test::check_spmv(&handle_r1, input_mat, xt_r1, yt_r1, 0.0, 1.0, "T", max_y);
+      }
+      std::vector<const char *> modes   = {"N", "C", "T", "H"};
+      std::vector<double> testAlphaBeta = {0.0, 1.0, -1.0, 2.5};
+      for (auto mode : modes) {
+        for (double alpha : testAlphaBeta) {
+          for (double beta : testAlphaBeta) {
+            mag_t max_error = beta * max_y + alpha * max_nnz_per_row * max_val * max_x;
+            if (*mode == 'N' || *mode == 'C') {
+              Test::check_spmv_mv(&handle, input_mat, x, y, y_copy, alpha, beta, nv, mode, max_error);
+            } else {
+              Test::check_spmv_mv(&handle, input_mat, xt, yt, yt_copy, alpha, beta, nv, mode, max_error);
+            }
           }
         }
       }
@@ -1085,6 +1178,12 @@ void test_spmv_all_interfaces_light() {
     test_spmv_mv_heavy<SCALAR, ORDINAL, OFFSET, Kokkos::LAYOUT, Kokkos::LAYOUT, DEVICE>(2, 3, 5, 3, 1, 10);        \
   }
 
+#define EXECUTE_TEST_SPMV_PADDED_SIZEALIGNED(SCALAR, ORDINAL, OFFSET, DEVICE)                             \
+  TEST_F(TestCategory, sparse##_##spmv_padded_sizealigned##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_spmv_padded_sizealigned<SCALAR, ORDINAL, OFFSET, DEVICE>(500, 499, 500 * 9, 100, 3, 4);          \
+    test_spmv_padded_sizealigned<SCALAR, ORDINAL, OFFSET, DEVICE>(501, 500, 500 * 9, 100, 3, 4);          \
+  }
+
 #define EXECUTE_TEST_MV_MIXED_LAYOUT(SCALAR, ORDINAL, OFFSET, DEVICE)                                               \
   TEST_F(TestCategory, sparse##_##spmv_mv_mixed_layout##_##SCALAR##_##ORDINAL##_##OFFSET##_##LAYOUT##_##DEVICE) {   \
     test_spmv_mv_heavy<SCALAR, ORDINAL, OFFSET, Kokkos::LayoutRight, Kokkos::LayoutLeft, DEVICE>(99, 101, 100 * 15, \
@@ -1125,9 +1224,10 @@ EXECUTE_TEST_ISSUE_101(TestDevice)
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT) || \
     (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 
-#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)       \
-  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestDevice)        \
-  EXECUTE_TEST_MV_STRUCT(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestDevice) \
+#define KOKKOSKERNELS_EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)         \
+  EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestDevice)          \
+  EXECUTE_TEST_SPMV_PADDED_SIZEALIGNED(SCALAR, ORDINAL, OFFSET, TestDevice) \
+  EXECUTE_TEST_MV_STRUCT(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestDevice)   \
   EXECUTE_TEST_INTERFACES(SCALAR, ORDINAL, OFFSET, LayoutLeft, TestDevice)
 
 #include <Test_Common_Test_All_Type_Combos.hpp>
