@@ -724,7 +724,7 @@ struct ComputeResidualVector {
     using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
     subview_1D_right_t bb(nullptr, blocksize);
     subview_1D_right_t xx(nullptr, blocksize);
-    subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride_1()));
+    subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride(1)));
     auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
 
     // Get shared allocation for a local copy of x, Ax, and A
@@ -821,7 +821,7 @@ struct ComputeResidualVector {
     subview_1D_right_t bb(nullptr, blocksize);
     subview_1D_right_t xx(nullptr, blocksize);
     subview_1D_right_t xx_remote(nullptr, blocksize);
-    subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride_1()));
+    subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride(1)));
     auto A_block_cst    = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
     auto colindsub_used = overlap ? colindsub_remote : colindsub;
     auto rowptr_used    = overlap ? rowptr_remote : rowptr;
