@@ -36,11 +36,11 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
 
     if (m > 0 && n > 0) {
       if (n == 1) {
-        BlasTeam<value_type>::trsv(member, ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride_1(),
-                                   B.data(), B.stride_0());
+        BlasTeam<value_type>::trsv(member, ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride(1),
+                                   B.data(), B.stride(0));
       } else {
         BlasTeam<value_type>::trsm(member, Side::Left::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n,
-                                   value_type(1), A.data(), A.stride_1(), B.data(), B.stride_1());
+                                   value_type(1), A.data(), A.stride(1), B.data(), B.stride(1));
       }
     }
     return 0;

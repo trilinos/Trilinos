@@ -37,7 +37,7 @@ template <> struct LU<Algo::OnDevice> {
       int *devInfo = (int *)W.data();
       value_type *workspace = W.data() + 1;
       // int lwork = (W.span()-1);
-      r_val = Lapack<value_type>::getrf(handle, m, n, A.data(), A.stride_1(), workspace, P.data(), devInfo);
+      r_val = Lapack<value_type>::getrf(handle, m, n, A.data(), A.stride(1), workspace, P.data(), devInfo);
     }
     return r_val;
   }
@@ -49,7 +49,7 @@ template <> struct LU<Algo::OnDevice> {
 
     int r_val(0);
     if (m > 0)
-      r_val = Lapack<value_type>::getrf_buffersize(handle, m, n, A.data(), A.stride_1(), lwork);
+      r_val = Lapack<value_type>::getrf_buffersize(handle, m, n, A.data(), A.stride(1), lwork);
     return r_val;
   }
 #endif
@@ -64,7 +64,7 @@ template <> struct LU<Algo::OnDevice> {
     int r_val(0);
     if (m > 0 && n > 0) {
       int *devInfo = (int *)W.data();
-      r_val = Lapack<value_type>::getrf(handle, m, n, A.data(), A.stride_1(), P.data(), devInfo);
+      r_val = Lapack<value_type>::getrf(handle, m, n, A.data(), A.stride(1), P.data(), devInfo);
     }
     return r_val;
   }
