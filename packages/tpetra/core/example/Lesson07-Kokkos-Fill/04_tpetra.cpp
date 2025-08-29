@@ -219,7 +219,7 @@ int main (int argc, char* argv[]) {
     // issues are that Teuchos::RCP isn't thread safe, and the Kokkos
     // version of Tpetra::Map isn't quite ready yet.  We will change
     // the latter soon.
-    Kokkos::View<GO*>::HostMirror colInds ("Column Map", num_col_inds);
+    Kokkos::View<GO*>::host_mirror_type colInds ("Column Map", num_col_inds);
     for (LO k = 0; k < numLclElements; ++k) {
       colInds(k) = rowMap->getGlobalElement (k);
     }

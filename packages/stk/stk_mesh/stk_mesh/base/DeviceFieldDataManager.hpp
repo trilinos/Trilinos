@@ -64,7 +64,7 @@ class DeviceFieldDataManager : public DeviceFieldDataManagerBase
   using HostFieldMetaDataCollectionType = Kokkos::View<HostFieldMetaDataArrayType<NgpMemSpace>*, stk::ngp::HostExecSpace>;
 
   using DeviceBucketsModifiedCollectionType = Kokkos::View<int**, Kokkos::LayoutRight, NgpMemSpace>;
-  using HostBucketsModifiedCollectionType = typename DeviceBucketsModifiedCollectionType::HostMirror;
+  using HostBucketsModifiedCollectionType = typename DeviceBucketsModifiedCollectionType::host_mirror_type;
 
   using BucketRawDataType = Kokkos::View<std::byte*, NgpMemSpace>;
   using BucketRawDataArrayType = Kokkos::View<BucketRawDataType*, stk::ngp::HostExecSpace>;

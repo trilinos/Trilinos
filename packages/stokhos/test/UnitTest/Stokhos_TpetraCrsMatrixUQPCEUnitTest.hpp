@@ -730,7 +730,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Check
   ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
   BaseScalar tol = 1.0e-14;
-  typename Cijk::HostMirror host_cijk =
+  typename Cijk::host_mirror_type host_cijk =
     Kokkos::create_mirror_view(cijk);
   Kokkos::deep_copy(host_cijk, cijk);
   for (size_t local_row=0; local_row<num_my_row; ++local_row) {
@@ -882,7 +882,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // Check
   ArrayRCP< ArrayRCP<Scalar> > y_view = y->get2dViewNonConst();
   BaseScalar tol = 1.0e-14;
-  typename Cijk::HostMirror host_cijk =
+  typename Cijk::host_mirror_type host_cijk =
     Kokkos::create_mirror_view(cijk);
   Kokkos::deep_copy(host_cijk, cijk);
   for (size_t local_row=0; local_row<num_my_row; ++local_row) {

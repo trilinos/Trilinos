@@ -139,7 +139,7 @@ namespace panzer {
           if (tmp.size() == 0)
             continue;
 
-          Kokkos::View<panzer::LocalOrdinal*>::HostMirror cell_local_ids_host(tmp.data(),tmp.size());
+          Kokkos::View<panzer::LocalOrdinal*>::host_mirror_type cell_local_ids_host(tmp.data(),tmp.size());
           Kokkos::View<panzer::LocalOrdinal*> cell_local_ids_nonconst("cell_local_ids",tmp.size());
           Kokkos::deep_copy(cell_local_ids_nonconst,cell_local_ids_host);
           cell_local_ids = cell_local_ids_nonconst;
@@ -273,7 +273,7 @@ namespace panzer {
           if (tmp.size() == 0)
             continue;
 
-          Kokkos::View<panzer::LocalOrdinal*>::HostMirror cell_local_ids_host(tmp.data(),tmp.size());
+          Kokkos::View<panzer::LocalOrdinal*>::host_mirror_type cell_local_ids_host(tmp.data(),tmp.size());
           Kokkos::View<panzer::LocalOrdinal*> cell_local_ids_nonconst("cell_local_ids",tmp.size());
           Kokkos::deep_copy(cell_local_ids_nonconst,cell_local_ids_host);
           cell_local_ids = cell_local_ids_nonconst;

@@ -356,7 +356,7 @@ void SemiCoarsenPFactory_kokkos<
 
   // Construct a map from Line, Layer ids to fine level node
   LOView2D LineLayer2Node("LineLayer2Node", NVertLines, NFLayers);
-  typename LOView2D::HostMirror LineLayer2NodeHost =
+  typename LOView2D::host_mirror_type LineLayer2NodeHost =
       Kokkos::create_mirror_view(LineLayer2Node);
   for (int node = 0; node < NFNodes; ++node)
     LineLayer2NodeHost(VertLineId[node], LayerId[node]) = node;
@@ -364,7 +364,7 @@ void SemiCoarsenPFactory_kokkos<
 
   // Construct a map from coarse layer id to fine layer id
   LOView1D CLayer2FLayer("CLayer2FLayer", NCLayers);
-  typename LOView1D::HostMirror CLayer2FLayerHost =
+  typename LOView1D::host_mirror_type CLayer2FLayerHost =
       Kokkos::create_mirror_view(CLayer2FLayer);
   using coordT = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
   const LO FirstStride =
@@ -387,9 +387,9 @@ void SemiCoarsenPFactory_kokkos<
   int MaxStencilSize = 1;
   LOView1D CLayer2StartLayer("CLayer2StartLayer", NCLayers);
   LOView1D CLayer2StencilSize("CLayer2StencilSize", NCLayers);
-  typename LOView1D::HostMirror CLayer2StartLayerHost =
+  typename LOView1D::host_mirror_type CLayer2StartLayerHost =
       Kokkos::create_mirror_view(CLayer2StartLayer);
-  typename LOView1D::HostMirror CLayer2StencilSizeHost =
+  typename LOView1D::host_mirror_type CLayer2StencilSizeHost =
       Kokkos::create_mirror_view(CLayer2StencilSize);
   for (int clayer = 0; clayer < NCLayers; ++clayer) {
     const int startLayer  = (clayer > 0) ? CLayer2FLayerHost(clayer - 1) + 1 : 0;
@@ -430,7 +430,7 @@ void SemiCoarsenPFactory_kokkos<
   // Note: Each coarse layer stencil dof contributes DofsPerNode to the
   // corresponding row in P
   Kokkos::View<size_t *, DeviceType> Pptr("Pptr", NFRows + 1);
-  typename Kokkos::View<size_t *, DeviceType>::HostMirror PptrHost =
+  typename Kokkos::View<size_t *, DeviceType>::host_mirror_type PptrHost =
       Kokkos::create_mirror_view(Pptr);
   Kokkos::deep_copy(PptrHost, 0);
   for (int line = 0; line < NVertLines; ++line) {
@@ -461,7 +461,7 @@ void SemiCoarsenPFactory_kokkos<
   Kokkos::deep_copy(layerBuckets, 0);
   LOView2D CLayerSNode2PptrOffset("CLayerSNode2PptrOffset", NCLayers,
                                   MaxStencilSize);
-  typename LOView2D::HostMirror CLayerSNode2PptrOffsetHost =
+  typename LOView2D::host_mirror_type CLayerSNode2PptrOffsetHost =
       Kokkos::create_mirror_view(CLayerSNode2PptrOffset);
   for (int clayer = 0; clayer < NCLayers; ++clayer) {
     const int stencilSize = CLayer2StencilSizeHost(clayer);

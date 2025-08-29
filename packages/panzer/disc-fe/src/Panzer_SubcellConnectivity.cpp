@@ -30,11 +30,11 @@ setup(const panzer::LocalMeshPartition & partition)
   _cell_to_subcells = PHX::View<int*>("cell_to_subcells", num_cells*num_faces_per_cell);
 
   // Host copies
-  _subcell_to_cells_adj_host = PHX::View<int*>::HostMirror("subcell_to_cells_adj_host", num_faces+1);
-  _subcell_to_cells_host = PHX::View<int*>::HostMirror("subcell_to_cells_host", num_faces*num_cells_per_face);
-  _subcell_to_local_subcells_host = PHX::View<int*>::HostMirror("subcell_to_local_subcells_host", num_faces*num_cells_per_face);
-  _cell_to_subcells_adj_host = PHX::View<int*>::HostMirror("cell_to_subcells_adj_host", num_cells+1);
-  _cell_to_subcells_host = PHX::View<int*>::HostMirror("cell_to_subcells_host", num_cells*num_faces_per_cell);
+  _subcell_to_cells_adj_host = PHX::View<int*>::host_mirror_type("subcell_to_cells_adj_host", num_faces+1);
+  _subcell_to_cells_host = PHX::View<int*>::host_mirror_type("subcell_to_cells_host", num_faces*num_cells_per_face);
+  _subcell_to_local_subcells_host = PHX::View<int*>::host_mirror_type("subcell_to_local_subcells_host", num_faces*num_cells_per_face);
+  _cell_to_subcells_adj_host = PHX::View<int*>::host_mirror_type("cell_to_subcells_adj_host", num_cells+1);
+  _cell_to_subcells_host = PHX::View<int*>::host_mirror_type("cell_to_subcells_host", num_cells*num_faces_per_cell);
 
   // This line not needed since kokkos initializes the arrays above to zero
   //_subcell_to_cells_adj(0)=0;

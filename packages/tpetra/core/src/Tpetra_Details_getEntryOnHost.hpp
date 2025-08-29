@@ -39,7 +39,7 @@ getEntryOnHost (const ViewType& x,
 
 template<class ViewType,
          class IndexType>
-typename ViewType::HostMirror::const_type
+typename ViewType::host_mirror_type::const_type
 getEntriesOnHost (const ViewType& x,
                   const IndexType ind,
                   const int count)
@@ -47,7 +47,7 @@ getEntriesOnHost (const ViewType& x,
   static_assert (ViewType::rank == 1, "x must be a rank-1 Kokkos::View.");
   // Get a 1-D subview of the entry of the array, and copy to host.
   auto subview = Kokkos::subview(x, Kokkos::make_pair(ind, ind + count));
-  return Kokkos::create_mirror_view_and_copy(typename ViewType::HostMirror::memory_space(), subview);
+  return Kokkos::create_mirror_view_and_copy(typename ViewType::host_mirror_type::memory_space(), subview);
 }
 
 } // namespace Details

@@ -40,7 +40,7 @@ namespace PHX {
     static_assert(!std::is_pointer<ViewType>::value);
     
     if constexpr (is_dyn_rank_view<ViewType>::value) {
-      typename ViewType::HostMirror v = Kokkos::create_mirror(view_device);
+      typename ViewType::host_mirror_type v = Kokkos::create_mirror(view_device);
       Kokkos::deep_copy(v,view_device);
       const auto rank = v.rank();
       if (rank == 1) {
@@ -101,7 +101,7 @@ namespace PHX {
       }
     }
     else if constexpr (Kokkos::is_view<ViewType>::value){ // Static rank View
-      typename ViewType::HostMirror v = Kokkos::create_mirror(view_device);
+      typename ViewType::host_mirror_type v = Kokkos::create_mirror(view_device);
       Kokkos::deep_copy(v,view_device);
       if constexpr (v.rank()==1) {
         for (std::size_t i=0; i < v.extent(0); ++i)
