@@ -230,9 +230,9 @@ class TestFactory {
     using local_matrix_type = typename Matrix::local_matrix_type::HostMirror;
     using local_graph_type  = typename CrsGraph::local_graph_type::HostMirror;
 #endif
-    using rowptr_type       = typename local_graph_type::row_map_type::non_const_type;
-    using entries_type      = typename local_graph_type::entries_type::non_const_type;
-    using values_type       = typename local_matrix_type::values_type::non_const_type;
+    using rowptr_type  = typename local_graph_type::row_map_type::non_const_type;
+    using entries_type = typename local_graph_type::entries_type::non_const_type;
+    using values_type  = typename local_matrix_type::values_type::non_const_type;
 
     using TST = Teuchos::ScalarTraits<Scalar>;
     size_t nnz;

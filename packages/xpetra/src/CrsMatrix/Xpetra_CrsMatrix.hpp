@@ -288,7 +288,7 @@ class CrsMatrix
   using local_matrix_type = KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void,
                                                     typename local_graph_type::size_type>;
 
-  virtual local_matrix_type getLocalMatrixDevice() const                    = 0;
+  virtual local_matrix_type getLocalMatrixDevice() const = 0;
 #if KOKKOS_VERSION >= 40799
   virtual typename local_matrix_type::host_mirror_type getLocalMatrixHost() const = 0;
 #else
