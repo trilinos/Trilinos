@@ -70,8 +70,8 @@ int main(int argc, char **argv)
   typedef Sacado::Fad::ViewFad<double,0,0,FadType> ViewFadType;
 
   // Fad objects
-  ViewFadType afad( &v(0,0), &a, num_deriv, v.stride_1() );
-  ViewFadType bfad( &v(1,0), &b, num_deriv, v.stride_1() );
+  ViewFadType afad( &v(0,0), &a, num_deriv, v.stride(1) );
+  ViewFadType bfad( &v(1,0), &b, num_deriv, v.stride(1) );
   FadType cfad(c);
   FadType rfad;
 
