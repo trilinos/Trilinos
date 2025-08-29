@@ -493,6 +493,11 @@ class Chebyshev : public Teuchos::Describable {
   /// and insead use native blas/SpMV operators
   bool ckUseNativeSpMV_;
 
+  /// Whether the temporary multivector should be pre-allocated (for a single vector)
+  /// in compute(). Otherwise this will happen the first time apply is called,
+  /// slowing it down.
+  bool preAllocateTempVector_;
+
   /// \brief Output stream for debug output ONLY.
   ///
   /// This is ONLY valid if debug_ is true.
@@ -541,6 +546,15 @@ class Chebyshev : public Teuchos::Describable {
                                          const ScalarType& alpha,
                                          const V& D_inv,
                                          const MV& B,
+                                         MV& X);
+
+  void
+  firstIterationWithZeroStartingSolution(MV& Z,
+                                         const ScalarType& alpha,
+                                         const V& D_inv,
+                                         const MV& B,
+                                         MV& X4,
+                                         const ScalarType& beta0,
                                          MV& X);
 
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.

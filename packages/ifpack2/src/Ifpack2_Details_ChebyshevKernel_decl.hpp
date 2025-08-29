@@ -69,6 +69,16 @@ class ChebyshevKernel {
           multivector_type& X,
           const SC& beta);
 
+  void
+  compute(multivector_type& W,
+          const SC& alpha,
+          vector_type& D_inv,
+          multivector_type& B,
+          multivector_type& Z,
+          multivector_type& X,
+          const SC& beta,
+          const SC& gamma);
+
  private:
   using import_type = Tpetra::Import<LO, GO, NT>;
   using export_type = Tpetra::Export<LO, GO, NT>;
@@ -80,7 +90,7 @@ class ChebyshevKernel {
   std::unique_ptr<vector_type> X_colMap_;
   std::unique_ptr<multivector_type> V1_;
 
-  Teuchos::RCP<vector_type> W_vec_, B_vec_, X_vec_;
+  Teuchos::RCP<vector_type> W_vec_, B_vec_, X_vec_, Z_vec_;
 
   // External override to not fuse operations into a single kernel
   // And use native blas/SpMV operations
@@ -91,15 +101,6 @@ class ChebyshevKernel {
   importVector(vector_type& X_domMap);
 
   bool canFuse(const multivector_type& B) const;
-
-  void
-  unfusedCase(multivector_type& W,
-              const SC& alpha,
-              vector_type& D_inv,
-              multivector_type& B,
-              const operator_type& A,
-              multivector_type& X,
-              const SC& beta);
 
   void
   fusedCase(vector_type& W,
