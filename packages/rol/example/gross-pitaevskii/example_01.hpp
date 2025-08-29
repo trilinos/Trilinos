@@ -111,8 +111,8 @@ private:
 
   public: 
 
-  Objective_GrossPitaevskii(const Real &g, const Vector<Real> &V) : g_(g),  
-    Vp_(getVector(V))  {
+  Objective_GrossPitaevskii(const Real &g, const Vector<Real> &pV) : g_(g),  
+    Vp_(getVector(pV))  {
     nx_ = Vp_->size(); 
     dx_ = (1.0/(1.0+nx_));
   }

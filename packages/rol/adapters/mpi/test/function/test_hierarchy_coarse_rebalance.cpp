@@ -33,39 +33,39 @@ typedef double Real;
 
 #define ROL_TEST_EQUALITY(a,b,print) { \
     if(not (a==b)) {\
-      std::stringstream ss;\
-      ss << "\nFAILURE: ******************************************************" << std::endl;\
-      ss <<   "FAILURE: * Test (" << #a << " != " << #b << ") failed: line " << __LINE__ << std::endl;\
-      ss <<   "FAILURE: *      (" <<  a << " != " <<  b << ")" << std::endl;\
-      ss <<   "FAILURE: ******************************************************" << std::endl;\
+      std::stringstream mss;\
+      mss << "\nFAILURE: ******************************************************" << std::endl;\
+      mss <<   "FAILURE: * Test (" << #a << " != " << #b << ") failed: line " << __LINE__ << std::endl;\
+      mss <<   "FAILURE: *      (" <<  a << " != " <<  b << ")" << std::endl;\
+      mss <<   "FAILURE: ******************************************************" << std::endl;\
       throw std::logic_error(ss.str());\
     }\
     else if(print) { \
-      std::stringstream ss;\
-      ss << "\nPASS: ******************************************************" << std::endl;\
-      ss <<   "PASS: * Test (" << #a << " == " << #b << ") passed: line " << __LINE__ << std::endl;\
-      ss <<   "PASS: *      (" <<  a << " == " <<  b << ")" << std::endl;\
-      ss <<   "PASS: ******************************************************" << std::endl;\
+      std::stringstream mss;\
+      mss << "\nPASS: ******************************************************" << std::endl;\
+      mss <<   "PASS: * Test (" << #a << " == " << #b << ") passed: line " << __LINE__ << std::endl;\
+      mss <<   "PASS: *      (" <<  a << " == " <<  b << ")" << std::endl;\
+      mss <<   "PASS: ******************************************************" << std::endl;\
       *outStream << ss.str() << std::endl;\
     } \
   }
 
 #define ROL_TEST_FLOAT_EQUALITY(a,b,tol,print) { \
     if(not (std::fabs(a-b)<=tol)) {\
-      std::stringstream ss;\
-      ss << "\nFAILURE: ******************************************************" << std::endl;\
-      ss <<   "FAILURE: * Test (" << #a << " != " << #b << ") failed: line " << __LINE__ << std::endl;\
-      ss <<   "FAILURE: *      (" << "abs(" << a << " - " <<  b << ") > " << tol << std::endl;\
-      ss <<   "FAILURE: ******************************************************" << std::endl;\
+      std::stringstream mss;\
+      mss << "\nFAILURE: ******************************************************" << std::endl;\
+      mss <<   "FAILURE: * Test (" << #a << " != " << #b << ") failed: line " << __LINE__ << std::endl;\
+      mss <<   "FAILURE: *      (" << "abs(" << a << " - " <<  b << ") > " << tol << std::endl;\
+      mss <<   "FAILURE: ******************************************************" << std::endl;\
       throw std::logic_error(ss.str());\
     }\
     else if(print) { \
-      std::stringstream ss;\
-      ss << "\nPASS: ******************************************************" << std::endl;\
-      ss <<   "PASS: * Test (" << #a << " == " << #b << ") passed: line " << __LINE__ << std::endl;\
-      ss <<   "PASS: *      (" << "abs(" << a << " - " <<  b << ") <= " << tol << std::endl;\
-      ss <<   "PASS: ******************************************************" << std::endl;\
-      *outStream << ss.str() << std::endl;\
+      std::stringstream mss;\
+      mss << "\nPASS: ******************************************************" << std::endl;\
+      mss <<   "PASS: * Test (" << #a << " == " << #b << ") passed: line " << __LINE__ << std::endl;\
+      mss <<   "PASS: *      (" << "abs(" << a << " - " <<  b << ") <= " << tol << std::endl;\
+      mss <<   "PASS: ******************************************************" << std::endl;\
+      *outStream << mss.str() << std::endl;\
     } \
   }
 
