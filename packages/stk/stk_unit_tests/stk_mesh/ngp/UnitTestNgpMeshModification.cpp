@@ -578,4 +578,20 @@ TEST(NgpMeshImpl, get_sorted_view)
   EXPECT_TRUE(Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{},sortedView));
 }
 
+TEST(NgpMeshConstructionTest, prevent_update_during_mesh_mod)
+{
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_spatial_dimension(3);
+  auto bulk = builder.create();
+
+  EXPECT_NO_THROW(stk::mesh::get_updated_ngp_mesh(*bulk));
+
+  bulk->modification_begin();
+  EXPECT_ANY_THROW(stk::mesh::get_updated_ngp_mesh(*bulk));
+  bulk->modification_end();
+
+  EXPECT_NO_THROW(stk::mesh::get_updated_ngp_mesh(*bulk));
+}
+
+
 }  // namespace

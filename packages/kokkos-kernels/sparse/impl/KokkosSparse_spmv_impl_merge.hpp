@@ -69,28 +69,28 @@ struct SpmvMergeHierarchical {
 
   template <bool NONZEROS_USE_SCRATCH, bool ROWENDS_USE_SCRATCH, bool Y_USE_SCRATCH, bool CONJ>
   struct SpmvMergeImplFunctor {
-    SpmvMergeImplFunctor(const y_value_type& _alpha, const AMatrix& _A, const XVector& _x, const YVector& _y,
+    SpmvMergeImplFunctor(const y_value_type& alpha, const AMatrix& A, const XVector& x, const YVector& y,
                          const A_size_type pathLengthThreadChunk)
-        : alpha(_alpha), A(_A), x(_x), y(_y), pathLengthThreadChunk_(pathLengthThreadChunk) {}
+        : alpha_(alpha), A_(A), x_(x), y_(y), pathLengthThreadChunk_(pathLengthThreadChunk) {}
 
-    y_value_type alpha;
-    AMatrix A;
-    XVector x;
-    YVector y;
+    y_value_type alpha_;
+    AMatrix A_;
+    XVector x_;
+    YVector y_;
     A_size_type pathLengthThreadChunk_;
 
     KOKKOS_INLINE_FUNCTION void operator()(const team_member& thread) const {
       const A_size_type pathLengthTeamChunk = thread.team_size() * pathLengthThreadChunk_;
 
-      const A_size_type pathLength = A.numRows() + A.nnz();
+      const A_size_type pathLength = A_.numRows() + A_.nnz();
       const A_size_type teamD      = thread.league_rank() * pathLengthTeamChunk;  // diagonal
       const A_size_type teamDEnd   = KOKKOSKERNELS_MACRO_MIN(teamD + pathLengthTeamChunk, pathLength);
 
       // iota(i) -> i
-      iota_type iota(A.nnz());
+      iota_type iota(A_.nnz());
 
       // remove leading 0 from row_map
-      um_row_map_type rowEnds(&A.graph.row_map(1), A.graph.row_map.size() - 1);
+      um_row_map_type rowEnds(&A_.graph.row_map(1), A_.graph.row_map.size() - 1);
 
       // compiler thinks these are "used" in team_broadcast below, so initialize
       // them with something to silence the warning
@@ -129,10 +129,10 @@ struct SpmvMergeHierarchical {
         // however, guard against reading off the end of the view
         Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, teamRowBegin, teamRowEnd + 1),
                              [&](const A_ordinal_type& i) {
-                               if (i < A.numRows()) {
+                               if (i < A_.numRows()) {
                                  rowEndsS[i - teamRowBegin] = rowEnds(i);
                                } else {
-                                 rowEndsS[i - teamRowBegin] = A.nnz();
+                                 rowEndsS[i - teamRowBegin] = A_.nnz();
                                }
                              });
       } else {
@@ -143,8 +143,8 @@ struct SpmvMergeHierarchical {
         valuesS  = (A_value_type*)thread.team_shmem().get_shmem(pathLengthTeamChunk * sizeof(A_value_type));
         entriesS = (A_ordinal_type*)thread.team_shmem().get_shmem(pathLengthTeamChunk * sizeof(A_ordinal_type));
         Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, teamNnzBegin, teamNnzEnd), [&](const A_ordinal_type& i) {
-          valuesS[i - teamNnzBegin]  = A.values(i);
-          entriesS[i - teamNnzBegin] = A.graph.entries(i);
+          valuesS[i - teamNnzBegin]  = A_.values(i);
+          entriesS[i - teamNnzBegin] = A_.graph.entries(i);
         });
       } else {
         (void)(entriesS == entriesS);  // set but unused, expr has no effect
@@ -155,7 +155,7 @@ struct SpmvMergeHierarchical {
         yS = (y_value_type*)thread.team_shmem().get_shmem(pathLengthTeamChunk * sizeof(y_value_type));
         Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, teamRowBegin, teamRowEnd + 1),
                              [&](const A_ordinal_type& i) {
-                               if (i < A.numRows()) {
+                               if (i < A_.numRows()) {
                                  yS[i - teamRowBegin] = 0;
                                }
                              });
@@ -194,7 +194,7 @@ struct SpmvMergeHierarchical {
       A_ordinal_type curRow = threadRowBegin;
       A_size_type curNnz    = threadNnzBegin;
       for (A_size_type i = 0;
-           i < pathLengthThreadChunk_ /*some threads have less work*/ && curNnz < A.nnz() + 1 && curRow < A.numRows();
+           i < pathLengthThreadChunk_ /*some threads have less work*/ && curNnz < A_.nnz() + 1 && curRow < A_.numRows();
            ++i) {
         A_size_type curRowEnd;
         if constexpr (ROWENDS_USE_SCRATCH) {
@@ -210,17 +210,17 @@ struct SpmvMergeHierarchical {
             col = entriesS[curNnz - teamNnzBegin];
             val = (CONJ ? KAT::conj(valuesS[curNnz - teamNnzBegin]) : valuesS[curNnz - teamNnzBegin]);
           } else {
-            col = A.graph.entries(curNnz);
-            val = (CONJ ? KAT::conj(A.values(curNnz)) : A.values(curNnz));
+            col = A_.graph.entries(curNnz);
+            val = (CONJ ? KAT::conj(A_.values(curNnz)) : A_.values(curNnz));
           }
 
-          acc += val * x(col);
+          acc += val * x_(col);
           ++curNnz;
         } else {
           if constexpr (Y_USE_SCRATCH) {
-            Kokkos::atomic_add(&yS[curRow - teamRowBegin], alpha * acc);
+            Kokkos::atomic_add(&yS[curRow - teamRowBegin], alpha_ * acc);
           } else {
-            Kokkos::atomic_add(&y(curRow), alpha * acc);
+            Kokkos::atomic_add(&y_(curRow), alpha_ * acc);
           }
           acc = 0;
           ++curRow;
@@ -228,11 +228,11 @@ struct SpmvMergeHierarchical {
       }
       // save the accumulated results of a partial last row.
       // might be 0 if last row was not partial
-      if (curRow < A.numRows()) {
+      if (curRow < A_.numRows()) {
         if constexpr (Y_USE_SCRATCH) {
-          Kokkos::atomic_add(&yS[curRow - teamRowBegin], alpha * acc);
+          Kokkos::atomic_add(&yS[curRow - teamRowBegin], alpha_ * acc);
         } else {
-          Kokkos::atomic_add(&y(curRow), alpha * acc);
+          Kokkos::atomic_add(&y_(curRow), alpha_ * acc);
         }
       }
 
@@ -241,11 +241,11 @@ struct SpmvMergeHierarchical {
 
         Kokkos::parallel_for(Kokkos::TeamThreadRange(thread, teamRowBegin, teamRowEnd + 1),
                              [&](const A_ordinal_type& i) {
-                               if (i < A.numRows()) {
+                               if (i < A_.numRows()) {
                                  if (i > teamRowBegin && i < teamRowEnd) {
-                                   y(i) += yS[i - teamRowBegin];
+                                   y_(i) += yS[i - teamRowBegin];
                                  } else {
-                                   Kokkos::atomic_add(&y(i), yS[i - teamRowBegin]);
+                                   Kokkos::atomic_add(&y_(i), yS[i - teamRowBegin]);
                                  }
                                }
                              });

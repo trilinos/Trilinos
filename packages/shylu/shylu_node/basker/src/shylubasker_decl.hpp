@@ -37,9 +37,12 @@ namespace BaskerNS
   class Basker
   {
   public:
+    static_assert(std::is_same_v<Exe_Space, Kokkos::DefaultHostExecutionSpace>,
+                  "ShyLU-Basker: invalid device execution space provided as template parameter - only the host backend is supported");
 
     #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
+    typedef Kokkos::RangePolicy<Exe_Space>   RangePolicy;
     typedef typename TeamPolicy::member_type TeamMember;
     #endif
 
@@ -56,7 +59,7 @@ namespace BaskerNS
     ~Basker();
 
     BASKER_INLINE
-    int InitMatrix(string filename);
+    int InitMatrix(std::string filename);
 
     BASKER_INLINE
     int InitMatrix(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
@@ -1057,7 +1060,7 @@ namespace BaskerNS
     BASKER_INLINE
     int t_blk_nfactor(Int kid, Int c);
 
-    BASKER_FINLINE
+    BASKER_INLINE
     void t_local_reach_short_btf(const Int, const Int, Int &);
 
     BASKER_INLINE

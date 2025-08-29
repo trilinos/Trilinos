@@ -70,8 +70,7 @@ graph_t deep_copy_graph(host_graph_t &host_graph) {
   // copy graph to device
   Kokkos::deep_copy(rowmap_view, row_map);
   Kokkos::deep_copy(column_view, entries);
-  graph_t static_graph(column_view, rowmap_view);
-  return static_graph;
+  return graph_t(column_view, rowmap_view);
 }
 
 /* =========================================================================================
@@ -559,8 +558,7 @@ host_graph_t generate_supernodal_graph(bool col_major, graph_t &graph, int nsupe
   std::cout << "   > Generate Supernodal Graph: sort graph     : " << time_seconds << std::endl << std::endl;
 #endif
 
-  host_graph_t static_graph(hc, hr);
-  return static_graph;
+  return host_graph_t(hc, hr);
 }
 
 template <typename graph_t>
@@ -630,8 +628,7 @@ graph_t generate_supernodal_dag(int nsuper, graph_t &supL, graph_t &supU) {
     hc(k) = rowind(k);
   }
 
-  graph_t static_graph(hc, colptr);
-  return static_graph;
+  return graph_t(hc, colptr);
 }
 
 /* =========================================================================================
@@ -892,8 +889,7 @@ output_graph_t generate_merged_supernodal_graph(bool lower, int nsuper, const in
   Kokkos::deep_copy(column_view, hc);
 
   // create crs
-  output_graph_t static_graph(column_view, rowmap_view);
-  return static_graph;
+  return output_graph_t(column_view, rowmap_view);
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

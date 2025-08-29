@@ -279,24 +279,6 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithFieldSpecifiedVertexWeights)
 }
 //ENDBalanceTest4
 
-TEST_F(StkBalanceHowTo, DISABLED_UseRebalanceWithFieldSpecifiedVertexWeightsOnLocallyOwnedPart)
-{
-    if(stk::parallel_machine_size(get_comm()) == 2)
-    {
-        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::mesh::Field<double> &weightField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights");
-        stk::mesh::put_field_on_mesh(weightField, get_meta().locally_owned_part(), nullptr);
-        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
-        set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
-
-        FieldVertexWeightSettings balanceSettings(weightField);
-        stk::balance::balanceStkMesh(balanceSettings, get_bulk());
-
-        EXPECT_TRUE(is_mesh_balanced_wrt_weight(get_bulk(), weightField));
-    }
-}
-
-
 //BEGINMultiCriteriaSelectorSettings
 class MultipleCriteriaSelectorSettings : public ParmetisSettings
 {

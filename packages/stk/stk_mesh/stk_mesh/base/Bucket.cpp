@@ -406,9 +406,12 @@ bool Bucket::member_any( const OrdinalVector & parts ) const
   return ! result_none ;
 }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sepember 2025
+STK_DEPRECATED_MSG("Please use the new Field API to access your data.")
 unsigned char* Bucket::field_data_location(const FieldBase& field) const{
   return reinterpret_cast<unsigned char*>(stk::mesh::field_data(field, *this, 0));
 }
+#endif
 
 //----------------------------------------------------------------------
 
@@ -485,40 +488,6 @@ std::ostream & operator << ( std::ostream & s , const Bucket & k )
 
   return s ;
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
-STK_DEPRECATED std::ostream &
-print( std::ostream & os , const std::string & indent , const Bucket & bucket )
-{
-  const MetaData & mesh_meta_data = bucket.mesh().mesh_meta_data();
-  const BulkData & mesh = bucket.mesh();
-  const std::string & entity_rank_name =
-    mesh_meta_data.entity_rank_names()[ bucket.entity_rank() ];
-
-  const std::pair<const unsigned *, const unsigned *>
-    part_ids = bucket.superset_part_ordinals();
-
-  os << "Bucket(size = " << bucket.size() << std::endl << indent << "Part intersection {" ;
-
-  for ( const unsigned * i = part_ids.first ; i < part_ids.second ; ++i ) {
-    const Part & part = mesh_meta_data.get_part( *i );
-    os << " " << part.name();
-  }
-
-  os << " }" << std::endl << indent << entity_rank_name << " members {" ;
-
-  for ( unsigned j = 0 ; j < bucket.size() ; ++j ) {
-    const EntityId id = mesh.identifier(bucket[j]);
-    os << " " << id ;
-  }
-  os << " }" << std::endl ;
-
-  bucket.debug_dump(os);
-  os << std::endl;
-
-  return os ;
-}
-#endif
 
 struct EntityRankLess
 {
@@ -794,12 +763,6 @@ void Bucket::parent_topology( EntityRank parent_rank, std::vector<stk::topology>
 void Bucket::check_size_invariant() const
 {
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
-STK_DEPRECATED void Bucket::debug_dump(std::ostream& /*out*/, unsigned /*ordinal*/) const
-{
-}
-#endif
 
 void Bucket::debug_check_for_invalid_connectivity_request([[maybe_unused]] ConnectivityType const* type) const
 {

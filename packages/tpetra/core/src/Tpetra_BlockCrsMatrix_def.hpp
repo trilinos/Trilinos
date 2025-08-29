@@ -2389,7 +2389,7 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
       Details::disableWDVTracking();
       Kokkos::parallel_for
         ("Tpetra::BlockCrsMatrix::unpackAndCombine: unpack", policy,
-         [=] (const typename policy_type::member_type& member) {
+         [=, *this](const typename policy_type::member_type& member) {
           const size_t i = member.league_rank();
           Kokkos::View<GO*, host_scratch_space> gblColInds
             (member.team_scratch (0), maxRowNumEnt);

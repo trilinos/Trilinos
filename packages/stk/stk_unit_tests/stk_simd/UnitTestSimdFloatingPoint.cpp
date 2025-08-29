@@ -31,15 +31,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "gtest/gtest.h"
 #include <cmath>
-#include "SimdFloatingPointFixture.hpp"
+#include <gtest/gtest.h>
 
+#include "SimdFloatingPointFixture.hpp"
+#include "SimdNameGenerator.hpp"
 
 template <typename T>
 using SimdFloatingPointMath = SimdFloatingPointFixture<T, T>;
 using FloatingPointTypes = ::testing::Types<stk::simd::Double, stk::simd::Float>;
-TYPED_TEST_SUITE(SimdFloatingPointMath, FloatingPointTypes,);
+TYPED_TEST_SUITE(SimdFloatingPointMath, FloatingPointTypes, SimdNameGenerator);
 
 TYPED_TEST(SimdFloatingPointMath, copysign_posNeg)
 {
@@ -287,4 +288,3 @@ TYPED_TEST(SimdFloatingPointOperator, lessThan_varying)
   this->compute_expected_result([](ScalarType a, ScalarType b){ return a < b; });
   this->verify();
 }
-

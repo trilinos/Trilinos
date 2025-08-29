@@ -389,7 +389,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
             "fill_coords",
             Kokkos::RangePolicy(0, map->getLocalNumElements()),
             KOKKOS_LAMBDA(const LocalOrdinal &i) {
-              lclCoordinates(i, 0) = ((Scalar)lclMap.getGlobalElement(i)) / ((Scalar)numGlobalRows);
+              lclCoordinates(i, 0) = ((double)lclMap.getGlobalElement(i)) / ((double)numGlobalRows);
             });
       }
     }

@@ -73,3 +73,4 @@ private:
 };
 
 #endif // ndef INCL_CORE_POOL
+

@@ -37,6 +37,7 @@
 
 #include "Kokkos_Macros.hpp"
 #include <type_traits>
+#include <iostream>  // TODO: DEBUG
 
 namespace stk::mesh {
 
@@ -91,6 +92,10 @@ public:
   constexpr KOKKOS_INLINE_FUNCTION Derived& operator+=(T rhs) { m_value += rhs; return static_cast<Derived&>(*this); }
   template <typename T, typename = EnableIfIntegral<T>>
   constexpr KOKKOS_INLINE_FUNCTION Derived& operator-=(T rhs) { m_value -= rhs; return static_cast<Derived&>(*this); }
+  template <typename T, typename = EnableIfIntegral<T>>
+  constexpr KOKKOS_INLINE_FUNCTION Derived& operator*=(T rhs) { m_value *= rhs; return static_cast<Derived&>(*this); }
+  template <typename T, typename = EnableIfIntegral<T>>
+  constexpr KOKKOS_INLINE_FUNCTION Derived& operator/=(T rhs) { m_value /= rhs; return static_cast<Derived&>(*this); }
 
   template <typename T, typename = EnableIfIntegral<T>>
   constexpr KOKKOS_INLINE_FUNCTION Derived& operator=(T rhs) { m_value = rhs; return static_cast<Derived&>(*this); }
@@ -120,26 +125,26 @@ public:
   constexpr KOKKOS_INLINE_FUNCTION friend Derived operator/(T lhs, const Derived& rhs) { return Derived(lhs / rhs.m_value); }
 
   // Comparison operators
-  constexpr KOKKOS_INLINE_FUNCTION bool operator==(const Derived& other) const { return m_value == other.m_value; }
-  constexpr KOKKOS_INLINE_FUNCTION bool operator!=(const Derived& other) const { return m_value != other.m_value; }
-  constexpr KOKKOS_INLINE_FUNCTION bool operator< (const Derived& other) const { return m_value <  other.m_value; }
-  constexpr KOKKOS_INLINE_FUNCTION bool operator<=(const Derived& other) const { return m_value <= other.m_value; }
-  constexpr KOKKOS_INLINE_FUNCTION bool operator> (const Derived& other) const { return m_value >  other.m_value; }
-  constexpr KOKKOS_INLINE_FUNCTION bool operator>=(const Derived& other) const { return m_value >= other.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator==(const Derived& lhs, const Derived& rhs) { return lhs.m_value == rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator!=(const Derived& lhs, const Derived& rhs) { return lhs.m_value != rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator< (const Derived& lhs, const Derived& rhs) { return lhs.m_value <  rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator<=(const Derived& lhs, const Derived& rhs) { return lhs.m_value <= rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator> (const Derived& lhs, const Derived& rhs) { return lhs.m_value >  rhs.m_value; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator>=(const Derived& lhs, const Derived& rhs) { return lhs.m_value >= rhs.m_value; }
 
   // Comparison operators with integral types
   template <typename T, typename = EnableIfIntegral<T>>
-  constexpr KOKKOS_INLINE_FUNCTION bool operator==(T rhs) const { return m_value == rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator==(const Derived& lhs, T rhs) { return lhs.m_value == rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  constexpr KOKKOS_INLINE_FUNCTION bool operator!=(T rhs) const { return m_value != rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator!=(const Derived& lhs, T rhs) { return lhs.m_value != rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  constexpr KOKKOS_INLINE_FUNCTION bool operator< (T rhs) const { return m_value <  rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator< (const Derived& lhs, T rhs) { return lhs.m_value <  rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  constexpr KOKKOS_INLINE_FUNCTION bool operator<=(T rhs) const { return m_value <= rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator<=(const Derived& lhs, T rhs) { return lhs.m_value <= rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  constexpr KOKKOS_INLINE_FUNCTION bool operator> (T rhs) const { return m_value >  rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator> (const Derived& lhs, T rhs) { return lhs.m_value >  rhs; }
   template <typename T, typename = EnableIfIntegral<T>>
-  constexpr KOKKOS_INLINE_FUNCTION bool operator>=(T rhs) const { return m_value >= rhs; }
+  constexpr KOKKOS_INLINE_FUNCTION friend bool operator>=(const Derived& lhs, T rhs) { return lhs.m_value >= rhs; }
 
   template <typename T, typename = EnableIfIntegral<T>>
   constexpr KOKKOS_INLINE_FUNCTION friend bool operator==(T lhs, const Derived& rhs) { return lhs == rhs.m_value; }
@@ -157,6 +162,25 @@ public:
 private:
   int m_value;
 };
+
+template <typename Derived, typename IndexType>
+std::ostream& operator<<(std::ostream& os, const FieldIndex<Derived, IndexType>& rhs)
+{
+  os << static_cast<int>(rhs);
+  return os;
+}
+
+template <typename T, typename Derived, typename IndexType, typename = EnableIfIntegral<T>>
+constexpr KOKKOS_INLINE_FUNCTION T& operator+=(T& lhs, const FieldIndex<Derived, IndexType>& rhs) { return lhs += static_cast<T>(rhs); }
+
+template <typename T, typename Derived, typename IndexType, typename = EnableIfIntegral<T>>
+constexpr KOKKOS_INLINE_FUNCTION T& operator-=(T& lhs, const FieldIndex<Derived, IndexType>& rhs) { return lhs -= static_cast<T>(rhs); }
+
+template <typename T, typename Derived, typename IndexType, typename = EnableIfIntegral<T>>
+constexpr KOKKOS_INLINE_FUNCTION T& operator*=(T& lhs, const FieldIndex<Derived, IndexType>& rhs) { return lhs *= static_cast<T>(rhs); }
+
+template <typename T, typename Derived, typename IndexType, typename = EnableIfIntegral<T>>
+constexpr KOKKOS_INLINE_FUNCTION T& operator/=(T& lhs, const FieldIndex<Derived, IndexType>& rhs) { return lhs /= static_cast<T>(rhs); }
 
 template <typename Derived, typename IndexType>
 class FieldIndexIterator {

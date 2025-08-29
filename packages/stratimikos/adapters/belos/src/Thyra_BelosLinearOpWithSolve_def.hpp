@@ -519,7 +519,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
-  Teuchos::Time totalTimer(""), timer("");
+  Teuchos::Time totalTimer("Stratimikos::BelosLinearOpWithSolve::totalTime");
   totalTimer.start(true);
 
   assertSolveSupports(*this, M_trans, solveCriteria);

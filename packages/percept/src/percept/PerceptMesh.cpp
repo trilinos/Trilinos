@@ -195,7 +195,7 @@
 
       stk::mesh::MeshBuilder builder(m_comm);
       m_bulkData = builder.create();
-      m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(),[](auto ptrWeWontDelete){});
+      m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(),[](auto /*ptrWeWontDelete*/){});
       m_metaData->initialize(m_spatialDim, entity_rank_names);
 
       const unsigned p_rank = stk::parallel_machine_rank( m_comm );
@@ -603,7 +603,7 @@
       std::string m_name;
     public:
       PrintFieldOp(std::string name, PerceptMesh& eMesh, int dom, int codom) : GenericFunction(Dimensions(dom), Dimensions(codom)), m_eMesh(eMesh), m_name(name) {}
-      virtual void operator()(MDArray& domain, MDArray& codomain, double time = 0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, double /*time*/=0.0) override
       {
         std::vector<double> pt(&domain[0], &domain[0]+domain.size());
         std::vector<double> field(&codomain[0], &codomain[0]+codomain.size());
@@ -1759,8 +1759,8 @@
 
     // ctor constructor
     PerceptMesh::PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted) :
-      m_metaData(std::shared_ptr<stk::mesh::MetaData>(const_cast<stk::mesh::MetaData*>(metaData),[](auto ptrWeWontDelete){})),
-      m_bulkData(std::shared_ptr<stk::mesh::BulkData>(bulkData,[](auto ptrWeWontDelete){})),
+      m_metaData(std::shared_ptr<stk::mesh::MetaData>(const_cast<stk::mesh::MetaData*>(metaData),[](auto /*ptrWeWontDelete*/){})),
+      m_bulkData(std::shared_ptr<stk::mesh::BulkData>(bulkData,[](auto /*ptrWeWontDelete*/){})),
       m_output_file_index(0),
       m_iossMeshDataDidPopulate(false),
         m_sync_io_regions(false),
@@ -1828,7 +1828,7 @@
 
     void PerceptMesh::set_bulk_data(stk::mesh::BulkData *bulkData)
     {
-      m_bulkData = std::shared_ptr<stk::mesh::BulkData>(bulkData,[](auto ptrWeWontDelete){});
+      m_bulkData = std::shared_ptr<stk::mesh::BulkData>(bulkData,[](auto /*ptrWeWontDelete*/){});
       m_comm = bulkData->parallel();
       if (!Teuchos::is_null(m_iossMeshData) && m_iossMeshData->is_bulk_data_null())
           m_iossMeshData->set_bulk_data(*bulkData);
@@ -1844,7 +1844,7 @@
 #endif
 
     void PerceptMesh::
-    init( stk::ParallelMachine comm, bool no_alloc)
+    init( stk::ParallelMachine comm, bool /*no_alloc*/)
     {
       if (m_isInitialized) return;
 
@@ -2302,7 +2302,7 @@
     }
 
     /// find node closest to given point
-    stk::mesh::Entity PerceptMesh::get_closest_node(double x, double y, double z, double t, double *sum_min_ret)
+    stk::mesh::Entity PerceptMesh::get_closest_node(double x, double y, double z, double /*t*/, double *sum_min_ret)
     {
       stk::mesh::FieldBase &coord_field = *get_coordinates_field();
       double sum_min = std::numeric_limits<double>::max();
@@ -2343,7 +2343,7 @@
 
     /// find element that contains or is closest to given point
 #if defined(STK_PERCEPT_LITE) &&  !STK_PERCEPT_LITE
-    stk::mesh::Entity PerceptMesh::get_element(double x, double y, double z, double t)
+    stk::mesh::Entity PerceptMesh::get_element(double x, double y, double z, double /*t*/)
     {
       if (!m_searcher)
         {
@@ -3192,7 +3192,7 @@
      */
     void PerceptMesh::
     element_side_permutation(const stk::mesh::Entity element, const stk::mesh::Entity side, unsigned element_side_ordinal,
-                             int& returnedIndex, int& returnedPolarity, bool use_coordinate_compare, bool debug)
+                             int& returnedIndex, int& returnedPolarity, bool /*use_coordinate_compare*/, bool debug)
     {
       //if (m_eMesh.identifier(side) == 5 && m_eMesh.identifier(element) == 473) debug = true;
       if (debug) {
@@ -6715,7 +6715,7 @@
         }
     }
 
-    std::string PerceptMesh::printParent(stk::mesh::Entity element, bool recurse)
+    std::string PerceptMesh::printParent(stk::mesh::Entity element, bool /*recurse*/)
     {
       if (hasFamilyTree(element))
         {

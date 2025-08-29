@@ -518,9 +518,9 @@ namespace BaskerNS
           #ifdef MY_DEBUG_BASKER // diagonal may be zero (and not in CSC) in the original matrix
           if (Options.verbose == BASKER_TRUE)
           {
-            cout << "---------------------------------" <<endl;
+            cout << "---------------------------------" << std::endl;
             cout << "  thread-" << kid << "  Failed to find diagonal" << std::endl;
-            cout << "---------------------------------" <<endl;
+            cout << "---------------------------------" << std::endl;
           }
           #endif
         } else {
@@ -543,36 +543,36 @@ namespace BaskerNS
         {
           if (Options.verbose == BASKER_TRUE)
           {
-            cout << endl << endl;
-            cout << "---------------------------" << endl;
-            cout << "  thread-" << kid 
-                 << " Error: Dom Matrix(" << b << "), k = " << k
-                 << " ( " << M.nrow << " x " << M.ncol << " )"
-                 << " with nnz = " << M.nnz
-                 << " is singular"
-                 << endl;
-            cout << "  norm(A)   = " << normA     << " (global)" << endl
-                 << "  norm(A)   = " << normA_blk << " (block)"  << endl
-                 << "  replace_tiny_pivot = " << (Options.replace_tiny_pivot ? " true " : "false" ) << endl
-                 << "  replace_zero_pivot = " << (Options.replace_zero_pivot ? " true " : "false" ) << endl;
+            std::cout << std::endl << std::endl;
+            std::cout << "---------------------------" << std::endl;
+            std::cout << "  thread-" << kid 
+                      << " Error: Dom Matrix(" << b << "), k = " << k
+                      << " ( " << M.nrow << " x " << M.ncol << " )"
+                      << " with nnz = " << M.nnz
+                      << " is singular"
+                      << std::endl;
+            std::cout << "  norm(A)   = " << normA     << " (global)" << std::endl
+                      << "  norm(A)   = " << normA_blk << " (block)"  << std::endl
+                      << "  replace_tiny_pivot = " << (Options.replace_tiny_pivot ? " true " : "false" ) << std::endl
+                      << "  replace_zero_pivot = " << (Options.replace_zero_pivot ? " true " : "false" ) << std::endl;
             if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
-              cout << "  + replace tiny pivot with " << normA_blk * sqrt(eps) << endl;
+              std::cout << "  + replace tiny pivot with " << normA_blk * sqrt(eps) << std::endl;
             } else if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
-              cout << "  - replace zero pivot with " << normA_blk * eps << endl;
+              std::cout << "  - replace zero pivot with " << normA_blk * eps << std::endl;
             }
-            cout << "  Ptr       = " << M.col_ptr(k) 
-                              << " " << M.col_ptr(k+1)-1 << endl;
-            cout << "  Top       = " << top         << endl
-                 << "  WS_size   = " << ws_size     << endl
-                 << "  MaxIndex  = " << maxindex    << endl
-                 << "  Pivot     = " << pivot       << endl;
+            std::cout << "  Ptr       = " << M.col_ptr(k) 
+                              << " " << M.col_ptr(k+1)-1 << std::endl;
+            std::cout << "  Top       = " << top         << std::endl
+                      << "  WS_size   = " << ws_size     << std::endl
+                      << "  MaxIndex  = " << maxindex    << std::endl
+                      << "  Pivot     = " << pivot       << std::endl;
             if (maxindex != BASKER_MAX_IDX) {
-              cout << "  x(MaxInd) = " << X(maxindex) << endl;
+              std::cout << "  x(MaxInd) = " << X(maxindex) << std::endl;
             } else {
-              cout << "  x(MaxInd) = Empty Colum"     << endl;
+              std::cout << "  x(MaxInd) = Empty Colum"     << std::endl;
             }
-            cout << " Lcount    = " << lcnt       << endl
-                 << "---------------------------" << endl;
+            std::cout << " Lcount    = " << lcnt       << std::endl
+                      << "---------------------------" << std::endl;
             /*if (kid == 0)
             {
               M.print_matrix("D.dat");
@@ -598,7 +598,7 @@ namespace BaskerNS
               if (maxindex < M.ncol) {
                 if (Options.verbose == BASKER_TRUE)
                 {
-                  cout << "  thread-" << kid << " Explicit tiny pivot for maxind = " << maxindex << endl;
+                  std::cout << "  thread-" << kid << " Explicit tiny pivot for maxind = " << maxindex << std::endl;
                 }
                 pivot = normA_blk * sqrt(eps);
                 lastU = pivot;
@@ -614,7 +614,8 @@ namespace BaskerNS
               if (maxindex < M.ncol) {
                 if (Options.verbose == BASKER_TRUE)
                 {
-                  cout << "  thread-" << kid << " Explicit nonzero pivot for maxind = " << maxindex << "(" << gperm(maxindex+brow_g) << ")" << endl;
+                  std::cout << "  thread-" << kid << " Explicit nonzero pivot for maxind = " << maxindex
+                            << "(" << gperm(maxindex+brow_g) << ")" << std::endl;
                 }
                 pivot = normA_blk * eps;
                 lastU = pivot;
@@ -636,16 +637,16 @@ namespace BaskerNS
         } else if (Options.replace_tiny_pivot && normA_blk > abs(zero) && abs(pivot) < normA_blk * sqrt(eps)) {
           if (Options.verbose == BASKER_TRUE)
           {
-            cout << endl << endl;
-            cout << "---------------------------" << endl;
-            cout << "  thread-" << kid 
-                 << " Dom Matrix(" << b << "), k = " << k
-                 << " ( " << M.nrow << " x " << M.ncol << " )"
-                 << " with nnz = " << M.nnz
-                 << " : replace tiny pivot( " << pivot << " -> "
-                 << (STS::real(pivot) >= abs(zero) ? normA_blk * sqrt(eps) : -normA_blk * sqrt(eps))
-                 << endl;
-            cout << "---------------------------" << endl;
+            std::cout << std::endl << std::endl;
+            std::cout << "---------------------------" << std::endl;
+            std::cout << "  thread-" << kid 
+                      << " Dom Matrix(" << b << "), k = " << k
+                      << " ( " << M.nrow << " x " << M.ncol << " )"
+                      << " with nnz = " << M.nnz
+                      << " : replace tiny pivot( " << pivot << " -> "
+                      << (STS::real(pivot) >= abs(zero) ? normA_blk * sqrt(eps) : -normA_blk * sqrt(eps))
+                      << std::endl;
+            std::cout << "---------------------------" << std::endl;
           }
           if (STS::real(pivot) >= abs(zero)) {
             pivot = normA_blk * sqrt(eps);
@@ -1037,7 +1038,7 @@ namespace BaskerNS
 
  
   template<class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
+  BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::t_local_reach_short
   (
    const Int kid, 
@@ -1322,7 +1323,7 @@ namespace BaskerNS
    //Note: need to fix indexing for color
   //Uses local idx for local blks
   template <class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
+  BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::t_local_reach_old
   (Int kid, Int lvl, Int l,
    Int j, Int *top)
@@ -1467,7 +1468,7 @@ namespace BaskerNS
 
   //local idx for local blks
   template <class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
+  BASKER_INLINE
   int Basker<Int, Entry,Exe_Space>::t_back_solve
   (
    Int kid, 

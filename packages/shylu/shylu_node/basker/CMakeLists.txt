@@ -1,11 +1,5 @@
 TRIBITS_SUBPACKAGE(Basker)
 
-IF (NOT Kokkos_ENABLE_OPENMP)
-  MESSAGE(FATAL_ERROR
-    "Error, can't enable ${PACKAGE_NAME} if 'Kokkos_ENABLE_OPENMP='${Kokkos_ENABLE_OPENMP}'"
-    " is not 'ON'!")
-ENDIF()
-
 ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

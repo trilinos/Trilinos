@@ -52,6 +52,19 @@ struct DoOp<T, Operation::SUM>
   { return lhs + rhs; }
 };
 
+template<>
+struct DoOp<double,Operation::SUM>
+{
+  KOKKOS_INLINE_FUNCTION
+  double operator()(double lhs, double rhs) const
+  {
+    long double llhs = lhs;
+    long double lrhs = rhs;
+    long double tmp = llhs + lrhs;
+    return static_cast<double>(tmp);
+  }
+};
+
 template <typename T>
 struct DoOp<T, Operation::MIN>
 {

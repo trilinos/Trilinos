@@ -22,7 +22,7 @@
       LocalCubicSplineFit(Option option = ThreePoint) : BSplineFit(option) {}
 
       /// create an OpenNURBS curve that fits the given input points
-      virtual void fit_internal(int n, Vectors2D& Q, Vectors2D& T);
+      virtual void fit_internal(int n, Vectors2D& Q, Vectors2D& T) override;
     };
 
   }

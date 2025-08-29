@@ -150,7 +150,7 @@
      *
      *  [R] is used for the rank of MDArray's
      */
-    void FieldFunction::operator()(MDArray& input_phy_points, MDArray& output_field_values, double time)
+    void FieldFunction::operator()(MDArray& input_phy_points, MDArray& output_field_values, double /*time*/)
     {
       EXCEPTWATCH;
       argsAreValid(input_phy_points, output_field_values);

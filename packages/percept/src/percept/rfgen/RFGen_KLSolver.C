@@ -8,28 +8,24 @@
 
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziSortManager.hpp"
-#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziTpetraAdapter.hpp"
 
 // Anasazi solver managers
 #include "AnasaziBlockDavidsonSolMgr.hpp"
 
-#include "Epetra_CrsMatrix.h"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace RFGen
 {
 
 KLSolver::KLSolver(const unsigned spatialDim)
-  : 
-  Epetra_Operator(),
-  mpiComm_(MPI_COMM_WORLD),
-  epetraComm_(Epetra_MpiComm(mpiComm_)),
+: mpiComm_(MPI_COMM_WORLD),
   localNumElem_(0),
   globalNumElem_(0),
   localMaxIntgPts_(0), 
   maxIntgPts_(0), 
   spatialDim_(spatialDim),
-  useMatrixFree_(false),
-  log_debug_(false)
+  useMatrixFree_(false)
 {}
 
 void 
@@ -51,22 +47,18 @@ KLSolver::solve(const int maxNev)
   TEUCHOS_TEST_FOR_EXCEPT(MPI_SUCCESS != MPI_Allreduce(&localMaxIntgPts_, &maxIntgPts_, 1, MPI_INT, MPI_MAX, mpiComm_));
 
   // build Epetra objects
-  epetra_Map_ = Teuchos::rcp(
-    new Epetra_Map(
+  auto tpetra_comm = Teuchos::rcp(new Teuchos::MpiComm<int>(mpiComm_));
+  map_ = Teuchos::rcp(
+    new Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(
       globalNumElem_, 
       localNumElem_, 
       0, // IndexBase, 
-      epetraComm_));
+      tpetra_comm));
   
   localElemIDs_.resize(localNumElem_);
-  epetra_Map_->MyGlobalElements(&localElemIDs_[0]);
+  const auto & local_elem_ids = map_->getMyGlobalIndices();
+  std::copy(local_elem_ids.data(), local_elem_ids.data() + localNumElem_, localElemIDs_.begin());
 
-  if (log_debug_)
-  {
-    epetra_Map_->Print(std::cout);
-  }
-
-  // TODO: can we create an "ArrayContainer" class to do this for us??
   std::vector<double> localIntgPtCoords_mem(
     localNumElem_*maxIntgPts_*spatialDim_);
   std::vector<double> localVolumeWeights_mem(
@@ -79,18 +71,11 @@ KLSolver::solve(const int maxNev)
     localIntgPtCoords_, 
     localVolumeWeights_);
 
-  epetra_massMat_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *epetra_Map_, 1));
-
-  epetra_massMat_->PutScalar(0.0);
+  tpetra_massMat_ = Teuchos::rcp(new CrsMatrix(map_, 1));
 
   assembleMassMat();
 
-  if (log_debug_)
-  {
-    epetra_massMat_->Print(std::cout);
-  }  
-
-  epetra_massMat_->FillComplete();
+  tpetra_massMat_->fillComplete();
 
   if (useMatrixFree_)
   {
@@ -100,19 +85,19 @@ KLSolver::solve(const int maxNev)
   else
   {
     assembleFullCovariance();
-    covarianceOp_ = epetra_covarianceMat_;
+    covarianceOp_ = tpetra_covarianceMat_;
   }
 
   const int blockSize=pl_.get<int>("Block Size");
 
-  Teuchos::RCP<Epetra_MultiVector> ivec = 
-    Teuchos::rcp( new Epetra_MultiVector(*epetra_Map_, blockSize) );
-  ivec->PutScalar(0.0);
+  Teuchos::RCP<MultiVector> ivec = 
+    Teuchos::rcp( new MultiVector(map_, blockSize) );
+  ivec->putScalar(0.0);
   
-  Teuchos::RCP<Anasazi::BasicEigenproblem<ScalarType,Epetra_MultiVector,Epetra_Operator> > problem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<ScalarType,Epetra_MultiVector,Epetra_Operator>
+  Teuchos::RCP<Anasazi::BasicEigenproblem<ScalarType,MultiVector,Operator> > problem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<ScalarType,MultiVector,Operator>
 		  (covarianceOp_,
-		   epetra_massMat_,
+		   tpetra_massMat_,
 		   ivec) );
   
   problem->setHermitian(true);
@@ -123,7 +108,7 @@ KLSolver::solve(const int maxNev)
 		      "Anasazi Eigenproblem initialized incorrectly");
   
   // TODO: use sublist for solver params
-  Anasazi::BlockDavidsonSolMgr<ScalarType,Epetra_MultiVector,Epetra_Operator> MySolverMgr(problem, pl_);
+  Anasazi::BlockDavidsonSolMgr<ScalarType,MultiVector,Operator> MySolverMgr(problem, pl_);
   
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   TEUCHOS_TEST_FOR_EXCEPT_MSG(returnCode != Anasazi::Converged,
@@ -138,7 +123,7 @@ KLSolver::solve(const int maxNev)
   TEUCHOS_TEST_FOR_EXCEPT(stochastic_dim > maxNev);
 
   // write KL solution back to app
-  Anasazi::Eigensolution<ScalarType,Epetra_MultiVector> sol = problem->getSolution();
+  Anasazi::Eigensolution<ScalarType,MultiVector> sol = problem->getSolution();
 
   lambda_mem_.resize(stochastic_dim);
   shards::Array<double,shards::NaturalOrder,Eigen> lambda(&lambda_mem_[0], stochastic_dim);
@@ -155,9 +140,10 @@ KLSolver::solve(const int maxNev)
   for (int d=0; (unsigned)d<spatialDim_+1; d++)
     coeff[d] = (double)rand()/(double)RAND_MAX;
 
-  Teuchos::RCP<Epetra_Vector> test_vec = 
-    Teuchos::rcp( new Epetra_Vector(*epetra_Map_) );
+  Teuchos::RCP<Vector> test_vec = 
+    Teuchos::rcp( new Vector(map_) );
   
+  auto local_test_vec = test_vec->getLocalViewHost(Tpetra::Access::ReadWrite);
   for (int i=0; i<localNumElem_; i++)
   {
     double avg_test_vec = 0.0;
@@ -178,30 +164,29 @@ KLSolver::solve(const int maxNev)
       area += JxW1(q1);
     }
 
-    (*test_vec)[i] = avg_test_vec / area;
+    local_test_vec(i, 0) = avg_test_vec / area;
   }
 
   // normalize sign of eigenfunctions: require that sum of components >= 0
   const double tolerance = pl_.get<double>("Convergence Tolerance");
   for (int i=0; i<stochastic_dim; i++)
   {
-    double sum = 0;
-
-    Epetra_Vector * phi_vec = (*sol.Evecs)(i);
+    auto phi_vec = sol.Evecs->getVectorNonConst(i);
   
-    test_vec->Dot(*phi_vec, &sum);
+    std::vector<double> sum(1);
+    test_vec->dot(*phi_vec, sum);
 
-    if ( (std::fabs(sum) > tolerance) && (sum < 0.0) )
+    if ( (std::fabs(sum[0]) > tolerance) && (sum[0] < 0.0) )
     { 
       double scale = -1.0;    
-      phi_vec->Scale(scale);
+      phi_vec->scale(scale);
     }
   }
     
   // generate a non-persisting ArrayView of phi
   // app must copy this data to its native data structures
-  const Epetra_MultiVector * phi_vecs = &*(sol.Evecs);
-  shards::Array<double,shards::NaturalOrder,Eigen,Cell> phi(phi_vecs->Values(), stochastic_dim, localNumElem_);
+  auto phi_local_vals = sol.Evecs->getLocalViewHost(Tpetra::Access::ReadWrite);
+  shards::Array<double,shards::NaturalOrder,Eigen,Cell> phi(phi_local_vals.data(), stochastic_dim, localNumElem_);
 
   appInterface_->setKLSolution(
     stochastic_dim,
@@ -216,9 +201,7 @@ KLSolver::solve(const int maxNev)
 void
 KLSolver::assembleFullCovariance()
 {
-  epetra_covarianceMat_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *epetra_Map_, globalNumElem_));
-
-  epetra_covarianceMat_->PutScalar(0.0);
+  tpetra_covarianceMat_ = Teuchos::rcp(new CrsMatrix(map_, globalNumElem_));
 
   // 1) local assembly of covar mat: diagonal square blocks
   {
@@ -264,9 +247,9 @@ KLSolver::assembleFullCovariance()
     nonlocalElemIDs_.resize(nonlocalNumElem);
 
     const int mpi_tag_elemids = 1;
-    TEUCHOS_TEST_FOR_EXCEPT(MPI_SUCCESS != MPI_Sendrecv(&localElemIDs_[0], localNumElem_, MPI_INT, 
+    TEUCHOS_TEST_FOR_EXCEPT(MPI_SUCCESS != MPI_Sendrecv(&localElemIDs_[0], localNumElem_, MPI_LONG_LONG, 
 						send_to_colPID, mpi_tag_elemids, 
-						&nonlocalElemIDs_[0], nonlocalNumElem, MPI_INT, 
+						&nonlocalElemIDs_[0], nonlocalNumElem, MPI_LONG_LONG, 
 						rec_from_colPID, mpi_tag_elemids, 
 						mpiComm_, &status));
 
@@ -305,12 +288,7 @@ KLSolver::assembleFullCovariance()
     partialAssemble(nonlocalIntgPtCoords, nonlocalVolumeWeights);
   }
 
-  epetra_covarianceMat_->FillComplete();
-
-  if (log_debug_)
-  {
-    epetra_covarianceMat_->Print(std::cout);
-  }  
+  tpetra_covarianceMat_->fillComplete();
 }
 
 void 
@@ -336,8 +314,8 @@ KLSolver::assembleMassMat()
     }
 
     int RowIndex = localElemIDs_[row];
-    int * Indices = &localElemIDs_[row];
-    epetra_massMat_->InsertGlobalValues(RowIndex, 1, &localMass, Indices);
+    auto * Indices = &localElemIDs_[row];
+    tpetra_massMat_->insertGlobalValues(RowIndex, 1, &localMass, Indices);
   }
 }
 
@@ -364,7 +342,7 @@ KLSolver::partialAssemble(
       maxIntgPts_);
 
     int RowIndex = localElemIDs_[row];
-    int * Indices = &localElemIDs_[row];
+    auto * Indices = &localElemIDs_[row];
 
     for (int col=0; col<nonlocalNumElem; col++)
     {
@@ -389,30 +367,30 @@ KLSolver::partialAssemble(
       }
 
       Indices = &nonlocalElemIDs_[col];
-      epetra_covarianceMat_->InsertGlobalValues(RowIndex, 1, &localCovar, Indices);
+      tpetra_covarianceMat_->insertGlobalValues(RowIndex, 1, &localCovar, Indices);
     }
   }  
 }
 
-int 
-KLSolver::SetUseTranspose(bool UseTranspose) 
-{ 
-  /* NO tranpose supported!! */ 
-  return -1;
-}
-
-int 
-KLSolver::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+void KLSolver::apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+          Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+          Teuchos::ETransp /*mode*/,
+          Scalar alpha,
+          Scalar beta) const
 {
-  // Y = A*X
+  if(beta == 0.) {
+    Y.putScalar(0.0);
+  } else {
+    Y.scale(beta);
+  }
   
-  Y.PutScalar(0.0);
-  
-  const int numVecs = X.NumVectors();
-  TEUCHOS_TEST_FOR_EXCEPT(numVecs != Y.NumVectors()); 
+  const auto numVecs = X.getNumVectors();
+  TEUCHOS_TEST_FOR_EXCEPT(numVecs != Y.getNumVectors()); 
 
-  shards::Array<double,shards::NaturalOrder,Eigen,Cell> Y_vec(Y.Values(), numVecs, localNumElem_);
-  shards::Array<double,shards::NaturalOrder,Eigen,Cell> X_vec(X.Values(), numVecs, localNumElem_);
+  auto X_local = X.getLocalViewHost(Tpetra::Access::ReadOnly);
+  auto Y_local = Y.getLocalViewHost(Tpetra::Access::ReadWrite);
+  shards::Array<double,shards::NaturalOrder,Eigen,Cell> Y_vec(Y_local.data(), numVecs, localNumElem_);
+  shards::Array<double,shards::NaturalOrder,Eigen,Cell> X_vec(const_cast<double *>(X_local.data()), numVecs, localNumElem_);
 
   // 1) local matvec of covar mat: diagonal square blocks
   {
@@ -424,7 +402,7 @@ KLSolver::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       localVolumeWeights_.contiguous_data(), 
       localNumElem_, maxIntgPts_);
 
-    partialMatVec(nonlocalIntgPtCoords, nonlocalVolumeWeights, X_vec, Y_vec);
+    partialMatVec(alpha, nonlocalIntgPtCoords, nonlocalVolumeWeights, X_vec, Y_vec);
   }
 
   // 2) parallel matvec of covar mat: off diagonal rectangular blocks
@@ -432,7 +410,7 @@ KLSolver::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   TEUCHOS_TEST_FOR_EXCEPT(MPI_SUCCESS != MPI_Comm_size(mpiComm_, &numProcs)); 
   TEUCHOS_TEST_FOR_EXCEPT(MPI_SUCCESS != MPI_Comm_rank(mpiComm_, &myPID));
 
-  if (numProcs==1) return 0;
+  if (numProcs==1) return;
 
   MPI_Status status;
 
@@ -503,64 +481,13 @@ KLSolver::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 						rec_from_colPID, mpi_tag_xvec, 
 						mpiComm_, &status));
 
-    partialMatVec(nonlocalIntgPtCoords, nonlocalVolumeWeights, nonlocalX_vec, Y_vec);
+    partialMatVec(alpha, nonlocalIntgPtCoords, nonlocalVolumeWeights, nonlocalX_vec, Y_vec);
   }
-
-  return 0;
-}
-
-int 
-KLSolver::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-  // NO inverse supported!!
-  return -1;
-}
-
-double 
-KLSolver::NormInf() const
-{
-  //
-  return 0.0;
-}
-
-const char * 
-KLSolver::Label() const
-{
-  return "KLSolver";
-}
-
-bool 
-KLSolver::UseTranspose() const
-{
-  return false;
-}
-
-bool 
-KLSolver::HasNormInf() const
-{
-  return false;
-}
-
-const Epetra_Comm & 
-KLSolver::Comm() const
-{
-  return epetraComm_;
-}
-
-const Epetra_Map & 
-KLSolver::OperatorDomainMap() const
-{
-  return *epetra_Map_;
-}
-
-const Epetra_Map & 
-KLSolver::OperatorRangeMap() const
-{
-  return *epetra_Map_;
 }
 
 void 
 KLSolver::partialMatVec(
+  const double alpha,
   const shards::Array<double,shards::NaturalOrder,Cell,Point,Dim> &nonlocalIntgPtCoords,
   const shards::Array<double,shards::NaturalOrder,Cell,Point> &nonlocalVolumeWeights,
   const shards::Array<double,shards::NaturalOrder,Eigen,Cell> &X_vec,
@@ -611,7 +538,7 @@ KLSolver::partialMatVec(
       }
      
       for (int i=0; i<numVecs; i++)
-	Y_vec(i,row) += integral * X_vec(i,col);
+	Y_vec(i,row) += alpha * integral * X_vec(i,col);
     }
   }  
 }

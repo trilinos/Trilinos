@@ -193,8 +193,8 @@ KOKKOS_INLINE_FUNCTION int SerialXpay::invoke(const alphaViewType& alpha, const 
 
   return SerialXpayInternal::template invoke<typename alphaViewType::non_const_value_type,
                                              typename ViewType::non_const_value_type>(
-      X.extent(0), X.extent(1), alpha.data(), alpha.stride_0(), X.data(), X.stride_0(), X.stride_1(), Y.data(),
-      Y.stride_0(), Y.stride_1());
+      X.extent(0), X.extent(1), alpha.data(), alpha.stride(0), X.data(), X.stride(0), X.stride(1), Y.data(),
+      Y.stride(0), Y.stride(1));
 }
 
 ///
@@ -230,8 +230,8 @@ KOKKOS_INLINE_FUNCTION int TeamXpay<MemberType>::invoke(const MemberType& member
 
   return TeamXpayInternal::template invoke<MemberType, typename alphaViewType::non_const_value_type,
                                            typename ViewType::non_const_value_type>(
-      member, X.extent(0), X.extent(1), alpha.data(), alpha.stride_0(), X.data(), X.stride_0(), X.stride_1(), Y.data(),
-      Y.stride_0(), Y.stride_1());
+      member, X.extent(0), X.extent(1), alpha.data(), alpha.stride(0), X.data(), X.stride(0), X.stride(1), Y.data(),
+      Y.stride(0), Y.stride(1));
 }
 
 ///
@@ -267,8 +267,8 @@ KOKKOS_INLINE_FUNCTION int TeamVectorXpay<MemberType>::invoke(const MemberType& 
 
   return TeamVectorXpayInternal::invoke<MemberType, typename alphaViewType::non_const_value_type,
                                         typename ViewType::non_const_value_type, typename ViewType::array_layout>(
-      member, X.extent(0), X.extent(1), alpha.data(), alpha.stride_0(), X.data(), X.stride_0(), X.stride_1(), Y.data(),
-      Y.stride_0(), Y.stride_1());
+      member, X.extent(0), X.extent(1), alpha.data(), alpha.stride(0), X.data(), X.stride(0), X.stride(1), Y.data(),
+      Y.stride(0), Y.stride(1));
 }
 
 }  // namespace KokkosBatched

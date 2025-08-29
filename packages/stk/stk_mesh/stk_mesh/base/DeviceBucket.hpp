@@ -154,12 +154,17 @@ struct DeviceBucketT {
   }
 
   void initialize_bucket_attributes(const stk::mesh::Bucket &bucket);
-  void initialize_fixed_data_from_host(const stk::mesh::Bucket &bucket);
+  void initialize_part_ordinals_from_host(const stk::mesh::Bucket &bucket);
   void update_entity_data_from_host(const stk::mesh::Bucket &bucket);
   void update_sparse_connectivity_from_host(const stk::mesh::Bucket &bucket);
 
   void resize_device_views(const stk::mesh::Bucket &bucket);
   std::pair<unsigned, unsigned> scan_entities_for_nodal_connectivity(const stk::mesh::Bucket & bucket);
+
+  void deep_copy_from_device_bucket(DeviceBucketT<BucketNgpMemSpace> const& rhs);
+
+  const PartOrdinalViewType<BucketNgpMemSpace>& get_part_ordinals() const { return m_partOrdinals; }
+  void set_part_ordinals(PartOrdinalViewType<BucketNgpMemSpace>& view) { m_partOrdinals = view; }
 
   EntityViewType<BucketNgpMemSpace> m_entities;
   BucketConnectivityType<BucketNgpMemSpace> m_nodeConnectivity;
@@ -179,6 +184,37 @@ struct DeviceBucketT {
   stk::topology m_bucketTopology;
   stk::mesh::EntityRank m_entityRank;
 };
+
+template<typename BucketNgpMemSpace>
+void DeviceBucketT<BucketNgpMemSpace>::deep_copy_from_device_bucket(DeviceBucketT<BucketNgpMemSpace> const& rhs)
+{
+  m_owningMesh = rhs.m_owningMesh;
+  m_owningPartitionId = rhs.m_owningPartitionId;
+  m_bucketId = rhs.m_bucketId;
+  m_bucketSize = rhs.m_bucketSize;
+  m_bucketCapacity = rhs.m_bucketCapacity;
+  m_bucketTopology = rhs.m_bucketTopology;
+  m_entityRank = rhs.m_entityRank;
+
+  Kokkos::realloc(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_entities, rhs.m_entities.extent(0));
+  Kokkos::realloc(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_nodeConnectivity, rhs.m_nodeConnectivity.extent(0));
+  Kokkos::realloc(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_nodeConnectivityOffsets, rhs.m_nodeConnectivityOffsets.extent(0));
+  Kokkos::realloc(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_nodeOrdinals, rhs.m_nodeOrdinals.extent(0));
+  Kokkos::realloc(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_sparseConnectivityOffsets, rhs.m_sparseConnectivityOffsets.extent(0), rhs.m_sparseConnectivityOffsets.extent(1));
+  Kokkos::realloc(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_sparseConnectivity, rhs.m_sparseConnectivity.extent(0));
+  Kokkos::realloc(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_sparseConnectivityOrdinals, rhs.m_sparseConnectivityOrdinals.extent(0));
+  Kokkos::realloc(Kokkos::view_alloc(Kokkos::WithoutInitializing), m_partOrdinals, rhs.m_partOrdinals.extent(0));
+
+  auto execSpace = typename BucketNgpMemSpace::execution_space{};
+  Kokkos::Experimental::copy(execSpace, rhs.m_entities, m_entities);
+  Kokkos::Experimental::copy(execSpace, rhs.m_nodeConnectivity, m_nodeConnectivity);
+  Kokkos::Experimental::copy(execSpace, rhs.m_nodeConnectivityOffsets, m_nodeConnectivityOffsets);
+  Kokkos::Experimental::copy(execSpace, rhs.m_nodeOrdinals, m_nodeOrdinals);
+  Kokkos::deep_copy(m_sparseConnectivityOffsets, rhs.m_sparseConnectivityOffsets);
+  Kokkos::Experimental::copy(execSpace, rhs.m_sparseConnectivity, m_sparseConnectivity);
+  Kokkos::Experimental::copy(execSpace, rhs.m_sparseConnectivityOrdinals, m_sparseConnectivityOrdinals);
+  Kokkos::Experimental::copy(execSpace, rhs.m_partOrdinals, m_partOrdinals);
+}
 
 template<typename BucketNgpMemSpace>
 KOKKOS_INLINE_FUNCTION
@@ -300,7 +336,7 @@ void DeviceBucketT<BucketNgpMemSpace>::initialize_bucket_attributes(const stk::m
 }
 
 template<typename BucketNgpMemSpace>
-void DeviceBucketT<BucketNgpMemSpace>::initialize_fixed_data_from_host(const stk::mesh::Bucket &bucket)
+void DeviceBucketT<BucketNgpMemSpace>::initialize_part_ordinals_from_host(const stk::mesh::Bucket &bucket)
 {
   const stk::mesh::PartVector& parts = bucket.supersets();
   m_partOrdinals = PartOrdinalViewType<BucketNgpMemSpace>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PartOrdinals"),

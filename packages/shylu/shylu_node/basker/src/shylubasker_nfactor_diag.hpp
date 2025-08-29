@@ -563,12 +563,12 @@ namespace BaskerNS
           // NaN
           if (Options.verbose == BASKER_TRUE)
           {
-            cout << endl;
-            cout << "---------------------------" << endl;
-            cout << "Error: NaN found blk: "
-              << c 
-              << " Column: "
-              << k << std::endl;
+            std::cout << std::endl;
+            std::cout << "---------------------------" << std::endl;
+            std::cout << "Error: NaN found blk: "
+                      << c 
+                      << " Column: "
+                      << k << std::endl;
           }
           thread_array(kid).error_type = BASKER_ERROR_NAN;
           thread_array(kid).error_blk = c;
@@ -657,33 +657,33 @@ namespace BaskerNS
         const Mag normA = A.gnorm;
         if (Options.verbose == BASKER_TRUE)
         {
-          cout << endl;
-          cout << "---------------------------"
-            << endl;
-          cout << "Error: Diag Matrix is singular, blk: "
-            << c 
-            << " Column: "
-            << k
-            << " Size: "
-            << btf_tabs(c+1)-btf_tabs(c)
-            << endl;
-          cout << "MaxIndex: " << maxindex 
-            << " pivot " 
-            << pivot << endl;
+          std::cout << std::endl;
+          std::cout << "---------------------------"
+                    << std::endl;
+          std::cout << "Error: Diag Matrix is singular, blk: "
+                    << c 
+                    << " Column: "
+                    << k
+                    << " Size: "
+                    << btf_tabs(c+1)-btf_tabs(c)
+                    << std::endl;
+          std::cout << "MaxIndex: " << maxindex 
+                    << " pivot " 
+                    << pivot << std::endl;
           if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
-            cout << "  replace zero pivot with " << normA_blk * eps
-                 << " (normA = " << normA << ", normA_blk = " << normA_blk << ", eps = " << eps << ")" << endl;
+            std::cout << "  replace zero pivot with " << normA_blk * eps
+                      << " (normA = " << normA << ", normA_blk = " << normA_blk << ", eps = " << eps << ")" << std::endl;
           } else {
             if (!Options.replace_zero_pivot) {
-              cout << " replace_zero_pivot disabled, ";
+              std::cout << " replace_zero_pivot disabled, ";
             }
             if (normA_blk <= abs(zero)) {
-              cout << " empty block, ";
+              std::cout << " empty block, ";
             }
             if (maxindex == BASKER_MAX_IDX) {
-              cout << " empty column, ";
+              std::cout << " empty column, ";
             }
-            cout << endl;
+            std::cout << std::endl;
           }
         }
         if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
@@ -717,7 +717,7 @@ namespace BaskerNS
         {
           cout << " >> Permuting Pivot: " << k
                << " as row " 
-               << maxindex+L.scol << endl;
+               << maxindex+L.scol << std::endl;
         }
       }
       #endif
@@ -937,7 +937,7 @@ namespace BaskerNS
 
 
   template <class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
+  BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::t_local_reach_short_btf
   (
    const Int kid,

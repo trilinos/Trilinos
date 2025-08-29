@@ -140,14 +140,12 @@ std::ostream & print_restrictions(std::ostream & s, const char * const b, const 
 }
 
 void FieldBase::set_initial_value(const void* new_initial_value, unsigned num_scalars, unsigned num_bytes) {
-  void*& init_val = field_state(StateNone)->m_initial_value;
-
-  delete [] reinterpret_cast<char*>(init_val);
-  init_val = new char[num_bytes];
+  delete [] m_initial_value;
+  m_initial_value = new std::byte[num_bytes];
 
   m_field_states[0]->m_initial_value_num_bytes = num_bytes;
 
-  data_traits().copy(init_val, new_initial_value, num_scalars);
+  data_traits().copy(m_initial_value, new_initial_value, num_scalars);
 }
 
 void FieldBase::insert_restriction(const char     * arg_method,
@@ -452,6 +450,16 @@ bool FieldBase::defined_on(const stk::mesh::Part& part) const
   return (length(part) > 0);
 }
 
+bool FieldBase::defined_on(const stk::mesh::Bucket& bucket) const
+{
+  return field_bytes_per_entity(*this, bucket) > 0;
+}
+
+bool FieldBase::defined_on(const stk::mesh::Entity& entity) const
+{ 
+  return field_bytes_per_entity(*this, entity) > 0;
+}
+
 unsigned FieldBase::length(const stk::mesh::Part& part) const
 {
   const stk::mesh::FieldRestriction& restriction = stk::mesh::find_restriction(*this, entity_rank(), part);
@@ -530,17 +538,17 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
         FieldDataBase* deviceData = sField->get_device_data();
         if (deviceData != nullptr) {
           if (deviceData->needs_update()) {
-            deviceData->update(stk::ngp::ExecSpace(), host_data_layout());
+            deviceData->update(m_defaultExecSpace, host_data_layout());
             if (sField->has_ngp_field()) {
               // Since DeviceField holds a *copy* of the FieldData, force a reacquisition
-              sField->get_ngp_field()->update_field(stk::ngp::ExecSpace());
+              sField->get_ngp_field()->update_field(m_defaultExecSpace);
             }
             increment_num_syncs_to_device();
           }
           else {
             deviceData->update_host_bucket_pointers();
           }
-          deviceData->fence(stk::ngp::ExecSpace());
+          deviceData->fence(m_defaultExecSpace);
         }
       }
       Kokkos::Profiling::popRegion();
@@ -558,10 +566,10 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
 
         // Since DeviceField holds a *copy* of the FieldData, force a reacquisition
         if (field_sminus1->has_ngp_field()) {
-          field_sminus1->get_ngp_field()->update_field(stk::ngp::ExecSpace());
+          field_sminus1->get_ngp_field()->update_field(m_defaultExecSpace);
         }
         if (field_s->has_ngp_field()) {
-          field_s->get_ngp_field()->update_field(stk::ngp::ExecSpace());
+          field_s->get_ngp_field()->update_field(m_defaultExecSpace);
         }
 
       }
@@ -615,7 +623,7 @@ FieldBase::need_sync_to_host() const
 void
 FieldBase::sync_to_host() const
 {
-  sync_to_host(stk::ngp::ExecSpace());
+  sync_to_host(m_defaultExecSpace);
 }
 
 void FieldBase::sync_to_host(const stk::ngp::ExecSpace& execSpace) const
@@ -632,7 +640,7 @@ void FieldBase::sync_to_host(const stk::ngp::ExecSpace& execSpace) const
 void
 FieldBase::sync_to_device() const
 {
-  sync_to_device(stk::ngp::ExecSpace());
+  sync_to_device(m_defaultExecSpace);
 }
 
 void FieldBase::sync_to_device(const stk::ngp::ExecSpace& execSpace) const
@@ -680,7 +688,7 @@ FieldBase::set_ngp_field(NgpFieldBase * ngpField) const
 void
 FieldBase::fence() const
 {
-  fence(stk::ngp::ExecSpace());
+  fence(m_defaultExecSpace);
 }
 
 void

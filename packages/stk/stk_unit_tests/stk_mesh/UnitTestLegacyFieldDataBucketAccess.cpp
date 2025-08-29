@@ -45,6 +45,8 @@
 
 namespace {
 
+#ifndef STK_UNIFIED_MEMORY
+
 class LegacyFieldDataBucketAccess : public FieldDataAccessFixture {};
 
 //==============================================================================
@@ -287,5 +289,7 @@ TEST_F(LegacyFieldDataBucketAccess, device_multiCopy_multiComponent) {
  // We don't have a legacy Bucket-based device-side data access method
  // that is equivalent to the new API.
 }
+
+#endif
 
 } //namespace <anonymous>

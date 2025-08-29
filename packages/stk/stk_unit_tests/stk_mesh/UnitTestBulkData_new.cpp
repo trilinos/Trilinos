@@ -697,8 +697,7 @@ TEST ( UnitTestBulkData_new , verifyBoxGhosting )
         ASSERT_TRUE( mesh.is_valid(node) );
 
         ASSERT_TRUE( fixture.node_id(ix,iy,iz) == mesh.identifier(node) );
-        fixtures::HexFixture::Scalar * const node_coord = stk::mesh::field_data(*fixture.m_coord_field, node);
-        ASSERT_TRUE( node_coord != NULL );
+        ASSERT_TRUE( fixture.m_coord_field->defined_on(node) );
       }
     }
   }
@@ -711,7 +710,6 @@ TEST ( UnitTestBulkData_new , verifyBoxGhosting )
         size_t num_elem_nodes = mesh.num_nodes(elem);
         ASSERT_EQ( 8u , num_elem_nodes );
         Entity const *elem_nodes = mesh.begin_nodes(elem);
-        // ConnectivityOrdinal const *elem_node_ords = mesh.begin_node_ordinals(elem);
         if ( 8u == num_elem_nodes ) {
           ASSERT_TRUE( elem_nodes[0] == fixture.node(ix,iy,iz));
           ASSERT_TRUE( elem_nodes[1] == fixture.node(ix+1,iy,iz));
@@ -722,15 +720,6 @@ TEST ( UnitTestBulkData_new , verifyBoxGhosting )
           ASSERT_TRUE( elem_nodes[6] == fixture.node(ix+1,iy+1,iz+1));
           ASSERT_TRUE( elem_nodes[7] == fixture.node(ix,iy+1,iz+1));
         }
-        // Now check access to field data via the fast rank functions.
-        // Node const *eph_elem_nodes = mesh.begin_nodes(elem);
-        // for ( size_t j = 0 ; j < num_elem_nodes ; ++j )
-        // {
-        //   fixtures::HexFixture::Scalar * const node_coord =
-        //     stk::mesh::field_data( fixture.m_coord_field , eph_elem_nodes[j]);
-        //   EXPECT_EQ( node_coord, elem_node_coord[ elem_node_ords[j] ] );
-        // }
-
       }
     }
   }

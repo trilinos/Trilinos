@@ -17,6 +17,8 @@
 #ifndef KOKKOSBLAS_MAGMA_HPP_
 #define KOKKOSBLAS_MAGMA_HPP_
 
+#include "KokkosKernels_Singleton.hpp"
+
 // If LAPACK TPL is enabled, it is preferred over magma's LAPACK
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 #include "magma_v2.h"
@@ -26,12 +28,13 @@ namespace Impl {
 
 struct MagmaSingleton {
   MagmaSingleton();
+  ~MagmaSingleton();
 
   static bool is_initialized();
   static MagmaSingleton& singleton();
 
  private:
-  static std::unique_ptr<MagmaSingleton>& get_instance();
+  static KokkosKernels::Impl::Singleton<MagmaSingleton>& get_instance();
 };
 
 }  // namespace Impl

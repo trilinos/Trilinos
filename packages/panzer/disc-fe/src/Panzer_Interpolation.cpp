@@ -172,7 +172,6 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
   using tp_matrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>;
   using tp_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal>;
 #ifdef PANZER_HAVE_EPETRA_STACK
-  using ep_linObjContainer = panzer::BlockedEpetraLinearObjContainer;
   using ep_matrix = Epetra_CrsMatrix;
   using ep_map = Epetra_Map;
 #endif

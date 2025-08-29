@@ -56,15 +56,25 @@ KOKKOS_INLINE_FUNCTION static int checkTrsmInput([[maybe_unused]] const AViewTyp
 /// A(m x m), B(m x n)
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
+    // Quick return if possible
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
-    const int m = B.extent(0), n = B.extent(1);
+    const int m = B.extent(0), n = B_extent_1;
 
     static_assert(is_vector<vector_type>::value, "value type is not vector type");
     static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
@@ -73,14 +83,14 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Tr
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_LOWER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_1(), (double *)B.data(), B.stride_1(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+                        A.stride(1), (double *)B.data(), B_stride_1, format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1 && B_stride_1 == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_LOWER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)B.data(), B.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)B.data(), B.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -93,15 +103,22 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(0), B.extent(1), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, false, B.extent(0), B_extent_1, alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -109,15 +126,23 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(0), B.extent(1), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, false, B.extent(0), B_extent_1, alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -127,31 +152,42 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Tr
 /// B := inv(triu(A)) (alpha*B)
 /// A(m x m), B(m x n)
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
+    // Quick return if possible
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
-    const int m = B.extent(0), n = B.extent(1);
+    const int m = B.extent(0), n = B_extent_1;
 
     static_assert(is_vector<vector_type>::value, "value type is not vector type");
     static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
                   "AVX, AVX2 and AVX512 is supported");
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     const MKL_COMPACT_PACK format = vector_type::vector_length == 8 ? MKL_COMPACT_AVX512 : MKL_COMPACT_AVX;
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_UPPER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_1(), (double *)B.data(), B.stride_1(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+                        A.stride(1), (double *)B.data(), B_stride_1, format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1 && B_stride_1 == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_UPPER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)B.data(), B.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)B.data(), B.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -164,15 +200,22 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(0), B.extent(1), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, false, B.extent(0), B_extent_1, alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -180,15 +223,22 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(0), B.extent(1), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, false, B.extent(0), B_extent_1, alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -199,15 +249,25 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Tr
 /// A(m x m), B(m x n)
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
+    // Quick return if possible
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
-    const int m = B.extent(0), n = B.extent(1);
+    const int m = B.extent(0), n = B_extent_1;
 
     static_assert(is_vector<vector_type>::value, "value type is not vector type");
     static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
@@ -216,13 +276,13 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_LOWER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_1(), (double *)B.data(), B.stride_1(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(1), (double *)B.data(), B_stride_1, format,
                         (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+    } else if (A.stride(1) == 1 && B_stride_1 == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_LOWER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_0(), (double *)B.data(), B.stride_0(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(0), (double *)B.data(), B.stride(0), format,
                         (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
@@ -236,15 +296,22 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(0), B.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, false, B.extent(0), B_extent_1, alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -252,15 +319,22 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(0), B.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, false, B.extent(0), B_extent_1, alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -270,15 +344,25 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm
 /// B := inv(triu(AT)) (alpha*B)
 /// A(m x m), B(m x n)
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
+    // Quick return if possible
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
-    const int m = B.extent(0), n = B.extent(1);
+    const int m = B.extent(0), n = B_extent_1;
 
     static_assert(is_vector<vector_type>::value, "value type is not vector type");
     static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
@@ -287,13 +371,13 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_UPPER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_1(), (double *)B.data(), B.stride_1(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(1), (double *)B.data(), B_stride_1, format,
                         (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+    } else if (A.stride(1) == 1 && B_stride_1 == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_UPPER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_0(), (double *)B.data(), B.stride_0(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(0), (double *)B.data(), B.stride(0), format,
                         (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
@@ -307,15 +391,22 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(0), B.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, false, B.extent(0), B_extent_1, alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -323,15 +414,22 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(0), B.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, false, B.extent(0), B_extent_1, alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -347,10 +445,20 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
+    // Quick return if possible
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
-    const int m = B.extent(0), n = B.extent(1);
+    const int m = B.extent(0), n = B_extent_1;
 
     static_assert(is_vector<vector_type>::value, "value type is not vector type");
     static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
@@ -359,14 +467,14 @@ struct SerialTrsm<Side::Left, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_LOWER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_1(), (double *)B.data(), B.stride_1(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+                        A.stride(1), (double *)B.data(), B_stride_1, format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1 && B_stride_1 == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_LOWER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)B.data(), B.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)B.data(), B.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -379,15 +487,22 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, B.extent(0), B.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, true, B.extent(0), B_extent_1, alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -404,10 +519,20 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
+    // Quick return if possible
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
+
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
-    const int m = B.extent(0), n = B.extent(1);
+    const int m = B.extent(0), n = B_extent_1;
 
     static_assert(is_vector<vector_type>::value, "value type is not vector type");
     static_assert(vector_type::vector_length == 4 || vector_type::vector_length == 8,
@@ -416,14 +541,14 @@ struct SerialTrsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_LEFT, MKL_UPPER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_1(), (double *)B.data(), B.stride_1(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+                        A.stride(1), (double *)B.data(), B_stride_1, format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1 && B_stride_1 == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_LEFT, MKL_UPPER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)B.data(), B.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)B.data(), B.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -436,15 +561,22 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2);
+    constexpr size_t B_rank = BViewType::rank();
+    static_assert(B_rank == 1 || B_rank == 2);
+
     // Quick return if possible
-    if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
+    if (B.size() == 0) return 0;
+
+    size_t B_extent_1 = B_rank == 1 ? 1 : B.extent(1);
+    size_t B_stride_1 = B_rank == 1 ? 1 : B.stride(1);
 
     auto info = KokkosBatched::Impl::checkTrsmInput<Side::Left>(A, B);
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, B.extent(0), B.extent(1), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_0(), B.stride_1());
+        ArgDiag::use_unit_diag, true, B.extent(0), B_extent_1, alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(0), B_stride_1);
   }
 };
 
@@ -462,6 +594,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
@@ -474,14 +607,14 @@ struct SerialTrsm<Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::T
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_RIGHT, MKL_LOWER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_1(), (double *)B.data(), B.stride_1(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+                        A.stride(1), (double *)B.data(), B.stride(1), format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1 && B.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_RIGHT, MKL_LOWER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)B.data(), B.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)B.data(), B.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -494,6 +627,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -501,8 +635,8 @@ struct SerialTrsm<Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::T
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 
@@ -510,6 +644,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -517,8 +652,8 @@ struct SerialTrsm<Side::Right, Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::T
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 
@@ -533,6 +668,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
@@ -545,14 +681,14 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::T
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_RIGHT, MKL_UPPER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_1(), (double *)B.data(), B.stride_1(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+                        A.stride(1), (double *)B.data(), B.stride(1), format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1 && B.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_RIGHT, MKL_UPPER, MKL_NOTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)B.data(), B.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)B.data(), B.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -565,6 +701,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -572,8 +709,8 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::T
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 
@@ -581,6 +718,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -588,8 +726,8 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::T
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride_1(), A.stride_0(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride(1), A.stride(0), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 
@@ -605,6 +743,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
@@ -617,13 +756,13 @@ struct SerialTrsm<Side::Right, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trs
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_RIGHT, MKL_LOWER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_1(), (double *)B.data(), B.stride_1(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(1), (double *)B.data(), B.stride(1), format,
                         (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+    } else if (A.stride(1) == 1 && B.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_RIGHT, MKL_LOWER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_0(), (double *)B.data(), B.stride_0(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(0), (double *)B.data(), B.stride(0), format,
                         (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
@@ -637,6 +776,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -644,8 +784,8 @@ struct SerialTrsm<Side::Right, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trs
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 
@@ -653,6 +793,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -660,8 +801,8 @@ struct SerialTrsm<Side::Right, Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Trs
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 
@@ -676,6 +817,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
@@ -688,13 +830,13 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trs
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_RIGHT, MKL_UPPER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_1(), (double *)B.data(), B.stride_1(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(1), (double *)B.data(), B.stride(1), format,
                         (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+    } else if (A.stride(1) == 1 && B.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_RIGHT, MKL_UPPER, MKL_TRANS, ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT,
-                        m, n, alpha, (const double *)A.data(), A.stride_0(), (double *)B.data(), B.stride_0(), format,
+                        m, n, alpha, (const double *)A.data(), A.stride(0), (double *)B.data(), B.stride(0), format,
                         (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
@@ -708,6 +850,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -715,8 +858,8 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trs
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 
@@ -724,6 +867,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trsm::Blocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -731,8 +875,8 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Trs
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
-        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, false, B.extent(1), B.extent(0), alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 
@@ -748,6 +892,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
@@ -760,14 +905,14 @@ struct SerialTrsm<Side::Right, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo:
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_RIGHT, MKL_LOWER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_1(), (double *)B.data(), B.stride_1(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+                        A.stride(1), (double *)B.data(), B.stride(1), format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1 && B.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_RIGHT, MKL_LOWER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)B.data(), B.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)B.data(), B.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -780,6 +925,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -787,8 +933,8 @@ struct SerialTrsm<Side::Right, Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo:
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, B.extent(1), B.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, true, B.extent(1), B.extent(0), alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 
@@ -805,6 +951,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Trsm::CompactMKL> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     typedef typename BViewType::value_type vector_type;
     // typedef typename vector_type::value_type value_type;
 
@@ -817,14 +964,14 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo:
 
     // no error check
     int r_val = 0;
-    if (A.stride_0() == 1 && B.stride_0() == 1) {
+    if (A.stride(0) == 1 && B.stride(0) == 1) {
       mkl_dtrsm_compact(MKL_COL_MAJOR, MKL_RIGHT, MKL_UPPER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_1(), (double *)B.data(), B.stride_1(), format, (MKL_INT)vector_type::vector_length);
-    } else if (A.stride_1() == 1 && B.stride_1() == 1) {
+                        A.stride(1), (double *)B.data(), B.stride(1), format, (MKL_INT)vector_type::vector_length);
+    } else if (A.stride(1) == 1 && B.stride(1) == 1) {
       mkl_dtrsm_compact(MKL_ROW_MAJOR, MKL_RIGHT, MKL_UPPER, MKL_CONJTRANS,
                         ArgDiag::use_unit_diag ? MKL_UNIT : MKL_NONUNIT, m, n, alpha, (const double *)A.data(),
-                        A.stride_0(), (double *)B.data(), B.stride_0(), format, (MKL_INT)vector_type::vector_length);
+                        A.stride(0), (double *)B.data(), B.stride(0), format, (MKL_INT)vector_type::vector_length);
     } else {
       r_val = -1;
     }
@@ -837,6 +984,7 @@ template <typename ArgDiag>
 struct SerialTrsm<Side::Right, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Trsm::Unblocked> {
   template <typename ScalarType, typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const ScalarType alpha, const AViewType &A, const BViewType &B) {
+    static_assert(AViewType::rank() == 2 && BViewType::rank() == 2);
     // Quick return if possible
     if (B.extent(0) == 0 || B.extent(1) == 0) return 0;
 
@@ -844,8 +992,8 @@ struct SerialTrsm<Side::Right, Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo:
     if (info) return info;
 
     return KokkosBatched::Impl::SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, true, B.extent(1), B.extent(0), alpha, A.data(), A.stride_0(), A.stride_1(), B.data(),
-        B.stride_1(), B.stride_0());
+        ArgDiag::use_unit_diag, true, B.extent(1), B.extent(0), alpha, A.data(), A.stride(0), A.stride(1), B.data(),
+        B.stride(1), B.stride(0));
   }
 };
 

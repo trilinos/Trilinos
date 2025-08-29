@@ -901,7 +901,7 @@ namespace percept {
   }
 
   void FitGregoryPatches::
-  processSeams(stk::mesh::PartVector& parts, bool createEdgeSeamsParts)
+  processSeams(stk::mesh::PartVector& /*parts*/, bool createEdgeSeamsParts)
   {
     m_contiguousEdgeSets.clear();
     m_nodeToEdgeMap.clear();
@@ -957,11 +957,15 @@ namespace percept {
               {
                 if (m_eMesh.shared(nodes[ii]))
                   {
+                    const int owner = m_eMesh.get_bulk_data()->parallel_owner_rank(nodes[ii]);
+                    const bool owned =  owner == m_eMesh.get_bulk_data()->parallel_rank();
                     m_eMesh.get_bulk_data()->comm_procs(nodes[ii], procs);
                     for (unsigned jj=0; jj < procs.size(); ++jj)
                       {
-                        commAll.send_buffer( procs[jj] ).pack< stk::mesh::EntityId > (ID(nodes[ii]));
-                        commAll.send_buffer( procs[jj] ).pack< stk::mesh::EntityId > (ID(nodes[(ii == 0 ? 1 : 0)]));
+                        if (owned || owner == procs[jj]) {
+                          commAll.send_buffer( procs[jj] ).pack< stk::mesh::EntityId > (ID(nodes[ii]));
+                          commAll.send_buffer( procs[jj] ).pack< stk::mesh::EntityId > (ID(nodes[(ii == 0 ? 1 : 0)]));
+                        }
                       }
                   }
               }

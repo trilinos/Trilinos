@@ -410,11 +410,11 @@ void getCoarsenedPartGraph(
         return *this;
       }
 
-      bool operator>(const part_info & src) {
+      bool operator>(const part_info & src) const {
         return (destination_part > src.destination_part);
       }
 
-      bool operator==(const part_info & src) {
+      bool operator==(const part_info & src) const {
         return (destination_part == src.destination_part);
       }
 

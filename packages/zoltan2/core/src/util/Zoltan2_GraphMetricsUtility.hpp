@@ -193,7 +193,7 @@ void globalWeightedByPart(
 
       // operator>
       // TODO: Decide if we want directory to work like this for AggregateAdd
-      bool operator>(const part_info & src) {
+      bool operator>(const part_info & src) const {
         // Note: Currently this doesn't actually do anything except allow this
         // struct to compile. Aggregate mode used operator> to preserve ordering
         // and therefore a custom struct must currently define it. However in
@@ -216,7 +216,7 @@ void globalWeightedByPart(
       // how to best integrate this so we can aggregate both simple types where
       // we just keep unique elements and more complex structs with a 'rule'
       // for combining them.
-      bool operator==(const part_info & src) {
+      bool operator==(const part_info & src) const {
         // if target_part is the same then the values for sum_weights will
         // be summed.
         return (target_part == src.target_part);

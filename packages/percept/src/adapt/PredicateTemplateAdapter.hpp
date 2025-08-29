@@ -81,7 +81,7 @@
       bool getUseQualityMarking() { return m_useQualityMarking; }
 
       virtual void
-      doBreak(int num_registration_loops)
+      doBreak(int /*num_registration_loops*/)
       {
         EXCEPTWATCH;
         // stk::diag::setEnabledTimerMetricsMask(stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME);
