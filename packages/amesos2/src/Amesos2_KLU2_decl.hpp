@@ -49,6 +49,7 @@ public:
   typedef SolverCore<Amesos2::KLU2,Matrix,Vector>             super_type;
 
   // Since typedef's are not inheritted, go grab them
+  typedef typename VectorTraits<Vector>::scalar_t        vector_scalar_type;
   typedef typename super_type::scalar_type                      scalar_type;
   typedef typename super_type::local_ordinal_type        local_ordinal_type;
   typedef typename super_type::global_ordinal_type      global_ordinal_type;
