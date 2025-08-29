@@ -5655,7 +5655,7 @@ namespace Tpetra {
     execute_sync_host_uvm_access(); // protect host UVM access
     Kokkos::parallel_reduce ("Tpetra::CrsGraph::pack: totalNumPackets",
       inputRange,
-      [=] (const LO& i, size_t& curTotalNumPackets) {
+      [=, *this](const LO& i, size_t& curTotalNumPackets) {
         const GO gblRow = rowMap.getGlobalElement (exportLIDs_raw[i]);
         if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
           Kokkos::atomic_add (&errCountView(), ONE);
@@ -5702,7 +5702,7 @@ namespace Tpetra {
     GO* const exports_raw = exports.getRawPtr ();
     errCount = 0;
     Kokkos::parallel_scan ("Tpetra::CrsGraph::pack: pack from views",
-      inputRange, [=, &prefix]
+      inputRange, [=, &prefix, *this]
       (const LO i, size_t& exportsOffset, const bool final) {
         const size_t curOffset = exportsOffset;
         const GO gblRow = rowMap.getGlobalElement (exportLIDs_raw[i]);
@@ -5923,7 +5923,7 @@ namespace Tpetra {
     Details::disableWDVTracking();
     Kokkos::parallel_scan
       ("Tpetra::CrsGraph::packFillActiveNew: Pack exports",
-       inputRange, [=, &prefix]
+       inputRange, [=, &prefix, *this]
        (const LO i, size_t& exportsOffset, const bool final) {
          const size_t curOffset = exportsOffset;
          const LO lclRow = exportLIDs_h(i);
