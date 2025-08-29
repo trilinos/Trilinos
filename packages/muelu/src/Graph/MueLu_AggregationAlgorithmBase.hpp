@@ -50,8 +50,11 @@ class AggregationAlgorithmBase : public BaseClass {
   //! @name Build routines
   //@{
 
-  //! SetupPhase routine gets executed on all ranks, even if all nodes are already aggregated
-  //  If communication is required by the phase it needs to take place here.
+  /*! Perform necessary communication among procs even if a proc might skip a phase
+   *
+   * SetupPhase routine gets executed on all ranks, even if all nodes are already aggregated
+   * If communication is required by the phase it needs to take place here.
+   */
   virtual void SetupPhase(const ParameterList& params, Teuchos::RCP<const Teuchos::Comm<int>>& comm, LO& numLocalNodes, LO& numNonAggregatedNodes){};
 
   //! BuildAggregatesNonKokkos routine.
