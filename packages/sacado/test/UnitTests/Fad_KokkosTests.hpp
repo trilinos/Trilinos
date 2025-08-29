@@ -1436,7 +1436,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check dimensions are correct
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride_0(), v1.stride_0(), out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
 
   // Check values
   FadType f =
@@ -1473,8 +1473,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   // Check dimensions are correct
   TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride_0(), v1.stride_0(), out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride_1(), v1.stride_1(), out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride(1), v1.stride(1), out, success);
 
   // Check values
   for (size_type i=0; i<num_rows; ++i) {
@@ -1514,9 +1514,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(v2.extent(1), num_cols, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride_0(), v1.stride_0(), out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride_1(), v1.stride_1(), out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride_2(), v1.stride_2(), out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride(1), v1.stride(1), out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride(2), v1.stride(2), out, success);
 
   // Check values
   for (size_type i=0; i<num_rows; ++i) {

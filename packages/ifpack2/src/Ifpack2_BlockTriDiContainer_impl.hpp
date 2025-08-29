@@ -2554,11 +2554,11 @@ solveSingleVectorNew(const typename Kokkos::TeamPolicy<typename impl_type::execu
   // const local_ordinal_type num_vectors = X_scalar_values.extent(2);
 
   // const local_ordinal_type blocksize = D_scalar_values.extent(1);
-  const local_ordinal_type astep = D_internal_vector_values.stride_0();
-  const local_ordinal_type as0   = D_internal_vector_values.stride_1();  // blocksize*vector_length;
-  const local_ordinal_type as1   = D_internal_vector_values.stride_2();  // vector_length;
-  const local_ordinal_type xstep = X_internal_vector_values.stride_0();
-  const local_ordinal_type xs0   = X_internal_vector_values.stride_1();  // vector_length;
+  const local_ordinal_type astep = D_internal_vector_values.stride(0);
+  const local_ordinal_type as0   = D_internal_vector_values.stride(1);  // blocksize*vector_length;
+  const local_ordinal_type as1   = D_internal_vector_values.stride(2);  // vector_length;
+  const local_ordinal_type xstep = X_internal_vector_values.stride(0);
+  const local_ordinal_type xs0   = X_internal_vector_values.stride(1);  // vector_length;
 
   // move to starting point
   A += i0 * astep + v;
@@ -2629,7 +2629,7 @@ solveSingleVectorNew(const typename Kokkos::TeamPolicy<typename impl_type::execu
     // for multiple rhs
     // X += xs1;
   } else {
-    const local_ordinal_type ws0 = WW.stride_0();
+    const local_ordinal_type ws0 = WW.stride(0);
     auto W                       = WW.data() + v;
     KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(default_mode_type,
                                                            member, blocksize, X, xs0, W, ws0);
@@ -4282,11 +4282,11 @@ struct SolveTridiags {
     // const local_ordinal_type num_vectors = X_scalar_values.extent(2);
 
     // const local_ordinal_type blocksize = D_scalar_values.extent(1);
-    const local_ordinal_type astep = D_internal_vector_values.stride_0();
-    const local_ordinal_type as0   = D_internal_vector_values.stride_1();  // blocksize*vector_length;
-    const local_ordinal_type as1   = D_internal_vector_values.stride_2();  // vector_length;
-    const local_ordinal_type xstep = X_internal_vector_values.stride_0();
-    const local_ordinal_type xs0   = X_internal_vector_values.stride_1();  // vector_length;
+    const local_ordinal_type astep = D_internal_vector_values.stride(0);
+    const local_ordinal_type as0   = D_internal_vector_values.stride(1);  // blocksize*vector_length;
+    const local_ordinal_type as1   = D_internal_vector_values.stride(2);  // vector_length;
+    const local_ordinal_type xstep = X_internal_vector_values.stride(0);
+    const local_ordinal_type xs0   = X_internal_vector_values.stride(1);  // vector_length;
 
     // move to starting point
     A += i0 * astep + v;
@@ -4357,7 +4357,7 @@ struct SolveTridiags {
       // for multiple rhs
       // X += xs1;
     } else {
-      const local_ordinal_type ws0 = WW.stride_0();
+      const local_ordinal_type ws0 = WW.stride(0);
       auto W                       = WW.data() + v;
       KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(default_mode_type,
                                                              member, blocksize, X, xs0, W, ws0);
@@ -4599,10 +4599,10 @@ struct SolveTridiags {
                                                         member,
                                                         blocksize, blocksize,
                                                         -one,
-                                                        C.data(), C.stride_0(), C.stride_1(),
-                                                        v_1.data(), v_1.stride_0(),
+                                                        C.data(), C.stride(0), C.stride(1),
+                                                        v_1.data(), v_1.stride(0),
                                                         one,
-                                                        v_2.data(), v_2.stride_0());
+                                                        v_2.data(), v_2.stride(0));
       });
     } else if (local_subpartidx == (local_ordinal_type)part2packrowidx0_sub.extent(1) - 2) {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const int &v) {
@@ -4614,10 +4614,10 @@ struct SolveTridiags {
                                                         member,
                                                         blocksize, blocksize,
                                                         -one,
-                                                        C.data(), C.stride_0(), C.stride_1(),
-                                                        v_1.data(), v_1.stride_0(),
+                                                        C.data(), C.stride(0), C.stride(1),
+                                                        v_1.data(), v_1.stride(0),
                                                         one,
-                                                        v_2.data(), v_2.stride_0());
+                                                        v_2.data(), v_2.stride(0));
       });
     } else {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, vector_loop_size), [&](const int &v) {
@@ -4630,10 +4630,10 @@ struct SolveTridiags {
                                                           member,
                                                           blocksize, blocksize,
                                                           -one,
-                                                          C.data(), C.stride_0(), C.stride_1(),
-                                                          v_1.data(), v_1.stride_0(),
+                                                          C.data(), C.stride(0), C.stride(1),
+                                                          v_1.data(), v_1.stride(0),
                                                           one,
-                                                          v_2.data(), v_2.stride_0());
+                                                          v_2.data(), v_2.stride(0));
         }
         {
           auto v_1 = Kokkos::subview(X_internal_vector_values, r0, Kokkos::ALL(), 0, v);
@@ -4644,10 +4644,10 @@ struct SolveTridiags {
                                                           member,
                                                           blocksize, blocksize,
                                                           -one,
-                                                          C.data(), C.stride_0(), C.stride_1(),
-                                                          v_1.data(), v_1.stride_0(),
+                                                          C.data(), C.stride(0), C.stride(1),
+                                                          v_1.data(), v_1.stride(0),
                                                           one,
-                                                          v_2.data(), v_2.stride_0());
+                                                          v_2.data(), v_2.stride(0));
         }
       });
     }
@@ -4731,10 +4731,10 @@ struct SolveTridiags {
                                                           member,
                                                           blocksize, blocksize,
                                                           -one,
-                                                          E.data(), E.stride_0(), E.stride_1(),
-                                                          v_2.data(), v_2.stride_0(),
+                                                          E.data(), E.stride(0), E.stride(1),
+                                                          v_2.data(), v_2.stride(0),
                                                           one,
-                                                          v_1.data(), v_1.stride_0());
+                                                          v_1.data(), v_1.stride(0));
         }
       });
     } else if (local_subpartidx == (local_ordinal_type)part2packrowidx0_sub.extent(1) - 2) {
@@ -4749,10 +4749,10 @@ struct SolveTridiags {
                                                           member,
                                                           blocksize, blocksize,
                                                           -one,
-                                                          E.data(), E.stride_0(), E.stride_1(),
-                                                          v_2.data(), v_2.stride_0(),
+                                                          E.data(), E.stride(0), E.stride(1),
+                                                          v_2.data(), v_2.stride(0),
                                                           one,
-                                                          v_1.data(), v_1.stride_0());
+                                                          v_1.data(), v_1.stride(0));
         }
       });
     } else {
@@ -4768,10 +4768,10 @@ struct SolveTridiags {
                                                             member,
                                                             blocksize, blocksize,
                                                             -one,
-                                                            E.data(), E.stride_0(), E.stride_1(),
-                                                            v_2.data(), v_2.stride_0(),
+                                                            E.data(), E.stride(0), E.stride(1),
+                                                            v_2.data(), v_2.stride(0),
                                                             one,
-                                                            v_1.data(), v_1.stride_0());
+                                                            v_1.data(), v_1.stride(0));
           }
         }
         {
@@ -4785,10 +4785,10 @@ struct SolveTridiags {
                                                             member,
                                                             blocksize, blocksize,
                                                             -one,
-                                                            E.data(), E.stride_0(), E.stride_1(),
-                                                            v_2.data(), v_2.stride_0(),
+                                                            E.data(), E.stride(0), E.stride(1),
+                                                            v_2.data(), v_2.stride(0),
                                                             one,
-                                                            v_1.data(), v_1.stride_0());
+                                                            v_1.data(), v_1.stride(0));
           }
         }
       });

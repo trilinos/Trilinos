@@ -1149,6 +1149,16 @@ void deep_copy
          dst.extent(5) == src.extent(5) &&
          dst.extent(6) == src.extent(6) &&
          dst.extent(7) == src.extent(7) &&
+#if KOKKOS_VERSION >= 40799
+         dst.stride(0) == src.stride(0) &&
+         dst.stride(1) == src.stride(1) &&
+         dst.stride(2) == src.stride(2) &&
+         dst.stride(3) == src.stride(3) &&
+         dst.stride(4) == src.stride(4) &&
+         dst.stride(5) == src.stride(5) &&
+         dst.stride(6) == src.stride(6) &&
+         dst.stride(7) == src.stride(7)
+#else
          dst.stride_0() == src.stride_0() &&
          dst.stride_1() == src.stride_1() &&
          dst.stride_2() == src.stride_2() &&
@@ -1157,6 +1167,7 @@ void deep_copy
          dst.stride_5() == src.stride_5() &&
          dst.stride_6() == src.stride_6() &&
          dst.stride_7() == src.stride_7()
+#endif
          ) {
 
       const size_t nbytes = sizeof(typename dst_type::value_type::value_type) * dst.span() ; 

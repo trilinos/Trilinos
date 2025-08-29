@@ -267,12 +267,12 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
       V1.extent(0) ,
       V1.extent(1) ,
       V1.data() ,
-      V1.stride_1() ,
+      V1.stride(1) ,
       S.data() ,
       U.data() ,
-      U.stride_1() ,
+      U.stride(1) ,
       Vt.data() ,
-      Vt.stride_1() ,
+      Vt.stride(1) ,
       work.data() ,
       5*cardVecPn ,
       rWork.data() ,
@@ -504,7 +504,7 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
   info = 0;
 
   lapack.GETRF(card, card,
-      vmat.data(), vmat.stride_1(),
+      vmat.data(), vmat.stride(1),
       (ordinal_type*)ipiv.data(),
       &info);
 
@@ -513,7 +513,7 @@ Basis_HCURL_TET_In_FEM( const ordinal_type order,
       ">>> ERROR: (Intrepid2::Basis_HCURL_TET_In_FEM) lapack.GETRF returns nonzero info." );
 
   lapack.GETRI(card,
-      vmat.data(), vmat.stride_1(),
+      vmat.data(), vmat.stride(1),
       (ordinal_type*)ipiv.data(),
       work1.data(), lwork,
       &info);

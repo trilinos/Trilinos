@@ -28,8 +28,8 @@ template <typename ArgTransA, typename ArgTransB> struct Gemm<ArgTransA, ArgTran
                        k = (std::is_same<ArgTransB, Trans::NoTranspose>::value ? B.extent(0) : B.extent(1));
 
     if (m > 0 && n > 0 && k > 0) {
-      Blas<value_type>::gemm(ArgTransA::param, ArgTransB::param, m, n, k, value_type(alpha), A.data(), A.stride_1(),
-                             B.data(), B.stride_1(), value_type(beta), C.data(), C.stride_1());
+      Blas<value_type>::gemm(ArgTransA::param, ArgTransB::param, m, n, k, value_type(alpha), A.data(), A.stride(1),
+                             B.data(), B.stride(1), value_type(beta), C.data(), C.stride(1));
     }
     return 0;
   }
@@ -46,7 +46,7 @@ template <typename ArgTransA, typename ArgTransB> struct Gemm<ArgTransA, ArgTran
     int r_val(0);
     if (m > 0 && n > 0 && k > 0) {
       r_val = Blas<value_type>::gemm(handle, ArgTransA::cublas_param, ArgTransB::cublas_param, m, n, k, alpha, A.data(),
-                                     A.stride_1(), B.data(), B.stride_1(), beta, C.data(), C.stride_1());
+                                     A.stride(1), B.data(), B.stride(1), beta, C.data(), C.stride(1));
     }
     return r_val;
   }
@@ -64,7 +64,7 @@ template <typename ArgTransA, typename ArgTransB> struct Gemm<ArgTransA, ArgTran
     int r_val(0);
     if (m > 0 && n > 0 && k > 0) {
       r_val = Blas<value_type>::gemm(handle, ArgTransA::rocblas_param, ArgTransB::rocblas_param, m, n, k, alpha,
-                                     A.data(), A.stride_1(), B.data(), B.stride_1(), beta, C.data(), C.stride_1());
+                                     A.data(), A.stride(1), B.data(), B.stride(1), beta, C.data(), C.stride(1));
     }
     return r_val;
   }
