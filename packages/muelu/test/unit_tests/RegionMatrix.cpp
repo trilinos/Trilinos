@@ -408,8 +408,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
     TEST_EQUALITY(regionMats->getLocalNumEntries(), 105);
 
     // In the serial case we can just compare to the values in A
-    entries_type refEntries                        = A->getLocalMatrixDevice().graph.entries;
-    values_type refValues                          = A->getLocalMatrixDevice().values;
+    entries_type refEntries                              = A->getLocalMatrixDevice().graph.entries;
+    values_type refValues                                = A->getLocalMatrixDevice().values;
     typename entries_type::host_mirror_type refEntries_h = Kokkos::create_mirror_view(refEntries);
     Kokkos::deep_copy(refEntries_h, refEntries);
     typename values_type::host_mirror_type refValues_h = Kokkos::create_mirror_view(refValues);
@@ -1093,8 +1093,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
     TEST_EQUALITY(regionMats->getLocalNumEntries(), 128);
 
     // In the serial case we can just compare to the values in A
-    entries_type refEntries                        = A->getLocalMatrixDevice().graph.entries;
-    values_type refValues                          = A->getLocalMatrixDevice().values;
+    entries_type refEntries                              = A->getLocalMatrixDevice().graph.entries;
+    values_type refValues                                = A->getLocalMatrixDevice().values;
     typename entries_type::host_mirror_type refEntries_h = Kokkos::create_mirror_view(refEntries);
     Kokkos::deep_copy(refEntries_h, refEntries);
     typename values_type::host_mirror_type refValues_h = Kokkos::create_mirror_view(refValues);
@@ -1269,8 +1269,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
     TEST_EQUALITY(regionMats->getLocalNumEntries(), 692);
 
     // In the serial case we can just compare to the values in A
-    entries_type refEntries                        = A->getLocalMatrixDevice().graph.entries;
-    values_type refValues                          = A->getLocalMatrixDevice().values;
+    entries_type refEntries                              = A->getLocalMatrixDevice().graph.entries;
+    values_type refValues                                = A->getLocalMatrixDevice().values;
     typename entries_type::host_mirror_type refEntries_h = Kokkos::create_mirror_view(refEntries);
     Kokkos::deep_copy(refEntries_h, refEntries);
     typename values_type::host_mirror_type refValues_h = Kokkos::create_mirror_view(refValues);

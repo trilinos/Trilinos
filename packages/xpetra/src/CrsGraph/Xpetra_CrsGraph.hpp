@@ -208,7 +208,7 @@ class CrsGraph
 #else
   virtual typename local_graph_type::HostMirror getLocalGraphHost() const = 0;
 #endif
-  virtual local_graph_type getLocalGraphDevice() const                    = 0;
+  virtual local_graph_type getLocalGraphDevice() const = 0;
 
   //! Get offsets of the diagonal entries in the matrix.
   virtual void getLocalDiagOffsets(const Kokkos::View<size_t *, device_type, Kokkos::MemoryUnmanaged> &offsets) const = 0;

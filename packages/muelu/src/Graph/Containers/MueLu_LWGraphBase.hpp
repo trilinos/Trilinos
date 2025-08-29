@@ -88,14 +88,14 @@ class LWGraphBase {
                                                                typename Node::device_type,
                                                                void, size_t>;
 #if KOKKOS_VERSION >= 40799
-  using local_graph_type        = typename std::conditional<OnHost, typename local_graph_device_type::host_mirror_type, local_graph_device_type>::type;
+  using local_graph_type = typename std::conditional<OnHost, typename local_graph_device_type::host_mirror_type, local_graph_device_type>::type;
 #else
-  using local_graph_type        = typename std::conditional<OnHost, typename local_graph_device_type::HostMirror, local_graph_device_type>::type;
+  using local_graph_type = typename std::conditional<OnHost, typename local_graph_device_type::HostMirror, local_graph_device_type>::type;
 #endif
-  using boundary_nodes_type     = Kokkos::View<bool*, memory_space>;
-  using row_type                = typename local_graph_type::row_map_type;
-  using entries_type            = typename local_graph_type::entries_type;
-  using neighbor_vertices_type  = KokkosSparse::GraphRowViewConst<local_graph_type>;
+  using boundary_nodes_type    = Kokkos::View<bool*, memory_space>;
+  using row_type               = typename local_graph_type::row_map_type;
+  using entries_type           = typename local_graph_type::entries_type;
+  using neighbor_vertices_type = KokkosSparse::GraphRowViewConst<local_graph_type>;
 
 #undef MUELU_LWGRAPHBASE_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"

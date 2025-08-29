@@ -797,7 +797,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Kokkos::deep_copy(valuesP_h, intermediateP.values);
   typename col_indices_type::host_mirror_type colIndPt_h = Kokkos::create_mirror_view(colIndPt);
   typename values_type::host_mirror_type valuesPt_h      = Kokkos::create_mirror_view(valuesPt);
-  const col_index_type invalidColumnIndex          = KokkosSparse::OrdinalTraits<col_index_type>::invalid();
+  const col_index_type invalidColumnIndex                = KokkosSparse::OrdinalTraits<col_index_type>::invalid();
   Kokkos::deep_copy(colIndPt_h, invalidColumnIndex);
 
   col_index_type colIdx = 0;
