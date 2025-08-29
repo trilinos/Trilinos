@@ -26,11 +26,11 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
     const ordinal_type m = B.extent(0), n = B.extent(1);
     if (m > 0 && n > 0) {
       if (n == 1) {
-        Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride_1(), B.data(),
-                               B.stride_0());
+        Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride(1), B.data(),
+                               B.stride(0));
       } else {
         Blas<value_type>::trsm(Side::Left::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n, value_type(1),
-                               A.data(), A.stride_1(), B.data(), B.stride_1());
+                               A.data(), A.stride(1), B.data(), B.stride(1));
       }
     }
     return 0;
@@ -46,11 +46,11 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
     if (m > 0 && n > 0) {
       if (n == 1) {
         r_val = Blas<value_type>::trsv(handle, ArgUplo::cublas_param, ArgTransA::cublas_param, diagA.cublas_param, m,
-                                       A.data(), A.stride_1(), B.data(), B.stride_0());
+                                       A.data(), A.stride(1), B.data(), B.stride(0));
       } else {
         r_val = Blas<value_type>::trsm(handle, Side::Left::cublas_param, ArgUplo::cublas_param, ArgTransA::cublas_param,
-                                       diagA.cublas_param, m, n, value_type(1), A.data(), A.stride_1(), B.data(),
-                                       B.stride_1());
+                                       diagA.cublas_param, m, n, value_type(1), A.data(), A.stride(1), B.data(),
+                                       B.stride(1));
       }
     }
     return r_val;
@@ -67,11 +67,11 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
     if (m > 0 && n > 0) {
       if (n == 1) {
         r_val = Blas<value_type>::trsv(handle, ArgUplo::rocblas_param, ArgTransA::rocblas_param, diagA.rocblas_param, m,
-                                       A.data(), A.stride_1(), B.data(), B.stride_0());
+                                       A.data(), A.stride(1), B.data(), B.stride(0));
       } else {
         r_val = Blas<value_type>::trsm(handle, Side::Left::rocblas_param, ArgUplo::rocblas_param,
                                        ArgTransA::rocblas_param, diagA.rocblas_param, m, n, value_type(1), A.data(),
-                                       A.stride_1(), B.data(), B.stride_1());
+                                       A.stride(1), B.data(), B.stride(1));
       }
     }
     return r_val;

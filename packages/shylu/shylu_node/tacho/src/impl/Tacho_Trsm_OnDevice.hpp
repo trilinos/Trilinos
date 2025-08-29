@@ -28,7 +28,7 @@ struct Trsm<ArgSide, ArgUplo, ArgTransA, Algo::OnDevice> {
 
     if (m > 0 && n > 0)
       Blas<value_type>::trsm(ArgSide::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n, value_type(alpha),
-                             A.data(), A.stride_1(), B.data(), B.stride_1());
+                             A.data(), A.stride(1), B.data(), B.stride(1));
     return 0;
   }
 
@@ -43,7 +43,7 @@ struct Trsm<ArgSide, ArgUplo, ArgTransA, Algo::OnDevice> {
     int r_val(0);
     if (m > 0 && n > 0)
       Blas<value_type>::trsm(handle, ArgSide::cublas_param, ArgUplo::cublas_param, ArgTransA::cublas_param,
-                             diagA.cublas_param, m, n, alpha, A.data(), A.stride_1(), B.data(), B.stride_1());
+                             diagA.cublas_param, m, n, alpha, A.data(), A.stride(1), B.data(), B.stride(1));
     return r_val;
   }
 #endif
@@ -59,7 +59,7 @@ struct Trsm<ArgSide, ArgUplo, ArgTransA, Algo::OnDevice> {
     int r_val(0);
     if (m > 0 && n > 0)
       Blas<value_type>::trsm(handle, ArgSide::rocblas_param, ArgUplo::rocblas_param, ArgTransA::rocblas_param,
-                             diagA.rocblas_param, m, n, alpha, A.data(), A.stride_1(), B.data(), B.stride_1());
+                             diagA.rocblas_param, m, n, alpha, A.data(), A.stride(1), B.data(), B.stride(1));
     return r_val;
   }
 #endif
