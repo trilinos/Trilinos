@@ -337,7 +337,7 @@ Only used when tentative: calculate qr is set to false.}
         
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
         
-\cbb{filtered matrix: lumping choice}{string}{"diag lumping"}{Can be no lumping (no modification to kept entries), diag lumping (modify diagonal to maintain row sums), or distributred lumping (modify kept nonzeros in a fashion proportional to their magnitude to preserve row sums). }
+\cbb{filtered matrix: lumping choice}{string}{"diag lumping"}{Can be no lumping (no modification to kept entries), diag lumping (modify diagonal to maintain row sums), or distributed lumping (modify kept nonzeros in a fashion proportional to their magnitude to preserve row sums). }
         
 \cbb{filtered matrix: use spread lumping}{bool}{false}{Lump (but not necessarily to the diagonal, trying not to lose diagonal dominance more than the original matrix) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace. Only used when filtered matrix: use lumping is set to true. }
         
