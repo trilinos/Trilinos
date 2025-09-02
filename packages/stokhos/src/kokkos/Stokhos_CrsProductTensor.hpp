@@ -446,9 +446,9 @@ public:
     return tensor;
   }
 
-  static HostMirror
+  static host_mirror_type
   create_mirror_view( const CrsProductTensor& tensor ) {
-    HostMirror host_tensor;
+    host_mirror_type host_tensor;
 
     host_tensor.m_coord     = Kokkos::create_mirror_view( tensor.m_coord );
     host_tensor.m_coord2    = Kokkos::create_mirror_view( tensor.m_coord2 );
