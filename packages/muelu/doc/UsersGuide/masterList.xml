@@ -1443,6 +1443,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>combine: useMaxLevels</name>
+      <type>bool</type>
+      <default>false</default>
+      <description> Used with multigrid algorithm 'combine'. When 'true', use the maximum number of levels across all sub-block hierarchies. </description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>interp: build coarse coordinates</name>
       <type>bool</type>
       <default>true</default>

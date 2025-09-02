@@ -136,13 +136,21 @@ void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
 
   paramListMultiphysics_->set<bool>("repartition: enable", false);
 
-  LO maxLevels = 9999;
+  bool useMaxLevels = false;
+  if (paramListMultiphysics_->isParameter("combine: useMaxLevels"))
+    useMaxLevels = paramListMultiphysics_->get<bool>("combine: useMaxLevels");
+
+  LO maxLevels = useMaxLevels ? 0 : std::numeric_limits<LO>::max();
   for (int i = 0; i < nBlks_; i++) {
     std::string operatorLabel = "MultiPhys (" + Teuchos::toString(i) + "," + Teuchos::toString(i) + ")";
     arrayOfAuxMatrices_[i]->setObjectLabel(operatorLabel);
     arrayOfHierarchies_[i] = MueLu::CreateXpetraPreconditioner(arrayOfAuxMatrices_[i], *arrayOfParamLists_[i]);
     LO tempNlevels         = arrayOfHierarchies_[i]->GetGlobalNumLevels();
-    if (tempNlevels < maxLevels) maxLevels = tempNlevels;
+    if (useMaxLevels) {
+      if (tempNlevels > maxLevels) maxLevels = tempNlevels;
+    } else {
+      if (tempNlevels < maxLevels) maxLevels = tempNlevels;
+    }
   }
 
   hierarchyMultiphysics_ = rcp(new Hierarchy("Combo"));
@@ -152,6 +160,23 @@ void MultiPhys<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   for (int i = 0; i < nBlks_; i++) {
     std::string subblkName = "Psubblock" + Teuchos::toString(i);
     MueLu::HierarchyUtils<SC, LO, GO, NO>::CopyBetweenHierarchies(*(arrayOfHierarchies_[i]), *(hierarchyMultiphysics_), "P", subblkName, "RCP<Matrix>");
+
+    std::string subblkOpName = "Operatorsubblock" + Teuchos::toString(i);
+    MueLu::HierarchyUtils<SC, LO, GO, NO>::CopyBetweenHierarchies(*(arrayOfHierarchies_[i]), *(hierarchyMultiphysics_), "A", subblkOpName, "RCP<Matrix>");
+
+    // Copy remaining levels, if needed
+    if (useMaxLevels) {
+      const auto numLevelsBlk       = arrayOfHierarchies_[i]->GetNumLevels();
+      const auto numGlobalLevelsBlk = arrayOfHierarchies_[i]->GetGlobalNumLevels();
+      if (numLevelsBlk == numGlobalLevelsBlk) {
+        auto crsLevel = arrayOfHierarchies_[i]->GetLevel(numLevelsBlk - 1);
+        TEUCHOS_ASSERT(crsLevel->IsAvailable("A"));
+        for (int levelId = numLevelsBlk; levelId < maxLevels; ++levelId) {
+          auto level = hierarchyMultiphysics_->GetLevel(levelId);
+          MueLu::HierarchyUtils<SC, LO, GO, NO>::CopyBetweenLevels(*crsLevel, *level, "A", subblkOpName, "RCP<Matrix>");
+        }
+      }
+    }
   }
   paramListMultiphysics_->set("coarse: max size", 1);
   paramListMultiphysics_->set("max levels", maxLevels);
