@@ -393,7 +393,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   Teuchos::LAPACK<ordinal_type,scalarType> lapack;
 
   lapack.GETRF(card, card,
-      vmat.data(), vmat.stride_1(),
+      vmat.data(), vmat.stride(1),
       (ordinal_type*)ipiv.data(),
       &info);
 
@@ -402,7 +402,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
       ">>> ERROR: (Intrepid2::Basis_HDIV_TET_In_FEM) lapack.GETRF returns nonzero info." );
 
   lapack.GETRI(card,
-      vmat.data(), vmat.stride_1(),
+      vmat.data(), vmat.stride(1),
       (ordinal_type*)ipiv.data(),
       work.data(), lwork,
       &info);

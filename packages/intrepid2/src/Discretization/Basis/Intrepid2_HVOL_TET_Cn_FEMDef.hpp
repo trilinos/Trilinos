@@ -243,7 +243,7 @@ namespace Intrepid2 {
     Teuchos::LAPACK<ordinal_type,scalarType> lapack;
 
     lapack.GETRF(card, card,
-                 vmat.data(), vmat.stride_1(),
+                 vmat.data(), vmat.stride(1),
                  (ordinal_type*)ipiv.data(),
                  &info);
 
@@ -252,7 +252,7 @@ namespace Intrepid2 {
                                   ">>> ERROR: (Intrepid2::Basis_HVOL_TET_Cn_FEM) lapack.GETRF returns nonzero info." );
 
     lapack.GETRI(card,
-                 vmat.data(), vmat.stride_1(),
+                 vmat.data(), vmat.stride(1),
                  (ordinal_type*)ipiv.data(),
                  work.data(), lwork,
                  &info);

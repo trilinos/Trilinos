@@ -38,7 +38,7 @@ template <> struct LDL<Uplo::Lower, Algo::Internal> {
     const ordinal_type m = A.extent(0);
     if (m > 0) {
       /// factorize LDL
-      LapackTeam<value_type>::sytrf(member, Uplo::Lower::param, m, A.data(), A.stride_1(), P.data(), W.data(), &r_val);
+      LapackTeam<value_type>::sytrf(member, Uplo::Lower::param, m, A.data(), A.stride(1), P.data(), W.data(), &r_val);
     }
     return r_val;
   }

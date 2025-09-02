@@ -38,11 +38,11 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
 
       if (m > 0 && n > 0) {
         //if (n == 1) {
-        //  Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride_1(), B.data(),
-        //                         B.stride_0());
+        //  Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride(1), B.data(),
+        //                         B.stride(0));
         //} else {
           BlasSerial<value_type>::trsm(Side::Left::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n, value_type(1),
-                                       A.data(), A.stride_1(), B.data(), B.stride_1());
+                                       A.data(), A.stride(1), B.data(), B.stride(1));
         //}
       }
     } else {

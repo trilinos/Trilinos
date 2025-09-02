@@ -245,10 +245,10 @@ getCoeffMatrix_HDIV(OutputViewType &output,
 
     lapack.GESV(ndofSubcell, ndofSubcell,
         RefMat.data(),
-        RefMat.stride_1(),
+        RefMat.stride(1),
         pivVec.data(),
         OrtMat.data(),
-        OrtMat.stride_1(),
+        OrtMat.stride(1),
         &info);
 
     if (info) {

@@ -199,10 +199,10 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
     Kokkos::DynRankView<ordinal_type,Kokkos::LayoutLeft,host_device_type> pivVec("pivVec", ndofSubcell);
     lapack.GESV(ndofSubcell, ndofSubcell,
                 RefMat.data(),
-                RefMat.stride_1(),
+                RefMat.stride(1),
                 pivVec.data(),
                 OrtMat.data(),
-                OrtMat.stride_1(),
+                OrtMat.stride(1),
                 &info);
     
     if (info) {

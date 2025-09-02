@@ -370,7 +370,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
   Teuchos::LAPACK<ordinal_type,scalarType> lapack;
 
   lapack.GETRF(card, card,
-      vmat.data(), vmat.stride_1(),
+      vmat.data(), vmat.stride(1),
       (ordinal_type*)ipiv.data(),
       &info);
 
@@ -379,7 +379,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
       ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM) lapack.GETRF returns nonzero info." );
 
   lapack.GETRI(card,
-      vmat.data(), vmat.stride_1(),
+      vmat.data(), vmat.stride(1),
       (ordinal_type*)ipiv.data(),
       work.data(), lwork,
       &info);
