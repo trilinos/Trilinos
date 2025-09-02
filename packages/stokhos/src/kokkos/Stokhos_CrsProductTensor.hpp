@@ -52,8 +52,8 @@ public:
   typedef Memory      memory_type;
 
   typedef typename Kokkos::ViewTraits< size_type*, execution_space,void,void >::host_mirror_space host_mirror_space ;
-  typedef CrsProductTensor<value_type, host_mirror_space> HostMirror;
-  typedef HostMirror host_mirror_type;
+  typedef CrsProductTensor<value_type, host_mirror_space> host_mirror_type;
+  typedef host_mirror_type HostMirror;
 
 // Vectorsize used in multiply algorithm
 #if defined(__AVX__)

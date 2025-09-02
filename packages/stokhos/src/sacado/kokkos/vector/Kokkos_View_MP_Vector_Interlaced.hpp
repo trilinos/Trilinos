@@ -112,10 +112,10 @@ public:
                 typename traits::host_mirror_space::memory_space >::type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
-                void > HostMirror ;
+                void > host_mirror_type ;
 
   // host_mirror_type
-  typedef host_mirror_type HostMirror ;
+  typedef HostMirror host_mirror_type ;
 
   // Equivalent array type for this view.
   typedef View< typename traits::array_type ,
