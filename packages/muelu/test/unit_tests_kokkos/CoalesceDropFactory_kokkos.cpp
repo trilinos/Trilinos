@@ -283,7 +283,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacianS
 
 }  // DistanceLaplacianScaledCut
 
-
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacianUnscaledCut, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   typedef Teuchos::ScalarTraits<SC> STS;
@@ -634,41 +633,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacianS
   RCP<Matrix> A;
   RCP<RealValuedMultiVector> coordinates;
   {
-
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", Teuchos::as<GlobalOrdinal>(36));
-    A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
+    A           = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(36);
     coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("1D", A->getRowMap(), galeriList);
-   }
+  }
 
   RCP<Matrix> filteredA;
   {
     Level fineLevel;
     TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(fineLevel);
     fineLevel.Set("A", A);
-     // Doctor coordinates with goal that the filtered matrix drops all entries in lower 
-     // triangular portion of the matrix (except for final row).
-     auto lclCoords  = coordinates->getLocalViewHost(Xpetra::Access::OverwriteAll);
-     double delta = 1.1;
-     for (size_t i = 0; i < coordinates->getMap()->getLocalNumElements(); i++) lclCoords(i,0) = pow(delta, coordinates->getMap()->getGlobalElement((LO)i)) / 35.;
-     fineLevel.Set("Coordinates", coordinates);
+    // Doctor coordinates with goal that the filtered matrix drops all entries in lower
+    // triangular portion of the matrix (except for final row).
+    auto lclCoords = coordinates->getLocalViewHost(Xpetra::Access::OverwriteAll);
+    double delta   = 1.1;
+    for (size_t i = 0; i < coordinates->getMap()->getLocalNumElements(); i++) lclCoords(i, 0) = pow(delta, coordinates->getMap()->getGlobalElement((LO)i)) / 35.;
+    fineLevel.Set("Coordinates", coordinates);
 
-     CoalesceDropFactory_kokkos coalesceDropFact;
-     coalesceDropFact.SetDefaultVerbLevel(MueLu::Extreme);
-     coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(.95));
-     coalesceDropFact.SetParameter("filtered matrix: reuse graph", Teuchos::ParameterEntry(false));
-     coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("point-wise")));
-     coalesceDropFact.SetParameter("aggregation: strength-of-connection: measure", Teuchos::ParameterEntry(std::string("signed ruge-stueben")));
-     coalesceDropFact.SetParameter("aggregation: strength-of-connection: matrix", Teuchos::ParameterEntry(std::string("distance laplacian")));
-     coalesceDropFact.SetParameter("filtered matrix: lumping choice", Teuchos::ParameterEntry(std::string("distributed lumping")));
-     coalesceDropFact.SetParameter("aggregation: distance laplacian metric", Teuchos::ParameterEntry(std::string("unweighted")));
-     fineLevel.Request("Graph", &coalesceDropFact);
-     fineLevel.Request("A", &coalesceDropFact);
-     fineLevel.Request("DofsPerNode", &coalesceDropFact);
+    CoalesceDropFactory_kokkos coalesceDropFact;
+    coalesceDropFact.SetDefaultVerbLevel(MueLu::Extreme);
+    coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(.95));
+    coalesceDropFact.SetParameter("filtered matrix: reuse graph", Teuchos::ParameterEntry(false));
+    coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("point-wise")));
+    coalesceDropFact.SetParameter("aggregation: strength-of-connection: measure", Teuchos::ParameterEntry(std::string("signed ruge-stueben")));
+    coalesceDropFact.SetParameter("aggregation: strength-of-connection: matrix", Teuchos::ParameterEntry(std::string("distance laplacian")));
+    coalesceDropFact.SetParameter("filtered matrix: lumping choice", Teuchos::ParameterEntry(std::string("distributed lumping")));
+    coalesceDropFact.SetParameter("aggregation: distance laplacian metric", Teuchos::ParameterEntry(std::string("unweighted")));
+    fineLevel.Request("Graph", &coalesceDropFact);
+    fineLevel.Request("A", &coalesceDropFact);
+    fineLevel.Request("DofsPerNode", &coalesceDropFact);
 
-     coalesceDropFact.Build(fineLevel);
+    coalesceDropFact.Build(fineLevel);
 
-     filteredA = fineLevel.Get<RCP<Matrix>>("A", &coalesceDropFact);
+    filteredA = fineLevel.Get<RCP<Matrix>>("A", &coalesceDropFact);
   }
 
   // All interior rows have 2 nonzeros.
