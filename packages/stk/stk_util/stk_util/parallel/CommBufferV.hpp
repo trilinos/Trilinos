@@ -44,6 +44,11 @@
 
 namespace stk {
 
+//############################################################################
+//  Do not use CommBufferV in new code!  It will be deprecated and removed
+//  along with CommNeighbors soon.  Please use CommBuffer as an equivalent
+//  capability.
+//############################################################################
 class CommBufferV {
 public:
     CommBufferV()

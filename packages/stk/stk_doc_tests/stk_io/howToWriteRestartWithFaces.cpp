@@ -37,10 +37,12 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
     stk::mesh::EntityVector faces;
     stk::mesh::get_entities(*bulk, stk::topology::FACE_RANK, meta.universal_part(), faces);
 
-    for(auto face : faces) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(faceField, face));
+    auto faceFieldData = faceField.data<stk::mesh::ReadWrite>();
 
-      *data = bulk->identifier(face);
+    for(auto face : faces) {
+      auto data = faceFieldData.entity_values(face);
+
+      data() = bulk->identifier(face);
     }
 
     stk::io::StkMeshIoBroker ioBroker;
@@ -66,11 +68,13 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
     stk::mesh::EntityVector faces;
     stk::mesh::get_entities(*bulk, stk::topology::FACE_RANK, faces);
 
+    auto faceFieldData = faceField.data<stk::mesh::ReadOnly>();
+
     for(auto face : faces) {
-      double* data = reinterpret_cast<double*>(stk::mesh::field_data(faceField, face));
+      auto data = faceFieldData.entity_values(face);
       double expectedValue = bulk->identifier(face);
 
-      EXPECT_EQ(expectedValue, *data);
+      EXPECT_EQ(expectedValue, data());
     }
   }
 

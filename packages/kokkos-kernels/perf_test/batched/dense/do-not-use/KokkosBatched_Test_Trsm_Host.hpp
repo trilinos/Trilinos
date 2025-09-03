@@ -169,23 +169,23 @@ void Trsm(const int NN) {
               switch (test) {
                 case 0:
                   cblas_dtrsm(CblasRowMajor, CblasLeft, CblasLower, CblasNoTrans, CblasUnit, BlkSize, NumCols, 1.0,
-                              (double *)aa.data(), aa.stride_0(), (double *)bb.data(), bb.stride_0());
+                              (double *)aa.data(), aa.stride(0), (double *)bb.data(), bb.stride(0));
                   break;
                 case 1:
                   cblas_dtrsm(CblasRowMajor, CblasLeft, CblasLower, CblasNoTrans, CblasNonUnit, BlkSize, NumCols, 1.0,
-                              (double *)aa.data(), aa.stride_0(), (double *)bb.data(), bb.stride_0());
+                              (double *)aa.data(), aa.stride(0), (double *)bb.data(), bb.stride(0));
                   break;
                 case 2:
                   cblas_dtrsm(CblasRowMajor, CblasRight, CblasUpper, CblasNoTrans, CblasUnit, BlkSize, NumCols, 1.0,
-                              (double *)aa.data(), aa.stride_0(), (double *)bb.data(), bb.stride_0());
+                              (double *)aa.data(), aa.stride(0), (double *)bb.data(), bb.stride(0));
                   break;
                 case 3:
                   cblas_dtrsm(CblasRowMajor, CblasRight, CblasUpper, CblasNoTrans, CblasNonUnit, BlkSize, NumCols, 1.0,
-                              (double *)aa.data(), aa.stride_0(), (double *)bb.data(), bb.stride_0());
+                              (double *)aa.data(), aa.stride(0), (double *)bb.data(), bb.stride(0));
                   break;
                 case 4:
                   cblas_dtrsm(CblasRowMajor, CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, BlkSize, NumCols, 1.0,
-                              (double *)aa.data(), aa.stride_0(), (double *)bb.data(), bb.stride_0());
+                              (double *)aa.data(), aa.stride(0), (double *)bb.data(), bb.stride(0));
                   break;
               }
             });
@@ -228,8 +228,8 @@ void Trsm(const int NN) {
       MKL_INT blksize[1] = {BlkSize};
       MKL_INT numcols[1] = {NumCols};
 
-      MKL_INT lda[1] = {a.stride_1()};
-      MKL_INT ldb[1] = {b.stride_1()};
+      MKL_INT lda[1] = {a.stride(1)};
+      MKL_INT ldb[1] = {b.stride(1)};
 
       double one[1]           = {1.0};
       MKL_INT size_per_grp[1] = {N * VectorLength};
@@ -355,7 +355,7 @@ void Trsm(const int NN) {
               MKL_DIAG diag        = MKL_UNIT;
 
               mkl_dtrsm_compact(MKL_ROW_MAJOR, side, uplo, transA, diag, BlkSize, NumCols, one,
-                                (const double *)a.data(), a.stride_1(), (double *)b.data(), b.stride_1(), format,
+                                (const double *)a.data(), a.stride(1), (double *)b.data(), b.stride(1), format,
                                 (MKL_INT)N * VectorLength);
               break;
             }
@@ -366,7 +366,7 @@ void Trsm(const int NN) {
               MKL_DIAG diag        = MKL_NONUNIT;
 
               mkl_dtrsm_compact(MKL_ROW_MAJOR, side, uplo, transA, diag, BlkSize, NumCols, one,
-                                (const double *)a.data(), a.stride_1(), (double *)b.data(), b.stride_1(), format,
+                                (const double *)a.data(), a.stride(1), (double *)b.data(), b.stride(1), format,
                                 (MKL_INT)N * VectorLength);
               break;
             }
@@ -377,7 +377,7 @@ void Trsm(const int NN) {
               MKL_DIAG diag        = MKL_UNIT;
 
               mkl_dtrsm_compact(MKL_ROW_MAJOR, side, uplo, transA, diag, BlkSize, NumCols, one,
-                                (const double *)a.data(), a.stride_1(), (double *)b.data(), b.stride_1(), format,
+                                (const double *)a.data(), a.stride(1), (double *)b.data(), b.stride(1), format,
                                 (MKL_INT)N * VectorLength);
               break;
             }
@@ -388,7 +388,7 @@ void Trsm(const int NN) {
               MKL_DIAG diag        = MKL_NONUNIT;
 
               mkl_dtrsm_compact(MKL_ROW_MAJOR, side, uplo, transA, diag, BlkSize, NumCols, one,
-                                (const double *)a.data(), a.stride_1(), (double *)b.data(), b.stride_1(), format,
+                                (const double *)a.data(), a.stride(1), (double *)b.data(), b.stride(1), format,
                                 (MKL_INT)N * VectorLength);
               break;
             }
@@ -399,7 +399,7 @@ void Trsm(const int NN) {
               MKL_DIAG diag        = MKL_NONUNIT;
 
               mkl_dtrsm_compact(MKL_ROW_MAJOR, side, uplo, transA, diag, BlkSize, NumCols, one,
-                                (const double *)a.data(), a.stride_1(), (double *)b.data(), b.stride_1(), format,
+                                (const double *)a.data(), a.stride(1), (double *)b.data(), b.stride(1), format,
                                 (MKL_INT)N * VectorLength);
               break;
             }

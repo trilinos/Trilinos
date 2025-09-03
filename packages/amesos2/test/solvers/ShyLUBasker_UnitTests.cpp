@@ -91,10 +91,10 @@ namespace {
     return ret;
   }
 
-  RCP<FancyOStream> getDefaultOStream()
-  {
-    return( VerboseObjectBase::getDefaultOStream() );
-  }
+  //RCP<FancyOStream> getDefaultOStream()
+  //{
+  //  return( VerboseObjectBase::getDefaultOStream() );
+  //}
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -104,15 +104,6 @@ namespace {
     clp.setOption("test-mpi", "test-serial", &testMpi,
                   "Test MPI by default or force serial test.  In a serial build,"
                   " this option is ignored and a serial comm is always used." );
-
-    auto out = getDefaultOStream();
-    auto comm = getDefaultComm();
-    auto numRanks = comm->getSize();
-    auto myRank = comm->getRank();
-    if (myRank == 0) {
-      using std::endl;
-      *out << endl << "TEUCHOS_STATIC_SETUP with " << numRanks << " MPI processes" << endl << endl;
-    }
   }
 
 
@@ -253,7 +244,13 @@ namespace {
 
     // Constructor from Factory
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("ShyLUBasker",eye,X,B);
-
+    {
+      Teuchos::ParameterList amesos2_paramlist;
+      amesos2_paramlist.setName("Amesos2");
+      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
+      shylubasker_paramlist.set("num_threads", 4, "Number of threads");
+      solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+    }
     solver->symbolicFactorization().numericFactorization();
 
     if ( rank == 0 ) {
@@ -287,7 +284,7 @@ namespace {
     amesos2_paramlist.setName("Amesos2");
     Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
 
-      shylubasker_paramlist.set("num_threads", 1,
+      shylubasker_paramlist.set("num_threads", 4,
         "Number of threads");
       shylubasker_paramlist.set("pivot", false,
         "Should not pivot");
@@ -379,7 +376,7 @@ namespace {
     amesos2_paramlist.setName("Amesos2");
     Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
 
-      shylubasker_paramlist.set("num_threads", 1,
+      shylubasker_paramlist.set("num_threads", 4,
         "Number of threads");
       shylubasker_paramlist.set("pivot", false,
         "Should not pivot");
@@ -617,13 +614,15 @@ namespace {
 
       // Create solver interface with Amesos2 factory method
       RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("ShyLUBasker", A, X, B);
-
-      // Create a Teuchos::ParameterList to hold solver parameters
-      Teuchos::ParameterList amesos2_params("Amesos2");
-      amesos2_params.sublist("ShyLUBasker").set("IsContiguous", false, "Are GIDs Contiguous");
-
-      solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
-
+      {
+        // Create a Teuchos::ParameterList to hold solver parameters
+        Teuchos::ParameterList amesos2_paramlist;
+        amesos2_paramlist.setName("Amesos2");
+        Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
+        shylubasker_paramlist.set("num_threads", 4, "Number of threads");
+        shylubasker_paramlist.set("IsContiguous", false, "Are GIDs Contiguous");
+        solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+      }
       solver->symbolicFactorization().numericFactorization().solve();
 
 
@@ -735,6 +734,13 @@ namespace {
 
     // Create solver interface to ShyLUBasker through Amesos2 factory method
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("ShyLUBasker",A,Xhat,B);
+    {
+      Teuchos::ParameterList amesos2_paramlist;
+      amesos2_paramlist.setName("Amesos2");
+      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
+      shylubasker_paramlist.set("num_threads", 4, "Number of threads");
+      solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+    }
 
     solver->symbolicFactorization().numericFactorization().solve();
 
@@ -792,6 +798,13 @@ namespace {
     // Solve A*Xhat = B for Xhat using the ShyLUBasker solver
     RCP<Amesos2::Solver<MAT,MV> > solver
       = Amesos2::create<MAT,MV>("ShyLUBasker", A, Xhat, B);
+    {
+      Teuchos::ParameterList amesos2_paramlist;
+      amesos2_paramlist.setName("Amesos2");
+      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
+      shylubasker_paramlist.set("num_threads", 4, "Number of threads");
+      solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+    }
 
     solver->symbolicFactorization().numericFactorization().solve();
 
@@ -849,11 +862,14 @@ namespace {
     // Solve A*Xhat = B for Xhat using the ShyLUBasker solver
     RCP<Amesos2::Solver<MAT,MV> > solver
       = Amesos2::create<MAT,MV>("ShyLUBasker", A, Xhat, B);
-
-    Teuchos::ParameterList amesos2_params("Amesos2");
-    amesos2_params.sublist("ShyLUBasker").set("transpose",true,"Solve with conjugate-transpose");
-
-    solver->setParameters( rcpFromRef(amesos2_params) );
+    {
+      Teuchos::ParameterList amesos2_paramlist;
+      amesos2_paramlist.setName("Amesos2");
+      Teuchos::ParameterList & shylubasker_paramlist = amesos2_paramlist.sublist("ShyLUBasker");
+      shylubasker_paramlist.set("num_threads", 4, "Number of threads");
+      shylubasker_paramlist.set("transpose",true,"Solve with conjugate-transpose");
+      solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
+    }
     solver->symbolicFactorization().numericFactorization().solve();
 
     Xhat->describe(out, Teuchos::VERB_EXTREME);

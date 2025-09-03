@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOS_SPADD_SYMBOLIC_IMPL_HPP
-#define _KOKKOS_SPADD_SYMBOLIC_IMPL_HPP
+#ifndef KOKKOSSPARSE_SPADD_SYMBOLIC_IMPL_HPP
+#define KOKKOSSPARSE_SPADD_SYMBOLIC_IMPL_HPP
 
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_SortCrs.hpp"

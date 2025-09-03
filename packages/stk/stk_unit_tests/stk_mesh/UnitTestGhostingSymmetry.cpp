@@ -310,6 +310,42 @@ TEST(GhostingSymmetry, ghostSharedNode_fromProc0_toProc2_symmetric)
   EXPECT_TRUE(is_comm_globally_symmetric(*bulkPtr));
 }
 
+TEST(GhostingSymmetry, ghostSharedNode_fromProc0_toProc2_then_change_parts_symmetric)
+{
+  stk::ParallelMachine comm = stk::parallel_machine_world();
+  const int numProcs = stk::parallel_machine_size(comm);
+  if(numProcs != 3) { GTEST_SKIP(); }
+
+  constexpr bool symmetricGhostInfo = true;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = setup_hex_mesh(comm, 1, 1, 3, symmetricGhostInfo);
+
+  stk::mesh::unit_test::proc0_ghost_node5_to_proc2(*bulkPtr);
+
+  stk::mesh::Entity node5 = bulkPtr->get_entity(stk::topology::NODE_RANK, 5);
+  EXPECT_TRUE(bulkPtr->is_valid(node5));
+
+  std::vector<int> commProcs;
+  bulkPtr->comm_procs(node5, commProcs);
+
+  const size_t numOtherProcs = 2;
+
+  EXPECT_EQ(numOtherProcs, commProcs.size());
+
+  EXPECT_TRUE(is_comm_globally_symmetric(*bulkPtr));
+
+  stk::mesh::Part& nodePart = bulkPtr->mesh_meta_data().declare_part("myNodePart", stk::topology::NODE_RANK);
+  stk::mesh::PartVector addParts = {&nodePart};
+  stk::mesh::PartVector rmParts;
+  stk::mesh::EntityVector entities;
+  if (bulkPtr->parallel_rank() == 0) {
+    entities.push_back(bulkPtr->get_entity(stk::topology::NODE_RANK, 5));
+  }
+
+  bulkPtr->batch_change_entity_parts(entities, addParts, rmParts);
+
+  EXPECT_TRUE(is_comm_globally_symmetric(*bulkPtr));
+}
+
 TEST(GhostingSymmetry, two_separate_mesh_mods_symmetric)
 {
   stk::ParallelMachine comm = stk::parallel_machine_world();

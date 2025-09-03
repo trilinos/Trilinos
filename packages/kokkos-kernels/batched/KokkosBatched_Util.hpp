@@ -20,20 +20,22 @@
 
 // no experimental name space guard for trilinos
 
+#define KOKKOSBATCHED_IMPL_PROMOTION 1
+
 #if defined(KOKKOS_COMPILER_MSVC)
-#define KOKKOSBATCHED_IMPL_PROMOTION \
-  (__pragma(message("warning: __KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version")) 1)
+#define __KOKKOSBATCHED_PROMOTION__ /*NOLINT(bugprone-reserved-identifier)*/                                       \
+  (__pragma(message("warning: __KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version")) \
+       KOKKOSBATCHED_IMPL_PROMOTION)
 #elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define KOKKOSBATCHED_IMPL_PROMOTION                                                                              \
+#define __KOKKOSBATCHED_PROMOTION__ /*NOLINT(bugprone-reserved-identifier)*/                                      \
   (__extension__({                                                                                                \
     _Pragma("GCC warning \"__KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version\""); \
-    1;                                                                                                            \
+    KOKKOSBATCHED_IMPL_PROMOTION;                                                                                 \
   }))
 #else
-#define KOKKOSBATCHED_IMPL_PROMOTION 1  // no good way to deprecate?
+// no good way to deprecate
+#define __KOKKOSBATCHED_PROMOTION__ KOKKOSBATCHED_IMPL_PROMOTION  // NOLINT(bugprone-reserved-identifier)
 #endif
-
-#define __KOKKOSBATCHED_PROMOTION__ KOKKOSBATCHED_IMPL_PROMOTION
 
 #include <iomanip>
 #include <random>
@@ -91,7 +93,25 @@
 #endif
 #define __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED
 
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ 1
+#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED 1
+#if defined(KOKKOS_COMPILER_MSVC)
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__                                                      \
+  (                                                                                                             \
+      __pragma(message("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ is deprecated and will be " \
+                       "removed in a future version")) KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
+#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__                                                    \
+  (__extension__({                                                                                            \
+    _Pragma(                                                                                                  \
+        "\"__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ is deprecated and will be removed in a future " \
+        "version\"");                                                                                         \
+    KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED;                                                      \
+  }))
+#else
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ \
+  KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED  // no good way to deprecate?
+#endif
+
 #include "mkl.h"
 // #include "mkl_types.h"
 #endif

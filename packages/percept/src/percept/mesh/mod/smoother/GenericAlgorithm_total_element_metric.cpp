@@ -59,7 +59,7 @@ run(unsigned iBlock);
 ///////////////////////////////////////////////////////////////////////
 // explicit specialization of 'operator()' after instantiation
 template<>
-KOKKOS_INLINE_FUNCTION
+inline
 void GenericAlgorithm_total_element_metric<STKMesh>::
 operator()(const unsigned& index, Double& mtot_loc)
 {
@@ -78,7 +78,7 @@ operator()(const unsigned& index, Double& mtot_loc)
 
 template<typename MeshType>
 void GenericAlgorithm_total_element_metric<MeshType>::
-run(unsigned iBlock)
+run(unsigned /*iBlock*/)
 {
   for (unsigned index=0; index<elements.size(); index++) {
     operator()(index, mtot); // implicit instantiation first required here

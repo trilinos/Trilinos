@@ -288,8 +288,6 @@ protected:
   stk::mesh::Field<double, stk::mesh::Layout::Right> *m_centroidFieldRight;
 };
 
-class LegacyFieldDataAccess : public FieldDataAccess {};
-
 auto host_verify_averaged_centroids_are_center_of_mesh = [](int elemsPerDim, int numTotalBlocks, int numUsedBlocks,
                                                             stk::mesh::Field<double>& centroidField)
 {
@@ -355,6 +353,23 @@ auto device_verify_averaged_centroids_are_center_of_mesh = [](int elemsPerDim, i
 };
 
 
+#ifdef NDEBUG
+  constexpr int numHostIters = 100;
+#else
+  constexpr int numHostIters = 1;
+#endif
+
+#ifdef STK_ENABLE_GPU
+  constexpr int numDeviceIters = 2000;
+#else
+  constexpr int numDeviceIters = 100;
+#endif
+
+
+#ifndef STK_UNIFIED_MEMORY
+
+class LegacyFieldDataAccess : public FieldDataAccess {};
+
 auto legacy_compute_centroid_entity_access = [](const stk::mesh::Selector& selector,
                                                 stk::mesh::Field<double>& centroidField,
                                                 const stk::mesh::Field<double>& coordsField)
@@ -391,6 +406,242 @@ auto legacy_compute_centroid_entity_access = [](const stk::mesh::Selector& selec
     }
   }
 };
+
+auto legacy_compute_centroid_bucket_access = [](const stk::mesh::Selector& selector,
+                                                stk::mesh::Field<double>& centroidField,
+                                                const stk::mesh::Field<double>& coordsField)
+{
+  const stk::mesh::BulkData& bulk = centroidField.get_mesh();
+  const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
+
+  for (const stk::mesh::Bucket* bucket : elemBuckets) {
+    double* centroid = stk::mesh::field_data(centroidField, *bucket);
+
+    const unsigned numComponents = stk::mesh::field_scalars_per_entity(centroidField, *bucket);
+    if (numComponents == 0u) {
+      continue;
+    }
+
+    const unsigned numNodes = bucket->topology().num_nodes();
+    for (unsigned elem = 0; elem < bucket->size(); ++elem) {
+      centroid[elem*3  ] = 0.0;
+      centroid[elem*3+1] = 0.0;
+      centroid[elem*3+2] = 0.0;
+
+      const stk::mesh::Entity* nodes = bucket->begin_nodes(elem);
+      for (unsigned n = 0; n < numNodes; ++n) {
+        const double* nodeCoords = stk::mesh::field_data(coordsField, nodes[n]);
+        centroid[elem*3  ] += nodeCoords[0];
+        centroid[elem*3+1] += nodeCoords[1];
+        centroid[elem*3+2] += nodeCoords[2];
+      }
+
+      centroid[elem*3  ] /= numNodes;
+      centroid[elem*3+1] /= numNodes;
+      centroid[elem*3+2] /= numNodes;
+    }
+  }
+};
+
+//------------------------------------------------------------------------------
+TEST_F(LegacyFieldDataAccess, entity_SingleBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_single_block_test(numHostIters, legacy_compute_centroid_entity_access,
+                        host_verify_averaged_centroids_are_center_of_mesh);
+}
+
+TEST_F(LegacyFieldDataAccess, entity_MultiBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_multiple_block_test(numHostIters, legacy_compute_centroid_entity_access,
+                          host_verify_averaged_centroids_are_center_of_mesh);
+}
+
+TEST_F(LegacyFieldDataAccess, entity_PartialBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_partial_block_test(numHostIters, legacy_compute_centroid_entity_access,
+                         host_verify_averaged_centroids_are_center_of_mesh);
+}
+
+//------------------------------------------------------------------------------
+TEST_F(LegacyFieldDataAccess, bucket_SingleBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_single_block_test(numHostIters, legacy_compute_centroid_bucket_access,
+                        host_verify_averaged_centroids_are_center_of_mesh);
+}
+
+TEST_F(LegacyFieldDataAccess, bucket_MultiBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_multiple_block_test(numHostIters, legacy_compute_centroid_bucket_access,
+                          host_verify_averaged_centroids_are_center_of_mesh);
+}
+
+TEST_F(LegacyFieldDataAccess, bucket_PartialBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_partial_block_test(numHostIters, legacy_compute_centroid_bucket_access,
+                         host_verify_averaged_centroids_are_center_of_mesh);
+}
+
+
+class LegacyDeviceFieldDataAccess : public FieldDataAccess {};
+
+//------------------------------------------------------------------------------
+// Can't put a device lambda in another lambda, so add a lambda->function->device_lambda layer
+//
+void legacy_device_compute_centroid_entity_component_access_function(const stk::mesh::Selector& selector,
+                                                                     stk::mesh::Field<double>& centroidField,
+                                                                     const stk::mesh::Field<double>& coordsField)
+{
+  const stk::mesh::BulkData& bulk = centroidField.get_mesh();
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+
+  stk::mesh::NgpField<double>& ngpCentroidField = stk::mesh::get_updated_ngp_field<double>(centroidField);
+  stk::mesh::NgpField<double>& ngpCoordsField = stk::mesh::get_updated_ngp_field<double>(coordsField);
+
+  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
+      const unsigned numComponents = ngpCentroidField.get_num_components_per_entity(elem);
+      if (numComponents == 0) {
+        return;
+      }
+
+      ngpCentroidField(elem, 0) = 0.0;
+      ngpCentroidField(elem, 1) = 0.0;
+      ngpCentroidField(elem, 2) = 0.0;
+
+      stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elem);
+      for (size_t i = 0; i < nodes.size(); ++i) {
+        stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
+
+        ngpCentroidField(elem, 0) += ngpCoordsField(nodeIndex, 0);
+        ngpCentroidField(elem, 1) += ngpCoordsField(nodeIndex, 1);
+        ngpCentroidField(elem, 2) += ngpCoordsField(nodeIndex, 2);
+      }
+
+      ngpCentroidField(elem, 0) /= nodes.size();
+      ngpCentroidField(elem, 1) /= nodes.size();
+      ngpCentroidField(elem, 2) /= nodes.size();
+    }
+  );
+};
+
+void legacy_device_compute_centroid_entity_access_function(const stk::mesh::Selector& selector,
+                                                           stk::mesh::Field<double>& centroidField,
+                                                           const stk::mesh::Field<double>& coordsField)
+{
+  const stk::mesh::BulkData& bulk = centroidField.get_mesh();
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+
+  stk::mesh::NgpField<double>& ngpCentroidField = stk::mesh::get_updated_ngp_field<double>(centroidField);
+  stk::mesh::NgpField<double>& ngpCoordsField = stk::mesh::get_updated_ngp_field<double>(coordsField);
+
+  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
+      const unsigned numComponents = ngpCentroidField.get_num_components_per_entity(elem);
+      if (numComponents == 0) {
+        return;
+      }
+
+      stk::mesh::EntityFieldData<double> elemCentroid = ngpCentroidField(elem);
+      elemCentroid[0] = 0.0;
+      elemCentroid[1] = 0.0;
+      elemCentroid[2] = 0.0;
+
+      stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elem);
+      for (size_t i = 0; i < nodes.size(); ++i) {
+        stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
+        const stk::mesh::EntityFieldData<double> nodeCoords = ngpCoordsField(nodeIndex);
+
+        elemCentroid[0] += nodeCoords[0];
+        elemCentroid[1] += nodeCoords[1];
+        elemCentroid[2] += nodeCoords[2];
+      }
+
+      elemCentroid[0] /= nodes.size();
+      elemCentroid[1] /= nodes.size();
+      elemCentroid[2] /= nodes.size();
+    }
+  );
+};
+
+auto legacy_device_compute_centroid_entity_component_access = [](const stk::mesh::Selector& selector,
+                                                                 stk::mesh::Field<double>& centroidField,
+                                                                 const stk::mesh::Field<double>& coordsField)
+{
+  legacy_device_compute_centroid_entity_component_access_function(selector, centroidField, coordsField);
+};
+
+
+auto legacy_device_compute_centroid_entity_access = [](const stk::mesh::Selector& selector,
+                                                       stk::mesh::Field<double>& centroidField,
+                                                       const stk::mesh::Field<double>& coordsField)
+{
+  legacy_device_compute_centroid_entity_access_function(selector, centroidField, coordsField);
+};
+
+//------------------------------------------------------------------------------
+TEST_F(LegacyDeviceFieldDataAccess, entity_component_SingleBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_single_block_test(numDeviceIters, legacy_device_compute_centroid_entity_component_access,
+                        device_verify_averaged_centroids_are_center_of_mesh);
+}
+
+TEST_F(LegacyDeviceFieldDataAccess, entity_component_MultiBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_multiple_block_test(numDeviceIters, legacy_device_compute_centroid_entity_component_access,
+                          device_verify_averaged_centroids_are_center_of_mesh);
+}
+
+TEST_F(LegacyDeviceFieldDataAccess, entity_component_PartialBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_partial_block_test(numDeviceIters, legacy_device_compute_centroid_entity_component_access,
+                         device_verify_averaged_centroids_are_center_of_mesh);
+}
+
+//------------------------------------------------------------------------------
+TEST_F(LegacyDeviceFieldDataAccess, entity_SingleBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_single_block_test(numDeviceIters, legacy_device_compute_centroid_entity_access,
+                        device_verify_averaged_centroids_are_center_of_mesh);
+}
+
+TEST_F(LegacyDeviceFieldDataAccess, entity_MultiBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_multiple_block_test(numDeviceIters, legacy_device_compute_centroid_entity_access,
+                          device_verify_averaged_centroids_are_center_of_mesh);
+}
+
+TEST_F(LegacyDeviceFieldDataAccess, entity_PartialBlock)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  run_partial_block_test(numDeviceIters, legacy_device_compute_centroid_entity_access,
+                         device_verify_averaged_centroids_are_center_of_mesh);
+}
+
+#endif  // For not STK_UNIFIED_MEMORY
+
 
 auto compute_centroid_entity_access = [](const stk::mesh::Selector& selector,
                                          stk::mesh::Field<double>& centroidField,
@@ -585,42 +836,6 @@ auto compute_centroid_entity_access_right_auto = [](const stk::mesh::Selector& s
       centroid(0_comp) /= numNodes;
       centroid(1_comp) /= numNodes;
       centroid(2_comp) /= numNodes;
-    }
-  }
-};
-
-auto legacy_compute_centroid_bucket_access = [](const stk::mesh::Selector& selector,
-                                                stk::mesh::Field<double>& centroidField,
-                                                const stk::mesh::Field<double>& coordsField)
-{
-  const stk::mesh::BulkData& bulk = centroidField.get_mesh();
-  const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
-
-  for (const stk::mesh::Bucket* bucket : elemBuckets) {
-    double* centroid = stk::mesh::field_data(centroidField, *bucket);
-
-    const unsigned numComponents = stk::mesh::field_scalars_per_entity(centroidField, *bucket);
-    if (numComponents == 0u) {
-      continue;
-    }
-
-    const unsigned numNodes = bucket->topology().num_nodes();
-    for (unsigned elem = 0; elem < bucket->size(); ++elem) {
-      centroid[elem*3  ] = 0.0;
-      centroid[elem*3+1] = 0.0;
-      centroid[elem*3+2] = 0.0;
-
-      const stk::mesh::Entity* nodes = bucket->begin_nodes(elem);
-      for (unsigned n = 0; n < numNodes; ++n) {
-        const double* nodeCoords = stk::mesh::field_data(coordsField, nodes[n]);
-        centroid[elem*3  ] += nodeCoords[0];
-        centroid[elem*3+1] += nodeCoords[1];
-        centroid[elem*3+2] += nodeCoords[2];
-      }
-
-      centroid[elem*3  ] /= numNodes;
-      centroid[elem*3+1] /= numNodes;
-      centroid[elem*3+2] /= numNodes;
     }
   }
 };
@@ -880,37 +1095,6 @@ auto host_bucket_values_acquisition = [](int numIters, stk::mesh::Field<double>&
   }
 };
 
-#ifdef NDEBUG
-  constexpr int numHostIters = 100;
-#else
-  constexpr int numHostIters = 1;
-#endif
-
-
-//------------------------------------------------------------------------------
-TEST_F(LegacyFieldDataAccess, entity_SingleBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_single_block_test(numHostIters, legacy_compute_centroid_entity_access,
-                        host_verify_averaged_centroids_are_center_of_mesh);
-}
-
-TEST_F(LegacyFieldDataAccess, entity_MultiBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_multiple_block_test(numHostIters, legacy_compute_centroid_entity_access,
-                          host_verify_averaged_centroids_are_center_of_mesh);
-}
-
-TEST_F(LegacyFieldDataAccess, entity_PartialBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_partial_block_test(numHostIters, legacy_compute_centroid_entity_access,
-                         host_verify_averaged_centroids_are_center_of_mesh);
-}
 
 //------------------------------------------------------------------------------
 TEST_F(FieldDataAccess, entity_SingleBlock)
@@ -969,31 +1153,6 @@ TEST_F(FieldDataAccess, entity_SingleBlock_layoutRightAuto)
 
   run_single_block_test_right(numHostIters, compute_centroid_entity_access_right_auto,
                               host_verify_averaged_centroids_are_center_of_mesh_right);
-}
-
-//------------------------------------------------------------------------------
-TEST_F(LegacyFieldDataAccess, bucket_SingleBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_single_block_test(numHostIters, legacy_compute_centroid_bucket_access,
-                        host_verify_averaged_centroids_are_center_of_mesh);
-}
-
-TEST_F(LegacyFieldDataAccess, bucket_MultiBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_multiple_block_test(numHostIters, legacy_compute_centroid_bucket_access,
-                          host_verify_averaged_centroids_are_center_of_mesh);
-}
-
-TEST_F(LegacyFieldDataAccess, bucket_PartialBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_partial_block_test(numHostIters, legacy_compute_centroid_bucket_access,
-                         host_verify_averaged_centroids_are_center_of_mesh);
 }
 
 
@@ -1084,87 +1243,7 @@ TEST_F(FieldDataAccess, BucketValuesAcquisition)
 
 //------------------------------------------------------------------------------
 
-class LegacyDeviceFieldDataAccess : public FieldDataAccess {};
 class DeviceFieldDataAccess : public FieldDataAccess {};
-
-//------------------------------------------------------------------------------
-// Can't put a device lambda in another lambda, so add a lambda->function->device_lambda layer
-//
-void legacy_device_compute_centroid_entity_component_access_function(const stk::mesh::Selector& selector,
-                                                                     stk::mesh::Field<double>& centroidField,
-                                                                     const stk::mesh::Field<double>& coordsField)
-{
-  const stk::mesh::BulkData& bulk = centroidField.get_mesh();
-  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-
-  stk::mesh::NgpField<double>& ngpCentroidField = stk::mesh::get_updated_ngp_field<double>(centroidField);
-  stk::mesh::NgpField<double>& ngpCoordsField = stk::mesh::get_updated_ngp_field<double>(coordsField);
-
-  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
-    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
-      const unsigned numComponents = ngpCentroidField.get_num_components_per_entity(elem);
-      if (numComponents == 0) {
-        return;
-      }
-
-      ngpCentroidField(elem, 0) = 0.0;
-      ngpCentroidField(elem, 1) = 0.0;
-      ngpCentroidField(elem, 2) = 0.0;
-
-      stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elem);
-      for (size_t i = 0; i < nodes.size(); ++i) {
-        stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
-
-        ngpCentroidField(elem, 0) += ngpCoordsField(nodeIndex, 0);
-        ngpCentroidField(elem, 1) += ngpCoordsField(nodeIndex, 1);
-        ngpCentroidField(elem, 2) += ngpCoordsField(nodeIndex, 2);
-      }
-
-      ngpCentroidField(elem, 0) /= nodes.size();
-      ngpCentroidField(elem, 1) /= nodes.size();
-      ngpCentroidField(elem, 2) /= nodes.size();
-    }
-  );
-};
-
-void legacy_device_compute_centroid_entity_access_function(const stk::mesh::Selector& selector,
-                                                           stk::mesh::Field<double>& centroidField,
-                                                           const stk::mesh::Field<double>& coordsField)
-{
-  const stk::mesh::BulkData& bulk = centroidField.get_mesh();
-  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-
-  stk::mesh::NgpField<double>& ngpCentroidField = stk::mesh::get_updated_ngp_field<double>(centroidField);
-  stk::mesh::NgpField<double>& ngpCoordsField = stk::mesh::get_updated_ngp_field<double>(coordsField);
-
-  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
-    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
-      const unsigned numComponents = ngpCentroidField.get_num_components_per_entity(elem);
-      if (numComponents == 0) {
-        return;
-      }
-
-      stk::mesh::EntityFieldData<double> elemCentroid = ngpCentroidField(elem);
-      elemCentroid[0] = 0.0;
-      elemCentroid[1] = 0.0;
-      elemCentroid[2] = 0.0;
-
-      stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elem);
-      for (size_t i = 0; i < nodes.size(); ++i) {
-        stk::mesh::FastMeshIndex nodeIndex = ngpMesh.fast_mesh_index(nodes[i]);
-        const stk::mesh::EntityFieldData<double> nodeCoords = ngpCoordsField(nodeIndex);
-
-        elemCentroid[0] += nodeCoords[0];
-        elemCentroid[1] += nodeCoords[1];
-        elemCentroid[2] += nodeCoords[2];
-      }
-
-      elemCentroid[0] /= nodes.size();
-      elemCentroid[1] /= nodes.size();
-      elemCentroid[2] /= nodes.size();
-    }
-  );
-};
 
 void device_compute_centroid_entity_access_function(const stk::mesh::Selector& selector,
                                                     stk::mesh::Field<double>& centroidField,
@@ -1251,21 +1330,6 @@ void device_compute_centroid_bucket_access_function(const stk::mesh::Selector& s
   );
 };
 
-auto legacy_device_compute_centroid_entity_component_access = [](const stk::mesh::Selector& selector,
-                                                                 stk::mesh::Field<double>& centroidField,
-                                                                 const stk::mesh::Field<double>& coordsField)
-{
-  legacy_device_compute_centroid_entity_component_access_function(selector, centroidField, coordsField);
-};
-
-
-auto legacy_device_compute_centroid_entity_access = [](const stk::mesh::Selector& selector,
-                                                       stk::mesh::Field<double>& centroidField,
-                                                       const stk::mesh::Field<double>& coordsField)
-{
-  legacy_device_compute_centroid_entity_access_function(selector, centroidField, coordsField);
-};
-
 auto device_compute_centroid_entity_access = [](const stk::mesh::Selector& selector,
                                                 stk::mesh::Field<double>& centroidField,
                                                 const stk::mesh::Field<double>& coordsField)
@@ -1297,62 +1361,6 @@ auto device_field_data_acquisition = [](int numIters, stk::mesh::Field<double>& 
 {
   device_field_data_acquisition_function(numIters, field1, field2, field3, field4);
 };
-
-#ifdef STK_ENABLE_GPU
-  constexpr int numDeviceIters = 2000;
-#else
-  constexpr int numDeviceIters = 100;
-#endif
-
-//------------------------------------------------------------------------------
-TEST_F(LegacyDeviceFieldDataAccess, entity_component_SingleBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_single_block_test(numDeviceIters, legacy_device_compute_centroid_entity_component_access,
-                        device_verify_averaged_centroids_are_center_of_mesh);
-}
-
-TEST_F(LegacyDeviceFieldDataAccess, entity_component_MultiBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_multiple_block_test(numDeviceIters, legacy_device_compute_centroid_entity_component_access,
-                          device_verify_averaged_centroids_are_center_of_mesh);
-}
-
-TEST_F(LegacyDeviceFieldDataAccess, entity_component_PartialBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_partial_block_test(numDeviceIters, legacy_device_compute_centroid_entity_component_access,
-                         device_verify_averaged_centroids_are_center_of_mesh);
-}
-
-//------------------------------------------------------------------------------
-TEST_F(LegacyDeviceFieldDataAccess, entity_SingleBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_single_block_test(numDeviceIters, legacy_device_compute_centroid_entity_access,
-                        device_verify_averaged_centroids_are_center_of_mesh);
-}
-
-TEST_F(LegacyDeviceFieldDataAccess, entity_MultiBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_multiple_block_test(numDeviceIters, legacy_device_compute_centroid_entity_access,
-                          device_verify_averaged_centroids_are_center_of_mesh);
-}
-
-TEST_F(LegacyDeviceFieldDataAccess, entity_PartialBlock)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-
-  run_partial_block_test(numDeviceIters, legacy_device_compute_centroid_entity_access,
-                         device_verify_averaged_centroids_are_center_of_mesh);
-}
 
 //------------------------------------------------------------------------------
 TEST_F(DeviceFieldDataAccess, entity_SingleBlock)

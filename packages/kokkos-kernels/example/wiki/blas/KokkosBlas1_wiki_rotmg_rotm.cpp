@@ -5,13 +5,13 @@
 #include "KokkosBlas1_rotm.hpp"
 #include "KokkosKernels_PrintUtils.hpp"
 
-using execution_space = Kokkos::DefaultExecutionSpace;
-using Scalar          = double;
-using Vector          = Kokkos::View<Scalar*, execution_space>;
-using ParamView       = Kokkos::View<Scalar[5], execution_space>;
-using ScalarView      = Kokkos::View<Scalar, execution_space>;
-
 int main(int argc, char* argv[]) {
+  using execution_space = Kokkos::DefaultExecutionSpace;
+  using Scalar          = double;
+  using Vector          = Kokkos::View<Scalar*, execution_space>;
+  using ParamView       = Kokkos::View<Scalar[5], execution_space>;
+  using ScalarView      = Kokkos::View<Scalar, execution_space>;
+
   Kokkos::initialize(argc, argv);
   {
     const int N = 10;

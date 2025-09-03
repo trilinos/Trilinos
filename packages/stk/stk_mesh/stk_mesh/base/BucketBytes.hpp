@@ -37,15 +37,16 @@
 #include "stk_util/stk_config.h"
 #include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_mesh/base/FieldIndexTypes.hpp"
+#include "stk_mesh/base/Types.hpp"
 #include "Kokkos_Macros.hpp"
 
 namespace stk::mesh {
 
 //==============================================================================
-// Device BucketBytes
+// Device BucketBytes: Layout::Left
 //==============================================================================
 
-template<typename T = std::byte, typename MemSpace = stk::ngp::HostMemSpace>
+template<typename T = std::byte, typename MemSpace = stk::ngp::HostMemSpace, Layout DataLayout = Layout::Auto>
 class BucketBytes {
 public:
   KOKKOS_INLINE_FUNCTION BucketBytes(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities,
@@ -55,7 +56,9 @@ public:
       m_numBytesPerScalar(numBytesPerScalar),
       m_numEntities(numEntities),
       m_scalarByteStride(scalarStride*numBytesPerScalar)
-  {}
+  {
+    static_assert(DataLayout == Layout::Left);
+  }
 
   KOKKOS_DEFAULTED_FUNCTION ~BucketBytes() = default;
 
@@ -73,6 +76,11 @@ public:
     return m_bytePtr[entity*m_numBytesPerScalar + scalar*m_scalarByteStride + byteInScalar];
   }
 
+
+  KOKKOS_INLINE_FUNCTION T* pointer(EntityIdx entity) const { return m_bytePtr[entity*m_numBytesPerScalar]; }
+  KOKKOS_INLINE_FUNCTION int bytes_per_scalar() const { return m_numBytesPerScalar; }
+  KOKKOS_INLINE_FUNCTION int scalar_byte_stride() const { return m_scalarByteStride; }
+
 private:
   T* m_bytePtr;
   int m_numBytesPerEntity;
@@ -83,11 +91,11 @@ private:
 
 
 //==============================================================================
-// Host BucketBytes
+// Host BucketBytes: Layout::Auto
 //==============================================================================
 
 template<typename T>
-class BucketBytes<T, stk::ngp::HostMemSpace> {
+class BucketBytes<T, stk::ngp::HostMemSpace, Layout::Auto> {
 public:
 
   inline BucketBytes(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities, int scalarStride)
@@ -99,10 +107,12 @@ public:
       m_isLayoutRight(false)
   {}
 
-  inline BucketBytes(T* bytePtr, int numBytesPerEntity, int numEntities)
+  inline BucketBytes(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities)
     : m_bytePtr(bytePtr),
       m_numBytesPerEntity(numBytesPerEntity),
       m_numEntities(numEntities),
+      m_numBytesPerScalar(numBytesPerScalar),
+      m_scalarByteStride(numBytesPerScalar),
       m_isLayoutRight(true)
   {}
 
@@ -127,6 +137,12 @@ public:
     }
   }
 
+
+  inline T* pointer(EntityIdx entity) const { return (m_isLayoutRight) ? m_bytePtr + entity*m_numBytesPerEntity
+                                                                       : m_bytePtr + entity*m_numBytesPerScalar; }
+  inline int bytes_per_scalar() const { return m_numBytesPerScalar; }
+  inline int scalar_byte_stride() const { return m_scalarByteStride; }
+
 private:
   T* m_bytePtr;
   int m_numBytesPerEntity;
@@ -138,14 +154,14 @@ private:
 
 
 //==============================================================================
-// Host BucketBytesLeft
+// Host BucketBytes: Layout::Left
 //==============================================================================
 
 template<typename T>
-class BucketBytesLeft {
+class BucketBytes<T, stk::ngp::HostMemSpace, Layout::Left> {
 public:
 
-  inline BucketBytesLeft(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities, int scalarStride)
+  inline BucketBytes(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities, int scalarStride)
     : m_bytePtr(bytePtr),
       m_numBytesPerEntity(numBytesPerEntity),
       m_numEntities(numEntities),
@@ -153,7 +169,7 @@ public:
       m_scalarByteStride(scalarStride*numBytesPerScalar)
   {}
 
-  ~BucketBytesLeft() = default;
+  ~BucketBytes() = default;
 
   inline int num_bytes() const { return m_numBytesPerEntity; }
   inline ByteIdxProxy bytes() const { return ByteIdxProxy(m_numBytesPerEntity); }
@@ -169,6 +185,11 @@ public:
     return m_bytePtr[entity*m_numBytesPerScalar + scalar*m_scalarByteStride + byteInScalar];
   }
 
+
+  inline T* pointer(EntityIdx entity) const { return m_bytePtr[entity*m_numBytesPerScalar]; }
+  inline int bytes_per_scalar() const { return m_numBytesPerScalar; }
+  inline int scalar_byte_stride() const { return m_scalarByteStride; }
+
 private:
   T* m_bytePtr;
   int m_numBytesPerEntity;
@@ -179,20 +200,21 @@ private:
 
 
 //==============================================================================
-// Host BucketBytesRight
+// Host BucketBytes: Layout::Right
 //==============================================================================
 
 template<typename T>
-class BucketBytesRight {
+class BucketBytes<T, stk::ngp::HostMemSpace, Layout::Right> {
 public:
 
-  inline BucketBytesRight(T* bytePtr, int numBytesPerEntity, int numEntities)
+  inline BucketBytes(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities)
     : m_bytePtr(bytePtr),
       m_numBytesPerEntity(numBytesPerEntity),
+      m_numBytesPerScalar(numBytesPerScalar),
       m_numEntities(numEntities)
   {}
 
-  ~BucketBytesRight() = default;
+  ~BucketBytes() = default;
 
   inline int num_bytes() const { return m_numBytesPerEntity; }
   inline ByteIdxProxy bytes() const { return ByteIdxProxy(m_numBytesPerEntity); }
@@ -206,9 +228,15 @@ public:
     return m_bytePtr[static_cast<int>(entity)*m_numBytesPerEntity + static_cast<int>(byte)];
   }
 
+
+  inline T* pointer(EntityIdx entity) const { return m_bytePtr[entity*m_numBytesPerEntity]; }
+  inline int bytes_per_scalar() const { return m_numBytesPerScalar; }
+  inline int scalar_byte_stride() const { return m_numBytesPerScalar; }
+
 private:
   T* m_bytePtr;
   int m_numBytesPerEntity;
+  int m_numBytesPerScalar;
   int m_numEntities;
 };
 

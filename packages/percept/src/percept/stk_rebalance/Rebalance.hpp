@@ -38,6 +38,7 @@ namespace stk {
 
     class Rebalance {
     public:
+      virtual ~Rebalance() = default;
 
       /** \brief Rebalance with a Partition object.
        *

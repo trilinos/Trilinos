@@ -169,6 +169,24 @@ void set_new_part_list_per_entity(const MESH_TYPE& ngpMesh, const EntityViewType
   );
 }
 
+template <typename T>
+T get_round_up_pow_of_2(T val)
+{
+  static_assert(std::is_integral_v<T>);
+
+  if (val <= 0) { return val; }
+
+  val--;
+  val |= val >> 1;
+  val |= val >> 2;
+  val |= val >> 4;
+  val |= val >> 8;
+  val |= val >> 16;
+  val++;
+
+  return val;
+}
+
 } } } // namespace stk::mesh::impl
 
 #endif

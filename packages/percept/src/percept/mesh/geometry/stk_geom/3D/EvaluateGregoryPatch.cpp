@@ -768,7 +768,7 @@ namespace percept {
 
   bool EvaluateGregoryPatch::
   findClosestPoint(const double *input_xyz, stk::mesh::Entity face, double *closest_xyz, double *found_uv, bool linearOnly,
-                   stk::mesh::Entity node )
+                   stk::mesh::Entity /*node*/ )
   {
     double centroid[2] = {0.5,0.5};
     stk::topology face_topo = m_eMesh.bucket(face).topology();

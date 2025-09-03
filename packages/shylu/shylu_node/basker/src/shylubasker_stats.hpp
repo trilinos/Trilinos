@@ -27,8 +27,6 @@
 #include <iostream>
 #include <string>
 
-using namespace std;
-
 namespace BaskerNS
 {
   template <class Int, class Entry, class Exe_Space>

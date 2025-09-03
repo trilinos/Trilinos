@@ -18,8 +18,8 @@
 #include "KokkosSparse_CcsMatrix.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
-#ifndef _KOKKOSSPARSE_CCS2CRS_HPP
-#define _KOKKOSSPARSE_CCS2CRS_HPP
+#ifndef KOKKOSSPARSE_CCS2CRS_HPP
+#define KOKKOSSPARSE_CCS2CRS_HPP
 namespace KokkosSparse {
 namespace Impl {
 template <class OrdinalType, class SizeType, class ValViewType, class ColMapViewType, class RowIdViewType>
@@ -116,4 +116,4 @@ auto ccs2crs(KokkosSparse::CcsMatrix<ScalarType, OrdinalType, DeviceType, Memory
                  ccsMatrix.graph.entries);
 }
 }  // namespace KokkosSparse
-#endif  //  _KOKKOSSPARSE_CCS2CRS_HPP
+#endif  //  KOKKOSSPARSE_CCS2CRS_HPP

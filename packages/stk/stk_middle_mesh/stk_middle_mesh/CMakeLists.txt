@@ -61,13 +61,6 @@ else()
 
   find_package(LAPACK REQUIRED)
   target_link_libraries(stk_middle_mesh PRIVATE ${LAPACK_LIBRARIES})
-
-  FILE(GLOB TEST_UTIL_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../../stk_unit_tests/stk_middle_mesh/util/*.cpp)
-  add_library(stk_middle_mesh_test_util ${TEST_UTIL_SOURCES})
-  target_link_libraries(stk_middle_mesh_test_util stk_middle_mesh)
-  target_include_directories(stk_middle_mesh_test_util PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../stk_unit_tests/stk_middle_mesh)
-  target_include_directories(stk_middle_mesh_test_util PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
 endif()
 
 target_include_directories(stk_middle_mesh PUBLIC

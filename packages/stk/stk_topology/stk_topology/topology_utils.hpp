@@ -145,40 +145,6 @@ struct is_shell_impl {
   result_type operator()(Topology) const { return Topology::is_shell; }
 };
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 2025
-struct STK_DEPRECATED is_shell_with_face_sides_impl {
-  using result_type = bool;
-
-  static constexpr int m_spatial_dim_3 = 3;
-
-  template <typename Topology>
-  STK_INLINE_FUNCTION
-  result_type operator()(Topology) const { return Topology::is_shell &&
-                                                  Topology::defined_on_spatial_dimension(m_spatial_dim_3) &&
-                                                  Topology::side_rank == topology::rank_t::FACE_RANK; }
-};
-
-struct STK_DEPRECATED shell_side_topology_impl {
-  using result_type = stk::topology;
-
-  STK_INLINE_FUNCTION
-  shell_side_topology_impl(unsigned ordinal)
-    : m_ordinal(ordinal)
-  {}
-
-  template <typename Topology>
-  STK_INLINE_FUNCTION
-  result_type operator()(Topology) const {
-    if constexpr (Topology::is_shell)
-      return Topology::shell_side_topology(m_ordinal);
-
-    return topology::topology_t::INVALID_TOPOLOGY;
-  }
-
-  unsigned m_ordinal;
-};
-#endif
-
 struct side_rank_impl {
   using result_type = stk::topology::rank_t;
 

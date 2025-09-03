@@ -42,9 +42,8 @@ template <class execution_space, class AViewType, class BViewType, class CViewTy
 bool gemv_based_gemm(
     const execution_space& space, const char transA[], const char transB[], typename AViewType::const_value_type& alpha,
     const AViewType& A, const BViewType& B, typename CViewType::const_value_type& beta, const CViewType& C,
-    typename std::enable_if<!std::is_same<typename BViewType::array_layout, Kokkos::LayoutStride>::value &&
-                            !std::is_same<typename CViewType::array_layout, Kokkos::LayoutStride>::value>::type* =
-        nullptr) {
+    typename std::enable_if<!std::is_same_v<typename BViewType::array_layout, Kokkos::LayoutStride> &&
+                            !std::is_same_v<typename CViewType::array_layout, Kokkos::LayoutStride>>::type* = nullptr) {
   if (toupper(transA[0]) == 'N' && toupper(transB[0]) == 'N' && B.extent(1) == size_t(1)) {
     // since B/C both have a single column and are not LayoutStride,
     // can create a raw contiguous rank-1 vector from them rather than using
@@ -69,9 +68,8 @@ bool gemv_based_gemm(
     const typename CViewType::execution_space& /*space*/, const char /*transA*/[], const char /*transB*/[],
     typename AViewType::const_value_type& /*alpha*/, const AViewType& /*A*/, const BViewType& /*B*/,
     typename CViewType::const_value_type& /*beta*/, const CViewType& /*C*/,
-    typename std::enable_if<std::is_same<typename BViewType::array_layout, Kokkos::LayoutStride>::value ||
-                            std::is_same<typename CViewType::array_layout, Kokkos::LayoutStride>::value>::type* =
-        nullptr) {
+    typename std::enable_if<std::is_same_v<typename BViewType::array_layout, Kokkos::LayoutStride> ||
+                            std::is_same_v<typename CViewType::array_layout, Kokkos::LayoutStride>>::type* = nullptr) {
   return false;
 }
 }  // namespace Impl
@@ -102,12 +100,12 @@ void gemm(const execution_space& space, const char transA[], const char transB[]
   static_assert(Kokkos::is_execution_space_v<execution_space>,
                 "KokkosBlas::gemm: execution_space must be a valid Kokkos "
                 "execution space");
-  static_assert(Kokkos::is_view<AViewType>::value, "KokkosBlas::gemm: AViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<BViewType>::value, "KokkosBlas::gemm: BViewType must be a Kokkos::View.");
-  static_assert(Kokkos::is_view<CViewType>::value, "KokkosBlas::gemm: CViewType must be a Kokkos::View.");
-  static_assert(static_cast<int>(AViewType::rank) == 2, "KokkosBlas::gemm: AViewType must have rank 2.");
-  static_assert(static_cast<int>(BViewType::rank) == 2, "KokkosBlas::gemm: BViewType must have rank 2.");
-  static_assert(static_cast<int>(CViewType::rank) == 2, "KokkosBlas::gemm: CViewType must have rank 2.");
+  static_assert(Kokkos::is_view_v<AViewType>, "KokkosBlas::gemm: AViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<BViewType>, "KokkosBlas::gemm: BViewType must be a Kokkos::View.");
+  static_assert(Kokkos::is_view_v<CViewType>, "KokkosBlas::gemm: CViewType must be a Kokkos::View.");
+  static_assert(static_cast<int>(AViewType::rank()) == 2, "KokkosBlas::gemm: AViewType must have rank 2.");
+  static_assert(static_cast<int>(BViewType::rank()) == 2, "KokkosBlas::gemm: BViewType must have rank 2.");
+  static_assert(static_cast<int>(CViewType::rank()) == 2, "KokkosBlas::gemm: CViewType must have rank 2.");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename AViewType::memory_space>::accessible,
                 "KokkosBlas::gemm: AViewType must be accessible from execution_space");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename BViewType::memory_space>::accessible,

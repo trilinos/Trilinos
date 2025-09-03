@@ -322,7 +322,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     //By ref triggers compiler bug in CUDA 10.
     Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team_member, num_entries_in_batch),
-      [=](const LO& j)
+      [=, *this](const LO& j)
       {
         size_t distance = 0;
 

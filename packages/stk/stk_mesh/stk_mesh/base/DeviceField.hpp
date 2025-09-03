@@ -212,16 +212,6 @@ public:
     return 0;  // Keep Nvidia compiler happy about always having return value
   }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 16, 2025
-  STK_DEPRECATED_MSG("The component stride is now a function of the Bucket you are accessing.  Please use one of the "
-                     "other overloads of get_component_stride() instead.")
-  KOKKOS_FUNCTION
-  unsigned get_component_stride() const
-  {
-    return 512;
-  }
-#endif
-
   KOKKOS_FUNCTION
   unsigned get_num_components_per_entity(const FastMeshIndex& entityIndex) const {
     const DeviceFieldMetaData& fieldMetaData = m_deviceFieldData.m_deviceFieldMetaData(entityIndex.bucket_id);

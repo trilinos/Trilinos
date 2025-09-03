@@ -176,11 +176,11 @@ public:
       stk::mesh::EntityVector elems;
       stk::mesh::get_selected_entities(stk::mesh::Selector(*field), get_bulk().buckets(stk::topology::ELEM_RANK), elems);
 
+      auto fieldData = field->data<int, stk::mesh::ReadWrite>();
       for(auto elem : elems) {
-        int* data = reinterpret_cast<int*>(stk::mesh::field_data(*field, elem));
-        unsigned numComponents = stk::mesh::field_scalars_per_entity(*field, elem);
-        for(unsigned j = 0; j < numComponents; j++) {
-          setValue(data, j);
+        auto entityValues = fieldData.entity_values(elem);
+        for (stk::mesh::ComponentIdx component : entityValues.components()) {
+          setValue(entityValues, component);
         }
       }
     }
@@ -188,9 +188,9 @@ public:
   
   void update_fields_values_on_host(stk::mesh::FieldVector& fields)
   {
-    auto updateValueFunc = [this](int* data, unsigned component)
+    auto updateValueFunc = [this](stk::mesh::EntityValues<int>& values, stk::mesh::ComponentIdx component)
                            {
-                             data[component] += m_increment;
+                             values(component) += m_increment;
                            };
 
     set_fields_values_on_host(fields, updateValueFunc);
@@ -198,9 +198,9 @@ public:
 
   void reset_fields_values_on_host(stk::mesh::FieldVector& fields)
   {
-    auto updateValueFunc = [](int* data, unsigned component)
+    auto updateValueFunc = [](stk::mesh::EntityValues<int>& values, stk::mesh::ComponentIdx component)
                            {
-                             data[component] = component;
+                             values(component) = component;
                            };
 
     set_fields_values_on_host(fields, updateValueFunc);
@@ -251,15 +251,15 @@ public:
   {
     for(auto field : fields) {
       auto ngpField = stk::mesh::get_updated_ngp_field<int>(*field);
+      auto fieldData = field->data<int, stk::mesh::ReadOnly>();
 
       stk::mesh::EntityVector elems;
       stk::mesh::get_selected_entities(stk::mesh::Selector(*field), get_bulk().buckets(stk::topology::ELEM_RANK), elems);
 
       for(auto elem : elems) {
-        int* data = reinterpret_cast<int*>(stk::mesh::field_data(*field, elem));
-        unsigned numComponents = stk::mesh::field_scalars_per_entity(*field, elem);
-        for(unsigned j = 0; j < numComponents; j++) {
-          EXPECT_EQ((int)expectedValue, data[j]);
+        auto entityValues = fieldData.entity_values(elem);
+        for (stk::mesh::ComponentIdx component : entityValues.components()) {
+          EXPECT_EQ(entityValues(component), static_cast<int>(expectedValue));
         }
       }
     }
