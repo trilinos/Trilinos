@@ -20,7 +20,6 @@
 // MueLu
 #include <MueLu_ShiftedLaplacian.hpp>
 #include <MueLu_UseDefaultTypesComplex.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>

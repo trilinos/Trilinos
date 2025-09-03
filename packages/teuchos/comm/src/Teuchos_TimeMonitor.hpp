@@ -607,6 +607,8 @@ public:
   //! The StackedTimer used by the TimeMonitor.
   static Teuchos::RCP<Teuchos::StackedTimer> getStackedTimer();
 
+  static bool stackedTimerNameIsDefault();
+
  private:
   /// \brief Valid output formats for report().
   ///
@@ -730,7 +732,7 @@ public:
 protected:
   /// \brief Stacked timer for optional injection of timing from
   ///   TimeMonitor-enabled objects.
-  static Teuchos::RCP<Teuchos::StackedTimer> stackedTimer_; 
+  static Teuchos::RCP<Teuchos::StackedTimer> stackedTimer_;
 };
 
 

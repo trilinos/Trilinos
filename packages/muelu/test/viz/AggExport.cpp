@@ -32,8 +32,6 @@
 
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_MutuallyExclusiveTime.hpp>
-
 bool compare_to_gold_all_ranks(int myRank, const std::string& baseFile) {
   bool failed = false;
 

@@ -11,6 +11,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_Behavior.hpp"
 
 // slowLoop does not reliably make a timer nonzero (RHEL6, gcc 4.4.7, OpenMPI 1.5.4).
 // Thus, I'm introducing headers to make sleep() available.
@@ -33,7 +34,7 @@ void sleep(int sec)
 }
 #endif
 
-#ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
 #include "Kokkos_Core.hpp"
 #endif
 
@@ -841,7 +842,7 @@ namespace Teuchos {
       substr_i = oss.str().find ("Timer C");
       TEST_EQUALITY(substr_i, std::string::npos);
     }
-      
+
     // This sets up for the next unit test.
     TimeMonitor::clearCounters ();
   }
@@ -922,12 +923,12 @@ namespace Teuchos {
       TEST_INEQUALITY(substr_i, std::string::npos);
       substr_i = oss.str().find ("Timer B");
       TEST_INEQUALITY(substr_i, std::string::npos);
-      
+
       // Timer C should NOT be reported.
       substr_i = oss.str().find ("Timer C");
       TEST_EQUALITY(substr_i, std::string::npos);
     }
-      
+
     // This sets up for the next unit test (if there is one).
     TimeMonitor::clearCounters ();
   }
@@ -1052,7 +1053,7 @@ namespace Teuchos {
   // Test that Time::start() and Time::stop() call Kokkos::fence(),
   // if the option to do that is enabled.
   //
-  #ifdef HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
+  #ifdef HAVE_TEUCHOSCORE_KOKKOS
   namespace KokkosFenceCounter
   {
     static int numFences;
@@ -1092,8 +1093,13 @@ namespace Teuchos {
     }
     // Timer has stopped; record again
     fenceCountAfterStop = KokkosFenceCounter::numFences;
-    TEST_EQUALITY(fenceCountAfterStart, 1);
-    TEST_EQUALITY(fenceCountAfterStop, 2);
+    if (Behavior::fenceTimers()) {
+      TEST_EQUALITY(fenceCountAfterStart, 1);
+      TEST_EQUALITY(fenceCountAfterStop, 2);
+    } else {
+      TEST_EQUALITY(fenceCountAfterStart, 0);
+      TEST_EQUALITY(fenceCountAfterStop, 0);
+    }
 
     // This sets up for the next unit test (if there is one).
     TimeMonitor::clearCounters ();
