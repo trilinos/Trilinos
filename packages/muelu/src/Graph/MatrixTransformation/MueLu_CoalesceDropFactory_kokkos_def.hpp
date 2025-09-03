@@ -191,7 +191,7 @@ void runBoundaryFunctors(local_matrix_type& lclA, boundary_nodes_view& boundaryN
 }
 
 template <class magnitudeType>
-void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppingMethod, bool& useBlocking, std::string& socUsesMatrix, std::string& socUsesMeasure, bool& symmetrizeDroppedGraph, bool& generateColoringGraph, magnitudeType& threshold, MueLu::MatrixConstruction::lumpingType lumpingChoice) {
+void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppingMethod, bool& useBlocking, std::string& socUsesMatrix, std::string& socUsesMeasure, bool& symmetrizeDroppedGraph, bool& generateColoringGraph, magnitudeType& threshold, MueLu::MatrixConstruction::lumpingType& lumpingChoice) {
   std::set<std::string> validDroppingMethods = {"piece-wise", "cut-drop"};
 
   if (!pL.get<bool>("filtered matrix: use lumping")) lumpingChoice = MueLu::MatrixConstruction::no_lumping;
