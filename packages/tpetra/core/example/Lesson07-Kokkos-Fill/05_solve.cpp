@@ -23,7 +23,6 @@
 #include <Tpetra_Import_Util2.hpp>  //for sortCrsEntries
 #include <iostream>
 
-#ifdef KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA
 
 // Exact solution of the partial differential equation that main()
 // discretizes.  We include it here to check the error.
@@ -411,18 +410,3 @@ int main (int argc, char* argv[]) {
   }
   return EXIT_SUCCESS;
 }
-
-#else
-
-int main (int argc, char* argv[]) {
-  using std::cout;
-  using std::endl;
-  
-  cout << "This lesson was not compiled because Kokkos" << endl
-    "was not configured with lambda support for all backends." << endl
-    "Tricking CTest into perceiving success anyways:" << endl
-    "End Result: TEST PASSED" << endl;
-  return 0;
-}
-
-#endif
