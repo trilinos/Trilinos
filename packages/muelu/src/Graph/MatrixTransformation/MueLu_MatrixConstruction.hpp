@@ -311,15 +311,19 @@ class PointwiseFillReuseFunctor {
     }
   }
 };
+enum lumpingType { no_lumping,
+                   diag_lumping,
+                   distributed_lumping };
 
 /*!
   @class PointwiseFillNoReuseFunctor
   @brief Functor does not reuse the graph of the matrix for a problem with blockSize == 1.
 
   The dropped graph and the filtered matrix are built from scratch.
-  Lumps dropped entries to the diagonal if lumping==true.
+  Lumps dropped entries to the diagonal if lumpingChoice==diag_lumping.
+  Lumps dropped entries across all kept entries (proportional to their magnitude) if lumpingChoice==ddistributed_lumping.
 */
-template <class local_matrix_type, bool lumping>
+template <class local_matrix_type, lumpingType lumpingChoice>
 class PointwiseFillNoReuseFunctor {
  private:
   using scalar_type        = typename local_matrix_type::value_type;
@@ -349,10 +353,11 @@ class PointwiseFillNoReuseFunctor {
     size_t K                      = A.graph.row_map(rlid);
     auto rowFilteredA             = filteredA.row(rlid);
     local_ordinal_type j          = 0;
-    scalar_type diagCorrection    = zero;
+    scalar_type droppedSum        = zero;
+    scalar_type keptRowSumAbs     = zero;
     local_ordinal_type diagOffset = -1;
     for (local_ordinal_type k = 0; k < rowA.length; ++k) {
-      if constexpr (lumping) {
+      if constexpr (lumpingChoice != no_lumping) {
         local_ordinal_type clid = rowA.colidx(k);
         if (rlid == clid) {
           diagOffset = j;
@@ -361,15 +366,27 @@ class PointwiseFillNoReuseFunctor {
       if (results(K + k) == KEEP) {
         rowFilteredA.colidx(j) = rowA.colidx(k);
         rowFilteredA.value(j)  = rowA.value(k);
+        if constexpr (lumpingChoice == distributed_lumping) {
+          keptRowSumAbs += ATS::magnitude(rowFilteredA.value(j));
+        }
         ++j;
-      } else if constexpr (lumping) {
-        diagCorrection += rowA.value(k);
+      } else if constexpr (lumpingChoice != no_lumping) {
+        droppedSum += rowA.value(k);
       }
     }
-    if constexpr (lumping) {
-      rowFilteredA.value(diagOffset) += diagCorrection;
+    if constexpr (lumpingChoice == diag_lumping) {
+      rowFilteredA.value(diagOffset) += droppedSum;
       if ((dirichletThreshold >= 0.0) && (ATS::real(rowFilteredA.value(diagOffset)) <= dirichletThreshold))
         rowFilteredA.value(diagOffset) = one;
+    } else if constexpr (lumpingChoice == distributed_lumping) {
+      if (ATS::real(droppedSum) >= ATS::real(zero)) {
+        rowFilteredA.value(diagOffset) += droppedSum;
+
+      } else {
+        for (local_ordinal_type k = 0; k < j; ++k) {
+          rowFilteredA.value(k) += droppedSum * ATS::magnitude(rowFilteredA.value(k)) / keptRowSumAbs;
+        }
+      }
     }
   }
 };
