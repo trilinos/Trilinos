@@ -2126,15 +2126,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   RowptrsType rowptrsCRS[3];
   ColindsType colindsCRS[3];
   //Populate A and B
-  typename ValuesType::HostMirror vals[3];
-     vals[0] = typename ValuesType::HostMirror("vals0", nrows*nnzPerRow);
-     vals[1] = typename ValuesType::HostMirror("vals1", nrows*nnzPerRow);
-  typename RowptrsType::HostMirror rowptrs[3];
-     rowptrs[0] = typename RowptrsType::HostMirror("rowptr0", nrows+1);
-     rowptrs[1] = typename RowptrsType::HostMirror("rowptr1", nrows+1);
-  typename ColindsType::HostMirror colinds[3]; 
-     colinds[0] = typename ColindsType::HostMirror("colind0", nrows*nnzPerRow);
-     colinds[1] = typename ColindsType::HostMirror("colind1", nrows*nnzPerRow);
+  typename ValuesType::host_mirror_type vals[3];
+     vals[0] = typename ValuesType::host_mirror_type("vals0", nrows*nnzPerRow);
+     vals[1] = typename ValuesType::host_mirror_type("vals1", nrows*nnzPerRow);
+  typename RowptrsType::host_mirror_type rowptrs[3];
+     rowptrs[0] = typename RowptrsType::host_mirror_type("rowptr0", nrows+1);
+     rowptrs[1] = typename RowptrsType::host_mirror_type("rowptr1", nrows+1);
+  typename ColindsType::host_mirror_type colinds[3]; 
+     colinds[0] = typename ColindsType::host_mirror_type("colind0", nrows*nnzPerRow);
+     colinds[1] = typename ColindsType::host_mirror_type("colind1", nrows*nnzPerRow);
   {
     //want consistent test results
     srand(12);
@@ -2192,13 +2192,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   ExecSpace().fence();
 
   vals[2] = Kokkos::create_mirror_view_and_copy(
-                           typename ValuesType::HostMirror::memory_space(),
+                           typename ValuesType::host_mirror_type::memory_space(),
                            valsCRS[2]);
   rowptrs[2] = Kokkos::create_mirror_view_and_copy(
-                              typename RowptrsType::HostMirror::memory_space(),
+                              typename RowptrsType::host_mirror_type::memory_space(),
                               rowptrsCRS[2]);
   colinds[2] = Kokkos::create_mirror_view_and_copy(
-                              typename ColindsType::HostMirror::memory_space(),
+                              typename ColindsType::host_mirror_type::memory_space(),
                               colindsCRS[2]);
   
   //the above function is an unfenced kernel launch, and the verification below relies on UVM, so fence here.
@@ -2281,18 +2281,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   RowptrsType rowptrsCRS[3];
   ColindsType colindsCRS[3];
   //Populate A and B
-  typename ValuesType::HostMirror vals[3];
-     vals[0] = typename ValuesType::HostMirror("vals0", nrows*nnzPerRow);
-     vals[1] = typename ValuesType::HostMirror("vals1", nrows*nnzPerRow);
-     vals[2] = typename ValuesType::HostMirror("vals2", nrows*nnzPerRow);
-  typename RowptrsType::HostMirror rowptrs[3];
-     rowptrs[0] = typename RowptrsType::HostMirror("rowptr0", nrows+1);
-     rowptrs[1] = typename RowptrsType::HostMirror("rowptr1", nrows+1);
-     rowptrs[2] = typename RowptrsType::HostMirror("rowptr2", nrows+1);
-  typename ColindsType::HostMirror colinds[3]; 
-     colinds[0] = typename ColindsType::HostMirror("colind0", nrows*nnzPerRow);
-     colinds[1] = typename ColindsType::HostMirror("colind1", nrows*nnzPerRow);
-     colinds[2] = typename ColindsType::HostMirror("colind2", nrows*nnzPerRow);
+  typename ValuesType::host_mirror_type vals[3];
+     vals[0] = typename ValuesType::host_mirror_type("vals0", nrows*nnzPerRow);
+     vals[1] = typename ValuesType::host_mirror_type("vals1", nrows*nnzPerRow);
+     vals[2] = typename ValuesType::host_mirror_type("vals2", nrows*nnzPerRow);
+  typename RowptrsType::host_mirror_type rowptrs[3];
+     rowptrs[0] = typename RowptrsType::host_mirror_type("rowptr0", nrows+1);
+     rowptrs[1] = typename RowptrsType::host_mirror_type("rowptr1", nrows+1);
+     rowptrs[2] = typename RowptrsType::host_mirror_type("rowptr2", nrows+1);
+  typename ColindsType::host_mirror_type colinds[3]; 
+     colinds[0] = typename ColindsType::host_mirror_type("colind0", nrows*nnzPerRow);
+     colinds[1] = typename ColindsType::host_mirror_type("colind1", nrows*nnzPerRow);
+     colinds[2] = typename ColindsType::host_mirror_type("colind2", nrows*nnzPerRow);
   {
     //want consistent test results
     srand(12);
@@ -2347,13 +2347,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   TEST_ASSERT(rowptrsCRS[0].extent(0) == rowptrsCRS[2].extent(0));
 
   vals[2] = Kokkos::create_mirror_view_and_copy(
-                           typename ValuesType::HostMirror::memory_space(),
+                           typename ValuesType::host_mirror_type::memory_space(),
                            valsCRS[2]);
   rowptrs[2] = Kokkos::create_mirror_view_and_copy(
-                              typename RowptrsType::HostMirror::memory_space(),
+                              typename RowptrsType::host_mirror_type::memory_space(),
                               rowptrsCRS[2]);
   colinds[2] = Kokkos::create_mirror_view_and_copy(
-                              typename ColindsType::HostMirror::memory_space(),
+                              typename ColindsType::host_mirror_type::memory_space(),
                               colindsCRS[2]);
 
   for(size_t i = 0; i < nrows; i++)

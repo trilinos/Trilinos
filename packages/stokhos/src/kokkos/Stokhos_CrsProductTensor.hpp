@@ -52,7 +52,8 @@ public:
   typedef Memory      memory_type;
 
   typedef typename Kokkos::ViewTraits< size_type*, execution_space,void,void >::host_mirror_space host_mirror_space ;
-  typedef CrsProductTensor<value_type, host_mirror_space> HostMirror;
+  typedef CrsProductTensor<value_type, host_mirror_space> host_mirror_type;
+  typedef host_mirror_type HostMirror;
 
 // Vectorsize used in multiply algorithm
 #if defined(__AVX__)
@@ -316,15 +317,15 @@ public:
     tensor.m_avg_entries_per_row = avg_entries_per_row;
 
     // Create mirror, is a view if is host memory
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_coord = Kokkos::create_mirror_view( tensor.m_coord );
-    typename coord2_array_type::HostMirror
+    typename coord2_array_type::host_mirror_type
       host_coord2 = Kokkos::create_mirror_view( tensor.m_coord2 );
-    typename value_array_type::HostMirror
+    typename value_array_type::host_mirror_type
       host_value = Kokkos::create_mirror_view( tensor.m_value );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_num_entry = Kokkos::create_mirror_view( tensor.m_num_entry );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_row_map = Kokkos::create_mirror_view( tensor.m_row_map );
 
     // Compute row map
@@ -413,15 +414,15 @@ public:
     tensor.m_flops = 5*tensor.m_nnz + dimension;
 
     // Create mirror, is a view if is host memory
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_coord = Kokkos::create_mirror_view( tensor.m_coord );
-    typename coord2_array_type::HostMirror
+    typename coord2_array_type::host_mirror_type
       host_coord2 = Kokkos::create_mirror_view( tensor.m_coord2 );
-    typename value_array_type::HostMirror
+    typename value_array_type::host_mirror_type
       host_value = Kokkos::create_mirror_view( tensor.m_value );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_num_entry = Kokkos::create_mirror_view( tensor.m_num_entry );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_row_map = Kokkos::create_mirror_view( tensor.m_row_map );
 
     // Compute row map
@@ -445,9 +446,9 @@ public:
     return tensor;
   }
 
-  static HostMirror
+  static host_mirror_type
   create_mirror_view( const CrsProductTensor& tensor ) {
-    HostMirror host_tensor;
+    host_mirror_type host_tensor;
 
     host_tensor.m_coord     = Kokkos::create_mirror_view( tensor.m_coord );
     host_tensor.m_coord2    = Kokkos::create_mirror_view( tensor.m_coord2 );
@@ -516,7 +517,7 @@ create_mean_based_product_tensor()
 
 template < class ValueType, class Device, class Memory >
 inline
-typename CrsProductTensor<ValueType,Device,Memory>::HostMirror
+typename CrsProductTensor<ValueType,Device,Memory>::host_mirror_type
 create_mirror_view( const CrsProductTensor<ValueType,Device,Memory> & src )
 {
   return CrsProductTensor<ValueType,Device,Memory>::create_mirror_view( src );

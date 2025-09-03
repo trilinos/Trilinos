@@ -43,7 +43,7 @@ public:
   typedef typename node_t::device_type device_t;
   typedef typename device_t::execution_space execution_space;
   typedef Kokkos::View<int *, device_t> list_of_colors_t;
-  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
+  typedef typename list_of_colors_t::host_mirror_type list_of_colors_host_t;
 
   // Constructor
   TpetraCrsColorer(const Teuchos::RCP<matrix_t> &matrix_);
@@ -129,7 +129,7 @@ public:
   typedef typename node_t::device_type device_t;
   typedef typename device_t::execution_space execution_space;
   typedef Kokkos::View<int *, device_t> list_of_colors_t;
-  typedef typename list_of_colors_t::HostMirror list_of_colors_host_t;
+  typedef typename list_of_colors_t::host_mirror_type list_of_colors_host_t;
 
   // Constructor
   TpetraCrsColorer(const Teuchos::RCP<matrix_t> &matrix_);

@@ -929,9 +929,9 @@ namespace Tpetra {
       const auto Pvals = Pmat.values;
       const auto Rvals = Rmat.values;
 
-      typename c_lno_view_t::HostMirror::const_type  Irowptr;
-      typename lno_nnz_view_t::HostMirror  Icolind;
-      typename scalar_view_t::HostMirror  Ivals;
+      typename c_lno_view_t::host_mirror_type::const_type  Irowptr;
+      typename lno_nnz_view_t::host_mirror_type  Icolind;
+      typename scalar_view_t::host_mirror_type  Ivals;
       if(!Pview.importMatrix.is_null()) {
         auto lclP = Pview.importMatrix->getLocalMatrixHost();
         Irowptr = lclP.graph.row_map;
@@ -952,9 +952,9 @@ namespace Tpetra {
       // ML; for the non-threaded case, ML found it faster to spend less
       // effort on estimation and risk an occasional reallocation.
       size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Pview.origMatrix), n);
-      typename lno_view_t::HostMirror Crowptr(Kokkos::ViewAllocateWithoutInitializing("Crowptr"),m+1);
-      typename lno_nnz_view_t::HostMirror Ccolind(Kokkos::ViewAllocateWithoutInitializing("Ccolind"),CSR_alloc);
-      typename scalar_view_t::HostMirror Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"),CSR_alloc);
+      typename lno_view_t::host_mirror_type Crowptr(Kokkos::ViewAllocateWithoutInitializing("Crowptr"),m+1);
+      typename lno_nnz_view_t::host_mirror_type Ccolind(Kokkos::ViewAllocateWithoutInitializing("Ccolind"),CSR_alloc);
+      typename scalar_view_t::host_mirror_type Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"),CSR_alloc);
 
       // mfh 27 Sep 2016: The ac_status array is an implementation detail
       // of the local sparse matrix-matrix multiply routine.

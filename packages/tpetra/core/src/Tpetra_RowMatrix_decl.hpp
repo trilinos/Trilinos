@@ -87,32 +87,32 @@ namespace Tpetra {
     typedef typename
         Kokkos::View<impl_scalar_type*, typename Node::device_type>::const_type
         values_device_view_type;
-    typedef typename values_device_view_type::HostMirror::const_type
+    typedef typename values_device_view_type::host_mirror_type::const_type
         values_host_view_type;
-    typedef typename values_device_view_type::HostMirror
+    typedef typename values_device_view_type::host_mirror_type
         nonconst_values_host_view_type;
 
     typedef typename
         Kokkos::View<LocalOrdinal *, typename Node::device_type>::const_type
         local_inds_device_view_type;
-    typedef typename local_inds_device_view_type::HostMirror::const_type
+    typedef typename local_inds_device_view_type::host_mirror_type::const_type
         local_inds_host_view_type;
-    typedef typename local_inds_device_view_type::HostMirror
+    typedef typename local_inds_device_view_type::host_mirror_type
         nonconst_local_inds_host_view_type;
 
     typedef typename
         Kokkos::View<GlobalOrdinal *, typename Node::device_type>::const_type
         global_inds_device_view_type;
-    typedef typename global_inds_device_view_type::HostMirror::const_type
+    typedef typename global_inds_device_view_type::host_mirror_type::const_type
         global_inds_host_view_type;
-    typedef typename global_inds_device_view_type::HostMirror
+    typedef typename global_inds_device_view_type::host_mirror_type
         nonconst_global_inds_host_view_type;
 
 
     typedef typename
         Kokkos::View<const size_t*, typename Node::device_type>::const_type
         row_ptrs_device_view_type;
-    typedef typename row_ptrs_device_view_type::HostMirror::const_type
+    typedef typename row_ptrs_device_view_type::host_mirror_type::const_type
         row_ptrs_host_view_type;
 
 

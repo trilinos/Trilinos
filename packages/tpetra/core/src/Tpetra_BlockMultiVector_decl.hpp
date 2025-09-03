@@ -161,7 +161,7 @@ public:
   /// strategy circa 2014 to move from "classic" Tpetra to the Kokkos
   /// refactor version.
   typedef Kokkos::View<impl_scalar_type *, device_type> little_vec_type;
-  typedef typename little_vec_type::HostMirror little_host_vec_type;
+  typedef typename little_vec_type::host_mirror_type little_host_vec_type;
 
   /// \brief "Const block view" of all degrees of freedom at a mesh point,
   ///   for a single column of the MultiVector.

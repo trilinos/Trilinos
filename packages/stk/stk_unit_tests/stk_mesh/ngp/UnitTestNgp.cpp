@@ -25,7 +25,7 @@ void test_view_of_fields(const stk::mesh::BulkData& /*bulk*/,
   using FieldViewType = Kokkos::View<stk::mesh::NgpField<double>*,stk::ngp::MemSpace>;
 
   FieldViewType fields(Kokkos::ViewAllocateWithoutInitializing("fields"),2);
-  FieldViewType::HostMirror hostFields = Kokkos::create_mirror_view(fields);
+  FieldViewType::host_mirror_type hostFields = Kokkos::create_mirror_view(fields);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 2),
                        KOKKOS_LAMBDA(const unsigned& i)

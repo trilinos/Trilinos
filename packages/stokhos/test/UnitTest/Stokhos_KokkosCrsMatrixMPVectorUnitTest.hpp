@@ -107,8 +107,8 @@ bool compare_rank_2_views(const array_type& y,
                           Teuchos::FancyOStream& out)
 {
   typedef typename array_type::size_type size_type;
-  typename array_type::HostMirror hy = Kokkos::create_mirror_view(y);
-  typename array_type::HostMirror hy_exp = Kokkos::create_mirror_view(y_exp);
+  typename array_type::host_mirror_type hy = Kokkos::create_mirror_view(y);
+  typename array_type::host_mirror_type hy_exp = Kokkos::create_mirror_view(y_exp);
   Kokkos::deep_copy(hy, y);
   Kokkos::deep_copy(hy_exp, y_exp);
 
@@ -193,7 +193,7 @@ struct ReplaceDiagonalValuesKernel {
   static bool check(const MatrixType matrix,
                     Teuchos::FancyOStream& out) {
     typedef typename MatrixType::values_type matrix_values_type;
-    typename matrix_values_type::HostMirror host_matrix_values =
+    typename matrix_values_type::host_mirror_type host_matrix_values =
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
@@ -241,7 +241,7 @@ struct AddDiagonalValuesKernel {
   static bool check(const MatrixType matrix,
                     Teuchos::FancyOStream& out) {
     typedef typename MatrixType::values_type matrix_values_type;
-    typename matrix_values_type::HostMirror host_matrix_values =
+    typename matrix_values_type::host_mirror_type host_matrix_values =
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
@@ -290,7 +290,7 @@ struct AddDiagonalValuesAtomicKernel {
   static bool check(const MatrixType matrix,
                     Teuchos::FancyOStream& out) {
     typedef typename MatrixType::values_type matrix_values_type;
-    typename matrix_values_type::HostMirror host_matrix_values =
+    typename matrix_values_type::host_mirror_type host_matrix_values =
       Kokkos::create_mirror_view(matrix.values);
     Kokkos::deep_copy(host_matrix_values, matrix.values);
     const ordinal_type nrow = matrix.numRows();
@@ -448,12 +448,12 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   block_vector_type y =
     block_vector_type("y", fem_length, stoch_length);
 
-  typename block_vector_type::HostMirror hx = Kokkos::create_mirror_view( x );
-  typename block_vector_type::HostMirror hy = Kokkos::create_mirror_view( y );
+  typename block_vector_type::host_mirror_type hx = Kokkos::create_mirror_view( x );
+  typename block_vector_type::host_mirror_type hy = Kokkos::create_mirror_view( y );
 
   // View the block vector as an array of the embedded intrinsic type.
-  typename block_vector_type::HostMirror::array_type hax = hx ;
-  typename block_vector_type::HostMirror::array_type hay = hy ;
+  typename block_vector_type::host_mirror_type::array_type hax = hx ;
+  typename block_vector_type::host_mirror_type::array_type hay = hy ;
 
   for (ordinal_type iRowFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     for (ordinal_type iRowStoch=0; iRowStoch<stoch_length; ++iRowStoch) {
@@ -483,10 +483,10 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
 
-  typename matrix_values_type::HostMirror hM =
+  typename matrix_values_type::host_mirror_type hM =
     Kokkos::create_mirror_view( matrix.values );
 
-  typename matrix_values_type::HostMirror::array_type haM = hM ;
+  typename matrix_values_type::host_mirror_type::array_type haM = hM ;
 
   for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     const ordinal_type row_size = fem_graph[iRowFEM].size();
@@ -520,7 +520,7 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   array_type ay_expected =
     RankTypeSelector<array_type, ordinal_type, array_type::traits::rank_dynamic>::create_view("ay_expected", fem_length, stoch_length);
 #endif
-  typename array_type::HostMirror hay_expected =
+  typename array_type::host_mirror_type hay_expected =
     Kokkos::create_mirror_view(ay_expected);
   for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     const ordinal_type row_size = fem_graph[iRowFEM].size();

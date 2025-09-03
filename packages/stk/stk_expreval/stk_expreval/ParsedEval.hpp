@@ -144,7 +144,7 @@ private:
   int m_firstNodeIndex;
   int m_lastNodeIndex;
   NodeView m_deviceNodes;
-  NodeView::HostMirror m_hostNodes;
+  NodeView::host_mirror_type m_hostNodes;
 };
 
 }

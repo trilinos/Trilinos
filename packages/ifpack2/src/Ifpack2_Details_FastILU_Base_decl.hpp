@@ -54,7 +54,7 @@ class FastILU_Base : public Ifpack2::Preconditioner<Scalar, LocalOrdinal, Global
   //! Array of LocalOrdinal on device
   typedef Kokkos::View<LocalOrdinal*, execution_space> OrdinalArray;
   //! Array of LocalOrdinal on host
-  typedef typename Kokkos::View<LocalOrdinal*, execution_space>::HostMirror OrdinalArrayHost;
+  typedef typename Kokkos::View<LocalOrdinal*, execution_space>::host_mirror_type OrdinalArrayHost;
   //! Array of Scalar on device
   typedef Kokkos::View<ImplScalar*, execution_space> ImplScalarArray;
   typedef Kokkos::View<Scalar*, execution_space> ScalarArray;

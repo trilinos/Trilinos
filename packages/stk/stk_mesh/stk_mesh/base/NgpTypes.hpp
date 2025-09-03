@@ -43,9 +43,9 @@ namespace stk {
 namespace mesh {
 
 template <typename MemSpace> using DeviceCommMapIndices           = Kokkos::View<FastMeshIndex*, MemSpace>;
-template <typename MemSpace> using HostCommMapIndices             = typename DeviceCommMapIndices<MemSpace>::HostMirror;
+template <typename MemSpace> using HostCommMapIndices             = typename DeviceCommMapIndices<MemSpace>::host_mirror_type;
 template <typename MemSpace> using NgpCommMapIndices              = Kokkos::View<FastMeshIndex*, MemSpace>;
-template <typename MemSpace> using NgpCommMapIndicesHostMirror    = typename NgpCommMapIndices<MemSpace>::HostMirror;
+template <typename MemSpace> using NgpCommMapIndicesHostMirror    = typename NgpCommMapIndices<MemSpace>::host_mirror_type;
 
 template <typename MemSpace> using EntityKeyViewType              = Kokkos::View<EntityKey*, MemSpace>;
 template <typename MemSpace> using EntityViewType                 = Kokkos::View<Entity*, MemSpace>;
@@ -63,13 +63,13 @@ template <typename MemSpace> using PermutationViewType            = Kokkos::View
 template <typename MemSpace> using FastSharedCommMapViewType      = DeviceCommMapIndices<MemSpace>;
 template <typename MemSpace> using MeshIndexType                  = Kokkos::View<FastMeshIndex*, MemSpace,
                                                                                  Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
-template <typename MemSpace> using HostMeshIndexType              = typename MeshIndexType<MemSpace>::HostMirror;
+template <typename MemSpace> using HostMeshIndexType              = typename MeshIndexType<MemSpace>::host_mirror_type;
 
 using DeviceStringType = Kokkos::View<char*, stk::ngp::HostPinnedSpace>;
 using HostStringType = Kokkos::View<char*, stk::ngp::HostMemSpace>;
 
 template <typename MemSpace> using DeviceFieldMetaDataArrayType   = Kokkos::View<DeviceFieldMetaData*, MemSpace>;
-template <typename MemSpace> using HostFieldMetaDataArrayType     = typename DeviceFieldMetaDataArrayType<MemSpace>::HostMirror;
+template <typename MemSpace> using HostFieldMetaDataArrayType     = typename DeviceFieldMetaDataArrayType<MemSpace>::host_mirror_type;
 template <typename MemSpace> using DeviceBucketsModifiedCollectionType = Kokkos::View<int**, Kokkos::LayoutRight, MemSpace>;
 
 using FieldMetaDataArrayType = typename Kokkos::View<FieldMetaData*, stk::ngp::HostMemSpace>;

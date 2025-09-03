@@ -98,10 +98,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LWGraph_kokkos, LocalGraphData, Scalar, LocalO
   using row_map_type = typename LWGraph_kokkos::local_graph_type::row_map_type;
   using entries_type = typename LWGraph_kokkos::local_graph_type::entries_type;
 
-  row_map_type rowPtrs                          = graph->getRowPtrs();
-  entries_type entries                          = graph->getEntries();
-  typename row_map_type::HostMirror rowPtrsHost = Kokkos::create_mirror_view(rowPtrs);
-  typename entries_type::HostMirror entriesHost = Kokkos::create_mirror_view(entries);
+  row_map_type rowPtrs                                = graph->getRowPtrs();
+  entries_type entries                                = graph->getEntries();
+  typename row_map_type::host_mirror_type rowPtrsHost = Kokkos::create_mirror_view(rowPtrs);
+  typename entries_type::host_mirror_type entriesHost = Kokkos::create_mirror_view(entries);
   Kokkos::deep_copy(rowPtrsHost, rowPtrs);
   Kokkos::deep_copy(entriesHost, entries);
   rowPtrs = row_map_type();

@@ -138,7 +138,7 @@ private:
 
     build_lid_to_gid(lid_to_gid_row, fixture);
 
-    typename lid_to_gid_type::HostMirror lid_to_gid_row_host =
+    typename lid_to_gid_type::host_mirror_type lid_to_gid_row_host =
       Kokkos::create_mirror_view(lid_to_gid_row);
 
     Kokkos::deep_copy(lid_to_gid_row_host, lid_to_gid_row);
@@ -155,7 +155,7 @@ private:
 
     build_lid_to_gid(lid_to_gid_all, fixture);
 
-    typename lid_to_gid_type::HostMirror lid_to_gid_all_host =
+    typename lid_to_gid_type::host_mirror_type lid_to_gid_all_host =
       Kokkos::create_mirror_view(lid_to_gid_all);
 
     Kokkos::deep_copy(lid_to_gid_all_host, lid_to_gid_all);

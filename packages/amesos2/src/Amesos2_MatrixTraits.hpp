@@ -98,8 +98,13 @@ namespace Amesos2 {
     typedef Scalar impl_scalar_type;
     typedef Tpetra::Map<>::node_type node_t;
 
+#if KOKKOS_VERSION >= 40799
+    typedef typename matrix_type::host_mirror_type::index_type  global_host_idx_type;
+    typedef typename matrix_type::host_mirror_type::values_type global_host_val_type;
+#else
     typedef typename matrix_type::HostMirror::index_type  global_host_idx_type;
     typedef typename matrix_type::HostMirror::values_type global_host_val_type;
+#endif
 
     typedef row_access major_access;
   };

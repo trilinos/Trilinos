@@ -244,8 +244,8 @@ bool testAtomic(const TagType& tag, Teuchos::FancyOStream& out)
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
   typedef Kokkos::View<FadType,Layout,Device> ScalarViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
-  typedef typename ScalarViewType::HostMirror host_scalar_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
+  typedef typename ScalarViewType::host_mirror_type host_scalar_view_type;
 
   const size_type num_rows = global_num_rows;
   const size_type fad_size = global_fad_size;

@@ -22,18 +22,18 @@ struct GaussSeidel {
   using multivector_type         = Tpetra::MultiVector<Scalar, LO, GO, NT>;
   using block_multivector_type   = Tpetra::BlockMultiVector<Scalar, LO, GO, NT>;
   using mem_space_t              = typename local_matrix_device_type::memory_space;
-  using rowmap_t                 = typename local_matrix_device_type::row_map_type::HostMirror;
-  using entries_t                = typename local_matrix_device_type::index_type::HostMirror;
-  using values_t                 = typename local_matrix_device_type::values_type::HostMirror;
+  using rowmap_t                 = typename local_matrix_device_type::row_map_type::host_mirror_type;
+  using entries_t                = typename local_matrix_device_type::index_type::host_mirror_type;
+  using values_t                 = typename local_matrix_device_type::values_type::host_mirror_type;
   using const_rowmap_t           = typename rowmap_t::const_type;
   using const_entries_t          = typename entries_t::const_type;
   using const_values_t           = typename values_t::const_type;
   using Offset                   = typename rowmap_t::non_const_value_type;
   using IST                      = typename crs_matrix_type::impl_scalar_type;
   using KAT                      = Kokkos::ArithTraits<IST>;
-  // Type of view representing inverse diagonal blocks, and its HostMirror.
+  // Type of view representing inverse diagonal blocks, and its host_mirror_type.
   using InverseBlocks     = Kokkos::View<IST***, typename bcrs_matrix_type::device_type>;
-  using InverseBlocksHost = typename InverseBlocks::HostMirror;
+  using InverseBlocksHost = typename InverseBlocks::host_mirror_type;
 
   typedef typename crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
   typedef typename crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;

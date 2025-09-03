@@ -211,19 +211,24 @@ class XPETRA_DEPRECATED EpetraCrsMatrixT
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
+#if KOKKOS_VERSION >= 40799
+  typename local_matrix_type::host_mirror_type getLocalMatrixHost() const {
+#else
   typename local_matrix_type::HostMirror getLocalMatrixHost() const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
-                               "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
-  }
+#endif
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                                 "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+}
 
-  void setAllValues(const typename local_matrix_type::row_map_type &ptr,
-                    const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type &ind,
-                    const typename local_matrix_type::values_type &val) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
-                               "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
-  }
+void
+setAllValues(const typename local_matrix_type::row_map_type &ptr,
+             const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type &ind,
+             const typename local_matrix_type::values_type &val) {
+  TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                             "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+}
 
-  LocalOrdinal GetStorageBlockSize() const { return 1; }
+LocalOrdinal GetStorageBlockSize() const { return 1; }
 
 #else
 #ifdef __GNUC__
@@ -231,15 +236,15 @@ class XPETRA_DEPRECATED EpetraCrsMatrixT
 #endif
 #endif
 
-  void residual(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X,
-                const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &B,
-                MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &R) const {
-    Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
-    apply(X, R);
-    R.update(one, B, negone);
-  }
+void residual(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X,
+              const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &B,
+              MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &R) const {
+  Scalar one = Teuchos::ScalarTraits<Scalar>::one(), negone = -one;
+  apply(X, R);
+  R.update(one, B, negone);
+}
 
-};  // EpetraCrsMatrixT class (specialization on GO=long, empty stub implementation)
+};  // namespace Xpetra
 
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 template <>
@@ -1263,7 +1268,11 @@ class EpetraCrsMatrixT<int, EpetraNode>
     return getLocalMatrixHost();
   }
 
+#if KOKKOS_VERSION >= 40799
+  typename local_matrix_type::host_mirror_type getLocalMatrixHost() const {
+#else
   typename local_matrix_type::HostMirror getLocalMatrixHost() const {
+#endif
     RCP<Epetra_CrsMatrix> matrix = getEpetra_CrsMatrixNonConst();
 
     const int numRows = matrix->NumMyRows();

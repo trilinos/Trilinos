@@ -90,13 +90,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IndexManager_kokkos, IndexManager, Scalar, Loc
   Kokkos::fence();
   std::cout << "Allocate host views before performing checks" << std::endl;
 
-  typename Kokkos::View<const int[3], device_type>::HostMirror coarseRate_h = Kokkos::create_mirror_view(myIndexManager->getCoarseningRates());
+  typename Kokkos::View<const int[3], device_type>::host_mirror_type coarseRate_h = Kokkos::create_mirror_view(myIndexManager->getCoarseningRates());
   Kokkos::deep_copy(coarseRate_h, myIndexManager->getCoarseningRates());
 
-  typename Kokkos::View<LO[3], device_type>::HostMirror lFineNodesPerDir_h = Kokkos::create_mirror_view(myIndexManager->getLocalFineNodesPerDir());
+  typename Kokkos::View<LO[3], device_type>::host_mirror_type lFineNodesPerDir_h = Kokkos::create_mirror_view(myIndexManager->getLocalFineNodesPerDir());
   Kokkos::deep_copy(lFineNodesPerDir_h, myIndexManager->getLocalFineNodesPerDir());
 
-  typename Kokkos::View<LO[3], device_type>::HostMirror lCoarseNodesPerDir_h = Kokkos::create_mirror_view(myIndexManager->getCoarseNodesPerDir());
+  typename Kokkos::View<LO[3], device_type>::host_mirror_type lCoarseNodesPerDir_h = Kokkos::create_mirror_view(myIndexManager->getCoarseNodesPerDir());
   Kokkos::deep_copy(lCoarseNodesPerDir_h, myIndexManager->getCoarseNodesPerDir());
 
   Kokkos::fence();

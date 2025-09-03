@@ -728,7 +728,7 @@ OverlappingRowMatrix<MatrixType>::getExtHaloStarts() const {
 }
 
 template <class MatrixType>
-typename Kokkos::View<size_t *, typename OverlappingRowMatrix<MatrixType>::device_type>::HostMirror
+typename Kokkos::View<size_t *, typename OverlappingRowMatrix<MatrixType>::device_type>::host_mirror_type
 OverlappingRowMatrix<MatrixType>::getExtHaloStartsHost() const {
   return ExtHaloStarts_h;
 }

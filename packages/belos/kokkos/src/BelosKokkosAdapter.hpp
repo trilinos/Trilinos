@@ -558,7 +558,7 @@ public:
   /// (This function will first copy the multivector to host space
   /// if needed.)
   void MvPrint( std::ostream& os ) const {
-    typename ViewMatrixType::HostMirror hostView("myViewMirror", myView.extent(0), myView.extent(1));
+    typename ViewMatrixType::host_mirror_type hostView("myViewMirror", myView.extent(0), myView.extent(1));
     Kokkos::deep_copy(hostView, myView);
     for(unsigned int i = 0; i < (hostView.extent(0)); i++){
       for (unsigned int j = 0; j < (hostView.extent(1)); j++){

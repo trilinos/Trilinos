@@ -149,7 +149,7 @@ public:
 
 protected:
     typedef Kokkos::View<Datatype *, DeviceSpace> DeviceType;
-    typedef typename DeviceType::HostMirror HostType;
+    typedef typename DeviceType::host_mirror_type HostType;
 
     virtual DeviceType get_new_vals_of_size(size_t s)
     {

@@ -132,23 +132,23 @@ protected:
 
   /// Adjacency array for indexing into subcell_to_cells array
   PHX::View<int*> _subcell_to_cells_adj;
-  PHX::View<int*>::HostMirror _subcell_to_cells_adj_host;
+  PHX::View<int*>::host_mirror_type _subcell_to_cells_adj_host;
 
   /// Mapping from subcells to cells
   PHX::View<int*> _subcell_to_cells;
-  PHX::View<int*>::HostMirror _subcell_to_cells_host;
+  PHX::View<int*>::host_mirror_type _subcell_to_cells_host;
 
   /// Mapping from subcell indexes to local subcell indexes
   PHX::View<int*> _subcell_to_local_subcells;
-  PHX::View<int*>::HostMirror _subcell_to_local_subcells_host;
+  PHX::View<int*>::host_mirror_type _subcell_to_local_subcells_host;
 
   /// Adjacency array for indexing into cell_to_subcells array
   PHX::View<int*> _cell_to_subcells_adj;
-  PHX::View<int*>::HostMirror _cell_to_subcells_adj_host;
+  PHX::View<int*>::host_mirror_type _cell_to_subcells_adj_host;
 
   /// Mapping from cells to subcells
   PHX::View<int*> _cell_to_subcells;
-  PHX::View<int*>::HostMirror _cell_to_subcells_host;
+  PHX::View<int*>::host_mirror_type _cell_to_subcells_host;
 
 };
 

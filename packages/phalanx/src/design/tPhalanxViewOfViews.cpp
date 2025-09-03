@@ -484,7 +484,7 @@ using DeviceMemorySpace = std::conditional<std::is_same<DeviceExecutionSpace,Kok
                                            Kokkos::CudaSpace,
                                            Kokkos::DefaultExecutionSpace::memory_space>::type;
 using view = Kokkos::View<double*,DeviceMemorySpace>;
-using view_host = view::HostMirror;
+using view_host = view::host_mirror_type;
 
 class Wrapper {
 public:

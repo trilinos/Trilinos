@@ -122,7 +122,7 @@ public:
     // Compute the maximum and minimum values of the diffusion coefficient
     // over the mesh (which is our measure of anisotropy) for each sample point
     typedef typename CoeffFunctionType::RandomVariableView RV;
-    typedef typename RV::HostMirror HRV;
+    typedef typename RV::host_mirror_type HRV;
     RV rv = m_max_min_functor.m_coeff_function.getRandomVariables();
     HRV hrv = Kokkos::create_mirror_view(rv);
     const Ordinal dim = rv.extent(0);

@@ -94,7 +94,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 {
   typedef Kokkos::View<FadFadType**,Layout,Device> ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = global_num_cols;
@@ -142,7 +142,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 {
   typedef Kokkos::DynRankView<FadFadType,Layout,Device> ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = global_num_cols;
@@ -191,10 +191,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 {
   typedef Kokkos::DynRankView<FadFadType,Layout,Device> DRViewType;
   typedef typename DRViewType::size_type size_type;
-  typedef typename DRViewType::HostMirror host_view_type;
+  typedef typename DRViewType::host_mirror_type host_view_type;
 
   typedef Kokkos::View<FadFadType**,Layout,Device> NoDynViewType;
-  typedef typename NoDynViewType::HostMirror host_nondynrankview_type;
+  typedef typename NoDynViewType::host_mirror_type host_nondynrankview_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = global_num_cols;
@@ -249,10 +249,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 {
   typedef Kokkos::DynRankView<FadFadType,Layout,Device> DRViewType;
   typedef typename DRViewType::size_type size_type;
-  typedef typename DRViewType::HostMirror host_view_type;
+  typedef typename DRViewType::host_mirror_type host_view_type;
 
   typedef Kokkos::View<FadFadType**,Layout,Device> NoDynViewType;
-  typedef typename NoDynViewType::HostMirror host_nondynrankview_type;
+  typedef typename NoDynViewType::host_mirror_type host_nondynrankview_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = global_num_cols;

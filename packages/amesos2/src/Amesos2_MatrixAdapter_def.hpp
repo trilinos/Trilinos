@@ -283,7 +283,7 @@ namespace Amesos2 {
     global_ordinal_t rowInd = OrdinalTraits<global_ordinal_t>::zero();
 
     // For rowptr we can just make a mirror and deep_copy at the end
-    typename KV_GS::HostMirror host_rowptr = Kokkos::create_mirror_view(rowptr);
+    typename KV_GS::host_mirror_type host_rowptr = Kokkos::create_mirror_view(rowptr);
 
     #if !defined(TESTING_AMESOS2_WITH_TPETRA_REMOVE_UVM)
     // Note nzval, colind, and rowptr will not all be in the same memory space.

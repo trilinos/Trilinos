@@ -58,9 +58,9 @@ void checkAggregatesBlockmap(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, Global
   // Lists of nodes in each aggregate
   struct {
     // GH: For now, copy everything to host until we properly set this factory to run device code
-    // Instead, we'll copy data into HostMirrors and run the algorithms on host, saving optimization for later.
+    // Instead, we'll copy data into host_mirror_types and run the algorithms on host, saving optimization for later.
     typename Aggregates::LO_view ptr, nodes, unaggregated;
-    typename Aggregates::LO_view::HostMirror ptr_h, nodes_h, unaggregated_h;
+    typename Aggregates::LO_view::host_mirror_type ptr_h, nodes_h, unaggregated_h;
   } nodesInAgg;
   aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
   nodesInAgg.ptr_h          = Kokkos::create_mirror_view(nodesInAgg.ptr);
@@ -108,9 +108,9 @@ void checkAggregatesMapPair(Teuchos::RCP<MueLu::Aggregates<LocalOrdinal, GlobalO
   // Lists of nodes in each aggregate
   struct {
     // GH: For now, copy everything to host until we properly set this factory to run device code
-    // Instead, we'll copy data into HostMirrors and run the algorithms on host, saving optimization for later.
+    // Instead, we'll copy data into host_mirror_types and run the algorithms on host, saving optimization for later.
     typename Aggregates::LO_view ptr, nodes, unaggregated;
-    typename Aggregates::LO_view::HostMirror ptr_h, nodes_h, unaggregated_h;
+    typename Aggregates::LO_view::host_mirror_type ptr_h, nodes_h, unaggregated_h;
   } nodesInAgg;
   aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
   nodesInAgg.ptr_h          = Kokkos::create_mirror_view(nodesInAgg.ptr);
