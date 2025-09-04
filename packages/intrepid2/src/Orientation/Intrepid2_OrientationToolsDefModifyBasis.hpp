@@ -115,7 +115,7 @@ namespace Intrepid2 {
         for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
           const ordinal_type ordEdge = (1 < tagToOrdinal.extent(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.extent(1) ? tagToOrdinal(1, edgeId, 0) : -1) : -1);
 
-          bool havePrinted = false; // DEBUGGING
+//          bool havePrinted = false; // DEBUGGING
           if (ordEdge != -1) {
             existEdgeDofs = 1;
             const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
@@ -133,14 +133,14 @@ namespace Intrepid2 {
                     const ordinal_type ll = tagToOrdinal(1, edgeId, l);
                     auto & input_ = leftMultiply ? in.access(ll, j, k) : in.access(j, ll, k);
                     auto & mat_il = transpose ? mat(l,i) : mat(i,l);
-                    {
-                      // DEBUGGING
-                      if (!havePrinted)
-                      {
-                        std::cout << "old edge mat_il(" << ii << "," << ll << ") = " << mat_il << std::endl; // ii, ll: basis ordinals
-                        havePrinted = true;
-                      }
-                    }
+//                    {
+//                      // DEBUGGING
+//                      if (!havePrinted)
+//                      {
+//                        std::cout << "old edge mat_il(" << ii << "," << ll << ") = " << mat_il << std::endl; // ii, ll: basis ordinals
+//                        havePrinted = true;
+//                      }
+//                    }
                     temp += mat_il*input_;
                   }
                   auto & output_ = leftMultiply ? out.access(ii, j, k) : out.access(j, ii, k);
@@ -160,7 +160,7 @@ namespace Intrepid2 {
         for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
           const ordinal_type ordFace = (2 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.extent(1) ? tagToOrdinal(2, faceId, 0) : -1) : -1);
 
-          bool havePrinted = false; // DEBUGGING
+//          bool havePrinted = false; // DEBUGGING
           if (ordFace != -1) {
             const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
             const auto mat = Kokkos::subview(matData,
@@ -177,14 +177,14 @@ namespace Intrepid2 {
                     const ordinal_type ll = tagToOrdinal(2, faceId, l);
                     auto & input_ = leftMultiply ? in.access(ll, j, k) : in.access(j, ll, k);
                     auto & mat_il = transpose ? mat(l,i) : mat(i,l);
-                    {
-                      // DEBUGGING
-                      if (!havePrinted)
-                      {
-                        std::cout << "old face mat_il(" << ii << "," << ll << ") = " << mat_il << std::endl; // ii, ll: basis ordinals
-                        havePrinted = true;
-                      }
-                    }
+//                    {
+//                      // DEBUGGING
+//                      if (!havePrinted)
+//                      {
+//                        std::cout << "old face mat_il(" << ii << "," << ll << ") = " << mat_il << std::endl; // ii, ll: basis ordinals
+//                        havePrinted = true;
+//                      }
+//                    }
                     temp += mat_il*input_;
                   }
                   
@@ -313,7 +313,7 @@ namespace Intrepid2 {
           // apply operators on each edge
           for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
           {
-            bool havePrinted = false;
+//            bool havePrinted = false;
             auto & edgeOp = edgeOperatorData(edgeId, ortEdges[edgeId]);
             auto & rowIndices = edgeOp.rowIndices;
             auto & rowOffsets = edgeOp.offsetsForRowOrdinal;
@@ -321,18 +321,18 @@ namespace Intrepid2 {
             auto & weights    = edgeOp.packedWeights;
             
             ordinal_type numRowIndices = rowIndices.extent_int(0);
-            if (numRowIndices == 0) // DEBUGGING
-            {
-              {
-                // DEBUGGING
-                if (!havePrinted)
-                {
-                  // x: we don't have immediate access to *which* basis ordinal this is.
-                  std::cout << "new edge mat_ij(x,x) = " << 1.0 << std::endl;
-                  havePrinted = true;
-                }
-              }
-            }
+//            if (numRowIndices == 0) // DEBUGGING
+//            {
+//              {
+//                // DEBUGGING
+//                if (!havePrinted)
+//                {
+//                  // x: we don't have immediate access to *which* basis ordinal this is.
+//                  std::cout << "new edge mat_ij(x,x) = " << 1.0 << std::endl;
+//                  havePrinted = true;
+//                }
+//              }
+//            }
             for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
             {
               const ordinal_type & i = rowIndices[rowOrdinal];
@@ -349,14 +349,14 @@ namespace Intrepid2 {
                     const ordinal_type & j = colIndices(rowOffset);
                     const auto & mat_ij = weights(rowOffset);
                     
-                    {
-                      // DEBUGGING
-                      if (!havePrinted)
-                      {
-                        std::cout << "new edge mat_ij(" << i << "," << j << ") = " << mat_ij << std::endl;
-                        havePrinted = true;
-                      }
-                    }
+//                    {
+//                      // DEBUGGING
+//                      if (!havePrinted)
+//                      {
+//                        std::cout << "new edge mat_ij(" << i << "," << j << ") = " << mat_ij << std::endl;
+//                        havePrinted = true;
+//                      }
+//                    }
                     
                     auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
                     temp += mat_ij * input_;
@@ -378,7 +378,7 @@ namespace Intrepid2 {
           // apply operators on each face
           for (ordinal_type faceId=0;faceId<numFaces;++faceId)
           {
-            bool havePrinted = false;
+//            bool havePrinted = false;
             auto & faceOp = faceOperatorData(faceId, ortFaces[faceId]);
             auto & rowIndices = faceOp.rowIndices;
             auto & rowOffsets = faceOp.offsetsForRowOrdinal;
@@ -386,18 +386,18 @@ namespace Intrepid2 {
             auto & weights    = faceOp.packedWeights;
             
             ordinal_type numRowIndices = rowIndices.extent_int(0);
-            if (numRowIndices == 0) // DEBUGGING
-            {
-              {
+//            if (numRowIndices == 0) // DEBUGGING
+//            {
+//              {
                 // DEBUGGING
-                if (!havePrinted)
-                {
-                  // x: we don't have immediate access to *which* basis ordinal this is.
-                  std::cout << "new face mat_ij(x,x) = " << 1.0 << std::endl;
-                  havePrinted = true;
-                }
-              }
-            }
+//                if (!havePrinted)
+//                {
+//                  // x: we don't have immediate access to *which* basis ordinal this is.
+//                  std::cout << "new face mat_ij(x,x) = " << 1.0 << std::endl;
+//                  havePrinted = true;
+//                }
+//              }
+//            }
             for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
             {
               const ordinal_type & i = rowIndices[rowOrdinal];
@@ -414,14 +414,14 @@ namespace Intrepid2 {
                     const ordinal_type & j = colIndices(rowOffset);
                     const auto & mat_ij = weights(rowOffset);
                     
-                    {
-                      // DEBUGGING
-                      if (!havePrinted)
-                      {
-                        std::cout << "new face mat_ij(" << i << "," << j << ") = " << mat_ij << std::endl;
-                        havePrinted = true;
-                      }
-                    }
+//                    {
+//                      // DEBUGGING
+//                      if (!havePrinted)
+//                      {
+//                        std::cout << "new face mat_ij(" << i << "," << j << ") = " << mat_ij << std::endl;
+//                        havePrinted = true;
+//                      }
+//                    }
                     
                     auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
                     temp += mat_ij * input_;
