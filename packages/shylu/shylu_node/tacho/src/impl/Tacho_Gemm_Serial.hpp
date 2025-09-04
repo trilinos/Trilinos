@@ -34,9 +34,9 @@ template <typename ArgTransA, typename ArgTransB> struct Gemm<ArgTransA, ArgTran
                          k = (std::is_same<ArgTransB, Trans::NoTranspose>::value ? B.extent(0) : B.extent(1));
 
       BlasSerial<value_type_a>::gemm(ArgTransA::param, ArgTransB::param, m, n, k,
-                                     value_type_a(alpha), A.data(), A.stride_1(),
-                                                          B.data(), B.stride_1(),
-                                     value_type_c(beta),  C.data(), C.stride_1());
+                                     value_type_a(alpha), A.data(), A.stride(1),
+                                                          B.data(), B.stride(1),
+                                     value_type_c(beta),  C.data(), C.stride(1));
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");
     }

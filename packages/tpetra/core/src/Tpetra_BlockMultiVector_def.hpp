@@ -270,7 +270,7 @@ replaceLocalValuesImpl (const LO localRowIndex,
                         const Scalar vals[])
 {
   auto X_dst = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
-  typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
+  typename const_little_vec_type::host_mirror_type::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
   using exec_space = typename device_type::execution_space;
@@ -317,7 +317,7 @@ sumIntoLocalValuesImpl (const LO localRowIndex,
                         const Scalar vals[])
 {
   auto X_dst = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
-  typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
+  typename const_little_vec_type::host_mirror_type::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   AXPY (static_cast<impl_scalar_type> (STS::one ()), X_src, X_dst);
 }

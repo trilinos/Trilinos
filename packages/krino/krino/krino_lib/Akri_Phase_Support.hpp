@@ -55,6 +55,8 @@ struct LS_Field
   const CDFEM_Inequality_Spec * deathPtr;
 };
 
+FieldSet get_levelset_fields(const std::vector<LS_Field> & lsFields);
+
 class DecompositionPackage
 {
 public:

@@ -93,7 +93,7 @@ class Diagonal_Operator_2 : public Vector_Operator<MV>
 {
   public:
 
-    Diagonal_Operator_2<ST,MV>(int n_in, int min_gid_in, ST v_in)
+    Diagonal_Operator_2(int n_in, int min_gid_in, ST v_in)
     : Vector_Operator<MV>(n_in, n_in), min_gid(min_gid_in), v(v_in) {}
 
     ~Diagonal_Operator_2() { };

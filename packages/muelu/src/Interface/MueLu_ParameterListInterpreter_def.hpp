@@ -1072,6 +1072,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: lumping choice", std::string, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, dropParams);
     }
@@ -1792,6 +1793,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (changedPRViaCopyrebalance_)
         newPparams.set("repartition: explicit via new copy rebalance P and R", true);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newPparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: send type", std::string, newPparams);
       newP->SetParameterList(newPparams);
       newP->SetFactory("Importer", manager.GetFactory("Importer"));
       newP->SetFactory("P", manager.GetFactory("P"));
@@ -1818,6 +1820,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       ParameterList newRparams;
       newRparams.set("type", "Restriction");
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, newRparams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: send type", std::string, newRparams);
       if (changedPRrebalance_)
         newRparams.set("repartition: rebalance P and R", this->doPRrebalance_);
       if (changedPRViaCopyrebalance_)
@@ -2067,6 +2070,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, fParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: lumping choice", std::string, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, fParams);
       filterFactory->SetParameterList(fParams);
@@ -2126,6 +2130,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use root stencil", bool, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: Dirichlet threshold", double, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use spread lumping", bool, fParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: lumping choice", std::string, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, fParams);
       filterFactory->SetParameterList(fParams);

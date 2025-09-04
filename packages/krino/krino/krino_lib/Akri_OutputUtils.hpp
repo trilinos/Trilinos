@@ -13,6 +13,7 @@
 #include <stk_io/DatabasePurpose.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_math/StkVector.hpp>
 
 namespace krino {
 class Facet3d;
@@ -31,8 +32,12 @@ stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkDa
 template<class FACET>
 void write_facets( const std::vector<FACET> & facetedSurface, const std::string & fileBaseName, const int fileIndex, const stk::ParallelMachine comm);
 
+std::string stl_parallel_file_name(const std::string &fileBaseName, const stk::ParallelMachine comm);
 void write_stl(const std::string &filename, const std::vector<const Facet3d *> & facets);
-
+void write_stl(const std::string &filename, const std::vector<Facet3d> & facets);
+void write_stl(const std::string &filename,
+  const std::vector<stk::math::Vector3d> & vertices,
+  const std::vector<std::array<unsigned,3>> & facetConnectivity);
 }
 
 

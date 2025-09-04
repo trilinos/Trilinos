@@ -146,15 +146,18 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionSpecifiedTime)
 
     // ============================================================
     //+ VERIFICATION
+    auto temperatureData = temperature.data<stk::mesh::ReadOnly>();
+    auto heatFluxData = heat_flux.data<stk::mesh::ReadOnly>();
+
     stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
       [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
       //+ The value of the "temperature" field at all nodes should be 2.0
-      double *fieldDataForNode = stk::mesh::field_data(temperature, node);
-      EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
+      auto temperatureAtNode = temperatureData.entity_values(node);
+      EXPECT_DOUBLE_EQ(2.0, temperatureAtNode());
 
       //+ The value of the "heat_flux" field at all nodes should be 1.0
-      fieldDataForNode = stk::mesh::field_data(heat_flux, node);
-      EXPECT_DOUBLE_EQ(1.0, *fieldDataForNode);
+      auto heatFluxAtNode = heatFluxData.entity_values(node);
+      EXPECT_DOUBLE_EQ(1.0, heatFluxAtNode());
     });
     //-END
   }

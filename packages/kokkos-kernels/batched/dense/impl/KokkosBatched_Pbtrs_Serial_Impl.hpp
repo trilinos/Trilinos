@@ -70,7 +70,7 @@ struct SerialPbtrs<Uplo::Lower, Algo::Pbtrs::Unblocked> {
 
     const int kd = A.extent(0) - 1;
     return KokkosBatched::Impl::SerialPbtrsInternalLower<Algo::Pbtrs::Unblocked>::invoke(
-        A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), kd);
+        A.extent(1), A.data(), A.stride(0), A.stride(1), x.data(), x.stride(0), kd);
   }
 };
 
@@ -86,7 +86,7 @@ struct SerialPbtrs<Uplo::Upper, Algo::Pbtrs::Unblocked> {
 
     const int kd = A.extent(0) - 1;
     return KokkosBatched::Impl::SerialPbtrsInternalUpper<Algo::Pbtrs::Unblocked>::invoke(
-        A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), kd);
+        A.extent(1), A.data(), A.stride(0), A.stride(1), x.data(), x.stride(0), kd);
   }
 };
 

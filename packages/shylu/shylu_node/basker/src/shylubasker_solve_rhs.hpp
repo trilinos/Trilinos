@@ -32,8 +32,6 @@
 //#define BASKER_DEBUG_SOLVE_RHS
 //#define BASKER_TIMER
 
-using namespace std;
-
 namespace BaskerNS
 {
   // ================================= //
@@ -46,9 +44,9 @@ namespace BaskerNS
       no_pivot(no_pivot_), gperm(gperm_), post2downtop(post2downtop_), LL(LL_), x(x_), y(y_), offset(offset_)
       {}
 
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const int j) const {
-        Int b = post2downtop[j];
+      BASKER_INLINE
+      void operator()(const int id) const {
+        Int b = post2downtop[id];
         BASKER_MATRIX &L = LL(b)(0);
 
         const Int bcol = L.scol + offset;
@@ -91,9 +89,9 @@ namespace BaskerNS
                                post2downtop(post2downtop_), LU_size(LU_size_), LU(LU_), x(x_), y(y_), offset(offset_)
       {}
 
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const int j) const {
-        Int b = post2downtop(j);
+      BASKER_INLINE
+      void operator()(const int id) const {
+        Int b = post2downtop(id);
         BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
 
         const Int bcol = U.scol + offset;
@@ -195,8 +193,8 @@ namespace BaskerNS
       permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
       if (Options.matrix_scaling != 0) {
         Kokkos::parallel_for(
-          " ShyLU::Basker:Solve::pre_scale", gn,
-          KOKKOS_LAMBDA(const int i) {
+          " ShyLU::Basker:Solve::pre_scale", RangePolicy(0, gn),
+          BASKER_LAMBDA(const int i) {
           x_view_ptr_copy(i) = x_view_ptr_copy(i) * scale_row_array(i);
         });
       }

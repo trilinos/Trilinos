@@ -74,7 +74,7 @@ namespace { // (anonymous)
 
     typedef typename crs_matrix_type::impl_scalar_type ST;
     typedef typename Node::device_type DD;
-    typedef typename Kokkos::View<LO*, DD>::HostMirror::device_type HD;
+    typedef typename Kokkos::View<LO*, DD>::host_mirror_type::device_type HD;
     Kokkos::View<LO*, HD> lclInds ("lclInds", 1);
     Kokkos::View<ST*, HD> vals ("vals", 1);
     auto colMap = matrix.getColMap ();
@@ -225,7 +225,7 @@ namespace { // (anonymous)
 
     typedef typename crs_matrix_type::impl_scalar_type ST;
     typedef typename Node::device_type DD;
-    typedef typename Kokkos::View<LO*, DD>::HostMirror::device_type HD;
+    typedef typename Kokkos::View<LO*, DD>::host_mirror_type::device_type HD;
     Kokkos::View<GO*, HD> gblInds ("gblInds", 1);
     Kokkos::View<ST*, HD> vals ("vals", 1);
 

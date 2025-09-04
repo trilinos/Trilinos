@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
-#define _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
+#ifndef KOKKOSGRAPH_DISTANCE1_COLOR_HPP
+#define KOKKOSGRAPH_DISTANCE1_COLOR_HPP
 
 #include "KokkosGraph_color_d1_spec.hpp"
 #include "KokkosKernels_helpers.hpp"
@@ -65,4 +65,4 @@ void graph_color(KernelHandle *handle, typename KernelHandle::nnz_lno_t num_rows
 }  // end namespace Experimental
 }  // end namespace KokkosGraph
 
-#endif  // _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
+#endif  // KOKKOSGRAPH_DISTANCE1_COLOR_HPP

@@ -37,11 +37,11 @@ void SerialTrtri_Invoke(const RViewType &R, const char uplo[], const char diag[]
   using KokkosBatched::SerialTrtriInternalLower;
   using KokkosBatched::SerialTrtriInternalUpper;
 
-  char __uplo = tolower(uplo[0]), __diag = tolower(diag[0]);
+  char _uplo = tolower(uplo[0]), _diag = tolower(diag[0]);
 
   //// Lower ////
-  if (__uplo == 'l') {
-    if (__diag == 'u') {
+  if (_uplo == 'l') {
+    if (_diag == 'u') {
       R() = SerialTrtriInternalLower<Algo::Trtri::Unblocked>::invoke(Diag::Unit::use_unit_diag, A.extent(0),
                                                                      A.extent(1), A.data(), A.stride(0), A.stride(1));
     } else {
@@ -50,7 +50,7 @@ void SerialTrtri_Invoke(const RViewType &R, const char uplo[], const char diag[]
     }
   } else {
     //// Upper ////
-    if (__diag == 'u') {
+    if (_diag == 'u') {
       R() = SerialTrtriInternalUpper<Algo::Trtri::Unblocked>::invoke(Diag::Unit::use_unit_diag, A.extent(0),
                                                                      A.extent(1), A.data(), A.stride(0), A.stride(1));
     } else {

@@ -84,7 +84,7 @@ struct RKSolve_wrapper {
   ode_type my_ode;
   ode_params params;
   scalar_type tstart, tend;
-  int max_steps;
+  // int max_steps;
   vec_type y_old, y_new, tmp;
   mv_type kstack;
   count_type count;

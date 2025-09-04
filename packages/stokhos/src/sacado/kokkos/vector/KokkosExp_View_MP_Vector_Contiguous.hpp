@@ -130,7 +130,7 @@ inline auto create_mirror(
   if constexpr (Impl::ViewCtorProp<ViewCtorArgs...>::has_memory_space){
     return typename Impl::MirrorViewType<typename Impl::ViewCtorProp<ViewCtorArgs...>::memory_space, T, P ...>::dest_view_type(prop_copy, layout);
   } else {
-    return typename View<T, P...>::HostMirror(prop_copy, layout);
+    return typename View<T, P...>::host_mirror_type(prop_copy, layout);
   }
 }
 

@@ -214,9 +214,7 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols, const
     for (int i = 0; i < N; i++) {
       vgemm.A = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
       vgemm.B = Kokkos::subview(B_actual, i, Kokkos::ALL(), Kokkos::ALL());
-      ;
       vgemm.C = Kokkos::subview(B_expected, i, Kokkos::ALL(), Kokkos::ALL());
-      ;
       Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM",
                            Kokkos::TeamPolicy<execution_space>(nRows, Kokkos::AUTO, 16), vgemm);
     }
@@ -234,9 +232,7 @@ void impl_test_batched_trmm(const int N, const int nRows, const int nCols, const
     for (int i = 0; i < N; i++) {
       vgemm.A = Kokkos::subview(B_actual, i, Kokkos::ALL(), Kokkos::ALL());
       vgemm.B = Kokkos::subview(A, i, Kokkos::ALL(), Kokkos::ALL());
-      ;
       vgemm.C = Kokkos::subview(B_expected, i, Kokkos::ALL(), Kokkos::ALL());
-      ;
       Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM",
                            Kokkos::TeamPolicy<execution_space>(nRows, Kokkos::AUTO, 16), vgemm);
     }

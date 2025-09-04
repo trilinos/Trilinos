@@ -670,12 +670,6 @@ struct GetCoordinates
 
 }} //namespace stk::mesh
 
-namespace impl_hack {
-
-void really_dumb_func();
-
-} //namespace impl_hack
-
 #endif /*STK_SEARCH_UTIL_STK_MESH_PERIODIC_BOUNDARY_SEARCH_HPP*/
 
 

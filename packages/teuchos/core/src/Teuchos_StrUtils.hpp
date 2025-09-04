@@ -36,6 +36,9 @@ public:
       of strings, one for each line */
   static Array<std::string> splitIntoLines(const std::string& input);
 
+  /** \brief Split an input std::string using a seperator char sep*/
+  static Array<std::string> splitString(const std::string_view s, const char sep = ',');
+
   /** \brief Tokenize a file into whitespace-delimited tokens */
   static Array<Array<std::string> > tokenizeFile(std::istream& is, char comment);
 
@@ -125,7 +128,7 @@ public:
     ,const std::string       &linePrefix
     ,const std::string       &lines
     );
-	
+
   /** \brief Removes all the spaces in a string. */
   static std::string removeAllSpaces(std::string stringToClean);
 

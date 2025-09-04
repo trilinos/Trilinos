@@ -140,7 +140,7 @@
         Util::replace(m_root_string, ":", ": ");
       }
 
-      void create(Histograms<T>& histograms)
+      void create([[maybe_unused]] Histograms<T>& histograms)
       { 
 #if HAVE_YAML
         std::stringstream ss(m_root_string);

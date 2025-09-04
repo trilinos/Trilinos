@@ -50,16 +50,17 @@ getPart(stk::mesh::MetaData *meta_data, std::string part_name, bool partial_stri
       for (unsigned ipart=0; ipart < nparts; ipart++)
         {
           stk::mesh::Part& part = *parts[ipart];
-          size_t found = part.name().find(part_name);
+          std::string stk_part_name = sierra::make_lower(part.name());
+          size_t found = stk_part_name.find(part_name);
           if (found != std::string::npos)
             {
               // skip "old" parts
-              if (part.name().find(PerceptMesh::s_omit_part) == std::string::npos)
+              if (stk_part_name.find(PerceptMesh::s_omit_part) == std::string::npos)
                 {
-                  if (part.name().length() < pname_len_min)
+                  if (stk_part_name.length() < pname_len_min)
                     {
                       found_part = &part;
-                      pname_len_min = part.name().length();
+                      pname_len_min = stk_part_name.length();
                     }
                 }
             }

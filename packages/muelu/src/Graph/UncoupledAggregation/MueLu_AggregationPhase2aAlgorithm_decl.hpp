@@ -66,6 +66,8 @@ class AggregationPhase2aAlgorithm : public MueLu::AggregationAlgorithmBase<Local
 
   /*! @brief Local aggregation. */
 
+  void SetupPhase(const ParameterList& params, Teuchos::RCP<const Teuchos::Comm<int>>& comm, LO& numLocalNodes, LO& numNonAggregatedNodes) override;
+
   void BuildAggregatesNonKokkos(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
 
   void BuildAggregates(const Teuchos::ParameterList& params,
@@ -88,6 +90,9 @@ class AggregationPhase2aAlgorithm : public MueLu::AggregationAlgorithmBase<Local
   //@}
 
   std::string description() const { return "Phase 2a (secondary)"; }
+
+ private:
+  double factorMLOverride_ = Teuchos::ScalarTraits<double>::nan();
 };
 
 }  // namespace MueLu

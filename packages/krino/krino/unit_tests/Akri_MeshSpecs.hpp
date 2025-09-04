@@ -291,22 +291,24 @@ struct UMRRegularTet
         { 0.0, -0.5,  0.5/std::sqrt(2.) },
         { 0.0,  0.5,  0.5/std::sqrt(2.) },
 
-        { 0.0,  0.0,  0.5/std::sqrt(2.) },
-        {-0.25, 0.25, 0.0 },
-        { 0.25, 0.25, 0.0 },
-        { 0.25,-0.25, 0.0 },
-        {-0.25,-0.25, 0.0 },
         { 0.0,  0.0, -0.5/std::sqrt(2.) },
+        {-0.25,-0.25, 0.0 },
+        { 0.25,-0.25, 0.0 },
+
+        { 0.25, 0.25, 0.0 },
+        {-0.25, 0.25, 0.0 },
+        { 0.0,  0.0,  0.5/std::sqrt(2.) },
     }};
 
-    std::array<unsigned,4> TetConn0{{0,9,7,6}};
-    std::array<unsigned,4> TetConn1{{9,1,8,5}};
-    std::array<unsigned,4> TetConn2{{7,8,2,4}};
-    std::array<unsigned,4> TetConn3{{6,5,4,3}};
-    std::array<unsigned,4> TetConn4{{7,6,9,5}};
-    std::array<unsigned,4> TetConn5{{7,4,6,5}};
-    std::array<unsigned,4> TetConn6{{7,8,4,5}};
-    std::array<unsigned,4> TetConn7{{7,9,8,5}};
+    std::array<unsigned,4> TetConn0{{0,4,6,7}};
+    std::array<unsigned,4> TetConn1{{4,1,5,8}};
+    std::array<unsigned,4> TetConn2{{6,5,2,9}};
+    std::array<unsigned,4> TetConn3{{7,8,9,3}};
+    std::array<unsigned,4> TetConn4{{6,7,4,8}};
+    std::array<unsigned,4> TetConn5{{6,9,7,8}};
+    std::array<unsigned,4> TetConn6{{6,5,9,8}};
+    std::array<unsigned,4> TetConn7{{6,4,5,8}};
+
     std::vector<std::array<unsigned, 4>> allElementConn{TetConn0,TetConn1,TetConn2,TetConn3,TetConn4,TetConn5,TetConn6,TetConn7};
 };
 

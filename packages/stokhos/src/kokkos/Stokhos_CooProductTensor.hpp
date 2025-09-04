@@ -184,9 +184,9 @@ public:
     tensor.m_flops = 5*entry_count + tensor.m_dim;
 
     // Create mirror, is a view if is host memory
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_coord = Kokkos::create_mirror_view( tensor.m_coord );
-    typename value_array_type::HostMirror
+    typename value_array_type::host_mirror_type
       host_value = Kokkos::create_mirror_view( tensor.m_value );
 
     size_type n = 0;
@@ -222,9 +222,9 @@ public:
 
   void print(std::ostream& os) const {
     size_type num_entry = entry_count();
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_coord = Kokkos::create_mirror_view( m_coord );
-    typename value_array_type::HostMirror
+    typename value_array_type::host_mirror_type
       host_value = Kokkos::create_mirror_view( m_value );
     Kokkos::deep_copy( host_coord, m_coord );
     Kokkos::deep_copy( host_value, m_value );
@@ -369,9 +369,9 @@ public:
     tensor.m_flops = 5*entry_count + tensor.m_dim;
 
     // Create mirror, is a view if is host memory
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_coord = Kokkos::create_mirror_view( tensor.m_coord );
-    typename value_array_type::HostMirror
+    typename value_array_type::host_mirror_type
       host_value = Kokkos::create_mirror_view( tensor.m_value );
 
     // Set entries
@@ -412,9 +412,9 @@ public:
 
   void print(std::ostream& os) const {
     size_type num_entry = entry_count();
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_coord = Kokkos::create_mirror_view( m_coord );
-    typename value_array_type::HostMirror
+    typename value_array_type::host_mirror_type
       host_value = Kokkos::create_mirror_view( m_value );
     Kokkos::deep_copy( host_coord, m_coord );
     Kokkos::deep_copy( host_value, m_value );

@@ -540,7 +540,7 @@ int read_mtxplus_file(
   preprocessed = 0;
   sprintf(filename, "%s.mtxp", pio_info->pexo_fname);
   if (pio_info->file_comp == GZIP)
-    sprintf(filename, "%s.gz", filename);      /* but we don't uncompress?? TODO */
+    sprintf(filename, "%s.gz", pio_info->pexo_fname);      /* but we don't uncompress?? TODO */
 
   if (pio_info->chunk_reader == 1 &&              /* read large file in chunks */
       pio_info->init_dist_type == INITIAL_OWNER)  /* each process gets its own objects */
@@ -1209,7 +1209,7 @@ int nexte, nextv, nDistProcs=0;
 float pinVal;
 char *line, *token, *pinBuf, *vwgtBuf, *ewgtBuf;
 float *myvwgt, *myewgt;
-char cmesg[256];
+char cmesg[1074];
 char linestr[MATRIX_MARKET_MAX_LINE+1];
 
   *nGlobalEdges = *nGlobalVtxs = 0;

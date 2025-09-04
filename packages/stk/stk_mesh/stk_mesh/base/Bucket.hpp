@@ -53,6 +53,7 @@ namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { template<typename NgpMemSpace> class DeviceMeshT; } }
+namespace stk { namespace mesh { namespace impl { template <typename NgpMemSpace> class DeviceBucketRepository; } } }
 namespace stk { namespace mesh { template<typename NgpMemSpace> class DeviceFieldDataManager; } }
 namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
@@ -88,12 +89,6 @@ bool should_store_permutations(EntityRank fromRank, EntityRank toRank)
  *          for which this bucket is a subset.
  */
 std::ostream & operator << ( std::ostream & , const Bucket & );
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
-/** \brief  Print the parts and entities of this bucket */
-STK_DEPRECATED std::ostream &
-print( std::ostream & , const std::string & indent , const Bucket & );
-#endif
 
 #define CONNECTIVITY_TYPE_SWITCH(entity_kind, fixed_func_sig, dynamic_func_sig, check_invalid) \
   switch(entity_kind) {                                                 \
@@ -243,7 +238,10 @@ public:
 
   impl::Partition *getPartition() const { return m_partition; }
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Sepember 2025
+  STK_DEPRECATED_MSG("Please use the new Field API to access your data.")
   unsigned char* field_data_location(const FieldBase& field) const;
+#endif
 
   bool field_data_is_allocated(const FieldBase& field) const;
 
@@ -336,10 +334,6 @@ public:
   { return m_dynamic_element_connectivity.end_permutations(bucket_ordinal); }
 
   bool has_permutation(EntityRank rank) const;
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2025
-STK_DEPRECATED void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
-#endif
 
   /* NGP Bucket methods */
 
@@ -508,6 +502,7 @@ private:
   friend struct impl::OverwriteEntityFunctor;
   friend class BulkData;
   template<typename NgpMemSpace> friend class DeviceMeshT;
+  template<typename NgpMemSpace> friend class impl::DeviceBucketRepository;
   template<typename NgpMemSpace> friend class DeviceFieldDataManager;
 
   BulkData             & m_mesh;

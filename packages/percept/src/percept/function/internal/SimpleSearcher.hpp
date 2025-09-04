@@ -47,7 +47,7 @@
        */
 
       virtual const stk::mesh::Entity findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
-                                                   unsigned& found_it, const stk::mesh::Entity hint_element );
+                                                   unsigned& found_it, const stk::mesh::Entity hint_element ) override;
     };
 
   }

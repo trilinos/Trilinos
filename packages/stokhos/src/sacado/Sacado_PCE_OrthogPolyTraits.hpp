@@ -152,9 +152,9 @@ namespace Teuchos {
     typedef ValueTypeSerializer<Ordinal,T> ValueSerializer;
     typedef Sacado::PCE::SerializerImp< Ordinal,PCEType,ValueSerializer> Base;
     typedef typename Base::expansion_type expansion_type;
-    ValueTypeSerializer(const Teuchos::RCP<expansion_type>& expansion,
-                        const Teuchos::RCP<const ValueSerializer>& vs) :
-      Base(expansion,vs) {}
+    ValueTypeSerializer(const Teuchos::RCP<expansion_type>& aexpansion,
+                        const Teuchos::RCP<const ValueSerializer>& avs) :
+      Base(aexpansion,avs) {}
   };
 
 }

@@ -79,21 +79,27 @@ size_t set_field_data(stk::mesh::BulkData& mesh, const stk::mesh::Selector& sele
 {
   const stk::mesh::MetaData& meta = mesh.mesh_meta_data();
   const stk::mesh::FieldVector& fields = meta.get_fields(stk::topology::NODE_RANK);
-  const stk::mesh::BucketVector& node_buckets = mesh.get_buckets(stk::topology::NODE_RANK, select);
-  size_t num_nodes = 0;
-  for(size_t i=0; i<node_buckets.size(); ++i) {
-    stk::mesh::Bucket& bucket = *node_buckets[i];
-    num_nodes += bucket.size();
-    for(size_t f=0; f<fields.size(); ++f) {
-      double* data = static_cast<double*>(stk::mesh::field_data(*fields[f], bucket));
-      unsigned flen = stk::mesh::field_scalars_per_entity(*fields[f], bucket);
-      for(size_t n=0; n<flen*bucket.size(); ++n) {
-        data[n] = static_cast<double>(f + 10*outputStep);
+  const stk::mesh::BucketVector& nodeBuckets = mesh.get_buckets(stk::topology::NODE_RANK, select);
+
+  for (unsigned fieldIndex = 0; fieldIndex < fields.size(); ++fieldIndex) {
+    const stk::mesh::FieldBase& field = *fields[fieldIndex];
+    auto fieldData = field.data<double, stk::mesh::ReadWrite>();
+    for (stk::mesh::Bucket* bucket : nodeBuckets) {
+      auto bucketValues = fieldData.bucket_values(*bucket);
+      for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        for (stk::mesh::ScalarIdx scalar : bucketValues.scalars()) {
+          bucketValues(entityIdx, scalar) = static_cast<double>(fieldIndex + 10*outputStep);
+        }
       }
     }
   }
 
-  return num_nodes;
+  size_t numNodes = 0;
+  for (stk::mesh::Bucket* bucket : nodeBuckets) {
+    numNodes += bucket->size();
+  }
+
+  return numNodes;
 }
 
 void setup_mesh(const std::string& meshSpec, stk::mesh::BulkData& bulkData, unsigned numFields)

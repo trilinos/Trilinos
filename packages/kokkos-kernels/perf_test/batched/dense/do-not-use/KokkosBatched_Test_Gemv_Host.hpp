@@ -132,8 +132,8 @@ void Gemv(const int NN) {
                 auto xx = Kokkos::subview(x, k, j, Kokkos::ALL());
                 auto yy = Kokkos::subview(y, k, j, Kokkos::ALL());
 
-                cblas_dgemv(CblasRowMajor, CblasNoTrans, BlkSize, BlkSize, 1.0, (double*)aa.data(), aa.stride_0(),
-                            (double*)xx.data(), xx.stride_0(), 1.0, (double*)yy.data(), yy.stride_0());
+                cblas_dgemv(CblasRowMajor, CblasNoTrans, BlkSize, BlkSize, 1.0, (double*)aa.data(), aa.stride(0),
+                            (double*)xx.data(), xx.stride(0), 1.0, (double*)yy.data(), yy.stride(0));
               }
             });
 

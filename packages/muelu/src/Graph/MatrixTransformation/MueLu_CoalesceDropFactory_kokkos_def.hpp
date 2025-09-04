@@ -75,6 +75,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
 
   SET_VALID_ENTRY("filtered matrix: use root stencil");
+  SET_VALID_ENTRY("filtered matrix: lumping choice");
   SET_VALID_ENTRY("filtered matrix: use spread lumping");
   SET_VALID_ENTRY("filtered matrix: spread lumping diag dom growth factor");
   SET_VALID_ENTRY("filtered matrix: spread lumping diag dom cap");
@@ -190,8 +191,11 @@ void runBoundaryFunctors(local_matrix_type& lclA, boundary_nodes_view& boundaryN
 }
 
 template <class magnitudeType>
-void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppingMethod, bool& useBlocking, std::string& socUsesMatrix, std::string& socUsesMeasure, bool& symmetrizeDroppedGraph, bool& generateColoringGraph, magnitudeType& threshold) {
+void translateOldAlgoParam(const Teuchos::ParameterList& pL, std::string& droppingMethod, bool& useBlocking, std::string& socUsesMatrix, std::string& socUsesMeasure, bool& symmetrizeDroppedGraph, bool& generateColoringGraph, magnitudeType& threshold, MueLu::MatrixConstruction::lumpingType& lumpingChoice) {
   std::set<std::string> validDroppingMethods = {"piece-wise", "cut-drop"};
+
+  if (!pL.get<bool>("filtered matrix: use lumping")) lumpingChoice = MueLu::MatrixConstruction::no_lumping;
+
   if (validDroppingMethods.find(droppingMethod) == validDroppingMethods.end()) {
     std::string algo                     = droppingMethod;
     std::string classicalAlgoStr         = pL.get<std::string>("aggregation: classical algo");
@@ -309,12 +313,17 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
 
   // Fill
-  const bool lumping         = pL.get<bool>("filtered matrix: use lumping");
   const bool reuseGraph      = pL.get<bool>("filtered matrix: reuse graph");
   const bool reuseEigenvalue = pL.get<bool>("filtered matrix: reuse eigenvalue");
 
-  const bool useRootStencil   = pL.get<bool>("filtered matrix: use root stencil");
-  const bool useSpreadLumping = pL.get<bool>("filtered matrix: use spread lumping");
+  const bool useRootStencil                            = pL.get<bool>("filtered matrix: use root stencil");
+  const bool useSpreadLumping                          = pL.get<bool>("filtered matrix: use spread lumping");
+  const std::string lumpingChoiceString                = pL.get<std::string>("filtered matrix: lumping choice");
+  MueLu::MatrixConstruction::lumpingType lumpingChoice = MueLu::MatrixConstruction::no_lumping;
+  if (lumpingChoiceString == "diag lumping")
+    lumpingChoice = MueLu::MatrixConstruction::diag_lumping;
+  else if (lumpingChoiceString == "distributed lumping")
+    lumpingChoice = MueLu::MatrixConstruction::distributed_lumping;
 
   const magnitudeType filteringDirichletThreshold = as<magnitudeType>(pL.get<double>("filtered matrix: Dirichlet threshold"));
 
@@ -324,7 +333,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   const bool symmetrizeColoringGraph = true;
 
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
-  translateOldAlgoParam(pL, droppingMethod, useBlocking, socUsesMatrix, socUsesMeasure, symmetrizeDroppedGraph, generateColoringGraph, threshold);
+  translateOldAlgoParam(pL, droppingMethod, useBlocking, socUsesMatrix, socUsesMeasure, symmetrizeDroppedGraph, generateColoringGraph, threshold, lumpingChoice);
 #endif
 
   {
@@ -340,6 +349,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   TEUCHOS_ASSERT(!useRootStencil);
   TEUCHOS_ASSERT(!useSpreadLumping);
+  TEUCHOS_ASSERT((lumpingChoice != MueLu::MatrixConstruction::distributed_lumping) || !reuseGraph);
   if (droppingMethod == "cut-drop")
     TEUCHOS_TEST_FOR_EXCEPTION(threshold > 1.0, Exceptions::RuntimeError, "For cut-drop algorithms, \"aggregation: drop tol\" = " << threshold << ", needs to be <= 1.0");
 
@@ -448,16 +458,16 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
       if (symmetrizeDroppedGraph) {
         auto drop_boundaries = Misc::PointwiseSymmetricDropBoundaryFunctor(*A, boundaryNodes, results);
-        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_boundaries);
       } else {
         auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, no_op);
+        ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, no_op);
       }
     }
 
     if (symmetrizeDroppedGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
     }
   }
   GO numDropped = lclA.nnz() - nnz_filtered;
@@ -490,20 +500,25 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
                                        values, filtered_rowptr, colidx);
     }
 
-    if (lumping) {
+    if (lumpingChoice != MueLu::MatrixConstruction::no_lumping) {
       if (reuseGraph) {
         auto fillFunctor = MatrixConstruction::PointwiseFillReuseFunctor<local_matrix_type, local_graph_type, true>(lclA, results, lclFilteredA, lclGraph, filteringDirichletThreshold);
         Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_lumped_reuse", range, fillFunctor);
       } else {
-        auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, true>(lclA, results, lclFilteredA, filteringDirichletThreshold);
-        Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_lumped_noreuse", range, fillFunctor);
+        if (lumpingChoice == MueLu::MatrixConstruction::diag_lumping) {
+          auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::diag_lumping>(lclA, results, lclFilteredA, filteringDirichletThreshold);
+          Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_lumped_noreuse", range, fillFunctor);
+        } else if (lumpingChoice == MueLu::MatrixConstruction::distributed_lumping) {
+          auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::distributed_lumping>(lclA, results, lclFilteredA, filteringDirichletThreshold);
+          Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_lumped_noreuse", range, fillFunctor);
+        }
       }
     } else {
       if (reuseGraph) {
         auto fillFunctor = MatrixConstruction::PointwiseFillReuseFunctor<local_matrix_type, local_graph_type, false>(lclA, results, lclFilteredA, lclGraph, filteringDirichletThreshold);
         Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_reuse", range, fillFunctor);
       } else {
-        auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, false>(lclA, results, lclFilteredA, filteringDirichletThreshold);
+        auto fillFunctor = MatrixConstruction::PointwiseFillNoReuseFunctor<local_matrix_type, MueLu::MatrixConstruction::no_lumping>(lclA, results, lclFilteredA, filteringDirichletThreshold);
         Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_unlumped_noreuse", range, fillFunctor);
       }
     }
@@ -537,11 +552,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     filtered_rowptr = rowptr_type("rowptr_coloring_graph", lclA.numRows() + 1);
     if (localizeColoringGraph) {
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
-      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_offrank);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, drop_offrank);
     }
     if (symmetrizeColoringGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
+      ScalarDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, results, filtered_rowptr, nnz_filtered, useBlocking, currentLevel, *this, symmetrize);
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);
@@ -674,12 +689,17 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
 
   // Fill
-  const bool lumping         = pL.get<bool>("filtered matrix: use lumping");
   const bool reuseGraph      = pL.get<bool>("filtered matrix: reuse graph");
   const bool reuseEigenvalue = pL.get<bool>("filtered matrix: reuse eigenvalue");
 
-  const bool useRootStencil   = pL.get<bool>("filtered matrix: use root stencil");
-  const bool useSpreadLumping = pL.get<bool>("filtered matrix: use spread lumping");
+  const bool useRootStencil                            = pL.get<bool>("filtered matrix: use root stencil");
+  const bool useSpreadLumping                          = pL.get<bool>("filtered matrix: use spread lumping");
+  const std::string lumpingChoiceString                = pL.get<std::string>("filtered matrix: lumping choice");
+  MueLu::MatrixConstruction::lumpingType lumpingChoice = MueLu::MatrixConstruction::no_lumping;
+  if (lumpingChoiceString == "diag lumping")
+    lumpingChoice = MueLu::MatrixConstruction::diag_lumping;
+  else if (lumpingChoiceString == "distributed lumping")
+    lumpingChoice = MueLu::MatrixConstruction::distributed_lumping;
 
   const magnitudeType filteringDirichletThreshold = as<magnitudeType>(pL.get<double>("filtered matrix: Dirichlet threshold"));
 
@@ -689,7 +709,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   const bool symmetrizeColoringGraph = true;
 
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
-  translateOldAlgoParam(pL, droppingMethod, useBlocking, socUsesMatrix, socUsesMeasure, symmetrizeDroppedGraph, generateColoringGraph, threshold);
+  translateOldAlgoParam(pL, droppingMethod, useBlocking, socUsesMatrix, socUsesMeasure, symmetrizeDroppedGraph, generateColoringGraph, threshold, lumpingChoice);
 #endif
   {
     std::stringstream ss;
@@ -704,6 +724,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   TEUCHOS_ASSERT(!useRootStencil);
   TEUCHOS_ASSERT(!useSpreadLumping);
+  TEUCHOS_ASSERT((lumpingChoice != MueLu::MatrixConstruction::distributed_lumping) || !reuseGraph);
   if (droppingMethod == "cut-drop")
     TEUCHOS_TEST_FOR_EXCEPTION(threshold > 1.0, Exceptions::RuntimeError, "For cut-drop algorithms, \"aggregation: drop tol\" = " << threshold << ", needs to be <= 1.0");
 
@@ -853,12 +874,12 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       Kokkos::deep_copy(results, KEEP);
 
       auto no_op = Misc::NoOpFunctor<LocalOrdinal>();
-      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, no_op);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, no_op);
     }
 
     if (symmetrizeDroppedGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     }
   }
   LocalOrdinal nnz_filtered = nnz.first;
@@ -895,7 +916,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       lclGraph    = local_graph_type(colidx, graph_rowptr);
     }
 
-    if (lumping) {
+    if (lumpingChoice != MueLu::MatrixConstruction::no_lumping) {
       if (reuseGraph) {
         auto fillFunctor = MatrixConstruction::VectorFillFunctor<local_matrix_type, true, true>(lclA, blkPartSize, colTranslation, results, lclFilteredA, lclGraph, filteringDirichletThreshold);
         Kokkos::parallel_for("MueLu::CoalesceDrop::Fill_lumped_reuse", range, fillFunctor);
@@ -938,11 +959,11 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     graph_rowptr    = rowptr_type("rowptr", numNodes + 1);
     if (localizeColoringGraph) {
       auto drop_offrank = Misc::DropOffRankFunctor(lclA, results);
-      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, drop_offrank);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, drop_offrank);
     }
     if (symmetrizeColoringGraph) {
       auto symmetrize = Misc::SymmetrizeFunctor(lclA, results);
-      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
+      VectorDroppingBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::template runDroppingFunctors<>(*A, *mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, currentLevel, *this, symmetrize);
     }
     auto colidx            = entries_type("entries_coloring_graph", nnz_filtered);
     auto lclGraph          = local_graph_type(colidx, filtered_rowptr);

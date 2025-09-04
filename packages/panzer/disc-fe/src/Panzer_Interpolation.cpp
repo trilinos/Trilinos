@@ -172,7 +172,6 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
   using tp_matrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal>;
   using tp_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal>;
 #ifdef PANZER_HAVE_EPETRA_STACK
-  using ep_linObjContainer = panzer::BlockedEpetraLinearObjContainer;
   using ep_matrix = Epetra_CrsMatrix;
   using ep_map = Epetra_Map;
 #endif
@@ -690,7 +689,7 @@ Teuchos::RCP<Thyra::LinearOpBase<double> > buildInterpolation(const Teuchos::RCP
 
       // loop over element worksets
       std::vector<int> elementIds = range_ugi->getElementBlock(elementBlockIds[blockIter]);
-      Kokkos::View<int*,DeviceSpace>::HostMirror elementIds_h(elementIds.data(), elementIds.size());
+      Kokkos::View<int*,DeviceSpace>::host_mirror_type elementIds_h(elementIds.data(), elementIds.size());
       Kokkos::View<int*,DeviceSpace> elementIds_d("elementIds_d", elementIds_h.extent(0));
       Kokkos::deep_copy(elementIds_d, elementIds_h);
       for(std::size_t elemIter = 0; elemIter < elementIds_d.extent(0); elemIter += numCells) {

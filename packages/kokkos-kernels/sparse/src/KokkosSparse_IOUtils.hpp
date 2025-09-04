@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSSPARSE_IOUTILS_HPP
-#define _KOKKOSSPARSE_IOUTILS_HPP
+#ifndef KOKKOSSPARSE_IOUTILS_HPP
+#define KOKKOSSPARSE_IOUTILS_HPP
 
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -1316,8 +1316,7 @@ crsGraph_t read_kokkos_crst_graph(const char *filename_) {
   delete[] adj;
   delete[] values;
 
-  crsGraph_t static_graph(columns_view, rowmap_view);
-  return static_graph;
+  return crsGraph_t(columns_view, rowmap_view);
 }
 
 template <typename size_type, typename nnz_lno_t>
@@ -1379,4 +1378,4 @@ inline void kk_sequential_create_incidence_matrix_transpose(const nnz_lno_t num_
 
 }  // namespace Impl
 }  // namespace KokkosSparse
-#endif  // _KOKKOSSPARSE_IOUTILS_HPP
+#endif  // KOKKOSSPARSE_IOUTILS_HPP

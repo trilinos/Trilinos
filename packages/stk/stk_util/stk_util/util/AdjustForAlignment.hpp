@@ -39,8 +39,7 @@
 
 namespace stk {
 
-inline
-size_t adjust_up_to_alignment_boundary(size_t input, size_t alignment)
+inline constexpr size_t adjust_up_to_alignment_boundary(size_t input, size_t alignment)
 {
   size_t remainder = input % alignment;
   if (remainder > 0) {
@@ -52,4 +51,3 @@ size_t adjust_up_to_alignment_boundary(size_t input, size_t alignment)
 } //namespace stk
 
 #endif
-

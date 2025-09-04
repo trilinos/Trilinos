@@ -66,12 +66,12 @@ namespace Teuchos {
           rowIndex_ (i), colIndex_ (j), value_ (Aij) {}
 
         //! Ignore the matrix value for comparisons.
-        bool operator== (const Element& rhs) {
+        bool operator== (const Element& rhs) const {
           return rowIndex_ == rhs.rowIndex_ && colIndex_ == rhs.colIndex_;
         }
 
         //! Ignore the matrix value for comparisons.
-        bool operator!= (const Element& rhs) {
+        bool operator!= (const Element& rhs) const {
           return ! (*this == rhs);
         }
 

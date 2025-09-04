@@ -70,9 +70,6 @@
 #include <stk_mesh/base/MeshUtils.hpp>
 
 class PGeom;
-#ifdef HAVE_ACIS
-class PGeomACIS;
-#endif
 
 namespace stk { 
 namespace diag {
@@ -105,6 +102,8 @@ namespace percept {
 
     // constructor
     MeshAdapt();
+
+    ~MeshAdapt();
 
     bool has_suffix(const std::string &str, const std::string &suffix) {
       return str.size() >= suffix.size() &&
@@ -239,9 +238,6 @@ namespace percept {
     std::shared_ptr<PerceptMesh> eMeshP;
     std::shared_ptr<AdaptedMeshVerifier> adaptedMeshVerifier;
     PGeom * m_PGeomPntr = NULL;
-#ifdef HAVE_ACIS
-    PGeomACIS * m_PGA = NULL;
-#endif
 
     BlockNamesType m_block_names;
     stk::mesh::Selector block_selector;

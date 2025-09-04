@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOS_SPADD_HPP
-#define _KOKKOS_SPADD_HPP
+#ifndef KOKKOSSPARSE_SPADD_HPP
+#define KOKKOSSPARSE_SPADD_HPP
 
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_helpers.hpp"

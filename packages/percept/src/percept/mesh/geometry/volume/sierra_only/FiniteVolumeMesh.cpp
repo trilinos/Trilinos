@@ -983,7 +983,7 @@ namespace percept {
   }
 
   double FiniteVolumeMesh3D::polyhedralVolume(
-                                              const int numCoords,
+                                              const int /*numCoords*/,
                                               const double x[][3],
                                               const int numTriangles,
                                               const int triangularFaceTable[][3])

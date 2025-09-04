@@ -109,8 +109,8 @@ KOKKOS_INLINE_FUNCTION int SerialHadamardProduct::invoke(const XViewType& X, con
 #endif
 
   return SerialHadamardProductInternal::template invoke<typename XViewType::non_const_value_type>(
-      X.extent(0), X.extent(1), X.data(), X.stride_0(), X.stride_1(), Y.data(), Y.stride_0(), Y.stride_1(), V.data(),
-      V.stride_0(), V.stride_1());
+      X.extent(0), X.extent(1), X.data(), X.stride(0), X.stride(1), Y.data(), Y.stride(0), Y.stride(1), V.data(),
+      V.stride(0), V.stride(1));
 }
 
 ///
@@ -150,8 +150,8 @@ KOKKOS_INLINE_FUNCTION int TeamHadamardProduct<MemberType>::invoke(const MemberT
 
   return TeamHadamardProductInternal::template invoke<MemberType, typename XViewType::non_const_value_type,
                                                       typename XViewType::array_layout>(
-      member, X.extent(0), X.extent(1), X.data(), X.stride_0(), X.stride_1(), Y.data(), Y.stride_0(), Y.stride_1(),
-      V.data(), V.stride_0(), V.stride_1());
+      member, X.extent(0), X.extent(1), X.data(), X.stride(0), X.stride(1), Y.data(), Y.stride(0), Y.stride(1),
+      V.data(), V.stride(0), V.stride(1));
 }
 
 ///
@@ -191,8 +191,8 @@ KOKKOS_INLINE_FUNCTION int TeamVectorHadamardProduct<MemberType>::invoke(const M
 
   return TeamVectorHadamardProductInternal::invoke<MemberType, typename XViewType::non_const_value_type,
                                                    typename XViewType::array_layout>(
-      member, X.extent(0), X.extent(1), X.data(), X.stride_0(), X.stride_1(), Y.data(), Y.stride_0(), Y.stride_1(),
-      V.data(), V.stride_0(), V.stride_1());
+      member, X.extent(0), X.extent(1), X.data(), X.stride(0), X.stride(1), Y.data(), Y.stride(0), Y.stride(1),
+      V.data(), V.stride(0), V.stride(1));
 }
 
 }  // namespace KokkosBatched

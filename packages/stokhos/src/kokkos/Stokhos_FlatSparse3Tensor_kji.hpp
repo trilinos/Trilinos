@@ -240,19 +240,19 @@ public:
     tensor.m_flops = 3*j_entry_count + 2*i_entry_count;
 
     // Create mirror, is a view if is host memory
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_j_coord = Kokkos::create_mirror_view( tensor.m_j_coord );
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_i_coord = Kokkos::create_mirror_view( tensor.m_i_coord );
-    typename value_array_type::HostMirror
+    typename value_array_type::host_mirror_type
       host_value = Kokkos::create_mirror_view( tensor.m_value );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_num_j = Kokkos::create_mirror_view( tensor.m_num_j );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_num_i = Kokkos::create_mirror_view( tensor.m_num_i );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_j_row_map = Kokkos::create_mirror_view( tensor.m_j_row_map );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_i_row_map = Kokkos::create_mirror_view( tensor.m_i_row_map );
 
     // Compute j row map

@@ -113,58 +113,8 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &sendLists,
                               std::vector< std::vector<T> > &recvLists,
                               MPI_Comm &mpiCommunicator) {
 #ifdef STK_HAS_MPI
-  stk::util::print_unsupported_version_warning(3, __LINE__, __FILE__);
-
-  if (stk::util::get_common_coupling_version() >= 4) {
-    DataExchangeUnknownPatternBlocking exchanger(mpiCommunicator, 11242);
-    exchanger.execute(sendLists, recvLists);
-  } else
-  {
-    //
-    //  Determine the number of processors involved in this communication
-    //
-    auto msg_tag = get_mpi_tag_manager().get_tag(mpiCommunicator, 10242);
-    int num_procs;
-    MPI_Comm_size(mpiCommunicator, &num_procs);
-    int my_proc;
-    MPI_Comm_rank(mpiCommunicator, &my_proc);
-    STK_ThrowRequire((unsigned int) num_procs == sendLists.size() && (unsigned int) num_procs == recvLists.size());
-    int class_size = sizeof(T);
-    //
-    //  Determine number of items each other processor will send to the current processor
-    //
-    std::vector<int> global_number_to_send(num_procs);
-    for(int iproc=0; iproc<num_procs; ++iproc) {
-      global_number_to_send[iproc] = sendLists[iproc].size();
-    }
-    std::vector<int> numToRecvFrom = ComputeReceiveList(global_number_to_send, mpiCommunicator);
-    //
-    //  Send the actual messages as raw byte streams.
-    //
-    std::vector<MPI_Request> recv_handles(num_procs);
-    for(int iproc = 0; iproc < num_procs; ++iproc) {
-      recvLists[iproc].resize(numToRecvFrom[iproc]);
-      if(recvLists[iproc].size() > 0) {
-        char* recv_buffer = (char*)recvLists[iproc].data();
-        int recv_size = recvLists[iproc].size()*class_size;
-        MPI_Irecv(recv_buffer, recv_size, MPI_CHAR, iproc, msg_tag, mpiCommunicator, &recv_handles[iproc]);
-      }
-    }
-    MPI_Barrier(mpiCommunicator);
-    for(int iproc = 0; iproc < num_procs; ++iproc) {
-      if(sendLists[iproc].size() > 0) {
-        char* send_buffer = (char*)sendLists[iproc].data();
-        int send_size = sendLists[iproc].size()*class_size;
-        MPI_Send(send_buffer, send_size, MPI_CHAR,
-                iproc, msg_tag, mpiCommunicator);
-      }
-    }
-    for(int iproc = 0; iproc < num_procs; ++iproc) {
-      if(recvLists[iproc].size() > 0) {
-        MPI_Wait( &recv_handles[iproc], MPI_STATUS_IGNORE );
-      }
-    }
-  }
+  DataExchangeUnknownPatternBlocking exchanger(mpiCommunicator, 11242);
+  exchanger.execute(sendLists, recvLists);
 #endif
 }
 

@@ -373,19 +373,24 @@ std::vector<stk::math::Vector3d> nodeCoordinates(const stk::mesh::EntityVector& 
                                                  int spatialDim)
 {
   std::vector<stk::math::Vector3d> nodeCoordinates;
-  auto coordsData = coords.data<double, stk::mesh::ReadOnly>();
-  for (const stk::mesh::Entity & node : sideNodes) {
-    auto nodeFieldData = coordsData.entity_values(node);
-    if (spatialDim == 3) {
-      nodeCoordinates.emplace_back(nodeFieldData(0_comp), nodeFieldData(1_comp), nodeFieldData(2_comp));
+
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(coords,
+    [&](auto& coordsData) {
+      for (const stk::mesh::Entity & node : sideNodes) {
+        auto nodeFieldData = coordsData.entity_values(node);
+        if (spatialDim == 3) {
+          nodeCoordinates.emplace_back(nodeFieldData(0_comp), nodeFieldData(1_comp), nodeFieldData(2_comp));
+        }
+        else if (spatialDim == 2) {
+          nodeCoordinates.emplace_back(nodeFieldData(0_comp), nodeFieldData(1_comp), 0.0);
+        }
+        else {
+          STK_ThrowErrorMsg("Problem dimensionality " << spatialDim << " not supported");
+        }
+      }
     }
-    else if (spatialDim == 2) {
-      nodeCoordinates.emplace_back(nodeFieldData(0_comp), nodeFieldData(1_comp), 0.0);
-    }
-    else {
-      STK_ThrowErrorMsg("Problem dimensionality " << spatialDim << " not supported");
-    }
-  }
+  );
+
   return nodeCoordinates;
 }
 
@@ -594,35 +599,36 @@ void addGraphEdgesUsingBBSearch(stk::mesh::BulkData & stkMeshBulkData,
   printGraphEdgeCounts(stkMeshBulkData, graphEdges.size(), "After search");
 }
 
-void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData, const stk::mesh::FieldBase* coord, stk::mesh::Entity entityOfConcern, double *entityCentroid)
+void fillEntityCentroid(const stk::mesh::BulkData& stkMeshBulkData, const stk::mesh::FieldBase* coord,
+                        stk::mesh::Entity entityOfConcern, double *entityCentroid)
 {
-  auto coordData = coord->data<double, stk::mesh::ReadOnly>();
   int spatialDimension = stkMeshBulkData.mesh_meta_data().spatial_dimension();
-  if(stkMeshBulkData.entity_rank(entityOfConcern)==stk::topology::NODE_RANK)
-  {
-    auto nodeCoord = coordData.entity_values(entityOfConcern);
-    for(stk::mesh::ComponentIdx k=0_comp; k < spatialDimension; k++) {
-      entityCentroid[k] += nodeCoord(k);
-    }
-  }
-  else
-  {
-    stk::mesh::Entity const * nodes = stkMeshBulkData.begin_nodes(entityOfConcern);
-    unsigned numNodes = stkMeshBulkData.num_nodes(entityOfConcern);
-    for(unsigned nodeIndex=0; nodeIndex < numNodes; nodeIndex++)
-    {
-      auto nodeCoord = coordData.entity_values(nodes[nodeIndex]);
 
-      for(stk::mesh::ComponentIdx k=0_comp; k < spatialDimension; k++) {
-        entityCentroid[k] += nodeCoord(k);
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(*coord,
+    [&](auto& coordData) {
+      if (stkMeshBulkData.entity_rank(entityOfConcern)==stk::topology::NODE_RANK) {
+        auto nodeCoord = coordData.entity_values(entityOfConcern);
+        for (stk::mesh::ComponentIdx k(0); k < spatialDimension; ++k) {
+          entityCentroid[k] += nodeCoord(k);
+        }
+      }
+      else {
+        stk::mesh::Entity const* nodes = stkMeshBulkData.begin_nodes(entityOfConcern);
+        unsigned numNodes = stkMeshBulkData.num_nodes(entityOfConcern);
+        for (unsigned nodeIndex = 0; nodeIndex < numNodes; ++nodeIndex) {
+          auto nodeCoord = coordData.entity_values(nodes[nodeIndex]);
+
+          for (stk::mesh::ComponentIdx k(0); k < spatialDimension; ++k) {
+            entityCentroid[k] += nodeCoord(k);
+          }
+        }
+
+        for (int k = 0; k < spatialDimension; ++k) {
+          entityCentroid[k] /= numNodes;
+        }
       }
     }
-
-    for(int k=0; k < spatialDimension; k++)
-    {
-      entityCentroid[k] /= numNodes;
-    }
-  }
+  );
 }
 
 bool is_not_part_of_spider(const stk::mesh::BulkData & bulk, const stk::mesh::Part & spiderPart,

@@ -49,4 +49,6 @@ struct TeamAddRadial {
 
 }  // namespace KokkosBatched
 
+#include "KokkosBatched_AddRadial_Impl.hpp"
+
 #endif

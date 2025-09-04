@@ -101,7 +101,7 @@ void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
           }
         }
       });
-  typename Kokkos::View<LO, device_type>::HostMirror aggCount_h = Kokkos::create_mirror_view(aggCount);
+  typename Kokkos::View<LO, device_type>::host_mirror_type aggCount_h = Kokkos::create_mirror_view(aggCount);
   Kokkos::deep_copy(aggCount_h, aggCount);
   // In this phase the number of new aggregates is the same
   // as the number of newly aggregated nodes.

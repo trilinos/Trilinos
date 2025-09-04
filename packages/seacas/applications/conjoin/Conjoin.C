@@ -150,12 +150,12 @@ namespace {
     }
   }
 
-  char **get_name_array(int size, size_t length)
+  char **get_name_array(size_t size, size_t length)
   {
     char **names = nullptr;
     if (size > 0) {
       names = new char *[size];
-      for (int i = 0; i < size; i++) {
+      for (size_t i = 0; i < size; i++) {
         names[i] = new char[length + 1];
         std::memset(names[i], '\0', length + 1);
       }
@@ -163,9 +163,9 @@ namespace {
     return names;
   }
 
-  void free_name_array(char **names, int size)
+  void free_name_array(char **names, size_t size)
   {
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
       delete[] names[i];
     }
     delete[] names;
@@ -263,7 +263,6 @@ namespace {
 
   template <typename INT>
   size_t find_max_entity_count(size_t part_count, std::vector<Excn::Mesh<INT>> &local_mesh,
-                               const Excn::Mesh<INT>                        &global,
                                std::vector<std::vector<Excn::Block>>        &blocks,
                                std::vector<std::vector<Excn::NodeSet<INT>>> &nodesets,
                                std::vector<std::vector<Excn::SideSet<INT>>> &sidesets);
@@ -708,7 +707,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   }
 
   // Determine maximum number of entities on any part
-  auto max_ent = find_max_entity_count(part_count, local_mesh, global, blocks, nodesets, sidesets);
+  auto max_ent = find_max_entity_count(part_count, local_mesh, blocks, nodesets, sidesets);
   std::vector<T> values(max_ent);
 
   // Stage II.  Extracting transient variable data.
@@ -954,10 +953,10 @@ namespace {
 
     std::time_t date_time = std::time(nullptr);
 
-    auto date = fmt::format("{:%Y/%m/%d}", fmt::localtime(date_time));
+    auto date = fmt::format("{:%Y/%m/%d}", *std::localtime(&date_time));
     copy_string(qaRecord[num_qa_records].qa_record[0][2], date.c_str(), MAX_STR_LENGTH + 1);
 
-    auto time = fmt::format("{:%T}", fmt::localtime(date_time));
+    auto time = fmt::format("{:%T}", *std::localtime(&date_time));
     copy_string(qaRecord[num_qa_records].qa_record[0][3], time.c_str(), MAX_STR_LENGTH + 1);
 
     error += ex_put_qa(id_out, num_qa_records + 1, qaRecord[0].qa_record);
@@ -1911,8 +1910,8 @@ namespace {
 
     for (size_t i = 0; i < vars.inputIndex_[part].size(); i++) {
       if (vars.inputIndex_[part][i] != 0) {
-        auto name  = exo_names[i];
-        bool found = false;
+        const auto &name  = exo_names[i];
+        bool        found = false;
         for (size_t j = 0; j < vars.names_.size(); j++) {
           if (case_compare(vars.names_[j], name)) {
             found                     = true;
@@ -2728,41 +2727,32 @@ namespace {
 
   template <typename INT>
   size_t find_max_entity_count(size_t part_count, std::vector<Excn::Mesh<INT>> &local_mesh,
-                               const Excn::Mesh<INT>                        &global,
                                std::vector<std::vector<Excn::Block>>        &blocks,
                                std::vector<std::vector<Excn::NodeSet<INT>>> &nodesets,
                                std::vector<std::vector<Excn::SideSet<INT>>> &sidesets)
   {
-    size_t max_ent = local_mesh[0].count(Excn::ObjectType::NODE);
-    for (size_t p = 1; p < part_count; p++) {
-      if (static_cast<size_t>(local_mesh[p].count(Excn::ObjectType::NODE)) > max_ent) {
-        max_ent = local_mesh[p].count(Excn::ObjectType::NODE);
-      }
+    size_t max_ent = 0;
+    for (const auto &mesh : local_mesh) {
+      max_ent = std::max(max_ent, mesh.count(Excn::ObjectType::NODE));
     }
 
     for (size_t p = 0; p < part_count; p++) {
-      for (size_t b = 0; b < global.count(Excn::ObjectType::EBLK); b++) {
-        if (blocks[p][b].entity_count() > max_ent) {
-          max_ent = blocks[p][b].entity_count();
-        }
+      for (const auto &blk : blocks[p]) {
+        max_ent = std::max(max_ent, blk.entity_count());
       }
     }
 
     // Nodesets...
     for (size_t p = 0; p < part_count; p++) {
-      for (size_t b = 0; b < global.count(Excn::ObjectType::NSET); b++) {
-        if (nodesets[p][b].entity_count() > max_ent) {
-          max_ent = nodesets[p][b].entity_count();
-        }
+      for (const auto &nset : nodesets[p]) {
+        max_ent = std::max(max_ent, nset.entity_count());
       }
     }
 
     // Sidesets...
     for (size_t p = 0; p < part_count; p++) {
-      for (size_t b = 0; b < global.count(Excn::ObjectType::SSET); b++) {
-        if (sidesets[p][b].entity_count() > max_ent) {
-          max_ent = sidesets[p][b].entity_count();
-        }
+      for (const auto &sset : sidesets[p]) {
+        max_ent = std::max(max_ent, sset.entity_count());
       }
     }
     return max_ent;

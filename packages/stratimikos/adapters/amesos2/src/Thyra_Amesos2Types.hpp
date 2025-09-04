@@ -37,6 +37,9 @@ enum ESolverType {
 #ifdef HAVE_AMESOS2_PARDISO_MKL
   ,PARDISO_MKL
 #endif
+#ifdef HAVE_AMESOS2_CSS_MKL
+  ,CSS_MKL
+#endif
 #ifdef HAVE_AMESOS2_CHOLMOD
   ,CHOLMOD
 #endif
@@ -65,6 +68,9 @@ const int numSolverTypes = 1
 +1
 #endif
 #ifdef HAVE_AMESOS2_PARDISO_MKL
++1
+#endif
+#ifdef HAVE_AMESOS2_CSS_MKL
 +1
 #endif
 #ifdef HAVE_AMESOS2_CHOLMOD

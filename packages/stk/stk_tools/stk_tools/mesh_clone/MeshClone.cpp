@@ -258,12 +258,12 @@ void copy_field_data(const stk::mesh::BulkData& oldBulk,
 
   for(unsigned i=0; i<oldFields.size(); ++i)
   {
-    auto oldFieldBytes = oldFields[i]->const_bytes();
-    auto newFieldBytes = newFields[i]->bytes();
+    auto oldFieldBytes = oldFields[i]->data_bytes<const std::byte>();
+    auto newFieldBytes = newFields[i]->data_bytes<std::byte>();
 
     if (oldFields[i]->host_data_layout() == stk::mesh::Layout::Right) {
-      auto oldEntityBytes = oldFieldBytes.entity_bytes_right(oldEntity);
-      auto newEntityBytes = newFieldBytes.entity_bytes_right(newEntity);
+      auto oldEntityBytes = oldFieldBytes.entity_bytes<stk::mesh::Layout::Right>(oldEntity);
+      auto newEntityBytes = newFieldBytes.entity_bytes<stk::mesh::Layout::Right>(newEntity);
 
       for (stk::mesh::ByteIdx idx : oldEntityBytes.bytes()) {
         newEntityBytes(idx) = oldEntityBytes(idx);
@@ -271,8 +271,8 @@ void copy_field_data(const stk::mesh::BulkData& oldBulk,
     }
 
     else if (oldFields[i]->host_data_layout() == stk::mesh::Layout::Left) {
-      auto oldEntityBytes = oldFieldBytes.entity_bytes_left(oldEntity);
-      auto newEntityBytes = newFieldBytes.entity_bytes_left(newEntity);
+      auto oldEntityBytes = oldFieldBytes.entity_bytes<stk::mesh::Layout::Left>(oldEntity);
+      auto newEntityBytes = newFieldBytes.entity_bytes<stk::mesh::Layout::Left>(newEntity);
 
       for (stk::mesh::ByteIdx idx : oldEntityBytes.bytes()) {
         newEntityBytes(idx) = oldEntityBytes(idx);

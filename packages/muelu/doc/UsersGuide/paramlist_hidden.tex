@@ -15,7 +15,7 @@
         
 \cbb{coarse grid correction scaling factor}{double}{1.0}{Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.}
         
-\cbb{fuse prolongation and update}{bool}{false}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
+\cbb{fuse prolongation and update}{bool}{true}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
         
 \cbb{number of vectors}{int}{1}{Number of columns in multivectors that are cached for Hierarchy apply phase.}
         
@@ -337,6 +337,8 @@ Only used when tentative: calculate qr is set to false.}
         
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
         
+\cbb{filtered matrix: lumping choice}{string}{"diag lumping"}{Can be no lumping (no modification to kept entries), diag lumping (modify diagonal to maintain row sums), or distributed lumping (modify kept nonzeros in a fashion proportional to their magnitude to preserve row sums). }
+        
 \cbb{filtered matrix: use spread lumping}{bool}{false}{Lump (but not necessarily to the diagonal, trying not to lose diagonal dominance more than the original matrix) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace. Only used when filtered matrix: use lumping is set to true. }
         
 \cbb{filtered matrix: spread lumping diag dom growth factor}{double}{1.1}{Determines how much a measure of diagonal dominance is allowed to grow when using spread lumping. Only used when filtered matrix: use lumping and filtered matrix: use spread lumping are both set to true. }
@@ -419,6 +421,8 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{repartition: save importer}{bool}{false}{Mark Importer as 'Final' to keep it on the hierarchy after setup is complete.}
         
 \cbb{repartition: put on single proc}{int}{0}{Number of rows below which we always repartition to a single rank}
+        
+\cbb{repartition: send type}{string}{""}{Tpetra 'Send type' to use in repartitioning}
         
 \cbb{rap: relative diagonal floor}{Array(double)}{{}}{Will boost diagonals on A matrices to the given floor.}
         

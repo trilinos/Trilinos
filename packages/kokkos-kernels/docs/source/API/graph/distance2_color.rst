@@ -38,26 +38,8 @@ No type requirements will be asserted.
 
 Example
 =======
-.. code-block:: c++
 
-   crsMat A =
-     KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat>(numVerts, numVerts, nnz, row_size_variance, bandwidth);
-   auto G = A.graph;
-   // Symmetrize the graph
-   rowmap_t symRowmap;
-   entries_t symEntries;
-   KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<c_rowmap_t, c_entries_t, rowmap_t, entries_t, execution_space>(
-      numVerts, G.row_map, G.entries, symRowmap, symEntries);
-   std::vector<GraphColoringAlgorithmDistance2> algos = {COLORING_D2_DEFAULT, COLORING_D2_SERIAL,    COLORING_D2_VB,
-                                                         COLORING_D2_VB_BIT,  COLORING_D2_VB_BIT_EF, COLORING_D2_NB_BIT};
-   for (auto algo : algos) {
-     KernelHandle kh;
-     kh.create_distance2_graph_coloring_handle(algo);
-     // Compute the Distance-2 graph coloring.
-     graph_color_distance2<KernelHandle, c_rowmap_t, c_entries_t>(&kh, numVerts, symRowmap, symEntries);
-     execution_space().fence();
-     auto coloring_handle = kh.get_distance2_graph_coloring_handle();
-     auto colors          = coloring_handle->get_vertex_colors();
-     ...
-   }
+.. literalinclude:: ../../../../example/wiki/graph/KokkosGraph_wiki_coloring.cpp
+  :language: c++
+  :lines: 16-
 

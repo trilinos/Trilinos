@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSGRAPH_DISTANCE2_MIS_IMPL_HPP
-#define _KOKKOSGRAPH_DISTANCE2_MIS_IMPL_HPP
+#ifndef KOKKOSGRAPH_DISTANCE2_MIS_IMPL_HPP
+#define KOKKOSGRAPH_DISTANCE2_MIS_IMPL_HPP
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Bitset.hpp"
@@ -818,14 +818,9 @@ struct D2_MIS_Aggregation {
   }
 
   struct Phase1Functor {
-    Phase1Functor(lno_t numVerts__, const mis2_view& m1__, const rowmap_t& rowmap__, const entries_t& entries__,
-                  const labels_t& labels__, const char_view_t& roots__)
-        : numVerts_(numVerts__),
-          m1_(m1__),
-          rowmap_(rowmap__),
-          entries_(entries__),
-          labels_(labels__),
-          roots_(roots__) {}
+    Phase1Functor(lno_t numVerts, const mis2_view& m1, const rowmap_t& rowmap, const entries_t& entries,
+                  const labels_t& labels, const char_view_t& roots)
+        : numVerts_(numVerts), m1_(m1), rowmap_(rowmap), entries_(entries), labels_(labels), roots_(roots) {}
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t agg) const {
       lno_t root         = m1_(agg);
@@ -857,14 +852,14 @@ struct D2_MIS_Aggregation {
   }
 
   struct CandAggSizesFunctor {
-    CandAggSizesFunctor(lno_t numVerts__, const labels_t& m2__, const rowmap_t& rowmap__, const entries_t& entries__,
-                        const labels_t& labels__, const labels_t& candAggSizes__)
-        : numVerts_(numVerts__),
-          m2_(m2__),
-          rowmap_(rowmap__),
-          entries_(entries__),
-          labels_(labels__),
-          candAggSizes_(candAggSizes__) {}
+    CandAggSizesFunctor(lno_t numVerts, const labels_t& m2, const rowmap_t& rowmap, const entries_t& entries,
+                        const labels_t& labels, const labels_t& candAggSizes)
+        : numVerts_(numVerts),
+          m2_(m2),
+          rowmap_(rowmap),
+          entries_(entries),
+          labels_(labels),
+          candAggSizes_(candAggSizes) {}
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const {
       lno_t candRoot = m2_(i);
@@ -889,17 +884,17 @@ struct D2_MIS_Aggregation {
   };
 
   struct ChoosePhase2AggsFunctor {
-    ChoosePhase2AggsFunctor(lno_t numVerts__, lno_t numAggs__, const labels_t& m2__, const rowmap_t& rowmap__,
-                            const entries_t& entries__, const labels_t& labels__, const labels_t& candAggSizes__,
-                            const char_view_t& roots__)
-        : numVerts_(numVerts__),
-          numAggs_(numAggs__),
-          m2_(m2__),
-          rowmap_(rowmap__),
-          entries_(entries__),
-          labels_(labels__),
-          candAggSizes_(candAggSizes__),
-          roots_(roots__) {}
+    ChoosePhase2AggsFunctor(lno_t numVerts, lno_t numAggs, const labels_t& m2, const rowmap_t& rowmap,
+                            const entries_t& entries, const labels_t& labels, const labels_t& candAggSizes,
+                            const char_view_t& roots)
+        : numVerts_(numVerts),
+          numAggs_(numAggs),
+          m2_(m2),
+          rowmap_(rowmap),
+          entries_(entries),
+          labels_(labels),
+          candAggSizes_(candAggSizes),
+          roots_(roots) {}
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i, lno_t& lid, bool finalPass) const {
       lno_t aggSize = candAggSizes_(i);
@@ -951,14 +946,14 @@ struct D2_MIS_Aggregation {
   }
 
   struct SizeAndConnectivityFunctor {
-    SizeAndConnectivityFunctor(lno_t numVerts__, const rowmap_t& rowmap__, const entries_t& entries__,
-                               const labels_t& labels__, const labels_t& connectivities__, const labels_t& aggSizes__)
-        : numVerts_(numVerts__),
-          rowmap_(rowmap__),
-          entries_(entries__),
-          labels_(labels__),
-          connectivities_(connectivities__),
-          aggSizes_(aggSizes__) {}
+    SizeAndConnectivityFunctor(lno_t numVerts, const rowmap_t& rowmap, const entries_t& entries, const labels_t& labels,
+                               const labels_t& connectivities, const labels_t& aggSizes)
+        : numVerts_(numVerts),
+          rowmap_(rowmap),
+          entries_(entries),
+          labels_(labels),
+          connectivities_(connectivities),
+          aggSizes_(aggSizes) {}
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const {
       lno_t agg = labels_(i);
@@ -988,17 +983,17 @@ struct D2_MIS_Aggregation {
   };
 
   struct AssignLeftoverFunctor {
-    AssignLeftoverFunctor(lno_t numVerts__, const rowmap_t& rowmap__, const entries_t& entries__,
-                          const labels_t& labels__, const labels_t& labelsOld__, const labels_t& connectivities__,
-                          const labels_t& aggSizes__, const char_view_t& roots__)
-        : numVerts_(numVerts__),
-          rowmap_(rowmap__),
-          entries_(entries__),
-          labels_(labels__),
-          labelsOld_(labelsOld__),
-          connectivities_(connectivities__),
-          aggSizes_(aggSizes__),
-          roots_(roots__) {}
+    AssignLeftoverFunctor(lno_t numVerts, const rowmap_t& rowmap, const entries_t& entries, const labels_t& labels,
+                          const labels_t& labelsOld, const labels_t& connectivities, const labels_t& aggSizes,
+                          const char_view_t& roots)
+        : numVerts_(numVerts),
+          rowmap_(rowmap),
+          entries_(entries),
+          labels_(labels),
+          labelsOld_(labelsOld),
+          connectivities_(connectivities),
+          aggSizes_(aggSizes),
+          roots_(roots) {}
 
     KOKKOS_INLINE_FUNCTION void operator()(lno_t i) const {
       lno_t agg               = labelsOld_(i);

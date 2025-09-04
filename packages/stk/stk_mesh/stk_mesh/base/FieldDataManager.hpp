@@ -102,24 +102,23 @@ public:
                            const std::vector< FieldBase * > & fieldSet);
   void reallocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, FieldBase & currentField,
                              const std::vector<FieldBase *> & allFields);
-  size_t get_num_bytes_allocated_on_field(const unsigned fieldIndex) const {
-    return m_numBytesAllocatedPerField[fieldIndex];
-  }
   void add_field_data_for_entity(const std::vector<FieldBase *> &allFields, EntityRank dstRank,
                                  unsigned dstBucketId, unsigned dstBucketOrd, unsigned newBucketSize);
   void remove_field_data_for_entity(EntityRank rank, unsigned bucketId, unsigned bucketOrd, unsigned newBucketSize,
                                     const std::vector<FieldBase *> &allFields);
   void initialize_entity_field_data(EntityRank rank, unsigned bucketId, unsigned bucketOrd, unsigned newBucketSize,
                                     const std::vector<FieldBase *> &fields);
-  void swap_fields(const int /*field1*/, const int /*field2*/) { }
-  unsigned get_bucket_capacity(EntityRank rank, unsigned bucketId) const {
-    return m_bucketCapacity[rank][bucketId];
-  }
   void grow_bucket_capacity(const FieldVector & allFields, EntityRank rank, unsigned bucketId,
                             unsigned bucketSize, unsigned bucketCapacity);
   void reset_empty_field_data(EntityRank rank, unsigned bucketId, unsigned bucketSize,
                               unsigned bucketCapacity, const FieldVector & fields);
 
+  unsigned get_bucket_capacity(EntityRank rank, unsigned bucketId) const {
+    return m_bucketCapacity[rank][bucketId];
+  }
+  size_t get_num_bytes_allocated_on_field(const unsigned fieldIndex) const {
+    return m_numBytesAllocatedPerField[fieldIndex];
+  }
   unsigned get_alignment_bytes() const { return m_alignmentIncrementBytes; }
 
 private:
@@ -141,26 +140,6 @@ private:
                                                                const unsigned bucketId,
                                                                const std::vector<FieldBase*>& allFields,
                                                                const unsigned capacity) const;
-  void update_field_meta_data(const EntityRank rank, const unsigned bucketId,
-                              const std::vector<FieldBase*> & allFields,
-                              const PartVector & supersetParts,
-                              unsigned bucketSize,
-                              unsigned bucketCapacity);
-  void copy_field_data_from_old_to_new_bucket(EntityRank rank,
-                                              unsigned bucketSize,
-                                              unsigned bucketId,
-                                              const std::vector<FieldBase*>& allFields,
-                                              const std::vector<BucketFieldSegment>& oldOffsetForField,
-                                              const std::vector<BucketFieldSegment>& newOffsetForField,
-                                              const std::byte* oldAllocationAllFields,
-                                              std::byte* newAllocationAllFields);
-  void update_field_pointers_to_new_bucket(const EntityRank rank,
-                                           const unsigned bucketId,
-                                           const std::vector<FieldBase*>& allFields,
-                                           const size_t capacity,
-                                           std::byte* newAllocationAllFields);
-  void initialize_new_field_values(FieldBase& currentField, const EntityRank rank, const unsigned bucketId,
-                                   unsigned size, unsigned capacity);
 
   std::unique_ptr<AllocatorAdaptorInterface> m_fieldDataAllocator;
   unsigned m_alignmentIncrementBytes;

@@ -55,6 +55,7 @@ public:
   typedef SolverCore<Amesos2::ShyLUBasker,Matrix,Vector>       super_type;
 
   // Since typedef's are not inheritted, go grab them
+  typedef typename VectorTraits<Vector>::scalar_t       vector_scalar_type;
   typedef typename super_type::scalar_type                     scalar_type;
   typedef typename super_type::local_ordinal_type              local_ordinal_type;
   typedef typename super_type::global_ordinal_type             global_ordinal_type;
@@ -184,19 +185,18 @@ private:
   int ldb_;
 
   /*Handle for ShyLUBasker object*/
-#if defined( HAVE_AMESOS2_KOKKOS ) && defined( KOKKOS_ENABLE_OPENMP )
+#if defined( HAVE_AMESOS2_KOKKOS )
   /*
   typedef typename node_type::device_type  kokkos_device;
   typedef typename kokkos_device::execution_space kokkos_exe;
   static_assert(std::is_same<kokkos_exe,Kokkos::OpenMP>::value,
   "Kokkos node type not support by experimental ShyLUBasker Amesos2");
   */
-  typedef Kokkos::OpenMP Exe_Space;
+  typedef Kokkos::DefaultHostExecutionSpace Exe_Space;
    ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, shylubasker_dtype, Exe_Space> *ShyLUbasker;
 #else
-  #pragma message("Amesos_ShyLUBasker_decl Error: ENABLED SHYLU_NODEBASKER BUT NOT KOKKOS or NOT OPENMP!")
+  #pragma message("Amesos_ShyLUBasker_decl Error: ENABLED SHYLU_NODEBASKER BUT NOT KOKKOS!")
 #endif
-
 
 }; // End class ShyLUBasker
 

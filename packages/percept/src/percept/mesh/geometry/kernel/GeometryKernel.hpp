@@ -42,11 +42,11 @@ public:
     virtual bool read_file(const std::string& file_name,
                            std::vector<GeometryHandle>& geometry_entities ) = 0;
 
-    virtual void pre_process(percept::PerceptMesh *eMeshWithNode, const stk::mesh::PartVector& parts)
+    virtual void pre_process(percept::PerceptMesh */*eMeshWithNode*/, const stk::mesh::PartVector& /*parts*/)
     {
     }
 
-    virtual bool debug_dump_file(const std::string& file_name) { return true; }
+    virtual bool debug_dump_file(const std::string& /*file_name*/) { return true; }
 
     virtual void snap_to(KernelPoint& point, GeometryHandle geom,
                     double *converged_tolerance = NULL,

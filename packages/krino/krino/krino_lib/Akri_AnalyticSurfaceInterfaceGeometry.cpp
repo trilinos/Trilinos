@@ -64,14 +64,6 @@ static bool does_any_surface_have_sharp_features(const std::vector<const Surface
   return false;
 }
 
-static bool can_all_surfaces_compute_sign(const std::vector<const Surface *> & surfaces)
-{
-  for (auto * surf : surfaces)
-    if (surf->truncated_distance_may_have_wrong_sign())
-      return false;
-  return true;
-}
-
 SurfaceElementCutter::SurfaceElementCutter(const stk::mesh::BulkData & mesh,
   const FieldRef coordsField,
   stk::mesh::Entity element,
@@ -245,10 +237,10 @@ static void append_surface_edge_intersection_points(const stk::mesh::BulkData & 
   for (auto & edge : edgesToIntersect)
   {
     fill_edge_nodes(edge, intersectionPointNodes);
-    const auto [crossingSign, interfaceLoc] = surface.compute_intersection_with_segment(get_vector_field(mesh, coordsField, intersectionPointNodes[0], dim), get_vector_field(mesh, coordsField, intersectionPointNodes[1], dim), edgeCrossingTol);
-    if (crossingSign != 0)
+    if (intersectionPointFilter(intersectionPointNodes, intersectionPointSortedDomains))
     {
-      if (intersectionPointFilter(intersectionPointNodes, intersectionPointSortedDomains))
+      const auto [crossingSign, interfaceLoc] = surface.compute_intersection_with_segment(get_vector_field(mesh, coordsField, intersectionPointNodes[0], dim), get_vector_field(mesh, coordsField, intersectionPointNodes[1], dim), edgeCrossingTol);
+      if (crossingSign != 0)
         intersectionPoints.emplace_back(intersectionPointIsOwned, intersectionPointNodes, std::vector<double>{1.-interfaceLoc, interfaceLoc}, intersectionPointSortedDomains);
     }
   }
@@ -291,19 +283,23 @@ void AnalyticSurfaceInterfaceGeometry::set_elements_to_intersect_and_prepare_to_
   }
 }
 
-void AnalyticSurfaceInterfaceGeometry::set_element_signs(const stk::mesh::BulkData & mesh,
-    const std::vector<stk::mesh::Selector> & perSurfaceElementSelector) const
+void AnalyticSurfaceInterfaceGeometry::set_node_signs(NodeToSignsMap & nodesToSigns) const
 {
-  if (!myFlagSurfacesCanComputeSign)
-    myElementsToSigns = determine_element_signs(mesh, get_coordinates_field(mesh), get_mesh_parent_element_selector(), perSurfaceElementSelector, mySurfaces);
+  myNodesToSigns.swap(nodesToSigns);
+}
+
+void AnalyticSurfaceInterfaceGeometry::set_node_signs_from_surfaces(const stk::mesh::BulkData & mesh,
+    const std::vector<stk::mesh::Selector> & perSurfaceElementSelector,
+    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+{
+  myNodesToSigns = determine_node_signs(mesh, get_coordinates_field(mesh), get_mesh_parent_element_selector(), perSurfaceElementSelector, mySurfaces, nodesToCapturedDomains);
 }
 
 void AnalyticSurfaceInterfaceGeometry::prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
+    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
 {
   set_elements_to_intersect_and_prepare_to_compute_with_surfaces(mesh, get_mesh_parent_elements(mesh));
-
-  set_element_signs(mesh, mySurfaceElementSelectors);
+  set_node_signs_from_surfaces(mesh, mySurfaceElementSelectors, nodesToCapturedDomains);
 }
 
 void AnalyticSurfaceInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::BulkData & mesh) const
@@ -474,7 +470,6 @@ AnalyticSurfaceInterfaceGeometry::AnalyticSurfaceInterfaceGeometry(const stk::me
     const CDFEM_Support & cdfemSupport,
     const Phase_Support & phaseSupport)
   : myMightHaveInteriorOrFaceCrossings(false),
-    myFlagSurfacesCanComputeSign(true),
     myActivePart(activePart),
     myCdfemSupport(cdfemSupport),
     myPhaseSupport(phaseSupport)
@@ -495,7 +490,6 @@ AnalyticSurfaceInterfaceGeometry::AnalyticSurfaceInterfaceGeometry(const std::ve
   for (auto & surfId : surfaceIdentifiers)
     mySurfaceElementSelectors.push_back(myPhaseSupport.get_levelset_decomposed_blocks_selector(surfId));
   myMightHaveInteriorOrFaceCrossings = does_any_surface_have_sharp_features(mySurfaces);
-  myFlagSurfacesCanComputeSign = can_all_surfaces_compute_sign(mySurfaces);
 }
 
 void AnalyticSurfaceInterfaceGeometry::add_surface(const Surface_Identifier surfaceIdentifier, const Surface & surface, const stk::mesh::Selector & surfaceElementSelector)
@@ -504,7 +498,6 @@ void AnalyticSurfaceInterfaceGeometry::add_surface(const Surface_Identifier surf
   mySurfaces.push_back(&surface);
   mySurfaceElementSelectors.push_back(surfaceElementSelector);
   myMightHaveInteriorOrFaceCrossings = does_any_surface_have_sharp_features(mySurfaces);
-  myFlagSurfacesCanComputeSign = can_all_surfaces_compute_sign(mySurfaces);
 }
 
 void AnalyticSurfaceInterfaceGeometry::store_phase_for_elements_that_will_be_uncut_after_snapping(const stk::mesh::BulkData & mesh,
@@ -553,7 +546,6 @@ static void append_intersection_points_from_within_elements_and_owned_faces(cons
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const std::vector<const Surface*> & surfaces,
     const std::vector<stk::mesh::Selector> & surfaceElementSelectors,
-    const ElementToSignsMap & /*elementsToSigns*/,
     const bool mightHaveInteriorOrFaceCrossings,
     const double edgeCrossingTol,
     const IntersectionPointFilter & intersectionPointFilter,
@@ -600,40 +592,45 @@ void AnalyticSurfaceInterfaceGeometry::append_element_intersection_points(const 
       myElementsToIntersect,
       mySurfaces,
       mySurfaceElementSelectors,
-      myElementsToSigns,
       myMightHaveInteriorOrFaceCrossings,
       myEdgeCrossingTol,
       intersectionPointFilter,
       intersectionPoints);
 }
 
-static int compute_element_sign_from_surface(const Surface & surface, const std::vector<stk::math::Vector3d> & elementNodeCoords)
+static int determine_element_sign_from_node_signs(const StkMeshEntities & elemNodes,
+    const NodeToSignsMap & nodesToSigns,
+    const int surfIndex)
 {
-  bool haveNeg = false;
-  bool havePos = false;
-  for (auto nodeCoords : elementNodeCoords)
+  bool hasNeg = false;
+  bool hasPos = false;
+
+  for (auto & node : elemNodes)
   {
-    const int nodeSign = sign(surface.point_signed_distance(nodeCoords));
-    if (nodeSign < 0) haveNeg = true;
-    if (nodeSign > 0) havePos = true;
+    const int8_t nodeSign = nodesToSigns.at(node)[surfIndex];
+    if (nodeSign < 0)
+      hasNeg = true;
+    else if (nodeSign > 0)
+      hasPos = true;
   }
-  const int elemSign = haveNeg ? (havePos ? 0 : -1) : 1;
-  return elemSign;
+
+  if (hasNeg && !hasPos)
+    return -1;
+  if (!hasNeg && hasPos)
+    return 1;
+  return 0;
 }
 
-std::vector<int8_t> compute_element_signs_from_surfaces(const stk::mesh::BulkData & mesh,
-    const FieldRef coordsField,
+std::vector<int8_t> compute_element_signs_from_node_signs(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity element,
-    const std::vector<const Surface *> & surfaces,
-    const std::vector<stk::mesh::Selector> & surfaceElementSelectors)
+    const std::vector<stk::mesh::Selector> & surfaceElementSelectors,
+    const NodeToSignsMap & nodesToSigns)
 {
-  std::vector<stk::math::Vector3d> elementNodeCoords;
-  fill_element_node_coordinates(mesh, element, coordsField, elementNodeCoords);
-
-  std::vector<int8_t> elementSigns(surfaces.size(), -2);
-  for (size_t i=0; i<surfaces.size(); ++i)
+  const StkMeshEntities elemNodes{mesh.begin_nodes(element), mesh.end_nodes(element)};
+  std::vector<int8_t> elementSigns(surfaceElementSelectors.size(), -2);
+  for (size_t i=0; i<surfaceElementSelectors.size(); ++i)
     if (is_entity_selected(mesh, surfaceElementSelectors[i], element))
-      elementSigns[i] = compute_element_sign_from_surface(*surfaces[i], elementNodeCoords);
+      elementSigns[i] = determine_element_sign_from_node_signs(elemNodes, nodesToSigns, i);
 
   return elementSigns;
 }
@@ -644,9 +641,7 @@ std::unique_ptr<ElementCutter> AnalyticSurfaceInterfaceGeometry::build_element_c
 {
   std::unique_ptr<ElementCutter> cutter;
   const FieldRef coordsField = get_coordinates_field(mesh);
-  const std::vector<int8_t> & elementSigns = myFlagSurfacesCanComputeSign ?
-      compute_element_signs_from_surfaces(mesh, coordsField, element, mySurfaces, mySurfaceElementSelectors) :
-      myElementsToSigns.at(element);
+  const std::vector<int8_t> & elementSigns = compute_element_signs_from_node_signs(mesh, element, mySurfaceElementSelectors, myNodesToSigns);
   cutter.reset( new SurfaceElementCutter(mesh, coordsField, element, mySurfaces, elementSigns, myMightHaveInteriorOrFaceCrossings, myEdgeCrossingTol) );
   return cutter;
 }

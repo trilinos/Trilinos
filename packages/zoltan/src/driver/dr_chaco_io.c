@@ -48,7 +48,7 @@ int read_chaco_file(int Proc,
 {
   /* Local declarations. */
   const char  *yo = "read_chaco_mesh";
-  char   cmesg[256];
+  char   cmesg[4188];
   char   chaco_fname[FILENAME_MAX + 8];
 
   int    nvtxs,base;
@@ -172,7 +172,7 @@ for (i=0; i<nvtxs; i++) { /* move 2/3 of points much closer to "a" */
     if (pio_info->init_dist_type == INITIAL_FILE) {
       sprintf(chaco_fname, "%s.assign", pio_info->pexo_fname);
       if (pio_info->file_comp == GZIP)
-	sprintf(chaco_fname, "%s.gz", chaco_fname);
+	sprintf(chaco_fname, "%s.gz", pio_info->pexo_fname);
 
       fp = ZOLTAN_FILE_open(chaco_fname, "r", pio_info->file_comp);
       if (fp == NULL) {

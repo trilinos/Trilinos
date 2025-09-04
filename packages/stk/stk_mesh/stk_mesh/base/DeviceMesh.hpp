@@ -35,6 +35,7 @@
 #define STK_MESH_DEVICEMESH_HPP
 
 #include <stk_util/stk_config.h>
+#include "View/Kokkos_ViewCtor.hpp"
 #include "stk_mesh/base/NgpMeshBase.hpp"
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/Entity.hpp"
@@ -53,6 +54,7 @@
 #include "stk_util/util/StkNgpVector.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 
+#include "stk_mesh/baseImpl/Partition.hpp"
 #include "stk_mesh/baseImpl/NgpMeshHostData.hpp"
 #include "stk_mesh/base/DeviceBucket.hpp"
 #include "stk_mesh/baseImpl/DeviceBucketRepository.hpp"
@@ -95,7 +97,7 @@ public:
       m_needSyncToHost(false),
       endRank(static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count())),
       deviceMeshHostData(nullptr),
-      m_deviceBucketRepo(this, stk::topology::NUM_RANKS),
+      m_deviceBucketRepo(this),
       m_deviceBufferOffsets(UnsignedViewType<NgpMemSpace>("deviceBufferOffsets", 1)),
       m_deviceMeshIndicesOffsets(UnsignedViewType<NgpMemSpace>("deviceMeshIndicesOffsets", 1))
   {
@@ -115,7 +117,6 @@ public:
   KOKKOS_FUNCTION
   virtual ~DeviceMeshT() override {
     m_needSyncToHost = false;
-    clear_buckets_and_views();
   }
 
   void update_mesh() override;
@@ -267,7 +268,7 @@ public:
   KOKKOS_FUNCTION
   unsigned num_buckets(stk::mesh::EntityRank rank) const
   {
-    return m_deviceBucketRepo.m_buckets[rank].size();
+    return m_deviceBucketRepo.num_buckets(rank);
   }
 
   KOKKOS_FUNCTION
@@ -335,9 +336,9 @@ public:
     static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, RemovePartOrdinalsMemorySpace>::accessible,
                   "The memory space of the 'removePartOrdinals' View is inaccessible from the DeviceMesh execution space");
 
-    using HostEntitiesType = typename std::remove_reference<decltype(entities)>::type::HostMirror;
-    using HostAddPartOrdinalsType = typename std::remove_reference<decltype(addPartOrdinals)>::type::HostMirror;
-    using HostRemovePartOrdinalsType = typename std::remove_reference<decltype(removePartOrdinals)>::type::HostMirror;
+    using HostEntitiesType = typename std::remove_reference<decltype(entities)>::type::host_mirror_type;
+    using HostAddPartOrdinalsType = typename std::remove_reference<decltype(addPartOrdinals)>::type::host_mirror_type;
+    using HostRemovePartOrdinalsType = typename std::remove_reference<decltype(removePartOrdinals)>::type::host_mirror_type;
 
     HostEntitiesType copiedEntities = Kokkos::create_mirror_view(entities);
     HostAddPartOrdinalsType copiedAddPartOrdinals = Kokkos::create_mirror_view(addPartOrdinals);
@@ -439,31 +440,19 @@ public:
   impl::DeviceBucketRepository<NgpMemSpace>& get_device_bucket_repository() {
     return m_deviceBucketRepo;
   }
+  
+  impl::DeviceBucketRepository<NgpMemSpace> const& get_device_bucket_repository() const {
+    return m_deviceBucketRepo;
+  }
+
+  bool should_sort_buckets_by_first_entity_identifier() const {
+    return bulk->should_sort_buckets_by_first_entity_identifier();
+  }
 
 private:
   void set_entity_keys(const stk::mesh::BulkData& bulk_in);
+
   void set_entity_local_ids(const stk::mesh::BulkData& bulk_in);
-
-  KOKKOS_FUNCTION
-  bool is_last_bucket_reference(unsigned rank = stk::topology::NODE_RANK) const
-  {
-    return (m_deviceBucketRepo.m_buckets[rank].use_count() == 1);
-  }
-
-  KOKKOS_FUNCTION
-  void clear_buckets_and_views()
-  {
-    // TODO need to also destroy devicebucketrepo
-    KOKKOS_IF_ON_HOST((
-      if (is_last_bucket_reference()) {
-        for (stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; rank++) {
-          for (unsigned iBucket = 0; iBucket < m_deviceBucketRepo.m_numBuckets[rank]; ++iBucket) {
-            m_deviceBucketRepo.m_buckets[rank][iBucket].~DeviceBucket();
-          }
-        }
-      }
-    ))
-  }
 
   bool fill_buckets(const stk::mesh::BulkData& bulk_in);
 
@@ -565,55 +554,12 @@ bool DeviceMeshT<NgpMemSpace>::fill_buckets(const stk::mesh::BulkData& bulk_in)
 
   Kokkos::Profiling::pushRegion("fill_buckets");
   for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < endRank; ++rank) {
-    const stk::mesh::BucketVector& stkBuckets = bulk_in.buckets(rank);
-    unsigned numStkBuckets = stkBuckets.size();
-
-    BucketView bucketBuffer(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketBuffer"), numStkBuckets);
-
-    if (numStkBuckets != m_deviceBucketRepo.m_buckets[rank].size()) {
-      anyBucketChanges = true;
-    }
-
-    for (unsigned iBucket = 0; iBucket < numStkBuckets; ++iBucket) {
-      stk::mesh::Bucket& stkBucket = *stkBuckets[iBucket];
-      const int ngpBucketId = stkBucket.ngp_mesh_bucket_id();
-
-      if (ngpBucketId == INVALID_BUCKET_ID) {
-        Kokkos::Profiling::pushRegion("new bucket");
-        // New bucket on host
-        new (&bucketBuffer[iBucket]) DeviceBucketT<NgpMemSpace>();
-        bucketBuffer[iBucket].initialize_bucket_attributes(stkBucket);
-        bucketBuffer[iBucket].initialize_fixed_data_from_host(stkBucket);
-        bucketBuffer[iBucket].update_entity_data_from_host(stkBucket);
-        bucketBuffer[iBucket].update_sparse_connectivity_from_host(stkBucket);
-        anyBucketChanges = true;
-        Kokkos::Profiling::popRegion();
-      }
-      else {
-        Kokkos::Profiling::pushRegion("pre-existing bucket");
-        // Pre-existing bucket on host
-        new (&bucketBuffer[iBucket]) DeviceBucketT(m_deviceBucketRepo.m_buckets[rank][ngpBucketId]);
-        if (stkBucket.ngp_mesh_bucket_is_modified()) {
-          bucketBuffer[iBucket].update_entity_data_from_host(stkBucket);
-          bucketBuffer[iBucket].update_sparse_connectivity_from_host(stkBucket);
-          anyBucketChanges = true;
-        }
-        bucketBuffer[iBucket].m_bucketId = stkBucket.bucket_id();
-        Kokkos::Profiling::popRegion();
-      }
-
-      stkBucket.set_ngp_mesh_bucket_id(iBucket);
-    }
-
-    if (is_last_bucket_reference(rank)) {
-      for (unsigned iBucket = 0; iBucket < m_deviceBucketRepo.m_buckets[rank].size(); ++iBucket) {
-        m_deviceBucketRepo.m_buckets[rank][iBucket].~DeviceBucketT();
-      }
-    }
-
-    m_deviceBucketRepo.m_buckets[rank] = bucketBuffer;
-    // increment/update partition size
+    auto& hostBuckets = bulk_in.buckets(rank);
+    auto& hostPartitions = bulk_in.m_bucket_repository.m_partitions[rank];
+    m_deviceBucketRepo.copy_buckets_and_partitions_from_host(rank, hostBuckets, hostPartitions, anyBucketChanges);
   }
+  m_deviceBucketRepo.sync_num_buckets_host_to_device();
+  m_deviceBucketRepo.sync_num_partitions_host_to_device();
   Kokkos::Profiling::popRegion();
 
   return anyBucketChanges;

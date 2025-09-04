@@ -26,23 +26,14 @@ namespace KokkosKernels {
 namespace Impl {
 
 CusparseSingleton::CusparseSingleton() { KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseCreate(&cusparseHandle)); }
+CusparseSingleton::~CusparseSingleton() { KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroy(cusparseHandle)); }
 
-CusparseSingleton& CusparseSingleton::singleton() {
-  std::unique_ptr<CusparseSingleton>& instance = get_instance();
-  if (!instance) {
-    instance = std::make_unique<CusparseSingleton>();
-    Kokkos::push_finalize_hook([&]() {
-      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroy(instance->cusparseHandle));
-      instance.reset();
-    });
-  }
-  return *instance;
-}
+CusparseSingleton& CusparseSingleton::singleton() { return get_instance().get(); }
 
-bool CusparseSingleton::is_initialized() { return get_instance() != nullptr; }
+bool CusparseSingleton::is_initialized() { return get_instance().is_initialized(); }
 
-std::unique_ptr<CusparseSingleton>& CusparseSingleton::get_instance() {
-  static std::unique_ptr<CusparseSingleton> s;
+KokkosKernels::Impl::Singleton<CusparseSingleton>& CusparseSingleton::get_instance() {
+  static KokkosKernels::Impl::Singleton<CusparseSingleton> s;
   return s;
 }
 
@@ -60,22 +51,16 @@ RocsparseSingleton::RocsparseSingleton() {
   KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_create_handle(&rocsparseHandle));
 }
 
-RocsparseSingleton& RocsparseSingleton::singleton() {
-  std::unique_ptr<RocsparseSingleton>& instance = get_instance();
-  if (!instance) {
-    instance = std::make_unique<RocsparseSingleton>();
-    Kokkos::push_finalize_hook([&]() {
-      KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_handle(instance->rocsparseHandle));
-      instance.reset();
-    });
-  }
-  return *instance;
+RocsparseSingleton::~RocsparseSingleton() {
+  KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_destroy_handle(rocsparseHandle));
 }
 
-bool RocsparseSingleton::is_initialized() { return get_instance() != nullptr; }
+RocsparseSingleton& RocsparseSingleton::singleton() { return get_instance().get(); }
 
-std::unique_ptr<RocsparseSingleton>& RocsparseSingleton::get_instance() {
-  static std::unique_ptr<RocsparseSingleton> s;
+bool RocsparseSingleton::is_initialized() { return get_instance().is_initialized(); }
+
+KokkosKernels::Impl::Singleton<RocsparseSingleton>& RocsparseSingleton::get_instance() {
+  static KokkosKernels::Impl::Singleton<RocsparseSingleton> s;
   return s;
 }
 

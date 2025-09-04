@@ -1866,10 +1866,10 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   2. This to complete before any following work in the provided instance.
   */
 
-  space.fence(); // // TODO: Tpetra::Details::Spaces::exec_space_wait
+  space.fence("Tpetra::DistObject::copyAndPermute-1"); // // TODO: Tpetra::Details::Spaces::exec_space_wait
   copyAndPermute(source, numSameIDs, permuteToLIDs, permuteFromLIDs,
                  CM);        // default instance
-  execution_space().fence(); // TODO:
+  execution_space().fence("Tpetra::DistObject::copyAndPermute-2"); // TODO:
                              // Tpetra::Details::Spaces::exec_space_wait
 }
 // clang-format off
@@ -1914,7 +1914,7 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
 
   // wait for any work from prior operations in the provided instance to
   // complete
-  space.fence(); // TODO: Details::Spaces::exec_space_wait
+  space.fence("Tpetra::DistObject::packAndPrepare-1"); // TODO: Details::Spaces::exec_space_wait
 
   // pack and prepare in the default instance.
   packAndPrepare(source, exportLIDs, exports, numPacketsPerLID,
@@ -1922,7 +1922,7 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
 
   // wait for the default instance to complete before returning, so any
   // following work inserted into the provided instance will be done after this
-  execution_space().fence(); // TODO: Details::Spaces::exec_space_wait
+  execution_space().fence("Tpetra::DistObject::packAndPrepare-2"); // TODO: Details::Spaces::exec_space_wait
 }
 // clang-format off
 
@@ -1953,13 +1953,13 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
     const size_t constantNumPackets, const CombineMode combineMode,
     const execution_space &space) {
   // Wait for any work in the provided space to complete
-  space.fence(); // TODO: Details::Spaces::exec_space_wait(execution_space(),
+  space.fence("Tpetra::DistObject::unpackAndCombine-1"); // TODO: Details::Spaces::exec_space_wait(execution_space(),
                  // space);
   unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets,
                    combineMode); // default instance
   // wait for unpack to finish in the default instance, since the caller
   // may be expecting sequential semantics in the `space` instance
-  execution_space().fence(); // TODO: Details::Spaces::exec_space_wait(space,
+  execution_space().fence("Tpetra::DistObject::unpackAndCombine-2"); // TODO: Details::Spaces::exec_space_wait(space,
                              // execution_space());
 }
 // clang-format off

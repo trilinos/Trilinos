@@ -9,6 +9,7 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MathUtil.hpp>
 #include <stk_math/StkVector.hpp>
+#include <boost/cstdint.hpp>
 #include <boost/math/tools/toms748_solve.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <vector>

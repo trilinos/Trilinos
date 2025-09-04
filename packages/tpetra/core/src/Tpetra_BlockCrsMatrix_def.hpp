@@ -1935,7 +1935,7 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
     using ::Tpetra::Details::ProfilingRegion;
     using ::Tpetra::Details::PackTraits;
 
-    typedef typename Kokkos::View<int*, device_type>::HostMirror::execution_space host_exec;
+    typedef typename Kokkos::View<int*, device_type>::host_mirror_type::execution_space host_exec;
 
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_BCRS_type;
 
@@ -2194,7 +2194,7 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
     using ::Tpetra::Details::PackTraits;
     using std::endl;
     using host_exec =
-      typename Kokkos::View<int*, device_type>::HostMirror::execution_space;
+      typename Kokkos::View<int*, device_type>::host_mirror_type::execution_space;
 
     ProfilingRegion profile_region("Tpetra::BlockCrsMatrix::unpackAndCombine");
     const bool verbose = Behavior::verbose ();
@@ -2389,7 +2389,7 @@ void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
       Details::disableWDVTracking();
       Kokkos::parallel_for
         ("Tpetra::BlockCrsMatrix::unpackAndCombine: unpack", policy,
-         [=] (const typename policy_type::member_type& member) {
+         [=, *this](const typename policy_type::member_type& member) {
           const size_t i = member.league_rank();
           Kokkos::View<GO*, host_scratch_space> gblColInds
             (member.team_scratch (0), maxRowNumEnt);

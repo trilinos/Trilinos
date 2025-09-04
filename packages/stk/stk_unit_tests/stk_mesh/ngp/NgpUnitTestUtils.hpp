@@ -131,7 +131,7 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk,
 
   using BucketPartOrdinalType = Kokkos::View<stk::mesh::PartOrdinal*, stk::ngp::MemSpace>;
   BucketPartOrdinalType bucketPartOrdinals("bucketPartOrdinals", numBuckets*MaxNumParts);
-  BucketPartOrdinalType::HostMirror hostBucketPartOrdinals = Kokkos::create_mirror_view(bucketPartOrdinals);
+  BucketPartOrdinalType::host_mirror_type hostBucketPartOrdinals = Kokkos::create_mirror_view(bucketPartOrdinals);
   Kokkos::deep_copy(hostBucketPartOrdinals, stk::mesh::InvalidOrdinal);
   for (size_t bucketIdx = 0; bucketIdx < buckets.size(); ++bucketIdx) {
     const unsigned numExpectedParts = expectedBucketLayout[bucketIdx].partNames.size();
@@ -159,7 +159,7 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk,
 
   using BucketEntitiesType = Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace>;
   BucketEntitiesType bucketEntities("bucketEntities", numEntitiesAcrossBuckets);
-  BucketEntitiesType::HostMirror hostBucketEntities = Kokkos::create_mirror_view(bucketEntities);
+  BucketEntitiesType::host_mirror_type hostBucketEntities = Kokkos::create_mirror_view(bucketEntities);
 
   Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
     KOKKOS_LAMBDA(size_t /*index*/) {

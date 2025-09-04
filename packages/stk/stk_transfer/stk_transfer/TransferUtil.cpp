@@ -51,11 +51,8 @@ void exchange_transfer_ids(ReducedDependencyCommData& comm_data)
   std::vector<MPI_Request> receiveRequests(comm_data.numToMeshCommunications);
   std::vector<MPI_Request> sendRequests(comm_data.numFromMeshCommunications);
 
-  int sendTag = 0;
-  if (stk::util::get_common_coupling_version() >= 10) {
-    comm_data.m_transferId = impl::get_next_transfer_id();
-    sendTag = comm_data.m_transferId;
-  }
+  comm_data.m_transferId = impl::get_next_transfer_id();
+  int sendTag = comm_data.m_transferId;
 
   for (int ii = 0; ii < comm_data.numToMeshCommunications; ++ii) {
     int source = comm_data.uniqueToProcVec[ii];
@@ -76,11 +73,9 @@ void exchange_transfer_ids(ReducedDependencyCommData& comm_data)
   std::vector<MPI_Status> receiveStati(receiveRequests.size());
   MPI_Waitall(receiveRequests.size(), receiveRequests.data(), receiveStati.data());
 
-  if (stk::util::get_common_coupling_version() >= 10) {
-    comm_data.m_otherTransferId.resize(comm_data.numToMeshCommunications);
-    for(unsigned i=0; i<receiveStati.size(); ++i) {
-      comm_data.m_otherTransferId[i] = receiveStati[i].MPI_TAG;
-    }
+  comm_data.m_otherTransferId.resize(comm_data.numToMeshCommunications);
+  for(unsigned i=0; i<receiveStati.size(); ++i) {
+    comm_data.m_otherTransferId[i] = receiveStati[i].MPI_TAG;
   }
 
   MPI_Waitall(sendRequests.size(), sendRequests.data(), MPI_STATUSES_IGNORE);

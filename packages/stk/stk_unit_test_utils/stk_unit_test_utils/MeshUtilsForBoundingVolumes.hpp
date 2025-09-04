@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,11 +30,12 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 #define STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 
+#include "stk_mesh/base/Types.hpp"
 #include "stk_unit_test_utils/Search_UnitTestUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/ExodusTranslator.hpp"
@@ -89,51 +90,51 @@ inline void findBoundingBoxCoordinates(const std::vector<double> &coordinates, s
 
 inline void createBoundingBoxesForSidesInSidesets(const stk::mesh::BulkData& bulk, std::vector<FloatBox>& domainBoxes)
 {
-    stk::mesh::ExodusTranslator exoTranslator(bulk);
-    size_t numberBoundingBoxes = 0;
-    std::vector<int64_t> sidesetIds;
-    exoTranslator.fill_side_set_ids(sidesetIds);
+  stk::mesh::ExodusTranslator exoTranslator(bulk);
+  size_t numberBoundingBoxes = 0;
+  std::vector<int64_t> sidesetIds;
+  exoTranslator.fill_side_set_ids(sidesetIds);
 
-    for (size_t i=0;i<sidesetIds.size();i++)
-    {
-        numberBoundingBoxes += exoTranslator.get_local_num_entities_for_id(sidesetIds[i], bulk.mesh_meta_data().side_rank());
-    }
+  for (size_t i = 0; i < sidesetIds.size(); ++i) {
+    numberBoundingBoxes += exoTranslator.get_local_num_entities_for_id(sidesetIds[i], bulk.mesh_meta_data().side_rank());
+  }
 
-    domainBoxes.resize(numberBoundingBoxes);
+  domainBoxes.resize(numberBoundingBoxes);
 
-    stk::mesh::FieldBase const * coords = bulk.mesh_meta_data().coordinate_field();
+  auto& coordsField = *bulk.mesh_meta_data().coordinate_field();
+  size_t boxCounter = 0;
+  std::vector<double> boxCoordinates(6);
 
-    size_t boxCounter = 0;
-
-    std::vector<double> boxCoordinates(6);
-    for (size_t ssetCounter=0;ssetCounter<sidesetIds.size();ssetCounter++)
-    {
-        const stk::mesh::Part* sideset = exoTranslator.get_exodus_part_of_rank(sidesetIds[ssetCounter], bulk.mesh_meta_data().side_rank());
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(coordsField,
+    [&](auto& coordsFieldData) {
+      for (size_t ssetCounter = 0; ssetCounter < sidesetIds.size(); ++ssetCounter) {
+        const stk::mesh::Part* sideset = exoTranslator.get_exodus_part_of_rank(sidesetIds[ssetCounter],
+                                                                               bulk.mesh_meta_data().side_rank());
         stk::mesh::EntityVector sides;
         stk::mesh::Selector sel = bulk.mesh_meta_data().locally_owned_part() & *sideset;
         const bool sortById = true;
         stk::mesh::get_entities(bulk, bulk.mesh_meta_data().side_rank(), sel, sides, sortById);
 
-        for(size_t j=0;j<sides.size();++j)
-        {
-            unsigned num_nodes_per_side = bulk.num_nodes(sides[j]);
-            const stk::mesh::Entity* nodes = bulk.begin_nodes(sides[j]);
-            std::vector<double> coordinates(3*num_nodes_per_side,0);
-            for(unsigned k=0;k<num_nodes_per_side;++k)
-            {
-                double *data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[k]));
-                coordinates[3*k] = data[0];
-                coordinates[3*k+1] = data[1];
-                coordinates[3*k+2] = data[2];
-            }
-            findBoundingBoxCoordinates(coordinates, boxCoordinates);
-            domainBoxes[boxCounter].set_box(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
-                                            boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]);
-            boxCounter++;
+        for (size_t j = 0; j < sides.size(); ++j) {
+          unsigned num_nodes_per_side = bulk.num_nodes(sides[j]);
+          const stk::mesh::Entity* nodes = bulk.begin_nodes(sides[j]);
+          std::vector<double> coordinates(3*num_nodes_per_side,0);
+          for (unsigned k = 0; k < num_nodes_per_side; ++k) {
+            auto data = coordsFieldData.entity_values(nodes[k]);
+            coordinates[3*k]   = data(0_comp);
+            coordinates[3*k+1] = data(1_comp);
+            coordinates[3*k+2] = data(2_comp);
+          }
+          findBoundingBoxCoordinates(coordinates, boxCoordinates);
+          domainBoxes[boxCounter].set_box(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
+                                          boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]);
+          boxCounter++;
         }
+      }
     }
+  );
 
-    STK_ThrowRequireMsg(boxCounter == numberBoundingBoxes, "Program error. Please contact sierra-help for support");
+  STK_ThrowRequireMsg(boxCounter == numberBoundingBoxes, "Program error. Please contact sierra-help for support");
 }
 
 inline void fillBoxesUsingSidesetsFromFile(MPI_Comm comm, const std::string& filename, std::vector<FloatBox> &domainBoxes)
@@ -329,28 +330,26 @@ inline void createBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
                                            stk::mesh::EntityRank rank,
                                            std::vector<std::pair<BoxType,IdentProcType>>& boundingBoxes)
 {
-    stk::mesh::EntityVector entities;
-    const bool sortById = true;
-    stk::mesh::get_entities(bulk, rank, bulk.mesh_meta_data().locally_owned_part(), entities, sortById);
+  stk::mesh::EntityVector entities;
+  const bool sortById = true;
+  stk::mesh::get_entities(bulk, rank, bulk.mesh_meta_data().locally_owned_part(), entities, sortById);
 
-    size_t numberBoundingBoxes = entities.size();
-    boundingBoxes.resize(numberBoundingBoxes);
+  size_t numberBoundingBoxes = entities.size();
+  boundingBoxes.resize(numberBoundingBoxes);
+  auto& coordsField = *bulk.mesh_meta_data().coordinate_field();
+  std::vector<double> boxCoordinates(6);
 
-    stk::mesh::FieldBase const * coords = bulk.mesh_meta_data().coordinate_field();
-
-    std::vector<double> boxCoordinates(6);
-
-    for(size_t i=0;i<entities.size();++i)
-    {
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(coordsField,
+    [&](auto& coordsFieldData) {
+      for (size_t i = 0; i < entities.size(); ++i) {
         unsigned num_nodes = bulk.num_nodes(entities[i]);
         std::vector<double> coordinates(3*num_nodes,0);
         const stk::mesh::Entity* nodes = bulk.begin_nodes(entities[i]);
-        for(unsigned j=0;j<num_nodes;++j)
-        {
-            double* data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[j]));
-            coordinates[3*j] = data[0];
-            coordinates[3*j+1] = data[1];
-            coordinates[3*j+2] = data[2];
+        for (unsigned j = 0; j < num_nodes; ++j) {
+          auto data = coordsFieldData.entity_values(nodes[j]);
+          coordinates[3*j]   = data(0_comp);
+          coordinates[3*j+1] = data(1_comp);
+          coordinates[3*j+2] = data(2_comp);
         }
         findBoundingBoxCoordinates(coordinates, boxCoordinates);
         unsigned id = bulk.identifier(entities[i]);
@@ -359,13 +358,14 @@ inline void createBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
           domainBoxId = IdentProc(id, bulk.parallel_rank());
         }
         else {
-            domainBoxId = id;
+          domainBoxId = id;
         }
         boundingBoxes[i] = std::make_pair(BoxType(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
                                                   boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]),
-                                                  domainBoxId);
-
+                                          domainBoxId);
+      }
     }
+  );
 }
 
 template<typename BoxIdentProcType>
@@ -374,8 +374,8 @@ createBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
                                      stk::mesh::EntityRank rank)
 {
 
-  using BoxType = typename BoxIdentProcType::box_type;  
-  using IdentProcType = typename BoxIdentProcType::second_type;  
+  using BoxType = typename BoxIdentProcType::box_type;
+  using IdentProcType = typename BoxIdentProcType::second_type;
   stk::mesh::EntityVector entities;
   const bool sortById = true;
   stk::mesh::get_entities(bulk, rank, bulk.mesh_meta_data().locally_owned_part(), entities, sortById);
@@ -383,35 +383,37 @@ createBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
   size_t numberBoundingBoxes = entities.size();
   Kokkos::View<BoxIdentProcType *> boundingBoxes("Bounding Boxes", numberBoundingBoxes);
   auto boundingBoxesHost = Kokkos::create_mirror_view(boundingBoxes);
-
-  stk::mesh::FieldBase const * coords = bulk.mesh_meta_data().coordinate_field();
-
+  auto& coordsField = *bulk.mesh_meta_data().coordinate_field();
   std::vector<double> boxCoordinates(6);
 
-  for (size_t i = 0; i < entities.size(); ++i) {
-    unsigned num_nodes = bulk.num_nodes(entities[i]);
-    std::vector<double> coordinates(3*num_nodes,0);
-    const stk::mesh::Entity* nodes = bulk.begin_nodes(entities[i]);
-    for (unsigned j = 0; j < num_nodes; ++j) {
-      double* data = static_cast<double*>(stk::mesh::field_data(*coords, nodes[j]));
-      coordinates[3*j] = data[0];
-      coordinates[3*j+1] = data[1];
-      coordinates[3*j+2] = data[2];
-    }
-    findBoundingBoxCoordinates(coordinates, boxCoordinates);
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(coordsField,
+    [&](auto& coordsFieldData) {
+      for (size_t i = 0; i < entities.size(); ++i) {
+        unsigned num_nodes = bulk.num_nodes(entities[i]);
+        std::vector<double> coordinates(3*num_nodes,0);
+        const stk::mesh::Entity* nodes = bulk.begin_nodes(entities[i]);
+        for (unsigned j = 0; j < num_nodes; ++j) {
+          auto data = coordsFieldData.entity_values(nodes[j]);
+          coordinates[3*j]   = data(0_comp);
+          coordinates[3*j+1] = data(1_comp);
+          coordinates[3*j+2] = data(2_comp);
+        }
+        findBoundingBoxCoordinates(coordinates, boxCoordinates);
 
-    int id = bulk.identifier(entities[i]);
-    IdentProcType domainBoxId;
-    if constexpr (std::is_same_v<IdentProcType, IdentProc>) {
-      domainBoxId = IdentProc(id, bulk.parallel_rank());
-    }
-    else {
-        domainBoxId = id;
-    }
+        int id = bulk.identifier(entities[i]);
+        IdentProcType domainBoxId;
+        if constexpr (std::is_same_v<IdentProcType, IdentProc>) {
+          domainBoxId = IdentProc(id, bulk.parallel_rank());
+        }
+        else {
+          domainBoxId = id;
+        }
 
-    boundingBoxesHost(i) = {BoxType(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
-                                                 boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]), domainBoxId};
-  }
+        boundingBoxesHost(i) = {BoxType(boxCoordinates[0], boxCoordinates[1], boxCoordinates[2],
+                                        boxCoordinates[3], boxCoordinates[4], boxCoordinates[5]), domainBoxId};
+      }
+    }
+  );
 
   Kokkos::deep_copy(boundingBoxes, boundingBoxesHost);
 
@@ -431,69 +433,73 @@ inline void fillBoxesUsingElementBlocksFromFile(MPI_Comm comm, const std::string
     createBoundingBoxesForElementsInElementBlocks(*bulk, domainBoxes);
 }
 
-inline void fillBoundingVolumesUsingNodesFromFile(
-        MPI_Comm comm, const std::string& sphereFilename, std::vector< std::pair<Sphere, IdentProc> > &spheres)
+inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::string& sphereFilename,
+                                                  std::vector<std::pair<Sphere, IdentProc>>& spheres)
 {
-    std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, comm);
-    stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, comm);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
 
-    stk::io::fill_mesh(sphereFilename, *bulk);
+  stk::io::fill_mesh(sphereFilename, *bulk);
 
-    stk::mesh::EntityVector nodes;
-    const bool sortById = true;
-    stk::mesh::get_entities(*bulk, stk::topology::NODE_RANK, meta.locally_owned_part(), nodes, sortById);
+  stk::mesh::EntityVector nodes;
+  const bool sortById = true;
+  stk::mesh::get_entities(*bulk, stk::topology::NODE_RANK, meta.locally_owned_part(), nodes, sortById);
 
-    spheres.clear();
-    spheres.resize(nodes.size());
+  spheres.clear();
+  spheres.resize(nodes.size());
+  auto& coordsField = *bulk->mesh_meta_data().coordinate_field();
 
-    stk::mesh::FieldBase const * coords = meta.coordinate_field();
-
-    for (size_t i=0;i<nodes.size();i++)
-    {
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(coordsField,
+    [&](auto& coordsFieldData) {
+      for (size_t i = 0; i < nodes.size(); ++i) {
         stk::mesh::Entity node = nodes[i];
-        double *data = static_cast<double*>(stk::mesh::field_data(*coords, node));
+        auto data = coordsFieldData.entity_values(node);
 
-        double x=data[0];
-        double y=data[1];
-        double z=data[2];
+        double x=data(0_comp);
+        double y=data(1_comp);
+        double z=data(2_comp);
 
         double radius=1e-5;
         unsigned id = bulk->identifier(node);
         spheres[i] = std::make_pair(Sphere(Point(x,y,z), radius), IdentProc(id, bulk->parallel_rank()));
+      }
     }
+  );
 }
 
 inline void fillBoundingVolumesUsingNodesFromFile(MPI_Comm comm, const std::string& sphereFilename, FloatBoxIdentProcVector &spheres)
 {
-    std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, comm);
-    stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, comm);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
 
-    stk::io::fill_mesh(sphereFilename, *bulk);
+  stk::io::fill_mesh(sphereFilename, *bulk);
 
-    stk::mesh::EntityVector nodes;
-    const bool sortById = true;
-    stk::mesh::get_entities(*bulk, stk::topology::NODE_RANK, meta.locally_owned_part(), nodes, sortById);
+  stk::mesh::EntityVector nodes;
+  const bool sortById = true;
+  stk::mesh::get_entities(*bulk, stk::topology::NODE_RANK, meta.locally_owned_part(), nodes, sortById);
 
-    spheres.clear();
-    spheres.resize(nodes.size());
+  spheres.clear();
+  spheres.resize(nodes.size());
+  auto& coordsField = *bulk->mesh_meta_data().coordinate_field();
 
-    stk::mesh::FieldBase const * coords = meta.coordinate_field();
-
-    for (size_t i=0;i<nodes.size();i++)
-    {
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(coordsField,
+    [&](auto& coordsFieldData) {
+      for (size_t i = 0; i < nodes.size(); ++i) {
         stk::mesh::Entity node = nodes[i];
-        const double *data = static_cast<const double*>(stk::mesh::field_data(*coords, node));
+        auto data = coordsFieldData.entity_values(node);
 
-        const double x=data[0];
-        const double y=data[1];
-        const double z=data[2];
+        const double x=data(0_comp);
+        const double y=data(1_comp);
+        const double z=data(2_comp);
 
         constexpr double radius=1e-5;
         const unsigned id = bulk->identifier(node);
         FloatBox box(x-radius, y-radius, z-radius, x+radius, y+radius, z+radius);
         spheres[i] = std::make_pair(box, IdentProc(id, bulk->parallel_rank()));
         STK_ThrowRequire(spheres[i].first == box);
+      }
     }
+  );
 }
 
 #endif

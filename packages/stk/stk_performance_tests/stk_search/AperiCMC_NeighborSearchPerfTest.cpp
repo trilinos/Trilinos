@@ -231,7 +231,7 @@ public:
   }
 
   // Ghost the neighbors to the nodes processor
-  void ghost_node_neighbors(const ResultViewType::HostMirror &host_search_results)
+  void ghost_node_neighbors(const ResultViewType::host_mirror_type &host_search_results)
   {
     m_bulkData->modification_begin();
     stk::mesh::Ghosting &neighbor_ghosting = m_bulkData->create_ghosting("neighbors");
@@ -341,7 +341,7 @@ public:
 
     stk::search::coarse_search(node_points, node_spheres, search_method, m_bulkData->parallel(), search_results, exec_space, results_parallel_symmetry);
 
-    ResultViewType::HostMirror host_search_results = Kokkos::create_mirror_view(search_results);
+    ResultViewType::host_mirror_type host_search_results = Kokkos::create_mirror_view(search_results);
     Kokkos::deep_copy(host_search_results, search_results);
 
     ghost_node_neighbors(host_search_results);
@@ -381,12 +381,13 @@ public:
     }
 
     const stk::mesh::BucketVector& nodeBuckets = m_bulkData->get_buckets(stk::topology::NODE_RANK, m_owned_selector);
+    auto numNeighborsData = m_numNeighborsField->data<stk::mesh::ReadOnly>();
     for(const stk::mesh::Bucket* bptr : nodeBuckets) {
       for(stk::mesh::Entity node : *bptr) {
-        const double* numNeighbors = reinterpret_cast<const double*>(stk::mesh::field_data(*m_numNeighborsField, node));
-        max_num_neighbors = std::max(max_num_neighbors, numNeighbors[0]);
-        min_num_neighbors = std::min(min_num_neighbors, numNeighbors[0]);
-        total_num_neighbors += numNeighbors[0];
+        auto numNeighbors = numNeighborsData.entity_values(node);
+        max_num_neighbors = std::max(max_num_neighbors, numNeighbors(0_comp));
+        min_num_neighbors = std::min(min_num_neighbors, numNeighbors(0_comp));
+        total_num_neighbors += numNeighbors(0_comp);
       }
     }
 

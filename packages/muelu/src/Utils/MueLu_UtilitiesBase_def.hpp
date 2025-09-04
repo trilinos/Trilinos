@@ -470,8 +470,8 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
               });
         }
         if (useAverageAbsDiagVal) {
-          Teuchos::TimeMonitor MMM                                                   = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: useAverageAbsDiagVal");
-          typename Kokkos::View<mag_type, execution_space>::HostMirror avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
+          Teuchos::TimeMonitor MMM                                                         = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: useAverageAbsDiagVal");
+          typename Kokkos::View<mag_type, execution_space>::host_mirror_type avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
           Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
           int numDiagsEqualToOne;
           Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);
@@ -737,14 +737,16 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetMatrixOverlappedDiagonal(const Matrix& A) {
   RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
   RCP<Vector> localDiag      = GetMatrixDiagonal(A);
-  RCP<Vector> diagonal       = VectorFactory::Build(colMap);
   RCP<const Import> importer = A.getCrsGraph()->getImporter();
-  if (importer == Teuchos::null) {
+  if (importer.is_null() && !rowMap->isSameAs(*colMap)) {
     importer = ImportFactory::Build(rowMap, colMap);
   }
-  diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
-
-  return diagonal;
+  if (!importer.is_null()) {
+    RCP<Vector> diagonal = VectorFactory::Build(colMap);
+    diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
+    return diagonal;
+  } else
+    return localDiag;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -2055,6 +2057,12 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapsAreNested(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& rowMap, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& colMap) {
+  if ((rowMap.lib() == Xpetra::UseTpetra) && (colMap.lib() == Xpetra::UseTpetra)) {
+    auto tpRowMap = toTpetra(rowMap);
+    auto tpColMap = toTpetra(colMap);
+    return tpColMap.isLocallyFitted(tpRowMap);
+  }
+
   ArrayView<const GlobalOrdinal> rowElements = rowMap.getLocalElementList();
   ArrayView<const GlobalOrdinal> colElements = colMap.getLocalElementList();
 

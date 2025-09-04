@@ -49,7 +49,7 @@ namespace Tpetra::Details {
 #ifdef HAVE_TPETRA_MPI
     if (ialltofewv_.req) {
 
-      ProfilingRegion ws("Tpetra::Distributor: doWaitsIalltofewv");
+      ProfilingRegion ws("Tpetra::Distributor::doWaitsIalltofewv");
       ialltofewv_.impl.wait(*ialltofewv_.req);
 
       ialltofewv_.sendcounts.reset();

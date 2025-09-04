@@ -100,7 +100,7 @@ Kokkos::initialize(argc, args);
     // coordinates of source sites, bigger than needed then resized later
     Kokkos::View<double**, Kokkos::DefaultExecutionSpace> source_coords_device("source coordinates", 
             1.25*N_pts_on_sphere, 3);
-    Kokkos::View<double**>::HostMirror source_coords = Kokkos::create_mirror_view(source_coords_device);
+    Kokkos::View<double**>::host_mirror_type source_coords = Kokkos::create_mirror_view(source_coords_device);
 
     double r = 1.0;
 
@@ -145,7 +145,7 @@ Kokkos::initialize(argc, args);
     // coordinates of target sites
     Kokkos::View<double**, Kokkos::DefaultExecutionSpace> target_coords_device ("target coordinates", 
             number_target_coords, 3);
-    Kokkos::View<double**>::HostMirror target_coords = Kokkos::create_mirror_view(target_coords_device);
+    Kokkos::View<double**>::host_mirror_type target_coords = Kokkos::create_mirror_view(target_coords_device);
     
     {
         bool enough_pts_found = false;
@@ -253,11 +253,11 @@ Kokkos::initialize(argc, args);
 
     Kokkos::View<int**, Kokkos::DefaultExecutionSpace> neighbor_lists_device("neighbor lists", 
             number_target_coords, estimated_upper_bound_number_neighbors); // first column is # of neighbors
-    Kokkos::View<int**>::HostMirror neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
+    Kokkos::View<int**>::host_mirror_type neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
     
     // each target site has a window size
     Kokkos::View<double*, Kokkos::DefaultExecutionSpace> epsilon_device("h supports", number_target_coords);
-    Kokkos::View<double*>::HostMirror epsilon = Kokkos::create_mirror_view(epsilon_device);
+    Kokkos::View<double*>::host_mirror_type epsilon = Kokkos::create_mirror_view(epsilon_device);
     
     // query the point cloud to generate the neighbor lists using a kdtree to produce the n nearest neighbor
     // to each target site, adding (epsilon_multiplier-1)*100% to whatever the distance away the further neighbor used is from

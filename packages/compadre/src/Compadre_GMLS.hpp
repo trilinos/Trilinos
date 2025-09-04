@@ -79,10 +79,10 @@ private:
     Kokkos::View<double*> _ref_N;
 
     //! tangent vectors information (host)
-    Kokkos::View<double*>::HostMirror _host_T;
+    Kokkos::View<double*>::host_mirror_type _host_T;
 
     //! reference outward normal vectors information (host)
-    Kokkos::View<double*>::HostMirror _host_ref_N;
+    Kokkos::View<double*>::host_mirror_type _host_ref_N;
 
     //! metric tensor inverse for all problems
     Kokkos::View<double*> _manifold_metric_tensor_inverse;
@@ -111,7 +111,7 @@ private:
 
     //! generated weights for nontraditional samples required to transform data into expected sampling 
     //! functional form (host)
-    Kokkos::View<const double*****, layout_right>::HostMirror _host_prestencil_weights;
+    Kokkos::View<const double*****, layout_right>::host_mirror_type _host_prestencil_weights;
 
     //! (OPTIONAL) connections between additional points and neighbors
     point_connections_type _additional_pc;
@@ -172,7 +172,7 @@ private:
     Kokkos::View<TargetOperation*> _operations;
 
     //! vector containing target functionals to be applied for reconstruction problem (host)
-    Kokkos::View<TargetOperation*>::HostMirror _host_operations;
+    Kokkos::View<TargetOperation*>::host_mirror_type _host_operations;
 
     //! weighting kernel type for GMLS
     WeightingFunctionType _weighting_type;
@@ -723,7 +723,7 @@ public:
     double getTangentBundle(const int target_index, const int direction, const int component) const {
         // Component index 0.._dimensions-2 will return tangent direction
         // Component index _dimensions-1 will return the normal direction
-        scratch_matrix_right_type::HostMirror 
+        scratch_matrix_right_type::host_mirror_type
                 T(_host_T.data() + target_index*_dimensions*_dimensions, _dimensions, _dimensions);
         return T(direction, component);
     }
@@ -732,7 +732,7 @@ public:
     double getReferenceNormalDirection(const int target_index, const int component) const {
         compadre_assert_debug(_reference_outward_normal_direction_provided && 
                 "getRefenceNormalDirection called, but reference outwrad normal directions were never provided.");
-        scratch_vector_type::HostMirror 
+        scratch_vector_type::host_mirror_type
                 ref_N(_host_ref_N.data() + target_index*_dimensions, _dimensions);
         return ref_N(component);
     }

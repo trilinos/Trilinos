@@ -221,6 +221,16 @@ CDFEM_Support::set_snap_fields()
     }
   }
 
+  for (auto && entry : get_stashed_levelsets())
+  {
+    auto & stashedFld = entry.second;
+    for ( unsigned is = 0; is < stashedFld.number_of_states(); ++is )
+    {
+      const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
+      mySnapFields.erase(stashedFld.field_state(state));
+    }
+  }
+
   FieldRef cdfemSnapField = get_cdfem_snap_displacements_field();
   if (cdfemSnapField.valid())
   {
@@ -244,10 +254,7 @@ CDFEM_Support::finalize_fields()
     const FieldRef field(field_ptr);
     if( !field.type_is<double>() || field.field_state(stk::mesh::StateNew) == my_cdfem_displacements_field ) continue;
 
-    if( field.entity_rank()==stk::topology::ELEMENT_RANK &&
-        !stk::equal_case(field.name(), "transition_element") &&
-        !stk::equal_case(field.name(), "transition_element_3") &&
-        !stk::equal_case(field.name(), "parent_element") )
+    if( field.entity_rank()==stk::topology::ELEMENT_RANK )
     {
       my_element_fields.insert(field);
     }
@@ -346,6 +353,20 @@ CDFEM_Support::set_simplex_generation_method(const Simplex_Generation_Method & m
   STK_ThrowAssert(method < MAX_SIMPLEX_GENERATION_METHOD);
   STK_ThrowRequireMsg(3 == my_meta.spatial_dimension() || method != CUT_QUADS_BY_NEAREST_EDGE_CUT, "Simplex generation method CUT_QUADS_BY_NEAREST_EDGE_CUT only supported in 3d.");
   my_simplex_generation_method = method;
+}
+
+void CDFEM_Support::setup_levelset_field_stash(const FieldSet &  levelSetFields)
+{
+  myLevelSetFields = levelSetFields;
+  myStashedLevelSetFields.clear();
+  for(auto && fld : levelSetFields)
+  {
+    auto stashedFld = 
+      my_aux_meta.register_field(fld.name() + "_STASH", FieldType::REAL, stk::topology::NODE_RANK, 
+        1, 1, get_universal_part());
+    myStashedLevelSetFields[fld] = stashedFld;
+    my_interpolation_fields.insert(stashedFld);
+  }
 }
 
 } // namespace krino

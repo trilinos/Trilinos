@@ -1008,18 +1008,18 @@ unpackAndCombineIntoCrsArrays(
       permute_to_lids_d, permute_from_lids_d, crs_rowptr_d, crs_colind_d, src_pids_d,
       tgt_pids_d, numSameIDs, TargetNumRows, TargetNumNonzeros, MyTargetPID);
 
-  // FIXME (mfh 25 Jun 2019) HostMirror of CudaUVMSpace is CudaUVMSpace!!!
+  // FIXME (mfh 25 Jun 2019) host_mirror_type of CudaUVMSpace is CudaUVMSpace!!!
 
   // Copy outputs back to host
-  typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(
+  typename decltype(crs_rowptr_d)::host_mirror_type crs_rowptr_h(
       CRS_rowptr.getRawPtr(), CRS_rowptr.size());
   deep_copy(crs_rowptr_h, crs_rowptr_d);
 
-  typename decltype(crs_colind_d)::HostMirror crs_colind_h(
+  typename decltype(crs_colind_d)::host_mirror_type crs_colind_h(
       CRS_colind.getRawPtr(), CRS_colind.size());
   deep_copy(crs_colind_h, crs_colind_d);
 
-  typename decltype(tgt_pids_d)::HostMirror tgt_pids_h(
+  typename decltype(tgt_pids_d)::host_mirror_type tgt_pids_h(
       TargetPids.getRawPtr(), TargetPids.size());
   deep_copy(tgt_pids_h, tgt_pids_d);
 

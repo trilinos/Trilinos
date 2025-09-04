@@ -45,6 +45,8 @@
 
 namespace {
 
+#ifndef STK_UNIFIED_MEMORY
+
 class LegacyFieldDataEntityAccess : public FieldDataAccessFixture {};
 
 //==============================================================================
@@ -403,5 +405,7 @@ NGP_TEST_F(LegacyFieldDataEntityAccess, device_multiCopy_multiComponent)
   build_mesh_with_multi_copy_multi_component_field();
   test_legacy_device_multi_copy_multi_component_entity_values(get_bulk(), *m_field);
 }
+
+#endif
 
 } //namespace <anonymous>

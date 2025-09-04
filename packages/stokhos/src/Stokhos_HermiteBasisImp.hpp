@@ -9,8 +9,8 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::HermiteBasis<ordinal_type,value_type>::
-HermiteBasis(ordinal_type p, bool normalize, Stokhos::GrowthPolicy growth) :
-  RecurrenceBasis<ordinal_type,value_type>("Hermite", p, normalize, growth)
+HermiteBasis(ordinal_type ap, bool anormalize, Stokhos::GrowthPolicy agrowth) :
+  RecurrenceBasis<ordinal_type,value_type>("Hermite", ap, anormalize, agrowth)
 {
   this->setup();
 
@@ -21,11 +21,11 @@ HermiteBasis(ordinal_type p, bool normalize, Stokhos::GrowthPolicy growth) :
 
 template <typename ordinal_type, typename value_type>
 Stokhos::HermiteBasis<ordinal_type, value_type>::
-HermiteBasis(ordinal_type p, const HermiteBasis& basis) :
-  RecurrenceBasis<ordinal_type, value_type>(p, basis)
+HermiteBasis(ordinal_type ap, const HermiteBasis& basis) :
+  RecurrenceBasis<ordinal_type, value_type>(ap, basis)
 {
   // Compute coefficients in 3-term recurrsion
-  computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta,
+  computeRecurrenceCoefficients(ap+1, this->alpha, this->beta, this->delta,
 				this->gamma);
 
   // Setup rest of recurrence basis
@@ -42,24 +42,24 @@ template <typename ordinal_type, typename value_type>
 bool
 Stokhos::HermiteBasis<ordinal_type,value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
-			      Teuchos::Array<value_type>& alpha,
-			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta,
-			      Teuchos::Array<value_type>& gamma) const
+			      Teuchos::Array<value_type>& aalpha,
+			      Teuchos::Array<value_type>& abeta,
+			      Teuchos::Array<value_type>& adelta,
+			      Teuchos::Array<value_type>& agamma) const
 {
   // Hermite 3 term recurrence:
   // He_0(x) = 1
   // He_1(x) = x
   // He_i(x) = x*He_{i-1}(x) - (i-1)*He_{i-2}(x), i=2,3,...
-  alpha[0] = 0.0;
-  beta[0] = 1.0;
-  delta[0] = 1.0;
-  gamma[0] = 1.0;
+  aalpha[0] = 0.0;
+  abeta[0] = 1.0;
+  adelta[0] = 1.0;
+  agamma[0] = 1.0;
   for (ordinal_type i=1; i<n; i++) {
-    alpha[i] = 0.0;
-    beta[i] = value_type(i);
-    delta[i] = 1.0;
-    gamma[i] = 1.0;
+    aalpha[i] = 0.0;
+    abeta[i] = value_type(i);
+    adelta[i] = 1.0;
+    agamma[i] = 1.0;
   }
 
   return false;
@@ -68,8 +68,8 @@ computeRecurrenceCoefficients(ordinal_type n,
 template <typename ordinal_type, typename value_type>
 Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
 Stokhos::HermiteBasis<ordinal_type,value_type>::
-cloneWithOrder(ordinal_type p) const
+cloneWithOrder(ordinal_type ap) const
 {
   return 
-    Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(p,*this));
+    Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(ap,*this));
 }

@@ -22,7 +22,6 @@
 #include <iostream>
 #include <math.h>
 
-using namespace std;
 
 //#define BASKER_TIMER_FINE
 
@@ -190,12 +189,12 @@ namespace BaskerNS
 
     if(newnblks < nblks)
     {
-      cout << "Reducing nblks to: " << newnblks << 
-        " in order to fit threads" <<endl;
+      std::cout << "Reducing nblks to: " << newnblks << 
+        " in order to fit threads" << std::endl;
     }
     else if(newnblks > nblks)
     {
-      cout << "Error: need more blocks to fit threads" << endl;
+      std::cout << "Error: need more blocks to fit threads" << std::endl;
       return -1;
     }
 
@@ -448,12 +447,12 @@ namespace BaskerNS
 
     if(newnblks < nblks)
     {
-      cout << "Reducing nblks to: " << newnblks << 
-        " in order to fit threads" <<endl;
+      std::cout << "Reducing nblks to: " << newnblks << 
+        " in order to fit threads" << std::endl;
     }
     else if(newnblks > nblks)
     {
-      cout << "Error: need more blocks to fit threads" << endl;
+      std::cout << "Error: need more blocks to fit threads" << std::endl;
       return -1;
     }
 

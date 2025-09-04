@@ -7,9 +7,11 @@
 // *****************************************************************************
 // @HEADER
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
+#elif defined(_WIN32)
+#define __STDC__ 1
 #endif
 
 

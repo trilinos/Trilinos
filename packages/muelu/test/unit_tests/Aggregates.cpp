@@ -864,7 +864,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, GreedyDirichlet, Scalar, LocalOrdi
 
   aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
 
-  typename Aggregates::LO_view::HostMirror unaggregated_h = Kokkos::create_mirror_view(unaggregated);
+  typename Aggregates::LO_view::host_mirror_type unaggregated_h = Kokkos::create_mirror_view(unaggregated);
   Kokkos::deep_copy(unaggregated_h, unaggregated);
 
   //     Test to check that the dirichlet node is aggregated:

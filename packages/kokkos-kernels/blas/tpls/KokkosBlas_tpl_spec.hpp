@@ -17,6 +17,8 @@
 #ifndef KOKKOSBLAS_TPL_SPEC_HPP_
 #define KOKKOSBLAS_TPL_SPEC_HPP_
 
+#include "KokkosKernels_Singleton.hpp"
+
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
 #include "cuda_runtime.h"
 #include "cublas_v2.h"
@@ -28,12 +30,13 @@ struct CudaBlasSingleton {
   cublasHandle_t handle;
 
   CudaBlasSingleton();
+  ~CudaBlasSingleton();
 
   static bool is_initialized();
   static CudaBlasSingleton& singleton();
 
  private:
-  static std::unique_ptr<CudaBlasSingleton>& get_instance();
+  static KokkosKernels::Impl::Singleton<CudaBlasSingleton>& get_instance();
 };
 
 inline void cublas_internal_error_throw(cublasStatus_t cublasState, const char* name, const char* file,
@@ -115,13 +118,14 @@ struct RocBlasSingleton {
   rocblas_handle handle;
 
   RocBlasSingleton();
+  ~RocBlasSingleton();
 
   static bool is_initialized();
 
   static RocBlasSingleton& singleton();
 
  private:
-  static std::unique_ptr<RocBlasSingleton>& get_instance();
+  static KokkosKernels::Impl::Singleton<RocBlasSingleton>& get_instance();
 };
 
 inline void rocblas_internal_error_throw(rocblas_status rocblasState, const char* name, const char* file,

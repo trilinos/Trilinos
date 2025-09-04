@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "Ioss_CodeTypes.h"
 #include "Ioss_ConcreteVariableType.h"
 #include "Ioss_Field.h"
 #include "Ioss_Utils.h"
@@ -219,6 +220,7 @@ TEST_CASE("format_id_list")
     CHECK(ret == std::string("1 and 43 to 100040 and 100042"));
   }
 
+#ifndef SEACAS_HAVE_MPI
   SECTION("detect unsorted two ids") { CHECK_THROWS(Ioss::Utils::format_id_list({2, 1})); }
 
   SECTION("detect unsorted ids") { CHECK_THROWS(Ioss::Utils::format_id_list({1, 2, 3, 4, 5, 1})); }
@@ -227,5 +229,6 @@ TEST_CASE("format_id_list")
   {
     CHECK_THROWS(Ioss::Utils::format_id_list({1, 2, 3, 3, 4, 5, 6}));
   }
+#endif
 }
 #endif

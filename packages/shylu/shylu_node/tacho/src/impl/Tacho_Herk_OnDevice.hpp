@@ -27,8 +27,8 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
                        k = (std::is_same<ArgTrans, Trans::NoTranspose>::value ? A.extent(1) : A.extent(0));
 
     if (n > 0 && k > 0) {
-      Blas<value_type>::herk(ArgUplo::param, ArgTrans::param, n, k, value_type(alpha), A.data(), A.stride_1(),
-                             value_type(beta), C.data(), C.stride_1());
+      Blas<value_type>::herk(ArgUplo::param, ArgTrans::param, n, k, value_type(alpha), A.data(), A.stride(1),
+                             value_type(beta), C.data(), C.stride(1));
     }
     return 0;
   }
@@ -47,11 +47,11 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
             Blas<value_type>::herk(handle, ArgUplo::cublas_param,
                                    std::is_same<ArgTrans, Trans::ConjTranspose>::value ? Trans::Transpose::cublas_param
                                                                                        : ArgTrans::cublas_param,
-                                   n, k, alpha, A.data(), A.stride_1(), beta, C.data(), C.stride_1());
+                                   n, k, alpha, A.data(), A.stride(1), beta, C.data(), C.stride(1));
       else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
                std::is_same<value_type, Kokkos::complex<double>>::value)
         r_val = Blas<value_type>::herk(handle, ArgUplo::cublas_param, ArgTrans::cublas_param, n, k, alpha, A.data(),
-                                       A.stride_1(), beta, C.data(), C.stride_1());
+                                       A.stride(1), beta, C.data(), C.stride(1));
     }
     return r_val;
   }
@@ -72,11 +72,11 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
             Blas<value_type>::herk(handle, ArgUplo::rocblas_param,
                                    std::is_same<ArgTrans, Trans::ConjTranspose>::value ? Trans::Transpose::rocblas_param
                                                                                        : ArgTrans::rocblas_param,
-                                   n, k, alpha, A.data(), A.stride_1(), beta, C.data(), C.stride_1());
+                                   n, k, alpha, A.data(), A.stride(1), beta, C.data(), C.stride(1));
       else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
                std::is_same<value_type, Kokkos::complex<double>>::value)
         r_val = Blas<value_type>::herk(handle, ArgUplo::rocblas_param, ArgTrans::rocblas_param, n, k, alpha, A.data(),
-                                       A.stride_1(), beta, C.data(), C.stride_1());
+                                       A.stride(1), beta, C.data(), C.stride(1));
     }
     return r_val;
   }

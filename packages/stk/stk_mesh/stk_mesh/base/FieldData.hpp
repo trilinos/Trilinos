@@ -50,7 +50,7 @@ class FieldData : public ConstFieldData<T, MemSpace, DataLayout>
 {
 public:
   KOKKOS_FUNCTION FieldData();
-  FieldData(FieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes);
+  FieldData(FieldDataBytes<stk::ngp::HostMemSpace>* hostFieldBytes);
   KOKKOS_FUNCTION virtual ~FieldData() override {}
 
   FieldData(const FieldData& fieldData, FieldAccessTag accessTag);
@@ -170,7 +170,7 @@ class FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>
 {
 public:
   FieldData();
-  FieldData(const FieldBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag);
+  FieldData(const FieldDataBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag);
   KOKKOS_DEFAULTED_FUNCTION virtual ~FieldData() override = default;
 
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
@@ -217,7 +217,7 @@ FieldData<T, MemSpace, DataLayout>::FieldData()
 
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, Layout DataLayout>
-FieldData<T, MemSpace, DataLayout>::FieldData(FieldBytes<stk::ngp::HostMemSpace>* hostFieldBytes)
+FieldData<T, MemSpace, DataLayout>::FieldData(FieldDataBytes<stk::ngp::HostMemSpace>* hostFieldBytes)
   : ConstFieldData<T, MemSpace, DataLayout>(hostFieldBytes)
 {
   static_assert(DataLayout == Layout::Left, "Only Layout::Left is supported for device data");
@@ -541,8 +541,8 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::FieldData()
 
 //------------------------------------------------------------------------------
 template <typename T>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::FieldData(const FieldBytes<stk::ngp::HostMemSpace>& hostFieldBytes,
-                                                              FieldAccessTag accessTag)
+FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::FieldData(
+    const FieldDataBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag)
   : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>(hostFieldBytes, accessTag)
 {}
 

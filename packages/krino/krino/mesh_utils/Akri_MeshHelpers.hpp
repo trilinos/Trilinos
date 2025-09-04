@@ -43,6 +43,18 @@ struct StkMeshEntities
     value_type operator[](int i) const { return *(mBegin + i); }
 };
 
+void fill_vector_from_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, stk::math::Vector3d & vec);
+void fill_vector_from_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, const unsigned vecLen, stk::math::Vector3d & vec);
+
+template <size_t NNODES>
+std::array<stk::math::Vector3d,NNODES> get_nodes_vector(const stk::mesh::BulkData & mesh, const FieldRef vecField, const std::array<stk::mesh::Entity, NNODES> & nodes, const int dim)
+{
+  std::array<stk::math::Vector3d,NNODES> nodesVec;
+  for (size_t n=0; n<NNODES; ++n)
+    fill_vector_from_field(mesh, vecField, nodes[n], dim, nodesVec[n]);
+  return nodesVec;
+}
+
 template <typename NodeContainer>
 std::array<stk::math::Vector3d,3> get_triangle_vector(const stk::mesh::BulkData & mesh, const FieldRef vecField, const NodeContainer & triangleNodes)
 {
@@ -72,7 +84,6 @@ double * get_field_data(const stk::mesh::BulkData& mesh, const FieldRef field, c
 double & get_scalar_field(const stk::mesh::BulkData& mesh, const FieldRef field, const stk::mesh::Entity entity);
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity);
 stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, const unsigned vecLen);
-bool is_less_than_in_x_then_y_then_z(const stk::math::Vector3d& A, const stk::math::Vector3d &B);
 size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank entityRank);
 size_t get_global_num_entities(const stk::mesh::BulkData& mesh, const stk::mesh::Part & part);
 unsigned get_entity_node_ordinal(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::Entity node);
@@ -84,15 +95,17 @@ double compute_tet_volume(const stk::math::Vector3d * elementNodeCoords);
 double compute_tri_or_tet_volume(const std::vector<stk::math::Vector3d> & elementNodeCoords);
 stk::math::Vector3d get_side_normal(const stk::mesh::BulkData& mesh, const FieldRef coordsField, stk::mesh::Entity side);
 std::array<stk::math::Vector3d,4> gather_tet_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField);
+std::array<stk::math::Vector3d,10> gather_tet10_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField);
 std::array<stk::math::Vector3d,3> gather_tri_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField);
 void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField, std::vector<stk::math::Vector3d> & elementNodeCoords);
 void fill_procs_owning_or_sharing_or_ghosting_node(const stk::mesh::BulkData& bulkData, stk::mesh::Entity node, std::vector<int> & procsOwningSharingOrGhostingNode);
 double compute_maximum_element_size(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector);
 double compute_maximum_size_of_selected_elements_using_node(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & selector, const stk::mesh::Entity node);
 void compute_element_quality(const stk::mesh::BulkData & mesh, double & minEdgeLength, double & maxEdgeLength, double & minVolume, double & maxVolume);
+void compute_element_volume_range(const stk::mesh::BulkData & mesh, double & minVolume, double & maxVolume);
 double compute_global_average_edge_length_for_elements(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const std::vector<stk::mesh::Entity> & elementsToIntersect);
 double compute_global_average_edge_length_for_selected_elements(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const stk::mesh::Selector & elementSelector);
-void delete_all_entities_using_nodes_with_nodal_volume_below_threshold(stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold);
+void delete_all_entities_using_vertex_nodes_with_nodal_volume_below_threshold(stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold);
 std::vector<unsigned> get_side_permutation(stk::topology topology, stk::mesh::Permutation node_permutation);
 const stk::mesh::Part & find_element_part(const stk::mesh::BulkData& mesh, stk::mesh::Entity elem);
 bool check_induced_parts(const stk::mesh::BulkData & mesh);
@@ -184,6 +197,8 @@ void recursively_fill_parent_nodes(const stk::mesh::BulkData & mesh,
     stk::mesh::Entity childNode, const FieldRef & parentIdsField,
     std::set<stk::mesh::Entity> & parentNodes);
 
+double compute_child_position(const unsigned dim, const double * childCoords, const double * parentCoords0, const double * parentCoords1);
+double compute_child_position(const unsigned dim, const stk::math::Vector3d & childCoords, const stk::math::Vector3d & parentCoords0, const stk::math::Vector3d & parentCoords1);
 double compute_child_position(const stk::mesh::BulkData & mesh, stk::mesh::Entity child, stk::mesh::Entity parent0, stk::mesh::Entity parent1);
 
 // topology helpers
