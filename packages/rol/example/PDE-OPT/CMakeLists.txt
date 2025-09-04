@@ -5,12 +5,14 @@ SET(NOINSTALLHEADERS "")
 APPEND_SET(SOURCES
   TOOLS/solver.cpp
   TOOLS/assembler.cpp
+  TOOLS/assemblerK.cpp
 )
 
 APPEND_SET(NOINSTALLHEADERS
   TOOLS/solver.hpp
   TOOLS/solver_def.hpp
   TOOLS/assembler.hpp
+  TOOLS/assemblerK.hpp
 )
 
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND
