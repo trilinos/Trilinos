@@ -107,7 +107,7 @@ void device_runTwoSpheresTest(stk::search::SearchMethod searchMethod, const doub
 
   stk::search::coarse_search(domain, range, searchMethod, comm, intersections);
 
-  Kokkos::View<IdentProcIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentProcIntersection*>::host_mirror_type hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   if (procId == 0 || (procId == numProcs-1)) {
@@ -293,7 +293,7 @@ void device_local_runTwoSpheresTest(stk::search::SearchMethod searchMethod, cons
   bool sortSearchResults = true;
   stk::search::local_coarse_search(domain, range, searchMethod, intersections, execSpace, sortSearchResults);
 
-  Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentIntersection*>::host_mirror_type hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   ASSERT_EQ(intersections.extent(0), expectedNumOverlap);

@@ -227,7 +227,11 @@ namespace Tpetra {
                                   device_type, void, size_t>;
 
     //! The type of the part of the sparse graph on each MPI process.
+#if KOKKOS_VERSION >= 40799
+    using local_graph_host_type = typename local_graph_device_type::host_mirror_type;
+#else
     using local_graph_host_type = typename local_graph_device_type::HostMirror;
+#endif
 
     //! The Map specialization used by this class.
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -2354,8 +2358,8 @@ public:
     getLocalIndsViewHostNonConst (const RowInfo& rowinfo);
 
     // FOR NOW...
-    // KEEP k_numRowEntries_ (though switch from HostMirror to Host)
-    // KEEP k_numAllocPerRow_ (though perhaps switch from HostMirror to Host)
+    // KEEP k_numRowEntries_ (though switch from host_mirror_type to Host)
+    // KEEP k_numAllocPerRow_ (though perhaps switch from host_mirror_type to Host)
 
     /// \brief The maximum number of entries to allow in each locally
     ///   owned row, per row.
@@ -2367,9 +2371,9 @@ public:
     /// are done with it.
     ///
     /// This is a host View because it is only ever used on the host.
-    /// It has the HostMirror type for backwards compatibility; this
+    /// It has the host_mirror_type type for backwards compatibility; this
     /// used to be a DualView with default layout, so making this a
-    /// HostMirror ensures that we can still take it directly by
+    /// host_mirror_type ensures that we can still take it directly by
     /// assignment from the constructors that take DualView, without a
     /// deep copy.
     ///
@@ -2382,7 +2386,7 @@ public:
     /// allocate, rather than doing lazy allocation at first insert.
     /// This will make both k_numAllocPerRow_ and numAllocForAllRows_
     /// obsolete.
-    typename Kokkos::View<const size_t*, device_type>::HostMirror
+    typename Kokkos::View<const size_t*, device_type>::host_mirror_type
     k_numAllocPerRow_;
 
     /// \brief The maximum number of entries to allow in each locally owned row.
@@ -2426,9 +2430,9 @@ public:
     /// This View gets used only on host.  However, making this
     /// literally a host View (of Kokkos::HostSpace) causes
     /// inexplicable test failures only on CUDA.  Thus, I left it as a
-    /// HostMirror, which means (given Trilinos' current UVM
+    /// host_mirror_type, which means (given Trilinos' current UVM
     /// requirement) that it will be a UVM allocation.
-    typedef typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror num_row_entries_type;
+    typedef typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::host_mirror_type num_row_entries_type;
 
     // typedef Kokkos::View<
     //   size_t*,
@@ -2437,7 +2441,7 @@ public:
     //     typename Kokkos::View<
     //       size_t*,
     //       Kokkos::LayoutLeft,
-    //       device_type>::HostMirror::execution_space,
+    //       device_type>::host_mirror_type::execution_space,
     //     Kokkos::HostSpace> > num_row_entries_type;
 
     /// \brief The number of local entries in each locally owned row.

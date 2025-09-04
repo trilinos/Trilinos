@@ -125,7 +125,7 @@ public:
       typename node_t::device_type> kokkos_entries_view_t;
     elements = kokkos_entries_view_t("entries", this->getLocalNumIDs(),
       this->getNumEntriesPerID());
-    typename kokkos_entries_view_t::HostMirror host_elements =
+    typename kokkos_entries_view_t::host_mirror_type host_elements =
       Kokkos::create_mirror_view(elements);
     for(int j = 0; j < this->getNumEntriesPerID(); ++j) {
       const scalar_t * ptr_elements;

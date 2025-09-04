@@ -769,7 +769,7 @@ public:
 
     typedef scalar_coeff_function_type KL;
     typedef typename KL::RandomVariableView RV;
-    typedef typename RV::HostMirror HRV;
+    typedef typename RV::host_mirror_type HRV;
     RV rv = scalar_diffusion_coefficient.getRandomVariables();
     HRV hrv = Kokkos::create_mirror_view(rv);
     auto hqp = Kokkos::create_mirror_view(quad_points);

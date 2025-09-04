@@ -358,7 +358,7 @@ namespace { // (anonymous)
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
     typedef typename MV::impl_scalar_type IST;
-    typedef typename Kokkos::View<IST**, DT>::HostMirror::memory_space
+    typedef typename Kokkos::View<IST**, DT>::host_mirror_type::memory_space
       host_memory_space;
 
     const IST ONE = Kokkos::ArithTraits<IST>::one ();
@@ -374,7 +374,7 @@ namespace { // (anonymous)
     if (std::is_same<dev_memory_space, host_memory_space>::value) {
       out << "This test only matters if the device memory space and the "
         "host memory space are actually different.  In this case, they "
-        "are both the same.  (Note that the HostMirror::memory_space of "
+        "are both the same.  (Note that the host_mirror_type::memory_space of "
         "a CudaUVMSpace View is also CudaUVMSpace.)  Thus, there is no "
         "point in continuing the test for the current device type." << endl;
     }

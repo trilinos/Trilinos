@@ -442,7 +442,7 @@ public:
     // Copy col_indices to the device
     Kokkos::View<Ordinal*,execution_space> col_indices_dev(
       Kokkos::ViewAllocateWithoutInitializing("col_indices"), ncol);
-    typename Kokkos::View<Ordinal*,execution_space>::HostMirror col_indices_host =
+    typename Kokkos::View<Ordinal*,execution_space>::host_mirror_type col_indices_host =
       Kokkos::create_mirror_view(col_indices_dev);
     for (size_t i=0; i<ncol; ++i)
       col_indices_host(i) = col_indices[i];
@@ -844,7 +844,7 @@ public:
     // Copy col_indices to the device
     Kokkos::View<Ordinal*,execution_space> col_indices_dev(
       Kokkos::ViewAllocateWithoutInitializing("col_indices"), ncol);
-    typename Kokkos::View<Ordinal*,execution_space>::HostMirror col_indices_host =
+    typename Kokkos::View<Ordinal*,execution_space>::host_mirror_type col_indices_host =
       Kokkos::create_mirror_view(col_indices_dev);
     for (size_t i=0; i<ncol; ++i)
       col_indices_host(i) = col_indices[i];

@@ -110,7 +110,7 @@ public:
       m_deviceRecvData(BufferViewType<T,mem_space>("deviceRecvData", 1))
   {
     impl::fill_field_ranks(ngpFields, m_fieldRanks);
-    typename FieldView<NgpFieldType,mem_space>::HostMirror ngpFieldsHostMirror = Kokkos::create_mirror_view(m_ngpFieldsOnDevice);
+    typename FieldView<NgpFieldType,mem_space>::host_mirror_type ngpFieldsHostMirror = Kokkos::create_mirror_view(m_ngpFieldsOnDevice);
     for (size_t fieldIdx = 0; fieldIdx < m_ngpFields.size(); fieldIdx++)
     {
       ngpFieldsHostMirror(fieldIdx) = NgpFieldInfo<NgpFieldType>(*m_ngpFields[fieldIdx]);
@@ -167,12 +167,12 @@ public:
     return m_deviceRecvData;
   }
 
-  typename UnsignedViewType<stk::ngp::MemSpace>::HostMirror& get_host_buffer_offsets()
+  typename UnsignedViewType<stk::ngp::MemSpace>::host_mirror_type& get_host_buffer_offsets()
   {
     return m_ngpMesh.get_ngp_parallel_sum_host_buffer_offsets();
   }
 
-  typename UnsignedViewType<stk::ngp::MemSpace>::HostMirror& get_host_mesh_indices_offsets()
+  typename UnsignedViewType<stk::ngp::MemSpace>::host_mirror_type& get_host_mesh_indices_offsets()
   {
     return m_ngpMesh.get_ngp_parallel_sum_host_mesh_indices_offsets();
   }

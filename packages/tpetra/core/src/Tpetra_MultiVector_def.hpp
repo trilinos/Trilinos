@@ -1214,7 +1214,7 @@ namespace Tpetra {
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
             Kokkos::deep_copy (space, tgt_j, src_j);
-            space.fence();
+            space.fence("Tpetra::MultiVector::copyAndPermute-1");
           }
         }
       }
@@ -1243,7 +1243,7 @@ namespace Tpetra {
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
             Kokkos::deep_copy (space, tgt_j, src_j);
-            space.fence();
+            space.fence("Tpetra::MultiVector::copyAndPermute-2");
           }
         }
       }
@@ -2356,7 +2356,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     // Adding a frnce here guarantees that we will have the lclDot
     // ahead of the MPI reduction.
     execution_space exec_space_instance = execution_space();
-    exec_space_instance.fence();
+    exec_space_instance.fence("Tpetra::MultiVector::dot");
 
     gblDotImpl (dotsOut, comm, this->isDistributed ());
   }
@@ -2561,11 +2561,11 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
     // Make sure that the final output view has the same layout as the
-    // temporary view's HostMirror.  Left or Right doesn't matter for
+    // temporary view's host_mirror_type.  Left or Right doesn't matter for
     // a 1-D array anyway; this is just to placate the compiler.
     typedef Kokkos::View<impl_scalar_type*, device_type> local_view_type;
     typedef Kokkos::View<impl_scalar_type*,
-      typename local_view_type::HostMirror::array_layout,
+      typename local_view_type::host_mirror_type::array_layout,
       Kokkos::HostSpace,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > host_local_view_type;
     host_local_view_type meansOut (means.getRawPtr (), numMeans);
@@ -2626,7 +2626,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       // Adding a fence here guarantees that we will have the lclSums
       // ahead of the MPI reduction.
       execution_space exec_space_instance = execution_space();
-      exec_space_instance.fence();
+      exec_space_instance.fence("Tpetra::MultiVector::mean");
 
       // If there are multiple MPI processes, the all-reduce reads
       // from lclSums, and writes to meansOut.  (We assume that MPI

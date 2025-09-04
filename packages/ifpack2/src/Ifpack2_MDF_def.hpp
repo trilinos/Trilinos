@@ -39,7 +39,7 @@ auto copy_view(const dev_view_t& vals) {
 
 template <class array_t, class dev_view_t>
 void copy_dev_view_to_host_array(array_t& array, const dev_view_t& dev_view) {
-  using host_view_t = typename dev_view_t::HostMirror;
+  using host_view_t = typename dev_view_t::host_mirror_type;
 
   // Clear out existing and allocate
   const auto ext = dev_view.extent(0);

@@ -556,31 +556,31 @@ public:
     tensor.m_num_i = num_i_parts;
 
     // Create mirror, is a view if is host memory
-    typename value_array_type::HostMirror host_value =
+    typename value_array_type::host_mirror_type host_value =
       Kokkos::create_mirror_view(tensor.m_value);
-    typename coord_array_type::HostMirror host_coord =
+    typename coord_array_type::host_mirror_type host_coord =
       Kokkos::create_mirror_view(tensor.m_coord);
-    typename coord2_array_type::HostMirror host_coord2 =
+    typename coord2_array_type::host_mirror_type host_coord2 =
       Kokkos::create_mirror_view(tensor.m_coord2);
-    typename i_begin_type::HostMirror host_i_begin =
+    typename i_begin_type::host_mirror_type host_i_begin =
       Kokkos::create_mirror_view(tensor.m_i_begin);
-    typename i_size_type::HostMirror host_i_size =
+    typename i_size_type::host_mirror_type host_i_size =
       Kokkos::create_mirror_view(tensor.m_i_size);
-    typename num_j_type::HostMirror host_num_j =
+    typename num_j_type::host_mirror_type host_num_j =
       Kokkos::create_mirror_view(tensor.m_num_j);
-    typename j_begin_type::HostMirror host_j_begin =
+    typename j_begin_type::host_mirror_type host_j_begin =
       Kokkos::create_mirror_view(tensor.m_j_begin);
-    typename j_size_type::HostMirror host_j_size =
+    typename j_size_type::host_mirror_type host_j_size =
       Kokkos::create_mirror_view(tensor.m_j_size);
-    typename num_k_type::HostMirror host_num_k =
+    typename num_k_type::host_mirror_type host_num_k =
       Kokkos::create_mirror_view(tensor.m_num_k);
-    typename k_begin_type::HostMirror host_k_begin =
+    typename k_begin_type::host_mirror_type host_k_begin =
       Kokkos::create_mirror_view(tensor.m_k_begin);
-    typename k_size_type::HostMirror host_k_size =
+    typename k_size_type::host_mirror_type host_k_size =
       Kokkos::create_mirror_view(tensor.m_k_size);
-    typename row_map_type::HostMirror host_row_map =
+    typename row_map_type::host_mirror_type host_row_map =
       Kokkos::create_mirror_view(tensor.m_row_map);
-    typename num_entry_type::HostMirror host_num_entry =
+    typename num_entry_type::host_mirror_type host_num_entry =
       Kokkos::create_mirror_view(tensor.m_num_entry);
 
     // Compute row map

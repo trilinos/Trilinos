@@ -135,7 +135,7 @@ public:
     tensor.m_value = value_array_type( "value" , tensor.m_nnz );
 
     // Create mirror, is a view if is host memory
-    typename value_array_type::HostMirror
+    typename value_array_type::host_mirror_type
       host_value = Kokkos::create_mirror_view( tensor.m_value );
 
     // Get Cijk values

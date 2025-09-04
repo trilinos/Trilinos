@@ -43,9 +43,9 @@ struct Functor_TeamGemm {
 
   template <typename MemberType> KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     ::BlasTeam<value_type>::gemm(member, _transa, _transb, _m, _n, _k, _alpha, (const value_type *)_A.view_device().data(),
-                                 (int)_A.view_device().stride_1(), (const value_type *)_B.view_device().data(),
-                                 (int)_B.view_device().stride_1(), _beta, (value_type *)_C.view_device().data(),
-                                 (int)_C.view_device().stride_1());
+                                 (int)_A.view_device().stride(1), (const value_type *)_B.view_device().data(),
+                                 (int)_B.view_device().stride(1), _beta, (value_type *)_C.view_device().data(),
+                                 (int)_C.view_device().stride(1));
   }
 
   inline void run() {
@@ -91,8 +91,8 @@ TEST(DenseLinearAlgebra, team_gemm_nn) {
   test.run();
 
   // reference test
-  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), B2.view_host().data(),
-                         B2.view_host().stride_1(), beta, C2.view_host().data(), C2.view_host().stride_1());
+  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), B2.view_host().data(),
+                         B2.view_host().stride(1), beta, C2.view_host().data(), C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -129,8 +129,8 @@ TEST(DenseLinearAlgebra, team_gemm_nt) {
   test.run();
 
   // reference test
-  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), B2.view_host().data(),
-                         B2.view_host().stride_1(), beta, C2.view_host().data(), C2.view_host().stride_1());
+  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), B2.view_host().data(),
+                         B2.view_host().stride(1), beta, C2.view_host().data(), C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -160,8 +160,8 @@ TEST(DenseLinearAlgebra, team_gemm_nc) {
   ::Test::Functor_TeamGemm test(transa, transb, m, n, k, alpha, A1, B1, beta, C1);
   test.run();
 
-  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), B2.view_host().data(),
-                         B2.view_host().stride_1(), beta, C2.view_host().data(), C2.view_host().stride_1());
+  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), B2.view_host().data(),
+                         B2.view_host().stride(1), beta, C2.view_host().data(), C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -191,8 +191,8 @@ TEST(DenseLinearAlgebra, team_gemm_tn) {
   ::Test::Functor_TeamGemm test(transa, transb, m, n, k, alpha, A1, B1, beta, C1);
   test.run();
 
-  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), B2.view_host().data(),
-                         B2.view_host().stride_1(), beta, C2.view_host().data(), C2.view_host().stride_1());
+  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), B2.view_host().data(),
+                         B2.view_host().stride(1), beta, C2.view_host().data(), C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -226,8 +226,8 @@ TEST(DenseLinearAlgebra, team_gemm_tt) {
   ::Test::Functor_TeamGemm test(transa, transb, m, n, k, alpha, A1, B1, beta, C1);
   test.run();
 
-  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), B2.view_host().data(),
-                         B2.view_host().stride_1(), beta, C2.view_host().data(), C2.view_host().stride_1());
+  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), B2.view_host().data(),
+                         B2.view_host().stride(1), beta, C2.view_host().data(), C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -261,8 +261,8 @@ TEST(DenseLinearAlgebra, team_gemm_tc) {
   ::Test::Functor_TeamGemm test(transa, transb, m, n, k, alpha, A1, B1, beta, C1);
   test.run();
 
-  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), B2.view_host().data(),
-                         B2.view_host().stride_1(), beta, C2.view_host().data(), C2.view_host().stride_1());
+  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), B2.view_host().data(),
+                         B2.view_host().stride(1), beta, C2.view_host().data(), C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -296,8 +296,8 @@ TEST(DenseLinearAlgebra, team_gemm_cn) {
   ::Test::Functor_TeamGemm test(transa, transb, m, n, k, alpha, A1, B1, beta, C1);
   test.run();
 
-  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), B2.view_host().data(),
-                         B2.view_host().stride_1(), beta, C2.view_host().data(), C2.view_host().stride_1());
+  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), B2.view_host().data(),
+                         B2.view_host().stride(1), beta, C2.view_host().data(), C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -331,8 +331,8 @@ TEST(DenseLinearAlgebra, team_gemm_ct) {
   ::Test::Functor_TeamGemm test(transa, transb, m, n, k, alpha, A1, B1, beta, C1);
   test.run();
 
-  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), B2.view_host().data(),
-                         B2.view_host().stride_1(), beta, C2.view_host().data(), C2.view_host().stride_1());
+  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), B2.view_host().data(),
+                         B2.view_host().stride(1), beta, C2.view_host().data(), C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -366,8 +366,8 @@ TEST(DenseLinearAlgebra, team_gemm_cc) {
   ::Test::Functor_TeamGemm test(transa, transb, m, n, k, alpha, A1, B1, beta, C1);
   test.run();
 
-  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), B2.view_host().data(),
-                         B2.view_host().stride_1(), beta, C2.view_host().data(), C2.view_host().stride_1());
+  Blas<value_type>::gemm(transa, transb, m, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), B2.view_host().data(),
+                         B2.view_host().stride(1), beta, C2.view_host().data(), C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -388,9 +388,9 @@ struct Functor_TeamGemv {
 
   template <typename MemberType> KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     ::BlasTeam<value_type>::gemv(member, _trans, _m, _n, _alpha, (const value_type *)_A.view_device().data(),
-                                 (int)_A.view_device().stride_1(), (const value_type *)_x.view_device().data(),
-                                 (int)_x.view_device().stride_0(), _beta, (value_type *)_y.view_device().data(),
-                                 (int)_y.view_device().stride_0());
+                                 (int)_A.view_device().stride(1), (const value_type *)_x.view_device().data(),
+                                 (int)_x.view_device().stride(0), _beta, (value_type *)_y.view_device().data(),
+                                 (int)_y.view_device().stride(0));
   }
 
   inline void run() {
@@ -433,8 +433,8 @@ TEST(DenseLinearAlgebra, team_gemv_n) {
   ::Test::Functor_TeamGemv test(trans, m, n, alpha, A1, x1, beta, y1);
   test.run();
 
-  Blas<value_type>::gemv(trans, m, n, alpha, A2.view_host().data(), A2.view_host().stride_1(), x2.view_host().data(),
-                         x2.view_host().stride_0(), beta, y2.view_host().data(), y2.view_host().stride_0());
+  Blas<value_type>::gemv(trans, m, n, alpha, A2.view_host().data(), A2.view_host().stride(1), x2.view_host().data(),
+                         x2.view_host().stride(0), beta, y2.view_host().data(), y2.view_host().stride(0));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)
@@ -467,8 +467,8 @@ TEST(DenseLinearAlgebra, team_gemv_t) {
   ::Test::Functor_TeamGemv test(trans, m, n, alpha, A1, x1, beta, y1);
   test.run();
 
-  Blas<value_type>::gemv(trans, m, n, alpha, A2.view_host().data(), A2.view_host().stride_1(), x2.view_host().data(),
-                         x2.view_host().stride_0(), beta, y2.view_host().data(), y2.view_host().stride_0());
+  Blas<value_type>::gemv(trans, m, n, alpha, A2.view_host().data(), A2.view_host().stride(1), x2.view_host().data(),
+                         x2.view_host().stride(0), beta, y2.view_host().data(), y2.view_host().stride(0));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < n; ++i)
@@ -501,8 +501,8 @@ TEST(DenseLinearAlgebra, team_gemv_c) {
   ::Test::Functor_TeamGemv test(trans, m, n, alpha, A1, x1, beta, y1);
   test.run();
 
-  Blas<value_type>::gemv(trans, m, n, alpha, A2.view_host().data(), A2.view_host().stride_1(), x2.view_host().data(),
-                         x2.view_host().stride_0(), beta, y2.view_host().data(), y2.view_host().stride_0());
+  Blas<value_type>::gemv(trans, m, n, alpha, A2.view_host().data(), A2.view_host().stride(1), x2.view_host().data(),
+                         x2.view_host().stride(0), beta, y2.view_host().data(), y2.view_host().stride(0));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < n; ++i)
@@ -522,8 +522,8 @@ struct Functor_TeamHerk {
 
   template <typename MemberType> KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     ::BlasTeam<value_type>::herk(member, _uplo, _trans, _n, _k, _alpha, (const value_type *)_A.view_device().data(),
-                                 (int)_A.view_device().stride_1(), _beta, (value_type *)_C.view_device().data(),
-                                 (int)_C.view_device().stride_1());
+                                 (int)_A.view_device().stride(1), _beta, (value_type *)_C.view_device().data(),
+                                 (int)_C.view_device().stride(1));
   }
 
   inline void run() {
@@ -563,8 +563,8 @@ TEST(DenseLinearAlgebra, team_herk_un) {
   ::Test::Functor_TeamHerk test(uplo, trans, n, k, alpha, A1, beta, C1);
   test.run();
 
-  Blas<value_type>::herk(uplo, trans, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), beta, C2.view_host().data(),
-                         C2.view_host().stride_1());
+  Blas<value_type>::herk(uplo, trans, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), beta, C2.view_host().data(),
+                         C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < n; ++i)
@@ -596,8 +596,8 @@ TEST(DenseLinearAlgebra, team_herk_uc) {
   ::Test::Functor_TeamHerk test(uplo, trans, n, k, alpha, A1, beta, C1);
   test.run();
 
-  Blas<value_type>::herk(uplo, trans, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), beta, C2.view_host().data(),
-                         C2.view_host().stride_1());
+  Blas<value_type>::herk(uplo, trans, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), beta, C2.view_host().data(),
+                         C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < n; ++i)
@@ -629,8 +629,8 @@ TEST(DenseLinearAlgebra, team_herk_ln) {
   ::Test::Functor_TeamHerk test(uplo, trans, n, k, alpha, A1, beta, C1);
   test.run();
 
-  Blas<value_type>::herk(uplo, trans, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), beta, C2.view_host().data(),
-                         C2.view_host().stride_1());
+  Blas<value_type>::herk(uplo, trans, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), beta, C2.view_host().data(),
+                         C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < n; ++i)
@@ -662,8 +662,8 @@ TEST(DenseLinearAlgebra, team_herk_lc) {
   ::Test::Functor_TeamHerk test(uplo, trans, n, k, alpha, A1, beta, C1);
   test.run();
 
-  Blas<value_type>::herk(uplo, trans, n, k, alpha, A2.view_host().data(), A2.view_host().stride_1(), beta, C2.view_host().data(),
-                         C2.view_host().stride_1());
+  Blas<value_type>::herk(uplo, trans, n, k, alpha, A2.view_host().data(), A2.view_host().stride(1), beta, C2.view_host().data(),
+                         C2.view_host().stride(1));
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < n; ++i)
@@ -683,7 +683,7 @@ struct Functor_TeamTrsv {
 
   template <typename MemberType> KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     ::BlasTeam<value_type>::trsv(member, _uplo, _trans, _diag, _m, (const value_type *)_A.view_device().data(),
-                                 (int)_A.view_device().stride_1(), (value_type *)_b.view_device().data(), (int)_b.view_device().stride_0());
+                                 (int)_A.view_device().stride(1), (value_type *)_b.view_device().data(), (int)_b.view_device().stride(0));
   }
 
   inline void run() {
@@ -718,8 +718,8 @@ struct Functor_TeamTrsv {
     ::Test::Functor_TeamTrsv test(uplo, trans, diag, m, A1, b1);                                                       \
     test.run();                                                                                                        \
                                                                                                                        \
-    Blas<value_type>::trsv(uplo, trans, diag, m, A2.view_host().data(), A2.view_host().stride_1(), b2.view_host().data(),             \
-                           b2.view_host().stride_0());                                                                      \
+    Blas<value_type>::trsv(uplo, trans, diag, m, A2.view_host().data(), A2.view_host().stride(1), b2.view_host().data(),             \
+                           b2.view_host().stride(0));                                                                      \
                                                                                                                        \
     const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 10000;                                 \
     for (int i = 0; i < m; ++i)                                                                                        \
@@ -860,8 +860,8 @@ struct Functor_TeamTrsm {
 
   template <typename MemberType> KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     ::BlasTeam<value_type>::trsm(member, _side, _uplo, _trans, _diag, _m, _n, _alpha,
-                                 (const value_type *)_A.view_device().data(), (int)_A.view_device().stride_1(),
-                                 (value_type *)_B.view_device().data(), (int)_B.view_device().stride_1());
+                                 (const value_type *)_A.view_device().data(), (int)_A.view_device().stride(1),
+                                 (value_type *)_B.view_device().data(), (int)_B.view_device().stride(1));
   }
 
   inline void run() {
@@ -896,8 +896,8 @@ struct Functor_TeamTrsm {
     ::Test::Functor_TeamTrsm test(side, uplo, trans, diag, m, n, alpha, A1, B1);                                       \
     test.run();                                                                                                        \
                                                                                                                        \
-    Blas<value_type>::trsm(side, uplo, trans, diag, m, n, alpha, A2.view_host().data(), A2.view_host().stride_1(),               \
-                           B2.view_host().data(), B2.view_host().stride_1());                                                    \
+    Blas<value_type>::trsm(side, uplo, trans, diag, m, n, alpha, A2.view_host().data(), A2.view_host().stride(1),               \
+                           B2.view_host().data(), B2.view_host().stride(1));                                                    \
                                                                                                                        \
     const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 100000;                                \
     for (int i = 0; i < m; ++i)                                                                                        \
@@ -1060,7 +1060,7 @@ struct Functor_TeamChol {
 
   template <typename MemberType> KOKKOS_INLINE_FUNCTION void operator()(const MemberType &member) const {
     int r_val = 0;
-    ::LapackTeam<value_type>::potrf(member, _uplo, _m, (value_type *)_A.view_device().data(), (int)_A.view_device().stride_1(),
+    ::LapackTeam<value_type>::potrf(member, _uplo, _m, (value_type *)_A.view_device().data(), (int)_A.view_device().stride(1),
                                     &r_val);
   }
 
@@ -1099,7 +1099,7 @@ TEST(DenseLinearAlgebra, team_chol_u) {
   test.run();
 
   int r_val = 0;
-  Lapack<value_type>::potrf(uplo, m, (value_type *)A2.view_host().data(), (int)A2.view_host().stride_1(), &r_val);
+  Lapack<value_type>::potrf(uplo, m, (value_type *)A2.view_host().data(), (int)A2.view_host().stride(1), &r_val);
 
   const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i = 0; i < m; ++i)

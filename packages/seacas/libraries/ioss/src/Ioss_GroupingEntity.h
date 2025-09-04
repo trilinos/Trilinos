@@ -612,7 +612,7 @@ int64_t Ioss::GroupingEntity::get_field_data(const std::string          &field_n
   size_t data_size = new_view_size * sizeof(T);
 
   // Create a host mirror view. (No memory allocation if data is in HostSpace.)
-  typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
+  typename ViewType::host_mirror_type host_data = Kokkos::create_mirror_view(data);
 
   // Extract a pointer to the underlying allocated memory of the host view.
   T *host_data_ptr = host_data.data();
@@ -662,7 +662,7 @@ int64_t Ioss::GroupingEntity::get_field_data(const std::string           &field_
   T *data_array = new T[data_size];
 
   // Create a host mirror view. (No memory allocation if data is in HostSpace.)
-  typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
+  typename ViewType::host_mirror_type host_data = Kokkos::create_mirror_view(data);
 
   // Extract the data from disk to the underlying memory pointed to by host_data_ptr.
   auto retval = internal_get_field_data(field, data_array, data_size);
@@ -713,7 +713,7 @@ int64_t Ioss::GroupingEntity::put_field_data(const std::string          &field_n
   size_t      data_size = field.raw_count() * field.raw_storage()->component_count() * sizeof(T);
 
   // Create a host mirror view. (No memory allocation if data is in HostSpace.)
-  typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
+  typename ViewType::host_mirror_type host_data = Kokkos::create_mirror_view(data);
 
   // Copy the data to the host. (No op if data is in HostSpace.)
   Kokkos::deep_copy(host_data, data);
@@ -760,7 +760,7 @@ int64_t Ioss::GroupingEntity::put_field_data(const std::string           &field_
   }
 
   // Create a host mirror view. (No memory allocation if data is in HostSpace.)
-  typename ViewType::HostMirror host_data = Kokkos::create_mirror_view(data);
+  typename ViewType::host_mirror_type host_data = Kokkos::create_mirror_view(data);
 
   // Copy the data to the host. (No op if data is in HostSpace.)
   Kokkos::deep_copy(host_data, data);

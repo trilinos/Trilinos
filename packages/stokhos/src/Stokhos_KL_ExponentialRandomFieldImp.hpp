@@ -111,9 +111,9 @@ ExponentialRandomField(Teuchos::ParameterList& solverParams)
     eigen_func_array_type("product eigen functions", num_prod, dim);
   product_eigen_values =
     eigen_value_array_type("product eigen vvalues", num_prod);
-  typename eigen_func_array_type::HostMirror host_product_eigen_funcs =
+  typename eigen_func_array_type::host_mirror_type host_product_eigen_funcs =
     Kokkos::create_mirror_view(product_eigen_funcs);
-  typename eigen_value_array_type::HostMirror host_product_eigen_values =
+  typename eigen_value_array_type::host_mirror_type host_product_eigen_values =
     Kokkos::create_mirror_view(product_eigen_values);
   for (int i=0; i<num_prod; ++i) {
     host_product_eigen_values(i) = 1.0;

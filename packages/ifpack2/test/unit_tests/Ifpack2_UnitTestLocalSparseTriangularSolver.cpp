@@ -408,7 +408,7 @@ void testCompareToLocalSolve(bool& success, Teuchos::FancyOStream& out,
         out << "numVecs: " << numVecs << endl;
         Teuchos::OSTab tab3(out);
 
-        typename Kokkos::View<mag_type*, device_type>::HostMirror norms("norms", numVecs);
+        typename Kokkos::View<mag_type*, device_type>::host_mirror_type norms("norms", numVecs);
 
         for (Teuchos::ETransp mode : modes) {
           out << "mode: ";
@@ -545,7 +545,7 @@ void testArrowMatrixWithDense(bool& success, Teuchos::FancyOStream& out, const L
   using val_type = typename Kokkos::ArithTraits<SC>::val_type;
   using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
   using host_execution_space =
-      typename Kokkos::View<val_type**, DT>::HostMirror::execution_space;
+      typename Kokkos::View<val_type**, DT>::host_mirror_type::execution_space;
   using host_memory_space = Kokkos::HostSpace;
   using HDT               = Kokkos::Device<host_execution_space, host_memory_space>;
 

@@ -691,7 +691,7 @@ public:
     map_ (map)
   {
     typedef Kokkos::View<mag_type*, device_type> dev_view_type;
-    typedef typename dev_view_type::HostMirror host_view_type;
+    typedef typename dev_view_type::host_mirror_type host_view_type;
     typedef Teuchos::ScalarTraits<SC> STS;
 
     const LO lclNumRows = map_.is_null () ?

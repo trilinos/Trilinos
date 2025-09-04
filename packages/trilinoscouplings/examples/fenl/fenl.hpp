@@ -330,7 +330,7 @@ public:
     m_eig( "KL Eigenvalues", m_num_rv ),
     m_pi( 4.0*std::atan(1.0) )
   {
-    typename EigenView::HostMirror host_eig =
+    typename EigenView::host_mirror_type host_eig =
       Kokkos::create_mirror_view( m_eig );
 
     const MeshScalar a = std::sqrt( std::sqrt(m_pi)*m_corr_len );

@@ -193,10 +193,6 @@ class FactoryMonitor : public Monitor {
  private:
   //! Total time spent on this level in this object and all its children.
   RCP<TimeMonitor> levelTimeMonitor_;
-  //! Total time spent on all levels in this object only, excluding all children.
-  MutuallyExclusiveTimeMonitor<FactoryBase> timerMonitorExclusive_;
-  //! Total time spent on this level in this object only, excluding all children.
-  RCP<MutuallyExclusiveTimeMonitor<Level> > levelTimeMonitorExclusive_;
 };
 
 //---------------------------------------------------------------------------------------------------
