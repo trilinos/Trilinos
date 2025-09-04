@@ -132,20 +132,20 @@ namespace Intrepid2 {
             
             ordinal_type rowOffset = 0;
             if (ordEdge != -1) {
-              {
-                // DEBUGGING
-                std::cout << "\nedge " << edgeId << ", ort " << edgeOrt << ": [";
-              }
+//              {
+//                // DEBUGGING
+//                std::cout << "\nedge " << edgeId << ", ort " << edgeOrt << ": [";
+//              }
               const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
               const auto mat = Kokkos::subview(matDataHost,
                                                edgeId, edgeOrt,
                                                Kokkos::ALL(), Kokkos::ALL());
               
               for (ordinal_type i=0;i<ndofEdge;++i) {
-                {
-                  // DEBUGGING
-                  std::cout << "[";
-                }
+//                {
+//                  // DEBUGGING
+//                  std::cout << "[";
+//                }
                 const ordinal_type ii = tagToOrdinal(EDGE_DIM, edgeId, i);
                 
                 // first pass for ii:
@@ -165,12 +165,12 @@ namespace Intrepid2 {
                       deviatesFromIdentity = true;
                     }
                   }
-                  {
-                    // DEBUGGING
-                    std::cout << mat_il << " ";
-                  }
+//                  {
+//                    // DEBUGGING
+//                    std::cout << mat_il << " ";
+//                  }
                 } // column
-                std::cout << "]; ";
+//                std::cout << "]; ";
                 INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
                 if (deviatesFromIdentity)
                 {
@@ -191,10 +191,10 @@ namespace Intrepid2 {
                   }
                 }
               } // row
-              {
-                // DEBUGGING
-                std::cout << "]\n";
-              }
+//              {
+//                // DEBUGGING
+//                std::cout << "]\n";
+//              }
             }
             // initialize operator
             const int numRows = static_cast<int>(nonIdentityDofs.size());
@@ -224,41 +224,41 @@ namespace Intrepid2 {
             }
             offsetForRowOrdinalHost(numRows) = rowOffset;
             
-            {
-              // DEBUGGING:
-              std::cout << "packed version: ";
-              if (numRows == 0)
-              {
-                std::cout << "[ identity ]\n";
-              }
-              else
-              {
-                std::cout << "\nrow IDs: ";
-                for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
-                {
-                  std::cout << rowIndices[rowOrdinal] << " ";
-                }
-                std::cout << std::endl;
-                std::cout << "row offsets: ";
-                for (int rowOrdinal=0; rowOrdinal<=numRows; rowOrdinal++)
-                {
-                  std::cout << rowOffsets[rowOrdinal] << " ";
-                }
-                std::cout << std::endl;
-                std::cout << "col IDs: ";
-                for (int i=0; i<rowOffset; i++)
-                {
-                  std::cout << colIDs[i] << " ";
-                }
-                std::cout << std::endl;
-                std::cout << "weights: ";
-                for (int i=0; i<rowOffset; i++)
-                {
-                  std::cout << weights[i] << " ";
-                }
-                std::cout << std::endl;
-              }
-            }
+//            {
+//              // DEBUGGING:
+//              std::cout << "packed version: ";
+//              if (numRows == 0)
+//              {
+//                std::cout << "[ identity ]\n";
+//              }
+//              else
+//              {
+//                std::cout << "\nrow IDs: ";
+//                for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
+//                {
+//                  std::cout << rowIndices[rowOrdinal] << " ";
+//                }
+//                std::cout << std::endl;
+//                std::cout << "row offsets: ";
+//                for (int rowOrdinal=0; rowOrdinal<=numRows; rowOrdinal++)
+//                {
+//                  std::cout << rowOffsets[rowOrdinal] << " ";
+//                }
+//                std::cout << std::endl;
+//                std::cout << "col IDs: ";
+//                for (int i=0; i<rowOffset; i++)
+//                {
+//                  std::cout << colIDs[i] << " ";
+//                }
+//                std::cout << std::endl;
+//                std::cout << "weights: ";
+//                for (int i=0; i<rowOffset; i++)
+//                {
+//                  std::cout << weights[i] << " ";
+//                }
+//                std::cout << std::endl;
+//              }
+//            }
             
             Kokkos::deep_copy(rowIndices, rowIndicesHost);
             Kokkos::deep_copy(offsetForRowOrdinal, offsetForRowOrdinalHost);
@@ -356,15 +356,15 @@ namespace Intrepid2 {
               const auto mat = Kokkos::subview(matDataHost,
                                                numEdges*existEdgeDofs+faceId, faceOrt,
                                                Kokkos::ALL(), Kokkos::ALL());
-              {
-                // DEBUGGING
-                std::cout << "\nface " << faceId << ", ort " << faceOrt << ": [";
-              }
+//              {
+//                // DEBUGGING
+//                std::cout << "\nface " << faceId << ", ort " << faceOrt << ": [";
+//              }
               for (ordinal_type i=0;i<ndofFace;++i) {
-                {
-                  // DEBUGGING
-                  std::cout << "[";
-                }
+//                {
+//                  // DEBUGGING
+//                  std::cout << "[";
+//                }
                 
                 const ordinal_type ii = tagToOrdinal(FACE_DIM, faceId, i);
                 
@@ -385,12 +385,12 @@ namespace Intrepid2 {
                       deviatesFromIdentity = true;
                     }
                   }
-                  {
-                    // DEBUGGING
-                    std::cout << mat_il << " ";
-                  }
+//                  {
+//                    // DEBUGGING
+//                    std::cout << mat_il << " ";
+//                  }
                 } // column
-                std::cout << "]; ";
+//                std::cout << "]; ";
                 INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
                 if (deviatesFromIdentity)
                 {
@@ -412,10 +412,10 @@ namespace Intrepid2 {
                   }
                 } // if (deviatesFromIdentity)
               } // row
-              {
-                // DEBUGGING
-                std::cout << "]\n";
-              }
+//              {
+//                // DEBUGGING
+//                std::cout << "]\n";
+//              }
               // initialize operator
               const int numRows = static_cast<int>(nonIdentityDofs.size());
               Kokkos::View<ordinal_type*,DT> rowIndices("OrientationOperator: rowIndices", numRows);
@@ -444,41 +444,41 @@ namespace Intrepid2 {
               }
               offsetForRowOrdinalHost(numRows) = rowOffset;
               
-              {
-                // DEBUGGING:
-                std::cout << "packed version: ";
-                if (numRows == 0)
-                {
-                  std::cout << "[ identity ]\n";
-                }
-                else
-                {
-                  std::cout << "\nrow IDs: ";
-                  for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
-                  {
-                    std::cout << rowIndices[rowOrdinal] << " ";
-                  }
-                  std::cout << std::endl;
-                  std::cout << "row offsets: ";
-                  for (int rowOrdinal=0; rowOrdinal<=numRows; rowOrdinal++)
-                  {
-                    std::cout << rowOffsets[rowOrdinal] << " ";
-                  }
-                  std::cout << std::endl;
-                  std::cout << "col IDs: ";
-                  for (int i=0; i<rowOffset; i++)
-                  {
-                    std::cout << colIDs[i] << " ";
-                  }
-                  std::cout << std::endl;
-                  std::cout << "weights: ";
-                  for (int i=0; i<rowOffset; i++)
-                  {
-                    std::cout << weights[i] << " ";
-                  }
-                  std::cout << std::endl;
-                }
-              }
+//              {
+//                // DEBUGGING:
+//                std::cout << "packed version: ";
+//                if (numRows == 0)
+//                {
+//                  std::cout << "[ identity ]\n";
+//                }
+//                else
+//                {
+//                  std::cout << "\nrow IDs: ";
+//                  for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
+//                  {
+//                    std::cout << rowIndices[rowOrdinal] << " ";
+//                  }
+//                  std::cout << std::endl;
+//                  std::cout << "row offsets: ";
+//                  for (int rowOrdinal=0; rowOrdinal<=numRows; rowOrdinal++)
+//                  {
+//                    std::cout << rowOffsets[rowOrdinal] << " ";
+//                  }
+//                  std::cout << std::endl;
+//                  std::cout << "col IDs: ";
+//                  for (int i=0; i<rowOffset; i++)
+//                  {
+//                    std::cout << colIDs[i] << " ";
+//                  }
+//                  std::cout << std::endl;
+//                  std::cout << "weights: ";
+//                  for (int i=0; i<rowOffset; i++)
+//                  {
+//                    std::cout << weights[i] << " ";
+//                  }
+//                  std::cout << std::endl;
+//                }
+//              }
               
               Kokkos::deep_copy(rowIndices, rowIndicesHost);
               Kokkos::deep_copy(offsetForRowOrdinal, offsetForRowOrdinalHost);
