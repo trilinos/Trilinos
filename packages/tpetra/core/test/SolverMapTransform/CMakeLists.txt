@@ -4,7 +4,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     SolverMapTransform_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM mpi
+  COMM serial mpi
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
