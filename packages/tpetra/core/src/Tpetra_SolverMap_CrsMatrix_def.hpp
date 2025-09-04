@@ -74,24 +74,13 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::construct( Origi
   // *******************************************************************
   // Step 1/7: Check if domain map and col map are different
   // *******************************************************************
-  Teuchos::RCP<map_t const> origRowMap    = origMatrix->getRowMap();
   Teuchos::RCP<map_t const> origDomainMap = origMatrix->getDomainMap();
   Teuchos::RCP<map_t const> origColMap    = origMatrix->getColMap();
 
-  Teuchos::RCP<Teuchos::Comm<int> const> Comm = origRowMap->getComm();
+  typename map_t::local_map_type localOrigDomainMap( origDomainMap->getLocalMap() );
+  typename map_t::local_map_type localOrigColMap   ( origColMap->getLocalMap() );
 
-  size_t origDomainMap_localSize = origDomainMap->getLocalNumElements();
-  size_t localNumDifferences(0);
-  for (size_t i(0); i < origDomainMap_localSize; ++i) {
-    if (origDomainMap->getGlobalElement(i) != origColMap->getGlobalElement(i)) {
-      localNumDifferences += 1;
-      break;
-    }
-  }
-  size_t globalNumDifferences(0);
-  Teuchos::reduceAll(*Comm, Teuchos::REDUCE_SUM, 1, &localNumDifferences, &globalNumDifferences);
-  
-  if (globalNumDifferences == 0) {
+  if (origDomainMap->isLocallyFitted(*origColMap)) {
     this->newObj_ = this->origObj_;
   }
   else {
@@ -102,34 +91,77 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::construct( Origi
     // Step 2/7: Fill newColMap_globalColIndices with the global indices
     //           of all entries in origDomainMap
     // *****************************************************************
-    std::vector<GlobalOrdinal> newColMap_globalColIndices(origDomainMap_localSize);
-    for (size_t i(0); i < origDomainMap_localSize; ++i) {
-      newColMap_globalColIndices[i] = origDomainMap->getGlobalElement(i);
+
+    // Initialize the value of 'newColMap_localSize'
+    size_t const origDomainMap_localSize = origDomainMap->getLocalNumElements();
+    size_t newColMap_localSize( origDomainMap_localSize );
+
+    // Increase the value of 'newColMap_localSize' as necessary
+    size_t newColMap_extraSize(0);
+    size_t const origColMap_localSize = origColMap->getLocalNumElements();
+    {
+      auto lambda = KOKKOS_LAMBDA(size_t const i, size_t & sizeToUpdate) -> void {
+                      GlobalOrdinal const globalColIndex( localOrigColMap.getGlobalElement(i) );
+                    //if (origDomainMap->isNodeGlobalElement( globalColIndex ) == false) {
+                      if (localOrigDomainMap.getLocalElement( globalColIndex ) == ::Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
+                        sizeToUpdate += 1;
+                      }
+                    };
+      Kokkos::parallel_reduce( "Tpetra::SolverMap_CrsMatrix::construct::newColMap_extraSize"
+                             , Kokkos::RangePolicy<typename Node::device_type::execution_space, size_t>(0, origColMap_localSize)
+                             , lambda
+                             , newColMap_extraSize
+                             );
+    }
+    newColMap_localSize += newColMap_extraSize;
+
+    // Instantiate newColMap_globalColIndices with the correct size 'newColMap_localSize'
+    Kokkos::View< GlobalOrdinal*, typename Node::device_type::execution_space > newColMap_globalColIndices("", newColMap_localSize);
+
+    // Fill newColMap_globalColIndices with the global indices of all entries in origDomainMap
+    {
+      auto lambda = KOKKOS_LAMBDA(size_t const i) -> void {
+                      newColMap_globalColIndices(i) = localOrigDomainMap.getGlobalElement(i);
+                    };
+      Kokkos::parallel_for( "Tpetra::SolverMap_CrsMatrix::construct::copyDomainMapToNewColMap"
+                          , Kokkos::RangePolicy<typename Node::device_type::execution_space, size_t>(0, origDomainMap_localSize)
+                          , lambda
+                          );
     }
 
     // *****************************************************************
     // Step 3/7: Append newColMap_globalColIndices with those origColMap
     //           entries that are not in newColMap_globalColIndices yet
     // *****************************************************************
-    size_t const origColMap_localSize = origColMap->getLocalNumElements();
-    for (size_t i(0); i < origColMap_localSize; ++i) {
-      GlobalOrdinal const globalColIndex( origColMap->getGlobalElement(i) );
-      if (origDomainMap->isNodeGlobalElement( globalColIndex ) == false) {
-        newColMap_globalColIndices.push_back( globalColIndex );
-      }
+    {
+      size_t j(0);
+      auto lambda = KOKKOS_LAMBDA(size_t const i, size_t & jToUpdate) -> void {
+                      GlobalOrdinal const globalColIndex( localOrigColMap.getGlobalElement(i) );
+                    //if (origDomainMap->isNodeGlobalElement( globalColIndex ) == false) {
+                      if (localOrigDomainMap.getLocalElement( globalColIndex ) == ::Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
+                        newColMap_globalColIndices[origDomainMap_localSize + jToUpdate] = globalColIndex;
+                        jToUpdate += 1;
+                      }
+                    };
+      Kokkos::parallel_reduce( "Tpetra::SolverMap_CrsMatrix::construct::appendNewColMap"
+                             , Kokkos::RangePolicy<typename Node::device_type::execution_space, size_t>(0, origColMap_localSize)
+                             , lambda
+                             , j
+                             );
     }
 
     // *****************************************************************
     // Step 4/7: Create a new column map using newColMap_globalColIndices
     // *****************************************************************
+    Teuchos::RCP<map_t const> origRowMap = origMatrix->getRowMap();
+    Teuchos::RCP<Teuchos::Comm<int> const> Comm = origRowMap->getComm();
     size_t const newColMap_localNumCols = newColMap_globalColIndices.size();
     size_t newColMap_globalNumCols(0);
     Teuchos::reduceAll(*Comm, Teuchos::REDUCE_SUM, 1, &newColMap_localNumCols, &newColMap_globalNumCols);
 
-    newColMap_ = Teuchos::rcp<map_t>( new map_t( newColMap_globalNumCols           // global_size_t       numGlobalElements
-                                               , newColMap_globalColIndices.data() // global_ordinal_type indexList[]
-                                               , newColMap_localNumCols            // local_ordinal_type  indexListSize
-                                               , origDomainMap->getIndexBase()     // global_ordinal_type indexBase
+    newColMap_ = Teuchos::rcp<map_t>( new map_t( newColMap_globalNumCols
+                                               , newColMap_globalColIndices
+                                               , origDomainMap->getIndexBase()
                                                , Comm
                                                ));
 
@@ -169,6 +201,9 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::construct( Origi
     // *****************************************************************
     Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>( new cm_t( newGraph_ ) );
 
+    // Kokkos-aware code in the near future
+    // KokkosSparse::CrsMatrix aux( newMatrix->getLocalMatrixDevice() );
+    
     typename cm_t::local_inds_host_view_type origMatrix_localIndices;
     typename cm_t::values_host_view_type     origMatrix_localValues;
     typename cg_t::local_inds_host_view_type newGraph_localIndices;
@@ -196,6 +231,10 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::construct( Origi
                                    , newMatrix_localValues.data()  // const Scalar       inputVals[]
                                    , newMatrix_localIndices.data() // const LocalOrdinal inputCols[]
                                    );
+
+      // Kokkos-aware code in the near future
+      // row = aux->row(i);
+      // row.vals(j) = something
     }
 
     newMatrix->fillComplete(origDomainMap, origRangeMap);

@@ -83,10 +83,6 @@ protected:
   std::vector<Scalar_t> const m_lhsNorms2;
   std::vector<Scalar_t> const m_rhsNorms2;
 
-  std::unique_ptr< Map_t >         m_rowMap;
-  std::unique_ptr< Map_t >         m_colMap;
-  std::unique_ptr< Map_t >         m_domainMap;
-  std::unique_ptr< Map_t >         m_rangeMap;
   std::unique_ptr< Matrix_t >      m_matrix;
   std::unique_ptr< MultiVector_t > m_lhs;
   std::unique_ptr< MultiVector_t > m_rhs;
