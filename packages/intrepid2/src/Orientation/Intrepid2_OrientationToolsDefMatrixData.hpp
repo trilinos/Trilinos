@@ -68,6 +68,9 @@ namespace Intrepid2 {
   typename OrientationTools<DT>::OperatorViewType
   OrientationTools<DT>::createEdgeOperatorsInternal(const BasisHostType* basis, CoeffMatrixDataViewType matData)
   {
+    const int EDGE_DIM = 1;
+    const int FACE_DIM = 2;
+    
     const std::string name(basis->getName());
     OperatorViewType operators;
 
@@ -76,16 +79,16 @@ namespace Intrepid2 {
     ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0, numSubCells;
     const auto cellTopo = basis->getBaseCellTopology();
     {
-      const ordinal_type numEdges = cellTopo.getSubcellCount(1);
-      const ordinal_type numFaces = cellTopo.getSubcellCount(2);
+      const ordinal_type numEdges = cellTopo.getSubcellCount(EDGE_DIM);
+      const ordinal_type numFaces = cellTopo.getSubcellCount(FACE_DIM);
       for(ordinal_type i=0; i<numEdges; ++i) {
-        matDim1 = std::max(matDim1, basis->getDofCount(1,i));
+        matDim1 = std::max(matDim1, basis->getDofCount(EDGE_DIM,i));
         numEdgeOrts = std::max(numOrts,2);
         numOrts     = numEdgeOrts;
       }
       for(ordinal_type i=0; i<numFaces; ++i) {
         matDim2 = std::max(matDim2, basis->getDofCount(2,i));
-        numOrts = std::max(numOrts,2*ordinal_type(cellTopo.getSideCount(2,i)));
+        numOrts = std::max(numOrts,2*ordinal_type(cellTopo.getSideCount(FACE_DIM,i)));
       }
       matDim = std::max(matDim1,matDim2);
       numSubCells = (matDim1>0)*numEdges + (matDim2>0)*numFaces;
@@ -107,15 +110,13 @@ namespace Intrepid2 {
       auto ordinalToTag = basis->getAllDofTags();
       auto tagToOrdinal = basis->getAllDofOrdinal();
       
-      ordinal_type numVerts(0), numEdges(0), numFaces(0);
+      ordinal_type numEdges(0), numFaces(0);
       
       if (basis->requireOrientation()) {
-        numVerts = cellTopo.getVertexCount()*ordinal_type(basis->getDofCount(0, 0) > 0);
-        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
-        numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
+        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(EDGE_DIM, 0) > 0);
+        numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(FACE_DIM, 0) > 0);
       }
       
-      ordinal_type rowOffset = 0;
       if (numEdges > 0)
       {
         for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
@@ -127,24 +128,33 @@ namespace Intrepid2 {
             std::vector<ordinal_type> colIDs;
             std::vector<double> weights;
             
-            const ordinal_type ordEdge = (1 < tagToOrdinal.extent(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.extent(1) ? tagToOrdinal(1, edgeId, 0) : -1) : -1);
+            const ordinal_type ordEdge = (1 < tagToOrdinal.extent(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.extent(1) ? tagToOrdinal(EDGE_DIM, edgeId, 0) : -1) : -1);
             
+            ordinal_type rowOffset = 0;
             if (ordEdge != -1) {
+              {
+                // DEBUGGING
+                std::cout << "\nedge " << edgeId << ", ort " << edgeOrt << ": [";
+              }
               const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
-              const auto mat = Kokkos::subview(matData,
+              const auto mat = Kokkos::subview(matDataHost,
                                                edgeId, edgeOrt,
                                                Kokkos::ALL(), Kokkos::ALL());
               
               for (ordinal_type i=0;i<ndofEdge;++i) {
-                const ordinal_type ii = tagToOrdinal(1, edgeId, i);
+                {
+                  // DEBUGGING
+                  std::cout << "[";
+                }
+                const ordinal_type ii = tagToOrdinal(EDGE_DIM, edgeId, i);
                 
                 // first pass for ii:
                 // check whether this is different from the identity
-                // count number of nonzeros
+                // count number of nonzeros in this row
                 int nnz = 0;
                 bool deviatesFromIdentity = false;
                 for (ordinal_type l=0;l<ndofEdge;++l) {
-                  const ordinal_type ll = tagToOrdinal(1, edgeId, l);
+                  const ordinal_type ll = tagToOrdinal(EDGE_DIM, edgeId, l);
                   //                      auto & input_ = in.access(ll);
                   auto & mat_il = mat(i,l);
                   if (mat_il != 0.0)
@@ -155,8 +165,13 @@ namespace Intrepid2 {
                       deviatesFromIdentity = true;
                     }
                   }
-                }
-                INTREPID2_TEST_FOR_EXCEPTION(nnz != 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
+                  {
+                    // DEBUGGING
+                    std::cout << mat_il << " ";
+                  }
+                } // column
+                std::cout << "]; ";
+                INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
                 if (deviatesFromIdentity)
                 {
                   // then we store the nonzeros for ii
@@ -166,8 +181,7 @@ namespace Intrepid2 {
                   
                   for (ordinal_type l=0;l<ndofEdge;++l)
                   {
-                    const ordinal_type ll = tagToOrdinal(1, edgeId, l);
-                    //                      auto & input_ = in.access(ll);
+                    const ordinal_type ll = tagToOrdinal(EDGE_DIM, edgeId, l);
                     auto & mat_il = mat(i,l);
                     if (mat_il != 0.0)
                     {
@@ -176,6 +190,10 @@ namespace Intrepid2 {
                     }
                   }
                 }
+              } // row
+              {
+                // DEBUGGING
+                std::cout << "]\n";
               }
             }
             // initialize operator
@@ -196,8 +214,8 @@ namespace Intrepid2 {
             {
               rowIndicesHost(rowOrdinal)          = nonIdentityDofs[rowOrdinal];
               int thisRowOffset                   = rowOffsets[rowOrdinal];
-              offsetForRowOrdinalHost(rowOrdinal) = thisRowOffset;
               int nextRowOffset                   = rowOffsets[rowOrdinal+1];
+              offsetForRowOrdinalHost(rowOrdinal) = thisRowOffset;
               for (int i=thisRowOffset; i<nextRowOffset; i++)
               {
                 packedColumnIndicesHost(i) = colIDs[i];
@@ -205,6 +223,42 @@ namespace Intrepid2 {
               }
             }
             offsetForRowOrdinalHost(numRows) = rowOffset;
+            
+            {
+              // DEBUGGING:
+              std::cout << "packed version: ";
+              if (numRows == 0)
+              {
+                std::cout << "[ identity ]\n";
+              }
+              else
+              {
+                std::cout << "\nrow IDs: ";
+                for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
+                {
+                  std::cout << rowIndices[rowOrdinal] << " ";
+                }
+                std::cout << std::endl;
+                std::cout << "row offsets: ";
+                for (int rowOrdinal=0; rowOrdinal<=numRows; rowOrdinal++)
+                {
+                  std::cout << rowOffsets[rowOrdinal] << " ";
+                }
+                std::cout << std::endl;
+                std::cout << "col IDs: ";
+                for (int i=0; i<rowOffset; i++)
+                {
+                  std::cout << colIDs[i] << " ";
+                }
+                std::cout << std::endl;
+                std::cout << "weights: ";
+                for (int i=0; i<rowOffset; i++)
+                {
+                  std::cout << weights[i] << " ";
+                }
+                std::cout << std::endl;
+              }
+            }
             
             Kokkos::deep_copy(rowIndices, rowIndicesHost);
             Kokkos::deep_copy(offsetForRowOrdinal, offsetForRowOrdinalHost);
@@ -223,71 +277,226 @@ namespace Intrepid2 {
     return operators;
   }
 
-//template<typename DT>
-//  template<typename BasisHostType>
-//  typename OrientationTools<DT>::OperatorViewType
-//  OrientationTools<DT>::createFaceOperatorsInternal(const BasisHostType* basis, CoeffMatrixDataViewType matData) {
-//    const std::string name(basis->getName());
-//    OperatorViewType operators;
-//
-//    const auto cellTopo = basis->getBaseCellTopology();
-//    const ordinal_type numEdges = cellTopo.getSubcellCount(1);
-//    const ordinal_type numFaces = cellTopo.getSubcellCount(2);
-//    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numSubCells;
-//    for(ordinal_type i=0; i<numEdges; ++i) {
-//      matDim1 = std::max(matDim1, basis->getDofCount(1,i));
-//      numOrts = std::max(numOrts,2);
-//    }
-//    for(ordinal_type i=0; i<numFaces; ++i) {
-//      matDim2 = std::max(matDim2, basis->getDofCount(2,i));
-//      numOrts = std::max(numOrts,2*ordinal_type(cellTopo.getSideCount(2,i)));
-//    }
-//    matDim = std::max(matDim1,matDim2);
-//    numSubCells = (matDim1>0)*numEdges + (matDim2>0)*numFaces;
-//
-//
-//    operators = OperatorViewType("Orientation::Operators::"+name,
-//                                 numSubCells,
-//                                 numOrts);
-//
-//    
-//    auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofTags());
-//    auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofOrdinal());
-//
-//    ordinal_type numVerts(0), numEdges(0), numFaces(0);
-//
-//    if (basis->requireOrientation()) {
-//      numVerts = cellTopo.getVertexCount()*ordinal_type(basis->getDofCount(0, 0) > 0);
-//      numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
-//      numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
-//    }
-//
-//    bool leftMultiply = true;
-//
-//    const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
-//    typedef F_modifyBasisByOrientation
-//      <decltype(orts),
-//       decltype(output),decltype(input),
-//       decltype(ordinalToTag),decltype(tagToOrdinal),
-//       decltype(matData)> FunctorType;
-//    Kokkos::parallel_for
-//      (policy,
-//       FunctorType(orts,
-//                   output, input,
-//                   ordinalToTag, tagToOrdinal,
-//                   matData,
-//                   cellDim, numVerts, numEdges, numFaces,
-//                   numPoints, dimBasis, leftMultiply, transpose));
-//
-//    
-//    
-//    
-//    
-//    
-//    
-//    
-//    return operators;
-//  }
+  template<typename DT>
+  template<typename BasisHostType>
+  typename OrientationTools<DT>::OperatorViewType
+  OrientationTools<DT>::createFaceOperatorsInternal(const BasisHostType* basis, CoeffMatrixDataViewType matData)
+  {
+    const int EDGE_DIM = 1;
+    const int FACE_DIM = 2;
+    
+    const std::string name(basis->getName());
+    OperatorViewType operators;
+
+    auto matDataHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), matData);
+
+    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0, numFaceOrts = 0, numSubCells;
+    const auto cellTopo = basis->getBaseCellTopology();
+    {
+      const ordinal_type numEdges = cellTopo.getSubcellCount(EDGE_DIM);
+      const ordinal_type numFaces = cellTopo.getSubcellCount(FACE_DIM);
+      for(ordinal_type i=0; i<numEdges; ++i) {
+        matDim1 = std::max(matDim1, basis->getDofCount(EDGE_DIM,i));
+        numEdgeOrts = std::max(numOrts,2);
+        numOrts     = numEdgeOrts;
+      }
+      for(ordinal_type i=0; i<numFaces; ++i) {
+        matDim2 = std::max(matDim2, basis->getDofCount(FACE_DIM,i));
+        numFaceOrts = std::max(numFaceOrts,2*ordinal_type(cellTopo.getSideCount(FACE_DIM,i)));
+        numOrts = std::max(numOrts,numFaceOrts);
+        // 2*(#face edges): a formula that happens to work for triangles and quads: 6 triangle orientations, 8 quad orientations.
+      }
+      matDim = std::max(matDim1,matDim2);
+      numSubCells = (matDim1>0)*numEdges + (matDim2>0)*numFaces;
+      
+      operators = OperatorViewType("Orientation::FaceOperators::"+name,
+                                   numFaces, numOrts);
+    }
+    
+    // NOTE: the OrientationOperators within operatorsHost contain *device* views.
+    auto operatorsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), operators);
+
+    if (matDim2 == 0)
+    {
+      // no non-trivial face operators (no face dofs)
+      return operators;
+    }
+    
+    // determine if there are edge dofs
+    ordinal_type existEdgeDofs = (matDim1 > 0) ? 1 : 0;
+    
+    {
+      auto ordinalToTag = basis->getAllDofTags();
+      auto tagToOrdinal = basis->getAllDofOrdinal();
+
+      ordinal_type numVerts(0), numEdges(0), numFaces(0);
+      
+      if (basis->requireOrientation()) {
+        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(EDGE_DIM, 0) > 0);
+        numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(FACE_DIM, 0) > 0);
+      }
+      
+      if (numFaces > 0)
+      {
+        for (ordinal_type faceId=0;faceId<numFaces;++faceId)
+        {
+          for (ordinal_type faceOrt=0; faceOrt<numFaceOrts; faceOrt++)
+          {
+            std::vector<ordinal_type> nonIdentityDofs;
+            std::vector<ordinal_type> rowOffsets; // within the column storage
+            std::vector<ordinal_type> colIDs;
+            std::vector<double> weights;
+            
+            const ordinal_type ordFace = (2 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.extent(1) ? tagToOrdinal(FACE_DIM, faceId, 0) : -1) : -1);
+            
+            ordinal_type rowOffset = 0;
+            
+            if (ordFace != -1) {
+              const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
+              const auto mat = Kokkos::subview(matDataHost,
+                                               numEdges*existEdgeDofs+faceId, faceOrt,
+                                               Kokkos::ALL(), Kokkos::ALL());
+              {
+                // DEBUGGING
+                std::cout << "\nface " << faceId << ", ort " << faceOrt << ": [";
+              }
+              for (ordinal_type i=0;i<ndofFace;++i) {
+                {
+                  // DEBUGGING
+                  std::cout << "[";
+                }
+                
+                const ordinal_type ii = tagToOrdinal(FACE_DIM, faceId, i);
+                
+                // first pass for ii:
+                // check whether this is different from the identity
+                // count number of nonzeros
+                int nnz = 0;
+                bool deviatesFromIdentity = false;
+                for (ordinal_type l=0;l<ndofFace;++l) {
+                  const ordinal_type ll = tagToOrdinal(FACE_DIM, faceId, l);
+                  //                      auto & input_ = in.access(ll);
+                  auto & mat_il = mat(i,l);
+                  if (mat_il != 0.0)
+                  {
+                    nnz++;
+                    if ((mat_il != 1.0) || (ii != ll))
+                    {
+                      deviatesFromIdentity = true;
+                    }
+                  }
+                  {
+                    // DEBUGGING
+                    std::cout << mat_il << " ";
+                  }
+                } // column
+                std::cout << "]; ";
+                INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
+                if (deviatesFromIdentity)
+                {
+                  // then we store the nonzeros for ii
+                  nonIdentityDofs.push_back(ii);
+                  rowOffsets.push_back(rowOffset);
+                  rowOffset += nnz;
+                  
+                  for (ordinal_type l=0;l<ndofFace;++l)
+                  {
+                    const ordinal_type ll = tagToOrdinal(FACE_DIM, faceId, l);
+                    //                      auto & input_ = in.access(ll);
+                    auto & mat_il = mat(i,l);
+                    if (mat_il != 0.0)
+                    {
+                      colIDs.push_back(ll);
+                      weights.push_back(mat_il);
+                    }
+                  }
+                } // if (deviatesFromIdentity)
+              } // row
+              {
+                // DEBUGGING
+                std::cout << "]\n";
+              }
+              // initialize operator
+              const int numRows = static_cast<int>(nonIdentityDofs.size());
+              Kokkos::View<ordinal_type*,DT> rowIndices("OrientationOperator: rowIndices", numRows);
+              Kokkos::View<ordinal_type*,DT> offsetForRowOrdinal("OrientationOperator: rowOffsets", numRows+1); // convenient to be able to check the "next" row offset to get a column count, even when on the last row
+              Kokkos::View<ordinal_type*,DT> packedColumnIndices("OrientationOperator: packedColumnIndices", rowOffset);
+              Kokkos::View<double*,      DT> packedWeights("OrientationOperator: packedWeights", rowOffset);
+              
+              auto rowIndicesHost          = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowIndices);
+              auto offsetForRowOrdinalHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), offsetForRowOrdinal);
+              auto packedColumnIndicesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedColumnIndices);
+              auto packedWeightsHost       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedWeights);
+              
+              // for convenience of the code below, put the "next" rowOffset at the end:
+              rowOffsets.push_back(rowOffset);
+              for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
+              {
+                rowIndicesHost(rowOrdinal)          = nonIdentityDofs[rowOrdinal];
+                int thisRowOffset                   = rowOffsets[rowOrdinal];
+                int nextRowOffset                   = rowOffsets[rowOrdinal+1];
+                offsetForRowOrdinalHost(rowOrdinal) = thisRowOffset;
+                for (int i=thisRowOffset; i<nextRowOffset; i++)
+                {
+                  packedColumnIndicesHost(i) = colIDs[i];
+                  packedWeightsHost(i)       = weights[i];
+                }
+              }
+              offsetForRowOrdinalHost(numRows) = rowOffset;
+              
+              {
+                // DEBUGGING:
+                std::cout << "packed version: ";
+                if (numRows == 0)
+                {
+                  std::cout << "[ identity ]\n";
+                }
+                else
+                {
+                  std::cout << "\nrow IDs: ";
+                  for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
+                  {
+                    std::cout << rowIndices[rowOrdinal] << " ";
+                  }
+                  std::cout << std::endl;
+                  std::cout << "row offsets: ";
+                  for (int rowOrdinal=0; rowOrdinal<=numRows; rowOrdinal++)
+                  {
+                    std::cout << rowOffsets[rowOrdinal] << " ";
+                  }
+                  std::cout << std::endl;
+                  std::cout << "col IDs: ";
+                  for (int i=0; i<rowOffset; i++)
+                  {
+                    std::cout << colIDs[i] << " ";
+                  }
+                  std::cout << std::endl;
+                  std::cout << "weights: ";
+                  for (int i=0; i<rowOffset; i++)
+                  {
+                    std::cout << weights[i] << " ";
+                  }
+                  std::cout << std::endl;
+                }
+              }
+              
+              Kokkos::deep_copy(rowIndices, rowIndicesHost);
+              Kokkos::deep_copy(offsetForRowOrdinal, offsetForRowOrdinalHost);
+              Kokkos::deep_copy(packedColumnIndices, packedColumnIndicesHost);
+              Kokkos::deep_copy(packedWeights, packedWeightsHost);
+              
+              OrientationOperator<DT> orientationOperator(rowIndices, offsetForRowOrdinal, packedColumnIndices, packedWeights);
+              operatorsHost(faceId, faceOrt) = orientationOperator;
+            } // if (ordFace != -1)
+          }
+        }
+      }
+    }
+    
+    Kokkos::deep_copy(operators, operatorsHost);
+    
+    return operators;
+  }
 
   //
   // HGRAD elements
