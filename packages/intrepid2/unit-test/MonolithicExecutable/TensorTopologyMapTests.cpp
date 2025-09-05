@@ -100,8 +100,8 @@ namespace
     
     for (auto entry : expectedCompositeSubcells)
     {
-      auto subcell1 = entry.first.first;
-      auto subcell2 = entry.first.second;
+      subcell1 = entry.first.first;
+      subcell2 = entry.first.second;
       auto expectedCompositeOrdinal = entry.second;
       unsigned actualOrdinal = topoMap.getCompositeSubcellOrdinal(subcell1.first, subcell1.second,
                                                                   subcell2.first, subcell2.second);
@@ -237,8 +237,8 @@ namespace
     
     for (auto entry : expectedCompositeSubcells)
     {
-      auto subcell1 = entry.first.first;
-      auto subcell2 = entry.first.second;
+      subcell1 = entry.first.first;
+      subcell2 = entry.first.second;
       auto expectedCompositeOrdinal = entry.second;
       unsigned actualOrdinal = topoMap.getCompositeSubcellOrdinal(subcell1.first, subcell1.second,
                                                                   subcell2.first, subcell2.second);
@@ -398,8 +398,8 @@ namespace
     
     for (auto entry : expectedCompositeSubcells)
     {
-      auto subcell1 = entry.first.first;
-      auto subcell2 = entry.first.second;
+      subcell1 = entry.first.first;
+      subcell2 = entry.first.second;
       auto expectedCompositeOrdinal = entry.second;
       unsigned actualOrdinal = topoMap.getCompositeSubcellOrdinal(subcell1.first, subcell1.second,
                                                                   subcell2.first, subcell2.second);
