@@ -462,11 +462,16 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // We do this so the parameters on the level get flagged correctly as "used"
       ParameterList& levelList = paramList.sublist("level " + toString(levelID), true /*mustAlreadyExist*/);
       UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
-
-    } else {
-      ParameterList levelList;
-      UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
     }
+    // CAG: I believe that this step is not required.
+    //      If nothing is specified for level i, then we should already be using the non-level specific settings.
+    //      We should not need to set defaults again.
+    //      The reason for not wanting this call is that it slows down the ParameterListInterpreter significantly.
+    //      This was observed in simulation with one setup per time step and with a relatively small problem.
+    // else {
+    //   ParameterList levelList;
+    //   UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
+    // }
 
     this->keep_[levelID] = keeps;
     this->AddFactoryManager(levelID, 1, levelManager);
