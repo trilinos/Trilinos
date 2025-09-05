@@ -148,7 +148,7 @@ public:
     typename node_t::device_type> &wgt) const {
     typedef Kokkos::View<scalar_t**, typename node_t::device_type> view_t;
     wgt = view_t("wgts", vector_->getLocalLength(), numWeights_);
-    typename view_t::HostMirror host_wgt = Kokkos::create_mirror_view(wgt);
+    typename view_t::host_mirror_type host_wgt = Kokkos::create_mirror_view(wgt);
     for(int idx = 0; idx < numWeights_; ++idx) {
       const scalar_t * weights;
       size_t length;

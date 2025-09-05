@@ -584,8 +584,8 @@ void testUniqueNumbering(Teuchos::FancyOStream &out, bool &success) {
   typedef Kokkos::DynRankView<OT, typename Node::device_type> FCO;  // FC of ordinals
   typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES, MT, MT> Basis;
 
-  typename FC::HostMirror physDofCoords;
-  typename FCO::HostMirror cellGIDs;
+  typename FC::host_mirror_type physDofCoords;
+  typename FCO::host_mirror_type cellGIDs;
   std::vector<std::vector<LocalOrdinal>> expectedGIDs = {{0, 1, 2, 3, 4, 5, 6, 7, 8},
                                                          {9, 10, 11, 12, 13, 14, 0, 1, 2},
                                                          {11, 15, 16, 14, 17, 18, 2, 19, 20}};
@@ -1681,7 +1681,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string &na
 
     // we'll want to create a global numbering for both high and low order bases
     // --> we make a lambda function that accepts FC with dof coords as argument
-    auto getTwoCellNumbering = [pointTol, numCells, spaceDim, xTranslationForCell1](const typename FC::HostMirror &dofCoords) -> UniqueNumbering {
+    auto getTwoCellNumbering = [pointTol, numCells, spaceDim, xTranslationForCell1](const typename FC::host_mirror_type &dofCoords) -> UniqueNumbering {
       int dofsPerCell = dofCoords.extent(0);
 
       vector<double> coords(spaceDim);

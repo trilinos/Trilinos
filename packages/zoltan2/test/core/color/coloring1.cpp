@@ -378,8 +378,8 @@ int main(int narg, char** arg)
   std::cout<<"Got row indices, replacing diagonals\n";
   //loop through all rows
   for(size_t i = 0; i < rowInds.size(); i++){
-    typename Kokkos::View<zgno_t*>::HostMirror idx("idx",1);
-    typename Kokkos::View<zscalar_t*>::HostMirror val("val",1);
+    typename Kokkos::View<zgno_t*>::host_mirror_type idx("idx",1);
+    typename Kokkos::View<zscalar_t*>::host_mirror_type val("val",1);
     Kokkos::deep_copy(idx,rowInds[i]);
     Kokkos::deep_copy(val, 0.);
     //get the entries in the current row

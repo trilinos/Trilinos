@@ -376,8 +376,8 @@ struct BlockCrsMatrixMaker {
       typedef typename Tpetra_CrsGraph::local_graph_device_type::row_map_type row_map_type;
       typedef typename Tpetra_CrsGraph::local_graph_device_type::entries_type entries_type;
       const GO nr = my_row_gids.size();
-      typename row_map_type::non_const_type::HostMirror rowptr("rowptr", nr + 1);
-      typename entries_type::HostMirror colidx;
+      typename row_map_type::non_const_type::host_mirror_type rowptr("rowptr", nr + 1);
+      typename entries_type::host_mirror_type colidx;
       GO nnz = 0;
       for (Int pass = 0; pass < 2; ++pass) {
         if (pass == 0) {
@@ -385,7 +385,7 @@ struct BlockCrsMatrixMaker {
           Kokkos::deep_copy(rowptr, 0);
         } else {
           // Fill pass.
-          colidx = typename entries_type::HostMirror("colidx", nnz);
+          colidx = typename entries_type::host_mirror_type("colidx", nnz);
           // Cumsum.
           for (Int i = 2; i <= nr; ++i)
             rowptr(i) += rowptr(i - 1);

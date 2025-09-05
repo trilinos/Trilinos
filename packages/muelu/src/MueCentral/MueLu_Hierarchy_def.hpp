@@ -276,8 +276,12 @@ bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(int coarseLevel
 
   Level& level = *Levels_[coarseLevelID];
 
+  bool useStackedTimer = !Teuchos::TimeMonitor::stackedTimerNameIsDefault();
+
   std::string label = FormattingHelper::getColonLabel(level.getObjectLabel());
-  TimeMonitor m1(*this, label + this->ShortClassName() + ": " + "Setup (total)");
+  RCP<TimeMonitor> m1;
+  if (!useStackedTimer)
+    m1 = rcp(new TimeMonitor(*this, label + this->ShortClassName() + ": " + "Setup (total)"));
   TimeMonitor m2(*this, label + this->ShortClassName() + ": " + "Setup" + " (total, level=" + Teuchos::toString(coarseLevelID) + ")");
 
   // TODO: pass coarseLevelManager by reference
@@ -893,7 +897,7 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
   std::string levelSuffix  = " (level=" + toString(startLevel) + ")";
   std::string levelSuffix1 = " (level=" + toString(startLevel + 1) + ")";
 
-  bool useStackedTimer = !Teuchos::TimeMonitor::getStackedTimer().is_null();
+  bool useStackedTimer = !Teuchos::TimeMonitor::stackedTimerNameIsDefault();
 
   RCP<Monitor> iterateTime;
   RCP<TimeMonitor> iterateTime1;

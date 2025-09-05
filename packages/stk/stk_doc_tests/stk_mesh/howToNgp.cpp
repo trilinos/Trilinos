@@ -767,7 +767,7 @@ unsigned count_num_elems(stk::mesh::NgpMesh ngpMesh,
                                    unsigned fieldValue = static_cast<unsigned>(ngpField(entity, 0));
                                    Kokkos::atomic_add(&numElems(0), fieldValue);
                                  });
-  Kokkos::View<unsigned *, stk::ngp::MemSpace>::HostMirror numElemsHost =
+  Kokkos::View<unsigned *, stk::ngp::MemSpace>::host_mirror_type numElemsHost =
       Kokkos::create_mirror_view(numElems);
   Kokkos::deep_copy(numElemsHost, numElems);
   return numElemsHost(0);

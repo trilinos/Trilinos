@@ -84,7 +84,7 @@ namespace { // (anonymous)
     //typedef Tpetra::Map<>::global_ordinal_type GO;
     typedef matrix_type::device_type device_type;
     typedef Kokkos::View<SC**, Kokkos::LayoutRight,
-                         device_type>::HostMirror block_type;
+                         device_type>::host_mirror_type block_type;
 
     const auto& meshRowMap = * (graph->getRowMap ());
     // Contrary to expectations, asking for the graph's number of

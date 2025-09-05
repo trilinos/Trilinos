@@ -39,7 +39,7 @@ public:
 
         source_coords_device = Kokkos::View<double**, Kokkos::DefaultExecutionSpace>("source coordinates", 
                 num_source_sites, dimension);
-        Kokkos::View<double**>::HostMirror source_coords = Kokkos::create_mirror_view(source_coords_device);
+        Kokkos::View<double**>::host_mirror_type source_coords = Kokkos::create_mirror_view(source_coords_device);
         if (dimension==1) {
             source_coords(0,0) = 0.0;
             source_coords(1,0) = 1.0;
@@ -69,7 +69,7 @@ public:
 
         target_coords_device = Kokkos::View<double**, Kokkos::DefaultExecutionSpace>("target coordinates", 
                 1, dimension);
-        Kokkos::View<double**>::HostMirror target_coords = Kokkos::create_mirror_view(target_coords_device);
+        Kokkos::View<double**>::host_mirror_type target_coords = Kokkos::create_mirror_view(target_coords_device);
         if (dimension==1) {
             target_coords(0,0) = 1.0;
         } else if (dimension==2) {
@@ -80,7 +80,7 @@ public:
         Kokkos::deep_copy(target_coords_device, target_coords);
 
         epsilon_device = Kokkos::View<double*, Kokkos::DefaultExecutionSpace>("h supports", 1);
-        Kokkos::View<double*>::HostMirror epsilon = Kokkos::create_mirror_view(epsilon_device);
+        Kokkos::View<double*>::host_mirror_type epsilon = Kokkos::create_mirror_view(epsilon_device);
         if (dimension==1) {
             epsilon(0) = 1.0;
         } else if (dimension==2) {
@@ -91,7 +91,7 @@ public:
 
         neighbor_lists_device = Kokkos::View<int**, Kokkos::DefaultExecutionSpace>("neighbor lists", 
                 1, num_source_sites+1); // first column is # of neighbors
-        Kokkos::View<int**>::HostMirror neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
+        Kokkos::View<int**>::host_mirror_type neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
         if (dimension==1) {
             neighbor_lists(0,0) = 3;
             neighbor_lists(0,1) = 0;
@@ -114,7 +114,7 @@ public:
 
         additional_target_coords_device = Kokkos::View<double**, Kokkos::DefaultExecutionSpace>("additional target coordinates", 
                 6, dimension);
-        Kokkos::View<double**>::HostMirror additional_target_coords = Kokkos::create_mirror_view(additional_target_coords_device);
+        Kokkos::View<double**>::host_mirror_type additional_target_coords = Kokkos::create_mirror_view(additional_target_coords_device);
         if (dimension==1) {
             // out of bounds
             additional_target_coords(0,0) = -1.0;
@@ -153,7 +153,7 @@ public:
 
         additional_target_indices_device = Kokkos::View<int**, Kokkos::DefaultExecutionSpace>("additional target indices", 
                 1, 7 /* # of extra evaluation sites plus index for each */);
-        Kokkos::View<int**>::HostMirror additional_target_indices = Kokkos::create_mirror_view(additional_target_indices_device);
+        Kokkos::View<int**>::host_mirror_type additional_target_indices = Kokkos::create_mirror_view(additional_target_indices_device);
         if (dimension==1) {
             additional_target_indices(0,0)=6;
             additional_target_indices(0,1)=0;

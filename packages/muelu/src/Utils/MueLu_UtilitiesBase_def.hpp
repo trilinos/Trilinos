@@ -470,8 +470,8 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
               });
         }
         if (useAverageAbsDiagVal) {
-          Teuchos::TimeMonitor MMM                                                   = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: useAverageAbsDiagVal");
-          typename Kokkos::View<mag_type, execution_space>::HostMirror avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
+          Teuchos::TimeMonitor MMM                                                         = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: useAverageAbsDiagVal");
+          typename Kokkos::View<mag_type, execution_space>::host_mirror_type avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
           Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
           int numDiagsEqualToOne;
           Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);

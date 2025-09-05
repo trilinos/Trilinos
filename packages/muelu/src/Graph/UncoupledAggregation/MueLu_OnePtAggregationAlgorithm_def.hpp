@@ -85,7 +85,7 @@ void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
 
   Monitor m(*this, "BuildAggregates");
 
-  typename Kokkos::View<unsigned*, device_type>::HostMirror aggstatHost = Kokkos::create_mirror(aggstat);
+  typename Kokkos::View<unsigned*, device_type>::host_mirror_type aggstatHost = Kokkos::create_mirror(aggstat);
   Kokkos::deep_copy(aggstatHost, aggstat);
   std::vector<unsigned> aggStat;
   aggStat.resize(aggstatHost.extent(0));

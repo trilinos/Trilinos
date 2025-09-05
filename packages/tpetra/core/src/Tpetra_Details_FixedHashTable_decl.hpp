@@ -462,13 +462,13 @@ private:
   }
 
   typedef Kokkos::View<const KeyType*,
-                       typename ptr_type::HostMirror::array_layout,
-                       typename ptr_type::HostMirror::execution_space,
+                       typename ptr_type::host_mirror_type::array_layout,
+                       typename ptr_type::host_mirror_type::execution_space,
                        Kokkos::MemoryUnmanaged> host_input_keys_type;
 
   typedef Kokkos::View<const ValueType*,
-                       typename ptr_type::HostMirror::array_layout,
-                       typename ptr_type::HostMirror::execution_space,
+                       typename ptr_type::host_mirror_type::array_layout,
+                       typename ptr_type::host_mirror_type::execution_space,
                        Kokkos::MemoryUnmanaged> host_input_vals_type;
 
   /// \brief Allocate storage and initialize the table; use given

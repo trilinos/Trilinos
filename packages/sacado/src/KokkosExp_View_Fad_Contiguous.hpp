@@ -696,6 +696,12 @@ public:
     { return m_impl_offset.stride_7(); }
 
   template< typename iType >
+  KOKKOS_INLINE_FUNCTION constexpr std::enable_if_t<std::is_integral_v<iType>,
+                                                    size_t>
+  stride( iType const s ) const
+    { return m_impl_offset.stride(s) ; }
+
+  template< typename iType >
   KOKKOS_INLINE_FUNCTION void stride( iType * const s ) const
     { m_impl_offset.stride(s); }
 

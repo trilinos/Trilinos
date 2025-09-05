@@ -322,7 +322,7 @@ class OverlappingRowMatrix : virtual public Ifpack2::Details::RowMatrix<MatrixTy
   Teuchos::RCP<const crs_matrix_type> getExtMatrix() const;
 
   Kokkos::View<size_t *, typename OverlappingRowMatrix<MatrixType>::device_type> getExtHaloStarts() const;
-  typename Kokkos::View<size_t *, typename OverlappingRowMatrix<MatrixType>::device_type>::HostMirror getExtHaloStartsHost() const;
+  typename Kokkos::View<size_t *, typename OverlappingRowMatrix<MatrixType>::device_type>::host_mirror_type getExtHaloStartsHost() const;
 
   void doExtImport();
 
@@ -351,7 +351,7 @@ class OverlappingRowMatrix : virtual public Ifpack2::Details::RowMatrix<MatrixTy
   Teuchos::RCP<const map_type> ExtMap_;
   Teuchos::RCP<const import_type> ExtImporter_;
   Kokkos::View<size_t *, device_type> ExtHaloStarts_;
-  typename Kokkos::View<size_t *, device_type>::HostMirror ExtHaloStarts_h;
+  typename Kokkos::View<size_t *, device_type>::host_mirror_type ExtHaloStarts_h;
 
   //! Graph of the matrix (as returned by getGraph()).
   Teuchos::RCP<const row_graph_type> graph_;
