@@ -55,16 +55,6 @@ template <class Scalar,
 typename SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NewType
 SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( OriginalType const & origMatrix )
 {
-  return construct( origMatrix );
-}
-
-template <class Scalar,
-          class LocalOrdinal,
-          class GlobalOrdinal,
-          class Node>
-typename SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NewType
-SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::construct( OriginalType origMatrix )
-{
   using map_t = Map<LocalOrdinal, GlobalOrdinal, Node>;
 
   assert( !origMatrix->isGloballyIndexed() );

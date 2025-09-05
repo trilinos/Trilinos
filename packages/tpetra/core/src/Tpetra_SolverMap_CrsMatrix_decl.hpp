@@ -49,11 +49,6 @@ using OriginalType = typename StructuralSameTypeTransform< CrsMatrix<Scalar, Loc
   NewType operator()( OriginalType const & origMatrix );
 
 private:
-  NewType construct( OriginalType origMatrix );
-
-  // Avoid warning about "hidden overloaded virtual function"
-  using StructuralSameTypeTransform< CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::construct;
-
   Teuchos::RCP< Map     <LocalOrdinal, GlobalOrdinal, Node> > newColMap_;
   Teuchos::RCP< CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > newGraph_;
 };
