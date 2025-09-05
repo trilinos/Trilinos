@@ -406,6 +406,12 @@ namespace Intrepid2 {
     static OrtOperatorDataType faceOperatorData;
     static OrtOperatorDataType invFaceOperatorData;
     
+    using OrtStaticDoubleAllocationType = std::vector< Kokkos::View<double*,DeviceType> >;
+    using OrtStaticOrdinalAllocationType = std::vector< Kokkos::View<ordinal_type*,DeviceType> >;
+    
+    static OrtStaticDoubleAllocationType  doubleViewAllocations;
+    static OrtStaticOrdinalAllocationType ordinalViewAllocations;
+
   private:
 
     template<typename BasisHostType>
@@ -420,6 +426,13 @@ namespace Intrepid2 {
     inline
     static OperatorViewType createFaceOperatorsInternal(const BasisHostType* basis, CoeffMatrixDataViewType matData);
 
+    //! allocates managed static storage in doubleViewAllocations and ordinalViewAllocations; constructs OrientationOperator with unmanaged Views corresponding to these.
+    static OrientationOperator<DeviceType> constructOrientationOperatorInternal(const std::vector<ordinal_type> &nonIdentityDofs,
+                                                                                const std::vector<ordinal_type> &rowOffsets, // within the column storage
+                                                                                const std::vector<ordinal_type> &colIDs,
+                                                                                const std::vector<double> &weights,
+                                                                                const bool transpose);
+    
     /** \brief  Compute orientation matrix for HGRAD basis
      */
     template<typename BasisHostType>
@@ -605,6 +618,13 @@ namespace Intrepid2 {
 
   template<typename T>
   typename OrientationTools<T>::OrtOperatorDataType OrientationTools<T>::invFaceOperatorData;
+
+  template<typename T>
+  typename OrientationTools<T>::OrtStaticDoubleAllocationType OrientationTools<T>::doubleViewAllocations;
+
+  template<typename T>
+  typename OrientationTools<T>::OrtStaticOrdinalAllocationType OrientationTools<T>::ordinalViewAllocations;
+
 }
 
 // include templated function definitions
