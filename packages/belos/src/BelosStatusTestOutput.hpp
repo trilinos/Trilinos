@@ -36,8 +36,8 @@ namespace Belos {
     of the printing can be dictated according to some parameters passed to 
     StatusTestOutput::StatusTestOutput().
   */
-template <class ScalarType, class MV, class OP>
-class StatusTestOutput : public virtual StatusTest<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class StatusTestOutput : public virtual StatusTest<ScalarType,MV,OP,DM> {
 
  public:
   //! @name Constructors/destructors
@@ -61,7 +61,7 @@ class StatusTestOutput : public virtual StatusTest<ScalarType,MV,OP> {
    *
    */
   StatusTestOutput(const Teuchos::RCP<OutputManager<ScalarType> > &printer, 
-                   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test,
+                   Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > test,
                    int mod = 1,
                    int printStates = Passed)
     {}   
@@ -85,10 +85,10 @@ class StatusTestOutput : public virtual StatusTest<ScalarType,MV,OP> {
    *
    *  \note This also resets the test status to ::Undefined.
    */
-  virtual void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) = 0;
+  virtual void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > test) = 0;
 
   //! \brief Get child test.
-  virtual Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getChild() const = 0;
+  virtual Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > getChild() const = 0;
 
   /*! \brief Set a short solver description for output clarity.
    */

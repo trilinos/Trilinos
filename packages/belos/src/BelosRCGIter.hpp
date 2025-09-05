@@ -23,18 +23,13 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosCGIteration.hpp"
 
 #include "Teuchos_LAPACK.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-
-// MLP Remove after debugging
-#include <fstream>
-#include <iomanip>
 
 /*!
   \class Belos::RCGIter
@@ -56,7 +51,7 @@ namespace Belos {
    *
    * This struct is utilized by RCGIter::initialize()
    */
-  template <class ScalarType, class MV>
+  template <class ScalarType, class MV, class DM>
   struct RCGIterState {
     /*! \brief The current dimension of the reduction.
      *
@@ -84,16 +79,17 @@ namespace Belos {
 
     /*! \brief Coefficients arising in RCG iteration
      */
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Alpha;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Beta;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > D;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > rTz_old;
+    Teuchos::RCP<std::vector<ScalarType> > Alpha;
+    Teuchos::RCP<std::vector<ScalarType> > Beta;
+    int Beta_i;
+    Teuchos::RCP<std::vector<ScalarType> > D;
+    Teuchos::RCP<std::vector<ScalarType> > rTz_old;
 
     /*! \brief Solutions to local least-squares problems */
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Delta;
+    Teuchos::RCP<DM> Delta;
 
     /*! \brief The LU factorization of the matrix U^T A U  */
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > LUUTAU;
+    Teuchos::RCP<DM> LUUTAU;
     /*! \brief Data from LU factorization of U^T A U */
     Teuchos::RCP<std::vector<int> > ipiv;
 
@@ -102,23 +98,25 @@ namespace Belos {
                      z(Teuchos::null),
                      existU(false),
 		     U(Teuchos::null), AU(Teuchos::null),
-		     Alpha(Teuchos::null), Beta(Teuchos::null), D(Teuchos::null), rTz_old(Teuchos::null),
+		     Alpha(Teuchos::null), Beta(Teuchos::null), Beta_i(0),
+                     D(Teuchos::null), rTz_old(Teuchos::null),
 		     Delta(Teuchos::null), LUUTAU(Teuchos::null), ipiv(Teuchos::null)
     {}
   };
 
   //@}
 
-  template<class ScalarType, class MV, class OP>
-  class RCGIter : virtual public Iteration<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class RCGIter : virtual public Iteration<ScalarType,MV,OP,DM> {
 
   public:
 
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef DenseMatTraits<ScalarType,DM>    DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
 
@@ -134,7 +132,7 @@ namespace Belos {
      */
     RCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 		const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-		const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+		const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 		Teuchos::ParameterList &params );
 
     //! Destructor.
@@ -173,14 +171,14 @@ namespace Belos {
     * \note For any pointer in \c newstate which directly points to the multivectors in
     * the solver, the data is not copied.
     */
-    void initialize(RCGIterState<ScalarType,MV> &newstate);
+    void initialize(RCGIterState<ScalarType,MV,DM> &newstate);
 
    /*! \brief Initialize the solver with the initial vectors from the linear problem
     *  or random data.
     */
     void initialize()
     {
-      RCGIterState<ScalarType,MV> empty;
+      RCGIterState<ScalarType,MV,DM> empty;
       initialize(empty);
     }
 
@@ -231,12 +229,6 @@ namespace Belos {
     //! \brief Set the maximum number of blocks used by the iterative solver.
     void setNumBlocks(int numBlocks) { setSize( recycleBlocks_, numBlocks ); };
 
-    //! Get the maximum number of recycled blocks used by the iterative solver in solving this linear problem.
-    int getRecycledBlocks() const { return recycleBlocks_; }
-
-    //! \brief Set the maximum number of recycled blocks used by the iterative solver.
-    void setRecycledBlocks(int recycleBlocks) { setSize( recycleBlocks, numBlocks_ ); };
-
     //! Get the blocksize to be used by the iterative solver in solving this linear problem.
     int getBlockSize() const { return 1; }
 
@@ -265,7 +257,7 @@ namespace Belos {
     //
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >    stest_;
 
     //
     // Algorithmic parameters
@@ -308,27 +300,30 @@ namespace Belos {
     Teuchos::RCP<MV> U_, AU_;
     //
     // Coefficients arising in RCG iteration
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Alpha_,Beta_,D_;
+    Teuchos::RCP<std::vector<ScalarType> > Alpha_;
+    Teuchos::RCP<std::vector<ScalarType> > Beta_;
+    int Beta_i_;
+    Teuchos::RCP<std::vector<ScalarType> > D_;
     //
     // Solutions to local least-squares problems
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Delta_;
+    Teuchos::RCP<DM> Delta_;
     //
     // The LU factorization of the matrix U^T A U
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > LUUTAU_;
+    Teuchos::RCP<DM> LUUTAU_;
     //
     // Data from LU factorization of UTAU
     Teuchos::RCP<std::vector<int> > ipiv_;
     //
     // The scalar r'*z
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > rTz_old_;
+    Teuchos::RCP<std::vector<ScalarType> > rTz_old_;
   };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  RCGIter<ScalarType,MV,OP>::RCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  template<class ScalarType, class MV, class OP, class DM>
+  RCGIter<ScalarType,MV,OP,DM>::RCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 				     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-				     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+				     const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 					   Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -355,8 +350,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
-  template <class ScalarType, class MV, class OP>
-  void RCGIter<ScalarType,MV,OP>::setSize( int recycleBlocks, int numBlocks )
+  template <class ScalarType, class MV, class OP, class DM>
+  void RCGIter<ScalarType,MV,OP,DM>::setSize( int recycleBlocks, int numBlocks )
   {
 
     TEUCHOS_TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "Belos::RCGIter::setSize() was passed a non-positive argument for \"Num Blocks\".");
@@ -370,8 +365,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void RCGIter<ScalarType,MV,OP>::initialize(RCGIterState<ScalarType,MV> &newstate)
+  template <class ScalarType, class MV, class OP, class DM>
+  void RCGIter<ScalarType,MV,OP,DM>::initialize(RCGIterState<ScalarType,MV,DM> &newstate)
   {
 
     if (newstate.P != Teuchos::null &&
@@ -398,6 +393,7 @@ namespace Belos {
       AU_ = newstate.AU;
       Alpha_ = newstate.Alpha;
       Beta_ = newstate.Beta;
+      Beta_i_ = newstate.Beta_i;
       D_ = newstate.D;
       Delta_ = newstate.Delta;
       LUUTAU_ = newstate.LUUTAU;
@@ -454,8 +450,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void RCGIter<ScalarType,MV,OP>::iterate()
+  template <class ScalarType, class MV, class OP, class DM>
+  void RCGIter<ScalarType,MV,OP,DM>::iterate()
   {
     TEUCHOS_TEST_FOR_EXCEPTION( initialized_ == false, CGIterateFailure,
                         "Belos::RCGIter::iterate(): RCGIter class not initialized." );
@@ -469,7 +465,8 @@ namespace Belos {
 
     // Allocate memory for scalars
     std::vector<int> index(1);
-    Teuchos::SerialDenseMatrix<int,ScalarType> pAp(1,1), rTz(1,1);
+    std::vector<ScalarType> pAp(1);
+    std::vector<ScalarType> rTz(1);
 
     // Get the current solution std::vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
@@ -500,22 +497,22 @@ namespace Belos {
       lp_->applyOp( *p_, *Ap_ );
 
       // d = p'*Ap;
-      MVT::MvTransMv( one, *p_, *Ap_, pAp );
-      (*D_)(i_,0) = pAp(0,0);
+      MVT::MvDot( *p_, *Ap_, pAp );
+      (*D_)[i_] = pAp[0];
 
       // alpha = rTz_old / pAp
-      (*Alpha_)(i_,0) = (*rTz_old_)(0,0) / pAp(0,0);
+      (*Alpha_)[i_] = (*rTz_old_)[0] / pAp[0];
 
       // Check that alpha is a positive number
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(pAp(0,0)) <= zero, CGPositiveDefiniteFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(pAp[0]) <= zero, CGPositiveDefiniteFailure,
                                   "Belos::RCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
       // x = x + (alpha * p);
-      MVT::MvAddMv( one, *cur_soln_vec, (*Alpha_)(i_,0), *p_, *cur_soln_vec );
+      MVT::MvAddMv( one, *cur_soln_vec, (*Alpha_)[i_], *p_, *cur_soln_vec );
       lp_->updateSolution();
 
       // r = r - (alpha * Ap);
-      MVT::MvAddMv( one, *r_, -(*Alpha_)(i_,0), *Ap_, *r_ );
+      MVT::MvAddMv( one, *r_, -(*Alpha_)[i_], *Ap_, *r_ );
 
       std::vector<MagnitudeType> norm(1);
       MVT::MvNorm( *r_, norm );
@@ -533,13 +530,13 @@ namespace Belos {
       }
 
       // rTz_new = r'*z;
-      MVT::MvTransMv( one, *r_, *z_, rTz );
+      MVT::MvDot( *r_, *z_, rTz );
 
       // beta = rTz_new/rTz_old;
-      (*Beta_)(i_,0) = rTz(0,0) / (*rTz_old_)(0,0);
+      (*Beta_)[Beta_i_] = rTz[0] / (*rTz_old_)[0];
 
       // rTz_old = rTz_new;
-      (*rTz_old_)(0,0) = rTz(0,0);
+      (*rTz_old_) = rTz;
 
       // get pointer for next p
       index.resize( 1 );
@@ -548,22 +545,27 @@ namespace Belos {
 
       if (existU_) {
         // mu = UTAU \ (AU'*z);
-        Teuchos::SerialDenseMatrix<int,ScalarType> mu( Teuchos::View, *Delta_, recycleBlocks_, 1, 0, i_ );
-        MVT::MvTransMv( one, *AU_, *z_, mu );
+        Teuchos::RCP<DM> mu = DMT::Subview( *Delta_, recycleBlocks_, 1, 0, i_+1 );
+        MVT::MvTransMv( one, *AU_, *z_, *mu );
+
+        DMT::SyncDeviceToHost( *mu );
+        DMT::SyncDeviceToHost( *LUUTAU_ );
         char TRANS = 'N';
         int info;
-        lapack.GETRS( TRANS, recycleBlocks_, 1, LUUTAU_->values(), LUUTAU_->stride(), &(*ipiv_)[0], mu.values(), mu.stride(), &info );
+        lapack.GETRS( TRANS, recycleBlocks_, 1, DMT::GetConstRawHostPtr(*LUUTAU_), DMT::GetStride(*LUUTAU_), 
+                      &(*ipiv_)[0], DMT::GetRawHostPtr(*mu), DMT::GetStride(*mu), &info );
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, CGIterationLAPACKFailure,
                            "Belos::RCGIter::solve(): LAPACK GETRS failed to compute a solution.");
+        DMT::SyncHostToDevice( *mu );
         // p = -(U*mu) + (beta*p) + z (in two steps)
         // p = (beta*p) + z;
-        MVT::MvAddMv( (*Beta_)(i_,0), *p_, one, *z_, *pnext_ );
+        MVT::MvAddMv( (*Beta_)[Beta_i_], *p_, one, *z_, *pnext_ );
         // pnext = -(U*mu) + (one)*pnext;
-        MVT::MvTimesMatAddMv( -one, *U_, mu, one, *pnext_ );
+        MVT::MvTimesMatAddMv( -one, *U_, *mu, one, *pnext_ );
       }
       else {
         // p = (beta*p) + z;
-        MVT::MvAddMv( (*Beta_)(i_,0), *p_, one, *z_, *pnext_ );
+        MVT::MvAddMv( (*Beta_)[Beta_i_], *p_, one, *z_, *pnext_ );
       }
 
       // Done with this view; release pointer
@@ -572,6 +574,7 @@ namespace Belos {
 
       // increment iteration count and dimension index
       i_++;
+      Beta_i_++;
       iter_++;
       curDim_++;
 

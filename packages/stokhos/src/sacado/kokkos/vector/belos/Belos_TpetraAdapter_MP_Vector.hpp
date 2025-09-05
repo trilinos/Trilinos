@@ -14,6 +14,7 @@
 #include "Belos_Tpetra_MP_Vector.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "KokkosBlas.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #ifdef HAVE_BELOS_TSQR
 #  include <Tpetra_TsqrAdaptor_MP_Vector.hpp>
