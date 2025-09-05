@@ -28,7 +28,14 @@
 #undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
 #endif
 
-namespace Kokkos {
+#if (KOKKOS_VERSION > 40700) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY) \
+&& !defined(SACADO_DISABLE_FAD_VIEW_SPEC) 
+#define SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+#endif
+
+
+#ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+namespace Sacado {
 
 // Whether a given type is a view with Sacado FAD scalar type
 template <typename view_type>
@@ -36,6 +43,20 @@ struct is_view_fad;
 
 }
 
+namespace Kokkos {
+using Sacado::is_view_fad;
+}
+#else
+namespace Kokkos {
+
+// Whether a given type is a view with Sacado FAD scalar type
+template <typename view_type>
+struct is_view_fad;
+
+}
+#endif
+
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 // Make sure the user really wants these View specializations
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
@@ -376,6 +397,7 @@ void KOKKOS_INLINE_FUNCTION local_deep_copy_contiguous(
 } // namespace Kokkos
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#endif
 
 #endif // defined(HAVE_SACADO_KOKKOS)
 
