@@ -257,7 +257,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
         mueluFactory->SetupHierarchy(*H);
 
-        if (strncmp(fileList[i].c_str(), "reuse", 5) == 0) {
+        if (xmlFile.find("reuse") != std::string::npos) {
           // Build the Hierarchy the second time
           // Should be faster if we actually do the reuse
           A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());

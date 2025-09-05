@@ -447,6 +447,14 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   //    std::cout<<"*** Default Manager ***"<<std::endl;
   //    defaultManager->Print();
 
+  MUELU_SET_VAR_2LIST(paramList, paramList, "reuse: type", std::string, reuseType);
+  const bool doPcoarsen
+#ifdef HAVE_MUELU_INTREPID2
+      = (paramList.isParameter("pcoarsen: schedule") && paramList.isParameter("pcoarsen: element"));
+#else
+      = false;
+#endif
+
   // Create level specific factory managers
   for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
     // Note, that originally if there were no level specific parameters, we
@@ -462,8 +470,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // We do this so the parameters on the level get flagged correctly as "used"
       ParameterList& levelList = paramList.sublist("level " + toString(levelID), true /*mustAlreadyExist*/);
       UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
-
-    } else {
+    } else if ((reuseType != "none") || doPcoarsen) {
       ParameterList levelList;
       UpdateFactoryManager(levelList, paramList, *levelManager, levelID, keeps);
     }
@@ -700,9 +707,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                    FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
   MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
   MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
-  bool useMaxAbsDiagonalScaling = false;
-  if (defaultList.isParameter("sa: use rowsumabs diagonal scaling"))
-    useMaxAbsDiagonalScaling = defaultList.get<bool>("sa: use rowsumabs diagonal scaling");
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use rowsumabs diagonal scaling", bool, useMaxAbsDiagonalScaling);
 
   // === Smoothing ===
   // FIXME: should custom smoother check default list too?
@@ -1329,7 +1334,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   if (!paramList.isParameter("rap: triple product") &&
       paramList.isType<std::string>("multigrid algorithm") &&
       paramList.get<std::string>("multigrid algorithm") == "unsmoothed")
-    paramList.set("rap: triple product", true);
+    RAPparams.set("rap: triple product", true);
   else
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: triple product", bool, RAPparams);
 
