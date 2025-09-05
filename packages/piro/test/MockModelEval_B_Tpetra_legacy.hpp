@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef MOCKMODELEVAL_B_TPETRA_H
-#define MOCKMODELEVAL_B_TPETRA_H
+#ifndef MOCKMODELEVAL_B_TPETRA_LEGACY_H
+#define MOCKMODELEVAL_B_TPETRA_LEGACY_H
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
@@ -42,7 +42,7 @@ typedef Thyra::TpetraOperatorVectorExtraction<
  * solution is p = (6,4).
  */
 
-class MockModelEval_B_Tpetra
+class MockModelEval_B_Tpetra_legacy
     : public Piro::TransientDecorator<double>
 {
   public:
@@ -51,11 +51,11 @@ class MockModelEval_B_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint = false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false);
+  MockModelEval_B_Tpetra_legacy(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint = false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false);
 
   //@}
 
-  ~MockModelEval_B_Tpetra();
+  ~MockModelEval_B_Tpetra_legacy();
 
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */

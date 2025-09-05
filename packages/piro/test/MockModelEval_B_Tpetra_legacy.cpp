@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-#include "MockModelEval_B_Tpetra.hpp"
+#include "MockModelEval_B_Tpetra_legacy.hpp"
 #include "Thyra_LinearOpWithSolveBase_decl.hpp"
 
 
@@ -16,18 +16,18 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MockModelEval_B_Tpetra::MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool /*adjoint*/, const Teuchos::RCP<Teuchos::ParameterList>& problemList, bool hessianSupport) //problem is self-adjoint
+MockModelEval_B_Tpetra_legacy::MockModelEval_B_Tpetra_legacy(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool /*adjoint*/, const Teuchos::RCP<Teuchos::ParameterList>& problemList, bool hessianSupport) //problem is self-adjoint
  {
     comm = appComm;
     hessSupport = hessianSupport;
 
     //set up map and initial guess for solution vector
-    const int vecLength = 4;
+    const int vecLength = 1;
     x_map = rcp(new Tpetra_Map(vecLength, 0, comm));
     x_vec = rcp(new Tpetra_Vector(x_map));
     x_dot_vec = rcp(new Tpetra_Vector(x_map));
     x_dotdot_vec = rcp(new Tpetra_Vector(x_map));
-    x_vec->putScalar(3.0);
+    x_vec->putScalar(0.0);
     x_dot_vec->putScalar(1.0);
     x_dotdot_vec->putScalar(0.0);
 
@@ -39,7 +39,7 @@ MockModelEval_B_Tpetra::MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos:
     g_map = rcp(new const Tpetra_Map(numResponses , 0, comm, Tpetra::LocallyReplicated));
 
     //set up parameters
-    const int numParameters= 2;
+    const int numParameters= 1;
     p_map = rcp(new const Tpetra_Map(numParameters, 0, comm, Tpetra::LocallyReplicated));
 
     Teuchos::RCP<const Thyra::VectorSpaceBase<double>> p_space =
@@ -99,12 +99,12 @@ MockModelEval_B_Tpetra::MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos:
     probList_ = problemList;
 }
 
-MockModelEval_B_Tpetra::~MockModelEval_B_Tpetra()
+MockModelEval_B_Tpetra_legacy::~MockModelEval_B_Tpetra_legacy()
 {
 }
 
 Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
-MockModelEval_B_Tpetra::get_x_space() const
+MockModelEval_B_Tpetra_legacy::get_x_space() const
 {
   Teuchos::RCP<const Thyra::VectorSpaceBase<double>> x_space =
       Thyra::createVectorSpace<double>(x_map);
@@ -112,7 +112,7 @@ MockModelEval_B_Tpetra::get_x_space() const
 }
 
 Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
-MockModelEval_B_Tpetra::get_f_space() const
+MockModelEval_B_Tpetra_legacy::get_f_space() const
 {
   Teuchos::RCP<const Thyra::VectorSpaceBase<double>> f_space =
       Thyra::createVectorSpace<double>(x_map);
@@ -120,7 +120,7 @@ MockModelEval_B_Tpetra::get_f_space() const
 }
 
 Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
-MockModelEval_B_Tpetra::get_p_space(int l) const
+MockModelEval_B_Tpetra_legacy::get_p_space(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
@@ -133,11 +133,11 @@ MockModelEval_B_Tpetra::get_p_space(int l) const
 }
 
 Teuchos::RCP<const Thyra::VectorSpaceBase<double>>
-MockModelEval_B_Tpetra::get_g_space(int l) const
+MockModelEval_B_Tpetra_legacy::get_g_space(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
-                     "Error!  MockModelEval_B_Tpetra::get_g_map() only " <<
+                     "Error!  MockModelEval_B_Tpetra_legacy::get_g_map() only " <<
                      " supports 1 response.  Supplied index l = " <<
                      l << std::endl);
   Teuchos::RCP<const Thyra::VectorSpaceBase<double>> g_space =
@@ -145,7 +145,7 @@ MockModelEval_B_Tpetra::get_g_space(int l) const
   return g_space;
 }
 
-RCP<const  Teuchos::Array<std::string> > MockModelEval_B_Tpetra::get_p_names(int l) const
+RCP<const  Teuchos::Array<std::string> > MockModelEval_B_Tpetra_legacy::get_p_names(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(l != 0, std::logic_error,
                      std::endl <<
@@ -167,7 +167,7 @@ RCP<const  Teuchos::Array<std::string> > MockModelEval_B_Tpetra::get_p_names(int
 
 
 Teuchos::RCP<Thyra::LinearOpBase<double>>
-MockModelEval_B_Tpetra::create_W_op() const
+MockModelEval_B_Tpetra_legacy::create_W_op() const
 {
   const Teuchos::RCP<Tpetra_Operator> W =
       Teuchos::rcp(new Tpetra_CrsMatrix(crs_graph));
@@ -176,19 +176,19 @@ MockModelEval_B_Tpetra::create_W_op() const
 
 //! Create preconditioner operator
 Teuchos::RCP<Thyra::PreconditionerBase<double>>
-MockModelEval_B_Tpetra::create_W_prec() const
+MockModelEval_B_Tpetra_legacy::create_W_prec() const
 {
   return Teuchos::null;
 }
 
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double>>
-MockModelEval_B_Tpetra::get_W_factory() const
+MockModelEval_B_Tpetra_legacy::get_W_factory() const
 {
   return Teuchos::null;
 }
 
 Teuchos::RCP<Thyra::LinearOpBase<double>>
-MockModelEval_B_Tpetra::create_hess_g_pp( int j, int l1, int l2 ) const
+MockModelEval_B_Tpetra_legacy::create_hess_g_pp( int j, int l1, int l2 ) const
 {
   const Teuchos::RCP<Tpetra_Operator> H =
       Teuchos::rcp(new Tpetra_CrsMatrix(hess_crs_graph));
@@ -196,39 +196,39 @@ MockModelEval_B_Tpetra::create_hess_g_pp( int j, int l1, int l2 ) const
 }
 
 Thyra::ModelEvaluatorBase::InArgs<double>
-MockModelEval_B_Tpetra::getNominalValues() const
+MockModelEval_B_Tpetra_legacy::getNominalValues() const
 {
   return nominalValues;
 }
 
 Thyra::ModelEvaluatorBase::InArgs<double>
-MockModelEval_B_Tpetra::getLowerBounds() const
+MockModelEval_B_Tpetra_legacy::getLowerBounds() const
 {
   return lowerBounds;
 }
 
 Thyra::ModelEvaluatorBase::InArgs<double>
-MockModelEval_B_Tpetra::getUpperBounds() const
+MockModelEval_B_Tpetra_legacy::getUpperBounds() const
 {
   return upperBounds;
 }
 
 
 Thyra::ModelEvaluatorBase::InArgs<double>
-MockModelEval_B_Tpetra::createInArgs() const
+MockModelEval_B_Tpetra_legacy::createInArgs() const
 {
   return this->createInArgsImpl();
 }
 
 void
-MockModelEval_B_Tpetra::reportFinalPoint(
+MockModelEval_B_Tpetra_legacy::reportFinalPoint(
     const Thyra::ModelEvaluatorBase::InArgs<double>& /* finalPoint */,
     const bool /* wasSolved */) {
   // Do nothing  
 }
 
 Thyra::ModelEvaluatorBase::OutArgs<double>
-MockModelEval_B_Tpetra::createOutArgsImpl() const
+MockModelEval_B_Tpetra_legacy::createOutArgsImpl() const
 {
   Thyra::ModelEvaluatorBase::OutArgsSetup<double> result;
   result.setModelEvalDescription(this->description());
@@ -255,7 +255,7 @@ MockModelEval_B_Tpetra::createOutArgsImpl() const
   return result;
 }
 
-void MockModelEval_B_Tpetra::evalModelImpl(
+void MockModelEval_B_Tpetra_legacy::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<double>&  inArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<double>& outArgs) const
 {
@@ -264,7 +264,7 @@ void MockModelEval_B_Tpetra::evalModelImpl(
 
   const Teuchos::RCP<const Tpetra_Vector> x_in =
       ConverterT::getConstTpetraVector(inArgs.get_x());
-  if (!Teuchos::nonnull(x_in)) std::cerr << "ERROR: MockModelEval_B_Tpetra requires x as inargs\n";
+  if (!Teuchos::nonnull(x_in)) std::cerr << "ERROR: MockModelEval_B_Tpetra_legacy requires x as inargs\n";
 
   const Teuchos::RCP<const Tpetra_Vector> x_dot_in =
       Teuchos::nonnull(inArgs.get_x_dot()) ?
@@ -394,81 +394,79 @@ void MockModelEval_B_Tpetra::evalModelImpl(
   auto x = x_in->getData();
   auto p = p_vec->getData();
 
-  if (f_out != Teuchos::null) {
+  const double damping = 0;
+  if (Teuchos::nonnull(f_out)) {
     f_out->putScalar(0.0);
     auto f_out_data = f_out->getDataNonConst();
     for (int i=0; i<myVecLength; i++)
-      f_out_data[i] = x[i];
+      f_out_data[i] = -p[0];
+
+    if (Teuchos::nonnull(x_dotdot_in)) {
+      // f(x, x_dot) = x_dotdot - f(x)
+      auto f_out_data = f_out->getDataNonConst();
+      for (int i=0; i<myVecLength; i++) {
+        f_out_data[i] = x_dotdot_in->getData()[i] - f_out->getData()[i];
+      }
+    }
+
+    if (Teuchos::nonnull(f_out) && Teuchos::nonnull(x_dot_in)) {
+      // f(x, x_dot) = f(x) -  damping * x_dot
+      auto f_out_data = f_out->getDataNonConst();
+      for (int i=0; i<myVecLength; i++) {
+        f_out_data[i] += damping * x_dot_in->getData()[i];
+      }
+    }
   }
+
   if (W_out != Teuchos::null) {
     Teuchos::RCP<Tpetra_CrsMatrix> W_out_crs =
       Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(W_out, true);
     W_out_crs->resumeFill();
     W_out_crs->setAllToScalar(0.0);
 
-    double diag=1.0;
+    double diag=0.0;
     for (int i=0; i<myVecLength; i++)
       W_out_crs->replaceLocalValues(i, 1, &diag, &i);
-    if(!Teuchos::nonnull(x_dot_in))
-      W_out_crs->fillComplete();
-  }
 
-  auto hess_g_pp = outArgs.supports(Thyra::ModelEvaluator<double>::OUT_ARG_hess_g_pp,0,0,0) ? outArgs.get_hess_g_pp(0,0,0) : Teuchos::null; 
-  const Teuchos::RCP<MatrixBased_LOWS> H_pp_out =
-    Teuchos::nonnull(hess_g_pp) ?
-      Teuchos::rcp_dynamic_cast<MatrixBased_LOWS>(outArgs.get_hess_g_pp(0,0,0)):
-      Teuchos::null;
+    double alpha = inArgs.get_alpha();
+    double beta = inArgs.get_beta();
+    double omega = inArgs.get_W_x_dot_dot_coeff();
 
-  // Response: g = 0.5*(p0-6)^2 + 0.5*c*(p1-4)^2 + 0.5*(p0+p1-10)^2
-  // min g(x(p), p) s.t. f(x, p) = 0 reached for p0 = 6, p1 = 4
-
-  double term1, term2, term3, c;
-  term1 = p[0]-6;
-  term2 = p[1]-4;
-  term3 = p[0]+p[1]-10;
-  c = 5;
-
-  if (Teuchos::nonnull(H_pp_out)) {
-    Teuchos::RCP<Tpetra_CrsMatrix> H_pp_out_crs =
-      Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(ConverterT::getTpetraOperator(H_pp_out->getMatrix()), true);
-    H_pp_out_crs->resumeFill();
-    H_pp_out_crs->setAllToScalar(0.0);
-
-    if (comm->getRank() == 0) {
-      std::vector<double> vals = {2, 1};
-      std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices = {0, 1};
-      H_pp_out_crs->replaceGlobalValues(0, 2, &vals[0], &indices[0]);
-      vals[0] = 1;
-      vals[1] = 1+c;
-      H_pp_out_crs->replaceGlobalValues(1, 2, &vals[0], &indices[0]);
-    }
-    H_pp_out_crs->fillComplete();
-
-      if(probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").isSublist("H_pp Solver")) {
-        auto pl = probList_->sublist("Hessian").sublist("Response 0").sublist("Parameter 0").sublist("H_pp Solver");
-        H_pp_out->initializeSolver(Teuchos::rcpFromRef(pl));
+    // W(x, x_dot, x_dotdot) = omega * Id + alpha * damping * Id - beta * W(x)
+    if (Teuchos::nonnull(x_dotdot_in)) {
+      W_out_crs->resumeFill();
+      W_out_crs->scale(-beta);
+      diag = omega;
+      for (int i=0; i<myVecLength; i++) {
+        W_out_crs->sumIntoLocalValues(i, 1, &diag, &i);
       }
+    }
+
+    if (Teuchos::nonnull(x_dot_in)) {
+      W_out_crs->resumeFill();
+      diag = alpha*damping;
+      for (int i=0; i<myVecLength; i++) {
+        W_out_crs->sumIntoLocalValues(i, 1, &diag, &i);
+      }
+    }
+    
+    W_out_crs->fillComplete();
   }
 
   if (Teuchos::nonnull(dfdp_out)) {
-    dfdp_out->putScalar(0.0);
-    auto dfdp_out_data_0 = dfdp_out->getVectorNonConst(0)->getDataNonConst();
-    auto dfdp_out_data_1 = dfdp_out->getVectorNonConst(1)->getDataNonConst();
-    for (int i=0; i<myVecLength; i++)
-      dfdp_out_data_1[i] = 0.0;
+    if (Teuchos::nonnull(x_dotdot_in))
+      dfdp_out->putScalar(1.0);
+    else
+      dfdp_out->putScalar(-1.0);
   }
 
   if (Teuchos::nonnull(g_out)) {
-    g_out->getDataNonConst()[0] = 0.5*term1*term1 + 0.5*c*term2*term2 + 0.5*term3*term3;
+    double mean = x_in->meanValue();
+    g_out->getDataNonConst()[0] = mean;
   }
 
   if (dgdx_out != Teuchos::null) {
-    dgdx_out->putScalar(0);
-  }
-  if (dgdp_out != Teuchos::null) {
-    dgdp_out->putScalar(0.0);
-    dgdp_out->getVectorNonConst(0)->getDataNonConst()[0] = term1+term3;
-    dgdp_out->getVectorNonConst(0)->getDataNonConst()[1] = c*term2+term3;
+    dgdx_out->putScalar(1.0/x_in->getGlobalLength());
   }
 
   if (Teuchos::nonnull(f_hess_xx_v_out)) {
@@ -502,51 +500,15 @@ void MockModelEval_B_Tpetra::evalModelImpl(
   if (Teuchos::nonnull(g_hess_pp_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
     const auto direction_p = p_direction->getVector(0)->getData();
-    g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[0] = 2*direction_p[0]+direction_p[1];
-    g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[1] = direction_p[0]+(c+1)*direction_p[1];
+    g_hess_pp_v_out->getVectorNonConst(0)->putScalar(0);
   }
 
   // Modify for time dependent (implicit time integration or eigensolves)
-  if (Teuchos::nonnull(x_dot_in) || Teuchos::nonnull(x_dot_in) ) {
-    // Velocity provided: Time dependent problem
-    double alpha = inArgs.get_alpha();
-    double beta = inArgs.get_beta();
-    if (alpha==0.0 && beta==0.0) {
-      std::cerr << "MockModelEval Warning: alpha=beta=0 -- setting beta=1\n";
-      beta = 1.0;
-    }
 
-    if (Teuchos::nonnull(f_out) && Teuchos::nonnull(x_dotdot_in)) {
-      // f(x, x_dot) = f(x) - x_dot
-      auto f_out_data = f_out->getDataNonConst();
-      for (int i=0; i<myVecLength; i++) {
-        f_out_data[i] = -x_dot_in->getData()[i] + f_out->getData()[i];
-      }
-    }
-    if (Teuchos::nonnull(f_out) && Teuchos::nonnull(x_dotdot_in)) {
-      auto f_out_data = f_out->getDataNonConst();
-      for (int i=0; i<myVecLength; i++) {
-        f_out_data[i] = -x_dotdot_in->getData()[i] + f_out->getData()[i];
-      }
-    }
-    if ((W_out != Teuchos::null) && Teuchos::nonnull(x_dot_in)) {
-      // W(x, x_dot) = beta * W(x) - alpha * Id
-      const Teuchos::RCP<Tpetra_CrsMatrix> W_out_crs =
-        Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(W_out, true);
-      W_out_crs->resumeFill();
-      W_out_crs->scale(beta);
-
-      const double diag = -alpha;
-      for (int i=0; i<myVecLength; i++) {
-        W_out_crs->sumIntoLocalValues(i, 1, &diag, &i);
-      }
-      W_out_crs->fillComplete();
-    }
-  }
 }
 
 Thyra::ModelEvaluatorBase::InArgs<double>
-MockModelEval_B_Tpetra::createInArgsImpl() const
+MockModelEval_B_Tpetra_legacy::createInArgsImpl() const
 {
   Thyra::ModelEvaluatorBase::InArgsSetup<double> result;
   result.setModelEvalDescription(this->description());
@@ -557,6 +519,7 @@ MockModelEval_B_Tpetra::createInArgsImpl() const
   result.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_t, true);
   result.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_alpha, true);
   result.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_beta, true);
+  result.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_W_x_dot_dot_coeff,true);
 
   result.set_Np_Ng(1,1);
 

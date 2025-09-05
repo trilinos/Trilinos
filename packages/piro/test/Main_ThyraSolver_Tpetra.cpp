@@ -53,18 +53,24 @@ int main(int argc, char *argv[]) {
 
     Piro::SolverFactory solverFactory;
 
-    int numTests = 3;
+    int numTests = 5;
 
     for (int iTest = 0; iTest < numTests; iTest++) {
         if (doAll) {
             switch (iTest) {
                 case 0:
-                    inputFile = "input_Solve_NOX_ForwardSensitivities_Thyra.xml";
+                    inputFile = "input_Solve_NOX_ForwardSensitivities_MatrixFree_Thyra.xml";
                     break;
                 case 1:
-                    inputFile = "input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml";
+                    inputFile = "input_Solve_NOX_ForwardSensitivities_Thyra.xml";
                     break;
                 case 2:
+                    inputFile = "input_Solve_LOCA_Thyra.xml";
+                    break;
+                case 3:
+                    inputFile = "input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml";
+                    break;
+                case 4:
                     inputFile = "input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml";
                     break;
                 default:
