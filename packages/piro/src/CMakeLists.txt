@@ -77,8 +77,6 @@ IF (Piro_ENABLE_NOX)
     Piro_LOCAAdaptiveSolver.hpp
     Piro_LOCAAdaptiveSolver_Def.hpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.hpp
-    Piro_VelocityVerletSolver.hpp
-    Piro_VelocityVerletSolver_Def.hpp
     Piro_TrapezoidRuleSolver.hpp
     Piro_TrapezoidRuleSolver_Def.hpp
     Piro_TransientDecorator.hpp

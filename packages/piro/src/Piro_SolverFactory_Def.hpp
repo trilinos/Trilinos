@@ -14,7 +14,6 @@
 #include "Thyra_AdaptiveSolutionManager.hpp"
 #include "Piro_LOCASolver.hpp"
 #include "Piro_LOCAAdaptiveSolver.hpp"
-#include "Piro_VelocityVerletSolver.hpp"
 #include "Piro_TrapezoidRuleSolver.hpp"
 #endif /* HAVE_PIRO_NOX */
 
@@ -44,10 +43,6 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 #ifdef HAVE_PIRO_NOX
   if (solverType == "NOX") {
     result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, adjointModel, observer));
-  } else
-  if (solverType == "Velocity Verlet") {
-    result = Teuchos::rcp(new VelocityVerletSolver<Scalar>(
-         piroParams, model, solMgr, observer));
   } else
   if (solverType == "Trapezoid Rule") {
     result = Teuchos::rcp(new TrapezoidRuleSolver<Scalar>(
@@ -94,10 +89,6 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > SolverFactory::crea
 #ifdef HAVE_PIRO_NOX
   if (solverType == "NOX") {
     result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, adjointModel, observer));
-  } else
-  if (solverType == "Velocity Verlet") {
-    result = Teuchos::rcp(new VelocityVerletSolver<Scalar>( 
-         piroParams, model, Teuchos::null, observer));
   } else
   if (solverType == "Trapezoid Rule") {
     result = Teuchos::rcp(new TrapezoidRuleSolver<Scalar>(
