@@ -298,6 +298,111 @@ void ChebyshevKernel<TpetraOperatorType>::
   }
 }
 
+// W := alpha * D * (B - A*X) + beta * W.
+// X := X + W
+template <class WVector,
+          class XVector,
+          class DVector,
+          class BVector,
+          class VVector,
+          class AMatrix,
+          class Scalar>
+static void
+unfused_chebyshev_kernel_vector(const Scalar& alpha,
+                                WVector& W,
+                                XVector& X,
+                                const DVector& D_inv,
+                                VVector& V1,
+                                const BVector& B,
+                                const AMatrix& A,
+                                const Scalar& beta) {
+  using STS = Teuchos::ScalarTraits<Scalar>;
+
+  // V1 = B - A*X
+  Tpetra::Details::residual(A, X, B, V1);
+
+  if (B.getNumVectors() == 1) {
+    using execution_space = typename AMatrix::node_type::execution_space;
+    using range_type      = Kokkos::RangePolicy<typename AMatrix::local_ordinal_type, execution_space>;
+
+    auto lclX     = X.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    auto lclW     = W.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    auto lclD_inv = D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto lclV1    = V1.getLocalViewDevice(Tpetra::Access::ReadOnly);
+
+    Kokkos::parallel_for(
+        "Ifpack2::Details_ChebychevKernel::unfused",
+        range_type(0, lclX.extent(0)),
+        KOKKOS_LAMBDA(const typename AMatrix::local_ordinal_type i) {
+          lclW(i, 0) = alpha * lclD_inv(i, 0) * lclV1(i, 0) + beta * lclW(i, 0);
+          lclX(i, 0) += lclW(i, 0);
+        });
+  } else {
+    // W := alpha * D_inv * V1 + beta * W
+    W.elementWiseMultiply(alpha, D_inv, V1, beta);
+
+    // X := X + W
+    X.update(STS::one(), W, STS::one());
+  }
+}
+
+// W := alpha * D * (B - A*Z) + beta * W.
+// Z := Z + W
+// X := X + gamma * W
+template <class WVector,
+          class XVector,
+          class DVector,
+          class BVector,
+          class VVector,
+          class AMatrix,
+          class ZVector,
+          class Scalar>
+static void
+unfused_chebyshev_kernel_vector(const Scalar& alpha,
+                                WVector& W,
+                                ZVector& Z,
+                                const DVector& D_inv,
+                                VVector& V1,
+                                const BVector& B,
+                                const AMatrix& A,
+                                XVector& X,
+                                const Scalar& beta,
+                                const Scalar& gamma) {
+  using STS = Teuchos::ScalarTraits<Scalar>;
+
+  // V1 = B - A*Z
+  Tpetra::Details::residual(A, Z, B, V1);
+
+  if (B.getNumVectors() == 1) {
+    using execution_space = typename AMatrix::node_type::execution_space;
+    using range_type      = Kokkos::RangePolicy<typename AMatrix::local_ordinal_type, execution_space>;
+
+    auto lclZ     = Z.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    auto lclW     = W.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    auto lclD_inv = D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto lclV1    = V1.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto lclX     = X.getLocalViewDevice(Tpetra::Access::ReadWrite);
+
+    Kokkos::parallel_for(
+        "Ifpack2::Details_ChebychevKernel::unfused4th",
+        range_type(0, lclZ.extent(0)),
+        KOKKOS_LAMBDA(const typename AMatrix::local_ordinal_type i) {
+          lclW(i, 0) = alpha * lclD_inv(i, 0) * lclV1(i, 0) + beta * lclW(i, 0);
+          lclZ(i, 0) += lclW(i, 0);
+          lclX(i, 0) += gamma * lclW(i, 0);
+        });
+  } else {
+    // W := alpha * D_inv * V1 + beta * W
+    W.elementWiseMultiply(alpha, D_inv, V1, beta);
+
+    // Z := Z + W
+    Z.update(STS::one(), W, STS::one());
+
+    // X := X + gamma*W
+    X.update(gamma, W, STS::one());
+  }
+}
+
 template <class TpetraOperatorType>
 void ChebyshevKernel<TpetraOperatorType>::
     compute(multivector_type& W,
@@ -318,7 +423,46 @@ void ChebyshevKernel<TpetraOperatorType>::
     fusedCase(*W_vec_, alpha, D_inv, *B_vec_, *A_crs_, *X_vec_, beta);
   } else {
     TEUCHOS_ASSERT(!A_op_.is_null());
-    unfusedCase(W, alpha, D_inv, B, *A_op_, X, beta);
+    if (V1_.get() == nullptr) {
+      using MV             = multivector_type;
+      const size_t numVecs = B.getNumVectors();
+      V1_                  = std::unique_ptr<MV>(new MV(B.getMap(), numVecs));
+    }
+    unfused_chebyshev_kernel_vector(alpha, W, X, D_inv, *V1_, B, *A_op_, beta);
+  }
+}
+
+template <class TpetraOperatorType>
+void ChebyshevKernel<TpetraOperatorType>::
+    compute(multivector_type& W,
+            const SC& alpha,
+            vector_type& D_inv,
+            multivector_type& B,
+            multivector_type& Z,
+            multivector_type& X,
+            const SC& beta,
+            const SC& gamma) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using STS = Teuchos::ScalarTraits<SC>;
+
+  if (canFuse(B)) {
+    // "nonconst" here has no effect other than on the return type.
+    W_vec_ = W.getVectorNonConst(0);
+    B_vec_ = B.getVectorNonConst(0);
+    Z_vec_ = Z.getVectorNonConst(0);
+    X_vec_ = X.getVectorNonConst(0);
+    TEUCHOS_ASSERT(!A_crs_.is_null());
+    fusedCase(*W_vec_, alpha, D_inv, *B_vec_, *A_crs_, *Z_vec_, beta);
+    X.update(gamma, W, STS::one());
+  } else {
+    TEUCHOS_ASSERT(!A_op_.is_null());
+    if (V1_.get() == nullptr) {
+      using MV             = multivector_type;
+      const size_t numVecs = B.getNumVectors();
+      V1_                  = std::unique_ptr<MV>(new MV(B.getMap(), numVecs));
+    }
+    unfused_chebyshev_kernel_vector(alpha, W, Z, D_inv, *V1_, B, *A_op_, X, beta, gamma);
   }
 }
 
@@ -345,34 +489,6 @@ bool ChebyshevKernel<TpetraOperatorType>::
   return B.getNumVectors() == size_t(1) &&
          !A_crs_.is_null() &&
          exp_.is_null();
-}
-
-template <class TpetraOperatorType>
-void ChebyshevKernel<TpetraOperatorType>::
-    unfusedCase(multivector_type& W,
-                const SC& alpha,
-                vector_type& D_inv,
-                multivector_type& B,
-                const operator_type& A,
-                multivector_type& X,
-                const SC& beta) {
-  using STS = Teuchos::ScalarTraits<SC>;
-  if (V1_.get() == nullptr) {
-    using MV             = multivector_type;
-    const size_t numVecs = B.getNumVectors();
-    V1_                  = std::unique_ptr<MV>(new MV(B.getMap(), numVecs));
-  }
-  const SC one = Teuchos::ScalarTraits<SC>::one();
-
-  // V1 = B - A*X
-  Tpetra::deep_copy(*V1_, B);
-  A.apply(X, *V1_, Teuchos::NO_TRANS, -one, one);
-
-  // W := alpha * D_inv * V1 + beta * W
-  W.elementWiseMultiply(alpha, D_inv, *V1_, beta);
-
-  // X := X + W
-  X.update(STS::one(), W, STS::one());
 }
 
 template <class TpetraOperatorType>
