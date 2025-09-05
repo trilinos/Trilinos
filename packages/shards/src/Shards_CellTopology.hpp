@@ -442,9 +442,8 @@ public:
       return m_cell->permutation[permutation_ord].node[node_ord];
     }
   
-  /** \brief  Permutation of a cell's node ordinals.
+  /** \brief  Polarity of a cell's permutation.
    *  \param  permutation_ordinal [in]
-   *  \param  node_ordinal        [in]
    */
   unsigned getNodePermutationPolarity( const unsigned permutation_ord ) const
     {
