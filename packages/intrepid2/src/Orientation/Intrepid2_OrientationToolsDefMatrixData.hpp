@@ -196,76 +196,10 @@ namespace Intrepid2 {
 //                std::cout << "]\n";
 //              }
             }
-            // initialize operator
-            const int numRows = static_cast<int>(nonIdentityDofs.size());
-            Kokkos::View<ordinal_type*,DT> rowIndices("OrientationOperator: rowIndices", numRows);
-            Kokkos::View<ordinal_type*,DT> offsetForRowOrdinal("OrientationOperator: rowOffsets", numRows+1); // convenient to be able to check the "next" row offset to get a column count, even when on the last row
-            Kokkos::View<ordinal_type*,DT> packedColumnIndices("OrientationOperator: packedColumnIndices", rowOffset);
-            Kokkos::View<double*,      DT> packedWeights("OrientationOperator: packedWeights", rowOffset);
             
-            auto rowIndicesHost          = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowIndices);
-            auto offsetForRowOrdinalHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), offsetForRowOrdinal);
-            auto packedColumnIndicesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedColumnIndices);
-            auto packedWeightsHost       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedWeights);
-            
-            // for convenience of the code below, put the "next" rowOffset at the end:
             rowOffsets.push_back(rowOffset);
-            for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
-            {
-              rowIndicesHost(rowOrdinal)          = nonIdentityDofs[rowOrdinal];
-              int thisRowOffset                   = rowOffsets[rowOrdinal];
-              int nextRowOffset                   = rowOffsets[rowOrdinal+1];
-              offsetForRowOrdinalHost(rowOrdinal) = thisRowOffset;
-              for (int i=thisRowOffset; i<nextRowOffset; i++)
-              {
-                packedColumnIndicesHost(i) = colIDs[i];
-                packedWeightsHost(i)       = weights[i];
-              }
-            }
-            offsetForRowOrdinalHost(numRows) = rowOffset;
-            
-//            {
-//              // DEBUGGING:
-//              std::cout << "packed version: ";
-//              if (numRows == 0)
-//              {
-//                std::cout << "[ identity ]\n";
-//              }
-//              else
-//              {
-//                std::cout << "\nrow IDs: ";
-//                for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
-//                {
-//                  std::cout << rowIndices[rowOrdinal] << " ";
-//                }
-//                std::cout << std::endl;
-//                std::cout << "row offsets: ";
-//                for (int rowOrdinal=0; rowOrdinal<=numRows; rowOrdinal++)
-//                {
-//                  std::cout << rowOffsets[rowOrdinal] << " ";
-//                }
-//                std::cout << std::endl;
-//                std::cout << "col IDs: ";
-//                for (int i=0; i<rowOffset; i++)
-//                {
-//                  std::cout << colIDs[i] << " ";
-//                }
-//                std::cout << std::endl;
-//                std::cout << "weights: ";
-//                for (int i=0; i<rowOffset; i++)
-//                {
-//                  std::cout << weights[i] << " ";
-//                }
-//                std::cout << std::endl;
-//              }
-//            }
-            
-            Kokkos::deep_copy(rowIndices, rowIndicesHost);
-            Kokkos::deep_copy(offsetForRowOrdinal, offsetForRowOrdinalHost);
-            Kokkos::deep_copy(packedColumnIndices, packedColumnIndicesHost);
-            Kokkos::deep_copy(packedWeights, packedWeightsHost);
-            
-            OrientationOperator<DT> orientationOperator(rowIndices, offsetForRowOrdinal, packedColumnIndices, packedWeights);
+            bool transpose = false;
+            OrientationOperator<DT> orientationOperator = constructOrientationOperatorInternal(nonIdentityDofs, rowOffsets, colIDs, weights, transpose);
             operatorsHost(edgeId, edgeOrt) = orientationOperator;
           }
         }
@@ -416,76 +350,9 @@ namespace Intrepid2 {
 //                // DEBUGGING
 //                std::cout << "]\n";
 //              }
-              // initialize operator
-              const int numRows = static_cast<int>(nonIdentityDofs.size());
-              Kokkos::View<ordinal_type*,DT> rowIndices("OrientationOperator: rowIndices", numRows);
-              Kokkos::View<ordinal_type*,DT> offsetForRowOrdinal("OrientationOperator: rowOffsets", numRows+1); // convenient to be able to check the "next" row offset to get a column count, even when on the last row
-              Kokkos::View<ordinal_type*,DT> packedColumnIndices("OrientationOperator: packedColumnIndices", rowOffset);
-              Kokkos::View<double*,      DT> packedWeights("OrientationOperator: packedWeights", rowOffset);
-              
-              auto rowIndicesHost          = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowIndices);
-              auto offsetForRowOrdinalHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), offsetForRowOrdinal);
-              auto packedColumnIndicesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedColumnIndices);
-              auto packedWeightsHost       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedWeights);
-              
-              // for convenience of the code below, put the "next" rowOffset at the end:
               rowOffsets.push_back(rowOffset);
-              for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
-              {
-                rowIndicesHost(rowOrdinal)          = nonIdentityDofs[rowOrdinal];
-                int thisRowOffset                   = rowOffsets[rowOrdinal];
-                int nextRowOffset                   = rowOffsets[rowOrdinal+1];
-                offsetForRowOrdinalHost(rowOrdinal) = thisRowOffset;
-                for (int i=thisRowOffset; i<nextRowOffset; i++)
-                {
-                  packedColumnIndicesHost(i) = colIDs[i];
-                  packedWeightsHost(i)       = weights[i];
-                }
-              }
-              offsetForRowOrdinalHost(numRows) = rowOffset;
-              
-//              {
-//                // DEBUGGING:
-//                std::cout << "packed version: ";
-//                if (numRows == 0)
-//                {
-//                  std::cout << "[ identity ]\n";
-//                }
-//                else
-//                {
-//                  std::cout << "\nrow IDs: ";
-//                  for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
-//                  {
-//                    std::cout << rowIndices[rowOrdinal] << " ";
-//                  }
-//                  std::cout << std::endl;
-//                  std::cout << "row offsets: ";
-//                  for (int rowOrdinal=0; rowOrdinal<=numRows; rowOrdinal++)
-//                  {
-//                    std::cout << rowOffsets[rowOrdinal] << " ";
-//                  }
-//                  std::cout << std::endl;
-//                  std::cout << "col IDs: ";
-//                  for (int i=0; i<rowOffset; i++)
-//                  {
-//                    std::cout << colIDs[i] << " ";
-//                  }
-//                  std::cout << std::endl;
-//                  std::cout << "weights: ";
-//                  for (int i=0; i<rowOffset; i++)
-//                  {
-//                    std::cout << weights[i] << " ";
-//                  }
-//                  std::cout << std::endl;
-//                }
-//              }
-              
-              Kokkos::deep_copy(rowIndices, rowIndicesHost);
-              Kokkos::deep_copy(offsetForRowOrdinal, offsetForRowOrdinalHost);
-              Kokkos::deep_copy(packedColumnIndices, packedColumnIndicesHost);
-              Kokkos::deep_copy(packedWeights, packedWeightsHost);
-              
-              OrientationOperator<DT> orientationOperator(rowIndices, offsetForRowOrdinal, packedColumnIndices, packedWeights);
+              bool transpose = false;
+              OrientationOperator<DT> orientationOperator = constructOrientationOperatorInternal(nonIdentityDofs, rowOffsets, colIDs, weights, transpose);
               operatorsHost(faceId, faceOrt) = orientationOperator;
             } // if (ordFace != -1)
           }
@@ -754,8 +621,19 @@ namespace Intrepid2 {
   std::tuple<typename OrientationTools<DT>::OperatorViewType, typename OrientationTools<DT>::OperatorViewType>
   OrientationTools<DT>::createOperators(const BasisType* basis) {
     Kokkos::push_finalize_hook( [=] {
-      edgeOperatorData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::OperatorViewType>();
-      faceOperatorData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::OperatorViewType>();
+      OrientationOperator<DT> emptyOp;
+      using ExecutionSpace = typename DT::execution_space;
+      for (auto entry : edgeOperatorData)
+      {
+        entry.second = OperatorViewType();
+      }
+      for (auto entry : faceOperatorData)
+      {
+        entry.second = OperatorViewType();
+      }
+      
+      edgeOperatorData.clear();
+      faceOperatorData.clear();
     });
 
     const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
@@ -787,8 +665,19 @@ namespace Intrepid2 {
   std::tuple<typename OrientationTools<DT>::OperatorViewType, typename OrientationTools<DT>::OperatorViewType>
   OrientationTools<DT>::createInvOperators(const BasisType* basis) {
     Kokkos::push_finalize_hook( [=] {
-      invEdgeOperatorData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::OperatorViewType>();
-      invFaceOperatorData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::OperatorViewType>();
+      OrientationOperator<DT> emptyOp;
+      using ExecutionSpace = typename DT::execution_space;
+      for (auto entry : invEdgeOperatorData)
+      {
+        entry.second = OperatorViewType();
+      }
+      for (auto entry : invFaceOperatorData)
+      {
+        entry.second = OperatorViewType();
+      }
+      
+      invEdgeOperatorData.clear();
+      invFaceOperatorData.clear();
     });
 
     const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
@@ -819,6 +708,85 @@ namespace Intrepid2 {
   void OrientationTools<DT>::clearCoeffMatrix() {
     ortCoeffData.clear();
     ortInvCoeffData.clear();
+  }
+
+  template<typename DT>
+  OrientationOperator<DT> OrientationTools<DT>::constructOrientationOperatorInternal(const std::vector<ordinal_type> &nonIdentityDofs,
+                                                                                     const std::vector<ordinal_type> &rowOffsets,
+                                                                                     const std::vector<ordinal_type> &colIDs,
+                                                                                     const std::vector<double> &weights, const bool transpose)
+  {
+    static bool hookRegistered = false;
+    if (!hookRegistered)
+    {
+      Kokkos::push_finalize_hook( [=] {
+        doubleViewAllocations.clear();
+        ordinalViewAllocations.clear();
+      });
+      hookRegistered = true;
+    }
+    
+    const int numRows = static_cast<int>(nonIdentityDofs.size());
+    if (numRows > 0)
+    {
+      if (!transpose)
+      {
+        const int numWeights = rowOffsets[numRows];
+        Kokkos::View<ordinal_type*,DT> rowIndices("OrientationOperator: rowIndices", numRows);
+        Kokkos::View<ordinal_type*,DT> offsetForRowOrdinal("OrientationOperator: rowOffsets", numRows+1); // convenient to be able to check the "next" row offset to get a column count, even when on the last row
+        Kokkos::View<ordinal_type*,DT> packedColumnIndices("OrientationOperator: packedColumnIndices", numWeights);
+        Kokkos::View<double*,      DT> packedWeights("OrientationOperator: packedWeights", numWeights);
+        
+        auto rowIndicesHost          = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowIndices);
+        auto offsetForRowOrdinalHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), offsetForRowOrdinal);
+        auto packedColumnIndicesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedColumnIndices);
+        auto packedWeightsHost       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), packedWeights);
+        
+        for (int rowOrdinal=0; rowOrdinal<numRows; rowOrdinal++)
+        {
+          rowIndicesHost(rowOrdinal)          = nonIdentityDofs[rowOrdinal];
+          int thisRowOffset                   = rowOffsets[rowOrdinal];
+          int nextRowOffset                   = rowOffsets[rowOrdinal+1];
+          offsetForRowOrdinalHost(rowOrdinal) = thisRowOffset;
+          for (int i=thisRowOffset; i<nextRowOffset; i++)
+          {
+            packedColumnIndicesHost(i) = colIDs[i];
+            packedWeightsHost(i)       = weights[i];
+          }
+        }
+        offsetForRowOrdinalHost(numRows) = numWeights;
+        
+        Kokkos::deep_copy(rowIndices, rowIndicesHost);
+        Kokkos::deep_copy(offsetForRowOrdinal, offsetForRowOrdinalHost);
+        Kokkos::deep_copy(packedColumnIndices, packedColumnIndicesHost);
+        Kokkos::deep_copy(packedWeights, packedWeightsHost);
+        
+        // statically store the managed views
+        ordinalViewAllocations.push_back(rowIndices);
+        ordinalViewAllocations.push_back(offsetForRowOrdinal);
+        ordinalViewAllocations.push_back(packedColumnIndices);
+        doubleViewAllocations.push_back(packedWeights);
+        
+        using UnmanagedDoubleView  = OrientationOperator<DT>::UnmanagedDoubleView;
+        using UnmanagedOrdinalView = OrientationOperator<DT>::UnmanagedOrdinalView;
+        
+        UnmanagedOrdinalView rowIndicesUnmanaged         (rowIndices.data(),          rowIndices.extent(0));
+        UnmanagedOrdinalView offsetForRowOrdinalUnmanaged(offsetForRowOrdinal.data(), offsetForRowOrdinal.extent(0));
+        UnmanagedOrdinalView packedColumnIndicesUnmanaged(packedColumnIndices.data(), packedColumnIndices.extent(0));
+        UnmanagedDoubleView  packedWeightsUnmanaged      (packedWeights.data(),       packedWeights.extent(0));
+        
+        OrientationOperator<DT> orientationOperator(rowIndicesUnmanaged, offsetForRowOrdinalUnmanaged,
+                                                    packedColumnIndicesUnmanaged, packedWeightsUnmanaged);
+        
+        return orientationOperator;
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "transpose support not yet implemented");
+      }
+    }
+    // identity; nothing to allocate or store
+    return OrientationOperator<DT>();
   }
 }
 

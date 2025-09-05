@@ -34,18 +34,21 @@ namespace Intrepid2 {
   template<class DeviceType>
   class OrientationOperator {
   public:
-    // only stores deviations from the identity
-    Kokkos::View<ordinal_type*,DeviceType> rowIndices; // index in basis
-    Kokkos::View<ordinal_type*,DeviceType> offsetsForRowOrdinal; // ordinal into _rowIndices; offset gives index for _packedColumnIndices and _packedWeights
-    Kokkos::View<ordinal_type*,DeviceType> packedColumnIndices; // ordinal into _rowIndices
-    Kokkos::View<double*,DeviceType> packedWeights; // ordinal into _rowIndices
-  public:
-    OrientationOperator(Kokkos::View<ordinal_type*,DeviceType> rowIndices_,
-                        Kokkos::View<ordinal_type*,DeviceType> offsetsForRowOrdinal_,
-                        Kokkos::View<ordinal_type*,DeviceType> packedColumnIndices_,
-                        Kokkos::View<double*,DeviceType>       packedWeights_);
+    using UnmanagedOrdinalView = Kokkos::View<ordinal_type*, typename DeviceType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+    using UnmanagedDoubleView  = Kokkos::View<      double*, typename DeviceType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     
-    OrientationOperator() {}
+    // only stores deviations from the identity
+    UnmanagedOrdinalView rowIndices; // index in basis
+    UnmanagedOrdinalView offsetsForRowOrdinal; // ordinal into _rowIndices; offset gives index for _packedColumnIndices and _packedWeights
+    UnmanagedOrdinalView packedColumnIndices; // ordinal into _rowIndices
+    UnmanagedDoubleView packedWeights; // ordinal into _rowIndices
+  public:
+    OrientationOperator(UnmanagedOrdinalView rowIndices_,
+                        UnmanagedOrdinalView offsetsForRowOrdinal_,
+                        UnmanagedOrdinalView packedColumnIndices_,
+                        UnmanagedDoubleView       packedWeights_);
+    
+    OrientationOperator();
   };
 }
 

@@ -23,15 +23,19 @@
 namespace Intrepid2 {
 
 template<class DeviceType>
-OrientationOperator<DeviceType>::OrientationOperator(Kokkos::View<ordinal_type*,DeviceType> rowIndices_,
-                                                     Kokkos::View<ordinal_type*,DeviceType> offsetsForRowOrdinal_,
-                                                     Kokkos::View<ordinal_type*,DeviceType> packedColumnIndices_,
-                                                     Kokkos::View<double*,DeviceType>       packedWeights_)
+OrientationOperator<DeviceType>::OrientationOperator(typename OrientationOperator<DeviceType>::UnmanagedOrdinalView rowIndices_,
+                                                     typename OrientationOperator<DeviceType>::UnmanagedOrdinalView offsetsForRowOrdinal_,
+                                                     typename OrientationOperator<DeviceType>::UnmanagedOrdinalView packedColumnIndices_,
+                                                     typename OrientationOperator<DeviceType>::UnmanagedDoubleView  packedWeights_)
 :
 rowIndices(rowIndices_),
 offsetsForRowOrdinal(offsetsForRowOrdinal_),
 packedColumnIndices(packedColumnIndices_),
 packedWeights(packedWeights_)
+{}
+
+template<class DeviceType>
+OrientationOperator<DeviceType>::OrientationOperator()
 {}
 
 } // namespace Intrepid2
