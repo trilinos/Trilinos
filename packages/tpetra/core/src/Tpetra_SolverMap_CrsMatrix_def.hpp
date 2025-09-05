@@ -106,7 +106,7 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( Orig
     newColMap_localSize += newColMap_extraSize;
 
     // Instantiate newColMap_globalColIndices with the correct size 'newColMap_localSize'
-    Kokkos::View< GlobalOrdinal*, typename Node::device_type::execution_space > newColMap_globalColIndices("", newColMap_localSize);
+    Kokkos::View< GlobalOrdinal*, typename Node::device_type > newColMap_globalColIndices("", newColMap_localSize);
 
     // Fill newColMap_globalColIndices with the global indices of all entries in origDomainMap
     {
@@ -129,7 +129,7 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( Orig
                       GlobalOrdinal const globalColIndex( localOrigColMap.getGlobalElement(i) );
                     //if (origDomainMap->isNodeGlobalElement( globalColIndex ) == false) {
                       if (localOrigDomainMap.getLocalElement( globalColIndex ) == ::Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
-                        newColMap_globalColIndices[origDomainMap_localSize + jToUpdate] = globalColIndex;
+                        newColMap_globalColIndices(origDomainMap_localSize + jToUpdate) = globalColIndex;
                         jToUpdate += 1;
                       }
                     };
