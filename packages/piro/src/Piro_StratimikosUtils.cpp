@@ -22,7 +22,7 @@ Piro::extractStratimikosParams(const Teuchos::RCP<Teuchos::ParameterList> &piroP
   else if (solverToken == "Tempus") {
     result = Teuchos::sublist(Teuchos::sublist(piroParams, "Tempus"), "Stratimikos");
   } 
-  else if (solverToken == "Trapezoid Rule") {
+  else if ((solverToken == "Trapezoid Rule") || (solverToken == "Velocity Verlet")) {
     result = Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(Teuchos::sublist(
                 piroParams, "NOX"), "Direction"), "Newton"), "Stratimikos Linear Solver"), "Stratimikos");
   }

@@ -57,14 +57,14 @@ VelocityVerletSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
   numTimeSteps = vvPL->get("Num Time Steps", 10);
   t_final = vvPL->get("Final Time", 0.1);
   t_init  = vvPL->get("Initial Time", 0.0);
-  delta_t = t_final / numTimeSteps;
+  delta_t = (t_final - t_init) / numTimeSteps;
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
   bool lump = vvPL->get("Lump Mass Matrix", false);
   bool isConstMass = vvPL->get("Constant Mass Matrix", false); 
   *out << "\nB) Using InvertMassMatrix Decorator\n";
   model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-           sublist(vvPL,"Stratimikos", true), origModel,
+           sublist(appParams,"Stratimikos", true), origModel,
            isConstMass, lump, true));
 }
 
@@ -260,7 +260,7 @@ Piro::VelocityVerletSolver<Scalar>::evalModelImpl(
            (DMEWSF->getUnderlyingModel());
 
   TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(dec), std::logic_error,
-      "Underlying model in VelovityVerletSolver does not cast to a Piro::TransientDecorator<Scalar>\n"); 
+      "Underlying model in VelocityVerletSolver does not cast to a Piro::TransientDecorator<Scalar>\n"); 
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> > a = dec->get_x_dotdot()->clone_v();
 
