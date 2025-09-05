@@ -1789,8 +1789,8 @@ public:
      // solve the coarse system
      timer->start("applyMGAugmentedKKT-coarse");
      {
-       auto pint_u = ROL::makePtrFromRef(dynamic_cast<const PinTVector<Real>&>(u));
-       auto pint_z = ROL::makePtrFromRef(dynamic_cast<const PinTVector<Real>&>(z));
+       auto lpint_u = ROL::makePtrFromRef(dynamic_cast<const PinTVector<Real>&>(u));
+       auto lpint_z = ROL::makePtrFromRef(dynamic_cast<const PinTVector<Real>&>(z));
 
        auto dx_u = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*dx).get(0));
        auto dx_z = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*dx).get(1));
@@ -1800,23 +1800,23 @@ public:
        auto residual_z = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*residual).get(1));
        auto residual_v = dynamicPtrCast<PinTVector<Real>>(dynamic_cast<PartitionedVector&>(*residual).get(2));
 
-       auto crs_u            = hierarchy_.allocateSimVector(*pint_u,level+1);
+       auto crs_u            = hierarchy_.allocateSimVector(*lpint_u,level+1);
 
-       auto crs_residual_u   = hierarchy_.allocateSimVector(*pint_u,level+1);
-       auto crs_residual_v   = hierarchy_.allocateSimVector(*pint_u,level+1);
-       auto crs_correction_u = hierarchy_.allocateSimVector(*pint_u,level+1);
-       auto crs_correction_v = hierarchy_.allocateSimVector(*pint_u,level+1);
+       auto crs_residual_u   = hierarchy_.allocateSimVector(*lpint_u,level+1);
+       auto crs_residual_v   = hierarchy_.allocateSimVector(*lpint_u,level+1);
+       auto crs_correction_u = hierarchy_.allocateSimVector(*lpint_u,level+1);
+       auto crs_correction_v = hierarchy_.allocateSimVector(*lpint_u,level+1);
 
-       auto crs_z            = hierarchy_.allocateOptVector(*pint_z,level+1);
-       auto crs_residual_z   = hierarchy_.allocateOptVector(*pint_z,level+1);
-       auto crs_correction_z = hierarchy_.allocateOptVector(*pint_z,level+1);
+       auto crs_z            = hierarchy_.allocateOptVector(*lpint_z,level+1);
+       auto crs_residual_z   = hierarchy_.allocateOptVector(*lpint_z,level+1);
+       auto crs_correction_z = hierarchy_.allocateOptVector(*lpint_z,level+1);
 
        hierarchy_.restrictSimVector(residual_u,crs_residual_u,level);
        hierarchy_.restrictOptVector(residual_z,crs_residual_z,level);
        hierarchy_.restrictSimVector(residual_v,crs_residual_v,level);
 
-       hierarchy_.restrictSimVector(pint_u,crs_u,level);               // restrict the state to the coarse level
-       hierarchy_.restrictOptVector(pint_z,crs_z,level);               // restrict the control to the coarse level
+       hierarchy_.restrictSimVector(lpint_u,crs_u,level);               // restrict the state to the coarse level
+       hierarchy_.restrictOptVector(lpint_z,crs_z,level);               // restrict the control to the coarse level
 
        if(hierarchy_.levelIsActiveOnMyRank(level+1)) {
          typedef std::vector<ROL::Ptr<ROL::Vector<Real>>> vector;
