@@ -125,19 +125,21 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( Orig
     // *****************************************************************
     {
       size_t j(0);
-      auto lambda = KOKKOS_LAMBDA(size_t const i, size_t & jToUpdate) -> void {
+      auto lambda = KOKKOS_LAMBDA(size_t const i, size_t & jToUpdate, bool const final) -> void {
                       GlobalOrdinal const globalColIndex( localOrigColMap.getGlobalElement(i) );
                     //if (origDomainMap->isNodeGlobalElement( globalColIndex ) == false) {
                       if (localOrigDomainMap.getLocalElement( globalColIndex ) == ::Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
-                        newColMap_globalColIndices(origDomainMap_localSize + jToUpdate) = globalColIndex;
+                        if (final) {
+                          newColMap_globalColIndices(origDomainMap_localSize + jToUpdate) = globalColIndex;
+                        }
                         jToUpdate += 1;
                       }
                     };
-      Kokkos::parallel_reduce( "Tpetra::SolverMap_CrsMatrix::construct::appendNewColMap"
-                             , Kokkos::RangePolicy<typename Node::device_type::execution_space, size_t>(0, origColMap_localSize)
-                             , lambda
-                             , j
-                             );
+      Kokkos::parallel_scan( "Tpetra::SolverMap_CrsMatrix::construct::appendNewColMap"
+                           , Kokkos::RangePolicy<typename Node::device_type::execution_space, size_t>(0, origColMap_localSize)
+                           , lambda
+                           , j
+                           );
     }
 
     // *****************************************************************
