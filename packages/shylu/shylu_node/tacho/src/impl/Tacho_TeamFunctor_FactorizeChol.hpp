@@ -109,7 +109,7 @@ public:
         const value_type one(1), minus_one(-1), zero(0);
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         if (_ldl) {
-          // Apply L^{-T} on off-diagonal
+          // Apply L^{-1} on off-diagonal
           Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
                                                                                     ATR);
           member.team_barrier();

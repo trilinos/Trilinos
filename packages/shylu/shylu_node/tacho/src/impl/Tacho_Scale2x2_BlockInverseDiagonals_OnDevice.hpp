@@ -81,5 +81,38 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> {
   }
 };
 
+template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::OnDevice> {
+  template <typename MemberType, typename ViewTypeD, typename ViewTypeA>
+  inline static int invoke(MemberType &exec_instance, const ViewTypeD &D, const ViewTypeA &A) {
+    typedef typename ViewTypeA::non_const_value_type value_type;
+
+    const ordinal_type m = A.extent(0), n = A.extent(1);
+    if (A.extent(0) == D.extent(0)) {
+      if (A.span() > 0) {
+        using exec_space = MemberType;
+
+        if (n == 1) {
+          Kokkos::RangePolicy<exec_space> policy(exec_instance, 0, m);
+          Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
+              const value_type a00 = D(i, i);
+              A(i, 0) /= a00;
+          });
+        } else {
+          using policy_type = Kokkos::TeamPolicy<exec_space>;
+          policy_type policy(exec_instance, m, Kokkos::AUTO);
+          Kokkos::parallel_for(
+            policy, KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+              const ordinal_type i = member.league_rank();
+              const value_type a00 = D(i, i);
+              Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
+                                   [=](const ordinal_type &j) { A(i, j) /= a00; });
+          });
+        }
+      }
+    }
+    return 0;
+  }
+};
+
 } // namespace Tacho
 #endif

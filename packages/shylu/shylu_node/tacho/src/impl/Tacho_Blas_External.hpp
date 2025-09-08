@@ -62,6 +62,14 @@ template <typename T> struct Blas {
                   /* */ T *b, int ldb);
 #endif
 
+  static int trmv(const char uplo, const char transa, const char diag, int m, const T *a, int lda,
+                  /* */ T *b, int incb);
+#if defined(TACHO_ENABLE_CUBLAS)
+  static int trmv(cublasHandle_t handle, const cublasFillMode_t uplo, const cublasOperation_t transa,
+                  const cublasDiagType_t diag, int m, const T *a, int lda,
+                  /* */ T *b, int incb);
+#endif
+
   static int gemm(const char transa, const char transb, int m, int n, int k, const T alpha, const T *a, int lda,
                   const T *b, int ldb, const T beta,
                   /* */ T *c, int ldc);
@@ -74,6 +82,17 @@ template <typename T> struct Blas {
   static int gemm(rocblas_handle handle, const rocblas_operation transa, const rocblas_operation transb, int m, int n,
                   int k, const T alpha, const T *a, int lda, const T *b, int ldb, const T beta,
                   /* */ T *c, int ldc);
+#endif
+
+//  static int trmm(const char transa, const char side, const char uplo, const char transa, int m, int n,
+//                  const T alpha, const T *a, int lda,
+//                                 const T *b, int ldb,
+//                  const T beta,  /* */ T *c, int ldc);
+#if defined(TACHO_ENABLE_CUBLAS)
+//  static int trmm(cublasHandle_t handle, const cublasSideMode_t side, const cublasFillMode_t uplo, const cublasOperation_t transa, const cublasDiagType_t diat, int m, int n,
+//                  const T alpha, const T *a, int lda,
+//                                 const T *b, int ldb,
+//                  const T beta,  /* */ T *c, int ldc);
 #endif
 
   static int herk(const char uplo, const char trans, int n, int k, const T alpha, const T *a, int lda, const T beta,
