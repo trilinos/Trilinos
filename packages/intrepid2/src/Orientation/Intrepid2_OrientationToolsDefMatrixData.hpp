@@ -132,20 +132,12 @@ namespace Intrepid2 {
             
             ordinal_type rowOffset = 0;
             if (ordEdge != -1) {
-//              {
-//                // DEBUGGING
-//                std::cout << "\nedge " << edgeId << ", ort " << edgeOrt << ": [";
-//              }
               const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
               const auto mat = Kokkos::subview(matDataHost,
                                                edgeId, edgeOrt,
                                                Kokkos::ALL(), Kokkos::ALL());
               
               for (ordinal_type i=0;i<ndofEdge;++i) {
-//                {
-//                  // DEBUGGING
-//                  std::cout << "[";
-//                }
                 const ordinal_type ii = tagToOrdinal(EDGE_DIM, edgeId, i);
                 
                 // first pass for ii:
@@ -165,12 +157,7 @@ namespace Intrepid2 {
                       deviatesFromIdentity = true;
                     }
                   }
-//                  {
-//                    // DEBUGGING
-//                    std::cout << mat_il << " ";
-//                  }
                 } // column
-//                std::cout << "]; ";
                 INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
                 if (deviatesFromIdentity)
                 {
@@ -191,10 +178,6 @@ namespace Intrepid2 {
                   }
                 }
               } // row
-//              {
-//                // DEBUGGING
-//                std::cout << "]\n";
-//              }
             }
             
             rowOffsets.push_back(rowOffset);
@@ -282,19 +265,6 @@ namespace Intrepid2 {
           
           const ordinal_type numFaceOrts = 2*ordinal_type(cellTopo.getSideCount(FACE_DIM,faceId));
           // 2*(#face edges): a formula that happens to work for triangles and quads: 6 triangle orientations, 8 quad orientations.
-//          {
-//            //DEBUGGING
-//            if (ordFace != -1)
-//            {
-//              const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
-//              std::cout << "face " << faceId << " dofs: [";
-//              for (ordinal_type i=0;i<ndofFace;++i) {
-//                const ordinal_type ii = tagToOrdinal(FACE_DIM, faceId, i);
-//                std::cout << ii << " ";
-//              }
-//              std::cout << "]\n";
-//            }
-//          }
           for (ordinal_type faceOrt=0; faceOrt<numFaceOrts; faceOrt++)
           {
             std::vector<ordinal_type> nonIdentityDofs;
@@ -309,16 +279,7 @@ namespace Intrepid2 {
               const auto mat = Kokkos::subview(matDataHost,
                                                numEdges*existEdgeDofs+faceId, faceOrt,
                                                Kokkos::ALL(), Kokkos::ALL());
-//              std::cout << "mat subview (" << numEdges*existEdgeDofs+faceId << "," << faceOrt << ",:,:)\n";
-//              {
-//                // DEBUGGING
-//                std::cout << "\nface " << faceId << ", ort " << faceOrt << ": [";
-//              }
               for (ordinal_type i=0;i<ndofFace;++i) {
-//                {
-//                  // DEBUGGING
-//                  std::cout << "[";
-//                }
                 
                 const ordinal_type ii = tagToOrdinal(FACE_DIM, faceId, i);
                 
@@ -339,12 +300,7 @@ namespace Intrepid2 {
                       deviatesFromIdentity = true;
                     }
                   }
-//                  {
-//                    // DEBUGGING
-//                    std::cout << mat_il << " ";
-//                  }
                 } // column
-//                std::cout << "]; ";
                 INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
                 if (deviatesFromIdentity)
                 {
@@ -366,10 +322,6 @@ namespace Intrepid2 {
                   }
                 } // if (deviatesFromIdentity)
               } // row
-//              {
-//                // DEBUGGING
-//                std::cout << "]\n";
-//              }
               rowOffsets.push_back(rowOffset);
               std::vector<bool> transposeVector {false, true};
               for (const bool transpose : transposeVector)
@@ -847,17 +799,6 @@ namespace Intrepid2 {
           colOffsets.push_back(static_cast<ordinal_type>(rowIDs.size()));
         }
         
-        // DEBUGGING
-//        {
-//          // checking one particular case
-//          if (rowIDs.size() == 4)
-//          {
-//            if ((colIDs[0] == 24) && (colIDs[1] == 40) && (colIDs[2] == 20) && (colIDs[3] == 36))
-//            {
-//              std::cout << "Got to line " << __LINE__ << " in " << __FILE__ << std::endl;
-//            }
-//          }
-//        }
         return constructOrientationOperatorInternal(nonIdentityColDofs, colOffsets, rowIDs, weightsTranspose, false);
       }
     }
