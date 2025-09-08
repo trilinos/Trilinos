@@ -311,9 +311,9 @@ class PointwiseFillReuseFunctor {
     }
   }
 };
-enum lumpingType { no_lumping,
-                   diag_lumping,
-                   distributed_lumping };
+enum lumpingType : int { no_lumping,
+                         diag_lumping,
+                         distributed_lumping };
 
 /*!
   @class PointwiseFillNoReuseFunctor
