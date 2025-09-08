@@ -303,8 +303,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   std::string levelPerformanceModel = "no";
   clp.setOption("performance-model", &levelPerformanceModel, "runs the level-by-level performance mode options- 'no', 'yes' or 'verbose'");
 
-  bool performSacrifice = Node::is_gpu;
-  clp.setOption("sacrificial-solve", "no-sacrificial-solve", &performSacrifice, "Warm up the solver using a sacrificial solve");
+  bool performSacrificeSetup = Node::is_gpu;
+  clp.setOption("sacrificial-setup", "no-sacrificial-setup", &performSacrificeSetup, "Warm up using a sacrificial setup");
+  bool performSacrificeSolve = Node::is_gpu;
+  clp.setOption("sacrificial-solve", "no-sacrificial-solve", &performSacrificeSolve, "Warm up the solver using a sacrificial solve");
 
   bool kokkosTuning = false;
 #ifdef KOKKOS_ENABLE_TUNING
@@ -583,9 +585,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         RCP<Operator> Prec;
         // Build the preconditioner numRebuilds+1 times
         if (solvePreconditioned) {
-          MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
-
-          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
+          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec, performSacrificeSetup);
         }
         comm->barrier();
         tm = Teuchos::null;
@@ -610,7 +610,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         // =========================================================================
         // Solve the system numResolves+1 times
         try {
-          SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrifice);
+          SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrificeSolve);
 
           comm->barrier();
         } catch (const std::exception& e) {
