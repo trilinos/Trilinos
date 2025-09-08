@@ -94,7 +94,7 @@ namespace Intrepid2 {
       numSubCells = (matDim1>0)*numEdges + (matDim2>0)*numFaces;
       
       operators = OperatorViewType("Orientation::EdgeOperators::"+name,
-                                   numEdges, numOrts);
+                                   numEdges, numOrts, 2);
     }
     
     // NOTE: the OrientationOperators within operatorsHost contain *device* views.
@@ -198,9 +198,13 @@ namespace Intrepid2 {
             }
             
             rowOffsets.push_back(rowOffset);
-            bool transpose = false;
-            OrientationOperator<DT> orientationOperator = constructOrientationOperatorInternal(nonIdentityDofs, rowOffsets, colIDs, weights, transpose);
-            operatorsHost(edgeId, edgeOrt) = orientationOperator;
+            std::vector<bool> transposeVector {false, true};
+            for (const bool transpose : transposeVector)
+            {
+              bool transposeInt = transpose ? 1 : 0;
+              OrientationOperator<DT> orientationOperator = constructOrientationOperatorInternal(nonIdentityDofs, rowOffsets, colIDs, weights, transpose);
+              operatorsHost(edgeId, edgeOrt, transposeInt) = orientationOperator;
+            }
           }
         }
       }
@@ -244,7 +248,7 @@ namespace Intrepid2 {
       numSubCells = (matDim1>0)*numEdges + (matDim2>0)*numFaces;
       
       operators = OperatorViewType("Orientation::FaceOperators::"+name,
-                                   numFaces, numOrts);
+                                   numFaces, numOrts, 2);
     }
     
     // NOTE: the OrientationOperators within operatorsHost contain *device* views.
@@ -274,14 +278,26 @@ namespace Intrepid2 {
       {
         for (ordinal_type faceId=0;faceId<numFaces;++faceId)
         {
+          const ordinal_type ordFace = (2 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.extent(1) ? tagToOrdinal(FACE_DIM, faceId, 0) : -1) : -1);
+//          {
+//            //DEBUGGING
+//            if (ordFace != -1)
+//            {
+//              const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
+//              std::cout << "face " << faceId << " dofs: [";
+//              for (ordinal_type i=0;i<ndofFace;++i) {
+//                const ordinal_type ii = tagToOrdinal(FACE_DIM, faceId, i);
+//                std::cout << ii << " ";
+//              }
+//              std::cout << "]\n";
+//            }
+//          }
           for (ordinal_type faceOrt=0; faceOrt<numFaceOrts; faceOrt++)
           {
             std::vector<ordinal_type> nonIdentityDofs;
             std::vector<ordinal_type> rowOffsets; // within the column storage
             std::vector<ordinal_type> colIDs;
             std::vector<double> weights;
-            
-            const ordinal_type ordFace = (2 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.extent(1) ? tagToOrdinal(FACE_DIM, faceId, 0) : -1) : -1);
             
             ordinal_type rowOffset = 0;
             
@@ -290,15 +306,16 @@ namespace Intrepid2 {
               const auto mat = Kokkos::subview(matDataHost,
                                                numEdges*existEdgeDofs+faceId, faceOrt,
                                                Kokkos::ALL(), Kokkos::ALL());
-//              {
-//                // DEBUGGING
-//                std::cout << "\nface " << faceId << ", ort " << faceOrt << ": [";
-//              }
+//              std::cout << "mat subview (" << numEdges*existEdgeDofs+faceId << "," << faceOrt << ",:,:)\n";
+              {
+                // DEBUGGING
+                std::cout << "\nface " << faceId << ", ort " << faceOrt << ": [";
+              }
               for (ordinal_type i=0;i<ndofFace;++i) {
-//                {
-//                  // DEBUGGING
-//                  std::cout << "[";
-//                }
+                {
+                  // DEBUGGING
+                  std::cout << "[";
+                }
                 
                 const ordinal_type ii = tagToOrdinal(FACE_DIM, faceId, i);
                 
@@ -319,10 +336,10 @@ namespace Intrepid2 {
                       deviatesFromIdentity = true;
                     }
                   }
-//                  {
-//                    // DEBUGGING
-//                    std::cout << mat_il << " ";
-//                  }
+                  {
+                    // DEBUGGING
+                    std::cout << mat_il << " ";
+                  }
                 } // column
 //                std::cout << "]; ";
                 INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
@@ -346,14 +363,18 @@ namespace Intrepid2 {
                   }
                 } // if (deviatesFromIdentity)
               } // row
-//              {
-//                // DEBUGGING
-//                std::cout << "]\n";
-//              }
+              {
+                // DEBUGGING
+                std::cout << "]\n";
+              }
               rowOffsets.push_back(rowOffset);
-              bool transpose = false;
-              OrientationOperator<DT> orientationOperator = constructOrientationOperatorInternal(nonIdentityDofs, rowOffsets, colIDs, weights, transpose);
-              operatorsHost(faceId, faceOrt) = orientationOperator;
+              std::vector<bool> transposeVector {false, true};
+              for (const bool transpose : transposeVector)
+              {
+                bool transposeInt = transpose ? 1 : 0;
+                OrientationOperator<DT> orientationOperator = constructOrientationOperatorInternal(nonIdentityDofs, rowOffsets, colIDs, weights, transpose);
+                operatorsHost(faceId, faceOrt, transposeInt) = orientationOperator;
+              }
             } // if (ordFace != -1)
           }
         }
@@ -782,7 +803,59 @@ namespace Intrepid2 {
       }
       else
       {
-        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "transpose support not yet implemented");
+        // for the transpose case, we construct the arguments for the non-transpose case,
+        // and then call this method with transpose = false.
+        std::map<ordinal_type, std::map<ordinal_type,double> > transposeOperator; // column to (row -> weight) lookup
+        
+        const ordinal_type numRows = static_cast<ordinal_type>(nonIdentityDofs.size());
+        for (ordinal_type rowOrdinal = 0; rowOrdinal < numRows; rowOrdinal++)
+        {
+          const ordinal_type & rowID = nonIdentityDofs[rowOrdinal];
+          const ordinal_type & rowOffset = rowOffsets[rowOrdinal];
+          
+          const ordinal_type numCols = rowOffsets[rowOrdinal+1] - rowOffset;
+          for (ordinal_type colOrdinal=0; colOrdinal<numCols; colOrdinal++)
+          {
+            const ordinal_type & colID = colIDs[rowOffset + colOrdinal];
+            const double      & weight = weights[rowOffset + colOrdinal];
+            transposeOperator[colID][rowID] = weight;
+          }
+        }
+        
+        std::vector<ordinal_type> nonIdentityColDofs;
+        std::vector<ordinal_type> colOffsets;
+        std::vector<ordinal_type> rowIDs;
+        std::vector<double> weightsTranspose;
+        
+        colOffsets.push_back(0);
+        for (const auto & entry : transposeOperator)
+        {
+          const ordinal_type & colID = entry.first;
+          nonIdentityColDofs.push_back(colID);
+          const auto & rowMap = entry.second;
+          for (const auto & rowEntry : rowMap)
+          {
+            const ordinal_type & rowID = rowEntry.first;
+            const double      & weight = rowEntry.second;
+            
+            rowIDs.push_back(rowID);
+            weightsTranspose.push_back(weight);
+          }
+          colOffsets.push_back(static_cast<ordinal_type>(rowIDs.size()));
+        }
+        
+        // DEBUGGING
+//        {
+//          // checking one particular case
+//          if (rowIDs.size() == 4)
+//          {
+//            if ((colIDs[0] == 24) && (colIDs[1] == 40) && (colIDs[2] == 20) && (colIDs[3] == 36))
+//            {
+//              std::cout << "Got to line " << __LINE__ << " in " << __FILE__ << std::endl;
+//            }
+//          }
+//        }
+        return constructOrientationOperatorInternal(nonIdentityColDofs, colOffsets, rowIDs, weightsTranspose, false);
       }
     }
     // identity; nothing to allocate or store
