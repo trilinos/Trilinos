@@ -383,9 +383,9 @@ namespace Intrepid2 {
      */
     using CoeffMatrixDataViewType = Kokkos::View<double****,DeviceType>;
 
-    /** \brief subcell ordinal, orientation
+    /** \brief subcell ordinal, orientation, transpose (0 or 1)
      */
-    using OperatorViewType = Kokkos::View<OrientationOperator<DeviceType>**,DeviceType>;
+    using OperatorViewType = Kokkos::View<OrientationOperator<DeviceType>***,DeviceType>;
     
     //
     /** \brief  key :: basis name, order, value :: matrix data view type 
@@ -397,9 +397,9 @@ namespace Intrepid2 {
     static OrtCoeffDataType ortInvCoeffData;
     
     //
-    /** \brief  key :: basis name, order, value :: matrix data view type
+    /** \brief  key :: basis name, order, value :: matrix data view type, transpose (0 for no transpose, 1 for transpose)
      */
-    using OrtOperatorDataType = std::map<std::pair<std::string,ordinal_type>,Kokkos::View<OrientationOperator<DeviceType>**,DeviceType> >;
+    using OrtOperatorDataType = std::map<std::pair<std::string,ordinal_type>,Kokkos::View<OrientationOperator<DeviceType>***,DeviceType> >;
 
     static OrtOperatorDataType edgeOperatorData;
     static OrtOperatorDataType invEdgeOperatorData;
