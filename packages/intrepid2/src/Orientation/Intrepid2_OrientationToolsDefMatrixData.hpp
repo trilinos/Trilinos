@@ -228,7 +228,7 @@ namespace Intrepid2 {
 
     auto matDataHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), matData);
 
-    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0, numFaceOrts = 0, numSubCells;
+    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0, maxFaceOrts = 0, numSubCells;
     const auto cellTopo = basis->getBaseCellTopology();
     {
       const ordinal_type numEdges = cellTopo.getSubcellCount(EDGE_DIM);
@@ -240,8 +240,8 @@ namespace Intrepid2 {
       }
       for(ordinal_type i=0; i<numFaces; ++i) {
         matDim2 = std::max(matDim2, basis->getDofCount(FACE_DIM,i));
-        numFaceOrts = std::max(numFaceOrts,2*ordinal_type(cellTopo.getSideCount(FACE_DIM,i)));
-        numOrts = std::max(numOrts,numFaceOrts);
+        maxFaceOrts = std::max(maxFaceOrts,2*ordinal_type(cellTopo.getSideCount(FACE_DIM,i)));
+        numOrts = std::max(numOrts,maxFaceOrts);
         // 2*(#face edges): a formula that happens to work for triangles and quads: 6 triangle orientations, 8 quad orientations.
       }
       matDim = std::max(matDim1,matDim2);
@@ -279,6 +279,9 @@ namespace Intrepid2 {
         for (ordinal_type faceId=0;faceId<numFaces;++faceId)
         {
           const ordinal_type ordFace = (2 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.extent(1) ? tagToOrdinal(FACE_DIM, faceId, 0) : -1) : -1);
+          
+          const ordinal_type numFaceOrts = 2*ordinal_type(cellTopo.getSideCount(FACE_DIM,faceId));
+          // 2*(#face edges): a formula that happens to work for triangles and quads: 6 triangle orientations, 8 quad orientations.
 //          {
 //            //DEBUGGING
 //            if (ordFace != -1)
@@ -307,15 +310,15 @@ namespace Intrepid2 {
                                                numEdges*existEdgeDofs+faceId, faceOrt,
                                                Kokkos::ALL(), Kokkos::ALL());
 //              std::cout << "mat subview (" << numEdges*existEdgeDofs+faceId << "," << faceOrt << ",:,:)\n";
-              {
-                // DEBUGGING
-                std::cout << "\nface " << faceId << ", ort " << faceOrt << ": [";
-              }
+//              {
+//                // DEBUGGING
+//                std::cout << "\nface " << faceId << ", ort " << faceOrt << ": [";
+//              }
               for (ordinal_type i=0;i<ndofFace;++i) {
-                {
-                  // DEBUGGING
-                  std::cout << "[";
-                }
+//                {
+//                  // DEBUGGING
+//                  std::cout << "[";
+//                }
                 
                 const ordinal_type ii = tagToOrdinal(FACE_DIM, faceId, i);
                 
@@ -336,10 +339,10 @@ namespace Intrepid2 {
                       deviatesFromIdentity = true;
                     }
                   }
-                  {
-                    // DEBUGGING
-                    std::cout << mat_il << " ";
-                  }
+//                  {
+//                    // DEBUGGING
+//                    std::cout << mat_il << " ";
+//                  }
                 } // column
 //                std::cout << "]; ";
                 INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
@@ -363,10 +366,10 @@ namespace Intrepid2 {
                   }
                 } // if (deviatesFromIdentity)
               } // row
-              {
-                // DEBUGGING
-                std::cout << "]\n";
-              }
+//              {
+//                // DEBUGGING
+//                std::cout << "]\n";
+//              }
               rowOffsets.push_back(rowOffset);
               std::vector<bool> transposeVector {false, true};
               for (const bool transpose : transposeVector)
