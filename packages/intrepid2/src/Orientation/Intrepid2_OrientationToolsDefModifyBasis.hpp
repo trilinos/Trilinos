@@ -115,7 +115,6 @@ namespace Intrepid2 {
         for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
           const ordinal_type ordEdge = (1 < tagToOrdinal.extent(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.extent(1) ? tagToOrdinal(1, edgeId, 0) : -1) : -1);
 
-//          bool havePrinted = false; // DEBUGGING
           if (ordEdge != -1) {
             existEdgeDofs = 1;
             const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
@@ -133,17 +132,6 @@ namespace Intrepid2 {
                     const ordinal_type ll = tagToOrdinal(1, edgeId, l);
                     auto & input_ = leftMultiply ? in.access(ll, j, k) : in.access(j, ll, k);
                     auto & mat_il = transpose ? mat(l,i) : mat(i,l);
-//                    {
-//                      // DEBUGGING
-//                      if (!havePrinted)
-//                      {
-//                    if ((ll != ii) && (std::fabs(mat_il) > 1e-15) || (mat_il != 1.) && (std::fabs(mat_il) > 1e-15))
-//                    {
-//                      std::cout << "edge mat_ij(" << ii << "," << ll << ") = " << mat_il << std::endl; // ii, ll: basis ordinals
-//                    }
-//                        havePrinted = true;
-//                      }
-//                    }
                     temp += mat_il*input_;
                   }
                   auto & output_ = leftMultiply ? out.access(ii, j, k) : out.access(j, ii, k);
@@ -163,33 +151,11 @@ namespace Intrepid2 {
         for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
           const ordinal_type ordFace = (2 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceId) < tagToOrdinal.extent(1) ? tagToOrdinal(2, faceId, 0) : -1) : -1);
 
-//          bool havePrinted = false; // DEBUGGING
           if (ordFace != -1) {
             const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
             const auto mat = Kokkos::subview(matData,
                                              numEdges*existEdgeDofs+faceId, ortFaces[faceId],
                                              Kokkos::ALL(), Kokkos::ALL());
-//            std::cout << "mat subview (" << numEdges*existEdgeDofs+faceId << "," << ortFaces[faceId] << ",:,:)\n";
-//            std::cout << "ortFaces[" << faceId << "] = " << ortFaces[faceId] << std::endl;
-            
-//            {
-//              // DEBUGGING
-//              std::cout << "[";
-//              for (ordinal_type i=0;i<ndofFace;++i)
-//              {
-//                std::cout << "[";
-//                for (ordinal_type l=0;l<ndofFace;++l)
-//                {
-//                  {
-//                    // DEBUGGING
-//                    auto & mat_il = transpose ? mat(l,i) : mat(i,l);
-//                    std::cout << mat_il << " ";
-//                  }
-//                }
-//                std::cout << "];";
-//              }
-//              std::cout << "]\n";
-//            }
             
             for (ordinal_type j=0;j<numPoints;++j)
               for (ordinal_type i=0;i<ndofFace;++i) {
@@ -201,17 +167,6 @@ namespace Intrepid2 {
                     const ordinal_type ll = tagToOrdinal(2, faceId, l);
                     auto & input_ = leftMultiply ? in.access(ll, j, k) : in.access(j, ll, k);
                     auto & mat_il = transpose ? mat(l,i) : mat(i,l);
-//                    {
-//                      // DEBUGGING
-//                      if (!havePrinted)
-//                      {
-//                    if ((ll != ii) && (std::fabs(mat_il) > 1e-15) || (mat_il != 1.) && (std::fabs(mat_il) > 1e-15))
-//                    {
-//                      std::cout << "face mat_ij(" << ii << "," << ll << ") = " << mat_il << std::endl; // ii, ll: basis ordinals
-//                    }
-//                        havePrinted = true;
-//                      }
-//                    }
                     temp += mat_il*input_;
                   }
                   
@@ -351,18 +306,6 @@ namespace Intrepid2 {
             auto & weights    = edgeOp.packedWeights;
             
             ordinal_type numRowIndices = rowIndices.extent_int(0);
-//            if (numRowIndices == 0) // DEBUGGING
-//            {
-//              {
-//                // DEBUGGING
-//                if (!havePrinted)
-//                {
-//                  // x: we don't have immediate access to *which* basis ordinal this is.
-//                  std::cout << "new edge mat_ij(x,x) = " << 1.0 << std::endl;
-//                  havePrinted = true;
-//                }
-//              }
-//            }
             for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
             {
               for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
@@ -379,15 +322,6 @@ namespace Intrepid2 {
                   {
                     const ordinal_type & j = colIndices(rowOffset);
                     const auto & mat_ij = weights(rowOffset);
-                    
-//                    {
-//                      // DEBUGGING
-//                      if (!havePrinted)
-//                      {
-//                        std::cout << "edge mat_ij(" << i << "," << j << ") = " << mat_ij << std::endl;
-//                        havePrinted = true;
-//                      }
-//                    }
                     
                     auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
                     temp += mat_ij * input_;
@@ -409,8 +343,6 @@ namespace Intrepid2 {
           // apply operators on each face
           for (ordinal_type faceId=0;faceId<numFaces;++faceId)
           {
-//            bool havePrinted = false;
-//            std::cout << "ortFaces[" << faceId << "] = " << ortFaces[faceId] << std::endl;
             auto & faceOp = faceOperatorData(faceId, ortFaces[faceId], transpose);
             auto & rowIndices = faceOp.rowIndices;
             auto & rowOffsets = faceOp.offsetsForRowOrdinal;
@@ -418,18 +350,6 @@ namespace Intrepid2 {
             auto & weights    = faceOp.packedWeights;
             
             ordinal_type numRowIndices = rowIndices.extent_int(0);
-//            if (numRowIndices == 0) // DEBUGGING
-//            {
-//              {
-                // DEBUGGING
-//                if (!havePrinted)
-//                {
-//                  // x: we don't have immediate access to *which* basis ordinal this is.
-//                  std::cout << "new face mat_ij(x,x) = " << 1.0 << std::endl;
-//                  havePrinted = true;
-//                }
-//              }
-//            }
             for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
             {
               for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
@@ -445,15 +365,6 @@ namespace Intrepid2 {
                   {
                     const ordinal_type & j = colIndices(rowOffset);
                     const auto & mat_ij = weights(rowOffset);
-                    
-//                    {
-//                      // DEBUGGING
-//                      if (!havePrinted)
-//                      {
-//                        std::cout << "face mat_ij(" << i << "," << j << ") = " << mat_ij << std::endl;
-//                        havePrinted = true;
-//                      }
-//                    }
                     
                     auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
                     temp += mat_ij * input_;
@@ -505,105 +416,44 @@ namespace Intrepid2 {
     }
 #endif
 
-    // new implementation:
-    bool runNew = true;
-    if (runNew)
-    {
-      const shards::CellTopology cellTopo = basis->getBaseCellTopology();
-      const ordinal_type  cellDim = cellTopo.getDimension();
-      
-      //Initialize output with values from input
-      if(input.rank() == output.rank())
-        Kokkos::deep_copy(output, input);
-      else
-        RealSpaceTools<DT>::clone(output, input);
-      
-      if ((cellDim < 3) || basis->requireOrientation()) {
-        auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofTags());
-        auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofOrdinal());
-        
-        const ordinal_type
-        numCells  = output.extent(0),
-        //numBasis  = output.extent(1),
-        numPoints = output.extent(2),
-        dimBasis  = output.extent(3); //returns 1 when output.rank() < 4;
-        
-        //      const CoeffMatrixDataViewType matData = createCoeffMatrix(basis);
-        
-        const auto op_tuple = createOperators(basis);
-        
-        ordinal_type numVerts(0), numEdges(0), numFaces(0);
-        
-        if (basis->requireOrientation()) {
-          numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
-          numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
-        }
-        
-        bool leftMultiply = true;
-        
-        const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
-        using FunctorType = F_modifyBasisByOrientationOperator
-        <decltype(orts),
-        decltype(output),decltype(input),
-        decltype(std::get<0>(op_tuple))>;
-        Kokkos::parallel_for
-        (policy,
-         FunctorType(orts,
-                     output, input,
-                     std::get<0>(op_tuple), std::get<1>(op_tuple), numEdges, numFaces,
-                     numPoints, dimBasis, leftMultiply, transpose));
-      }
-    }
+    const shards::CellTopology cellTopo = basis->getBaseCellTopology();
+    const ordinal_type  cellDim = cellTopo.getDimension();
     
-    // old implementation:
+    //Initialize output with values from input
+    if(input.rank() == output.rank())
+      Kokkos::deep_copy(output, input);
     else
-    {
-      const shards::CellTopology cellTopo = basis->getBaseCellTopology();
-      const ordinal_type  cellDim = cellTopo.getDimension();
-
-      //Initialize output with values from input
-      if(input.rank() == output.rank())
-        Kokkos::deep_copy(output, input);
-      else
-        RealSpaceTools<DT>::clone(output, input);
-
-      if ((cellDim < 3) || basis->requireOrientation()) {
-        auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofTags());
-        auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofOrdinal());
-
-        const ordinal_type
-          numCells  = output.extent(0),
-          //numBasis  = output.extent(1),
-          numPoints = output.extent(2),
-          dimBasis  = output.extent(3); //returns 1 when output.rank() < 4;
-
-        const CoeffMatrixDataViewType matData = createCoeffMatrix(basis);
-
-        ordinal_type numVerts(0), numEdges(0), numFaces(0);
-
-        if (basis->requireOrientation()) {
-          numVerts = cellTopo.getVertexCount()*ordinal_type(basis->getDofCount(0, 0) > 0);
-          numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
-          numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
-        }
-
-        bool leftMultiply = true;
-
-        const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
-        typedef F_modifyBasisByOrientation
-          <decltype(orts),
-           decltype(output),decltype(input),
-           decltype(ordinalToTag),decltype(tagToOrdinal),
-           decltype(matData)> FunctorType;
-        Kokkos::parallel_for
-          (policy,
-           FunctorType(orts,
-                       output, input,
-                       ordinalToTag, tagToOrdinal,
-                       matData,
-                       cellDim, numVerts, numEdges, numFaces,
-                       numPoints, dimBasis, leftMultiply, transpose));
+      RealSpaceTools<DT>::clone(output, input);
+    
+    if ((cellDim < 3) || basis->requireOrientation()) {
+      const ordinal_type
+      numCells  = output.extent(0),
+      //numBasis  = output.extent(1),
+      numPoints = output.extent(2),
+      dimBasis  = output.extent(3); //returns 1 when output.rank() < 4;
+      
+      const auto op_tuple = createOperators(basis);
+      
+      ordinal_type numVerts(0), numEdges(0), numFaces(0);
+      
+      if (basis->requireOrientation()) {
+        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
+        numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
       }
+      
+      bool leftMultiply = true;
+      
+      const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
+      using FunctorType = F_modifyBasisByOrientationOperator
+      <decltype(orts),
+      decltype(output),decltype(input),
+      decltype(std::get<0>(op_tuple))>;
+      Kokkos::parallel_for
+      (policy,
+       FunctorType(orts,
+                   output, input,
+                   std::get<0>(op_tuple), std::get<1>(op_tuple), numEdges, numFaces,
+                   numPoints, dimBasis, leftMultiply, transpose));
     }
   }
 
