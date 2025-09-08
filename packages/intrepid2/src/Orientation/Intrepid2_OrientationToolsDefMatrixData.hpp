@@ -661,19 +661,19 @@ namespace Intrepid2 {
     const auto faceFound = invFaceOperatorData.find(key);
     
     OperatorViewType edgeOperator, faceOperator;
-    if (edgeFound == edgeOperatorData.end()) {
+    if (edgeFound == invEdgeOperatorData.end()) {
       {
         auto basis_host = basis->getHostBasis();
         auto matData = createInvCoeffMatrix(basis);
-        edgeOperator = createEdgeOperatorsInternal(basis_host, matData);
+        edgeOperator = createEdgeOperatorsInternal(basis_host.get(), matData);
         invEdgeOperatorData.insert(std::make_pair(key, edgeOperator));
         
-        faceOperator = createFaceOperatorsInternal(basis_host, matData);
+        faceOperator = createFaceOperatorsInternal(basis_host.get(), matData);
         invFaceOperatorData.insert(std::make_pair(key, faceOperator));
       }
     } else {
       edgeOperator = edgeFound->second;
-      INTREPID2_TEST_FOR_EXCEPTION(faceFound == faceOperatorData.end(), std::invalid_argument, "edgeOperator found while faceOperator was not");
+      INTREPID2_TEST_FOR_EXCEPTION(faceFound == invFaceOperatorData.end(), std::invalid_argument, "edgeOperator found while faceOperator was not");
       faceOperator = faceFound->second;
     }
       
