@@ -636,6 +636,7 @@ private: // data members
   double t_init_;
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_ghosted_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
 
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;

@@ -100,6 +100,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 
   x_space_ = tof->getThyraDomainSpace();
   f_space_ = tof->getThyraRangeSpace();
+  x_space_ghosted_ = tof->getGhostedThyraDomainSpace();
 
   //
   // Setup parameters
@@ -631,7 +632,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
             //dxdotdpContainer->setOwnedVector(
             //  dxdotdpBlock->getNonconstVectorBlock(j));
             auto dxdotdpContainer = lof_->buildGhostedLinearObjContainer();
-            lof_->initializeGhostedContainer(panzer::LinearObjContainer::X,*dxdotdpContainer);
+            lof_->initializeGhostedContainer(panzer::LinearObjContainer::DxDt,*dxdotdpContainer);
             auto thContainer = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar>>(dxdotdpContainer);
             thContainer->set_dxdt_th(rcp_dynamic_cast<Thyra::VectorBase<Scalar>>(dxdotdpBlock->getNonconstVectorBlock(j)));
             string name("DXDT TANGENT GATHER CONTAINER: " +
@@ -845,7 +846,7 @@ addParameter(const Teuchos::Array<std::string> & names,
 
   // Create vector space for parameter tangent vector
   RCP< Thyra::VectorSpaceBase<double> > tan_space =
-    Thyra::multiVectorProductVectorSpace(x_space_, param->names->size());
+    Thyra::multiVectorProductVectorSpace(x_space_ghosted_, param->names->size());
   tangent_space_.push_back(tan_space);
 
   // The number of model evaluator parameters is the number of model parameters (parameters_.size()) plus a tangent
@@ -1709,7 +1710,6 @@ evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   for(std::size_t i=0;i<responses_.size();i++) {
     Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = outArgs.get_g(i);
-    std::cout << " RESPONSE " << i << " " << responses_[i]->name << std::endl;
     if(vec!=Teuchos::null) {
       std::string responseName = responses_[i]->name;
       Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Residual> > resp

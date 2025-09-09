@@ -73,6 +73,7 @@ GatherSolution_BlockedTpetra(
   indexerNames_                    = input.getIndexerNames();
   useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
   globalDataKey_                   = input.getGlobalDataKey();
+  std::cout << " GATHER GDK " << globalDataKey_ << std::endl;
 
   // allocate fields
   gatherFields_.resize(names.size());
@@ -231,6 +232,7 @@ GatherSolution_BlockedTpetra(
   indexerNames_                    = input.getIndexerNames();
   useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
   globalDataKey_                   = input.getGlobalDataKey();
+  std::cout << " GATHER GDK " << globalDataKey_ << std::endl;
 
   // allocate fields
   gatherFields_.resize(names.size());
@@ -381,7 +383,6 @@ evaluateFields(typename TRAITS::EvalData workset)
     const PHX::View<ScalarT**> fieldValues = gatherFields_[fieldIndex].get_static_view();        
 
     if (has_tangent_fields_) { 
-      //std::cout << " GATHER EVAL FIELD INDEX " << gatherFields_[fieldIndex].fieldTag() << std::endl; 
       const int numTangents = tangentFields_[fieldIndex].size();
       const auto tangentFieldsDevice = tangentFieldsVoV_.getViewDevice();
       const auto kokkosTangents = Kokkos::subview(tangentFieldsDevice,fieldIndex,Kokkos::ALL());
@@ -390,7 +391,6 @@ evaluateFields(typename TRAITS::EvalData workset)
           const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
 	       fieldValues(cell,basis).zero();
           fieldValues(cell,basis).val() = kokkosSolution(rowLID,0);
-          //std::cout << " C B VAL " << cell << " " << basis << " " << fieldValues(cell,basis) << " " << kokkosTangents(0)(cell,basis) << std::endl;
           for (int i_tangent=0; i_tangent<numTangents; ++i_tangent)
             fieldValues(cell,basis).fastAccessDx(i_tangent) = kokkosTangents(i_tangent)(cell,basis);
         }

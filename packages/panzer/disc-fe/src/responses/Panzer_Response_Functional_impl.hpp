@@ -126,7 +126,6 @@ scatterResponse()
     // use thyra
     TEUCHOS_ASSERT(this->useThyra());
     Thyra::ArrayRCP< Thyra::ArrayRCP<double> > deriv = this->getThyraMultiVector();
-    std::cout << " I AM HERE" << std::endl;
     for (int i=0; i<num_deriv; ++i)
       deriv[i][0] = glbValue.dx(i);
   }

@@ -289,8 +289,6 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
   bool dgdp_supported = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,response_index_,param_index_).supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM) || outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,response_index_,param_index_).supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
   if (dgdp_supported) {
     dgdp = outArgs.get_DgDp(response_index_, param_index_).getMultiVector();
-    // TODO BWR this is not NONNULL the first few two times run_tempus is called
-    std::cout << " DGDP " << std::boolalpha << nonnull(dgdp) << std::endl;
     dgdp_orientation = outArgs.get_DgDp(response_index_, param_index_).getMultiVectorOrientation();
   }
   
