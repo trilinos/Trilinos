@@ -457,7 +457,7 @@ bool Behavior::newCopyAndPermute() {
 
   static bool value_ = defaultValue;
   static bool initialized_ = false;
-  return idempotentlyGetEnvironmentVariable(
+  return Teuchos::idempotentlyGetEnvironmentVariable(
     value_, initialized_, BehaviorDetails::NEW_COPY_AND_PERMUTE, defaultValue
   );
 }
