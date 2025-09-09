@@ -1,47 +1,12 @@
 // @HEADER
-//
-// ***********************************************************************
-//
+// *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
-// ***********************************************************************
-//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
 // @HEADER
+
 #include <iostream>
 
 #include <Amesos2.hpp>
@@ -98,6 +63,14 @@ void printMultiVector(const Teuchos::RCP<Tpetra::MultiVector<>> mv) {
   mv->describe(*out, Teuchos::VERB_EXTREME);
 }
 
+/*Usage:
+comm->barrier();
+std::cout<<"\n//#exactSolution:\n\n";
+comm->barrier();
+printMultiVector(exactSolution);
+comm->barrier();
+*/
+
 //#}
 
 int main(int argc, char* argv[]) {
@@ -152,18 +125,35 @@ int main(int argc, char* argv[]) {
       // Parameters initialization
       // ================================
       Teuchos::CommandLineProcessor clp(false);
+
+      std::string availableMatrixTypes[] = {"Laplace2D", "Laplace3D", "Recirc2D"};
+      std::string matrixType             = availableMatrixTypes[0];
+      std::string matrixTypeDesc         = "matrix type which defines problem. Currently available options: [";
+      for (size_t i = 0; i < std::size(availableMatrixTypes); ++i) {
+        matrixTypeDesc += availableMatrixTypes[i];
+        if (i < std::size(availableMatrixTypes) - 1) matrixTypeDesc += ", ";
+      }
+      matrixTypeDesc += "]";
+      clp.setOption("matrixType", &matrixType, matrixTypeDesc.c_str());
+
       GO nx = 100;
       clp.setOption("nx", &nx, "mesh size in x direction");
       GO ny = 100;
       clp.setOption("ny", &ny, "mesh size in y direction");
+      GO nz = 100;
+      clp.setOption("nz", &ny, "mesh size in z direction");
+
       std::string xmlFileName = "";
       clp.setOption("xml", &xmlFileName, "read parameters from a file");
       int mgridSweeps = 1;
-      clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within Multigrid solver.");
+      clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within multigrid solver");
       std::string printTimings = "no";
       clp.setOption("timings", &printTimings, "print timings to screen [yes/no]");
       double tol = 1e-12;
       clp.setOption("tol", &tol, "solver convergence tolerance");
+
+      double diffusion = 1e-5;
+      clp.setOption("diffusion", &diffusion, "diffusion coefficient, also called epsilon");
 
       switch (clp.parse(argc, argv)) {
         case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
@@ -177,10 +167,20 @@ int main(int argc, char* argv[]) {
       // ================================
       TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName == "", std::runtime_error,
                                  "You need to specify the xml-file via the command line argument '--xml=<path/to/xml_file>'.");
+      TEUCHOS_TEST_FOR_EXCEPTION([&] {
+        for (std::string e : availableMatrixTypes)
+          if (matrixType == e) return false;
+        return true;
+      }(),
+                                 std::runtime_error, "Invalid matrixType.");
+
+      RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
 
       // ================================
       // Problem construction
       // ================================
+      comm->barrier();
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
       Teuchos::ParameterList galeriList;
       galeriList.set("nx", nx);
@@ -188,17 +188,37 @@ int main(int argc, char* argv[]) {
       galeriList.set("mx", comm->getSize());
       galeriList.set("my", 1);
 
+      if (matrixType == "Laplace3D") {
+        galeriList.set("nz", nz);
+        galeriList.set("mz", 1);
+      }
+
+      if (matrixType == "Recirc2D") {
+        galeriList.set("lx", 1.0);  // length of x-axis
+        galeriList.set("ly", 1.0);  // length of y-axis
+        galeriList.set("diff", diffusion);
+        galeriList.set("conv", 1.0);
+      }
+
       // Create node map (equals dof map, since one dof per node)
-      RCP<const Xpetra::Map<LO, GO, NO>> xpetra_map = Galeri::Xpetra::CreateMap<LO, GO, NO>(Xpetra::UseTpetra, "Cartesian2D", comm, galeriList);
-      RCP<const Map> nodeMap                        = Xpetra::toTpetra(xpetra_map);
-      RCP<const Map> dofMap                         = nodeMap;
+      RCP<const Xpetra::Map<LO, GO, NO>> xpetra_map;
+      if (matrixType == "Laplace2D" || matrixType == "Recirc2D")
+        xpetra_map = Galeri::Xpetra::CreateMap<LO, GO, NO>(Xpetra::UseTpetra, "Cartesian2D", comm, galeriList);
+      else if (matrixType == "Laplace3D")
+        xpetra_map = Galeri::Xpetra::CreateMap<LO, GO, NO>(Xpetra::UseTpetra, "Cartesian3D", comm, galeriList);
+      RCP<const Map> nodeMap = Xpetra::toTpetra(xpetra_map);
+      RCP<const Map> dofMap  = nodeMap;
 
       // Create coordinates
-      RCP<const RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
+      RCP<const RealValuedMultiVector> coordinates;
+      if (matrixType == "Laplace2D" || matrixType == "Recirc2D")
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
+      else if (matrixType == "Laplace3D")
+        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("3D", nodeMap, galeriList);
 
       // Create the matrix
       RCP<Galeri::Xpetra::Problem<Map, CrsMatrix, MultiVector>> galeriProblem =
-          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrix, MultiVector>("Laplace2D", dofMap, galeriList);
+          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrix, MultiVector>(matrixType, dofMap, galeriList);
       RCP<CrsMatrix> matrix = galeriProblem->BuildMatrix();
 
       // Some safety checks to see, if Galeri delivered valid output
@@ -212,10 +232,10 @@ int main(int argc, char* argv[]) {
       RCP<MultiVector> B = rcp(new MultiVector(dofMap, 1, true));
       B->putScalar(one);
 
-      // Initilize solution vector with random values
-      RCP<MultiVector> X = rcp(new MultiVector(dofMap, 1, true));
+      // Initialize solution vector with random values
+      RCP<MultiVector> X0 = rcp(new MultiVector(dofMap, 1, true));
       STS::seedrandom(100);
-      X->randomize();
+      X0->randomize();
       //! [RhsAndSolutionVector end]
 
       //! [BuildNullSpaceVector begin]
@@ -224,14 +244,27 @@ int main(int argc, char* argv[]) {
       nullspace->putScalar(one);
       //! [BuildNullSpaceVector end]
 
+      comm->barrier();
+      tm = Teuchos::null;
+
+      fancyout << "========================================================\nGaleri complete.\n========================================================" << std::endl;
+
       // ================================
       // Preconditioner construction
       // ================================
+
+      comm->barrier();
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
 
       //! [ReadMueLuParamsFromXmlFile begin]
       // Read MueLu parameter list from xml file
       RCP<ParameterList> mueluParams = Teuchos::getParametersFromXmlFile(xmlFileName);
       //! [ReadMueLuParamsFromXmlFile end]
+
+      comm->barrier();
+      tm = Teuchos::null;
+
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
       //! [InsertNullspaceInUserData begin]
       // Register nullspace as user data in the MueLu parameter list
@@ -245,34 +278,38 @@ int main(int argc, char* argv[]) {
           MueLu::CreateTpetraPreconditioner(Teuchos::rcp_dynamic_cast<Operator>(matrix), *mueluParams);
       //! [CreateTpetraPreconditioner end]
 
+      comm->barrier();
+      tm = Teuchos::null;
+
       // Generate exact solution using a direct solver
       //! [ExactSolutionVector begin]
       RCP<MultiVector> exactSolution = rcp(new MultiVector(dofMap, 1, true));
       //! [ExactSolutionVector end]
       {
-        exactSolution->update(0.0, *X, 1.0);
-
-        RCP<Amesos2::Solver<CrsMatrix, MultiVector>> directSolver = Amesos2::create<CrsMatrix, MultiVector>("KLU2", matrix, X, B);
+        fancyout << "========================================================\nCalculate exact solution." << std::endl;
+        tm                                                        = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - direct solve")));
+        RCP<Amesos2::Solver<CrsMatrix, MultiVector>> directSolver = Amesos2::create<CrsMatrix, MultiVector>("KLU2", matrix, exactSolution, B);
         directSolver->solve();
+
+        comm->barrier();
+        std::cout << "\n//#exactSolution:\n\n";
+        comm->barrier();
+        printMultiVector(exactSolution);
+        comm->barrier();
+
+        comm->barrier();
+        tm = Teuchos::null;
       }
 
       // Solve Ax = b using AMG as a preconditioner in Belos
+      //! [MueLuAsPrecCreateSolutionVector begin]
+      RCP<MultiVector> precSolVec = rcp(new MultiVector(dofMap, 1, true));
+      //! [MueLuAsPrecCreateSolutionVector end]
       {
-        //! [MueLuAsPrecCreateSolutionVector begin]
-        // Create solution vector and set initial guess (already stored in X)
-        RCP<MultiVector> precSolVec = rcp(new MultiVector(dofMap, 1, true));
-        precSolVec->update(1.0, *X, 0.0);  // precSolVec->update(0.0, *X, 1.0); //# this original does nothing. just sets it to itself
-        //! [MueLuAsPrecCreateSolutionVector end]
+        fancyout << "========================================================\nUse multigrid hierarchy as preconditioner within CG." << std::endl;
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - AMG as preconditioner")));
 
-        std::cout << "\n//#precSolVec:\n\n";
-        comm->barrier();
-        printMultiVector(precSolVec);
-
-        comm->barrier();
-
-        std::cout << "\n//#X:\n\n";
-        comm->barrier();
-        printMultiVector(X);
+        precSolVec->update(1.0, *X0, 0.0);
 
         //! [MueLuAsPrecSetupLinearSystem begin]
         // Construct a Belos LinearProblem object and hand-in the MueLu preconditioner
@@ -310,8 +347,17 @@ int main(int argc, char* argv[]) {
         retStatus                   = solver->solve();
         //! [MueLuAsPrecSolve end]
 
+        comm->barrier();
+        tm = Teuchos::null;
+
         // Get the number of iterations for this solve
         fancyout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+
+        comm->barrier();
+        std::cout << "\n//#precSolVec:\n\n";
+        comm->barrier();
+        printMultiVector(precSolVec);
+        comm->barrier();
 
         // Check convergence status
         if (retStatus != Belos::Converged)
@@ -323,12 +369,14 @@ int main(int argc, char* argv[]) {
       }
 
       // Solve Ax = b using AMG as a solver
+      //! [MueLuAsSolverCreateSolutionVector begin]
+      RCP<MultiVector> multigridSolVec = rcp(new MultiVector(dofMap, 1, true));
+      //! [MueLuAsSolverCreateSolutionVector end]
       {
-        //! [MueLuAsSolverCreateSolutionVector begin]
-        // Create solution vector and set initial guess (already stored in X)
-        RCP<MultiVector> multigridSolVec = rcp(new MultiVector(dofMap, 1, true));
-        multigridSolVec->update(1.0, *X, 0.0);  //#update(0.0, *X, 1.0);
-        //! [MueLuAsSolverCreateSolutionVector end]
+        fancyout << "========================================================\nUse multigrid hierarchy as solver." << std::endl;
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Multigrid Solve")));
+
+        multigridSolVec->update(1.0, *X0, 0.0);
 
         //! [ExtractHierarchyFromTpetraPrec begin]
         // Extract the underlying MueLu hierarchy
@@ -344,7 +392,115 @@ int main(int argc, char* argv[]) {
         // Solve
         hierarchy->Iterate(*Xpetra::toXpetra(B), *Xpetra::toXpetra(multigridSolVec), mgridSweeps);
         //! [MueLuAsSolverIterate end]
+
+        comm->barrier();
+        std::cout << "\n//#multigridSolVec:\n\n";
+        comm->barrier();
+        printMultiVector(multigridSolVec);
+        comm->barrier();
+
+        comm->barrier();
+        tm = Teuchos::null;
       }
+
+      // Write results into file
+      /*{
+        fancyout << "========================================================\nExport results.\n========================================================" << std::endl;
+        std::ofstream myfile;
+        std::stringstream ss;
+        ss << "example" << MyPID << ".txt";
+        myfile.open(ss.str().c_str());
+
+        // loop over all procs
+        for (int iproc = 0; iproc < NumProc; iproc++) {
+          if (MyPID == iproc) {
+            int NumVectors1               = 2;
+            int NumMyElements1            = coordinates->getMap()->getLocalNumElements();
+            int MaxElementSize1           = 1;
+            int* FirstPointInElementList1 = NULL;
+            if (MaxElementSize1 != 1) FirstPointInElementList1 = coordinates->getMap().FirstPointInElementList();
+            double** A_Pointers = coordinates->Pointers();
+
+            if (MyPID == 0) {
+              myfile.width(8);
+              myfile << "#     MyPID";
+              myfile << "    ";
+              myfile.width(12);
+              if (MaxElementSize1 == 1)
+                myfile << "GID  ";
+              else
+                myfile << "     GID/Point";
+              for (int j = 0; j < NumVectors1; j++) {
+                myfile.width(20);
+                myfile << "Value  ";
+              }
+              myfile << std::endl;
+            }
+            for (int i = 0; i < NumMyElements1; i++) {
+              for (int ii = 0; ii < coordinates->Map().ElementSize(i); ii++) {
+                int iii;
+                myfile.width(10);
+                myfile << MyPID;
+                myfile << "    ";
+                myfile.width(10);
+                if (MaxElementSize1 == 1) {
+                  if (coordinates->Map().GlobalIndicesInt()) {
+                    int* MyGlobalElements1 = coordinates->Map().MyGlobalElements();
+                    myfile << MyGlobalElements1[i] << "    ";
+                  }
+
+                  iii = i;
+                } else {
+                  if (coordinates->Map().GlobalIndicesInt()) {
+                    int* MyGlobalElements1 = coordinates->Map().MyGlobalElements();
+                    myfile << MyGlobalElements1[i] << "/" << ii << "    ";
+                  }
+
+                  iii = FirstPointInElementList1[i] + ii;
+                }
+                for (int j = 0; j < NumVectors1; j++) {
+                  myfile.width(20);
+                  myfile << A_Pointers[j][iii];
+                }
+
+                myfile.precision(18);  // set high precision for output
+
+                // add exact solution vector entry
+                myfile.width(25);
+                myfile << exactSolution->getData(iii).get();
+
+                // add preconditioned solution vector entry
+                myfile.width(25);
+                myfile << precSolVec->getData(iii).get();
+
+                // add multigrid solution vector entry
+                myfile.width(25);
+                myfile << multigridSolVec->getData(iii).get();
+
+                myfile.precision(6);  // set default precision
+                myfile << std::endl;
+              }
+            }  // end loop over all lines on current proc
+            myfile << std::flush;
+
+            // syncronize procs // Why three times?
+            comm->barrier();
+            comm->barrier();
+            comm->barrier();
+
+          }  // end myProc
+        } // end loop over all procs
+
+        myfile.close();
+
+        comm->barrier();
+        tm                = Teuchos::null;
+        globalTimeMonitor = Teuchos::null;
+
+        if (printTimings == "yes") {
+          TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
+        }
+      }*/
 
     }  // end of Tpetra::ScopeGuard
     success = true;
