@@ -32,8 +32,6 @@ Response_Probe(const std::string & responseName, MPI_Comm comm,
   : ResponseMESupport_Default<EvalT>(responseName,comm), value(0.0),
     have_probe(false), linObjFactory_(linObjFact)
 {
-  std::cout << std::boolalpha << "I AM HERE BUT " << (linObjFactory_!=Teuchos::null) << " " << typeid(EvalT).name() << std::endl;
-  // TODO BWR DOES NOT HAVE A LINOBJFACTORY!!
   if(linObjFactory_!=Teuchos::null) {
     // requires thyra object factory
     thyraObjFactory_ = Teuchos::rcp_dynamic_cast<const panzer::ThyraObjFactory<double> >(linObjFactory_,true);
@@ -47,7 +45,6 @@ Response_Probe(const std::string & responseName, MPI_Comm comm,
 
     if constexpr (std::is_same<EvalT,panzer::Traits::Jacobian>::value) {
       this->setDerivativeVectorSpace(thyraObjFactory_->getThyraDomainSpace());
-      std::cout << std::boolalpha << " SET DEV FOR " << responseName << " " << (this->getDerivativeVectorSpace() != Teuchos::null) << std::endl;
     }
   }
 }

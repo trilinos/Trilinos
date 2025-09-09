@@ -117,8 +117,6 @@ preEvaluate(typename TRAITS::PreEvalData d)
 {
   // try to extract linear object container
   if (d.gedc->containsDataObject(globalDataKey_)) {
-    // TODO BWR HERE HERE HERE - should we even be calling this for residual type?
-    // TODO BWR HERE HERE HERE - should this already be set up earlier?
     Teuchos::RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
     Teuchos::RCP<LOCPair_GlobalEvaluationData> loc_pair =
       Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);

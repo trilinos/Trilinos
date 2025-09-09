@@ -436,7 +436,6 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("build response library",buildResponses);
 
-    std::cout << std::boolalpha << (lof_ == Teuchos::null) << " LOF " << std::endl;
     responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
 
     // TODO this already gets called by ModelEvaluatorFactory::buildResponses ...
@@ -676,9 +675,6 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
              = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
 
           // class must supppot a derivative
-          // TODO BWR THIS IS NOT TRUE !!!
-             std::cout << std::boolalpha << " SETTING UP DGDX " << responses_[i]->name << " " << resp->supportsDerivative() << std::endl;
-             // TODO BWR response does not support a derivative...
           if(resp->supportsDerivative()) {
             outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
 
@@ -701,7 +697,6 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
         Teuchos::RCP<panzer::ResponseBase> respTanBase
             = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
         if(respTanBase!=Teuchos::null) {
-          std::cout << " TAN RESPONSE " << responses_[i]->name << std::endl;
           Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
              = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respTanBase);
 
@@ -1755,7 +1750,6 @@ evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs
     if(vec!=Teuchos::null) {
 
       std::string responseName = responses_[i]->name;
-      std::cout << " JAC RESP " << responseName << std::endl;
       Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> > resp
           = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Jacobian> >(
               responseLibrary_->getResponse<panzer::Traits::Jacobian>(responseName));
@@ -1812,7 +1806,6 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
       if (outArgs.supports(MEB::OUT_ARG_DgDp,i,j).none())
         continue;
       MEB::Derivative<Scalar> deriv = outArgs.get_DgDp(i,j);
-    std::cout << " IN ME " << deriv.getMultiVector()->description() << std::endl;
       if(deriv.isEmpty())
         continue;
 
@@ -1891,12 +1884,8 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     // TODO BWR these are not even needed for the FD path...
     // TODO BWR there is some foo in user_app to set up tempus for FD path
 
-    std::cout << " CALL EVAL RESP " << std::endl;
     responseLibrary_->addResponsesToInArgs<Traits::Tangent>(ae_inargs);
-    // setenv("PHX_PRINT_FIELDS","1",1);
-    // responseLibrary_->writeGraphvizFiles<panzer::Traits::Tangent>("ResponseLibrary_");
     responseLibrary_->evaluate<Traits::Tangent>(ae_inargs);
-    // unsetenv("PHX_PRINT_FIELDS");
   }
 }
 

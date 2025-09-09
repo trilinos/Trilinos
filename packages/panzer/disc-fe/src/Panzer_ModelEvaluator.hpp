@@ -253,9 +253,7 @@ public:
        const Teuchos::ParameterList& user_data,
        const bool write_graphviz_file=false,
        const std::string& graphviz_file_prefix="")
-  { std::cout << std::boolalpha << " IN BUILD RESPONSE " << nonnull(responseLibrary_->getLinearObjFactory()) << std::endl;
-    // TODO BWR THIS IS NONNULL BUT THEN WHAT???
-    responseLibrary_->buildResponseEvaluators(physicsBlocks,eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
+  { responseLibrary_->buildResponseEvaluators(physicsBlocks,eqset_factory,cm_factory,closure_models,user_data,write_graphviz_file,graphviz_file_prefix);
     require_in_args_refresh_ = true;
     require_out_args_refresh_ = true;
     this->resetDefaultBase();

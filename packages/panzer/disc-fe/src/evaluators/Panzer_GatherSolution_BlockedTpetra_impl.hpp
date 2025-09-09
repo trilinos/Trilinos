@@ -73,7 +73,6 @@ GatherSolution_BlockedTpetra(
   indexerNames_                    = input.getIndexerNames();
   useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
   globalDataKey_                   = input.getGlobalDataKey();
-  std::cout << " GATHER GDK " << globalDataKey_ << std::endl;
 
   // allocate fields
   gatherFields_.resize(names.size());
@@ -232,7 +231,6 @@ GatherSolution_BlockedTpetra(
   indexerNames_                    = input.getIndexerNames();
   useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
   globalDataKey_                   = input.getGlobalDataKey();
-  std::cout << " GATHER GDK " << globalDataKey_ << std::endl;
 
   // allocate fields
   gatherFields_.resize(names.size());
