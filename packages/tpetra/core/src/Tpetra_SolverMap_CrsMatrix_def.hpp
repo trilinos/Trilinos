@@ -90,16 +90,14 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( Orig
     size_t newColMap_extraSize(0);
     size_t const origColMap_localSize = origColMap->getLocalNumElements();
     {
-      auto lambda = KOKKOS_LAMBDA(size_t const i, size_t & sizeToUpdate) -> void {
-                      GlobalOrdinal const globalColIndex( localOrigColMap.getGlobalElement(i) );
-                    //if (origDomainMap->isNodeGlobalElement( globalColIndex ) == false) {
-                      if (localOrigDomainMap.getLocalElement( globalColIndex ) == ::Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
-                        sizeToUpdate += 1;
-                      }
-                    };
       Kokkos::parallel_reduce( "Tpetra::SolverMap_CrsMatrix::construct::newColMap_extraSize"
                              , Kokkos::RangePolicy<typename Node::device_type::execution_space, size_t>(0, origColMap_localSize)
-                             , lambda
+                             , KOKKOS_LAMBDA(size_t const i, size_t & sizeToUpdate) -> void {
+                                 GlobalOrdinal const globalColIndex( localOrigColMap.getGlobalElement(i) );
+                                 if (localOrigDomainMap.getLocalElement( globalColIndex ) == ::Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
+                                   sizeToUpdate += 1;
+                                 }
+                               }
                              , newColMap_extraSize
                              );
     }
@@ -110,12 +108,11 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( Orig
 
     // Fill newColMap_globalColIndices with the global indices of all entries in origDomainMap
     {
-      auto lambda = KOKKOS_LAMBDA(size_t const i) -> void {
-                      newColMap_globalColIndices(i) = localOrigDomainMap.getGlobalElement(i);
-                    };
       Kokkos::parallel_for( "Tpetra::SolverMap_CrsMatrix::construct::copyDomainMapToNewColMap"
                           , Kokkos::RangePolicy<typename Node::device_type::execution_space, size_t>(0, origDomainMap_localSize)
-                          , lambda
+                          , KOKKOS_LAMBDA(size_t const i) -> void {
+                              newColMap_globalColIndices(i) = localOrigDomainMap.getGlobalElement(i);
+                            }
                           );
     }
 
@@ -124,21 +121,17 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( Orig
     //           entries that are not in newColMap_globalColIndices yet
     // *****************************************************************
     {
-      size_t j(0);
-      auto lambda = KOKKOS_LAMBDA(size_t const i, size_t & jToUpdate, bool const final) -> void {
-                      GlobalOrdinal const globalColIndex( localOrigColMap.getGlobalElement(i) );
-                    //if (origDomainMap->isNodeGlobalElement( globalColIndex ) == false) {
-                      if (localOrigDomainMap.getLocalElement( globalColIndex ) == ::Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
-                        if (final) {
-                          newColMap_globalColIndices(origDomainMap_localSize + jToUpdate) = globalColIndex;
-                        }
-                        jToUpdate += 1;
-                      }
-                    };
       Kokkos::parallel_scan( "Tpetra::SolverMap_CrsMatrix::construct::appendNewColMap"
                            , Kokkos::RangePolicy<typename Node::device_type::execution_space, size_t>(0, origColMap_localSize)
-                           , lambda
-                           , j
+                           , KOKKOS_LAMBDA(size_t const i, size_t & jToUpdate, bool const final) -> void {
+                               GlobalOrdinal const globalColIndex( localOrigColMap.getGlobalElement(i) );
+                               if (localOrigDomainMap.getLocalElement( globalColIndex ) == ::Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid()) {
+                                 if (final) {
+                                   newColMap_globalColIndices(origDomainMap_localSize + jToUpdate) = globalColIndex;
+                                 }
+                                 jToUpdate += 1;
+                               }
+                             }
                            );
     }
 
