@@ -52,17 +52,14 @@
             <Parameter name="Parameter 0" type="string" value="S"/>
             <Parameter name="Initial Value 0" type="double" value="0.0"/>
         </ParameterList>
-<!--
         <ParameterList name="Parameter Vector 1">
             <Parameter name="Number" type="int" value="1"/>
             <Parameter name="Parameter 0" type="string" value="S_TEST"/>
             <Parameter name="Initial Value 0" type="double" value="0.0"/>
         </ParameterList>
--->
     </ParameterList>
 
     <ParameterList name="Responses">
-      <!--
       <ParameterList name="TEMPERATURE Integral">
          <Parameter name="Type" type="string" value="Functional"/>
          <Parameter name="Field Name" type="string" value="TEMPERATURE"/>
@@ -77,7 +74,6 @@
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
          <Parameter name="Requires Cell Integral" type="bool" value="true"/>
       </ParameterList>
--->
       <ParameterList name="TEMPERATURE Point Value">
          <Parameter name="Type" type="string" value="Point Value"/>
          <Parameter name="Field Name" type="string" value="TEMPERATURE"/>

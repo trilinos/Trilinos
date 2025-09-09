@@ -1739,8 +1739,8 @@ evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs
 
   for(std::size_t i=0;i<responses_.size();i++) {
     // get "Vector" out of derivative, if its something else, throw an exception
-    // TODO BWR This is throwing an error Derivative{NULL} when I have more than 
-    // TODO BWR one response. This is probably because only the probe type supports a deriv currently
+    if (outArgs.supports(MEB::OUT_ARG_DgDx,i).none())
+      continue;
     MEB::Derivative<Scalar> deriv = outArgs.get_DgDx(i);
     if(deriv.isEmpty())
       continue;
