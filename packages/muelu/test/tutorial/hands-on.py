@@ -98,15 +98,15 @@ class ProblemHandler():
     self.numprocs   = 2
     self.xmlFileName = "s2a.xml"
 
-    self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc5 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
+    self.proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
+    self.proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
+    self.proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
+    self.proc5 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
 
     self.isDirty = True                   # flag to store, whether problem has to be rerun or not
 
-    self.editor = "gedit"    # TODO replace me by local editor...
+    self.editor = os.environ.get("H_EDITOR", "nano") # text editor is specified by the env var H_EDITOR, nano by default
 
   def main(self):
     self.printMainMenu()
@@ -162,7 +162,7 @@ class ProblemHandler():
     m.numProcs      = 1      # number of processors
     m.globalNumDofs = 16641   # number of DOFs
     m.nDofsPerNode  = 1      # DOFs per node
-    m.solver        = "gmres"        # AztecOO solver
+    m.solver        = "gmres"        # Belos solver
     m.tol           = 1e-12       # solver tolerance
     m.executable    = "./MueLu_Challenge_XML.exe" # executable
     m.problem       = "condif2d"   # string describing problem
@@ -173,7 +173,7 @@ class ProblemHandler():
     m.numProcs      = 1      # number of processors
     m.globalNumDofs = 7020   # number of DOFs
     m.nDofsPerNode  = 2      # DOFs per node
-    m.solver        = "cg"        # AztecOO solver
+    m.solver        = "cg"        # Belos solver
     m.tol           = 1e-12       # solver tolerance
     m.executable    = "./MueLu_Challenge_XML.exe" # executable
     m.problem       = "stru2d"   # string describing problem
@@ -230,7 +230,7 @@ class ProblemHandler():
     #cmd = "set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n set style data lines\n set nolabel \n set key off\n set autoscale\n splot " + "example.txt" + " using 3:4:5\n quit\n_TTT_"
     #runCommand(cmd)
 
-    #proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    #proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
     self.proc1.stdin.write("set term x11 1\n")
     self.proc1.stdin.write("set title \"Solution\"\n")
     self.proc1.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
@@ -242,7 +242,7 @@ class ProblemHandler():
     #self.proc1.stdin.write("quit\n") #close the gnuplot window
     self.proc1.stdin.flush()
 
-    #proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    #proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
     self.proc2.stdin.write("set term x11 2\n") #wxt
     if (self.mgsweeps==1):
       self.proc2.stdin.write("set title \"Multigrid solution after " + str(self.mgsweeps) + " multigrid sweep\"\n")
@@ -257,7 +257,7 @@ class ProblemHandler():
     #self.proc2.stdin.write("quit\n") #close the gnuplot window
     self.proc2.stdin.flush()
 
-    #proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    #proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
     self.proc3.stdin.write("set term x11 3\n")
     if (self.mgsweeps==1):
       self.proc3.stdin.write("set title \"Error (Exact vs. " + str(self.mgsweeps) + " multigrid sweep)\"\n")
@@ -276,7 +276,7 @@ class ProblemHandler():
     #self.proc3.stdin.write("quit\n") #close the gnuplot window
     self.proc3.stdin.flush()
 
-    #proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    #proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
     self.proc4.stdin.write("set term x11 4\n")
     self.proc4.stdin.write("set title \"Distribution of processors\"\n")
     self.proc4.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
@@ -335,7 +335,10 @@ class ProblemHandler():
     waitForKey()
 
   def openXMLfile(self):
-    editor = subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, )
+    if self.editor in ["nano", "vim", "vi"]:
+        subprocess.run([self.editor, self.xmlFileName])
+    else:
+        subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, text=True)
 
   def printProblemSelectionMenu(self):
     options = ['Laplace 2D (50x50)', 'Laplace 2D', 'Recirc 2D (50x50)', 'Recirc 2D', 'Challenge: Convection diffusion', 'Challenge: Elasticity problem', 'Exit']
@@ -421,7 +424,7 @@ class MueLu_XMLChallengeMode():
     self.numProcs      = 1      # number of processors
     self.globalNumDofs = 7020   # number of DOFs
     self.nDofsPerNode  = 2      # DOFs per node
-    self.solver        = "cg"        # AztecOO solver
+    self.solver        = "cg"        # Belos solver
     self.tol           = 1e-12       # solver tolerance
     self.executable    = "./MueLu_Challenge_XML.exe" # executable
     self.problem       = "stru2d"   # string describing problem
@@ -429,10 +432,10 @@ class MueLu_XMLChallengeMode():
     self.xmlFileName   = ""
     self.bcolors       = usecolors()
     self.isDirty       = True  # dirty flag
-    self.editor        = "gedit" ### fix me
-    self.has_coords    = False
+    self.editor = os.environ.get("H_EDITOR", "nano") # text editor is specified by the env var H_EDITOR, nano by default
+    self.has_coords    = False ### never used?
 
-    self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
 
   def main(self):
 
@@ -575,7 +578,10 @@ class MueLu_XMLChallengeMode():
       self.xmlFileName = m.xmlFileName # store xml file
 
   def openXMLfile(self):
-    editor = subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, )
+    if self.editor in ["nano", "vim", "vi"]:
+        subprocess.run([self.editor, self.xmlFileName])
+    else:
+        subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, text=True)
 
   def changeProcs(self):
     self.numProcs = input("Number of processors: ")
