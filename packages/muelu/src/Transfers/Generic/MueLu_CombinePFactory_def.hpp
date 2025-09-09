@@ -67,7 +67,7 @@ constructIdentityProlongator(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, 
   using entries_type      = typename local_graph_type::entries_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  auto numLocal = map->getLocalNumElements();
+  LocalOrdinal numLocal = map->getLocalNumElements();
   row_map_type rowptr("rowptr", numLocal + 1);
   entries_type colind("colind", numLocal);
   values_type values("values", numLocal);
