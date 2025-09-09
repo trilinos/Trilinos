@@ -90,7 +90,6 @@ scatterResponse()
     TEUCHOS_ASSERT(this->useThyra());
 
     this->getThyraVector()[0] = glbValue;
-    std::cout << " VAL " << glbValue << std::endl;
   }
 }
 
@@ -138,8 +137,6 @@ scatterResponse()
   if (n == 0)
     value.resize(num_deriv);
 
-  std::cout << " HAVE PROBE " << have_probe << std::endl;
-
   // find the minimum processor who has the probe value
   if (num_deriv > 0) {
     int locProc = have_probe ? this->getComm()->getRank() : this->getComm()->getSize();
@@ -168,7 +165,6 @@ scatterResponse()
     Thyra::ArrayRCP< Thyra::ArrayRCP<double> > deriv = this->getThyraMultiVector();
     for (int i=0; i<num_deriv; ++i) {
       deriv[i][0] = value.dx(i);
-      std::cout << "VALS " << value.val() << " " << value.dx(i) << std::endl;
     }
   }
 }

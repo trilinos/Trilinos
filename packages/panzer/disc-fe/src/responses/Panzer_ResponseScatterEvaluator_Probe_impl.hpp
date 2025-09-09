@@ -249,12 +249,7 @@ evaluateFields(typename Traits::EvalData d)
     return;
 
   auto field_coeffs_host = Kokkos::create_mirror_view(field_.get_view());
-  //std::cout << "PRINT FIELD " << fieldName_ << std::endl;
   Kokkos::deep_copy(field_coeffs_host,field_.get_view());
-  //for (int i = 0; i < field_coeffs_host.extent(0); ++i)
-  //  for (int j = 0; j < field_coeffs_host.extent(1); ++j)
-  //    for (int k = 0; k < field_coeffs_host.extent(2); ++k)
-  //      std::cout << " I J K " << i << " " << j << " " << k << " " << field_coeffs_host(i,j,k) << " " << typeid(EvalT).name() << std::endl;
 
   auto field_coeffs_host_subview = Kokkos::subview(field_coeffs_host,std::pair<int,int>(cellIndex_,cellIndex_+1),Kokkos::ALL);
 
@@ -264,7 +259,6 @@ evaluateFields(typename Traits::EvalData d)
 
   Intrepid2::FunctionSpaceTools<HostSpace>::evaluate(field_val, field_coeffs_host_subview, basis_values_host);
   responseObj_->value = field_val(0,0);
-  std::cout << " VAL HERE " << field_val(0,0) << " " << typeid(EvalT).name() << std::endl;
   responseObj_->have_probe = true;
 }
 
