@@ -57,8 +57,8 @@ protected:
         _quadrature_weights = decltype(_quadrature_weights)("quadrature weights", _number_of_quadrature_points);
         _parameterized_quadrature_sites = decltype(_parameterized_quadrature_sites)("quadrature sites", _number_of_quadrature_points, dimension);
 
-        decltype(_quadrature_weights)::HostMirror quadrature_weights = create_mirror_view(_quadrature_weights);
-        decltype(_parameterized_quadrature_sites)::HostMirror parameterized_quadrature_sites = create_mirror_view(_parameterized_quadrature_sites);
+        decltype(_quadrature_weights)::host_mirror_type quadrature_weights = create_mirror_view(_quadrature_weights);
+        decltype(_parameterized_quadrature_sites)::host_mirror_type parameterized_quadrature_sites = create_mirror_view(_parameterized_quadrature_sites);
 
         if (dimension == 1) {
 

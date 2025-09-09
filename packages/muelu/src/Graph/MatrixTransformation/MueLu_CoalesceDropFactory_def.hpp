@@ -1809,20 +1809,20 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Coalesce
   Teuchos::ArrayRCP<const LO> col_block_number = ghostedBlockNumber->getData(0);
 
   // allocate space for the local graph
-  typename CrsMatrix::local_matrix_type::row_map_type::HostMirror::non_const_type rows_mat;
+  typename CrsMatrix::local_matrix_type::row_map_type::host_mirror_type::non_const_type rows_mat;
   typename LWGraph::row_type::non_const_type rows_graph;
   typename LWGraph::entries_type::non_const_type columns;
-  typename CrsMatrix::local_matrix_type::values_type::HostMirror::non_const_type values;
+  typename CrsMatrix::local_matrix_type::values_type::host_mirror_type::non_const_type values;
   RCP<CrsMatrixWrap> crs_matrix_wrap;
 
   if (generate_matrix) {
     crs_matrix_wrap = rcp(new CrsMatrixWrap(A->getRowMap(), A->getColMap(), 0));
-    rows_mat        = typename CrsMatrix::local_matrix_type::row_map_type::HostMirror::non_const_type("rows_mat", A->getLocalNumRows() + 1);
+    rows_mat        = typename CrsMatrix::local_matrix_type::row_map_type::host_mirror_type::non_const_type("rows_mat", A->getLocalNumRows() + 1);
   } else {
     rows_graph = typename LWGraph::row_type::non_const_type("rows_graph", A->getLocalNumRows() + 1);
   }
   columns = typename LWGraph::entries_type::non_const_type("columns", A->getLocalNumEntries());
-  values  = typename CrsMatrix::local_matrix_type::values_type::HostMirror::non_const_type("values", A->getLocalNumEntries());
+  values  = typename CrsMatrix::local_matrix_type::values_type::host_mirror_type::non_const_type("values", A->getLocalNumEntries());
 
   LO realnnz    = 0;
   GO numDropped = 0, numTotal = 0;

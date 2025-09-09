@@ -25,7 +25,7 @@ namespace {
 template<class DeviceViewType>
 struct create_device_views {
   DeviceViewType d;
-  typename DeviceViewType::HostMirror h;
+  typename DeviceViewType::host_mirror_type h;
   create_device_views(
     const std::vector<typename DeviceViewType::value_type>& x
   )

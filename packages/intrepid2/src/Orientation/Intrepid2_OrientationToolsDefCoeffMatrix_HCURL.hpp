@@ -295,9 +295,9 @@ getCoeffMatrix_HCURL(OutputViewType &output,
         Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space_type> work("pivVec", 2*ndofSubcell, 1);
         lapack.GELS('N', ndofSubcell*card, ndofSubcell, ndofSubcell,
             RefMat.data(),
-            RefMat.stride_1(),
+            RefMat.stride(1),
             OrtMat.data(),
-            OrtMat.stride_1(),
+            OrtMat.stride(1),
             work.data(), work.extent(0),
             &info);
 
@@ -305,10 +305,10 @@ getCoeffMatrix_HCURL(OutputViewType &output,
     Kokkos::DynRankView<ordinal_type,host_device_type> pivVec("pivVec", ndofSubcell);
     lapack.GESV(ndofSubcell, ndofSubcell,
         RefMat.data(),
-        RefMat.stride_1(),
+        RefMat.stride(1),
         pivVec.data(),
         OrtMat.data(),
-        OrtMat.stride_1(),
+        OrtMat.stride(1),
         &info);
     //*/
     if (info) {

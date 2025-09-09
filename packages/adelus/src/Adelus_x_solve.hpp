@@ -56,8 +56,8 @@ void solve_(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, PViewType& perm
     tsecs = get_seconds(0.0);
 
 #ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
-    typename ZViewType::HostMirror h_Z = Kokkos::create_mirror_view( Z );
-    typename RHSViewType::HostMirror h_RHS = Kokkos::create_mirror_view( RHS );
+    typename ZViewType::host_mirror_type h_Z = Kokkos::create_mirror_view( Z );
+    typename RHSViewType::host_mirror_type h_RHS = Kokkos::create_mirror_view( RHS );
     // Bring data to host memory
     Kokkos::deep_copy (h_Z, Z);
     Kokkos::deep_copy (h_RHS, RHS);

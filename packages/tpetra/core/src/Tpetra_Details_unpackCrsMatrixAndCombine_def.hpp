@@ -1840,22 +1840,22 @@ unpackAndCombineIntoCrsArrays (
 # ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("copy back to host"))));
 # endif
-  typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(
+  typename decltype(crs_rowptr_d)::host_mirror_type crs_rowptr_h(
       CRS_rowptr.getRawPtr(), CRS_rowptr.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), crs_rowptr_h, crs_rowptr_d);
 
-  typename decltype(crs_colind_d)::HostMirror crs_colind_h(
+  typename decltype(crs_colind_d)::host_mirror_type crs_colind_h(
       CRS_colind.getRawPtr(), CRS_colind.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), crs_colind_h, crs_colind_d);
 
-  typename decltype(crs_vals_d)::HostMirror crs_vals_h(
+  typename decltype(crs_vals_d)::host_mirror_type crs_vals_h(
       CRS_vals_impl_scalar_type.getRawPtr(), CRS_vals_impl_scalar_type.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), crs_vals_h, crs_vals_d);
 
-  typename decltype(tgt_pids_d)::HostMirror tgt_pids_h(
+  typename decltype(tgt_pids_d)::host_mirror_type tgt_pids_h(
       TargetPids.getRawPtr(), TargetPids.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), tgt_pids_h, tgt_pids_d);

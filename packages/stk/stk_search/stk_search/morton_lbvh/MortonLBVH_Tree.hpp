@@ -90,7 +90,7 @@ struct MortonAabbTree
   using execution_space = ExecutionSpace;
   using view_type = ViewType;
   using BoxViewType     = ViewType;
-  using BoxViewType_hmt = typename ViewType::HostMirror;
+  using BoxViewType_hmt = typename ViewType::host_mirror_type;
   using BoxType         = typename BoxViewType::value_type::box_type;
   using real_type = typename BoxType::value_type;
   using LBVH_types = MortonLbvhTypes<ExecutionSpace>;

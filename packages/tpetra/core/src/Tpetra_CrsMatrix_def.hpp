@@ -4619,7 +4619,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   {
     using ::Tpetra::Details::ProfilingRegion;
     typedef LocalOrdinal LO;
-    typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
+    typedef typename Kokkos::View<LO*, device_type>::host_mirror_type::execution_space
       host_execution_space;
     typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
     const char tfecfFuncName[] = "sortAndMergeIndicesAndValues: ";
@@ -7102,7 +7102,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using ST = impl_scalar_type;
     using size_type = typename Teuchos::ArrayView<LO>::size_type;
     using HES =
-      typename View<int*, device_type>::HostMirror::execution_space;
+      typename View<int*, device_type>::host_mirror_type::execution_space;
     using pair_type = std::pair<typename View<int*, HES>::size_type,
                                 typename View<int*, HES>::size_type>;
     using gids_out_type = View<GO*, HES, MemoryUnmanaged>;

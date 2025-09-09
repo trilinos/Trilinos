@@ -464,7 +464,7 @@ namespace { // (anonymous)
       {
         Kokkos::View<const LO*, typename Kokkos::View<LO*, DT>::array_layout,
           Kokkos::HostSpace, Kokkos::MemoryUnmanaged> lids_h (eltSparsityPattern, eltDim);
-        //typename Kokkos::View<const LO*, DT>::HostMirror lids_h (eltSparsityPattern, eltDim);
+        //typename Kokkos::View<const LO*, DT>::host_mirror_type lids_h (eltSparsityPattern, eltDim);
         Kokkos::deep_copy (lids_d, lids_h);
       }
 

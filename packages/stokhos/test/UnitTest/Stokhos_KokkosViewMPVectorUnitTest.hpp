@@ -43,7 +43,7 @@ checkVectorView(const ViewType& v,
                 Teuchos::FancyOStream& out) {
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
-  typedef typename view_type::HostMirror host_view_type;
+  typedef typename view_type::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
   typedef typename host_array_type::value_type scalar_type;
 
@@ -100,7 +100,7 @@ checkConstantVectorView(const ViewType& v,
                         Teuchos::FancyOStream& out) {
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
-  typedef typename view_type::HostMirror host_view_type;
+  typedef typename view_type::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type::value_type scalar_type;
 
   // Copy to host
@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy, Storage, Layout )
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
 
   const size_type num_rows = global_num_rows;
@@ -251,7 +251,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Kokkos_View_MP, DeepCopy_Subview_Range, Stora
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector**,Kokkos::LayoutLeft,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
 
   const size_type num_rows1 = global_num_rows;
   const size_type num_rows2 = global_num_rows*2;
@@ -298,7 +298,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_HostArray, Storage, 
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
 
   const size_type num_rows = global_num_rows;
@@ -332,7 +332,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_DeviceArray, Storage
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
   typedef typename ViewType::array_type array_type;
 
@@ -359,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
   typedef typename host_view_type::array_type host_array_type;
 
   const size_type num_rows = global_num_rows;
@@ -397,7 +397,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionHost, Storage, Layou
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::host_mirror_type host_view_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = Storage::static_size;
@@ -445,8 +445,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, PartitionDevice, Storage, Lay
   auto v1 = Kokkos::partition<num_cols_part>(v, 0);
   auto v2 = Kokkos::partition<num_cols_part>(v, num_cols_part);
 
-  typename decltype(v1)::HostMirror h_v1 = Kokkos::create_mirror_view(v1);
-  typename decltype(v2)::HostMirror h_v2 = Kokkos::create_mirror_view(v2);
+  typename decltype(v1)::host_mirror_type h_v1 = Kokkos::create_mirror_view(v1);
+  typename decltype(v2)::host_mirror_type h_v2 = Kokkos::create_mirror_view(v2);
 
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols_part; ++j) {
@@ -471,7 +471,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Flatten, Storage, Layout )
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename Kokkos::FlatArrayType<ViewType>::type flat_view_type;
-  typedef typename flat_view_type::HostMirror host_flat_view_type;
+  typedef typename flat_view_type::host_mirror_type host_flat_view_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;

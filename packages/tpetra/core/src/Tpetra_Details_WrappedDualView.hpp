@@ -502,7 +502,7 @@ public:
 
 
   // Debugging functions to get copies of the view state
-  typename t_host::HostMirror getHostCopy() const {
+  typename t_host::host_mirror_type getHostCopy() const {
     auto X_dev = getRawHostView();
     if(X_dev.span_is_contiguous()) {
       auto mirror = Kokkos::create_mirror_view(X_dev);
@@ -517,7 +517,7 @@ public:
     }
   }
 
-  typename t_dev::HostMirror getDeviceCopy() const {
+  typename t_dev::host_mirror_type getDeviceCopy() const {
     auto X_dev = getRawDeviceView();
     if(X_dev.span_is_contiguous()) {
       auto mirror = Kokkos::create_mirror_view(X_dev);

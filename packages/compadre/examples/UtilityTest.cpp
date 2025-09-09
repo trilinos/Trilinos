@@ -82,11 +82,11 @@ bool all_passed = true;
 
     // create a 2D view of inputs
     Kokkos::View<int**, Kokkos::DefaultExecutionSpace> data_device("data", num_flags, num_cols);
-    Kokkos::View<int**>::HostMirror data = Kokkos::create_mirror_view(data_device);
+    Kokkos::View<int**>::host_mirror_type data = Kokkos::create_mirror_view(data_device);
 
     // create a view of flags
     Kokkos::View<int*, Kokkos::DefaultExecutionSpace> flags_device("flags", num_flags);
-    Kokkos::View<int*>::HostMirror flags = Kokkos::create_mirror_view(flags_device);
+    Kokkos::View<int*>::host_mirror_type flags = Kokkos::create_mirror_view(flags_device);
 
     //! [Setting Up Data]
 

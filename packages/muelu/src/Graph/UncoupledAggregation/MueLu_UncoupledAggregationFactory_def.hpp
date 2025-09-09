@@ -191,7 +191,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
   bool runOnHost;
   if (IsType<RCP<LWGraph>>(currentLevel, "Graph")) {
-    if ((aggregationBackend == "default") || (aggregationBackend == "non-Kokkos")) {
+    if ((aggregationBackend == "default") || (aggregationBackend == "host")) {
       graph      = Get<RCP<LWGraph>>(currentLevel, "Graph");
       aggregates = rcp(new Aggregates(*graph));
       comm       = graph->GetComm();
@@ -206,7 +206,7 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       runOnHost              = false;
     }
   } else if (IsType<RCP<LWGraph_kokkos>>(currentLevel, "Graph")) {
-    if ((aggregationBackend == "default") || (aggregationBackend == "Kokkos")) {
+    if ((aggregationBackend == "default") || (aggregationBackend == "kokkos")) {
       graph_kokkos = Get<RCP<LWGraph_kokkos>>(currentLevel, "Graph");
       aggregates   = rcp(new Aggregates(*graph_kokkos));
       comm         = graph_kokkos->GetComm();

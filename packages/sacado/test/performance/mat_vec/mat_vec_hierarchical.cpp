@@ -61,7 +61,7 @@ check_deriv_hierarchical(const ViewTypeA& A, const ViewTypeB& b, const ViewTypeC
 {
   const double tol = 1.0e-14;
   typedef typename ViewTypeC::value_type value_type;
-  typename ViewTypeC::HostMirror h_c = Kokkos::create_mirror_view(c);
+  typename ViewTypeC::host_mirror_type h_c = Kokkos::create_mirror_view(c);
   Kokkos::deep_copy(h_c, c);
   const size_t m = A.extent(0);
   const size_t n = A.extent(1);
