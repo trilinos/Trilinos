@@ -22,7 +22,7 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const ParameterList> CloneRepartitionInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+Teuchos::RCP<const ParameterList> CloneRepartitionInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   Teuchos::RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->set<Teuchos::RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
   validParamList->set<Teuchos::RCP<const FactoryBase> >("number of partitions", Teuchos::null, "Instance of RepartitionHeuristicFactory.");
