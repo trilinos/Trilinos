@@ -98,7 +98,13 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   // dynamic cast to blocked LOF for now
   RCP<const ThyraObjFactory<Scalar> > tof = rcp_dynamic_cast<const ThyraObjFactory<Scalar> >(lof,true);
 
-  x_space_ = tof->getThyraDomainSpace();
+  x_space_ = tof->getThyraDomainSpace(); // TODO BWR This has to be used SOMEWHERE because the test problem
+  // TODO BWR will hang if we switch this to get the GHOSTED space
+  // TODO BWR this is presumably when get_x_space() is called in the test problem (used for dgdx it looks like)
+  // TODO BWR or when we get_x() from the nominal values
+  // TODO BWR in the GatherSolution, the x we use is ghosted, which i believe comes directly from the ghostedContainer
+  // TODO BWR see initializeGhostedContainer
+  // TODO BWR this seems confusing and inconsistent
   f_space_ = tof->getThyraRangeSpace();
   x_space_ghosted_ = tof->getGhostedThyraDomainSpace();
 
@@ -150,6 +156,7 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
 
   x_space_ = tof->getThyraDomainSpace();
   f_space_ = tof->getThyraRangeSpace();
+  x_space_ghosted_ = tof->getGhostedThyraDomainSpace(); // TODO BWR see above
 
   // now that the vector spaces are setup we can allocate the nominal values
   // (i.e. initial conditions)
