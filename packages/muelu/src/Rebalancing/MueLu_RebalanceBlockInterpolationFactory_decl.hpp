@@ -52,7 +52,9 @@ class RebalanceBlockInterpolationFactory : public TwoLevelFactoryBase {
   //! Destructor.
   virtual ~RebalanceBlockInterpolationFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

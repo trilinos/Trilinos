@@ -15,7 +15,7 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->set<RCP<const FactoryBase>>("CoarseDualNodeID2PrimalNodeID", Teuchos::null, "Generating factory of the CoarseDualNodeID2PrimalNodeID map");
   return validParamList;

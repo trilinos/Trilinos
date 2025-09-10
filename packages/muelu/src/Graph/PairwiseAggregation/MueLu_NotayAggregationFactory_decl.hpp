@@ -62,7 +62,9 @@ class NotayAggregationFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~NotayAggregationFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

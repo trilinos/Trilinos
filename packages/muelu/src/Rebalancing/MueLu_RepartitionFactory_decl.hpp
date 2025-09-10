@@ -90,7 +90,9 @@ class RepartitionFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~RepartitionFactory();
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

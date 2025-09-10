@@ -24,7 +24,7 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> ZeroSubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> ZeroSubBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<RCP<const FactoryBase>>("A", MueLu::NoFactory::getRCP(), "Generating factory for A.");

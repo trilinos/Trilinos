@@ -90,7 +90,9 @@ class CoordinatesTransferFactory : public TwoLevelFactoryBase {
   //! Destructor.
   virtual ~CoordinatesTransferFactory();
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

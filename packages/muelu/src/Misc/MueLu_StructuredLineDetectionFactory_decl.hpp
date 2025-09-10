@@ -40,7 +40,9 @@ class StructuredLineDetectionFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~StructuredLineDetectionFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

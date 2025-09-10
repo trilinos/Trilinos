@@ -87,7 +87,9 @@ class SemiCoarsenPFactory : public PFactory {
   virtual ~SemiCoarsenPFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

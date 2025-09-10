@@ -36,7 +36,7 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->setEntry("combine: numBlks", ParameterEntry(1));
   validParamList->setEntry("combine: useMaxLevels", ParameterEntry(false));
