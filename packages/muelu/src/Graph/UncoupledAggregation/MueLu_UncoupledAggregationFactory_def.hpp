@@ -49,7 +49,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::~UncoupledAggregationFactory() = default;
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   // Aggregation parameters (used in aggregation algorithms)

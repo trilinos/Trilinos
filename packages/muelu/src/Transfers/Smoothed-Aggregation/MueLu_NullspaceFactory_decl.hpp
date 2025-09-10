@@ -97,7 +97,9 @@ class NullspaceFactory : public SingleLevelFactoryBase {
   //@{
 
   /*! @brief Define valid parameters for internal factory parameters */
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 

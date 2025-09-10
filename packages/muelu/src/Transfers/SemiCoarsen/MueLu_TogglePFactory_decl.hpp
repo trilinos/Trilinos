@@ -70,7 +70,9 @@ class TogglePFactory : public PFactory {
   //! Destructor.
   virtual ~TogglePFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

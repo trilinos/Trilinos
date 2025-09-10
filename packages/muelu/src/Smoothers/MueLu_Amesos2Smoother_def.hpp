@@ -139,7 +139,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~Amesos2Smoother() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->set<RCP<const FactoryBase> >("A", null, "Factory of the coarse matrix");
   validParamList->set<RCP<const FactoryBase> >("Nullspace", null, "Factory of the nullspace");

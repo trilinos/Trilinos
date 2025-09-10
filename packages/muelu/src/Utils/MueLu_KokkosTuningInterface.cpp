@@ -51,7 +51,7 @@ KokkosTuningInterface::KokkosTuningInterface(const Teuchos::RCP<const Teuchos::C
 }
 
 // ***********************************************************************
-RCP<const Teuchos::ParameterList> KokkosTuningInterface::GetValidParameterList() const {
+RCP<const Teuchos::ParameterList> KokkosTuningInterface::GetValidParameterListImpl() const {
   RCP<ParameterList> topValidParamList = rcp(new ParameterList());
   ParameterList validParamList;
 

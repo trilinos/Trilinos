@@ -58,7 +58,9 @@ class Factory : public FactoryBase, public FactoryAcceptor, public ParameterList
 
   //@}
 
-  virtual RCP<const ParameterList> GetValidParameterList() const;
+  virtual MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
  protected:
   void Input(Level& level, const std::string& varName) const;

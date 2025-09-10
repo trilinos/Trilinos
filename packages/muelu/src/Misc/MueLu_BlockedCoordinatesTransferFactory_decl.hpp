@@ -75,7 +75,9 @@ class BlockedCoordinatesTransferFactory : public TwoLevelFactoryBase {
   //! Destructor.
   virtual ~BlockedCoordinatesTransferFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

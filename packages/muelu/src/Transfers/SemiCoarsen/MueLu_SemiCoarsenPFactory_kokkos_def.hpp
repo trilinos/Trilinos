@@ -38,7 +38,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 
 RCP<const ParameterList>
 SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GetValidParameterList() const {
+    GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   std::string name = "semicoarsen: coarsen rate";
