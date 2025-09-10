@@ -64,7 +64,9 @@ class BlockedCoarseMapFactory : public MueLu::CoarseMapFactory<Scalar, LocalOrdi
   //! @name Input
   //@{
 
-  RCP<const ParameterList> GetValidParameterList() const final;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   /*! @brief Specifies the data that this class needs, and the factories that generate that data.
 

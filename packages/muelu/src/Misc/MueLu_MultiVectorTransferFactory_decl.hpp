@@ -53,7 +53,9 @@ class MultiVectorTransferFactory : public TwoLevelFactoryBase {
   //! Destructor.
   virtual ~MultiVectorTransferFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 
