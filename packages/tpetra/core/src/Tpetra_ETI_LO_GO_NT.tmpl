@@ -22,7 +22,8 @@
 // by running CMake on it IS a syntactically correct C++ file.
 
 #include "TpetraCore_config.h"
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined (HAVE_TPETRA_INST_@NT_MACRO_NAME@) @GO_MACRO_EXPR@
+
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined (HAVE_TPETRA_INST_@NT_MACRO_NAME@) && defined (HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@)
 
 // We protect the contents of this file with macros, to assist
 // applications that circumvent Trilinos' build system.  (We do NOT
