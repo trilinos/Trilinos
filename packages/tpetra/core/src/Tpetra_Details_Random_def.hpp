@@ -84,8 +84,9 @@ getPool() {
 //
 
 #define TPETRA_DETAILS_RANDOM_INSTANT(NODE) \
-  template class Details::Static_Random_XorShift64_Pool<typename NODE::execution_space>; \
-  template<> Kokkos::Random_XorShift64_Pool<typename NODE::execution_space>* Details::Static_Random_XorShift64_Pool<typename NODE::execution_space>::pool_ = nullptr;
+    template<> Kokkos::Random_XorShift64_Pool<typename NODE::execution_space>* Details::Static_Random_XorShift64_Pool<typename NODE::execution_space>::pool_ = nullptr; \
+  template class Details::Static_Random_XorShift64_Pool<typename NODE::execution_space>;
+
 
 
 #endif // TPETRA_DETAILS_RANDOM_DEF_HPP
