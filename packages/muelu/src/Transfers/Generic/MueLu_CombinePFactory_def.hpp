@@ -39,6 +39,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->setEntry("combine: numBlks", ParameterEntry(1));
+  validParamList->setEntry("combine: useMaxLevels", ParameterEntry(false));
   validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
 
   return validParamList;
@@ -56,6 +57,40 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fi
   return BuildP(fineLevel, coarseLevel);
 }
 
+namespace {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+constructIdentityProlongator(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& map) {
+  using local_matrix_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_graph_type  = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_graph_type;
+  using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
+  using entries_type      = typename local_graph_type::entries_type::non_const_type;
+  using values_type       = typename local_matrix_type::values_type;
+
+  LocalOrdinal numLocal = map->getLocalNumElements();
+  row_map_type rowptr("rowptr", numLocal + 1);
+  entries_type colind("colind", numLocal);
+  values_type values("values", numLocal);
+
+  Kokkos::parallel_for(
+      "Setup CRS values for identity prolongator",
+      Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>(0, numLocal),
+      KOKKOS_LAMBDA(const LocalOrdinal index) {
+        rowptr(index) = index;
+        colind(index) = index;
+        values(index) = Scalar(1.0);
+        if (index == (numLocal - 1)) {
+          rowptr(numLocal) = numLocal;
+        }
+      });
+
+  auto eye = Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, map, 0);
+  eye->setAllValues(rowptr, colind, values);
+  eye->expertStaticFillComplete(map, map);
+  return Teuchos::make_rcp<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(eye);
+}
+}  // namespace
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel,
                                                                         Level& coarseLevel) const {
@@ -63,6 +98,7 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& f
 
   const ParameterList& pL = GetParameterList();
   const LO nBlks          = as<LO>(pL.get<int>("combine: numBlks"));
+  const bool useMaxLevels = pL.get<bool>("combine: useMaxLevels");
 
   RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
 
@@ -80,35 +116,68 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& f
   Teuchos::ArrayRCP<size_t> ColMapRemoteSizePerBlk(nBlks);
   Teuchos::ArrayRCP<size_t> ColMapLocalCumulativePerBlk(nBlks + 1);   // hardwire 0th entry so that it has the value of 0
   Teuchos::ArrayRCP<size_t> ColMapRemoteCumulativePerBlk(nBlks + 1);  // hardwire 0th entry so that it has the value of 0
+
+  bool anyCoarseGridsRemaining = false;
+
+  if (useMaxLevels) {
+    for (int j = 0; j < nBlks; j++) {
+      std::string blockName = "Psubblock" + Teuchos::toString(j);
+      anyCoarseGridsRemaining |= coarseLevel.IsAvailable(blockName, NoFactory::get());
+    };
+
+    int localAnyCoarseGridsRemaining  = anyCoarseGridsRemaining;
+    int globalAnyCoarseGridsRemaining = localAnyCoarseGridsRemaining;
+    Teuchos::reduceAll(*A->getDomainMap()->getComm(), Teuchos::REDUCE_MAX, localAnyCoarseGridsRemaining, Teuchos::ptr(&globalAnyCoarseGridsRemaining));
+
+    anyCoarseGridsRemaining |= globalAnyCoarseGridsRemaining > 0;
+  }
+
+  auto setSubblockProlongator = [&](RCP<Matrix> Psubblock, int j) {
+    arrayOfMatrices[j] = Psubblock;
+    nComboRowMap += Teuchos::as<size_t>((arrayOfMatrices[j])->getRowMap()->getLocalNumElements());
+    DomMapSizePerBlk[j] = Teuchos::as<size_t>((arrayOfMatrices[j])->getDomainMap()->getLocalNumElements());
+    ColMapSizePerBlk[j] = Teuchos::as<size_t>((arrayOfMatrices[j])->getColMap()->getLocalNumElements());
+    nComboDomMap += DomMapSizePerBlk[j];
+    nComboColMap += ColMapSizePerBlk[j];
+    nnzCombo += Teuchos::as<size_t>((arrayOfMatrices[j])->getLocalNumEntries());
+    TEUCHOS_TEST_FOR_EXCEPTION((arrayOfMatrices[j])->getDomainMap()->getIndexBase() != 0, Exceptions::RuntimeError, "interpolation subblocks must use 0 indexbase");
+
+    // figure out how many empty entries in each column map
+    int tempii = 0;
+    for (int i = 0; i < (int)DomMapSizePerBlk[j]; i++) {
+      if ((arrayOfMatrices[j])->getDomainMap()->getGlobalElement(i) == (arrayOfMatrices[j])->getColMap()->getGlobalElement(tempii)) tempii++;
+    }
+    nTotalNumberLocalColMapEntries += tempii;
+    ColMapLocalSizePerBlk[j]  = tempii;
+    ColMapRemoteSizePerBlk[j] = ColMapSizePerBlk[j] - ColMapLocalSizePerBlk[j];
+  };
+
   for (int j = 0; j < nBlks; j++) {
     std::string blockName = "Psubblock" + Teuchos::toString(j);
     if (coarseLevel.IsAvailable(blockName, NoFactory::get())) {
-      arrayOfMatrices[j] = coarseLevel.Get<RCP<Matrix>>(blockName, NoFactory::get());
-      nComboRowMap += Teuchos::as<size_t>((arrayOfMatrices[j])->getRowMap()->getLocalNumElements());
-      DomMapSizePerBlk[j] = Teuchos::as<size_t>((arrayOfMatrices[j])->getDomainMap()->getLocalNumElements());
-      ColMapSizePerBlk[j] = Teuchos::as<size_t>((arrayOfMatrices[j])->getColMap()->getLocalNumElements());
-      nComboDomMap += DomMapSizePerBlk[j];
-      nComboColMap += ColMapSizePerBlk[j];
-      nnzCombo += Teuchos::as<size_t>((arrayOfMatrices[j])->getLocalNumEntries());
-      TEUCHOS_TEST_FOR_EXCEPTION((arrayOfMatrices[j])->getDomainMap()->getIndexBase() != 0, Exceptions::RuntimeError, "interpolation subblocks must use 0 indexbase");
-
-      // figure out how many empty entries in each column map
-      int tempii = 0;
-      for (int i = 0; i < (int)DomMapSizePerBlk[j]; i++) {
-        //          if ( (arrayOfMatrices[j])->getDomainMap()->getGlobalElement(i) == (arrayOfMatrices[j])->getColMap()->getGlobalElement(tempii) )  nTotalNumberLocalColMapEntries++;
-        if ((arrayOfMatrices[j])->getDomainMap()->getGlobalElement(i) == (arrayOfMatrices[j])->getColMap()->getGlobalElement(tempii)) tempii++;
-      }
-      nTotalNumberLocalColMapEntries += tempii;
-      ColMapLocalSizePerBlk[j]  = tempii;
-      ColMapRemoteSizePerBlk[j] = ColMapSizePerBlk[j] - ColMapLocalSizePerBlk[j];
+      setSubblockProlongator(coarseLevel.Get<RCP<Matrix>>(blockName, NoFactory::get()), j);
     } else {
-      arrayOfMatrices[j]        = Teuchos::null;
-      ColMapLocalSizePerBlk[j]  = 0;
-      ColMapRemoteSizePerBlk[j] = 0;
+      std::string subblockOpName = "Operatorsubblock" + Teuchos::toString(j);
+      bool hasOperator           = false;
+      if (coarseLevel.IsAvailable(subblockOpName)) {
+        auto A_blk  = coarseLevel.Get<RCP<Operator>>(subblockOpName);
+        hasOperator = A_blk != Teuchos::null;
+      }
+
+      if (useMaxLevels && anyCoarseGridsRemaining && hasOperator) {
+        // Use Psubblock = I
+        auto P_id = constructIdentityProlongator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(coarseLevel.Get<RCP<Operator>>(subblockOpName)->getDomainMap());
+        setSubblockProlongator(P_id, j);
+      } else {
+        arrayOfMatrices[j]        = Teuchos::null;
+        ColMapLocalSizePerBlk[j]  = 0;
+        ColMapRemoteSizePerBlk[j] = 0;
+      }
     }
     ColMapLocalCumulativePerBlk[j + 1]  = ColMapLocalSizePerBlk[j] + ColMapLocalCumulativePerBlk[j];
     ColMapRemoteCumulativePerBlk[j + 1] = ColMapRemoteSizePerBlk[j] + ColMapRemoteCumulativePerBlk[j];
   }
+
   TEUCHOS_TEST_FOR_EXCEPTION(nComboRowMap != A->getRowMap()->getLocalNumElements(), Exceptions::RuntimeError, "sum of subblock rows != #row's Afine");
 
   // build up csr arrays for combo block diagonal P

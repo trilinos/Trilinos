@@ -2216,6 +2216,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   ParameterList Pparams;
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "combine: numBlks", int, Pparams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "combine: useMaxLevels", bool, Pparams);
 
   P->SetParameterList(Pparams);
   manager.SetFactory("P", P);

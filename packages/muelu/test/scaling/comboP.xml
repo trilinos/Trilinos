@@ -34,6 +34,8 @@
   </ParameterList>
   <!--Parameter name="coarse: type" type="string" value="none"/-->
 
+  <Parameter name="combine: useMaxLevels" type="bool" value="true"/>
+
   <ParameterList name="subblockList0">
     <Parameter name="use kokkos refactor" type="bool" value="false"/>
     <Parameter name="multigrid algorithm" type="string" value="sa"/>
@@ -43,9 +45,8 @@
     <Parameter name="transpose: use implicit" type="bool" value="false"/>
     <Parameter name="aggregation: type" type="string" value="uncoupled"/>
     <Parameter name="aggregation: drop tol" type="double" value="0.000000001"/>
-    <!--Parameter name="coarse: max size" type="int" value="56"/-->
-    <Parameter name="coarse: max size" type="int" value="56"/>
-    <Parameter name="max levels" type="int" value="5"/>
+    <Parameter name="coarse: max size" type="int" value="1000"/>
+    <Parameter name="max levels" type="int" value="3"/>
     <Parameter name="coarse: type" type="string" value="none"/>    <!--- change the driver so that this is always forced -->
     <Parameter name="smoother: type" type="string" value="RELAXATION"/>
     <ParameterList name="export data">
@@ -64,7 +65,7 @@
     <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
     -->
     <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
-    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: start level" type="int" value="2"/>
     <Parameter name="repartition: min rows per proc" type="int" value="65"/>
     <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
     <Parameter name="repartition: remap parts" type="bool" value="true"/>
@@ -101,7 +102,7 @@
     <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
     -->
     <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
-    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: start level" type="int" value="2"/>
     <Parameter name="repartition: min rows per proc" type="int" value="190"/>
     <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
     <Parameter name="repartition: remap parts" type="bool" value="true"/>
@@ -136,7 +137,7 @@
     <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
     -->
     <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
-    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: start level" type="int" value="2"/>
     <Parameter name="repartition: min rows per proc" type="int" value="200"/>
     <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
     <Parameter name="repartition: remap parts" type="bool" value="true"/>
@@ -171,7 +172,7 @@
     <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
     -->
     <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
-    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: start level" type="int" value="2"/>
     <Parameter name="repartition: min rows per proc" type="int" value="60"/>
     <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
     <Parameter name="repartition: remap parts" type="bool" value="true"/>
@@ -208,7 +209,7 @@
     <Parameter name="repartition: explicit via new copy rebalance P and R" type="bool" value="true"/>
     -->
     <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
-    <Parameter name="repartition: start level" type="int" value="10"/>
+    <Parameter name="repartition: start level" type="int" value="2"/>
     <Parameter name="repartition: min rows per proc" type="int" value="200"/>
     <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
     <Parameter name="repartition: remap parts" type="bool" value="true"/>
