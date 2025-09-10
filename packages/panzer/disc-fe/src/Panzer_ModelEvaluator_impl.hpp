@@ -438,8 +438,6 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
 
     responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
 
-    // TODO this already gets called by ModelEvaluatorFactory::buildResponses ...
-    // TODO BWR but me_factory has user_app::addResponsesToModelEvaluatorFactory
     buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
     buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
     buildDistroParamDgDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DgDp_");
@@ -1860,30 +1858,6 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
 
   // evaluate response tangent
   if(totalParameterCount>0) {
-    // TODO BWR response vector seems to get set OK above
-    // TODO BWR but unavailable (segfault) when we go to evaluate below...
-    // TODO BWR ask roger
-    // TODO BWR OK -> so Value In Middle sets a vector
-    // TODO BWR but when we do evaluate below, TEST_TEMPERATURE Integral gets scattered
-    // TODO BWR and looks for the multivector and its not there
-    // TODO BWR why is that getting called as a tangent type?
-    // TODO BWR remember I had to mess with outArgs above
-    // TODO BWR it seems like all responses are tangent type? or at least
-    // TODO BWR some can be without being dependent on an active parameter
-
-    // TODO BWR it seems like Value In Middle is both residual and tangent type?
-    // TODO BWR the other two are just tangent?
-    // TODO BWR very hard to tell what type the responses are 
-    // TODO BWR ask...
-
-    // TODO BWR OK so if i turn off other responses, we're OK
-    // TODO BWR however, something is off with the optimization and the RK stepper
-    // TODO BWR no errors for the SDIRK and optimization vals are off
-    // TODO BWR this is probably where the debug is failing, and catching it
-    // TODO BWR is tempus problem getting set up correctly? I had to "fix" the tempus_params_ thing
-    // TODO BWR these are not even needed for the FD path...
-    // TODO BWR there is some foo in user_app to set up tempus for FD path
-
     responseLibrary_->addResponsesToInArgs<Traits::Tangent>(ae_inargs);
     responseLibrary_->evaluate<Traits::Tangent>(ae_inargs);
   }
