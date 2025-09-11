@@ -19,16 +19,12 @@
 namespace Tpetra {
 namespace Details {
 
-void finalizeKokkosIfNeeded() {
-  if(!Kokkos::is_finalized()) {
-    Kokkos::finalize();
-  }
-}
-  
 void
 initializeKokkos ()
 {
-  if (! Kokkos::is_initialized ()) {
+  static int once = [] {
+    assert(!Kokkos::is_finalized());
+    if (! Kokkos::is_initialized ()) {
     std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
     int narg = static_cast<int> (args.size ()); // must be nonconst
 
@@ -42,16 +38,19 @@ initializeKokkos ()
     }
     args_c.push_back(nullptr);
 
-    Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
+    Kokkos::initialize (narg, args_c.data ());
     checkOldCudaLaunchBlocking();
 
-    std::atexit (finalizeKokkosIfNeeded);
+    std::atexit (Kokkos::finalize);
 
-  }
-  // Add Kokkos calls to the TimeMonitor if the environment says so
-  Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-  Tpetra::Details::AddKokkosFenceToTimeMonitor();
-  Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+    // Add Kokkos calls to the TimeMonitor if the environment says so
+    Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
+    Tpetra::Details::AddKokkosFenceToTimeMonitor();
+    Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
+
+    return 1;
+  }();
+  assert(Kokkos::is_initialized());
 }
 
 } // namespace Details
