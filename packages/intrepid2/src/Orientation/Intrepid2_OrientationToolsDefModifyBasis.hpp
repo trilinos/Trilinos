@@ -674,7 +674,7 @@ namespace Intrepid2 {
                 }
               }
               
-              const ordinal_type ordFace = (1 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceOrdinal) < tagToOrdinal.extent(1) ? tagToOrdinal(2, faceOrdinal, 0) : -1) : -1);
+              const ordinal_type ordFace = (2 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceOrdinal) < tagToOrdinal.extent(1) ? tagToOrdinal(2, faceOrdinal, 0) : -1) : -1);
               
               if (ordFace > -1)
               {
