@@ -10,8 +10,8 @@
 #ifndef IFPACK2_BLOCKTRIDICONTAINER_IMPL_HPP
 #define IFPACK2_BLOCKTRIDICONTAINER_IMPL_HPP
 
-//#define IFPACK2_BLOCKTRIDICONTAINER_WRITE_MM
-//#define IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+// #define IFPACK2_BLOCKTRIDICONTAINER_WRITE_MM
+// #define IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
 
 #include <Teuchos_Details_MpiTypeTraits.hpp>
 
@@ -52,11 +52,11 @@
 #include "Ifpack2_BlockComputeResidualVector.hpp"
 #include "Ifpack2_BlockComputeResidualAndSolve.hpp"
 
-//#include <KokkosBlas2_gemv.hpp>
+// #include <KokkosBlas2_gemv.hpp>
 
 // need to interface this into cmake variable (or only use this flag when it is necessary)
-//#define IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
-//#undef  IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
+// #define IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
+// #undef  IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
 #include "cuda_profiler_api.h"
 #endif
@@ -72,7 +72,7 @@
 // if defined, this use pinned memory instead of device pointer
 // by default, we enable pinned memory
 #define IFPACK2_BLOCKTRIDICONTAINER_USE_PINNED_MEMORY_FOR_MPI
-//#define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_MEMORY_FOR_MPI
+// #define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_MEMORY_FOR_MPI
 
 // if defined, all views are allocated on cuda space intead of cuda uvm space
 #define IFPACK2_BLOCKTRIDICONTAINER_USE_CUDA_SPACE
@@ -138,10 +138,14 @@ using Scratch = Kokkos::View<typename ViewType::data_type,
 /// block tridiag scalar type
 ///
 template <typename T>
-struct BlockTridiagScalarType { typedef T type; };
+struct BlockTridiagScalarType {
+  typedef T type;
+};
 #if defined(IFPACK2_BLOCKTRIDICONTAINER_USE_SMALL_SCALAR_FOR_BLOCKTRIDIAG)
 template <>
-struct BlockTridiagScalarType<double> { typedef float type; };
+struct BlockTridiagScalarType<double> {
+  typedef float type;
+};
 // template<> struct SmallScalarType<Kokkos::complex<double> > { typedef Kokkos::complex<float> type; };
 #endif
 
@@ -1115,8 +1119,8 @@ createPartInterface(const Teuchos::RCP<const typename BlockHelperDetails::ImplTy
 
   BlockHelperDetails::PartInterface<MatrixType> interf;
 
-  const bool jacobi                    = partitions.size() == 0;
   const local_ordinal_type A_n_lclrows = G->getLocalNumRows();
+  const bool jacobi                    = partitions.size() == 0 || partitions.size() == A_n_lclrows;
   const local_ordinal_type nparts      = jacobi ? A_n_lclrows : partitions.size();
 
   typedef std::pair<local_ordinal_type, local_ordinal_type> size_idx_pair_type;

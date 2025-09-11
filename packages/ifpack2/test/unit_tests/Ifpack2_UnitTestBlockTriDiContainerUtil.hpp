@@ -22,6 +22,13 @@
 
 namespace tif_utest {
 
+enum JacobiMode {
+  JACOBI_OFF,
+  JACOBI_ON,
+  JACOBI_ON_SINGLETON_PARTS,
+  JACOBI_ON_SHUFFLED_PARTS
+};
+
 template <typename Scalar, typename LO, typename GO>
 struct BlockTriDiContainerTester {
   typedef LO Int;
@@ -58,10 +65,10 @@ struct BlockTriDiContainerTester {
   template <typename Array>
   static void
   make_parts(const StructuredBlock& sb, const StructuredBlockPart& sbp,
-             Tpetra_BlockCrsMatrix& A, const bool nonuniform_lines, const bool jacobi,
+             Tpetra_BlockCrsMatrix& A, const bool nonuniform_lines, const JacobiMode jacobiMode,
              Teuchos::Array<Array>& parts) {
     const auto& g = A.getCrsGraph();
-    if (!jacobi) {
+    if (jacobiMode == JACOBI_OFF) {
       // For the parts.
       if (!nonuniform_lines) {
         const Int n_lcl_parts = (sbp.ie - sbp.is) * (sbp.je - sbp.js);
@@ -113,6 +120,19 @@ struct BlockTriDiContainerTester {
           }
         }
       }
+    } else if (jacobiMode == JACOBI_ON_SINGLETON_PARTS || jacobiMode == JACOBI_ON_SHUFFLED_PARTS) {
+      // Populate parts explicitly for Jacobi: each row is its own part
+      Int n = g.getLocalNumRows();
+      for (Int i = 0; i < n; i++) {
+        parts.push_back(Array());
+        auto& part = parts.back();
+        part.resize(1);
+        part[0] = i;
+      }
+      if (jacobiMode == JACOBI_ON_SHUFFLED_PARTS) {
+        // Also randomly shuffle the parts (this should have no effect on the solution)
+        std::random_shuffle(parts.begin(), parts.end());
+      }
     }
   }
 
@@ -125,12 +145,12 @@ struct BlockTriDiContainerTester {
                   const bool nonuniform_lines   = false,
                   const bool zero_starting_soln = true,
                   const int num_sweeps          = 1,
-                  const bool jacobi             = false,
+                  const JacobiMode jacobiMode   = JACOBI_OFF,
                   const bool explicitConversion = false) {
     Teuchos::Array<Teuchos::ArrayRCP<LO> > parts;
     // make_parts modifies entries of A so the call to convertToCrsMatrix
     // needs to happen after make_parts
-    make_parts(sb, sbp, *A, nonuniform_lines, jacobi, parts);
+    make_parts(sb, sbp, *A, nonuniform_lines, jacobiMode, parts);
     auto A_pw    = Tpetra::convertToCrsMatrix(*A);
     const auto T = Teuchos::rcp(new Ifpack2::BlockRelaxation<Tpetra_RowMatrix>(A_pw));
     {
@@ -159,7 +179,7 @@ struct BlockTriDiContainerTester {
                const bool nonuniform_lines   = false,
                const bool zero_starting_soln = true,
                const int num_sweeps          = 1,
-               const bool jacobi             = false) {
+               const JacobiMode jacobiMode   = JACOBI_OFF) {
     const auto T = Teuchos::rcp(new Ifpack2::BlockRelaxation<Tpetra_RowMatrix>(A));
     {
       Teuchos::ParameterList p;
@@ -170,7 +190,7 @@ struct BlockTriDiContainerTester {
       p.set("relaxation: zero starting solution", zero_starting_soln);
       p.set<int>("relaxation: sweeps", num_sweeps);
       Teuchos::Array<Teuchos::ArrayRCP<LO> > parts;
-      make_parts(sb, sbp, *A, nonuniform_lines, jacobi, parts);
+      make_parts(sb, sbp, *A, nonuniform_lines, jacobiMode, parts);
       p.set<LO>("partitioner: local parts", parts.size());
       p.set("partitioner: parts", parts);
       p.set("partitioner: subparts per part", 1);
@@ -188,12 +208,12 @@ struct BlockTriDiContainerTester {
   make_BTDC_PW(const StructuredBlock& sb, const StructuredBlockPart& sbp,
                const Teuchos::RCP<Tpetra_BlockCrsMatrix>& A,
                const bool overlap_comm = false, const bool nonuniform_lines = false,
-               const bool jacobi = false, const bool seq_method = false,
+               const JacobiMode jacobiMode = JACOBI_OFF, const bool seq_method = false,
                const bool explicitConversion = false) {
     Teuchos::Array<Teuchos::Array<LO> > parts;
     // make_parts modifies entries of A so the call to convertToCrsMatrix
     // needs to happen after make_parts
-    make_parts(sb, sbp, *A, nonuniform_lines, jacobi, parts);
+    make_parts(sb, sbp, *A, nonuniform_lines, jacobiMode, parts);
     auto A_pw = Tpetra::convertToCrsMatrix(*A);
 
     return Teuchos::rcp(new Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix>(
@@ -206,9 +226,9 @@ struct BlockTriDiContainerTester {
   make_BTDC(const StructuredBlock& sb, const StructuredBlockPart& sbp,
             const Teuchos::RCP<Tpetra_BlockCrsMatrix>& A,
             const bool overlap_comm = false, const bool nonuniform_lines = false,
-            const bool jacobi = false, const bool seq_method = false) {
+            const JacobiMode jacobiMode = JACOBI_OFF, const bool seq_method = false) {
     Teuchos::Array<Teuchos::Array<LO> > parts;
-    make_parts(sb, sbp, *A, nonuniform_lines, jacobi, parts);
+    make_parts(sb, sbp, *A, nonuniform_lines, jacobiMode, parts);
     return Teuchos::rcp(new Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix>(
         A, parts, 1, overlap_comm, seq_method));
   }
@@ -217,7 +237,7 @@ struct BlockTriDiContainerTester {
   test_BR_BTDC(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                const StructuredBlock& sb, const StructuredBlockPart& sbp,
                const Int bs, const Int nvec, const bool nonuniform_lines,
-               const bool different_maps, const bool jacobi, const bool overlap_comm,
+               const bool different_maps, const JacobiMode jacobiMode, const bool overlap_comm,
                const bool seq_method, const bool pointwise, const bool explicitConversion,
                const std::string& details) {
 #define TEST_BR_BTDC_FAIL(msg)  \
@@ -247,7 +267,9 @@ struct BlockTriDiContainerTester {
         {"general", false, false},  // Test the general case.
         {"I", true, true},          // Internal test of tridiag_is_identity.
     };
-    int nerr = 0;
+    // Is Jacobi used (either empty parts, or singleton parts)?
+    bool jacobi = jacobiMode != JACOBI_OFF;
+    int nerr    = 0;
     for (size_t pi = 0; pi < sizeof(parms) / sizeof(Parameters); ++pi) {
       const auto& p            = parms[pi];
       auto g                   = bcmm::make_crs_graph(comm, sb, sbp, p.tridiag_only, different_maps);
@@ -257,8 +279,8 @@ struct BlockTriDiContainerTester {
       const int num_sweeps     = solve_case ? (jacobi ? 40 : 20) : 1;
       const bool use_br        = !(overlap_comm || seq_method);
       const Magnitude tol      = 1e-3;
-      const auto T_br          = use_br ? (pointwise ? make_BR_BTDC_PW(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobi, explicitConversion) : make_BR_BTDC(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobi)) : Teuchos::null;
-      const auto T_bare        = use_br ? Teuchos::null : (pointwise ? make_BTDC_PW(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi, seq_method, explicitConversion) : make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi, seq_method));
+      const auto T_br          = use_br ? (pointwise ? make_BR_BTDC_PW(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobiMode, explicitConversion) : make_BR_BTDC(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobiMode)) : Teuchos::null;
+      const auto T_bare        = use_br ? Teuchos::null : (pointwise ? make_BTDC_PW(sb, sbp, A, overlap_comm, nonuniform_lines, jacobiMode, seq_method, explicitConversion) : make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobiMode, seq_method));
       if (!T_br.is_null()) {
         T_br->initialize();
         T_br->compute();
@@ -324,7 +346,7 @@ struct BlockTriDiContainerTester {
         {  // Advanced options only the bare object supports.
           auto T_bare_advanced = T_bare;
           if (T_bare_advanced.is_null()) {
-            T_bare_advanced = make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobi,
+            T_bare_advanced = make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobiMode,
                                         seq_method);
             T_bare_advanced->initialize();
             T_bare_advanced->compute(T_bare_advanced->createDefaultComputeParameters());
