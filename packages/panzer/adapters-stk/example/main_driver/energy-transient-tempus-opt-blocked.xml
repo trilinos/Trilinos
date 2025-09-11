@@ -80,6 +80,12 @@
          <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
       </ParameterList>
+      <ParameterList name="S^2_TEMPERATURE Point Value">
+         <Parameter name="Type" type="string" value="Point Value"/>
+         <Parameter name="Field Name" type="string" value="S^2_TEMPERATURE"/>
+         <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
+         <Parameter name="Evaluation Types" type="string" value="Residual"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="Physics Blocks">
@@ -137,6 +143,11 @@
             </ParameterList>
             <ParameterList name="HEAT_CAPACITY">
                 <Parameter name="Value" type="double" value="1.0"/>
+            </ParameterList>
+            <ParameterList name="S^2_TEMPERATURE">
+                <Parameter name="Type" type="string" value="Product"/>
+                <Parameter name="Product Name" type="string" value="S^2_TEMPERATURE"/>
+                <Parameter name="Term Names" type="string" value="S,S,TEMPERATURE"/>
             </ParameterList>
 
         </ParameterList>

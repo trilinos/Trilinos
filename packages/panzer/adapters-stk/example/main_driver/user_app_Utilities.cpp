@@ -105,11 +105,7 @@ void user_app::addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList&
       for(std::size_t i=0;i<eblocks.size();i++)
         descriptors.push_back(panzer::blockDescriptor(eblocks[i]));
 
-      //me_factory.addResponse("Value In Middle",descriptors,builder);
-      // TODO BWR HACK HACK TO GET DGDX!
-      //auto me = Teuchos::rcp_dynamic_cast<panzer::ModelEvaluator<double>>(me_factory.getPhysicsModelEvaluator());
-      //me->addFlexibleResponse("Value In Middle",descriptors,Teuchos::rcpFromRef(builder));
-      me_factory.addFlexibleResponse("Value In Middle",descriptors,builder);
+      me_factory.addResponseWithDerivativesValue In Middle",descriptors,builder);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Error: Response type of \"" << lst.get<std::string>("Type") << "\" is not supported!");

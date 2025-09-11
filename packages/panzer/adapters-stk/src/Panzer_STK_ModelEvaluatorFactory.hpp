@@ -122,9 +122,10 @@ namespace panzer_stk {
     template <typename BuilderT>
     int addResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,const BuilderT & builder);
 
-    // TODO BWR HERE DO WE WANT THIS?
+    /** \brief Add a response \f$g\f$ along with support for state and parameter derivatives \f$\frac{dg}{dx}\f$ and \f$\frac{dg}{dp}\f$, respectively.
+     */
     template <typename BuilderT>
-    int addFlexibleResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,BuilderT & builder);
+    int addResponseWithDerivatives(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,BuilderT & builder);
 
     void buildResponses(const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                         const bool write_graphviz_file=false,
@@ -365,7 +366,7 @@ addResponse(const std::string & responseName,const std::vector<panzer::WorksetDe
 template<typename ScalarT>
 template <typename BuilderT>
 int ModelEvaluatorFactory<ScalarT>::
-addFlexibleResponse(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,BuilderT & builder)
+addResponseWithDerivatives(const std::string & responseName,const std::vector<panzer::WorksetDescriptor> & wkstDesc,BuilderT & builder)
 {
   typedef panzer::ModelEvaluator<double> PanzerME;
 
