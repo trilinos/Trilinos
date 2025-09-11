@@ -76,7 +76,7 @@ namespace Intrepid2 {
 
     auto matDataHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), matData);
 
-    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0, numSubCells;
+    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0;
     const auto cellTopo = basis->getBaseCellTopology();
     {
       const ordinal_type numEdges = cellTopo.getSubcellCount(EDGE_DIM);
@@ -91,7 +91,6 @@ namespace Intrepid2 {
         numOrts = std::max(numOrts,2*ordinal_type(cellTopo.getSideCount(FACE_DIM,i)));
       }
       matDim = std::max(matDim1,matDim2);
-      numSubCells = (matDim1>0)*numEdges + (matDim2>0)*numFaces;
       
       operators = OperatorViewType("Orientation::EdgeOperators::"+name,
                                    numEdges, numOrts, 2);
@@ -110,12 +109,8 @@ namespace Intrepid2 {
       auto ordinalToTag = basis->getAllDofTags();
       auto tagToOrdinal = basis->getAllDofOrdinal();
       
-      ordinal_type numEdges(0), numFaces(0);
-      
-      if (basis->requireOrientation()) {
-        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(EDGE_DIM, 0) > 0);
-        numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(FACE_DIM, 0) > 0);
-      }
+      const ordinal_type numEdges = cellTopo.getSubcellCount(1);
+      const ordinal_type numFaces = cellTopo.getSubcellCount(2);
       
       if (numEdges > 0)
       {
@@ -147,7 +142,6 @@ namespace Intrepid2 {
                 bool deviatesFromIdentity = false;
                 for (ordinal_type l=0;l<ndofEdge;++l) {
                   const ordinal_type ll = tagToOrdinal(EDGE_DIM, edgeId, l);
-                  //                      auto & input_ = in.access(ll);
                   auto & mat_il = mat(i,l);
                   if (mat_il != 0.0)
                   {
@@ -156,6 +150,11 @@ namespace Intrepid2 {
                     {
                       deviatesFromIdentity = true;
                     }
+                  }
+                  else if (ii == ll)
+                  {
+                    // zero entry on the diagonal is also a deviation from the identity
+                    deviatesFromIdentity = true;
                   }
                 } // column
                 INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
@@ -178,13 +177,13 @@ namespace Intrepid2 {
                   }
                 }
               } // row
+              rowOffsets.push_back(rowOffset);
             }
             
-            rowOffsets.push_back(rowOffset);
             std::vector<bool> transposeVector {false, true};
             for (const bool transpose : transposeVector)
             {
-              bool transposeInt = transpose ? 1 : 0;
+              ordinal_type transposeInt = transpose ? 1 : 0;
               OrientationOperator<DT> orientationOperator = constructOrientationOperatorInternal(nonIdentityDofs, rowOffsets, colIDs, weights, transpose);
               operatorsHost(edgeId, edgeOrt, transposeInt) = orientationOperator;
             }
@@ -211,7 +210,7 @@ namespace Intrepid2 {
 
     auto matDataHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), matData);
 
-    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0, maxFaceOrts = 0, numSubCells;
+    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0, maxFaceOrts = 0;
     const auto cellTopo = basis->getBaseCellTopology();
     {
       const ordinal_type numEdges = cellTopo.getSubcellCount(EDGE_DIM);
@@ -223,12 +222,15 @@ namespace Intrepid2 {
       }
       for(ordinal_type i=0; i<numFaces; ++i) {
         matDim2 = std::max(matDim2, basis->getDofCount(FACE_DIM,i));
-        maxFaceOrts = std::max(maxFaceOrts,2*ordinal_type(cellTopo.getSideCount(FACE_DIM,i)));
-        numOrts = std::max(numOrts,maxFaceOrts);
+        const ordinal_type faceEdgeCount = static_cast<ordinal_type>(cellTopo.getSideCount(FACE_DIM,i));
+        std::cout << "faceEdgeCount: " << faceEdgeCount << std::endl;
+        maxFaceOrts = std::max(maxFaceOrts,2*faceEdgeCount);
+        std::cout << "maxFaceOrts: " << maxFaceOrts << std::endl;
         // 2*(#face edges): a formula that happens to work for triangles and quads: 6 triangle orientations, 8 quad orientations.
+        numOrts = std::max(numOrts,maxFaceOrts);
+        
       }
       matDim = std::max(matDim1,matDim2);
-      numSubCells = (matDim1>0)*numEdges + (matDim2>0)*numFaces;
       
       operators = OperatorViewType("Orientation::FaceOperators::"+name,
                                    numFaces, numOrts, 2);
@@ -246,16 +248,13 @@ namespace Intrepid2 {
     // determine if there are edge dofs
     ordinal_type existEdgeDofs = (matDim1 > 0) ? 1 : 0;
     
+    if ((basis->getFunctionSpace() != FUNCTION_SPACE_HDIV) || (cellTopo.getDimension() == 3)) // no face orientations for H(div) except in 3D
     {
       auto ordinalToTag = basis->getAllDofTags();
       auto tagToOrdinal = basis->getAllDofOrdinal();
-
-      ordinal_type numVerts(0), numEdges(0), numFaces(0);
       
-      if (basis->requireOrientation()) {
-        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(EDGE_DIM, 0) > 0);
-        numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(FACE_DIM, 0) > 0);
-      }
+      const ordinal_type numEdges = cellTopo.getSubcellCount(1);
+      const ordinal_type numFaces = cellTopo.getSubcellCount(2);
       
       if (numFaces > 0)
       {
@@ -290,7 +289,6 @@ namespace Intrepid2 {
                 bool deviatesFromIdentity = false;
                 for (ordinal_type l=0;l<ndofFace;++l) {
                   const ordinal_type ll = tagToOrdinal(FACE_DIM, faceId, l);
-                  //                      auto & input_ = in.access(ll);
                   auto & mat_il = mat(i,l);
                   if (mat_il != 0.0)
                   {
@@ -299,6 +297,11 @@ namespace Intrepid2 {
                     {
                       deviatesFromIdentity = true;
                     }
+                  }
+                  else if (ii == ll)
+                  {
+                    // zero entry on the diagonal is also a deviation from the identity
+                    deviatesFromIdentity = true;
                   }
                 } // column
                 INTREPID2_TEST_FOR_EXCEPTION(nnz == 0, std::invalid_argument, "Each dof should have *some* nonzero weight");
@@ -312,7 +315,6 @@ namespace Intrepid2 {
                   for (ordinal_type l=0;l<ndofFace;++l)
                   {
                     const ordinal_type ll = tagToOrdinal(FACE_DIM, faceId, l);
-                    //                      auto & input_ = in.access(ll);
                     auto & mat_il = mat(i,l);
                     if (mat_il != 0.0)
                     {
@@ -326,7 +328,8 @@ namespace Intrepid2 {
               std::vector<bool> transposeVector {false, true};
               for (const bool transpose : transposeVector)
               {
-                bool transposeInt = transpose ? 1 : 0;
+                ordinal_type transposeInt = transpose ? 1 : 0;
+                std::cout << "determining faceOperators[Inv](" << faceId << "," << faceOrt << "," << transposeInt << "):\n";
                 OrientationOperator<DT> orientationOperator = constructOrientationOperatorInternal(nonIdentityDofs, rowOffsets, colIDs, weights, transpose);
                 operatorsHost(faceId, faceOrt, transposeInt) = orientationOperator;
               }
@@ -365,7 +368,7 @@ namespace Intrepid2 {
       subcellBasis = cellBasis; // if (dim==1)
       const ordinal_type numOrt = 2;
       for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
-        if(cellBasis->getDofCount(1, edgeId) < 2) continue;
+        if(cellBasis->getDofCount(1, edgeId) < 1) continue;
         if(cellTopo.getDimension()!=1) {
           basisPtr = cellBasis->getSubCellRefBasis(1,edgeId);
           subcellBasis = basisPtr.get();
@@ -445,7 +448,7 @@ namespace Intrepid2 {
     { //faces
       subcellBasis = cellBasis; // if (dim==2)
       for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
-        // this works for triangles (numOrt=6) and quadratures (numOrt=8)
+        // this works for triangles (numOrt=6) and quadrilaterals (numOrt=8)
         const ordinal_type numOrt = 2*cellTopo.getSideCount(2,faceId);
         if(cellBasis->getDofCount(2, faceId) < 1) continue;
         if(cellTopo.getDimension()!=2) {
@@ -621,7 +624,18 @@ namespace Intrepid2 {
       {
         auto basis_host = basis->getHostBasis();
         auto matData = createCoeffMatrix(basis);
+        {
+          // DEBUGGING
+          std::cout << "createOperators() for basis " << basis->getName() << " of degree " << basis->getDegree() << std::endl;
+          
+          if (basis->getDegree() == 3)
+          {
+            std::cout << "basis degree is " << basis->getDegree() << std::endl;
+          }
+        }
+        
         edgeOperator = createEdgeOperatorsInternal(basis_host.get(), matData);
+        
         edgeOperatorData.insert(std::make_pair(key, edgeOperator));
         
         faceOperator = createFaceOperatorsInternal(basis_host.get(), matData);
@@ -665,8 +679,19 @@ namespace Intrepid2 {
       {
         auto basis_host = basis->getHostBasis();
         auto matData = createInvCoeffMatrix(basis);
+        
+        {
+          // DEBUGGING
+          if (basis->getDegree() == 3)
+          {
+            std::cout << "basis degree is " << basis->getDegree() << std::endl;
+          }
+        }
+        
         edgeOperator = createEdgeOperatorsInternal(basis_host.get(), matData);
         invEdgeOperatorData.insert(std::make_pair(key, edgeOperator));
+        
+        std::cout << "createInvOperators() for basis " << basis->getName() << " of degree " << basis->getDegree() << std::endl;
         
         faceOperator = createFaceOperatorsInternal(basis_host.get(), matData);
         invFaceOperatorData.insert(std::make_pair(key, faceOperator));
@@ -707,6 +732,31 @@ namespace Intrepid2 {
     {
       if (!transpose)
       {
+        {
+          // DEBUGGING
+          std::cout << "rowIndices: ";
+          for (auto &rowIndex : nonIdentityDofs)
+          {
+            std::cout << rowIndex << " ";
+          }
+          std::cout << "\nrowOffsets: ";
+          for (auto &rowOffset : rowOffsets)
+          {
+            std::cout << rowOffset << " ";
+          }
+          std::cout << "\ncolIndices: ";
+          for (auto &colID : colIDs)
+          {
+            std::cout << colID << " ";
+          }
+          std::cout << "\nweights: ";
+          for (auto &weight : weights)
+          {
+            std::cout << weight << " ";
+          }
+          std::cout << std::endl;
+        }
+        
         const int numWeights = rowOffsets[numRows];
         Kokkos::View<ordinal_type*,DT> rowIndices("OrientationOperator: rowIndices", numRows);
         Kokkos::View<ordinal_type*,DT> offsetForRowOrdinal("OrientationOperator: rowOffsets", numRows+1); // convenient to be able to check the "next" row offset to get a column count, even when on the last row
@@ -761,6 +811,7 @@ namespace Intrepid2 {
         // for the transpose case, we construct the arguments for the non-transpose case,
         // and then call this method with transpose = false.
         std::map<ordinal_type, std::map<ordinal_type,double> > transposeOperator; // column to (row -> weight) lookup
+        std::set<ordinal_type> opRows(nonIdentityDofs.begin(), nonIdentityDofs.end());
         
         const ordinal_type numRows = static_cast<ordinal_type>(nonIdentityDofs.size());
         for (ordinal_type rowOrdinal = 0; rowOrdinal < numRows; rowOrdinal++)
@@ -774,6 +825,11 @@ namespace Intrepid2 {
             const ordinal_type & colID = colIDs[rowOffset + colOrdinal];
             const double      & weight = weights[rowOffset + colOrdinal];
             transposeOperator[colID][rowID] = weight;
+            if (opRows.find(colID) == opRows.end())
+            {
+              // then the original operator had an implicit identity row for colID; the transpose should have a 1 in diagonal
+              transposeOperator[colID][colID] = 1.0;
+            }
           }
         }
         
@@ -803,6 +859,12 @@ namespace Intrepid2 {
       }
     }
     // identity; nothing to allocate or store
+    
+    if (!transpose)
+    {
+      // DEBUGGING
+      std::cout << "[identity]\n";
+    }
     return OrientationOperator<DT>();
   }
 }
