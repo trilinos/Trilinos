@@ -1318,7 +1318,7 @@ describe (Teuchos::FancyOStream& out,
 // This macro must be explanded within the Tpetra::Details namespace.
 // Moreover, we need (GO,LO,Host) and (LO,LO,Host)
 #if defined(HAVE_TPETRA_INST_SERIAL) || defined(HAVE_TPETRA_INST_OPENMP)
-#if define(HAVE_TPETRA_INST_INT_INT)
+#if defined(HAVE_TPETRA_INST_INT_INT)
 #define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE)             \
   template class Details::FixedHashTable< GO , LO , typename NODE::device_type >;
 #else
