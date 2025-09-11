@@ -96,8 +96,8 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
   )
   
   TRIBITS_ADD_EXECUTABLE(
-    TutorialDriver_xml
-    SOURCES TutorialDriver_xml.cpp
+    TutorialDriver_xml_galeri
+    SOURCES TutorialDriver_xml_galeri.cpp
     COMM serial mpi
     )
   #TRIBITS_ADD_EXECUTABLE(
@@ -111,9 +111,9 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     get_filename_component(xml_we "${xml_file}" NAME_WE)
 
     TRIBITS_ADD_TEST(
-      TutorialDriver_xml
+      TutorialDriver_xml_galeri
       NAME "Test_Tutorial_laplace2d_${xml_we}"
-      ARGS "--matrixType=Laplace2D --xml=${xml_file}"
+      ARGS "--matrixType=Laplace2D --matrixType=Laplace2D --xml=${xml_file}"
       COMM serial mpi
       NUM_MPI_PROCS 2
     )
@@ -127,15 +127,15 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     message("${xml_we}")
 
     TRIBITS_ADD_TEST(
-      TutorialDriver_xml
+      TutorialDriver_xml_galeri
       NAME "Test_Tutorial_recirc2d_${xml_we}"
-      ARGS "--matrixType=Recirc2D --xml=${xml_file} --diffusion=1e-5"
+      ARGS "--matrixType=Recirc2D --matrixType=Recirc2D --xml=${xml_file} --diffusion=1e-5"
       COMM serial mpi
       NUM_MPI_PROCS 4
     )
   endforeach()
 
-  IF(TRUE)
+  IF(FALSE)
   ## These tests are incorrectly named. ScalingTestParamList.cpp always uses Laplace2D. I don't know if the plan is to generalize the different problem types into using the same file? But this is mostly an older file anyways (most edits by Tobias Wiesner and other 10 years ago)
     TRIBITS_ADD_EXECUTABLE(
       Tutorial_ScalingTestParamList
