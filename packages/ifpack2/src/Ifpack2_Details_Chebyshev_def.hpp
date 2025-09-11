@@ -284,6 +284,7 @@ Chebyshev<ScalarType, MV>::
   , computeMaxResNorm_(false)
   , computeSpectralRadius_(true)
   , ckUseNativeSpMV_(MV::node_type::is_gpu)
+  , preAllocateTempVector_(true)
   , debug_(false) {
   checkConstructorInput();
 }
@@ -316,6 +317,7 @@ Chebyshev<ScalarType, MV>::
   , computeMaxResNorm_(false)
   , computeSpectralRadius_(true)
   , ckUseNativeSpMV_(MV::node_type::is_gpu)
+  , preAllocateTempVector_(true)
   , debug_(false) {
   checkConstructorInput();
   setParameters(params);
@@ -360,6 +362,7 @@ void Chebyshev<ScalarType, MV>::
   const bool defaultComputeMaxResNorm         = false;
   const bool defaultComputeSpectralRadius     = true;
   const bool defaultCkUseNativeSpMV           = MV::node_type::is_gpu;
+  const bool defaultPreAllocateTempVector     = true;
   const bool defaultDebug                     = false;
 
   // We'll set the instance data transactionally, after all reads
@@ -383,6 +386,7 @@ void Chebyshev<ScalarType, MV>::
   bool computeMaxResNorm         = defaultComputeMaxResNorm;
   bool computeSpectralRadius     = defaultComputeSpectralRadius;
   bool ckUseNativeSpMV           = defaultCkUseNativeSpMV;
+  bool preAllocateTempVector     = defaultPreAllocateTempVector;
   bool debug                     = defaultDebug;
 
   // Fetch the parameters from the ParameterList.  Defer all
@@ -458,6 +462,10 @@ void Chebyshev<ScalarType, MV>::
   // Load the kernel fuse override from the parameter list
   if (plist.isParameter("chebyshev: use native spmv"))
     ckUseNativeSpMV = plist.get("chebyshev: use native spmv", ckUseNativeSpMV);
+
+  // Load the pre-allocate overrride from the parameter list
+  if (plist.isParameter("chebyshev: pre-allocate temp vector"))
+    preAllocateTempVector = plist.get("chebyshev: pre-allocate temp vector", preAllocateTempVector);
 
   // Don't fill in defaults for the max or min eigenvalue, because
   // this class uses the existence of those parameters to determine
@@ -690,6 +698,7 @@ void Chebyshev<ScalarType, MV>::
   computeMaxResNorm_     = computeMaxResNorm;
   computeSpectralRadius_ = computeSpectralRadius;
   ckUseNativeSpMV_       = ckUseNativeSpMV;
+  preAllocateTempVector_ = preAllocateTempVector;
   debug_                 = debug;
 
   if (debug_) {
@@ -943,6 +952,25 @@ void Chebyshev<ScalarType, MV>::compute() {
       lambdaMinForApply_ = one;
       lambdaMaxForApply_ = lambdaMinForApply_;
       eigRatioForApply_  = one;  // Ifpack doesn't include this line.
+    }
+  }
+
+  // Allocate temporary vector
+  if (preAllocateTempVector_ && !D_.is_null()) {
+    makeTempMultiVector(*D_);
+    if (chebyshevAlgorithm_ == "fourth" || chebyshevAlgorithm_ == "opt_fourth") {
+      makeSecondTempMultiVector(*D_);
+    }
+  }
+
+  if (chebyshevAlgorithm_ == "textbook") {
+    // no-op
+  } else {
+    if (ck_.is_null()) {
+      ck_ = Teuchos::rcp(new ChebyshevKernel<op_type>(A_, ckUseNativeSpMV_));
+    }
+    if (ckUseNativeSpMV_) {
+      ck_->setAuxiliaryVectors(1);
     }
   }
 }
