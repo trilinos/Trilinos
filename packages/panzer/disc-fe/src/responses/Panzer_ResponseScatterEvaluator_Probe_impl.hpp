@@ -65,8 +65,6 @@ ResponseScatterEvaluator_ProbeBase(
 
   // the field manager will allocate all of these fields
   field_ = PHX::MDField<const ScalarT,Cell,BASIS>(fieldName,basis_->functional);
-  //std::cout << " FIELD NAME " << field_.fieldTag() << " " << typeid(EvalT).name() << " " << 
-  //typeid(ScalarT).name() << std::endl;
   this->addDependentField(field_);
 
   num_basis = basis->cardinality();

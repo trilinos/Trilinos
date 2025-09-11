@@ -4,6 +4,7 @@
 #include "Panzer_NodeType.hpp"
 #include "Thyra_TpetraMultiVector.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
+#include <Panzer_LinearObjContainer.hpp>
 
 namespace ROL {
 
