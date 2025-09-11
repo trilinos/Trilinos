@@ -193,7 +193,7 @@ namespace TpetraExamples
       TimeMonitor timer(*TimeMonitor::getNewTimer("3.1) Ghosting Material State (Matrix)"));
       state.doGhost();
 
-    }  
+    }
 
     // Matrix Fill
     // -------------------
@@ -239,8 +239,8 @@ namespace TpetraExamples
     crs_matrix_type crs_matrix (crs_graph);
     multivector_type rhs (crs_graph->getRowMap(), 1);
 
-    Kokkos::View<Scalar[4][4], hostType> element_matrix ("element_matrix");
-    Teuchos::Array<Scalar> element_rhs(4);
+    Scalar element_matrix[4][4];
+    Scalar element_rhs[4];
 
     Teuchos::Array<global_ordinal_type> column_global_ids(4);     // global column ids list
     Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
@@ -250,8 +250,7 @@ namespace TpetraExamples
     for (size_t element_gidx = 0;
          element_gidx < mesh.getNumOwnedElements (); ++element_gidx) {
       // Get the stiffness matrix for this element
-      ReferenceQuad4(element_matrix);
-      ReferenceQuad4RHS(element_rhs);
+      ReferenceQuad4(element_matrix,element_rhs);
 
       // Fill the global column ids array for this element
       for (size_t element_node_idx = 0;
@@ -272,7 +271,7 @@ namespace TpetraExamples
         if (mesh.nodeIsOwned (global_row_id)) {
           for (size_t col_idx = 0; col_idx < 4; ++col_idx) {
             column_scalar_values[col_idx] =
-              element_matrix(element_node_idx, col_idx);
+              element_matrix[element_node_idx][col_idx];
           }
           crs_matrix.sumIntoGlobalValues (global_row_id,
                                           column_global_ids,
@@ -288,8 +287,7 @@ namespace TpetraExamples
     //   is for ghost elements.
     for(size_t element_gidx=0; element_gidx<mesh.getNumGhostElements(); element_gidx++)
       {
-        ReferenceQuad4(element_matrix);
-        ReferenceQuad4RHS(element_rhs);
+        ReferenceQuad4(element_matrix,element_rhs);
 
         for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.extent(1); element_node_idx++)
           {
@@ -303,7 +301,7 @@ namespace TpetraExamples
               {
                 for(size_t col_idx=0; col_idx<4; col_idx++)
                   {
-                    column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
+                    column_scalar_values[col_idx] = element_matrix[element_node_idx][col_idx];
                   }
                 crs_matrix.sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
                 rhs.sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
@@ -399,16 +397,16 @@ namespace TpetraExamples
     auto range_map  = row_map;
 
 
-    Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer(); 
+    Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
     RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
     RCP<crs_graph_type> crs_graph = rcp(new crs_graph_type(row_map, maxEntriesPerRow));
     {
       auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
       auto ghost_element_to_node_ids = mesh.getGhostElementToNode().getHostView(Tpetra::Access::ReadOnly);
-   
+
       // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
       Teuchos::Array<global_ordinal_type> global_ids_in_row(4);
-  
+
       // Insert node contributions for every OWNED element:
       for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
         {
@@ -420,7 +418,7 @@ namespace TpetraExamples
             {
               global_ids_in_row[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
             }
-      
+
           // Add the contributions from the current row into the graph if the node is owned.
           // - For example, if Element 0 contains nodes [0,1,4,5] and nodes 0 and 4 are owned
           //   by the current processor, then:
@@ -436,7 +434,7 @@ namespace TpetraExamples
                 }
             }
         }
-  
+
       // Insert the node contributions for every GHOST element:
       for(size_t element_gidx=0; element_gidx<mesh.getNumGhostElements(); element_gidx++)
         {
@@ -471,7 +469,7 @@ namespace TpetraExamples
       TimeMonitor timer(*TimeMonitor::getNewTimer("3.1) Ghosting Material State (Matrix)"));
       state.doGhost();
 
-    }  
+    }
 
 
     // Matrix Fill
@@ -514,51 +512,39 @@ namespace TpetraExamples
     // elements and insert rows for only the locally owned rows.
     //
     RCP<TimeMonitor> timerElementLoopMemory = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.2) ElementLoop  (Memory)")));
-    
+
     RCP<crs_matrix_type> crs_matrix = rcp(new crs_matrix_type(crs_graph));
     RCP<multivector_type> rhs = rcp(new multivector_type(crs_graph->getRowMap(), 1));
     {
 
       auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
-      auto ghost_element_to_node_ids = mesh.getGhostElementToNode().getDeviceView(Tpetra::Access::ReadOnly);    
+      auto ghost_element_to_node_ids = mesh.getGhostElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
       auto localMatrix  = crs_matrix->getLocalMatrixDevice();
       auto localRHS     = rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
       auto localRowMap  = crs_matrix->getRowMap()->getLocalMap();
       auto localColMap  = crs_matrix->getColMap()->getLocalMap();
-    
+
       // Because we're processing elements in parallel, we need storage for all of them
       int numOwnedElements = mesh.getNumOwnedElements();
       int numGhostElements = mesh.getNumGhostElements();
-      int nperel = owned_element_to_node_ids.extent(1);
-      pair_type alln = pair_type(0,nperel);
-      scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*std::max(numOwnedElements,numGhostElements));
-      scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*std::max(numOwnedElements,numGhostElements));
-      local_ordinal_single_view_type  all_lcids("all_lids",nperel*std::max(numOwnedElements,numGhostElements));
-    
-    
+      constexpr int MAX_NODES_PER_ELEM = 4;
+      int nperel = mesh.getNodesPerElem();
+
       timerElementLoopMemory = Teuchos::null;
       RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.3) ElementLoop  (Matrix)")));
 
-      // Work around subview of managed views being slower than unmanaged
-      auto all_element_rhs_unmanaged = makeUnmanaged(all_element_rhs);
-      auto all_element_matrix_unmanaged = makeUnmanaged(all_element_matrix);
-      auto all_lcids_unmanaged = makeUnmanaged(all_lcids);
-    
       // Loop over owned elements:
       Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numOwnedElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
-          // Get subviews
-          pair_type location_pair = pair_type(nperel*element_gidx,nperel*(element_gidx+1));
-          auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged,location_pair);
-          auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
-          auto element_lcids  = Kokkos::subview(all_lcids_unmanaged,location_pair);
-      
+          Scalar element_matrix[MAX_NODES_PER_ELEM][MAX_NODES_PER_ELEM];
+          local_ordinal_type element_lcids[MAX_NODES_PER_ELEM];
+          Scalar element_rhs[MAX_NODES_PER_ELEM];
+
           // Get the contributions for the current element
-          ReferenceQuad4(element_matrix);
-          ReferenceQuad4RHS(element_rhs);
-      
+          ReferenceQuad4(element_matrix,element_rhs);
+
           // Get the local column ids array for this element
           for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++) {
-            element_lcids(element_node_idx) = localColMap.getLocalElement(owned_element_to_node_ids(element_gidx, element_node_idx));
+            element_lcids[element_node_idx] = localColMap.getLocalElement(owned_element_to_node_ids(element_gidx, element_node_idx));
           }
 
           // For each node (row) on the current element:
@@ -571,7 +557,7 @@ namespace TpetraExamples
               if(local_row_id != LO_INVALID) {
                 // Force atomics on sums
                 for(int col_idx=0; col_idx<nperel; col_idx++)
-                  localMatrix.sumIntoValues(local_row_id,&element_lcids(col_idx),1,&(element_matrix(element_node_idx,col_idx)),true,true);
+                  localMatrix.sumIntoValues(local_row_id,&element_lcids[col_idx],1,&(element_matrix[element_node_idx][col_idx]),true,true);
                 Kokkos::atomic_add(&(localRHS(local_row_id,0)),element_rhs[element_node_idx]);
               }
             }
@@ -582,19 +568,16 @@ namespace TpetraExamples
       // - This loop is the same as the element loop for owned elements, but this one
       //   is for ghost elements.
       Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numGhostElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
-          // Get subviews
-          pair_type location_pair = pair_type(nperel*element_gidx,nperel*(element_gidx+1));
-          auto element_rhs    = Kokkos::subview(all_element_rhs_unmanaged,location_pair);
-          auto element_matrix = Kokkos::subview(all_element_matrix_unmanaged,location_pair,alln);
-          auto element_lcids  = Kokkos::subview(all_lcids_unmanaged,location_pair);
+          Scalar element_matrix[MAX_NODES_PER_ELEM][MAX_NODES_PER_ELEM];
+          local_ordinal_type element_lcids[MAX_NODES_PER_ELEM];
+          Scalar element_rhs[MAX_NODES_PER_ELEM];
 
           // Get the contributions for the current element
-          ReferenceQuad4(element_matrix);
-          ReferenceQuad4RHS(element_rhs);
+          ReferenceQuad4(element_matrix,element_rhs);
 
           // Get the local column ids array for this element
           for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++) {
-            element_lcids(element_node_idx) = localColMap.getLocalElement(ghost_element_to_node_ids(element_gidx, element_node_idx));
+            element_lcids[element_node_idx] = localColMap.getLocalElement(ghost_element_to_node_ids(element_gidx, element_node_idx));
           }
 
           for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++)
@@ -604,12 +587,12 @@ namespace TpetraExamples
               if(local_row_id != LO_INVALID) {
                 // Force atomics on sums
                 for(int col_idx=0; col_idx<nperel; col_idx++)
-                  localMatrix.sumIntoValues(local_row_id,&element_lcids(col_idx),1,&(element_matrix(element_node_idx,col_idx)),true,true);
+                  localMatrix.sumIntoValues(local_row_id,&element_lcids[col_idx],1,&(element_matrix[element_node_idx][col_idx]),true,true);
                 Kokkos::atomic_add(&(localRHS(local_row_id,0)),element_rhs[element_node_idx]);
               }
             }
         });
-      execution_space ().fence ();    
+      execution_space ().fence ();
     timerElementLoopMatrix = Teuchos::null;
     }
 

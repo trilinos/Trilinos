@@ -57,6 +57,8 @@ public:
 
   size_t getNumOwnedAndGhostElements() const {return ownedAndGhostElementGlobalIDs_.extent(0);}
 
+  size_t getNodesPerElem() const { return 4; }
+
   // Data accessors
   global_ordinal_view_type getOwnedElementGlobalIDs() {return ownedElementGlobalIDs_;}
   global_ordinal_view_type getGhostElementGlobalIDs() {return ghostElementGlobalIDs_;}
@@ -68,6 +70,8 @@ public:
 
   global_ordinal_2d_array_type getOwnedElementToNode() {return ownedElementToNode_;}
   global_ordinal_2d_array_type getGhostElementToNode() {return ghostElementToNode_;}
+
+
 
   // Debugging output
   void print(std::ostream & oss);
@@ -108,7 +112,7 @@ private:
 
   void initializeOwnedAndGhostElementGlobalIDs(void);
 
-  //wrapped dual views 
+  //wrapped dual views
   global_ordinal_view_type ownedElementGlobalIDs_;
   global_ordinal_view_type ghostElementGlobalIDs_;
 
@@ -183,12 +187,12 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
       ect++;
     }
   }
-  
-  
+
+
   // Generate the owned node ids
   ownedNodeGlobalIDs_ = global_ordinal_view_type(globalDualViewType("ownedNodeGlobalIDs_",num_my_nodes));
   auto _ownedNodeGlobalIDs = ownedNodeGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
-  
+
   int nct=0;
   for(global_ordinal_type j=myNodeStart_[1]; j<myNodeStop_[1]; j++) {
     for(global_ordinal_type i=myNodeStart_[0]; i<myNodeStop_[0]; i++) {
@@ -256,7 +260,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
 
   // Generate the list of "ghost" nodes (aka any node that exists on the ownedElement list that isn't owned
   std::set<global_ordinal_type> my_ghost_nodes;
-  auto ownedElementToNodeView = ownedElementToNode_.getHostView(Tpetra::Access::ReadOnly);  
+  auto ownedElementToNodeView = ownedElementToNode_.getHostView(Tpetra::Access::ReadOnly);
   for(size_t k=0; k<ownedElementToNodeView.extent(0); k++) {
     for(size_t l=0; l<ownedElementToNodeView.extent(1); l++) {
       global_ordinal_type nidx=ownedElementToNodeView(k,l);
@@ -445,5 +449,3 @@ private:
 } // namespace TpetraExamples
 
 #endif // TPETRAEXAMPLES_FEM_ASSEMBLY_MESH_DATABASE
-
-

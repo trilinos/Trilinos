@@ -38,8 +38,11 @@ namespace TpetraExamples
 //    2 |    -1   2  -1
 //    3 |-1      -1   2
 //
-template <class ViewType>
-KOKKOS_INLINE_FUNCTION void ReferenceQuad4(ViewType & elementMatrix) {
+
+
+
+template <class ScalarType>
+KOKKOS_INLINE_FUNCTION void ReferenceQuad4(ScalarType elementMatrix[4][4], ScalarType elementRHS[4]) {
   size_t lr[4] = {1,0,3,2};
   size_t ud[4] = {3,2,1,0};
 
@@ -47,33 +50,22 @@ KOKKOS_INLINE_FUNCTION void ReferenceQuad4(ViewType & elementMatrix) {
 
     // Zero everything
     for (size_t j=0; j<4; j++) {
-      elementMatrix(i,j) = 0.0;
+      elementMatrix[i][j] = 0.0;
     }
 
     // Diagonals
-    elementMatrix(i,i) = 2.0;
+    elementMatrix[i][i] = 2.0;
 
     // Off-diagonals
-    elementMatrix(i,lr[i]) = -1.0;
-    elementMatrix(i,ud[i]) = -1.0;
+    elementMatrix[i][lr[i]] = -1.0;
+    elementMatrix[i][ud[i]] = -1.0;
+
+    // RHS
+    elementRHS[i] = static_cast<Scalar>(.25);
   }
 }
 
-// RHS vector for the reference quad.
-// This can be thought of as a unit source being equally distributed to the
-// 4 nodes of the quad.
-template<class ViewType>
-KOKKOS_INLINE_FUNCTION void ReferenceQuad4RHS(ViewType& rhs) {
-  for(size_t i=0; i<rhs.extent(0); i++)
-    rhs[i] = static_cast<Scalar>(.25);
-}
 
-void ReferenceQuad4RHS(Teuchos::Array<Scalar>& rhs) {
-  for(int i=0; (int)i<rhs.size(); i++)
-    rhs[i] = static_cast<Scalar>(.25);
-}
-
-//
 // This function prints out the quad4 array in a nice way.
 //  rows x cols?
 //
