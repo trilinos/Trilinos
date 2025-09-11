@@ -105,7 +105,7 @@ void user_app::addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList&
       for(std::size_t i=0;i<eblocks.size();i++)
         descriptors.push_back(panzer::blockDescriptor(eblocks[i]));
 
-      me_factory.addResponseWithDerivativesValue In Middle",descriptors,builder);
+      me_factory.addResponseWithDerivatives("Value In Middle",descriptors,builder);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Error: Response type of \"" << lst.get<std::string>("Type") << "\" is not supported!");

@@ -335,7 +335,6 @@ getThyraDomainSpace() const
    return domainSpace_;
 }
 
-// TODO BWR KEEP ME?
 //! Get the domain space
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> >

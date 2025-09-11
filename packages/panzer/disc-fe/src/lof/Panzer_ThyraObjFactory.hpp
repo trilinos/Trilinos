@@ -30,8 +30,7 @@ public:
    
    //! Get the domain space
    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraDomainSpace() const = 0;
-   // TODO BWR HACK FOR NOW
-   virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getGhostedThyraDomainSpace() const {return Teuchos::null;};
+   virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getGhostedThyraDomainSpace() const = 0;
 
    //! Get the range space
    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraRangeSpace() const = 0;
