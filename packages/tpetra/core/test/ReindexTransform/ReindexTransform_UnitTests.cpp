@@ -27,8 +27,8 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ReindexTransform, TestCase_1, LO, GO, Node )
   {
-    using Map_t         = Tpetra::Map<>;
     using Scalar_t      = Tpetra::CrsMatrix<>::scalar_type;
+    using Map_t         = Tpetra::Map          <          LO, GO, Node>;
     using CrsMatrix_t   = Tpetra::CrsMatrix    <Scalar_t, LO, GO, Node>;
     using MultiVector_t = Tpetra::MultiVector  <Scalar_t, LO, GO, Node>;
     using Problem_t     = Tpetra::LinearProblem<Scalar_t, LO, GO, Node>;
@@ -76,8 +76,8 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ReindexTransform, TestCase_2, LO, GO, Node )
   {
-    using Map_t         = Tpetra::Map<>;
     using Scalar_t      = Tpetra::CrsMatrix<>::scalar_type;
+    using Map_t         = Tpetra::Map          <          LO, GO, Node>;
     using CrsMatrix_t   = Tpetra::CrsMatrix    <Scalar_t, LO, GO, Node>;
     using MultiVector_t = Tpetra::MultiVector  <Scalar_t, LO, GO, Node>;
     using Problem_t     = Tpetra::LinearProblem<Scalar_t, LO, GO, Node>;
