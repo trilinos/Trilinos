@@ -47,6 +47,7 @@
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "lof/Panzer_LinearObjContainer.hpp"
+#include <Teuchos_RCPDecl.hpp>
 
 // Constructors/Initializers/Accessors
 
