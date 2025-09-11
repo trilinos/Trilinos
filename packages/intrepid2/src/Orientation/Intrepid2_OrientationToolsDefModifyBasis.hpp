@@ -683,7 +683,7 @@ namespace Intrepid2 {
     Kokkos::deep_copy(output, outputLeft);
     if ((cellDim < 3) || basisRight->requireOrientation()) {
       const bool leftMultiply = false;
-      const bool transpose = false; // TODO: I believe this should be changed to "true".  "false" matches prior behavior, but I'm guessing that we simply never have tested this in a case where the right orientation operator was not symmetric.
+      const bool transpose = true; // NVR: added this September 2025; I think to date we have only ever run this with symmetric orientation operations, so that it has not mattered to date.
       auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisRight->getAllDofTags());
       auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisRight->getAllDofOrdinal());
 
