@@ -549,9 +549,14 @@ namespace Intrepid2 {
   template<typename BasisType>
   typename OrientationTools<DT>::CoeffMatrixDataViewType
   OrientationTools<DT>::createCoeffMatrix(const BasisType* basis) {
-    Kokkos::push_finalize_hook( [=] {
-      ortCoeffData=OrientationTools<DT>::OrtCoeffDataType();
-    });
+    static bool hookRegistered = false;
+    if (!hookRegistered)
+    {
+      Kokkos::push_finalize_hook( [=] {
+        ortCoeffData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::CoeffMatrixDataViewType>();
+      });
+      hookRegistered = true;
+    }
 
     const KeyType key(basis->getName(), basis->getDegree());
     const auto found = ortCoeffData.find(key);
@@ -574,9 +579,14 @@ namespace Intrepid2 {
   template<typename BasisType>
   typename OrientationTools<DT>::CoeffMatrixDataViewType
   OrientationTools<DT>::createInvCoeffMatrix(const BasisType* basis) {
-    Kokkos::push_finalize_hook( [=] {
-      ortInvCoeffData=OrientationTools<DT>::OrtCoeffDataType();
-    });
+    static bool hookRegistered = false;
+    if (!hookRegistered)
+    {
+      Kokkos::push_finalize_hook( [=] {
+        ortInvCoeffData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::CoeffMatrixDataViewType>();
+      });
+      hookRegistered = true;
+    }
 
     const KeyType key(basis->getName(), basis->getDegree());
     const auto found = ortInvCoeffData.find(key);
@@ -599,21 +609,15 @@ namespace Intrepid2 {
   template<typename BasisType>
   std::tuple<typename OrientationTools<DT>::OperatorViewType, typename OrientationTools<DT>::OperatorViewType>
   OrientationTools<DT>::createOperators(const BasisType* basis) {
-    Kokkos::push_finalize_hook( [=] {
-      OrientationOperator<DT> emptyOp;
-      using ExecutionSpace = typename DT::execution_space;
-      for (auto entry : edgeOperatorData)
-      {
-        entry.second = OperatorViewType();
-      }
-      for (auto entry : faceOperatorData)
-      {
-        entry.second = OperatorViewType();
-      }
-      
-      edgeOperatorData.clear();
-      faceOperatorData.clear();
-    });
+    static bool hookRegistered = false;
+    if (!hookRegistered)
+    {
+      Kokkos::push_finalize_hook( [=] {
+        edgeOperatorData.clear();
+        faceOperatorData.clear();
+      });
+      hookRegistered = true;
+    }
 
     const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
     const auto edgeFound = edgeOperatorData.find(key);
@@ -654,21 +658,15 @@ namespace Intrepid2 {
   template<typename BasisType>
   std::tuple<typename OrientationTools<DT>::OperatorViewType, typename OrientationTools<DT>::OperatorViewType>
   OrientationTools<DT>::createInvOperators(const BasisType* basis) {
-    Kokkos::push_finalize_hook( [=] {
-      OrientationOperator<DT> emptyOp;
-      using ExecutionSpace = typename DT::execution_space;
-      for (auto entry : invEdgeOperatorData)
-      {
-        entry.second = OperatorViewType();
-      }
-      for (auto entry : invFaceOperatorData)
-      {
-        entry.second = OperatorViewType();
-      }
-      
-      invEdgeOperatorData.clear();
-      invFaceOperatorData.clear();
-    });
+    static bool hookRegistered = false;
+    if (!hookRegistered)
+    {
+      Kokkos::push_finalize_hook( [=] {
+        invEdgeOperatorData.clear();
+        invFaceOperatorData.clear();
+      });
+      hookRegistered = true;
+    }
 
     const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
     const auto edgeFound = invEdgeOperatorData.find(key);
