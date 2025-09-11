@@ -1,3 +1,5 @@
+//# follow TutorialDriver_xml.cpp closely, but with --args rather than an xml
+
 // @HEADER
 // *****************************************************************************
 //        MueLu: A package for multigrid based preconditioning
@@ -74,6 +76,7 @@ comm->barrier();
 //#}
 
 int main(int argc, char* argv[]) {
+#include "MueLu_UseShortNames.hpp"
   bool success = false;
   try {
     Tpetra::ScopeGuard tpetraScope(&argc, &argv);
