@@ -88,9 +88,9 @@ class ProblemHandler():
   """Class for handling demonstration problems"""
 
   def __init__(self):
-    self.problem    = "Laplace 2D"
+    self.problem    = "Laplace2D"
     self.solver     = "cg"
-    self.executable = "MueLu_Tutorial_laplace2d.exe"
+    self.executable = "MueLu_TutorialDriver_xml_galeri.exe"
     self.bcolors    = usecolors()
     self.meshx      = 50
     self.meshy      = 50
@@ -126,32 +126,32 @@ class ProblemHandler():
 
 
   def doLaplace2Dn(self):
-    self.problem    = "Laplace 2D"
-    self.executable = "MueLu_Tutorial_laplace2d.exe"
+    self.problem    = "Laplace2D"
+    self.executable = "MueLu_TutorialDriver_xml_galeri.exe"
     self.solver     = "cg"
     self.meshx      = input("Mesh: Elements in x direction = ")
     self.meshy      = input("Mesh: Elements in y direction = ")
     self.runLaplaceProblem()
 
   def doLaplace2D50(self):
-    self.problem    = "Laplace 2D"
-    self.executable = "MueLu_Tutorial_laplace2d.exe"
+    self.problem    = "Laplace2D"
+    self.executable = "MueLu_TutorialDriver_xml_galeri.exe"
     self.solver     = "cg"
     self.meshx      = 50
     self.meshy      = 50
     self.runLaplaceProblem()
 
   def doRecirc2Dn(self):
-    self.problem    = "Recirc 2D"
-    self.executable = "MueLu_Tutorial_recirc2d.exe"
+    self.problem    = "Recirc2D"
+    self.executable = "MueLu_TutorialDriver_xml_galeri.exe"
     self.solver     = "gmres"
     self.meshx      = input("Mesh: Elements in x direction = ")
     self.meshy      = input("Mesh: Elements in y direction = ")
     self.runLaplaceProblem() # we can use the same routine as for Laplace...
 
   def doRecirc2D50(self):
-    self.problem    = "Recirc 2D"
-    self.executable = "MueLu_Tutorial_recirc2d.exe"
+    self.problem    = "Recirc2D"
+    self.executable = "MueLu_TutorialDriver_xml_galeri.exe"
     self.solver     = "gmres"
     self.meshx      = 50
     self.meshy      = 50
@@ -213,7 +213,7 @@ class ProblemHandler():
     cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt nodes*.txt"
     runCommand(cmd)
     print("RUN EXAMPLE")
-    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + " | tee output.log 2>&1"
+    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + "--matrixType=" + str(self.problem) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + " | tee output.log 2>&1"
     print(cmd)
     runCommand(cmd)
     runCommand("echo 'Press q to return.' >> output.log")
@@ -341,7 +341,7 @@ class ProblemHandler():
         subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, text=True)
 
   def printProblemSelectionMenu(self):
-    options = ['Laplace 2D (50x50)', 'Laplace 2D', 'Recirc 2D (50x50)', 'Recirc 2D', 'Challenge: Convection diffusion', 'Challenge: Elasticity problem', 'Exit']
+    options = ['Laplace2D (50x50)', 'Laplace2D', 'Recirc2D (50x50)', 'Recirc2D', 'Challenge: Convection diffusion', 'Challenge: Elasticity problem', 'Exit']
     callbacks = [self.doLaplace2D50,self.doLaplace2Dn,self.doRecirc2D50,self.doRecirc2Dn,self.doChallenge1,self.doChallenge2, self.doExitProgram]
     while True:
       self.runMenu(options,callbacks)

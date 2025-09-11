@@ -74,6 +74,7 @@ comm->barrier();
 //#}
 
 int main(int argc, char* argv[]) {
+  //#include "MueLu_UseShortNames.hpp"
   bool success = false;
   try {
     Tpetra::ScopeGuard tpetraScope(&argc, &argv);
@@ -126,22 +127,34 @@ int main(int argc, char* argv[]) {
       // ================================
       Teuchos::CommandLineProcessor clp(false);
 
-      std::string xmlFileName = "xml/muelu_ParameterList.xml";
-      clp.setOption("xml", &xmlFileName, "read parameters from a file [default = 'xml/muelu_ParameterList.xml']");
+      std::string availableMatrixTypes[] = {"Laplace2D", "Laplace3D", "Recirc2D"};
+      std::string matrixType             = availableMatrixTypes[0];
+      std::string matrixTypeDesc         = "matrix type which defines problem. Currently available options: [";
+      for (size_t i = 0; i < std::size(availableMatrixTypes); ++i) {
+        matrixTypeDesc += availableMatrixTypes[i];
+        if (i < std::size(availableMatrixTypes) - 1) matrixTypeDesc += ", ";
+      }
+      matrixTypeDesc += "]";
+      clp.setOption("matrixType", &matrixType, matrixTypeDesc.c_str());
 
-      int globalNumDofs = 0;  // 7020;
-      clp.setOption("globalNumDofs", &globalNumDofs, "global number of degrees of freedom [has to be set by user, default = 0 -> error]");
-      int nDofsPerNode = 1;
-      clp.setOption("nDofsPerNode", &nDofsPerNode, "number of degrees of freedom per node [has to be set by user, default = 1]");
-      int nProcs             = comm->getSize();
-      std::string dsolveType = "cg";
-      clp.setOption("solver", &dsolveType, "solve type: (none | cg | gmres | standalone) [default = cg]");  //# none vs standalone, whats the difference?
-      double dtol = 1e-12;
-      clp.setOption("tol", &dtol, "solver convergence tolerance [default = 1e-12]");
-      std::string problemFile = "stru2d";
-      clp.setOption("problem", &problemFile, "string for problem file (e.g. 'stru2d' expects 'stru2d_A.txt', 'stru2d_b.txt' and 'stru2d_ns.txt')");
-      std::string coordsFile = "";
-      clp.setOption("coordinates", &coordsFile, "file name containing coordinates in matrix market format");
+      GO nx = 100;
+      clp.setOption("nx", &nx, "mesh size in x direction");
+      GO ny = 100;
+      clp.setOption("ny", &ny, "mesh size in y direction");
+      GO nz = 100;
+      clp.setOption("nz", &ny, "mesh size in z direction");
+
+      std::string xmlFileName = "";
+      clp.setOption("xml", &xmlFileName, "read parameters from a file");
+      int mgridSweeps = 1;
+      clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within multigrid solver");
+      std::string printTimings = "no";
+      clp.setOption("timings", &printTimings, "print timings to screen [yes/no]");
+      double tol = 1e-12;
+      clp.setOption("tol", &tol, "solver convergence tolerance");
+
+      double diffusion = 1e-5;
+      clp.setOption("diffusion", &diffusion, "diffusion coefficient, also called epsilon");
 
       switch (clp.parse(argc, argv)) {
         case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
@@ -155,10 +168,12 @@ int main(int argc, char* argv[]) {
       // ================================
       TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName == "", std::runtime_error,
                                  "You need to specify the xml-file via the command line argument '--xml=<path/to/xml_file>'.");
-      if (globalNumDofs == 0) {
-        std::cout << "Please specify '--globalNumDofs'! Simulation cannot run without that parameter correctly set" << std::endl;
-        return EXIT_FAILURE;
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION([&] {
+        for (std::string e : availableMatrixTypes)
+          if (matrixType == e) return false;
+        return true;
+      }(),
+                                 std::runtime_error, "Invalid matrixType.");
 
       RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time"))), tm;
 
@@ -167,15 +182,6 @@ int main(int argc, char* argv[]) {
       // ================================
       comm->barrier();
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
-
-      int nLocalDofs     = (int)globalNumDofs / nProcs;
-      nLocalDofs         = nLocalDofs - (nLocalDofs % nDofsPerNode);
-      int nCumulatedDofs = 0;
-      MueLu_sumAll(comm, nLocalDofs, nCumulatedDofs);
-
-      if (comm->getRank() == nProcs - 1) {
-        nLocalDofs += globalNumDofs - nCumulatedDofs;
-      }
 
       Teuchos::ParameterList galeriList;
       galeriList.set("nx", nx);
@@ -287,12 +293,6 @@ int main(int argc, char* argv[]) {
         directSolver->solve();
 
         comm->barrier();
-        std::cout << "\n//#exactSolution:\n\n";
-        comm->barrier();
-        printMultiVector(exactSolution);
-        comm->barrier();
-
-        comm->barrier();
         tm = Teuchos::null;
       }
 
@@ -348,12 +348,6 @@ int main(int argc, char* argv[]) {
         // Get the number of iterations for this solve
         fancyout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
-        comm->barrier();
-        std::cout << "\n//#precSolVec:\n\n";
-        comm->barrier();
-        printMultiVector(precSolVec);
-        comm->barrier();
-
         // Check convergence status
         if (retStatus != Belos::Converged)
           fancyout << std::endl
@@ -387,12 +381,6 @@ int main(int argc, char* argv[]) {
         // Solve
         hierarchy->Iterate(*Xpetra::toXpetra(B), *Xpetra::toXpetra(multigridSolVec), mgridSweeps);
         //! [MueLuAsSolverIterate end]
-
-        comm->barrier();
-        std::cout << "\n//#multigridSolVec:\n\n";
-        comm->barrier();
-        printMultiVector(multigridSolVec);
-        comm->barrier();
 
         comm->barrier();
         tm = Teuchos::null;
