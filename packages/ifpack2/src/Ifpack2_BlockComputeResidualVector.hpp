@@ -570,9 +570,9 @@ struct ComputeResidualVector {
     const local_ordinal_type num_vectors = y.extent(1);
 
     // subview pattern
-    auto bb = Kokkos::subview(b, block_range, 0);
-    auto xx = bb;
-    auto yy = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
+    auto bb          = Kokkos::subview(b, block_range, 0);
+    auto xx          = bb;
+    auto yy          = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
     auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(tpetra_values.data(), blocksize, blocksize);
 
     const local_ordinal_type row = lr * blocksize;
@@ -720,9 +720,9 @@ struct ComputeResidualVector {
     const local_ordinal_type num_local_rows = lclrow.extent(0);
 
     // subview pattern
-    auto bb = Kokkos::subview(b, block_range, 0);
-    auto xx = bb;
-    auto yy = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
+    auto bb          = Kokkos::subview(b, block_range, 0);
+    auto xx          = bb;
+    auto yy          = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
     auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(tpetra_values.data(), blocksize, blocksize);
 
     // Get shared allocation for a local copy of x, Ax, and A
@@ -814,11 +814,11 @@ struct ComputeResidualVector {
     const local_ordinal_type num_local_rows = lclrow.extent(0);
 
     // subview pattern
-    auto bb = Kokkos::subview(b, block_range, 0);
-    auto xx = bb;
-    auto xx_remote = bb;
-    auto yy = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
-    auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(tpetra_values.data(), blocksize, blocksize);
+    auto bb             = Kokkos::subview(b, block_range, 0);
+    auto xx             = bb;
+    auto xx_remote      = bb;
+    auto yy             = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
+    auto A_block_cst    = ConstUnmanaged<tpetra_block_access_view_type>(tpetra_values.data(), blocksize, blocksize);
     auto colindsub_used = overlap ? colindsub_remote : colindsub;
     auto rowptr_used    = overlap ? rowptr_remote : rowptr;
 
