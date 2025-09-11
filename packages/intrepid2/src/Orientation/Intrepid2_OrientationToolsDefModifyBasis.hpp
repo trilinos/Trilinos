@@ -1100,38 +1100,40 @@ namespace Intrepid2 {
     //Initialize output with values from outputLeft
     Kokkos::deep_copy(output, outputLeft);
     if ((cellDim < 3) || basisRight->requireOrientation()) {
-      bool leftMultiply = false;
+      const bool leftMultiply = false;
+      const bool transpose = false; // TODO: I believe this should be changed to "true".  "false" matches prior behavior, but I'm guessing that we simply never have tested this in a case where the right orientation operator was not symmetric.
       auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisRight->getAllDofTags());
       auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisRight->getAllDofOrdinal());
 
       const ordinal_type
-        numOtherFields = output.extent(1),
+        numOtherFields = numFieldsLeft,
         dimBasis       = output.extent(3); //returns 1 when output.rank() < 4;
 
-      const CoeffMatrixDataViewType matData = createCoeffMatrix(basisRight);
-
-      ordinal_type numVerts(0), numEdges(0), numFaces(0);
+      ordinal_type numEdges(0), numFaces(0);
       if (basisRight->requireOrientation()) {
-        numVerts = cellTopo.getVertexCount()*ordinal_type(basisRight->getDofCount(0, 0) > 0);
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basisRight->getDofCount(1, 0) > 0);
         numFaces = cellTopo.getFaceCount()*ordinal_type(basisRight->getDofCount(2, 0) > 0);
       }
-      // TODO: before switching to F_modifyBasisByOrientationOperator, add an "else" clause as we did in modifyBasisByOrientation()
-
+      else
+      {
+        // "side" orientations
+        if      (cellDim == 1) numEdges = 1;
+        else if (cellDim == 2) numFaces = 1;
+      }
+      
+      const auto op_tuple = createOperators(basisRight);
+      
       const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
-      typedef F_modifyBasisByOrientation
-        <decltype(orts),
-         decltype(output),decltype(outputLeft),
-         decltype(ordinalToTag),decltype(tagToOrdinal),
-         decltype(matData)> FunctorType;
+      using FunctorType = F_modifyBasisByOrientationOperator
+      <decltype(orts),
+      decltype(output),decltype(input),
+      decltype(std::get<0>(op_tuple))>;
       Kokkos::parallel_for
-        (policy,
-         FunctorType(orts,
-                     output, outputLeft,
-                     ordinalToTag, tagToOrdinal,
-                     matData,
-                     cellDim, numVerts, numEdges, numFaces,
-                     numOtherFields, dimBasis, leftMultiply));
+      (policy,
+       FunctorType(orts,
+                   output, outputLeft,
+                   std::get<0>(op_tuple), std::get<1>(op_tuple), numEdges, numFaces,
+                   numOtherFields, dimBasis, leftMultiply, transpose));
     }
   }
 
