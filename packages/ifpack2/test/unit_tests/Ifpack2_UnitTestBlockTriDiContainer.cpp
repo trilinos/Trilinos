@@ -152,7 +152,7 @@ static void run_performance_test(const Input& in) {
                                                                           in.comm->getRank());
   auto g                                 = bcmm::make_crs_graph(in.comm, sb, sbp);
   auto A                                 = bcmm::make_bcrs_matrix(sb, g, in.bs);
-  const auto T                           = btdct::make_BTDC(sb, sbp, A, in.use_overlap_comm, in.nonuniform_lines, in.jacobi,
+  const auto T                           = btdct::make_BTDC(sb, sbp, A, in.use_overlap_comm, in.nonuniform_lines, in.jacobi ? tif_utest::JACOBI_ON : tif_utest::JACOBI_OFF,
                                                             in.use_seq_method);
   const auto X                           = bcmm::make_multivector(sb, A, in.bs, in.nrhs);
   const auto B                           = Teuchos::rcp(new typename bcmm::Tpetra_MultiVector(A->getRangeMap(), in.nrhs));
@@ -206,6 +206,7 @@ static void run_performance_test(const Input& in) {
 
 template <typename Scalar, typename LO, typename GO>
 static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& success) {
+  using tif_utest::JacobiMode;
   typedef LO Int;
   typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
   typedef tif_utest::BlockTriDiContainerTester<Scalar, LO, GO> btdct;
@@ -238,7 +239,7 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
         TEUCHOS_TEST(ne == 0, "test_bcrs_matrix tridiags only");
         nerr += ne;
       }
-      for (const bool jacobi : {false, true})
+      for (const JacobiMode jacobi : {tif_utest::JACOBI_OFF, tif_utest::JACOBI_ON, tif_utest::JACOBI_ON_SINGLETON_PARTS, tif_utest::JACOBI_ON_SHUFFLED_PARTS})
         for (const bool seq_method : {false, true}) {
           // The sequential method only works when 'device' memory space is host-accessible (aka UVM semantics)
           if (seq_method && !Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace,
@@ -256,9 +257,14 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
                     std::stringstream ss;
                     ss << "test_BR_BTDC:"
                        << " bs " << bs
-                       << (contiguous ? " contig" : " noncontig")
-                       << (jacobi ? " jacobi" : " tridiag")
-                       << (seq_method ? " seq_method" : "")
+                       << (contiguous ? " contig" : " noncontig");
+                    switch (jacobi) {
+                      case tif_utest::JACOBI_OFF: ss << " tridiag"; break;
+                      case tif_utest::JACOBI_ON: ss << " jacobi"; break;
+                      case tif_utest::JACOBI_ON_SINGLETON_PARTS: ss << " jacobi-parts"; break;
+                      case tif_utest::JACOBI_ON_SHUFFLED_PARTS: ss << " jacobi-parts-shuffled"; break;
+                    }
+                    ss << (seq_method ? " seq_method" : "")
                        << (overlap_comm ? " overlap_comm" : "")
                        << (pointwise ? " point_wise" : "")
                        << (explicitConversion ? " explicit_block_conversion" : "")
