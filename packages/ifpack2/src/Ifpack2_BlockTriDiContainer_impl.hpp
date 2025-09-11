@@ -52,8 +52,6 @@
 #include "Ifpack2_BlockComputeResidualVector.hpp"
 #include "Ifpack2_BlockComputeResidualAndSolve.hpp"
 
-// #include <KokkosBlas2_gemv.hpp>
-
 // need to interface this into cmake variable (or only use this flag when it is necessary)
 // #define IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
 // #undef  IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
