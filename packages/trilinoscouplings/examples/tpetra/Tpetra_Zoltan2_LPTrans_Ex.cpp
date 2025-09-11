@@ -49,7 +49,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   using GlobalId_t = Map_t::global_ordinal_type;
   using Node_t     = Map_t::node_type;
   using Scalar_t   = Tpetra::Details::DefaultTypes::scalar_type;
-  using Vector_t   = Tpetra::Vector<Scalar_t, LocalId_t, GlobalId_t, Node_t>;
+  using MultiV_t = Tpetra::MultiVector<Scalar_t, LocalId_t, GlobalId_t, Node_t>;
   using Matrix_t   = Tpetra::CrsMatrix<Scalar_t, LocalId_t, GlobalId_t, Node_t>;
   using Problem_t  = Tpetra::LinearProblem<Scalar_t, LocalId_t, GlobalId_t, Node_t>;
 
@@ -117,13 +117,16 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   // ****************************************************************
   // Step 2/6: create the original linear problem
   // ****************************************************************
-  Teuchos::RCP<Vector_t> originalLhs( Teuchos::null );
-  originalLhs  = Tpetra::createVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getDomainMap() );
+  size_t numVectors(2);
+
+  Teuchos::RCP<MultiV_t> originalLhs( Teuchos::null );
+  originalLhs  = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getDomainMap(), numVectors );
   originalLhs->randomize();
 
-  Teuchos::RCP<Vector_t> originalRhs( Teuchos::null );
-  originalRhs  = Tpetra::createVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getDomainMap() );
-  originalRhs->randomize();
+  Teuchos::RCP<MultiV_t> originalRhs( Teuchos::null );
+  originalRhs  = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getRangeMap(), numVectors );
+  originalMatrix->apply(*originalLhs, *originalRhs);
+  //originalRhs->randomize();
 
   Teuchos::RCP<Problem_t> originalLP = Teuchos::rcp<Problem_t>( new Problem_t(originalMatrix, originalLhs, originalRhs) );
 
@@ -139,8 +142,8 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   rebalanceTransform.fwd();
 
   Teuchos::RCP<Matrix_t> rebalancedMatrix = Teuchos::rcp<Matrix_t>( dynamic_cast<Matrix_t *>(transformedLP->getMatrix().get()), false );
-  Teuchos::RCP<Vector_t> rebalancedLhs    = Teuchos::rcp<Vector_t>( dynamic_cast<Vector_t *>(transformedLP->getLHS().get())   , false );
-  Teuchos::RCP<Vector_t> rebalancedRhs    = Teuchos::rcp<Vector_t>( dynamic_cast<Vector_t *>(transformedLP->getRHS().get())   , false );
+  Teuchos::RCP<MultiV_t> rebalancedLhs    = Teuchos::rcp<MultiV_t>( dynamic_cast<MultiV_t *>(transformedLP->getLHS().get())   , false );
+  Teuchos::RCP<MultiV_t> rebalancedRhs    = Teuchos::rcp<MultiV_t>( dynamic_cast<MultiV_t *>(transformedLP->getRHS().get())   , false );
 
 #else
 
@@ -163,7 +166,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   //           with the original matrix. The original matrix will
   //           multiply this vector in the step 6/6 below.
   // ****************************************************************
-  Teuchos::RCP<Vector_t> originalLhs;
+  Teuchos::RCP<MultiV_t> originalLhs;
   originalLhs  = Tpetra::createVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getDomainMap() );
   originalLhs->randomize();
 
@@ -175,10 +178,10 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
                                           rebalancedMatrix,
                                           partitioningProblem.getSolution());
 
-  using MultiVectorAdapter_t = Zoltan2::XpetraMultiVectorAdapter<Vector_t>;
+  using MultiVectorAdapter_t = Zoltan2::XpetraMultiVectorAdapter<MultiV_t>;
   MultiVectorAdapter_t vectorAdapter(originalLhs);
 
-  Teuchos::RCP<Vector_t> rebalancedLhs;
+  Teuchos::RCP<MultiV_t> rebalancedLhs;
   vectorAdapter.applyPartitioningSolution(*originalLhs,
                                           rebalancedLhs,
                                           partitioningProblem.getSolution());
@@ -257,13 +260,18 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   // ****************************************************************
   // Step 6/6: check sparse matvec
   // ****************************************************************
-  Teuchos::RCP<Vector_t> originalMatLhs = Tpetra::createVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getRangeMap() );
-  originalMatrix->apply(*originalLhs, *originalMatLhs);
-  Scalar_t originalNorm = originalMatLhs->norm2();
+  std::vector<Scalar_t> allNorms( numVectors );
+  Teuchos::ArrayView<Scalar_t> allNorms2( allNorms.data(), allNorms.size() );
 
-  Teuchos::RCP<Vector_t> rebalancedMatLhs = Tpetra::createVector<Scalar_t,LocalId_t,GlobalId_t>( rebalancedMatrix->getRangeMap() );
+  Teuchos::RCP<MultiV_t> originalMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getRangeMap(), numVectors );
+  originalMatrix->apply(*originalLhs, *originalMatLhs);
+  originalMatLhs->norm2(allNorms2);
+  Scalar_t originalNorm = allNorms2[0];
+
+  Teuchos::RCP<MultiV_t> rebalancedMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( rebalancedMatrix->getRangeMap(), numVectors );
   rebalancedMatrix->apply(*rebalancedLhs, *rebalancedMatLhs);
-  Scalar_t rebalancedNorm = rebalancedMatLhs->norm2();
+  rebalancedMatLhs->norm2(allNorms2);
+  Scalar_t rebalancedNorm = allNorms2[0];
 
   Scalar_t relativeDiff = (rebalancedNorm - originalNorm) / originalNorm;
   
