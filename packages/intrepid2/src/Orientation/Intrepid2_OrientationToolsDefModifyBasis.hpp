@@ -791,138 +791,6 @@ namespace Intrepid2 {
     const ordinal_type numCells       = output.extent(0);
     const ordinal_type numFieldsLeft  = basisLeft->getCardinality();
     const ordinal_type numFieldsRight = basisRight->getCardinality();
-  #ifdef HAVE_INTREPID2_DEBUG
-    {
-      if (input.rank() == output.rank())
-      {
-        for (size_type i=0;i<input.rank();++i)
-          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i), std::invalid_argument,
-                                        ">>> ERROR (OrientationTools::modifyMatrixByOrientation): Input and output dimensions do not match.");
-      }
-      else if (input.rank() == output.rank() - 1)
-      {
-        for (size_type i=0;i<input.rank();++i)
-          INTREPID2_TEST_FOR_EXCEPTION( input.extent(i) != output.extent(i+1), std::invalid_argument,
-                                       ">>> ERROR (OrientationTools::modifyMatrixByOrientation): Input dimensions must match output dimensions exactly, or else match all but the first dimension (in the case that input does not have a 'cell' dimension).");
-      }
-      else
-      {
-        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-                                     ">>> ERROR (OrientationTools::modifyMatrixByOrientation): input and output ranks must either match, or input rank must be one less than that of output.")
-      }
-
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(output.extent(1)) != numFieldsLeft, std::invalid_argument,
-                                    ">>> ERROR (OrientationTools::modifyMatrixByOrientation): First field dimension of input/output does not match left basis cardinality.");
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(output.extent(2)) != numFieldsRight, std::invalid_argument,
-                                    ">>> ERROR (OrientationTools::modifyMatrixByOrientation): Second field dimension of input/output does not match right basis cardinality.");
-      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(output.extent(3)) != 1, std::invalid_argument,
-                                    ">>> ERROR (OrientationTools::modifyMatrixByOrientation): Third dimension of output must be 1.");
-      
-    }
-  #endif
-    const shards::CellTopology cellTopo = basisLeft->getBaseCellTopology();
-    const ordinal_type  cellDim = cellTopo.getDimension();
-    
-    // apply orientations on left
-    decltype(output) outputLeft("temp view - output from left application", numCells, numFieldsLeft, numFieldsRight);
-    
-    //Initialize outputLeft with values from input
-    if(input.rank() == output.rank())
-      Kokkos::deep_copy(outputLeft, input);
-    else
-      RealSpaceTools<DT>::clone(outputLeft, input);
-    
-    if ((cellDim < 3) || basisLeft->requireOrientation()) {
-      bool leftMultiply = true;
-      auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisLeft->getAllDofTags());
-      auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisLeft->getAllDofOrdinal());
-
-      const ordinal_type
-        numOtherFields = output.extent(2),
-        dimBasis       = output.extent(3); //returns 1 when output.rank() < 4;
-
-      const CoeffMatrixDataViewType matData = createCoeffMatrix(basisLeft);
-
-      ordinal_type numVerts(0), numEdges(0), numFaces(0);
-
-      if (basisLeft->requireOrientation()) {
-        numVerts = cellTopo.getVertexCount()*ordinal_type(basisLeft->getDofCount(0, 0) > 0);
-        numEdges = cellTopo.getEdgeCount()*ordinal_type(basisLeft->getDofCount(1, 0) > 0);
-        numFaces = cellTopo.getFaceCount()*ordinal_type(basisLeft->getDofCount(2, 0) > 0);
-      }
-
-      const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
-      typedef F_modifyBasisByOrientation
-        <decltype(orts),
-         decltype(outputLeft),decltype(input),
-         decltype(ordinalToTag),decltype(tagToOrdinal),
-         decltype(matData)> FunctorType;
-      Kokkos::parallel_for
-        (policy,
-         FunctorType(orts,
-                     outputLeft, input,
-                     ordinalToTag, tagToOrdinal,
-                     matData,
-                     cellDim, numVerts, numEdges, numFaces,
-                     numOtherFields, dimBasis, leftMultiply));
-    }
-    
-    // apply orientations on right
-    //Initialize output with values from outputLeft
-    Kokkos::deep_copy(output, outputLeft);
-    if ((cellDim < 3) || basisRight->requireOrientation()) {
-      bool leftMultiply = false;
-      auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisRight->getAllDofTags());
-      auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisRight->getAllDofOrdinal());
-
-      const ordinal_type
-        numOtherFields = output.extent(1),
-        dimBasis       = output.extent(3); //returns 1 when output.rank() < 4;
-
-      const CoeffMatrixDataViewType matData = createCoeffMatrix(basisRight);
-
-      ordinal_type numVerts(0), numEdges(0), numFaces(0);
-
-      if (basisRight->requireOrientation()) {
-        numVerts = cellTopo.getVertexCount()*ordinal_type(basisRight->getDofCount(0, 0) > 0);
-        numEdges = cellTopo.getEdgeCount()*ordinal_type(basisRight->getDofCount(1, 0) > 0);
-        numFaces = cellTopo.getFaceCount()*ordinal_type(basisRight->getDofCount(2, 0) > 0);
-      }
-
-      const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
-      typedef F_modifyBasisByOrientation
-        <decltype(orts),
-         decltype(output),decltype(outputLeft),
-         decltype(ordinalToTag),decltype(tagToOrdinal),
-         decltype(matData)> FunctorType;
-      Kokkos::parallel_for
-        (policy,
-         FunctorType(orts,
-                     output, outputLeft,
-                     ordinalToTag, tagToOrdinal,
-                     matData,
-                     cellDim, numVerts, numEdges, numFaces,
-                     numOtherFields, dimBasis, leftMultiply));
-    }
-  }
-
-/*  template<typename DT>
-  template<typename outputValueType, class ...outputProperties,
-           typename inputValueType,  class ...inputProperties,
-           typename OrientationViewType,
-           typename BasisTypeLeft,
-           typename BasisTypeRight>
-  void
-  OrientationTools<DT>::
-  modifyMatrixByOrientation(Kokkos::DynRankView<outputValueType,outputProperties...> output,
-                            const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
-                            const OrientationViewType orts,
-                            const BasisTypeLeft* basisLeft,
-                            const BasisTypeRight* basisRight)
-  {
-    const ordinal_type numCells       = output.extent(0);
-    const ordinal_type numFieldsLeft  = basisLeft->getCardinality();
-    const ordinal_type numFieldsRight = basisRight->getCardinality();
 #ifdef HAVE_INTREPID2_DEBUG
     {
       if (input.rank() == output.rank())
@@ -1040,7 +908,7 @@ namespace Intrepid2 {
                      cellDim, numVerts, numEdges, numFaces,
                      numOtherFields, dimBasis, leftMultiply));
     }
-  }*/
+  }
 
 } // namespace Intrepid2
 
