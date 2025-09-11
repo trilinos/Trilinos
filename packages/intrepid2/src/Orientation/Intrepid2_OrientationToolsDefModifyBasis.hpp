@@ -167,6 +167,14 @@ namespace Intrepid2 {
                     const ordinal_type ll = tagToOrdinal(2, faceId, l);
                     auto & input_ = leftMultiply ? in.access(ll, j, k) : in.access(j, ll, k);
                     auto & mat_il = transpose ? mat(l,i) : mat(i,l);
+//                    
+//                    { // DEBUGGING
+//                      if (j == 0)
+//                      {
+//                        std::cout << "mat(" << ii << "," << ll << ") = " << mat_il << std::endl;
+//                      }
+//                    }
+//                    
                     temp += mat_il*input_;
                   }
                   
@@ -325,6 +333,13 @@ namespace Intrepid2 {
                       const ordinal_type & j = colIndices(rowOffset);
                       const auto & mat_ij = weights(rowOffset);
                       
+//                      { // DEBUGGING
+//                        if (pointOrdinal == 0)
+//                        {
+//                          std::cout << "mat(" << i << "," << j << ") = " << mat_ij << std::endl;
+//                        }
+//                      }
+//                      
                       auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
                       temp += mat_ij * input_;
                     }
@@ -788,9 +803,26 @@ namespace Intrepid2 {
                             const BasisTypeLeft* basisLeft,
                             const BasisTypeRight* basisRight)
   {
+    const ordinal_type NODE_DIM = 0;
+    const ordinal_type EDGE_DIM = 1;
+    const ordinal_type FACE_DIM = 2;
+    
+    const shards::CellTopology cellTopo = basisLeft->getBaseCellTopology();
+    const ordinal_type  cellDim = cellTopo.getDimension();
+    
     const ordinal_type numCells       = output.extent(0);
     const ordinal_type numFieldsLeft  = basisLeft->getCardinality();
     const ordinal_type numFieldsRight = basisRight->getCardinality();
+    
+	// apply orientations on left
+    decltype(output) outputLeft("temp view - output from left application", numCells, numFieldsLeft, numFieldsRight);
+    
+    //Initialize outputLeft with values from input
+    if(input.rank() == output.rank())
+      Kokkos::deep_copy(outputLeft, input);
+    else
+      RealSpaceTools<DT>::clone(outputLeft, input);
+	
 #ifdef HAVE_INTREPID2_DEBUG
     {
       if (input.rank() == output.rank())
@@ -820,55 +852,248 @@ namespace Intrepid2 {
       
     }
 #endif
-    const ordinal_type NODE_DIM = 0;
-    const ordinal_type EDGE_DIM = 1;
-    const ordinal_type FACE_DIM = 2;
-    
-    const shards::CellTopology cellTopo = basisLeft->getBaseCellTopology();
-    const ordinal_type  cellDim = cellTopo.getDimension();
-    
-    // apply orientations on left
-    decltype(output) outputLeft("temp view - output from left application", numCells, numFieldsLeft, numFieldsRight);
-    
-    //Initialize outputLeft with values from input
-    if(input.rank() == output.rank())
-      Kokkos::deep_copy(outputLeft, input);
-    else
-      RealSpaceTools<DT>::clone(outputLeft, input);
     
     if ((cellDim < 3) || basisLeft->requireOrientation()) {
-      bool leftMultiply = true;
-      auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisLeft->getAllDofTags());
-      auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisLeft->getAllDofOrdinal());
-
+      const bool leftMultiply = true;
+      const bool transpose    = false;
+      
       const ordinal_type
-        numOtherFields = output.extent(2),
+        numOtherFields = numFieldsRight,
         dimBasis       = output.extent(3); //returns 1 when output.rank() < 4;
 
-      const CoeffMatrixDataViewType matData = createCoeffMatrix(basisLeft);
-
-      ordinal_type numVerts(0), numEdges(0), numFaces(0);
+      ordinal_type numEdges(0), numFaces(0);
       if (basisLeft->requireOrientation()) {
-        numVerts = cellTopo.getVertexCount()*ordinal_type(basisLeft->getDofCount(0, 0) > 0);
-        numEdges = cellTopo.getEdgeCount()*ordinal_type(basisLeft->getDofCount(1, 0) > 0);
-        numFaces = cellTopo.getFaceCount()*ordinal_type(basisLeft->getDofCount(2, 0) > 0);
+        numEdges = cellTopo.getEdgeCount()*ordinal_type(basisLeft->getDofCount(EDGE_DIM, 0) > 0);
+        numFaces = cellTopo.getFaceCount()*ordinal_type(basisLeft->getDofCount(FACE_DIM, 0) > 0);
       }
-      // TODO: before switching to F_modifyBasisByOrientationOperator, add an "else" clause as we did in modifyBasisByOrientation()
+      else
+      {
+        // "side" orientations
+        if      (cellDim == 1) numEdges = 1;
+        else if (cellDim == 2) numFaces = 1;
+      }
+      
+      const auto op_tuple = createOperators(basisLeft);
+      
+      {
+        {
+          // DEBUGGING
+          bool transpose = false;
+          
+          auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisLeft->getAllDofTags());
+          auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basisLeft->getAllDofOrdinal());
+          
+          const CoeffMatrixDataViewType matData = createCoeffMatrix(basisLeft);
+          
+          auto edgeOpData = std::get<0>(op_tuple);
+          auto faceOpData = std::get<1>(op_tuple);
+          
+          ordinal_type transposeInt = static_cast<ordinal_type>(transpose);
+          const int numEdges    = edgeOpData.extent_int(0);
+          const int numEdgeOrts = 2; // edgeOpData.extent_int(1);
+          int existEdgeDofs = 0;
+          for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
+          {
+            for (int edgeOrt=0; edgeOrt<numEdgeOrts; edgeOrt++)
+            {
+              OrientationOperator<DT> op = edgeOpData(edgeOrdinal,edgeOrt,transposeInt);
+              std::map<ordinal_type, std::map<ordinal_type,double> > opMap; // column to (row -> weight) lookup
+              
+              const ordinal_type numRows = static_cast<ordinal_type>(op.rowIndices.size());
+              for (ordinal_type rowOrdinal = 0; rowOrdinal < numRows; rowOrdinal++)
+              {
+                const ordinal_type & rowID = op.rowIndices[rowOrdinal];
+                const ordinal_type & rowOffset = op.offsetsForRowOrdinal[rowOrdinal];
+                
+                const ordinal_type numCols = op.offsetsForRowOrdinal[rowOrdinal+1] - rowOffset;
+                for (ordinal_type colOrdinal=0; colOrdinal<numCols; colOrdinal++)
+                {
+                  const ordinal_type & colID = op.packedColumnIndices[rowOffset + colOrdinal];
+                  const double      & weight = op.packedWeights[rowOffset + colOrdinal];
+                  opMap[rowID][colID] = weight;
+                }
+              }
+              
+              const ordinal_type ordEdge = (1 < tagToOrdinal.extent(0) ? (static_cast<size_type>(edgeOrdinal) < tagToOrdinal.extent(1) ? tagToOrdinal(1, edgeOrdinal, 0) : -1) : -1);
+              
+              if (ordEdge > -1)
+              {
+                existEdgeDofs = 1;
+                bool agree = true;
+                // now compare to matData
+                const auto mat = Kokkos::subview(matData,
+                                                 edgeOrdinal, edgeOrt,
+                                                 Kokkos::ALL(), Kokkos::ALL());
+                
+                const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
+                              
+                for (ordinal_type i=0;i<ndofEdge;++i) {
+                  const ordinal_type ii = tagToOrdinal(1, edgeOrdinal, i);
+                  
+                  ordinal_type opNumCols;
+                  if (numRows == 0)
+                  {
+                    opNumCols = 0;
+                  }
+                  else
+                  {
+                    if (opMap.find(ii) != opMap.end())
+                    {
+                      opNumCols = static_cast<ordinal_type>(opMap[ii].size());
+                    }
+                    else
+                    {
+                      opNumCols = 0;
+                    }
+                  }
+                  
+                  for (ordinal_type k=0;k<dimBasis;++k) {
+                    for (ordinal_type l=0;l<ndofEdge;++l) {
+                      const ordinal_type ll = tagToOrdinal(1, edgeOrdinal, l);
+                      auto & mat_il = transpose ? mat(l,i) : mat(i,l);
+                      
+                      double op_il;
+                      if (opNumCols == 0) // then we should treat this as an identity row
+                      {
+                        op_il = (ii==ll) ? 1.0 : 0.0;
+                      }
+                      else
+                      {
+                        op_il = opMap[ii][ll];
+                      }
+                      
+                      const double diff = std::fabs(mat_il - op_il);
+                      if (diff > 1e-15)
+                      {
+                        std::cout << mat_il << " != " << op_il << std::endl;
+                        agree = false;
+                      }
+                    }
+                  }
+                }
+                std::cout << "for edge " << edgeOrdinal << ", ort " << edgeOrt << ": ";
+                if (agree) std::cout << "matrix and op AGREE.\n";
+                else std::cout << "matrix and op DISAGREE.\n";
+                
+                if (!agree)
+                {
+                  INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "op disagrees with matData");
+                }
+              }
+            }
+          }
+          
+          if ((basisLeft->getFunctionSpace() != FUNCTION_SPACE_HDIV) || (cellDim == 3))
+          {
+            const int numFaces = faceOpData.extent_int(0);
+            for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
+            {
+              const int numFaceOrts = 2*ordinal_type(cellTopo.getSideCount(FACE_DIM,faceOrdinal));
+              // 2*(#face edges): a formula that happens to work for triangles and quads: 6 triangle orientations, 8 quad orientations.
+              for (int faceOrt=0; faceOrt<numFaceOrts; faceOrt++)
+              {
+                OrientationOperator<DT> op = faceOpData(faceOrdinal,faceOrt,transposeInt);
+                std::map<ordinal_type, std::map<ordinal_type,double> > opMap; // column to (row -> weight) lookup
+                
+                const ordinal_type numRows = static_cast<ordinal_type>(op.rowIndices.size());
+                for (ordinal_type rowOrdinal = 0; rowOrdinal < numRows; rowOrdinal++)
+                {
+                  const ordinal_type & rowID = op.rowIndices[rowOrdinal];
+                  const ordinal_type & rowOffset = op.offsetsForRowOrdinal[rowOrdinal];
+                  
+                  const ordinal_type numCols = op.offsetsForRowOrdinal[rowOrdinal+1] - rowOffset;
+                  for (ordinal_type colOrdinal=0; colOrdinal<numCols; colOrdinal++)
+                  {
+                    const ordinal_type & colID = op.packedColumnIndices[rowOffset + colOrdinal];
+                    const double      & weight = op.packedWeights[rowOffset + colOrdinal];
+                    opMap[rowID][colID] = weight;
+                  }
+                }
+                
+                const ordinal_type ordFace = (2 < tagToOrdinal.extent(0) ? (static_cast<size_type>(faceOrdinal) < tagToOrdinal.extent(1) ? tagToOrdinal(2, faceOrdinal, 0) : -1) : -1);
+                
+                if (ordFace > -1)
+                {
+                  bool agree = true;
+                  // now compare to matData
+                  
+                  const auto mat = Kokkos::subview(matData,
+                                                   numEdges*existEdgeDofs+faceOrdinal, faceOrt,
+                                                   Kokkos::ALL(), Kokkos::ALL());
+                  
+                  const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
+                  
+                  for (ordinal_type i=0;i<ndofFace;++i) {
+                    const ordinal_type ii = tagToOrdinal(2, faceOrdinal, i);
+                    
+                    ordinal_type opNumCols;
+                    if (numRows == 0)
+                    {
+                      opNumCols = 0;
+                    }
+                    else
+                    {
+                      if (opMap.find(ii) != opMap.end())
+                      {
+                        opNumCols = static_cast<ordinal_type>(opMap[ii].size());
+                      }
+                      else
+                      {
+                        opNumCols = 0;
+                      }
+                    }
+                    
+                    for (ordinal_type k=0;k<dimBasis;++k) {
+                      for (ordinal_type l=0;l<ndofFace;++l) {
+                        const ordinal_type ll = tagToOrdinal(2, faceOrdinal, l);
+                        auto & mat_il = transpose ? mat(l,i) : mat(i,l);
+                        
+                        double op_il;
+                        if (opNumCols == 0) // then we should treat this as an identity row
+                        {
+                          op_il = (ii==ll) ? 1.0 : 0.0;
+                        }
+                        else
+                        {
+                          op_il = opMap[ii][ll];
+                        }
+                        
+                        const double diff = std::fabs(mat_il - op_il);
+                        if (diff > 1e-15)
+                        {
+                          std::cout << mat_il << " != " << op_il << std::endl;
+                          agree = false;
+                        }
+                      }
+                    }
+                  }
+                  std::cout << "for face " << faceOrdinal << ", ort " << faceOrt << ": ";
+                  if (agree) std::cout << "matrix and op AGREE.\n";
+                  else std::cout << "matrix and op DISAGREE.\n";
+                  
+                  if (!agree)
+                  {
+                    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "op disagrees with matData");
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      
       
       const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
-      typedef F_modifyBasisByOrientation
-        <decltype(orts),
-         decltype(outputLeft),decltype(input),
-         decltype(ordinalToTag),decltype(tagToOrdinal),
-         decltype(matData)> FunctorType;
+      using FunctorType = F_modifyBasisByOrientationOperator
+      <decltype(orts),
+      decltype(outputLeft),decltype(input),
+      decltype(std::get<0>(op_tuple))>;
       Kokkos::parallel_for
-        (policy,
-         FunctorType(orts,
-                     outputLeft, input,
-                     ordinalToTag, tagToOrdinal,
-                     matData,
-                     cellDim, numVerts, numEdges, numFaces,
-                     numOtherFields, dimBasis, leftMultiply));
+      (policy,
+       FunctorType(orts,
+                   outputLeft, input,
+                   std::get<0>(op_tuple), std::get<1>(op_tuple), numEdges, numFaces,
+                   numOtherFields, dimBasis, leftMultiply, transpose));
     }
     
     // apply orientations on right
