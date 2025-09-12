@@ -14,7 +14,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 
-using namespace ROL;
+namespace ROL {
 
 //! \brief ROL interface wrapper for Sacado SimOpt Constraint
 template<class Real, template<class> class Constr>
@@ -594,4 +594,7 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointHessian_22AD(Vector<Scal
 
     }
 }
+
+} // namespace ROL
+
 #endif
