@@ -35,6 +35,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     energy-ss-blocked.xml
     energy-transient-tempus-blocked.xml
     energy-transient-tempus-opt-blocked.xml
+    energy-transient-tempus-opt-blocked-p-dependent-g.xml
     rol_params.xml
     energy-neumann.xml
     energy-ss-blocked-tp.xml
