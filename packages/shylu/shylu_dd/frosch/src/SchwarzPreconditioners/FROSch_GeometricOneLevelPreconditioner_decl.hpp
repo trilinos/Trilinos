@@ -25,7 +25,7 @@ namespace FROSch {
     /**
      * @class GeometricOneLevelPreconditioner
      *
-     * The GeometricOneLevelPreconditioner is a variance of the OneLevelPrecondtioner that 
+     * The GeometricOneLevelPreconditioner is a variant of the OneLevelPrecondtioner that 
      * builds on the GeometricOverlappingOperator instead of the AlgebraicOverlappingOperator.
      *
      * In the construction of the preconditioner, the algebraic decomposition of the matrix 

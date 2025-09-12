@@ -240,6 +240,7 @@ namespace FROSch {
       void 
       extractLocalSubdomainMatrix_Symbolic();
     
+    private:
       /**
        * @brief A RCP<Xpetra::CrsGraph<SC,LO,GO,NO>> which contains the dual graph.
        *
