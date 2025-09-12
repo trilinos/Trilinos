@@ -535,13 +535,13 @@ public:
     // Get Solution
     ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
     Real h = 1.0/((Real)n+1), pt = 0.0, k1 = 1.0, k2 = 2.0;
-    for( int i = 0; i < n; i++ ) {
-      pt = (Real)(i+1)*h;
+    for( int li = 0; li < n; li++ ) {
+      pt = (Real)(li+1)*h;
       if ( pt >= 0.0 && pt < 0.5 ) {
-        (*xp)[i] = std::log(k1);
+        (*xp)[li] = std::log(k1);
       }
       else if ( pt >= 0.5 && pt < 1.0 ) {
-        (*xp)[i] = std::log(k2); 
+        (*xp)[li] = std::log(k2); 
       }
     }
     return ROL::makePtr<StdVector<Real>>(xp);
