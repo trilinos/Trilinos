@@ -43,8 +43,6 @@
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 
-#include "Epetra_MpiComm.h"
-
 namespace panzer {
 
   TEUCHOS_UNIT_TEST(bcstrategy, basic_construction)
