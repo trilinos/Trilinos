@@ -168,11 +168,29 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 ENDIF ()
 
 IF(Tpetra_INST_DOUBLE AND ${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     BlockTriDiContainerUnitAndPerfTests
     SOURCES
     Ifpack2_UnitTestBlockTriDiContainer.cpp
-    ARGS ""
+    )
+
+  # Add test for block tridiagonal cases
+  TRIBITS_ADD_TEST(
+    BlockTriDiContainerUnitAndPerfTests
+    NAME
+    BlockTriDiContainer_BTD_UnitTests
+    ARGS "--test_btds --notest_jacobi"
+    COMM serial mpi
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+    )
+
+  # Add test for block Jacobi cases
+  TRIBITS_ADD_TEST(
+    BlockTriDiContainerUnitAndPerfTests
+    NAME
+    BlockTriDiContainer_Jacobi_UnitTests
+    ARGS "--notest_btds --test_jacobi"
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT

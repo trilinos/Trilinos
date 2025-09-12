@@ -26,7 +26,7 @@
 
 struct Input {
   Teuchos::RCP<const Teuchos::Comm<int> > comm;
-  bool quiet, teuchos_test, contiguous, verbose;
+  bool quiet, teuchos_test_btds, teuchos_test_jacobi, contiguous, verbose;
   int isplit, jsplit;
   int ni, nj, nk;
   int bs;                 // block size
@@ -66,7 +66,8 @@ struct Input {
     clp.setOption("tol", &tol, "Tolerance for norm-based termination. Set to <= 0 to turn off norm-based termination.");
     clp.setOption("check-tol-every", &check_tol_every, "Check norm every CE iterations.");
     clp.setOption("verbose", "quiet", &verbose, "Verbose output.");
-    clp.setOption("test", "notest", &teuchos_test, "Run unit tests.");
+    clp.setOption("test_btds", "notest_btds", &teuchos_test_btds, "Run block tridiagonal unit tests.");
+    clp.setOption("test_jacobi", "notest_jacobi", &teuchos_test_jacobi, "Run block Jacobi unit tests.");
     clp.setOption("jacobi", "tridiag", &jacobi, "Run with little-block Jacobi instead of block tridagional.");
     clp.setOption("contiguous", "noncontiguous", &contiguous, "Use contiguous GIDs.");
     clp.setOption("seq-method", "non-seq-method", &use_seq_method, "Developer option.");
@@ -114,9 +115,10 @@ struct Input {
 
  private:
   void init(const Teuchos::RCP<const Teuchos::Comm<int> >& icomm) {
-    comm         = icomm;
-    quiet        = false;
-    teuchos_test = true;
+    comm                = icomm;
+    quiet               = false;
+    teuchos_test_btds   = true;
+    teuchos_test_jacobi = true;
     ni = nj = nk     = 10;
     isplit           = comm->getSize();
     jsplit           = 1;
@@ -152,7 +154,7 @@ static void run_performance_test(const Input& in) {
                                                                           in.comm->getRank());
   auto g                                 = bcmm::make_crs_graph(in.comm, sb, sbp);
   auto A                                 = bcmm::make_bcrs_matrix(sb, g, in.bs);
-  const auto T                           = btdct::make_BTDC(sb, sbp, A, in.use_overlap_comm, in.nonuniform_lines, in.jacobi,
+  const auto T                           = btdct::make_BTDC(sb, sbp, A, in.use_overlap_comm, in.nonuniform_lines, in.jacobi ? tif_utest::JACOBI_ON : tif_utest::JACOBI_OFF,
                                                             in.use_seq_method);
   const auto X                           = bcmm::make_multivector(sb, A, in.bs, in.nrhs);
   const auto B                           = Teuchos::rcp(new typename bcmm::Tpetra_MultiVector(A->getRangeMap(), in.nrhs));
@@ -206,6 +208,7 @@ static void run_performance_test(const Input& in) {
 
 template <typename Scalar, typename LO, typename GO>
 static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& success) {
+  using tif_utest::JacobiMode;
   typedef LO Int;
   typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
   typedef tif_utest::BlockTriDiContainerTester<Scalar, LO, GO> btdct;
@@ -238,7 +241,17 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
         TEUCHOS_TEST(ne == 0, "test_bcrs_matrix tridiags only");
         nerr += ne;
       }
-      for (const bool jacobi : {false, true})
+      // Make a list of the Jacobi modes to test, based on input params
+      Teuchos::Array<JacobiMode> modes;
+      if (in.teuchos_test_btds) {
+        modes.push_back(tif_utest::JACOBI_OFF);
+      }
+      if (in.teuchos_test_jacobi) {
+        modes.push_back(tif_utest::JACOBI_ON);
+        modes.push_back(tif_utest::JACOBI_ON_SINGLETON_PARTS);
+        modes.push_back(tif_utest::JACOBI_ON_SHUFFLED_PARTS);
+      }
+      for (const JacobiMode jacobi : modes)
         for (const bool seq_method : {false, true}) {
           // The sequential method only works when 'device' memory space is host-accessible (aka UVM semantics)
           if (seq_method && !Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace,
@@ -256,9 +269,14 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
                     std::stringstream ss;
                     ss << "test_BR_BTDC:"
                        << " bs " << bs
-                       << (contiguous ? " contig" : " noncontig")
-                       << (jacobi ? " jacobi" : " tridiag")
-                       << (seq_method ? " seq_method" : "")
+                       << (contiguous ? " contig" : " noncontig");
+                    switch (jacobi) {
+                      case tif_utest::JACOBI_OFF: ss << " tridiag"; break;
+                      case tif_utest::JACOBI_ON: ss << " jacobi"; break;
+                      case tif_utest::JACOBI_ON_SINGLETON_PARTS: ss << " jacobi-parts"; break;
+                      case tif_utest::JACOBI_ON_SHUFFLED_PARTS: ss << " jacobi-parts-shuffled"; break;
+                    }
+                    ss << (seq_method ? " seq_method" : "")
                        << (overlap_comm ? " overlap_comm" : "")
                        << (pointwise ? " point_wise" : "")
                        << (explicitConversion ? " explicit_block_conversion" : "")
@@ -333,7 +351,7 @@ int main(int argc, char** argv) {
         const bool detail = false;
         Kokkos::print_configuration(std::cout, detail);
       }
-      if (in->teuchos_test) {
+      if (in->teuchos_test_btds || in->teuchos_test_jacobi) {
         Teuchos::UnitTestRepository::runUnitTestsFromMain(1, argv);
       }
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
