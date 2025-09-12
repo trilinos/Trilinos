@@ -187,12 +187,12 @@ void test_sincos_fsa(const bool use_combined_method,
       typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
 
       std::ofstream ftmp(outfile_name);
-      RCP<const Tempus::SolutionHistory<double> > solutionHistory =
+      RCP<const Tempus::SolutionHistory<double> > lsolutionHistory =
         integrator->getSolutionHistory();
       RCP< Thyra::MultiVectorBase<double> > DxDp_exact_plot =
         Thyra::createMembers(model->get_x_space(), num_param);
-      for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<const Tempus::SolutionState<double> > solutionState = (*solutionHistory)[i];
+      for (int i=0; i<lsolutionHistory->getNumStates(); i++) {
+        RCP<const Tempus::SolutionState<double> > solutionState = (*lsolutionHistory)[i];
         double time_i = solutionState->getTime();
         RCP<const DMVPV> x_prod_plot =
           Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
