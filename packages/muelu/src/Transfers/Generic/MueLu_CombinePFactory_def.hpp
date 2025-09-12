@@ -78,7 +78,7 @@ constructIdentityProlongator(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, 
       KOKKOS_LAMBDA(const LocalOrdinal index) {
         rowptr(index) = index;
         colind(index) = index;
-        values(index) = Scalar(1.0);
+        values(index) = typename values_type::value_type(1.0);
         if (index == (numLocal - 1)) {
           rowptr(numLocal) = numLocal;
         }
