@@ -282,7 +282,7 @@ double time_space_normal(double t, double x, double y, double z, double mu, doub
   int low = 0;
   int high = 0;
 
-  static const double epsilon = DBL_MIN;
+  static const double epsilon = std::numeric_limits<double>::min();
 
   // Box-Muller transformation from two uniform random numbers
   // to a gaussian distribution
