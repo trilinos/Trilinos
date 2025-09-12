@@ -55,6 +55,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTutorialXmlFiles
   SOURCE_FILES
     ${XML_FILES_ALL}
     hands-on.py
+    MueLu_Agg2VTK.py
+    tmpl/MueLu_Agg2VTK.py_TMPL
+    tmpl/muelu.xml_TMPL
+    tmpl/muelu_easy.xml_TMPL
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
@@ -96,8 +100,8 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
   )
   
   TRIBITS_ADD_EXECUTABLE(
-    TutorialDriver_xml_galeri
-    SOURCES TutorialDriver_xml_galeri.cpp
+    TutorialDriver
+    SOURCES TutorialDriver.cpp
     COMM serial mpi
     )
   #TRIBITS_ADD_EXECUTABLE(
@@ -111,7 +115,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     get_filename_component(xml_we "${xml_file}" NAME_WE)
 
     TRIBITS_ADD_TEST(
-      TutorialDriver_xml_galeri
+      TutorialDriver
       NAME "Test_Tutorial_laplace2d_${xml_we}"
       ARGS "--matrixType=Laplace2D --matrixType=Laplace2D --xml=${xml_file}"
       COMM serial mpi
@@ -123,11 +127,9 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
   foreach(xml_file IN LISTS XML_FILES_ALL)
     # xml_name = filename without directory and without extension
     get_filename_component(xml_we "${xml_file}" NAME_WE)
-    message("wwwwww-----")
-    message("${xml_we}")
 
     TRIBITS_ADD_TEST(
-      TutorialDriver_xml_galeri
+      TutorialDriver
       NAME "Test_Tutorial_recirc2d_${xml_we}"
       ARGS "--matrixType=Recirc2D --matrixType=Recirc2D --xml=${xml_file} --diffusion=1e-5"
       COMM serial mpi
