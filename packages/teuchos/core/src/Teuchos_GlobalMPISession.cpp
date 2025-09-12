@@ -136,36 +136,24 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   // requirement.
 
   const int numArgs = *argc;
-  argvCopy_.resize (numArgs);  
+  argvCopy_.resize (numArgs);
   for (int c = 0; c < numArgs; ++c) {
     argvCopy_[c] = std::string ((*argv)[c]); // deep copy
   }
 #endif // HAVE_TEUCHOSCORE_KOKKOS
 }
 
-  
-#ifdef HAVE_TEUCHOSCORE_KOKKOS  
+
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
 std::vector<std::string> GlobalMPISession::getArgv ()
 {
   return argvCopy_;
 }
-#endif // HAVE_TEUCHOSCORE_KOKKOS  
+#endif // HAVE_TEUCHOSCORE_KOKKOS
 
-  
+
 GlobalMPISession::~GlobalMPISession()
 {
-
-#ifdef HAVE_TEUCHOSCORE_KOKKOS
-  try {
-    if (Kokkos::is_initialized())
-      Kokkos::finalize();
-  }
-  catch (const std::runtime_error& e) {
-    std::cerr << "Kokkos::finalize failed:\n"
-              << e.what() << "\n";
-  }
-#endif
-
   haveMPIState_ = false;
 #ifdef HAVE_MPI
   const int mpierr = ::MPI_Finalize();
