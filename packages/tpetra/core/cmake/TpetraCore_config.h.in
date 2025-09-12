@@ -168,6 +168,8 @@
 
 #cmakedefine HAVE_TPETRA_BCRS_DO_POINT_IMPORT
 
+#cmakedefine HAVE_TPETRA_LEGACY_IMPORT_SHRINK
+
 /* Define the Fortran name mangling to be used for the BLAS */
 #ifndef TPETRACORE_F77_BLAS_MANGLE
 #  define TPETRACORE_F77_BLAS_MANGLE@F77_BLAS_MANGLE@
