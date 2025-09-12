@@ -1134,32 +1134,36 @@ createPartInterface(const Teuchos::RCP<const typename BlockHelperDetails::ImplTy
   }
 
   local_ordinal_type n_subparts_per_part;
-  if (n_subparts_per_part_in == -1) {
-    // If the number of subparts is set to -1, the user let the algorithm
-    // decides the value automatically
-    using execution_space = typename impl_type::execution_space;
-
-    // Line splitting only benefits GPUs
-    if constexpr (impl_type::node_type::is_gpu) {
-      const int line_length = partsz[0].first;
-
-      const local_ordinal_type team_size =
-          SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
-              recommended_team_size(blocksize, vector_length, internal_vector_length);
-
-      const local_ordinal_type num_teams = std::max(1, execution_space().concurrency() / (team_size * vector_length));
-      n_subparts_per_part                = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
-#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-      printf("Automatically chosen n_subparts_per_part = %d for nparts = %d, num_teams = %d, team_size = %d, line_length = %d, and blocksize = %d;\n", n_subparts_per_part, nparts, num_teams, team_size, line_length, blocksize);
-#endif
-    } else {
-      n_subparts_per_part = 1;
-#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
-      printf("Automatically chosen n_subparts_per_part = 1 for CPU backend\n");
-#endif
-    }
+  if (jacobi) {
+    n_subparts_per_part = 1;
   } else {
-    n_subparts_per_part = n_subparts_per_part_in;
+    if (n_subparts_per_part_in == -1) {
+      // If the number of subparts is set to -1, the user let the algorithm
+      // decides the value automatically
+      using execution_space = typename impl_type::execution_space;
+
+      // Line splitting only benefits GPUs
+      if constexpr (impl_type::node_type::is_gpu) {
+        const int line_length = partsz[0].first;
+
+        const local_ordinal_type team_size =
+            SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space>::
+                recommended_team_size(blocksize, vector_length, internal_vector_length);
+
+        const local_ordinal_type num_teams = std::max(1, execution_space().concurrency() / (team_size * vector_length));
+        n_subparts_per_part                = getAutomaticNSubparts(nparts, num_teams, line_length, blocksize);
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+        printf("Automatically chosen n_subparts_per_part = %d for nparts = %d, num_teams = %d, team_size = %d, line_length = %d, and blocksize = %d;\n", n_subparts_per_part, nparts, num_teams, team_size, line_length, blocksize);
+#endif
+      } else {
+        n_subparts_per_part = 1;
+#ifdef IFPACK2_BLOCKTRIDICONTAINER_USE_PRINTF
+        printf("Automatically chosen n_subparts_per_part = 1 for CPU backend\n");
+#endif
+      }
+    } else {
+      n_subparts_per_part = n_subparts_per_part_in;
+    }
   }
 
   // Total number of sub lines:
