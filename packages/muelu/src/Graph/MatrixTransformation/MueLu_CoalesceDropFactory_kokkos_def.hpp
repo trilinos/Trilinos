@@ -28,8 +28,6 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
 
-// #define MUELU_COALESCE_DROP_DEBUG 1
-
 #include "MueLu_BoundaryDetection.hpp"
 #include "MueLu_DroppingCommon.hpp"
 #include "MueLu_MatrixConstruction.hpp"

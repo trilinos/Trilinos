@@ -10,6 +10,8 @@
 #ifndef MUELU_DROPPINGCOMMON_HPP
 #define MUELU_DROPPINGCOMMON_HPP
 
+// #define MUELU_COALESCE_DROP_DEBUG 1
+
 #include "Kokkos_Core.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Xpetra_Access.hpp"

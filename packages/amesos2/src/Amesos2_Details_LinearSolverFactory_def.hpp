@@ -174,6 +174,9 @@ public:
       else if (Amesos2::query ("umfpack")) {
         solverName_ = "umfpack";
       }
+      else if (Amesos2::query ("tacho")) {
+        solverName_ = "tacho";
+      }
       // We don't have to try to rescue the user if their empty solver
       // name didn't catch any of the above choices.
     }

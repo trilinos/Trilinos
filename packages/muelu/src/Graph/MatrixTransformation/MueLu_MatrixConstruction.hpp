@@ -210,7 +210,7 @@ class PointwiseCountingFunctor<local_matrix_type, functor_type> {
     functor(rlid);
 
 #ifdef MUELU_COALESCE_DROP_DEBUG
-    Kokkos::printf("%s\n", functorName);
+    Kokkos::printf("%s\n", functorName.c_str());
 
     auto row            = A.rowConst(rlid);
     const size_t offset = A.graph.row_map(rlid);
