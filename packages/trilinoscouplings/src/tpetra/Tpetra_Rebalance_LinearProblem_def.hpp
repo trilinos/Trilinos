@@ -35,8 +35,9 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Rebalance_LinearProblem()
+Rebalance_LinearProblem( Teuchos::RCP< Teuchos::ParameterList > paramListForZoltan2PartitioningProblem )
   : ViewTransform< LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >()
+  , paramListForZoltan2PartitioningProblem_( paramListForZoltan2PartitioningProblem )
 {
   // Nothing to do
 }
@@ -75,12 +76,7 @@ Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( 
   using MatrixAdapter_t = Zoltan2::XpetraCrsMatrixAdapter<cm_t>;
   MatrixAdapter_t matrixAdapter(origMatrix);
 
-  std::string partitioningMethod("block"); // "scotch" "parmetis"
-  Teuchos::ParameterList param;
-  param.set("partitioning_approach", "partition");
-  param.set("algorithm", partitioningMethod);
-
-  Zoltan2::PartitioningProblem<MatrixAdapter_t> partitioningProblem(&matrixAdapter, &param);
+  Zoltan2::PartitioningProblem<MatrixAdapter_t> partitioningProblem(&matrixAdapter, paramListForZoltan2PartitioningProblem_.get());
   partitioningProblem.solve();
 
   // ****************************************************************

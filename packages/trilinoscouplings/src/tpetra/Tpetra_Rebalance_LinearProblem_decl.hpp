@@ -35,7 +35,7 @@ using OriginalType = typename ViewTransform< LinearProblem<Scalar, LocalOrdinal,
   ///
   /** Constructor
    */
-  Rebalance_LinearProblem();
+  Rebalance_LinearProblem( Teuchos::RCP< Teuchos::ParameterList > paramListForZoltan2PartitioningProblem );
 
   ///
   /** Destructor
@@ -46,6 +46,9 @@ using OriginalType = typename ViewTransform< LinearProblem<Scalar, LocalOrdinal,
   /** Constructs a new rebalanced view the original LP.
    */
   NewType operator()( OriginalType const & origProblem );
+
+private:
+  Teuchos::RCP< Teuchos::ParameterList > paramListForZoltan2PartitioningProblem_;
 };
 
 } // namespace Tpetra
