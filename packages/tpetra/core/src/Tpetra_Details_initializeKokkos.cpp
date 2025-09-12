@@ -20,7 +20,7 @@ namespace Tpetra {
 namespace Details {
 
 void initializeKokkos() {
-  static int once = [] {
+  static int initialized = []() {
     assert(!Kokkos::is_finalized());
     if (!Kokkos::is_initialized()) {
       std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv();
@@ -45,12 +45,13 @@ void initializeKokkos() {
       Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
       Tpetra::Details::AddKokkosFenceToTimeMonitor();
       Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
-
-      return 1;
     }
-    ();
-    assert(Kokkos::is_initialized());
-  }
+    return 1;
+  }();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(Kokkos::is_initialized() && initialized == 1, std::runtime_error,
+                             "Tpetra::Details::initializeKokkos: Initialization failed");
+}
 
 }  // namespace Details
 }  // namespace Tpetra
