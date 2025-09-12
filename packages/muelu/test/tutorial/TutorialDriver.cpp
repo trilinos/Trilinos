@@ -57,10 +57,10 @@
 
 void printMultiVector(const Teuchos::RCP<Tpetra::MultiVector<>> mv) {
   auto comm = mv->getMap()->getComm();
-  Teuchos::RCP<Teuchos::FancyOStream> out =
+  Teuchos::RCP<Teuchos::FancyOStream> myfile =
       Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
   // Prints in rank order and includes map info + entries at EXTREME
-  mv->describe(*out, Teuchos::VERB_EXTREME);
+  mv->describe(*myfile, Teuchos::VERB_EXTREME);
 }
 
 /*Usage:
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
       clp.setOption("xml", &xmlFileName, "read parameters from a file");
       int mgridSweeps = 1;
       clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within multigrid solver");
-      std::string printTimings = "no";
+      std::string printTimings = "yes";
       clp.setOption("timings", &printTimings, "print timings to screen [yes/no]");
       double tol = 1e-12;
       clp.setOption("tol", &tol, "solver convergence tolerance");
@@ -201,18 +201,27 @@ int main(int argc, char* argv[]) {
         galeriList.set("conv", 1.0);
       }
 
-      // Create node map (equals dof map, since one dof per node)
-      RCP<const Xpetra::Map<LO, GO, NO>> xpetra_map;
-      if (matrixType == "Laplace2D" || matrixType == "Recirc2D")
-        xpetra_map = Galeri::Xpetra::CreateMap<LO, GO, NO>(Xpetra::UseTpetra, "Cartesian2D", comm, galeriList);
+      // Create node map
+      RCP<const Xpetra::Map<LO, GO, NO>> xpetra_nodeMap;
+      if (matrixType == "Laplace2D" || matrixType == "Recirc2D" || matrixType == "Elasticity2D")
+        xpetra_nodeMap = Galeri::Xpetra::CreateMap<LO, GO, NO>(Xpetra::UseTpetra, "Cartesian2D", comm, galeriList);
       else if (matrixType == "Laplace3D")
-        xpetra_map = Galeri::Xpetra::CreateMap<LO, GO, NO>(Xpetra::UseTpetra, "Cartesian3D", comm, galeriList);
-      RCP<const Map> nodeMap = Xpetra::toTpetra(xpetra_map);
-      RCP<const Map> dofMap  = nodeMap;
+        xpetra_nodeMap = Galeri::Xpetra::CreateMap<LO, GO, NO>(Xpetra::UseTpetra, "Cartesian3D", comm, galeriList);
+
+      // Create dof map (depends on number of dofs per node)
+      RCP<const Xpetra::Map<LO, GO, NO>> xpetra_dofMap;
+      if (matrixType == "Elasticity2D") {
+        std::vector<size_t> striding = {1, 1};
+        xpetra_dofMap                = Xpetra::StridedMapFactory<LO, GO, NO>::Build(xpetra_nodeMap, striding);  //# check if this works (small chance it will give error)
+      } else
+        xpetra_dofMap = xpetra_nodeMap;
+
+      RCP<const Map> nodeMap = Xpetra::toTpetra(xpetra_nodeMap);
+      RCP<const Map> dofMap  = Xpetra::toTpetra(xpetra_dofMap);
 
       // Create coordinates
       RCP<const RealValuedMultiVector> coordinates;
-      if (matrixType == "Laplace2D" || matrixType == "Recirc2D")
+      if (matrixType == "Laplace2D" || matrixType == "Recirc2D" || matrixType == "Elasticity2D")
         coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
       else if (matrixType == "Laplace3D")
         coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, RealValuedMultiVector>("3D", nodeMap, galeriList);
@@ -284,7 +293,7 @@ int main(int argc, char* argv[]) {
 
       // Generate exact solution using a direct solver
       //! [ExactSolutionVector begin]
-      RCP<MultiVector> exactSolution = rcp(new MultiVector(dofMap, 1, true));
+      RCP<MultiVector> exactSolution = rcp(new MultiVector(dofMap, 1, false));
       //! [ExactSolutionVector end]
       {
         fancyout << "========================================================\nCalculate exact solution." << std::endl;
@@ -297,14 +306,15 @@ int main(int argc, char* argv[]) {
       }
 
       // Solve Ax = b using AMG as a preconditioner in Belos
+
       //! [MueLuAsPrecCreateSolutionVector begin]
-      RCP<MultiVector> precSolVec = rcp(new MultiVector(dofMap, 1, true));
+      // Create solution vector and set it to an initial guess (X0)
+      RCP<MultiVector> precSolVec = rcp(new MultiVector(dofMap, 1, false));
+      Tpetra::deep_copy(*precSolVec, *X0);
       //! [MueLuAsPrecCreateSolutionVector end]
       {
         fancyout << "========================================================\nUse multigrid hierarchy as preconditioner within CG." << std::endl;
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - AMG as preconditioner")));
-
-        precSolVec->update(1.0, *X0, 0.0);
 
         //! [MueLuAsPrecSetupLinearSystem begin]
         // Construct a Belos LinearProblem object and hand-in the MueLu preconditioner
@@ -358,14 +368,15 @@ int main(int argc, char* argv[]) {
       }
 
       // Solve Ax = b using AMG as a solver
+
       //! [MueLuAsSolverCreateSolutionVector begin]
-      RCP<MultiVector> multigridSolVec = rcp(new MultiVector(dofMap, 1, true));
+      // Create solution vector and set it to an initial guess (X0)
+      RCP<MultiVector> multigridSolVec = rcp(new MultiVector(dofMap, 1, false));
+      Tpetra::deep_copy(*multigridSolVec, *X0);
       //! [MueLuAsSolverCreateSolutionVector end]
       {
         fancyout << "========================================================\nUse multigrid hierarchy as solver." << std::endl;
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Multigrid Solve")));
-
-        multigridSolVec->update(1.0, *X0, 0.0);
 
         //! [ExtractHierarchyFromTpetraPrec begin]
         // Extract the underlying MueLu hierarchy
@@ -387,21 +398,88 @@ int main(int argc, char* argv[]) {
       }
 
       // Write results into file
-      /*{
+      {
         fancyout << "========================================================\nExport results.\n========================================================" << std::endl;
         std::ofstream myfile;
         std::stringstream ss;
         ss << "example" << MyPID << ".txt";
         myfile.open(ss.str().c_str());
 
+        const size_t numLocal = dofMap->getLocalNumElements();
+        //#TEUCHOS_TEST_FOR_EXCEPTION(coordinates.getNumVectors() < 2, std::runtime_error, "coordinates must have 2 columns.");
+
+        auto coords_h = coordinates->getLocalViewHost(Tpetra::Access::ReadOnly);
+        auto ex_h     = exactSolution->getLocalViewHost(Tpetra::Access::ReadOnly);
+        auto pr_h     = precSolVec->getLocalViewHost(Tpetra::Access::ReadOnly);
+        auto mg_h     = multigridSolVec->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+        for (int iproc = 0; iproc < NumProc; ++iproc) {
+          if (MyPID == iproc) {
+            if (MyPID == 0) {
+              myfile.width(8);
+              myfile << "#     MyPID  ";
+              myfile.width(12);
+              myfile << "GID  ";
+              myfile.width(20);
+              myfile << "X  ";
+              myfile.width(20);
+              myfile << "Y  ";
+              myfile.width(20);
+              myfile << "ExactSolution  ";
+              myfile.width(20);
+              myfile << "PrecSolution  ";
+              myfile.width(20);
+              myfile << "MultigridSolution  ";
+              myfile << '\n';
+            }
+
+            for (size_t i = 0; i < numLocal; ++i) {
+              myfile.width(8);
+              myfile << MyPID << "    ";
+
+              // GID of local row i
+              const long long gid = static_cast<long long>(coordinates->getMap()->getGlobalElement(static_cast<LO>(i)));
+              myfile.width(12);
+              myfile << gid << "    ";
+
+              // coordinates(:,0:1)
+              myfile.width(20);
+              myfile << coords_h(i, 0);
+              myfile.width(20);
+              myfile << coords_h(i, 1);
+
+              myfile.precision(18);  // set high precision for output
+              myfile.width(25);
+              myfile << ex_h(i, 0);
+              myfile.width(25);
+              myfile << pr_h(i, 0);
+              myfile.width(25);
+              myfile << mg_h(i, 0);
+
+              myfile.precision(6);  // set default precision
+
+              myfile << '\n';
+            }
+            myfile << std::flush;
+          }
+          comm->barrier();
+          comm->barrier();
+          tm                = Teuchos::null;
+          globalTimeMonitor = Teuchos::null;
+        }
+
+        if (printTimings == "yes") {
+          Teuchos::TimeMonitor::summarize(comm, std::cout, false, true, false, Teuchos::Union, "", true);
+        }
+
         // loop over all procs
-        for (int iproc = 0; iproc < NumProc; iproc++) {
+        /*for (int iproc = 0; iproc < NumProc; iproc++) {
           if (MyPID == iproc) {
             int NumVectors1               = 2;
             int NumMyElements1            = coordinates->getMap()->getLocalNumElements();
             int MaxElementSize1           = 1;
             int* FirstPointInElementList1 = NULL;
-            if (MaxElementSize1 != 1) FirstPointInElementList1 = coordinates->getMap().FirstPointInElementList();
+            if (MaxElementSize1 != 1) FirstPointInElementList1 = coordinates->getMap()->FirstPointInElementList();
             double** A_Pointers = coordinates->Pointers();
 
             if (MyPID == 0) {
@@ -482,8 +560,8 @@ int main(int argc, char* argv[]) {
 
         if (printTimings == "yes") {
           TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
-        }
-      }*/
+        }*/
+      }
 
     }  // end of Tpetra::ScopeGuard
     success = true;
