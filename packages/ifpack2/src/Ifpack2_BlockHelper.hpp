@@ -251,7 +251,7 @@ struct SumReducer {
   KOKKOS_INLINE_FUNCTION
   void init(value_type &val) const {
     for (int i = 0; i < N; ++i)
-      val.v[i] = Kokkos::reduction_identity<T>::sum();
+      val.v[i] = 0;
   }
   KOKKOS_INLINE_FUNCTION
   value_type &reference() {

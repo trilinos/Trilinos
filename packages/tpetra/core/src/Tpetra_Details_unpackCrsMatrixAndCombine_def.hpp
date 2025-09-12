@@ -252,28 +252,24 @@ struct UnpackCrsMatrixAndCombineFunctor {
 
     if (expected_num_bytes > num_bytes)
     {
-// FIXME_SYCL Enable again once a SYCL conforming printf implementation is available.
-#ifndef KOKKOS_ENABLE_SYCL
-      printf(
+      Kokkos::printf(
         "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, the expected number of bytes (%d) != number of unpacked bytes (%d)\n",
         (int) lid_no, (int) expected_num_bytes, (int) num_bytes
       );
-#endif
+
       Kokkos::atomic_compare_exchange(error_code.data(), 0, 21);
       return;
     }
 
     if (offset > buf_size || offset + num_bytes > buf_size)
     {
-// FIXME_SYCL Enable again once a SYCL conforming printf implementation is available.
-#ifndef KOKKOS_ENABLE_SYCL
-      printf(
+      Kokkos::printf(
         "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, the offset (%d) > buffer size (%d)\n",
         (int) lid_no, (int) offset, (int) buf_size
       );
-#endif
+
       Kokkos::atomic_compare_exchange(error_code.data(), 0, 22);
       return;
     }
@@ -306,14 +302,12 @@ struct UnpackCrsMatrixAndCombineFunctor {
     (void)PackTraits<LO>::unpackValue(num_ent_out, num_ent_in);
     if (static_cast<size_t>(num_ent_out) != num_entries_in_row)
     {
-// FIXME_SYCL Enable again once a SYCL conforming printf implementation is available.
-#ifndef KOKKOS_ENABLE_SYCL
-      printf(
+      Kokkos::printf(
         "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, number of entries (%d) != number of entries unpacked (%d)\n",
         (int) lid_no, (int) num_entries_in_row, (int) num_ent_out
       );
-#endif
+
       Kokkos::atomic_compare_exchange(error_code.data(), 0, 23);
     }
 
@@ -368,13 +362,10 @@ struct UnpackCrsMatrixAndCombineFunctor {
           );
         } else {
           // should never get here
-// FIXME_SYCL Enable again once a SYCL conforming printf implementation is available.
-#ifndef KOKKOS_ENABLE_SYCL
-          printf(
+          Kokkos::printf(
             "*** Error: UnpackCrsMatrixAndCombineFunctor: "
             "At row %d, an unknown error occurred during unpack\n", (int) lid_no
           );
-#endif
           Kokkos::atomic_compare_exchange(error_code.data(), 0, 31);
         }
       }

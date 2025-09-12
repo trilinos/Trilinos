@@ -64,7 +64,7 @@ void Temporary_Replacement_For_Kokkos_abs(const RV& R, const XV& X) {
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Axpetra, std::string equilibrate) {
+void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Axpetra, std::string equilibrate) {
 #include <MueLu_UseShortNames.hpp>
   using Tpetra::computeRowAndColumnOneNorms;
   using Tpetra::leftAndOrRightScaleCrsMatrix;
@@ -78,7 +78,7 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
 
   typedef typename Tpetra::Details::EquilibrationInfo<typename Kokkos::ArithTraits<Scalar>::val_type, typename Node::device_type> equil_type;
 
-  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A = toTpetra(Axpetra);
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A = toTpetra(Axpetra);
 
   if (Axpetra->getRowMap()->lib() == Xpetra::UseTpetra) {
     equil_type equibResult_ = computeRowAndColumnOneNorms(*A, assumeSymmetric);
@@ -109,6 +109,50 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
     } else
       throw std::runtime_error("Invalid 'equilibrate' option '" + equilibrate + "'");
   }
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+void reorderDistObjs(Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node>> importer) {}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node, class DistObj, class... DistObjs>
+void reorderDistObjs(Teuchos::RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node>> importer, Teuchos::RCP<DistObj>& distObj, DistObjs&... distObjs) {
+  using Scalar = typename DistObj::scalar_type;
+  if (!distObj.is_null()) {
+    if constexpr (std::is_same_v<DistObj, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>) {
+      auto new_distObj = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), distObj->getNumVectors());
+      new_distObj->doImport(*distObj, *importer, Xpetra::INSERT);
+      distObj = new_distObj;
+    } else if constexpr (std::is_same_v<DistObj, Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>) {
+      auto new_distObj = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
+      new_distObj->doImport(*distObj, *importer, Xpetra::INSERT);
+      distObj = new_distObj;
+    }
+  }
+  reorderDistObjs(importer, distObjs...);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class... DistObjs>
+void reorderMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Axpetra,
+                   DistObjs&... distObjs) {
+#include <MueLu_UseShortNames.hpp>
+  auto ordering  = Utilities::ReverseCuthillMcKee(*Axpetra);
+  auto sourceMap = Axpetra->getMap();
+  auto comm      = sourceMap->getComm();
+
+  Kokkos::View<GlobalOrdinal*, typename Node::memory_space> elementList("", sourceMap->getLocalNumElements());
+  auto lclSourceMap = sourceMap->getLocalMap();
+  auto lclOrdering  = ordering->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  Kokkos::parallel_for(
+      "",
+      Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>(0, sourceMap->getLocalNumElements()),
+      KOKKOS_LAMBDA(const LocalOrdinal i) {
+        elementList(i) = lclSourceMap.getGlobalElement(lclOrdering(i, 0));
+      });
+  auto targetMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Axpetra->getRowMap()->lib(), Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), elementList, 0, comm);
+  auto importer  = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Axpetra->getRangeMap(), targetMap);
+  Teuchos::ParameterList XpetraList;
+  Axpetra = MatrixFactory::Build(Axpetra, *importer, *importer, targetMap, targetMap, rcp(&XpetraList, false));
+  reorderDistObjs(importer, distObjs...);
 }
 
 /*********************************************************************/
@@ -144,7 +188,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
   // =========================================================================
   // Convenient definitions
@@ -232,6 +276,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
   std::string equilibrate = "no";
   clp.setOption("equilibrate", &equilibrate, "equilibrate the system (no | diag | 1-norm)");
+  bool reorder = false;
+  clp.setOption("reorder", "no-reorder", &reorder, "reorder system using reverse CuthillMcKee");
 
   bool profileSetup = false;
   bool profileSolve = false;
@@ -257,8 +303,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   std::string levelPerformanceModel = "no";
   clp.setOption("performance-model", &levelPerformanceModel, "runs the level-by-level performance mode options- 'no', 'yes' or 'verbose'");
 
-  bool performSacrifice = Node::is_gpu;
-  clp.setOption("sacrificial-solve", "no-sacrificial-solve", &performSacrifice, "Warm up the solver using a sacrificial solve");
+  bool performSacrificeSetup = Node::is_gpu;
+  clp.setOption("sacrificial-setup", "no-sacrificial-setup", &performSacrificeSetup, "Warm up using a sacrificial setup");
+  bool performSacrificeSolve = Node::is_gpu;
+  clp.setOption("sacrificial-solve", "no-sacrificial-solve", &performSacrificeSolve, "Warm up the solver using a sacrificial solve");
 
   bool kokkosTuning = false;
 #ifdef KOKKOS_ENABLE_TUNING
@@ -332,7 +380,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
 #ifdef HAVE_MPI
   // Generate the node-level communicator, if we want one
-  Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
+  Teuchos::RCP<const Teuchos::Comm<int>> nodeComm;
   int NodeId = comm->getRank();
   if (provideNodeComm) {
     nodeComm = MueLu::GenerateNodeComm(comm, NodeId, provideNodeComm);
@@ -369,9 +417,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<Matrix> A;
   RCP<const Map> map;
   RCP<RealValuedMultiVector> coordinates;
-  RCP<Xpetra::MultiVector<SC, LO, GO, NO> > nullspace;
-  RCP<Xpetra::MultiVector<SC, LO, GO, NO> > material;
-  RCP<Xpetra::Vector<LO, LO, GO, NO> > blocknumber;
+  RCP<Xpetra::MultiVector<SC, LO, GO, NO>> nullspace;
+  RCP<Xpetra::MultiVector<SC, LO, GO, NO>> material;
+  RCP<Xpetra::Vector<LO, LO, GO, NO>> blocknumber;
   RCP<MultiVector> X;
   RCP<MultiVector> B;
 
@@ -379,6 +427,12 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
   comm->barrier();
   tm = Teuchos::null;
+
+  if (reorder && (A->getRowMap()->lib() == Xpetra::UseTpetra)) {
+    TEUCHOS_ASSERT(map->isSameAs(*A->getRowMap()));
+    reorderMatrix(A, coordinates, nullspace, material, blocknumber, X, B);
+    map = A->getRowMap();
+  }
 
   // Do equilibration if requested
   if (lib == Xpetra::UseTpetra) {
@@ -531,9 +585,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         RCP<Operator> Prec;
         // Build the preconditioner numRebuilds+1 times
         if (solvePreconditioned) {
-          MUELU_SWITCH_TIME_MONITOR(tm, "Driver: 2 - MueLu Setup");
-
-          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec);
+          PreconditionerSetup(A, coordinates, nullspace, material, blocknumber, mueluList, profileSetup, useAMGX, useML, setNullSpace, numRebuilds, H, Prec, performSacrificeSetup);
         }
         comm->barrier();
         tm = Teuchos::null;
@@ -558,7 +610,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         // =========================================================================
         // Solve the system numResolves+1 times
         try {
-          SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrifice);
+          SystemSolve(A, X, B, H, Prec, out2, solveType, belosType, profileSolve, useAMGX, useML, cacheSize, numResolves, scaleResidualHist, solvePreconditioned, maxIts, tol, computeCondEst, enforceBoundaryConditionsOnInitialGuess, performSacrificeSolve);
 
           comm->barrier();
         } catch (const std::exception& e) {
@@ -580,7 +632,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
           for (int i = 0; i < H->GetNumLevels(); i++) {
             RCP<Level> level = H->GetLevel(i);
             try {
-              RCP<Matrix> A_level    = level->Get<RCP<Matrix> >("A");
+              RCP<Matrix> A_level    = level->Get<RCP<Matrix>>("A");
               std::string level_name = std::string("Level-") + std::to_string(i) + std::string(": ");
               std::vector<const char*> timers;  // MueLu: Laplace2D: Hierarchy: Solve (level=0)
               MueLu::report_spmv_performance_models<Matrix>(A_level, 100, timers, globalTimeMonitor, level_name, levelPerformanceModel == "verbose");

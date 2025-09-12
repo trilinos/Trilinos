@@ -61,6 +61,8 @@ class ChebyshevKernel {
   void
   setMatrix(const Teuchos::RCP<const operator_type>& A);
 
+  void setAuxiliaryVectors(size_t numVectors);
+
   void
   compute(multivector_type& W,
           const SC& alpha,
