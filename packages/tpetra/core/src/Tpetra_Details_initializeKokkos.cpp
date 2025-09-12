@@ -22,9 +22,12 @@ namespace Details {
 void
 initializeKokkos ()
 {
-  static int initialized = []() {
-                             assert(!Kokkos::is_finalized());
+  static const int initialized = []() {
+                            TEUCHOS_TEST_FOR_EXCEPTION(Kokkos::is_finalized(),std::runtime_error,
+                                                       "Tpetra::Details::initializeKokkos: Kokkos is already finalized");
                              if (! Kokkos::is_initialized ()) {
+                               std::cout<< "CMS: Calling initializeKokkos()"<<std::endl;
+
                                std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
                                int narg = static_cast<int> (args.size ()); // must be nonconst
 
@@ -42,16 +45,16 @@ initializeKokkos ()
                                checkOldCudaLaunchBlocking();
 
                                std::atexit (Kokkos::finalize);
-
-                               // Add Kokkos calls to the TimeMonitor if the environment says so
-                               Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
-                               Tpetra::Details::AddKokkosFenceToTimeMonitor();
-                               Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
                              }
+
+                             // Add Kokkos calls to the TimeMonitor if the environment says so
+                             Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
+                             Tpetra::Details::AddKokkosFenceToTimeMonitor();
+                             Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
                              return 1;
                            }();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(Kokkos::is_initialized(),std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!Kokkos::is_initialized() || initialized != 1,std::runtime_error,
                              "Tpetra::Details::initializeKokkos: Initialization failed");
 }
 
