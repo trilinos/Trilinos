@@ -34,6 +34,9 @@
 /* Determine if we have the mpi_advance TPL */
 #cmakedefine HAVE_TPETRACORE_MPI_ADVANCE
 
+/* Determine if we have the KokkosComm TPL */
+#cmakedefine HAVE_TPETRACORE_KOKKOSCOMM
+
 /* Determine if we have QD */
 #cmakedefine HAVE_TPETRACORE_QD
 #ifdef HAVE_TPETRACORE_QD
