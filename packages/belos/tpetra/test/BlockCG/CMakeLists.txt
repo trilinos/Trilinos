@@ -11,6 +11,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_BlockCG_hb_test
   SOURCES test_bl_cg_hb.cpp
+  ARGS "--verbose"
+       "--verbose --use-single-red"
+       "--verbose --num-rhs=2 --block-size=2"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_BlockCG_hb_test
+  SOURCES test_kokkos_bl_cg_hb.cpp
+  ARGS "--verbose"
+       "--verbose --use-single-red"
+       "--verbose --num-rhs=2 --block-size=2"
   COMM serial mpi
   ARGS
     "--verbose"
@@ -25,11 +37,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_PseudoBlockCG_hb_test
+  SOURCES test_kokkos_pseudo_bl_cg_hb.cpp
+  ARGS "--verbose"
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_PseudoBlockStochasticCG_hb_test
   SOURCES test_pseudo_stochastic_cg_hb.cpp
   ARGS
   COMM serial mpi
 )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Tpetra_KokkosDense_StochasticCG_hb_test
+  SOURCES test_kokkos_stochastic_cg_hb.cpp
+  ARGS
+  COMM serial mpi
+  )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
@@ -55,8 +81,19 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Tpetra_BlockCG_complex_hb_test
-      SOURCES test_bl_cg_complex_hb.cpp
-      ARGS "--verbose"
+      SOURCES test_cg_complex_hb.cpp
+      ARGS
+        "--verbose"
+        "--verbose --pseudo"
+      COMM serial mpi
+    )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tpetra_KokkosDense_BlockCG_complex_hb_test
+      SOURCES test_kokkos_cg_complex_hb.cpp
+      ARGS
+        "--verbose"
+        "--verbose --pseudo"
       COMM serial mpi
     )
 
@@ -64,7 +101,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       Tpetra_BlockCG_complex_hb_CopyFiles
       SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
       SOURCE_FILES mhd1280b.cua
-      EXEDEPS Tpetra_BlockCG_complex_hb_test
+      EXEDEPS Tpetra_BlockCG_complex_hb_test Tpetra_KokkosDense_BlockCG_complex_hb_test
     )
 
   ENDIF()

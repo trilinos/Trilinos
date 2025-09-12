@@ -57,9 +57,11 @@ upperCase (const std::string& s);
 ///   Belos::SolverFactory (which see below).
 /// \tparam MV Same as template parameter 2 of
 ///   Belos::SolverFactory (which see below).
-/// \tparam OP Same as template parameter 2 of
+/// \tparam OP Same as template parameter 3 of
 ///   Belos::SolverFactory (which see below).
-template<class Scalar, class MV, class OP>
+/// \tparam DM Same as template parameter 4 of
+///   Belos::SolverFactory (which see below).
+template<class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,Scalar>>
 class SolverFactoryParent :
     public Teuchos::Describable
 {
@@ -82,11 +84,11 @@ public:
   /// This is a specialization of SolverManager for the same scalar,
   /// multivector, and operator types as the template parameters of
   /// this factory.
-  typedef ::Belos::SolverManager<Scalar, MV, OP> solver_base_type;
+  typedef ::Belos::SolverManager<Scalar, MV, OP, DM> solver_base_type;
 
   /// \brief The type of a solver factory that users may give to
   ///   addFactory() (which see below)
-  typedef CustomSolverFactory<Scalar, MV, OP> custom_solver_factory_type;
+  typedef CustomSolverFactory<Scalar, MV, OP, DM> custom_solver_factory_type;
 
 protected:
   /// \brief Return an instance of the specified solver, or
@@ -191,7 +193,7 @@ public:
   /// \brief register a solver for Inverted Injection (DII).
   static void
   registerSolver (const std::string & solverName,
-    Teuchos::RCP<SolverFactoryParent<Scalar, MV, OP>::solver_base_type > instance)
+    Teuchos::RCP<SolverFactoryParent<Scalar, MV, OP, DM>::solver_base_type > instance)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       instance == Teuchos::null,
@@ -230,23 +232,23 @@ private:
   static std::vector<Teuchos::RCP<custom_solver_factory_type> > factories_;
 
   static std::map<const std::string, Teuchos::RCP<typename
-    SolverFactoryParent<Scalar, MV, OP>::solver_base_type> > &
+    SolverFactoryParent<Scalar, MV, OP, DM>::solver_base_type> > &
     get_solverManagers() {
       static std::map<const std::string, Teuchos::RCP<typename
-        SolverFactoryParent<Scalar, MV, OP>::solver_base_type> > solverManagers;
+        SolverFactoryParent<Scalar, MV, OP, DM>::solver_base_type> > solverManagers;
       return solverManagers;
     }
 };
 
-template<class Scalar, class MV, class OP>
-std::vector<Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::custom_solver_factory_type> >
-SolverFactoryParent<Scalar, MV, OP>::factories_;
+template<class Scalar, class MV, class OP, class DM>
+std::vector<Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP, DM>::custom_solver_factory_type> >
+SolverFactoryParent<Scalar, MV, OP, DM>::factories_;
 
-template<class SolverClass, class Scalar, class MV, class OP>
+template<class SolverClass, class Scalar, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,Scalar>>
 void registerSolverSubclassForTypes (const std::string & solverName) {
-  if(!SolverFactoryParent<Scalar, MV, OP>::isSolverRegistered(solverName)) {
+  if(!SolverFactoryParent<Scalar, MV, OP, DM>::isSolverRegistered(solverName)) {
     Teuchos::RCP<SolverClass> solver (new SolverClass);
-    SolverFactoryParent<Scalar, MV, OP>::registerSolver (solverName, solver);
+    SolverFactoryParent<Scalar, MV, OP, DM>::registerSolver (solverName, solver);
   }
 }
 
@@ -258,7 +260,7 @@ void registerSolverSubclassForTypes (const std::string & solverName) {
 //   BelosSolverFactory_Tpetra.hpp, BelosSolverFactory_Xpetra.hpp
 // These were setup to be automatically included through the corresponding
 // adapter includes so something may have gone wrong with that.
-template<class SC, class MV, class OP>
+template<class SC, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,SC>>
 class SolverFactorySelector {
   public:
     // TODO: This could be deleted except for the GenericSolverFactory which
@@ -270,21 +272,21 @@ class SolverFactorySelector {
     // in the code. This may be preferable because it makes it clear that
     // factory is not connecting to the standard set of types. I'm not sure how
     // to do this in a better way.
-    typedef SolverFactoryParent<SC,MV,OP> type;
+    typedef SolverFactoryParent<SC,MV,OP,DM> type;
 };
 
 } // namespace Impl
 
 // Derived setups such as found in BelosSolverFactory_Tpetra.hpp will define
 // this specialization so that SolverFactory will be used as SolverFactoryTpetra.
-template<class SC, class MV, class OP>
-using SolverFactory = typename ::Belos::Impl::SolverFactorySelector<SC, MV, OP>::type;
+template<class SC, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,SC>>
+using SolverFactory = typename ::Belos::Impl::SolverFactorySelector<SC, MV, OP, DM>::type;
 
 namespace Impl {
 
-template<class Scalar, class MV, class OP>
-Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type>
-SolverFactoryParent<Scalar, MV, OP>::
+template<class Scalar, class MV, class OP, class DM>
+Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP, DM>::solver_base_type>
+SolverFactoryParent<Scalar, MV, OP, DM>::
 create (const std::string& solverName,
         const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
@@ -296,9 +298,9 @@ create (const std::string& solverName,
   return solver;
 }
 
-template<class Scalar, class MV, class OP>
-Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type>
-SolverFactoryParent<Scalar, MV, OP>::
+template<class Scalar, class MV, class OP, class DM>
+Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP, DM>::solver_base_type>
+SolverFactoryParent<Scalar, MV, OP, DM>::
 getSolver (const std::string& solverName,
            const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
@@ -306,9 +308,9 @@ getSolver (const std::string& solverName,
 
   // First, check the overriding factories.
   for (std::size_t k = 0; k < factories_.size (); ++k) {
-    RCP<CustomSolverFactory<Scalar, MV, OP> > factory = factories_[k];
+    RCP<CustomSolverFactory<Scalar, MV, OP, DM> > factory = factories_[k];
     if (! factory.is_null ()) {
-      RCP<SolverManager<Scalar, MV, OP> > solver =
+      RCP<SolverManager<Scalar, MV, OP, DM> > solver =
         factory->getSolver (solverName, solverParams);
       if (! solver.is_null ()) {
         return solver;
@@ -343,7 +345,7 @@ getSolver (const std::string& solverName,
   }
 
   typename std::map<const std::string, Teuchos::RCP<
-    typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type> >::iterator
+    typename SolverFactoryParent<Scalar, MV, OP, DM>::solver_base_type> >::iterator
     it = get_solverManagers().find (standardized_name);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -386,27 +388,27 @@ getSolver (const std::string& solverName,
 }
 
 
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM>
 void
-SolverFactoryParent<Scalar, MV, OP>::
-addFactory (const Teuchos::RCP<CustomSolverFactory<Scalar, MV, OP> >& factory)
+SolverFactoryParent<Scalar, MV, OP, DM>::
+addFactory (const Teuchos::RCP<CustomSolverFactory<Scalar, MV, OP, DM> >& factory)
 {
   factories_.push_back (factory);
 }
 
 
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM>
 void
-SolverFactoryParent<Scalar, MV, OP>::
+SolverFactoryParent<Scalar, MV, OP, DM>::
 clearFactories ()
 {
   factories_.clear();
 }
 
 
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM>
 std::string
-SolverFactoryParent<Scalar, MV, OP>::
+SolverFactoryParent<Scalar, MV, OP, DM>::
 description () const
 {
   using Teuchos::TypeNameTraits;
@@ -419,14 +421,15 @@ description () const
   out << "Scalar: \"" << TypeNameTraits<Scalar>::name ()
       << "\", MV: \"" << TypeNameTraits<MV>::name ()
       << "\", OP: \"" << TypeNameTraits<OP>::name ()
+      << "\", DM: \"" << TypeNameTraits<DM>::name ()
       << "\"}";
   return out.str ();
 }
 
 
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM>
 void
-SolverFactoryParent<Scalar, MV, OP>::
+SolverFactoryParent<Scalar, MV, OP, DM>::
 describe (Teuchos::FancyOStream& out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -455,7 +458,8 @@ describe (Teuchos::FancyOStream& out,
     Teuchos::OSTab tab1 (out);
     out << "Scalar: \"" << TypeNameTraits<Scalar>::name () << "\"" << endl
         << "MV: \"" << TypeNameTraits<MV>::name () << "\"" << endl
-        << "OP: \"" << TypeNameTraits<OP>::name () << "\"" << endl;
+        << "OP: \"" << TypeNameTraits<OP>::name () << "\"" << endl
+        << "DM: \"" << TypeNameTraits<DM>::name () << "\"" << endl;
   }
 
   // At higher verbosity levels, print out the list of supported solvers.
@@ -473,9 +477,9 @@ describe (Teuchos::FancyOStream& out,
   }
 }
 
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM>
 int
-SolverFactoryParent<Scalar, MV, OP>::
+SolverFactoryParent<Scalar, MV, OP, DM>::
 numSupportedSolvers () const
 {
   int numSupported = 0;
@@ -493,9 +497,9 @@ numSupportedSolvers () const
   return numSupported + Details::numSupportedSolvers ();
 }
 
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM>
 Teuchos::Array<std::string>
-SolverFactoryParent<Scalar, MV, OP>::
+SolverFactoryParent<Scalar, MV, OP, DM>::
 supportedSolverNames () const
 {
   typedef std::vector<std::string>::const_iterator iter_type;
@@ -531,9 +535,9 @@ supportedSolverNames () const
   return names;
 }
 
-template<class Scalar, class MV, class OP>
+template<class Scalar, class MV, class OP, class DM>
 bool
-SolverFactoryParent<Scalar, MV, OP>::
+SolverFactoryParent<Scalar, MV, OP, DM>::
 isSupported (const std::string& solverName) const
 {
   // First, check the overriding factories.
