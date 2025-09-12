@@ -49,7 +49,7 @@ void initializeKokkos() {
     return 1;
   }();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(Kokkos::is_initialized() && initialized == 1, std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(Kokkos::is_initialized(), std::runtime_error,
                              "Tpetra::Details::initializeKokkos: Initialization failed");
 }
 
