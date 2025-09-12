@@ -17,10 +17,13 @@
 
 #include "Sacado.hpp"
 #include "Kokkos_Core.hpp"
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+#include "Sacado.hpp"
+#else
 #include "Kokkos_View_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
-
+#endif
 namespace phalanx_test {
 
   TEUCHOS_UNIT_TEST(Kokkos_AllocationTracker, MemoryManager)

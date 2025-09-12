@@ -17,9 +17,11 @@
 #include <map>
 
 #include "Sacado.hpp"
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
 #include "Kokkos_View_Fad.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
+#endif
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Kokkos_Random.hpp"
 
@@ -581,6 +583,7 @@ namespace phalanx_test {
 	  TEST_FLOATING_EQUALITY(host_f(i).fastAccessDx(0),3.0,tol);
 	}
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
 	Kokkos::parallel_for(num_cells,KOKKOS_LAMBDA (const int i) {
 	    f[i].val() = 3.0;
 	    f[i].fastAccessDx(0) = 4.0;
@@ -591,6 +594,7 @@ namespace phalanx_test {
 	  TEST_FLOATING_EQUALITY(host_f[i].val(),3.0,tol);
 	  TEST_FLOATING_EQUALITY(host_f[i].fastAccessDx(0),4.0,tol);
 	}
+#endif
       }
 
     }
@@ -646,12 +650,14 @@ namespace phalanx_test {
 
       TEST_EQUALITY(c.rank(),2);
       TEST_EQUALITY(Kokkos::dimension_scalar(c),2);
+#if !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
       TEST_EQUALITY(c.impl_map().dimension_scalar(),2);
+#endif
 
       double tol = std::numeric_limits<double>::epsilon() * 100.0;
       for (int i = 0; i < num_cells; ++i) {
         for (int j = 0; j < num_ip; ++j) {
-          out << "(" << i << "," << j << ") val=" << host_c[i].val() << ",fad=" << host_c[i].fastAccessDx(1) << std::endl;
+          out << "(" << i << "," << j << ") val=" << host_c(i, j).val() << ",fad=" << host_c(i,j).fastAccessDx(1) << std::endl;
           TEST_FLOATING_EQUALITY(host_c(i,j).val(),static_cast<double>(i+j),tol);
           TEST_FLOATING_EQUALITY(host_c(i,j).fastAccessDx(0),static_cast<double>(i+j+1),tol);
         }
