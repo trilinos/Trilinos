@@ -58,7 +58,6 @@ template <class Scalar,
 typename Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NewType
 Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( OriginalType const & origProblem )
 {
-  using map_t = Map          <        LocalOrdinal, GlobalOrdinal, Node>;
   using mv_t  = MultiVector  <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using cm_t  = CrsMatrix    <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using lp_t  = LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -101,7 +100,6 @@ Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( 
   // ****************************************************************
   // Rebalance the rhs vector
   // ****************************************************************
-  using MultiVectorAdapter_t = Zoltan2::XpetraMultiVectorAdapter<mv_t>;
   MultiVectorAdapter_t rhsAdapter(origRHS);
 
   Teuchos::RCP<mv_t> newRHS( Teuchos::null );
