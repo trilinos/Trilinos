@@ -17,7 +17,7 @@ Run the *hands-on.sh* script and choose the option 4 for the convection-diffusio
 .. image:: pics/tut1_16.png
     :width: 10cm
 
-When using the reference settings for the multigrid preconditioner we need 94 linear iterations. The challenge is to find optimized multigrid settings which results in a significantly lower number of linear iterations and -- even more important -- a lower computational time.
+When using the reference settings for the multigrid preconditioner we need 85 linear iterations. The challenge is to find optimized multigrid settings which results in a significantly lower number of linear iterations and -- even more important -- a lower computational time.
 
 .. note::
     Please notice that we have automatically chosen GMRES as solver as the linear systems arising from convection-diffusion problems are non-symmetric (due to the convective term). A CG methods would not converge.

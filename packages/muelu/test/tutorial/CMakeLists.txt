@@ -10,6 +10,10 @@ ASSERT_DEFINED(
   )
   
 set(XML_FILES_ALL
+  challenges/Elasticity2D_reference.xml
+  challenges/Elasticity2D_parameters.xml
+  challenges/Recirc2D_reference.xml
+  challenges/Recirc2D_parameters.xml
   blocked_rebalancing.xml
   ml_ParameterList.xml
   ml_RebalancedParameterList.xml
@@ -105,8 +109,36 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     COMM serial mpi
     )
     
-  foreach(xml_file IN LISTS XML_FILES_ALL)
-    # xml_name = filename without directory and without extension
+  set(XML_FILES_TEST ${XML_FILES_ALL})
+  list(REMOVE_ITEM XML_FILES_TEST
+    challenges/Elasticity2D_reference.xml
+    challenges/Elasticity2D_parameters.xml
+    challenges/Recirc2D_reference.xml
+    challenges/Recirc2D_parameters.xml
+    blocked_rebalancing.xml
+    ml_ParameterList.xml
+    ml_RebalancedParameterList.xml
+    muelu_ParameterList.xml
+    n2_easy_agg.xml
+    n2_easy_agg2.xml
+    n2_easy_agg3.xml
+    n2_easy_export.xml
+    s4av.xml
+    s4c.xml
+    s5a.xml
+    s5b.xml
+    # xmls never mentioned in the tutorial
+    n1_easy_pg.xml
+    s2_easy.xml
+    s2b.xml
+    s3a_easy.xml
+    s3b_easy.xml
+    s3c.xml
+    s3c_easy.xml
+  )
+    
+  foreach(xml_file IN LISTS XML_FILES_TEST)
+    # without directory and without extension
     get_filename_component(xml_we "${xml_file}" NAME_WE)
 
     TRIBITS_ADD_TEST(
@@ -119,8 +151,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
   endforeach()
   
   # foreach() are split so that tests are ordered by matrix type
-  foreach(xml_file IN LISTS XML_FILES_ALL)
-    # xml_name = filename without directory and without extension
+  foreach(xml_file IN LISTS XML_FILES_TEST)
     get_filename_component(xml_we "${xml_file}" NAME_WE)
 
     TRIBITS_ADD_TEST(
@@ -131,63 +162,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       NUM_MPI_PROCS 4
     )
   endforeach()
-
-  IF(FALSE)
-  ## These tests are incorrectly named. ScalingTestParamList.cpp always uses Laplace2D. I don't know if the plan is to generalize the different problem types into using the same file? But this is mostly an older file anyways (most edits by Tobias Wiesner and other 10 years ago)
-    TRIBITS_ADD_EXECUTABLE(
-      Tutorial_ScalingTestParamList
-      SOURCES ScalingTestParamList.cpp
-      COMM serial mpi
-      )
-
-    TRIBITS_ADD_TEST(
-      Tutorial_ScalingTestParamList
-      NAME "Test_Tutorial_Sc_recirc2d_n1_easy"
-      ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n1_easy.xml"
-      COMM serial mpi
-      NUM_MPI_PROCS 4
-      )
-
-    TRIBITS_ADD_TEST(
-      Tutorial_ScalingTestParamList
-      NAME "Test_Tutorial_Sc_recirc2d_n1_easy_pg"
-      ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n1_easy_pg.xml --notimings"
-      COMM serial mpi
-      NUM_MPI_PROCS 4
-      )
-
-    TRIBITS_ADD_TEST(
-      Tutorial_ScalingTestParamList
-      NAME "Test_Tutorial_Sc_recirc2d_n2_easy_agg"
-      ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n2_easy_agg.xml --notimings"
-      COMM serial mpi
-      NUM_MPI_PROCS 4
-      )
-
-    TRIBITS_ADD_TEST(
-      Tutorial_ScalingTestParamList
-      NAME "Test_Tutorial_Sc_recirc2d_n2_easy_agg2"
-      ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n2_easy_agg2.xml --notimings"
-      COMM serial mpi
-      NUM_MPI_PROCS 4
-      )
-
-    TRIBITS_ADD_TEST(
-      Tutorial_ScalingTestParamList
-      NAME "Test_Tutorial_Sc_recirc2d_n2_easy_agg3"
-      ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n2_easy_agg3.xml --notimings"
-      COMM serial mpi
-      NUM_MPI_PROCS 4
-      )
-
-    TRIBITS_ADD_TEST(
-      Tutorial_ScalingTestParamList
-      NAME "Test_Tutorial_Sc_recirc2d_n2_easy_export"
-      ARGS "--diffusion=1.0e-5 --convection=1.0 --xml=n2_easy_export.xml --notimings"
-      COMM serial mpi
-      NUM_MPI_PROCS 4
-      )
-  ENDIF()
 
 ENDIF()
 
