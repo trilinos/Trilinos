@@ -631,7 +631,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
       NAME "AnisotropicElasticityEmin"
-      ARGS "--linAlgebra=Tpetra --xml=emin_with_dl_elasticity3D.xml  --matrixType=Elasticity3D --nx=20 --ny=20 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace"
+      ARGS "--linAlgebra=Tpetra --xml=emin_with_dl_elasticity3D.xml  --matrixType=Elasticity3D --nx=20 --ny=20 --nz=25 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace"
       NUM_MPI_PROCS 4
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "Belos converged"
@@ -639,8 +639,8 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
       NAME "MaterialAnisotropicElasticityEmin"
-      POSTFIX_AND_ARGS_0 "ConstantScalar" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace --scalarCoefficient
-      POSTFIX_AND_ARGS_1 "ConstantTensor" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace --tensorCoefficient
+      POSTFIX_AND_ARGS_0 "ConstantScalar" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --nz=25 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace --scalarCoefficient
+      POSTFIX_AND_ARGS_1 "ConstantTensor" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --nz=25 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace --tensorCoefficient
       NUM_MPI_PROCS 4
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "Belos converged"
