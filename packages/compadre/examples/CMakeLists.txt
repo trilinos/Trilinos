@@ -48,7 +48,7 @@ if (Compadre_EXAMPLES)
       ENDIF()
     else()
       add_exe_w_compadre(UnitTests Compadre_UnitTests.cpp)
-      TARGET_LINK_LIBRARIES(UnitTests PRIVATE gtest)
+      TARGET_LINK_LIBRARIES(UnitTests PRIVATE compadre_gtest)
       ADD_TEST(CompadreGtests UnitTests)
     endif()
     SET_TESTS_PROPERTIES(CompadreGtests PROPERTIES SKIP_REGULAR_EXPRESSION "MISSING_GTEST" LABELS "Gtest;UnitTest;unittest;Unit;unit")
@@ -72,6 +72,10 @@ if (Compadre_EXAMPLES)
     
     ADD_TEST(NAME GMLS_Device_Dim1_QR COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Device_Test "--p" "4" "--nt" "200" "--d" "1" "${KOKKOS_THREADS_ARG}=2")
     SET_TESTS_PROPERTIES(GMLS_Device_Dim1_QR PROPERTIES LABELS "IntegrationTest;integration;kokkos" TIMEOUT 10)
+
+    # Device views test of CardinalCubicBSpline for GMLS
+    ADD_TEST(NAME GMLS_Device_Dim3_QR_CardinalCubicBSpline COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Device_Test "--p" "4" "--nt" "200" "--d" "3" "${KOKKOS_THREADS_ARG}=2" "--kernel-type" "cardinalcubicbspline")
+    SET_TESTS_PROPERTIES(GMLS_Device_Dim3_QR_CardinalCubicBSpline PROPERTIES LABELS "IntegrationTest;integration;kokkos;bspline" TIMEOUT 10)
 
     # Device views tests for GMLS - LU solver
     ADD_TEST(NAME GMLS_Device_Dim3_LU COMMAND ${CMAKE_CURRENT_BINARY_DIR}/GMLS_Device_Test "--p" "4" "--nt" "200" "--d" "3" "--solver" "LU" "${KOKKOS_THREADS_ARG}=2")
