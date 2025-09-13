@@ -22,7 +22,7 @@ DO NOT FORGET TO RUN THE EXAMPLE (option 0)
 your choice? 0
 PREPARE SIMULATON
 RUN EXAMPLE
-mpirun -np 2 MueLu_Tutorial_laplace2d.exe --nx=50 --ny=50 --mgridSweeps=1 --xml=s1_easy.xml | tee output.log 2>&1
+mpirun -np 2 MueLu_TutorialDriver.exe --matrixType=Laplace2D --nx=50 --ny=50 --mgridSweeps=1 --xml=s1_easy.xml | tee output.log 2>&1
 POSTPROCESSING...
 COMPLETE
 Press any key to continue...
