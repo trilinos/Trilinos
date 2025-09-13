@@ -3,7 +3,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 # first ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Epetra
   ${PACKAGE_NAME}_ENABLE_Galeri
   ${PACKAGE_NAME}_ENABLE_Isorropia
   ${PACKAGE_NAME}_ENABLE_Tpetra
