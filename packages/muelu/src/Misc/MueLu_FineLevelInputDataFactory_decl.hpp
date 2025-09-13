@@ -52,7 +52,9 @@ class FineLevelInputDataFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~FineLevelInputDataFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 
