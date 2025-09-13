@@ -86,14 +86,14 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
   #   )
 
   TRIBITS_ADD_EXECUTABLE(
-    Tutorial_ScalingTest
-    SOURCES ScalingTest.cpp
+    Tutorial_cppInterface
+    SOURCES Tutorial_cppInterface.cpp
     COMM serial mpi
     )
 
   TRIBITS_ADD_TEST(
-    Tutorial_ScalingTest
-    NAME "Test_Tutorial_ScalingTest"
+    Tutorial_cppInterface
+    NAME "Tutorial_cppInterface"
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 4
@@ -104,11 +104,6 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     SOURCES TutorialDriver.cpp
     COMM serial mpi
     )
-  #TRIBITS_ADD_EXECUTABLE(
-  #  TutorialDriver_api
-  #  SOURCES TutorialDriver_api.cpp
-  #  COMM serial mpi
-  #  )
     
   foreach(xml_file IN LISTS XML_FILES_ALL)
     # xml_name = filename without directory and without extension
