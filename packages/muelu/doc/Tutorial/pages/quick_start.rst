@@ -48,7 +48,7 @@ Next, choose option 0 and run the example. That is, the linear system is created
 
 .. literalinclude:: output/quick_start_3.txt
 
-Note that the line **mpirun -np 2 MueLu_tutorial_laplace2d.exe -nx ...** is the command that is executed in the background. The default is 2 processors used.
+Note that the line **mpirun -np 2 MueLu_TutorialDriver.exe --matrixType=Laplace2D -nx ...** is the command that is executed in the background. The default is 2 processors used.
 After pressing a key we are ready for a first analysis as it is stated by the green letters **Results up to date!**
 
 .. literalinclude:: output/quick_start_4.txt
@@ -59,7 +59,7 @@ After pressing a key we are ready for a first analysis as it is stated by the gr
 
 To check the output select option 1. This should produce the following output on screen.
 
-.. program-output:: mpiexec -n 2 ../../../test/tutorial/MueLu_Tutorial_laplace2d.exe --nx=50 --ny=50 --mgridSweeps=1 --xml=../../../test/tutorial/s1_easy.xml
+.. program-output:: mpiexec -n 2 ../../../test/tutorial/MueLu_TutorialDriver.exe --matrixType=Laplace2D --nx=50 --ny=50 --mgridSweeps=1 --xml=../../../test/tutorial/s1_easy.xml
 
 .. note::
 

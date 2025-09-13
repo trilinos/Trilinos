@@ -22,25 +22,22 @@ However, for the C++ code it makes no difference which type of XML interface is 
 
 .. note::
   In the next sections, we give some code snippets.
-  THey are borrowed form the ``laplace2d.cpp`` file in the tutorial tests.
+  THey are borrowed form the ``TutorialDriver.cpp`` file in the tutorial tests.
 
 Preparations
 ------------
 First of all, we need to grab a communicator object.
 Therefore, it is easy to use some utilities from the Teuchos package:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: CommunicatorObject begin
   :end-before: CommunicatorObject end
 
 For the multigrid method, we need a linear operator :math:`A`.
-For demonstration purposes,
-here we just generate a 2D Laplacian operator using the Galeri package (see :ref:`quick_start/example problem`).
-In this example, we use Tpetra (throught the Xpetra wrappers) for the underlying linear algebra framework.
-For convenience, we ask the Galeri package to create a matrix of a Laplace2D problem:
+We can generate a problem-dependent matrix operator using the Galeri package (see :ref:`quick_start/example problem`), with Tpetra as our underlying linear algebra framework (through Xpetra wrappers). Below is an example for the Laplace2D Problem:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/Tutorial_cppInterface.cpp
   :language: cpp
   :start-after: 2DLaplacianOperator begin
   :end-before: 2DLaplacianOperator end
@@ -49,7 +46,7 @@ For aggregation-based algebraic multigrid methods,
 one has to provide a valid set of near null space vectors to produce transfer operators.
 In case of a Laplace problem, we just use a constant vector.
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: BuildNullSpaceVector begin
   :end-before: BuildNullSpaceVector end
@@ -73,21 +70,21 @@ However, for the ``C++`` code it makes no difference which type of XML interface
 
 We first read the MueLu configuration from the XML file:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: ReadMueLuParamsFromXmlFile begin
   :end-before: ReadMueLuParamsFromXmlFile end
 
 Then, we store the near null space vectors in the ``"user data"`` sublist of this parameter list:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: InsertNullspaceInUserData begin
   :end-before: InsertNullspaceInUserData end
 
 We then can create a MueLu object ready to be used as a preconditioner:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: CreateTpetraPreconditioner begin
   :end-before: CreateTpetraPreconditioner end
@@ -107,7 +104,7 @@ In the next subsections it is demonstrated how to use MueLu as standalone solver
 For solving a linear system :math:`Ax=b`, we need a right hand side vector :math:`b`.
 When using iterative solvers we also need an initial guess for the solution vector.
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: SetRhsAndSolutionVector begin
   :end-before: SetRhsAndSolutionVector end
@@ -122,21 +119,21 @@ MueLu as multigrid solver
 MueLu can be used as standalone solver.
 First, we create and initialize a solution vector:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: MueLuAsSolverCreateSolutionVector begin
   :end-before: MueLuAsSolverCreateSolutionVector end
 
 If necessary, extract the ``MueLu::Hiearchy`` from the Tpetra preconditioner object:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: ExtractHierarchyFromTpetraPrec begin
   :end-before: ExtractHierarchyFromTpetraPrec end
 
 Then, the ``MueLu::Hierarchy`` object is set to the non-preconditioner mode:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: MueLuAsSolverSetSolverMode begin
   :end-before: MueLuAsSolverSetSolverMode end
@@ -144,7 +141,7 @@ Then, the ``MueLu::Hierarchy`` object is set to the non-preconditioner mode:
 Finally, we solve the system by calling the ``Iterate()`` routine
 to perform ``mgridSweeps`` sweeps with the chosen multigrid cycle.
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: MueLuAsSolverIterate begin
   :end-before: MueLuAsSolverIterate end
@@ -160,14 +157,14 @@ Here, we demonstrate how to use MueLu as preconditioner for Belos solvers using 
 
 First, we create and initialize a solution vector:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: MueLuAsPrecCreateSolutionVector begin
   :end-before: MueLuAsPrecCreateSolutionVector end
 
 Then, we create a ``Belos::LinearProblem`` and hand in the MueLu preconditioner object:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: MueLuAsPrecSetupLinearSystem begin
   :end-before: MueLuAsPrecSetupLinearSystem end
@@ -175,28 +172,28 @@ Then, we create a ``Belos::LinearProblem`` and hand in the MueLu preconditioner 
 Now, we define the linear solver configuration in a ``Teuchos::ParameterList``
 and create the Belos solver with this configuration:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: MueLuAsPrecConfigureAndCreateBelosSolver begin
   :end-before: MueLuAsPrecConfigureAndCreateBelosSolver end
 
 Finally, we solve the linear system:
 
-.. literalinclude:: ../../../test/tutorial/laplace2d.cpp
+.. literalinclude:: ../../../test/tutorial/TutorialDriver.cpp
   :language: cpp
   :start-after: MueLuAsPrecSolve begin
   :end-before: MueLuAsPrecSolve end
 
 Full example using the XML interface
 ------------------------------------
-The reader may refer to ``laplace2d.cpp`` for a working example to study the source code.
+The reader may refer to ``TutorialDriver.cpp`` for a working example to study the source code.
 This demonstration program has some more features that are not discussed in this tutorial.
 
 .. admonition:: Exercise 1
 
-	Compile the example in ``laplace2d.cpp`` and then run the program in parallel using two processors
+	Compile the example in ``TutorialDriver.cpp`` and then run the program in parallel using two processors
 
-        ``mpirun -np 2 ./MueLu_tutorial_laplace2d.exe --help``
+        ``mpirun -np 2 ./MueLu_TutorialDriver.exe --help``
 
         Study the screen output and try to run the example with an XML file as input for the multigrid setup.
 

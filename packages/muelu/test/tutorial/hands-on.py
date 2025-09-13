@@ -383,11 +383,7 @@ class ProblemHandler():
     self.proc5.stdin.write("set ylabel \"Relative residual\"\n")
     self.proc5.stdin.write("set autoscale\n")
     self.proc5.stdin.write("set logscale y\n")
-    #printcmd = "plot \"output.res\" using 2:(real(substr(strcol(5), 2, strlen(strcol(5)) w linespoints title \"" + str(self.xmlFileName) + "\"\n"
-    #self.proc5.stdin.write("unbrace(s) = real(substr(s,2,strlen(s)-2))\n")
-    #self.proc5.stdin.write("plot 'output.res' using 2:(unbrace(strcol(5))) with linespoints title '" + str(self.xmlFileName) + "'\n")
-    printcmd = "plot '< sed \"s/[{}]//g\" output.res' using 2:5 w linespoints title \"" + str(self.xmlFileName) + "\"\n"
-    self.proc5.stdin.write(printcmd)
+    self.proc5.stdin.write("plot '< sed \"s/[{}]//g\" output.res' using 2:5 w linespoints title \"" + str(self.xmlFileName) + "\"\n")
     self.proc5.stdin.flush()
 
   def printMainMenu(self):

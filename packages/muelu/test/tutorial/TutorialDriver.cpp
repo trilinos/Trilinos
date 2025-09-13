@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
       // ================================
       Teuchos::CommandLineProcessor clp(false);
 
-      std::string availableMatrixTypes[] = {"Laplace2D", "Laplace3D", "Recirc2D"};
+      std::string availableMatrixTypes[] = {"Laplace2D", "Laplace3D", "Recirc2D", "Elasticity2D"};
       std::string matrixType             = availableMatrixTypes[0];
       std::string matrixTypeDesc         = "matrix type which defines problem. Currently available options: [";
       for (size_t i = 0; i < std::size(availableMatrixTypes); ++i) {
