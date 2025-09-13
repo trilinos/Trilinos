@@ -161,7 +161,7 @@ void assign_local_group_id_for_each_element(const stk::mesh::BulkData & mesh,
   }
 }
 
-static std::vector<stk::mesh::Entity> get_elements_not_in_given_group(const stk::mesh::BulkData & mesh,
+static std::vector<stk::mesh::Entity> get_elements_not_in_given_group(const stk::mesh::BulkData & /*mesh*/,
     const std::vector<stk::mesh::Entity> & ownedSelectedElements,
     const size_t elementGroupId,
     const std::vector<size_t> & elementGroupIds)
@@ -294,7 +294,7 @@ static void parallel_sum_group_id_sizes(std::map<size_t,size_t> & groupIdSizes, 
 }
 
 static size_t find_id_of_largest_group(const stk::mesh::BulkData & mesh,
-    const std::vector<stk::mesh::Entity> & ownedSelectedElements,
+    const std::vector<stk::mesh::Entity> & /*ownedSelectedElements*/,
     const std::vector<size_t> & elementGroupIds)
 {
   std::map<size_t,size_t> groupIdSizes = get_local_group_ids_sizes(elementGroupIds);

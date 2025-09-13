@@ -31,8 +31,8 @@ class STKConnManager : public panzer::ConnManager {
 public:
    typedef typename panzer::ConnManager::LocalOrdinal LocalOrdinal;
    typedef typename panzer::ConnManager::GlobalOrdinal GlobalOrdinal;
-   typedef typename Kokkos::DynRankView<GlobalOrdinal,PHX::Device>::HostMirror GlobalOrdinalView;
-   typedef typename Kokkos::DynRankView<LocalOrdinal, PHX::Device>::HostMirror LocalOrdinalView;
+   typedef typename Kokkos::DynRankView<GlobalOrdinal,PHX::Device>::host_mirror_type GlobalOrdinalView;
+   typedef typename Kokkos::DynRankView<LocalOrdinal, PHX::Device>::host_mirror_type LocalOrdinalView;
 
    STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB);
 

@@ -31,13 +31,13 @@ int main(int argc, char* argv[])
   */
 
   //typedef long long Int;
-  typedef long Int;
   //typedef int Int;
-  typedef double Entry;
+  using Int   = long;
+  using Entry = double;
   #ifdef BASKER_KOKKOS
-  typedef Kokkos::OpenMP Exe_Space;
+  using Exe_Space = Kokkos::DefaultHostExecutionSpace;
   #else
-  typedef void*          Exe_Space;
+  using Exe_Space = void*;
   #endif
     
   cout << "basker_test: filename, nthreads should be passed as command line args" << endl; 
@@ -83,29 +83,29 @@ int main(int argc, char* argv[])
   Int nrows, ncols; //, true_nnz; // NDE: warning unused
   Entry val;
   std::string s;
-  size_t p1, p2, p3;
   
   if (inp_str.is_open())
   {
     getline(inp_str, s);
 
     // Check if matrix is pattern-only or symmetric
-    Int ptype, sym_type;
-    p1 = s.find("pattern");
-    if (p1 != string::npos)
-      ptype = 2;
-    else
-      ptype = 3;
-    p1 = s.find("symmetric");
-    p2 = s.find("hermitian");
-    p3 = s.find("skew-symmetric");
-    if ((p1 != string::npos) || (p2 != string::npos) || (p3 != string::npos))
-      sym_type = 1;
-    else
-      sym_type = 0;
+    //size_t p1, p2, p3;
+    //Int ptype, sym_type;
+    //p1 = s.find("pattern");
+    //if (p1 != string::npos)
+    //  ptype = 2;
+    //else
+    //  ptype = 3;
+    //p1 = s.find("symmetric");
+    //p2 = s.find("hermitian");
+    //p3 = s.find("skew-symmetric");
+    //if ((p1 != string::npos) || (p2 != string::npos) || (p3 != string::npos))
+    //  sym_type = 1;
+    //else
+    //  sym_type = 0;
 
-    (void)ptype;
-    (void)sym_type; //NDE silence warnings
+    //(void)ptype;
+    //(void)sym_type; //NDE silence warnings
 
     while (inp_str.peek() == '%') // Skip the comments.
       getline(inp_str, s);

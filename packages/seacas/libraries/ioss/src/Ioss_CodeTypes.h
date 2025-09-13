@@ -59,19 +59,9 @@ inline std::string IOSS_SYM_TENSOR() { return {"sym_tensor_33"}; }
 #if defined(SEACAS_HAVE_MPI)
 #include <mpi.h>
 using Ioss_MPI_Comm = MPI_Comm;
-#define IOSS_PAR_UNUSED(x)
 #define ADIOS2_USE_MPI 1
 #else
 using Ioss_MPI_Comm = int;
-#if (__cplusplus >= 201703L)
-// For C++17, we rely on IOSS_MAYBE_UNUSED instead.  Can eventually remove all IOSS_PAR_UNUSED...
-#define IOSS_PAR_UNUSED(x)
-#else
-#define IOSS_PAR_UNUSED(x)                                                                         \
-  do {                                                                                             \
-    (void)(x);                                                                                     \
-  } while (0)
-#endif
 #endif
 
 #ifdef SEACAS_HAVE_KOKKOS
@@ -109,6 +99,12 @@ using Kokkos_Complex = Kokkos::complex<double>;
 
 #ifndef IOSS_DEBUG_OUTPUT
 #define IOSS_DEBUG_OUTPUT 0
+#endif
+
+#ifdef NDEBUG
+#define IOSS_ASSERT_USED(x) (void)x
+#else
+#define IOSS_ASSERT_USED(x)
 #endif
 
 // For use to create a no-op get or put_field_internal function...

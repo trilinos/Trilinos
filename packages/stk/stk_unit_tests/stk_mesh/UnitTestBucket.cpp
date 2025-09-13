@@ -387,9 +387,12 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
     bucket_side.my_change_connected_nodes(bulk.bucket_ordinal(side), &new_nodes[0]);
     bucket_side.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(side), faces_element_offset, new_permutation);
 
+    size_t sizeBefore = bulk.bucket(elem).memory_size_in_bytes();
     stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
 
     bucket_elem.my_change_existing_permutation_for_connected_face(bulk.bucket_ordinal(elem), elements_face_offset, new_permutation);
+    size_t sizeAfter = bulk.bucket(elem).memory_size_in_bytes();
+    EXPECT_EQ(sizeBefore, sizeAfter);
 
     test_nodes_and_permutation(bulk, elem, side, new_nodes);
   }

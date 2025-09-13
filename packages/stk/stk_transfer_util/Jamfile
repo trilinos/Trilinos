@@ -139,6 +139,7 @@ lib stk_transfer_util
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(stk_transfer_util-root)/stk_transfer_util/*.cpp ]
+        [ glob $(stk_transfer_util-root)/stk_transfer_util/spmd/*.cpp ]
     ]
     /sierra/stk_transfer//stk_transfer_lib
     /sierra/stk_io//stk_io

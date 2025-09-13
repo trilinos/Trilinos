@@ -61,12 +61,15 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
 
   // create MPIX communicator
   MPIX_Comm *mpixComm = nullptr;
+  MPIX_Info *mpixInfo;
+  MPIX_Info_init(&mpixInfo);
   MPIX_Dist_graph_create_adjacent(
       comm, 0, /*indegree*/
       nullptr, /*sources*/
       nullptr, /*sourceweights*/
       0,       /*outdegree*/
-      nullptr /*destinations*/, nullptr /*destweights*/, MPI_INFO_NULL /*info*/,
+      nullptr /*destinations*/, nullptr /*destweights*/, 
+      mpixInfo /*info*/,
       0 /*reorder*/, &mpixComm);
 
   // reference implementation should be okay
@@ -74,11 +77,12 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
                    recvcounts.data(), recvdispls.data(), MPI_BYTE, comm);
 
   // MPI advance implementation
+  mpix_neighbor_alltoallv_implementation = NEIGHBOR_ALLTOALLV_STANDARD;
   MPIX_Neighbor_alltoallv(sbuf, sendcounts.data(), senddispls.data(), MPI_BYTE,
                           rbuf, recvcounts.data(), recvdispls.data(), MPI_BYTE,
                           mpixComm);
-
-  MPIX_Comm_free(mpixComm);
+  MPIX_Info_free(&mpixInfo);
+  MPIX_Comm_free(&mpixComm);
 
   // we just require that we got this far
   success = true;
@@ -159,13 +163,15 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
 
   // create MPIX communicator
   MPIX_Comm *mpixComm = nullptr;
+  MPIX_Info *mpixInfo;
+  MPIX_Info_init(&mpixInfo);
   MPIX_Dist_graph_create_adjacent(
       comm, sources.size(), /*indegree*/
       sources.data(),       /*sources*/
       sourceweights.data(), /*sourceweights*/
       destinations.size(),  /*outdegree*/
       destinations.data() /*destinations*/, destweights.data() /*destweights*/,
-      MPI_INFO_NULL /*info*/, 0 /*reorder*/, &mpixComm);
+      mpixInfo /*info*/, 0 /*reorder*/, &mpixComm);
 
   // allocate send/recv bufs
   // displs are in elements, so the displs are correct since MPI_BYTE 
@@ -186,11 +192,13 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   print_vec(rank, "nbrrecvcounts", nbrrecvcounts);
   print_vec(rank, "nbrrecvdispls", nbrrecvdispls);
 
+  mpix_neighbor_alltoallv_implementation = NEIGHBOR_ALLTOALLV_STANDARD;
   MPIX_Neighbor_alltoallv(sbuf.data(), nbrsendcounts.data(), nbrsenddispls.data(), MPI_BYTE,
                           act.data(), nbrrecvcounts.data(), nbrrecvdispls.data(), MPI_BYTE,
                           mpixComm);
 
-  MPIX_Comm_free(mpixComm);
+  MPIX_Info_free(&mpixInfo);
+  MPIX_Comm_free(&mpixComm);
 
   // two recv buffers should be the same
   auto exp_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), exp);

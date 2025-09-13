@@ -123,7 +123,7 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
     num_df          = df;
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of elements in side set %" PRId64 " in file id %d",
              side_set_id, exoid);
@@ -160,7 +160,7 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
     }
 
     if (ex_get_set(exoid, EX_SIDE_SET, side_set_id, side_set_elem_list, side_set_side_list) !=
-        NC_NOERR) {
+        EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get side set %" PRId64 " in file id %d",
                side_set_id, exoid);
       ex_err_fn(exoid, __func__, errmsg, EX_LASTERR);

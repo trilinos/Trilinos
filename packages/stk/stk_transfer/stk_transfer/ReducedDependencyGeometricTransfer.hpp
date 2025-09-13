@@ -363,18 +363,12 @@ void do_communication_max_int(const ReducedDependencyCommData & comm_data, const
   std::vector<MPI_Request> receiveRequests(comm_data.numToMeshCommunications);
   std::vector<MPI_Request> sendRequests(comm_data.numFromMeshCommunications);
 
-  int sendTag = 0;
-  if (stk::util::get_common_coupling_version() >= 10) {
-    sendTag = comm_data.m_transferId;
-  }
+  int sendTag = comm_data.m_transferId;
 
   for (int ii = 0; ii < comm_data.numToMeshCommunications; ++ii)
   {
     int source = comm_data.uniqueToProcVec[ii];
     int recvTag = comm_data.m_otherTransferId[ii];
-    if (stk::util::get_common_coupling_version() < 10) {
-      recvTag = MPI_ANY_TAG;
-    }
     const int recv_size = comm_data.offset_and_num_keys_to_mesh[ii].second * stride;
     const int recv_offset = comm_data.offset_and_num_keys_to_mesh[ii].first * stride;
     auto recvMessageSize = recv_size*sizeof(typename MeshAVec::value_type);
@@ -487,7 +481,7 @@ template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE
   filter_to_nearest(to_entity_keys, from_entity_keys);
   
   const auto coupling_version = stk::util::get_common_coupling_version();
-  if (coupling_version >= 10 and coupling_version <= 14) {
+  if (coupling_version >= 11 and coupling_version <= 14) {
     exchange_transfer_ids();
   }
 }
@@ -652,10 +646,7 @@ ReducedDependencyGeometricTransfer<INTERPOLATE>::buildExchangeLists(typename Mes
     MPI_Irecv(&receiveSizesBuffers[ii], 1, MPI_INT, source, MPI_ANY_TAG, m_comm_data.m_shared_comm, &receiveRequests[ii]);
   }
 
-  int sendTag = 0;
-  if (stk::util::get_common_coupling_version() >= 10) {
-    sendTag = m_comm_data.m_transferId;
-  }
+  int sendTag = m_comm_data.m_transferId;
 
   for(int ii = 0; ii < m_comm_data.numToMeshCommunications; ++ii)
   {

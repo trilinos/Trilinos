@@ -131,7 +131,7 @@ public:
     if(available_rit != availableDVs.rend()) {
       available_rit->second.pop_back();
     }
-    dv_t dv("Belos::MultiVecPool DV", num_local_elems, numVecs);
+    dv_t dv(Kokkos::view_alloc("Belos::MultiVecPool DV", Kokkos::WithoutInitializing), num_local_elems, numVecs);
     auto & available = availableDVs[total_size];
     return Teuchos::rcpWithDealloc(new MV(map, dv), RCPDeleter{available, dv});
   }

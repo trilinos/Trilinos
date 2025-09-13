@@ -146,12 +146,12 @@ namespace {
     }
   }
 
-  char **get_name_array(int size, int length)
+  char **get_name_array(size_t size, int length)
   {
     char **names = nullptr;
     if (size > 0) {
       names = new char *[size];
-      for (int i = 0; i < size; i++) {
+      for (size_t i = 0; i < size; i++) {
         names[i] = new char[length + 1];
         std::memset(names[i], '\0', length + 1);
       }
@@ -159,9 +159,9 @@ namespace {
     return names;
   }
 
-  void free_name_array(char **names, int size)
+  void free_name_array(char **names, size_t size)
   {
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
       delete[] names[i];
     }
     delete[] names;
@@ -1784,21 +1784,13 @@ namespace {
     copy_string(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH + 1); // Code
     copy_string(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH + 1); // Version
 
-    time_t date_time = std::time(nullptr);
-#if defined __NVCC__
-    auto *lt = std::localtime(&date_time);
-    buffer   = fmt::format("{:%Y/%m/%d}", *lt);
-#else
-    auto const lt = fmt::localtime(date_time);
-    buffer        = fmt::format("{:%Y/%m/%d}", lt);
-#endif
+    time_t      date_time = std::time(nullptr);
+    auto const *lt        = std::localtime(&date_time);
+
+    buffer = fmt::format("{:%Y/%m/%d}", *lt);
     copy_string(qaRecord[num_qa_records].qa_record[0][2], buffer, MAX_STR_LENGTH + 1);
 
-#if defined __NVCC__
     buffer = fmt::format("{:%H:%M:%S}", *lt);
-#else
-    buffer = fmt::format("{:%H:%M:%S}", lt);
-#endif
     copy_string(qaRecord[num_qa_records].qa_record[0][3], buffer, MAX_STR_LENGTH + 1);
 
     error = ex_put_qa(id_out, num_qa_records + 1, qaRecord[0].qa_record);
@@ -3857,6 +3849,10 @@ namespace {
 
     auto linkage    = new INT *[global_num_edgeblocks];
     auto attributes = new T *[global_num_edgeblocks];
+    for (int i = 0; i < global_num_edgeblocks; i++) {
+      linkage[i]    = nullptr;
+      attributes[i] = nullptr;
+    }
 
     LOG("\nReading and Writing edge connectivity & attributes\n");
 

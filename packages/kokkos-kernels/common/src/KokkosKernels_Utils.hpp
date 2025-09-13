@@ -24,8 +24,8 @@
 #include "KokkosKernels_PrintUtils.hpp"
 #include "KokkosKernels_VectorUtils.hpp"
 
-#ifndef _KOKKOSKERNELSUTILS_HPP
-#define _KOKKOSKERNELSUTILS_HPP
+#ifndef KOKKOSKERNELS_UTILS_HPP
+#define KOKKOSKERNELS_UTILS_HPP
 
 namespace KokkosKernels {
 
@@ -34,10 +34,6 @@ namespace Impl {
 template <typename ExecutionSpace>
 ExecSpaceType get_exec_space_type() {
   return kk_get_exec_space_type<ExecutionSpace>();
-}
-
-inline int get_suggested_vector__size(size_t nr, size_t nnz, ExecSpaceType exec_space) {
-  return kk_get_suggested_vector_size(nr, nnz, exec_space);
 }
 
 template <typename in_lno_view_t, typename out_lno_view_t, typename MyExecSpace>

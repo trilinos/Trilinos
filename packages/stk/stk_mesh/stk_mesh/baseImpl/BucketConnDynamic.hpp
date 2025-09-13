@@ -88,7 +88,7 @@ public:
     auto [first, second] = m_connectivity.empty() ? IndexRange{0, 0} : m_offsets[bktOrdinal];
     const unsigned len = second - first;
     const Entity* ptr = len==0 ? nullptr : m_connectivity.data()+first;
-    return ConnectedEntities(ptr, len);
+    return ConnectedEntities(ptr, len, 1);
   }
 
   const Entity* begin(unsigned bktOrdinal) const

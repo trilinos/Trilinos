@@ -293,6 +293,9 @@ TEST_F(TagManagerTester, CommFreeMultiple)
     EXPECT_NE(tag31, tags[i]);
     EXPECT_NE(tag41, tags[i]);
   }
+
+  MPI_Comm_free(&comm3);
+  MPI_Comm_free(&comm4);
 }
 
 
@@ -322,6 +325,8 @@ TEST(TagManager, NonSortedCommOrder_DoesntHang)
 
     tagManager->get_tag(comm4);
   }
+  MPI_Comm_free(&comm3);
+  MPI_Comm_free(&comm4);
 }
 
 namespace {

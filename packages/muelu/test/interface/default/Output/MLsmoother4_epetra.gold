@@ -23,7 +23,6 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
 aggregation: match ML phase1 = 1   [unused]
 aggregation: match ML phase2a = 1   [unused]
 aggregation: match ML phase2b = 1   [unused]
@@ -64,7 +63,6 @@ BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
 aggregation: match ML phase1 = 1   [unused]
 aggregation: match ML phase2a = 1   [unused]
 aggregation: match ML phase2b = 1   [unused]
@@ -103,9 +101,6 @@ Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
-BuildAggregatesNonKokkos (Phase 2a (secondary))
-BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
 aggregation: match ML phase1 = 1   [unused]
 aggregation: match ML phase2a = 1   [unused]
 aggregation: match ML phase2b = 1   [unused]
@@ -144,9 +139,6 @@ Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
-BuildAggregatesNonKokkos (Phase 2a (secondary))
-BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
 aggregation: match ML phase1 = 1   [unused]
 aggregation: match ML phase2a = 1   [unused]
 aggregation: match ML phase2b = 1   [unused]

@@ -30,11 +30,16 @@
 #include "Teuchos_BLAS.hpp" // includes Teuchos_ConfigDefs.hpp
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
+
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
+
 #if defined(HAVE_TEUCHOSCORE_CXX11)
 #  include <type_traits>
+#  if defined(HAVE_TEUCHOS_COMPLEX)
+#include "Kokkos_Complex.hpp"
+#  endif
 #endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
 /** \example epetra/example/GCRODR/GCRODREpetraExFile.cpp

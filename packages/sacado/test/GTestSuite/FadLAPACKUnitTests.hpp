@@ -68,7 +68,7 @@ TYPED_TEST_SUITE_P(FadLAPACKUnitTests);
 
 // What is the purpose of this test?  It doesn't test Fad at all.
 TYPED_TEST_P(FadLAPACKUnitTests, testGESV) {
-  const int n = 2;
+  const int ln = 2;
   const int nrhs = 1;
   double A[] = { 1.1, 0.1, .01, 0.9 };
   const int lda = 2;
@@ -80,7 +80,7 @@ TYPED_TEST_P(FadLAPACKUnitTests, testGESV) {
   const double refX[] = {0.088978766430738, 0.212335692618807};
 
   Teuchos::LAPACK<int,double> teuchos_lapack;
-  teuchos_lapack.GESV(n, nrhs, &A[0], lda, &IPIV[0], &B[0], ldb, &info);
+  teuchos_lapack.GESV(ln, nrhs, &A[0], lda, &IPIV[0], &B[0], ldb, &info);
 
   COMPARE_VALUES(B[0],refX[0]);
   COMPARE_VALUES(B[1],refX[1]);

@@ -37,6 +37,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/MPI.hpp>
 #include <stk_util/ngp/NgpSpaces.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_mesh/base/NgpField.hpp>
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
@@ -44,6 +45,22 @@
 
 namespace stk {
 namespace mesh {
+
+namespace impl {
+
+template<typename NgpFieldType>
+void fill_field_ranks(const std::vector<NgpFieldType*>& fields,
+                      std::vector<stk::mesh::EntityRank>& fieldRanks)
+{
+  fieldRanks.clear();
+  fieldRanks.reserve(fields.size());
+  for(const NgpFieldType* f : fields) {
+    fieldRanks.push_back(f->get_rank());
+  }
+  stk::util::sort_and_unique(fieldRanks);
+}
+
+} // namespace impl
 
 template <typename NgpFieldType>
 struct NgpFieldInfo
@@ -86,12 +103,14 @@ public:
 
   ParallelSumDataExchangeSymPackUnpackHandler(const NgpMeshType& mesh, const std::vector<NgpFieldType *> & ngpFields)
     : m_ngpMesh(const_cast<NgpMeshType&>(mesh)),
+      m_fieldRanks(),
       m_ngpFields(ngpFields),
       m_ngpFieldsOnDevice(FieldView<NgpFieldType,mem_space>("ngpFieldsOnDevice", ngpFields.size())),
       m_deviceSendData(BufferViewType<T,mem_space>("deviceSendData", 1)),
       m_deviceRecvData(BufferViewType<T,mem_space>("deviceRecvData", 1))
   {
-    typename FieldView<NgpFieldType,mem_space>::HostMirror ngpFieldsHostMirror = Kokkos::create_mirror_view(m_ngpFieldsOnDevice);
+    impl::fill_field_ranks(ngpFields, m_fieldRanks);
+    typename FieldView<NgpFieldType,mem_space>::host_mirror_type ngpFieldsHostMirror = Kokkos::create_mirror_view(m_ngpFieldsOnDevice);
     for (size_t fieldIdx = 0; fieldIdx < m_ngpFields.size(); fieldIdx++)
     {
       ngpFieldsHostMirror(fieldIdx) = NgpFieldInfo<NgpFieldType>(*m_ngpFields[fieldIdx]);
@@ -104,21 +123,30 @@ public:
   void hostSizeMessages(int proc, size_t & numValues, bool includeGhosts=false) const
   {
     numValues = 0;
-    for (NgpFieldType* field : m_ngpFields)
-    {
-      stk::mesh::FieldBase* stkField = m_ngpMesh.get_bulk_on_host().mesh_meta_data().get_fields()[field->get_ordinal()];
+    for(stk::mesh::EntityRank fieldRank : m_fieldRanks) {
       stk::mesh::HostCommMapIndices<stk::ngp::MemSpace> commMapIndices =
-          m_ngpMesh.get_bulk_on_host().template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(field->get_rank(), proc, includeGhosts);
+        m_ngpMesh.get_bulk_on_host().template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(fieldRank, proc, includeGhosts);
+
       for (size_t i = 0; i < commMapIndices.extent(0); ++i) {
         const unsigned bucketId = commMapIndices(i).bucket_id;
-        const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(*stkField, bucketId);
-        numValues += numScalarsPerEntity;
+
+        for (NgpFieldType* field : m_ngpFields) {
+          if (field->get_rank() == fieldRank) {
+            stk::mesh::FieldBase* stkField = m_ngpMesh.get_bulk_on_host().mesh_meta_data().get_fields()[field->get_ordinal()];
+            const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(*stkField, bucketId);
+            numValues += numScalarsPerEntity;
+          }
+        }
       }
     }
   }
 
   NgpMeshType& get_ngp_mesh() const {
     return m_ngpMesh;
+  }
+
+  const std::vector<stk::mesh::EntityRank>& get_field_ranks() const {
+    return m_fieldRanks;
   }
 
   std::vector<NgpFieldType*> const& get_ngp_fields() const {
@@ -139,12 +167,12 @@ public:
     return m_deviceRecvData;
   }
 
-  typename UnsignedViewType<stk::ngp::MemSpace>::HostMirror& get_host_buffer_offsets()
+  typename UnsignedViewType<stk::ngp::MemSpace>::host_mirror_type& get_host_buffer_offsets()
   {
     return m_ngpMesh.get_ngp_parallel_sum_host_buffer_offsets();
   }
 
-  typename UnsignedViewType<stk::ngp::MemSpace>::HostMirror& get_host_mesh_indices_offsets()
+  typename UnsignedViewType<stk::ngp::MemSpace>::host_mirror_type& get_host_mesh_indices_offsets()
   {
     return m_ngpMesh.get_ngp_parallel_sum_host_mesh_indices_offsets();
   }
@@ -165,6 +193,7 @@ public:
 
 private:
   NgpMeshType& m_ngpMesh;
+  std::vector<stk::mesh::EntityRank> m_fieldRanks;
   const std::vector<NgpFieldType *>& m_ngpFields;
   FieldView<NgpFieldType,mem_space> m_ngpFieldsOnDevice;
 

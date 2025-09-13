@@ -816,7 +816,7 @@ template <typename INT> const double *Exo_Read<INT>::Get_Nodal_Results(size_t va
   if (cur_time == 0) {
     return nullptr;
   }
-  SMART_ASSERT(static_cast<size_t>(var_index) < nodal_vars.size());
+  SMART_ASSERT(var_index < nodal_vars.size());
 
   return results[var_index];
 }
@@ -1025,18 +1025,20 @@ template <typename INT> std::string Exo_Read<INT>::Open_Change_Set(int index)
 {
   SMART_ASSERT(Check_State());
 
-  if (index == current_change_set_index) {
-    return "";
-  }
+  if (index >= 0) {
+    if (index == current_change_set_index) {
+      return "";
+    }
 
-  if (index >= num_change_sets) {
-    return fmt::format("exodiff: ERROR: Index {} is out of range. Valid range: 0 <= index < {}",
-		       index, num_change_sets);
-  }
+    if (index >= num_change_sets) {
+      return fmt::format("exodiff: ERROR: Index {} is out of range. Valid range: 0 <= index < {}",
+                         index, num_change_sets);
+    }
 
-  Reset_Meta_Data();
-  current_change_set_index = index;
-  file_id                  = change_set_ids[index];
+    Reset_Meta_Data();
+    current_change_set_index = index;
+    file_id                  = change_set_ids[index];
+  }
   Get_Meta_Data();
 
   return "";

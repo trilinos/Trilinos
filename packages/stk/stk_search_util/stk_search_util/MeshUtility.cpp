@@ -59,7 +59,7 @@
 namespace stk {
 namespace search {
 
-stk::search::Box<double> get_mesh_bounding_box(const stk::mesh::FieldBase* coords, stk::mesh::BulkData& bulk)
+stk::search::Box<double> get_mesh_bounding_box(const stk::mesh::FieldBase* coords, const stk::mesh::BulkData& bulk)
 {
   const auto& meta = bulk.mesh_meta_data();
   const int ndim = meta.spatial_dimension();
@@ -186,11 +186,10 @@ bool part_has_proper_entity_rank(const stk::mesh::Part* part)
   return false;
 }
 
-std::vector<std::string> get_part_membership(const stk::mesh::BulkData& bulk, const stk::mesh::EntityKey k, const stk::mesh::PartVector& parts)
+std::vector<std::string> get_part_membership(const stk::mesh::BulkData& bulk, const stk::mesh::Entity e, const stk::mesh::PartVector& parts)
 {
   std::vector<std::string> partNames;
 
-  stk::mesh::Entity e = bulk.get_entity(k);
   const stk::mesh::Bucket &bucket = bulk.bucket(e);
 
   for(const stk::mesh::Part* part : parts) {
@@ -222,6 +221,12 @@ std::vector<std::string> get_part_membership(const stk::mesh::BulkData& bulk, co
   }
 
   return partNames;
+}
+
+std::vector<std::string> get_part_membership(const stk::mesh::BulkData& bulk, const stk::mesh::EntityKey k, const stk::mesh::PartVector& parts)
+{
+  stk::mesh::Entity e = bulk.get_entity(k);
+  return get_part_membership(bulk, e, parts);
 }
 
 std::string get_time_stamp()

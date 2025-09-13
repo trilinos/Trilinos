@@ -99,7 +99,7 @@ void check_device_aware_mpi_send_recv(MPI_Comm comm)
     MPI_Status status;
     EXPECT_EQ( MPI_SUCCESS, MPI_Recv(recvBuf.data(), N, MPI_DOUBLE, otherProc, msgTag, comm, &status));
 
-    BufferViewType::HostMirror hostRecvBuf = Kokkos::create_mirror_view(recvBuf);
+    BufferViewType::host_mirror_type hostRecvBuf = Kokkos::create_mirror_view(recvBuf);
     Kokkos::deep_copy(hostRecvBuf, recvBuf);
     for(size_t i=0; i<N; ++i) {
       EXPECT_NEAR(goldValue, hostRecvBuf(i), tol);
@@ -156,7 +156,7 @@ void check_device_aware_mpi_isend_irecv_waitany(MPI_Comm comm)
     MPI_Waitany(numCommProcs, recvRequests.data(), &idx, MPI_STATUS_IGNORE);
     EXPECT_EQ(0, idx);
 
-    BufferViewType::HostMirror hostRecvBuf = Kokkos::create_mirror_view(recvBuf);
+    BufferViewType::host_mirror_type hostRecvBuf = Kokkos::create_mirror_view(recvBuf);
     Kokkos::deep_copy(hostRecvBuf, recvBuf);
     for(size_t i=0; i<N; ++i) {
       EXPECT_NEAR(goldValue, hostRecvBuf(i), tol);

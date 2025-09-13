@@ -403,7 +403,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
   std::sort( ghosted_change.begin() , ghosted_change.end() , EntityLess(mesh) );
 }
 
-stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
+stk::mesh::EntityVector convert_keys_to_entities(const stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
 {
     stk::mesh::EntityVector nodes(node_keys.size());
     for (size_t i=0;i<nodes.size();++i)
@@ -851,7 +851,7 @@ Entity connect_element_to_side<stk::mesh::ConstPartVector>(BulkData & mesh, Enti
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
-                                                     stk::mesh::EntityId new_face_global_id,
+                                                     stk::mesh::EntityId /*new_face_global_id*/,
                                                      const stk::mesh::PartVector & parts)
 {
     stk::mesh::Entity new_face = stk::mesh::Entity();
@@ -1760,6 +1760,22 @@ void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face)
 {
   STK_ThrowRequireMsg(connect_edge_or_face_to_elements_impl(bulk, face),
                   "Face with id: " << bulk.identifier(face) << " has no valid connectivity to elements");
+}
+
+bool part_is_on_upward_entity_except(const stk::mesh::BulkData& bulk,
+                                     stk::mesh::Entity entity,
+                                     stk::mesh::EntityRank upwardRank,
+                                     const stk::mesh::Part& part,
+                                     stk::mesh::Entity entityToSkip)
+{
+  const stk::mesh::ConnectedEntities conn = bulk.get_connected_entities(entity, upwardRank);
+  for(unsigned i=0; i<conn.size(); ++i) {
+    if (conn[i] != entityToSkip && bulk.bucket(conn[i]).member(part)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool has_upward_recv_ghost_connectivity(const stk::mesh::BulkData &bulk,

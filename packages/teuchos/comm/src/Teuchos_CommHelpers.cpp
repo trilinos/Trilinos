@@ -661,6 +661,8 @@ sendImpl (const Comm<int>& comm,
     }
   }
   else { // It's an MpiComm.  Invoke MPI directly.
+    TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::sendImpl<" << TypeNameTraits<T>::name () << ">");
     MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
     T t;
     MPI_Datatype rawType = MpiTypeTraits<T>::getType (t);
@@ -714,6 +716,8 @@ sendImpl (const T sendBuffer[],
     }
   }
   else { // It's an MpiComm.  Invoke MPI directly.
+    TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::sendImpl<" << TypeNameTraits<T>::name () << ">");
     MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
     T t;
     MPI_Datatype rawType = MpiTypeTraits<T>::getType (t);
@@ -808,6 +812,9 @@ isendImpl (const ArrayRCP<const T>& sendBuffer,
     }
   }
   else { // It's an MpiComm.  Invoke MPI directly.
+    TEUCHOS_COMM_TIME_MONITOR(
+    "Teuchos::isendImpl<" << TypeNameTraits<T>::name () << ">");
+
     MPI_Comm rawComm = * (mpiComm->getRawMpiComm ());
     T t;
     MPI_Datatype rawType = MpiTypeTraits<T>::getType (t);

@@ -7,11 +7,11 @@
 // license that can be found in the LICENSE file.
 
 #include <Akri_MeshHelpers.hpp>
-#include <Akri_RefinementInterface.hpp>
 #include <Akri_RebalanceUtils.hpp>
 #include <Akri_RebalanceUtils_Impl.hpp>
 #include <Akri_config.hpp>
 #include <Akri_CDMesh.hpp>
+#include <Akri_RefinementManager.hpp>
 #include <stk_balance/balance.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -54,12 +54,12 @@ public:
   virtual ~MultipleCriteriaSettings() override = default;
 
   virtual double
-  getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override
+  getGraphEdgeWeight(stk::topology /*element1Topology*/, stk::topology /*element2Topology*/) const override
   {
     return 1.0;
   }
   virtual bool includeSearchResultsInGraph() const override { return false; }
-  virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+  virtual int getGraphVertexWeight(stk::topology /*type*/) const override { return 1; }
   virtual double getImbalanceTolerance() const override { return 1.05; }
   virtual void setDecompMethod(const std::string & input_method) override { m_method = input_method; }
   virtual std::string getDecompMethod() const override { return m_method; }
@@ -78,7 +78,7 @@ class CDFEMRebalance final : public MultipleCriteriaSettings
 {
 public:
   CDFEMRebalance(stk::mesh::BulkData & bulk_data,
-      const RefinementInterface * refinement,
+      const RefinementManager * refinement,
       CDMesh * cdmesh,
       const std::string & coordinates_field_name,
       const std::vector<stk::mesh::Field<double> *> & weights_fields,
@@ -110,7 +110,7 @@ public:
   }
 
 private:
-  const RefinementInterface * myRefinement;
+  const RefinementManager * myRefinement;
   CDMesh * my_cdmesh;
   stk::mesh::BulkData & my_bulk_data;
   std::string my_coordinates_field_name;
@@ -143,7 +143,7 @@ void CDFEMRebalance::modifyDecomposition(stk::balance::DecompositionChangeList &
 void
 update_parent_child_rebalance_weights(const stk::mesh::BulkData & bulk_data,
     stk::mesh::Field<double> & element_weights_field,
-    const RefinementInterface * refinement,
+    const RefinementManager * refinement,
     const CDMesh * cdmesh)
 {
   // First sum CDFEM child weights to their CDFEM parents, then adaptivity children to
@@ -161,7 +161,7 @@ update_parent_child_rebalance_weights(const stk::mesh::BulkData & bulk_data,
 }
 
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
-    const RefinementInterface * refinement,
+    const RefinementManager * refinement,
     CDMesh * cdmesh,
     const std::string & element_weights_field_name,
     const std::string & coordinates_field_name,
@@ -196,7 +196,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
           stk::balance::balanceStkMesh(balancer, bulk_data, selections_to_rebalance_separately);
 
   if(AuxMetaData::has(meta))
-    fix_node_owners_to_assure_active_owned_element_for_node(bulk_data, AuxMetaData::get(meta).active_part());
+    fix_node_ownership_to_assure_selected_owned_element(bulk_data, AuxMetaData::get(meta).active_part());
   STK_ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
   if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);
@@ -210,7 +210,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 }
 
 bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
-    const RefinementInterface * refinement,
+    const RefinementManager * refinement,
     CDMesh * cdmesh,
     const std::vector<std::string> & element_weights_field_names,
     const std::string & coordinates_field_name,
@@ -249,7 +249,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
     stk::balance::balanceStkMeshNodes(balancer, bulk_data);
 
   if(AuxMetaData::has(meta))
-    fix_node_owners_to_assure_active_owned_element_for_node(bulk_data, AuxMetaData::get(meta).active_part());
+    fix_node_ownership_to_assure_selected_owned_element(bulk_data, AuxMetaData::get(meta).active_part());
   STK_ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
   if(refinement) check_leaf_children_have_parents_on_same_proc(bulk_data.parallel(), *refinement);

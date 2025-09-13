@@ -100,8 +100,8 @@ SaPFactory_kokkos - #if defined(HAVE_MUELU_DEPRECATED_CODE)
 ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory
-ShiftedLaplacian - #if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
-ShiftedLaplacianOperator - #if defined(HAVE_MUELU_BELOS) && defined(HAVE_MUELU_TPETRA_INST_INT_INT)
+ShiftedLaplacian - #if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS) && defined(HAVE_TPETRA_COMPLEX_DOUBLE)
+ShiftedLaplacianOperator - #if defined(HAVE_MUELU_BELOS) && defined(HAVE_TPETRA_COMPLEX_DOUBLE)
 SimpleSmoother
 Smoother
 SmootherBase

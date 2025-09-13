@@ -247,13 +247,13 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
        << "  -nnz=     " << nnz << std::endl;
 
   row_map_type row_map(Kokkos::ViewAllocateWithoutInitializing("row_map"), numRows + 1);
-  typename row_map_type::HostMirror row_map_h = Kokkos::create_mirror_view(row_map);
+  typename row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(row_map);
 
   entries_type entries(Kokkos::ViewAllocateWithoutInitializing("entries"), nnz);
-  typename entries_type::HostMirror entries_h = Kokkos::create_mirror_view(entries);
+  typename entries_type::host_mirror_type entries_h = Kokkos::create_mirror_view(entries);
 
   values_type values(Kokkos::ViewAllocateWithoutInitializing("values"), nnz);
-  typename values_type::HostMirror values_h = Kokkos::create_mirror_view(values);
+  typename values_type::host_mirror_type values_h = Kokkos::create_mirror_view(values);
 
   // Compute the basic interpolation
   // coefficients for 1D rate of 3
@@ -760,8 +760,8 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   LOTupleView lFineNodesPerDim_d("lFineNodesPerDim");
   LOTupleView lCoarseNodesPerDim_d("lCoarseNodesPerDim");
 
-  typename Kokkos::View<LO[3], device_type>::HostMirror lCoarseNodesPerDim_h = Kokkos::create_mirror_view(lCoarseNodesPerDim_d);
-  typename Kokkos::View<LO[3], device_type>::HostMirror lFineNodesPerDim_h   = Kokkos::create_mirror_view(lFineNodesPerDim_d);
+  typename Kokkos::View<LO[3], device_type>::host_mirror_type lCoarseNodesPerDim_h = Kokkos::create_mirror_view(lCoarseNodesPerDim_d);
+  typename Kokkos::View<LO[3], device_type>::host_mirror_type lFineNodesPerDim_h   = Kokkos::create_mirror_view(lFineNodesPerDim_d);
 
   for (int dim = 0; dim < numDimensions; ++dim) {
     lCoarseNodesPerDim_h(dim) = lCoarseNodesPerDim[dim];

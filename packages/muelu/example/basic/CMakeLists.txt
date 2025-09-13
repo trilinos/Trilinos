@@ -50,7 +50,7 @@ ENDIF()
 # Stratimikos example
 #
 IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
-  
+
   # build executable
   TRIBITS_ADD_EXECUTABLE(
     Stratimikos
@@ -98,7 +98,15 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
-    
+
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Stratimikos
+      NAME Stratimikos_Tpetra_direct
+      ARGS "--xml=set3-mg-jacobi.xml --linAlgebra=Tpetra --useDirectMatrixConstruction --matrixType=Laplace1D --nx=3000"
+      NUM_MPI_PROCS 4
+      COMM serial mpi
+      )
+
   ENDIF()
 
 ENDIF()

@@ -87,20 +87,20 @@ bool Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(Pa
     } else if (paramList.isType<RCP<TpCrsMat> >(parameterName)) {
       RCP<TpCrsMat> tM = paramList.get<RCP<TpCrsMat> >(parameterName);
       paramList.remove(parameterName);
-      RCP<XpMat> xM = MueLu::TpetraCrs_To_XpetraMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tM);
+      RCP<XpMat> xM = Xpetra::toXpetra(tM);
       paramList.set<RCP<XpMat> >(parameterName, xM);
       return true;
     } else if (paramList.isType<RCP<tMV> >(parameterName)) {
       RCP<tMV> tpetra_X = paramList.get<RCP<tMV> >(parameterName);
       paramList.remove(parameterName);
-      RCP<XpMultVec> X = MueLu::TpetraMultiVector_To_XpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpetra_X);
+      RCP<XpMultVec> X = Xpetra::toXpetra(tpetra_X);
       paramList.set<RCP<XpMultVec> >(parameterName, X);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
       return true;
     } else if (paramList.isType<RCP<tMagMV> >(parameterName)) {
       RCP<tMagMV> tpetra_X = paramList.get<RCP<tMagMV> >(parameterName);
       paramList.remove(parameterName);
-      RCP<XpMagMultVec> X = MueLu::TpetraMultiVector_To_XpetraMultiVector<Magnitude, LocalOrdinal, GlobalOrdinal, Node>(tpetra_X);
+      RCP<XpMagMultVec> X = Xpetra::toXpetra(tpetra_X);
       paramList.set<RCP<XpMagMultVec> >(parameterName, X);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
       return true;
@@ -111,7 +111,7 @@ bool Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(Pa
       paramList.remove(parameterName);
       RCP<tMagMV> tpetra_X = rcp(new tMagMV(tpetra_hX->getMap(), tpetra_hX->getNumVectors()));
       Tpetra::deep_copy(*tpetra_X, *tpetra_hX);
-      RCP<XpMagMultVec> X = MueLu::TpetraMultiVector_To_XpetraMultiVector<Magnitude, LocalOrdinal, GlobalOrdinal, Node>(tpetra_X);
+      RCP<XpMagMultVec> X = Xpetra::toXpetra(tpetra_X);
       paramList.set<RCP<XpMagMultVec> >(parameterName, X);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
       return true;
@@ -228,20 +228,20 @@ bool Converters<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWr
     } else if (paramList.isType<RCP<TpCrsMat> >(parameterName)) {
       RCP<TpCrsMat> tM = paramList.get<RCP<TpCrsMat> >(parameterName);
       paramList.remove(parameterName);
-      RCP<XpMat> xM = MueLu::TpetraCrs_To_XpetraMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tM);
+      RCP<XpMat> xM = Xpetra::toXpetra(tM);
       paramList.set<RCP<XpMat> >(parameterName, xM);
       return true;
     } else if (paramList.isType<RCP<tMV> >(parameterName)) {
       RCP<tMV> tpetra_X = paramList.get<RCP<tMV> >(parameterName);
       paramList.remove(parameterName);
-      RCP<XpMultVec> X = MueLu::TpetraMultiVector_To_XpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tpetra_X);
+      RCP<XpMultVec> X = Xpetra::toXpetra(tpetra_X);
       paramList.set<RCP<XpMultVec> >(parameterName, X);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
       return true;
     } else if (paramList.isType<RCP<tMagMV> >(parameterName)) {
       RCP<tMagMV> tpetra_X = paramList.get<RCP<tMagMV> >(parameterName);
       paramList.remove(parameterName);
-      RCP<XpMagMultVec> X = MueLu::TpetraMultiVector_To_XpetraMultiVector<Magnitude, LocalOrdinal, GlobalOrdinal, Node>(tpetra_X);
+      RCP<XpMagMultVec> X = Xpetra::toXpetra(tpetra_X);
       paramList.set<RCP<XpMagMultVec> >(parameterName, X);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
       return true;
@@ -252,7 +252,7 @@ bool Converters<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWr
       paramList.remove(parameterName);
       RCP<tMagMV> tpetra_X = rcp(new tMagMV(tpetra_hX->getMap(), tpetra_hX->getNumVectors()));
       Tpetra::deep_copy(*tpetra_X, *tpetra_hX);
-      RCP<XpMagMultVec> X = MueLu::TpetraMultiVector_To_XpetraMultiVector<Magnitude, LocalOrdinal, GlobalOrdinal, Node>(tpetra_X);
+      RCP<XpMagMultVec> X = Xpetra::toXpetra(tpetra_X);
       paramList.set<RCP<XpMagMultVec> >(parameterName, X);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(X));
       return true;

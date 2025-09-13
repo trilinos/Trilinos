@@ -47,6 +47,7 @@
 #include <cmath>
 #include <algorithm>
 
+#include "stk_search/ObjectOutsideDomainPolicy.hpp"
 #include "stk_search/DistanceComparison.hpp"
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/Parallel.hpp>
@@ -61,41 +62,6 @@ using FilterCoarseSearchProcRelation = std::pair<typename RECVMESH::EntityProc, 
 
 template <class SENDMESH, class RECVMESH>
 using FilterCoarseSearchProcRelationVec = std::vector<FilterCoarseSearchProcRelation<SENDMESH, RECVMESH>>;
-
-//BEGINObjectOutsideDomainPolicy 
-enum class ObjectOutsideDomainPolicy { IGNORE, EXTRAPOLATE, TRUNCATE, PROJECT, ABORT, UNDEFINED_OBJFLAG = 0xff };
-//ENDObjectOutsideDomainPolicy 
-
-inline ObjectOutsideDomainPolicy get_object_outside_domain_policy(const std::string& id)
-{
-  if(id == "IGNORE") return ObjectOutsideDomainPolicy::IGNORE;
-  if(id == "EXTRAPOLATE") return ObjectOutsideDomainPolicy::EXTRAPOLATE;
-  if(id == "TRUNCATE") return ObjectOutsideDomainPolicy::TRUNCATE;
-  if(id == "PROJECT") return ObjectOutsideDomainPolicy::PROJECT;
-  if(id == "ABORT") return ObjectOutsideDomainPolicy::ABORT;
-
-  return ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG;
-}
-
-inline std::string get_object_outside_domain_policy(const ObjectOutsideDomainPolicy id)
-{
-  switch(id) {
-  case ObjectOutsideDomainPolicy::IGNORE:
-    return "IGNORE";
-  case ObjectOutsideDomainPolicy::EXTRAPOLATE:
-    return "EXTRAPOLATE";
-  case ObjectOutsideDomainPolicy::TRUNCATE:
-    return "TRUNCATE";
-  case ObjectOutsideDomainPolicy::PROJECT:
-    return "PROJECT";
-  case ObjectOutsideDomainPolicy::ABORT:
-    return "ABORT";
-  case ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG:
-    return "UNDEFINED";
-  }
-
-  return std::string("");
-}
 
 //BEGINFilterCoarseSearchOptions
 struct FilterCoarseSearchOptions

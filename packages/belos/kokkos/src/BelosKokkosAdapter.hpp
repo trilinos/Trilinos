@@ -76,21 +76,21 @@ public:
   ///
   /// The `label` string indicates the label for the internal `Kokkos::view`.
   /// If `zeroOut` is set to `true`, the multivector will be initialized to zeros.
-  KokkosMultiVec<ScalarType, Device> (const std::string label, const int numrows, const int numvecs, const bool zeroOut = true) :
+  KokkosMultiVec (const std::string label, const int numrows, const int numvecs, const bool zeroOut = true) :
     myView (Kokkos::view_alloc(Kokkos::WithoutInitializing,label),numrows,numvecs)
     { if (zeroOut) { Kokkos::deep_copy(myView,0); } }
 
   /// \brief Returns a multivector with `numrows` rows and `numvecs` columns.
   ///
   /// If `zeroOut` is set to `true`, the multivector will be initialized to zeros.
-  KokkosMultiVec<ScalarType, Device> (const int numrows, const int numvecs, const bool zeroOut = true) :
+  KokkosMultiVec (const int numrows, const int numvecs, const bool zeroOut = true) :
     myView (Kokkos::view_alloc(Kokkos::WithoutInitializing,"MV"),numrows,numvecs)
     { if (zeroOut) { Kokkos::deep_copy(myView,0); } }
 
   /// \brief Returns a single column multivector with `numrows` rows.
   ///
   /// If `zeroOut` is set to `true`, the multivector will be initialized to zeros.
-  KokkosMultiVec<ScalarType, Device> (const int numrows, const bool zeroOut = true) :
+  KokkosMultiVec (const int numrows, const bool zeroOut = true) :
     myView(Kokkos::view_alloc(Kokkos::WithoutInitializing,"MV"),numrows,1)
     { if (zeroOut) { Kokkos::deep_copy(myView,0); } }
 
@@ -98,7 +98,7 @@ public:
 
   /// This copy constructor returns a new KokksMultiVec containing a
   /// deep copy of the multivector given by the user.
-  KokkosMultiVec<ScalarType, Device> (const KokkosMultiVec<ScalarType, Device> &sourceVec) :
+  KokkosMultiVec (const KokkosMultiVec<ScalarType, Device> &sourceVec) :
     myView(Kokkos::view_alloc(Kokkos::WithoutInitializing,"MV"),(int)sourceVec.GetGlobalLength(),sourceVec.GetNumberVecs())
   { Kokkos::deep_copy(myView,sourceVec.GetInternalViewConst()); }
 
@@ -109,7 +109,7 @@ public:
   /// The internal data of the multivector is converted from
   /// `ScalarType` to `ScalarType2`.
   template < class ScalarType2 >
-    KokkosMultiVec<ScalarType, Device> (const KokkosMultiVec<ScalarType2, Device> &sourceVec) :
+    KokkosMultiVec (const KokkosMultiVec<ScalarType2, Device> &sourceVec) :
     myView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "MV"),(int)sourceVec.GetGlobalLength(),sourceVec.GetNumberVecs())
   { Kokkos::deep_copy(myView,sourceVec.GetInternalViewConst()); }
 
@@ -119,7 +119,7 @@ public:
   /// the right-hand side KokkosMultiVec to the
   /// left-hand side KokkosMultiVec. The left-hand
   /// side MultiVec will be resized if necessary.
-  KokkosMultiVec<ScalarType, Device> & operator=(const KokkosMultiVec<ScalarType, Device> & sourceVec) {
+  KokkosMultiVec & operator=(const KokkosMultiVec<ScalarType, Device> & sourceVec) {
     int len = sourceVec.GetGlobalLength();
     int cols = sourceVec.GetNumberVecs();
     if( len != (int)myView.extent(0) || cols != (int)myView.extent(1) ){
@@ -138,7 +138,7 @@ public:
   /// The internal data of the right-hand side multivec
   /// is converted from `ScalarType` to `ScalarType2`.
   template < class ScalarType2 >
-  KokkosMultiVec<ScalarType, Device> & operator=(const KokkosMultiVec<ScalarType2, Device> & sourceVec) {
+  KokkosMultiVec & operator=(const KokkosMultiVec<ScalarType2, Device> & sourceVec) {
     int len = sourceVec.GetGlobalLength();
     int cols = sourceVec.GetNumberVecs();
     if( len != (int)myView.extent(0) || cols != (int)myView.extent(1) ){
@@ -157,7 +157,7 @@ public:
   /// shallow copy of the given `Kokkos::view`.  (This option assumes that
   /// the user will make no changes to that view outside of
   /// the KokkosMultiVec interface.)
-  KokkosMultiVec<ScalarType, Device> (const ViewMatrixType & sourceView, bool makeCopy = true) {
+  KokkosMultiVec (const ViewMatrixType & sourceView, bool makeCopy = true) {
     if( makeCopy ){
       if( sourceView.extent(0) != myView.extent(0) || sourceView.extent(1) != myView.extent(1) ){
         Kokkos::resize(myView, sourceView.extent(0), sourceView.extent(1));
@@ -176,12 +176,12 @@ public:
   /// a deep copy of the sourceView in order to change scalar
   /// types.
   template < class ScalarType2 > //TODO: Fix this so that passing in a view without device specified actually compiles...
-  KokkosMultiVec<ScalarType, Device> (const Kokkos::View<ScalarType2**,Kokkos::LayoutLeft, Device> & sourceView) :
+  KokkosMultiVec (const Kokkos::View<ScalarType2**,Kokkos::LayoutLeft, Device> & sourceView) :
     myView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "MV"),sourceView.extent(0),sourceView.extent(1))
   { Kokkos::deep_copy(myView,sourceView); }
 
   //! Destructor (default)
-  ~KokkosMultiVec<ScalarType, Device>(){}
+  ~KokkosMultiVec(){}
 
   //@}
 
@@ -558,7 +558,7 @@ public:
   /// (This function will first copy the multivector to host space
   /// if needed.)
   void MvPrint( std::ostream& os ) const {
-    typename ViewMatrixType::HostMirror hostView("myViewMirror", myView.extent(0), myView.extent(1));
+    typename ViewMatrixType::host_mirror_type hostView("myViewMirror", myView.extent(0), myView.extent(1));
     Kokkos::deep_copy(hostView, myView);
     for(unsigned int i = 0; i < (hostView.extent(0)); i++){
       for (unsigned int j = 0; j < (hostView.extent(1)); j++){
@@ -585,11 +585,11 @@ public:
   //! @name Constructor/Destructor
   //@{
   //! Constructor obtains a shallow copy of the given CrsMatrix.
-  KokkosCrsOperator<ScalarType, OrdinalType, Device> (const KokkosSparse::CrsMatrix<ScalarType, OrdinalType, Device> mat)
+  KokkosCrsOperator (const KokkosSparse::CrsMatrix<ScalarType, OrdinalType, Device> mat)
    : myMatrix(mat) {}
 
   //! Destructor.
-  ~KokkosCrsOperator<ScalarType, OrdinalType, Device>(){}
+  ~KokkosCrsOperator(){}
   //@}
 
   //! @name Methods relating to applying the operator

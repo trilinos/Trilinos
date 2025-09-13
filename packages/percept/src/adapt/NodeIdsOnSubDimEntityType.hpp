@@ -60,7 +60,7 @@
             buff.pack<stk::mesh::EntityId>( id );
           }
       }
-      void unpack(percept::PerceptMesh& eMesh, stk::CommBuffer& buff)
+      void unpack(percept::PerceptMesh& /*eMesh*/, stk::CommBuffer& buff)
       {
         unsigned sz;
         buff.unpack< unsigned > ( sz );

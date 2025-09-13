@@ -45,7 +45,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpSum, reduct, Scalar )
   using RTOpPack::DefaultReductTarget;
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
-  typedef ScalarTraits<ScalarMag> SMT;
 
   const Scalar v1 = - ST::random();
   const Scalar v2 = + ST::random();

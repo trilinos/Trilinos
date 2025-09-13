@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,6 +34,7 @@ namespace Excn {
     bool ignore_coordinates() const { return ignoreCoordinates_; }
     bool use_netcdf4() const { return useNetcdf4_; }
     bool sort_times() const { return sortTimes_; }
+    bool use_all_times() const { return useAllTimes_; }
 
     double alive_value() const { return aliveValue_; }
 
@@ -63,7 +64,7 @@ namespace Excn {
     GetLongOption options_{}; //!< Options parsing
 
     int  debugLevel_{0};
-    int  screenWidth_{0};
+    int  screenWidth_{80};
     int  compressionLevel_{0};
     int  quantizeNSD_{0};
     bool zlib_{false};
@@ -76,6 +77,7 @@ namespace Excn {
     bool ignoreCoordinates_{false};
     bool useNetcdf4_{false};
     bool sortTimes_{false};
+    bool useAllTimes_{false};
 
     double aliveValue_{-1.0};
     double interpartMinimumTimeDelta_{0.0};

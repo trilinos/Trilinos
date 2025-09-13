@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 
@@ -56,6 +56,8 @@ C             9 = BINARY MESH INPUT (GENESIS)
      &  ' ', ' ')
       call cpyrgt (ITERM, '1988')
       call cpyrgt (IHARD, '1988')
+      call PRTERR ('CMDSPEC',
+     $     'This version has some support for tet meshes')
 
 C ... GET FILENAMES:
 
@@ -133,14 +135,14 @@ C .. Get filename from command line.  If not specified, emit error message
 
       AXI    = .TRUE.
       EXODUS = .FALSE.
-      NNODES = 2**NDIM
+      NNODES = 0
 
       CALL MDRSRV ('CRD', IR, NUMNP*NDIM)
       IRX = IR
       IRY = IR + NUMNP
       IRZ = IR + 2 * NUMNP
 
-      CALL MDRSRV ('MAT',  IM, 6*NELBLK)
+      CALL MDRSRV ('MAT',  IM, 7*NELBLK)
       CALL MDRSRV ('LINK', IX, 0)
 
       CALL MDRSRV ('DENS',ID, NELBLK)

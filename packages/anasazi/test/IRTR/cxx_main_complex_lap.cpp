@@ -21,7 +21,7 @@
 #include "Teuchos_as.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #endif
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
   int MyPID = 0;
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
     cmdp.setOption("fakeM","noM",&fakeM,"Use an explicit identity matrix for the mass matrix.");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
       MPI_Finalize();
 #endif
       return -1;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
         cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
           << "End Result: TEST FAILED" << endl;
       }
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
       MPI_Finalize() ;
 #endif
       return -1;
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize() ;
 #endif
 

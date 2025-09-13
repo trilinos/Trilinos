@@ -10,8 +10,8 @@ smoother ->
 
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-algorithm = "classical" classical algorithm = "default": threshold = 0.02, blocksize = 1
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.02
 aggregation: drop scheme = classical
 Build (MueLu::TentativePFactory_kokkos)
@@ -20,7 +20,6 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 Build (MueLu::AmalgamationFactory)
 [empty list]
 Nullspace factory (MueLu::NullspaceFactory)
@@ -45,8 +44,8 @@ smoother ->
 
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
-Build (MueLu::CoalesceDropFactory_kokkos)
-algorithm = "classical" classical algorithm = "default": threshold = 0.02, blocksize = 1
+BuildScalar (MueLu::CoalesceDropFactory_kokkos)
+dropping scheme = "point-wise", strength-of-connection measure = "smoothed aggregation", strength-of-connection matrix = "A", threshold = 0.02, blocksize = 1, useBlocking = 0, symmetrizeDroppedGraph = 0
 aggregation: drop tol = 0.02
 aggregation: drop scheme = classical
 Build (MueLu::TentativePFactory_kokkos)
@@ -55,7 +54,6 @@ BuildAggregates (Phase - (Dirichlet))
 BuildAggregatesRandom (Phase 1 (main))
 BuildAggregatesRandom (Phase 2a (secondary))
 BuildAggregatesRandom (Phase 2b (expansion))
-BuildAggregatesRandom (Phase 3 (cleanup))
 Build (MueLu::AmalgamationFactory)
 [empty list]
 Nullspace factory (MueLu::NullspaceFactory)

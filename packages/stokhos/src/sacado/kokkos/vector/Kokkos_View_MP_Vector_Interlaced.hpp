@@ -108,11 +108,14 @@ public:
 
   // Host mirror
   typedef View< typename Impl::RebindStokhosStorageDevice<
-                  typename traits::data_type ,
-                  typename traits::host_mirror_space::memory_space >::type ,
+                typename traits::data_type ,
+                typename traits::host_mirror_space::memory_space >::type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
-                void > HostMirror ;
+                void > host_mirror_type ;
+
+  // host_mirror_type
+  typedef HostMirror host_mirror_type ;
 
   // Equivalent array type for this view.
   typedef View< typename traits::array_type ,

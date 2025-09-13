@@ -29,6 +29,9 @@ const Amesos2::ESolverType Amesos2::solverTypeValues[Amesos2::numSolverTypes] =
 #ifdef HAVE_AMESOS2_PARDISO_MKL
   ,Amesos2::PARDISO_MKL
 #endif
+#ifdef HAVE_AMESOS2_CSS_MKL
+  ,Amesos2::CSS_MKL
+#endif
 #ifdef HAVE_AMESOS2_CHOLMOD
   ,Amesos2::CHOLMOD
 #endif
@@ -58,6 +61,9 @@ const char* Amesos2::solverTypeNames[Amesos2::numSolverTypes] =
 #ifdef HAVE_AMESOS2_PARDISO_MKL
   ,"PARDISOMKL"
 #endif
+#ifdef HAVE_AMESOS2_CSS_MKL
+  ,"CSSMKL"
+#endif
 #ifdef HAVE_AMESOS2_CHOLMOD
   ,"Cholmod"
 #endif
@@ -85,6 +91,9 @@ const bool Amesos2::supportsUnsymmetric[Amesos2::numSolverTypes] =
   ,true
 #endif
 #ifdef HAVE_AMESOS2_PARDISO_MKL
+  ,true
+#endif
+#ifdef HAVE_AMESOS2_CSS_MKL
   ,true
 #endif
 #ifdef HAVE_AMESOS2_CHOLMOD

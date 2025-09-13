@@ -584,8 +584,8 @@ void create_external_shell(stk::mesh::BulkData& bulk,
       std::cout << "P" << bulk.parallel_rank() << ": Creating external shell with id: "
                 << shellElemIds[iface] << " on face: " << iface << " of element: " << bulk.identifier(elem) << std::endl;
 
-      auto elem = stk::mesh::declare_element(bulk, blockPart, shellElemIds[iface], nodeIds);
-      createdElems.push_back(elem);
+      auto element = stk::mesh::declare_element(bulk, blockPart, shellElemIds[iface], nodeIds);
+      createdElems.push_back(element);
     }
   }
 }

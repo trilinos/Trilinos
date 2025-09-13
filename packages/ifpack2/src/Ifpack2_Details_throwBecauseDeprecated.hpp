@@ -17,10 +17,9 @@ namespace Details {
 
 /// \brief Call this in deprecated methods that will be removed soon;
 ///   it will throw std::logic_error with a helpful message.
-void
-throwBecauseDeprecated (const char functionName[]);
+void throwBecauseDeprecated(const char functionName[]);
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_THROWBECAUSEDEPRECATED_HPP
+#endif  // IFPACK2_DETAILS_THROWBECAUSEDEPRECATED_HPP

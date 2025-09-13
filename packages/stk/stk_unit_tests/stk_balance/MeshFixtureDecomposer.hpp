@@ -110,6 +110,21 @@ protected:
     return stk::is_true_on_all_procs(get_comm(), isNested);
   }
 
+
+  void clean_up_decomposer()
+  {
+    std::string meshfile = m_balanceSettings.get_input_filename();
+    unsigned numInputProcs = m_balanceSettings.get_num_input_processors();
+    if (get_parallel_rank() == 0) {
+      unlink(meshfile.c_str());
+      for (unsigned i = 0; i < numInputProcs; i++) {
+        std::string suffix = "." + std::to_string(numInputProcs) + "." + std::to_string(i);
+        std::string output_filename = meshfile + suffix; 
+        unlink(output_filename.c_str());
+      }
+    }
+  }
+
   stk::balance::Decomposer * m_decomposer;
   stk::balance::BalanceSettings m_balanceSettings;
 };

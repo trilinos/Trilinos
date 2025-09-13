@@ -68,6 +68,8 @@ namespace Iocatalyst {
     Ioss::Region          cir(cdbi);
     Ioss::MeshCopyOptions options;
     options.data_storage_type = 1;
+    options.verbose           = 1;
+    options.debug             = 1;
     Ioss::copy_database(cir, cor, options);
   }
 
@@ -206,8 +208,12 @@ namespace Iocatalyst {
       Ioss::StructuredBlock *iossBlock =
           new Ioss::StructuredBlock(iop.databaseIO, getStructuredBlockName(bm.getID()), spatialDims,
                                     localSizes, parentOffsets, globalSizes);
-      int node_count = (bm.getPartitionExtents().i + 1) * (bm.getPartitionExtents().j + 1) *
-                       (bm.getPartitionExtents().k + 1);
+      int node_count = 0;
+      if (!bm.isPartitionEmpty()) {
+        node_count = (bm.getPartitionExtents().i + 1) * (bm.getPartitionExtents().j + 1) *
+                     (bm.getPartitionExtents().k + 1);
+      }
+
       Ioss::NodeBlock *nodeBlock = new Ioss::NodeBlock(
           iop.databaseIO, getStructuredNodeBlockName(bm.getID()), node_count, spatialDims);
       iop.region->add(iossBlock);
@@ -225,10 +231,17 @@ namespace Iocatalyst {
     origin.y = 0.0;
     origin.z = 0.0;
     for (auto bm : bms) {
-      const int numI      = bm.getPartitionExtents().i + 1;
-      const int numJ      = bm.getPartitionExtents().j + 1;
-      const int numK      = bm.getPartitionExtents().k + 1;
-      const int numPoints = numI * numJ * numK;
+      int numI      = 0;
+      int numJ      = 0;
+      int numK      = 0;
+      int numPoints = 0;
+
+      if (!bm.isPartitionEmpty()) {
+        numI      = bm.getPartitionExtents().i + 1;
+        numJ      = bm.getPartitionExtents().j + 1;
+        numK      = bm.getPartitionExtents().k + 1;
+        numPoints = numI * numJ * numK;
+      }
 
       coordx.resize(numPoints);
       coordy.resize(numPoints);

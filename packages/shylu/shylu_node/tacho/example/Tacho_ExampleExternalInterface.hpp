@@ -28,10 +28,12 @@ enum TACHO_PARAM_INDICES {
   VERBOSITY,
   SMALLPROBLEMTHRESHOLDSIZE,
   SOLUTION_METHOD,
+#ifdef TACHO_DEPRECATED_PARAMETERS
   TASKING_OPTION_BLOCKSIZE,
   TASKING_OPTION_PANELSIZE,
   TASKING_OPTION_MAXNUMSUPERBLOCKS,
   LEVELSET_OPTION_SCHEDULING,
+#endif
   LEVELSET_OPTION_DEVICE_LEVEL_CUT,
   LEVELSET_OPTION_DEVICE_FACTOR_THRES,
   LEVELSET_OPTION_DEVICE_SOLVE_THRES,
@@ -341,13 +343,17 @@ private:
     // solution method
     m_Solver.setSolutionMethod(solverParams[SOLUTION_METHOD]);
 
+#ifdef TACHO_DEPRECATED_PARAMETERS
     // tasking options
     m_Solver.setBlocksize(solverParams[TASKING_OPTION_BLOCKSIZE]);
     m_Solver.setPanelsize(solverParams[TASKING_OPTION_PANELSIZE]);
     m_Solver.setMaxNumberOfSuperblocks(solverParams[TASKING_OPTION_MAXNUMSUPERBLOCKS]);
+#endif
 
     // levelset options
+#ifdef TACHO_DEPRECATED_PARAMETERS
     m_Solver.setLevelSetScheduling(solverParams[LEVELSET_OPTION_SCHEDULING]);
+#endif
     m_Solver.setLevelSetOptionDeviceLevelCut(solverParams[LEVELSET_OPTION_DEVICE_LEVEL_CUT]);
     m_Solver.setLevelSetOptionDeviceFunctionThreshold(solverParams[LEVELSET_OPTION_DEVICE_FACTOR_THRES],
                                                       solverParams[LEVELSET_OPTION_DEVICE_SOLVE_THRES]);

@@ -9,6 +9,7 @@
 
 #include "Tpetra_Details_DistributorPlan.hpp"
 
+#include "Tpetra_Details_Profiling.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Details_Behavior.hpp"
@@ -29,6 +30,11 @@ DistributorSendTypeEnumToString (EDistributorSendType sendType)
   else if (sendType == DISTRIBUTOR_ALLTOALL) {
     return "Alltoall";
   }
+#if defined(HAVE_TPETRA_MPI)
+  else if (sendType == DISTRIBUTOR_IALLTOFEWV) {
+    return "Ialltofewv";
+  }
+#endif
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   else if (sendType == DISTRIBUTOR_MPIADVANCE_ALLTOALL) {
     return "MpiAdvanceAlltoall";
@@ -41,6 +47,31 @@ DistributorSendTypeEnumToString (EDistributorSendType sendType)
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
       "EDistributorSendType enum value " << sendType << ".");
   }
+}
+
+EDistributorSendType
+DistributorSendTypeStringToEnum (const std::string_view s)
+{
+  if (s == "Isend") return DISTRIBUTOR_ISEND;
+  if (s == "Send") return DISTRIBUTOR_SEND;
+  if (s == "Alltoall") return DISTRIBUTOR_ALLTOALL;
+#if defined(HAVE_TPETRA_MPI)
+  if (s == "Ialltofewv") return DISTRIBUTOR_IALLTOFEWV;
+#endif
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  if (s == "MpiAdvanceAlltoall") return DISTRIBUTOR_MPIADVANCE_ALLTOALL;
+  if (s == "MpiAdvanceNbralltoallv") return DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV;
+#endif
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string to convert to EDistributorSendType enum value: " << s);
+}
+
+/// \brief Valid enum values of distributor send types.
+const std::string &validSendTypeOrThrow(const std::string &s) {
+  const auto valids = distributorSendTypes();
+  if (std::find(valids.begin(), valids.end(), s) == valids.end()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string for EDistributorSendType enum value: " << s);
+  }
+  return s;
 }
 
 std::string
@@ -71,7 +102,7 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
 #endif
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
     reversePlan_(Teuchos::null),
-    sendType_(DISTRIBUTOR_SEND),
+    sendType_(DistributorSendTypeStringToEnum(Behavior::defaultSendType())),
     sendMessageToSelf_(false),
     numSendsToOtherProcs_(0),
     maxSendLength_(0),
@@ -100,6 +131,10 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     procsFrom_(otherPlan.procsFrom_),
     startsFrom_(otherPlan.startsFrom_),
     indicesFrom_(otherPlan.indicesFrom_)
+#if defined(HAVE_TPETRACORE_MPI)
+    ,
+    roots_(otherPlan.roots_)
+#endif
 { }
 
 size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs) {
@@ -378,8 +413,8 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // Invert map to see what msgs are received and what length
   computeReceives();
 
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  initializeMpiAdvance();
+#if defined(HAVE_TPETRA_MPI)
+  maybeInitializeRoots();
 #endif
 
   // createFromRecvs() calls createFromSends(), but will set
@@ -578,8 +613,8 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
   indicesFrom_.clear ();
   numReceives_-=sendMessageToSelf_;
 
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  initializeMpiAdvance();
+#if defined(HAVE_TPETRA_MPI)
+  maybeInitializeRoots();
 #endif
 }
 
@@ -593,6 +628,22 @@ void DistributorPlan::createReversePlan() const
   reversePlan_ = Teuchos::rcp(new DistributorPlan(comm_));
   reversePlan_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
   reversePlan_->sendType_ = sendType_;
+
+#if defined(HAVE_TPETRACORE_MPI)
+  // If the forward plan matches an all-to-few communication pattern,
+  // the reverse plan is few-to-all, so don't use a special all-to-few
+  // implementation for it
+  if (DISTRIBUTOR_IALLTOFEWV == sendType_) {
+    if (Behavior::verbose()) {
+      std::stringstream ss;
+      ss << __FILE__ << ":" << __LINE__ << " WARNING (Ialltofewv send type): using default for reversed Ialltofewv\n";
+      std::cerr << ss.str();
+    }
+
+    reversePlan_->sendType_ = DistributorSendTypeStringToEnum(Behavior::defaultSendType());
+  }
+#endif
+
 
   // The total length of all the sends of this DistributorPlan.  We
   // calculate it because it's the total length of all the receives
@@ -631,6 +682,10 @@ void DistributorPlan::createReversePlan() const
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   // is there a smarter way to do this
   reversePlan_->initializeMpiAdvance();
+#endif
+
+#if defined(HAVE_TPETRA_MPI)
+  reversePlan_->maybeInitializeRoots();
 #endif
 }
 
@@ -880,9 +935,17 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
 
+    #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+      initializeMpiAdvance();
+    #endif
+
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
     this->setMyParamList (plist);
+
+#if defined(HAVE_TPETRA_MPI)
+    maybeInitializeRoots();
+#endif
   }
 }
 
@@ -892,11 +955,29 @@ Teuchos::Array<std::string> distributorSendTypes()
   sendTypes.push_back ("Isend");
   sendTypes.push_back ("Send");
   sendTypes.push_back ("Alltoall");
+#if defined(HAVE_TPETRA_MPI)
+  sendTypes.push_back ("Ialltofewv");
+#endif
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   sendTypes.push_back ("MpiAdvanceAlltoall");
   sendTypes.push_back ("MpiAdvanceNbralltoallv");
 #endif
   return sendTypes;
+}
+
+Teuchos::Array<EDistributorSendType> distributorSendTypeEnums() {
+  Teuchos::Array<EDistributorSendType> res;
+  res.push_back (DISTRIBUTOR_ISEND);
+  res.push_back (DISTRIBUTOR_SEND);
+  res.push_back (DISTRIBUTOR_ALLTOALL);
+#if defined(HAVE_TPETRA_MPI)
+  res.push_back (DISTRIBUTOR_IALLTOFEWV);
+#endif
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  res.push_back (DISTRIBUTOR_MPIADVANCE_ALLTOALL);
+  res.push_back (DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
+#endif
+  return res;
 }
 
 Teuchos::RCP<const Teuchos::ParameterList>
@@ -909,20 +990,14 @@ DistributorPlan::getValidParameters() const
   using Teuchos::setStringToIntegralParameter;
 
   Array<std::string> sendTypes = distributorSendTypes ();
-  const std::string defaultSendType ("Send");
-  Array<Details::EDistributorSendType> sendTypeEnums;
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
-#endif
+  const Array<Details::EDistributorSendType> sendTypeEnums = distributorSendTypeEnums ();
+
+  const std::string validatedSendType = validSendTypeOrThrow(Behavior::defaultSendType());
 
   RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
 
   setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
-      defaultSendType, "When using MPI, the variant of send to use in "
+      validatedSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
   plist->set ("Timer Label","","Label for Time Monitor output");
 
@@ -934,7 +1009,7 @@ DistributorPlan::getValidParameters() const
 // Used by Teuchos::RCP to clean up an owned MPIX_Comm*
 struct MpixCommDeallocator {
   void free(MPIX_Comm **comm) const {
-    MPIX_Comm_free(*comm);
+    MPIX_Comm_free(comm);
   }
 };
 
@@ -947,28 +1022,10 @@ void DistributorPlan::initializeMpiAdvance() {
   Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm_);
   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
   int err = 0;
-  if (sendType_ == DISTRIBUTOR_MPIADVANCE_ALLTOALL) {
+  if (sendType_ == DISTRIBUTOR_MPIADVANCE_ALLTOALL ||
+        sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV ) {
     MPIX_Comm **mpixComm = new(MPIX_Comm*);
     err = MPIX_Comm_init(mpixComm, (*rawComm)());
-    mpixComm_ = Teuchos::RCP(mpixComm,
-      MpixCommDeallocator(),
-      true /*take ownership*/
-    );
-  }
-  else if (sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
-    int numRecvs = (int)(numReceives_ + (sendMessageToSelf_ ? 1 : 0));
-    int *sourceRanks = procsFrom_.data();
-
-    // int *sourceWeights = static_cast<int*>(lengthsFrom_.data());// lengthsFrom_ may not be int
-    const int *sourceWeights = MPI_UNWEIGHTED;
-    int numSends = (int)(numSendsToOtherProcs_ + (sendMessageToSelf_ ? 1 : 0));
-    int *destRanks = procIdsToSendTo_.data();
-
-    // int *destWeights = static_cast<int*>(lengthsTo_.data()); // lengthsTo_ may not be int
-    const int *destWeights = MPI_UNWEIGHTED; // lengthsTo_ may not be int
-
-    MPIX_Comm **mpixComm = new(MPIX_Comm*);
-    err = MPIX_Dist_graph_create_adjacent((*rawComm)(), numRecvs, sourceRanks, sourceWeights, numSends, destRanks, destWeights, MPI_INFO_NULL, false, mpixComm);
     mpixComm_ = Teuchos::RCP(mpixComm,
       MpixCommDeallocator(),
       true /*take ownership*/
@@ -979,6 +1036,70 @@ void DistributorPlan::initializeMpiAdvance() {
 }
 #endif
 
+#if defined(HAVE_TPETRA_MPI)
+  // FIXME: probably need to rename this function since it might change the sendType
+  void DistributorPlan::maybeInitializeRoots() {
+
+    // Only IALLTOFEWV needs to know the roots
+    if (DISTRIBUTOR_IALLTOFEWV != sendType_) {
+      roots_.clear();
+      return;
+    }
+
+    ProfilingRegion region_maybeInitializeRoots ("Tpetra::DistributorPlan::maybeInitializeRoots");
+
+    // send my number of recvs to everyone
+    const int numRecvs = (int)(getNumReceives() + (hasSelfMessage() ? 1 : 0));
+    std::vector<int> sendbuf(comm_->getSize(), numRecvs);
+    std::vector<int> recvbuf(comm_->getSize());
+
+    // FIXME: is there a more natural way to do this?
+    // Maybe MPI_Allreduce is better, we just care if anyone is sending anything to each process
+    // we just need to know all processes that receive anything (including a self message)
+    Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm_);
+    Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
+    MPI_Comm comm = (*rawComm)();
+    MPI_Alltoall(sendbuf.data(), 1, MPI_INT, recvbuf.data(), 1, MPI_INT, comm);
+
+    roots_.clear();
+    for (size_t root = 0; root < recvbuf.size(); ++root) {
+      if (recvbuf[root] > 0) {
+        roots_.push_back(root);
+      }
+    }
+
+    // In "slow-path" communication, the data is not blocked according to sending / receiving proc.
+    // The root-detection algorithm expects data to be blocked, so disable.
+    int slow = !getIndicesTo().is_null() ? 1 : 0;
+    MPI_Allreduce(MPI_IN_PLACE, &slow, 1, MPI_INT, MPI_LOR, comm);
+    if (slow) {
+
+      if (Tpetra::Details::Behavior::verbose()) {
+        {
+          std::stringstream ss;
+          ss << __FILE__ << ":" << __LINE__ << " " << comm_->getRank() << ": WARNING: Ialltoallv send mode set, at least one rank's data is not grouped by rank. Setting to \"Send\"" << std::endl;
+          std::cerr << ss.str();
+        }
+      }
+      
+      roots_.clear();
+      sendType_ = DISTRIBUTOR_SEND;
+    }
+
+    // if there aren't many roots, probably someone wanted to use a gather somewhere but then just reused the import/export thing for a scatter
+    // which this won't work well for
+    // just fall back to SEND if roots are more than sqrt of comm
+    if (roots_.size() * roots_.size() >= size_t(comm_->getSize())) {
+      if (Tpetra::Details::Behavior::verbose()) {
+        std::stringstream ss;
+        ss << __FILE__ << ":" << __LINE__ << " " << comm_->getRank() << ": WARNING (Ialltoallv send type): too many roots (" << roots_.size() << ") for " << comm_->getSize() << " ranks. Setting send-type to \"Send\"" << std::endl;
+        std::cerr << ss.str();
+      }
+      roots_.clear();
+      sendType_ = DISTRIBUTOR_SEND;
+    }
+  }
+#endif // HAVE_TPETRA_MPI
 
   DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(size_t numPackets) const {
     const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);

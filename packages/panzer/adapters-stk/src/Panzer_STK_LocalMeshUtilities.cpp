@@ -348,7 +348,7 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
     sideset_info.cell_nodes = PHX::View<double***>("cell_nodes", num_total_cells, num_nodes_per_cell, num_dims);
     Kokkos::deep_copy(sideset_info.cell_nodes,0.);
 
-    typename PHX::View<ParentOrdinal*>::HostMirror all_cells_h("all_cells_h", num_total_cells);
+    typename PHX::View<ParentOrdinal*>::host_mirror_type all_cells_h("all_cells_h", num_total_cells);
     PHX::View<ParentOrdinal*> all_cells_d("all_cells_d", num_total_cells);
     for(LocalOrdinal i=0; i<num_total_cells; ++i)
       all_cells_h(i) = all_cells[i];

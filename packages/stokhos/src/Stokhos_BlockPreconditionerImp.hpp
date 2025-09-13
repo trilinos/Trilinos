@@ -42,10 +42,10 @@ facto(ordinal_type n) const
 template <typename ordinal_type, typename value_type>
 ordinal_type 
 Stokhos::BlockPreconditioner<ordinal_type, value_type>::
-siz (ordinal_type n, ordinal_type m) const
+siz (ordinal_type n, ordinal_type lm) const
 {
-  //n is the polynomial order and m is the number of random variables
-  return (facto(n+m)/(facto(n)*facto(m)));
+  //n is the polynomial order and lm is the number of random variables
+  return (facto(n+lm)/(facto(n)*facto(lm)));
  }
 
 template <typename ordinal_type, typename value_type>

@@ -40,7 +40,7 @@ template <> struct LDL<Uplo::Lower, Algo::Serial> {
       const ordinal_type m = A.extent(0);
       if (m > 0) {
         /// factorize LDL
-        Lapack<value_type>::sytrf('L', m, A.data(), A.stride_1(), P.data(), W.data(), W.extent(0), &r_val);
+        Lapack<value_type>::sytrf('L', m, A.data(), A.stride(1), P.data(), W.data(), W.extent(0), &r_val);
         TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LAPACK (sytrf) returns non-zero error code.");
       }
     } else {

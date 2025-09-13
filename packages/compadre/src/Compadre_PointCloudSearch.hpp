@@ -311,7 +311,7 @@ class PointCloudSearch {
                 teamMember.team_barrier();
 
                 Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
-                    // target_coords is LayoutLeft on device and its HostMirror, so giving a pointer to 
+                    // target_coords is LayoutLeft on device and its host_mirror_type, so giving a pointer to
                     // this data would lead to a wrong result if the device is a GPU
 
                     for (int j=0; j<_dim; ++j) {
@@ -456,7 +456,7 @@ class PointCloudSearch {
                 teamMember.team_barrier();
 
                 Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
-                    // target_coords is LayoutLeft on device and its HostMirror, so giving a pointer to 
+                    // target_coords is LayoutLeft on device and its host_mirror_type, so giving a pointer to
                     // this data would lead to a wrong result if the device is a GPU
 
                     for (int j=0; j<_dim; ++j) {
@@ -590,7 +590,7 @@ class PointCloudSearch {
             
                 teamMember.team_barrier();
                 Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
-                    // target_coords is LayoutLeft on device and its HostMirror, so giving a pointer to 
+                    // target_coords is LayoutLeft on device and its host_mirror_type, so giving a pointer to
                     // this data would lead to a wrong result if the device is a GPU
 
                     for (int j=0; j<_dim; ++j) { 
@@ -737,7 +737,7 @@ class PointCloudSearch {
             
                 teamMember.team_barrier();
                 Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
-                    // target_coords is LayoutLeft on device and its HostMirror, so giving a pointer to 
+                    // target_coords is LayoutLeft on device and its host_mirror_type, so giving a pointer to
                     // this data would lead to a wrong result if the device is a GPU
 
                     for (int j=0; j<_dim; ++j) { 

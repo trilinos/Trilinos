@@ -130,7 +130,7 @@ void check_sideset_orientation(const stk::mesh::BulkData& bulk,
                                const stk::mesh::EntityId expectedId,
                                const stk::mesh::ConnectivityOrdinal expectedOrdinal)
 {
-  stk::mesh::SideSet sideSet = *sidesets[0];
+  stk::mesh::SideSet& sideSet = *sidesets[0];
   stk::mesh::SideSetEntry sideSetEntry;
   if (sideSet.size() > 0) {
     sideSetEntry = sideSet[0];
@@ -144,7 +144,7 @@ TEST(CEO, change_entity_owner_2ElemWithSideset) {
   const int pRank = stk::parallel_machine_rank(pm);
   const int pSize = stk::parallel_machine_size(pm);
 
-  if(pSize != 2) return;
+  if(pSize != 2) { GTEST_SKIP(); }
 
   const std::string outputMeshName = "2ElemWithSideset.e";
   const stk::mesh::EntityId expectedId = 2;
@@ -312,10 +312,11 @@ TEST(CEO,moveElem_fieldDataOfNodes)
 
     stk::mesh::EntityVector sharedNodes;
     stk::mesh::get_selected_entities(meta.globally_shared_part(), bulk.buckets(stk::topology::NODE_RANK), sharedNodes);
+    auto field1Data = field1.data<stk::mesh::ReadWrite>();
     for(stk::mesh::Entity node : sharedNodes)
     {
-      int *data = stk::mesh::field_data(field1, node);
-      *data = stk::parallel_machine_rank(comm);
+      auto data = field1Data.entity_values(node);
+      data(0_comp) = stk::parallel_machine_rank(comm);
     }
 
     stk::mesh::EntityProcVec thingsToChange;
@@ -333,19 +334,20 @@ TEST(CEO,moveElem_fieldDataOfNodes)
     {
       for(stk::mesh::Entity node : sharedNodes)
       {
-        int *data = stk::mesh::field_data(field1, node);
-        EXPECT_EQ(0, *data);
+        auto data = field1Data.entity_values(node);
+        EXPECT_EQ(0, data(0_comp));
       }
     }
 
     bulk.change_entity_owner(thingsToChange);
 
+    field1Data = field1.data<stk::mesh::ReadWrite>();
     if(stk::parallel_machine_rank(comm) == 0)
     {
       for(stk::mesh::Entity node : sharedNodes)
       {
-        int *data = stk::mesh::field_data(field1, node);
-        EXPECT_EQ(0, *data);
+        auto data = field1Data.entity_values(node);
+        EXPECT_EQ(0, data(0_comp));
       }
     }
   }

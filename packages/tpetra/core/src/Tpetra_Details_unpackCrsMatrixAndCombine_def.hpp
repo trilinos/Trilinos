@@ -252,28 +252,24 @@ struct UnpackCrsMatrixAndCombineFunctor {
 
     if (expected_num_bytes > num_bytes)
     {
-// FIXME_SYCL Enable again once a SYCL conforming printf implementation is available.
-#ifndef KOKKOS_ENABLE_SYCL
-      printf(
+      Kokkos::printf(
         "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, the expected number of bytes (%d) != number of unpacked bytes (%d)\n",
         (int) lid_no, (int) expected_num_bytes, (int) num_bytes
       );
-#endif
+
       Kokkos::atomic_compare_exchange(error_code.data(), 0, 21);
       return;
     }
 
     if (offset > buf_size || offset + num_bytes > buf_size)
     {
-// FIXME_SYCL Enable again once a SYCL conforming printf implementation is available.
-#ifndef KOKKOS_ENABLE_SYCL
-      printf(
+      Kokkos::printf(
         "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, the offset (%d) > buffer size (%d)\n",
         (int) lid_no, (int) offset, (int) buf_size
       );
-#endif
+
       Kokkos::atomic_compare_exchange(error_code.data(), 0, 22);
       return;
     }
@@ -306,14 +302,12 @@ struct UnpackCrsMatrixAndCombineFunctor {
     (void)PackTraits<LO>::unpackValue(num_ent_out, num_ent_in);
     if (static_cast<size_t>(num_ent_out) != num_entries_in_row)
     {
-// FIXME_SYCL Enable again once a SYCL conforming printf implementation is available.
-#ifndef KOKKOS_ENABLE_SYCL
-      printf(
+      Kokkos::printf(
         "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, number of entries (%d) != number of entries unpacked (%d)\n",
         (int) lid_no, (int) num_entries_in_row, (int) num_ent_out
       );
-#endif
+
       Kokkos::atomic_compare_exchange(error_code.data(), 0, 23);
     }
 
@@ -322,7 +316,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     //By ref triggers compiler bug in CUDA 10.
     Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team_member, num_entries_in_batch),
-      [=](const LO& j)
+      [=, *this](const LO& j)
       {
         size_t distance = 0;
 
@@ -368,13 +362,10 @@ struct UnpackCrsMatrixAndCombineFunctor {
           );
         } else {
           // should never get here
-// FIXME_SYCL Enable again once a SYCL conforming printf implementation is available.
-#ifndef KOKKOS_ENABLE_SYCL
-          printf(
+          Kokkos::printf(
             "*** Error: UnpackCrsMatrixAndCombineFunctor: "
             "At row %d, an unknown error occurred during unpack\n", (int) lid_no
           );
-#endif
           Kokkos::atomic_compare_exchange(error_code.data(), 0, 31);
         }
       }
@@ -1840,22 +1831,22 @@ unpackAndCombineIntoCrsArrays (
 # ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("copy back to host"))));
 # endif
-  typename decltype(crs_rowptr_d)::HostMirror crs_rowptr_h(
+  typename decltype(crs_rowptr_d)::host_mirror_type crs_rowptr_h(
       CRS_rowptr.getRawPtr(), CRS_rowptr.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), crs_rowptr_h, crs_rowptr_d);
 
-  typename decltype(crs_colind_d)::HostMirror crs_colind_h(
+  typename decltype(crs_colind_d)::host_mirror_type crs_colind_h(
       CRS_colind.getRawPtr(), CRS_colind.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), crs_colind_h, crs_colind_d);
 
-  typename decltype(crs_vals_d)::HostMirror crs_vals_h(
+  typename decltype(crs_vals_d)::host_mirror_type crs_vals_h(
       CRS_vals_impl_scalar_type.getRawPtr(), CRS_vals_impl_scalar_type.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), crs_vals_h, crs_vals_d);
 
-  typename decltype(tgt_pids_d)::HostMirror tgt_pids_h(
+  typename decltype(tgt_pids_d)::host_mirror_type tgt_pids_h(
       TargetPids.getRawPtr(), TargetPids.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
   deep_copy(execution_space(), tgt_pids_h, tgt_pids_d);

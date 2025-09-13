@@ -71,7 +71,7 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
   MPIX_Alltoallv(sbuf, sendcounts.data(), senddispls.data(), MPI_BYTE, rbuf,
                  recvcounts.data(), recvdispls.data(), MPI_BYTE, mpixComm);
 
-  MPIX_Comm_free(mpixComm);
+  MPIX_Comm_free(&mpixComm);
 
   // we just require that we got this far
   success = true;
@@ -145,7 +145,7 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
                  act.data(), recvcounts.data(), recvdispls.data(), MPI_BYTE,
                  mpixComm);
 
-  MPIX_Comm_free(mpixComm);
+  MPIX_Comm_free(&mpixComm);
 
   // two recv buffers should be the same
   auto exp_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), exp);

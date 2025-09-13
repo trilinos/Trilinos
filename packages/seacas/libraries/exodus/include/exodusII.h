@@ -55,12 +55,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION       "9.04"
+#define EXODUS_VERSION       "9.05"
 #define EXODUS_VERSION_MAJOR 9
-#define EXODUS_VERSION_MINOR 4
-#define EXODUS_RELEASE_DATE  "November 5, 2024"
+#define EXODUS_VERSION_MINOR 5
+#define EXODUS_RELEASE_DATE  "August 19, 2025"
 
-#define EX_API_VERS       9.04f
+#define EX_API_VERS       9.05f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS           EX_API_VERS
 
@@ -1953,6 +1953,7 @@ enum ex_error_return_code {
   EX_DUPLICATEID   = 1007,  /**< duplicate id found                       */
   EX_DUPLICATEOPEN = 1008,  /**< duplicate open                           */
   EX_BADFILENAME   = 1009,  /**< empty or null filename specified         */
+  EX_LONGFIELDNAME = 1010,  /**< field name is too long to generate attribute */
   EX_MSG           = -1000, /**< message print code - no error implied    */
   EX_PRTLASTMSG    = -1001, /**< print last error message msg code        */
   EX_NOTROOTID     = -1002, /**< file id is not the root id; it is a subgroup id */

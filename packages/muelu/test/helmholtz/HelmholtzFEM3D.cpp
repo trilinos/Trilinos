@@ -23,7 +23,6 @@
 // MueLu
 #include <MueLu_ShiftedLaplacian.hpp>
 #include <MueLu_UseDefaultTypesComplex.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -173,7 +172,7 @@ int main(int argc, char *argv[]) {
 
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Belos Solve")));
 
-    SLSolver->solve(B, X);
+    Belos::ReturnType ret = SLSolver->solve(B, X);
 
     tm = Teuchos::null;
 
@@ -181,7 +180,7 @@ int main(int argc, char *argv[]) {
 
     TimeMonitor::summarize();
 
-    success = true;
+    success = (ret == Belos::Converged);
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

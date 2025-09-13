@@ -470,8 +470,8 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
               });
         }
         if (useAverageAbsDiagVal) {
-          Teuchos::TimeMonitor MMM                                                   = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: useAverageAbsDiagVal");
-          typename Kokkos::View<mag_type, execution_space>::HostMirror avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
+          Teuchos::TimeMonitor MMM                                                         = *Teuchos::TimeMonitor::getNewTimer("GetLumpedMatrixDiagonal: useAverageAbsDiagVal");
+          typename Kokkos::View<mag_type, execution_space>::host_mirror_type avgAbsDiagVal = Kokkos::create_mirror_view(avgAbsDiagVal_dev);
           Kokkos::deep_copy(avgAbsDiagVal, avgAbsDiagVal_dev);
           int numDiagsEqualToOne;
           Kokkos::deep_copy(numDiagsEqualToOne, numDiagsEqualToOne_dev);
@@ -737,14 +737,16 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     GetMatrixOverlappedDiagonal(const Matrix& A) {
   RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
   RCP<Vector> localDiag      = GetMatrixDiagonal(A);
-  RCP<Vector> diagonal       = VectorFactory::Build(colMap);
   RCP<const Import> importer = A.getCrsGraph()->getImporter();
-  if (importer == Teuchos::null) {
+  if (importer.is_null() && !rowMap->isSameAs(*colMap)) {
     importer = ImportFactory::Build(rowMap, colMap);
   }
-  diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
-
-  return diagonal;
+  if (!importer.is_null()) {
+    RCP<Vector> diagonal = VectorFactory::Build(colMap);
+    diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
+    return diagonal;
+  } else
+    return localDiag;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1020,6 +1022,40 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   return boundaryNodes;
 }
 
+template <class CrsMatrix>
+KOKKOS_FORCEINLINE_FUNCTION bool isDirichletRow(typename CrsMatrix::ordinal_type rowId,
+                                                KokkosSparse::SparseRowViewConst<CrsMatrix>& row,
+                                                const typename Kokkos::ArithTraits<typename CrsMatrix::value_type>::magnitudeType& tol,
+                                                const bool count_twos_as_dirichlet) {
+  using ATS = Kokkos::ArithTraits<typename CrsMatrix::value_type>;
+
+  auto length       = row.length;
+  bool boundaryNode = true;
+
+  if (count_twos_as_dirichlet) {
+    if (length > 2) {
+      decltype(length) colID = 0;
+      for (; colID < length; colID++)
+        if ((row.colidx(colID) != rowId) &&
+            (ATS::magnitude(row.value(colID)) > tol)) {
+          if (!boundaryNode)
+            break;
+          boundaryNode = false;
+        }
+      if (colID == length)
+        boundaryNode = true;
+    }
+  } else {
+    for (decltype(length) colID = 0; colID < length; colID++)
+      if ((row.colidx(colID) != rowId) &&
+          (ATS::magnitude(row.value(colID)) > tol)) {
+        boundaryNode = false;
+        break;
+      }
+  }
+  return boundaryNode;
+}
+
 template <class SC, class LO, class GO, class NO, class memory_space>
 Kokkos::View<bool*, memory_space>
 DetectDirichletRows_kokkos(const Xpetra::Matrix<SC, LO, GO, NO>& A,
@@ -1073,42 +1109,12 @@ DetectDirichletRows_kokkos(const Xpetra::Matrix<SC, LO, GO, NO>& A,
     LO numRows       = A.getLocalNumRows();
     boundaryNodes    = Kokkos::View<bool*, typename NO::device_type::memory_space>(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);
 
-    if (count_twos_as_dirichlet)
-      Kokkos::parallel_for(
-          "MueLu:Utils::DetectDirichletRows_Twos_As_Dirichlet", range_type(0, numRows),
-          KOKKOS_LAMBDA(const LO row) {
-            auto rowView = localMatrix.row(row);
-            auto length  = rowView.length;
-
-            boundaryNodes(row) = true;
-            if (length > 2) {
-              decltype(length) colID = 0;
-              for (; colID < length; colID++)
-                if ((rowView.colidx(colID) != row) &&
-                    (ATS::magnitude(rowView.value(colID)) > tol)) {
-                  if (!boundaryNodes(row))
-                    break;
-                  boundaryNodes(row) = false;
-                }
-              if (colID == length)
-                boundaryNodes(row) = true;
-            }
-          });
-    else
-      Kokkos::parallel_for(
-          "MueLu:Utils::DetectDirichletRows", range_type(0, numRows),
-          KOKKOS_LAMBDA(const LO row) {
-            auto rowView = localMatrix.row(row);
-            auto length  = rowView.length;
-
-            boundaryNodes(row) = true;
-            for (decltype(length) colID = 0; colID < length; colID++)
-              if ((rowView.colidx(colID) != row) &&
-                  (ATS::magnitude(rowView.value(colID)) > tol)) {
-                boundaryNodes(row) = false;
-                break;
-              }
-          });
+    Kokkos::parallel_for(
+        "MueLu:Utils::DetectDirichletRows", range_type(0, numRows),
+        KOKKOS_LAMBDA(const LO row) {
+          auto rowView       = localMatrix.rowConst(row);
+          boundaryNodes(row) = isDirichletRow(row, rowView, tol, count_twos_as_dirichlet);
+        });
   }
   if constexpr (std::is_same<memory_space, typename NO::device_type::memory_space>::value)
     return boundaryNodes;
@@ -1185,8 +1191,6 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                             const bool count_twos_as_dirichlet) {
   using range_type = Kokkos::RangePolicy<LO, typename Node::execution_space>;
 
-  auto dirichletRows = DetectDirichletRows_kokkos(A, tol, count_twos_as_dirichlet);
-
   LocalOrdinal numRows    = A.getLocalNumRows();
   LocalOrdinal numVectors = RHS.getNumVectors();
   TEUCHOS_ASSERT_EQUALITY(numVectors, Teuchos::as<LocalOrdinal>(InitialGuess.getNumVectors()));
@@ -1196,13 +1200,15 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   auto lclRHS          = RHS.getLocalViewDevice(Xpetra::Access::ReadOnly);
   auto lclInitialGuess = InitialGuess.getLocalViewDevice(Xpetra::Access::ReadWrite);
+  auto lclA            = A.getLocalMatrixDevice();
 
   Kokkos::parallel_for(
       "MueLu:Utils::EnforceInitialCondition", range_type(0, numRows),
-      KOKKOS_LAMBDA(const LO row) {
-        if (dirichletRows(row)) {
+      KOKKOS_LAMBDA(const LO i) {
+        auto row = lclA.rowConst(i);
+        if (isDirichletRow(i, row, tol, count_twos_as_dirichlet)) {
           for (LocalOrdinal j = 0; j < numVectors; ++j)
-            lclInitialGuess(row, j) = lclRHS(row, j);
+            lclInitialGuess(i, j) = lclRHS(i, j);
         }
       });
 }
@@ -2055,6 +2061,12 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     MapsAreNested(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& rowMap, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& colMap) {
+  if ((rowMap.lib() == Xpetra::UseTpetra) && (colMap.lib() == Xpetra::UseTpetra)) {
+    auto tpRowMap = toTpetra(rowMap);
+    auto tpColMap = toTpetra(colMap);
+    return tpColMap.isLocallyFitted(tpRowMap);
+  }
+
   ArrayView<const GlobalOrdinal> rowElements = rowMap.getLocalElementList();
   ArrayView<const GlobalOrdinal> colElements = colMap.getLocalElementList();
 

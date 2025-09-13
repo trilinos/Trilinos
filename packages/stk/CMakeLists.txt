@@ -40,6 +40,7 @@ option(STK_BUILT_FOR_SIERRA "Enable SIERRA capability" OFF)
 set(SIERRA_MIGRATION ${STK_BUILT_FOR_SIERRA} CACHE BOOL "Enable SIERRA capability")
 
 if(STK_BUILT_FOR_SIERRA)
+message("STK_BUILT_FOR_SIERRA is ON")
 set(STK_ENABLE_16BIT_UPWARDCONN_INDEX_TYPE ON)
 endif()
 
@@ -49,7 +50,7 @@ IF(COMMAND TRIBITS_PACKAGE_DECL)
   message("*** Building STK as a Trilinos package. ***")
 ELSE()
   SET(HAVE_STK_Trilinos OFF)
-  project(STK CXX Fortran)
+  project(STK CXX)
 
   SET(PACKAGE_NAME "STK")
 
@@ -256,19 +257,4 @@ IF (NOT HAVE_STK_Trilinos)
     DESTINATION share/cmake/stk
     COMPONENT Devel
   )
-  if(STK_BUILT_FOR_SIERRA)
-    install(
-      FILES cmake/stkLapackSierra.cmake
-      DESTINATION share/cmake/stk
-      RENAME stkLapack.cmake
-      COMPONENT Devel
-    )
-  else()
-    install(
-      FILES cmake/stkLapackGeneric.cmake
-      DESTINATION share/cmake/stk
-      RENAME stkLapack.cmake
-      COMPONENT Devel
-    )
-  endif()
 ENDIF()

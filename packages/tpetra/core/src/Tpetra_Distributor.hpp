@@ -29,13 +29,15 @@
 
 namespace Tpetra {
 
+#if defined (TPETRA_ENABLE_DEPRECATED_CODE)
   /// \brief Valid values for Distributor's "Send type" parameter.
   ///
   /// This is mainly useful as an implementation detail of
   /// Distributor.  You may use it if you would like a programmatic
   /// way to get all possible values of the "Send type" parameter of
   /// Distributor.
-  Teuchos::Array<std::string> distributorSendTypes ();
+  [[deprecated]] Teuchos::Array<std::string> distributorSendTypes ();
+#endif
 
   /// \class Distributor
   /// \brief Sets up and executes a communication plan for a Tpetra DistObject.

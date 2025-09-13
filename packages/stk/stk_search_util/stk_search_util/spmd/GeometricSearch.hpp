@@ -163,8 +163,18 @@ bool local_is_sorted(ForwardIterator first, ForwardIterator last, Compare compar
 }
 } // namespace impl
 
+class SearchBase {
+public :
+  SearchBase(){};
+  virtual ~SearchBase(){};
+
+  virtual void initialize()    = 0;
+  virtual void coarse_search() = 0;
+  virtual void local_search()  = 0;
+};
+
 template <typename SENDMESH, typename RECVMESH>
-class GeometricSearch {
+class GeometricSearch : public SearchBase {
  public:
   using EntityA = typename SENDMESH::Entity;
   using EntityB = typename RECVMESH::Entity;
@@ -203,10 +213,10 @@ class GeometricSearch {
   {
   }
 
-  void coarse_search();
-  void local_search();
+  virtual void coarse_search() override;
+  virtual void local_search() override;
 
-  void initialize();
+  virtual void initialize() override;
   void reinitialize();
 
   EntityProcRelationVec& get_range_to_domain() { return m_globalRangeToDomain; }
@@ -220,6 +230,7 @@ class GeometricSearch {
   void coarse_search_for_objects_inside_domain();
   void determine_entities_to_copy(EntityProcVecA& entities_to_copy) const;
   void ghost_from_elements();
+  void update_ghosted_keys();
   void post_mesh_modification_event(bool activeFlag);
 
   void set_closest_bounding_box_using_nearest_node(bool flag) { m_useNearestNodeForClosestBoundingBox = flag; }
@@ -256,6 +267,15 @@ class GeometricSearch {
   }
   double get_expansion_limit() const { return m_expansionLimit; }
 
+  void set_expansion_factor(const double expansionFactor) { m_expansionFactor = expansionFactor; }
+  double get_expansion_factor() const { return m_expansionFactor; }
+
+  void set_expansion_padding(const double expansionPadding) { m_expansionSum = expansionPadding; }
+  double get_expansion_padding() const { return m_expansionSum; }
+
+  void set_search_method(const stk::search::SearchMethod searchMethod) { m_searchMethod = searchMethod; }
+  stk::search::SearchMethod get_search_method() const { return m_searchMethod; }
+
  protected:
   double m_expansionFactor{0.5};
   double m_expansionSum{0.0};
@@ -276,7 +296,7 @@ class GeometricSearch {
 
   std::shared_ptr<SENDMESH> m_mesha;
   std::shared_ptr<RECVMESH> m_meshb;
-  const stk::search::SearchMethod m_searchMethod{stk::search::KDTREE};
+  stk::search::SearchMethod m_searchMethod{stk::search::KDTREE};
   bool m_isListenerActive{true};
   size_t m_syncCount{0};
   const std::string m_name;
@@ -303,6 +323,7 @@ void GeometricSearch<SENDMESH,RECVMESH>::coarse_search()
 
    coarse_search_by_range();
    ghost_from_elements();
+   update_ghosted_keys();
 }
 
 template <typename SENDMESH, typename RECVMESH>
@@ -521,7 +542,7 @@ void GeometricSearch<SENDMESH,RECVMESH>::print_expansion_warnings(int number_coa
 {
   if(!m_printSearchWarnings) return;
 
-  size_t g_range_vector_size = stk::get_global_sum(m_comm, range_size);
+  size_t g_range_vector_size = stk::get_global_max(m_comm, range_size);
   (*m_outputStream) << m_name
                     << ": GeometricSearch::coarse_search(): Number of points not found: "
                     << g_range_vector_size << " after expanding bounding boxes: " << number_coarse_search_passes
@@ -589,7 +610,7 @@ void GeometricSearch<SENDMESH,RECVMESH>::coarse_search_for_objects_inside_domain
     if(terminate_on_first_pass) {
       if(!range_vector_empty && m_printSearchWarnings) {
         size_t range_vector_size = range_vector.size();
-        size_t g_range_vector_size = stk::get_global_sum(m_comm, range_vector_size);
+        size_t g_range_vector_size = stk::get_global_max(m_comm, range_vector_size);
         (*m_outputStream) << m_name
                           << ": GeometricSearch::coarse_search(): Number of points not found: "
                           << g_range_vector_size << " in initial coarse search" << std::endl;
@@ -635,6 +656,26 @@ void GeometricSearch<SENDMESH,RECVMESH>::coarse_search_by_range()
 {
   m_unpairedRecvEntities.clear();
   coarse_search_for_objects_inside_domain();
+}
+
+template <typename SENDMESH, typename RECVMESH>
+void GeometricSearch<SENDMESH,RECVMESH>::update_ghosted_keys()
+{
+  const unsigned my_rank = stk::parallel_machine_rank(m_comm);
+
+  for (auto& i : m_globalRangeToDomain) {
+    EntityProcA& sendEntityProc = i.second;
+    EntityProcB& recvEntityProc = i.first;
+
+    const unsigned send_owning_rank = sendEntityProc.proc();
+    const unsigned recv_owning_rank = recvEntityProc.proc();
+
+    if (send_owning_rank != my_rank && recv_owning_rank == my_rank) {
+      EntityKeyA& sendKey = sendEntityProc.id();
+      m_mesha->update_ghosted_key(sendKey);
+    }
+  }
+
 }
 
 template <typename SENDMESH, typename RECVMESH>

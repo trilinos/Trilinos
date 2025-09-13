@@ -135,4 +135,29 @@ double ScaledJacobianQualityMetric::tri3d_scaled_jacobian(const std::vector<stk:
   return jacobian*two_over_root_of_3/maxEdgeLengthProduct;
 }
 
+static bool float_less(double a, double b)
+{
+  return static_cast<float>(a) < static_cast<float>(b);
+}
+
+bool is_less_than_in_x_then_y_then_z(const stk::math::Vector3d& A, const stk::math::Vector3d &B)
+{
+    if (float_less(A[0], B[0]))
+        return true;
+    else if (float_less(B[0], A[0]))
+        return false;
+
+    if (float_less(A[1], B[1]))
+        return true;
+    else if (float_less(B[1], A[1]))
+        return false;
+
+    if (float_less(A[2], B[2]))
+        return true;
+    else if (float_less(B[2], A[2]))
+        return false;
+
+    return false;
+}
+
 }

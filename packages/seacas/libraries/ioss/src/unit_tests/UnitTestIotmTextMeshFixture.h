@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -931,7 +931,7 @@ namespace Iotm {
 
           Ioss::NodeBlock *nb = node_blocks[0];
 
-          size_t node_count = nb->get_property("entity_count").get_int();
+          size_t node_count = nb->entity_count();
 
           EntityIdVector nodeIds = get_node_ids();
 

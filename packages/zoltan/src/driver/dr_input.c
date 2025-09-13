@@ -566,7 +566,7 @@ int read_cmd_file (
 	  undef->list_size++;
 	}
 	else{
-	  char buffer[200];
+	  char buffer[4143];
 	  sprintf (buffer,
 	    "fatal error, too many unrecognized commands: %s\n", line);
 	  Gen_Error(0, buffer);

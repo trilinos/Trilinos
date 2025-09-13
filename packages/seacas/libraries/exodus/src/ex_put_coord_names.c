@@ -55,14 +55,14 @@ int ex_put_coord_names(int exoid, char *const coord_names[])
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of dimensions in file id %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: inquire failed to get number of dimensions in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

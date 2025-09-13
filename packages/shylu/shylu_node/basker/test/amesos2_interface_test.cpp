@@ -20,9 +20,9 @@
 int main(int argc, char* argv[])
 {
 
-  typedef long           Int;
-  typedef double         Entry;
-  typedef Kokkos::OpenMP Exe_Space;
+  using Int       = long;
+  using Entry     = double;
+  using Exe_Space = Kokkos::DefaultHostExecutionSpace;
 
   const bool nontranspose = true;
   const bool transpose = true;

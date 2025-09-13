@@ -27,9 +27,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
 // Multiply the matrix time a vector of global IDs and compare the result
 // to expected values.
 
-  using map_t = Tpetra::Map<>;
-  using matrix_t = Tpetra::CrsMatrix<Scalar>;
-  using vector_t = Tpetra::Vector<Scalar>;
+  using map_t = Tpetra::Map<LO, GO, Node>;
+  using matrix_t = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
+  using vector_t = Tpetra::Vector<Scalar, LO, GO, Node>;
   using magnitude_t = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
   auto comm = Tpetra::getDefaultComm();

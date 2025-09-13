@@ -44,12 +44,10 @@ project votd
     <define>STK_BUILT_FOR_SIERRA
     <define>STK_BUILT_WITH_BJAM
     <include>$(stk_simd-root)
-    <define>STK_VOLATILE_SIMD
     <architecture>power:<define>USE_STK_SIMD_NONE
     <architecture>generic_x86:<define>USE_STK_SIMD_NONE
   : usage-requirements
     <include>$(stk_simd-root)
-    <define>STK_VOLATILE_SIMD
     <architecture>power:<define>USE_STK_SIMD_NONE
     <architecture>generic_x86:<define>USE_STK_SIMD_NONE
   : build-dir $(stk_simd-builddir)

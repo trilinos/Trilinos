@@ -337,7 +337,11 @@ void TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getLocalRowView(LocalOrd
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
+#if KOKKOS_VERSION >= 40799
+typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type::host_mirror_type TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getLocalGraphHost() const {
+#else
 typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type::HostMirror TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getLocalGraphHost() const {
+#endif
   return getTpetra_CrsGraph()->getLocalGraphHost();
 }
 
@@ -1071,11 +1075,19 @@ class TpetraCrsGraph<int, long long, EpetraNode>
                                "Epetra does not support getLocalDiagOffsets!");
   }
 
+#if KOKKOS_VERSION >= 40799
+  typename local_graph_type::host_mirror_type getLocalGraphHost() const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+                               "Epetra does not support Kokkos::StaticCrsGraph!");
+    TEUCHOS_UNREACHABLE_RETURN((local_graph_type::host_mirror_type()));
+  }
+#else
   typename local_graph_type::HostMirror getLocalGraphHost() const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                "Epetra does not support Kokkos::StaticCrsGraph!");
     TEUCHOS_UNREACHABLE_RETURN((local_graph_type::HostMirror()));
   }
+#endif
 
   //! Dummy implementation for computeGlobalConstants
   void computeGlobalConstants() {}

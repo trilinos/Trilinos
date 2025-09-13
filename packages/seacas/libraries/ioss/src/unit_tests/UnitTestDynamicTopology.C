@@ -1,4 +1,4 @@
-// Copyright(C) 2024 National Technology & Engineering Solutions
+// Copyright(C) 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -143,7 +143,7 @@ namespace {
     o_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
     for (Ioss::ElementBlock *o_eb : o_region.get_element_blocks()) {
-      size_t      num_elem = o_eb->get_property("entity_count").get_int();
+      size_t      num_elem = o_eb->entity_count();
       std::string storage  = "scalar";
 
       Ioss::Field field(elemFieldName, Ioss::Field::REAL, storage, 1, Ioss::Field::Field::TRANSIENT,
@@ -160,7 +160,7 @@ namespace {
     o_region.begin_state(step);
 
     for (Ioss::ElementBlock *o_eb : o_region.get_element_blocks()) {
-      size_t num_elem = o_eb->get_property("entity_count").get_int();
+      size_t num_elem = o_eb->entity_count();
 
       std::vector<double> field_data(num_elem);
       std::vector<int>    elem_ids;
@@ -986,7 +986,7 @@ namespace {
   {
     i_region.begin_state(gold_step);
     for (Ioss::ElementBlock *i_eb : i_region.get_element_blocks()) {
-      size_t num_elem = i_eb->get_property("entity_count").get_int();
+      size_t num_elem = i_eb->entity_count();
 
       std::vector<double> field_data(num_elem);
       std::vector<int>    elem_ids;

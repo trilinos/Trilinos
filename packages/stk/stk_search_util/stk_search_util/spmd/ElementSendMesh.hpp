@@ -38,7 +38,6 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "stk_mesh/base/Entity.hpp"                   // for Entity
-#include "stk_mesh/base/EntityKey.hpp"                // for EntityKey
 #include "stk_mesh/base/Field.hpp"                    // for Field
 #include "stk_mesh/base/Part.hpp"                     // for Part
 #include "stk_mesh/base/Selector.hpp"                 // for Selector
@@ -49,10 +48,12 @@
 #include "stk_search/IdentProc.hpp"                   // for IdentProc
 #include "stk_search/Point.hpp"                       // for Point
 #include "stk_util/parallel/Parallel.hpp"             // for ParallelMachine
+#include "stk_search_util/CachedEntity.hpp"
 #include "stk_search_util/ExternalPointHandler.hpp"   // for ExternalPoin...
 #include "stk_search_util/FindParametricCoordinates.hpp"  // for FindParametr...
 #include "stk_search_util/MasterElementProvider.hpp"  // for ProvideMaste...
 #include "stk_search_util/MeshUtility.hpp"
+#include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include "stk_search/SearchInterface.hpp"
 
 #include <cstddef>                                    // for size_t
@@ -78,8 +79,7 @@ template <>
 struct MeshTraits<spmd::ElementSendMesh> {
   using Entity = stk::mesh::Entity;
   using EntityVec = std::vector<Entity>;
-  using EntityKey = stk::mesh::EntityKey;
-  using EntityKeySet = std::set<EntityKey>;
+  using EntityKey = stk::search::spmd::EntityKeyPair;
   using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
   using EntityProcVec = std::vector<EntityProc>;
   using Point = stk::search::Point<double>;
@@ -90,8 +90,12 @@ struct MeshTraits<spmd::ElementSendMesh> {
 
 namespace spmd {
 
-class ElementSendMesh : public stk::search::SourceMeshInterface<ElementSendMesh> {
+using ElementSendMeshSearchBaseClass = stk::search::SourceMeshInterface<ElementSendMesh>;
+
+class ElementSendMesh : public ElementSendMeshSearchBaseClass {
  public:
+  using BaseClass = ElementSendMeshSearchBaseClass;
+
   ElementSendMesh(stk::mesh::BulkData* sendBulk, const stk::mesh::FieldBase* coordinateField,
                   const stk::mesh::EntityRank sendEntityRank, const stk::mesh::PartVector& sendParts,
                   const stk::ParallelMachine sendComm,
@@ -107,56 +111,72 @@ class ElementSendMesh : public stk::search::SourceMeshInterface<ElementSendMesh>
                   std::shared_ptr<HandleExternalPointInterface> externalPointHandler,
                   std::shared_ptr<MasterElementProviderInterface> masterElemProvider);
 
+  ElementSendMesh(stk::mesh::BulkData* sendBulk, const stk::mesh::FieldBase* coordinateField,
+                  const stk::mesh::EntityRank sendEntityRank, const stk::mesh::PartVector& sendParts,
+                  const stk::ParallelMachine sendComm,
+                  std::shared_ptr<FindParametricCoordsInterface> findParametricCoords,
+                  std::shared_ptr<HandleExternalPointInterface> externalPointHandler);
+
+  ElementSendMesh(stk::mesh::BulkData* sendBulk, const stk::mesh::FieldBase* coordinateField,
+                  const stk::mesh::EntityRank sendEntityRank, const stk::mesh::PartVector& sendParts,
+                  const stk::mesh::Selector& activeSelector,
+                  const stk::ParallelMachine sendComm,
+                  std::shared_ptr<FindParametricCoordsInterface> findParametricCoords,
+                  std::shared_ptr<HandleExternalPointInterface> externalPointHandler);
+
   virtual ~ElementSendMesh() = default;
 
-  // Needed for STK Transfer
   stk::ParallelMachine comm() const final { return m_comm; }
 
   void bounding_boxes(std::vector<BoundingBox>& v, bool includeGhosts=false) const override;
 
-  virtual void find_parametric_coords(const EntityKey k, const std::vector<double>& toCoords,
+  virtual void find_parametric_coords(const EntityKey& k, const std::vector<double>& toCoords,
                                       std::vector<double>& parametricCoords,
                                       double& parametricDistance,
                                       bool& isWithinParametricTolerance) const override;
 
-  virtual bool modify_search_outside_parametric_tolerance(const EntityKey k, const std::vector<double>& toCoords,
+  virtual bool modify_search_outside_parametric_tolerance(const EntityKey& k, const std::vector<double>& toCoords,
                                                           std::vector<double>& parametricCoords,
                                                           double& geometricDistanceSquared,
                                                           bool& isWithinGeometricTolerance) const override;
 
-  virtual double get_closest_geometric_distance_squared(const EntityKey k,
+  virtual double get_closest_geometric_distance_squared(const EntityKey& k,
                                                         const std::vector<double>& toCoords) const override;
 
-  virtual double get_distance_from_centroid(const EntityKey k, const std::vector<double>& toCoords) const override;
+  virtual double get_distance_from_centroid(const EntityKey& k, const std::vector<double>& toCoords) const override;
 
-  virtual double get_distance_squared_from_centroid(const EntityKey k, const std::vector<double>& toCoords) const override;
+  virtual double get_distance_squared_from_centroid(const EntityKey& k, const std::vector<double>& toCoords) const override;
 
-  virtual double get_distance_from_nearest_node(const EntityKey k, const std::vector<double>& toCoords) const override;
+  virtual double get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& toCoords) const override;
 
-  virtual void centroid(const EntityKey k, std::vector<double>& centroid) const override;
+  virtual void centroid(const EntityKey& k, std::vector<double>& centroid) const override;
 
-  void coordinates(const EntityKey k, std::vector<double>& coords) const override;
+  void coordinates(const EntityKey& k, std::vector<double>& coords) const override;
 
-  virtual std::string name() const override { return "<UNKNOWN SEND ELEMENT MESH>"; }
+  virtual std::string name() const override { return m_name; }
+
+  virtual void set_name(const std::string& meshName) override { m_name = meshName; }
+
+  stk::search::ObjectOutsideDomainPolicy get_extrapolate_option() const override { return m_extrapolateOption; }
+
+  virtual void update_ghosting(const EntityProcVec& entity_keys, const std::string& suffix = "") override;
+
+  virtual void update_ghosted_key(EntityKey& k) override;
+
+  virtual void initialize() override;
+
+  virtual void post_mesh_modification_event() override;
 
 
-
-  virtual void update_ghosting(const EntityProcVec& entity_keys, const std::string& suffix = "");
-
-  virtual void destroy_ghosting();
+  virtual void destroy_ghosting() override;
 
   stk::mesh::EntityId id(const EntityKey& k) const;
 
-  std::vector<std::string> get_transfer_part_membership(const EntityKey k) const;
+  std::vector<std::string> get_part_membership(const EntityKey& k) const override;
 
-  virtual void initialize();
-
-  bool is_valid(const EntityKey e) const;
-
-  virtual void post_mesh_modification_event();
+  bool is_valid(const EntityKey& e) const;
 
   void set_extrapolate_option(stk::search::ObjectOutsideDomainPolicy option) { m_extrapolateOption = option; }
-  stk::search::ObjectOutsideDomainPolicy get_extrapolate_option() const { return m_extrapolateOption; }
 
   void set_mesh_modified(bool modified) { m_meshModified = modified; }
   bool is_mesh_modified() const { return m_meshModified; }
@@ -170,6 +190,9 @@ class ElementSendMesh : public stk::search::SourceMeshInterface<ElementSendMesh>
   std::shared_ptr<HandleExternalPointInterface> get_external_point_handler_interface() const { return m_externalPointHandler; }
 
   std::shared_ptr<MasterElementProviderInterface> get_provide_master_element_interface() const { return m_masterElementProvider; }
+
+  const stk::mesh::BulkData* get_bulk() const { return m_bulk; }
+  const stk::mesh::MetaData* get_meta() const { return m_meta; }
 
  protected:
   stk::mesh::BulkData* m_bulk{nullptr};
@@ -192,8 +215,6 @@ class ElementSendMesh : public stk::search::SourceMeshInterface<ElementSendMesh>
   std::shared_ptr<stk::search::MasterElementProviderInterface> m_masterElementProvider;
 
   mutable std::vector<double> m_coordVector;
-  mutable Entity m_cachedEntity;
-  mutable EntityKey m_cachedKey;
 
   size_t m_syncCount{0};
 
@@ -201,11 +222,13 @@ class ElementSendMesh : public stk::search::SourceMeshInterface<ElementSendMesh>
 
   stk::search::ObjectOutsideDomainPolicy m_extrapolateOption{stk::search::ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG};
 
+  void consistency_check();
+
+ private:
+  std::string m_name{"<UNKNOWN SEND ELEMENT SEARCH MESH>"};
+
   ElementSendMesh(const ElementSendMesh&) = delete;
   const ElementSendMesh& operator()(const ElementSendMesh&) = delete;
-
-  void consistency_check();
-  Entity get_entity(const EntityKey& k) const;
 };
 
 } // namespace spmd

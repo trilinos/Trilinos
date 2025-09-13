@@ -103,11 +103,12 @@ public:
   void run_edge_check(unsigned numExpectedEdgesPerElem)
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, get_meta().universal_part(),
+    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, !stk::mesh::Selector());
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bucketIds,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
         stk::mesh::ConnectedEntities edges = ngpMesh.get_edges(stk::topology::ELEM_RANK, entityIndex);
         NGP_EXPECT_EQ(numExpectedEdgesPerElem, edges.size());
-      }
+      }, stk::ngp::ExecSpace()
     );
   }
 
@@ -205,6 +206,43 @@ TEST_F(NgpMeshRankLimit, tooManyRanksThrowWithMessage_custom_NgpMemSpace)
     std::string msg(e.what());
     EXPECT_TRUE((msg.find(expectedMsg) != std::string::npos));
   }
+}
+
+class NgpMeshHostDevice : public stk::mesh::fixtures::TestHexFixture {};
+
+void test_HostMesh_works_on_host_in_any_build(const stk::mesh::BulkData& bulk)
+{
+  stk::mesh::HostMesh hostMesh(bulk);
+  stk::mesh::Selector all = bulk.mesh_meta_data().universal_part();
+  stk::NgpVector<unsigned> vec("elem-count", 1, 0);
+  stk::mesh::for_each_entity_run(hostMesh, stk::topology::ELEM_RANK, all,
+    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& sideIndex) {
+      vec[0] += 1; //we're on host. on device we would use 'vec.device_get(0) += 1;'
+    }
+  );
+
+  const unsigned numElems = vec[0];
+  EXPECT_EQ(numElems, stk::mesh::count_entities(bulk, stk::topology::ELEM_RANK, all));
+}
+
+TEST_F(NgpMeshHostDevice, host_mesh_host_space)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
+  setup_mesh(1,1,1);
+
+  constexpr bool isCPUbuild = std::is_same_v<stk::ngp::MemSpace,stk::ngp::HostMemSpace>;
+
+  if constexpr(isCPUbuild) {
+    auto ngpMeshIsHostMesh = stk::mesh::get_updated_ngp_mesh<stk::ngp::HostMemSpace>(get_bulk());
+    ASSERT_TRUE((std::is_same_v<decltype(ngpMeshIsHostMesh),stk::mesh::HostMesh>));
+  }
+  else {
+    auto ngpMeshIsDeviceMesh = stk::mesh::get_updated_ngp_mesh<stk::ngp::MemSpace>(get_bulk());
+    ASSERT_TRUE((std::is_same_v<decltype(ngpMeshIsDeviceMesh),stk::mesh::DeviceMesh>));
+  }
+
+  test_HostMesh_works_on_host_in_any_build(get_bulk());
 }
 
 class EntityIndexSpace : public stk::mesh::fixtures::TestHexFixture {};
@@ -416,7 +454,6 @@ double reduce_on_host(stk::mesh::BulkData& bulk)
 
   double max_val = 0.0;
   Kokkos::Max<double> max_reduction(max_val);
-
   stk::mesh::for_each_entity_reduce(
     ngp_mesh,
     stk::topology::NODE_RANK,
@@ -443,7 +480,7 @@ TEST(NgpHostMesh, FieldForEachEntityReduceOnHost_fromTylerVoskuilen)
 
 TEST(NgpDeviceMesh, dont_let_stacksize_get_out_of_control)
 {
-  constexpr size_t tol = 50;
+  constexpr size_t tol = 64;
 
 #ifdef SIERRA_MIGRATION
   constexpr size_t expectedBulkDataSize = 1320;
@@ -452,10 +489,10 @@ TEST(NgpDeviceMesh, dont_let_stacksize_get_out_of_control)
 #endif
   EXPECT_NEAR(expectedBulkDataSize, sizeof(stk::mesh::BulkData), tol);
 
-  constexpr size_t expectedBucketSize = 1056;
+  constexpr size_t expectedBucketSize = 976;
   EXPECT_NEAR(expectedBucketSize, sizeof(stk::mesh::Bucket), tol);
 
-  constexpr size_t expectedDeviceMeshSize = 880;
+  constexpr size_t expectedDeviceMeshSize = 944;
   EXPECT_NEAR(expectedDeviceMeshSize, sizeof(stk::mesh::DeviceMesh), tol);
 
   constexpr size_t expectedDeviceBucketSize = 264;

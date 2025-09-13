@@ -1042,14 +1042,14 @@ namespace SEAMS {
     return array_data;
   }
 
-  array *do_linear_array(double init, double final, double count)
+  array *do_linear_array(double init, double last, double count)
   {
     // Create 1D array with `count` rows and 1 column.
-    // Values are linearly spaced from `init` to `final`
+    // Values are linearly spaced from `init` to `last`
     auto isize      = static_cast<size_t>(count);
     auto array_data = aprepro->make_array(isize, 1);
 
-    double inc = (final - init) / (count - 1);
+    double inc = (last - init) / (count - 1);
     for (size_t i = 0; i < isize; i++) {
       array_data->data[i] = init + static_cast<double>(i) * inc;
     }

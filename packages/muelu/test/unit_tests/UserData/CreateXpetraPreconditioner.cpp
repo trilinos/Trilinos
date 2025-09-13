@@ -48,8 +48,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
 
   using Teuchos::RCP;
 
-  Xpetra::UnderlyingLib lib           = TestHelpers::Parameters::getLib();
-  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib          = TestHelpers::Parameters::getLib();
+  RCP<const Teuchos::Comm<int>> comm = TestHelpers::Parameters::getDefaultComm();
 
   GO nx = 1000;
 
@@ -82,10 +82,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
   RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", Op->getRowMap(), galeriList);
   RCP<MultiVector> nullspace   = Xpetra::MultiVectorFactory<SC, LO, GO, NO>::Build(Op->getDomainMap(), 1);
   nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
+  RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(Op->getDomainMap());
+  blocknumber->putScalar(Teuchos::ScalarTraits<LO>::one());
 
   // Add sublist "user data" to MueLu's parameter list
   const std::string userName            = "user data";
   Teuchos::ParameterList& userParamList = inParamList->sublist(userName);
+
+  userParamList.set("Coordinates", coordinates);
+  userParamList.set("Nullspace", nullspace);
+  userParamList.set("BlockNumber", blocknumber);
 
   // Create test variables to be stored on Level 0 of the Hierarchy
   SC myScalar = 3.14;
@@ -101,14 +107,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
   myArrayGO[1] = 4;
   myArrayGO[2] = 5;
   myArrayGO[3] = 0;
-  userParamList.set<Array<GO> >("Array<GO> myArray<GO>", myArrayGO);
+  userParamList.set<Array<GO>>("Array<GO> myArray<GO>", myArrayGO);
   Array<LO> myArrayLO(5);
   myArrayLO[0] = 8;
   myArrayLO[1] = 7;
   myArrayLO[2] = 1;
   myArrayLO[3] = 2;
   myArrayLO[4] = 3;
-  userParamList.set<Array<LO> >("Array<LO> myArray<LO>", myArrayLO);
+  userParamList.set<Array<LO>>("Array<LO> myArray<LO>", myArrayLO);
+  Array<SC> myNormSC(1);
+  Array<LO> myNormLO(1);
 
   RCP<Hierarchy> xH = MueLu::CreateXpetraPreconditioner<SC, LO, GO, NO>(Op, *inParamList);
 
@@ -116,6 +124,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
   RCP<MueLu::Level> level0 = xH->GetLevel();
   bool result              = true;
   std::string errorMsg     = "";
+
+  level0->Get<RCP<MultiVector>>("Nullspace")->normInf(myNormSC);
+  if (!(myNormSC[0] == 1.0)) {
+    errorMsg += "nullspace does not have correct value on level 0.\n";
+    result = false;
+  }
+
+  level0->Get<RCP<LOVector>>("BlockNumber")->normInf(myNormLO);
+  if (!(myNormLO[0] == 1)) {
+    errorMsg += "BlockNumber does not have correct value on level 0.\n";
+    result = false;
+  }
 
   if (!(level0->Get<SC>("myScalar") == myScalar)) {
     errorMsg += "myScalar does not have correct value on level 0.\n";
@@ -137,12 +157,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UserData, CreateXpetraPreconditioner, Scalar, 
     result = false;
   }
 
-  if (!(level0->Get<Array<GO> >("myArray<GO>") == myArrayGO)) {
+  if (!(level0->Get<Array<GO>>("myArray<GO>") == myArrayGO)) {
     errorMsg += "myArray<GO> does not have correct value on level 0.\n";
     result = false;
   }
 
-  if (!(level0->Get<Array<LO> >("myArray<LO>") == myArrayLO)) {
+  if (!(level0->Get<Array<LO>>("myArray<LO>") == myArrayLO)) {
     errorMsg += "myArray<LO> does not have correct value on level 0.\n";
     result = false;
   }

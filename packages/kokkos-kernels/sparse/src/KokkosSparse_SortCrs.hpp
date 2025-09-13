@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
-#ifndef _KOKKOSSPARSE_SORTCRS_HPP
-#define _KOKKOSSPARSE_SORTCRS_HPP
+#ifndef KOKKOSSPARSE_SORTCRS_HPP
+#define KOKKOSSPARSE_SORTCRS_HPP
 
 #include "KokkosSparse_sort_crs_impl.hpp"
 #include "KokkosSparse_Utils.hpp"
@@ -541,4 +541,4 @@ crsGraph_t sort_and_merge_graph(
 
 }  // namespace KokkosSparse
 
-#endif  // _KOKKOSSPARSE_SORTCRS_HPP
+#endif  // KOKKOSSPARSE_SORTCRS_HPP

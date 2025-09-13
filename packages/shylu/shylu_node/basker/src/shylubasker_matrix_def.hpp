@@ -24,7 +24,6 @@
 
 
 #include <iostream>
-//using namespace std;
 
 namespace BaskerNS
 {
@@ -51,7 +50,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  BaskerMatrix<Int,Entry,Exe_Space>::BaskerMatrix(string _label)
+  BaskerMatrix<Int,Entry,Exe_Space>::BaskerMatrix(std::string _label)
   {
     label   = _label;
     ncol    = 0;
@@ -92,7 +91,7 @@ namespace BaskerNS
   BASKER_INLINE
   BaskerMatrix<Int,Entry, Exe_Space>::BaskerMatrix
   (
-   string _label, Int _m, Int _n, Int _nnz,
+   std::string _label, Int _m, Int _n, Int _nnz,
    Int *colptr, Int *rowind, Entry *nzval
   )
   {
@@ -261,7 +260,7 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int, Entry, Exe_Space>::init_matrix
   (
-   string _label, Int _m, Int _n, 
+   std::string _label, Int _m, Int _n, 
    Int _nnz
   )
   {
@@ -273,7 +272,7 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::init_matrix
   (
-   string _label, Int _m, Int _n, Int _nnz,
+   std::string _label, Int _m, Int _n, Int _nnz,
    Int *_col_ptr, Int *_row_idx, Entry *_val
   )
   {
@@ -289,7 +288,7 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int, Entry, Exe_Space>::init_matrix
   (
-   string _label,
+   std::string _label,
    Int _sr, Int _m,
    Int _sc, Int _n,
    Int _nnz

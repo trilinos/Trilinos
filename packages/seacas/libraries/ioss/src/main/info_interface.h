@@ -32,6 +32,7 @@ namespace Info {
     IOSS_NODISCARD bool list_change_sets() const { return listChangeSets_; }
     IOSS_NODISCARD bool show_config() const { return showConfig_; }
     IOSS_NODISCARD bool query_timesteps_only() const { return queryTimeOnly_; }
+    IOSS_NODISCARD bool show_timestep_times() const { return showTimes_; }
     IOSS_NODISCARD bool field_details() const { return fieldDetails_; }
 
     IOSS_NODISCARD int  surface_split_scheme() const { return surfaceSplitScheme_; }
@@ -67,6 +68,7 @@ namespace Info {
     bool showConfig_{false};
     bool summary_{false};
     bool queryTimeOnly_{false};
+    bool showTimes_{false};
     bool fieldDetails_{false};
 
     char fieldSuffixSeparator_{'_'};

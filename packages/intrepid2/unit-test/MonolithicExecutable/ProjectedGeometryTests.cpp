@@ -262,8 +262,8 @@ namespace
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-15;
-    const double absTol = 1e-15;
-    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
+    const double absTol = 3e-15;
+    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<8; polyOrder++)

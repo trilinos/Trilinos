@@ -109,6 +109,7 @@ public:
     }
 
     SideSetEntry operator[](unsigned index) const;
+    SideSet(const SideSet&) = default;
     SideSet& operator=(const SideSet &rhs);
 
     std::vector<SideSetEntry>::iterator erase(std::vector<SideSetEntry>::iterator iter);
@@ -163,11 +164,7 @@ public:
   , m_selector(selector)
   { }
 
-  SideSetSelector(const SideSetSelector& rhs)
-  : m_part(rhs.m_part)
-  , m_sideset(rhs.m_sideset)
-  , m_selector(rhs.m_selector)
-  { }
+  SideSetSelector(const SideSetSelector&) = default;
 
   inline bool operator<(const stk::mesh::SideSetSelector& rhs) const
   {

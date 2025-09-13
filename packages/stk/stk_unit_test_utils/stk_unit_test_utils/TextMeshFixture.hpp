@@ -133,12 +133,16 @@ class TextMeshFixture : public stk::unit_test_util::MeshFixture
    private:
     void verify_num_nodes();
 
-    const double* get_nodal_coordinates(const stk::mesh::EntityId& nodeId);
-
     const stk::mesh::Entity get_node(const stk::mesh::EntityId& nodeId);
 
-    void verify_nodal_coordinates(
-        const stk::mesh::EntityId& nodeId, const double* goldCoords, const double* nodalCoords);
+    template <typename EntityValuesType>
+    void verify_nodal_coordinates(const stk::mesh::EntityId& nodeId, const double* goldCoords,
+                                  EntityValuesType& nodalCoords)
+    {
+      for (stk::mesh::ComponentIdx i : nodalCoords.components()) {
+        EXPECT_NEAR(goldCoords[i], nodalCoords(i), 1.0e-9) << error_message(nodeId, i);
+      }
+    }
 
     std::string error_message(const stk::mesh::EntityId& nodeId, unsigned coordIndex);
 

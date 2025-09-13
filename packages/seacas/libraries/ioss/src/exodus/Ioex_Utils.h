@@ -110,8 +110,8 @@ namespace Ioex {
   IOEX_EXPORT int add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
                                  size_t name_length);
 
-  IOSS_NODISCARD IOEX_EXPORT char **get_name_array(size_t count, int size);
-  IOEX_EXPORT void                  delete_name_array(char **names, int count);
+  IOSS_NODISCARD IOEX_EXPORT char **get_name_array(size_t count, size_t size);
+  IOEX_EXPORT void                  delete_name_array(char **names, size_t count);
   IOSS_NODISCARD IOEX_EXPORT Ioss::NameList get_variable_names(int nvar, int maximumNameLength,
                                                                int exoid, ex_entity_type type);
   IOSS_NODISCARD IOEX_EXPORT                Ioss::NameList
@@ -126,7 +126,10 @@ namespace Ioex {
 
   IOSS_NODISCARD IOEX_EXPORT std::string get_entity_name(int exoid, ex_entity_type type, int64_t id,
                                                          const std::string &basename, int length,
-                                                         bool &db_has_name);
+                                                         bool lowercase_names, bool &db_has_name);
+
+  IOEX_EXPORT std::vector<ex_assembly> get_exodus_assemblies(int exoid);
+  IOEX_EXPORT void cleanup_exodus_assembly_vector(std::vector<ex_assembly> &assemblies);
 
   IOEX_EXPORT bool filter_node_list(Ioss::Int64Vector                &nodes,
                                     const std::vector<unsigned char> &node_connectivity_status);

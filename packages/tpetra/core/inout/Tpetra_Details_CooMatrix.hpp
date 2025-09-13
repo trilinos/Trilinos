@@ -663,7 +663,7 @@ public:
                           vals_h.data ());
     rowOffsets =
       View<OffsetType*, device_type> ("rowOffsets", rowOffsetsSV.size ());
-    typename View<OffsetType*, device_type>::HostMirror
+    typename View<OffsetType*, device_type>::host_mirror_type
       rowOffsets_h (rowOffsetsSV.data (), rowOffsetsSV.size ());
     deep_copy (rowOffsets, rowOffsets_h);
 

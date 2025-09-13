@@ -12,6 +12,8 @@
 #include <stdio.h>  //DEBUG
 #include <string>
 #include <set>
+#include <tuple>
+#include "Teuchos_Assert.hpp"
 #ifndef _MSC_VER
 #include <dirent.h>
 #endif
@@ -47,6 +49,7 @@
 // Galeri
 #include "Galeri_XpetraProblemFactory.hpp"
 #include "Galeri_XpetraMatrixTypes.hpp"
+#include "Galeri_XpetraUtils.hpp"
 
 namespace Galeri {
 namespace Xpetra {
@@ -168,6 +171,69 @@ class TestFactory {
 
     return Op;
   }  // BuildMatrix()
+
+  // Create a matrix as specified by parameter list options
+  static std::tuple<RCP<Matrix>, RCP<RealValuedMultiVector>, RCP<MultiVector>, int> BuildMatrixCoordsNullspace(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) {
+    RCP<const Teuchos::Comm<int>> comm = TestHelpers::Parameters::getDefaultComm();
+
+    if (lib == Xpetra::NotSpecified)
+      lib = TestHelpers::Parameters::getLib();
+
+    std::string matrixType = matrixList.get("matrixType", "Laplace1D");
+    int DofsPerNode        = 1;
+    std::string mapType;
+    if (matrixType == "Laplace1D") {
+      mapType = "Cartesian1D";
+    } else if (matrixType == "Laplace2D" || matrixType == "Star2D" || matrixType == "Cross2D") {
+      mapType = "Cartesian2D";
+    } else if (matrixType == "Elasticity2D") {
+      DofsPerNode = 2;
+      mapType     = "Cartesian2D";
+    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D") {
+      mapType = "Cartesian3D";
+    } else if (matrixType == "Elasticity3D") {
+      DofsPerNode = 3;
+      mapType     = "Cartesian3D";
+    } else {
+      std::string msg = matrixType + " is unsupported (in unit testing)";
+      throw(MueLu::Exceptions::RuntimeError(msg));
+    }
+
+    RCP<const Map> map;
+    RCP<const Map> coords_map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(lib, mapType, comm, matrixList);
+    if (DofsPerNode == 1)
+      map = coords_map;
+    else
+      map = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coords_map, DofsPerNode);  // expand map
+
+    RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixType, map, matrixList);
+    RCP<Matrix> Op = Pr->BuildMatrix();
+
+    if (DofsPerNode > 1)
+      Op->SetFixedBlockSize(DofsPerNode);
+
+    RCP<MultiVector> Nullspace = Pr->BuildNullspace();
+    RCP<RealValuedMultiVector> Coords;
+    if ((matrixType != "Elasticity2D") && (matrixType != "Elasticity3D"))
+      Coords = Pr->BuildCoords();
+    else {
+      if (matrixType == "Elasticity2D") {
+        Coords = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("2D", coords_map, matrixList);
+      } else if (matrixType == "Elasticity3D") {
+        Coords = Galeri::Xpetra::Utils::CreateCartesianCoordinates<typename RealValuedMultiVector::scalar_type, LocalOrdinal, GlobalOrdinal, Map, RealValuedMultiVector>("3D", coords_map, matrixList);
+      }
+    }
+
+    TEUCHOS_ASSERT(Nullspace->getMap()->isSameAs(*Op->getDomainMap()));
+    if (DofsPerNode == 1) {
+      TEUCHOS_ASSERT(Coords->getMap()->isSameAs(*Op->getDomainMap()));
+    } else {
+      TEUCHOS_ASSERT(Coords->getMap()->getGlobalNumElements() * DofsPerNode == Op->getDomainMap()->getGlobalNumElements());
+    }
+
+    return std::make_tuple(Op, Coords, Nullspace, DofsPerNode);
+  }  // BuildMatrixCoordsNullspace()
 
   // Create a tridiagonal matrix (stencil = [b,a,c]) with the specified number of rows
   // dofMap: row map of matrix
@@ -956,7 +1022,7 @@ ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string&
 //
 
 // TODO: add directly to Teuchos ?
-//#include "../xpetra/test/Xpetra_UnitTestHelpers.hpp" // declaration of TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL
+// #include "../xpetra/test/Xpetra_UnitTestHelpers.hpp" // declaration of TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL
 
 //
 

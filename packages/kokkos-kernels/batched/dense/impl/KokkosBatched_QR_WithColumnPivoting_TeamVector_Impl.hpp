@@ -33,8 +33,8 @@ struct TeamVectorQR_WithColumnPivoting<MemberType, Algo::QR::Unblocked> {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const tViewType &t,
                                            const pViewType &p, const wViewType &w,
                                            /* */ int &matrix_rank) {
-    return TeamVectorQR_WithColumnPivotingInternal::invoke(member, A.extent(0), A.extent(1), A.data(), A.stride_0(),
-                                                           A.stride_1(), t.data(), t.stride_0(), p.data(), p.stride_0(),
+    return TeamVectorQR_WithColumnPivotingInternal::invoke(member, A.extent(0), A.extent(1), A.data(), A.stride(0),
+                                                           A.stride(1), t.data(), t.stride(0), p.data(), p.stride(0),
                                                            w.data(), matrix_rank);
   }
 };

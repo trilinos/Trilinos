@@ -176,11 +176,11 @@ void UnitTestFieldImpl::testFieldRestriction()
   //------------------------------
   // Introduce a redundant restriction, clean it, and
   // check that it was cleaned.
-  Part & pD = meta_data.declare_part( std::string("D") , stk::topology::NODE_RANK );
+  Part & pDD = meta_data.declare_part( std::string("D") , stk::topology::NODE_RANK );
 
-  meta_data.declare_part_subset( pD, pA );
+  meta_data.declare_part_subset( pDD, pA );
   meta_data.declare_field_restriction(*f2, pA, stride[0], stride[0]);
-  meta_data.declare_field_restriction(*f2, pD, stride[0], stride[0]);
+  meta_data.declare_field_restriction(*f2, pDD, stride[0], stride[0]);
 
   unsigned expected = 1;
   ASSERT_TRUE( f2->restrictions().size() == expected );
@@ -189,7 +189,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     const FieldBase::Restriction & rA = stk::mesh::find_restriction(*f2, stk::topology::NODE_RANK, pA );
     const FieldBase::Restriction & rD = stk::mesh::find_restriction(*f2, stk::topology::NODE_RANK, pD );
     ASSERT_TRUE( & rA == & rD );
-    ASSERT_TRUE( rA.selector() == pD );
+    ASSERT_TRUE( rA.selector() == pDD );
   }
 
   //------------------------------
@@ -200,7 +200,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   // this error condition.
   {
     meta_data.declare_field_restriction(*f2, pB, stride[1], stride[1]);
-    ASSERT_THROW(meta_data.declare_part_subset(pD, pB), std::runtime_error);
+    ASSERT_THROW(meta_data.declare_part_subset(pDD, pB), std::runtime_error);
   }
 
   //Coverage for error from print_restriction in FieldBaseImpl.cpp when there is no stride (!stride[i])

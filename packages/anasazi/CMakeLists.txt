@@ -128,10 +128,7 @@ ENDIF()
 #
 
 TRIBITS_EXCLUDE_FILES(
-  doc/TOMS
-  doc/OrthoStudy
-  doc/ThyraPerf
-  src/ModalAnalysisSolvers
+  epetra/src/ModalAnalysisSolvers
   )
 
 #

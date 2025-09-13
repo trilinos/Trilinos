@@ -81,14 +81,14 @@ ID %d",
 
   if (varidx[1] == -1) {
     /* Get the dimension of this elemental communication map */
-    if ((status = nc_inq_dimid(exoid, DIM_ECNT_CMAP, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, DIM_ECNT_CMAP, &dimid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_ECNT_CMAP, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, count)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_ECNT_CMAP,
                exoid);
@@ -100,7 +100,7 @@ ID %d",
   }
 
   /* Get the variable ID for the elemental comm map node IDs */
-  if ((status = nc_inq_varid(exoid, VAR_E_COMM_EIDS, &varid[0])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_E_COMM_EIDS, &varid[0])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_E_COMM_EIDS, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -108,7 +108,7 @@ ID %d",
   }
 
   /* Get the variable ID for the elemental side set IDs */
-  if ((status = nc_inq_varid(exoid, VAR_E_COMM_SIDS, &varid[1])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_E_COMM_SIDS, &varid[1])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_E_COMM_SIDS, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -116,7 +116,7 @@ ID %d",
   }
 
   /* Get the variable ID for the elemental comm map processor IDs */
-  if ((status = nc_inq_varid(exoid, VAR_E_COMM_PROC, &varid[2])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_E_COMM_PROC, &varid[2])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_E_COMM_PROC, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -132,7 +132,7 @@ ID %d",
   else {
     status = nc_get_vara_int(exoid, varid[0], start, count, elem_ids);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_E_COMM_EIDS, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -146,7 +146,7 @@ ID %d",
   else {
     status = nc_get_vara_int(exoid, varid[1], start, count, side_ids);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_E_COMM_SIDS, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -160,7 +160,7 @@ ID %d",
   else {
     status = nc_get_vara_int(exoid, varid[2], start, count, proc_ids);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_E_COMM_PROC, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

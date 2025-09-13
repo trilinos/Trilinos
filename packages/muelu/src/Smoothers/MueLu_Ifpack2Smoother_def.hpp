@@ -11,6 +11,7 @@
 #define MUELU_IFPACK2SMOOTHER_DEF_HPP
 
 #include "MueLu_ConfigDefs.hpp"
+#include "Xpetra_TpetraRowMatrix.hpp"
 
 #if defined(HAVE_MUELU_IFPACK2)
 
@@ -278,7 +279,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupSchwarz(Le
     bool isTRowMatrix = true;
     RCP<const tRowMatrix> tA;
     try {
-      tA = Utilities::Op2NonConstTpetraRow(A_);
+      tA = Xpetra::toTpetraRowMatrix(A_);
     } catch (Exceptions::BadCast&) {
       isTRowMatrix = false;
     }
@@ -370,9 +371,9 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupSchwarz(Le
 
     RCP<const tRowMatrix> tA;
     if (isBlockedMatrix == true)
-      tA = Utilities::Op2NonConstTpetraRow(merged2Mat);
+      tA = Xpetra::toTpetraRowMatrix(merged2Mat);
     else
-      tA = Utilities::Op2NonConstTpetraRow(A_);
+      tA = Xpetra::toTpetraRowMatrix(A_);
 
     prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
@@ -420,7 +421,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupAggregate(
   paramList.set("partitioner: overlap", 0);
   paramList.set("partitioner: local parts", (int)aggregates->GetNumAggregates());
 
-  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Xpetra::toTpetraRowMatrix(A_);
 
   type_ = "BLOCKRELAXATION";
   prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
@@ -498,7 +499,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupTopologica
   paramList.set("partitioner: overlap", 1);
   paramList.set("partitioner: local parts", int(seeds[dimension].size()));
 
-  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Xpetra::toTpetraRowMatrix(A_);
 
   type_ = "BLOCKRELAXATION";
   prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
@@ -593,7 +594,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupLineSmooth
     type_ = "RELAXATION";
   }
 
-  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const Tpetra::RowMatrix<SC, LO, GO, NO>> tA = Xpetra::toTpetraRowMatrix(A_);
 
   prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
   SetPrecParameters();
@@ -609,7 +610,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupBlockRelax
   if (!bA.is_null())
     A_ = bA->Merge();
 
-  RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const tRowMatrix> tA = Xpetra::toTpetraRowMatrix(A_);
 
   bool reusePreconditioner = false;
   if (this->IsSetup() == true) {
@@ -661,7 +662,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupChebyshev(
   if (!bA.is_null())
     A_ = bA->Merge();
 
-  RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const tRowMatrix> tA = Xpetra::toTpetraRowMatrix(A_);
 
   bool reusePreconditioner = false;
 
@@ -723,7 +724,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHiptmair(L
   if (!bA.is_null())
     A_ = bA->Merge();
 
-  RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const tRowMatrix> tA = Xpetra::toTpetraRowMatrix(A_);
 
   bool reusePreconditioner = false;
   if (this->IsSetup() == true) {
@@ -764,8 +765,8 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHiptmair(L
   RCP<Operator> NodeMatrix = currentLevel.Get<RCP<Operator>>("NodeMatrix");
   RCP<Operator> D0         = currentLevel.Get<RCP<Operator>>("D0");
 
-  RCP<tRowMatrix> tNodeMatrix = Utilities::Op2NonConstTpetraRow(NodeMatrix);
-  RCP<tRowMatrix> tD0         = Utilities::Op2NonConstTpetraRow(D0);
+  RCP<tRowMatrix> tNodeMatrix = Xpetra::toTpetraRowMatrix(NodeMatrix);
+  RCP<tRowMatrix> tD0         = Xpetra::toTpetraRowMatrix(D0);
 
   Teuchos::ParameterList newlist;
   newlist.set("P", tD0);
@@ -903,7 +904,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Le
   if (!bA.is_null())
     A_ = bA->Merge();
 
-  RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+  RCP<const tRowMatrix> tA = Xpetra::toTpetraRowMatrix(A_);
 
   bool reusePreconditioner = false;
   if (this->IsSetup() == true) {

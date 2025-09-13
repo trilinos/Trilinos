@@ -27,16 +27,15 @@ namespace Details {
 /// We use Tpetra's template parameters here, instead of MV, OP, and
 /// NormType, because this is not a public-facing class.  We also want
 /// to avoid mix-ups between MV and OP.
-template<class SC, class LO, class GO, class NT>
-class LinearSolverFactory :
-  public Trilinos::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>,
-                                                Tpetra::Operator<SC, LO, GO, NT>,
-                                                typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>
-{
-public:
+template <class SC, class LO, class GO, class NT>
+class LinearSolverFactory : public Trilinos::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>,
+                                                                          Tpetra::Operator<SC, LO, GO, NT>,
+                                                                          typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type> {
+ public:
   typedef Trilinos::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NT>,
                                           Tpetra::Operator<SC, LO, GO, NT>,
-                                          typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type> solver_type;
+                                          typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>
+      solver_type;
 
   /// \brief Get an instance of a Ifpack2 solver.
   ///
@@ -48,7 +47,7 @@ public:
   /// \return A pointer to the solver, if the name was valid; else,
   ///   a null pointer (Teuchos::null).
   virtual Teuchos::RCP<solver_type>
-  getLinearSolver (const std::string& solverName);
+  getLinearSolver(const std::string& solverName);
 
   /// \brief Register this LinearSolverFactory with the central registry.
   ///
@@ -63,10 +62,10 @@ public:
   /// Users do not normally have to call this function.  Ifpack2
   /// automatically registers its LinearSolverFactory with the central
   /// repository, for all enabled template parameter combinations.
-  static void registerLinearSolverFactory ();
+  static void registerLinearSolverFactory();
 };
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_LINEARSOLVERFACTORY_DECL_HPP
+#endif  // IFPACK2_DETAILS_LINEARSOLVERFACTORY_DECL_HPP

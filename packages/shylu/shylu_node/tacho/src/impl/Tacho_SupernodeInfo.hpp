@@ -69,11 +69,11 @@ struct SuperNodeInfoInitReducer {
   }
 
   KOKKOS_INLINE_FUNCTION void init(value_type &val) const {
-    val.max_nchildren = Kokkos::reduction_identity<ordinal_type>::max();
-    val.max_supernode_size = Kokkos::reduction_identity<ordinal_type>::max();
-    val.max_num_cols = Kokkos::reduction_identity<ordinal_type>::max();
-    val.max_schur_size = Kokkos::reduction_identity<ordinal_type>::max();
-    val.nnz = Kokkos::reduction_identity<size_type>::sum();
+    val.max_nchildren = Kokkos::Experimental::finite_min_v<ordinal_type>;
+    val.max_supernode_size = Kokkos::Experimental::finite_min_v<ordinal_type>;
+    val.max_num_cols = Kokkos::Experimental::finite_min_v<ordinal_type>;
+    val.max_schur_size = Kokkos::Experimental::finite_min_v<ordinal_type>;
+    val.nnz = 0;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -258,7 +258,9 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
           }
 
           s.nchildren = stree_ptr_(sid + 1) - stree_ptr_(sid);
-          s.children = &stree_children_(stree_ptr_(sid));
+          if (s.nchildren > 0) {
+            s.children = &stree_children_(stree_ptr_(sid));
+          }
           // const ordinal_type offset = stree_ptr_(sid);
           // for (ordinal_type i=0;i<s.nchildren;++i)
           //   s.children[i] = stree_children_(offset + i);

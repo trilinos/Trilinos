@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -7,7 +7,7 @@ C    See packages/seacas/LICENSE for details
       SUBROUTINE MASSPR (A, TIME, ITMSEL, DENS, MAT, DISP,
      *   NQUAD, LABEL)
 
-      DIMENSION A(*), TIME(*), DENS(*), MAT(6,*),
+      DIMENSION A(*), TIME(*), DENS(*), MAT(7,*),
      *   DISP(NUMNP,*)
       LOGICAL ITMSEL(*), ISABRT
       CHARACTER*16  LABEL(32)
@@ -31,7 +31,7 @@ C    See packages/seacas/LICENSE for details
          CALL MDRSRV ('VOLUME', IV, NELBLK)
          CALL MDRSRV ('CENTER', IC, 3)
          CALL MDRSRV ('INERTA', IZ, 6)
-         NNODES = 2**NDIM
+         NNODES = MAT(7,1)
          NQMAX  = 2**NDIM
          CALL MDRSRV ('XXX'   , IXXX,  (NDIM+1)*NNODES*NQMAX)
          CALL MDRSRV ('XG'    , IXG,   NDIM*NQMAX)
@@ -70,10 +70,17 @@ C ... 'JACOB' conflicts with jacob in command.f, renamed to jacob1
      *         A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
      *         A(IVM),A(IEM),NELBLK,AXI,NUMNP)
          ELSE IF (NDIM .EQ. 3) THEN
-            CALL CGCAL3 (DISP,A(IX),MAT,A(IS),VOL,A(ID),
-     *         A(IV),A(IC),A(IZ),A(IXXX),A(IXG),XI3,
-     *         A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
-     *         A(IVM),A(IEM),NELBLK,NUMNP)
+            if (nnodes .eq. 8) then
+               CALL CGCAL3 (DISP,A(IX),MAT,A(IS),VOL,A(ID),
+     *              A(IV),A(IC),A(IZ),A(IXXX),A(IXG),XI3,
+     *              A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
+     *              A(IVM),A(IEM),NELBLK,NUMNP)
+            else 
+               CALL CGCAL3T (DISP,A(IX),MAT,A(IS),VOL,A(ID),
+     *              A(IV),A(IC),A(IZ),A(IXXX),A(IXG),XI3,
+     *              A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
+     *              A(IVM),A(IEM),NELBLK,NUMNP)
+            end if
          END IF
 
          CALL OUTPUT (A(IS), A(ID), A(IV), A(IC), A(IZ), MAT,
@@ -89,10 +96,17 @@ C ... 'JACOB' conflicts with jacob in command.f, renamed to jacob1
      *         A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
      *         A(IVM),A(IEM),NELBLK,AXI,NUMNP)
          ELSE
-            CALL CGCAL3 (A(IR),A(IX),MAT,A(IS),VOL,A(ID),
-     *         A(IV),A(IC),A(IZ),A(IXXX),A(IXG),XI3,
-     *         A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
-     *         A(IVM),A(IEM),NELBLK,NUMNP)
+            if (nnodes .eq. 8) then
+               CALL CGCAL3 (A(IR),A(IX),MAT,A(IS),VOL,A(ID),
+     *              A(IV),A(IC),A(IZ),A(IXXX),A(IXG),XI3,
+     *              A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
+     *              A(IVM),A(IEM),NELBLK,NUMNP)
+            else
+               CALL CGCAL3T (A(IR),A(IX),MAT,A(IS),VOL,A(ID),
+     *              A(IV),A(IC),A(IZ),A(IXXX),A(IXG),XI3,
+     *              A(IXINI),A(IAJ),NNODES,NDIM,NQUAD,
+     *              A(IVM),A(IEM),NELBLK,NUMNP)
+            end if
          END IF
          CALL OUTPUT (A(IS), A(ID), A(IV), A(IC), A(IZ), MAT,
      *      NDIM,NELBLK, VOL, A(IVM), A(IEM), NQUAD, LABEL,

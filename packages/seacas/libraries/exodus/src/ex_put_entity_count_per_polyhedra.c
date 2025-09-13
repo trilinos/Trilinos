@@ -67,7 +67,7 @@ int ex_put_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type, ex_ent
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate entity_counts array for %s block %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
@@ -76,7 +76,7 @@ int ex_put_entity_count_per_polyhedra(int exoid, ex_entity_type blk_type, ex_ent
   }
 
   status = nc_put_var_int(exoid, npeid, entity_counts);
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to write node counts array for %s block %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);

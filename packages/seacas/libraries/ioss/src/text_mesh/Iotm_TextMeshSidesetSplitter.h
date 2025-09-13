@@ -216,7 +216,7 @@ namespace Iotm {
       void fill_split_data(std::string key, size_t index,
                            const ElementData<EntityId, Topology> &elemData, int side)
       {
-        convert_to_upper_case(key);
+        convert_to_uppercase(key);
 
         SplitData &splitData = m_splitMap[key];
 

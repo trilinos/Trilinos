@@ -343,6 +343,19 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
     MueLu_ETI_LO_GO_NO_SRC)
   LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_LO_GO_NO_SRC})
+
+  LIST(APPEND MUELU_SC_LO_GO_NO_bare_ETI_CLASSES
+    "MueLu_ScalarDroppingClassical"
+    "MueLu_ScalarDroppingDistanceLaplacian"
+    "MueLu_VectorDroppingClassical"
+    "MueLu_VectorDroppingDistanceLaplacian")
+
+  MUELU_PROCESS_ETI_TEMPLATE(
+    "${MUELU_SC_LO_GO_NO_bare_ETI_CLASSES}"
+    Utils/ExplicitInstantiation/MueLu_ETI_SC_LO_GO_NO_bare.tmpl
+    "Utils/ExplicitInstantiation/CLASS_FILE_NAME.cpp"
+    MueLu_ETI_SC_LO_GO_NO_bare_SRC)
+  LIST(APPEND MUELU_ETI_CPP_SOURCES ${MueLu_ETI_SC_LO_GO_NO_bare_SRC})
 ENDIF()
 
 ENDIF() # split ETI files
@@ -433,5 +446,7 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

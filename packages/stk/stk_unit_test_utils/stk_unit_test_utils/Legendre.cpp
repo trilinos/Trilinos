@@ -86,7 +86,46 @@ std::vector<double> gauss_abscissas(int num_intg_points) {
   return roots;
 }
 
-void gauss_legendre(unsigned q, std::vector<double>& points, std::vector<double>& weights)
+void gauss_legendre_1D(unsigned q, std::vector<double>& points, std::vector<double>& weights)
+{
+  assert(q > 0);
+
+  points = gauss_abscissas(q);
+  weights = gauss_weights(q, points);
+}
+
+void gauss_legendre_2D(unsigned q, std::vector<double>& points, std::vector<double>& weights)
+{
+  assert(q > 0);
+
+  unsigned numIntgPoints(q * q);
+
+  if(points.size() < 2*numIntgPoints) {
+    points.resize(2*numIntgPoints);
+  }
+
+  if(weights.size() < numIntgPoints) {
+    weights.resize(numIntgPoints);
+  }
+
+  std::vector<double> g_abscissas = gauss_abscissas(q);
+  std::vector<double> g_weights = gauss_weights(q, g_abscissas);
+
+  unsigned l = 0;
+  unsigned m = 0;
+
+  for(unsigned i = 0; i < q; i++) {
+    for(unsigned j = 0; j < q; j++) {
+
+      points[l++] = g_abscissas[i];
+      points[l++] = g_abscissas[j];
+
+      weights[m++] = g_weights[i] * g_weights[j];
+    }
+  }
+}
+
+void gauss_legendre_3D(unsigned q, std::vector<double>& points, std::vector<double>& weights)
 {
   assert(q > 0);
 

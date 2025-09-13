@@ -57,11 +57,11 @@ public:
       const stk::mesh::Part & sidesetPart = *meta.get_part(dfFieldInfo.second);
 
       const stk::mesh::EntityVector faces = stk::mesh::get_entities(bulk, stk::topology::FACE_RANK, sidesetPart);
+      auto dfFieldData = dfField.data<stk::mesh::ReadOnly>();
       for (stk::mesh::Entity face : faces) {
-        double * df = stk::mesh::field_data(dfField, face);
-        unsigned fieldLength = stk::mesh::field_scalars_per_entity(dfField, face);
-        for (unsigned i = 0; i < fieldLength; ++i) {
-          EXPECT_EQ(2.0, df[i]);
+        auto df = dfFieldData.entity_values(face);
+        for (stk::mesh::ComponentIdx i : df.components()) {
+          EXPECT_EQ(2.0, df(i));
         }
       }
     }
@@ -95,11 +95,11 @@ public:
         const stk::mesh::Part & sidesetPart = *meta.get_part(dfFieldInfo.second);
 
         const stk::mesh::EntityVector faces = stk::mesh::get_entities(*bulk, stk::topology::FACE_RANK, sidesetPart);
+        auto dfFieldData = dfField.data<stk::mesh::ReadWrite>();
         for (stk::mesh::Entity face : faces) {
-          double * df = stk::mesh::field_data(dfField, face);
-          unsigned fieldLength = stk::mesh::field_scalars_per_entity(dfField, face);
-          for (unsigned i = 0; i < fieldLength; ++i) {
-            df[i] = 2.0;
+          auto df = dfFieldData.entity_values(face);
+          for (stk::mesh::ComponentIdx i : df.components()) {
+            df(i) = 2.0;
           }
         }
       }

@@ -224,7 +224,7 @@ main (int argc, char *argv[])
   cmdp.setOption("K-filename",&k_filename,"Filename and path of the stiffness matrix.");
   cmdp.setOption("M-filename",&m_filename,"Filename and path of the mass matrix.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -232,7 +232,7 @@ main (int argc, char *argv[])
 
   if (k_filename=="" || m_filename=="") {
     std::cout << "The matrices K and M must be supplied through an input file!!!" << std::endl;
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;

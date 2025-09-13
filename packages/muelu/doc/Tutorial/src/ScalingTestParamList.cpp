@@ -33,8 +33,6 @@
 
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_MutuallyExclusiveTime.hpp>
-
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>

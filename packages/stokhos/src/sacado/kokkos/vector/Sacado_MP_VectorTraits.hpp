@@ -170,9 +170,9 @@ namespace Teuchos {
     typedef typename VecType::value_type value_type;
     typedef ValueTypeSerializer<Ordinal,value_type> ValueSerializer;
     typedef Sacado::MP::SerializerImp< Ordinal,VecType,ValueSerializer> Base;
-    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs,
-                        Ordinal sz = 0) :
-      Base(vs, sz) {}
+    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& avs,
+                        Ordinal asz = 0) :
+      Base(avs, asz) {}
   };
 
 //! Specializations for Teuchos::as<T>

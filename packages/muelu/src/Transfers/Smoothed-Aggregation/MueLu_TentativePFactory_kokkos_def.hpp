@@ -785,7 +785,7 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             }
           });
 
-      typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
+      typename status_type::host_mirror_type statusHost = Kokkos::create_mirror_view(status);
       Kokkos::deep_copy(statusHost, status);
       for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
         if (statusHost(i)) {
@@ -853,7 +853,7 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_qr_loop", policy, localQRFunctor, nnz);
     }
 
-    typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
+    typename status_type::host_mirror_type statusHost = Kokkos::create_mirror_view(status);
     Kokkos::deep_copy(statusHost, status);
     for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
       if (statusHost(i)) {

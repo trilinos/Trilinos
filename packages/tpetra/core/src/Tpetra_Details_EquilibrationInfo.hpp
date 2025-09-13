@@ -48,7 +48,7 @@ struct EquilibrationInfo {
   using val_type = typename Kokkos::ArithTraits<ScalarType>::val_type;
   using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
   using device_type = typename DeviceType::device_type;
-  using host_device_type = typename Kokkos::View<mag_type*, device_type>::HostMirror::device_type;
+  using host_device_type = typename Kokkos::View<mag_type*, device_type>::host_mirror_type::device_type;
   using HostMirror = EquilibrationInfo<val_type, host_device_type>;
 
   EquilibrationInfo () :

@@ -90,7 +90,7 @@ private:
     }
 
     void process_remote_edges_for_shell_sides_with_multiple_adjacencies(std::vector<stk::mesh::sharing_info> &shared_modified,
-                                                                        stk::mesh::EntityVector& deletedEntities,
+                                                                        stk::mesh::EntityVector& /*deletedEntities*/,
                                                                         stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
                                                                         std::vector<impl::GraphEdgeProc>& remote_edges)
     {
@@ -141,7 +141,7 @@ private:
     void process_dead_remote_parallel_graph_edge(const impl::ParallelInfo &parallel_edge_info,
                                                  stk::mesh::Entity element,
                                                  int local_side,
-                                                 stk::mesh::EntityId remote_id,
+                                                 stk::mesh::EntityId /*remote_id*/,
                                                  std::vector<stk::mesh::sharing_info> &shared_modified,
                                                  stk::mesh::EntityVector& deletedEntities,
                                                  stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector)

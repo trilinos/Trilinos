@@ -68,10 +68,10 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   }
 
   /* Get the number of nodal communications maps in the file */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_N_CMAPS, &dimid)) == NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_N_CMAPS, &dimid)) == EX_NOERR) {
     /* check if I need to get the dimension of the nodal comm map */
     if (cmap_info_idx[1] == -1) {
-      if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, count)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_N_CMAPS,
                  exoid);
@@ -89,7 +89,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
       count[0] = num_n_comm_maps;
 
       /* Get the variable ID for the vector of nodal comm map IDs */
-      if ((status = nc_inq_varid(exoid, VAR_N_COMM_IDS, &varid)) != NC_NOERR) {
+      if ((status = nc_inq_varid(exoid, VAR_N_COMM_IDS, &varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get variable ID for \"%s\" in file ID %d", VAR_N_COMM_IDS,
                  exoid);
@@ -107,14 +107,14 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
           status = nc_get_vara_int(exoid, varid, start, count, node_cmap_ids);
         }
 
-        if (status != NC_NOERR) {
+        if (status != EX_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
                    VAR_N_COMM_IDS, exoid);
           ex_err_fn(exoid, __func__, errmsg, status);
           EX_FUNC_LEAVE(EX_FATAL);
         }
 
-        if ((status = nc_inq_varid(exoid, VAR_N_COMM_STAT, &varid)) != NC_NOERR) {
+        if ((status = nc_inq_varid(exoid, VAR_N_COMM_STAT, &varid)) != EX_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to find variable ID for \"%s\" from file ID %d", VAR_N_COMM_STAT,
                    exoid);
@@ -144,7 +144,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
 
             /* Check the status of the node map */
             start[0] = map_idx;
-            if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
+            if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != EX_NOERR) {
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to get status for \"%s\" from file ID %d", VAR_N_COMM_STAT,
                        exoid);
@@ -170,7 +170,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
                  * Find the dimension ID of the variable containing the
                  * node count
                  */
-                if ((status = nc_inq_dimid(exoid, DIM_NCNT_CMAP, &dimid)) != NC_NOERR) {
+                if ((status = nc_inq_dimid(exoid, DIM_NCNT_CMAP, &dimid)) != EX_NOERR) {
                   snprintf(errmsg, MAX_ERR_LENGTH,
                            "ERROR: failed to find dimension ID for "
                            "\"%s\" in file ID %d",
@@ -181,7 +181,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
 
                 /* Find the value of the number of nodes in this nodal comm map
                  */
-                if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
+                if ((status = nc_inq_dimlen(exoid, dimid, count)) != EX_NOERR) {
                   snprintf(errmsg, MAX_ERR_LENGTH,
                            "ERROR: failed to find length of dimension "
                            "\"%s\" in file ID %d",
@@ -228,10 +228,10 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   }
 
   /* Get the number of elemental communications maps in the file */
-  if (nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid) == NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid) == EX_NOERR) {
     /* check if I need to get the dimension of the nodal comm map */
     if (cmap_info_idx[1] == -1) {
-      if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, count)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_E_CMAPS,
                  exoid);
@@ -249,7 +249,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
       count[0] = num_e_comm_maps;
 
       /* Get the variable ID for the vector of nodal comm map IDs */
-      if ((status = nc_inq_varid(exoid, VAR_E_COMM_IDS, &varid)) != NC_NOERR) {
+      if ((status = nc_inq_varid(exoid, VAR_E_COMM_IDS, &varid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get variable ID for \"%s\" in file ID %d", VAR_E_COMM_IDS,
                  exoid);
@@ -266,14 +266,14 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
         else {
           status = nc_get_vara_int(exoid, varid, start, count, elem_cmap_ids);
         }
-        if (status != NC_NOERR) {
+        if (status != EX_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
                    VAR_E_COMM_IDS, exoid);
           ex_err_fn(exoid, __func__, errmsg, status);
           EX_FUNC_LEAVE(EX_FATAL);
         }
 
-        if ((status = nc_inq_varid(exoid, VAR_E_COMM_STAT, &varid)) != NC_NOERR) {
+        if ((status = nc_inq_varid(exoid, VAR_E_COMM_STAT, &varid)) != EX_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to find variable ID for \"%s\" from file ID %d", VAR_E_COMM_STAT,
                    exoid);
@@ -305,7 +305,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
 
             /* Check the status of the requested elemental map */
             start[0] = map_idx;
-            if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
+            if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != EX_NOERR) {
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to get status for \"%s\" from file ID %d", VAR_E_COMM_STAT,
                        exoid);
@@ -331,7 +331,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
                  * Find the dimension ID of the variable containing the
                  * element count
                  */
-                if ((status = nc_inq_dimid(exoid, DIM_ECNT_CMAP, &dimid)) != NC_NOERR) {
+                if ((status = nc_inq_dimid(exoid, DIM_ECNT_CMAP, &dimid)) != EX_NOERR) {
                   snprintf(errmsg, MAX_ERR_LENGTH,
                            "ERROR: failed to find dimension ID for "
                            "\"%s\" in file ID %d",
@@ -344,7 +344,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
                  * Find the value of the number of elements in this elemental
                  * comm map
                  */
-                if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
+                if ((status = nc_inq_dimlen(exoid, dimid, count)) != EX_NOERR) {
                   snprintf(errmsg, MAX_ERR_LENGTH,
                            "ERROR: failed to find length of dimension "
                            "\"%s\" in file ID %d",

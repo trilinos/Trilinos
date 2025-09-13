@@ -12,7 +12,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(TPL_ENABLE_yamlcpp
   
 TRIBITS_ADD_OPTION_AND_DEFINE(TPL_ENABLE_ParMETIS
   KRINO_HAVE_PARMETIS
-  "Enable support for ParMETIS parser in ${PACKAGE_NAME}."
+  "Enable support for ParMETIS in ${PACKAGE_NAME}."
+  OFF )
+  
+TRIBITS_ADD_OPTION_AND_DEFINE(TPL_ENABLE_Pnetcdf
+  KRINO_HAVE_PARALELL_IO
+  "Enable support for Pnetcdf in ${PACKAGE_NAME}."
   OFF )
 
 TRIBITS_CONFIGURE_FILE(Akri_Trilinos_config.hpp)

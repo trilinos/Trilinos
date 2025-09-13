@@ -481,10 +481,10 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
                   sum_weights += src.sum_weights;
                   return *this;   // return old value
                 }
-                bool operator>(const part_info & src) {
+                bool operator>(const part_info & src) const {
                   return (target_part > src.target_part);
                 }
-                bool operator==(const part_info & src) {
+                bool operator==(const part_info & src) const {
                   return (target_part == src.target_part);
                 }
                 part_t target_part;     // the part this part_info refers to

@@ -101,6 +101,7 @@ namespace MueLu {
     if (name == "sa: rowsumabs replace single entry row with zero") { ss << "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "replicate: npdes") { ss << "<Parameter name=\"replicate: npdes\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "combine: numBlks") { ss << "<Parameter name=\"combine: numBlks\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "combine: useMaxLevels") { ss << "<Parameter name=\"combine: useMaxLevels\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: element") { ss << "<Parameter name=\"pcoarsen: element\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: schedule") { ss << "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: hi basis") { ss << "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
@@ -116,6 +117,7 @@ namespace MueLu {
     if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: put on single proc") { ss << "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "maxwell1: dump matrices") { ss << "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
@@ -142,7 +144,7 @@ namespace MueLu {
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
   "<Parameter name=\"W cycle start level\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"coarse grid correction scaling factor\" type=\"double\" value=\"1.0\"/>"
-  "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"fuse prolongation and update\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"number of vectors\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
@@ -169,7 +171,11 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: phase 1 algorithm\" type=\"string\" value=\"Distance2\"/>"
+  "<Parameter name=\"aggregation: symmetrize graph after dropping\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: use blocking\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: strength-of-connection: matrix\" type=\"string\" value=\"A\"/>"
+  "<Parameter name=\"aggregation: strength-of-connection: measure\" type=\"string\" value=\"smoothed aggregation\"/>"
   "<Parameter name=\"aggregation: classical scheme\" type=\"string\" value=\"direct\"/>"
   "<Parameter name=\"aggregation: row sum drop tol\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"aggregation: block diagonal: interleaved blocksize\" type=\"int\" value=\"3\"/>"
@@ -275,6 +281,7 @@ namespace MueLu {
   "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"replicate: npdes\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"combine: numBlks\" type=\"int\" value=\"1\"/>"
+  "<Parameter name=\"combine: useMaxLevels\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"interp: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
@@ -283,6 +290,7 @@ namespace MueLu {
   "<Parameter name=\"pcoarsen: lo basis\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"smoother: neighborhood type\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"filtered matrix: lumping choice\" type=\"string\" value=\"diag lumping\"/>"
   "<Parameter name=\"filtered matrix: use spread lumping\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"filtered matrix: spread lumping diag dom growth factor\" type=\"double\" value=\"1.1\"/>"
   "<Parameter name=\"filtered matrix: spread lumping diag dom cap\" type=\"double\" value=\"2.0\"/>"
@@ -322,6 +330,8 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance Nullspace\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: save importer\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"repartition: send type\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"rap: relative diagonal floor\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"rap: fix zero diagonals threshold\" type=\"double\" value=\"0.\"/>"
@@ -609,7 +619,15 @@ namespace MueLu {
       
          ("aggregation: phase 1 algorithm","aggregation: phase 1 algorithm")
       
+         ("aggregation: symmetrize graph after dropping","aggregation: symmetrize graph after dropping")
+      
+         ("aggregation: use blocking","aggregation: use blocking")
+      
          ("aggregation: drop scheme","aggregation: drop scheme")
+      
+         ("aggregation: strength-of-connection: matrix","aggregation: strength-of-connection: matrix")
+      
+         ("aggregation: strength-of-connection: measure","aggregation: strength-of-connection: measure")
       
          ("aggregation: classical scheme","aggregation: classical scheme")
       
@@ -821,6 +839,8 @@ namespace MueLu {
       
          ("not supported by ML","combine: numBlks")
       
+         ("not supported by ML","combine: useMaxLevels")
+      
          ("interp: build coarse coordinates","interp: build coarse coordinates")
       
          ("transfer: params","transfer: params")
@@ -836,6 +856,8 @@ namespace MueLu {
          ("smoother: neighborhood type","smoother: neighborhood type")
       
          ("filtered matrix: use lumping","filtered matrix: use lumping")
+      
+         ("filtered matrix: lumping choice","filtered matrix: lumping choice")
       
          ("filtered matrix: use spread lumping","filtered matrix: use spread lumping")
       
@@ -914,6 +936,10 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       
          ("repartition: save importer","repartition: save importer")
+      
+         ("repartition: put on single proc","repartition: put on single proc")
+      
+         ("repartition: send type","repartition: send type")
       
          ("rap: relative diagonal floor","rap: relative diagonal floor")
       

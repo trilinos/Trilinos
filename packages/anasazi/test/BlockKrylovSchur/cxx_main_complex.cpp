@@ -26,7 +26,7 @@
 #include "AnasaziFactory.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #endif
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   bool boolret;
   int MyPID = 0;
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("herm","nonherm",&herm,"Solve Hermitian or non-Hermitian problem.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix (assumes non-Hermitian unless specified otherwise).");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
 #ifndef HAVE_ANASAZI_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize() ;
 #endif
   if (MyPID == 0) {
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
       cout << "Error reading '" << filename << "'" << endl
            << "End Result: TEST FAILED" << endl;
     }
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
            << "End Result: TEST FAILED" << endl;
     }
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
     }
   }
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize() ;
 #endif
 

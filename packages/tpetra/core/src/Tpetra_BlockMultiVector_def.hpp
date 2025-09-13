@@ -135,7 +135,7 @@ BlockMultiVector (const mv_type& X_mv,
 
   // At this point, mv_ has been assigned, so we can ignore X_mv.
   Teuchos::RCP<const map_type> pointMap = mv_.getMap ();
-  pointMap_ = pointMap; 
+  pointMap_ = pointMap;
 
 }
 
@@ -267,10 +267,10 @@ void
 BlockMultiVector<Scalar, LO, GO, Node>::
 replaceLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
-                        const Scalar vals[]) 
+                        const Scalar vals[])
 {
   auto X_dst = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
-  typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
+  typename const_little_vec_type::host_mirror_type::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
   using exec_space = typename device_type::execution_space;
@@ -317,7 +317,7 @@ sumIntoLocalValuesImpl (const LO localRowIndex,
                         const Scalar vals[])
 {
   auto X_dst = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
-  typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
+  typename const_little_vec_type::host_mirror_type::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   AXPY (static_cast<impl_scalar_type> (STS::one ()), X_src, X_dst);
 }
@@ -406,7 +406,7 @@ getLocalBlockHost (const LO localRowIndex,
     auto hostView = mv_.getLocalViewHost(Access::ReadWrite);
     LO startRow = localRowIndex*blockSize;
     LO endRow = startRow + blockSize;
-    return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow), 
+    return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow),
                            colIndex);
   }
 }
@@ -478,7 +478,7 @@ packAndPrepare
 {
   TEUCHOS_TEST_FOR_EXCEPTION
     (true, std::logic_error,
-     "Tpetra::BlockMultiVector::copyAndPermute: Do NOT use this; "
+     "Tpetra::BlockMultiVector::packAndPrepare: Do NOT use this; "
      "instead, create a point importer using makePointMap function.");
 }
 
@@ -496,7 +496,7 @@ unpackAndCombine
 {
   TEUCHOS_TEST_FOR_EXCEPTION
     (true, std::logic_error,
-     "Tpetra::BlockMultiVector::copyAndPermute: Do NOT use this; "
+     "Tpetra::BlockMultiVector::unpackAndCombine: Do NOT use this; "
      "instead, create a point importer using makePointMap function.");
 }
 

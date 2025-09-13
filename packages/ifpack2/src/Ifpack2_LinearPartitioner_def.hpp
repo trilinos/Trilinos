@@ -16,26 +16,20 @@ namespace Ifpack2 {
 
 //==============================================================================
 // Constructor
-template<class GraphType>
+template <class GraphType>
 LinearPartitioner<GraphType>::
-LinearPartitioner (const Teuchos::RCP<const row_graph_type>& graph) :
-  OverlappingPartitioner<GraphType> (graph)
-{}
+    LinearPartitioner(const Teuchos::RCP<const row_graph_type>& graph)
+  : OverlappingPartitioner<GraphType>(graph) {}
 
-
-template<class GraphType>
+template <class GraphType>
 LinearPartitioner<GraphType>::~LinearPartitioner() {}
 
+template <class GraphType>
+void LinearPartitioner<GraphType>::
+    setPartitionParameters(Teuchos::ParameterList& /* List */) {}
 
-template<class GraphType>
-void
-LinearPartitioner<GraphType>::
-setPartitionParameters (Teuchos::ParameterList& /* List */) {}
-
-
-template<class GraphType>
-void LinearPartitioner<GraphType>::computePartitions()
-{
+template <class GraphType>
+void LinearPartitioner<GraphType>::computePartitions() {
   using Teuchos::as;
   // Partition_ is an array of local_ordinal_type.  local_ordinal_type
   // may be signed or unsigned.  NumLocalParts_ is int, and needs to
@@ -44,21 +38,20 @@ void LinearPartitioner<GraphType>::computePartitions()
   // warnings, which is why we use as() for explicit conversions
   // below.  We also use as() because in a debug build, it checks for
   // overflow.
-  const int mod = as<int> (this->Graph_->getLocalNumRows () / 
-                           this->NumLocalParts_);
-  for (size_t i = 0; i < this->Graph_->getLocalNumRows (); ++i) {
-    this->Partition_[i] = as<local_ordinal_type> (i / mod);
-    if (this->Partition_[i] >= as<local_ordinal_type> (this->NumLocalParts_)) {
+  const int mod = as<int>(this->Graph_->getLocalNumRows() /
+                          this->NumLocalParts_);
+  for (size_t i = 0; i < this->Graph_->getLocalNumRows(); ++i) {
+    this->Partition_[i] = as<local_ordinal_type>(i / mod);
+    if (this->Partition_[i] >= as<local_ordinal_type>(this->NumLocalParts_)) {
       this->Partition_[i] = this->NumLocalParts_ - 1;
     }
   }
 }
 
+}  // namespace Ifpack2
 
-}// namespace Ifpack2
+#define IFPACK2_LINEARPARTITIONER_INSTANT(LO, GO, N)                       \
+  template class Ifpack2::LinearPartitioner<Tpetra::CrsGraph<LO, GO, N> >; \
+  template class Ifpack2::LinearPartitioner<Tpetra::RowGraph<LO, GO, N> >;
 
-#define IFPACK2_LINEARPARTITIONER_INSTANT(LO,GO,N) \
-  template class Ifpack2::LinearPartitioner<Tpetra::CrsGraph< LO, GO, N > >; \
-  template class Ifpack2::LinearPartitioner<Tpetra::RowGraph< LO, GO, N > >;
-
-#endif // IFPACK2_LINEARPARTITIONER_DEF_HPP
+#endif  // IFPACK2_LINEARPARTITIONER_DEF_HPP

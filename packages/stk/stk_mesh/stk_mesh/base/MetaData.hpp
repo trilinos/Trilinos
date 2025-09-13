@@ -47,10 +47,9 @@
 #include <utility>                      // for pair
 #include <vector>                       // for vector, vector<>::size_type
 #include <stk_util/stk_config.h>
-#include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, etc
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_mesh/base/Types.hpp>      // for EntityRank, etc
 #include <stk_mesh/baseImpl/FieldRepository.hpp>  // for FieldRepository, etc
 #include <stk_mesh/baseImpl/PartRepository.hpp>  // for PartRepository
 #include <stk_topology/topology.hpp>    // for topology, topology::rank_t, etc
@@ -370,8 +369,8 @@ public:
   //
   // stk::mesh::Field<double> * field = meta.get_field<double>(stk::topology::NODE_RANK, "density");
   //
-  template <typename T>
-  Field<T> * get_field(stk::mesh::EntityRank entity_rank, const std::string & name) const;
+  template <typename T, Layout HostLayout = DefaultHostLayout>
+  Field<T, HostLayout> * get_field(stk::mesh::EntityRank entity_rank, const std::string & name) const;
 
   // Get a field by name with an unknown type.  A nullptr will be
   // returned if it does not exist.  A case-insensitive name search
@@ -405,10 +404,10 @@ public:
   // calls to stk::mesh::put_field_on_mesh().  Exodus file output subscripting of
   // multi-component Fields is handled through calls to stk::io::set_field_output_type().
   //
-  template <typename T>
-  Field<T> & declare_field(stk::topology::rank_t arg_entity_rank,
-                           const std::string & name,
-                           unsigned number_of_states = 1);
+  template <typename T, Layout HostLayout = DefaultHostLayout>
+  Field<T, HostLayout> & declare_field(stk::topology::rank_t arg_entity_rank,
+                                       const std::string& name,
+                                       unsigned number_of_states = 1);
 
   /** \brief  Declare an attribute on a field.
    *          Return the attribute of that type,
@@ -761,9 +760,9 @@ Part & MetaData::get_part( unsigned ord ) const
   return *m_part_repo.get_all_parts()[ord];
 }
 
-template <typename T>
-inline
-Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank, const std::string & name) const
+template <typename T, Layout HostLayout>
+inline Field<T, HostLayout>*
+MetaData::get_field(stk::mesh::EntityRank arg_entity_rank, const std::string & name) const
 {
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to MetaData::get_field(), "
@@ -772,24 +771,31 @@ Field<T> * MetaData::get_field(stk::mesh::EntityRank arg_entity_rank, const std:
   const DataTraits & dt = data_traits<T>();
   const DataTraits & dt_void = data_traits<void>();
 
-  FieldBase * const field = m_field_repo.get_field(arg_entity_rank, name, dt, 0);
+  FieldBase* const field = m_field_repo.get_field(arg_entity_rank, name, dt, 0);
 
   STK_ThrowRequireMsg(field == nullptr ||
                       field->data_traits().type_info == dt.type_info ||
                       dt_void.type_info == dt.type_info,
-                      "field " << field->name() << " has type " << field->data_traits().type_info.name()
-                      << " when expecting type " << dt.type_info.name());
+                      "Field " << field->name() << " has datatype " << field->data_traits().type_info.name()
+                      << " when expecting datatype " << dt.type_info.name());
+  STK_ThrowRequireMsg(field == nullptr ||
+                      field->host_data_layout() == HostLayout,
+                      "Field " << field->name() << " has host data layout " << field->host_data_layout()
+                      << " when expecting type " << HostLayout);
 
-  return static_cast<Field<T>*>(field);
+  return static_cast<Field<T, HostLayout>*>(field);
 }
 
-template <typename T>
-Field<T> &
+template <typename T, Layout HostLayout>
+Field<T, HostLayout> &
 MetaData::declare_field(stk::topology::rank_t arg_entity_rank, const std::string & name, unsigned number_of_states)
 {
   static_assert(not is_field_v<T> && not is_field_base_v<T>,
                 "You must use a datatype as the template parameter to MetaData::declare_field(), "
                 "and not the Field itself");
+  static_assert(HostLayout != Layout::Auto,
+                "Layout::Auto can only be used for access through FieldBase::data() calls and not for registering "
+                "Fields themselves.  You may only use Layout::Right or Layout::Left for the host Field.");
 
   const DataTraits & traits = data_traits<T>();
 
@@ -812,15 +818,16 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank, const std::string
 
   // Check that the field of this name has not already been declared
 
-  Field<T> * f[MaximumFieldStates] = {nullptr};
+  Field<T, HostLayout>* f[MaximumFieldStates] = {nullptr};
 
   FieldBase* rawField = m_field_repo.get_field(arg_entity_rank, name, traits, number_of_states);
 
-  f[0] = dynamic_cast<Field<T>*>(rawField);
+  f[0] = dynamic_cast<Field<T, HostLayout>*>(rawField);
 
   if (rawField != nullptr) {
     STK_ThrowRequireMsg(f[0] == rawField,
-                        "Re-registration of field '" << name << "' with a different template type is not allowed.");
+                        "Re-registration of Field '" << name <<
+                        "' with a different datatype or host layout is not allowed.");
   }
 
   if (f[0] != nullptr) {
@@ -848,13 +855,13 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank, const std::string
 
     for (unsigned i = 0; i < number_of_states; ++i) {
 
-      f[i] = new Field<T>(this,
-                          arg_entity_rank,
-                          m_field_repo.get_fields().size(),
-                          field_names[i],
-                          traits,
-                          number_of_states,
-                          static_cast<FieldState>(i));
+      f[i] = new Field<T, HostLayout>(this,
+                                      arg_entity_rank,
+                                      m_field_repo.get_fields().size(),
+                                      field_names[i],
+                                      traits,
+                                      number_of_states,
+                                      static_cast<FieldState>(i));
 
       m_field_repo.add_field(f[i]);
     }
@@ -864,7 +871,9 @@ MetaData::declare_field(stk::topology::rank_t arg_entity_rank, const std::string
     }
   }
 
-  f[0]->set_mesh(m_bulk_data);
+  for(unsigned i=0; i<number_of_states; ++i) {
+    f[i]->set_mesh(m_bulk_data);
+  }
 
   return *f[0];
 }

@@ -103,8 +103,6 @@ class StkCompatibleVersion
 
     void abort_if_incompatible(MPI_Comm comm, int requestedVersion, int maxVersion, int oldVersion)
     {
-      print_unsupported_version_warning(1, __LINE__, __FILE__);
-
       if (m_isVersionSet && (m_errorOnResetVersion && requestedVersion != oldVersion)) {
         int myRank;
         MPI_Comm_rank(comm, &myRank);
@@ -136,11 +134,6 @@ class StkCompatibleVersion
 
     int is_output_proc(MPI_Comm comm, bool condition)
     {
-      print_unsupported_version_warning(1, __LINE__, __FILE__);
-      if (m_version < 2) {
-        throw std::runtime_error("This function cannot be used with STK versions prior to 2");
-      }
-
       int myRank;
       MPI_Comm_rank(comm, &myRank);
       std::array<int, 2> localData{condition, myRank}, globalData;
@@ -214,7 +207,9 @@ std::string get_deprecation_date(int version)
                                                       std::make_pair(13, "3/28/2024"),
                                                       std::make_pair(14, "4/3/2025"),
                                                       std::make_pair(15, "5/27/2025"),
-                                                      std::make_pair(16, "")
+                                                      std::make_pair(16, "6/10/2025"),
+                                                      std::make_pair(17, "8/14/2025"),
+                                                      std::make_pair(18,"")
                                                     };
 
   return deprecationDates.at(version);

@@ -10,20 +10,17 @@ smoother ->
 
 Level 1
 Prolongator minimization (MueLu::EminPFactory)
-Matrix filtering (MueLu::FilteredAFactory)
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
-Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -31,6 +28,8 @@ matrixmatrix: kernel params ->
  [empty list]
 Constraint (MueLu::ConstraintFactory)
 Ppattern (MueLu::PatternFactory)
+Matrix filtering (MueLu::FilteredAFactory)
+Filtered matrix is not being constructed as no filtering is being done
 [empty list]
 Number of emin iterations = 2
 CG iterations
@@ -49,20 +48,17 @@ smoother ->
 
 Level 2
 Prolongator minimization (MueLu::EminPFactory)
-Matrix filtering (MueLu::FilteredAFactory)
+Build (MueLu::TentativePFactory)
+Build (MueLu::UncoupledAggregationFactory)
 Build (MueLu::CoalesceDropFactory)
 Build (MueLu::AmalgamationFactory)
 [empty list]
 algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
 lightweight wrap = 1
-Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
 BuildAggregatesNonKokkos (Phase - (Dirichlet))
 BuildAggregatesNonKokkos (Phase 1 (main))
 BuildAggregatesNonKokkos (Phase 2a (secondary))
 BuildAggregatesNonKokkos (Phase 2b (expansion))
-BuildAggregatesNonKokkos (Phase 3 (cleanup))
 Nullspace factory (MueLu::NullspaceFactory)
 Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
@@ -70,6 +66,8 @@ matrixmatrix: kernel params ->
  [empty list]
 Constraint (MueLu::ConstraintFactory)
 Ppattern (MueLu::PatternFactory)
+Matrix filtering (MueLu::FilteredAFactory)
+Filtered matrix is not being constructed as no filtering is being done
 [empty list]
 Number of emin iterations = 2
 CG iterations

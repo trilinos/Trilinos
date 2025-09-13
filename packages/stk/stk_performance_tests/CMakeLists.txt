@@ -14,6 +14,7 @@ else()
                                       stk_mesh/entity_sorting/*.cpp
                                       general/*.cpp
                                       stk_search/*.cpp
+                                      stk_transfer/*.cpp
                                       stk_util/*.cpp
       )
 
@@ -32,6 +33,8 @@ else()
   endif()
   target_link_libraries(stk_performance_tests stk_coupling)
   target_link_libraries(stk_performance_tests stk_search)
+  target_link_libraries(stk_performance_tests stk_search_util)  
+  target_link_libraries(stk_performance_tests stk_transfer_util)
   target_link_libraries(stk_performance_tests stk_io_util)
   target_link_libraries(stk_performance_tests stk_util_diag)
   target_link_libraries(stk_performance_tests stk_tools_lib)

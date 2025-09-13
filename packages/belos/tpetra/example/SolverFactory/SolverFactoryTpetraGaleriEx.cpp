@@ -13,6 +13,7 @@
 #include <Tpetra_MultiVector.hpp>
 
 // Galeri
+#include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraMaps.hpp>
 #include <Galeri_XpetraMatrixTypes.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
@@ -22,11 +23,14 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_oblackholestream.hpp>
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_StackedTimer.hpp"
 
 // Belos
 #include "BelosTpetraAdapter.hpp"
@@ -75,6 +79,8 @@ int run(int argc, char *argv[]) {
   bool verbose = false;
   bool success = true;
 
+  auto out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
   try {
     bool procVerbose = false;
     bool debug = false;
@@ -85,9 +91,13 @@ int run(int argc, char *argv[]) {
     int maxSubspace = 50;      // maximum number of blocks the solver can use for the subspace
     int maxRestarts = 15;      // number of restarts allowed
     int nx = 10;               // number of discretization points in each direction
+    int ny = nx;
+    int nz = nx;
     MT tol = 1.0e-5;           // relative residual tolerance
+    std::string solverName = "Block GMRES"; // type of iterative solver
 
     Teuchos::CommandLineProcessor cmdp(false,true);
+    Galeri::Xpetra::Parameters<GO> galeriParameters(cmdp, nx, ny, nz, "Laplace2D");
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nondebug",&debug,"Print debugging information from solver.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
@@ -97,32 +107,40 @@ int run(int argc, char *argv[]) {
     cmdp.setOption("max-iters",&maxIters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
     cmdp.setOption("max-subspace",&maxSubspace,"Maximum number of blocks the solver can use for the subspace.");
     cmdp.setOption("max-restarts",&maxRestarts,"Maximum number of restarts allowed for GMRES solver.");
-    cmdp.setOption("nx",&nx,"Number of discretization points in each direction of 3D Laplacian.");
+    cmdp.setOption("solverName", &solverName, "The type of solver to use.");
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
     if (!verbose)
       frequency = -1;  // reset frequency if test is not verbose
 
+    std::string watchrProblemName = std::string("Belos ") + solverName + " " + std::to_string(comm->getSize()) + " ranks";
     procVerbose = ( verbose && (myPID==0) ); // Only print on the zero processor
 
     if (procVerbose) {
-      std::cout << Belos::Belos_Version() << std::endl << std::endl;
+      *out << Belos::Belos_Version() << std::endl << std::endl;
     }
+
+    Teuchos::RCP<Teuchos::StackedTimer> stacked_timer = rcp(new Teuchos::StackedTimer("Driver"));
+    Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
 
     // Set up the test problem.
     //
     // We use Trilinos' Galeri package to construct a test problem.
-    // Here, we use a discretization of the 2-D Laplacian operator.
-    // The global mesh size is nx * nx.
-
-    Teuchos::ParameterList GaleriList;
-    GaleriList.set ("n", nx * nx );
-    GaleriList.set ("nx", nx);
-    GaleriList.set ("ny", nx);
-
-    auto Map = RCP{Galeri::Xpetra::CreateMap<ST,GO,tmap_t>("Cartesian2D", comm, GaleriList)};
-    auto GaleriProblem = Galeri::Xpetra::BuildProblem<ST,LO,GO,tmap_t,tcrsmatrix_t,MV>("Laplace2D", Map, GaleriList);
+    // By default, we use a discretization of the 2-D Laplacian operator.
+    // The global mesh size is nx * ny.
+    Teuchos::ParameterList GaleriList = galeriParameters.GetParameterList();
+    std::string matrixType = galeriParameters.GetMatrixType();
+    RCP<tmap_t> Map;
+    if (matrixType == "Laplace1D" || matrixType == "Identity") {
+      Map = RCP{Galeri::Xpetra::CreateMap<LO,GO,tmap_t>("Cartesian1D", comm, GaleriList)};
+    } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
+               matrixType == "BigStar2D" || matrixType == "AnisotropicDiffusion" || matrixType == "Elasticity2D" || matrixType == "Recirc2D") {
+      Map = RCP{Galeri::Xpetra::CreateMap<LO,GO,tmap_t>("Cartesian2D", comm, GaleriList)};
+    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
+      Map = RCP{Galeri::Xpetra::CreateMap<LO,GO,tmap_t>("Cartesian3D", comm, GaleriList)};
+    }
+    auto GaleriProblem = Galeri::Xpetra::BuildProblem<ST,LO,GO,tmap_t,tcrsmatrix_t,MV>(matrixType, Map, GaleriList);
 
     // Create matrix from problem
     auto A = GaleriProblem->BuildMatrix();
@@ -150,7 +168,7 @@ int run(int argc, char *argv[]) {
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
     int verbosity = Belos::Errors + Belos::Warnings;
     if (verbose) {
-      verbosity += Belos::TimingDetails + Belos::StatusTestDetails;
+      verbosity += Belos::IterationDetails + Belos::FinalSummary + Belos::StatusTestDetails;
       if (frequency > 0)
         belosList.set( "Output Frequency", frequency );
     }
@@ -164,7 +182,7 @@ int run(int argc, char *argv[]) {
     bool set = problem.setProblem();
     if (set == false) {
       if (procVerbose)
-        std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+        *out << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
       return -1;
     }
 
@@ -177,33 +195,40 @@ int run(int argc, char *argv[]) {
     Belos::SolverFactory<double,MV,OP> factory;
 
     // Create an iterative solver manager
-    std::string solverName = "Block GMRES";
     RCP< Belos::SolverManager<double,MV,OP> > newSolver = factory.create (solverName, rcp(&belosList,false));
 
     // Set the problem on the solver manager
     newSolver->setProblem( rcp(&problem,false) );
 
-
     // **********Print out information about problem*******************
 
     if (procVerbose) {
-      std::cout << std::endl << std::endl;
-      std::cout << "Dimension of matrix: " << numGlobalElements << std::endl;
-      std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-      std::cout << "Block size used by solver: " << blockSize << std::endl;
-      std::cout << "Max number of restarts allowed: " << maxRestarts << std::endl;
-      std::cout << "Max number of Gmres iterations per linear system: " << maxIters << std::endl;
-      std::cout << "Relative residual tolerance: " << tol << std::endl;
-      std::cout << std::endl;
+      *out << std::endl << std::endl;
+      *out << "Solver: " << solverName << std::endl;
+      *out << "Dimension of matrix: " << numGlobalElements << std::endl;
+      *out << "Number of right-hand sides: " << numrhs << std::endl;
+      *out << "Block size used by solver: " << blockSize << std::endl;
+      *out << "Max number of restarts allowed: " << maxRestarts << std::endl;
+      *out << "Max number of iterations per linear system: " << maxIters << std::endl;
+      *out << "Relative residual tolerance: " << tol << std::endl;
+      *out << std::endl;
     }
 
     // Perform solve
     Belos::ReturnType ret = newSolver->solve();
 
+    stacked_timer->stopBaseTimer();
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stacked_timer->report(*out, comm, options);
+    auto xmlOut = stacked_timer->reportWatchrXML(watchrProblemName, comm);
+    if (xmlOut.length())
+      *out << "\nAlso created Watchr performance report " << xmlOut << '\n';
+
     // Get the number of iterations for this solve.
     int numIters = newSolver->getNumIters();
     if (procVerbose)
-      std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+      *out << "Number of iterations performed for this solve: " << numIters << std::endl;
 
     // Compute actual residuals.
     bool badRes = false;
@@ -215,10 +240,10 @@ int run(int argc, char *argv[]) {
     MVT::MvNorm( resid, actualResids );
     MVT::MvNorm( *B, rhsNorm );
     if (procVerbose) {
-      std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+      *out<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
       for ( int i=0; i<numrhs; i++) {
         ST actRes = actualResids[i]/rhsNorm[i];
-        std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+        *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
         if (actRes > tol) badRes = true;
       }
     }
@@ -226,10 +251,10 @@ int run(int argc, char *argv[]) {
     if (ret!=Belos::Converged || badRes) {
       success = false;
       if (procVerbose)
-        std::cout << "End Result: TEST FAILED" << std::endl;
+        *out << "End Result: TEST FAILED" << std::endl;
     } else {
       if (procVerbose)
-        std::cout << "End Result: TEST PASSED" << std::endl;
+        *out << "End Result: TEST PASSED" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

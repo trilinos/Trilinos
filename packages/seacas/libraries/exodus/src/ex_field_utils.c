@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -330,9 +330,9 @@ const char *ex_field_component_suffix(ex_field *field, int nest_level, int compo
   case EX_FIELD_TYPE_SEQUENCE: {
     // Suffices are just 1...#components.
     static char user_suffix[32];
-    static char format[8];
+    static char format[32];
     int         width = number_width(field->cardinality[nest_level]);
-    snprintf(format, 8, "%c%d%dd", '%', 0, width);
+    snprintf(format, 32, "%c%d%dd", '%', 0, width);
     snprintf(user_suffix, 32, format, component);
     return user_suffix;
   }
@@ -341,9 +341,9 @@ const char *ex_field_component_suffix(ex_field *field, int nest_level, int compo
   case EX_QUADRATURE: {
     // Suffices are just 0...#components-1.
     static char user_suffix[32];
-    static char format[8];
+    static char format[32];
     int         width = number_width(field->cardinality[nest_level]);
-    snprintf(format, 8, "%c%d%dd", '%', 0, width);
+    snprintf(format, 32, "%c%d%dd", '%', 0, width);
     snprintf(user_suffix, 32, format, component - 1);
     return user_suffix;
   }

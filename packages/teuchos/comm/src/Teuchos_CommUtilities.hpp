@@ -11,6 +11,9 @@
 #define TEUCHOS_COMM_UTILTIES_HPP
 
 #include "Teuchos_TimeMonitor.hpp"
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
+#include "Kokkos_Profiling_ScopedRegion.hpp"
+#endif
 
 #ifdef HAVE_TEUCHOS_COMM_TIMERS
 
@@ -19,7 +22,18 @@
 
 #else // HAVE_TEUCHOS_COMM_TIMERS
 
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
+
+#define TEUCHOS_COMM_TIME_MONITOR( FUNCNAME ) \
+  std::ostringstream TEUCHOS_COMM_TIME_MONITOR_oss; \
+  TEUCHOS_COMM_TIME_MONITOR_oss << FUNCNAME; \
+  ::Kokkos::Profiling::ScopedRegion TEUCHOS_COMM_TIME_MONITOR_scopedRegion( TEUCHOS_COMM_TIME_MONITOR_oss.str().c_str() )
+
+#else
+
 #define TEUCHOS_COMM_TIME_MONITOR( FUNCNAME )
+
+#endif
 
 #endif // HAVE_TEUCHOS_COMM_TIMERS
 

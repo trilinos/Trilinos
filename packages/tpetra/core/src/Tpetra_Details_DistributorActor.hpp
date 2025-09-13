@@ -10,6 +10,9 @@
 #ifndef TPETRA_DETAILS_DISTRIBUTOR_ACTOR_HPP
 #define TPETRA_DETAILS_DISTRIBUTOR_ACTOR_HPP
 
+#include <optional>
+#include <vector>
+
 #include "Teuchos_Assert.hpp"
 #include "Tpetra_Details_DistributorPlan.hpp"
 #include "Tpetra_Util.hpp"
@@ -24,6 +27,7 @@
 
 #ifdef HAVE_TPETRA_MPI
 #include "mpi.h"
+#include "Tpetra_Details_Ialltofewv.hpp"
 #endif
 
 namespace Tpetra::Details {
@@ -42,7 +46,7 @@ class DistributorActor {
 
 public:
   DistributorActor();
-  DistributorActor(const DistributorActor& otherActor);
+  DistributorActor(const DistributorActor& otherActor) = default;
 
   template <class ExpView, class ImpView>
   void doPostsAndWaits(const DistributorPlan& plan,
@@ -99,6 +103,8 @@ public:
 
   void doWaitsSend(const DistributorPlan& plan);
 
+  void doWaitsIalltofewv(const DistributorPlan &plan);
+
   bool isReady() const;
 
 private:
@@ -131,7 +137,26 @@ private:
                                const ImpView &imports,
                                const SubViewLimits& importSubViewLimits);
 #endif // HAVE_TPETRACORE_MPI_ADVANCE
-#endif // HAVE_TPETRA_CORE
+
+  template <typename ExpView, typename ImpView>
+  void doPostsIalltofewvImpl(const DistributorPlan &plan,
+                             const ExpView &exports,
+                             const SubViewLimits& exportSubViewLimits,
+                             const ImpView &imports,
+                             const SubViewLimits& importSubViewLimits);
+
+  // ialltofewv members
+  struct {
+    Details::Ialltofewv impl;
+    std::optional<Details::Ialltofewv::Req> req;
+    Teuchos::RCP<std::vector<int>> sendcounts;
+    Teuchos::RCP<std::vector<int>> sdispls;
+    Teuchos::RCP<std::vector<int>> recvcounts;
+    Teuchos::RCP<std::vector<int>> rdispls;
+    std::vector<int> roots;
+  } ialltofewv_;
+
+#endif // HAVE_TPETRA_MPI
 
   int mpiTag_;
 
@@ -219,6 +244,138 @@ packOffset(const DstViewType& dst,
 }
 
 #ifdef HAVE_TPETRA_MPI
+
+template <class ExpView, class ImpView>
+void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan &plan,
+                                           const ExpView &exports,
+                                           const SubViewLimits& exportSubViewLimits,
+                                           const ImpView &imports,
+                                           const SubViewLimits& importSubViewLimits) {
+  using size_type = Teuchos::Array<size_t>::size_type;
+  using ExportValue = typename ExpView::non_const_value_type;
+
+  ProfilingRegion pr("Tpetra::Distributor::doPostsIalltofewvImpl");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      !plan.getIndicesTo().is_null(), std::runtime_error,
+      "Send Type=\"Ialltofewv\" only works for fast-path communication.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    bool(ialltofewv_.req), std::runtime_error,
+    "This actor has an active Ialltofewv already");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      bool(ialltofewv_.sendcounts), std::runtime_error,
+      "This actor has an active Ialltofewv already");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    bool(ialltofewv_.sdispls), std::runtime_error,
+      "This actor has an active Ialltofewv already");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    bool(ialltofewv_.recvcounts), std::runtime_error,
+      "This actor has an active Ialltofewv already");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    bool(ialltofewv_.rdispls), std::runtime_error,
+      "This actor has an active Ialltofewv already");
+
+  auto comm = plan.getComm();
+
+  const auto& [importStarts, importLengths] = importSubViewLimits;
+  const auto& [exportStarts, exportLengths] = exportSubViewLimits;
+
+
+  ialltofewv_.roots = plan.getRoots();
+  const int nroots = ialltofewv_.roots.size();
+  const int *roots = ialltofewv_.roots.data();
+  ialltofewv_.req = std::make_optional<Details::Ialltofewv::Req>();
+  ialltofewv_.sendcounts = Teuchos::rcp(new std::vector<int>(nroots));
+  ialltofewv_.sdispls = Teuchos::rcp(new std::vector<int>(nroots));
+  ialltofewv_.recvcounts = Teuchos::rcp(new std::vector<int>);
+  ialltofewv_.rdispls = Teuchos::rcp(new std::vector<int>);
+
+  for (int rootIdx = 0; rootIdx < nroots; ++rootIdx) {
+    const int root = roots[rootIdx];
+
+    //if we can't find the root proc index in our plan, it just means we send 0
+    // also make sure root only appears once in getProcsTo()
+    size_type rootProcIndex = plan.getProcsTo().size(); // sentinel value -> not found
+    for (size_type pi = 0; pi < plan.getProcsTo().size(); ++pi) {
+      if (plan.getProcsTo()[pi] == root) {
+        rootProcIndex = pi;
+        break;
+      }
+    }
+
+    // am I sending to root?
+    int sendcount = 0;
+    if (rootProcIndex != plan.getProcsTo().size()) {
+      sendcount = exportLengths[rootProcIndex];
+    }
+    (*ialltofewv_.sendcounts)[rootIdx] = sendcount;
+
+    int sdispl = 0;
+    if (0 != sendcount) {
+      sdispl = exportStarts[rootProcIndex];
+    }
+    (*ialltofewv_.sdispls)[rootIdx] = sdispl;
+
+    // If I happen to be this root, set up my receive metadata
+    if (comm->getRank() == root) {
+
+      // don't recv anything from anywhere by default
+      ialltofewv_.recvcounts->resize(comm->getSize());
+      std::fill(ialltofewv_.recvcounts->begin(), ialltofewv_.recvcounts->end(), 0);
+      ialltofewv_.rdispls->resize(comm->getSize());
+      std::fill(ialltofewv_.rdispls->begin(), ialltofewv_.rdispls->end(), 0);
+
+      const size_type actualNumReceives =
+      Teuchos::as<size_type>(plan.getNumReceives()) +
+      Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
+
+      for (size_type i = 0; i < actualNumReceives; ++i) {
+        const int src = plan.getProcsFrom()[i];
+        (*ialltofewv_.rdispls)[src] = importStarts[i];
+        (*ialltofewv_.recvcounts)[src] = Teuchos::as<int>(importLengths[i]);
+      }
+    }
+
+  } // rootIdx
+
+  // TODO: do we need to pass ExportValue{} here?
+  MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<ExportValue>::getType(ExportValue{});
+  // FIXME: is there a better way to do this?
+  Teuchos::RCP<const Teuchos::MpiComm<int>> tMpiComm =
+    Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> oMpiComm =
+    tMpiComm->getRawMpiComm();
+  MPI_Comm mpiComm = (*oMpiComm)();
+
+  // don't care about send-side accessibility because it's not accessed through kokkos
+  // rely on MPI to do the right thing
+  constexpr bool recvDevAccess = Kokkos::SpaceAccessibility<
+     Kokkos::DefaultExecutionSpace, typename ImpView::memory_space>::accessible;
+  constexpr bool sendDevAccess = Kokkos::SpaceAccessibility<
+     Kokkos::DefaultExecutionSpace, typename ExpView::memory_space>::accessible;
+  static_assert(recvDevAccess == sendDevAccess, "sending across host/device");
+
+  const int err = ialltofewv_.impl.post<recvDevAccess>(exports.data(), ialltofewv_.sendcounts->data(), ialltofewv_.sdispls->data(), rawType,
+    imports.data(), ialltofewv_.recvcounts->data(), ialltofewv_.rdispls->data(), 
+    roots, nroots,
+    rawType,
+    mpiTag_, mpiComm, &(*ialltofewv_.req));
+
+  TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
+                              "ialltofewv failed with error \""
+                              << Teuchos::mpiErrorCodeToString(err)
+                              << "\".");
+}
+
+
+
+
+
 template <class ExpView, class ImpView>
 void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
                                            const ExpView &exports,
@@ -322,6 +479,7 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
 
   const int myRank = plan.getComm()->getRank();
   MPIX_Comm *mpixComm = *plan.getMPIXComm();
+  using size_type = Teuchos::Array<size_t>::size_type;
 
   const size_t numSends = plan.getNumSends() + plan.hasSelfMessage();
   const size_t numRecvs = plan.getNumReceives() + plan.hasSelfMessage();
@@ -333,8 +491,8 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
   auto& [importStarts, importLengths] = importSubViewLimits;
   auto& [exportStarts, exportLengths] = exportSubViewLimits;
 
-  for (size_t pp = 0; pp < plan.getNumSends(); ++pp) {
-    sdispls[plan.getProcsTo()[pp]] = exportStarts[pp];
+  for (size_t pp = 0; pp < numSends; ++pp) {
+    sdispls[pp] = exportStarts[pp];
     size_t numPackets = exportLengths[pp];
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
@@ -343,16 +501,12 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
                                    << pp << " (" << numPackets
                                    << ") is too large "
                                       "to be represented as int.");
-    sendcounts[plan.getProcsTo()[pp]] = static_cast<int>(numPackets);
+    sendcounts[pp] = static_cast<int>(numPackets);
   }
 
-  const size_type actualNumReceives =
-      Teuchos::as<size_type>(plan.getNumReceives()) +
-      Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
-
-  for (size_type i = 0; i < actualNumReceives; ++i) {
-    rdispls[plan.getProcsFrom()[i]] = importStarts(i);
-    size_t totalPacketsFrom_i = importLengths(i);
+  for (size_type i = 0; i < numRecvs; ++i) {
+    rdispls[i] = importStarts[i];
+    size_t totalPacketsFrom_i = importLengths[i];
     // totalPacketsFrom_i is converted down to int, so make sure it can be
     // represented
     TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
@@ -362,15 +516,22 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
                                    << i << " (" << totalPacketsFrom_i
                                    << ") is too large "
                                       "to be represented as int.");
-    recvcounts[plan.getProcsFrom()[i]] = static_cast<int>(totalPacketsFrom_i);
+    recvcounts[i] = static_cast<int>(totalPacketsFrom_i);
   }
 
   using T = typename ExpView::non_const_value_type;
   MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType(T());
 
-  const int err = MPIX_Neighbor_alltoallv(
+  MPIX_Info* xinfo;
+  MPIX_Topo* xtopo;
+  MPIX_Info_init(&xinfo);
+  MPIX_Topo_init(numRecvs, plan.getProcsFrom().data(), recvcounts.data(),
+      numSends, plan.getProcsTo().data(), sendcounts.data(), xinfo, &xtopo);
+  const int err = MPIX_Neighbor_alltoallv_topo(
       exports.data(), sendcounts.data(), sdispls.data(), rawType,
-      imports.data(), recvcounts.data(), rdispls.data(), rawType, mpixComm);
+      imports.data(), recvcounts.data(), rdispls.data(), rawType, xtopo, mpixComm);
+  MPIX_Topo_free(&xtopo);
+  MPIX_Info_free(&xinfo);
 
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
                              "MPIX_Neighbor_alltoallv failed with error \""
@@ -432,6 +593,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   // These send options require no matching receives, so we just return.
   const Details::EDistributorSendType sendType = plan.getSendType();
   if ((sendType == Details::DISTRIBUTOR_ALLTOALL)
+      || (sendType == Details::DISTRIBUTOR_IALLTOFEWV)
 #ifdef HAVE_TPETRACORE_MPI_ADVANCE
       || (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL)
       || (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV)
@@ -441,7 +603,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   }
 #endif // HAVE_TPETRA_MPI
 
-  ProfilingRegion pr("Tpetra::Distributor: doPostRecvs");
+  ProfilingRegion pr("Tpetra::Distributor::doPostRecvs");
 
   const int myProcID = plan.getComm()->getRank ();
 
@@ -488,7 +650,7 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   // to the "unexpected queue" (of arrived messages not yet matched
   // with a receive).
   {
-    ProfilingRegion prr("Tpetra::Distributor: doPostRecvs recvs");
+    ProfilingRegion prr("Tpetra::Distributor::doPostRecvs MPI_Irecv");
 
     for (size_type i = 0; i < actualNumReceives; ++i) {
       size_t totalPacketsFrom_i = importLengths[Teuchos::as<size_t>(i)];
@@ -571,7 +733,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
        "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
 #endif // KOKKOS_ENABLE_SYCL
 
-  ProfilingRegion ps("Tpetra::Distributor: doPostSends");
+  ProfilingRegion ps("Tpetra::Distributor::doPostSends");
 
   const int myRank = plan.getComm()->getRank ();
   // Run-time configurable parameters that come from the input
@@ -588,13 +750,16 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
   if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
     doPostsAllToAllImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
     return;
+  } else if (sendType == Details::DISTRIBUTOR_IALLTOFEWV) {
+    doPostsIalltofewvImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
+    return;
   }
 #ifdef HAVE_TPETRACORE_MPI_ADVANCE
   else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL) {
     doPostsAllToAllImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
     return;
   } else if (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
-    doPostsNbrAllToAllVImpl(plan, exports,numPackets, imports);
+    doPostsNbrAllToAllVImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
     return;
   }
 #endif // defined(HAVE_TPETRACORE_MPI_ADVANCE)
@@ -653,7 +818,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
     }
   }
 
-  ProfilingRegion pss("Tpetra::Distributor: doPostSends sends");
+  ProfilingRegion pss("Tpetra::Distributor::doPostSends sends");
 
   // setup scan through getProcsTo() list starting with higher numbered procs
   // (should help balance message traffic)
@@ -673,7 +838,9 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
   size_t selfIndex = 0;
 
   if (plan.getIndicesTo().is_null()) {
-    ProfilingRegion pssf("Tpetra::Distributor: doPostSends sends FAST");
+    const char isend_region[] = "Tpetra::Distributor::doPostSends MPI_Isend FAST";
+    const char send_region[] = "Tpetra::Distributor::doPostSends MPI_Send FAST";
+    ProfilingRegion pssf((sendType == Details::DISTRIBUTOR_ISEND) ? isend_region : send_region);
 
     // Data are already blocked (laid out) by process, so we don't
     // need a separate send buffer (besides the exports array).
@@ -725,7 +892,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
 
   }
   else { // data are not blocked by proc, use send buffer
-    ProfilingRegion psss("Tpetra::Distributor: doPostSends: sends SLOW");
+    ProfilingRegion psss("Tpetra::Distributor::doPostSends: MPI_Send SLOW");
 
     using Packet = typename ExpView::non_const_value_type;
     using Layout = typename ExpView::array_layout;

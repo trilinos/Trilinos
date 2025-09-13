@@ -406,6 +406,7 @@ namespace Ioex {
     mutable std::map<std::string, Ioss::Int64Vector> activeNodeSetNodesIndex;
 
     time_t timeLastFlush{0};
+    time_t timeBeginStep{0};
     int    flushInterval{-1};
     int    m_timestepCount{0};
 

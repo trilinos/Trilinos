@@ -9,6 +9,7 @@
 #include <Akri_AnalyticSurfaceInterfaceGeometry.hpp>
 #include <Akri_CDFEM_Parent_Edges.hpp>
 #include <Akri_CDFEM_Support.hpp>
+#include <Akri_Edge.hpp>
 #include <Akri_Element_Intersections.hpp>
 #include <Akri_ElementCutterUtils.hpp>
 #include <Akri_MathUtil.hpp>
@@ -88,8 +89,8 @@ std::vector<InterfaceID> SurfaceElementCutter::get_sorted_cutting_interfaces() c
   return interfaces;
 }
 
-std::vector<int> SurfaceElementCutter::get_interface_signs_based_on_crossings(const std::vector<stk::math::Vector3d> & elemNodesCoords,
-    const std::vector<const std::vector<int> *> & elemNodesSnappedDomains) const
+std::vector<int> SurfaceElementCutter::get_interface_signs_based_on_crossings(const std::vector<stk::math::Vector3d> & /*elemNodesCoords*/,
+    const std::vector<const std::vector<int> *> & /*elemNodesSnappedDomains*/) const
 {
   unsigned numInterfaces = 0;
   for (size_t i=0; i<myElementSigns.size(); ++i)
@@ -146,7 +147,7 @@ static void fill_triangle_intersections(const std::vector<stk::math::Vector3d> &
   }
 }
 
-void SurfaceElementCutter::fill_interior_intersections(const ElementIntersectionPointFilter & intersectionPointFilter, std::vector<ElementIntersection> & intersections) const
+void SurfaceElementCutter::fill_interior_intersections(const ElementIntersectionPointFilter & /*intersectionPointFilter*/, std::vector<ElementIntersection> & intersections) const
 {
   if (myMightHaveInteriorOrFaceCrossings)
   {
@@ -170,7 +171,7 @@ std::vector<stk::math::Vector3d> SurfaceElementCutter::parametric_to_global_coor
 }
 
 void SurfaceElementCutter::append_triangle_intersections(const std::array<stk::math::Vector3d,3> & triCoords,
-    const ElementIntersectionPointFilter & intersectionPointFilter,
+    const ElementIntersectionPointFilter & /*intersectionPointFilter*/,
     std::vector<ElementIntersection> & intersections) const
 {
   std::vector<stk::math::Vector3d> intParamCoords;
@@ -219,60 +220,28 @@ stk::math::Vector3d SurfaceElementCutter::parametric_to_global_coordinates(const
   return pt;
 }
 
-static bool are_elements_in_selected_block(const stk::mesh::Bucket & elemBucket, const stk::mesh::Selector & elemSelector)
-{
-  return elemSelector(elemBucket);
-}
-
-static bool is_element_in_selected_block(const stk::mesh::BulkData & mesh, const stk::mesh::Entity elem, const stk::mesh::Selector & elemSelector)
-{
-  return are_elements_in_selected_block(mesh.bucket(elem), elemSelector);
-}
-
 static void append_surface_edge_intersection_points(const stk::mesh::BulkData & mesh,
     const FieldRef coordsField,
-    const std::vector<stk::mesh::Entity> & elementsToIntersect,
+    const std::vector<Edge> & edgesToIntersect,
     const InterfaceID interface,
     const Surface & surface,
-    const stk::mesh::Selector & surfaceElementSelector,
     const double edgeCrossingTol,
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints)
 {
   const bool intersectionPointIsOwned = true;
   std::vector<int> intersectionPointSortedDomains;
+  interface.fill_sorted_domains(intersectionPointSortedDomains);
   const int dim = mesh.mesh_meta_data().spatial_dimension();
-  std::set<std::array<stk::mesh::EntityId,2>> edgesAlreadyChecked;
-  for (auto && elem : elementsToIntersect)
+  std::vector<stk::mesh::Entity> intersectionPointNodes;
+  for (auto & edge : edgesToIntersect)
   {
-    if (is_element_in_selected_block(mesh, elem, surfaceElementSelector))
+    fill_edge_nodes(edge, intersectionPointNodes);
+    if (intersectionPointFilter(intersectionPointNodes, intersectionPointSortedDomains))
     {
-      const stk::topology topology = mesh.bucket(elem).topology();
-      const stk::mesh::Entity* elem_nodes = mesh.begin_nodes(elem);
-      const unsigned numEdges = topology.num_edges();
-
-      for (unsigned iedge = 0; iedge < numEdges; ++iedge)
-      {
-        const unsigned * edge_node_ordinals = get_edge_node_ordinals(topology, iedge);
-        const stk::mesh::Entity node0 = elem_nodes[edge_node_ordinals[0]];
-        const stk::mesh::Entity node1 = elem_nodes[edge_node_ordinals[1]];
-        const stk::mesh::EntityId node0Id = mesh.identifier(node0);
-        const stk::mesh::EntityId node1Id = mesh.identifier(node1);
-        const std::array<stk::mesh::EntityId,2> edgeNodeIds = (node0Id < node1Id) ? std::array<stk::mesh::EntityId,2>{node0Id, node1Id} : std::array<stk::mesh::EntityId,2>{node1Id, node0Id};
-        auto iter = edgesAlreadyChecked.lower_bound(edgeNodeIds);
-        if (iter == edgesAlreadyChecked.end() || edgeNodeIds != *iter)
-        {
-          edgesAlreadyChecked.insert(iter, edgeNodeIds);
-          const auto [crossingSign, interfaceLoc] = surface.compute_intersection_with_segment(get_vector_field(mesh, coordsField, node0, dim), get_vector_field(mesh, coordsField, node1, dim), edgeCrossingTol);
-          if (crossingSign != 0)
-          {
-            interface.fill_sorted_domains(intersectionPointSortedDomains);
-            const std::vector<stk::mesh::Entity> intersectionPointNodes{node0,node1};
-            if (intersectionPointFilter(intersectionPointNodes, intersectionPointSortedDomains))
-              intersectionPoints.emplace_back(intersectionPointIsOwned, intersectionPointNodes, std::vector<double>{1.-interfaceLoc, interfaceLoc}, intersectionPointSortedDomains);
-          }
-        }
-      }
+      const auto [crossingSign, interfaceLoc] = surface.compute_intersection_with_segment(get_vector_field(mesh, coordsField, intersectionPointNodes[0], dim), get_vector_field(mesh, coordsField, intersectionPointNodes[1], dim), edgeCrossingTol);
+      if (crossingSign != 0)
+        intersectionPoints.emplace_back(intersectionPointIsOwned, intersectionPointNodes, std::vector<double>{1.-interfaceLoc, interfaceLoc}, intersectionPointSortedDomains);
     }
   }
 }
@@ -314,18 +283,23 @@ void AnalyticSurfaceInterfaceGeometry::set_elements_to_intersect_and_prepare_to_
   }
 }
 
-void AnalyticSurfaceInterfaceGeometry::set_element_signs(const stk::mesh::BulkData & mesh,
-    const std::vector<stk::mesh::Selector> & perSurfaceElementSelector) const
+void AnalyticSurfaceInterfaceGeometry::set_node_signs(NodeToSignsMap & nodesToSigns) const
 {
-  myElementsToSigns = determine_element_signs(mesh, get_coordinates_field(mesh), get_mesh_parent_element_selector(), perSurfaceElementSelector, mySurfaces);
+  myNodesToSigns.swap(nodesToSigns);
+}
+
+void AnalyticSurfaceInterfaceGeometry::set_node_signs_from_surfaces(const stk::mesh::BulkData & mesh,
+    const std::vector<stk::mesh::Selector> & perSurfaceElementSelector,
+    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+{
+  myNodesToSigns = determine_node_signs(mesh, get_coordinates_field(mesh), get_mesh_parent_element_selector(), perSurfaceElementSelector, mySurfaces, nodesToCapturedDomains);
 }
 
 void AnalyticSurfaceInterfaceGeometry::prepare_to_decompose_elements(const stk::mesh::BulkData & mesh,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
 {
   set_elements_to_intersect_and_prepare_to_compute_with_surfaces(mesh, get_mesh_parent_elements(mesh));
-
-  set_element_signs(mesh, mySurfaceElementSelectors);
+  set_node_signs_from_surfaces(mesh, mySurfaceElementSelectors, nodesToCapturedDomains);
 }
 
 void AnalyticSurfaceInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::BulkData & mesh) const
@@ -335,14 +309,14 @@ void AnalyticSurfaceInterfaceGeometry::prepare_to_intersect_elements(const stk::
 }
 
 void AnalyticSurfaceInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
 {
   set_elements_to_intersect_and_prepare_to_compute_with_surfaces(mesh, get_mesh_parent_elements(mesh));
 }
 
 void AnalyticSurfaceInterfaceGeometry::prepare_to_intersect_elements(const stk::mesh::BulkData & mesh,
   const std::vector<stk::mesh::Entity> & elementsToIntersect,
-  const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+  const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
 {
   set_elements_to_intersect_and_prepare_to_compute_with_surfaces(mesh, elementsToIntersect);
 }
@@ -377,7 +351,7 @@ bool AnalyticSurfaceInterfaceGeometry::does_element_possibly_have_cut_edge(const
 {
   for (unsigned s=0; s<mySurfaces.size(); ++s)
   {
-    if (is_element_in_selected_block(mesh, elem, mySurfaceElementSelectors[s]))
+    if (is_entity_selected(mesh, mySurfaceElementSelectors[s], elem))
     {
       fill_point_distances(*mySurfaces[s], elemNodeCoords, elemNodeDistWorkspace);
       if (element_has_possibly_cut_edge(elemTopology, elemNodeCoords, elemNodeDistWorkspace))
@@ -417,6 +391,17 @@ static bool element_intersects_distance_interval(const Surface & surface, const 
   return InterfaceGeometry::element_with_nodal_distance_intersects_distance_interval(elemNodeDistWorkspace, loAndHi);
 }
 
+bool AnalyticSurfaceInterfaceGeometry::have_enough_surfaces_to_have_interior_intersections_or_multiple_crossings() const
+{
+  const unsigned minNumLSForInteriorIntersectionsOrMultipleElementCrossings = myPhaseSupport.has_one_levelset_per_phase() ? 3 : 2;
+  return mySurfaces.size() >= minNumLSForInteriorIntersectionsOrMultipleElementCrossings;
+}
+
+bool AnalyticSurfaceInterfaceGeometry::snapped_elements_may_have_new_intersections() const
+{
+  return have_enough_surfaces_to_have_interior_intersections_or_multiple_crossings();
+}
+
 unsigned AnalyticSurfaceInterfaceGeometry::get_index_of_surface_with_identifer(const Surface_Identifier surfaceIdentifier) const
 {
   auto iter = std::find(mySurfaceIdentifiers.begin(), mySurfaceIdentifiers.end(), surfaceIdentifier);
@@ -436,7 +421,7 @@ void AnalyticSurfaceInterfaceGeometry::fill_elements_that_intersect_distance_int
   elementsThaIntersectInterval.clear();
   for(const auto & bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, activeLocallyOwned))
   {
-    if (are_elements_in_selected_block(*bucketPtr, mySurfaceElementSelectors[surfIndex]))
+    if (are_entities_selected(mySurfaceElementSelectors[surfIndex], *bucketPtr))
     {
       for(const auto & elem : *bucketPtr)
       {
@@ -512,11 +497,11 @@ void AnalyticSurfaceInterfaceGeometry::add_surface(const Surface_Identifier surf
   mySurfaceIdentifiers.push_back(surfaceIdentifier);
   mySurfaces.push_back(&surface);
   mySurfaceElementSelectors.push_back(surfaceElementSelector);
-  myMightHaveInteriorOrFaceCrossings |= surface.has_sharp_features();
+  myMightHaveInteriorOrFaceCrossings = does_any_surface_have_sharp_features(mySurfaces);
 }
 
 void AnalyticSurfaceInterfaceGeometry::store_phase_for_elements_that_will_be_uncut_after_snapping(const stk::mesh::BulkData & mesh,
-      const std::vector<IntersectionPoint> & intersectionPoints,
+      const std::vector<IntersectionPoint> & /*intersectionPoints*/,
       const std::vector<SnapInfo> & snapInfos,
       const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
 {
@@ -537,7 +522,7 @@ void AnalyticSurfaceInterfaceGeometry::store_phase_for_elements_that_will_be_unc
 }
 
 std::vector<IntersectionPoint> AnalyticSurfaceInterfaceGeometry::get_edge_intersection_points(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains) const
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/) const
 {
   NodeToCapturedDomainsMap nodesToSnappedDomains;
   prepare_to_intersect_elements(mesh, nodesToSnappedDomains);
@@ -545,10 +530,13 @@ std::vector<IntersectionPoint> AnalyticSurfaceInterfaceGeometry::get_edge_inters
 
   const IntersectionPointFilter intersectionPointFilter = keep_all_intersection_points_filter();
   std::vector<IntersectionPoint> intersectionPoints;
+  std::vector<Edge> edgesToIntersect;
   for (size_t i=0; i<mySurfaces.size(); ++i)
   {
     InterfaceID interface(i,i);
-    append_surface_edge_intersection_points(mesh, coordsField, myElementsToIntersect, interface, *mySurfaces[i], mySurfaceElementSelectors[i], myEdgeCrossingTol, intersectionPointFilter, intersectionPoints);
+    if (i==0 || mySurfaceElementSelectors[i] != mySurfaceElementSelectors[i-1])
+      edgesToIntersect = get_edges_of_selected_elements(mesh, mySurfaceElementSelectors[i], myElementsToIntersect);
+    append_surface_edge_intersection_points(mesh, coordsField, edgesToIntersect, interface, *mySurfaces[i], myEdgeCrossingTol, intersectionPointFilter, intersectionPoints);
   }
   return intersectionPoints;
 }
@@ -558,7 +546,6 @@ static void append_intersection_points_from_within_elements_and_owned_faces(cons
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const std::vector<const Surface*> & surfaces,
     const std::vector<stk::mesh::Selector> & surfaceElementSelectors,
-    const ElementToSignsMap & elementsToSigns,
     const bool mightHaveInteriorOrFaceCrossings,
     const double edgeCrossingTol,
     const IntersectionPointFilter & intersectionPointFilter,
@@ -591,10 +578,13 @@ void AnalyticSurfaceInterfaceGeometry::append_element_intersection_points(const 
 {
   prepare_to_intersect_elements(mesh, elementsToIntersect, nodesToCapturedDomains);
   const FieldRef coordsField = get_coordinates_field(mesh);
+  std::vector<Edge> edgesToIntersect;
   for (size_t i=0; i<mySurfaces.size(); ++i)
   {
     InterfaceID interface(i,i);
-    append_surface_edge_intersection_points(mesh, coordsField, myElementsToIntersect, interface, *mySurfaces[i], mySurfaceElementSelectors[i], myEdgeCrossingTol, intersectionPointFilter, intersectionPoints);
+    if (i==0 || mySurfaceElementSelectors[i] != mySurfaceElementSelectors[i-1])
+      edgesToIntersect = get_edges_of_selected_elements(mesh, mySurfaceElementSelectors[i], myElementsToIntersect);
+    append_surface_edge_intersection_points(mesh, coordsField, edgesToIntersect, interface, *mySurfaces[i], myEdgeCrossingTol, intersectionPointFilter, intersectionPoints);
   }
 
   append_intersection_points_from_within_elements_and_owned_faces(mesh,
@@ -602,20 +592,57 @@ void AnalyticSurfaceInterfaceGeometry::append_element_intersection_points(const 
       myElementsToIntersect,
       mySurfaces,
       mySurfaceElementSelectors,
-      myElementsToSigns,
       myMightHaveInteriorOrFaceCrossings,
       myEdgeCrossingTol,
       intersectionPointFilter,
       intersectionPoints);
 }
 
+static int determine_element_sign_from_node_signs(const StkMeshEntities & elemNodes,
+    const NodeToSignsMap & nodesToSigns,
+    const int surfIndex)
+{
+  bool hasNeg = false;
+  bool hasPos = false;
+
+  for (auto & node : elemNodes)
+  {
+    const int8_t nodeSign = nodesToSigns.at(node)[surfIndex];
+    if (nodeSign < 0)
+      hasNeg = true;
+    else if (nodeSign > 0)
+      hasPos = true;
+  }
+
+  if (hasNeg && !hasPos)
+    return -1;
+  if (!hasNeg && hasPos)
+    return 1;
+  return 0;
+}
+
+std::vector<int8_t> compute_element_signs_from_node_signs(const stk::mesh::BulkData & mesh,
+    stk::mesh::Entity element,
+    const std::vector<stk::mesh::Selector> & surfaceElementSelectors,
+    const NodeToSignsMap & nodesToSigns)
+{
+  const StkMeshEntities elemNodes{mesh.begin_nodes(element), mesh.end_nodes(element)};
+  std::vector<int8_t> elementSigns(surfaceElementSelectors.size(), -2);
+  for (size_t i=0; i<surfaceElementSelectors.size(); ++i)
+    if (is_entity_selected(mesh, surfaceElementSelectors[i], element))
+      elementSigns[i] = determine_element_sign_from_node_signs(elemNodes, nodesToSigns, i);
+
+  return elementSigns;
+}
+
 std::unique_ptr<ElementCutter> AnalyticSurfaceInterfaceGeometry::build_element_cutter(const stk::mesh::BulkData & mesh,
   stk::mesh::Entity element,
-  const std::function<bool(const std::array<unsigned,4> &)> & intersectingPlanesDiagonalPicker) const
+  const std::function<bool(const std::array<unsigned,4> &)> & /*intersectingPlanesDiagonalPicker*/) const
 {
   std::unique_ptr<ElementCutter> cutter;
   const FieldRef coordsField = get_coordinates_field(mesh);
-  cutter.reset( new SurfaceElementCutter(mesh, coordsField, element, mySurfaces, myElementsToSigns.at(element), myMightHaveInteriorOrFaceCrossings, myEdgeCrossingTol) );
+  const std::vector<int8_t> & elementSigns = compute_element_signs_from_node_signs(mesh, element, mySurfaceElementSelectors, myNodesToSigns);
+  cutter.reset( new SurfaceElementCutter(mesh, coordsField, element, mySurfaces, elementSigns, myMightHaveInteriorOrFaceCrossings, myEdgeCrossingTol) );
   return cutter;
 }
 

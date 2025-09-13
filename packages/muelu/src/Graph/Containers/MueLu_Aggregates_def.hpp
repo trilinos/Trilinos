@@ -162,8 +162,8 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetGraph() const {
 
   size_type numNNZ;
   {
-    Kokkos::View<size_type, device_type> numNNZ_device                    = Kokkos::subview(rows, numAggregates);
-    typename Kokkos::View<size_type, device_type>::HostMirror numNNZ_host = Kokkos::create_mirror_view(numNNZ_device);
+    Kokkos::View<size_type, device_type> numNNZ_device                          = Kokkos::subview(rows, numAggregates);
+    typename Kokkos::View<size_type, device_type>::host_mirror_type numNNZ_host = Kokkos::create_mirror_view(numNNZ_device);
     Kokkos::deep_copy(numNNZ_host, numNNZ_device);
     numNNZ = numNNZ_host();
   }
@@ -251,7 +251,7 @@ std::string Aggregates<LocalOrdinal, GlobalOrdinal, Node>::description() const {
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
   MUELU_DESCRIBE;
 
   if (verbLevel & Statistics1) {

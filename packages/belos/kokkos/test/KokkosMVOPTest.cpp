@@ -314,7 +314,7 @@ bool TestKokkosMultiVecOneScalar(const Teuchos::RCP<OutputManager<ScalarType> > 
   int numCols2 = 4;
   int numRows2 = 60;
   Kokkos::View<ScalarType**, Kokkos::LayoutLeft> myView("View2MV", numRows2, numCols2);
-  typename Kokkos::View<ScalarType**>::HostMirror myView_h("View2MV_host", numRows2, numCols2);
+  typename Kokkos::View<ScalarType**>::host_mirror_type myView_h("View2MV_host", numRows2, numCols2);
   Kokkos::deep_copy(myView, 42);
   Belos::KokkosMultiVec<ScalarType> myVec4( myView );
   if ( myVec4.GetNumberVecs() != (int)myView.extent(1) ) {
@@ -382,7 +382,7 @@ bool TestKokkosMultiVecTwoScalar(const Teuchos::RCP<OutputManager<ScalarType1> >
   int numCols = 4;
   int numRows = 60;
   Kokkos::View<ScalarType1**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> myViewST1("View2MV1", numRows, numCols);
-  typename Kokkos::View<ScalarType2**>::HostMirror myViewST2_h("View2MV1_host", numRows, numCols);
+  typename Kokkos::View<ScalarType2**>::host_mirror_type myViewST2_h("View2MV1_host", numRows, numCols);
   Kokkos::deep_copy(myViewST1, 42);
   Belos::KokkosMultiVec<ScalarType2> myVecST2A( myViewST1 );
   if ( myVecST2A.GetNumberVecs() != (int)myViewST1.extent(1) ) {
@@ -407,7 +407,7 @@ bool TestKokkosMultiVecTwoScalar(const Teuchos::RCP<OutputManager<ScalarType1> >
   }
   // Test view to multivec ST2 to ST1:
   Kokkos::View<ScalarType2**, Kokkos::LayoutLeft, Kokkos::DefaultExecutionSpace> myViewST2("View2MV2", numRows, numCols);
-  typename Kokkos::View<ScalarType1**>::HostMirror myViewST1_h("View2MV2_host", numRows, numCols);
+  typename Kokkos::View<ScalarType1**>::host_mirror_type myViewST1_h("View2MV2_host", numRows, numCols);
   Kokkos::deep_copy(myViewST2, 56);
   Belos::KokkosMultiVec<ScalarType1> myVecST1A( myViewST2 );
   if ( myVecST1A.GetNumberVecs() != (int)myViewST2.extent(1) ) {

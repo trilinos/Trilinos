@@ -68,6 +68,14 @@ template <int DIM>
 class TriFixtureImpl
 {
  public:
+  static std::string name() { 
+    if constexpr ( DIM == 2 ) {
+      return "TriFixture";
+    }
+    else {
+      return "TriShellFixture";
+    }
+  }
   typedef double        Scalar;
   typedef Field<Scalar> CoordFieldType;
 

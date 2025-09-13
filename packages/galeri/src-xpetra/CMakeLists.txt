@@ -28,6 +28,10 @@ APPEND_SET(HEADERS
   Galeri_StencilProblems_Helmholtz.hpp
   Galeri_Elasticity2DProblem.hpp
   Galeri_Elasticity3DProblem.hpp
+  Galeri_Problem_Helmholtz.hpp
+  Galeri_HelmholtzFEM2DProblem.hpp
+  Galeri_HelmholtzFEM3DProblem.hpp
+  Galeri_VelocityModel.hpp
 
   Galeri_VectorTraits.hpp
   Galeri_MatrixTraits.hpp

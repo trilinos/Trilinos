@@ -31,7 +31,7 @@ Cylinder::Cylinder(const double e1[3],  // first endpoint of axis
 }
 
 void
-Cylinder::prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length)
+Cylinder::prepare_to_compute(const double time, const BoundingBox & /*point_bbox*/, const double /*truncation_length*/)
 {
   if (NULL == my_transformation)
   {
@@ -157,7 +157,7 @@ Sphere::Sphere(const stk::math::Vector3d & center,
 }
 
 void
-Sphere::prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length)
+Sphere::prepare_to_compute(const double time, const BoundingBox & /*point_bbox*/, const double /*truncation_length*/)
 {
   if (nullptr != my_transformation)
   {
@@ -372,7 +372,7 @@ void Plane::insert_into(BoundingBox & bbox) const
   bbox.accommodate(BoundingBox::ENTIRE_DOMAIN);
 }
 
-bool Plane::does_intersect(const BoundingBox & bbox) const
+bool Plane::does_intersect(const BoundingBox & /*bbox*/) const
 {
   return true; // This could actually test the sidedness of the min and max points of the bbox if desired
 }
@@ -385,7 +385,7 @@ Random::Random(const unsigned long seed)
 }
 
 double
-Random::point_signed_distance(const stk::math::Vector3d &x) const
+Random::point_signed_distance(const stk::math::Vector3d &/*x*/) const
 {
   // generate random number between -my_amplitude and my_amplitude
   return my_amplitude * (-1.0 + 2.0 * my_rand());
@@ -396,7 +396,7 @@ void Random::insert_into(BoundingBox & bbox) const
   bbox.accommodate(BoundingBox::ENTIRE_DOMAIN);
 }
 
-bool Random::does_intersect(const BoundingBox & bbox) const
+bool Random::does_intersect(const BoundingBox & /*bbox*/) const
 {
   return true;
 }

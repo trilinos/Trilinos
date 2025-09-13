@@ -72,13 +72,13 @@ int ex_close(int exoid)
    * Get exoid of root group
    */
 
-  if ((status1 = nc_sync(exoid)) != NC_NOERR) {
+  if ((status1 = nc_sync(exoid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to update file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status1);
   }
 
   int root_id = exoid & EX_FILE_ID_MASK;
-  if ((status2 = nc_close(root_id)) != NC_NOERR) {
+  if ((status2 = nc_close(root_id)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to close file id %d", root_id);
     ex_err_fn(root_id, __func__, errmsg, status2);
   }
@@ -118,7 +118,7 @@ int ex_close(int exoid)
   exi_conv_exit(exoid);
 
   status = EX_NOERR;
-  if (status1 != NC_NOERR || status2 != NC_NOERR) {
+  if (status1 != EX_NOERR || status2 != EX_NOERR) {
     status = EX_FATAL;
   }
   EX_FUNC_LEAVE(status);

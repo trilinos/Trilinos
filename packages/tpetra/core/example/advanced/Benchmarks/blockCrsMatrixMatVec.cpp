@@ -464,9 +464,9 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   typedef Kokkos::ArithTraits<SC> KAT;
   typedef Tpetra::Map<>::local_ordinal_type LO;
 
-  // mfh 02 Jun 2016: Prefer Kokkos::Serial to the HostMirror as the
+  // mfh 02 Jun 2016: Prefer Kokkos::Serial to the host_mirror_type as the
   // pseudorandom number generator's execution space.  This is
-  // because, for CudaUVMSpace, the HostMirror is the same as the
+  // because, for CudaUVMSpace, the host_mirror_type is the same as the
   // original.  This causes segfaults in the pseudorandom number
   // generator, due to CUDA code trying to access host memory.
 #ifdef KOKKOS_ENABLE_SERIAL

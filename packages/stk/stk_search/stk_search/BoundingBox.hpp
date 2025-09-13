@@ -336,7 +336,7 @@ inline T length_scale(Box<T> &b)
 }
 
 template <typename T>
-inline T length_scale(Point<T> &p)
+inline T length_scale(Point<T> &)
 {
   //point has 0 length scale
   return static_cast<T>(0);
@@ -344,7 +344,7 @@ inline T length_scale(Point<T> &p)
 
 
 template <typename T>
-inline T length_scale(Plane<T> &p)
+inline T length_scale(Plane<T> &)
 {
   //plane has infinite (numerical limit) length scale
   return std::numeric_limits<T>::max();

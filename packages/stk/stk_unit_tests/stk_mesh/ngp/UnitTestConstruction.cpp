@@ -38,6 +38,7 @@
 
 namespace {
 
+#ifdef STK_USE_DEVICE_MESH
 void test_device_field_default_constructor()
 {
   int constructionFinished = 0;
@@ -60,6 +61,7 @@ TEST(NgpDeviceConstruction, deviceField_onHost)
   stk::mesh::DeviceField<double> deviceField;
   EXPECT_EQ(stk::topology::INVALID_RANK, deviceField.get_rank());
 }
+#endif
 
 TEST(NgpDeviceConstruction, hostField)
 {
@@ -67,6 +69,7 @@ TEST(NgpDeviceConstruction, hostField)
   EXPECT_EQ(stk::topology::INVALID_RANK, hostField.get_rank());
 }
 
+#ifdef STK_USE_DEVICE_MESH
 struct MimicNaluWindKernelBase
 {
   KOKKOS_DEFAULTED_FUNCTION MimicNaluWindKernelBase() = default;
@@ -127,6 +130,7 @@ TEST(NgpDeviceConstruction, structWithNgpField)
 {
   test_ngp_field_placement_new();
 }
+#endif
 
 }
 

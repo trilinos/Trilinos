@@ -297,8 +297,8 @@ void Trsm(const int NN, const int BlkSize, const int NumCols) {
       double tavg = 0, tmin = tmax;
       value_type *aa[N * VectorLength], *bb[N * VectorLength];
       for (int k = 0; k < N * VectorLength; ++k) {
-        aa[k] = a.data() + k * a.stride_0();
-        bb[k] = b.data() + k * b.stride_0();
+        aa[k] = a.data() + k * a.stride(0);
+        bb[k] = b.data() + k * b.stride(0);
       }
       value_type **aa_device, **bb_device;
       if (cudaMalloc(&aa_device, N * VectorLength * sizeof(value_type *)) != cudaSuccess ||

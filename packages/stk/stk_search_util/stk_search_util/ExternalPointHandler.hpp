@@ -37,27 +37,26 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include "stk_search_util/MasterElementProvider.hpp"  // for ProvideMaste...
 #include "stk_search/SearchInterface.hpp"             // for ExternalPointHa...
-#include "stk_mesh/base/EntityKey.hpp"                // for EntityKey
+#include "stk_search_util/MasterElementProvider.hpp"  // for ProvideMaste...
+#include "stk_search_util/spmd/EntityKeyPair.hpp"
 #include <memory>                                     // for shared_ptr
 #include <vector>                                     // for vector
 namespace stk::mesh { class BulkData; }
 namespace stk::mesh { class MetaData; }
 namespace stk::mesh { class FieldBase; }
-namespace stk::mesh { struct Entity; }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
 namespace search {
 
-using HandleExternalPointInterface =  stk::search::ExternalPointHandlerInterface<stk::mesh::EntityKey>;
+using HandleExternalPointInterface =  stk::search::ExternalPointHandlerInterface<stk::search::spmd::EntityKeyPair>;
 
 class ExternalPointNoOpHandler : public HandleExternalPointInterface {
  public:
   ExternalPointNoOpHandler(double tol);
-  bool handle_point(const stk::mesh::EntityKey k, const std::vector<double>& toCoords, std::vector<double>& parametricCoords,
+  bool handle_point(const stk::search::spmd::EntityKeyPair& k, const std::vector<double>& toCoords, std::vector<double>& parametricCoords,
                     double& geometricDistanceSquared, bool& isWithinGeometricTolerance) const override;
 };
 
@@ -68,7 +67,7 @@ class MasterElementExternalPointProjection : public HandleExternalPointInterface
                                        const double parametricTol, const double geometricTol);
   ~MasterElementExternalPointProjection() = default;
 
-  bool handle_point(const stk::mesh::EntityKey k, const std::vector<double>& toCoords,
+  bool handle_point(const stk::search::spmd::EntityKeyPair& k, const std::vector<double>& toCoords,
                     std::vector<double>& parametricCoords,
                     double& geometricDistanceSquared,
                     bool& isWithinGeometricTolerance) const override;
@@ -91,7 +90,7 @@ class MasterElementExternalPointTruncation : public HandleExternalPointInterface
                                        const double geometricTol);
   ~MasterElementExternalPointTruncation() = default;
 
-  bool handle_point(const stk::mesh::EntityKey k, const std::vector<double>& toCoords,
+  bool handle_point(const stk::search::spmd::EntityKeyPair& k, const std::vector<double>& toCoords,
                     std::vector<double>& parametricCoords,
                     double& geometricDistanceSquared,
                     bool& isWithinGeometricTolerance) const override;
@@ -108,6 +107,5 @@ class MasterElementExternalPointTruncation : public HandleExternalPointInterface
 
 }
 }
-
 
 #endif /* STK_STK_SEARCH_UTIL_STK_SEARCH_UTIL_EXTERNALPOINTHANDLER_HPP_ */

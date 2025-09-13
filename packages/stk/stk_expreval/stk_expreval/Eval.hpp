@@ -60,6 +60,7 @@ public:
   enum class FPErrorBehavior {
     Ignore,
     Warn,
+    WarnOnce,
     Error
   };
 
@@ -122,6 +123,10 @@ public:
   void set_fp_error_behavior(FPErrorBehavior flag) { m_fpErrorBehavior = flag; }
 
   FPErrorBehavior get_fp_error_behavior() const { return m_fpErrorBehavior; }
+  
+  void set_fp_warning_issued() { m_fpWarningIssued = true; }
+  
+  bool get_fp_warning_issued() const { return m_fpWarningIssued; }
 
   bool getSyntaxStatus() const { return m_syntaxStatus; }
 
@@ -196,6 +201,8 @@ public:
   double& get_result_buffer_value(const int idx) { return m_resultBuffer[idx];}
 
 private:
+  void print_expression_if_fp_warning(bool fpWarningPreviouslyIssued) const;
+  
   friend void check_node_order(const std::string & expression);
   friend void check_evaluation_node_order(const std::string & expression);
 
@@ -209,6 +216,7 @@ private:
   bool m_syntaxStatus;
   bool m_parseStatus;
   FPErrorBehavior m_fpErrorBehavior;
+  mutable bool m_fpWarningIssued;
 
   Node* m_headNode;
   std::vector<std::shared_ptr<Node>> m_nodes;

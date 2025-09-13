@@ -630,13 +630,13 @@ template <class Scalar1, class Scalar2>
 typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType
 Teuchos::relErr( const Scalar1 &s1, const Scalar2 &s2 )
 {
-  typedef typename std::common_type<Scalar1,Scalar2>::type Scalar;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename std::common_type<Scalar1,Scalar2>::type Scalar3;
+  typedef Teuchos::ScalarTraits<Scalar3> ST;
   return
     ST::magnitude( s1 - s2 )
     / (
       ST::magnitude(
-        RelErrSmallNumber<ST::hasMachineParameters,Scalar>::smallNumber()
+        RelErrSmallNumber<ST::hasMachineParameters,Scalar3>::smallNumber()
         )
       + std::max( ST::magnitude(s1), ST::magnitude(s2) )
       );

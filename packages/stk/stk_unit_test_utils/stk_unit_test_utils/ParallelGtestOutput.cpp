@@ -5,11 +5,13 @@
 #include <gtest/gtest-message.h>
 #include <stdarg.h>                 // for va_end, va_list, va_start
 #include <stdio.h>                  // for printf, vprintf, fflush, NULL, etc
+#include <unistd.h>
 #include <stk_util/environment/EnvData.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
+#include <stk_util/util/string_case_compare.hpp>
 #include <string>                   // for string
 #include "gtest/gtest-test-part.h"  // for TestPartResult
 
@@ -134,12 +136,7 @@ protected:
         {
             if(numTotalFailures == 0)
             {
-#ifdef STK_BUILT_FOR_SIERRA
-              ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[       OK ] ");
-#else
-//newer versions of gtest don't allow external access to ColoredPrintf
-              printf("[       OK ] ");
-#endif
+                print_in_color_for_terminal("[       OK ] ", colorGreen);
             }
             else
             {
@@ -222,25 +219,48 @@ protected:
 
     void print_failed(const std::string &message)
     {
-#ifdef STK_BUILT_FOR_SIERRA
-      ::testing::internal::ColoredPrintf(::testing::internal::COLOR_RED, "[  FAILED  ] ");
-#else
-//newer versions of gtest don't allow external access to ColoredPrintf
-      printf("[  FAILED  ] ");
-#endif
-      printf("%s\n", message.c_str());
+        print_in_color_for_terminal("[  FAILED  ] ", colorRed);
+        printf("%s\n", message.c_str());
     }
 
     void print_passed(const std::string &message)
     {
-#ifdef STK_BUILT_FOR_SIERRA
-      ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[  PASSED  ] ");
-#else
-//newer versions of gtest don't allow external access to ColoredPrintf
-      printf("[  PASSED  ] ");
-#endif
-      printf("%s\n", message.c_str());
+        print_in_color_for_terminal("[  PASSED  ] ", colorGreen);
+        printf("%s\n", message.c_str());
     }
+
+    bool user_requests_color()
+    {
+      std::string c = GTEST_FLAG(color);
+      // follows the convention from gtest itself
+      return stk::equal_case(c, "yes") || stk::equal_case(c, "true") || stk::equal_case(c, "t") ||
+             stk::equal_case(c, "1");
+    }
+
+    bool is_auto_color()
+    {
+      std::string c = GTEST_FLAG(color);
+      // follows the convention from gtest itself
+      return stk::equal_case(c, "auto");
+    }
+
+    bool is_terminal_output()
+    {
+      return isatty(fileno(stdout));
+    }
+
+    void print_in_color_for_terminal(const std::string &message, const char *colorString)
+    {
+      if (user_requests_color() || (is_auto_color() && is_terminal_output())) {
+        printf("%s%s%s", colorString, message.c_str(), colorDefault);
+      } else {
+        printf("%s", message.c_str());
+      }
+    }
+
+    static constexpr const char *colorDefault = "\033[0m";
+    static constexpr const char *colorRed = "\033[31m";
+    static constexpr const char *colorGreen = "\033[32m";
 };
 
 class OutputCapturer

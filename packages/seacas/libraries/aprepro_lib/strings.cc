@@ -4,6 +4,7 @@
 //
 // See packages/seacas/LICENSE for details
 
+// clang-format off
 #include "aprepro.h" // for Aprepro
 #include <iostream>  // for cout, ostream, etc
 #include <string>    // for string, operator<<

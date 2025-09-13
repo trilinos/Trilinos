@@ -242,8 +242,7 @@ void thyraVSToTpetraMap(std::vector<GO>& myIndicies, int blockOffset,
 
 // From a Thyra vector space create a compatable Tpetra_Map
 const RCP<Tpetra::Map<LO, GO, NT> > thyraVSToTpetraMap(
-    const Thyra::VectorSpaceBase<ST>& vs,
-    const RCP<const Teuchos::Comm<Thyra::Ordinal> >& /* comm */) {
+    const Thyra::VectorSpaceBase<ST>& vs, const RCP<const Teuchos::Comm<Thyra::Ordinal> >& comm) {
   int localDim = 0;
   std::vector<GO> myGIDs;
 
@@ -252,12 +251,11 @@ const RCP<Tpetra::Map<LO, GO, NT> > thyraVSToTpetraMap(
 
   TEUCHOS_ASSERT(myGIDs.size() == (size_t)localDim);
 
-  // FIXME (mfh 12 Jul 2018) This ignores the input comm, so it can't
-  // be right.
+  auto tpetraComm = Thyra::convertThyraToTpetraComm(comm);
 
   // create the map
-  return rcp(new Tpetra::Map<LO, GO, NT>(vs.dim(), Teuchos::ArrayView<const GO>(myGIDs), 0,
-                                         Tpetra::getDefaultComm()));
+  return rcp(
+      new Tpetra::Map<LO, GO, NT>(vs.dim(), Teuchos::ArrayView<const GO>(myGIDs), 0, tpetraComm));
 }
 
 }  // namespace TpetraHelpers

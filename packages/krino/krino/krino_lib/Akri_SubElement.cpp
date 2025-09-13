@@ -110,8 +110,7 @@ static bool is_on_multiple_blocks(const stk::mesh::BulkData& mesh, stk::mesh::En
   {
     if (part->primary_entity_rank() == stk::topology::ELEMENT_RANK &&
        !stk::mesh::is_auto_declared_part(*part) &&
-       part->subsets().empty() &&
-       part->name().compare(0,7,"refine_") != 0)
+       part->subsets().empty())
     {
       if (foundVolumePart) return true;
       foundVolumePart = true;
@@ -378,7 +377,7 @@ bool on_interface_or_io_parts_have_changed(const CDMesh & mesh, const Phase_Supp
   if (newParts != oldParts)
     return true;
   for (auto && partOrdinal : newParts)
-    if (phaseSupport.is_interface(&mesh.stk_meta().get_part(partOrdinal)))
+    if (phaseSupport.is_interface(mesh.stk_meta().get_part(partOrdinal)))
       return true;
   return false;
 }
@@ -946,7 +945,7 @@ SubElement::determine_decomposed_elem_phase(const std::vector<Surface_Identifier
   }
   else
   {
-    const PhaseTag startPhase = my_phase.empty() ? my_owner->get_phase() : my_phase;
+    const PhaseTag & startPhase = my_phase.empty() ? my_owner->get_phase() : my_phase;
     my_phase = update_phase(surfaceIDs, startPhase, my_owner->get_sorted_cutting_interfaces(), myInterfaceSigns);
   }
 
@@ -1088,7 +1087,7 @@ SubElement::maximum_relative_angle() const
 }
 
 void
-SubElement::decompose_edges(CDMesh & mesh, const InterfaceID interface_key)
+SubElement::decompose_edges(CDMesh & /*mesh*/, const InterfaceID /*interface_key*/)
 {
   const std::string & owner_type = my_owner->topology().name();
   const std::string & sub_type = topology().name();
@@ -1358,7 +1357,7 @@ SubElement_Tri_3::determine_node_signs(const CDMesh & mesh, const InterfaceID in
 }
 
 void
-SubElement_Tri_3::determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key)
+SubElement_Tri_3::determine_node_scores(const CDMesh & /*mesh*/, const InterfaceID /*interface_key*/)
 {
   // No-op, node scores are not used on tris
 }
@@ -1520,7 +1519,7 @@ SubElement_Tri_3::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
 }
 
 bool
-SubElement_Tri_3::determine_diagonal_for_cut_triangle(const Simplex_Generation_Method & simplexMethod, const NodeVec & lnodes, const int i0, const int i1, const int i2, const int i3, const int i5)
+SubElement_Tri_3::determine_diagonal_for_cut_triangle(const Simplex_Generation_Method & simplexMethod, const NodeVec & lnodes, const int /*i0*/, const int i1, const int i2, const int i3, const int i5)
 {
   /*
    *     2 o
@@ -1558,7 +1557,7 @@ SubElement_Tri_3::handle_tri( NodeVec & lnodes,
                                const std::vector<int> & subInterfaceSigns,
                                const int i0, const int i1, const int i2,
                                const int s0, const int s1, const int s2,
-                               const bool is_interface0, const bool is_interface1, const bool is_interface2)
+                               const bool /*is_interface0*/, const bool /*is_interface1*/, const bool /*is_interface2*/)
 {
   STK_ThrowAssert(!is_degenerate(lnodes, i0,i1,i2));
 
@@ -1578,7 +1577,7 @@ SubElement_Tri_3::handle_tri( NodeVec & lnodes,
 }
 
 void
-SubElement_Tri_3::handle_quad( CDMesh & mesh,
+SubElement_Tri_3::handle_quad( CDMesh & /*mesh*/,
     NodeVec & lnodes,
     const std::vector<int> & subInterfaceSigns,
     const int i0, const int i1, const int i2, const int i3,
@@ -2048,7 +2047,7 @@ static void determine_node_scores_on_triangle_face( const Simplex_Generation_Met
 }
 
 void
-SubElement_Tet_4::determine_node_scores_on_face( const CDMesh & mesh, const InterfaceID interface, const int i0, const int i1, const int i2 )
+SubElement_Tet_4::determine_node_scores_on_face( const CDMesh & mesh, const InterfaceID /*interface*/, const int i0, const int i1, const int i2 )
 {
   const Simplex_Generation_Method simplexMethod = mesh.get_cdfem_support().get_simplex_generation_method();
 
@@ -2270,7 +2269,7 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
   }
 }
 
-bool SubElement_Tet_4::determine_diagonal_for_cut_triangular_face(const Simplex_Generation_Method & simplexMethod, const bool globalIDsAreParallelConsistent, const NodeVec & lnodes, const int i0, const int i1, const int i2, const int i3, const int i5)
+bool SubElement_Tet_4::determine_diagonal_for_cut_triangular_face(const Simplex_Generation_Method & simplexMethod, const bool globalIDsAreParallelConsistent, const NodeVec & lnodes, const int /*i0*/, const int i1, const int i2, const int /*i3*/, const int /*i5*/)
 {
   /*
    *     2 o
@@ -2594,7 +2593,7 @@ SubElement::parametric_distance( const SubElementNode * node0, const SubElementN
   return std::sqrt(0.5*sum_sqr_dist);
 }
 
-void set_node_signs_for_edge(const InterfaceID interface, const SubElementNode * node1, const SubElementNode * node2, const int node1Sign, const int node2Sign, const double crossingLocation, const CDFEM_Snapper & snapper)
+void set_node_signs_for_edge(const InterfaceID /*interface*/, const SubElementNode * node1, const SubElementNode * node2, const int node1Sign, const int node2Sign, const double crossingLocation, const CDFEM_Snapper & snapper)
 {
   if (node1Sign != node2Sign)
   {
@@ -2741,13 +2740,13 @@ SubElement::decompose(CDMesh & mesh, const InterfaceID interface_key)
 }
 
 std::vector<int>
-SubElement::get_edges_with_children(const InterfaceID & interface) const
+SubElement::get_edges_with_children(const InterfaceID & /*interface*/) const
 {
   // Iterate edges looking for any common children of the edge nodes
   const stk::topology Top = topology();
   const int num_edges = Top.num_edges();
-
   std::vector<int> edgesWithChildren;
+
   for ( int edge = 0; edge < num_edges; ++edge )
   {
     const unsigned * edge_node_ordinals = get_edge_node_ordinals(Top, edge);
@@ -2757,6 +2756,7 @@ SubElement::get_edges_with_children(const InterfaceID & interface) const
     const SubElementNode * child = SubElementNode::common_child({node0, node1});
     if( child )
     {
+      edgesWithChildren.reserve(num_edges);
       if(krinolog.shouldPrint(LOG_DEBUG))
       {
         krinolog << "Found hanging node on edge " << edge << " of element id=" << entityId() << "\n";
@@ -2801,7 +2801,7 @@ SubElement::build_quadratic_subelements(CDMesh & mesh)
 }
 
 void
-SubElement::cut_face_interior_intersection_points(CDMesh & mesh, int level)
+SubElement::cut_face_interior_intersection_points(CDMesh & /*mesh*/, int /*level*/)
 {
 
   if (topology().num_faces() == 0)

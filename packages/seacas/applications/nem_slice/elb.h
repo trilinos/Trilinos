@@ -100,7 +100,7 @@ template <typename INT> struct LB_Description
   std::string file{};
 
   /* Calculated quantities */
-  int *vertex2proc{nullptr};
+  std::vector<int> vertex2proc{};
 
   /* Nodal */
   std::vector<std::vector<INT>> int_nodes{};

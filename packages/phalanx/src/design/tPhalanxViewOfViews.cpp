@@ -272,7 +272,11 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamCtor) {
   std::vector<PHX::Device> streams;
   if (PHX::Device().concurrency() >= 4) {
     std::cout << "Using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+#if KOKKOS_VERSION >= 40699
+    streams = Kokkos::Experimental::partition_space(PHX::Device(),std::vector<int>(4,1));
+#else
     streams = Kokkos::Experimental::partition_space(PHX::Device(),1,1,1,1);
+#endif
   }
   else {
     std::cout << "NOT using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
@@ -353,7 +357,11 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_UserStreamInitialize) {
   std::vector<PHX::Device> streams;
   if (PHX::Device().concurrency() >= 4) {
     std::cout << "Using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
+#if KOKKOS_VERSION >= 40699
+    streams = Kokkos::Experimental::partition_space(PHX::Device(),std::vector<int>(4,1));
+#else
     streams = Kokkos::Experimental::partition_space(PHX::Device(),1,1,1,1);
+#endif
   }
   else {
     std::cout << "NOT using partition_space, concurrency=" << PHX::Device().concurrency() << std::endl;
@@ -476,7 +484,7 @@ using DeviceMemorySpace = std::conditional<std::is_same<DeviceExecutionSpace,Kok
                                            Kokkos::CudaSpace,
                                            Kokkos::DefaultExecutionSpace::memory_space>::type;
 using view = Kokkos::View<double*,DeviceMemorySpace>;
-using view_host = view::HostMirror;
+using view_host = view::host_mirror_type;
 
 class Wrapper {
 public:

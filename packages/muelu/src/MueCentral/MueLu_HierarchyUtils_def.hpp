@@ -26,6 +26,34 @@
 
 namespace MueLu {
 
+// Copy object from one level to another
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CopyBetweenLevels(Level& fromLevel, Level& toLevel, const std::string fromLabel, const std::string toLabel, const std::string dataType) {
+  TEUCHOS_TEST_FOR_EXCEPTION(dataType != "RCP<Matrix>" && dataType != "RCP<const Import>", Exceptions::InvalidArgument,
+                             std::string("MueLu::Utils::CopyBetweenLevels: unknown data type(") + dataType + ")");
+
+  if (!fromLevel.IsAvailable(fromLabel)) return;
+
+  if (dataType == "RCP<Matrix>") {
+    // Normally, we should only do
+    //      toLevel->Set(toLabel,fromLevel->Get<RCP<Matrix> >(fromLabel));
+    // The logic below is meant to handle a special case when we
+    // repartition a processor away, leaving behind a RCP<Operator> on
+    // on the level instead of an RCP<Matrix>
+
+    auto tempOp     = fromLevel.Get<RCP<Operator>>(fromLabel);
+    auto tempMatrix = rcp_dynamic_cast<Matrix>(tempOp);
+    if (!tempMatrix.is_null())
+      toLevel.Set(toLabel, tempMatrix);
+    else
+      toLevel.Set(toLabel, tempOp);
+  }
+
+  if (dataType == "RCP<const Import>") {
+    toLevel.Set(toLabel, fromLevel.Get<RCP<const Import>>(fromLabel));
+  }
+}
+
 // Copy object from one hierarchy to another calling AddNewLevel as appropriate.
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CopyBetweenHierarchies(Hierarchy& fromHierarchy, Hierarchy& toHierarchy, const std::string fromLabel, const std::string toLabel, const std::string dataType) {
@@ -37,27 +65,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CopyBetweenHiera
     RCP<Level> fromLevel = fromHierarchy.GetLevel(i);
     RCP<Level> toLevel   = toHierarchy.GetLevel(i);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(dataType != "RCP<Matrix>" && dataType != "RCP<const Import>", Exceptions::InvalidArgument,
-                               std::string("MueLu::Utils::CopyBetweenHierarchies: unknown data type(") + dataType + ")");
-    if (fromLevel->IsAvailable(fromLabel)) {
-      if (dataType == "RCP<Matrix>") {
-        // Normally, we should only do
-        //      toLevel->Set(toLabel,fromLevel->Get<RCP<Matrix> >(fromLabel));
-        // The logic below is meant to handle a special case when we
-        // repartition a processor away, leaving behind a RCP<Operator> on
-        // on the level instead of an RCP<Matrix>
-
-        auto tempOp     = fromLevel->Get<RCP<Operator>>(fromLabel);
-        auto tempMatrix = rcp_dynamic_cast<Matrix>(tempOp);
-        if (!tempMatrix.is_null())
-          toLevel->Set(toLabel, tempMatrix);
-        else
-          toLevel->Set(toLabel, tempOp);
-      }
-      if (dataType == "RCP<const Import>") {
-        toLevel->Set(toLabel, fromLevel->Get<RCP<const Import>>(fromLabel));
-      }
-    }
+    CopyBetweenLevels(*fromLevel, *toLevel, fromLabel, toLabel, dataType);
   }
 }
 
@@ -188,6 +196,9 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
         } else if (name == "Material") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<MultiVector>>(levelListEntry->second), NoFactory::get());
+        } else if (name == "BlockNumber") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<LocalOrdinalVector>>(levelListEntry->second), NoFactory::get());
         } else if (name == "Coordinates")  // Scalar of Coordinates MV is always double
         {
           RCP<realvaluedmultivector_type> vec;
@@ -297,7 +308,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
                                        name != "M1" && name != "Ms" && name != "M0inv" &&
                                        name != "NodeMatrix" &&
                                        name != "Nullspace" && name != "Coordinates" && name != "Material" &&
-                                       name != "pcoarsen: element to node map" &&
+                                       name != "BlockNumber" && name != "pcoarsen: element to node map" &&
                                        name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                        name != "dropMap1" && name != "dropMap2" &&
                                        name != "output stream" &&
@@ -324,6 +335,9 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
         } else if (name == "Material") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<MultiVector>>(userListEntry->second), NoFactory::get());
+        } else if (name == "BlockNumber") {
+          level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+          level->Set(name, Teuchos::getValue<RCP<LocalOrdinalVector>>(userListEntry->second), NoFactory::get());
         } else if (name == "Coordinates") {  // Scalar of Coordinates MV is always double
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<realvaluedmultivector_type>>(userListEntry->second), NoFactory::get());

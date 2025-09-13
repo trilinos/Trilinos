@@ -682,7 +682,7 @@ void UpdateInteriorNodeBVs<ViewType, ExecutionSpace>::check_tree(unsigned argIdx
     LocalOrdinal parent = tm_nodeParents(idx);
     RealType sibMinMax[6];
 
-    constexpr RealType tol = std::numeric_limits<RealType>::epsilon();
+    constexpr RealType tol = Kokkos::Experimental::epsilon_v<RealType>;
     bool fixedBox = false;
 
     while (idx != parent) {

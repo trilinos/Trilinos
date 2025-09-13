@@ -148,12 +148,14 @@ void donate_one_element(stk::unit_test_util::BulkDataTester & mesh)
   ASSERT_TRUE( mesh.is_valid(node));
 
   const stk::mesh::ConnectedEntities node_elems = mesh.get_connected_entities(node, stk::topology::ELEM_RANK);
-  for(unsigned i=0; i<node_elems.size() && !mesh.is_valid(elem); ++i)
-  {
-    elem = node_elems[i];
+  for(stk::mesh::Entity node_elem : node_elems) {
+    elem = node_elem;
     if(mesh.parallel_owner_rank(elem) != p_rank)
     {
       elem = Entity();
+    }
+    if (mesh.is_valid(elem)) {
+      break;
     }
   }
 
@@ -2098,6 +2100,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
     Owned, Shared, Ghost
   };
 
+  auto pressureData = pressure_field.data<stk::mesh::ReadWrite>();
   for(stk::mesh::BucketVector::const_iterator k = buckets.begin(); k != buckets.end(); ++k)
   {
     {
@@ -2108,20 +2111,20 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
       for(unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
       {
         stk::mesh::Entity entity = bucket[iEntity];
-        int * const p = stk::mesh::field_data(pressure_field, entity);
+        auto p = pressureData.entity_values(entity);
         stk::mesh::EntityId id = eMesh.identifier(entity);
 
         if(bucket.owned())
         {
-          p[0] = (p_rank + 1) * 100 + id;
+          p(0_comp) = (p_rank + 1) * 100 + id;
         }
         else if(bucket.shared())
         {
-          p[0] = -((eMesh.parallel_owner_rank(entity) + 1) * 100 + id);
+          p(0_comp) = -((eMesh.parallel_owner_rank(entity) + 1) * 100 + id);
         }
         else
         {
-          p[0] = ((p_rank + 1) * 1000 + id);
+          p(0_comp) = ((p_rank + 1) * 1000 + id);
         }
 
       }
@@ -2152,18 +2155,18 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
       {
         stk::mesh::Entity entity = bucket[iEntity];
         stk::mesh::EntityId id = eMesh.identifier(entity);
-        int * const p = stk::mesh::field_data(pressure_field, entity);
+        auto p = pressureData.entity_values(entity);
         double p_e = (p_rank + 1) * 100 + id;
         if(bucket.owned())
         {
-          ASSERT_EQ(p[0], p_e);
+          ASSERT_EQ(p(0_comp), p_e);
         }
         else if(bucket.shared())
         {
           p_e = ((eMesh.parallel_owner_rank(entity) + 1) * 100 + id);
           if(sync_shared)
           {
-            ASSERT_EQ(p[0], p_e);
+            ASSERT_EQ(p(0_comp), p_e);
           }
         }
         else
@@ -2171,7 +2174,7 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
           p_e = ((eMesh.parallel_owner_rank(entity) + 1) * 100 + id);
           if(sync_aura)
           {
-            ASSERT_EQ(p[0], p_e);
+            ASSERT_EQ(p(0_comp), p_e);
           }
         }
       }
@@ -2413,12 +2416,24 @@ std::string printGhostDataByRank(stk::mesh::BulkData & bulkData, stk::topology::
   return oss.str();
 }
 
-TEST(BulkData, EntityGhostData)
+TEST(BulkData, EntityGhostData_SEND_LOCALLY_OWNED)
 {
   std::string gold_result = "(Entity_lid=0, direction=SEND, processor=128, ghosting level=LOCALLY_OWNED)";
   stk::mesh::impl::EntityGhostData data;
   data.direction = stk::mesh::impl::EntityGhostData::SEND;
   data.ghostingLevel = stk::mesh::impl::EntityGhostData::LOCALLY_OWNED;
+  data.processor = 128;
+  std::ostringstream oss;
+  oss << data;
+  EXPECT_EQ( gold_result, oss.str());
+}
+
+TEST(BulkData, EntityGhostData_INVALID_CUSTOM)
+{
+  std::string gold_result = "(Entity_lid=0, direction=INVALID, processor=128, ghosting level=CUSTOM_1)";
+  stk::mesh::impl::EntityGhostData data;
+  data.direction = stk::mesh::impl::EntityGhostData::INVALID;
+  data.ghostingLevel = 2;
   data.processor = 128;
   std::ostringstream oss;
   oss << data;
@@ -4466,28 +4481,29 @@ TEST(BulkData, can_we_create_shared_nodes)
 
       test_nodes(bulk);
 
+      auto coordFieldData = coordField.data<stk::mesh::ReadWrite>();
       ////////////////////////
       // Made it here. nodes 2 and 3 are shared, but are not connected to any higher
       // ranked entities on processor 1
 
       // Add coordinates so mesh can be written out to file
       int node_id = bulk.identifier(node1);
-      double* coords = stk::mesh::field_data(coordField, node1);
-      coords[0] = xCoords[node_id-1];
-      coords[1] = yCoords[node_id-1];
-      coords[2] = zCoords[node_id-1];
+      auto coords = coordFieldData.entity_values(node1);
+      coords(0_comp) = xCoords[node_id-1];
+      coords(1_comp) = yCoords[node_id-1];
+      coords(2_comp) = zCoords[node_id-1];
 
       node_id = bulk.identifier(node2);
-      coords = stk::mesh::field_data(coordField, node2);
-      coords[0] = xCoords[node_id-1];
-      coords[1] = yCoords[node_id-1];
-      coords[2] = zCoords[node_id-1];
+      coords = coordFieldData.entity_values(node2);
+      coords(0_comp) = xCoords[node_id-1];
+      coords(1_comp) = yCoords[node_id-1];
+      coords(2_comp) = zCoords[node_id-1];
 
       node_id = bulk.identifier(thirdNode);
-      coords = stk::mesh::field_data(coordField, thirdNode);
-      coords[0] = xCoords[node_id-1];
-      coords[1] = yCoords[node_id-1];
-      coords[2] = zCoords[node_id-1];
+      coords = coordFieldData.entity_values(thirdNode);
+      coords(0_comp) = xCoords[node_id-1];
+      coords(1_comp) = yCoords[node_id-1];
+      coords(2_comp) = zCoords[node_id-1];
 
       std::vector<size_t> counts;
       stk::mesh::comm_mesh_counts(bulk, counts);
@@ -4500,53 +4516,54 @@ TEST(BulkData, can_we_create_shared_nodes)
       double owned_value = 10;
       double shared_value = 1;
 
-      double *tempField = stk::mesh::field_data(temperatureField, node1);
+      auto tempFieldData = temperatureField.data<stk::mesh::ReadWrite>();
+      auto tempFieldNodeData = tempFieldData.entity_values(node1);
       if ( bulk.bucket(node1).owned() )
       {
-        *tempField = owned_value;
+        tempFieldNodeData(0_comp) = owned_value;
       }
       else
       {
-        *tempField = shared_value;
+        tempFieldNodeData(0_comp) = shared_value;
       }
 
-      tempField = stk::mesh::field_data(temperatureField, node2);
+      tempFieldNodeData = tempFieldData.entity_values(node2);
       if ( bulk.bucket(node2).owned() )
       {
-        *tempField = owned_value;
+        tempFieldNodeData(0_comp) = owned_value;
       }
       else
       {
-        *tempField = shared_value;
+        tempFieldNodeData(0_comp) = shared_value;
       }
 
-      tempField = stk::mesh::field_data(temperatureField, thirdNode);
+      tempFieldNodeData = tempFieldData.entity_values(thirdNode);
       if ( bulk.bucket(thirdNode).owned() )
       {
-        *tempField = owned_value;
+        tempFieldNodeData(0_comp) = owned_value;
       }
       else
       {
-        *tempField = shared_value;
+        tempFieldNodeData(0_comp) = shared_value;
       }
 
       std::vector<const stk::mesh::FieldBase*> fields(1, &temperatureField);
       // send data, owned to shared
       stk::mesh::communicate_field_data(bulk.shared_ghosting(), fields); /* IMPORTANT PART TO TEST */
 
-      tempField = stk::mesh::field_data(temperatureField, node1);
-      EXPECT_NEAR(owned_value, *tempField, 1e-6);
-      tempField = stk::mesh::field_data(temperatureField, node2);
-      EXPECT_NEAR(owned_value, *tempField, 1e-6);
-      tempField = stk::mesh::field_data(temperatureField, thirdNode);
-      EXPECT_NEAR(owned_value, *tempField, 1e-6);
+      tempFieldNodeData = tempFieldData.entity_values(node1);
+      EXPECT_NEAR(owned_value, tempFieldNodeData(0_comp), 1e-6);
+      tempFieldNodeData = tempFieldData.entity_values(node2);
+      EXPECT_NEAR(owned_value, tempFieldNodeData(0_comp), 1e-6);
+      tempFieldNodeData = tempFieldData.entity_values(thirdNode);
+      EXPECT_NEAR(owned_value, tempFieldNodeData(0_comp), 1e-6);
 
       // node 3 on processor 1 is ghosted, so it still has initial value
       if ( bulk.parallel_rank() == 1 )
       {
         stk::mesh::Entity ghostedNode = bulk.get_entity(stk::topology::NODE_RANK, 3);
-        tempField = stk::mesh::field_data(temperatureField, ghostedNode);
-        EXPECT_NEAR(initialTemperatureValue, *tempField, 1e-6);
+        tempFieldNodeData = tempFieldData.entity_values(ghostedNode);
+        EXPECT_NEAR(initialTemperatureValue, tempFieldNodeData(0_comp), 1e-6);
       }
 
       // send data, owned to ghosted
@@ -4555,40 +4572,40 @@ TEST(BulkData, can_we_create_shared_nodes)
       if ( bulk.parallel_rank() == 1 )
       {
         stk::mesh::Entity ghostedNode = bulk.get_entity(stk::topology::NODE_RANK, 3);
-        tempField = stk::mesh::field_data(temperatureField, ghostedNode);
-        EXPECT_NEAR(owned_value, *tempField, 1e-6);
+        tempFieldNodeData = tempFieldData.entity_values(ghostedNode);
+        EXPECT_NEAR(owned_value, tempFieldNodeData(0_comp), 1e-6);
       }
 
       std::vector<const stk::mesh::FieldBase*> fields1(1, &temperatureField);
       stk::mesh::parallel_sum(bulk, fields1); /* IMPORTANT PART TO TEST */
 
       double summed_value = 2*owned_value;
-      tempField = stk::mesh::field_data(temperatureField, node1);
-      EXPECT_NEAR(summed_value, *tempField, 1e-6);
-      tempField = stk::mesh::field_data(temperatureField, node2);
-      EXPECT_NEAR(summed_value, *tempField, 1e-6);
+      tempFieldNodeData = tempFieldData.entity_values(node1);
+      EXPECT_NEAR(summed_value, tempFieldNodeData(0_comp), 1e-6);
+      tempFieldNodeData = tempFieldData.entity_values(node2);
+      EXPECT_NEAR(summed_value, tempFieldNodeData(0_comp), 1e-6);
 
       double min_value = 1;
       if ( bulk.parallel_rank() == 1 )
       {
-        tempField = stk::mesh::field_data(temperatureField, node1);
-        *tempField = min_value;
+        tempFieldNodeData = tempFieldData.entity_values(node1);
+        tempFieldNodeData(0_comp) = min_value;
       }
 
       stk::mesh::parallel_min(bulk, fields1); /* IMPORTANT PART TO TEST */
-      tempField = stk::mesh::field_data(temperatureField, node1);
-      EXPECT_NEAR(min_value, *tempField, 1e-6);
+      tempFieldNodeData = tempFieldData.entity_values(node1);
+      EXPECT_NEAR(min_value, tempFieldNodeData(0_comp), 1e-6);
 
       double max_value = 100;
       if ( bulk.parallel_rank() == 1 )
       {
-        tempField = stk::mesh::field_data(temperatureField, node1);
-        *tempField = max_value;
+        tempFieldNodeData = tempFieldData.entity_values(node1);
+        tempFieldNodeData(0_comp) = max_value;
       }
 
       stk::mesh::parallel_max(bulk, fields1); /* IMPORTANT PART TO TEST */
-      tempField = stk::mesh::field_data(temperatureField, node1);
-      EXPECT_NEAR(max_value, *tempField, 1e-6);
+      tempFieldNodeData = tempFieldData.entity_values(node1);
+      EXPECT_NEAR(max_value, tempFieldNodeData(0_comp), 1e-6);
 
       std::vector<EntityProc> entities_to_change;
       if ( bulk.parallel_rank() == 0 )
@@ -4873,24 +4890,25 @@ void batch_create_child_nodes_new(BulkData & mesh, std::vector< ChildNodeRequest
 
 void set_coords_on_new_node(stk::mesh::MetaData& meta, stk::mesh::Entity nodeA, stk::mesh::Entity nodeB, stk::mesh::Entity new_node)
 {
-  stk::mesh::FieldBase const * coord = meta.coordinate_field();
+  const stk::mesh::FieldBase * coord = meta.coordinate_field();
+  auto coordData = coord->data<double,stk::mesh::ReadWrite>();
 
   double x = 0, y = 0, z = 0;
 
-  double *fieldValue = static_cast<double *>(stk::mesh::field_data(*coord, nodeA));
-  x += fieldValue[0]*0.5;
-  y += fieldValue[1]*0.5;
-  z += fieldValue[2]*0.5;
+  auto fieldValue = coordData.entity_values(nodeA);
+  x += fieldValue(0_comp)*0.5;
+  y += fieldValue(1_comp)*0.5;
+  z += fieldValue(2_comp)*0.5;
 
-  fieldValue = static_cast<double *>(stk::mesh::field_data(*coord, nodeB));
-  x += fieldValue[0]*0.5;
-  y += fieldValue[1]*0.5;
-  z += fieldValue[2]*0.5;
+  fieldValue = coordData.entity_values(nodeB);
+  x += fieldValue(0_comp)*0.5;
+  y += fieldValue(1_comp)*0.5;
+  z += fieldValue(2_comp)*0.5;
 
-  fieldValue = static_cast<double *>(stk::mesh::field_data(*coord, new_node));
-  fieldValue[0] = x;
-  fieldValue[1] = y;
-  fieldValue[2] = z;
+  fieldValue = coordData.entity_values(new_node);
+  fieldValue(0_comp) = x;
+  fieldValue(1_comp) = y;
+  fieldValue(2_comp) = z;
 }
 
 TEST(BulkData, create_vigilante_nodes_along_shared_edge)
@@ -5303,14 +5321,15 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
 
   std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(mesh, stk::topology::NODE_RANK, nodes);
+  auto coordData = coordField.data<stk::mesh::ReadWrite>();
   for (size_t n=0; n<nodes.size(); ++n)
   {
     stk::mesh::Entity node = nodes[n];
     int node_id = mesh.identifier(node);
 
-    double* coords = stk::mesh::field_data(coordField, node);
-    coords[0] = xCoords[node_id-1];
-    coords[1] = yCoords[node_id-1];
+    auto coords = coordData.entity_values(node);
+    coords(0_comp) = xCoords[node_id-1];
+    coords(1_comp) = yCoords[node_id-1];
   }
 
   //create 1 element per processor
@@ -5331,11 +5350,12 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   // check that all nodes of block_1 have the correct value
   std::vector<stk::mesh::Entity> block_1_nodes;
   stk::mesh::get_selected_entities(stk::mesh::Selector(block_1), mesh.buckets( stk::topology::NODE_RANK ), block_1_nodes);
+  auto oneFieldData = oneField.data<stk::mesh::ReadOnly>();
   for(size_t n=0; n<block_1_nodes.size(); ++n)
   {
-    double* data_ptr = stk::mesh::field_data(oneField, block_1_nodes[n]);
-    EXPECT_TRUE(data_ptr != NULL);
-    EXPECT_DOUBLE_EQ(1.0, *data_ptr);
+    EXPECT_TRUE(oneField.defined_on(block_1_nodes[n]));
+    auto data = oneFieldData.entity_values(block_1_nodes[n]);
+    EXPECT_DOUBLE_EQ(1.0, data(0_comp));
   }
 
   //
@@ -5362,11 +5382,12 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
 
   // check that all nodes of block_1 have the correct value
   stk::mesh::get_selected_entities(stk::mesh::Selector(block_1), mesh.buckets( stk::topology::NODE_RANK ), block_1_nodes);
+  oneFieldData = oneField.data<stk::mesh::ReadOnly>();
   for(size_t n=0; n<block_1_nodes.size(); ++n)
   {
-    double* data_ptr = stk::mesh::field_data(oneField, block_1_nodes[n]);
-    EXPECT_TRUE(data_ptr != NULL);
-    EXPECT_DOUBLE_EQ(1.0, *data_ptr)<<"node "<<mesh.identifier(block_1_nodes[n]);
+    EXPECT_TRUE(oneField.defined_on(block_1_nodes[n]));
+    auto data = oneFieldData.entity_values(block_1_nodes[n]);
+    EXPECT_DOUBLE_EQ(1.0, data(0_comp))<<"node "<<mesh.identifier(block_1_nodes[n]);
   }
 }
 

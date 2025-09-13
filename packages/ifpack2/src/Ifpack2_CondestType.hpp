@@ -20,6 +20,6 @@ enum CondestType {
   GMRES   //!< Uses AztecOO's GMRES
 };
 
-}//namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif

@@ -48,15 +48,16 @@
 namespace stk { namespace mesh { namespace unit_test {
 
 inline
-void proc0_ghost_node1_to_proc1_and_proc2(stk::mesh::BulkData& bulk,
-                                          const std::string& ghostingName = "myCustomGhosting")
+void proc0_ghost_node_to_proc1_and_proc2(stk::mesh::BulkData& bulk,
+                                         stk::mesh::EntityId nodeID,
+                                         const std::string& ghostingName = "myCustomGhosting")
 {
   bulk.modification_begin();
 
   stk::mesh::Ghosting& myGhosting = bulk.create_ghosting(ghostingName);
   std::vector<stk::mesh::EntityProc> nodesToGhost;
 
-  stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
+  stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, nodeID);
   if (bulk.parallel_rank() == 0) {
     EXPECT_TRUE(bulk.is_valid(node1));
     EXPECT_TRUE(bulk.bucket(node1).owned());

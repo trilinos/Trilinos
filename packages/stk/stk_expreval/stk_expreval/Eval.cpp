@@ -46,7 +46,8 @@ Eval::Eval(VariableMap::Resolver & resolver, const std::string & expression, Var
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
-    m_fpErrorBehavior(FPErrorBehavior::Warn),
+    m_fpErrorBehavior(FPErrorBehavior::WarnOnce),
+    m_fpWarningIssued(false),
     m_headNode(nullptr),
     m_arrayOffsetType(arrayOffsetType),
     m_parsedEval(nullptr)
@@ -59,7 +60,8 @@ Eval::Eval(const std::string & expression, Variable::ArrayOffset arrayOffsetType
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
-    m_fpErrorBehavior(FPErrorBehavior::Warn),
+    m_fpErrorBehavior(FPErrorBehavior::WarnOnce),
+    m_fpWarningIssued(false),
     m_headNode(nullptr),
     m_arrayOffsetType(arrayOffsetType),
     m_parsedEval(nullptr)
@@ -74,6 +76,8 @@ Eval::Eval(const Eval& otherEval)
     m_expression(otherEval.m_expression),
     m_syntaxStatus(otherEval.m_syntaxStatus),
     m_parseStatus(otherEval.m_parseStatus),
+    m_fpErrorBehavior(otherEval.m_fpErrorBehavior),
+    m_fpWarningIssued(otherEval.m_fpWarningIssued),
     m_headNode(otherEval.m_headNode),
     m_nodes(otherEval.m_nodes),
     m_evaluationNodes(otherEval.m_evaluationNodes),
@@ -188,6 +192,10 @@ Eval::evaluate() const
     throw std::runtime_error(std::string("Expression '") + m_expression + "' did not parse successfully");
   }
 
+  bool fpWarningPreviouslyIssued = get_fp_warning_issued();
+  if (m_fpErrorBehavior != FPErrorBehavior::WarnOnce) {
+    m_fpWarningIssued = false;
+  }
   double returnValue = 0.0;
   try
   {
@@ -201,12 +209,14 @@ Eval::evaluate() const
       }
       returnValue = m_evaluationNodes.back()->getResult();
     }
-
+    
+    print_expression_if_fp_warning(fpWarningPreviouslyIssued);
   }
   catch(expression_evaluation_exception &)
   {
     throw std::runtime_error(std::string("Expression '") + m_expression + "' did not evaluate successfully");
   }
+  
   return returnValue;
 }
 
@@ -287,6 +297,7 @@ Eval::get_independent_variable_names() const
 int
 Eval::get_variable_index(const std::string & variable) const
 {
+  
   const auto variableIter = m_variableMap.find(variable);
   STK_ThrowRequireMsg(variableIter != m_variableMap.end(), "Variable " + variable + " Not Found in VariableMap");
   return variableIter->second->get_index();
@@ -548,6 +559,19 @@ Eval::parse(const std::string &expr)
   setExpression(expr);
   parse();
 }
+
+void
+Eval::print_expression_if_fp_warning(bool fpWarningPreviouslyIssued) const
+{
+  if (get_fp_warning_issued() &&
+     (get_fp_error_behavior() == FPErrorBehavior::Warn ||
+     (get_fp_error_behavior() == FPErrorBehavior::WarnOnce && !fpWarningPreviouslyIssued)))
+  {
+    std::cerr << "a floating point exception (converted to warning) was raised during evaluation of expression:\n"
+              << m_expression << std::endl;
+  }
+}
+
 
 }
 }

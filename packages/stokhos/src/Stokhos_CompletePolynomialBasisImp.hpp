@@ -211,7 +211,7 @@ computeTripleProductTensorNew(ordinal_type order) const
   // Create i, j, k iterators for each dimension
   // Note:  we have to supply an initializer in the arrays of iterators to 
   // avoid checked-stl errors about singular iterators
-  typedef Sparse3Tensor<ordinal_type,value_type> Cijk_type;
+  //typedef Sparse3Tensor<ordinal_type,value_type> Cijk_type;
   typedef typename Cijk_type::k_iterator k_iterator;
   typedef typename Cijk_type::kj_iterator kj_iterator;
   typedef typename Cijk_type::kji_iterator kji_iterator;

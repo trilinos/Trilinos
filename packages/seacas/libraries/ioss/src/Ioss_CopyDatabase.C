@@ -4,6 +4,9 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <numeric>
+#include <random>
+
 #include "Ioss_CopyDatabase.h"
 #include "Ioss_DataPool.h"
 #include "Ioss_FaceGenerator.h"
@@ -309,7 +312,7 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   // to the output region based on values in `options`
   std::vector<int> selected_steps = get_selected_steps(region, options);
 
-  int step_count = static_cast<int>(region.get_property("state_count").get_int());
+  int step_count = static_cast<int>(selected_steps.size() - 1);
 #ifdef SEACAS_HAVE_MPI
   int min_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MIN);
   int max_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MAX);
@@ -322,8 +325,8 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   }
 #endif
   for (int istep = 1; istep <= step_count; istep++) {
-    if (selected_steps[istep] == 1) {
-      transfer_step(region, output_region, data_pool, istep, options, rank);
+    if (selected_steps[istep] != 0) {
+      transfer_step(region, output_region, data_pool, selected_steps[istep], options, rank);
     }
   }
 
@@ -367,7 +370,23 @@ namespace {
           }
         }
         if (selected_step > 0) {
-          selected_steps[selected_step] = 1;
+          selected_steps[selected_step] = selected_step;
+        }
+      }
+    }
+    else if (!options.selected_steps.empty()) {
+      for (const auto &step : options.selected_steps) {
+        if (step == 0 || abs(step) > step_count) {
+          fmt::print(std::cerr,
+                     "WARNING: Step {} is out of range. Must be non-zero and maximum of {}.\n",
+                     step, step_count);
+          continue;
+        }
+        if (step > 0) {
+          selected_steps[step] = step;
+        }
+        else {
+          selected_steps[step_count + 1 + step] = step_count + 1 + step;
         }
       }
     }
@@ -375,7 +394,7 @@ namespace {
       // User did not select specific times to be output...
       // Just select them all
       for (int i = 1; i <= step_count; i++) {
-        selected_steps[i] = 1;
+        selected_steps[i] = i;
       }
     }
 
@@ -389,6 +408,26 @@ namespace {
         selected_steps[istep] = 0;
       }
     }
+
+    if (options.shuffle_times) {
+      std::random_device rd;
+      std::mt19937       g(rd());
+      std::shuffle(selected_steps.begin() + 1, selected_steps.end(), g);
+    }
+
+    if (options.sort_times) {
+      std::vector<std::pair<double, size_t>> times;
+      for (size_t i = 1; i <= selected_steps.size() - 1; i++) {
+        times.emplace_back(region.get_state_time(i), selected_steps[i]);
+      }
+      std::sort(times.begin(), times.end(), [](auto &a, auto &b) { return a.first < b.first; });
+
+      size_t i = 1;
+      for (auto &[time, step] : times) {
+        selected_steps[i++] = step;
+      }
+    }
+
     return selected_steps;
   }
 

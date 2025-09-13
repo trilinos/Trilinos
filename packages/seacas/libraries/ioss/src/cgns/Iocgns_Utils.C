@@ -526,19 +526,14 @@ Ioss::MeshType Iocgns::Utils::check_mesh_type(int cgns_file_ptr)
     }
 
     if (common_zone_type != zone_type) {
-#if IOSS_ENABLE_HYBRID
-      common_zone_type = CGNS_ENUMV(ZoneTypeUserDefined); // This is how we represent hybrid...
-      break;
-#else
-      IOSS_ERROR(fmt::format("ERROR: CGNS: Zone {} is not the same zone type as previous zones."
-                             " This is currently not allowed or supported (hybrid mesh).",
-                             zone));
-#endif
+      IOSS_ERROR(fmt::format(
+          "ERROR: CGNS: Zone {} is not the same zone type as previous zones."
+          " This is currently not allowed or supported (mixed structured/unstructured mesh).",
+          zone));
     }
   }
 
   switch (common_zone_type) {
-  case CGNS_ENUMV(ZoneTypeUserDefined): return Ioss::MeshType::HYBRID;
   case CGNS_ENUMV(Structured): return Ioss::MeshType::STRUCTURED;
   case CGNS_ENUMV(Unstructured): return Ioss::MeshType::UNSTRUCTURED;
   default: return Ioss::MeshType::UNKNOWN;
@@ -697,7 +692,6 @@ namespace {
     // 3 int[3] transform; (values range from -3 to +3 (could store as single int)
     // CGNS_MAX_NAME_LENGTH characters + 17 ints / connection.
 
-    IOSS_PAR_UNUSED(region);
 #if CG_BUILD_PARALLEL
     const int BYTE_PER_NAME = CGNS_MAX_NAME_LENGTH;
     const int INT_PER_ZGC   = 17;
@@ -1050,15 +1044,6 @@ void Iocgns::Utils::write_state_meta_data(int file_ptr, const Ioss::Region &regi
 size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &region,
                                             std::vector<size_t> &zone_offset, bool is_parallel_io)
 {
-#if !IOSS_ENABLE_HYBRID
-  // Make sure mesh is not hybrid...
-  if (region.mesh_type() == Ioss::MeshType::HYBRID) {
-    IOSS_ERROR(fmt::format("ERROR: CGNS: The mesh on region '{}' is of type 'hybrid'."
-                           " This is currently not allowed or supported.",
-                           region.name()));
-  }
-#endif
-
   region.get_database()->progress("\tEnter common_write_metadata");
   int base           = 0;
   int phys_dimension = region.get_property("spatial_dimension").get_int();
@@ -1066,8 +1051,8 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
 
   CGERR(cg_goto(file_ptr, base, "end"));
   std::time_t t    = std::time(nullptr);
-  std::string date = fmt::format("{:%Y/%m/%d}", fmt::localtime(t));
-  std::string time = fmt::format("{:%H:%M:%S}", fmt::localtime(t));
+  std::string date = fmt::format("{:%Y/%m/%d}", *std::localtime(&t));
+  std::string time = fmt::format("{:%H:%M:%S}", *std::localtime(&t));
 
   std::string code_version = region.get_optional_property("code_version", "unknown");
   std::string code_name    = region.get_optional_property("code_name", "unknown");

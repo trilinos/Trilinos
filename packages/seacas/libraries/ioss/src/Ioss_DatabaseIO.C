@@ -346,7 +346,12 @@ namespace Ioss {
       }
     }
 
+    Utils::check_set_bool_property(properties, "LOWERCASE_VARIABLE_NAMES", lowerCaseVariableNames);
+    Utils::check_set_bool_property(properties, "LOWERCASE_DATABASE_NAMES", lowerCaseDatabaseNames);
+
+    // Not sure why I spelled it this way...
     Utils::check_set_bool_property(properties, "LOWER_CASE_VARIABLE_NAMES", lowerCaseVariableNames);
+    Utils::check_set_bool_property(properties, "LOWER_CASE_DATABASE_NAMES", lowerCaseDatabaseNames);
     Utils::check_set_bool_property(properties, "USE_GENERIC_CANONICAL_NAMES",
                                    useGenericCanonicalName);
     Utils::check_set_bool_property(properties, "IGNORE_DATABASE_NAMES", ignoreDatabaseNames);
@@ -653,7 +658,7 @@ namespace Ioss {
   bool DatabaseIO::begin_state(int state, double time)
   {
     IOSS_FUNC_ENTER(m_);
-    progress(__func__);
+    progress("DatabaseIO::begin_state(int state, double time)");
     if (m_timeStateInOut) {
       m_stateStart = std::chrono::steady_clock::now();
     }
@@ -667,7 +672,7 @@ namespace Ioss {
       auto finish = std::chrono::steady_clock::now();
       log_time(m_stateStart, finish, state, time, is_input(), singleProcOnly, util_);
     }
-    progress(__func__);
+    progress("DatabaseIO::end_state(int state, double time)");
     return res;
   }
 

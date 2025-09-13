@@ -23,28 +23,28 @@ namespace Ifpack2 {
     in the group floor(i/NumLocalParts_), with the exception that any leftover rows are placed in the largest
     group NumLocalParts_-1.
 */
-template<class GraphType>
+template <class GraphType>
 class LinearPartitioner : public OverlappingPartitioner<GraphType> {
-public:
+ public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
-  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> 
-    row_graph_type;
+  typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type>
+      row_graph_type;
 
   //! Constructor.
-  LinearPartitioner (const Teuchos::RCP<const row_graph_type>& graph);
+  LinearPartitioner(const Teuchos::RCP<const row_graph_type>& graph);
 
   //! Destructor.
-  virtual ~LinearPartitioner ();
+  virtual ~LinearPartitioner();
 
   //! Set the partitioner's parameters (none for linear partitioning).
-  void setPartitionParameters (Teuchos::ParameterList& List);
+  void setPartitionParameters(Teuchos::ParameterList& List);
 
   //! Compute the partitions.
-  void computePartitions ();
+  void computePartitions();
 };
 
-}// namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_LINEARPARTITIONER_DECL_HPP
+#endif  // IFPACK2_LINEARPARTITIONER_DECL_HPP

@@ -1512,7 +1512,7 @@ exe ejoin
   $(seacas-root)/applications/ejoin/EJ_SystemInterface.C
   $(seacas-root)/applications/ejoin/EJ_index_sort.C
   $(seacas-root)/applications/ejoin/EJ_mapping.C
-  $(seacas-root)/applications/ejoin/EJ_match_xyz.C
+  $(seacas-root)/applications/ejoin/EJ_match.C
   $(seacas-root)/applications/ejoin/EJ_vector3d.C
     suplib_cpp
     suplib_c

@@ -16,6 +16,10 @@ TRIBITS_INCLUDE_DIRECTORIES(
   "${CMAKE_CURRENT_SOURCE_DIR}/fre_fld"
 )
 
+if(TPL_ENABLE_CUDA)
+SET_SOURCE_FILES_PROPERTIES(ext_lib/getline_int.c PROPERTIES COMPILE_DEFINITIONS NO_TERMIOS=1)
+endif()
+
 SET(SOURCES
 	ext_lib/exmemy.c      ext_lib/extime.c      ext_lib/ixlchr.c
 	ext_lib/exname.c      ext_lib/exupcs.c      ext_lib/ixlnum.c

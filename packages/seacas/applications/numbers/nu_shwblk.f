@@ -1,11 +1,11 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
       SUBROUTINE SHWBLK (NELBLK, MAT, NSELND, NSELEL)
-      DIMENSION MAT(6, NELBLK)
+      DIMENSION MAT(7, NELBLK)
       CHARACTER*16 TYPE
       CHARACTER*80 STRTMP
       include 'nu_io.blk'

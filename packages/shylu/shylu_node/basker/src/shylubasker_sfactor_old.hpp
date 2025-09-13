@@ -17,7 +17,6 @@
 #include "shylubasker_structs.hpp"
 
 #include <iostream>
-using namespace std;
 
 namespace BaskerNS
 {

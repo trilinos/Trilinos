@@ -87,7 +87,7 @@ struct fill_ordinal_container< std::vector<T,A> >
 };
  
 #ifdef __GNUC__
-# if (__GNUC__ == 11)
+# if (__GNUC__ >= 11)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Warray-bounds"
 #   define SIERRA_GCC_POP_DIAG

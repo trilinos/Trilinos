@@ -65,8 +65,11 @@ namespace search {
 struct ProjectionData {
   const stk::mesh::BulkData& bulk;
   const std::shared_ptr<MasterElementProviderInterface> masterElemProvider;
-  const std::vector<double>& targetCoordinates;
-  const stk::mesh::FieldBase& sourceCoordinateField;
+  const std::vector<double>& evalPoint;
+  const stk::mesh::FieldBase& coordinateField;
+  const SearchField projectedCoordinateField;
+
+  mutable std::vector<spmd::EntityKeyPair> scratchKeySpace;
 
   ProjectionData(const stk::mesh::BulkData& bulk_,
                  const std::shared_ptr<MasterElementProviderInterface> masterElemProvider_,
@@ -74,8 +77,22 @@ struct ProjectionData {
                  const stk::mesh::FieldBase& sourceCoordinateField_)
                  : bulk(bulk_),
                    masterElemProvider(masterElemProvider_),
-                   targetCoordinates(targetCoordinates_),
-                   sourceCoordinateField(sourceCoordinateField_)
+                   evalPoint(targetCoordinates_),
+                   coordinateField(sourceCoordinateField_),
+                   projectedCoordinateField(&sourceCoordinateField_)
+                 {}
+
+  ProjectionData(const stk::mesh::BulkData& bulk_,
+                 const std::shared_ptr<MasterElementProviderInterface> masterElemProvider_,
+                 const std::vector<double>& targetCoordinates_,
+                 const stk::mesh::FieldBase& sourceCoordinateField_,
+                 double (*transformFunc_)(double),
+                 double defaultValue_)
+                 : bulk(bulk_),
+                   masterElemProvider(masterElemProvider_),
+                   evalPoint(targetCoordinates_),
+                   coordinateField(sourceCoordinateField_),
+                   projectedCoordinateField(&sourceCoordinateField_, transformFunc_, defaultValue_)
                  {}
 };
 

@@ -144,6 +144,50 @@ ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk, const stk::mesh:
 {
 }
 
+ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk, const stk::mesh::FieldBase* coordinateField,
+                                 const stk::mesh::EntityRank sendEntityRank, const stk::mesh::PartVector& sendParts,
+                                 const stk::ParallelMachine sendComm,
+                                 std::shared_ptr<FindParametricCoordsInterface> findParametricCoords,
+                                 std::shared_ptr<HandleExternalPointInterface> externalPointHandler)
+  : m_bulk(sendBulk)
+  , m_meta(sendBulk != nullptr ? &sendBulk->mesh_meta_data() : nullptr)
+  , m_coordinateField(coordinateField)
+  , m_searchEntityRank(sendEntityRank)
+  , m_meshParts(sendParts)
+  , m_comm(sendComm)
+  , m_activeSelector(stk::mesh::Selector().complement())
+  , m_meshModified(false)
+  , m_ghosting(nullptr)
+  , m_findParametricCoords(findParametricCoords)
+  , m_externalPointHandler(externalPointHandler)
+  , m_syncCount(0)
+  , m_isInitialized(false)
+  , m_extrapolateOption(stk::search::ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG)
+{
+}
+
+ElementSendMesh::ElementSendMesh(stk::mesh::BulkData* sendBulk, const stk::mesh::FieldBase* coordinateField,
+                                 const stk::mesh::EntityRank sendEntityRank, const stk::mesh::PartVector& sendParts,
+                                 const stk::mesh::Selector& activeSelector,
+                                 const stk::ParallelMachine sendComm,
+                                 std::shared_ptr<FindParametricCoordsInterface> findParametricCoords,
+                                 std::shared_ptr<HandleExternalPointInterface> externalPointHandler)
+  : m_bulk(sendBulk)
+  , m_meta(sendBulk != nullptr ? &sendBulk->mesh_meta_data() : nullptr)
+  , m_coordinateField(coordinateField)
+  , m_searchEntityRank(sendEntityRank)
+  , m_meshParts(sendParts)
+  , m_comm(sendComm)
+  , m_activeSelector(activeSelector)
+  , m_meshModified(false)
+  , m_ghosting(nullptr)
+  , m_findParametricCoords(findParametricCoords)
+  , m_externalPointHandler(externalPointHandler)
+  , m_syncCount(0)
+  , m_isInitialized(false)
+  , m_extrapolateOption(stk::search::ObjectOutsideDomainPolicy::UNDEFINED_OBJFLAG)
+{
+}
 
 void ElementSendMesh::initialize()
 {
@@ -185,7 +229,8 @@ void ElementSendMesh::bounding_boxes(std::vector<BoundingBox>& v_box, bool inclu
     for(auto entity : b) {
       impl::fill_bounding_box(*m_bulk, entity, m_coordinateField, minCorner, maxCorner);
 
-      EntityProc theIdent(m_bulk->entity_key(entity), m_bulk->parallel_rank());
+      EntityKey key(entity, m_bulk->entity_key(entity));
+      EntityProc theIdent(key, m_bulk->parallel_rank());
       BoundingBox theBox(Box(minCorner, maxCorner), theIdent);
       v_box.push_back(theBox);
     }
@@ -195,7 +240,7 @@ void ElementSendMesh::bounding_boxes(std::vector<BoundingBox>& v_box, bool inclu
 }
 
 
-void ElementSendMesh::find_parametric_coords(const EntityKey k, const std::vector<double>& toCoords,
+void ElementSendMesh::find_parametric_coords(const EntityKey& k, const std::vector<double>& toCoords,
                                              std::vector<double>& parametricCoords,
                                              double& parametricDistance,
                                              bool& isWithinParametricTolerance) const
@@ -206,7 +251,7 @@ void ElementSendMesh::find_parametric_coords(const EntityKey k, const std::vecto
                                                  isWithinParametricTolerance);
 }
 
-bool ElementSendMesh::modify_search_outside_parametric_tolerance(const stk::mesh::EntityKey k,
+bool ElementSendMesh::modify_search_outside_parametric_tolerance(const EntityKey& k,
                                                                  const std::vector<double>& toCoords,
                                                                  std::vector<double>& parametricCoords,
                                                                  double& geometricDistanceSquared,
@@ -215,20 +260,25 @@ bool ElementSendMesh::modify_search_outside_parametric_tolerance(const stk::mesh
   return m_externalPointHandler->handle_point(k, toCoords, parametricCoords, geometricDistanceSquared, isWithinGeometricTolerance);
 }
 
-double ElementSendMesh::get_closest_geometric_distance_squared(const EntityKey k, const std::vector<double>& toCoords) const
+double ElementSendMesh::get_closest_geometric_distance_squared(const EntityKey& k, const std::vector<double>& toCoords) const
 {
   STK_ThrowAssert(m_isInitialized);
+  stk::mesh::Entity e = k;
 
-  stk::search::ProjectionData data(*m_bulk, m_masterElementProvider, toCoords, *m_coordinateField);
-  stk::search::ProjectionResult projectionResult;
-  if(k.rank() == stk::topology::ELEM_RANK) {
-    stk::search::project_to_closest_side(data, get_entity(k), projectionResult);
+  if(m_masterElementProvider) {
+    stk::search::ProjectionData data(*m_bulk, m_masterElementProvider, toCoords, *m_coordinateField);
+    stk::search::ProjectionResult projectionResult;
+    if(k.rank() == stk::topology::ELEM_RANK) {
+      stk::search::project_to_closest_side(data, e, projectionResult);
+    }
+    else {
+      stk::search::project_to_entity(data, e, projectionResult);
+    }
+    STK_ThrowRequire(projectionResult.doneProjection);
+    return projectionResult.geometricDistanceSquared;
   }
-  else {
-    stk::search::project_to_entity(data, get_entity(k), projectionResult);
-  }
-  STK_ThrowRequire(projectionResult.doneProjection);
-  return projectionResult.geometricDistanceSquared;
+
+  return distance_squared_from_nearest_entity_node(*m_bulk, e, m_coordinateField, toCoords);
 }
 
 void ElementSendMesh::update_ghosting(const EntityProcVec& entity_keys, const std::string& suffix)
@@ -238,9 +288,8 @@ void ElementSendMesh::update_ghosting(const EntityProcVec& entity_keys, const st
 
   for(auto key_proc : entity_keys) {
     // convert from EntityProc based on EntityKey to EntityProc based on raw Entity.
-    const stk::mesh::EntityKey key = key_proc.id();
     const unsigned proc = key_proc.proc();
-    const stk::mesh::Entity e = get_entity(key);
+    const stk::mesh::Entity e = key_proc.id();
     const stk::mesh::EntityProc ep(e, proc);
 
     m_ghostingMap.push_back(ep);
@@ -276,6 +325,18 @@ void ElementSendMesh::update_ghosting(const EntityProcVec& entity_keys, const st
   }
 }
 
+void ElementSendMesh::update_ghosted_key(EntityKey& k)
+{
+  stk::mesh::EntityKey key = k;
+  stk::mesh::Entity entity = k;
+
+  stk::mesh::Entity keyEntity = m_bulk->get_entity(key);
+
+  if(keyEntity != entity) {
+    k.m_entity = keyEntity;
+  }
+}
+
 void ElementSendMesh::destroy_ghosting()
 {
   STK_ThrowAssert(m_isInitialized);
@@ -284,21 +345,21 @@ void ElementSendMesh::destroy_ghosting()
   }
 }
 
-bool ElementSendMesh::is_valid(const EntityKey k) const {
+bool ElementSendMesh::is_valid(const EntityKey& k) const {
   STK_ThrowAssert(m_isInitialized);
-  return m_bulk->is_valid(get_entity(k));
+  return m_bulk->is_valid(k);
 }
 
-double ElementSendMesh::get_distance_from_centroid(const EntityKey k, const std::vector<double>& toCoords) const
+double ElementSendMesh::get_distance_from_centroid(const EntityKey& k, const std::vector<double>& toCoords) const
 {
   double distanceSquared = get_distance_squared_from_centroid(k, toCoords);
   return std::sqrt(distanceSquared);
 }
 
-double ElementSendMesh::get_distance_squared_from_centroid(const EntityKey k, const std::vector<double>& toCoords) const
+double ElementSendMesh::get_distance_squared_from_centroid(const EntityKey& k, const std::vector<double>& toCoords) const
 {
   STK_ThrowAssert(m_isInitialized);
-  const stk::mesh::Entity e = get_entity(k);
+  const stk::mesh::Entity e = k;
   double distanceSquared = std::numeric_limits<double>::max();
   const unsigned nDim = m_meta->spatial_dimension();
 
@@ -315,29 +376,29 @@ double ElementSendMesh::get_distance_squared_from_centroid(const EntityKey k, co
   return distanceSquared;
 }
 
-double ElementSendMesh::get_distance_from_nearest_node(const EntityKey k, const std::vector<double>& toCoords) const
+double ElementSendMesh::get_distance_from_nearest_node(const EntityKey& k, const std::vector<double>& toCoords) const
 {
   STK_ThrowAssert(m_isInitialized);
-  const stk::mesh::Entity e = get_entity(k);
+  const stk::mesh::Entity e = k;
   return distance_from_nearest_entity_node(*m_bulk, e, m_coordinateField, toCoords);
 }
 
 stk::mesh::EntityId ElementSendMesh::id(const EntityKey& k) const
 {
   STK_ThrowAssert(m_isInitialized);
-  stk::mesh::Entity e = get_entity(k);
+  stk::mesh::Entity e = k;
   return m_bulk->identifier(e);
 }
 
-void ElementSendMesh::centroid(const EntityKey k, std::vector<double>& centroid) const
+void ElementSendMesh::centroid(const EntityKey& k, std::vector<double>& centroid) const
 {
   coordinates(k, centroid);
 }
 
-void ElementSendMesh::coordinates(const EntityKey k, std::vector<double>& coords) const
+void ElementSendMesh::coordinates(const EntityKey& k, std::vector<double>& coords) const
 {
   STK_ThrowAssert(m_isInitialized);
-  const stk::mesh::Entity elem = get_entity(k);
+  const stk::mesh::Entity elem = k;
   const unsigned nDim = m_meta->spatial_dimension();
   if(m_coordinateField->entity_rank() == stk::topology::NODE_RANK) {
     determine_centroid(nDim, elem, *m_coordinateField, coords);
@@ -353,28 +414,11 @@ void ElementSendMesh::post_mesh_modification_event()
   m_syncCount = m_bulk->synchronized_count();
 }
 
-std::vector<std::string> ElementSendMesh::get_transfer_part_membership(const EntityKey k) const
+std::vector<std::string> ElementSendMesh::get_part_membership(const EntityKey& k) const
 {
-return get_part_membership(*m_bulk, k, m_meshParts);
+  const stk::mesh::Entity elem = k;
+  return stk::search::get_part_membership(*m_bulk, elem, m_meshParts);
 }
-
-stk::mesh::Entity ElementSendMesh::get_entity(const EntityKey& k) const
-{
-  STK_ThrowAssert(m_isInitialized);
-  stk::mesh::Entity e;
-
-  if (k == m_cachedKey) {
-    e = m_cachedEntity;
-  }
-  else {
-    e = m_bulk->get_entity(k);
-    m_cachedEntity = e;
-    m_cachedKey = k;
-  }
-
-  return e;
-}
-
 
 } // namespace spmd
 } // namespace search

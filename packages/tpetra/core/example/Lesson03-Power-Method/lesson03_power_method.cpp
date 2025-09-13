@@ -279,15 +279,14 @@ main (int argc, char *argv[])
     // Increase diagonal dominance
     //
     if (myRank == 0) {
-      cout << endl << "Increasing magnitude of A(0,0), "
-	"solving again" << endl;
+      cout << endl << "Increasing magnitude of A(0,0), solving again" << endl;
     }
 
     // Must call resumeFill() before changing the matrix.
     A->resumeFill ();
 
     if (A->getRowMap ()->isNodeGlobalElement (0)) {
-      // Get a copy of the row with with global index 0.  Modify the
+      // Get a copy of the row with global index 0.  Modify the
       // diagonal entry of that row.  Submit the modified values to
       // the matrix.
       const global_ordinal_type idOfFirstRow = 0;

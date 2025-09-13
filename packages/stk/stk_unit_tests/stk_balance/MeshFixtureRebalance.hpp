@@ -174,11 +174,28 @@ protected:
   void clean_up_temporary_files()
   {
     if (get_parallel_rank() == 0) {
+
+      unsigned numOutputProcs = m_balanceSettings.get_num_output_processors();
+
       unlink(get_input_file_name().c_str());
-      for (unsigned i = 0; i < m_balanceSettings.get_num_output_processors(); ++i) {
-        unlink(get_subdomain_filename(m_balanceSettings.get_num_output_processors(), i).c_str());
+      for (unsigned i = 0; i < numOutputProcs; ++i) {
+        unlink(get_subdomain_filename(numOutputProcs, i).c_str());
       }
     }
+  }
+
+  void clean_up_temporary_input_files() 
+  {
+    if (get_parallel_rank() == 0) {
+
+      unsigned numInputProcs = m_balanceSettings.get_num_input_processors();
+
+      for (unsigned i = 0; i < numInputProcs; ++i) {
+        std::string suffix = "." + std::to_string(numInputProcs) + "." + std::to_string(i);
+        std::string inputFilename = get_input_file_name() + suffix;
+        unlink(inputFilename.c_str());
+      }
+    }  
   }
 
   void test_decomposed_mesh_element_distribution(const std::vector<unsigned> & elemsPerProc)

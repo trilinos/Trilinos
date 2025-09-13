@@ -66,6 +66,7 @@ namespace fixtures {
 class QuadFixture
 {
 public:
+  static std::string name() { return "QuadFixture"; }
   typedef double Scalar;
   typedef Field<Scalar> CoordFieldType;
 
@@ -180,6 +181,7 @@ using Quad4Fixture = QuadFixture;
 class Quad9Fixture
 {
 public:
+  static std::string name() { return "Quad9Fixture"; }
   typedef double Scalar;
   typedef Field<Scalar> CoordFieldType;
 

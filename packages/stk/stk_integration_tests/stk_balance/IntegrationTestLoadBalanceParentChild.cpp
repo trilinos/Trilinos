@@ -503,11 +503,12 @@ protected:
 
   void set_parent_element_weights(const stk::mesh::EntityVector& parentElements, ParentChildManager& parentChildManager)
   {
+    auto elementWeightFieldData = m_elementWeightField->data();
     for (stk::mesh::Entity parentElement : parentElements) {
-      double * weight = stk::mesh::field_data(*m_elementWeightField, parentElement);
-      EXPECT_TRUE(nullptr != weight);
+      EXPECT_TRUE(m_elementWeightField->defined_on(parentElement));
+      auto weight = elementWeightFieldData.entity_values(parentElement);
 
-      *weight = compute_weight_factor(parentElement, parentChildManager);
+      weight() = compute_weight_factor(parentElement, parentChildManager);
     }
   }
 
@@ -535,10 +536,11 @@ protected:
 
   double get_total_weight_for_these_elements(const stk::mesh::EntityVector & solidElements)
   {
+    auto elementWeightFieldData = m_elementWeightField->data<stk::mesh::ReadOnly>();
     double totalWeightTheseElements = 0.0;
     for (const stk::mesh::Entity element : solidElements) {
-      double* elementWeight = stk::mesh::field_data(*m_elementWeightField, element);
-      totalWeightTheseElements += (*elementWeight);
+      auto elementWeight = elementWeightFieldData.entity_values(element);
+      totalWeightTheseElements += elementWeight();
     }
     return totalWeightTheseElements;
   }

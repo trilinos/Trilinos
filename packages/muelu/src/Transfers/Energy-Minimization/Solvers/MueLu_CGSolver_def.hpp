@@ -37,9 +37,13 @@ void CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matrix& 
     return;
   }
 
-  RCP<const Matrix> A  = rcpFromRef(Aref);
-  ArrayRCP<const SC> D = Utilities::GetMatrixDiagonal_arcp(*A);
-  bool useTpetra       = (A->getRowMap()->lib() == Xpetra::UseTpetra);
+  RCP<const Matrix> A = rcpFromRef(Aref);
+  const auto rowMap   = A->getRowMap();
+  auto invDiag        = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, true);
+  A->getLocalDiagCopy(*invDiag);
+  invDiag->reciprocal(*invDiag);
+
+  bool useTpetra = (A->getRowMap()->lib() == Xpetra::UseTpetra);
 
   Teuchos::FancyOStream& mmfancy = this->GetOStream(Statistics2);
 
@@ -71,7 +75,7 @@ void CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matrix& 
 
   // Z_0 = M^{-1}R_0
   Z = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(R);
-  Utilities::MyOldScaleMatrix(*Z, D, true, true, false);
+  Z->leftScale(*invDiag);
 
   // P_0 = Z_0
   P = Xpetra::MatrixFactory2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(Z);
@@ -132,7 +136,7 @@ void CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const Matrix& 
 
     // Z_{i+1} = M^{-1} R_{i+1}
     Z = MatrixFactory2::BuildCopy(R);
-    Utilities::MyOldScaleMatrix(*Z, D, true, true, false);
+    Z->leftScale(*invDiag);
 
     // beta = (R_{i+1}, Z_{i+1})/(R_i, Z_i)
     newRZ = Utilities::Frobenius(*R, *Z);
