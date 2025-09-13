@@ -14,7 +14,7 @@ Run the **hands-on.sh** script and choose the option 5 for the elasticity. The s
 
 .. admonition:: Exercise 1
 
-    Open the **stru2d_parameters.xml** file by pressing option 3. Try to find optimized multigrid settings using your knowledge from the previous tutorials. We have 2 (displacement) degrees of freedom per node and 3 vectors describing the near null space components (rigid body modes). All this information is automatically set correctly by the **hands-on.py** script.
+    Open the **Elasticity2D_parameters.xml** file by pressing option 3. Try to find optimized multigrid settings using your knowledge from the previous tutorials. We have 2 (displacement) degrees of freedom per node and 3 vectors describing the near null space components (rigid body modes). All this information is automatically set correctly by the **hands-on.py** script.
     Run the example. Check the screen output (using option 1) and verify **blockdim=2** on level 1 and **blockdim=3** on level 2.
     
 

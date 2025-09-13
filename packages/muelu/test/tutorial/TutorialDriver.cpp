@@ -46,35 +46,11 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
+#include "Teuchos_ArrayViewDecl.hpp"
 
 #include <Xpetra_Map.hpp>
 
-//#{
-
-#include <Tpetra_Core.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Teuchos_FancyOStream.hpp>
-
-void printMultiVector(const Teuchos::RCP<Tpetra::MultiVector<>> mv) {
-  auto comm = mv->getMap()->getComm();
-  Teuchos::RCP<Teuchos::FancyOStream> myfile =
-      Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  // Prints in rank order and includes map info + entries at EXTREME
-  mv->describe(*myfile, Teuchos::VERB_EXTREME);
-}
-
-/*Usage:
-comm->barrier();
-std::cout<<"\n//#exactSolution:\n\n";
-comm->barrier();
-printMultiVector(exactSolution);
-comm->barrier();
-*/
-
-//#}
-
 int main(int argc, char* argv[]) {
-  //#include "MueLu_UseShortNames.hpp"
   bool success = false;
   try {
     Tpetra::ScopeGuard tpetraScope(&argc, &argv);
@@ -146,9 +122,11 @@ int main(int argc, char* argv[]) {
 
       std::string xmlFileName = "";
       clp.setOption("xml", &xmlFileName, "read parameters from a file");
-      int mgridSweeps = 1;
+      int mgridSweeps        = 1;
+      std::string dsolveType = "cg";
+      clp.setOption("solver", &dsolveType, "solve type: (none | cg | gmres | standalone) [default = cg]");
       clp.setOption("mgridSweeps", &mgridSweeps, "number of multigrid sweeps within multigrid solver");
-      std::string printTimings = "yes";
+      std::string printTimings = "no";
       clp.setOption("timings", &printTimings, "print timings to screen [yes/no]");
       double tol = 1e-12;
       clp.setOption("tol", &tol, "solver convergence tolerance");
@@ -207,17 +185,30 @@ int main(int argc, char* argv[]) {
         xpetra_nodeMap = Galeri::Xpetra::CreateMap<LO, GO, NO>(Xpetra::UseTpetra, "Cartesian2D", comm, galeriList);
       else if (matrixType == "Laplace3D")
         xpetra_nodeMap = Galeri::Xpetra::CreateMap<LO, GO, NO>(Xpetra::UseTpetra, "Cartesian3D", comm, galeriList);
+      RCP<const Map> nodeMap = Xpetra::toTpetra(xpetra_nodeMap);
 
       // Create dof map (depends on number of dofs per node)
-      RCP<const Xpetra::Map<LO, GO, NO>> xpetra_dofMap;
+      RCP<const Map> dofMap;
       if (matrixType == "Elasticity2D") {
-        std::vector<size_t> striding = {1, 1};
-        xpetra_dofMap                = Xpetra::StridedMapFactory<LO, GO, NO>::Build(xpetra_nodeMap, striding);  //# check if this works (small chance it will give error)
-      } else
-        xpetra_dofMap = xpetra_nodeMap;
+        constexpr int dofsPerNode            = 2;
+        const int numGlobalNodes             = xpetra_nodeMap->getGlobalNumElements();
+        const int numGlobalDofs              = dofsPerNode * numGlobalNodes;
+        Teuchos::ArrayView<const GO> myNodes = xpetra_nodeMap->getLocalElementList();
 
-      RCP<const Map> nodeMap = Xpetra::toTpetra(xpetra_nodeMap);
-      RCP<const Map> dofMap  = Xpetra::toTpetra(xpetra_dofMap);
+        const size_t numMyNodes = xpetra_nodeMap->getLocalNumElements();
+        const size_t numMyDofs  = dofsPerNode * numMyNodes;
+
+        Teuchos::Array<GO> myDofs(numMyDofs);
+
+        LO current_i = 0;
+        for (size_t i = 0; i < numMyNodes; ++i)
+          for (size_t j = 0; j < dofsPerNode; ++j)
+            myDofs[current_i++] = myNodes[i] * dofsPerNode + j;
+
+        dofMap = rcp(new Map(numGlobalDofs, myDofs, 0, comm));
+
+      } else
+        dofMap = nodeMap;
 
       // Create coordinates
       RCP<const RealValuedMultiVector> coordinates;
@@ -313,7 +304,7 @@ int main(int argc, char* argv[]) {
       Tpetra::deep_copy(*precSolVec, *X0);
       //! [MueLuAsPrecCreateSolutionVector end]
       {
-        fancyout << "========================================================\nUse multigrid hierarchy as preconditioner within CG." << std::endl;
+        fancyout << "========================================================\nUse multigrid hierarchy as preconditioner." << std::endl;
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - AMG as preconditioner")));
 
         //! [MueLuAsPrecSetupLinearSystem begin]
@@ -332,7 +323,7 @@ int main(int argc, char* argv[]) {
         //! [MueLuAsPrecConfigureAndCreateBelosSolver begin]
         // Belos parameter list
         RCP<ParameterList> belosList = Teuchos::parameterList();
-        belosList->set("Maximum Iterations", 50);      // Maximum number of iterations allowed
+        belosList->set("Maximum Iterations", 500);     // Maximum number of iterations allowed
         belosList->set("Convergence Tolerance", tol);  // Relative convergence tolerance requested
         belosList->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
         belosList->set("Output Frequency", 1);
@@ -340,7 +331,15 @@ int main(int argc, char* argv[]) {
 
         // Create an iterative solver manager
         Belos::SolverFactory<SC, MultiVector, Operator> solverFactory;
-        RCP<Belos::SolverManager<SC, MultiVector, Operator>> solver = solverFactory.create("Block GMRES", belosList);
+        RCP<Belos::SolverManager<SC, MultiVector, Operator>> solver;
+        if (dsolveType == "gmres")
+          solver = solverFactory.create("Block GMRES", belosList);
+        else if (dsolveType == "cg")
+          solver = solverFactory.create("CG", belosList);
+        else {
+          fancyout << "\nERROR:  Please select a valid solver!" << std::endl;
+          return EXIT_FAILURE;
+        }
 
         // Pass the linear problem to the solver
         solver->setProblem(belosProblem);
@@ -406,7 +405,6 @@ int main(int argc, char* argv[]) {
         myfile.open(ss.str().c_str());
 
         const size_t numLocal = dofMap->getLocalNumElements();
-        //#TEUCHOS_TEST_FOR_EXCEPTION(coordinates.getNumVectors() < 2, std::runtime_error, "coordinates must have 2 columns.");
 
         auto coords_h = coordinates->getLocalViewHost(Tpetra::Access::ReadOnly);
         auto ex_h     = exactSolution->getLocalViewHost(Tpetra::Access::ReadOnly);

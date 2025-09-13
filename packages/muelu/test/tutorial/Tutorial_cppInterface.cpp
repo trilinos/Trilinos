@@ -47,7 +47,6 @@
 #include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
-#include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -73,36 +72,18 @@ int main(int argc, char* argv[]) {
   try {
     Tpetra::ScopeGuard tpetraScope(&argc, &argv);
     {
-      //! [TpetraTemplateParameters begin]
-      // using SC = Tpetra::MultiVector<>::scalar_type;
-      // using LO = Tpetra::MultiVector<>::local_ordinal_type;
-      // using GO = Tpetra::MultiVector<>::global_ordinal_type;
-      //#using NO = Tpetra::MultiVector<>::node_type;
-      //! [TpetraTemplateParameters end]
-
-      // ================================
-      // Convenient definitions
-      // ================================
-      //! [UsingStatements begin]
       using Teuchos::ParameterList;
       using Teuchos::RCP;
       using Teuchos::rcp;
-      //! [UsingStatements end]
 
-      //! [CommunicatorObject begin]
       RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
-      int MyPID                          = comm->getRank();
-      int NumProc                        = comm->getSize();
-      (void)MyPID;    // unused void pointer cast to avoid unused variable warnings
-      (void)NumProc;  // unused void pointer cast to avoid unused variable warnings
-      //! [CommunicatorObject end]
 
       // ================================
       // Problem construction
       // ================================
       Teuchos::ParameterList galeriList;
-      galeriList.set("nx", 150);
-      galeriList.set("ny", 100);
+      galeriList.set("nx", 200);
+      galeriList.set("ny", 400);
       galeriList.set("mx", comm->getSize());
       galeriList.set("my", 1);
 
@@ -240,7 +221,6 @@ int main(int argc, char* argv[]) {
 
       //! [BelosParameterList begin]
       // Belos parameter list
-      int maxIts = 100;
       Teuchos::ParameterList belosList;
       belosList.set("Maximum Iterations", 100);      // Maximum number of iterations allowed
       belosList.set("Convergence Tolerance", 1e-7);  // Relative convergence tolerance requested

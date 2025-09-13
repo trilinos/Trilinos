@@ -160,23 +160,27 @@ class ProblemHandler():
   def doChallenge1(self):
     m = MueLu_XMLChallengeMode()
     m.numProcs      = 1      # number of processors
-    m.globalNumDofs = 16641   # number of DOFs
-    m.nDofsPerNode  = 1      # DOFs per node
+    #m.globalNumDofs = 16641   # number of DOFs
+    #m.nDofsPerNode  = 1      # DOFs per node
     m.solver        = "gmres"        # Belos solver
     m.tol           = 1e-12       # solver tolerance
-    m.executable    = "./MueLu_Challenge_XML.exe" # executable
-    m.problem       = "condif2d"   # string describing problem
+    m.executable    = "./MueLu_TutorialDriver.exe" # executable
+    m.problem       = "Recirc2D"   # string describing problem
+    m.meshx = 129
+    m.meshy = 129
     m.main()
 
   def doChallenge2(self):
     m = MueLu_XMLChallengeMode()
     m.numProcs      = 1      # number of processors
-    m.globalNumDofs = 7020   # number of DOFs
-    m.nDofsPerNode  = 2      # DOFs per node
+    #m.globalNumDofs = 7020   # number of DOFs
+    #m.nDofsPerNode  = 2      # DOFs per node
     m.solver        = "cg"        # Belos solver
     m.tol           = 1e-12       # solver tolerance
-    m.executable    = "./MueLu_Challenge_XML.exe" # executable
-    m.problem       = "stru2d"   # string describing problem
+    m.executable    = "./MueLu_TutorialDriver.exe" # executable
+    m.problem       = "Elasticity2D"   # string describing problem
+    m.meshx = 78
+    m.meshy = 90
     m.main()
 
   def runLaplaceProblem(self):
@@ -425,8 +429,8 @@ class MueLu_XMLChallengeMode():
     self.nDofsPerNode  = 2      # DOFs per node
     self.solver        = "cg"        # Belos solver
     self.tol           = 1e-12       # solver tolerance
-    self.executable    = "./MueLu_Challenge_XML.exe" # executable
-    self.problem       = "stru2d"   # string describing problem
+    self.executable    = "./MueLu_TutorialDriver.exe" # executable
+    self.problem       = "Elasticity2D"   # string describing problem
     self.xmlReferenceFileName = ""
     self.xmlFileName   = ""
     self.bcolors       = usecolors()
@@ -439,17 +443,17 @@ class MueLu_XMLChallengeMode():
   def main(self):
 
     # check if tar.gz file with data is in subfolder challenges:
-    if os.path.isfile("challenges/" + self.problem + ".tar.gz") == False:
-      cmd = "rm -Rf challenges"
-      runCommand(cmd)
-      print("Download additional files")
-      print(self.bcolors.WARNING+"https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"+self.bcolors.ENDC)
-      cmd = "wget --no-check-certificate https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"
-      runCommand(cmd)
-      print("Extract files...")
-      cmd = "tar xvf MueLu_tutorial_challenges.tar.gz"
-      runCommand(cmd)
-      print(self.bcolors.OKDARKGREEN + "Success!" + self.bcolors.ENDC)
+#    if os.path.isfile("challenges/" + self.problem + ".tar.gz") == False:
+#      cmd = "rm -Rf challenges"
+#      runCommand(cmd)
+#      print("Download additional files")
+#      print(self.bcolors.WARNING+"https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"+self.bcolors.ENDC)
+#      cmd = "wget --no-check-certificate https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"
+#      runCommand(cmd)
+#      print("Extract files...")
+#      cmd = "tar xvf MueLu_tutorial_challenges.tar.gz"
+#      runCommand(cmd)
+#      print(self.bcolors.OKDARKGREEN + "Success!" + self.bcolors.ENDC)
 
     # generate results for reference xml files
     self.xmlReferenceFileName = "challenges/" + self.problem + "_reference.xml"
@@ -535,7 +539,8 @@ class MueLu_XMLChallengeMode():
     # runs example
     cmd = "rm -f *.vtp *.mat example*.txt output.log output.res reference.log reference.res aggs*.txt nodes*.txt"
     runCommand(cmd)
-    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlReferenceFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee reference.log 2>&1"
+    #cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlReferenceFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee reference.log 2>&1"
+    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --matrixType=" + str(self.problem) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlReferenceFileName + " | tee reference.log 2>&1"
     runCommand(cmd)
     self.isDirty = False
 
@@ -546,7 +551,9 @@ class MueLu_XMLChallengeMode():
     cmd = "rm -f *.vtp *.mat example*.txt output.log output.res aggs*.txt nodes*.txt"
     runCommand(cmd)
     print("RUN EXAMPLE")
-    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee output.log 2>&1"
+    #cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee output.log 2>&1"
+    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --matrixType=" + str(self.problem) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlFileName + " | tee output.log 2>&1"
+    runCommand(cmd)
     print(cmd)
     runCommand(cmd)
     runCommand("echo 'Press q to return.' >> output.log")
@@ -621,8 +628,7 @@ class MueLu_XMLChallengeMode():
     self.proc1.stdin.write("set ylabel \"Relative residual\"\n")
     self.proc1.stdin.write("set autoscale\n")
     self.proc1.stdin.write("set logscale y\n")
-    printcmd = "plot \"reference.res\" using 5 w linespoints title \"REFERENCE\", \"output.res\" using 5 w linespoints title \"" + str(self.xmlFileName) + "\"\n"
-    self.proc1.stdin.write(printcmd)
+    self.proc1.stdin.write("plot '< sed \"s/[{}]//g\" output.res' using 2:5 w linespoints title \"" + str(self.xmlFileName) + "\"\n")
 
     self.proc1.stdin.flush()
 
