@@ -12,7 +12,6 @@
 #include <Amesos2.hpp>
 #include <Amesos2_config.h>
 
-#include "Xpetra_ConfigDefs.hpp"
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_IO.hpp>
@@ -469,96 +468,6 @@ int main(int argc, char* argv[]) {
         if (printTimings == "yes") {
           Teuchos::TimeMonitor::summarize(comm, std::cout, false, true, false, Teuchos::Union, "", true);
         }
-
-        // loop over all procs
-        /*for (int iproc = 0; iproc < NumProc; iproc++) {
-          if (MyPID == iproc) {
-            int NumVectors1               = 2;
-            int NumMyElements1            = coordinates->getMap()->getLocalNumElements();
-            int MaxElementSize1           = 1;
-            int* FirstPointInElementList1 = NULL;
-            if (MaxElementSize1 != 1) FirstPointInElementList1 = coordinates->getMap()->FirstPointInElementList();
-            double** A_Pointers = coordinates->Pointers();
-
-            if (MyPID == 0) {
-              myfile.width(8);
-              myfile << "#     MyPID";
-              myfile << "    ";
-              myfile.width(12);
-              if (MaxElementSize1 == 1)
-                myfile << "GID  ";
-              else
-                myfile << "     GID/Point";
-              for (int j = 0; j < NumVectors1; j++) {
-                myfile.width(20);
-                myfile << "Value  ";
-              }
-              myfile << std::endl;
-            }
-            for (int i = 0; i < NumMyElements1; i++) {
-              for (int ii = 0; ii < coordinates->Map().ElementSize(i); ii++) {
-                int iii;
-                myfile.width(10);
-                myfile << MyPID;
-                myfile << "    ";
-                myfile.width(10);
-                if (MaxElementSize1 == 1) {
-                  if (coordinates->Map().GlobalIndicesInt()) {
-                    int* MyGlobalElements1 = coordinates->Map().MyGlobalElements();
-                    myfile << MyGlobalElements1[i] << "    ";
-                  }
-
-                  iii = i;
-                } else {
-                  if (coordinates->Map().GlobalIndicesInt()) {
-                    int* MyGlobalElements1 = coordinates->Map().MyGlobalElements();
-                    myfile << MyGlobalElements1[i] << "/" << ii << "    ";
-                  }
-
-                  iii = FirstPointInElementList1[i] + ii;
-                }
-                for (int j = 0; j < NumVectors1; j++) {
-                  myfile.width(20);
-                  myfile << A_Pointers[j][iii];
-                }
-
-                myfile.precision(18);  // set high precision for output
-
-                // add exact solution vector entry
-                myfile.width(25);
-                myfile << exactSolution->getData(iii).get();
-
-                // add preconditioned solution vector entry
-                myfile.width(25);
-                myfile << precSolVec->getData(iii).get();
-
-                // add multigrid solution vector entry
-                myfile.width(25);
-                myfile << multigridSolVec->getData(iii).get();
-
-                myfile.precision(6);  // set default precision
-                myfile << std::endl;
-              }
-            }  // end loop over all lines on current proc
-            myfile << std::flush;
-
-            // syncronize procs // Why three times?
-            comm->barrier();
-            comm->barrier();
-            comm->barrier();
-
-          }  // end myProc
-        } // end loop over all procs
-
-        myfile.close();
-
-        comm->barrier();
-        tm                = Teuchos::null;
-        globalTimeMonitor = Teuchos::null;
-
-        if (printTimings == "yes") {
-          TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
-        }*/
       }
 
     }  // end of Tpetra::ScopeGuard
