@@ -16,6 +16,7 @@
 #include <cstddef> // for size_t
 #include <cstdlib> // for strtol, abs, exit, strtoul, etc
 #include <cstring> // for strchr, strlen
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <glob.h>
 #include <sstream>

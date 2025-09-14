@@ -35,8 +35,8 @@
 #include "Ioss_Wedge6.h"
 #include <assert.h>
 #include <fmt/chrono.h>
-#include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <stdint.h>
 #include <stdlib.h>
 #if !defined __NVCC__
@@ -49,7 +49,6 @@
 #include <cmath>
 #include <cstring>
 #include <ctime>
-#include <fmt/ostream.h>
 #include <limits>
 #include <numeric>
 #include <ostream>

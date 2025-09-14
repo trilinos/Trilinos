@@ -7,7 +7,7 @@
  */
 #include <cstdlib> // for exit, strtod, EXIT_SUCCESS, etc
 #include <cstring> // for strcmp
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <stdio.h>
 #include <string> // for string, char_traits

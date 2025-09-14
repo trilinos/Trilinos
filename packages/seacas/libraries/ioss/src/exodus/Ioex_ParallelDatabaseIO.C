@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <functional>
 #include <iostream>

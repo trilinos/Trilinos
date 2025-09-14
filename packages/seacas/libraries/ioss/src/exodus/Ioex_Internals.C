@@ -6,7 +6,7 @@
 
 #include "exodus/Ioex_Internals.h" // for Internals, ElemBlock, etc
 #include "exodus/Ioex_Utils.h"
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include "Ioss_ElementTopology.h"
 #include "Ioss_GroupingEntity.h"

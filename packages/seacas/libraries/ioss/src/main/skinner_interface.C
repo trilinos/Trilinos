@@ -6,7 +6,7 @@
  * See packages/seacas/LICENSE for details
  */
 #include <cstdlib> // for exit, EXIT_SUCCESS, getenv
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <stdio.h>
 #include <string> // for char_traits, string

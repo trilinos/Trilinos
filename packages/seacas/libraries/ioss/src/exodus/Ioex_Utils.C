@@ -11,7 +11,6 @@
 #include "Ioss_VariableType.h"
 #include "exodus/Ioex_Utils.h"
 #include <cstring>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iosfwd>

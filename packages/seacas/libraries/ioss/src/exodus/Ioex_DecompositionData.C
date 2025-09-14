@@ -26,6 +26,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iostream>
 #include <iterator>

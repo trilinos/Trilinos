@@ -40,7 +40,6 @@
 #include <array>
 #include <climits>
 #include <cstddef>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <map>

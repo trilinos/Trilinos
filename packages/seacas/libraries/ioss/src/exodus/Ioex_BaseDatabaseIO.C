@@ -12,7 +12,7 @@
 #include <ctime>
 #include <exodusII.h>
 #include <exodusII_int.h>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <map>
 #include <sstream>

@@ -7,6 +7,7 @@
 #include "ED_SystemInterface.h"
 
 #include <algorithm>
+#include <fmt/ostream.h>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -19,7 +20,6 @@
 #include "ED_Version.h"
 #include "copy_string_cpp.h"
 #include "copyright.h"
-#include "fmt/ostream.h"
 #include "stringx.h"
 #include <SL_tokenize.h>
 
