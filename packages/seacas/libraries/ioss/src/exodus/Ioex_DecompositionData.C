@@ -451,7 +451,7 @@ namespace Ioex {
                  "elements.\n"
                  "       This does not match the total element count of {} which indicates a "
                  "corrupt mesh description.\n"
-                 "       Contact gdsjaar@sandia.gov for more details.\n",
+                 "       Contact sierra-help@sandia.gov for more details.\n",
                  decomposition.m_fileBlockIndex[block_count], decomposition.m_globalElementCount);
       IOSS_ERROR(errmsg);
     }
@@ -465,7 +465,7 @@ namespace Ioex {
           "ERROR: The decomposition of this mesh requires 64-bit integers, but is being\n"
           "       run with 32-bit integer code. Please rerun with the property INTEGER_SIZE_API\n"
           "       set to 8. The details of how to do this vary with the code that is being run.\n"
-          "       Contact gdsjaar@sandia.gov for more details.\n");
+          "       Contact sierra-help@sandia.gov for more details.\n");
       IOSS_ERROR(errmsg);
     }
 
@@ -567,7 +567,7 @@ namespace Ioex {
       std::ostringstream errmsg;
       fmt::print(errmsg, "ERROR: The `generate_adjacency` function was not called prior to calling "
                          "`generate_omitted_block_weights`\n"
-                         "       Contact gdsjaar@sandia.gov for more details.\n");
+                         "       Contact sierra-help@sandia.gov for more details.\n");
       IOSS_ERROR(errmsg);
     }
 
@@ -668,7 +668,7 @@ namespace Ioex {
                  "ERROR: The sum of the {} entity counts is larger than 2.1 Billion "
                  " which cannot be correctly handled with the current IOSS decomposition "
                  "implementation.\n"
-                 "       Contact gdsjaar@sandia.gov for more details.\n",
+                 "       Contact sierra-help@sandia.gov for more details.\n",
                  set_type_name);
       IOSS_ERROR(errmsg);
     }

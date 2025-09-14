@@ -410,7 +410,7 @@ namespace Ioexnl {
     if (!extra.empty()) {
       fmt::print(errmsg, " {}", extra);
     }
-    fmt::print(errmsg, " Please report to gdsjaar@sandia.gov if you need help.");
+    fmt::print(errmsg, " Please report to sierra-help@sandia.gov if you need help.");
 
     ex_err_fn(exoid, nullptr, nullptr, EX_PRTLASTMSG);
     IOSS_ERROR(errmsg);

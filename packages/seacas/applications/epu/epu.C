@@ -118,7 +118,7 @@ namespace {
   [[noreturn]] void exodus_error(int lineno)
   {
     auto errmsg = fmt::format(
-        "Exodus error ({}) {} at line {} in file epu.C. Please report to gdsjaar@sandia.gov "
+        "Exodus error ({}) {} at line {} in file epu.C. Please report to sierra-help@sandia.gov "
         "if you need help.",
         exerrval, ex_strerror(exerrval), lineno);
 

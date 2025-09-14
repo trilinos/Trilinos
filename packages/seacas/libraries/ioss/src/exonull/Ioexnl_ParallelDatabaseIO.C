@@ -98,7 +98,7 @@ namespace {
                          "the 'owning_processor'"
                          " field prior to the output of nodal data.  This field has not yet been "
                          "defined so output is not possible."
-                         " For more information, contact gdsjaar@sandia.gov.\n");
+                         " For more information, contact sierra-help@sandia.gov.\n");
       IOSS_ERROR(errmsg);
     }
     else if (nop.size() < file_node_count) {
@@ -106,7 +106,7 @@ namespace {
       fmt::print(errmsg,
                  "ERROR: The 'owning_processor' data was defined, but it is not the correct size."
                  "  Its size is {}, but it must be at least this size {}."
-                 " For more information, contact gdsjaar@sandia.gov.\n",
+                 " For more information, contact sierra-help@sandia.gov.\n",
                  nop.size(), file_node_count);
       IOSS_ERROR(errmsg);
     }

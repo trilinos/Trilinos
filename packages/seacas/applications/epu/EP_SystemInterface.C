@@ -320,7 +320,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
                  "\tWrites: current_directory/basename.output_suf\n"
                  "\tReads:  root/sub/basename.suf.#p.0 to\n"
                  "\t\troot/sub/basename.suf.#p.#p-1\n"
-                 "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n");
+                 "\n\t->->-> Send email to sierra-help@sandia.gov for epu support.<-<-<-\n");
     }
     return false;
   }

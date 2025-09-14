@@ -160,7 +160,7 @@ int exi_conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_word
 /* If the following line causes a compile-time error, then there is a problem
  * which will cause exodus to not work correctly on this platform.
  *
- * Contact Greg Sjaardema, gdsjaar@sandia.gov for assistance.
+ * Contact Greg Sjaardema, sierra-help@sandia.gov for assistance.
  */
 #define CT_ASSERT(e) extern char(*ct_assert(void))[sizeof(char[1 - 2 * !(e)])]
   CT_ASSERT((sizeof(float) == 4 || sizeof(float) == 8) &&

@@ -1183,7 +1183,7 @@ namespace Ioex {
         IOSS_ERROR(fmt::format(
             "ERROR: The variable named '{}' is of the wrong type. A region variable must be of type"
             " TRANSIENT or REDUCTION.\n"
-            "This is probably an internal error; please notify gdsjaar@sandia.gov",
+            "This is probably an internal error; please notify sierra-help@sandia.gov",
             field.get_name()));
       }
       return num_to_get;
@@ -2504,7 +2504,7 @@ namespace Ioex {
                      "maximum name length ({1})\n         set for this database ({2}).\n"
                      "         You should either reduce the length of the variable name, or "
                      "set the 'MAXIMUM_NAME_LENGTH' property\n"
-                     "         to at least {0}.\n         Contact gdsjaar@sandia.gov for more "
+                     "         to at least {0}.\n         Contact sierra-help@sandia.gov for more "
                      "information.\n\n",
                      name_length, maximumNameLength, get_filename());
         }

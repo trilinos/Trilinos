@@ -952,7 +952,7 @@ namespace Ioss {
             "       32-bit integers, but the mesh being decomposed requires 64-bit integers.\n"
             "       You must either choose a different, non-metis decomposition method, or\n"
             "       rebuild your metis/parmetis libraries with 64-bit integer support.\n"
-            "       Contact gdsjaar@sandia.gov for more details.\n"));
+            "       Contact sierra-help@sandia.gov for more details.\n"));
       }
       else {
         // Should be able to narrow...

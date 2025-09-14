@@ -493,7 +493,7 @@ void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *functio
   if (processor >= 0) {
     fmt::print(errmsg, " on processor {}", processor);
   }
-  fmt::print(errmsg, ". Please report to gdsjaar@sandia.gov if you need help.");
+  fmt::print(errmsg, ". Please report to sierra-help@sandia.gov if you need help.");
   if (cgnsid > 0) {
 #if CG_BUILD_PARALLEL
     // This can cause a hang if not all processors call this routine
