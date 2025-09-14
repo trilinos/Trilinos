@@ -175,7 +175,7 @@ namespace {
     nb->get_field_data("mesh_model_coordinates", coordinates);
 
     const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
-    for (auto &eb : ebs) {
+    for (const auto &eb : ebs) {
       if (eb->topology()->name() == Ioss::Hex8::name) {
         hex_volume(eb, coordinates);
       }

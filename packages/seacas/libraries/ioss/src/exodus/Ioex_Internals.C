@@ -677,8 +677,10 @@ void Mesh::populate(Ioss::Region *region)
   {
     const auto &assem = region->get_assemblies();
     for (auto &assembly : assem) {
-      Ioex::Assembly T(*(assembly));
-      assemblies.push_back(T);
+      if (assembly->member_count() > 0) {
+        Ioex::Assembly T(*(assembly));
+        assemblies.push_back(T);
+      }
     }
   }
 
