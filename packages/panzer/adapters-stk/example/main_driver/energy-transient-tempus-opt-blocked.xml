@@ -79,6 +79,7 @@
          <Parameter name="Field Name" type="string" value="TEMPERATURE"/>
          <Parameter name="Element Blocks" type="string" value="eblock-0_0"/>
          <Parameter name="Evaluation Types" type="string" value="Residual"/>
+         <Parameter name="Request Derivatives" type="bool" value="true"/>
       </ParameterList>
     </ParameterList>
 

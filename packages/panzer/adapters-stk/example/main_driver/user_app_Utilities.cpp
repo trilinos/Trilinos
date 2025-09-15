@@ -111,7 +111,13 @@ void user_app::addResponsesToModelEvaluatorFactory(const Teuchos::ParameterList&
       for(std::size_t i=0;i<eblocks.size();i++)
         descriptors.push_back(panzer::blockDescriptor(eblocks[i]));
 
-      me_factory.addResponseWithDerivatives("Value In Middle",descriptors,builder);
+      // TODO BWR DO WE WANT THIS?
+      const bool add_derivatives = lst.isParameter("Request Derivatives") ? lst.get<bool>("Request Derivatives") : false;
+      if (add_derivatives) {
+        me_factory.addResponseWithDerivatives("Value In Middle",descriptors,builder);
+      } else {
+        me_factory.addResponse("Value In Middle",descriptors,builder);
+      }
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"Error: Response type of \"" << lst.get<std::string>("Type") << "\" is not supported!");
