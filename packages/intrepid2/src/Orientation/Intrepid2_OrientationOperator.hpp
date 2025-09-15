@@ -38,13 +38,23 @@ namespace Intrepid2 {
     using UnmanagedDoubleView  = Kokkos::View<      double*, typename DeviceType::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     
     // only stores deviations from the identity
-    UnmanagedOrdinalView rowIndices; // index in basis
-    UnmanagedOrdinalView offsetsForRowOrdinal; // ordinal into _rowIndices; offset gives index for _packedColumnIndices and _packedWeights
-    UnmanagedOrdinalView packedColumnIndices; // ordinal into _rowIndices
-    UnmanagedDoubleView packedWeights; // ordinal into _rowIndices
+    UnmanagedOrdinalView rowIndices;           // index in basis (the field ordinal)
+    UnmanagedOrdinalView offsetsForRowOrdinal; // argument is same as _rowIndices; offset gives index for _packedColumnIndices and _packedWeights
+    UnmanagedOrdinalView packedColumnIndices;  // ordinal is the index from offsets
+    UnmanagedDoubleView packedWeights;         // ordinal is the index from offsets
+    
+    // offsetsForRowOrdinal may be empty; if it is, isPermutation is set to true; otherwise it is false
+    // if isWeightedPermutation is true, the offsets are all unit-spaced (0,1,…), and packedColumnIndices and packedWeights have the same length as rowIndices
+    bool isWeightedPermutation;
   public:
+    //! general constructor.  Sets isWeightedPermutation to false.
     OrientationOperator(UnmanagedOrdinalView rowIndices_,
                         UnmanagedOrdinalView offsetsForRowOrdinal_,
+                        UnmanagedOrdinalView packedColumnIndices_,
+                        UnmanagedDoubleView       packedWeights_);
+    
+    //! weighted-permutation constructor.  Sets isWeightedPermutation to true.
+    OrientationOperator(UnmanagedOrdinalView rowIndices_,
                         UnmanagedOrdinalView packedColumnIndices_,
                         UnmanagedDoubleView       packedWeights_);
     

@@ -31,11 +31,25 @@ OrientationOperator<DeviceType>::OrientationOperator(typename OrientationOperato
 rowIndices(rowIndices_),
 offsetsForRowOrdinal(offsetsForRowOrdinal_),
 packedColumnIndices(packedColumnIndices_),
-packedWeights(packedWeights_)
+packedWeights(packedWeights_),
+isWeightedPermutation(false)
+{}
+
+template<class DeviceType>
+OrientationOperator<DeviceType>::OrientationOperator(typename OrientationOperator<DeviceType>::UnmanagedOrdinalView rowIndices_,
+                                                     typename OrientationOperator<DeviceType>::UnmanagedOrdinalView packedColumnIndices_,
+                                                     typename OrientationOperator<DeviceType>::UnmanagedDoubleView  packedWeights_)
+:
+rowIndices(rowIndices_),
+packedColumnIndices(packedColumnIndices_),
+packedWeights(packedWeights_),
+isWeightedPermutation(true)
 {}
 
 template<class DeviceType>
 OrientationOperator<DeviceType>::OrientationOperator()
+:
+isWeightedPermutation(true)
 {}
 
 } // namespace Intrepid2
