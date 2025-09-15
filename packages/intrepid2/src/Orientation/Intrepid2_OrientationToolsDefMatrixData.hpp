@@ -223,9 +223,7 @@ namespace Intrepid2 {
       for(ordinal_type i=0; i<numFaces; ++i) {
         matDim2 = std::max(matDim2, basis->getDofCount(FACE_DIM,i));
         const ordinal_type faceEdgeCount = static_cast<ordinal_type>(cellTopo.getSideCount(FACE_DIM,i));
-        std::cout << "faceEdgeCount: " << faceEdgeCount << std::endl;
         maxFaceOrts = std::max(maxFaceOrts,2*faceEdgeCount);
-        std::cout << "maxFaceOrts: " << maxFaceOrts << std::endl;
         // 2*(#face edges): a formula that happens to work for triangles and quads: 6 triangle orientations, 8 quad orientations.
         numOrts = std::max(numOrts,maxFaceOrts);
         
@@ -329,7 +327,6 @@ namespace Intrepid2 {
               for (const bool transpose : transposeVector)
               {
                 ordinal_type transposeInt = transpose ? 1 : 0;
-                std::cout << "determining faceOperators[Inv](" << faceId << "," << faceOrt << "," << transposeInt << "):\n";
                 OrientationOperator<DT> orientationOperator = constructOrientationOperatorInternal(nonIdentityDofs, rowOffsets, colIDs, weights, transpose);
                 operatorsHost(faceId, faceOrt, transposeInt) = orientationOperator;
               }
@@ -628,15 +625,6 @@ namespace Intrepid2 {
       {
         auto basis_host = basis->getHostBasis();
         auto matData = createCoeffMatrix(basis);
-        {
-          // DEBUGGING
-          std::cout << "createOperators() for basis " << basis->getName() << " of degree " << basis->getDegree() << std::endl;
-          
-          if (basis->getDegree() == 3)
-          {
-            std::cout << "basis degree is " << basis->getDegree() << std::endl;
-          }
-        }
         
         edgeOperator = createEdgeOperatorsInternal(basis_host.get(), matData);
         
@@ -678,18 +666,8 @@ namespace Intrepid2 {
         auto basis_host = basis->getHostBasis();
         auto matData = createInvCoeffMatrix(basis);
         
-        {
-          // DEBUGGING
-          if (basis->getDegree() == 3)
-          {
-            std::cout << "basis degree is " << basis->getDegree() << std::endl;
-          }
-        }
-        
         edgeOperator = createEdgeOperatorsInternal(basis_host.get(), matData);
         invEdgeOperatorData.insert(std::make_pair(key, edgeOperator));
-        
-        std::cout << "createInvOperators() for basis " << basis->getName() << " of degree " << basis->getDegree() << std::endl;
         
         faceOperator = createFaceOperatorsInternal(basis_host.get(), matData);
         invFaceOperatorData.insert(std::make_pair(key, faceOperator));
@@ -730,31 +708,6 @@ namespace Intrepid2 {
     {
       if (!transpose)
       {
-        {
-          // DEBUGGING
-          std::cout << "rowIndices: ";
-          for (auto &rowIndex : nonIdentityDofs)
-          {
-            std::cout << rowIndex << " ";
-          }
-          std::cout << "\nrowOffsets: ";
-          for (auto &rowOffset : rowOffsets)
-          {
-            std::cout << rowOffset << " ";
-          }
-          std::cout << "\ncolIndices: ";
-          for (auto &colID : colIDs)
-          {
-            std::cout << colID << " ";
-          }
-          std::cout << "\nweights: ";
-          for (auto &weight : weights)
-          {
-            std::cout << weight << " ";
-          }
-          std::cout << std::endl;
-        }
-        
         const int numWeights = rowOffsets[numRows];
         Kokkos::View<ordinal_type*,DT> rowIndices("OrientationOperator: rowIndices", numRows);
         Kokkos::View<ordinal_type*,DT> offsetForRowOrdinal("OrientationOperator: rowOffsets", numRows+1); // convenient to be able to check the "next" row offset to get a column count, even when on the last row
@@ -857,12 +810,6 @@ namespace Intrepid2 {
       }
     }
     // identity; nothing to allocate or store
-    
-    if (!transpose)
-    {
-      // DEBUGGING
-      std::cout << "[identity]\n";
-    }
     return OrientationOperator<DT>();
   }
 }
