@@ -896,6 +896,16 @@ namespace { // (anonymous)
 
 #ifdef KOKKOS_ENABLE_CUDA
     {
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
+        out << "Testing copy constructor to CudaUVMSpace" << endl;
+        TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+          DeviceType>::test (out, success, *table, keys, vals,
+                             "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>",
+                             typeid(DeviceType).name ());
+        testedAtLeastOnce = true;
+      }
+#else
       if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaSpace>::value) {
         out << "Testing copy constructor to CudaSpace" << endl;
         TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
@@ -904,6 +914,8 @@ namespace { // (anonymous)
                              typeid(DeviceType).name ());
         testedAtLeastOnce = true;
       }
+#endif
+
     }
 #endif // KOKKOS_ENABLE_CUDA
     if (! testedAtLeastOnce) {
