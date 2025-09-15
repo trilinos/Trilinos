@@ -150,7 +150,7 @@ namespace { // (anonymous)
           const ValueType expectedVal = vals(i);
           const ValueType actualVal = table.get (key);
           bool curBad = false;
-  
+
           if (actualVal == Tpetra::Details::OrdinalTraits<ValueType>::invalid ()) {
             curBad = true;
             printf("get(key=%lld) = invalid, should have been %d\n",
@@ -161,7 +161,7 @@ namespace { // (anonymous)
             printf("get(key=%lld) = %d, should have been %d\n",
                     (long long) key, actualVal, expectedVal);
           }
-  
+
           if (curBad) {
             ++myBadCount;
           }
@@ -895,7 +895,16 @@ namespace { // (anonymous)
 #endif // KOKKOS_ENABLE_THREADS
 
 #ifdef KOKKOS_ENABLE_CUDA
-    {
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
+        out << "Testing copy constructor to CudaUVMSpace" << endl;
+        TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+          DeviceType>::test (out, success, *table, keys, vals,
+                             "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>",
+                             typeid(DeviceType).name ());
+        testedAtLeastOnce = true;
+      }
+#else
       if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaSpace>::value) {
         out << "Testing copy constructor to CudaSpace" << endl;
         TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
@@ -904,7 +913,7 @@ namespace { // (anonymous)
                              typeid(DeviceType).name ());
         testedAtLeastOnce = true;
       }
-    }
+#endif // HAVE_TPETRA_SHARED_ALLOCS
 #endif // KOKKOS_ENABLE_CUDA
     if (! testedAtLeastOnce) {
       out << "*** WARNING: Did not actually test FixedHashTable's templated "
@@ -1035,16 +1044,25 @@ namespace { // (anonymous)
 #endif // KOKKOS_ENABLE_THREADS
 
 #ifdef KOKKOS_ENABLE_CUDA
-    {
-      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaSpace>::value) {
-        out << "Testing copy constructor to CudaSpace" << endl;
-        TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
-          DeviceType>::test (out, success, *table, keys, vals,
-                             "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>",
-                             typeid(DeviceType).name (), testValues);
-        testedAtLeastOnce = true;
-      }
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+    if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
+      out << "Testing copy constructor to CudaUVMSpace" << endl;
+      TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+                   DeviceType>::test (out, success, *table, keys, vals,
+                                      "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>",
+                                      typeid(DeviceType).name (), testValues);
+      testedAtLeastOnce = true;
     }
+#else
+    if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaSpace>::value) {
+      out << "Testing copy constructor to CudaSpace" << endl;
+      TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
+                   DeviceType>::test (out, success, *table, keys, vals,
+                                      "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>",
+                                      typeid(DeviceType).name (), testValues);
+      testedAtLeastOnce = true;
+    }
+#endif // HAVE_TPETRA_SHARED_ALLOCS
 #endif // KOKKOS_ENABLE_CUDA
     if (! testedAtLeastOnce) {
       out << "*** WARNING: Did not actually test FixedHashTable's templated "
@@ -1064,12 +1082,12 @@ namespace { // (anonymous)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, ZeroPairsOnDefaultInit, ValueType, KeyType, DeviceType)
   {
     using fixed_hash_table_t = Tpetra::Details::FixedHashTable<KeyType,ValueType,DeviceType>;
-    
+
     fixed_hash_table_t table {};
-    
+
     TEST_EQUALITY_CONST(table.numPairs(), 0);
   }
-  
+
   //
   // Instantiations of the templated unit test(s) above.
   //
@@ -1138,7 +1156,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, ZeroPairsOnDefaultInit, Valu
 
 
 #ifdef KOKKOS_ENABLE_CUDA
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> cuda_device_type;
+#else
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> cuda_device_type;
+#endif
 
 #define UNIT_TEST_GROUP_CUDA( LO, GO ) \
   UNIT_TEST_GROUP_3( LO, GO, cuda_device_type )

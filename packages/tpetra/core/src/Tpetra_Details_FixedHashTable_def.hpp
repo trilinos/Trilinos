@@ -1306,19 +1306,9 @@ describe (Teuchos::FancyOStream& out,
 } // namespace Details
 } // namespace Tpetra
 
-// Macro that explicitly instantiates FixedHashTable for the given local
-// ordinal (LO) and global ordinal (GO) types.  Note that FixedHashTable's
-// template parameters occur in the opposite order of most Tpetra
-// classes.  This is because FixedHashTable performs global-to-local
-// lookup, and the convention in templated C++ lookup tables (such as
-// std::map) is <KeyType, ValueType>.
-//
-// This macro must be explanded within the Tpetra::Details namespace.
-#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT_DEFAULTNODE(LO,GO) \
-  template class FixedHashTable< GO , LO >;
 
 // Macro that explicitly instantiates FixedHashTable for the given
-// local ordinal (LO), global ordinal (GO), and Kokkos device (DEVICE)
+// local ordinal (LO), global ordinal (GO), and Kokkos device (NODE::device_type)
 // types.  Note that FixedHashTable's first two template parameters
 // occur in the opposite order of most Tpetra classes.  This is
 // because FixedHashTable performs global-to-local lookup, and the
@@ -1326,7 +1316,20 @@ describe (Teuchos::FancyOStream& out,
 // <KeyType, ValueType>.
 //
 // This macro must be explanded within the Tpetra::Details namespace.
-#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, DEVICE) \
-  template class FixedHashTable< GO , LO , DEVICE >;
-
-#endif // TPETRA_DETAILS_FIXEDHASHTABLE_DEF_HPP
+// Moreover, we need (GO,LO,Host) and (LO,LO,Host)
+#if defined(HAVE_TPETRA_INST_SERIAL) || defined(HAVE_TPETRA_INST_OPENMP)
+#if defined(HAVE_TPETRA_INST_INT_INT)
+#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE)             \
+  template class Details::FixedHashTable< GO , LO , typename NODE::device_type >;
+#else
+#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE)             \
+  template class Details::FixedHashTable< GO , LO , typename NODE::device_type >; \
+  template class Details::FixedHashTable< LO , LO , typename NODE::device_type >;
+#endif
+#else
+#define TPETRA_DETAILS_FIXEDHASHTABLE_INSTANT(LO, GO, NODE) \
+  template class Details::FixedHashTable< GO , LO , typename NODE::device_type >; \
+  template class Details::FixedHashTable< GO , LO, Kokkos::HostSpace::device_type>; \
+  template class Details::FixedHashTable< LO , LO, Kokkos::HostSpace::device_type>;
+#endif
+#endif
