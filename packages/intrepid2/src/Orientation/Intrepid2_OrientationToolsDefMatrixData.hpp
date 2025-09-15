@@ -709,8 +709,12 @@ namespace Intrepid2 {
       if (!transpose)
       {
         const int numWeights = rowOffsets[numRows];
+        
+        const bool isWeightedPermutation = (nonIdentityDofs.size() == weights.size());
+        const int numOffsetsToStore = isWeightedPermutation ? 0 : numRows+1; // convenient to be able to check the "next" row offset to get a column count, even when on the last row
+        
         Kokkos::View<ordinal_type*,DT> rowIndices("OrientationOperator: rowIndices", numRows);
-        Kokkos::View<ordinal_type*,DT> offsetForRowOrdinal("OrientationOperator: rowOffsets", numRows+1); // convenient to be able to check the "next" row offset to get a column count, even when on the last row
+        Kokkos::View<ordinal_type*,DT> offsetForRowOrdinal("OrientationOperator: rowOffsets", numOffsetsToStore);
         Kokkos::View<ordinal_type*,DT> packedColumnIndices("OrientationOperator: packedColumnIndices", numWeights);
         Kokkos::View<double*,      DT> packedWeights("OrientationOperator: packedWeights", numWeights);
         
@@ -724,14 +728,24 @@ namespace Intrepid2 {
           rowIndicesHost(rowOrdinal)          = nonIdentityDofs[rowOrdinal];
           int thisRowOffset                   = rowOffsets[rowOrdinal];
           int nextRowOffset                   = rowOffsets[rowOrdinal+1];
-          offsetForRowOrdinalHost(rowOrdinal) = thisRowOffset;
+          if (isWeightedPermutation)
+          {
+            INTREPID2_TEST_FOR_EXCEPTION(nextRowOffset - thisRowOffset != 1, std::invalid_argument, "Invalid orientation operator arguments: if number of weights is equal to the number of row indices, then row offsets should exactly match row ordinals (i.e., there should be exactly one column for every row entry).");
+          }
+          else
+          {
+            offsetForRowOrdinalHost(rowOrdinal) = thisRowOffset;
+          }
           for (int i=thisRowOffset; i<nextRowOffset; i++)
           {
             packedColumnIndicesHost(i) = colIDs[i];
             packedWeightsHost(i)       = weights[i];
           }
         }
-        offsetForRowOrdinalHost(numRows) = numWeights;
+        if (!isWeightedPermutation)
+        {
+          offsetForRowOrdinalHost(numRows) = numWeights;
+        }
         
         Kokkos::deep_copy(rowIndices, rowIndicesHost);
         Kokkos::deep_copy(offsetForRowOrdinal, offsetForRowOrdinalHost);
@@ -752,10 +766,20 @@ namespace Intrepid2 {
         UnmanagedOrdinalView packedColumnIndicesUnmanaged(packedColumnIndices.data(), packedColumnIndices.extent(0));
         UnmanagedDoubleView  packedWeightsUnmanaged      (packedWeights.data(),       packedWeights.extent(0));
         
-        OrientationOperator<DT> orientationOperator(rowIndicesUnmanaged, offsetForRowOrdinalUnmanaged,
-                                                    packedColumnIndicesUnmanaged, packedWeightsUnmanaged);
-        
-        return orientationOperator;
+        if (!isWeightedPermutation)
+        {
+          OrientationOperator<DT> orientationOperator(rowIndicesUnmanaged, offsetForRowOrdinalUnmanaged,
+                                                      packedColumnIndicesUnmanaged, packedWeightsUnmanaged);
+          
+          return orientationOperator;
+        }
+        else
+        {
+          OrientationOperator<DT> orientationOperator(rowIndicesUnmanaged,
+                                                      packedColumnIndicesUnmanaged, packedWeightsUnmanaged);
+          
+          return orientationOperator;
+        }
       }
       else
       {
