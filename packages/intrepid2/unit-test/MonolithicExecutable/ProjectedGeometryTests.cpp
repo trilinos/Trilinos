@@ -118,7 +118,7 @@ namespace
   }
 
   template<typename PointScalar, int spaceDim, typename DeviceType>
-  void testLinearGeometryIsExact(int meshWidth, const double &relTol, const double &absTol,
+  void testLinearGeometryIsExact(const int &meshWidth, const double &relTol, const double &absTol,
                                  Teuchos::FancyOStream &out, bool &success)
   {
     Kokkos::Array<PointScalar,spaceDim> origin;
@@ -154,7 +154,7 @@ namespace
   }
 
   template<typename PointScalar, int spaceDim, typename DeviceType>
-  void testLinearGeometryIsExact(int meshWidth, int polyOrderForBasis, const double &relTol, const double &absTol,
+  void testLinearGeometryIsExact(const int &meshWidth, int polyOrderForBasis, const double &relTol, const double &absTol,
                                  Teuchos::FancyOStream &out, bool &success)
   {
     Kokkos::Array<PointScalar,spaceDim> origin;
