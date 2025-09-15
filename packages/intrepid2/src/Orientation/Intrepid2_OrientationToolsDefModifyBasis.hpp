@@ -270,8 +270,6 @@ namespace Intrepid2 {
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
     }
 #endif
-
-    const ordinal_type NODE_DIM = 0;
     const ordinal_type EDGE_DIM = 1;
     const ordinal_type FACE_DIM = 2;
     
@@ -442,7 +440,6 @@ namespace Intrepid2 {
                             const BasisTypeLeft* basisLeft,
                             const BasisTypeRight* basisRight)
   {
-    const ordinal_type NODE_DIM = 0;
     const ordinal_type EDGE_DIM = 1;
     const ordinal_type FACE_DIM = 2;
     
