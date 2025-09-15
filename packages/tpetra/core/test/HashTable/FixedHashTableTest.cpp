@@ -150,7 +150,7 @@ namespace { // (anonymous)
           const ValueType expectedVal = vals(i);
           const ValueType actualVal = table.get (key);
           bool curBad = false;
-  
+
           if (actualVal == Tpetra::Details::OrdinalTraits<ValueType>::invalid ()) {
             curBad = true;
             printf("get(key=%lld) = invalid, should have been %d\n",
@@ -161,7 +161,7 @@ namespace { // (anonymous)
             printf("get(key=%lld) = %d, should have been %d\n",
                     (long long) key, actualVal, expectedVal);
           }
-  
+
           if (curBad) {
             ++myBadCount;
           }
@@ -1064,12 +1064,12 @@ namespace { // (anonymous)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, ZeroPairsOnDefaultInit, ValueType, KeyType, DeviceType)
   {
     using fixed_hash_table_t = Tpetra::Details::FixedHashTable<KeyType,ValueType,DeviceType>;
-    
+
     fixed_hash_table_t table {};
-    
+
     TEST_EQUALITY_CONST(table.numPairs(), 0);
   }
-  
+
   //
   // Instantiations of the templated unit test(s) above.
   //
@@ -1138,7 +1138,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, ZeroPairsOnDefaultInit, Valu
 
 
 #ifdef KOKKOS_ENABLE_CUDA
+#ifdef HAVE_TPETRA_SHARED_ALLOCS
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> cuda_device_type;
+#else
   typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> cuda_device_type;
+#endif
 
 #define UNIT_TEST_GROUP_CUDA( LO, GO ) \
   UNIT_TEST_GROUP_3( LO, GO, cuda_device_type )
