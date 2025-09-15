@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2023, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2023, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,7 +12,9 @@
 #include "fix_column_partitions.h"
 #include <array>
 #include <cmath>
-#include <fmt/core.h>
+#ifdef DEBUG
+#include <fmt/format.h>
+#endif
 #include <iostream>
 #include <map>
 #include <vector>

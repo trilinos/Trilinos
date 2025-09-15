@@ -6,7 +6,6 @@
 
 #include <cstdlib>
 #include <exception>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <limits>

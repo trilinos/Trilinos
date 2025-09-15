@@ -18,7 +18,7 @@
 #include <bitset>
 #include <cgnslib.h>
 #include <cstddef>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iostream>
 #include <numeric>

@@ -4,6 +4,8 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <ctime>
+#include <fmt/format.h>
 #include <fmt/chrono.h>
 #include <time_stamp.h>
 

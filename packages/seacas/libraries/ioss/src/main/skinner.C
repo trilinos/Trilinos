@@ -9,7 +9,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <exception>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iostream>

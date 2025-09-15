@@ -7,9 +7,11 @@
 #include "ED_SystemInterface.h" // for SystemInterface, interFace
 #include "exo_block.h"
 #include "exodusII.h" // for ex_block, etc
-#include "fmt/ostream.h"
-#include "smart_assert.h" // for SMART_ASSERT
-#include <cstdlib>        // for exit, nullptr
+
+#include <cstdlib> // for exit, nullptr
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <smart_assert.h> // for SMART_ASSERT
 #include <string>         // for string, char_traits
 
 template <typename INT> Exo_Block<INT>::Exo_Block() : Exo_Entity() {}
@@ -59,7 +61,7 @@ template <typename INT> void Exo_Block<INT>::entity_load_params()
                      "\tnum nodes per elmt = {}\n"
                      "\tnum attributes     = {}\n"
                      " ... Aborting...\n"),
-        fmt::group_digits(numEntity), num_nodes_per_elmt, num_attr));
+        block.id, fmt::group_digits(numEntity), num_nodes_per_elmt, num_attr));
   }
 }
 

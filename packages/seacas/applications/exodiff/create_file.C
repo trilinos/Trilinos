@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,15 +8,15 @@
 #include "Tolerance.h"          // for Tolerance, etc
 #include "exo_entity.h"         // for Exo_Entity, EXOTYPE
 #include "exodusII.h"
-#include "fmt/color.h"
-#include "fmt/ostream.h"
-#include "smart_assert.h" // for SMART_ASSERT
-#include "stringx.h"      // for find_string, etc
+#include "stringx.h" // for find_string, etc
 #include "util.h"
 #include <cstddef> // for size_t
 #include <cstdio>  // for nullptr
-#include <string>  // for string, char_traits, etc
-#include <vector>  // for vector
+#include <fmt/color.h>
+#include <fmt/ostream.h>
+#include <smart_assert.h> // for SMART_ASSERT
+#include <string>         // for string, char_traits, etc
+#include <vector>         // for vector
 template <typename INT> class Exo_Read;
 
 namespace {
