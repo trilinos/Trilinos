@@ -76,7 +76,7 @@ namespace Intrepid2 {
 
     auto matDataHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), matData);
 
-    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0;
+    ordinal_type matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0;
     const auto cellTopo = basis->getBaseCellTopology();
     {
       const ordinal_type numEdges = cellTopo.getSubcellCount(EDGE_DIM);
@@ -90,7 +90,6 @@ namespace Intrepid2 {
         matDim2 = std::max(matDim2, basis->getDofCount(2,i));
         numOrts = std::max(numOrts,2*ordinal_type(cellTopo.getSideCount(FACE_DIM,i)));
       }
-      matDim = std::max(matDim1,matDim2);
       
       operators = OperatorViewType("Orientation::EdgeOperators::"+name,
                                    numEdges, numOrts, 2);
@@ -210,7 +209,7 @@ namespace Intrepid2 {
 
     auto matDataHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), matData);
 
-    ordinal_type matDim = 0, matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0, maxFaceOrts = 0;
+    ordinal_type matDim1 = 0, matDim2 = 0, numOrts = 0, numEdgeOrts = 0, maxFaceOrts = 0;
     const auto cellTopo = basis->getBaseCellTopology();
     {
       const ordinal_type numEdges = cellTopo.getSubcellCount(EDGE_DIM);
@@ -228,7 +227,6 @@ namespace Intrepid2 {
         numOrts = std::max(numOrts,maxFaceOrts);
         
       }
-      matDim = std::max(matDim1,matDim2);
       
       operators = OperatorViewType("Orientation::FaceOperators::"+name,
                                    numFaces, numOrts, 2);
@@ -758,8 +756,8 @@ namespace Intrepid2 {
         ordinalViewAllocations.push_back(packedColumnIndices);
         doubleViewAllocations.push_back(packedWeights);
         
-        using UnmanagedDoubleView  = OrientationOperator<DT>::UnmanagedDoubleView;
-        using UnmanagedOrdinalView = OrientationOperator<DT>::UnmanagedOrdinalView;
+        using UnmanagedDoubleView  = typename OrientationOperator<DT>::UnmanagedDoubleView;
+        using UnmanagedOrdinalView = typename OrientationOperator<DT>::UnmanagedOrdinalView;
         
         UnmanagedOrdinalView rowIndicesUnmanaged         (rowIndices.data(),          rowIndices.extent(0));
         UnmanagedOrdinalView offsetForRowOrdinalUnmanaged(offsetForRowOrdinal.data(), offsetForRowOrdinal.extent(0));
