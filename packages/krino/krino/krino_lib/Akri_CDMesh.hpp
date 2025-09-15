@@ -279,8 +279,6 @@ private:
   bool check_element_side_parts(const stk::mesh::Entity elem, const unsigned sideId) const;
   void update_element_side_parts();
 
-  void parallel_communicate_elemental_death_fields() const;
-
   void generate_sorted_child_elements();
   void cache_node_ids();
 
