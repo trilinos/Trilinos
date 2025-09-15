@@ -118,7 +118,7 @@ void testCircularGeometryProjectionConvergesInP(int meshWidth, Teuchos::FancyOSt
 }
 
 template<typename PointScalar, int spaceDim, typename DeviceType>
-void testLinearGeometryIsExact(const int &meshWidth, const double &relTol, const double &absTol,
+void testLinearGeometryIsExact(const int meshWidth, const double &relTol, const double &absTol,
                                Teuchos::FancyOStream &out, bool &success)
 {
   Kokkos::Array<PointScalar,spaceDim> origin;
@@ -154,7 +154,7 @@ void testLinearGeometryIsExact(const int &meshWidth, const double &relTol, const
 }
 
 template<typename PointScalar, int spaceDim, typename DeviceType>
-void testLinearGeometryIsExact(const int &meshWidth, int polyOrderForBasis, const double &relTol, const double &absTol,
+void testLinearGeometryIsExact(const int meshWidth, int polyOrderForBasis, const double &relTol, const double &absTol,
                                Teuchos::FancyOStream &out, bool &success)
 {
   Kokkos::Array<PointScalar,spaceDim> origin;
@@ -168,7 +168,7 @@ void testLinearGeometryIsExact(const int &meshWidth, int polyOrderForBasis, cons
     cellCount[d] = meshWidth;
   }
   
-  CellGeometry<PointScalar, spaceDim,DeviceType> flatCellGeometry(origin,extent,cellCount);
+  CellGeometry<PointScalar, spaceDim, DeviceType> flatCellGeometry(origin,extent,cellCount);
   
   using BasisPtr = Teuchos::RCP< Basis<DeviceType,PointScalar,PointScalar> >;
   
@@ -263,7 +263,7 @@ TEUCHOS_UNIT_TEST( ProjectedGeometry, LinearGeometryIsExact_Line )
   // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
   const double relTol = 1e-15;
   const double absTol = 3e-15;
-  testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+  testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
   
   // now, test with a higher-order basis (but still linear geometry)
   for (int polyOrder=2; polyOrder<8; polyOrder++)
