@@ -26,8 +26,6 @@ initializeKokkos ()
                             TEUCHOS_TEST_FOR_EXCEPTION(Kokkos::is_finalized(),std::runtime_error,
                                                        "Tpetra::Details::initializeKokkos: Kokkos is already finalized");
                              if (! Kokkos::is_initialized ()) {
-                               std::cout<< "CMS: Calling initializeKokkos()"<<std::endl;
-
                                std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
                                int narg = static_cast<int> (args.size ()); // must be nonconst
 
@@ -55,7 +53,7 @@ initializeKokkos ()
                            }();
 
   TEUCHOS_TEST_FOR_EXCEPTION(!Kokkos::is_initialized() || initialized != 1,std::runtime_error,
-                             "Tpetra::Details::initializeKokkos: Initialization failed");
+                             "Tpetra::Details::initializeKokkos: Initialization failed or Kokkos has already been finalized.");
 }
 
 } // namespace Details
