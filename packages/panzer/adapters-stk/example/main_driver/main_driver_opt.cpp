@@ -145,7 +145,8 @@ int main(int argc, char *argv[])
 
       // Create target -- do forward integration with perturbed parameter values
       RCP<ROL::Vector<double>> p = objective->create_design_vector();
-      p->setScalar(2.0);
+      const double p_target = 2.0;
+      p->setScalar(p_target);
       RCP<ROL::Vector<double>> r = objective->create_response_vector();
       objective->run_tempus(*r, *p);
       objective->set_target(r);
@@ -162,9 +163,15 @@ int main(int argc, char *argv[])
       {
         const ROL::ThyraVector<double>& thyra_p = dyn_cast<const ROL::ThyraVector<double> >(*p);
         ROL::ThyraVector<double>& thyra_r = dyn_cast<ROL::ThyraVector<double> >(*r);
-        *out << "Final Values: p = " << Thyra::get_ele(*(thyra_p.getVector()),0)
+        const double p_final = Thyra::get_ele(*(thyra_p.getVector()),0);
+        *out << "Final Values: p = " << p_final
              << ", g = " << Thyra::get_ele(*(thyra_r.getVector()),0)
              << std::endl;
+        if (fabs(p_target - p_final) / fabs(p_target) > 1e-9) { 
+          status = -1;
+          *out <<"******* Optimization solution does not match expected target! ********" << std::endl;
+          *out <<"\tExpected p = " << p_target << std::endl;
+        }
       }
     }
 
@@ -203,7 +210,7 @@ int main(int argc, char *argv[])
   }
 
   if (status == 0)
-    *out << "panzer::MainDriver run completed." << std::endl;
+    *out << "panzer::MainDriverOpt run completed." << std::endl;
 
   return status;
 }

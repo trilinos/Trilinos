@@ -124,17 +124,16 @@
             <ParameterList name="Volume_Integral">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
-
+<!--
             <ParameterList name="SOURCE_TEMPERATURE">
                 <Parameter name="Type" type="string" value="Parameter"/>
                 <Parameter name="Parameter Name" type="string" value="S"/>
                 <Parameter name="Field Name" type="string" value="SOURCE_TEMPERATURE"/>
             </ParameterList>
-<!--
+-->
             <ParameterList name="SOURCE_TEMPERATURE">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
--->
             <ParameterList name="Heat Capacity">
                 <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
