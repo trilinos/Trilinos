@@ -76,6 +76,7 @@ namespace MueLu {
     // put in auto-generated code here
 
 
+    if (name == "enable timers") { ss << "<Parameter name=\"enable timers\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "output filename") { ss << "<Parameter name=\"output filename\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "number of equations") { ss << "<Parameter name=\"number of equations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "max levels") { ss << "<Parameter name=\"max levels\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
@@ -138,6 +139,7 @@ namespace MueLu {
 "<ParameterList name=\"MueLu\">"
   "<Parameter name=\"problem: type\" type=\"string\" value=\"unknown\"/>"
   "<Parameter name=\"verbosity\" type=\"string\" value=\"high\"/>"
+  "<Parameter name=\"enable timers\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"output filename\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"number of equations\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"max levels\" type=\"int\" value=\"10\"/>"
@@ -552,6 +554,8 @@ namespace MueLu {
          ("default values","problem: type")
       
          ("ML output","verbosity")
+      
+         ("enable timers","enable timers")
       
          ("output filename","output filename")
       

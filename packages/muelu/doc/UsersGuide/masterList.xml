@@ -26,6 +26,13 @@
     </parameter>
 
     <parameter>
+      <name>enable timers</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Enable Teuchos::StackedTimers collection.</description>
+    </parameter>
+
+    <parameter>
       <name>output filename</name>
       <type>string</type>
       <default>""</default>

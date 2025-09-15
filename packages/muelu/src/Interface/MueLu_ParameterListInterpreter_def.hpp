@@ -302,6 +302,21 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     VerboseObject::SetDefaultVerbLevel(this->verbosity_);
   }
 
+  // Set timers, if necessary
+  MUELU_SET_VAR_2LIST(paramList, paramList, "enable timers", bool, enableTimers);
+  if (enableTimers) {
+    if (this->verbosity_ == MsgType::None) {
+      this->verbosity_ = MsgType::NoneWithTimings;
+    }
+    if (this->verbosity_ == MsgType::Low) {
+      this->verbosity_ = MsgType::LowWithTimings;
+    }
+    if (this->verbosity_ == MsgType::Medium) {
+      this->verbosity_ = MsgType::MediumWithTimings;
+    }
+    VerboseObject::SetDefaultVerbLevel(this->verbosity_);
+  }
+
   MUELU_SET_VAR_2LIST(paramList, paramList, "output filename", std::string, outputFilename);
   if (outputFilename != "")
     VerboseObject::SetMueLuOFileStream(outputFilename);

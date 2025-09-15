@@ -69,6 +69,10 @@ enum MsgType {
 #endif
   Default = High,  // This is the default of print() methods. For VerboseObject, another default is set by VerboseObject::globalVerbLevel_ // TODO: move it to the VerboseObject class
 
+  NoneWithTimings   = None | Timings,
+  LowWithTimings    = Low | Timings,
+  MediumWithTimings = Medium | Timings,
+
   NotSpecified = -1
 };
 
