@@ -303,33 +303,54 @@ namespace Intrepid2 {
               //            bool havePrinted = false;
               auto & edgeOp = edgeOperatorData(edgeId, ortEdges[edgeId], transpose);
               auto & rowIndices = edgeOp.rowIndices;
-              auto & rowOffsets = edgeOp.offsetsForRowOrdinal;
               auto & colIndices = edgeOp.packedColumnIndices;
               auto & weights    = edgeOp.packedWeights;
               
-              ordinal_type numRowIndices = rowIndices.extent_int(0);
-              for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
+              const ordinal_type numRowIndices = rowIndices.extent_int(0);
+              if (edgeOp.isWeightedPermutation)
               {
-                for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
+                for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
                 {
-                  const ordinal_type & i = rowIndices[rowOrdinal];
-                  const ordinal_type & thisRowOffset = rowOffsets(rowOrdinal);
-                  const ordinal_type & nextRowOffset = rowOffsets(rowOrdinal+1);
-                  
-                  
-                  for (int d=0; d<dimBasis; d++)
+                  for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
                   {
-                    input_value_type temp = 0.0;
-                    for (ordinal_type rowOffset=thisRowOffset; rowOffset<nextRowOffset; rowOffset++)
+                    const ordinal_type & i = rowIndices(rowOrdinal);
+                    const ordinal_type & j = colIndices(rowOrdinal);
+                    const auto & mat_ij = weights(rowOrdinal);
+                    
+                    for (int d=0; d<dimBasis; d++)
                     {
-                      const ordinal_type & j = colIndices(rowOffset);
-                      const auto & mat_ij = weights(rowOffset);
-                      
                       auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
-                      temp += mat_ij * input_;
+                      auto & output_ = leftMultiply ? out.access(i, pointOrdinal, d) : out.access(pointOrdinal, i, d);
+                      output_ = mat_ij * input_;
                     }
-                    auto & output_ = leftMultiply ? out.access(i, pointOrdinal, d) : out.access(pointOrdinal, i, d);
-                    output_ = temp;
+                  }
+                }
+              }
+              else
+              {
+                auto & rowOffsets = edgeOp.offsetsForRowOrdinal;
+                for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
+                {
+                  for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
+                  {
+                    const ordinal_type & i = rowIndices[rowOrdinal];
+                    const ordinal_type & thisRowOffset = rowOffsets(rowOrdinal);
+                    const ordinal_type & nextRowOffset = rowOffsets(rowOrdinal+1);
+                    
+                    for (int d=0; d<dimBasis; d++)
+                    {
+                      input_value_type temp = 0.0;
+                      for (ordinal_type rowOffset=thisRowOffset; rowOffset<nextRowOffset; rowOffset++)
+                      {
+                        const ordinal_type & j = colIndices(rowOffset);
+                        const auto & mat_ij = weights(rowOffset);
+                        
+                        auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
+                        temp += mat_ij * input_;
+                      }
+                      auto & output_ = leftMultiply ? out.access(i, pointOrdinal, d) : out.access(pointOrdinal, i, d);
+                      output_ = temp;
+                    }
                   }
                 }
               }
@@ -350,32 +371,54 @@ namespace Intrepid2 {
             {
               auto & faceOp = faceOperatorData(faceId, ortFaces[faceId], transpose);
               auto & rowIndices = faceOp.rowIndices;
-              auto & rowOffsets = faceOp.offsetsForRowOrdinal;
               auto & colIndices = faceOp.packedColumnIndices;
               auto & weights    = faceOp.packedWeights;
               
               ordinal_type numRowIndices = rowIndices.extent_int(0);
-              for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
+              if (faceOp.isWeightedPermutation)
               {
-                for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
+                for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
                 {
-                  const ordinal_type & i = rowIndices[rowOrdinal];
-                  const ordinal_type & thisRowOffset = rowOffsets(rowOrdinal);
-                  const ordinal_type & nextRowOffset = rowOffsets(rowOrdinal+1);
-                  
-                  for (int d=0; d<dimBasis; d++)
+                  for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
                   {
-                    input_value_type temp = 0.0;
-                    for (ordinal_type rowOffset=thisRowOffset; rowOffset<nextRowOffset; rowOffset++)
+                    const ordinal_type & i = rowIndices[rowOrdinal];
+                    const ordinal_type & j = colIndices(rowOrdinal);
+                    const auto & mat_ij = weights(rowOrdinal);
+                    
+                    for (int d=0; d<dimBasis; d++)
                     {
-                      const ordinal_type & j = colIndices(rowOffset);
-                      const auto & mat_ij = weights(rowOffset);
-                      
                       auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
-                      temp += mat_ij * input_;
+                      auto & output_ = leftMultiply ? out.access(i, pointOrdinal, d) : out.access(pointOrdinal, i, d);
+                      output_ = mat_ij * input_;
                     }
-                    auto & output_ = leftMultiply ? out.access(i, pointOrdinal, d) : out.access(pointOrdinal, i, d);
-                    output_ = temp;
+                  }
+                }
+              }
+              else
+              {
+                auto & rowOffsets = faceOp.offsetsForRowOrdinal;
+                for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
+                {
+                  for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
+                  {
+                    const ordinal_type & i = rowIndices[rowOrdinal];
+                    const ordinal_type & thisRowOffset = rowOffsets(rowOrdinal);
+                    const ordinal_type & nextRowOffset = rowOffsets(rowOrdinal+1);
+                    
+                    for (int d=0; d<dimBasis; d++)
+                    {
+                      input_value_type temp = 0.0;
+                      for (ordinal_type rowOffset=thisRowOffset; rowOffset<nextRowOffset; rowOffset++)
+                      {
+                        const ordinal_type & j = colIndices(rowOffset);
+                        const auto & mat_ij = weights(rowOffset);
+                        
+                        auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
+                        temp += mat_ij * input_;
+                      }
+                      auto & output_ = leftMultiply ? out.access(i, pointOrdinal, d) : out.access(pointOrdinal, i, d);
+                      output_ = temp;
+                    }
                   }
                 }
               }
