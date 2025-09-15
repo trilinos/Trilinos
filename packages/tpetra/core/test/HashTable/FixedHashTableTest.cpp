@@ -895,7 +895,6 @@ namespace { // (anonymous)
 #endif // KOKKOS_ENABLE_THREADS
 
 #ifdef KOKKOS_ENABLE_CUDA
-    {
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
       if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
         out << "Testing copy constructor to CudaUVMSpace" << endl;
@@ -914,9 +913,7 @@ namespace { // (anonymous)
                              typeid(DeviceType).name ());
         testedAtLeastOnce = true;
       }
-#endif
-
-    }
+#endif // HAVE_TPETRA_SHARED_ALLOCS
 #endif // KOKKOS_ENABLE_CUDA
     if (! testedAtLeastOnce) {
       out << "*** WARNING: Did not actually test FixedHashTable's templated "
@@ -1065,7 +1062,7 @@ namespace { // (anonymous)
                                       typeid(DeviceType).name (), testValues);
       testedAtLeastOnce = true;
     }
-
+#endif // HAVE_TPETRA_SHARED_ALLOCS
 #endif // KOKKOS_ENABLE_CUDA
     if (! testedAtLeastOnce) {
       out << "*** WARNING: Did not actually test FixedHashTable's templated "
