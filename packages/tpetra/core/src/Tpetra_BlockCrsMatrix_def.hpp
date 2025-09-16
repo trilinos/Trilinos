@@ -1065,33 +1065,30 @@ public:
 // clang-format on
 template <class Scalar, class LO, class GO, class Node>
 void BlockCrsMatrix<Scalar, LO, GO, Node>::localApplyBlockNoTrans(
-    const BlockMultiVector<Scalar, LO, GO, Node> &X,
-    BlockMultiVector<Scalar, LO, GO, Node> &Y, const Scalar alpha,
+    const BlockMultiVector<Scalar, LO, GO, Node>& X,
+    BlockMultiVector<Scalar, LO, GO, Node>& Y, const Scalar alpha,
     const Scalar beta) {
   ::Tpetra::Details::ProfilingRegion profile_region(
       "Tpetra::BlockCrsMatrix::localApplyBlockNoTrans");
   const impl_scalar_type alpha_impl = alpha;
-  const auto graph = this->graph_.getLocalGraphDevice();
+  const auto graph                  = this->graph_.getLocalGraphDevice();
 
   mv_type X_mv = X.getMultiVectorView();
   mv_type Y_mv = Y.getMultiVectorView();
-  auto X_lcl = X_mv.getLocalViewDevice(Access::ReadOnly);
-  auto Y_lcl = Y_mv.getLocalViewDevice(Access::ReadWrite);
+  auto X_lcl   = X_mv.getLocalViewDevice(Access::ReadOnly);
+  auto Y_lcl   = Y_mv.getLocalViewDevice(Access::ReadWrite);
 
   auto A_lcl = getLocalMatrixDevice();
-  if(!applyHelper.get()) {
+  if (!applyHelper.get()) {
     // The apply helper does not exist, so create it
     applyHelper = std::make_shared<ApplyHelper>(A_lcl.nnz(), A_lcl.graph.row_map);
   }
-  if(applyHelper->shouldUseIntRowptrs())
-  {
+  if (applyHelper->shouldUseIntRowptrs()) {
     auto A_lcl_int_rowptrs = applyHelper->getIntRowptrMatrix(A_lcl);
     KokkosSparse::spmv(
         &applyHelper->handle_int, KokkosSparse::NoTranspose,
         alpha_impl, A_lcl_int_rowptrs, X_lcl, beta, Y_lcl);
-  }
-  else
-  {
+  } else {
     KokkosSparse::spmv(
         &applyHelper->handle, KokkosSparse::NoTranspose,
         alpha_impl, A_lcl, X_lcl, beta, Y_lcl);

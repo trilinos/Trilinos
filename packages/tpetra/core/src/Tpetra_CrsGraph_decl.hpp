@@ -1185,8 +1185,8 @@ public:
 
   // clang-format on
   using dist_object_type::
-      copyAndPermute; /// DistObject copyAndPermute has multiple overloads --
-                      /// use copyAndPermutes for anything we don't override
+      copyAndPermute;  /// DistObject copyAndPermute has multiple overloads --
+                       /// use copyAndPermutes for anything we don't override
   // clang-format off
 
     virtual void
@@ -1260,10 +1260,10 @@ public:
       size_t& constantNumPackets) override;
 
   // clang-format on
-  using dist_object_type::packAndPrepare; ///< DistObject overloads
-                                          ///< packAndPrepare. Explicitly use
-                                          ///< DistObject's packAndPrepare for
-                                          ///< anything we don't override
+  using dist_object_type::packAndPrepare;  ///< DistObject overloads
+                                           ///< packAndPrepare. Explicitly use
+                                           ///< DistObject's packAndPrepare for
+                                           ///< anything we don't override
   // clang-format off
 
     virtual void
@@ -1288,10 +1288,10 @@ public:
                        size_t& constantNumPackets) const;
 
   // clang-format on
-  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
-                                            ///< unpackAndCombine, use the
-                                            ///< DistObject's implementation for
-                                            ///< anything we don't override.
+  using dist_object_type::unpackAndCombine;  ///< DistObject has overloaded
+                                             ///< unpackAndCombine, use the
+                                             ///< DistObject's implementation for
+                                             ///< anything we don't override.
   // clang-format off
 
     virtual void

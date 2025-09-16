@@ -23,10 +23,10 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
-  // Forward declaration of ParameterList
-  class ParameterList;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+// Forward declaration of ParameterList
+class ParameterList;
+}  // namespace Teuchos
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
@@ -40,11 +40,11 @@ namespace Tpetra {
 /// "unique", i.e., a row is wholly owned by one process.
 ///
 /// This class takes the same template parameters as CrsGraph.
-template<class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
+template <class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 class CrsGraphTransposer {
-public:
+ public:
   //! @name Typedefs
   //@{
   typedef LocalOrdinal local_ordinal_type;
@@ -59,17 +59,17 @@ public:
   //@{
 
   //! Constructor that takes the graph to transpose.
-  CrsGraphTransposer (const Teuchos::RCP<const crs_graph_type>& origGraph,const std::string & label = std::string());
+  CrsGraphTransposer(const Teuchos::RCP<const crs_graph_type> &origGraph, const std::string &label = std::string());
 
   //@}
   //! @name Methods for computing the explicit transpose.
   //@{
 
   //! Compute and return graph+graph^T of the graph given to the constructor.
-  Teuchos::RCP<crs_graph_type> symmetrize(const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+  Teuchos::RCP<crs_graph_type> symmetrize(const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
   //! Compute and return the transpose of the graph given to the constructor.
-  Teuchos::RCP<crs_graph_type> createTranspose(const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+  Teuchos::RCP<crs_graph_type> createTranspose(const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
   /// \brief Compute and return the transpose of the graph given to the constructor.
   ///
@@ -79,9 +79,9 @@ public:
   ///
   /// \warning This routine leaves overlapping rows.  Unless you're
   /// sure that's OK, call createTranspose() instead.
-  Teuchos::RCP<crs_graph_type> createTransposeLocal(const Teuchos::RCP<Teuchos::ParameterList> &params=Teuchos::null);
+  Teuchos::RCP<crs_graph_type> createTransposeLocal(const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
-private:
+ private:
   //! The original graph to be transposed.
   Teuchos::RCP<const crs_graph_type> origGraph_;
 
@@ -89,6 +89,6 @@ private:
   std::string label_;
 };
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
 #endif /* TPETRA_CRSGRAPHTRANSPOSER_DECL_HPP */

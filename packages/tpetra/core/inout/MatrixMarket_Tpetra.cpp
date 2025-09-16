@@ -10,5 +10,5 @@
 #include <Tpetra_ConfigDefs.hpp>
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#  include <MatrixMarket_Tpetra.hpp>
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#include <MatrixMarket_Tpetra.hpp>
+#endif  // HAVE_TPETRA_EXPLICIT_INSTANTIATION

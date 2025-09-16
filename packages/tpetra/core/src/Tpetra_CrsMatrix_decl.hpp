@@ -401,11 +401,11 @@ namespace Tpetra {
     public Details::Spaces::User
   {
   // clang-format on
-private:
+ private:
   using dist_object_type =
       DistObject<char, LocalOrdinal, GlobalOrdinal,
-                 Node>; ///< Type of the DistObject specialization from which
-                        ///< this class inherits.
+                 Node>;  ///< Type of the DistObject specialization from which
+                         ///< this class inherits.
   // clang-format off
 
   public:
@@ -2974,11 +2974,10 @@ public:
       const size_t numPermutes);
 
   protected:
-
   // clang-format on
   using dist_object_type::
-      copyAndPermute; /// DistObject copyAndPermute has multiple overloads --
-                      /// use copyAndPermutes for anything we don't override
+      copyAndPermute;  /// DistObject copyAndPermute has multiple overloads --
+                       /// use copyAndPermutes for anything we don't override
   // clang-format off
 
     virtual void
@@ -3004,11 +3003,11 @@ public:
      size_t& constantNumPackets) override;
 
   // clang-format on
-  using dist_object_type::packAndPrepare; ///< DistObject overloads
-                                          ///< packAndPrepare. Explicitly use
-                                          ///< DistObject's packAndPrepare for
-                                          ///< anything we don't override
-                                          // clang-format off
+  using dist_object_type::packAndPrepare;  ///< DistObject overloads
+                                           ///< packAndPrepare. Explicitly use
+                                           ///< DistObject's packAndPrepare for
+                                           ///< anything we don't override
+                                           // clang-format off
 
   private:
     /// \brief Unpack the imported column indices and values, and
@@ -3053,11 +3052,11 @@ public:
      const CombineMode CM) override;
 
   // clang-format on
-  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
-                                            ///< unpackAndCombine, use the
-                                            ///< DistObject's implementation for
-                                            ///< anything we don't override.
-                                            // clang-format off
+  using dist_object_type::unpackAndCombine;  ///< DistObject has overloaded
+                                             ///< unpackAndCombine, use the
+                                             ///< DistObject's implementation for
+                                             ///< anything we don't override.
+                                             // clang-format off
 
     /// \brief Pack this object's data for an Import or Export.
     ///

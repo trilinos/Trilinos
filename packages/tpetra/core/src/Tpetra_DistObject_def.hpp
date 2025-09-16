@@ -1850,12 +1850,10 @@ namespace Tpetra {
 // clang-format on
 template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
 void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
-    const SrcDistObject &source, const size_t numSameIDs,
-    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
-        &permuteToLIDs,
-    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
-        &permuteFromLIDs,
-    const CombineMode CM, const execution_space &space) {
+    const SrcDistObject& source, const size_t numSameIDs,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+    const CombineMode CM, const execution_space& space) {
   /*
   This is called if the derived class doesn't know how to pack and prepare in
   an arbitrary execution space instance, but it was asked to anyway.
@@ -1866,11 +1864,11 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
   2. This to complete before any following work in the provided instance.
   */
 
-  space.fence("Tpetra::DistObject::copyAndPermute-1"); // // TODO: Tpetra::Details::Spaces::exec_space_wait
+  space.fence("Tpetra::DistObject::copyAndPermute-1");  // // TODO: Tpetra::Details::Spaces::exec_space_wait
   copyAndPermute(source, numSameIDs, permuteToLIDs, permuteFromLIDs,
-                 CM);        // default instance
-  execution_space().fence("Tpetra::DistObject::copyAndPermute-2"); // TODO:
-                             // Tpetra::Details::Spaces::exec_space_wait
+                 CM);                                               // default instance
+  execution_space().fence("Tpetra::DistObject::copyAndPermute-2");  // TODO:
+                                                                    // Tpetra::Details::Spaces::exec_space_wait
 }
 // clang-format off
 
@@ -1895,12 +1893,11 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
 // clang-format on
 template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
 void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
-    const SrcDistObject &source,
-    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
-        &exportLIDs,
-    Kokkos::DualView<packet_type *, buffer_device_type> &exports,
-    Kokkos::DualView<size_t *, buffer_device_type> numPacketsPerLID,
-    size_t &constantNumPackets, const execution_space &space) {
+    const SrcDistObject& source,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+    Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+    Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
+    size_t& constantNumPackets, const execution_space& space) {
   /*
   This is called if the derived class doesn't know how to pack and prepare in
   an arbitrary execution space instance, but it was asked to anyway.
@@ -1914,15 +1911,15 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
 
   // wait for any work from prior operations in the provided instance to
   // complete
-  space.fence("Tpetra::DistObject::packAndPrepare-1"); // TODO: Details::Spaces::exec_space_wait
+  space.fence("Tpetra::DistObject::packAndPrepare-1");  // TODO: Details::Spaces::exec_space_wait
 
   // pack and prepare in the default instance.
   packAndPrepare(source, exportLIDs, exports, numPacketsPerLID,
-                 constantNumPackets); // default instance
+                 constantNumPackets);  // default instance
 
   // wait for the default instance to complete before returning, so any
   // following work inserted into the provided instance will be done after this
-  execution_space().fence("Tpetra::DistObject::packAndPrepare-2"); // TODO: Details::Spaces::exec_space_wait
+  execution_space().fence("Tpetra::DistObject::packAndPrepare-2");  // TODO: Details::Spaces::exec_space_wait
 }
 // clang-format off
 
@@ -1946,21 +1943,20 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::packAndPrepare(
 // clang-format on
 template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
 void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::unpackAndCombine(
-    const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
-        &importLIDs,
-    Kokkos::DualView<packet_type *, buffer_device_type> imports,
-    Kokkos::DualView<size_t *, buffer_device_type> numPacketsPerLID,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& importLIDs,
+    Kokkos::DualView<packet_type*, buffer_device_type> imports,
+    Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
     const size_t constantNumPackets, const CombineMode combineMode,
-    const execution_space &space) {
+    const execution_space& space) {
   // Wait for any work in the provided space to complete
-  space.fence("Tpetra::DistObject::unpackAndCombine-1"); // TODO: Details::Spaces::exec_space_wait(execution_space(),
-                 // space);
+  space.fence("Tpetra::DistObject::unpackAndCombine-1");  // TODO: Details::Spaces::exec_space_wait(execution_space(),
+                                                          // space);
   unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets,
-                   combineMode); // default instance
+                   combineMode);  // default instance
   // wait for unpack to finish in the default instance, since the caller
   // may be expecting sequential semantics in the `space` instance
-  execution_space().fence("Tpetra::DistObject::unpackAndCombine-2"); // TODO: Details::Spaces::exec_space_wait(space,
-                             // execution_space());
+  execution_space().fence("Tpetra::DistObject::unpackAndCombine-2");  // TODO: Details::Spaces::exec_space_wait(space,
+                                                                      // execution_space());
 }
 // clang-format off
 

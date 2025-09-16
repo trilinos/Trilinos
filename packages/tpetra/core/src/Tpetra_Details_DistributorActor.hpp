@@ -36,29 +36,29 @@ template <class View>
 constexpr bool isKokkosView = Kokkos::is_view<View>::value;
 
 template <class View1, class View2>
-constexpr bool areKokkosViews = Kokkos::is_view<View1>::value && Kokkos::is_view<View2>::value;
+constexpr bool areKokkosViews = Kokkos::is_view<View1>::value&& Kokkos::is_view<View2>::value;
 
 class DistributorActor {
   static constexpr int DEFAULT_MPI_TAG = 1;
 
-  using IndexView = DistributorPlan::IndexView;
+  using IndexView     = DistributorPlan::IndexView;
   using SubViewLimits = DistributorPlan::SubViewLimits;
 
-public:
+ public:
   DistributorActor();
   DistributorActor(const DistributorActor& otherActor) = default;
 
   template <class ExpView, class ImpView>
   void doPostsAndWaits(const DistributorPlan& plan,
-                       const ExpView &exports,
+                       const ExpView& exports,
                        size_t numPackets,
-                       const ImpView &imports);
+                       const ImpView& imports);
 
   template <class ExpView, class ImpView>
   void doPostsAndWaits(const DistributorPlan& plan,
-                       const ExpView &exports,
+                       const ExpView& exports,
                        const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                       const ImpView &imports,
+                       const ImpView& imports,
                        const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
   template <class ImpView>
@@ -68,7 +68,7 @@ public:
 
   template <class ImpView>
   void doPostRecvs(const DistributorPlan& plan,
-                   const ImpView &imports,
+                   const ImpView& imports,
                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
   template <class ExpView, class ImpView>
@@ -79,9 +79,9 @@ public:
 
   template <class ExpView, class ImpView>
   void doPostSends(const DistributorPlan& plan,
-                   const ExpView &exports,
+                   const ExpView& exports,
                    const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                   const ImpView &imports,
+                   const ImpView& imports,
                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
   template <class ExpView, class ImpView>
@@ -92,9 +92,9 @@ public:
 
   template <class ExpView, class ImpView>
   void doPosts(const DistributorPlan& plan,
-               const ExpView &exports,
+               const ExpView& exports,
                const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-               const ImpView &imports,
+               const ImpView& imports,
                const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
   void doWaits(const DistributorPlan& plan);
@@ -103,12 +103,11 @@ public:
 
   void doWaitsSend(const DistributorPlan& plan);
 
-  void doWaitsIalltofewv(const DistributorPlan &plan);
+  void doWaitsIalltofewv(const DistributorPlan& plan);
 
   bool isReady() const;
 
-private:
-
+ private:
   template <class ImpView>
   void doPostRecvsImpl(const DistributorPlan& plan,
                        const ImpView& imports,
@@ -123,26 +122,26 @@ private:
 
 #ifdef HAVE_TPETRA_MPI
   template <class ExpView, class ImpView>
-  void doPostsAllToAllImpl(const DistributorPlan &plan,
-                           const ExpView &exports,
+  void doPostsAllToAllImpl(const DistributorPlan& plan,
+                           const ExpView& exports,
                            const SubViewLimits& exportSubViewLimits,
-                           const ImpView &imports,
+                           const ImpView& imports,
                            const SubViewLimits& importSubViewLimits);
 
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   template <class ExpView, class ImpView>
-  void doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
-                               const ExpView &exports,
+  void doPostsNbrAllToAllVImpl(const DistributorPlan& plan,
+                               const ExpView& exports,
                                const SubViewLimits& exportSubViewLimits,
-                               const ImpView &imports,
+                               const ImpView& imports,
                                const SubViewLimits& importSubViewLimits);
-#endif // HAVE_TPETRACORE_MPI_ADVANCE
+#endif  // HAVE_TPETRACORE_MPI_ADVANCE
 
   template <typename ExpView, typename ImpView>
-  void doPostsIalltofewvImpl(const DistributorPlan &plan,
-                             const ExpView &exports,
+  void doPostsIalltofewvImpl(const DistributorPlan& plan,
+                             const ExpView& exports,
                              const SubViewLimits& exportSubViewLimits,
-                             const ImpView &imports,
+                             const ImpView& imports,
                              const SubViewLimits& importSubViewLimits);
 
   // ialltofewv members
@@ -156,7 +155,7 @@ private:
     std::vector<int> roots;
   } ialltofewv_;
 
-#endif // HAVE_TPETRA_MPI
+#endif  // HAVE_TPETRA_MPI
 
   int mpiTag_;
 
@@ -168,8 +167,7 @@ template <class ExpView, class ImpView>
 void DistributorActor::doPosts(const DistributorPlan& plan,
                                const ExpView& exports,
                                size_t numPackets,
-                               const ImpView& imports)
-{
+                               const ImpView& imports) {
   doPostRecvs(plan, numPackets, imports);
   doPostSends(plan, exports, numPackets, imports);
 }
@@ -178,21 +176,19 @@ template <class ExpView, class ImpView>
 void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
                                        const ExpView& exports,
                                        size_t numPackets,
-                                       const ImpView& imports)
-{
+                                       const ImpView& imports) {
   static_assert(areKokkosViews<ExpView, ImpView>,
-      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
+                "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPosts(plan, exports, numPackets, imports);
   doWaits(plan);
 }
 
 template <class ExpView, class ImpView>
 void DistributorActor::doPosts(const DistributorPlan& plan,
-                               const ExpView &exports,
+                               const ExpView& exports,
                                const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                               const ImpView &imports,
-                               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
-{
+                               const ImpView& imports,
+                               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) {
   doPostRecvs(plan, imports, numImportPacketsPerLID);
   doPostSends(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
 }
@@ -202,10 +198,9 @@ void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
                                        const ExpView& exports,
                                        const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                                        const ImpView& imports,
-                                       const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
-{
+                                       const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) {
   static_assert(areKokkosViews<ExpView, ImpView>,
-      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
+                "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPosts(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   doWaits(plan);
 }
@@ -227,9 +222,8 @@ packOffset(const DstViewType& dst,
            const SrcViewType& src,
            const size_t dst_offset,
            const size_t src_offset,
-           const size_t size)
-{
-  memcpy((void*) (dst.data()+dst_offset), src.data()+src_offset, size*sizeof(typename DstViewType::value_type));
+           const size_t size) {
+  memcpy((void*)(dst.data() + dst_offset), src.data() + src_offset, size * sizeof(typename DstViewType::value_type));
 }
 
 template <typename DstViewType, typename SrcViewType>
@@ -238,20 +232,19 @@ packOffset(const DstViewType& dst,
            const SrcViewType& src,
            const size_t dst_offset,
            const size_t src_offset,
-           const size_t size)
-{
+           const size_t size) {
   Kokkos::Compat::deep_copy_offset(dst, src, dst_offset, src_offset, size);
 }
 
 #ifdef HAVE_TPETRA_MPI
 
 template <class ExpView, class ImpView>
-void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan &plan,
-                                           const ExpView &exports,
-                                           const SubViewLimits& exportSubViewLimits,
-                                           const ImpView &imports,
-                                           const SubViewLimits& importSubViewLimits) {
-  using size_type = Teuchos::Array<size_t>::size_type;
+void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan& plan,
+                                             const ExpView& exports,
+                                             const SubViewLimits& exportSubViewLimits,
+                                             const ImpView& imports,
+                                             const SubViewLimits& importSubViewLimits) {
+  using size_type   = Teuchos::Array<size_t>::size_type;
   using ExportValue = typename ExpView::non_const_value_type;
 
   ProfilingRegion pr("Tpetra::Distributor::doPostsIalltofewvImpl");
@@ -261,23 +254,23 @@ void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan &plan,
       "Send Type=\"Ialltofewv\" only works for fast-path communication.");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    bool(ialltofewv_.req), std::runtime_error,
-    "This actor has an active Ialltofewv already");
+      bool(ialltofewv_.req), std::runtime_error,
+      "This actor has an active Ialltofewv already");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       bool(ialltofewv_.sendcounts), std::runtime_error,
       "This actor has an active Ialltofewv already");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    bool(ialltofewv_.sdispls), std::runtime_error,
+      bool(ialltofewv_.sdispls), std::runtime_error,
       "This actor has an active Ialltofewv already");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    bool(ialltofewv_.recvcounts), std::runtime_error,
+      bool(ialltofewv_.recvcounts), std::runtime_error,
       "This actor has an active Ialltofewv already");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    bool(ialltofewv_.rdispls), std::runtime_error,
+      bool(ialltofewv_.rdispls), std::runtime_error,
       "This actor has an active Ialltofewv already");
 
   auto comm = plan.getComm();
@@ -285,22 +278,21 @@ void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan &plan,
   const auto& [importStarts, importLengths] = importSubViewLimits;
   const auto& [exportStarts, exportLengths] = exportSubViewLimits;
 
-
-  ialltofewv_.roots = plan.getRoots();
-  const int nroots = ialltofewv_.roots.size();
-  const int *roots = ialltofewv_.roots.data();
-  ialltofewv_.req = std::make_optional<Details::Ialltofewv::Req>();
+  ialltofewv_.roots      = plan.getRoots();
+  const int nroots       = ialltofewv_.roots.size();
+  const int* roots       = ialltofewv_.roots.data();
+  ialltofewv_.req        = std::make_optional<Details::Ialltofewv::Req>();
   ialltofewv_.sendcounts = Teuchos::rcp(new std::vector<int>(nroots));
-  ialltofewv_.sdispls = Teuchos::rcp(new std::vector<int>(nroots));
+  ialltofewv_.sdispls    = Teuchos::rcp(new std::vector<int>(nroots));
   ialltofewv_.recvcounts = Teuchos::rcp(new std::vector<int>);
-  ialltofewv_.rdispls = Teuchos::rcp(new std::vector<int>);
+  ialltofewv_.rdispls    = Teuchos::rcp(new std::vector<int>);
 
   for (int rootIdx = 0; rootIdx < nroots; ++rootIdx) {
     const int root = roots[rootIdx];
 
-    //if we can't find the root proc index in our plan, it just means we send 0
-    // also make sure root only appears once in getProcsTo()
-    size_type rootProcIndex = plan.getProcsTo().size(); // sentinel value -> not found
+    // if we can't find the root proc index in our plan, it just means we send 0
+    //  also make sure root only appears once in getProcsTo()
+    size_type rootProcIndex = plan.getProcsTo().size();  // sentinel value -> not found
     for (size_type pi = 0; pi < plan.getProcsTo().size(); ++pi) {
       if (plan.getProcsTo()[pi] == root) {
         rootProcIndex = pi;
@@ -323,7 +315,6 @@ void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan &plan,
 
     // If I happen to be this root, set up my receive metadata
     if (comm->getRank() == root) {
-
       // don't recv anything from anywhere by default
       ialltofewv_.recvcounts->resize(comm->getSize());
       std::fill(ialltofewv_.recvcounts->begin(), ialltofewv_.recvcounts->end(), 0);
@@ -331,56 +322,52 @@ void DistributorActor::doPostsIalltofewvImpl(const DistributorPlan &plan,
       std::fill(ialltofewv_.rdispls->begin(), ialltofewv_.rdispls->end(), 0);
 
       const size_type actualNumReceives =
-      Teuchos::as<size_type>(plan.getNumReceives()) +
-      Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
+          Teuchos::as<size_type>(plan.getNumReceives()) +
+          Teuchos::as<size_type>(plan.hasSelfMessage() ? 1 : 0);
 
       for (size_type i = 0; i < actualNumReceives; ++i) {
-        const int src = plan.getProcsFrom()[i];
-        (*ialltofewv_.rdispls)[src] = importStarts[i];
+        const int src                  = plan.getProcsFrom()[i];
+        (*ialltofewv_.rdispls)[src]    = importStarts[i];
         (*ialltofewv_.recvcounts)[src] = Teuchos::as<int>(importLengths[i]);
       }
     }
 
-  } // rootIdx
+  }  // rootIdx
 
   // TODO: do we need to pass ExportValue{} here?
   MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<ExportValue>::getType(ExportValue{});
   // FIXME: is there a better way to do this?
   Teuchos::RCP<const Teuchos::MpiComm<int>> tMpiComm =
-    Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
+      Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> oMpiComm =
-    tMpiComm->getRawMpiComm();
+      tMpiComm->getRawMpiComm();
   MPI_Comm mpiComm = (*oMpiComm)();
 
   // don't care about send-side accessibility because it's not accessed through kokkos
   // rely on MPI to do the right thing
   constexpr bool recvDevAccess = Kokkos::SpaceAccessibility<
-     Kokkos::DefaultExecutionSpace, typename ImpView::memory_space>::accessible;
+      Kokkos::DefaultExecutionSpace, typename ImpView::memory_space>::accessible;
   constexpr bool sendDevAccess = Kokkos::SpaceAccessibility<
-     Kokkos::DefaultExecutionSpace, typename ExpView::memory_space>::accessible;
+      Kokkos::DefaultExecutionSpace, typename ExpView::memory_space>::accessible;
   static_assert(recvDevAccess == sendDevAccess, "sending across host/device");
 
   const int err = ialltofewv_.impl.post<recvDevAccess>(exports.data(), ialltofewv_.sendcounts->data(), ialltofewv_.sdispls->data(), rawType,
-    imports.data(), ialltofewv_.recvcounts->data(), ialltofewv_.rdispls->data(), 
-    roots, nroots,
-    rawType,
-    mpiTag_, mpiComm, &(*ialltofewv_.req));
+                                                       imports.data(), ialltofewv_.recvcounts->data(), ialltofewv_.rdispls->data(),
+                                                       roots, nroots,
+                                                       rawType,
+                                                       mpiTag_, mpiComm, &(*ialltofewv_.req));
 
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
-                              "ialltofewv failed with error \""
-                              << Teuchos::mpiErrorCodeToString(err)
-                              << "\".");
+                             "ialltofewv failed with error \""
+                                 << Teuchos::mpiErrorCodeToString(err)
+                                 << "\".");
 }
 
-
-
-
-
 template <class ExpView, class ImpView>
-void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
-                                           const ExpView &exports,
+void DistributorActor::doPostsAllToAllImpl(const DistributorPlan& plan,
+                                           const ExpView& exports,
                                            const SubViewLimits& exportSubViewLimits,
-                                           const ImpView &imports,
+                                           const ImpView& imports,
                                            const SubViewLimits& importSubViewLimits) {
   TEUCHOS_TEST_FOR_EXCEPTION(
       !plan.getIndicesTo().is_null(), std::runtime_error,
@@ -399,7 +386,7 @@ void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
 
   for (size_t pp = 0; pp < plan.getNumSends(); ++pp) {
     sdispls[plan.getProcsTo()[pp]] = exportStarts[pp];
-    size_t numPackets = exportLengths[pp];
+    size_t numPackets              = exportLengths[pp];
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
                                "Tpetra::Distributor::doPostsAllToAll: "
@@ -416,7 +403,7 @@ void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
 
   for (size_type i = 0; i < actualNumReceives; ++i) {
     rdispls[plan.getProcsFrom()[i]] = importStarts[i];
-    size_t totalPacketsFrom_i = importLengths[i];
+    size_t totalPacketsFrom_i       = importLengths[i];
     // totalPacketsFrom_i is converted down to int, so make sure it can be
     // represented
     TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
@@ -433,12 +420,12 @@ void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
       Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
   Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> rawComm =
       mpiComm->getRawMpiComm();
-  using T = typename ExpView::non_const_value_type;
+  using T              = typename ExpView::non_const_value_type;
   MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType(T());
 
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   if (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL == plan.getSendType()) {
-    MPIX_Comm *mpixComm = *plan.getMPIXComm();
+    MPIX_Comm* mpixComm = *plan.getMPIXComm();
     TEUCHOS_TEST_FOR_EXCEPTION(!mpixComm, std::runtime_error,
                                "MPIX_Comm is null in doPostsAllToAll \""
                                    << __FILE__ << ":" << __LINE__);
@@ -454,7 +441,7 @@ void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
 
     return;
   }
-#endif // HAVE_TPETRACORE_MPI_ADVANCE
+#endif  // HAVE_TPETRACORE_MPI_ADVANCE
 
   const int err = MPI_Alltoallv(
       exports.data(), sendcounts.data(), sdispls.data(), rawType,
@@ -468,18 +455,18 @@ void DistributorActor::doPostsAllToAllImpl(const DistributorPlan &plan,
 
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
 template <class ExpView, class ImpView>
-void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
-                                               const ExpView &exports,
+void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan& plan,
+                                               const ExpView& exports,
                                                const SubViewLimits& exportSubViewLimits,
-                                               const ImpView &imports,
+                                               const ImpView& imports,
                                                const SubViewLimits& importSubViewLimits) {
   TEUCHOS_TEST_FOR_EXCEPTION(
       !plan.getIndicesTo().is_null(), std::runtime_error,
       "Send Type=\"Alltoall\" only works for fast-path communication.");
 
-  const int myRank = plan.getComm()->getRank();
-  MPIX_Comm *mpixComm = *plan.getMPIXComm();
-  using size_type = Teuchos::Array<size_t>::size_type;
+  const int myRank    = plan.getComm()->getRank();
+  MPIX_Comm* mpixComm = *plan.getMPIXComm();
+  using size_type     = Teuchos::Array<size_t>::size_type;
 
   const size_t numSends = plan.getNumSends() + plan.hasSelfMessage();
   const size_t numRecvs = plan.getNumReceives() + plan.hasSelfMessage();
@@ -492,7 +479,7 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
   auto& [exportStarts, exportLengths] = exportSubViewLimits;
 
   for (size_t pp = 0; pp < numSends; ++pp) {
-    sdispls[pp] = exportStarts[pp];
+    sdispls[pp]       = exportStarts[pp];
     size_t numPackets = exportLengths[pp];
     // numPackets is converted down to int, so make sure it can be represented
     TEUCHOS_TEST_FOR_EXCEPTION(numPackets > size_t(INT_MAX), std::logic_error,
@@ -505,7 +492,7 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
   }
 
   for (size_type i = 0; i < numRecvs; ++i) {
-    rdispls[i] = importStarts[i];
+    rdispls[i]                = importStarts[i];
     size_t totalPacketsFrom_i = importLengths[i];
     // totalPacketsFrom_i is converted down to int, so make sure it can be
     // represented
@@ -519,14 +506,14 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
     recvcounts[i] = static_cast<int>(totalPacketsFrom_i);
   }
 
-  using T = typename ExpView::non_const_value_type;
+  using T              = typename ExpView::non_const_value_type;
   MPI_Datatype rawType = ::Tpetra::Details::MpiTypeTraits<T>::getType(T());
 
   MPIX_Info* xinfo;
   MPIX_Topo* xtopo;
   MPIX_Info_init(&xinfo);
   MPIX_Topo_init(numRecvs, plan.getProcsFrom().data(), recvcounts.data(),
-      numSends, plan.getProcsTo().data(), sendcounts.data(), xinfo, &xtopo);
+                 numSends, plan.getProcsTo().data(), sendcounts.data(), xinfo, &xtopo);
   const int err = MPIX_Neighbor_alltoallv_topo(
       exports.data(), sendcounts.data(), sdispls.data(), rawType,
       imports.data(), recvcounts.data(), rdispls.data(), rawType, xtopo, mpixComm);
@@ -538,53 +525,49 @@ void DistributorActor::doPostsNbrAllToAllVImpl(const DistributorPlan &plan,
                                  << Teuchos::mpiErrorCodeToString(err)
                                  << "\".");
 }
-#endif // HAVE_TPETRACORE_MPI_ADVANCE
-#endif // HAVE_TPETRA_MPI
+#endif  // HAVE_TPETRACORE_MPI_ADVANCE
+#endif  // HAVE_TPETRA_MPI
 
 template <class ImpView>
 void DistributorActor::doPostRecvs(const DistributorPlan& plan,
                                    size_t numPackets,
-                                   const ImpView& imports)
-{
+                                   const ImpView& imports) {
   auto importSubViewLimits = plan.getImportViewLimits(numPackets);
   doPostRecvsImpl(plan, imports, importSubViewLimits);
 }
 
 template <class ImpView>
 void DistributorActor::doPostRecvs(const DistributorPlan& plan,
-                                   const ImpView &imports,
-                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
-{
+                                   const ImpView& imports,
+                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) {
   auto importSubViewLimits = plan.getImportViewLimits(numImportPacketsPerLID);
   doPostRecvsImpl(plan, imports, importSubViewLimits);
 }
 
 template <class ImpView>
 void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
-                                       const ImpView &imports,
-                                       const SubViewLimits& importSubViewLimits)
-{
+                                       const ImpView& imports,
+                                       const SubViewLimits& importSubViewLimits) {
   static_assert(isKokkosView<ImpView>,
-      "Data arrays for DistributorActor::doPostRecvs must be Kokkos::Views");
+                "Data arrays for DistributorActor::doPostRecvs must be Kokkos::Views");
+  using Kokkos::Compat::subview_offset;
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::ireceive;
-  using Kokkos::Compat::subview_offset;
-  using size_type = Array<size_t>::size_type;
+  using size_type         = Array<size_t>::size_type;
   using imports_view_type = ImpView;
 
 #ifdef KOKKOS_ENABLE_CUDA
-  static_assert (! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
-                 "Please do not use Tpetra::Distributor with UVM "
-                 "allocations.  See GitHub issue #1088.");
-#endif // KOKKOS_ENABLE_CUDA
+  static_assert(!std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
+                "Please do not use Tpetra::Distributor with UVM "
+                "allocations.  See GitHub issue #1088.");
+#endif  // KOKKOS_ENABLE_CUDA
 
 #ifdef KOKKOS_ENABLE_SYCL
-    static_assert (! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
-                   "Please do not use Tpetra::Distributor with SharedUSM "
-                   "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
-#endif // KOKKOS_ENABLE_SYCL
-
+  static_assert(!std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+                "Please do not use Tpetra::Distributor with SharedUSM "
+                "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
+#endif  // KOKKOS_ENABLE_SYCL
 
 #if defined(HAVE_TPETRA_MPI)
   // All-to-all communication layout is quite different from
@@ -592,20 +575,18 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
 
   // These send options require no matching receives, so we just return.
   const Details::EDistributorSendType sendType = plan.getSendType();
-  if ((sendType == Details::DISTRIBUTOR_ALLTOALL)
-      || (sendType == Details::DISTRIBUTOR_IALLTOFEWV)
+  if ((sendType == Details::DISTRIBUTOR_ALLTOALL) || (sendType == Details::DISTRIBUTOR_IALLTOFEWV)
 #ifdef HAVE_TPETRACORE_MPI_ADVANCE
-      || (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL)
-      || (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV)
+      || (sendType == Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL) || (sendType == Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV)
 #endif
-      ) {
+  ) {
     return;
   }
-#endif // HAVE_TPETRA_MPI
+#endif  // HAVE_TPETRA_MPI
 
   ProfilingRegion pr("Tpetra::Distributor::doPostRecvs");
 
-  const int myProcID = plan.getComm()->getRank ();
+  const int myProcID = plan.getComm()->getRank();
 
   auto& [importStarts, importLengths] = importSubViewLimits;
 
@@ -622,8 +603,8 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   // doesn't (re)allocate its array of requests.  That happens in
   // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
   // demand), or Resize_().
-  const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
-    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
+  const size_type actualNumReceives = as<size_type>(plan.getNumReceives()) +
+                                      as<size_type>(plan.hasSelfMessage() ? 1 : 0);
 
 #ifdef HAVE_TPETRA_DEBUG
   size_t totalNumImportPackets = 0;
@@ -631,18 +612,21 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
     totalNumImportPackets += importLengths[i];
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
-      imports.extent (0) < totalNumImportPackets, std::runtime_error,
+      imports.extent(0) < totalNumImportPackets, std::runtime_error,
       "Tpetra::Distributor::doPostRecvs: The 'imports' array must have "
       "enough entries to hold the expected number of import packets.  "
-      "imports.extent(0) = " << imports.extent (0) << " < "
-      "totalNumImportPackets = " << totalNumImportPackets << ".");
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (!requestsRecv_.empty(), std::logic_error, "Tpetra::Distributor::"
-     "doPostRecvs: Process " << myProcID << ": requestsRecv_.size () = "
-     << requestsRecv_.size () << " != 0.");
-#endif // HAVE_TPETRA_DEBUG
+      "imports.extent(0) = "
+          << imports.extent(0) << " < "
+                                  "totalNumImportPackets = "
+          << totalNumImportPackets << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION(!requestsRecv_.empty(), std::logic_error,
+                             "Tpetra::Distributor::"
+                             "doPostRecvs: Process "
+                                 << myProcID << ": requestsRecv_.size () = "
+                                 << requestsRecv_.size() << " != 0.");
+#endif  // HAVE_TPETRA_DEBUG
 
-  requestsRecv_.resize (0);
+  requestsRecv_.resize(0);
 
   // Post the nonblocking receives.  It's common MPI wisdom to post
   // receives before sends.  In MPI terms, this means favoring
@@ -655,9 +639,11 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
     for (size_type i = 0; i < actualNumReceives; ++i) {
       size_t totalPacketsFrom_i = importLengths[Teuchos::as<size_t>(i)];
       TEUCHOS_TEST_FOR_EXCEPTION(totalPacketsFrom_i > size_t(INT_MAX),
-                                 std::logic_error, "Tpetra::Distributor::doPostRecvs: "
-                                 "Recv count for receive " << i << " (" << totalPacketsFrom_i << ") is too large "
-                                 "to be represented as int.");
+                                 std::logic_error,
+                                 "Tpetra::Distributor::doPostRecvs: "
+                                 "Recv count for receive "
+                                     << i << " (" << totalPacketsFrom_i << ") is too large "
+                                                                           "to be represented as int.");
       if (plan.getProcsFrom()[i] != myProcID && totalPacketsFrom_i) {
         // If my process is receiving these packet(s) from another
         // process (not a self-receive), and if there is at least
@@ -668,9 +654,9 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
         //    packets from process getProcsFrom()[i]).
         // 2. Start the Irecv and save the resulting request.
         imports_view_type recvBuf =
-          subview_offset (imports, importStarts[i], totalPacketsFrom_i);
-        requestsRecv_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
-              mpiTag_, *plan.getComm()));
+            subview_offset(imports, importStarts[i], totalPacketsFrom_i);
+        requestsRecv_.push_back(ireceive<int>(recvBuf, plan.getProcsFrom()[i],
+                                              mpiTag_, *plan.getComm()));
       }
     }
   }
@@ -680,8 +666,7 @@ template <class ExpView, class ImpView>
 void DistributorActor::doPostSends(const DistributorPlan& plan,
                                    const ExpView& exports,
                                    size_t numPackets,
-                                   const ImpView& imports)
-{
+                                   const ImpView& imports) {
   auto exportSubViewLimits = plan.getExportViewLimits(numPackets);
   auto importSubViewLimits = plan.getImportViewLimits(numPackets);
   doPostSendsImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
@@ -689,11 +674,10 @@ void DistributorActor::doPostSends(const DistributorPlan& plan,
 
 template <class ExpView, class ImpView>
 void DistributorActor::doPostSends(const DistributorPlan& plan,
-                                   const ExpView &exports,
+                                   const ExpView& exports,
                                    const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                                   const ImpView &imports,
-                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
-{
+                                   const ImpView& imports,
+                                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) {
   auto exportSubViewLimits = plan.getExportViewLimits(numExportPacketsPerLID);
   auto importSubViewLimits = plan.getImportViewLimits(numImportPacketsPerLID);
   doPostSendsImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
@@ -704,38 +688,35 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
                                        const ExpView& exports,
                                        const SubViewLimits& exportSubViewLimits,
                                        const ImpView& imports,
-                                       const SubViewLimits& importSubViewLimits)
-{
+                                       const SubViewLimits& importSubViewLimits) {
   static_assert(areKokkosViews<ExpView, ImpView>,
-      "Data arrays for DistributorActor::doPostSends must be Kokkos::Views");
+                "Data arrays for DistributorActor::doPostSends must be Kokkos::Views");
+  using Kokkos::Compat::deep_copy_offset;
+  using Kokkos::Compat::subview_offset;
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::isend;
   using Teuchos::send;
-  using Kokkos::Compat::subview_offset;
-  using Kokkos::Compat::deep_copy_offset;
-  using size_type = Array<size_t>::size_type;
+  using size_type         = Array<size_t>::size_type;
   using exports_view_type = ExpView;
 
 #ifdef KOKKOS_ENABLE_CUDA
-  static_assert
-    (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
-     ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
-     "Please do not use Tpetra::Distributor with UVM allocations.  "
-     "See Trilinos GitHub issue #1088.");
-#endif // KOKKOS_ENABLE_CUDA
+  static_assert(!std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
+                    !std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
+                "Please do not use Tpetra::Distributor with UVM allocations.  "
+                "See Trilinos GitHub issue #1088.");
+#endif  // KOKKOS_ENABLE_CUDA
 
 #ifdef KOKKOS_ENABLE_SYCL
-    static_assert
-      (! std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
-       ! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
-       "Please do not use Tpetra::Distributor with SharedUSM allocations.  "
-       "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
-#endif // KOKKOS_ENABLE_SYCL
+  static_assert(!std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
+                    !std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+                "Please do not use Tpetra::Distributor with SharedUSM allocations.  "
+                "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
+#endif  // KOKKOS_ENABLE_SYCL
 
   ProfilingRegion ps("Tpetra::Distributor::doPostSends");
 
-  const int myRank = plan.getComm()->getRank ();
+  const int myRank = plan.getComm()->getRank();
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
@@ -762,36 +743,34 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
     doPostsNbrAllToAllVImpl(plan, exports, exportSubViewLimits, imports, importSubViewLimits);
     return;
   }
-#endif // defined(HAVE_TPETRACORE_MPI_ADVANCE)
+#endif  // defined(HAVE_TPETRACORE_MPI_ADVANCE)
 
-
-#else // HAVE_TPETRA_MPI
-    if (plan.hasSelfMessage()) {
-      // This is how we "send a message to ourself": we copy from
-      // the export buffer to the import buffer.  That saves
-      // Teuchos::Comm implementations other than MpiComm (in
-      // particular, SerialComm) the trouble of implementing self
-      // messages correctly.  (To do this right, SerialComm would
-      // need internal buffer space for messages, keyed on the
-      // message's tag.)
-      size_t selfReceiveOffset = 0;
-      deep_copy_offset(imports, exports, selfReceiveOffset,
-                       exportStarts[0],
-                       exportLengths[0]);
-    }
-    // should we just return here?
-    // likely not as comm could be a serial comm
-#endif // HAVE_TPETRA_MPI
+#else   // HAVE_TPETRA_MPI
+  if (plan.hasSelfMessage()) {
+    // This is how we "send a message to ourself": we copy from
+    // the export buffer to the import buffer.  That saves
+    // Teuchos::Comm implementations other than MpiComm (in
+    // particular, SerialComm) the trouble of implementing self
+    // messages correctly.  (To do this right, SerialComm would
+    // need internal buffer space for messages, keyed on the
+    // message's tag.)
+    size_t selfReceiveOffset = 0;
+    deep_copy_offset(imports, exports, selfReceiveOffset,
+                     exportStarts[0],
+                     exportLengths[0]);
+  }
+  // should we just return here?
+  // likely not as comm could be a serial comm
+#endif  // HAVE_TPETRA_MPI
 
   size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TPETRA_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (requestsSend_.size () != 0,
-     std::logic_error,
-     "Tpetra::Distributor::doPostSends: Process "
-     << myRank << ": requestsSend_.size() = " << requestsSend_.size () << " != 0.");
-#endif // HAVE_TPETRA_DEBUG
+  TEUCHOS_TEST_FOR_EXCEPTION(requestsSend_.size() != 0,
+                             std::logic_error,
+                             "Tpetra::Distributor::doPostSends: Process "
+                                 << myRank << ": requestsSend_.size() = " << requestsSend_.size() << " != 0.");
+#endif  // HAVE_TPETRA_DEBUG
 
   // Distributor uses requestsRecv_.size() and requestsSend_.size()
   // as the number of outstanding nonblocking message requests, so
@@ -806,14 +785,14 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
   // doesn't (re)allocate its array of requests.  That happens in
   // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
   // demand), or Resize_().
-  const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
-    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
-  requestsSend_.resize (0);
+  const size_type actualNumReceives = as<size_type>(plan.getNumReceives()) +
+                                      as<size_type>(plan.hasSelfMessage() ? 1 : 0);
+  requestsSend_.resize(0);
 
   {
     for (size_type i = 0; i < actualNumReceives; ++i) {
-      if (plan.getProcsFrom()[i] == myRank) { // Receiving from myself
-        selfReceiveOffset = importStarts[i];  // Remember the self-recv offset
+      if (plan.getProcsFrom()[i] == myRank) {  // Receiving from myself
+        selfReceiveOffset = importStarts[i];   // Remember the self-recv offset
       }
     }
   }
@@ -834,12 +813,12 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
     procIndex = 0;
   }
 
-  size_t selfNum = 0;
+  size_t selfNum   = 0;
   size_t selfIndex = 0;
 
   if (plan.getIndicesTo().is_null()) {
     const char isend_region[] = "Tpetra::Distributor::doPostSends MPI_Isend FAST";
-    const char send_region[] = "Tpetra::Distributor::doPostSends MPI_Send FAST";
+    const char send_region[]  = "Tpetra::Distributor::doPostSends MPI_Send FAST";
     ProfilingRegion pssf((sendType == Details::DISTRIBUTOR_ISEND) ? isend_region : send_region);
 
     // Data are already blocked (laid out) by process, so we don't
@@ -863,17 +842,15 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
           // tmpSendBuf and uses tmpSend leads to a performance hit on Arm
           // SerialNode builds
           exports_view_type tmpSendBuf =
-            subview_offset (exports, exportStarts[p], exportLengths[p]);
-          requestsSend_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
-                mpiTag_, *plan.getComm()));
+              subview_offset(exports, exportStarts[p], exportLengths[p]);
+          requestsSend_.push_back(isend<int>(tmpSendBuf, plan.getProcsTo()[p],
+                                             mpiTag_, *plan.getComm()));
+        } else {  // DISTRIBUTOR_SEND
+          send<int>(tmpSend,
+                    as<int>(tmpSend.size()),
+                    plan.getProcsTo()[p], mpiTag_, *plan.getComm());
         }
-        else {  // DISTRIBUTOR_SEND
-          send<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], mpiTag_, *plan.getComm());
-        }
-      }
-      else { // "Sending" the message to myself
+      } else {  // "Sending" the message to myself
         selfNum = p;
       }
     }
@@ -890,14 +867,13 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
                        exportStarts[selfNum], exportLengths[selfNum]);
     }
 
-  }
-  else { // data are not blocked by proc, use send buffer
+  } else {  // data are not blocked by proc, use send buffer
     ProfilingRegion psss("Tpetra::Distributor::doPostSends: MPI_Send SLOW");
 
     using Packet = typename ExpView::non_const_value_type;
     using Layout = typename ExpView::array_layout;
     using Device = typename ExpView::device_type;
-    using Mem = typename ExpView::memory_traits;
+    using Mem    = typename ExpView::memory_traits;
 
     // This buffer is long enough for only one message at a time.
     // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
@@ -927,13 +903,13 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
       }
 
       size_t sendArrayOffset = 0;
-        size_t j = plan.getStartsTo()[p];
-        for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
+      size_t j               = plan.getStartsTo()[p];
+      for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
         sendArrayOffset += exportLengths[j];
       }
       maxSendLength = std::max(maxSendLength, sendArrayOffset);
     }
-    Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", maxSendLength);
+    Kokkos::View<Packet*, Layout, Device, Mem> sendArray("sendArray", maxSendLength);
 
     for (size_t i = 0; i < numBlocks; ++i) {
       size_t p = i + procIndex;
@@ -943,7 +919,7 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
 
       if (plan.getProcsTo()[p] != myRank) {
         size_t sendArrayOffset = 0;
-        size_t j = plan.getStartsTo()[p];
+        size_t j               = plan.getStartsTo()[p];
         for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
           packOffset(sendArray, exports, sendArrayOffset, exportStarts[j], exportLengths[j]);
           sendArrayOffset += exportLengths[j];
@@ -951,14 +927,13 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
         typename ExpView::execution_space().fence();
 
         ImpView tmpSend =
-          subview_offset(sendArray, size_t(0), sendArrayOffset);
+            subview_offset(sendArray, size_t(0), sendArrayOffset);
 
-        send<int> (tmpSend,
-            as<int> (tmpSend.size ()),
-            plan.getProcsTo()[p], mpiTag_, *plan.getComm());
-      }
-      else { // "Sending" the message to myself
-        selfNum = p;
+        send<int>(tmpSend,
+                  as<int>(tmpSend.size()),
+                  plan.getProcsTo()[p], mpiTag_, *plan.getComm());
+      } else {  // "Sending" the message to myself
+        selfNum   = p;
         selfIndex = plan.getStartsTo()[p];
       }
     }
@@ -973,6 +948,6 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
   }
 }
 
-}
+}  // namespace Tpetra::Details
 
 #endif
