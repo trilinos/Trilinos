@@ -3521,7 +3521,7 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   using Teuchos::reduceAll;
   typedef GlobalOrdinal GO;
   typedef LocalOrdinal LO;
-  typedef typename local_inds_dualv_type::t_host col_inds_type;
+  using col_inds_type_dev    = typename local_inds_dualv_type::t_dev;
   const char tfecfFuncName[] = "reindexColumns: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3568,133 +3568,137 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   // done an Import or Export instead?
   bool localSuffices = true;
 
-  // Final arrays for the local indices.  We will allocate exactly
-  // one of these ONLY if the graph is locally indexed on the
-  // calling process, and ONLY if the graph has one or more entries
-  // (is not empty) on the calling process.  In that case, we
-  // allocate the first (1-D storage) if the graph has a static
-  // profile, else we allocate the second (2-D storage).
-  col_inds_type newLclInds1D;
-  auto oldLclInds1D = lclIndsUnpacked_wdv.getHostView(Access::ReadOnly);
+  {
+    // Final arrays for the local indices.  We will allocate exactly
+    // one of these ONLY if the graph is locally indexed on the
+    // calling process, and ONLY if the graph has one or more entries
+    // (is not empty) on the calling process.  In that case, we
+    // allocate the first (1-D storage) if the graph has a static
+    // profile, else we allocate the second (2-D storage).
+    col_inds_type_dev newLclInds1D_dev;
 
-  // If indices aren't allocated, that means the calling process
-  // owns no entries in the graph.  Thus, there is nothing to
-  // convert, and it trivially succeeds locally.
-  if (indicesAreAllocated()) {
-    if (isLocallyIndexed()) {
-      if (hasColMap()) {  // locally indexed, and currently has a column Map
-        const map_type& oldColMap = *(getColMap());
-        // Allocate storage for the new local indices.
-        const size_t allocSize = this->getLocalAllocationSize();
-        newLclInds1D           = col_inds_type("Tpetra::CrsGraph::lclIndsReindexedHost",
-                                               allocSize);
-        // Attempt to convert the new indices locally.
+    // If indices aren't allocated, that means the calling process
+    // owns no entries in the graph.  Thus, there is nothing to
+    // convert, and it trivially succeeds locally.
+    if (indicesAreAllocated()) {
+      if (isLocallyIndexed()) {
+        if (hasColMap()) {  // locally indexed, and currently has a column Map
+          const map_type& oldColMap = *(getColMap());
+
+          // Allocate storage for the new local indices.
+          const size_t allocSize = this->getLocalAllocationSize();
+          auto oldLclInds1D      = lclIndsUnpacked_wdv.getDeviceView(Access::ReadOnly);
+          newLclInds1D_dev       = col_inds_type_dev("Tpetra::CrsGraph::lclIndsReindexed",
+                                                     allocSize);
+          auto oldLclColMap      = oldColMap.getLocalMap();
+          auto newLclColMap      = newColMap->getLocalMap();
+
+          const auto LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+          const auto GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+
+          const int NOT_ALL_LOCAL_INDICES_ARE_VALID = 1;
+          const int LOCAL_DOES_NOT_SUFFICE          = 2;
+          int errorStatus                           = 0;
+          Kokkos::parallel_reduce(
+              "Tpetra::CrsGraph::reindexColumns",
+              Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, allocSize),
+              KOKKOS_LAMBDA(const LocalOrdinal k, int& result) {
+                const LocalOrdinal oldLclCol = oldLclInds1D(k);
+                if (oldLclCol == LO_INVALID) {
+                  result &= NOT_ALL_LOCAL_INDICES_ARE_VALID;
+                } else {
+                  const GO gblCol = oldLclColMap.getGlobalElement(oldLclCol);
+                  if (gblCol == GO_INVALID) {
+                    result &= LOCAL_DOES_NOT_SUFFICE;
+                  } else {
+                    const LocalOrdinal newLclCol = newLclColMap.getLocalElement(gblCol);
+                    if (newLclCol == LO_INVALID) {
+                      result &= NOT_ALL_LOCAL_INDICES_ARE_VALID;
+                    } else {
+                      newLclInds1D_dev(k) = newLclCol;
+                    }
+                  }
+                }
+              },
+              Kokkos::LOr<int>(errorStatus));
+          allCurColIndsValid = !(errorStatus & NOT_ALL_LOCAL_INDICES_ARE_VALID);
+          localSuffices      = !(errorStatus & LOCAL_DOES_NOT_SUFFICE);
+        } else {  // locally indexed, but no column Map
+          // This case is only possible if replaceColMap() was called
+          // with a null argument on the calling process.  It's
+          // possible, but it means that this method can't possibly
+          // succeed, since we have no way of knowing how to convert
+          // the current local indices to global indices.
+          allCurColIndsValid = false;
+        }
+      } else {  // globally indexed
+        // If the graph is globally indexed, we don't need to save
+        // local indices, but we _do_ need to know whether the current
+        // global indices are valid in the new column Map.  We may
+        // need to do a getRemoteIndexList call to find this out.
+        //
+        // In this case, it doesn't matter whether the graph currently
+        // has a column Map.  We don't need the old column Map to
+        // convert from global indices to the _new_ column Map's local
+        // indices.  Furthermore, we can use the same code, whether
+        // the graph is static or dynamic profile.
+
+        // Test whether the current global indices are in the new
+        // column Map on the calling process.
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           const RowInfo rowInfo = this->getRowInfo(lclRow);
-          const size_t beg      = rowInfo.offset1D;
-          const size_t end      = beg + rowInfo.numEntries;
-          for (size_t k = beg; k < end; ++k) {
-            const LO oldLclCol = oldLclInds1D(k);
-            if (oldLclCol == Teuchos::OrdinalTraits<LO>::invalid()) {
-              allCurColIndsValid = false;
+          auto oldGblRowView    = this->getGlobalIndsViewHost(rowInfo);
+          for (size_t k = 0; k < rowInfo.numEntries; ++k) {
+            const GO gblCol = oldGblRowView(k);
+            if (!newColMap->isNodeGlobalElement(gblCol)) {
+              localSuffices = false;
               break;  // Stop at the first invalid index
             }
-            const GO gblCol = oldColMap.getGlobalElement(oldLclCol);
+          }  // for each entry in the current row
+        }    // for each locally owned row
+      }      // locally or globally indexed
+    }        // whether indices are allocated
 
-            // The above conversion MUST succeed.  Otherwise, the
-            // current local index is invalid, which means that
-            // the graph was constructed incorrectly.
-            if (gblCol == Teuchos::OrdinalTraits<GO>::invalid()) {
-              allCurColIndsValid = false;
-              break;  // Stop at the first invalid index
-            } else {
-              const LO newLclCol = newColMap->getLocalElement(gblCol);
-              if (newLclCol == Teuchos::OrdinalTraits<LO>::invalid()) {
-                localSuffices = false;
-                break;  // Stop at the first invalid index
-              }
-              newLclInds1D(k) = newLclCol;
-            }
-          }     // for each entry in the current row
-        }       // for each locally owned row
-      } else {  // locally indexed, but no column Map
-        // This case is only possible if replaceColMap() was called
-        // with a null argument on the calling process.  It's
-        // possible, but it means that this method can't possibly
-        // succeed, since we have no way of knowing how to convert
-        // the current local indices to global indices.
-        allCurColIndsValid = false;
-      }
-    } else {  // globally indexed
-      // If the graph is globally indexed, we don't need to save
-      // local indices, but we _do_ need to know whether the current
-      // global indices are valid in the new column Map.  We may
-      // need to do a getRemoteIndexList call to find this out.
-      //
-      // In this case, it doesn't matter whether the graph currently
-      // has a column Map.  We don't need the old column Map to
-      // convert from global indices to the _new_ column Map's local
-      // indices.  Furthermore, we can use the same code, whether
-      // the graph is static or dynamic profile.
-
-      // Test whether the current global indices are in the new
-      // column Map on the calling process.
-      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-        const RowInfo rowInfo = this->getRowInfo(lclRow);
-        auto oldGblRowView    = this->getGlobalIndsViewHost(rowInfo);
-        for (size_t k = 0; k < rowInfo.numEntries; ++k) {
-          const GO gblCol = oldGblRowView(k);
-          if (!newColMap->isNodeGlobalElement(gblCol)) {
-            localSuffices = false;
-            break;  // Stop at the first invalid index
-          }
-        }  // for each entry in the current row
-      }    // for each locally owned row
-    }      // locally or globally indexed
-  }        // whether indices are allocated
-
-  // Do an all-reduce to check both possible error conditions.
-  int lclSuccess[2];
-  lclSuccess[0] = allCurColIndsValid ? 1 : 0;
-  lclSuccess[1] = localSuffices ? 1 : 0;
-  int gblSuccess[2];
-  gblSuccess[0] = 0;
-  gblSuccess[1] = 0;
-  RCP<const Teuchos::Comm<int>> comm =
-      getRowMap().is_null() ? Teuchos::null : getRowMap()->getComm();
-  if (!comm.is_null()) {
-    reduceAll<int, int>(*comm, REDUCE_MIN, 2, lclSuccess, gblSuccess);
-  }
-
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      gblSuccess[0] == 0, std::runtime_error,
-      "It is not possible to continue."
-      "  The most likely reason is that the graph is locally indexed, but the "
-      "column Map is missing (null) on some processes, due to a previous call "
-      "to replaceColMap().");
-
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      gblSuccess[1] == 0, std::runtime_error,
-      "On some process, the graph "
-      "contains column indices that are in the old column Map, but not in the "
-      "new column Map (on that process).  This method does NOT redistribute "
-      "data; it does not claim to do the work of an Import or Export operation."
-      "  This means that for all processess, the calling process MUST own all "
-      "column indices, in both the old column Map and the new column Map.  In "
-      "this case, you will need to do an Import or Export operation to "
-      "redistribute data.");
-
-  // Commit the results.
-  if (isLocallyIndexed()) {
-    {  // scope the device view; sortAndMergeAllIndices needs host
-      typename local_inds_dualv_type::t_dev newLclInds1D_dev(
-          Kokkos::view_alloc("Tpetra::CrsGraph::lclIndReindexed",
-                             Kokkos::WithoutInitializing),
-          newLclInds1D.extent(0));
-      Kokkos::deep_copy(newLclInds1D_dev, newLclInds1D);
-      lclIndsUnpacked_wdv = local_inds_wdv_type(newLclInds1D_dev);
+    // Do an all-reduce to check both possible error conditions.
+    int lclSuccess[2];
+    lclSuccess[0] = allCurColIndsValid ? 1 : 0;
+    lclSuccess[1] = localSuffices ? 1 : 0;
+    int gblSuccess[2];
+    gblSuccess[0] = 0;
+    gblSuccess[1] = 0;
+    RCP<const Teuchos::Comm<int>> comm =
+        getRowMap().is_null() ? Teuchos::null : getRowMap()->getComm();
+    if (!comm.is_null()) {
+      reduceAll<int, int>(*comm, REDUCE_MIN, 2, lclSuccess, gblSuccess);
     }
 
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        gblSuccess[0] == 0, std::runtime_error,
+        "It is not possible to continue."
+        "  The most likely reason is that the graph is locally indexed, but the "
+        "column Map is missing (null) on some processes, due to a previous call "
+        "to replaceColMap().");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        gblSuccess[1] == 0, std::runtime_error,
+        "On some process, the graph "
+        "contains column indices that are in the old column Map, but not in the "
+        "new column Map (on that process).  This method does NOT redistribute "
+        "data; it does not claim to do the work of an Import or Export operation."
+        "  This means that for all processess, the calling process MUST own all "
+        "column indices, in both the old column Map and the new column Map.  In "
+        "this case, you will need to do an Import or Export operation to "
+        "redistribute data.");
+
+    // Commit the results.
+    if (isLocallyIndexed()) {
+      lclIndsUnpacked_wdv = local_inds_wdv_type(newLclInds1D_dev);
+    }
+    // end of scope for newLclInds1D_dev
+    // sortAndMergeAllIndices needs host access
+  }
+
+  if (isLocallyIndexed()) {
     // We've reindexed, so we don't know if the indices are sorted.
     //
     // FIXME (mfh 17 Sep 2014) It could make sense to check this,
@@ -4221,6 +4225,8 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       os << *prefix << "totalNumDups=" << totalNumDups << endl;
       std::cerr << os.str();
     } else {
+      // make sure that host rowptrs have been created before we enter the parallel region
+      (void)this->getRowPtrsUnpackedHost();
       // Sync and mark-modified the local indices before disabling WDV tracking
       lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
       Details::disableWDVTracking();
