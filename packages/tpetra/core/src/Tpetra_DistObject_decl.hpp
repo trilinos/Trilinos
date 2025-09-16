@@ -834,12 +834,10 @@ namespace Tpetra {
   /*! \brief Same as copyAndPermute, but do operations in \c space
    */
   virtual void copyAndPermute(
-      const SrcDistObject &source, const size_t numSameIDs,
-      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
-          &permuteToLIDs,
-      const Kokkos::DualView<const local_ordinal_type *, buffer_device_type>
-          &permuteFromLIDs,
-      const CombineMode CM, const execution_space &space);
+      const SrcDistObject& source, const size_t numSameIDs,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+      const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+      const CombineMode CM, const execution_space& space);
   // clang-format off
 
     /// \brief Pack data and metadata for communication (sends).

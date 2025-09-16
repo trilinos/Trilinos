@@ -1614,10 +1614,10 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
 // SrcView::rank == 2
 template <typename ExecutionSpace, typename DstView, typename SrcView,
           typename DstIdxView, typename SrcIdxView, typename Op>
-void permute_array_multi_column(const ExecutionSpace &space, const DstView &dst,
-                                const SrcView &src, const DstIdxView &dst_idx,
-                                const SrcIdxView &src_idx, size_t numCols,
-                                const Op &op) {
+void permute_array_multi_column(const ExecutionSpace& space, const DstView& dst,
+                                const SrcView& src, const DstIdxView& dst_idx,
+                                const SrcIdxView& src_idx, size_t numCols,
+                                const Op& op) {
   PermuteArrayMultiColumn<DstView, SrcView, DstIdxView, SrcIdxView,
                           Op>::permute(space, dst, src, dst_idx, src_idx,
                                        numCols, op);
@@ -1711,10 +1711,10 @@ template <typename ExecutionSpace, typename DstView, typename SrcView,
           typename DstIdxView, typename SrcIdxView, typename DstColView,
           typename SrcColView, typename Op>
 void permute_array_multi_column_variable_stride(
-    const ExecutionSpace &space, const DstView &dst, const SrcView &src,
-    const DstIdxView &dst_idx, const SrcIdxView &src_idx,
-    const DstColView &dst_col, const SrcColView &src_col, size_t numCols,
-    const Op &op) {
+    const ExecutionSpace& space, const DstView& dst, const SrcView& src,
+    const DstIdxView& dst_idx, const SrcIdxView& src_idx,
+    const DstColView& dst_col, const SrcColView& src_col, size_t numCols,
+    const Op& op) {
   PermuteArrayMultiColumnVariableStride<DstView, SrcView, DstIdxView,
                                         SrcIdxView, DstColView, SrcColView,
                                         Op>::permute(space, dst, src, dst_idx,

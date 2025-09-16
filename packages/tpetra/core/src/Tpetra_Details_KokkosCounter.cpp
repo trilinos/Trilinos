@@ -186,7 +186,7 @@ static_assert(std::is_same_v<decltype(&push_region_callback),
               "Unexpected Kokkos profiling interface API. This is an internal "
               "Tpetra developer error, please report this.");
 
-} // namespace KokkosRegionCounterDetails
+}  // namespace KokkosRegionCounterDetails
 
 void KokkosRegionCounter::start() {
   Kokkos::Tools::Experimental::set_push_region_callback(
@@ -221,7 +221,6 @@ void KokkosRegionCounter::dump_regions(std::ostream &os) {
     os << region << "\n";
   }
 }
-
 
 // clang-format off
 

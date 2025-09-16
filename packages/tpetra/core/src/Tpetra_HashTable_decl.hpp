@@ -28,60 +28,65 @@ namespace Details {
 ///
 /// The hash table uses an array of fixed size, each entry of which is
 /// a singly linked list of buckets.
-template<typename KeyType, typename ValueType>
+template <typename KeyType, typename ValueType>
 class HashTable : public Teuchos::Describable {
   //! A bucket in the hash table.
   struct Node {
-    KeyType Key; //!< The key
-    ValueType Value; //!< The value
-    Node * Ptr; //!< Pointer to the next bucket; NULL if there is none.
+    KeyType Key;      //!< The key
+    ValueType Value;  //!< The value
+    Node* Ptr;        //!< Pointer to the next bucket; NULL if there is none.
 
-    Node (const KeyType key = 0, const ValueType value = 0, Node * ptr = NULL)
-      : Key(key), Value(value), Ptr(ptr) {}
+    Node(const KeyType key = 0, const ValueType value = 0, Node* ptr = NULL)
+      : Key(key)
+      , Value(value)
+      , Ptr(ptr) {}
 
-  private:
-    Node (const Node& src) : Key(src.Key), Value(src.Value), Ptr(src.Ptr) {}
+   private:
+    Node(const Node& src)
+      : Key(src.Key)
+      , Value(src.Value)
+      , Ptr(src.Ptr) {}
 
-    Node& operator= (const Node& src) {
+    Node& operator=(const Node& src) {
       // We may safely omit the usual check for this == &src.
-      Key = src.Key;
+      Key   = src.Key;
       Value = src.Value;
-      Ptr = src.Ptr;
+      Ptr   = src.Ptr;
       return *this;
     }
   };
 
-  Node ** Container_; //!< The table; an array of linked lists.
+  Node** Container_;  //!< The table; an array of linked lists.
   KeyType Size_;
-  unsigned int Seed_; //!< Parameter for hash function; not used.
+  unsigned int Seed_;  //!< Parameter for hash function; not used.
 #ifdef HAVE_TPETRA_DEBUG
-  int maxc_; // Max size of the list among all entries w/ collisions. debug only.
-  int nc_;   // Number of entries with collisions; use only in debug mode.
-#endif // HAVE_TPETRA_DEBUG
+  int maxc_;  // Max size of the list among all entries w/ collisions. debug only.
+  int nc_;    // Number of entries with collisions; use only in debug mode.
+#endif        // HAVE_TPETRA_DEBUG
 
   /// The hash function.
   /// It returns \c int no matter the value type.
-  int hashFunc( const KeyType key );
+  int hashFunc(const KeyType key);
 
-  int getRecommendedSize( const int size );
+  int getRecommendedSize(const int size);
 
-public:
+ public:
   /// Constructor
   ///
   /// \param size [in] Number of entries that in the best case, the
   ///   table should be able to hold without collisions.
   /// \param seed [in] Seed for the hash function.  This parameter is
   ///   not actually used.
-  HashTable (const int size, const unsigned int seed = (2654435761U));
+  HashTable(const int size, const unsigned int seed = (2654435761U));
 
-  HashTable (const HashTable& obj);
+  HashTable(const HashTable& obj);
   ~HashTable();
 
   //! Add a key and its value to the hash table.
-  void add (const KeyType key, const ValueType value);
+  void add(const KeyType key, const ValueType value);
 
   //! Get the value corresponding to the given key.
-  ValueType get (const KeyType key);
+  ValueType get(const KeyType key);
 
   //! Implementation of Teuchos::Describable
   //@{
@@ -90,19 +95,19 @@ public:
 
   //! Print this object with the given verbosity to the output stream.
   void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel=
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
   //@}
 
-private:
+ private:
   //! Assignment operator (declared but not defined; do not use).
-  HashTable<KeyType,ValueType>&
-  operator= (const HashTable<KeyType,ValueType>& source);
+  HashTable<KeyType, ValueType>&
+  operator=(const HashTable<KeyType, ValueType>& source);
 };
 
-} // Details namespace
+}  // namespace Details
 
-} // Tpetra namespace
+}  // namespace Tpetra
 
 #endif

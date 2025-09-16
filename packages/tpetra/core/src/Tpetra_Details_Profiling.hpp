@@ -18,7 +18,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_RCP.hpp"
 
-
 namespace Tpetra {
 namespace Details {
 
@@ -69,24 +68,23 @@ namespace Details {
 ///
 /// https://github.com/kokkos/kokkos-tools/wiki
 class ProfilingRegion {
-public:
+ public:
   //! Default constructor does not construct a region.
   ProfilingRegion();
   //! Open region to profile; name the region \c name.
-  ProfilingRegion (const char name[]);
+  ProfilingRegion(const char name[]);
   //! Open region to profile, if the group name \c group is enabled by the
   //! TPETRA_TIMING variable; name the region \c name.
-  ProfilingRegion (const char name[], const char group[]);
+  ProfilingRegion(const char name[], const char group[]);
   //! Close region to profile.
-  ~ProfilingRegion ();
+  ~ProfilingRegion();
 
-private:
+ private:
   bool kokkos_region_active_;
   Teuchos::RCP<Teuchos::TimeMonitor> tm;
-
 };
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_PROFILING_HPP
+#endif  // TPETRA_DETAILS_PROFILING_HPP
