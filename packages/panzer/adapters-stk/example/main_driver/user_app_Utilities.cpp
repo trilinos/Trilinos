@@ -244,13 +244,10 @@ user_app::buildTimeIntegrator(const Teuchos::RCP<Teuchos::ParameterList>& input_
   // disableRecursiveValidation() to avoid errors with arbitrary
   // names.
 
-  const bool doInitialization = false;
-  //auto integrator = createIntegratorBasic<double>(tempus_pl, physics, doInitialization);
   auto integrator = createIntegratorForwardSensitivity<double>(tempus_pl, physics);
 
   RCP<ParameterList> noxList = parameterList("Correct NOX Params");
   *noxList = tempus_pl->sublist("My Example Stepper",true).sublist("My Example Solver",true).sublist("NOX",true);
-  // noxList->print(std::cout);
   integrator->getStepper()->getSolver()->setParameterList(noxList);
   integrator->initialize();
 

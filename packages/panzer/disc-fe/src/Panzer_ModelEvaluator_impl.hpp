@@ -151,7 +151,7 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
 
   x_space_ = tof->getThyraDomainSpace();
   f_space_ = tof->getThyraRangeSpace();
-  x_space_ghosted_ = tof->getGhostedThyraDomainSpace(); // TODO BWR see above
+  x_space_ghosted_ = tof->getGhostedThyraDomainSpace();
 
   // now that the vector spaces are setup we can allocate the nominal values
   // (i.e. initial conditions)
@@ -700,20 +700,14 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
           Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
              = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respTanBase);
 
-          //// class must supppot a derivative
-          //if(resp->supportsDerivative()) {
-          //  outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
-
-
           // TODO BWR should these match dfdp below?
           // TODO BWR not sure what to pick here
-            for(std::size_t p=0;p<parameters_.size();p++) {
-              if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
-                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
-              if(!parameters_[p]->is_distributed)
-                outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
-            }
-          //}
+          for(std::size_t p=0;p<parameters_.size();p++) {
+            if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
+              outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+            if(!parameters_[p]->is_distributed)
+              outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+          }
         }
       }
     }

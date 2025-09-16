@@ -64,7 +64,6 @@ public:
 private:
 
   // Teuchos::RCP<Thyra::ModelEvaluator<Real> > model_;
-  Teuchos::RCP<Teuchos::ParameterList> tempus_params_;
   Teuchos::RCP<Thyra::VectorBase<Real> > target_;
   std::string objective_type_;
   std::string sensitivity_method_;
@@ -75,6 +74,7 @@ private:
   // Objects neeeded to rebuild the time integrator since it seems to
   // not be able to reset itself
   Teuchos::RCP<Teuchos::ParameterList> input_params_;
+  Teuchos::RCP<Teuchos::ParameterList> tempus_params_;
   Teuchos::RCP<const Teuchos::Comm<int>> comm_;
   Teuchos::RCP<Thyra::ModelEvaluator<Real>> model_;
   Teuchos::RCP<panzer::GlobalData> global_data_;
