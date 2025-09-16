@@ -217,10 +217,10 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success, bool explicitAdj
       typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
 
       std::ofstream ftmp(soln_outfile_name);
-      RCP<const Tempus::SolutionHistory<double> > solutionHistory =
+      RCP<const Tempus::SolutionHistory<double> > lsolutionHistory =
         integrator->getSolutionHistory();
-      for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<const Tempus::SolutionState<double> > solutionState = (*solutionHistory)[i];
+      for (int i=0; i<lsolutionHistory->getNumStates(); i++) {
+        RCP<const Tempus::SolutionState<double> > solutionState = (*lsolutionHistory)[i];
         const double time_i = solutionState->getTime();
         RCP<const DPV> x_prod_plot =
           Teuchos::rcp_dynamic_cast<const DPV>(solutionState->getX());
