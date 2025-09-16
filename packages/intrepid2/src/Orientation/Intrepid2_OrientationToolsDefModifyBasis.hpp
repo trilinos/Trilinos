@@ -10,7 +10,7 @@
 
 /** \file   Intrepid2_OrientationToolsDefModifyBasis.hpp
     \brief  Definition file for the Intrepid2::OrientationTools class.
-    \author Created by Kyungjoo Kim
+    \author Created by Kyungjoo Kim; Revised (using OrientationOperators) by Nate Roberts
 */
 #ifndef __INTREPID2_ORIENTATIONTOOLS_DEF_MODIFY_BASIS_HPP__
 #define __INTREPID2_ORIENTATIONTOOLS_DEF_MODIFY_BASIS_HPP__
@@ -296,12 +296,9 @@ namespace Intrepid2 {
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(EDGE_DIM, 0) > 0);
         numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(FACE_DIM, 0) > 0);
       }
-      else
-      {
-        // "side" orientations
-        if      (cellDim == 1) numEdges = 1;
-        else if (cellDim == 2) numFaces = 1;
-      }
+      // "side" orientations
+      if      (cellDim == 1) numEdges = 1;
+      else if (cellDim == 2) numFaces = 1;
       
       bool leftMultiply = true;
       
@@ -403,12 +400,9 @@ namespace Intrepid2 {
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
         numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
       }
-      else
-      {
-        // "side" orientations
-        if      (cellDim == 1) numEdges = 1;
-        else if (cellDim == 2) numFaces = 1;
-      }
+      // "side" orientations
+      if      (cellDim == 1) numEdges = 1;
+      else if (cellDim == 2) numFaces = 1;
       
       bool leftMultiply = true;
       
@@ -502,12 +496,9 @@ namespace Intrepid2 {
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basisLeft->getDofCount(EDGE_DIM, 0) > 0);
         numFaces = cellTopo.getFaceCount()*ordinal_type(basisLeft->getDofCount(FACE_DIM, 0) > 0);
       }
-      else
-      {
-        // "side" orientations
-        if      (cellDim == 1) numEdges = 1;
-        else if (cellDim == 2) numFaces = 1;
-      }
+      // "side" orientations
+      if      (cellDim == 1) numEdges = 1;
+      else if (cellDim == 2) numFaces = 1;
       
       const auto op_tuple = createOperators(basisLeft);
       
