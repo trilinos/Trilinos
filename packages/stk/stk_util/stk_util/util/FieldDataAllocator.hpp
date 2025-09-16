@@ -35,205 +35,166 @@
 #ifndef STK_IMPL_FIELD_DATA_ALLOCATOR_HPP
 #define STK_IMPL_FIELD_DATA_ALLOCATOR_HPP
 
-#include <cstddef>      // for size_t, ptrdiff_t
-#include <cstdlib>      // for malloc, free
-#include <limits>       // for numeric_limits
-#include <type_traits>  // for is_same
-#include <unistd.h>    // for sysconf, _SC_PAGE_SIZE
-#include <new>         // for bad_alloc
-#include <iostream>
-#include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/stk_config.h>
+#include <stk_util/util/string_utils.hpp>
+#include "stk_util/util/ReportHandler.hpp"
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include "Kokkos_Core.hpp"
 
 #if defined(STK_ASAN_IS_ON) && defined(STK_ASAN_FIELD_ACCESS)
   #include <sanitizer/asan_interface.h>
-  constexpr unsigned ASAN_FIELD_PADDING_SIZE = 1024;
+  constexpr unsigned STK_ASAN_FIELD_PADDING_SIZE = 1024;
 #else
   #define ASAN_POISON_MEMORY_REGION(addr, size) ((void)(addr), (void)(size))
   #define ASAN_UNPOISON_MEMORY_REGION(addr, size) ((void)(addr), (void)(size))
-  constexpr unsigned ASAN_FIELD_PADDING_SIZE = 0;
+  constexpr unsigned STK_ASAN_FIELD_PADDING_SIZE = 0;
 #endif
+
+// If a full SIMD access occurs at the end of an irregularly-sized Bucket, we need to
+// tolerate accessing uninitialized values as long as they do not walk outside the
+// allocation.  Pad the allocation so that it is always a full increment of the maximum
+// SIMD size.  This only really has an affect on unusually-small Buckets or Buckets with
+// a non-power-of-2 capacity.  This may be smaller than the actual memory alignment size.
+//
+constexpr unsigned STK_ALIGNMENT_PADDING_SIZE = 64;  // For avx512 SIMD support
+
+//We used to assert that KOKKOS_MEMORY_ALIGNMENT is at least as big as
+//STK_ALIGNMENT_PADDING_SIZE.
+//That Kokkos macro has been deprecated (as of the 4.7 or so version). Kokkos documentation
+//simply indicates that Kokkos Views are 64-byte aligned. There doesn't appear to be a way
+//to set Kokkos alignment to a value different than that, nor is there a way to query Kokkos
+//View alignment.
 
 namespace stk {
 
-namespace impl {
-
-constexpr unsigned DEFAULT_FIELD_ALIGNMENT_BYTES = 64;  // For avx512 SIMD support
-
 template <typename T>
-class BaseFieldDataAllocator
+struct SerialFieldDataAllocator
 {
-public:
-  using ValueType = T;
-  using Pointer = T*;
-  using ConstPointer = const T*;
-  using Reference = T&;
-  using ConstReference = const T&;
-  using SizeType = std::size_t;
-  using DifferenceType = std::ptrdiff_t;
+  using DataType = T;
+  using HostMemorySpace = stk::ngp::HostMemSpace;
+  using DeviceMemorySpace = stk::ngp::MemSpace;
+  using HostAllocationType = Kokkos::View<T*, HostMemorySpace>;
+  using DeviceAllocationType = Kokkos::View<T*, DeviceMemorySpace>;
 
-  template <typename U>
-  struct rebind
-  {
-    using OtherType = BaseFieldDataAllocator<U>;
-  };
+  static_assert(sizeof(T) == 1u, "Allocator datatype must be of byte-equivalent length.");
 
-  BaseFieldDataAllocator() {}
-
-  BaseFieldDataAllocator(const BaseFieldDataAllocator&) {}
-
-  template <typename U>
-  BaseFieldDataAllocator (const BaseFieldDataAllocator <U>&) {}
-
-  ~BaseFieldDataAllocator() {}
-
-  static Pointer address(Reference value) { return &value; }
-  static ConstPointer address(ConstReference value) { return &value; }
-
-  static SizeType max_size()
-  {
-    return std::numeric_limits<std::size_t>::max() / sizeof(ValueType);
+  HostAllocationType host_allocate(size_t size) const {
+    const size_t asanSize = size + STK_ASAN_FIELD_PADDING_SIZE;
+    auto allocation = HostAllocationType(Kokkos::view_alloc("HostFieldData", Kokkos::WithoutInitializing), asanSize);
+    ASAN_POISON_MEMORY_REGION(allocation.data(), asanSize);
+    return allocation;
   }
 
-  static void construct(Pointer p, const ValueType& value)
-  {
-    new(p)ValueType(value);
+  DeviceAllocationType device_allocate(size_t size) const {
+    auto allocation = DeviceAllocationType(Kokkos::view_alloc("DeviceFieldData", Kokkos::WithoutInitializing), size);
+    return allocation;
   }
 
-  static void destroy(Pointer p)
-  {
-    p->~ValueType();
+  template <typename PtrType>
+  PtrType* get_host_pointer_for_device(PtrType* hostPointer) const {
+    return hostPointer;
   }
 };
 
-template <typename T, unsigned ALIGNMENT = DEFAULT_FIELD_ALIGNMENT_BYTES>
-class AlignedFieldDataAllocator : public BaseFieldDataAllocator<T>
-{
-public:
-  using ValueType = typename BaseFieldDataAllocator<T>::ValueType;
-  using Pointer = typename BaseFieldDataAllocator<T>::Pointer;
-  using SizeType = typename BaseFieldDataAllocator<T>::SizeType;
-
-  AlignedFieldDataAllocator() = default;
-
-  AlignedFieldDataAllocator(const AlignedFieldDataAllocator&) {}
-
-  template <typename U>
-  AlignedFieldDataAllocator (const AlignedFieldDataAllocator<U>&) {}
-
-  ~AlignedFieldDataAllocator() = default;
-
-  static Pointer allocate(SizeType num, const void* = 0)
-  {
-    size_t alignedSize = ((num * sizeof(ValueType) + ALIGNMENT - 1) / ALIGNMENT) * ALIGNMENT + ASAN_FIELD_PADDING_SIZE;
-    void * allocatedMemory = aligned_alloc(ALIGNMENT, alignedSize);
-    ASAN_POISON_MEMORY_REGION(allocatedMemory, alignedSize);
-    return static_cast<Pointer>(allocatedMemory);
-  }
-
-  static void deallocate(Pointer p, SizeType)
-  {
-    free(p);
-  }
-};
-
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA)
 template <typename T>
-class CUDAPinnedAndMappedAllocator : public BaseFieldDataAllocator<T>
+struct CudaFieldDataAllocator
 {
-public:
-  using ValueType = typename BaseFieldDataAllocator<T>::ValueType;
-  using Pointer = typename BaseFieldDataAllocator<T>::Pointer;
-  using SizeType = typename BaseFieldDataAllocator<T>::SizeType;
+  using DataType = T;
+  using HostMemorySpace = stk::ngp::HostPinnedSpace;
+  using DeviceMemorySpace = stk::ngp::MemSpace;
+  using HostAllocationType = Kokkos::View<T*, HostMemorySpace>;
+  using DeviceAllocationType = Kokkos::View<T*, DeviceMemorySpace>;
 
-  CUDAPinnedAndMappedAllocator() {}
+  static_assert(sizeof(T) == 1u, "Allocator datatype must be of byte-equivalent length.");
 
-  CUDAPinnedAndMappedAllocator(const CUDAPinnedAndMappedAllocator&) {}
-
-  template <typename U>
-  CUDAPinnedAndMappedAllocator (const CUDAPinnedAndMappedAllocator<U>&) {}
-
-  ~CUDAPinnedAndMappedAllocator() {}
-
-  static Pointer allocate(SizeType num, const void* = 0)
-  {
-    size_t size = num * sizeof(ValueType);
-
-    void* ret;
-    cudaError_t status = cudaHostAlloc(&ret, size, cudaHostAllocMapped);
-
-    STK_ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAllocator::allocate: " + std::string(cudaGetErrorString(status)));
-
-    return reinterpret_cast<T*>(ret);
+  HostAllocationType host_allocate(size_t size) const {
+    return HostAllocationType(Kokkos::view_alloc("HostFieldData", Kokkos::WithoutInitializing), size);
   }
 
-  static void deallocate(Pointer p, SizeType)
-  {
-    cudaFreeHost(p);
+  DeviceAllocationType device_allocate(size_t size) const {
+    return DeviceAllocationType(Kokkos::view_alloc("DeviceFieldData", Kokkos::WithoutInitializing), size);
+  }
+
+  template <typename PtrType>
+  PtrType* get_host_pointer_for_device(PtrType* hostPointer) const {
+    PtrType* translatedHostPointer = hostPointer;
+    if (hostPointer != nullptr) {
+      cudaError_t status = cudaHostGetDevicePointer((void**)&translatedHostPointer, (void*)hostPointer, 0);
+      STK_ThrowRequireMsg(status == cudaSuccess, "Something went wrong during cudaHostGetDevicePointer(): " +
+                          std::string(cudaGetErrorString(status)));
+    }
+    return translatedHostPointer;
   }
 };
 #endif
 
-#ifdef KOKKOS_ENABLE_HIP
+#if defined(KOKKOS_ENABLE_HIP)
 template <typename T>
-class HIPPinnedAndMappedAllocator : public BaseFieldDataAllocator<T>
+class HipFieldDataAllocator
 {
 public:
-  using ValueType = typename BaseFieldDataAllocator<T>::ValueType;
-  using Pointer = typename BaseFieldDataAllocator<T>::Pointer;
-  using SizeType = typename BaseFieldDataAllocator<T>::SizeType;
-
-  HIPPinnedAndMappedAllocator() {}
-
-  HIPPinnedAndMappedAllocator(const HIPPinnedAndMappedAllocator&) {}
-
-  template <typename U>
-  HIPPinnedAndMappedAllocator (const HIPPinnedAndMappedAllocator<U>&) {}
-
-  ~HIPPinnedAndMappedAllocator() {}
-
-  static Pointer allocate(SizeType num, const void* = 0)
-  {
-    size_t size = num * sizeof(ValueType);
-
-    void* ret;
-    hipError_t status = hipHostMalloc(&ret, size, hipHostMallocMapped);
-
-    STK_ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::allocate: " + std::string(hipGetErrorString(status)));
-
-    return reinterpret_cast<T*>(ret);
-  }
-
-  static void deallocate(Pointer p, SizeType)
-  {
-    hipError_t status = hipHostFree(p);
-    STK_ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAllocator::deallocate: hipHostFree returned hipError_t=="<<status);
-  }
-
-};
-#endif
-
-template <typename T1, typename T2>
-inline bool operator==(const BaseFieldDataAllocator<T1>&, const BaseFieldDataAllocator<T2>&)
-{ return std::is_same<T1,T2>::value; }
-
-template <typename T1, typename T2>
-inline bool operator!=(const BaseFieldDataAllocator<T1>&, const BaseFieldDataAllocator<T2>&)
-{ return !std::is_same<T1,T2>::value; }
-
-#ifdef KOKKOS_ENABLE_CUDA
-template <typename ValueType>
-using FieldDataAllocator = CUDAPinnedAndMappedAllocator<ValueType>;
-#elif defined(KOKKOS_ENABLE_HIP)
-template <typename ValueType>
-using FieldDataAllocator = HIPPinnedAndMappedAllocator<ValueType>;
+  using DataType = T;
+#if defined(STK_UNIFIED_MEMORY)
+  using HostMemorySpace = std::conditional_t<stk::ngp::DeviceAccessibleFromHost,
+                                             stk::ngp::MemSpace,          // Unified memory, so allocate on device (for performance)
+                                             stk::ngp::HostPinnedSpace>;  // Non-unified memory, so allocate on host
 #else
-template <typename ValueType>
-using FieldDataAllocator = AlignedFieldDataAllocator<ValueType>;
+  using HostMemorySpace = stk::ngp::HostPinnedSpace;
+#endif
+  using DeviceMemorySpace = stk::ngp::MemSpace;
+  using HostAllocationType = Kokkos::View<T*, HostMemorySpace>;
+  using DeviceAllocationType = Kokkos::View<T*, DeviceMemorySpace>;
+
+  static_assert(sizeof(T) == 1u, "Allocator datatype must be of byte-equivalent length.");
+
+  HostAllocationType host_allocate(size_t size) const {
+    return HostAllocationType(Kokkos::view_alloc("HostFieldData", Kokkos::WithoutInitializing), size);
+  }
+
+  DeviceAllocationType device_allocate(size_t size) const {
+    return DeviceAllocationType(Kokkos::view_alloc("DeviceFieldData", Kokkos::WithoutInitializing), size);
+  }
+
+  template <typename PtrType>
+  PtrType* get_host_pointer_for_device(PtrType* hostPointer) const {
+    PtrType* translatedHostPointer = hostPointer;
+    if (hostPointer != nullptr) {
+#if defined(STK_UNIFIED_MEMORY)
+      if constexpr (not stk::ngp::DeviceAccessibleFromHost) {
+        hipError_t status = hipHostGetDevicePointer((void**)&translatedHostPointer, (void*)hostPointer, 0);
+        STK_ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer(): " +
+                            std::string(hipGetErrorString(status)));
+      }
+#else
+      hipError_t status = hipHostGetDevicePointer((void**)&translatedHostPointer, (void*)hostPointer, 0);
+      STK_ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer(): " +
+                          std::string(hipGetErrorString(status)));
+#endif
+    }
+    return translatedHostPointer;
+  }
+};
 #endif
 
-} // namespace stk
-}
+
+#if defined(KOKKOS_ENABLE_CUDA)
+
+template <typename DataType>
+using FieldDataAllocator = CudaFieldDataAllocator<DataType>;
+
+#elif defined(KOKKOS_ENABLE_HIP)
+
+template <typename DataType>
+using FieldDataAllocator = HipFieldDataAllocator<DataType>;
+
+#else
+
+template <typename DataType>
+using FieldDataAllocator = SerialFieldDataAllocator<DataType>;
+
+#endif
+
+}  // namespace stk
 
 #endif

@@ -273,6 +273,14 @@ public:
   bool has_ngp_field() const { return get_ngp_field() != nullptr; }
   bool has_device_data() const { return m_deviceFieldData != nullptr; }
 
+  bool has_unified_device_storage() const {
+#ifdef STK_UNIFIED_MEMORY
+    return host_data_layout() == device_data_layout();
+#else
+    return false;
+#endif
+  }
+
   void rotate_multistate_data(bool rotateNgpFieldViews = false);
 
 protected:

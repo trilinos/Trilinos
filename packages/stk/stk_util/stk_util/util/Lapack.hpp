@@ -47,6 +47,11 @@ void SIERRA_FORTRAN(dgels)(const char* trans, const int* m, const int* n,
                            const int* ldb, double* work, const int* lwork,
                            int* info);
 
+void SIERRA_FORTRAN(dgelsy)(const int* m, const int* n,
+                            const int* nrhs, double* a, const int* lda, double* b,
+                            const int* ldb, int* jpvt, const double* rcond, int* rank,
+                            double* work, const int* lwork, int* info);
+
 void SIERRA_FORTRAN(dgeqrf)(const int* m, const int* n, double* a,
                             const int* lda, double* tau, double* work,
                             const int* lwork, int* info );
