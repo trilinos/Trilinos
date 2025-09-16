@@ -92,9 +92,9 @@ template <typename T, typename ... P>
 struct is_view_fad< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFad >::value ||
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -102,7 +102,7 @@ template <typename T, typename ... P>
 struct is_view_fad_contiguous< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
