@@ -35,6 +35,7 @@
 #define STK_MESH_DEVICEMESH_HPP
 
 #include <stk_util/stk_config.h>
+#include "Kokkos_Macros.hpp"
 #include "View/Kokkos_ViewCtor.hpp"
 #include "stk_mesh/base/NgpMeshBase.hpp"
 #include "stk_mesh/base/Bucket.hpp"
@@ -97,7 +98,7 @@ public:
       m_needSyncToHost(false),
       endRank(static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count())),
       deviceMeshHostData(nullptr),
-      m_deviceBucketRepo(this),
+      m_deviceBucketRepo(this, b.get_initial_bucket_capacity(), b.get_maximum_bucket_capacity()),
       m_deviceBufferOffsets(UnsignedViewType<NgpMemSpace>("deviceBufferOffsets", 1)),
       m_deviceMeshIndicesOffsets(UnsignedViewType<NgpMemSpace>("deviceMeshIndicesOffsets", 1))
   {
@@ -325,6 +326,10 @@ public:
                                  const Kokkos::View<stk::mesh::PartOrdinal*, AddPartParams...>& addPartOrdinals,
                                  const Kokkos::View<stk::mesh::PartOrdinal*, RemovePartParams...>& removePartOrdinals)
   {
+#ifdef USE_IMPL_DEVICE_MESH_MOD
+    impl_batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
+    m_needSyncToHost = true;
+#else
     using EntitiesMemorySpace = typename std::remove_reference<decltype(entities)>::type::memory_space;
     using AddPartOrdinalsMemorySpace = typename std::remove_reference<decltype(addPartOrdinals)>::type::memory_space;
     using RemovePartOrdinalsMemorySpace = typename std::remove_reference<decltype(removePartOrdinals)>::type::memory_space;
@@ -378,6 +383,7 @@ public:
 
     update_mesh();
     m_needSyncToHost = true;
+#endif
   }
 
   // This function should be called before doing any host-side mesh operations after a
@@ -412,17 +418,46 @@ public:
                   "The memory space of the 'removePartOrdinals' View is inaccessible from the DeviceMesh execution space");
 
     using PartOrdinalsViewType = typename std::remove_reference<decltype(addPartOrdinals)>::type;
-    const unsigned maxCurrentNumPartsPerEntity = impl::get_max_num_parts_per_entity(*this,entities);
+    const unsigned maxCurrentNumPartsPerEntity = impl::get_max_num_parts_per_entity(*this, entities);
     const unsigned maxNewNumPartsPerEntity = maxCurrentNumPartsPerEntity + addPartOrdinals.size();
-    PartOrdinalsViewType newPartOrdinalsPerEntity("newPartOrdinals", entities.size()*(1+maxNewNumPartsPerEntity));
-    PartOrdinalsViewType sortedAddPartOrdinals = impl::get_sorted_view(addPartOrdinals);
-    impl::set_new_part_list_per_entity(*this, entities, sortedAddPartOrdinals, removePartOrdinals,
-                                       maxNewNumPartsPerEntity, newPartOrdinalsPerEntity);
 
-    // TODO 
-    // Need to check that parts are valid before using on device
-    // Either check against host parts or
-    // store and maintain a part ordinals list for lookup
+    PartOrdinalsViewType newPartOrdinalsPerEntity("newPartOrdinals", entities.size()*maxNewNumPartsPerEntity);
+    PartOrdinalsViewType sortedAddPartOrdinals = impl::get_sorted_view(addPartOrdinals);
+
+    // A proxy indices view to part ordinals: (rank, startPtr, length)
+    using PartOrdinalsProxyViewType = Kokkos::View<impl::PartOrdinalsProxyIndices*>;
+    PartOrdinalsProxyViewType partOrdinalsProxy(Kokkos::view_alloc(Kokkos::WithoutInitializing, "partOrdinalsProxy"), entities.size());
+    impl::set_new_part_list_per_entity(*this, entities, sortedAddPartOrdinals, removePartOrdinals,
+                                       maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy);
+
+    PartOrdinalsProxyViewType copiedPartOrdinalsProxy(Kokkos::view_alloc(Kokkos::WithoutInitializing, "copiedPartOrdinalsProxy"), entities.size());
+    Kokkos::deep_copy(copiedPartOrdinalsProxy, partOrdinalsProxy);
+
+    Kokkos::sort(partOrdinalsProxy);
+    auto newEnd = Kokkos::Experimental::unique(MeshExecSpace{}, partOrdinalsProxy);
+    auto begin = Kokkos::Experimental::begin(partOrdinalsProxy);
+    size_t newSize = Kokkos::Experimental::distance(begin, newEnd);
+    if (newSize != partOrdinalsProxy.size()) {
+      Kokkos::resize(partOrdinalsProxy, newSize);
+    }
+    Kokkos::fence();
+
+    m_deviceBucketRepo.batch_create_partitions(partOrdinalsProxy);
+
+    UnsignedPairViewType<NgpMemSpace> srcDestPartitions("srcDestPartitionIdPerEntity", entities.size());
+    Kokkos::Experimental::fill(MeshExecSpace{}, srcDestPartitions, Kokkos::pair{INVALID_PARTITION_ID, INVALID_PARTITION_ID});
+
+    m_deviceBucketRepo.batch_get_partitions(entities, copiedPartOrdinalsProxy, srcDestPartitions);
+
+    m_deviceBucketRepo.batch_move_entities(entities, srcDestPartitions);
+
+    m_deviceBucketRepo.sync_from_partitions();
+
+    Kokkos::fence();
+  }
+
+  MeshIndexType<NgpMemSpace>& get_fast_mesh_indices() {
+    return deviceMeshIndices;
   }
 
   auto& get_ngp_parallel_sum_host_buffer_offsets() {
@@ -437,10 +472,12 @@ public:
     return m_deviceMeshIndicesOffsets;
   }
 
+  KOKKOS_INLINE_FUNCTION
   impl::DeviceBucketRepository<NgpMemSpace>& get_device_bucket_repository() {
     return m_deviceBucketRepo;
   }
   
+  KOKKOS_INLINE_FUNCTION
   impl::DeviceBucketRepository<NgpMemSpace> const& get_device_bucket_repository() const {
     return m_deviceBucketRepo;
   }

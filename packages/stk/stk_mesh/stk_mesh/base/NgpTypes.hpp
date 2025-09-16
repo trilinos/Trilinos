@@ -65,6 +65,8 @@ template <typename MemSpace> using MeshIndexType                  = Kokkos::View
                                                                                  Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
 template <typename MemSpace> using HostMeshIndexType              = typename MeshIndexType<MemSpace>::host_mirror_type;
 
+template <typename MemSpace> using UnsignedPairViewType           = Kokkos::View<Kokkos::pair<unsigned, unsigned>*, MemSpace>;
+
 using DeviceStringType = Kokkos::View<char*, stk::ngp::HostPinnedSpace>;
 using HostStringType = Kokkos::View<char*, stk::ngp::HostMemSpace>;
 
@@ -75,7 +77,6 @@ template <typename MemSpace> using DeviceBucketsModifiedCollectionType = Kokkos:
 using FieldMetaDataArrayType = typename Kokkos::View<FieldMetaData*, stk::ngp::HostMemSpace>;
 
 using FieldMetaDataModCountType = Kokkos::View<unsigned, stk::ngp::HostPinnedSpace>;
-
 
 template <typename MemSpace>
 struct DefaultLayoutSelector {

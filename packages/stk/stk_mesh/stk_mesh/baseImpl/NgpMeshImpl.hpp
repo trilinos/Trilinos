@@ -40,10 +40,29 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_StdAlgorithms.hpp>
+#include "Kokkos_Macros.hpp"
 
 namespace stk {
 namespace mesh {
 namespace impl {
+
+struct DevicePartOrdinalLess
+{
+  template <typename PartOrdinal>
+  KOKKOS_INLINE_FUNCTION
+  bool operator()(PartOrdinal const& lhs, PartOrdinal const& rhs) {
+    if (lhs.extent(0) != rhs.extent(0)) {
+      return lhs.extent(0) < rhs.extent(0);
+    }
+
+    for (unsigned i = 0; i < lhs.extent(0); ++i) {
+      if (lhs(i) < rhs(i)) {
+        return true;
+      }
+    }
+    return false;
+  }
+};
 
 template<typename MESH_TYPE, typename EntityViewType>
 unsigned get_max_num_parts_per_entity(const MESH_TYPE& ngpMesh, const EntityViewType& entities)
@@ -112,12 +131,15 @@ OutputIt my_merge(InputIt1 first1, InputIt1 last1,
   return my_copy(first2, last2, d_first);
 }
 
-template<typename MESH_TYPE, typename EntityViewType, typename AddPartsViewType, typename RmPartsViewType, typename NewPartsViewType>
-void set_new_part_list_per_entity(const MESH_TYPE& ngpMesh, const EntityViewType& entities,
+template<typename MESH_TYPE, typename EntityViewType, typename AddPartsViewType, typename RmPartsViewType,
+         typename NewPartsViewType, typename PartOrdinalsProxyViewType>
+void set_new_part_list_per_entity(const MESH_TYPE& ngpMesh,
+                                  const EntityViewType& entities,
                                   const AddPartsViewType& addParts,
                                   const RmPartsViewType& rmParts,
                                   unsigned maxPartsPerEntity,
-                                  NewPartsViewType& newPartsPerEntity)
+                                  NewPartsViewType& newPartsPerEntity,
+                                  PartOrdinalsProxyViewType& partOrdinalsProxyView)
 {
   using BucketType = typename MESH_TYPE::BucketType;
   using ExecSpace = typename MESH_TYPE::MeshExecSpace;
@@ -129,15 +151,13 @@ void set_new_part_list_per_entity(const MESH_TYPE& ngpMesh, const EntityViewType
   Kokkos::parallel_for("set_new_part_lists", teamPolicy,
     KOKKOS_LAMBDA(const TeamMember& teamMember) {
       const unsigned i = teamMember.league_rank();
-      const unsigned myStartIdx = i*(maxPartsPerEntity+1);
-      newPartsPerEntity(myStartIdx) = 0;
+      const unsigned myStartIdx = i*maxPartsPerEntity;
       const stk::mesh::EntityRank rank = ngpMesh.entity_rank(entities(i));
       const stk::mesh::FastMeshIndex entityIdx = ngpMesh.device_mesh_index(entities(i));
       const BucketType& bucket = ngpMesh.get_bucket(rank, entityIdx.bucket_id);
       auto currentPartOrdsPair = bucket.superset_part_ordinals();
 
-      const unsigned idx = myStartIdx+1;
-      Ordinal* dest = &newPartsPerEntity(idx);
+      Ordinal* dest = &newPartsPerEntity(myStartIdx);
       const Ordinal* first1 = addParts.data();
       const Ordinal* last1 = first1+addParts.size();
       const Ordinal* first2 = currentPartOrdsPair.first;
@@ -145,7 +165,9 @@ void set_new_part_list_per_entity(const MESH_TYPE& ngpMesh, const EntityViewType
       unsigned myNumParts = (last2-first2) + addParts.size();
       Kokkos::single(Kokkos::PerTeam(teamMember),[&]() {
         my_merge(first1, last1, first2, last2, dest);
-        newPartsPerEntity(myStartIdx) = myNumParts;
+
+        typename PartOrdinalsProxyViewType::value_type proxyIndices(rank, dest, myNumParts);
+        partOrdinalsProxyView(i) = proxyIndices;
       });
 
       auto isInRmParts = [&](Ordinal item) {
@@ -155,18 +177,19 @@ void set_new_part_list_per_entity(const MESH_TYPE& ngpMesh, const EntityViewType
                            return false;
                          };
 
-      auto begin = Kokkos::Experimental::begin(newPartsPerEntity)+idx;
+      auto begin = Kokkos::Experimental::begin(newPartsPerEntity) + myStartIdx;
       auto end = begin + myNumParts;
 
-      end = Kokkos::Experimental::remove_if(teamMember, begin, end,isInRmParts);
+      end = Kokkos::Experimental::remove_if(teamMember, begin, end, isInRmParts);
       end = Kokkos::Experimental::unique(teamMember, begin, end);
 
       Kokkos::single(Kokkos::PerTeam(teamMember),[&]() {
-        myNumParts = end - begin;
-        newPartsPerEntity(myStartIdx) = myNumParts;
+        partOrdinalsProxyView(i).length = static_cast<unsigned>(Kokkos::Experimental::distance(begin, end));
       });
     }
   );
+
+  Kokkos::fence();
 }
 
 template <typename T>

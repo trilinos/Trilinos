@@ -55,6 +55,7 @@
 #include <cmath>
 #include <ctime>
 #include <iostream>
+#include <limits>
 
 namespace stk {
 namespace expreval {
