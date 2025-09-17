@@ -547,7 +547,7 @@ namespace Intrepid2 {
     if (!hookRegistered)
     {
       Kokkos::push_finalize_hook( [=] {
-        ortCoeffData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::CoeffMatrixDataViewType>();
+        ortCoeffData.clear();
       });
       hookRegistered = true;
     }
@@ -577,7 +577,7 @@ namespace Intrepid2 {
     if (!hookRegistered)
     {
       Kokkos::push_finalize_hook( [=] {
-        ortInvCoeffData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::CoeffMatrixDataViewType>();
+        ortInvCoeffData.clear();
       });
       hookRegistered = true;
     }
