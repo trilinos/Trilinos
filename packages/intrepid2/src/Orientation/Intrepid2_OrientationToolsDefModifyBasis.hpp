@@ -389,7 +389,6 @@ namespace Intrepid2 {
         numPoints = output.extent(2),
         dimBasis  = output.extent(3); //returns 1 when output.rank() < 4;
 
-      const CoeffMatrixDataViewType matData = createInvCoeffMatrix(basis);
       auto opData = createInvOperators(basis);
       auto edgeOpData = std::get<0>(opData);
       auto faceOpData = std::get<1>(opData);
@@ -397,8 +396,8 @@ namespace Intrepid2 {
       ordinal_type numEdges(0), numFaces(0);
 
       if (basis->requireOrientation()) {
-        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
-        numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
+        numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(EDGE_DIM, 0) > 0);
+        numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(FACE_DIM, 0) > 0);
       }
       // "side" orientations
       if      (cellDim == 1) numEdges = 1;
