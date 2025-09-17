@@ -213,6 +213,8 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
   typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
   typedef tif_utest::BlockTriDiContainerTester<Scalar, LO, GO> btdct;
 
+  tif_utest::BTDC_MatrixCache<Scalar, LO, GO> matrixCache;
+
   success                   = true;
   Int nerr                  = 0;
   Int ne                    = 0;
@@ -263,7 +265,10 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
             for (const bool nonuniform_lines : {false, true}) {
               for (const bool pointwise : {false, true}) {
                 for (const bool explicitConversion : {false, true}) {
-                  if (jacobi && nonuniform_lines) continue;
+                  // Is this test case block Jacobi (in one of the 3 modes)?
+                  bool jacobiOn = jacobi != tif_utest::JACOBI_OFF;
+                  // Nonuniform lines don't make sense with block Jacobi
+                  if (jacobiOn && nonuniform_lines) continue;
                   if (!pointwise && explicitConversion) continue;
                   for (const int nvec : {1, 3}) {
                     std::stringstream ss;
@@ -285,7 +290,7 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
                     const std::string details = ss.str();
                     bool threw                = false;
                     try {
-                      ne = btdct::test_BR_BTDC(in.comm, sb, sbp, bs, nvec, nonuniform_lines,
+                      ne = btdct::test_BR_BTDC(in.comm, matrixCache, sb, sbp, bs, nvec, nonuniform_lines,
                                                different_maps, jacobi, overlap_comm, seq_method, pointwise,
                                                explicitConversion, details);
                       nerr += ne;

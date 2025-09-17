@@ -29,25 +29,64 @@ enum JacobiMode {
   JACOBI_ON_SHUFFLED_PARTS
 };
 
+// Cache graphs and matrices used by BTDC tests to avoid regenerating
+// each one many times.
 template <typename Scalar, typename LO, typename GO>
-struct BlockTriDiContainerTester {
-  typedef LO Int;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-#if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_SMALL_SCALAR)
-  typedef typename std::conditional<std::is_same<Magnitude, double>::value, float, Magnitude>::type SmallMagnitude;
-#else
-  typedef Magnitude SmallMagnitude;
-#endif
-  typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
-  typedef typename bcmm::Tpetra_RowMatrix Tpetra_RowMatrix;
-  typedef typename bcmm::Tpetra_BlockCrsMatrix Tpetra_BlockCrsMatrix;
-  typedef typename bcmm::Tpetra_MultiVector Tpetra_MultiVector;
-  typedef typename bcmm::StructuredBlock StructuredBlock;
-  typedef typename bcmm::StructuredBlockPart StructuredBlockPart;
-  typedef typename bcmm::StencilShape StencilShape;
+struct BTDC_MatrixCache {
+  using bcmm                = tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO>;
+  using StructuredBlock     = typename bcmm::StructuredBlock;
+  using StructuredBlockPart = typename bcmm::StructuredBlockPart;
+  using CrsGraph            = Tpetra::CrsGraph<LO, GO>;
+  using CrsMatrix           = Tpetra::CrsMatrix<Scalar, LO, GO>;
+  using BlockCrsMatrix      = Tpetra::BlockCrsMatrix<Scalar, LO, GO>;
+  using Int                 = LO;
+
+  // tridiag_only, different_maps
+  using GraphKey = std::tuple<bool, bool>;
+
+  // tridiag_only, different_maps, bs, tridiag_is_identity, block_diag, nonuniform_lines
+  // The first two parameters match those for the corresponding graph.
+  using MatrixKey = std::tuple<bool, bool, int, bool, bool, bool>;
+
+  BTDC_MatrixCache() {}
+
+  std::map<GraphKey, Teuchos::RCP<CrsGraph>> graphCache;
+  std::map<MatrixKey, Teuchos::RCP<BlockCrsMatrix>> matrixCache;
+  std::map<MatrixKey, Teuchos::RCP<CrsMatrix>> pointwiseMatrixCache;
+
+  Teuchos::RCP<CrsGraph> getGraph(const Teuchos::RCP<const Teuchos::Comm<int>>& comm, const StructuredBlock& sb, const StructuredBlockPart& sbp, bool tridiag_only, bool different_maps) {
+    GraphKey key = std::make_tuple(tridiag_only, different_maps);
+    if (graphCache.find(key) == graphCache.end()) {
+      graphCache[key] = bcmm::make_crs_graph(comm, sb, sbp, tridiag_only, different_maps);
+    }
+    return graphCache[key];
+  }
+
+  Teuchos::RCP<BlockCrsMatrix> getMatrix(const Teuchos::RCP<const Teuchos::Comm<int>>& comm, const StructuredBlock& sb, const StructuredBlockPart& sbp, bool tridiag_only, bool different_maps, int bs, bool tridiag_is_identity, bool block_diag, bool nonuniform_lines) {
+    MatrixKey key = std::make_tuple(tridiag_only, different_maps, bs, tridiag_is_identity, block_diag, nonuniform_lines);
+    if (matrixCache.find(key) == matrixCache.end()) {
+      auto g                         = this->getGraph(comm, sb, sbp, tridiag_only, different_maps);
+      Teuchos::RCP<BlockCrsMatrix> A = bcmm::make_bcrs_matrix(sb, g, bs, tridiag_is_identity, block_diag);
+      if (nonuniform_lines) {
+        zero_blocks_nonuniform_lines(*A, sb, sbp);
+      }
+      matrixCache[key] = A;
+    }
+    return matrixCache[key];
+  }
+
+  Teuchos::RCP<CrsMatrix> getPointwiseMatrix(const Teuchos::RCP<const Teuchos::Comm<int>>& comm, const StructuredBlock& sb, const StructuredBlockPart& sbp, bool tridiag_only, bool different_maps, int bs, bool tridiag_is_identity, bool block_diag, bool nonuniform_lines) {
+    MatrixKey key = std::make_tuple(tridiag_only, different_maps, bs, tridiag_is_identity, block_diag, nonuniform_lines);
+    if (pointwiseMatrixCache.find(key) == pointwiseMatrixCache.end()) {
+      auto A_bcrs               = getMatrix(comm, sb, sbp, tridiag_only, different_maps, bs, tridiag_is_identity, block_diag, nonuniform_lines);
+      auto A                    = Tpetra::convertToCrsMatrix(*A_bcrs);
+      pointwiseMatrixCache[key] = A;
+    }
+    return pointwiseMatrixCache[key];
+  }
 
   static void
-  zero_block(Tpetra_BlockCrsMatrix& A, const LO& row_lid, const LO& row_lid_to_match) {
+  zero_block(BlockCrsMatrix& A, const LO& row_lid, const LO& row_lid_to_match) {
     const auto& g      = A.getCrsGraph();
     const auto row_map = g.getRowMap();
     const auto col_map = g.getColMap();
@@ -60,12 +99,64 @@ struct BlockTriDiContainerTester {
         block(bi, bj) = 0;
   }
 
+  // Zero out some off-diagonal blocks in A so that the nonuniform line test cases still result in an exact solution.
+  static void zero_blocks_nonuniform_lines(BlockCrsMatrix& A, const StructuredBlock& sb, const StructuredBlockPart& sbp) {
+    using LOArray = Teuchos::Array<LO>;
+    auto g        = A.getCrsGraph();
+    // Break some lines into 2. This requires modifying A in order to make the
+    // 2 line solves equivalent to 1.
+    // This logic matches how lines are split in BlockTriDiContainerTester::make_parts.
+    const auto rmap = g.getRowMap();
+    for (Int i = sbp.is, ip = 0, cnt = 0; i < sbp.ie; ++i) {
+      for (Int j = sbp.js; j < sbp.je; ++j, ++ip, ++cnt) {
+        if (cnt % 3 == 0) {
+          Int ks = sbp.ks, ke = ks + (sbp.ke - sbp.ks) / 2;
+          LO lids[2];
+          for (Int pi = 0; pi < 2; ++pi) {
+            LOArray part;
+            part.resize(ke - ks);
+            for (Int k = ks; k < ke; ++k) {
+              const auto gid = sb.ijk2id(i, j, k);
+              part[k - ks]   = rmap->getLocalElement(gid);
+            }
+            lids[pi] = pi == 0 ? part[part.size() - 1] : part[0];
+            ks       = ke;
+            ke       = sbp.ke;
+          }
+          // Zero the corresponding offdiags so the solve is exact in the
+          // test.
+          zero_block(A, lids[0], lids[1]);
+          zero_block(A, lids[1], lids[0]);
+        }
+      }
+    }
+  }
+};
+
+template <typename Scalar, typename LO, typename GO>
+struct BlockTriDiContainerTester {
+  typedef LO Int;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+#if defined(HAVE_IFPACK2_BLOCKTRIDICONTAINER_SMALL_SCALAR)
+  typedef typename std::conditional<std::is_same<Magnitude, double>::value, float, Magnitude>::type SmallMagnitude;
+#else
+  typedef Magnitude SmallMagnitude;
+#endif
+  typedef tif_utest::BlockCrsMatrixMaker<Scalar, LO, GO> bcmm;
+  typedef typename bcmm::Tpetra_RowMatrix Tpetra_RowMatrix;
+  typedef typename bcmm::Tpetra_BlockCrsMatrix Tpetra_BlockCrsMatrix;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO> Tpetra_CrsMatrix;
+  typedef typename bcmm::Tpetra_MultiVector Tpetra_MultiVector;
+  typedef typename bcmm::StructuredBlock StructuredBlock;
+  typedef typename bcmm::StructuredBlockPart StructuredBlockPart;
+  typedef typename bcmm::StencilShape StencilShape;
+
   // Template on array type because the PL requires ArrayRCP<LO> while the
   // container ctor requires Array<LO>.
   template <typename Array>
   static void
   make_parts(const StructuredBlock& sb, const StructuredBlockPart& sbp,
-             Tpetra_BlockCrsMatrix& A, const bool nonuniform_lines, const JacobiMode jacobiMode,
+             const Tpetra_BlockCrsMatrix& A, const bool nonuniform_lines, const JacobiMode jacobiMode,
              Teuchos::Array<Array>& parts) {
     const auto& g = A.getCrsGraph();
     if (jacobiMode == JACOBI_OFF) {
@@ -84,14 +175,11 @@ struct BlockTriDiContainerTester {
             }
           }
       } else {
-        // Break some lines into 2. This requires modifying A in order to make the
-        // 2 line solves equivalent to 1.
         const auto rmap = g.getRowMap();
         for (Int i = sbp.is, ip = 0, cnt = 0; i < sbp.ie; ++i) {
           for (Int j = sbp.js; j < sbp.je; ++j, ++ip, ++cnt) {
             if (cnt % 3 == 0) {
               Int ks = sbp.ks, ke = ks + (sbp.ke - sbp.ks) / 2;
-              LO lids[2];
               for (Int pi = 0; pi < 2; ++pi) {
                 parts.push_back(Array());
                 auto& part = parts.back();
@@ -100,14 +188,9 @@ struct BlockTriDiContainerTester {
                   const auto gid = sb.ijk2id(i, j, k);
                   part[k - ks]   = rmap->getLocalElement(gid);
                 }
-                lids[pi] = pi == 0 ? part[part.size() - 1] : part[0];
-                ks       = ke;
-                ke       = sbp.ke;
+                ks = ke;
+                ke = sbp.ke;
               }
-              // Zero the corresponding offdiags so the solve is exact in the
-              // test.
-              zero_block(A, lids[0], lids[1]);
-              zero_block(A, lids[1], lids[0]);
             } else {
               parts.push_back(Array());
               auto& part = parts.back();
@@ -138,20 +221,17 @@ struct BlockTriDiContainerTester {
 
   // Make BlockRelaxation smoother with BlockTriDiContainer
   // with a pointwise matrix.
-  // N.B. Modifies A if nonuniform_lines is true.
-  static Teuchos::RCP<Ifpack2::BlockRelaxation<Tpetra_RowMatrix> >
+  static Teuchos::RCP<Ifpack2::BlockRelaxation<Tpetra_RowMatrix>>
   make_BR_BTDC_PW(const StructuredBlock& sb, const StructuredBlockPart& sbp,
                   const Teuchos::RCP<Tpetra_BlockCrsMatrix>& A,
+                  const Teuchos::RCP<Tpetra_CrsMatrix>& A_pw,
                   const bool nonuniform_lines   = false,
                   const bool zero_starting_soln = true,
                   const int num_sweeps          = 1,
                   const JacobiMode jacobiMode   = JACOBI_OFF,
                   const bool explicitConversion = false) {
-    Teuchos::Array<Teuchos::ArrayRCP<LO> > parts;
-    // make_parts modifies entries of A so the call to convertToCrsMatrix
-    // needs to happen after make_parts
+    Teuchos::Array<Teuchos::ArrayRCP<LO>> parts;
     make_parts(sb, sbp, *A, nonuniform_lines, jacobiMode, parts);
-    auto A_pw    = Tpetra::convertToCrsMatrix(*A);
     const auto T = Teuchos::rcp(new Ifpack2::BlockRelaxation<Tpetra_RowMatrix>(A_pw));
     {
       Teuchos::ParameterList p;
@@ -172,8 +252,7 @@ struct BlockTriDiContainerTester {
   }
 
   // Make BlockRelaxation smoother with BlockTriDiContainer.
-  // N.B. Modifies A if nonuniform_lines is true.
-  static Teuchos::RCP<Ifpack2::BlockRelaxation<Tpetra_RowMatrix> >
+  static Teuchos::RCP<Ifpack2::BlockRelaxation<Tpetra_RowMatrix>>
   make_BR_BTDC(const StructuredBlock& sb, const StructuredBlockPart& sbp,
                const Teuchos::RCP<Tpetra_BlockCrsMatrix>& A,
                const bool nonuniform_lines   = false,
@@ -189,7 +268,7 @@ struct BlockTriDiContainerTester {
       p.set("partitioner: type", "user");
       p.set("relaxation: zero starting solution", zero_starting_soln);
       p.set<int>("relaxation: sweeps", num_sweeps);
-      Teuchos::Array<Teuchos::ArrayRCP<LO> > parts;
+      Teuchos::Array<Teuchos::ArrayRCP<LO>> parts;
       make_parts(sb, sbp, *A, nonuniform_lines, jacobiMode, parts);
       p.set<LO>("partitioner: local parts", parts.size());
       p.set("partitioner: parts", parts);
@@ -203,38 +282,35 @@ struct BlockTriDiContainerTester {
 
   // Make a bare BlockTriDiContainer
   // with a pointwise matrix.
-  // N.B. Modifies A if nonuniform_lines is true.
-  static Teuchos::RCP<Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix> >
+  static Teuchos::RCP<Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix>>
   make_BTDC_PW(const StructuredBlock& sb, const StructuredBlockPart& sbp,
                const Teuchos::RCP<Tpetra_BlockCrsMatrix>& A,
+               const Teuchos::RCP<Tpetra_CrsMatrix>& A_pw,
                const bool overlap_comm = false, const bool nonuniform_lines = false,
                const JacobiMode jacobiMode = JACOBI_OFF, const bool seq_method = false,
                const bool explicitConversion = false) {
-    Teuchos::Array<Teuchos::Array<LO> > parts;
-    // make_parts modifies entries of A so the call to convertToCrsMatrix
-    // needs to happen after make_parts
+    Teuchos::Array<Teuchos::Array<LO>> parts;
     make_parts(sb, sbp, *A, nonuniform_lines, jacobiMode, parts);
-    auto A_pw = Tpetra::convertToCrsMatrix(*A);
 
     return Teuchos::rcp(new Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix>(
         A_pw, parts, 1, overlap_comm, seq_method, A->getBlockSize(), explicitConversion));
   }
 
   // Make a bare BlockTriDiContainer.
-  // N.B. Modifies A if nonuniform_lines is true.
-  static Teuchos::RCP<Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix> >
+  static Teuchos::RCP<Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix>>
   make_BTDC(const StructuredBlock& sb, const StructuredBlockPart& sbp,
             const Teuchos::RCP<Tpetra_BlockCrsMatrix>& A,
             const bool overlap_comm = false, const bool nonuniform_lines = false,
             const JacobiMode jacobiMode = JACOBI_OFF, const bool seq_method = false) {
-    Teuchos::Array<Teuchos::Array<LO> > parts;
+    Teuchos::Array<Teuchos::Array<LO>> parts;
     make_parts(sb, sbp, *A, nonuniform_lines, jacobiMode, parts);
     return Teuchos::rcp(new Ifpack2::BlockTriDiContainer<Tpetra_RowMatrix>(
         A, parts, 1, overlap_comm, seq_method));
   }
 
   static Int
-  test_BR_BTDC(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+  test_BR_BTDC(const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+               BTDC_MatrixCache<Scalar, LO, GO>& matrixCache,
                const StructuredBlock& sb, const StructuredBlockPart& sbp,
                const Int bs, const Int nvec, const bool nonuniform_lines,
                const bool different_maps, const JacobiMode jacobiMode, const bool overlap_comm,
@@ -271,16 +347,20 @@ struct BlockTriDiContainerTester {
     bool jacobi = jacobiMode != JACOBI_OFF;
     int nerr    = 0;
     for (size_t pi = 0; pi < sizeof(parms) / sizeof(Parameters); ++pi) {
-      const auto& p            = parms[pi];
-      auto g                   = bcmm::make_crs_graph(comm, sb, sbp, p.tridiag_only, different_maps);
-      auto A                   = bcmm::make_bcrs_matrix(sb, g, bs, p.tridiag_is_identity, jacobi && p.tridiag_only);
+      const auto& p                       = parms[pi];
+      auto g                              = matrixCache.getGraph(comm, sb, sbp, p.tridiag_only, different_maps);
+      auto A                              = matrixCache.getMatrix(comm, sb, sbp, p.tridiag_only, different_maps, bs, p.tridiag_is_identity, jacobi && p.tridiag_only, nonuniform_lines);
+      Teuchos::RCP<Tpetra_CrsMatrix> A_pw = Teuchos::null;
+      if (pointwise) {
+        A_pw = matrixCache.getPointwiseMatrix(comm, sb, sbp, p.tridiag_only, different_maps, bs, p.tridiag_is_identity, jacobi && p.tridiag_only, nonuniform_lines);
+      }
       const bool solve_case    = !(p.tridiag_is_identity || p.tridiag_only);
       const bool zero_starting = solve_case;
       const int num_sweeps     = solve_case ? (jacobi ? 40 : 20) : 1;
       const bool use_br        = !(overlap_comm || seq_method);
       const Magnitude tol      = 1e-3;
-      const auto T_br          = use_br ? (pointwise ? make_BR_BTDC_PW(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobiMode, explicitConversion) : make_BR_BTDC(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobiMode)) : Teuchos::null;
-      const auto T_bare        = use_br ? Teuchos::null : (pointwise ? make_BTDC_PW(sb, sbp, A, overlap_comm, nonuniform_lines, jacobiMode, seq_method, explicitConversion) : make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobiMode, seq_method));
+      const auto T_br          = use_br ? (pointwise ? make_BR_BTDC_PW(sb, sbp, A, A_pw, nonuniform_lines, zero_starting, num_sweeps, jacobiMode, explicitConversion) : make_BR_BTDC(sb, sbp, A, nonuniform_lines, zero_starting, num_sweeps, jacobiMode)) : Teuchos::null;
+      const auto T_bare        = use_br ? Teuchos::null : (pointwise ? make_BTDC_PW(sb, sbp, A, A_pw, overlap_comm, nonuniform_lines, jacobiMode, seq_method, explicitConversion) : make_BTDC(sb, sbp, A, overlap_comm, nonuniform_lines, jacobiMode, seq_method));
       if (!T_br.is_null()) {
         T_br->initialize();
         T_br->compute();
