@@ -443,7 +443,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   char qa_vers[MAX_STR_LENGTH + 1];
   char qa_date[MAX_STR_LENGTH + 1];
 
-  auto now = std::chrono::system_clock::now();
+  auto        now  = std::chrono::system_clock::now();
   std::string time = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
   std::string date = fmt::format("{:%Y/%m/%d}", now);
   copy_string(qa_date, date);

@@ -1049,7 +1049,7 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
   CGERR(cg_base_write(file_ptr, "Base", phys_dimension, phys_dimension, &base));
 
   CGERR(cg_goto(file_ptr, base, "end"));
-  auto now = std::chrono::system_clock::now();
+  auto        now  = std::chrono::system_clock::now();
   std::string date = fmt::format("{:%Y/%m/%d}", now);
   std::string time = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
 

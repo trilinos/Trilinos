@@ -15,7 +15,7 @@ std::string time_stamp(const std::string &format)
     return {""};
   }
 
-  auto now = std::chrono::system_clock::now();
+  auto        now         = std::chrono::system_clock::now();
   std::string time_string = fmt::format(fmt::runtime(format), now);
   return time_string;
 }

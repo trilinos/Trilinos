@@ -59,8 +59,9 @@ struct TimeInterp
 
 std::string Date()
 {
-  auto now = std::chrono::system_clock::now();
-  auto   time_string   = fmt::format("{:%Y/%m/%d   %H:%M:%S %Z}", std::chrono::time_point_cast<std::chrono::seconds>(now));
+  auto now         = std::chrono::system_clock::now();
+  auto time_string = fmt::format("{:%Y/%m/%d   %H:%M:%S %Z}",
+                                 std::chrono::time_point_cast<std::chrono::seconds>(now));
   return time_string;
 }
 

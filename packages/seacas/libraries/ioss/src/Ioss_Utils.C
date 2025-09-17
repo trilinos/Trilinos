@@ -159,8 +159,8 @@ std::ostream &Ioss::Utils::get_debug_stream() { return *m_debugStream; }
 
 void Ioss::Utils::time_and_date(char *time_string, char *date_string, size_t length)
 {
-  auto now = std::chrono::system_clock::now();
-  std::string time = fmt::format("{:%T}",  std::chrono::time_point_cast<std::chrono::seconds>(now));
+  auto        now  = std::chrono::system_clock::now();
+  std::string time = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
   std::string date;
   if (length >= 10) {
     date = fmt::format("{:%Y/%m/%d}", now);

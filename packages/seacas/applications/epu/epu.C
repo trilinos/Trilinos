@@ -1786,7 +1786,7 @@ namespace {
     copy_string(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH + 1); // Version
 
     auto now = std::chrono::system_clock::now();
-    buffer = fmt::format("{:%Y/%m/%d}", now);
+    buffer   = fmt::format("{:%Y/%m/%d}", now);
     copy_string(qaRecord[num_qa_records].qa_record[0][2], buffer, MAX_STR_LENGTH + 1);
 
     buffer = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));

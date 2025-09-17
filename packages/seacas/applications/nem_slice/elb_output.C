@@ -172,9 +172,9 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
   }
 
   /* Generate a QA record for the utility */
-  auto now = std::chrono::system_clock::now();
-  std::string time     = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
-  std::string date     = fmt::format("{:%Y/%m/%d}", now);
+  auto        now  = std::chrono::system_clock::now();
+  std::string time = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
+  std::string date = fmt::format("{:%Y/%m/%d}", now);
 
   char qa_date[32];
   char qa_time[32];
