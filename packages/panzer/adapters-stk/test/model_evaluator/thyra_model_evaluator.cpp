@@ -231,131 +231,131 @@ namespace panzer {
     }
   }
 
-//  // Testing Parameter Support
-//  TEUCHOS_UNIT_TEST(thyra_model_evaluator, scalar_parameters)
-//  {
-//    using Teuchos::RCP;
-//    using Teuchos::rcp_dynamic_cast;
-//
-//
-//    bool parameter_on = true;
-//    AssemblyPieces ap;
-//
-//    buildAssemblyPieces(parameter_on,false,ap);
-//
-//    panzer::registerScalarParameter("DUMMY",*ap.gd->pl,3.0);
-//    panzer::registerScalarParameter("DUMMY_A",*ap.gd->pl,4.0);
-//    panzer::registerScalarParameter("DUMMY_B",*ap.gd->pl,5.0);
-//
-//    {
-//      typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
-//      typedef Thyra::SpmdVectorBase<double> SpmdVector;
-//      typedef panzer::ModelEvaluator<double> PME;
-//
-//      bool build_transient_support = false;
-//      RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
-//      me->addParameter("SOURCE_TEMPERATURE",1.0);
-//      me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
-//                     *ap.eqset_factory,
-//                     *ap.bc_factory,
-//                     ap.cm_factory,
-//                     ap.cm_factory,
-//                     ap.closure_models,
-//                     ap.user_data,false,"");
-//
-//      Teuchos::Array<std::string> params;
-//      params.push_back("DUMMY_A");
-//      params.push_back("DUMMY_B");
-//      Teuchos::Array<double> params_values;
-//      params_values.push_back(4.0);
-//      params_values.push_back(5.0);
-//
-//      int index_dummy = me->addParameter("DUMMY",3.0);
-//      int index_dummy_pair = me->addParameter(params,params_values);
-//
-//      InArgs inArgs = me->createInArgs();
-//
-//      // 3 model parameters + 3 tangent vectors
-//      TEST_EQUALITY(inArgs.Np(),6);
-//
-//      RCP<const Teuchos::Array<std::string> > names_0 = me->get_p_names(0);
-//      RCP<const Teuchos::Array<std::string> > names_1 = me->get_p_names(index_dummy);
-//      RCP<const Teuchos::Array<std::string> > names_2 = me->get_p_names(index_dummy_pair);
-//
-//      TEST_ASSERT(names_0!=Teuchos::null);
-//      TEST_ASSERT(names_1!=Teuchos::null);
-//      TEST_ASSERT(names_2!=Teuchos::null);
-//
-//      TEST_EQUALITY(names_0->size(),1);
-//      TEST_EQUALITY(names_1->size(),1);
-//      TEST_EQUALITY(names_2->size(),2);
-//
-//      TEST_EQUALITY((*names_0)[0],"SOURCE_TEMPERATURE");
-//      TEST_EQUALITY((*names_1)[0],"DUMMY");
-//      TEST_EQUALITY((*names_2)[0],"DUMMY_A");
-//      TEST_EQUALITY((*names_2)[1],"DUMMY_B");
-//
-//      RCP<const Thyra::VectorSpaceBase<double> > vs_0 = me->get_p_space(0);
-//      RCP<const Thyra::VectorSpaceBase<double> > vs_1 = me->get_p_space(index_dummy);
-//      RCP<const Thyra::VectorSpaceBase<double> > vs_2 = me->get_p_space(index_dummy_pair);
-//
-//      TEST_THROW(me->get_p_space(-1),std::runtime_error);
-//      TEST_THROW(me->get_p_space(7),std::runtime_error);
-//
-//      TEST_THROW(me->get_p_names(-1),std::runtime_error);
-//      TEST_THROW(me->get_p_names(7),std::runtime_error);
-//
-//      TEST_ASSERT(vs_0!=Teuchos::null);
-//      TEST_ASSERT(vs_1!=Teuchos::null);
-//      TEST_ASSERT(vs_2!=Teuchos::null);
-//
-//      TEST_EQUALITY(vs_0->dim(),1);
-//      TEST_EQUALITY(vs_1->dim(),1);
-//      TEST_EQUALITY(vs_2->dim(),2);
-//
-//
-//      RCP<const Thyra::VectorBase<double> > param_0 = inArgs.get_p(0);
-//      RCP<const Thyra::VectorBase<double> > param_1 = inArgs.get_p(index_dummy);
-//      RCP<const Thyra::VectorBase<double> > param_2 = inArgs.get_p(index_dummy_pair);
-//
-//      TEST_ASSERT(param_0!=Teuchos::null);
-//      TEST_ASSERT(param_1!=Teuchos::null);
-//      TEST_ASSERT(param_2!=Teuchos::null);
-//
-//      RCP<const SpmdVector> spmd_0 = rcp_dynamic_cast<const SpmdVector>(param_0);
-//      RCP<const SpmdVector> spmd_1 = rcp_dynamic_cast<const SpmdVector>(param_1);
-//      RCP<const SpmdVector> spmd_2 = rcp_dynamic_cast<const SpmdVector>(param_2);
-//
-//      TEST_ASSERT(spmd_0!=Teuchos::null);
-//      TEST_ASSERT(spmd_1!=Teuchos::null);
-//      TEST_ASSERT(spmd_2!=Teuchos::null);
-//
-//      {
-//        Teuchos::ArrayRCP<const double> data;
-//        spmd_0->getLocalData(Teuchos::ptrFromRef(data));
-//
-//        TEST_EQUALITY(data.size(),1);
-//        TEST_EQUALITY(data[0],1.0);
-//      }
-//
-//      {
-//        Teuchos::ArrayRCP<const double> data;
-//        spmd_1->getLocalData(Teuchos::ptrFromRef(data));
-//
-//        TEST_EQUALITY(data.size(),1);
-//        TEST_EQUALITY(data[0],3.0);
-//      }
-//
-//      {
-//        Teuchos::ArrayRCP<const double> data;
-//        spmd_2->getLocalData(Teuchos::ptrFromRef(data));
-//
-//        TEST_EQUALITY(data.size(),2);
-//        TEST_EQUALITY(data[0],4.0);
-//        TEST_EQUALITY(data[1],5.0);
-//      }
-//    }
-//  }
+  // Testing Parameter Support
+  TEUCHOS_UNIT_TEST(thyra_model_evaluator, scalar_parameters)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp_dynamic_cast;
+
+
+    bool parameter_on = true;
+    AssemblyPieces ap;
+
+    buildAssemblyPieces(parameter_on,false,ap);
+
+    panzer::registerScalarParameter("DUMMY",*ap.gd->pl,3.0);
+    panzer::registerScalarParameter("DUMMY_A",*ap.gd->pl,4.0);
+    panzer::registerScalarParameter("DUMMY_B",*ap.gd->pl,5.0);
+
+    {
+      typedef Thyra::ModelEvaluatorBase::InArgs<double> InArgs;
+      typedef Thyra::SpmdVectorBase<double> SpmdVector;
+      typedef panzer::ModelEvaluator<double> PME;
+
+      bool build_transient_support = false;
+      RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
+      me->addParameter("SOURCE_TEMPERATURE",1.0);
+      me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
+                     *ap.eqset_factory,
+                     *ap.bc_factory,
+                     ap.cm_factory,
+                     ap.cm_factory,
+                     ap.closure_models,
+                     ap.user_data,false,"");
+
+      Teuchos::Array<std::string> params;
+      params.push_back("DUMMY_A");
+      params.push_back("DUMMY_B");
+      Teuchos::Array<double> params_values;
+      params_values.push_back(4.0);
+      params_values.push_back(5.0);
+
+      int index_dummy = me->addParameter("DUMMY",3.0);
+      int index_dummy_pair = me->addParameter(params,params_values);
+
+      InArgs inArgs = me->createInArgs();
+
+      // 3 model parameters + 3 tangent vectors
+      TEST_EQUALITY(inArgs.Np(),6);
+
+      RCP<const Teuchos::Array<std::string> > names_0 = me->get_p_names(0);
+      RCP<const Teuchos::Array<std::string> > names_1 = me->get_p_names(index_dummy);
+      RCP<const Teuchos::Array<std::string> > names_2 = me->get_p_names(index_dummy_pair);
+
+      TEST_ASSERT(names_0!=Teuchos::null);
+      TEST_ASSERT(names_1!=Teuchos::null);
+      TEST_ASSERT(names_2!=Teuchos::null);
+
+      TEST_EQUALITY(names_0->size(),1);
+      TEST_EQUALITY(names_1->size(),1);
+      TEST_EQUALITY(names_2->size(),2);
+
+      TEST_EQUALITY((*names_0)[0],"SOURCE_TEMPERATURE");
+      TEST_EQUALITY((*names_1)[0],"DUMMY");
+      TEST_EQUALITY((*names_2)[0],"DUMMY_A");
+      TEST_EQUALITY((*names_2)[1],"DUMMY_B");
+
+      RCP<const Thyra::VectorSpaceBase<double> > vs_0 = me->get_p_space(0);
+      RCP<const Thyra::VectorSpaceBase<double> > vs_1 = me->get_p_space(index_dummy);
+      RCP<const Thyra::VectorSpaceBase<double> > vs_2 = me->get_p_space(index_dummy_pair);
+
+      TEST_THROW(me->get_p_space(-1),std::runtime_error);
+      TEST_THROW(me->get_p_space(7),std::runtime_error);
+
+      TEST_THROW(me->get_p_names(-1),std::runtime_error);
+      TEST_THROW(me->get_p_names(7),std::runtime_error);
+
+      TEST_ASSERT(vs_0!=Teuchos::null);
+      TEST_ASSERT(vs_1!=Teuchos::null);
+      TEST_ASSERT(vs_2!=Teuchos::null);
+
+      TEST_EQUALITY(vs_0->dim(),1);
+      TEST_EQUALITY(vs_1->dim(),1);
+      TEST_EQUALITY(vs_2->dim(),2);
+
+
+      RCP<const Thyra::VectorBase<double> > param_0 = inArgs.get_p(0);
+      RCP<const Thyra::VectorBase<double> > param_1 = inArgs.get_p(index_dummy);
+      RCP<const Thyra::VectorBase<double> > param_2 = inArgs.get_p(index_dummy_pair);
+
+      TEST_ASSERT(param_0!=Teuchos::null);
+      TEST_ASSERT(param_1!=Teuchos::null);
+      TEST_ASSERT(param_2!=Teuchos::null);
+
+      RCP<const SpmdVector> spmd_0 = rcp_dynamic_cast<const SpmdVector>(param_0);
+      RCP<const SpmdVector> spmd_1 = rcp_dynamic_cast<const SpmdVector>(param_1);
+      RCP<const SpmdVector> spmd_2 = rcp_dynamic_cast<const SpmdVector>(param_2);
+
+      TEST_ASSERT(spmd_0!=Teuchos::null);
+      TEST_ASSERT(spmd_1!=Teuchos::null);
+      TEST_ASSERT(spmd_2!=Teuchos::null);
+
+      {
+        Teuchos::ArrayRCP<const double> data;
+        spmd_0->getLocalData(Teuchos::ptrFromRef(data));
+
+        TEST_EQUALITY(data.size(),1);
+        TEST_EQUALITY(data[0],1.0);
+      }
+
+      {
+        Teuchos::ArrayRCP<const double> data;
+        spmd_1->getLocalData(Teuchos::ptrFromRef(data));
+
+        TEST_EQUALITY(data.size(),1);
+        TEST_EQUALITY(data[0],3.0);
+      }
+
+      {
+        Teuchos::ArrayRCP<const double> data;
+        spmd_2->getLocalData(Teuchos::ptrFromRef(data));
+
+        TEST_EQUALITY(data.size(),2);
+        TEST_EQUALITY(data[0],4.0);
+        TEST_EQUALITY(data[1],5.0);
+      }
+    }
+  }
 
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(thyra_model_evaluator, scalar_parameters_dfdp)
