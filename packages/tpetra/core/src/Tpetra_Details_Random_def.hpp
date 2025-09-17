@@ -44,7 +44,6 @@ unsigned int Static_Random_XorShift64_Pool<ExecutionSpace>::getSeedFromRank(int 
 template <class ExecutionSpace>
 void Static_Random_XorShift64_Pool<ExecutionSpace>::
     resetPool(int mpi_rank) {
-
   if (isSet())
     delete pool_;
   else
