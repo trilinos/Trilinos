@@ -429,18 +429,8 @@ CDMesh::decompose_mesh(const InterfaceGeometry & interfaceGeometry, const int st
 
   NodeToCapturedDomainsMap nodesToCapturedDomains;
 
-  auto & LSStash = cdfemSupport.get_stashed_levelsets();
-  for(auto & LS : LSStash)
-  {
-    stk::mesh::field_copy(LS.first.field(), LS.second.field());
-  }
-
   {
     fix_node_ownership_to_assure_selected_owned_element(mesh, get_active_part());
-
-    // Not sure if this is krino's responsibility or the driving application.  If we have
-    // elemental death fields, these need to be parallel consistent on aura elements.
-    parallel_communicate_elemental_death_fields();
 
     stk::diag::TimeBlock timer__(my_timer_decompose);
 
@@ -603,20 +593,6 @@ CDMesh::set_entities_for_child_nodes_with_common_ancestry_as_existing_child_node
         newNode->set_entity(mesh, childNode);
     }
   }
-}
-
-void
-CDMesh::parallel_communicate_elemental_death_fields() const
-{
-  std::vector< const stk::mesh::FieldBase *> element_fields;
-  for (auto && field : my_cdfem_support.get_levelset_fields())
-  {
-    if (field.valid() && field.entity_rank() == stk::topology::ELEMENT_RANK)
-    {
-      element_fields.push_back(&field.field());
-    }
-  }
-  stk::mesh::communicate_field_data(stk_bulk(), element_fields);
 }
 
 bool
@@ -3414,6 +3390,14 @@ CDMesh::reset_mesh_to_original_undecomposed_state(stk::mesh::BulkData & mesh)
   append_part_changes_to_reset_entities_to_original_undecomposed_state(mesh, mesh.mesh_meta_data().side_rank(), phaseSupport, cdfemSupport.get_child_part(), cdfemSupport.get_parent_part(), auxMeta.active_part(), batchEntities, batchAddParts, batchRemoveParts);
 
   mesh.batch_change_entity_parts(batchEntities, batchAddParts, batchRemoveParts);
+
+  FieldRef cdfemSnapField = cdfemSupport.get_cdfem_snap_displacements_field();
+
+  if (cdfemSnapField.valid())
+  {
+      undo_previous_snaps_without_interpolation(mesh, cdfemSupport.get_coords_field(), cdfemSnapField);
+      stk::mesh::field_fill(0., cdfemSnapField);
+  }
 
   if (has_decomposed_mesh(mesh))
   {
