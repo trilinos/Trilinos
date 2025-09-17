@@ -44,7 +44,6 @@ unsigned int Static_Random_XorShift64_Pool<ExecutionSpace>::getSeedFromRank(int 
 template <class ExecutionSpace>
 void Static_Random_XorShift64_Pool<ExecutionSpace>::
     resetPool(int mpi_rank) {
-  using pool_type = Kokkos::Random_XorShift64_Pool<ExecutionSpace>;
 
   if (isSet())
     delete pool_;
