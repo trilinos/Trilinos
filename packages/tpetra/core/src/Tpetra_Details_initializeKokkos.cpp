@@ -21,11 +21,11 @@ namespace Details {
 
 void initializeKokkos() {
   static const int initialized = []() {
-                            TEUCHOS_TEST_FOR_EXCEPTION(Kokkos::is_finalized(),std::runtime_error,
-                                                       "Tpetra::Details::initializeKokkos: Kokkos is already finalized");
-                             if (! Kokkos::is_initialized ()) {
-                               std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
-                               int narg = static_cast<int> (args.size ()); // must be nonconst
+    TEUCHOS_TEST_FOR_EXCEPTION(Kokkos::is_finalized(), std::runtime_error,
+                               "Tpetra::Details::initializeKokkos: Kokkos is already finalized");
+    if (!Kokkos::is_initialized()) {
+      std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv();
+      int narg                      = static_cast<int>(args.size());  // must be nonconst
 
       std::vector<char*> args_c;
       std::vector<std::unique_ptr<char[]>> args_;
@@ -50,7 +50,7 @@ void initializeKokkos() {
     return 1;
   }();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(!Kokkos::is_initialized() || initialized != 1,std::runtime_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!Kokkos::is_initialized() || initialized != 1, std::runtime_error,
                              "Tpetra::Details::initializeKokkos: Initialization failed or Kokkos has already been finalized.");
 }
 
