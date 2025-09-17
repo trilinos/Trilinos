@@ -21,26 +21,24 @@
 #include <algorithm>
 #include <iterator>
 
-using Teuchos::CommandLineProcessor;
-using Tpetra::Details::padCrsArrays;
-using Tpetra::Details::insertCrsIndices;
-using Tpetra::Details::findCrsIndices;
-using Tpetra::Details::impl::make_uninitialized_view;
 using std::vector;
+using Teuchos::CommandLineProcessor;
+using Tpetra::Details::findCrsIndices;
+using Tpetra::Details::insertCrsIndices;
+using Tpetra::Details::padCrsArrays;
+using Tpetra::Details::impl::make_uninitialized_view;
 
 namespace {
 
-  TEUCHOS_STATIC_SETUP()
-  {
-    Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
-    clp.addOutputSetupOptions(true);
-  }
+TEUCHOS_STATIC_SETUP() {
+  Teuchos::CommandLineProcessor& clp = Teuchos::UnitTestRepository::getCLP();
+  clp.addOutputSetupOptions(true);
+}
 
-  //
-  // UNIT TESTS
-  //
-TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
-{
+//
+// UNIT TESTS
+//
+TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1) {
 #if 0
   using device_type = typename Tpetra::Map<>::device_type;
   using execution_space = typename device_type::execution_space;
@@ -113,11 +111,10 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_1)
     }
     TEST_ASSERT(indices_ok);
   }
-#endif // 0
+#endif  // 0
 }
 
-TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_2)
-{
+TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_2) {
 #if 0
   typedef typename Tpetra::Map<>::device_type device_type;
   using execution_space = typename device_type::execution_space;
@@ -190,27 +187,22 @@ TEUCHOS_UNIT_TEST(CrsGraph, ResizeRowPointersAndIndices_2)
   // Row 2
   TEST_ASSERT(indices(11) == 7);
   TEST_ASSERT(indices(12) == 8);
-#endif // 0
+#endif  // 0
 }
 
 template <class V1, class V2>
-bool
-compare_array_values(V1 const& arr1, V2 const& arr2, size_t const n)
-{
+bool compare_array_values(V1 const& arr1, V2 const& arr2, size_t const n) {
   bool l_success = true;
-  for (size_t i = 0; i < n; i++)
-  {
-    if (arr1[i] != arr2[i])
-    {
+  for (size_t i = 0; i < n; i++) {
+    if (arr1[i] != arr2[i]) {
       l_success = false;
-      //std::cout << "ARR1[" << i << "] = " << arr1[i] << ", expected " << arr2[i] << "\n";
+      // std::cout << "ARR1[" << i << "] = " << arr1[i] << ", expected " << arr2[i] << "\n";
     }
   }
   return l_success;
 }
 
-TEUCHOS_UNIT_TEST( TpetraUtils, insertIndices )
-{
+TEUCHOS_UNIT_TEST(TpetraUtils, insertIndices) {
   {
     vector<int> row_ptrs{0, 10};
     vector<int> cur_indices{1, 3, 5, 7, -1, -1, -1, -1, -1, -1};
@@ -255,8 +247,7 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndices )
   }
 }
 
-TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
-{
+TEUCHOS_UNIT_TEST(TpetraUtils, insertIndicesWithCallback) {
   {
     vector<int> row_ptrs{0, 7};
     vector<int> cur_indices{3, 6, 9, 12, -1, -1, -1};
@@ -267,12 +258,11 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
     vector<int> values(cur_indices.size(), 0);
     vector<int> expected_values{0, 0, 0, 0, 4, 2, 3};
     auto num_inserted =
-      insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices,
-        [&](const size_t k, const size_t start, const size_t offset){
-          values[start+offset] += in_values[k];
-        });
-    for (size_t k=0; k<expected_values.size(); k++)
-    {
+        insertCrsIndices(0, row_ptrs, cur_indices, num_assigned, new_indices,
+                         [&](const size_t k, const size_t start, const size_t offset) {
+                           values[start + offset] += in_values[k];
+                         });
+    for (size_t k = 0; k < expected_values.size(); k++) {
       std::cout << "[" << k << "] = (" << expected_values[k] << ", " << values[k] << ")\n";
     }
     TEST_EQUALITY(num_inserted, 3);
@@ -281,8 +271,7 @@ TEUCHOS_UNIT_TEST( TpetraUtils, insertIndicesWithCallback )
   }
 }
 
-TEUCHOS_UNIT_TEST( TpetraUtils, findIndices )
-{
+TEUCHOS_UNIT_TEST(TpetraUtils, findIndices) {
   {
     vector<int> row_ptrs{0, 4};
     vector<int> cur_indices{3, 6, 9, 12};
@@ -292,24 +281,22 @@ TEUCHOS_UNIT_TEST( TpetraUtils, findIndices )
     vector<int> values(cur_indices.size(), 0);
     vector<int> expected_values{2, 2, 2, 2};
     auto num_found =
-      findCrsIndices(0, row_ptrs, cur_num_entries, cur_indices, new_indices,
-        [&](const size_t k, const size_t start, const size_t offset){
-          values[start+offset] += in_values[k];
-        });
+        findCrsIndices(0, row_ptrs, cur_num_entries, cur_indices, new_indices,
+                       [&](const size_t k, const size_t start, const size_t offset) {
+                         values[start + offset] += in_values[k];
+                       });
     TEST_EQUALITY(num_found, 8);
     TEST_ASSERT(compare_array_values(values, expected_values, expected_values.size()));
   }
 }
 
-} // namespace (anonymous)
+}  // namespace
 
-int
-main (int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   // Initialize MPI (if enabled) before initializing Kokkos.  This
   // lets MPI control things like pinning processes to sockets.
-  Tpetra::ScopeGuard tpetraScope (&argc, &argv);
+  Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   const int errCode =
-    Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
+      Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
   return errCode;
 }

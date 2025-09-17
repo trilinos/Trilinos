@@ -33,8 +33,8 @@
 #endif
 
 namespace {
-  const std::string version_short{"6.40"};
-  const std::string version_date{"(2025/08/20)"};
+  const std::string version_short{"6.41"};
+  const std::string version_date{"(2025/08/25)"};
   const std::string version_string = version_short + " " + version_date;
 
   void output_copyright();
@@ -652,7 +652,7 @@ namespace SEAMS {
       fmt::print(stderr,
                  "\tDocumentation: "
                  "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#aprepro\n\n"
-                 "\t->->-> Send email to gdsjaar@sandia.gov for aprepro support.\n\n");
+                 "\t->->-> Send email to sierra-help@sandia.gov for aprepro support.\n\n");
       exit(EXIT_SUCCESS);
     }
     else {

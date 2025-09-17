@@ -1312,7 +1312,7 @@ C     number element blocks, and truth table.
  900  FORMAT(/,'WARNING: ',A,i5,' is a different size in the output',
      $     /,9x,'database than in the input database. The ',
      $     /,9x,'variables on this ',A,' will be transferred',
-     $     /,9x,'incorrectly. Contact gdsjaar@sandia.gov',
+     $     /,9x,'incorrectly. Contact sierra-help@sandia.gov',
      $     /,9x,'if you need this capability.')
       END
 

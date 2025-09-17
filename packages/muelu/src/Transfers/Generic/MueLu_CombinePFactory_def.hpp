@@ -66,6 +66,7 @@ constructIdentityProlongator(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, 
   using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
   using entries_type      = typename local_graph_type::entries_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type;
+  using local_scalar_type = typename values_type::value_type;
 
   LocalOrdinal numLocal = map->getLocalNumElements();
   row_map_type rowptr("rowptr", numLocal + 1);
@@ -78,7 +79,7 @@ constructIdentityProlongator(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, 
       KOKKOS_LAMBDA(const LocalOrdinal index) {
         rowptr(index) = index;
         colind(index) = index;
-        values(index) = Scalar(1.0);
+        values(index) = local_scalar_type{1.0};
         if (index == (numLocal - 1)) {
           rowptr(numLocal) = numLocal;
         }

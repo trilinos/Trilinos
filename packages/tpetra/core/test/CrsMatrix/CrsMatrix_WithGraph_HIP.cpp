@@ -27,13 +27,12 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // Declare a colon- and comma-free typedef, to avoid macro issues.
 typedef Tpetra::KokkosCompat::KokkosHIPWrapperNode hip_node_type;
 
-#define UNIT_TEST_GROUP_HIP( SCALAR, LO, GO ) \
-  UNIT_TEST_GROUP( SCALAR, LO, GO, hip_node_type )
+#define UNIT_TEST_GROUP_HIP(SCALAR, LO, GO) \
+  UNIT_TEST_GROUP(SCALAR, LO, GO, hip_node_type)
 
-TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP_HIP )
+TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP_HIP)
 
-} // namespace Test
-} // namespace Tpetra
+}  // namespace Test
+}  // namespace Tpetra
 
-#endif // defined(HAVE_TPETRA_HIP)
-
+#endif  // defined(HAVE_TPETRA_HIP)

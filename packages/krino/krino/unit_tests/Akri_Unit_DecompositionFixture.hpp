@@ -209,7 +209,6 @@ void setup_cdfem_support()
 {
   FieldRef coordsField = mMesh.mesh_meta_data().coordinate_field();
   cdfem_support().set_coords_field(coordsField);
-  cdfem_support().add_edge_interpolation_field(coordsField);
   cdfem_support().register_parent_node_ids_field();
 
   cdfem_support().set_prolongation_model(INTERPOLATION);

@@ -27,28 +27,25 @@ namespace Details {
 ///
 /// Kokkos::DualView<const ValueType*, DeviceType> forbids sync, at
 /// run time.  If we want to sync it, we have to cast away const.
-template<class ValueType, class DeviceType>
+template <class ValueType, class DeviceType>
 Kokkos::DualView<ValueType*, DeviceType>
-castAwayConstDualView (const Kokkos::DualView<const ValueType*, DeviceType>& input_dv)
-{
+castAwayConstDualView(const Kokkos::DualView<const ValueType*, DeviceType>& input_dv) {
   typedef Kokkos::DualView<const ValueType*, DeviceType> input_dual_view_type;
   typedef typename input_dual_view_type::t_dev::non_const_type out_dev_view_type;
   typedef typename input_dual_view_type::t_host::non_const_type out_host_view_type;
 
-  out_dev_view_type output_view_dev
-    (const_cast<ValueType*> (input_dv.view_device().data ()),
-     input_dv.view_device().extent (0));
-  out_host_view_type output_view_host
-    (const_cast<ValueType*> (input_dv.view_host().data ()),
-     input_dv.view_host().extent (0));
+  out_dev_view_type output_view_dev(const_cast<ValueType*>(input_dv.view_device().data()),
+                                    input_dv.view_device().extent(0));
+  out_host_view_type output_view_host(const_cast<ValueType*>(input_dv.view_host().data()),
+                                      input_dv.view_host().extent(0));
 
-  Kokkos::DualView<ValueType*, DeviceType> output_dv(output_view_dev,output_view_host);
-  if(input_dv.need_sync_host()) output_dv.modify_device();
-  if(input_dv.need_sync_device()) output_dv.modify_host();
+  Kokkos::DualView<ValueType*, DeviceType> output_dv(output_view_dev, output_view_host);
+  if (input_dv.need_sync_host()) output_dv.modify_device();
+  if (input_dv.need_sync_device()) output_dv.modify_host();
   return output_dv;
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_CASTAWAYCONSTDUALVIEW_HPP
+#endif  // TPETRA_DETAILS_CASTAWAYCONSTDUALVIEW_HPP

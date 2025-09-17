@@ -12,12 +12,13 @@
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Details_checkLaunchBlocking.hpp"
 #include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
-#include <cstdlib> // std::atexit
+#include <cstdlib>  // std::atexit
 #include <string>
 #include <vector>
 
 namespace Tpetra {
 namespace Details {
+
 
 void
 initializeKokkos ()

@@ -17,10 +17,9 @@
 
 namespace TpetraExamples {
 
-template<typename V>
+template <typename V>
 Kokkos::View<typename V::data_type, typename V::array_layout, typename V::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
-makeUnmanaged(const V& v)
-{
+makeUnmanaged(const V& v) {
   return v;
 }
 
@@ -28,22 +27,19 @@ makeUnmanaged(const V& v)
 // stream.  It prints on Process 0 of the given MPI communicator,
 // but ignores all output on other MPI processes.
 Teuchos::RCP<Teuchos::FancyOStream>
-getOutputStream (const Teuchos::Comm<int>& comm)
-{
+getOutputStream(const Teuchos::Comm<int>& comm) {
   using Teuchos::getFancyOStream;
 
-  const int myRank = comm.getRank ();
+  const int myRank = comm.getRank();
   if (0 == myRank) {
     // Process 0 of the given communicator prints to std::cout.
-    return getFancyOStream (Teuchos::rcpFromRef (std::cout));
-  }
-  else {
+    return getFancyOStream(Teuchos::rcpFromRef(std::cout));
+  } else {
     // A "black hole output stream" ignores all output directed to it.
-    return getFancyOStream (Teuchos::rcp (new Teuchos::oblackholestream ()));
+    return getFancyOStream(Teuchos::rcp(new Teuchos::oblackholestream()));
   }
 }
 
-} // namespace TpetraExamples
+}  // namespace TpetraExamples
 
 #endif  // TPETRAEXAMPLES_FEM_ASSEMBLY_UTILITY_HPP
-

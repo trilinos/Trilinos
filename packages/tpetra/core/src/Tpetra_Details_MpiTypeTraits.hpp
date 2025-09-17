@@ -49,56 +49,56 @@ namespace Teuchos {
 namespace Details {
 
 //! Specialization of MpiTypeTraits for Kokkos::complex<double>.
-template<>
+template <>
 class MpiTypeTraits< ::Kokkos::complex<double> > {
-private:
+ private:
 #if MPI_VERSION >= 3
   static const bool hasMpi3 = true;
 #else
   static const bool hasMpi3 = false;
-#endif // MPI_VERSION >= 3
+#endif  // MPI_VERSION >= 3
 
-public:
+ public:
   //! Whether this is a defined specialization of MpiTypeTraits (it is).
   static const bool isSpecialized = true;
 
   /// \brief Whether you must call MPI_Type_free on the return value
   ///   of getType (both versions) after use.
-  static const bool needsFree = ! hasMpi3;
+  static const bool needsFree = !hasMpi3;
 
   //! MPI_Datatype corresponding to the given Kokkos::complex<double> instance.
-  static MPI_Datatype getType (const ::Kokkos::complex<double>& z);
+  static MPI_Datatype getType(const ::Kokkos::complex<double>& z);
 
   //! MPI_Datatype corresponding to all Kokkos::complex<double> instances.
-  static MPI_Datatype getType ();
+  static MPI_Datatype getType();
 };
 
-template<>
+template <>
 class MpiTypeTraits< ::Kokkos::complex<float> > {
-private:
+ private:
 #if MPI_VERSION >= 3
   static const bool hasMpi3 = true;
 #else
   static const bool hasMpi3 = false;
-#endif // MPI_VERSION >= 3
+#endif  // MPI_VERSION >= 3
 
-public:
+ public:
   //! Whether this is a defined specialization of MpiTypeTraits (it is).
   static const bool isSpecialized = true;
 
   /// \brief Whether you must call MPI_Type_free on the return value
   ///   of getType (both versions) after use.
-  static const bool needsFree = ! hasMpi3;
+  static const bool needsFree = !hasMpi3;
 
   //! MPI_Datatype corresponding to the given Kokkos::complex<float> instance.
-  static MPI_Datatype getType (const ::Kokkos::complex<float>& z);
+  static MPI_Datatype getType(const ::Kokkos::complex<float>& z);
 
   //! MPI_Datatype corresponding to all Kokkos::complex<float> instances.
-  static MPI_Datatype getType ();
+  static MPI_Datatype getType();
 };
 
-} // namespace Details
-} // namespace Teuchos
+}  // namespace Details
+}  // namespace Teuchos
 
 namespace Tpetra {
 namespace Details {
@@ -106,8 +106,8 @@ namespace Details {
 // Import MpiTypeTraits into the Tpetra::Details namespace.
 using ::Teuchos::Details::MpiTypeTraits;
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // HAVE_TPETRACORE_MPI
-#endif // TPETRA_DETAILS_MPITYPETRAITS_HPP
+#endif  // HAVE_TPETRACORE_MPI
+#endif  // TPETRA_DETAILS_MPITYPETRAITS_HPP

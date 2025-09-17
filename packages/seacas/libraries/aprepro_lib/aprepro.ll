@@ -46,6 +46,7 @@ typedef SEAMS::Parser::token_type token_type;
  }
 
 namespace {
+  bool newline_output = false;
   bool begin_double_brace = false;
   bool end_double_brace = false;
   bool string_is_ascii(const char *line, size_t len)
@@ -873,6 +874,7 @@ integer {D}+({E})?
       hist_start = 0;
     }
 
+    newline_output = (size >= 1 && buf[size-1] == '\n');
     aprepro.outputStream.top()->write(buf, size);
     if (aprepro.ap_options.interactive && aprepro.outputStream.size() == 1) {
       // In interactive mode, output to stdout in addition to the
@@ -999,6 +1001,9 @@ integer {D}+({E})?
         yyin = nullptr;
         aprepro.ap_file_list.pop();
         yyFlexLexer::yypop_buffer_state();
+	if (echo && !newline_output) {
+	  LexerOutput("\n", 1);
+	}
 
         if (aprepro.ap_file_list.top().name == "standard input") {
           yyin = &std::cin;

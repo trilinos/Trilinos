@@ -9,10 +9,8 @@ The IOSS library source code is available on Github at
 https://github.com/sandialabs/seacas
 
 For bug reports, documentation errors, and enhancement suggestions, contact:
-- Gregory D. Sjaardema
-- WEB:   https://github.com/sandialabs/seacas
-- EMAIL: gdsjaar@sandia.gov
-- EMAIL: gsjaardema@gmail.com
+- WEB:   https://github.com/sandialabs/seacas (external/internal)
+- EMAIL: sierra-help@sandia.gov (internal)
 
 \section db_types Database Types
 

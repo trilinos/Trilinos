@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -7,6 +7,7 @@
  */
 #include "el_check_monot.h" // for check_monot
 #include "exodusII.h"       // for ex_inquire, ex_opts, etc
+#include <fmt/format.h>
 #include "fmt/ostream.h"
 #include "globals.h"     // for ELEM_COMM_MAP, etc
 #include "nem_spread.h"  // for NemSpread, etc

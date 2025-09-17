@@ -1684,19 +1684,20 @@ stk::mesh::Entity delete_node(stk::mesh::BulkData & bulk, stk::mesh::EntityId no
   return node;
 }
 
+template <typename FieldType>
 stk::mesh::Entity create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
-                                        const stk::mesh::Field<int> & field, const std::vector<int> & values)
+                                        const FieldType& field, const std::vector<int> & values)
 {
   bulk.modification_begin();
   stk::mesh::Entity node = bulk.declare_node(nodeId);
   bulk.modification_end();
 
-  auto fieldData = field.data<stk::mesh::ReadWrite>();
-  auto nodeFieldData = fieldData.entity_values(node);
-  STK_ThrowRequire(static_cast<int>(values.size()) == nodeFieldData.num_components());
+  auto fieldData = field.template data<stk::mesh::ReadWrite>();
+  auto nodeValues = fieldData.entity_values(node);
+  STK_ThrowRequire(static_cast<int>(values.size()) == nodeValues.num_components());
 
-  for (stk::mesh::ComponentIdx i : nodeFieldData.components()) {
-    nodeFieldData(i) = values[i];
+  for (stk::mesh::ComponentIdx i : nodeValues.components()) {
+    nodeValues(i) = values[i];
   }
 
   return node;
@@ -1717,16 +1718,49 @@ void create_node_with_multistate_data(stk::mesh::BulkData & bulk, stk::mesh::Ent
   nodeField2Data(0_comp) = 200 + nodeId;
 }
 
-void create_node_with_data(stk::mesh::BulkData & bulk, stk::mesh::EntityId nodeId,
-                           const stk::mesh::Field<int> & field, stk::mesh::Part & part)
+template <typename FieldType>
+void create_node_with_data(stk::mesh::BulkData& bulk, stk::mesh::EntityId nodeId, const FieldType& field,
+                           stk::mesh::Part& part)
 {
   bulk.modification_begin();
   const stk::mesh::Entity node = bulk.declare_node(nodeId, stk::mesh::PartVector{&part});
   bulk.modification_end();
 
-  auto fieldData = field.data<stk::mesh::ReadWrite>();
-  auto nodeFieldData = fieldData.entity_values(node);
-  nodeFieldData(0_comp) = nodeId;
+  auto fieldData = field.template data<stk::mesh::ReadWrite>();
+  auto nodeValues = fieldData.entity_values(node);
+  nodeValues(0_comp) = nodeId;
+}
+
+template <typename FieldType>
+stk::mesh::Entity create_node_with_data(stk::mesh::BulkData& bulk, stk::mesh::EntityId nodeId, const FieldType& field,
+                                        stk::mesh::Part& part, const std::vector<int>& values)
+{
+  bulk.modification_begin();
+  const stk::mesh::Entity node = bulk.declare_node(nodeId, stk::mesh::PartVector{&part});
+  bulk.modification_end();
+
+  auto fieldData = field.template data<stk::mesh::ReadWrite>();
+  auto nodeValues = fieldData.entity_values(node);
+  STK_ThrowRequire(static_cast<int>(values.size()) == nodeValues.num_components());
+
+  for (stk::mesh::ComponentIdx i : nodeValues.components()) {
+    nodeValues(i) = values[i];
+  }
+
+  return node;
+}
+
+template <typename FieldType>
+void set_node_data(stk::mesh::BulkData& bulk, stk::mesh::EntityId nodeId, const FieldType& field,
+                   const std::vector<int>& values)
+{
+  const stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
+
+  auto fieldData = field.template data<stk::mesh::ReadWrite>();
+  auto nodeValues = fieldData.entity_values(node);
+  for (stk::mesh::ComponentIdx component : nodeValues.components()) {
+    nodeValues(component) = values[component];
+  }
 }
 
 class CustomBulkData : public stk::mesh::BulkData
@@ -1794,7 +1828,7 @@ protected:
   std::unique_ptr<stk::mesh::FieldDataManager> m_customFieldDataManager;
 };
 
-using FieldDataType = int;
+using FieldValueType = int;
 
 class VariableCapacityFieldData : public ::ngp_testing::Test
 {
@@ -1822,40 +1856,46 @@ public:
     m_meta = &m_bulk->mesh_meta_data();
   }
 
-  int expected_bytes_allocated_host(const stk::mesh::BucketVector& buckets, int dataSize)
+  int expected_bytes_allocated_host(const stk::mesh::BucketVector& buckets, const stk::mesh::FieldBase& field)
   {
     return std::accumulate(buckets.begin(), buckets.end(), 0,
       [&](int currentValue, const stk::mesh::Bucket* bucket) {
-         return currentValue + stk::adjust_up_to_alignment_boundary(static_cast<size_t>(dataSize) * bucket->capacity(),
-                                                                    m_fieldDataManager->get_alignment_bytes());
+         const size_t dataSize = static_cast<size_t>(stk::mesh::field_bytes_per_entity(field, *bucket));
+         return currentValue + stk::adjust_up_to_alignment_boundary(dataSize * bucket->capacity(),
+                                                                    m_fieldDataManager->get_alignment_padding_size());
       });
   }
 
-  int expected_bytes_allocated_device(const stk::mesh::BucketVector& buckets, int dataSize)
+  int expected_bytes_allocated_device(const stk::mesh::BucketVector& buckets, const stk::mesh::FieldBase& field)
   {
-    return std::accumulate(buckets.begin(), buckets.end(), 0,
-      [&](int currentValue, const stk::mesh::Bucket* bucket) {
-         return currentValue + stk::adjust_up_to_alignment_boundary(static_cast<size_t>(dataSize) * bucket->capacity(),
-                                                                    stk::mesh::DeviceFieldAlignmentSize);
-      });
+    if (field.has_unified_device_storage()) {
+      return 0;
+    }
+    else {
+      return std::accumulate(buckets.begin(), buckets.end(), 0,
+        [&](int currentValue, const stk::mesh::Bucket* bucket) {
+           const size_t dataSize = static_cast<size_t>(stk::mesh::field_bytes_per_entity(field, *bucket));
+           return currentValue + stk::adjust_up_to_alignment_boundary(dataSize * bucket->capacity(),
+                                                                      stk::mesh::DeviceFieldAlignmentSize);
+        });
+      }
   }
 
   void check_expected_bytes_allocated([[maybe_unused]] const stk::mesh::BulkData & bulk,
                                       const stk::mesh::FieldBase & stkField)
   {
-    const int dataSize = sizeof(FieldDataType);
     const unsigned fieldOrdinal = stkField.mesh_meta_data_ordinal();
     const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
     const int bytesAllocatedOnHost = m_fieldDataManager->get_num_bytes_allocated_on_field(fieldOrdinal);
-    ASSERT_EQ(bytesAllocatedOnHost, expected_bytes_allocated_host(buckets, dataSize));
+    ASSERT_EQ(bytesAllocatedOnHost, expected_bytes_allocated_host(buckets, stkField));
 
 #ifdef STK_USE_DEVICE_MESH
-    if (std::is_same_v<stk::mesh::NgpField<FieldDataType>, stk::mesh::DeviceField<FieldDataType>>) {
+    if (std::is_same_v<stk::mesh::NgpField<FieldValueType>, stk::mesh::DeviceField<FieldValueType>>) {
       const stk::mesh::DeviceFieldDataManagerBase* deviceFieldDataManager =
           stk::mesh::impl::get_device_field_data_manager<stk::ngp::MemSpace>(bulk);
 
       const int bytesAllocatedOnDevice = deviceFieldDataManager->get_num_bytes_allocated_on_field(stkField);
-      ASSERT_EQ(bytesAllocatedOnDevice, expected_bytes_allocated_device(buckets, dataSize));
+      ASSERT_EQ(bytesAllocatedOnDevice, expected_bytes_allocated_device(buckets, stkField));
     }
 #endif
   }
@@ -1863,23 +1903,23 @@ public:
   void check_field_values(const stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & stkField)
   {
     const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
-    auto stkFieldDataHost = stkField.data<FieldDataType,stk::mesh::ReadOnly>();
+    auto stkFieldDataHost = stkField.data<FieldValueType,stk::mesh::ReadOnly>();
     for (const stk::mesh::Bucket * bucket : buckets) {
       auto bucketFieldValues = stkFieldDataHost.bucket_values(*bucket);
       for (stk::mesh::EntityIdx nodeIdx : bucket->entities()) {
-        const FieldDataType fieldValue = bucketFieldValues(nodeIdx,0_comp);
-        const FieldDataType expectedValue = bulk.identifier((*bucket)[nodeIdx]);
+        const FieldValueType fieldValue = bucketFieldValues(nodeIdx,0_comp);
+        const FieldValueType expectedValue = bulk.identifier((*bucket)[nodeIdx]);
         EXPECT_EQ(fieldValue, expectedValue);
       }
     }
 
     const unsigned numNodes = stk::mesh::count_entities(bulk, stk::topology::NODE_RANK,
                                                         bulk.mesh_meta_data().universal_part());
-    Kokkos::View<FieldDataType*> deviceValues("deviceValues", numNodes);
-    Kokkos::View<FieldDataType*>::host_mirror_type hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
+    Kokkos::View<FieldValueType*> deviceValues("deviceValues", numNodes);
+    Kokkos::View<FieldValueType*>::host_mirror_type hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
 
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-    auto stkFieldDataDevice = stkField.data<FieldDataType,stk::mesh::ReadOnly,stk::ngp::MemSpace>();
+    auto stkFieldDataDevice = stkField.data<FieldValueType,stk::mesh::ReadOnly,stk::ngp::MemSpace>();
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(size_t /*index*/) {
         unsigned nodeGlobalIndex = 0;
@@ -1900,34 +1940,107 @@ public:
     unsigned nodeIdx = 0;
     for (const stk::mesh::Bucket * bucket : buckets) {
       for (stk::mesh::Entity node : *bucket) {
-        const FieldDataType expectedValue = bulk.identifier(node);
+        const FieldValueType expectedValue = bulk.identifier(node);
         EXPECT_EQ(hostValuesFromDevice[nodeIdx++], expectedValue);
       }
     }
   }
 
-  void check_field_value(const stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & stkField,
-                         const stk::mesh::EntityId nodeId, const int expectedValue)
+  template <typename FieldType>
+  void check_field_values(const stk::mesh::BulkData & bulk, const FieldType& stkField,
+                          const stk::mesh::EntityId nodeId, const std::vector<int>& expectedValues)
   {
     stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
-    auto stkFieldDataHost = stkField.data<FieldDataType,stk::mesh::ReadOnly>();
-    auto nodeFieldDataHost = stkFieldDataHost.entity_values(node);
-    const FieldDataType fieldValue = nodeFieldDataHost(0_comp);
-    EXPECT_EQ(fieldValue, expectedValue);
+    auto stkFieldDataHost = stkField.template data<stk::mesh::ReadOnly>();
+    auto nodeValuesHost = stkFieldDataHost.entity_values(node);
+    for (stk::mesh::ComponentIdx component : nodeValuesHost.components()) {
+      EXPECT_EQ(nodeValuesHost(component), expectedValues[component]);
+    }
 
-    Kokkos::View<FieldDataType*> deviceValue("deviceValues", 1);
-    Kokkos::View<FieldDataType*>::host_mirror_type hostValueFromDevice = Kokkos::create_mirror_view(deviceValue);
+    Kokkos::View<FieldValueType*> deviceValues("deviceValues", expectedValues.size());
+    Kokkos::View<FieldValueType*>::host_mirror_type hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
 
-    auto stkFieldDataDevice = stkField.data<FieldDataType,stk::mesh::ReadOnly,stk::ngp::MemSpace>();
+    auto stkFieldDataDevice = stkField.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(size_t /*index*/) {
-        auto nodeFieldDataDevice = stkFieldDataDevice.entity_values(node);
-        deviceValue[0] = nodeFieldDataDevice(0_comp);
+        auto nodeValuesDevice = stkFieldDataDevice.entity_values(node);
+        for (stk::mesh::ComponentIdx component : nodeValuesDevice.components()) {
+          deviceValues(static_cast<int>(component)) = nodeValuesDevice(component);
+        }
       });
 
-    Kokkos::deep_copy(hostValueFromDevice, deviceValue);
+    Kokkos::deep_copy(hostValuesFromDevice, deviceValues);
 
-    EXPECT_EQ(hostValueFromDevice[0], expectedValue);
+    for (stk::mesh::ComponentIdx component(0); component < static_cast<int>(expectedValues.size()); ++component) {
+      EXPECT_EQ(hostValuesFromDevice[static_cast<int>(component)], expectedValues[component]);
+    }
+  }
+
+  template <typename FieldType>
+  void check_separate_storage(const stk::mesh::BulkData& bulk, const FieldType& stkField)
+  {
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::NODE_RANK, stkField);
+    unsigned numBuckets = bucketIds.size();
+
+    Kokkos::View<uintptr_t*> devicePointers("devicePointers", numBuckets);
+    Kokkos::View<uintptr_t*>::host_mirror_type hostPointersFromDevice = Kokkos::create_mirror_view(devicePointers);
+
+    auto deviceFieldData = stkField.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
+      KOKKOS_LAMBDA(size_t /*index*/) {
+        for (unsigned i = 0; i < numBuckets; ++i) {
+          auto bucketValuesDevice = deviceFieldData.bucket_values(bucketIds.device_get(i));
+          devicePointers[i] = reinterpret_cast<uintptr_t>(bucketValuesDevice.pointer());
+        }
+      }
+    );
+
+    Kokkos::deep_copy(hostPointersFromDevice, devicePointers);
+
+    auto hostFieldData = stkField.template data<stk::mesh::ReadOnly>();
+
+    for (unsigned i = 0; i < numBuckets; ++i) {
+      auto bucketValuesHost = hostFieldData.bucket_values(bucketIds[i]);
+      auto* hostPointer = bucketValuesHost.pointer();
+      auto* devicePointer = reinterpret_cast<FieldValueType*>(hostPointersFromDevice[i]);
+      EXPECT_NE(hostPointer, devicePointer) << "for Field: '" << stkField.name() << "'";
+    }
+  }
+
+  template <typename FieldType>
+  void check_unified_storage(const stk::mesh::BulkData& bulk, const FieldType& stkField)
+  {
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::NODE_RANK, stkField);
+    unsigned numBuckets = bucketIds.size();
+
+    Kokkos::View<uintptr_t*> devicePointers("devicePointers", numBuckets);
+    Kokkos::View<uintptr_t*>::host_mirror_type hostPointersFromDevice = Kokkos::create_mirror_view(devicePointers);
+
+    auto deviceFieldData = stkField.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+
+    Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
+      KOKKOS_LAMBDA(size_t /*index*/) {
+        for (unsigned i = 0; i < numBuckets; ++i) {
+          auto bucketValuesDevice = deviceFieldData.bucket_values(bucketIds.device_get(i));
+          devicePointers[i] = reinterpret_cast<uintptr_t>(bucketValuesDevice.pointer());
+        }
+      }
+    );
+
+    Kokkos::deep_copy(hostPointersFromDevice, devicePointers);
+
+    auto hostFieldData = stkField.template data<stk::mesh::ReadOnly>();
+
+    for (unsigned i = 0; i < numBuckets; ++i) {
+      auto bucketValuesHost = hostFieldData.bucket_values(bucketIds[i]);
+      auto* hostPointer = m_fieldDataManager->get_field_data_allocator().get_host_pointer_for_device(
+            stkField.get_meta_data_for_field()[bucketIds[i]].m_data);
+      auto* devicePointer = reinterpret_cast<std::byte*>(hostPointersFromDevice[i]);
+      EXPECT_EQ(hostPointer, devicePointer) << "for Field: '" << stkField.name() << "'";
+    }
   }
 
 protected:
@@ -2065,8 +2178,8 @@ TEST_F(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2_with
     check_num_buckets(*m_bulk, 1);
     check_expected_bytes_allocated(*m_bulk, field1);
     check_expected_bytes_allocated(*m_bulk, field2);
-    check_field_value(*m_bulk, field1, 1, 101);
-    check_field_value(*m_bulk, field2, 1, 201);
+    check_field_values(*m_bulk, field1, 1, {101});
+    check_field_values(*m_bulk, field2, 1, {201});
   }
 
   m_bulk->update_field_data_states();  // Default to not rotate on device; will rotate anyway during mesh mod below
@@ -2078,10 +2191,10 @@ TEST_F(VariableCapacityFieldData, createNodes_initialCapacity2_maxCapacity2_with
     check_num_buckets(*m_bulk, 1);
     check_expected_bytes_allocated(*m_bulk, field1);
     check_expected_bytes_allocated(*m_bulk, field2);
-    check_field_value(*m_bulk, field1, 1, 201);  // Flipped values due to state rotation
-    check_field_value(*m_bulk, field2, 1, 101);
-    check_field_value(*m_bulk, field1, 2, 102);  // Unflipped values written into new state layout
-    check_field_value(*m_bulk, field2, 2, 202);
+    check_field_values(*m_bulk, field1, 1, {201});  // Flipped values due to state rotation
+    check_field_values(*m_bulk, field2, 1, {101});
+    check_field_values(*m_bulk, field1, 2, {102});  // Unflipped values written into new state layout
+    check_field_values(*m_bulk, field2, 2, {202});
   }
 }
 
@@ -2103,8 +2216,8 @@ TEST_F(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2_with
     check_num_buckets(*m_bulk, 1);
     check_expected_bytes_allocated(*m_bulk, field1);
     check_expected_bytes_allocated(*m_bulk, field2);
-    check_field_value(*m_bulk, field1, 1, 101);
-    check_field_value(*m_bulk, field2, 1, 201);
+    check_field_values(*m_bulk, field1, 1, {101});
+    check_field_values(*m_bulk, field2, 1, {201});
     create_node_with_multistate_data(*m_bulk, 1, field1, field2);
   }
 
@@ -2117,10 +2230,10 @@ TEST_F(VariableCapacityFieldData, createNodes_initialCapacity1_maxCapacity2_with
     check_num_buckets(*m_bulk, 1);
     check_expected_bytes_allocated(*m_bulk, field1);
     check_expected_bytes_allocated(*m_bulk, field2);
-    check_field_value(*m_bulk, field1, 1, 201);  // Flipped values due to state rotation
-    check_field_value(*m_bulk, field2, 1, 101);
-    check_field_value(*m_bulk, field1, 2, 102);  // Unflipped values written into new state layout
-    check_field_value(*m_bulk, field2, 2, 202);
+    check_field_values(*m_bulk, field1, 1, {201});  // Flipped values due to state rotation
+    check_field_values(*m_bulk, field2, 1, {101});
+    check_field_values(*m_bulk, field1, 2, {102});  // Unflipped values written into new state layout
+    check_field_values(*m_bulk, field2, 2, {202});
   }
 }
 
@@ -2390,5 +2503,311 @@ TEST_F(LateFieldsTestFixture, get_ngp_field_multistate_no_seg_fault) {
     auto &ngp_field_n = stk::mesh::get_updated_ngp_field<double>(field_n);
     EXPECT_EQ(stk::topology::NODE_RANK, ngp_field_n.get_rank());
 }
+
+#ifdef STK_UNIFIED_MEMORY
+
+class UnifiedMemoryFieldData : public VariableCapacityFieldData {};
+
+TEST_F(UnifiedMemoryFieldData, allFieldsUnified)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 1);
+
+  auto& field1 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1_unified");
+  auto& field2 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field2_unified");
+  stk::mesh::put_field_on_mesh(field1, m_meta->universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(field2, m_meta->universal_part(), 3, nullptr);
+
+  create_node_with_data(*m_bulk, 1, field1, {1});
+  set_node_data(*m_bulk, 1, field2, {10, 20, 30});
+
+  check_num_buckets(*m_bulk, 1);
+  check_expected_bytes_allocated(*m_bulk, field1);
+  check_expected_bytes_allocated(*m_bulk, field2);
+  check_field_values(*m_bulk, field1, 1, {1});
+  check_field_values(*m_bulk, field2, 1, {10, 20, 30});
+  check_unified_storage(*m_bulk, field1);
+  check_unified_storage(*m_bulk, field2);
+}
+
+TEST_F(UnifiedMemoryFieldData, halfFieldsUnified)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 1);
+
+  auto& field1 = m_meta->declare_field<int, stk::mesh::Layout::Right>(stk::topology::NODE_RANK, "field1_separate");
+  auto& field2 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field2_unified");
+  stk::mesh::put_field_on_mesh(field1, m_meta->universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(field2, m_meta->universal_part(), 3, nullptr);
+
+  create_node_with_data(*m_bulk, 1, field1, {1});
+  set_node_data(*m_bulk, 1, field2, {10, 20, 30});
+
+  check_num_buckets(*m_bulk, 1);
+  check_expected_bytes_allocated(*m_bulk, field1);
+  check_expected_bytes_allocated(*m_bulk, field2);
+  check_field_values(*m_bulk, field1, 1, {1});
+  check_field_values(*m_bulk, field2, 1, {10, 20, 30});
+#ifdef STK_USE_DEVICE_MESH
+  check_separate_storage(*m_bulk, field1);
+#else
+  check_unified_storage(*m_bulk, field1);  // No device data, so it's automatically "unified"
+#endif
+  check_unified_storage(*m_bulk, field2);
+}
+
+TEST_F(UnifiedMemoryFieldData, noFieldsUnified)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 1);
+
+  auto& field1 = m_meta->declare_field<int, stk::mesh::Layout::Right>(stk::topology::NODE_RANK, "field1_separate");
+  auto& field2 = m_meta->declare_field<int, stk::mesh::Layout::Right>(stk::topology::NODE_RANK, "field2_separate");
+  stk::mesh::put_field_on_mesh(field1, m_meta->universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(field2, m_meta->universal_part(), 3, nullptr);
+
+  create_node_with_data(*m_bulk, 1, field1, {1});
+  set_node_data(*m_bulk, 1, field2, {10, 20, 30});
+
+  check_num_buckets(*m_bulk, 1);
+  check_expected_bytes_allocated(*m_bulk, field1);
+  check_expected_bytes_allocated(*m_bulk, field2);
+  check_field_values(*m_bulk, field1, 1, {1});
+  check_field_values(*m_bulk, field2, 1, {10, 20, 30});
+#ifdef STK_USE_DEVICE_MESH
+  check_separate_storage(*m_bulk, field1);
+  check_separate_storage(*m_bulk, field2);
+#else
+  check_unified_storage(*m_bulk, field1);  // No device data, so it's automatically "unified"
+  check_unified_storage(*m_bulk, field2);  // No device data, so it's automatically "unified"
+#endif
+}
+
+TEST_F(UnifiedMemoryFieldData, createNodes)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  auto& field1 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1_unified");
+  auto& field2 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field2_unified");
+  stk::mesh::put_field_on_mesh(field1, m_meta->universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(field2, m_meta->universal_part(), 3, nullptr);
+
+  {
+    SCOPED_TRACE("Create Node 1");
+    create_node_with_data(*m_bulk, 1, field1, {1});
+    set_node_data(*m_bulk, 1, field2, {11, 21, 31});
+
+    check_num_buckets(*m_bulk, 1);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 1, {1});
+    check_field_values(*m_bulk, field2, 1, {11, 21, 31});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+
+  {
+    SCOPED_TRACE("Create Node 2");
+    create_node_with_data(*m_bulk, 2, field1, {2});
+    set_node_data(*m_bulk, 2, field2, {12, 22, 32});
+
+    check_num_buckets(*m_bulk, 1);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 1, {1});
+    check_field_values(*m_bulk, field1, 2, {2});
+    check_field_values(*m_bulk, field2, 1, {11, 21, 31});
+    check_field_values(*m_bulk, field2, 2, {12, 22, 32});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+
+  {
+    SCOPED_TRACE("Create Node 3");
+    create_node_with_data(*m_bulk, 3, field1, {3});
+    set_node_data(*m_bulk, 3, field2, {13, 23, 33});
+
+    check_num_buckets(*m_bulk, 2);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 1, {1});
+    check_field_values(*m_bulk, field1, 2, {2});
+    check_field_values(*m_bulk, field1, 3, {3});
+    check_field_values(*m_bulk, field2, 1, {11, 21, 31});
+    check_field_values(*m_bulk, field2, 2, {12, 22, 32});
+    check_field_values(*m_bulk, field2, 3, {13, 23, 33});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+}
+
+TEST_F(UnifiedMemoryFieldData, deleteNodes)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  auto& field1 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1_unified");
+  auto& field2 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field2_unified");
+  stk::mesh::put_field_on_mesh(field1, m_meta->universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(field2, m_meta->universal_part(), 3, nullptr);
+
+  {
+    SCOPED_TRACE("Create Node 1,2,3");
+    create_node_with_data(*m_bulk, 1, field1, {1});
+    create_node_with_data(*m_bulk, 2, field1, {2});
+    create_node_with_data(*m_bulk, 3, field1, {3});
+    set_node_data(*m_bulk, 1, field2, {11, 21, 31});
+    set_node_data(*m_bulk, 2, field2, {12, 22, 32});
+    set_node_data(*m_bulk, 3, field2, {13, 23, 33});
+
+    check_num_buckets(*m_bulk, 2);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 1, {1});
+    check_field_values(*m_bulk, field1, 2, {2});
+    check_field_values(*m_bulk, field1, 3, {3});
+    check_field_values(*m_bulk, field2, 1, {11, 21, 31});
+    check_field_values(*m_bulk, field2, 2, {12, 22, 32});
+    check_field_values(*m_bulk, field2, 3, {13, 23, 33});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+
+  {
+    SCOPED_TRACE("Delete Node 1");
+    delete_node(*m_bulk, 1);
+
+    check_num_buckets(*m_bulk, 1);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 2, {2});
+    check_field_values(*m_bulk, field1, 3, {3});
+    check_field_values(*m_bulk, field2, 2, {12, 22, 32});
+    check_field_values(*m_bulk, field2, 3, {13, 23, 33});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+
+  {
+    SCOPED_TRACE("Delete Node 3");
+    delete_node(*m_bulk, 3);
+
+    check_num_buckets(*m_bulk, 1);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 2, {2});
+    check_field_values(*m_bulk, field2, 2, {12, 22, 32});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+}
+
+TEST_F(UnifiedMemoryFieldData, changeNodeParts)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  build_empty_mesh(1, 2);
+
+  stk::mesh::Part& block1 = m_meta->declare_part_with_topology("block_1", stk::topology::NODE);
+  stk::mesh::Part& block2 = m_meta->declare_part_with_topology("block_2", stk::topology::NODE);
+
+  auto& field1 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field1_unified");
+  auto& field2 = m_meta->declare_field<int>(stk::topology::NODE_RANK, "field2_unified");
+  stk::mesh::put_field_on_mesh(field1, m_meta->universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(field2, m_meta->universal_part(), 3, nullptr);
+
+  {
+    SCOPED_TRACE("Create Nodes 1, 2, 3");
+    create_node_with_data(*m_bulk, 1, field1, block1, {1});
+    create_node_with_data(*m_bulk, 2, field1, block1, {2});
+    create_node_with_data(*m_bulk, 3, field1, block1, {3});
+    set_node_data(*m_bulk, 1, field2, {11, 21, 31});
+    set_node_data(*m_bulk, 2, field2, {12, 22, 32});
+    set_node_data(*m_bulk, 3, field2, {13, 23, 33});
+
+    check_num_buckets(*m_bulk, 2);
+    check_bucket_sizes(*m_bulk, {2, 1});
+    check_bucket_capacities(*m_bulk, {2, 1});
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {1, 2}}, {{"block_1"}, {3}}}, bucketRank);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 1, {1});
+    check_field_values(*m_bulk, field1, 2, {2});
+    check_field_values(*m_bulk, field1, 3, {3});
+    check_field_values(*m_bulk, field2, 1, {11, 21, 31});
+    check_field_values(*m_bulk, field2, 2, {12, 22, 32});
+    check_field_values(*m_bulk, field2, 3, {13, 23, 33});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+
+  {
+    SCOPED_TRACE("Move Node 1 from block_1 to block_2");
+    change_node_parts(*m_bulk, 1, block2, block1);
+
+    check_num_buckets(*m_bulk, 2);
+    check_bucket_sizes(*m_bulk, {2, 1});
+    check_bucket_capacities(*m_bulk, {2, 1});
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {2, 3}}, {{"block_2"}, {1}}}, bucketRank);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 1, {1});
+    check_field_values(*m_bulk, field1, 2, {2});
+    check_field_values(*m_bulk, field1, 3, {3});
+    check_field_values(*m_bulk, field2, 1, {11, 21, 31});
+    check_field_values(*m_bulk, field2, 2, {12, 22, 32});
+    check_field_values(*m_bulk, field2, 3, {13, 23, 33});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+
+  {
+    SCOPED_TRACE("Move Node 2 from block_1 to block_2");
+    change_node_parts(*m_bulk, 2, block2, block1);
+
+    check_num_buckets(*m_bulk, 2);
+    check_bucket_sizes(*m_bulk, {1, 2});
+    check_bucket_capacities(*m_bulk, {2, 2});
+    check_bucket_layout(*m_bulk, {{{"block_1"}, {3}}, {{"block_2"}, {1, 2}}}, bucketRank);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 1, {1});
+    check_field_values(*m_bulk, field1, 2, {2});
+    check_field_values(*m_bulk, field1, 3, {3});
+    check_field_values(*m_bulk, field2, 1, {11, 21, 31});
+    check_field_values(*m_bulk, field2, 2, {12, 22, 32});
+    check_field_values(*m_bulk, field2, 3, {13, 23, 33});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+
+  {
+    SCOPED_TRACE("Move Node 3 from block_1 to block_2");
+    change_node_parts(*m_bulk, 3, block2, block1);
+
+    check_num_buckets(*m_bulk, 2);
+    check_bucket_sizes(*m_bulk, {2, 1});
+    check_bucket_capacities(*m_bulk, {2, 1});
+    check_bucket_layout(*m_bulk, {{{"block_2"}, {1, 2}}, {{"block_2"}, {3}}}, bucketRank);
+    check_expected_bytes_allocated(*m_bulk, field1);
+    check_expected_bytes_allocated(*m_bulk, field2);
+    check_field_values(*m_bulk, field1, 1, {1});
+    check_field_values(*m_bulk, field1, 2, {2});
+    check_field_values(*m_bulk, field1, 3, {3});
+    check_field_values(*m_bulk, field2, 1, {11, 21, 31});
+    check_field_values(*m_bulk, field2, 2, {12, 22, 32});
+    check_field_values(*m_bulk, field2, 3, {13, 23, 33});
+    check_unified_storage(*m_bulk, field1);
+    check_unified_storage(*m_bulk, field2);
+  }
+}
+
+#endif
 
 }

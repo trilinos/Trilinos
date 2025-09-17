@@ -53,7 +53,6 @@ ELSE()
   endif()
 
   target_link_libraries(stk_util_util PUBLIC Kokkos::kokkos)
-  target_compile_definitions(stk_util_util PUBLIC FORTRAN_ONE_UNDERSCORE)
 ENDIF()
 
 target_include_directories(stk_util_util PUBLIC

@@ -261,19 +261,20 @@ TEST_F(FieldDataSynchronization, overwriteAllOnHost_overwriteAllOnDevice_overwri
   }
   {
     auto deviceFieldData = m_field->data<stk::mesh::OverwriteAll, stk::ngp::MemSpace>();
-#ifdef STK_USE_DEVICE_MESH
-    check_field_values_on_device(deviceFieldData, 0);  // Host values not synced
+#if defined(STK_USE_DEVICE_MESH) && !defined(STK_UNIFIED_MEMORY)
+    check_field_values_on_device(deviceFieldData, 0);  // Host values not synced to device
 #else
-    check_field_values_on_device(deviceFieldData, 1);
+    check_field_values_on_device(deviceFieldData, 1);  // Host values already implicitly on device
 #endif
+
     set_field_values_on_device(deviceFieldData, 2);
   }
   {
     auto hostFieldData = m_field->data<stk::mesh::OverwriteAll, stk::ngp::HostMemSpace>();
-#ifdef STK_USE_DEVICE_MESH
-    check_field_values_on_host(hostFieldData, 1);  // Device values not synced
+#if defined(STK_USE_DEVICE_MESH) && !defined(STK_UNIFIED_MEMORY)
+    check_field_values_on_host(hostFieldData, 1);  // Device values not synced to host
 #else
-    check_field_values_on_host(hostFieldData, 2);
+    check_field_values_on_host(hostFieldData, 2);  // Host values already implicitly on device
 #endif
     set_field_values_on_host(hostFieldData, 3);
   }
@@ -556,10 +557,10 @@ TEST_F(FieldDataSynchronization, persistentHostCopy_triggerSynchronizeManually)
 
   {
     auto deviceFieldData = m_field->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-#ifdef STK_USE_DEVICE_MESH
+#if defined(STK_USE_DEVICE_MESH) && !defined(STK_UNIFIED_MEMORY)
     check_field_values_on_device(deviceFieldData, 0);  // No sync to device; initial values
 #else
-    check_field_values_on_device(deviceFieldData, 1);
+    check_field_values_on_device(deviceFieldData, 1);  // Value implicitly synced to device
 #endif
   }
 
@@ -601,10 +602,10 @@ TEST_F(FieldDataSynchronization, persistentDeviceCopy_triggerSynchronizeManually
   }
 
   {
-#ifdef STK_USE_DEVICE_MESH
+#if defined(STK_USE_DEVICE_MESH) && !defined(STK_UNIFIED_MEMORY)
     check_field_values_on_device(deviceKernelContainer[0].m_fieldData, 0);  // No sync to device; initial values
 #else
-    check_field_values_on_device(deviceKernelContainer[0].m_fieldData, 1);
+    check_field_values_on_device(deviceKernelContainer[0].m_fieldData, 1);  // Value implicitly synced to device
 #endif
   }
 

@@ -181,7 +181,7 @@ C ... Check that file contains at least that many change sets...
      *    ' explore with "-nomap node|element|all"',//,
      *    1x,'      To enable the maps and use global ids, restart',
      *    ' explore with "-map node|element|all"',//,
-     *    1x,'      Notify gdsjaar@sandia.gov if bugs found')
+     *    1x,'      Notify sierra-help@sandia.gov if bugs found')
 
         if (mapel .and. mapnd) then
           WRITE (*, 10010) 'Nodes and Elements using Global Ids'

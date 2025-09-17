@@ -5,6 +5,7 @@
 // See packages/seacas/LICENSE for details
 #include <algorithm>
 #include <exception>
+#include <fmt/format.h>
 #include <fmt/chrono.h>
 #include <fmt/ostream.h>
 #include <iomanip>
@@ -1469,8 +1470,9 @@ namespace {
       return;
     }
 
-    size_t max_id        = global_element_map[global->elementCount - 1].first;
-    bool   is_contiguous = max_id == global_element_map.size();
+    size_t max_id =
+        global->elementCount > 0 ? global_element_map[global->elementCount - 1].first : 0;
+    bool is_contiguous = max_id == global_element_map.size();
     // fmt::print("Element id map {}.\n", (is_contiguous ? "is" : "is not"));
 
     // The global_element_map may or may not be globally sorted; however, each
@@ -1599,7 +1601,7 @@ namespace {
     // the nodes back to their original location. Since the nodes are
     // sorted and there are no duplicates, we just need to see if the id
     // at global_node_map.size() == global_node_map.size();
-    INT  max_id = global_node_map[global->nodeCount - 1].id;
+    INT  max_id = global->nodeCount > 0 ? global_node_map[global->nodeCount - 1].id : 0;
     bool is_contiguous =
         static_cast<int64_t>(max_id) == static_cast<int64_t>(global_node_map.size());
     fmt::print("Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));

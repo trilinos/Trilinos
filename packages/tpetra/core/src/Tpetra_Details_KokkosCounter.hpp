@@ -77,7 +77,7 @@ size_t get_count_region_contains(const std::string &substr);
 /// \brief Print all observed region labels, separated by newline
 void dump_regions(std::ostream &os);
 void dump_regions(Teuchos::FancyOStream &os);
-} // namespace KokkosRegionCounter
+}  // namespace KokkosRegionCounter
 
 // clang-format off
 

@@ -758,9 +758,9 @@ protected:
 
   // clang-format on
   using dist_object_type::
-      copyAndPermute; ///< DistObject copyAndPermute has multiple overloads --
-                      ///< use copyAndPermutes for anything we don't override
-                      // clang-format off
+      copyAndPermute;  ///< DistObject copyAndPermute has multiple overloads --
+                       ///< use copyAndPermutes for anything we don't override
+                       // clang-format off
 
   virtual void
   copyAndPermute
@@ -773,11 +773,11 @@ protected:
    const CombineMode CM) override;
 
   // clang-format on
-  using dist_object_type::packAndPrepare; ///< DistObject overloads
-                                          ///< packAndPrepare. Explicitly use
-                                          ///< DistObject's packAndPrepare for
-                                          ///< anything we don't override
-                                          // clang-format off
+  using dist_object_type::packAndPrepare;  ///< DistObject overloads
+                                           ///< packAndPrepare. Explicitly use
+                                           ///< DistObject's packAndPrepare for
+                                           ///< anything we don't override
+                                           // clang-format off
 
   virtual void
   packAndPrepare
@@ -791,11 +791,11 @@ protected:
    size_t& constantNumPackets) override;
 
   // clang-format on
-  using dist_object_type::unpackAndCombine; ///< DistObject has overloaded
-                                            ///< unpackAndCombine, use the
-                                            ///< DistObject's implementation for
-                                            ///< anything we don't override.
-                                            // clang-format off
+  using dist_object_type::unpackAndCombine;  ///< DistObject has overloaded
+                                             ///< unpackAndCombine, use the
+                                             ///< DistObject's implementation for
+                                             ///< anything we don't override.
+                                             // clang-format off
 
   virtual void
   unpackAndCombine

@@ -30,15 +30,15 @@ namespace Ioss {
     /** \brief The basic data type held in the field.
      */
     enum BasicType {
-      INVALID = -1,
-      REAL    = 1,
-      DOUBLE  = 1,
-      INTEGER = 4,
-      INT32   = 4,
-      INT64   = 8,
-      COMPLEX,
-      STRING,
-      CHARACTER
+      INVALID   = -1,
+      REAL      = 1,
+      DOUBLE    = 1,
+      INTEGER   = 4,
+      INT32     = 4,
+      INT64     = 8,
+      COMPLEX   = 9,
+      STRING    = 10,
+      CHARACTER = 11
     };
 
     enum class InOut { INPUT, OUTPUT };

@@ -13,7 +13,6 @@
 #include "cgns/Iocgns_Utils.h"
 #include <cassert>
 #include <cstdlib>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <stdio.h>
 #include <string>
