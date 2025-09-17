@@ -109,7 +109,6 @@ namespace Intrepid2 {
       auto tagToOrdinal = basis->getAllDofOrdinal();
       
       const ordinal_type numEdges = cellTopo.getSubcellCount(1);
-      const ordinal_type numFaces = cellTopo.getSubcellCount(2);
       
       if (numEdges > 0)
       {
