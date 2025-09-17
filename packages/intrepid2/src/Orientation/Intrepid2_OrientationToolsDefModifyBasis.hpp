@@ -240,6 +240,138 @@ namespace Intrepid2 {
     }
   };
 
+  template<typename OrtViewType,
+             typename OutputViewType,
+             typename InputViewType,
+             typename OperatorViewType>
+    struct F_modifyBasisByOrientationOperator {
+      OrtViewType orts;
+      OutputViewType output;
+      InputViewType input;
+
+      const OperatorViewType edgeOperatorData, faceOperatorData;
+      const ordinal_type numEdges, numFaces, numPoints, dimBasis;
+      const bool leftMultiply;
+      // for simple left-multiplied basis value modification, numPoints is the dimension after the field dimension
+      // for matrix value modification (C,F1,F2), numPoints is F2 when left multiplied, and F1 when right multiplied
+
+      F_modifyBasisByOrientationOperator(OrtViewType orts_,
+                                         OutputViewType output_,
+                                         InputViewType input_,
+                                         const OperatorViewType edgeOperatorData_,
+                                         const OperatorViewType faceOperatorData_,
+                                         const ordinal_type numEdges_,
+                                         const ordinal_type numFaces_,
+                                         const ordinal_type numPoints_,
+                                         const ordinal_type dimBasis_,
+                                         const bool leftMultiply_ = true)
+      : orts(orts_),
+        output(output_),
+        input(input_),
+        edgeOperatorData(edgeOperatorData_),
+        faceOperatorData(faceOperatorData_),
+        numEdges(numEdges_),
+        numFaces(numFaces_),
+        numPoints(numPoints_),
+        dimBasis(dimBasis_),
+        leftMultiply(leftMultiply_)
+      {}
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cell) const {
+        using input_value_type =  typename InputViewType::non_const_value_type;
+
+        auto out = Kokkos::subview(output, cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+        auto in  = (input.rank() == output.rank()) ?
+                   Kokkos::subview(input,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL())
+                 : Kokkos::subview(input,        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+
+        // edge transformation
+        if (numEdges > 0)
+        {
+          ordinal_type ortEdges[12];
+          orts(cell).getEdgeOrientation(ortEdges, numEdges);
+
+          // apply operators on each edge
+          for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId)
+          {
+            auto & edgeOp = edgeOperatorData(edgeId, ortEdges[edgeId]);
+            auto & rowIndices = edgeOp.rowIndices;
+            auto & rowOffsets = edgeOp.offsetsForRowOrdinal;
+            auto & colIndices = edgeOp.packedColumnIndices;
+            auto & weights    = edgeOp.packedWeights;
+            
+            ordinal_type numRowIndices = rowIndices.extent_int(0);
+            for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
+            {
+              const ordinal_type & i = rowIndices[rowOrdinal];
+              const ordinal_type & thisRowOffset = rowOffsets(rowOrdinal);
+              const ordinal_type & nextRowOffset = rowOffsets(rowOrdinal+1);
+              
+              for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
+              {
+                for (int d=0; d<dimBasis; d++)
+                {
+                  input_value_type temp = 0.0;
+                  for (ordinal_type rowOffset=thisRowOffset; rowOffset<nextRowOffset; rowOffset++)
+                  {
+                    const ordinal_type & j = colIndices(rowOffset);
+                    const auto & mat_ij = weights(rowOffset);
+                    
+                    auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
+                    temp += mat_ij * input_;
+                  }
+                  auto & output_ = leftMultiply ? out.access(i, pointOrdinal, d) : out.access(pointOrdinal, i, d);
+                }
+              }
+            }
+          }
+        }
+        
+        // face transformation
+        if (numFaces > 0)
+        {
+          ordinal_type ortFaces[12];
+          orts(cell).getFaceOrientation(ortFaces, numFaces);
+
+          // apply operators on each face
+          for (ordinal_type faceId=0;faceId<numFaces;++faceId)
+          {
+            auto & faceOp = faceOperatorData(faceId, ortFaces[faceId]);
+            auto & rowIndices = faceOp.rowIndices;
+            auto & rowOffsets = faceOp.offsetsForRowOrdinal;
+            auto & colIndices = faceOp.packedColumnIndices;
+            auto & weights    = faceOp.packedWeights;
+            
+            ordinal_type numRowIndices = rowIndices.extent_int(0);
+            for (ordinal_type rowOrdinal=0; rowOrdinal<numRowIndices; rowOrdinal++)
+            {
+              const ordinal_type & i = rowIndices[rowOrdinal];
+              const ordinal_type & thisRowOffset = rowOffsets(rowOrdinal);
+              const ordinal_type & nextRowOffset = rowOffsets(rowOrdinal+1);
+              
+              for (ordinal_type pointOrdinal=0;pointOrdinal<numPoints;pointOrdinal++)
+              {
+                for (int d=0; d<dimBasis; d++)
+                {
+                  input_value_type temp = 0.0;
+                  for (ordinal_type rowOffset=thisRowOffset; rowOffset<nextRowOffset; rowOffset++)
+                  {
+                    const ordinal_type & j = colIndices(rowOffset);
+                    const auto & mat_ij = weights(rowOffset);
+                    
+                    auto & input_ = leftMultiply ? in.access(j, pointOrdinal, d) : in.access(pointOrdinal, j, d);
+                    temp += mat_ij * input_;
+                  }
+                  auto & output_ = leftMultiply ? out.access(i, pointOrdinal, d) : out.access(pointOrdinal, i, d);
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+
   template<typename DT>
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties,
@@ -296,12 +428,13 @@ namespace Intrepid2 {
         numPoints = output.extent(2),
         dimBasis  = output.extent(3); //returns 1 when output.rank() < 4;
 
-      const CoeffMatrixDataViewType matData = createCoeffMatrix(basis);
+//      const CoeffMatrixDataViewType matData = createCoeffMatrix(basis);
+      
+      const auto op_tuple = createOperators(basis);
 
       ordinal_type numVerts(0), numEdges(0), numFaces(0);
 
       if (basis->requireOrientation()) {
-        numVerts = cellTopo.getVertexCount()*ordinal_type(basis->getDofCount(0, 0) > 0);
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0);
         numFaces = cellTopo.getFaceCount()*ordinal_type(basis->getDofCount(2, 0) > 0);
       }
@@ -309,19 +442,16 @@ namespace Intrepid2 {
       bool leftMultiply = true;
 
       const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
-      typedef F_modifyBasisByOrientation
+      using FunctorType = F_modifyBasisByOrientationOperator
         <decltype(orts),
          decltype(output),decltype(input),
-         decltype(ordinalToTag),decltype(tagToOrdinal),
-         decltype(matData)> FunctorType;
+         decltype(std::get<0>(op_tuple))>;
       Kokkos::parallel_for
         (policy,
          FunctorType(orts,
                      output, input,
-                     ordinalToTag, tagToOrdinal,
-                     matData,
-                     cellDim, numVerts, numEdges, numFaces,
-                     numPoints, dimBasis, leftMultiply, transpose));
+                     std::get<0>(op_tuple), std::get<1>(op_tuple), numEdges, numFaces,
+                     numPoints, dimBasis, leftMultiply));
     }
   }
 
