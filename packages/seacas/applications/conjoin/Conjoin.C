@@ -952,12 +952,11 @@ namespace {
     copy_string(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH + 1); // Code
     copy_string(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH + 1); // Version
 
-    std::time_t date_time = std::time(nullptr);
-
-    auto date = fmt::format("{:%Y/%m/%d}", *std::localtime(&date_time));
+    auto now = std::chrono::system_clock::now();
+    auto date = fmt::format("{:%Y/%m/%d}", now);
     copy_string(qaRecord[num_qa_records].qa_record[0][2], date.c_str(), MAX_STR_LENGTH + 1);
 
-    auto time = fmt::format("{:%T}", *std::localtime(&date_time));
+    auto time = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
     copy_string(qaRecord[num_qa_records].qa_record[0][3], time.c_str(), MAX_STR_LENGTH + 1);
 
     error += ex_put_qa(id_out, num_qa_records + 1, qaRecord[0].qa_record);
