@@ -23,6 +23,7 @@
 
 #include "Ifpack2_UnitTestBlockCrsUtil.hpp"
 #include "Ifpack2_UnitTestBlockTriDiContainerUtil.hpp"
+#include "Ifpack2_ETIHelperMacros.h"
 
 struct Input {
   Teuchos::RCP<const Teuchos::Comm<int> > comm;
@@ -136,6 +137,10 @@ struct Input {
     jacobi           = false;
   }
 };
+
+static Teuchos::RCP<const Teuchos::Comm<int> > make_comm() {
+  return Tpetra::getDefaultComm();
+}
 
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 // Configure with Ifpack2_ENABLE_BlockTriDiContainer_Timers:BOOL=ON to get timer
@@ -267,7 +272,7 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
                 for (const bool explicitConversion : {false, true}) {
                   // Is this test case block Jacobi (in one of the 3 modes)?
                   bool jacobiOn = jacobi != tif_utest::JACOBI_OFF;
-                  // Nonuniform lines don't make sense with block Jacobi
+                  // Doesn't make sense to test nonuniform lines with block Jacobi
                   if (jacobiOn && nonuniform_lines) continue;
                   if (!pointwise && explicitConversion) continue;
                   for (const int nvec : {1, 3}) {
@@ -311,24 +316,31 @@ static LO run_teuchos_tests(const Input& in, Teuchos::FancyOStream& out, bool& s
   }
   return nerr;
 }
-#endif  // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockTriDi, Unit, Scalar, LO, GO) {
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-  Input in(Tpetra::getDefaultComm());
-  run_teuchos_tests<Scalar, LO, GO>(in, out, success);
-#endif  // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-}
+#define RUN_UNIT_TESTS(SC, LO, GO)                                                                                \
+  {                                                                                                               \
+    bool success = true;                                                                                          \
+    if (comm->getRank() == 0)                                                                                     \
+      std::cout << "** Starting BTDC tests for types: " << #SC << "/" << #LO << "/" << #GO << " **" << std::endl; \
+    (void)run_teuchos_tests<SC, LO, GO>(in, out, success);                                                        \
+    if (!success) all_success = false;                                                                            \
+  }
 
-#define UNIT_TEST_GROUP_SC_LO_GO(SC, LO, GO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Ifpack2BlockTriDi, Unit, SC, LO, GO)
-#include "Ifpack2_ETIHelperMacros.h"
 IFPACK2_ETI_MANGLING_TYPEDEFS()
-IFPACK2_INSTANTIATE_SLG(UNIT_TEST_GROUP_SC_LO_GO)
 
-static Teuchos::RCP<const Teuchos::Comm<int> > make_comm() {
-  return Tpetra::getDefaultComm();
+// Call run_teuchos_tests for every instantiated Scalar/LO/GO combination.
+// Return true only if all of them succeed in all cases.
+bool run_unit_tests(const Input& in) {
+  auto comm        = make_comm();
+  bool all_success = true;
+  Teuchos::oblackholestream blackHole;
+  // Only print out extra information (on all ranks) if --verbose was passed
+  std::ostream& out_os = in.verbose ? std::cout : blackHole;
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(out_os));
+  IFPACK2_INSTANTIATE_SLG(RUN_UNIT_TESTS)
+  return all_success;
 }
+#endif  // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
 
 int main(int argc, char** argv) {
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
@@ -356,10 +368,16 @@ int main(int argc, char** argv) {
         const bool detail = false;
         Kokkos::print_configuration(std::cout, detail);
       }
-      if (in->teuchos_test_btds || in->teuchos_test_jacobi) {
-        Teuchos::UnitTestRepository::runUnitTestsFromMain(1, argv);
-      }
 #ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+      if (in->teuchos_test_btds || in->teuchos_test_jacobi) {
+        bool success = run_unit_tests(*in);
+        if (comm->getRank() == 0) {
+          if (success)
+            std::cout << "End Result: TEST PASSED" << std::endl;
+          else
+            std::cout << "End Result: TEST FAILED" << std::endl;
+        }
+      }
       if (in->repeat) {
         run_performance_test<double>(*in);
       }
