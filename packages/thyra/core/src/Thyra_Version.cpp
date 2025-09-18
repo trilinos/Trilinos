@@ -10,7 +10,6 @@
 #include "Thyra_Version.hpp"
 #include "Trilinos_version.h"
 
-std::string Thyra::Thyra_Version()
-{ 
-  return("Thyra in Trilinos " TRILINOS_VERSION_STRING); 
+std::string Thyra::Thyra_Version() {
+  return ("Thyra in Trilinos " TRILINOS_VERSION_STRING);
 }

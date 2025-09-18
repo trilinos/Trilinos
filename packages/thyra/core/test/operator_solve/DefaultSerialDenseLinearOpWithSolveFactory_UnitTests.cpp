@@ -22,55 +22,46 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Thyra_UnitTestHelpers.hpp"
 
-
 namespace Thyra {
-
 
 //
 // Helper code and declarations
 //
 
-
 using Teuchos::as;
-using Teuchos::null;
 using Teuchos::inOutArg;
-
+using Teuchos::null;
 
 //
 // Unit Tests
 //
 
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSerialDenseLinearOpWithSolveFactory,
-  LinearOpWithSolveFactoryExamples, Scalar )
-{
-
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DefaultSerialDenseLinearOpWithSolveFactory,
+                                  LinearOpWithSolveFactoryExamples, Scalar) {
   const Ordinal dim = 4;
 
   const RCP<const VectorSpaceBase<Scalar> > vs =
-    defaultSpmdVectorSpace<Scalar>(dim);
+      defaultSpmdVectorSpace<Scalar>(dim);
 
   const RCP<const MultiVectorBase<Scalar> > A =
-    createNonsingularMultiVector(vs);
+      createNonsingularMultiVector(vs);
 
   const RCP<const LinearOpWithSolveFactoryBase<Scalar> > lowsFactory =
-    defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
+      defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
 
   nonExternallyPreconditionedLinearSolveUseCases<Scalar>(*A, *lowsFactory,
-    true, out);
+                                                         true, out);
 
   // Just get it to compile!
   bool runPrecTest = false;
   if (runPrecTest) {
     const Ptr<const PreconditionerFactoryBase<Scalar> > pfb_ptr;
     externallyPreconditionedLinearSolveUseCases<Scalar>(
-      *A, *lowsFactory, *pfb_ptr, false, true, out);
+        *A, *lowsFactory, *pfb_ptr, false, true, out);
   }
-
 }
 
-THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSerialDenseLinearOpWithSolveFactory,
-  LinearOpWithSolveFactoryExamples )
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(DefaultSerialDenseLinearOpWithSolveFactory,
+                                                LinearOpWithSolveFactoryExamples)
 
-
-} // namespace Thyra
+}  // namespace Thyra

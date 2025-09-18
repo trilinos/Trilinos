@@ -10,11 +10,9 @@
 #ifndef SIMPLE_2D_TPETRA_MODEL_EVALUATOR_DECL_HPP
 #define SIMPLE_2D_TPETRA_MODEL_EVALUATOR_DECL_HPP
 
-
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
-
 
 /** \brief Simple 2d simulation only ModelEvaluator for f(x) = 0 using Tpetra
  * objects.
@@ -32,12 +30,10 @@
  * <tt>Thyra::TpetraLinearOp</tt> object and all of the other objects are
  * Thyra wrappers for Tpetra objects.
  */
-template<class Scalar>
+template <class Scalar>
 class Simple2DTpetraModelEvaluator
-  : public Thyra::StateFuncModelEvaluatorBase<Scalar>
-{
-public:
-
+  : public Thyra::StateFuncModelEvaluatorBase<Scalar> {
+ public:
   /** \name Constructors/Initializers/Accessors */
   //@{
 
@@ -71,8 +67,7 @@ public:
 
   //@}
 
-private:
-
+ private:
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
@@ -80,14 +75,12 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 
-private: // data members
-
+ private:  // data members
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
@@ -97,20 +90,16 @@ private: // data members
   Teuchos::RCP<Tpetra::CrsGraph<> > W_op_graph_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
-
 };
-
 
 /** \brief Non-member constructor.
  *
  * \relates Simple2DTpetraModelEvaluator
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<Simple2DTpetraModelEvaluator<Scalar> >
-simple2DTpetraModelEvaluator()
-{
+simple2DTpetraModelEvaluator() {
   return Teuchos::rcp(new Simple2DTpetraModelEvaluator<Scalar>);
 }
 
-
-#endif // SIMPLE_2D_TPETRA_MODEL_EVALUATOR_DECL_HPP
+#endif  // SIMPLE_2D_TPETRA_MODEL_EVALUATOR_DECL_HPP

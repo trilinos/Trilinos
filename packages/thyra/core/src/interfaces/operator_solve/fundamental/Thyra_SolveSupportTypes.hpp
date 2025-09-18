@@ -15,9 +15,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_Describable.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Type of solve measure norm.
  *
@@ -38,15 +36,12 @@ enum ESolveMeasureNormType {
   SOLVE_MEASURE_NORM_RHS
 };
 
-
 /** \brief .
  *
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
-inline
-const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
-{
-  switch(solveMeasureNormType) {
+inline const std::string toString(const ESolveMeasureNormType solveMeasureNormType) {
+  switch (solveMeasureNormType) {
     case SOLVE_MEASURE_ONE:
       return "SOLVE_MEASURE_ONE";
     case SOLVE_MEASURE_NORM_RESIDUAL:
@@ -63,7 +58,6 @@ const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
   TEUCHOS_UNREACHABLE_RETURN("");
 }
 
-
 /** \brief Solve tolerance type.
  *
  * This represents the solve tolerance measure of the form:
@@ -79,56 +73,49 @@ const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
  */
 struct SolveMeasureType {
   /** \brief . */
-  ESolveMeasureNormType  numerator;
+  ESolveMeasureNormType numerator;
   /** \brief . */
-  ESolveMeasureNormType  denominator;
+  ESolveMeasureNormType denominator;
   /** \brief . */
   SolveMeasureType()
-    :numerator(SOLVE_MEASURE_ONE),denominator(SOLVE_MEASURE_ONE)
-    {}
+    : numerator(SOLVE_MEASURE_ONE)
+    , denominator(SOLVE_MEASURE_ONE) {}
   /** \brief . */
   SolveMeasureType(ESolveMeasureNormType _numerator, ESolveMeasureNormType _denominator)
-    :numerator(_numerator),denominator(_denominator)
-    {}
+    : numerator(_numerator)
+    , denominator(_denominator) {}
   /** \brief . */
-  void set(ESolveMeasureNormType _numerator, ESolveMeasureNormType _denominator)
-    { numerator = _numerator; denominator = _denominator; }
+  void set(ESolveMeasureNormType _numerator, ESolveMeasureNormType _denominator) {
+    numerator   = _numerator;
+    denominator = _denominator;
+  }
   /** \brief Return if this is a default solve measure (default
    * constructed).
    */
-  bool useDefault() const
-    { return ( numerator==SOLVE_MEASURE_ONE && denominator==SOLVE_MEASURE_ONE ); }
+  bool useDefault() const { return (numerator == SOLVE_MEASURE_ONE && denominator == SOLVE_MEASURE_ONE); }
   /** \brief Return if (numerator,denominataor) matches this. */
   bool operator()(ESolveMeasureNormType numerator_in,
-    ESolveMeasureNormType denominator_in
-    ) const
-    { return ( numerator==numerator_in && denominator==denominator_in ); }
+                  ESolveMeasureNormType denominator_in) const { return (numerator == numerator_in && denominator == denominator_in); }
   /** \breif Return if single measure matches numerator or denominator. */
-  bool contains(ESolveMeasureNormType measure) const
-    { return ( numerator==measure || denominator==measure ); }
+  bool contains(ESolveMeasureNormType measure) const { return (numerator == measure || denominator == measure); }
 };
-
 
 /** \brief Output operator.
  *
  * \relates SolveMeasureType
  */
-inline
-std::ostream& operator<<(std::ostream &out, const SolveMeasureType &solveMeasureType)
-{
-  out << "("<<toString(solveMeasureType.numerator)
-      << "/"<<toString(solveMeasureType.denominator)<<")";
+inline std::ostream &operator<<(std::ostream &out, const SolveMeasureType &solveMeasureType) {
+  out << "(" << toString(solveMeasureType.numerator)
+      << "/" << toString(solveMeasureType.denominator) << ")";
   return out;
 }
-
 
 /** \brief A general reduction functional to be used in specialized solve
  * convergence criteria.
  */
-template<class Scalar>
+template <class Scalar>
 class ReductionFunctional : public Teuchos::Describable {
-public:
-
+ public:
   /** \name Public non-virtual functions. */
   //@{
 
@@ -141,40 +128,36 @@ public:
    * </ul>
    */
   typename ScalarTraits<Scalar>::magnitudeType
-  reduce( const VectorBase<Scalar> &v ) const
-    {
+  reduce(const VectorBase<Scalar> &v) const {
 #ifdef THYRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION(!isCompatible(v), Exceptions::IncompatibleVectorSpaces,
-        "Error, the vector v="<<v.description()<<" is not compatiable with"
-        " *this="<<this->description()<<"!");
+    TEUCHOS_TEST_FOR_EXCEPTION(!isCompatible(v), Exceptions::IncompatibleVectorSpaces,
+                               "Error, the vector v=" << v.description() << " is not compatiable with"
+                                                                            " *this="
+                                                      << this->description() << "!");
 #endif
-      return reduceImpl(v);
-    }      
+    return reduceImpl(v);
+  }
 
   /** \brief Returns <tt>true</tt> if <tt>v</tt> is compatible with
    * <tt>*this</tt>.
    */
-  bool isCompatible( const VectorBase<Scalar> &v ) const
-    { return isCompatibleImpl(v); }
+  bool isCompatible(const VectorBase<Scalar> &v) const { return isCompatibleImpl(v); }
 
   //@}
 
-protected:
-
+ protected:
   /** \name Protected virtual functions. */
   //@{
 
   /** \brief . */
   virtual typename ScalarTraits<Scalar>::magnitudeType
-  reduceImpl( const VectorBase<Scalar> &v ) const = 0;
+  reduceImpl(const VectorBase<Scalar> &v) const = 0;
 
   /** \brief . */
-  virtual bool isCompatibleImpl( const VectorBase<Scalar> &v ) const = 0;
+  virtual bool isCompatibleImpl(const VectorBase<Scalar> &v) const = 0;
 
   //@}
-
 };
-
 
 /** \brief Simple struct that defines the requested solution criteria for a solve.
  *
@@ -302,84 +285,78 @@ struct SolveCriteria {
   RCP<const ReductionFunctional<Scalar> > denominatorReductionFunc;
   /** \brief Default construction to use default solve criteria. */
   SolveCriteria()
-    : requestedTol(unspecifiedTolerance())
-    {}
+    : requestedTol(unspecifiedTolerance()) {}
   /** \brief Construct with a specified solve criteria. */
   SolveCriteria(
-    SolveMeasureType solveMeasureType_in,
-    ScalarMag requestedTol_in,
-    const RCP<ParameterList> &extraParameters_in = Teuchos::null,
-    const RCP<ReductionFunctional<Scalar> > &numeratorReductionFunc_in = Teuchos::null,
-    const RCP<ReductionFunctional<Scalar> > &denominatorReductionFunc_in = Teuchos::null
-    )
-    : solveMeasureType(solveMeasureType_in),
-      requestedTol(requestedTol_in), 
-      extraParameters(extraParameters_in),
-      numeratorReductionFunc(numeratorReductionFunc_in),
-      denominatorReductionFunc(denominatorReductionFunc_in)
-    {}
+      SolveMeasureType solveMeasureType_in,
+      ScalarMag requestedTol_in,
+      const RCP<ParameterList> &extraParameters_in                         = Teuchos::null,
+      const RCP<ReductionFunctional<Scalar> > &numeratorReductionFunc_in   = Teuchos::null,
+      const RCP<ReductionFunctional<Scalar> > &denominatorReductionFunc_in = Teuchos::null)
+    : solveMeasureType(solveMeasureType_in)
+    , requestedTol(requestedTol_in)
+    , extraParameters(extraParameters_in)
+    , numeratorReductionFunc(numeratorReductionFunc_in)
+    , denominatorReductionFunc(denominatorReductionFunc_in) {}
 };
-
 
 /** \brief Output operator.
  *
  * \relates SolveCriteria
  */
-template<class Scalar>
-std::ostream& operator<<(std::ostream &out, const SolveCriteria<Scalar> &solveCriteria)
-{
+template <class Scalar>
+std::ostream &operator<<(std::ostream &out, const SolveCriteria<Scalar> &solveCriteria) {
   out << typeName(solveCriteria) << "{";
-  out << "solveMeasureType="<<solveCriteria.solveMeasureType;
-  out << ", requestedTol="<<solveCriteria.requestedTol;
+  out << "solveMeasureType=" << solveCriteria.solveMeasureType;
+  out << ", requestedTol=" << solveCriteria.requestedTol;
   if (nonnull(solveCriteria.extraParameters)) {
-    out << ", extraParameters="<<solveCriteria.extraParameters;
+    out << ", extraParameters=" << solveCriteria.extraParameters;
   }
   if (nonnull(solveCriteria.numeratorReductionFunc)) {
-    out << ", numeratorReductionFunc="<<solveCriteria.numeratorReductionFunc->description();
+    out << ", numeratorReductionFunc=" << solveCriteria.numeratorReductionFunc->description();
   }
   if (nonnull(solveCriteria.denominatorReductionFunc)) {
-    out << ", denominatorReductionFunc="<<solveCriteria.denominatorReductionFunc->description();
+    out << ", denominatorReductionFunc=" << solveCriteria.denominatorReductionFunc->description();
   }
   out << "}";
   return out;
 }
 
-
 /** \brief Exception type thrown on an catastrophic solve failure.
  *
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
-class CatastrophicSolveFailure : public std::runtime_error
-{public: CatastrophicSolveFailure(const std::string& what_arg) : std::runtime_error(what_arg) {}};
-
+class CatastrophicSolveFailure : public std::runtime_error {
+ public:
+  CatastrophicSolveFailure(const std::string &what_arg)
+    : std::runtime_error(what_arg) {}
+};
 
 /** \brief Solution status
  *
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 enum ESolveStatus {
-  SOLVE_STATUS_CONVERGED        ///< The requested solution criteria has likely been achieved
-  ,SOLVE_STATUS_UNCONVERGED     ///< The requested solution criteria has likely not been achieved
-  ,SOLVE_STATUS_UNKNOWN         ///< The final solution status is unknown but he solve did not totally fail
+  SOLVE_STATUS_CONVERGED  ///< The requested solution criteria has likely been achieved
+  ,
+  SOLVE_STATUS_UNCONVERGED  ///< The requested solution criteria has likely not been achieved
+  ,
+  SOLVE_STATUS_UNKNOWN  ///< The final solution status is unknown but he solve did not totally fail
 };
-
 
 /** \brief .
  *
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
-inline
-const std::string toString(const ESolveStatus solveStatus)
-{
-  switch(solveStatus) {
-    case SOLVE_STATUS_CONVERGED:    return "SOLVE_STATUS_CONVERGED";
-    case SOLVE_STATUS_UNCONVERGED:  return "SOLVE_STATUS_UNCONVERGED";
-    case SOLVE_STATUS_UNKNOWN:      return "SOLVE_STATUS_UNKNOWN";
+inline const std::string toString(const ESolveStatus solveStatus) {
+  switch (solveStatus) {
+    case SOLVE_STATUS_CONVERGED: return "SOLVE_STATUS_CONVERGED";
+    case SOLVE_STATUS_UNCONVERGED: return "SOLVE_STATUS_UNCONVERGED";
+    case SOLVE_STATUS_UNKNOWN: return "SOLVE_STATUS_UNKNOWN";
     default: TEUCHOS_TEST_FOR_EXCEPT(true);
   }
   TEUCHOS_UNREACHABLE_RETURN("");
 }
-
 
 /** \brief Simple struct for the return status from a solve.
  *
@@ -406,48 +383,46 @@ struct SolveStatus {
   RCP<ParameterList> extraParameters;
   /** \brief . */
   SolveStatus()
-    :solveStatus(SOLVE_STATUS_UNKNOWN), achievedTol(unknownTolerance())
-    {}
+    : solveStatus(SOLVE_STATUS_UNKNOWN)
+    , achievedTol(unknownTolerance()) {}
   /** \brief Output the achieveTol field.
    */
-  static std::string achievedTolToString( const ScalarMag &achievedTol )
-    {
-      if(achievedTol==unknownTolerance()) return "unknownTolerance()";
-      std::ostringstream oss; oss << achievedTol; return oss.str();
-    }
+  static std::string achievedTolToString(const ScalarMag &achievedTol) {
+    if (achievedTol == unknownTolerance()) return "unknownTolerance()";
+    std::ostringstream oss;
+    oss << achievedTol;
+    return oss.str();
+  }
 };
-
 
 /** \brief Print the solve status to a stream.
  *
  * \relates SolveStatus
  */
 template <class Scalar>
-std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solveStatus )
-{
+std::ostream &operator<<(std::ostream &out_arg, const SolveStatus<Scalar> &solveStatus) {
   RCP<Teuchos::FancyOStream>
-    out = Teuchos::getFancyOStream(Teuchos::rcp(&out_arg,false));
+      out = Teuchos::getFancyOStream(Teuchos::rcp(&out_arg, false));
   Teuchos::OSTab tab(out);
   *out
-    << "solveStatus = " << toString(solveStatus.solveStatus) << std::endl
-    << "achievedTol = " << SolveStatus<Scalar>::achievedTolToString(solveStatus.achievedTol) << std::endl;
+      << "solveStatus = " << toString(solveStatus.solveStatus) << std::endl
+      << "achievedTol = " << SolveStatus<Scalar>::achievedTolToString(solveStatus.achievedTol) << std::endl;
   *out << "message:";
   if (solveStatus.message.length()) {
     Teuchos::OSTab tab2(out);
-    *out << "\n" << solveStatus.message << "\n";
+    *out << "\n"
+         << solveStatus.message << "\n";
   }
   *out << "extraParameters:";
-  if(solveStatus.extraParameters.get()) {
+  if (solveStatus.extraParameters.get()) {
     *out << "\n";
     Teuchos::OSTab tab3(out);
     solveStatus.extraParameters->print(*out, 10, true);
-  }
-  else {
+  } else {
     *out << " NONE\n";
   }
   return out_arg;
 }
-
 
 /** \brief Enum that specifies how a <tt>LinearOpWithSolveBase</tt> object
  * will be used for solves after it is constructed.
@@ -456,11 +431,13 @@ std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solv
  */
 enum ESupportSolveUse {
   SUPPORT_SOLVE_UNSPECIFIED  ///< How the output LOWSB object will be useded for solves in unspecified
-  ,SUPPORT_SOLVE_FORWARD_ONLY  ///< The output LOWSB object will only be used for forward solves
-  ,SUPPORT_SOLVE_TRANSPOSE_ONLY  ///< The output LOWSB object will only be used for transpose solves
-  ,SUPPORT_SOLVE_FORWARD_AND_TRANSPOSE  ///< The output LOWSB object will used for forward and transpose solves
+  ,
+  SUPPORT_SOLVE_FORWARD_ONLY  ///< The output LOWSB object will only be used for forward solves
+  ,
+  SUPPORT_SOLVE_TRANSPOSE_ONLY  ///< The output LOWSB object will only be used for transpose solves
+  ,
+  SUPPORT_SOLVE_FORWARD_AND_TRANSPOSE  ///< The output LOWSB object will used for forward and transpose solves
 };
-
 
 /** \brief Enum defining the status of a preconditioner object.
  *
@@ -468,9 +445,9 @@ enum ESupportSolveUse {
  */
 enum EPreconditionerInputType {
   PRECONDITIONER_INPUT_TYPE_AS_OPERATOR  ///< The input preconditioner should just be applied as an operator
-  ,PRECONDITIONER_INPUT_TYPE_AS_MATRIX   ///< The input preconditioner should viewed as a matrix to be factored then backsolved as a preconditioner
+  ,
+  PRECONDITIONER_INPUT_TYPE_AS_MATRIX  ///< The input preconditioner should viewed as a matrix to be factored then backsolved as a preconditioner
 };
-
 
 /** \brief Initial overallSolveStatus before calling accumulateSolveStatus().
  *
@@ -478,12 +455,9 @@ enum EPreconditionerInputType {
  */
 template <class Scalar>
 void accumulateSolveStatusInit(
-  const Ptr<SolveStatus<Scalar> > &overallSolveStatus
-  )
-{
+    const Ptr<SolveStatus<Scalar> > &overallSolveStatus) {
   overallSolveStatus->solveStatus = SOLVE_STATUS_CONVERGED;
 }
-
 
 /** \brief Accumulate solve status objects for solving a block of RHSs is
  * smaller sub-blocks.
@@ -503,27 +477,23 @@ void accumulateSolveStatusInit(
  */
 template <class Scalar>
 void accumulateSolveStatus(
-  const SolveCriteria<Scalar>, // ToDo: Never used, need to take this out!
-  const SolveStatus<Scalar> &solveStatus,
-  const Ptr<SolveStatus<Scalar> > &overallSolveStatus
-  )
-{
-  switch(solveStatus.solveStatus) {
-    case SOLVE_STATUS_UNCONVERGED:
-    {
+    const SolveCriteria<Scalar>,  // ToDo: Never used, need to take this out!
+    const SolveStatus<Scalar> &solveStatus,
+    const Ptr<SolveStatus<Scalar> > &overallSolveStatus) {
+  switch (solveStatus.solveStatus) {
+    case SOLVE_STATUS_UNCONVERGED: {
       // First, if we see any unconverged solve status, then the entire block is
       // unconverged!
-      overallSolveStatus->solveStatus = SOLVE_STATUS_UNCONVERGED;
-      overallSolveStatus->message = solveStatus.message;
+      overallSolveStatus->solveStatus     = SOLVE_STATUS_UNCONVERGED;
+      overallSolveStatus->message         = solveStatus.message;
       overallSolveStatus->extraParameters = solveStatus.extraParameters;
       break;
     }
-    case SOLVE_STATUS_UNKNOWN:
-    {
+    case SOLVE_STATUS_UNKNOWN: {
       // Next, if any solve status is unknown, then if the overall solve
       // status says converged, then we have to mark it as unknown.  Note that
       // unknown could mean that the system is actually converged!
-      switch(overallSolveStatus->solveStatus) {
+      switch (overallSolveStatus->solveStatus) {
         case SOLVE_STATUS_CONVERGED:
           overallSolveStatus->solveStatus = SOLVE_STATUS_UNKNOWN;
           break;
@@ -531,39 +501,36 @@ void accumulateSolveStatus(
         case SOLVE_STATUS_UNKNOWN:
           // If we get here then the overall solve status is either unknown
           // already or says unconverged and this will not change here!
-          overallSolveStatus->message = solveStatus.message;
+          overallSolveStatus->message         = solveStatus.message;
           overallSolveStatus->extraParameters = solveStatus.extraParameters;
           break;
         default:
-          TEUCHOS_TEST_FOR_EXCEPT(true); // Corrupted enum?
+          TEUCHOS_TEST_FOR_EXCEPT(true);  // Corrupted enum?
       }
       break;
     }
-    case SOLVE_STATUS_CONVERGED:
-    {
+    case SOLVE_STATUS_CONVERGED: {
       // If we get here then the overall solve status is either unknown,
       // unconverged, or converged and this will not change here!
-      if(overallSolveStatus->message == "")
+      if (overallSolveStatus->message == "")
         overallSolveStatus->message = solveStatus.message;
       break;
     }
     default:
-      TEUCHOS_TEST_FOR_EXCEPT(true); // Corrupted enum?
+      TEUCHOS_TEST_FOR_EXCEPT(true);  // Corrupted enum?
   }
   // Update the achieved tolerence to the maximum returned
-  if( solveStatus.achievedTol > overallSolveStatus->achievedTol ) {
+  if (solveStatus.achievedTol > overallSolveStatus->achievedTol) {
     overallSolveStatus->achievedTol = solveStatus.achievedTol;
   }
   // Set a message if none is set
-  if(overallSolveStatus->message == "")
+  if (overallSolveStatus->message == "")
     overallSolveStatus->message = solveStatus.message;
   // Set the extra parameters if none is set
-  if(overallSolveStatus->extraParameters.get()==NULL)
+  if (overallSolveStatus->extraParameters.get() == NULL)
     overallSolveStatus->extraParameters = solveStatus.extraParameters;
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_SOLVE_SUPPORT_TYPES_HPP
+#endif  // THYRA_SOLVE_SUPPORT_TYPES_HPP

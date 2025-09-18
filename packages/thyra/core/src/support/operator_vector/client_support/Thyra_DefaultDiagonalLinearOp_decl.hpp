@@ -13,9 +13,7 @@
 #include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Default concrete <tt>LinearOpBase</tt> subclass for diagonal linear
  * operators.
@@ -27,30 +25,28 @@ namespace Thyra {
  M = diag(diag)
 
  \endverbatim
- 
+
  * where <tt>diag</tt> is a <tt>VectorBase</tt> object.
  *
  * The defined operator implements <tt>this->apply()</tt> as follows:
- 
+
  \verbatim
 
  y = alpha*op(M)*x + beta*y
- 
+
  =>
 
  y(i) = alpha*diag(i)*x(i) + beta*y(i), for i = 0 ... n-1
 
  \endverbatim
- 
+
  * where <tt>n = this->domain()->dim()</tt>.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
-class DefaultDiagonalLinearOp : virtual public DiagonalLinearOpBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class DefaultDiagonalLinearOp : virtual public DiagonalLinearOpBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -65,22 +61,19 @@ public:
   /** \brief Calls <tt>initialize()</tt> to construct given a vector space.
    */
   DefaultDiagonalLinearOp(
-    const RCP<const VectorSpaceBase<Scalar> >  &space
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &space);
 
   /** \brief Calls <tt>initialize()</tt> to construct for a non-const diagonal
    * vector.
    */
   DefaultDiagonalLinearOp(
-    const RCP<VectorBase<Scalar> >   &diag
-    );
+      const RCP<VectorBase<Scalar> > &diag);
 
   /** \brief Calls <tt>initialize()</tt> to construct for a const diagonal
    * vector.
    */
   DefaultDiagonalLinearOp(
-    const RCP<const VectorBase<Scalar> >   &diag
-    );
+      const RCP<const VectorBase<Scalar> > &diag);
 
   /** \brief Initialize given a vector space which allocates a vector internally.
    *
@@ -98,8 +91,7 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<const VectorSpaceBase<Scalar> >  &space
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &space);
 
   /** \brief Initialize given a non-const diagonal vector.
    *
@@ -120,7 +112,7 @@ public:
 
   /** \brief Initialize given a const diagonal vector.
    *
-   * \param  diag   [in] Smart pointer to diagonal vector. 
+   * \param  diag   [in] Smart pointer to diagonal vector.
    *
    * Preconditions:<ul>
    * <li><tt>diag.get()!=NULL</tt>
@@ -134,8 +126,7 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<const VectorBase<Scalar> >   &diag
-    );
+      const RCP<const VectorBase<Scalar> > &diag);
 
   /** \brief Uninitialize.
    *
@@ -175,61 +166,52 @@ public:
    * <li><tt>this->getDiag().get()!=NULL</tt>
    * </ul>
    */
-  RCP< const VectorSpaceBase<Scalar> > range() const;
+  RCP<const VectorSpaceBase<Scalar> > range() const;
   /** \brief Returns <tt>this->getDiag()->space()</tt>.
    *
    * Preconditions:<ul>
    * <li><tt>this->getDiag().get()!=NULL</tt>
    * </ul>
    */
-  RCP< const VectorSpaceBase<Scalar> > domain() const;
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
   /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const;
   //@}
 
-protected:
-
+ protected:
   /** @name Protected functions overridden from LinearOpBase */
   //@{
   /** \brief . */
   bool opSupportedImpl(EOpTransp M_trans) const;
   /** \brief . */
   void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const;
   //@}
 
-private:
-
+ private:
   Teuchos::ConstNonconstObjectContainer<VectorBase<Scalar> > diag_;
-
 };
-
 
 /** \brief Nonmember constructor function.
  *
  * \relates DefaultDiagonalLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const LinearOpBase<Scalar> >
 diagonal(
-  const RCP<VectorBase<Scalar> > &diag,
-  const std::string &label = ""
-  )
-{
+    const RCP<VectorBase<Scalar> > &diag,
+    const std::string &label = "") {
   RCP<LinearOpBase<Scalar> > dlo =
-    Teuchos::rcp(new DefaultDiagonalLinearOp<Scalar>(diag));
+      Teuchos::rcp(new DefaultDiagonalLinearOp<Scalar>(diag));
   if (label.length())
     dlo->setObjectLabel(label);
   return dlo;
 }
 
+}  // end namespace Thyra
 
-}	// end namespace Thyra
-
-
-#endif	// THYRA_DIAGONAL_LINEAR_OP_DECL_HPP
+#endif  // THYRA_DIAGONAL_LINEAR_OP_DECL_HPP

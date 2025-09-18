@@ -13,12 +13,10 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Teuchos_Describable.hpp"
 
-
 namespace Thyra {
 
-
 /** \brief Abstract interface for scalar products.
- * 
+ *
  * This interface is not considered a user-level interface.  Instead, this
  * interface is designed to be sub-classed off of and used with
  * <tt>ScalarProdVectorSpaceBase</tt> objects to define their scalar products.
@@ -54,10 +52,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ScalarProdBase : virtual public Teuchos::Describable {
-public:
-  
+ public:
   /** @name Non-virtual public interface */
   //@{
 
@@ -67,8 +64,7 @@ public:
    * The default implementation returns <tt>false</tt> (evenn though on average
    * the truth is most likely <tt>true</tt>).
    */
-  bool isEuclidean() const
-    { return isEuclideanImpl(); }
+  bool isEuclidean() const { return isEuclideanImpl(); }
 
   /** \brief Return the scalar product of two vectors in the vector space.
    *
@@ -92,9 +88,7 @@ public:
    * <tt>scalarProds()</tt>.
    */
   Scalar scalarProd(
-    const VectorBase<Scalar>& x, const VectorBase<Scalar>& y
-    ) const
-    { return scalarProdImpl(x, y); }
+      const VectorBase<Scalar>& x, const VectorBase<Scalar>& y) const { return scalarProdImpl(x, y); }
 
   /** \brief Return the scalar product of each column in two multi-vectors in
    * the vector space.
@@ -130,10 +124,8 @@ public:
    * </ul>
    */
   void scalarProds(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-    const ArrayView<Scalar> &scalarProds_out
-    ) const
-    { scalarProdsImpl(X, Y, scalarProds_out); }
+      const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+      const ArrayView<Scalar>& scalarProds_out) const { scalarProdsImpl(X, Y, scalarProds_out); }
 
   /** \brief Return a linear operator representing the scalar product
    * <tt>Q</tt>.
@@ -142,41 +134,34 @@ public:
    * value of <tt>null</tt> is allowed.  Note that if <tt>this->isEuclidean()
    * == true</tt> then there is no reason to return an identity operator.
    */
-  RCP<const LinearOpBase<Scalar> > getLinearOp() const
-    { return getLinearOpImpl(); }
+  RCP<const LinearOpBase<Scalar> > getLinearOp() const { return getLinearOpImpl(); }
 
   //@}
 
-protected:
-
+ protected:
   /** \name Protected virtual functions. */
   //@{
 
   /** \brief . */
   virtual bool isEuclideanImpl() const = 0;
-  
+
   /** \brief Default implementation calls scalarProdsImpl(). */
   virtual Scalar scalarProdImpl(
-    const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
+      const VectorBase<Scalar>& x, const VectorBase<Scalar>& y) const;
 
   /** \brief . */
   virtual void scalarProdsImpl(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-    const ArrayView<Scalar> &scalarProds_out
-    ) const = 0;
+      const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+      const ArrayView<Scalar>& scalarProds_out) const = 0;
 
   /** \brief . */
-  virtual RCP<const LinearOpBase<Scalar> > getLinearOpImpl() const
-    {
-      return Teuchos::null;
-    }
+  virtual RCP<const LinearOpBase<Scalar> > getLinearOpImpl() const {
+    return Teuchos::null;
+  }
 
   //@}
-
 };
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 #endif  // THYRA_SCALAR_PROD_BASE_DECL_HPP

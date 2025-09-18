@@ -10,13 +10,10 @@
 #ifndef THYRA_MODEL_EVALUATOR_HPP
 #define THYRA_MODEL_EVALUATOR_HPP
 
-
 #include "Thyra_ModelEvaluatorBase.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Pure abstract base interface for evaluating a stateless "model"
  * that can be mapped into a number of different types of problems.
@@ -132,22 +129,22 @@ namespace Thyra {
  *
  * \subsection Thyra_ME_nonlinear_equations_sec Nonlinear Equations
  *
- 
+
  \verbatim
     f(x) = 0
- \endverbatim 
+ \endverbatim
 
  * Here it is assumed that <tt>D(f)/D(x)</tt> is nonsingular in general but
  * this is not strictly required.  If <tt>W=D(f)/D(x)</tt> is supported, the
  * nature of <tt>D(f)/D(x)</tt> may be given by
  * <tt>this->createOutArgs().get_W_properties()</tt>.
- 
+
  * \subsection Thyra_ME_explicit_ode_sec Explicit ODEs
  *
- 
+
  \verbatim
     x_dot = f(x,t)
- \endverbatim 
+ \endverbatim
 
  * Here it is assumed that <tt>D(f)/D(x)</tt> is nonsingular in general but
  * this is not strictly required.  If <tt>W=D(f)/D(x)</tt> is supported, the
@@ -159,7 +156,7 @@ namespace Thyra {
  * <tt>false</tt>).
  *
  * \subsection Thyra_ME_implicit_dae_sec Implicit ODEs or DAEs
- 
+
  \verbatim
     f(x_dot,x,t) = 0
  \endverbatim
@@ -181,7 +178,7 @@ namespace Thyra {
  * Here the argument <tt>t</tt> may or may not be accepted by <tt>*this</tt>.
  *
  * \subsection Thyra_ME_unconstrained_optimization_sec Unconstrained optimization
- 
+
  \verbatim
     min g(x,{p(l)})
  \endverbatim
@@ -194,12 +191,12 @@ namespace Thyra {
  * symmetric semidefinite but this is not strictly required.
  *
  * \subsection Thyra_ME_equality_constrained_optimization_sec Equality constrained optimization
- 
+
  \verbatim
     min g(x,{p(l)})
 
     s.t. f(x,{p(l)}) = 0
- \endverbatim 
+ \endverbatim
 
  * where the objective function <tt>g(x,{p(l)})</tt> is some aggregated
  * function built from some subset of the the auxiliary response functions
@@ -211,7 +208,7 @@ namespace Thyra {
  * <tt>this->createOutArgs().get_W_properties()</tt>.
  *
  * \subsection Thyra_ME_general_constrained_optimization_sec General constrained optimization
- 
+
  \verbatim
     min g(x,{p(l)})
 
@@ -220,7 +217,7 @@ namespace Thyra {
          hL <= h(x,{p(l)}) <= hU
          xL <= x <= xU
          pL(l) <= p(l) <= pU(l)
- \endverbatim 
+ \endverbatim
 
  * where the objective function <tt>g(x,{p(l)})</tt> and the auxiliary
  * equality <tt>r(x,{p(l)})</tt> and inequality <tt>h(x,{p(l)})</tt>
@@ -248,29 +245,29 @@ namespace Thyra {
  * equation <tt>f(x,p)=0</tt> and that <tt>D(f)/D(x)</tt> is full rank, then
  * <tt>f(x,p)=0</tt> defines the implicit function <tt>p ==> x(p)</tt>.  Given
  * this implicit function, the reduced auxiliary function is
- 
+
  \verbatim
     g_hat(p) = g(x(p),p)
  \endverbatim
- 
+
  * The reduced derivative <tt>D(g_hat)/D(p)</tt> is given as:
- 
+
  \verbatim
     D(g_hat)/D(p) = D(g)/D(x) * D(x)/D(p) + D(g)/D(p)
  \endverbatim
- 
+
  * where
 
  \verbatim
     D(x)/D(p) = - [D(f)/D(x)]^{-1} * [D(f)/D(p)]
  \endverbatim
- 
+
  * Restated, the reduced derivative <tt>D(g_hat)/D(p)</tt> is given as:
- 
+
  \verbatim
     D(g_hat)/D(p) = - [D(g)/D(x)] * [D(f)/D(x)]^{-1} * [D(f)/D(p)] + D(g)/D(p)
  \endverbatim
- 
+
  * The reduced derivative <tt>D(g_hat)/D(p)</tt> can be computed using the
  * direct or the adjoint approaches.
  *
@@ -304,7 +301,7 @@ namespace Thyra {
     D(g_hat)/D(p)^T =  [D(f)/D(p)]^T * ( - [D(f)/D(x)]^{-T} * [D(g)/D(x)]^T ) + [D(g)/D(p)]^T
  \endverbatim
 
- * by first solving the adjoint system 
+ * by first solving the adjoint system
 
  \verbatim
     Lambda = - [D(f)/D(x)]^{-T} * [D(g)/D(x)]^T
@@ -356,7 +353,7 @@ namespace Thyra {
  * <tt>this->createOutArgs().supports(OUT_ARG_blah,...).supports(DERIV_MV_BY_COL)==true</tt>
  * while the adjoint form of the derivative is supported if
  * <tt>this->createOutArgs().supports(OUT_ARG_blah,...).supports(DERIV_TRANS_MV_BY_ROW)==true</tt>.
- * 
+ *
  * In order to accommodate these different forms of a derivative, the simple
  * class <tt>ModelEvaluatorBase::Derivative</tt> is defined that can store
  * either a <tt>LinearOpBase</tt> or one of two <tt>MultiVectorBase</tt> forms
@@ -371,7 +368,7 @@ namespace Thyra {
  * <li><b>State function <tt>f(x_dot,x,{p(l)},t,...)</tt> derivatives</b>
  *
  *     <ul>
- *     
+ *
  *     <li><b>State variable derivatives</b>
 
        \verbatim
@@ -427,7 +424,7 @@ namespace Thyra {
  *     coefficient is a <tt>Thyra::VectorBase</tt> object.  The Taylor series
  *     coefficients of \f$f\f$ can easily be computed using automatic
  *     differentiation, but this is generally the only means of doing so.
- *     
+ *
  *     <li><b>Auxiliary parameter derivatives</b>
 
        \verbatim
@@ -446,31 +443,31 @@ namespace Thyra {
  * <li><b>Auxiliary response function <tt>g(j)(x,{p(l)},t,...)</tt> derivatives</b>
  *
  *     <ul>
- *     
+ *
  *     <li><b>State variable derivatives</b>
- 
+
        \verbatim
        DgDx_dot(j) = D(g(j))/D(x_dot)
        \endverbatim
- 
+
  *     for <tt>j=0...Ng-1</tt>.
  *
  *     These are derivative objects that represent the derivative of the
  *     auxiliary function <tt>g(j)</tt> with respect to the state variables
  *     derivative <tt>x_dot</tt>.  This derivative is manipulated as a
  *     <tt>ModelEvaluatorBase::Derivative</tt> object.
- 
+
        \verbatim
        DgDx(j) = D(g(j))/D(x)
        \endverbatim
- 
+
  *     for <tt>j=0...Ng-1</tt>.
  *
  *     These are derivative objects that represent the derivative of the
  *     auxiliary function <tt>g(j)</tt> with respect to the state variables
  *     <tt>x</tt>.  This derivative is manipulated as a
  *     <tt>ModelEvaluatorBase::Derivative</tt> object.
- *     
+ *
  *     <li><b>Auxiliary parameter derivatives</b>
  *
        \verbatim
@@ -487,7 +484,7 @@ namespace Thyra {
  *     </ul>
  *
  * <li><b>Second-order derivatives</b>
- * 
+ *
  *     <ul>
  *     <li><b>Second-order derivatives of the state function <tt>f(x_dot,x,{p(l)},t,...)</tt></b>
  *
@@ -496,7 +493,7 @@ namespace Thyra {
        \endverbatim
  *
  *     This is a derivative object that represents the second-order derivative of the
- *     state function <tt>f</tt> with respect to the state variables <tt>x</tt>.  
+ *     state function <tt>f</tt> with respect to the state variables <tt>x</tt>.
  *     This derivative is manipulated as a <tt>LinearOpBase</tt> object.
  *     Objects of this type are created with the function <tt>create_hess_f_xx()</tt>.
  *
@@ -533,7 +530,7 @@ namespace Thyra {
  *     for <tt>j=0...Ng-1</tt>.
  *
  *     These are derivative objects that represent the second-order derivative of the
- *     auxiliary function <tt>g(j)</tt> with respect to the state variables <tt>x</tt>.  
+ *     auxiliary function <tt>g(j)</tt> with respect to the state variables <tt>x</tt>.
  *     This derivative is manipulated as a <tt>LinearOpBase</tt> object.
  *     Objects of this type are created with the function <tt>create_hess_g_xx(j)</tt>.
  *
@@ -737,10 +734,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Nonlinear_model_evaluator_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ModelEvaluator : public ModelEvaluatorBase {
-public:
-
+ public:
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
@@ -846,7 +842,7 @@ public:
 
   /** \name Initial guess and upper and lower bounds */
   //@{
-  
+
   /** \brief Return the set of nominal values or initial guesses for the
    * supported the input arguments.
    *
@@ -867,7 +863,7 @@ public:
    * *not* modify the values in place!
    */
   virtual ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const = 0;
-  
+
   /** \brief Return the set of lower bounds for the input arguments.
    *
    * It is not required for the client to supply lower bounds for every input
@@ -882,7 +878,7 @@ public:
    * *not* modify the values in place!
    */
   virtual ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const = 0;
-  
+
   /** \brief Return the set of upper bounds for the input arguments.
    *
    * It is not required for the client to supply upper bounds for every input
@@ -1022,7 +1018,7 @@ public:
    *     where <tt>outArgs = this->createOutArgs()</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const = 0;
+  virtual RCP<LinearOpBase<Scalar> > create_DgDp_op(int j, int l) const = 0;
 
 #ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
@@ -1058,7 +1054,7 @@ public:
    * <li><tt>this->createOutArgs().supports(l_1, l_2, OUT_ARG_hess_f_pp)==true</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_f_pp( int l1, int l2 ) const = 0;
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_pp(int l1, int l2) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * \f$\sum_k \lambda_k \frac{\partial^2 g_{j,k}}{\partial \boldsymbol{x}^2}\f$.
@@ -1082,7 +1078,7 @@ public:
    * <li><tt>this->createOutArgs().supports(j, l, OUT_ARG_hess_g_xp)==true</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xp( int j, int l ) const = 0;
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xp(int j, int l) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * \f$\sum_k \lambda_k \frac{\partial^2 g_{j,k}}{\partial \boldsymbol{p}_{l_1} \partial \boldsymbol{p}_{l_2}}\f$.
@@ -1096,7 +1092,7 @@ public:
    * <li><tt>this->createOutArgs().supports(j, l_1, l_2, OUT_ARG_hess_g_xp)==true</tt>
    * </ul>
    */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const = 0;
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp(int j, int l1, int l2) const = 0;
 
 #endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
@@ -1141,7 +1137,7 @@ public:
    * <li><tt>returnVal.get_blah(...)==null</tt> for all variables/parameters
    * that are supported.
    * </ul>
-   * 
+   *
    */
   virtual ModelEvaluatorBase::InArgs<Scalar> createInArgs() const = 0;
 
@@ -1220,9 +1216,8 @@ public:
    * TODO: Define behavior for state-full models!
    */
   virtual void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const = 0;
+      const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const = 0;
 
   //@}
 
@@ -1236,21 +1231,17 @@ public:
    * be passed back as well?
    */
   virtual void reportFinalPoint(
-    const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
-    const bool wasSolved
-    ) = 0;
+      const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+      const bool wasSolved) = 0;
 
   //@}
 
-private:
-  
+ private:
   // Not defined and not to be called
-  ModelEvaluator<Scalar>&
-  operator=(const ModelEvaluator<Scalar>&);
-
+  ModelEvaluator<Scalar> &
+  operator=(const ModelEvaluator<Scalar> &);
 };
 
-} // namespace Thyra
+}  // namespace Thyra
 
-
-#endif // THYRA_MODEL_EVALUATOR_HPP
+#endif  // THYRA_MODEL_EVALUATOR_HPP

@@ -11,33 +11,27 @@
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
-
 namespace Thyra {
-
 
 //
 // Helper code and declarations
 //
 
-
 using Teuchos::as;
+using Teuchos::fancyOStream;
+using Teuchos::get_extra_data;
+using Teuchos::inoutArg;
 using Teuchos::null;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
-using Teuchos::get_extra_data;
-using Teuchos::inoutArg;
-using Teuchos::fancyOStream;
 using Teuchos::Utils;
-
 
 //
 // Unit Tests
 //
 
-
-TEUCHOS_UNIT_TEST( TestResultsPrinter, show_all_tests_pass)
-{
+TEUCHOS_UNIT_TEST(TestResultsPrinter, show_all_tests_pass) {
   out << "*** Testing that output is send directly to main output stream!\n";
   ECHO(const bool show_all_tests = true);
   ECHO(std::ostringstream myOut);
@@ -65,16 +59,14 @@ TEUCHOS_UNIT_TEST( TestResultsPrinter, show_all_tests_pass)
   TEST_EQUALITY_CONST(myOut2.str(), std::string(""));
 }
 
-
-TEUCHOS_UNIT_TEST( TestResultsPrinter, show_all_tests_fail)
-{
+TEUCHOS_UNIT_TEST(TestResultsPrinter, show_all_tests_fail) {
   out << "*** Testing that output is send directly to main output stream!\n";
   ECHO(const bool show_all_tests = true);
   ECHO(std::ostringstream myOut);
   ECHO(std::ostringstream myOut2);
   {
     TestResultsPrinter testResultsPrinter(
-      fancyOStream(rcpFromRef(myOut)), show_all_tests);
+        fancyOStream(rcpFromRef(myOut)), show_all_tests);
     const RCP<FancyOStream> testOut = testResultsPrinter.getTestOStream();
     ECHO(bool this_result = true);
     ECHO(int num = 5);
@@ -97,9 +89,7 @@ TEUCHOS_UNIT_TEST( TestResultsPrinter, show_all_tests_fail)
   TEST_EQUALITY_CONST(myOut2.str(), std::string(""));
 }
 
-
-TEUCHOS_UNIT_TEST( TestResultsPrinter, no_show_all_tests_pass)
-{
+TEUCHOS_UNIT_TEST(TestResultsPrinter, no_show_all_tests_pass) {
   out << "*** Testing that output is send directly to main output stream!\n";
   ECHO(const bool show_all_tests = false);
   ECHO(std::ostringstream myOut);
@@ -123,9 +113,7 @@ TEUCHOS_UNIT_TEST( TestResultsPrinter, no_show_all_tests_pass)
   TEST_EQUALITY_CONST(myOut2.str(), std::string(""));
 }
 
-
-TEUCHOS_UNIT_TEST( TestResultsPrinter, no_show_all_tests_fail)
-{
+TEUCHOS_UNIT_TEST(TestResultsPrinter, no_show_all_tests_fail) {
   out << "*** Testing that output is send directly to main output stream!\n";
   ECHO(const bool show_all_tests = false);
   ECHO(std::ostringstream myOut);
@@ -143,16 +131,14 @@ TEUCHOS_UNIT_TEST( TestResultsPrinter, no_show_all_tests_fail)
     ECHO(testResultsPrinter.printTestResults(this_result, inoutArg(final_success)));
     TEST_EQUALITY_CONST(final_success, false);
     const std::string myOut_str = Utils::trimWhiteSpace(myOut.str());
-    TEST_EQUALITY_CONST(myOut_str.substr(0,25), "num = 5 == 4 : FAILED ==>");
+    TEST_EQUALITY_CONST(myOut_str.substr(0, 25), "num = 5 == 4 : FAILED ==>");
     out << "*** Make sure that nothing gets printed out from the destructor\n";
     ECHO(testResultsPrinter.replaceOStream(fancyOStream(rcpFromRef(myOut2))));
   }
   TEST_EQUALITY_CONST(myOut2.str(), std::string(""));
 }
 
-
-TEUCHOS_UNIT_TEST( TestResultsPrinter, no_show_all_tests_pass_throws)
-{
+TEUCHOS_UNIT_TEST(TestResultsPrinter, no_show_all_tests_pass_throws) {
   out << "*** Testing that output is send directly to main output stream!\n";
   ECHO(const bool show_all_tests = false);
   ECHO(std::ostringstream myOut);
@@ -167,10 +153,9 @@ TEUCHOS_UNIT_TEST( TestResultsPrinter, no_show_all_tests_pass_throws)
     TEST_EQUALITY_CONST(myOut.str(), std::string(""));
     out << "*** Throw before we can print the final test results!\n";
     TEUCHOS_TEST_FOR_EXCEPTION(!(num == 10), std::logic_error,
-      "Unexpected exception from my test!");
-    TEST_ASSERT(false); // If we get here, we failed!
-  }
-  catch (const std::logic_error &except) {
+                               "Unexpected exception from my test!");
+    TEST_ASSERT(false);  // If we get here, we failed!
+  } catch (const std::logic_error &except) {
     out << "*** Check to make sure test result got printed in destructor!\n";
     const std::string myOut_str = Utils::trimWhiteSpace(myOut.str());
     TEST_EQUALITY_CONST(myOut_str, std::string("num = 5 == 5 : passed"));
@@ -178,7 +163,6 @@ TEUCHOS_UNIT_TEST( TestResultsPrinter, no_show_all_tests_pass_throws)
   }
   out << "*** Make double sure exception got thrown and printed out myOut!\n";
   TEST_ASSERT(myOut.str().length() > 0);
-} 
+}
 
-
-} // namespace Thyra
+}  // namespace Thyra

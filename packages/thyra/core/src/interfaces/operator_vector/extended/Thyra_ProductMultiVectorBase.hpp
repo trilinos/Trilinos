@@ -14,9 +14,8 @@
 
 namespace Thyra {
 
-
-template<class Scalar> class ProductVectorSpaceBase;
-
+template <class Scalar>
+class ProductVectorSpaceBase;
 
 /** \brief Base interface for product multi-vectors.
  *
@@ -30,10 +29,9 @@ template<class Scalar> class ProductVectorSpaceBase;
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ProductMultiVectorBase : virtual public MultiVectorBase<Scalar> {
-public:
-
+ public:
   /** \brief Returns the associated product vector space that represents the
    * range.
    *
@@ -91,16 +89,12 @@ public:
   virtual Teuchos::RCP<const MultiVectorBase<Scalar> >
   getMultiVectorBlock(const int k) const = 0;
 
-private:
-  
+ private:
   // Not defined and not to be called
   ProductMultiVectorBase<Scalar>&
   operator=(const ProductMultiVectorBase<Scalar>&);
-  
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_PRODUCT_MULTI_VECTOR_BASE_HPP
+#endif  // THYRA_PRODUCT_MULTI_VECTOR_BASE_HPP

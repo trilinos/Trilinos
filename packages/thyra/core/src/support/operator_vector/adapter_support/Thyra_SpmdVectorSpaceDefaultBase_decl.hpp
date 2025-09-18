@@ -57,13 +57,11 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
  */
-template<class Scalar>
+template <class Scalar>
 class SpmdVectorSpaceDefaultBase
-  : virtual public SpmdVectorSpaceBase<Scalar>
-  , virtual public ScalarProdVectorSpaceBase<Scalar>
-{
-public:
-
+  : virtual public SpmdVectorSpaceBase<Scalar>,
+    virtual public ScalarProdVectorSpaceBase<Scalar> {
+ public:
   /** \brief . */
   SpmdVectorSpaceDefaultBase();
 
@@ -81,7 +79,7 @@ public:
    * process 1, <tt>localOffset=9</tt> on process 2 and so on.
    */
   Ordinal localOffset() const;
-  
+
   /** \brief .
    *
    * This method takes the data <tt>getComm()</tt>, <tt>numProc</tt> (where
@@ -107,7 +105,7 @@ public:
    * Spmd-based vector implementations.
    */
   Ordinal mapCode() const;
-  
+
   /** \brief Returns true if vector space is locally replicated space. */
   bool isLocallyReplicated() const;
 
@@ -128,7 +126,7 @@ public:
 
   /** \brief Returns a <tt>DefaultSpmdVectorSpaceFactory</tt> object that has been given <tt>getComm()</tt>.
    */
-  Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
+  Teuchos::RCP<const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
 
   /** \brief Checks the general compatibility of parallel (or serial on one
    * process) Spmd-based vector spaces.
@@ -154,12 +152,11 @@ public:
    * then this method should be overridden in a way that is specific
    * to the vector implementation.
    */
-   bool isCompatible(const VectorSpaceBase<Scalar>& vecSpc) const;
-  
+  bool isCompatible(const VectorSpaceBase<Scalar>& vecSpc) const;
+
   //@}
 
-protected:
-
+ protected:
   /** \brief This function must be called whenever the state of
    * <tt>this</tt> changes and some internal state must be updated.
    *
@@ -188,23 +185,22 @@ protected:
    * vector spaces will be created per application usually.
    */
   virtual void updateState(const Ordinal globalDim,
-    const bool isLocallyReplicated = false);
+                           const bool isLocallyReplicated = false);
 
-private:
-
+ private:
   // //////////////////////////////////////
   // Private data members
 
-  Ordinal mapCode_;    // < 0 is a flag that everything needs initialized
+  Ordinal mapCode_;  // < 0 is a flag that everything needs initialized
   Ordinal defaultLocalOffset_;
   Ordinal defaultGlobalDim_;
   Ordinal localSubDim_;
   bool isLocallyReplicated_;
 
-  Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> >  smallVecSpcFcty_;
-  
-}; // end class SpmdVectorSpaceDefaultBase
+  Teuchos::RCP<const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty_;
 
-} // end namespace Thyra
+};  // end class SpmdVectorSpaceDefaultBase
 
-#endif // THYRA_SPMD_VECTOR_SPACE_BASE_DECL_HPP
+}  // end namespace Thyra
+
+#endif  // THYRA_SPMD_VECTOR_SPACE_BASE_DECL_HPP

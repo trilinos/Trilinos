@@ -10,7 +10,6 @@
 #ifndef THYRA_LINEAR_OP_TESTER_DECL_HPP
 #define THYRA_LINEAR_OP_TESTER_DECL_HPP
 
-
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_MultiVectorRandomizerBase.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -18,9 +17,7 @@
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Testing class for <tt>LinearOpBase</tt>.
  *
@@ -38,10 +35,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class LinearOpTester {
-public:
-
+ public:
   /** \brief Local typedef for promoted scalar magnitude */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
@@ -50,69 +46,69 @@ public:
    * See the implementation of this function for the defaults that get set.
    */
   LinearOpTester();
-  
+
   /** \brief Set if to check for linear properties <tt>alpha*op*(x + y) ==
    * op(alpha*x) + op(alpha*y)</tt>
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_linear_properties );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(bool, check_linear_properties);
 
   /** \brief Set the tolerance above which a relative error will generate a
    * warning message for the check of the linear properties.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, linear_properties_warning_tol );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag, linear_properties_warning_tol);
 
   /** \brief Set the tolerance above which a relative error will generate a
    * error message and result in test failure for the check of the linear
    * properties.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, linear_properties_error_tol );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag, linear_properties_error_tol);
 
   /** \brief Set if to check for adjoint property <tt>x'*(op*y) ==
    * y'*(op'*x)</tt> if adjoint is supported.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_adjoint  );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(bool, check_adjoint);
 
   /** \brief Set the tolerance above which a relative error will generate a
    * warning message for the check of the adjoint.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, adjoint_warning_tol );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag, adjoint_warning_tol);
 
   /** \brief Set the tolerance above which a relative error will generate a
    * error message and result in test failure for the check of the adjoint.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, adjoint_error_tol );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag, adjoint_error_tol);
 
   /** \brief Set if to check for symmetry property <tt>x'*(op*y) ==
    * y'*(op*x)</tt> for symmetric operators.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_for_symmetry  );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(bool, check_for_symmetry);
 
   /** \brief Set the tolerance above which a relative error will generate a
    * warning message for the check of symmetry.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, symmetry_warning_tol );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag, symmetry_warning_tol);
 
   /** \brief Set the tolerance above which a relative error will generate a
    * error message and result in test failure for the check of symmetry.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, symmetry_error_tol );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag, symmetry_error_tol);
 
   /** \brief Set the number random vectors that is generated during each test.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_random_vectors );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(int, num_random_vectors);
 
   /** \brief Set if all tests are shown or just summaries.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, show_all_tests );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(bool, show_all_tests);
 
   /** \brief Set if all of the vectors are dumped or not (only relevant if
    * <tt>show_all_tests()==true</tt>).
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, dump_all );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(bool, dump_all);
 
   /** \brief Set the number of right-hand-sides in the multivectors
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_rhs );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(int, num_rhs);
 
   /** \brief Enable or disable all tests.
    *
@@ -122,7 +118,7 @@ public:
    * <li><tt>this->check_for_symmetry()==enable_all_tests</tt>
    * </ul>
    */
-  void enable_all_tests( const bool enable_all_tests );
+  void enable_all_tests(const bool enable_all_tests);
 
   /** \brief Set all the warning tolerances to the same value.
    *
@@ -132,7 +128,7 @@ public:
    * <li><tt>this->symmetry_warning_tol()==warning_tol</tt>
    * </ul>
    */
-  void set_all_warning_tol( const ScalarMag warning_tol );
+  void set_all_warning_tol(const ScalarMag warning_tol);
 
   /** \brief Set all the error tolerances to the same value.
    *
@@ -142,7 +138,7 @@ public:
    * <li><tt>this->symmetry_error_tol()==error_tol</tt>
    * </ul>
    */
-  void set_all_error_tol( const ScalarMag error_tol );
+  void set_all_error_tol(const ScalarMag error_tol);
 
   /** \brief Check a linear operator.
    *
@@ -214,17 +210,15 @@ public:
    * implementation by clicking on the following link to the source code:
    */
   bool check(
-    const LinearOpBase<Scalar> &op,
-    const Ptr<MultiVectorRandomizerBase<Scalar> > &rangeRandomizer,
-    const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
-    const Ptr<FancyOStream> &out
-    ) const;
+      const LinearOpBase<Scalar> &op,
+      const Ptr<MultiVectorRandomizerBase<Scalar> > &rangeRandomizer,
+      const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
+      const Ptr<FancyOStream> &out) const;
 
   /** \brief Calls <tt>this->check(op,null,null,out,leadingIndent,indentSpacer)</tt> */
   bool check(
-    const LinearOpBase<Scalar> &op,
-    const Ptr<FancyOStream> &out
-    ) const;
+      const LinearOpBase<Scalar> &op,
+      const Ptr<FancyOStream> &out) const;
 
   /** \brief Check if two linear operators are the same or not.
    *
@@ -265,29 +259,24 @@ public:
    * implementation by clicking on the following link to the source code:
    */
   bool compare(
-    const LinearOpBase<Scalar> &op1,
-    const LinearOpBase<Scalar> &op2,
-    const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
-    const Ptr<FancyOStream> &out_arg
-    ) const;
- 
+      const LinearOpBase<Scalar> &op1,
+      const LinearOpBase<Scalar> &op2,
+      const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
+      const Ptr<FancyOStream> &out_arg) const;
+
   /** \brief Calls
    * <tt>this->compare(op1,op2,NULL,out,leadingIndent,indentSpacer)</tt>.
    */
   bool compare(
-    const LinearOpBase<Scalar> &op1,
-    const LinearOpBase<Scalar> &op2,
-    const Ptr<FancyOStream> &out_arg
-    ) const;
+      const LinearOpBase<Scalar> &op1,
+      const LinearOpBase<Scalar> &op2,
+      const Ptr<FancyOStream> &out_arg) const;
 
-private:
-
+ private:
   void setDefaultTols();
 
-}; // class LinearOpTester
+};  // class LinearOpTester
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_LINEAR_OP_TESTER_DECL_HPP
+#endif  // THYRA_LINEAR_OP_TESTER_DECL_HPP

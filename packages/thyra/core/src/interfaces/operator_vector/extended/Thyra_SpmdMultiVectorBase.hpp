@@ -10,15 +10,12 @@
 #ifndef THYRA_SPMD_MULTI_VECTOR_BASE_DECL_HPP
 #define THYRA_SPMD_MULTI_VECTOR_BASE_DECL_HPP
 
-
 #include "Thyra_MultiVectorBase.hpp"
-
 
 namespace Thyra {
 
-
-template<class Scalar> class SpmdVectorSpaceBase;
-
+template <class Scalar>
+class SpmdVectorSpaceBase;
 
 /** \brief Base interface class for SPMD multi-vectors.
  *
@@ -31,29 +28,24 @@ template<class Scalar> class SpmdVectorSpaceBase;
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
-class SpmdMultiVectorBase : virtual public MultiVectorBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class SpmdMultiVectorBase : virtual public MultiVectorBase<Scalar> {
+ public:
   /** @name Public non-virtual interface functions */
   //@{
 
   /** \brief Returns the SPMD vector space object for the range of
    * <tt>*this</tt> multi-vector.
    */
-  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const
-    { return spmdSpaceImpl(); }
+  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const { return spmdSpaceImpl(); }
 
   /** \brief Get a non-const generalized view of local multi-vector data.
    */
-  RTOpPack::SubMultiVectorView<Scalar> getNonconstLocalSubMultiVector()
-    { return getNonconstLocalSubMultiVectorImpl(); }
+  RTOpPack::SubMultiVectorView<Scalar> getNonconstLocalSubMultiVector() { return getNonconstLocalSubMultiVectorImpl(); }
 
   /** \brief Get a const generalized view of local multi-vector data.
    */
-  RTOpPack::ConstSubMultiVectorView<Scalar> getLocalSubMultiVector() const
-    {  return getLocalSubMultiVectorImpl(); }
+  RTOpPack::ConstSubMultiVectorView<Scalar> getLocalSubMultiVector() const { return getLocalSubMultiVectorImpl(); }
 
   /** \brief Returns a non-<tt>const</tt> pointer to a Fortran-style view of
    * the local multi-vector data.
@@ -76,9 +68,7 @@ public:
    * </ul>
    */
   void getNonconstLocalData(
-    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
-    )
-    { getNonconstLocalMultiVectorDataImpl(localValues, leadingDim); }
+      const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim) { getNonconstLocalMultiVectorDataImpl(localValues, leadingDim); }
 
   /** \brief Returns a <tt>const</tt> pointer to a Fortran-style view of the
    * local multi-vector data.
@@ -101,14 +91,11 @@ public:
    * </ul>
    */
   void getLocalData(
-    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
-    ) const
-    { getLocalMultiVectorDataImpl(localValues, leadingDim); }
+      const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim) const { getLocalMultiVectorDataImpl(localValues, leadingDim); }
 
   //@}
 
-protected:
-
+ protected:
   /** @name Virtual functions to be overridden by sublcasses. */
   //@{
 
@@ -125,20 +112,16 @@ protected:
 
   /** \brief Virtual implementation for getNonconstLocalData(). */
   virtual void getNonconstLocalMultiVectorDataImpl(
-    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
-    ) = 0;
+      const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim) = 0;
 
   /** \brief Virtual implementation for getLocalData(). */
   virtual void getLocalMultiVectorDataImpl(
-    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
-    ) const = 0;
+      const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim) const = 0;
 
   //@}
-  
-}; // end class SpmdMultiVectorBase
 
+};  // end class SpmdMultiVectorBase
 
-} // end namespace Thyra
+}  // end namespace Thyra
 
-
-#endif // THYRA_SPMD_MULTI_VECTOR_BASE_DECL_HPP
+#endif  // THYRA_SPMD_MULTI_VECTOR_BASE_DECL_HPP

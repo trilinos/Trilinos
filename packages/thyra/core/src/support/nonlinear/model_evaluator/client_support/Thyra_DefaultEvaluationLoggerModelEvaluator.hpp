@@ -16,7 +16,6 @@
 
 namespace Thyra {
 
-
 /** \brief This class wraps any ModelEvaluator object and logs the evaluation
  * of various functions.
  *
@@ -24,12 +23,10 @@ namespace Thyra {
  *
  * \ingroup Thyra_Nonlin_ME_support_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultEvaluationLoggerModelEvaluator
-  : virtual public ModelEvaluatorDelegatorBase<Scalar>
-{
-public:
-
+  : virtual public ModelEvaluatorDelegatorBase<Scalar> {
+ public:
   /** \name Constructors/initializers/accessors/utilities. */
   //@{
 
@@ -38,9 +35,7 @@ public:
 
   /** \brief . */
   DefaultEvaluationLoggerModelEvaluator(
-    const RCP<ModelEvaluator<Scalar> >   &thyraModel
-    ,const RCP<std::ostream>             &tableOut
-    );
+      const RCP<ModelEvaluator<Scalar> > &thyraModel, const RCP<std::ostream> &tableOut);
 
   /** \brief Initalize.
    *
@@ -55,9 +50,7 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<ModelEvaluator<Scalar> >   &thyraModel
-    ,const RCP<std::ostream>             &tableOut
-    );
+      const RCP<ModelEvaluator<Scalar> > &thyraModel, const RCP<std::ostream> &tableOut);
 
   //@}
 
@@ -69,38 +62,33 @@ public:
 
   //@}
 
-private:
-
+ private:
   /** \name Private functions overridden from ModelEvaulatorDefaultBase */
   //@{
 
   /** \brief . */
   void evalModelImpl(
-    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
-    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
-    ) const;
+      const ModelEvaluatorBase::InArgs<Scalar> &inArgs, const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 
-private:
-
+ private:
   RCP<std::ostream> tableOut_;
   Teuchos::Time timer_;
-  
+
   mutable bool headerPrinted_;
   mutable bool supports_f_;
   mutable bool supports_W_;
-  
+
   static const int flt_width_;
   static const int flt_sciPrec_;
   static const int flt_prec_;
   static const char flt_line_[];
   static const int int_width_;
   static const char int_line_[];
-  
-  void printHeader( const ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const;
-  void printLine( const ModelEvaluatorBase::OutArgs<Scalar> &outArgs ) const;
-  
+
+  void printHeader(const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
+  void printLine(const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 };
 
 // /////////////////////////////////
@@ -108,108 +96,89 @@ private:
 
 // Constructors/initializers/accessors/utilities
 
-template<class Scalar>
-const int DefaultEvaluationLoggerModelEvaluator<Scalar>::flt_width_ = 25; 
-template<class Scalar>
-const int DefaultEvaluationLoggerModelEvaluator<Scalar>::flt_sciPrec_  = 16;
-template<class Scalar>
-const int DefaultEvaluationLoggerModelEvaluator<Scalar>::flt_prec_  = 16;
-template<class Scalar>
-const char DefaultEvaluationLoggerModelEvaluator<Scalar>::flt_line_[]  = "-------------------------";
-template<class Scalar>
-const int DefaultEvaluationLoggerModelEvaluator<Scalar>::int_width_ = 10; 
-template<class Scalar>
-const char DefaultEvaluationLoggerModelEvaluator<Scalar>::int_line_[]  = "----------";
+template <class Scalar>
+const int DefaultEvaluationLoggerModelEvaluator<Scalar>::flt_width_ = 25;
+template <class Scalar>
+const int DefaultEvaluationLoggerModelEvaluator<Scalar>::flt_sciPrec_ = 16;
+template <class Scalar>
+const int DefaultEvaluationLoggerModelEvaluator<Scalar>::flt_prec_ = 16;
+template <class Scalar>
+const char DefaultEvaluationLoggerModelEvaluator<Scalar>::flt_line_[] = "-------------------------";
+template <class Scalar>
+const int DefaultEvaluationLoggerModelEvaluator<Scalar>::int_width_ = 10;
+template <class Scalar>
+const char DefaultEvaluationLoggerModelEvaluator<Scalar>::int_line_[] = "----------";
 
-template<class Scalar>
+template <class Scalar>
 DefaultEvaluationLoggerModelEvaluator<Scalar>::DefaultEvaluationLoggerModelEvaluator()
-  :timer_(""),headerPrinted_(false)
-{}
+  : timer_("")
+  , headerPrinted_(false) {}
 
-template<class Scalar>
+template <class Scalar>
 DefaultEvaluationLoggerModelEvaluator<Scalar>::DefaultEvaluationLoggerModelEvaluator(
-  const RCP<ModelEvaluator<Scalar> >   &thyraModel
-  ,const RCP<std::ostream>             &tableOut
-  )
-  :timer_(""),headerPrinted_(false), supports_f_(false), supports_W_(false)
-{
-  initialize(thyraModel,tableOut);
+    const RCP<ModelEvaluator<Scalar> > &thyraModel, const RCP<std::ostream> &tableOut)
+  : timer_("")
+  , headerPrinted_(false)
+  , supports_f_(false)
+  , supports_W_(false) {
+  initialize(thyraModel, tableOut);
 }
 
-template<class Scalar>
+template <class Scalar>
 void DefaultEvaluationLoggerModelEvaluator<Scalar>::initialize(
-  const RCP<ModelEvaluator<Scalar> >   &thyraModel
-  ,const RCP<std::ostream>             &tableOut
-  )
-{
-  TEUCHOS_TEST_FOR_EXCEPT( tableOut.get()==NULL );
+    const RCP<ModelEvaluator<Scalar> > &thyraModel, const RCP<std::ostream> &tableOut) {
+  TEUCHOS_TEST_FOR_EXCEPT(tableOut.get() == NULL);
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
   tableOut_ = tableOut;
   timer_.start(true);
   headerPrinted_ = false;
 }
 
-
 // Public functions overridden from Teuchos::Describable
 
-
-template<class Scalar>
-std::string DefaultEvaluationLoggerModelEvaluator<Scalar>::description() const
-{
+template <class Scalar>
+std::string DefaultEvaluationLoggerModelEvaluator<Scalar>::description() const {
   const RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
+      thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultEvaluationLoggerModelEvaluator{";
   oss << "thyraModel=";
-  if(thyraModel.get())
-    oss << "\'"<<thyraModel->description()<<"\'";
+  if (thyraModel.get())
+    oss << "\'" << thyraModel->description() << "\'";
   else
     oss << "NULL";
   oss << "}";
   return oss.str();
 }
 
-
 // Private functions overridden from ModelEvaulatorDefaultBase
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultEvaluationLoggerModelEvaluator<Scalar>::evalModelImpl(
-  const ModelEvaluatorBase::InArgs<Scalar>     &inArgs
-  ,const ModelEvaluatorBase::OutArgs<Scalar>   &outArgs
-  ) const
-{
-
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs, const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const {
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
-    "Thyra::DefaultEvaluationLoggerModelEvaluator",inArgs,outArgs
-    );
+      "Thyra::DefaultEvaluationLoggerModelEvaluator", inArgs, outArgs);
 
-  thyraModel->evalModel(inArgs,outArgs);
+  thyraModel->evalModel(inArgs, outArgs);
 
-  if(!headerPrinted_) {
+  if (!headerPrinted_) {
     printHeader(outArgs);
     headerPrinted_ = true;
   }
   printLine(outArgs);
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
-  
 }
-
 
 // private
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultEvaluationLoggerModelEvaluator<Scalar>::printHeader(
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-  ) const
-{
-
-  using std::setw;
-  using std::setprecision;
-  using std::right;
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const {
   using std::left;
+  using std::right;
+  using std::setprecision;
+  using std::setw;
   typedef ModelEvaluatorBase MEB;
 
   supports_f_ = outArgs.supports(MEB::OUT_ARG_f);
@@ -218,75 +187,71 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::printHeader(
   const int Ng = outArgs.Ng();
 
   *tableOut_
-    << "\n***"
-    << "\n*** Table of function evaluations vs. CPU time"
-    << "\n***\n";
+      << "\n***"
+      << "\n*** Table of function evaluations vs. CPU time"
+      << "\n***\n";
 
   *tableOut_
-    << "\nModel Evaluator Description:\n" << Teuchos::describe(*this,Teuchos::VERB_LOW);
-  
+      << "\nModel Evaluator Description:\n"
+      << Teuchos::describe(*this, Teuchos::VERB_LOW);
+
   *tableOut_ << "\n";
   *tableOut_ << "  " << left << setw(flt_width_) << "time(s)";
-  for( int j = 0; j < Ng; ++j ) {
+  for (int j = 0; j < Ng; ++j) {
     std::ostringstream oss;
-    oss << "||g("<<j<<")||";
+    oss << "||g(" << j << ")||";
     *tableOut_ << "  " << left << setw(flt_width_) << oss.str();
   }
-  if(supports_f_)
+  if (supports_f_)
     *tableOut_ << "  " << left << setw(flt_width_) << "||f||";
-  if(supports_W_)
+  if (supports_W_)
     *tableOut_ << "  " << left << setw(int_width_) << "Calc W";
   *tableOut_ << "\n";
-  
-  *tableOut_ << "  " << left << setw(flt_width_) << flt_line_;   // time(s)
-  for( int j = 0; j < Ng; ++j )
-    *tableOut_ << "  " << left << setw(flt_width_) << flt_line_; // ||g(j)||
-  if(supports_f_)
-    *tableOut_ << "  " << left << setw(flt_width_) << flt_line_; // ||f||
-  if(supports_W_)
-    *tableOut_ << "  " << left << setw(int_width_) << int_line_; // Calc W
-  *tableOut_ << "\n";
 
+  *tableOut_ << "  " << left << setw(flt_width_) << flt_line_;  // time(s)
+  for (int j = 0; j < Ng; ++j)
+    *tableOut_ << "  " << left << setw(flt_width_) << flt_line_;  // ||g(j)||
+  if (supports_f_)
+    *tableOut_ << "  " << left << setw(flt_width_) << flt_line_;  // ||f||
+  if (supports_W_)
+    *tableOut_ << "  " << left << setw(int_width_) << int_line_;  // Calc W
+  *tableOut_ << "\n";
 }
 
-template<class Scalar>
+template <class Scalar>
 void DefaultEvaluationLoggerModelEvaluator<Scalar>::printLine(
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-  ) const
-{
-
-  using std::right;
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const {
   using std::left;
+  using std::right;
   using std::setprecision;
   using std::setw;
 
   const int Ng = outArgs.Ng();
 
   RCP<const VectorBase<Scalar> > f, g_j;
-  
+
   *tableOut_ << "  " << setprecision(flt_prec_) << right << setw(flt_width_) << timer_.totalElapsedTime(true);
-  for( int j = 0; j < Ng; ++j ) {
-    if((g_j=outArgs.get_g(j)).get())
+  for (int j = 0; j < Ng; ++j) {
+    if ((g_j = outArgs.get_g(j)).get())
       *tableOut_ << "  " << setprecision(flt_sciPrec_) << right << setw(flt_width_) << norm(*g_j);
     else
       *tableOut_ << "  " << right << setw(flt_width_) << "-";
   }
-  if(supports_f_) {
-    if((f=outArgs.get_f()).get())
+  if (supports_f_) {
+    if ((f = outArgs.get_f()).get())
       *tableOut_ << "  " << setprecision(flt_sciPrec_) << right << setw(flt_width_) << norm(*f);
     else
       *tableOut_ << "  " << right << setw(flt_width_) << "-";
   }
-  if(supports_W_) {
-    if(outArgs.get_W().get())
+  if (supports_W_) {
+    if (outArgs.get_W().get())
       *tableOut_ << "  " << right << setw(int_width_) << "1";
     else
       *tableOut_ << "  " << right << setw(int_width_) << "-";
   }
   *tableOut_ << "\n";
-
 }
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_DEFAULT_EVALUATION_LOGGER_MODEL_EVALUATOR_HPP
+#endif  // THYRA_DEFAULT_EVALUATION_LOGGER_MODEL_EVALUATOR_HPP

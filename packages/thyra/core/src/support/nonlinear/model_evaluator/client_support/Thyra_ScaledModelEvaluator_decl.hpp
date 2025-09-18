@@ -14,7 +14,6 @@
 
 namespace Thyra {
 
-
 /** \brief This class decorates a ModelEvaluator and returns scaled
  * residual and Jacobian values.
  *
@@ -23,54 +22,43 @@ namespace Thyra {
  *
  * \ingroup Thyra_Nonlin_ME_support_grp
  */
-template<class Scalar>
-class ScaledModelEvaluator : 
-    virtual public ModelEvaluatorDelegatorBase<Scalar>
-{
-public:
-  
+template <class Scalar>
+class ScaledModelEvaluator : virtual public ModelEvaluatorDelegatorBase<Scalar> {
+ public:
   /** \brief Constructs to uninitialized */
   ScaledModelEvaluator();
-  
+
   /** \brief . */
   std::string description() const;
 
   /** \brief . */
-  void set_f_scaling(const RCP<const Thyra::VectorBase<Scalar> >& f_scaling);
+  void set_f_scaling(const RCP<const Thyra::VectorBase<Scalar> > &f_scaling);
 
-private:
-
+ private:
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
   /** \brief . */
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
-  
-private:
 
+ private:
   //* Diagonal scaling vector */
   RCP<const Thyra::VectorBase<Scalar> > f_scaling_;
-
 };
 
-
 /** \brief Nonmember constructor. */
-template<class Scalar>
+template <class Scalar>
 RCP<ScaledModelEvaluator<Scalar> >
-createNonconstScaledModelEvaluator(const RCP<ModelEvaluator<Scalar > > &model)
-{
+createNonconstScaledModelEvaluator(const RCP<ModelEvaluator<Scalar> > &model) {
   RCP<ScaledModelEvaluator<Scalar> > srme(new ScaledModelEvaluator<Scalar>);
   srme->initialize(model);
   return srme;
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_SCALED_MODEL_EVALUATOR_HPP
+#endif  // THYRA_SCALED_MODEL_EVALUATOR_HPP

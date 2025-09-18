@@ -16,9 +16,7 @@
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Factory interface for creating preconditioner objects from
  * <tt>LinearOpBase</tt> objects.
@@ -27,14 +25,12 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  */
-template<class Scalar>
+template <class Scalar>
 class PreconditionerFactoryBase
   : virtual public Teuchos::Describable,
     virtual public Teuchos::ParameterListAcceptor,
-    virtual public Teuchos::VerboseObject<PreconditionerFactoryBase<Scalar> >
-{
-public:
-
+    virtual public Teuchos::VerboseObject<PreconditionerFactoryBase<Scalar> > {
+ public:
   /** @name Pure virtual public functions that must be overridden in subclasses */
   //@{
 
@@ -125,10 +121,9 @@ public:
    * </ul>
    */
   virtual void initializePrec(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    PreconditionerBase<Scalar> *precOp,
-    const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
-    ) const = 0;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      PreconditionerBase<Scalar> *precOp,
+      const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED) const = 0;
 
   /** \brief Uninitialize a <tt>LinearOpBase</tt> preconditioner object and
    * return its remembered forward linear operator.
@@ -179,10 +174,9 @@ public:
    * could be left in an inconsistent state.  However, this is not required.
    */
   virtual void uninitializePrec(
-    PreconditionerBase<Scalar> *prec,
-    RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,
-    ESupportSolveUse *supportSolveUse = NULL
-    ) const = 0;
+      PreconditionerBase<Scalar> *prec,
+      RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,
+      ESupportSolveUse *supportSolveUse                = NULL) const = 0;
 
   //@}
 
@@ -206,16 +200,12 @@ public:
 
   //@}
 
-private:
-
+ private:
   // Not defined and not to be called
-  PreconditionerFactoryBase<Scalar>&
-  operator=(const PreconditionerFactoryBase<Scalar>&);
-
+  PreconditionerFactoryBase<Scalar> &
+  operator=(const PreconditionerFactoryBase<Scalar> &);
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_PRECONDITIONER_FACTORY_BASE_DECL_HPP
+#endif  // THYRA_PRECONDITIONER_FACTORY_BASE_DECL_HPP

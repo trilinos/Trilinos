@@ -10,69 +10,53 @@
 #ifndef THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
-
 #include "Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory_decl.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
-#include "Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp" // Interface
-#include "Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp" // Implementation
+#include "Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp"     // Interface
+#include "Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp"  // Implementation
 #include "Thyra_DefaultLinearOpSource.hpp"
-
 
 namespace Thyra {
 
-
 // Overridden from Constructors/Initializers/Accessors
 
-  
-template<class Scalar>
+template <class Scalar>
 DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::DefaultBlockedTriangularLinearOpWithSolveFactory(
-  const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf
-  )
-{
+    const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf) {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(lowsf));
 #endif
   lowsf_.initialize(lowsf);
 }
 
-  
-template<class Scalar>
+template <class Scalar>
 DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::DefaultBlockedTriangularLinearOpWithSolveFactory(
-  const RCP<const LinearOpWithSolveFactoryBase<Scalar> > &lowsf
-  )
-{
+    const RCP<const LinearOpWithSolveFactoryBase<Scalar> > &lowsf) {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(lowsf));
 #endif
   lowsf_.initialize(lowsf);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpWithSolveFactoryBase<Scalar> >
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getUnderlyingLOWSF()
-{
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getUnderlyingLOWSF() {
   return lowsf_.getNonconstObj();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const LinearOpWithSolveFactoryBase<Scalar> >
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getUnderlyingLOWSF() const
-{
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getUnderlyingLOWSF() const {
   return lowsf_.getConstObj();
 }
 
-
 // Overridden from Teuchos::Describable
 
-
-template<class Scalar>
+template <class Scalar>
 std::string
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::description() const
-{
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::description() const {
   std::ostringstream oss;
   oss << this->Teuchos::Describable::description()
       << "{"
@@ -85,127 +69,94 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::description() const
   return oss.str();
 }
 
-
 // Overridden from ParameterListAcceptor
 
-
-template<class Scalar>
-void
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::setParameterList(
-  RCP<ParameterList> const& paramList
-  )
-{
+template <class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::setParameterList(
+    RCP<ParameterList> const &paramList) {
   lowsf_.getNonconstObj()->setParameterList(paramList);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<ParameterList>
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getNonconstParameterList()
-{
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getNonconstParameterList() {
   return lowsf_.getNonconstObj()->getNonconstParameterList();
 }
 
-
-template<class Scalar>
-RCP<ParameterList> 
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::unsetParameterList()
-{
+template <class Scalar>
+RCP<ParameterList>
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::unsetParameterList() {
   return lowsf_.getNonconstObj()->unsetParameterList();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const ParameterList>
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getParameterList() const
-{
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getParameterList() const {
   return lowsf_.getConstObj()->getParameterList();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const ParameterList>
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getValidParameters() const
-{
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getValidParameters() const {
   return lowsf_.getConstObj()->getValidParameters();
 }
 
-
 // Overridden from LinearOpWithSolveFactoyBase
 
-
-template<class Scalar>
-bool
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::acceptsPreconditionerFactory() const
-{
+template <class Scalar>
+bool DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::acceptsPreconditionerFactory() const {
   return false;
 }
 
-
-template<class Scalar>
-void
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
-  const RCP<PreconditionerFactoryBase<Scalar> > &/* precFactory */,
-  const std::string &/* precFactoryName */
-  )
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-    "Error, we don't support a preconditioner factory!");
+template <class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
+    const RCP<PreconditionerFactoryBase<Scalar> > & /* precFactory */,
+    const std::string & /* precFactoryName */
+) {
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                             "Error, we don't support a preconditioner factory!");
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<PreconditionerFactoryBase<Scalar> >
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getPreconditionerFactory() const
-{
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::getPreconditionerFactory() const {
   return Teuchos::null;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::unsetPreconditionerFactory(
-  RCP<PreconditionerFactoryBase<Scalar> > * /* precFactory */,
-  std::string * /* precFactoryName */
-  )
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-    "Error, we don't support a preconditioner factory!");
+    RCP<PreconditionerFactoryBase<Scalar> > * /* precFactory */,
+    std::string * /* precFactoryName */
+) {
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                             "Error, we don't support a preconditioner factory!");
 }
 
-
-template<class Scalar>
-bool
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::isCompatible(
-  const LinearOpSourceBase<Scalar> &/* fwdOpSrc */
-  ) const
-{
+template <class Scalar>
+bool DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::isCompatible(
+    const LinearOpSourceBase<Scalar> & /* fwdOpSrc */
+) const {
   TEUCHOS_TEST_FOR_EXCEPT(true);
   TEUCHOS_UNREACHABLE_RETURN(false);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpWithSolveBase<Scalar> >
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::createOp() const
-{
+DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::createOp() const {
   return defaultBlockedTriangularLinearOpWithSolve<Scalar>();
 }
 
-
-template<class Scalar>
-void
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse /* supportSolveUse */
-  ) const
-{
-
+template <class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(
+    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+    LinearOpWithSolveBase<Scalar> *Op,
+    const ESupportSolveUse /* supportSolveUse */
+) const {
   using Teuchos::dyn_cast;
   using Teuchos::rcp_dynamic_cast;
 
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0 == Op);
 #endif
 
   // Set the verbosity settings for the wrapped LOWSF object!
@@ -215,8 +166,8 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(
   // Get the block interface to get at the blocks
   typedef PhysicallyBlockedLinearOpBase<Scalar> PBLOB;
   const RCP<const PBLOB> blo =
-    rcp_dynamic_cast<const PBLOB>(fwdOpSrc->getOp().assert_not_null());
-  
+      rcp_dynamic_cast<const PBLOB>(fwdOpSrc->getOp().assert_not_null());
+
   // Dynamic cast to get the DefaultBlockedTriangularLinearOpWithSolveBase
   // interface that we will fill.
 
@@ -231,25 +182,23 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(
   // If this is the first time through, we need to fill and create the block
   // structure
   if (firstTime)
-    btlows.beginBlockFill(blo->productRange(),blo->productDomain());
+    btlows.beginBlockFill(blo->productRange(), blo->productDomain());
 
   const int N = blo->productRange()->numBlocks();
-  for ( int k = 0; k < N; ++k ) {
+  for (int k = 0; k < N; ++k) {
     const RCP<const LinearOpBase<Scalar> > fwdOp_k =
-      blo->getBlock(k,k).assert_not_null();
+        blo->getBlock(k, k).assert_not_null();
     if (firstTime) {
       // This is the first time through so reate and initialize a new LOWSB
       // object for each block
-      btlows.setNonconstLOWSBlock( k, k,
-        linearOpWithSolve<Scalar>(*lowsf_.getConstObj(),fwdOp_k)
-        );
-    }
-    else {
+      btlows.setNonconstLOWSBlock(k, k,
+                                  linearOpWithSolve<Scalar>(*lowsf_.getConstObj(), fwdOp_k));
+    } else {
       // This is not the first time through so we need to just reinitiallize
       // the object that is already created.  This allows us to efficiently
       // reuse precreated structure and storage.
       RCP<LinearOpWithSolveBase<Scalar> >
-        invOp_k = btlows.getNonconstLOWSBlock(k,k).assert_not_null();
+          invOp_k = btlows.getNonconstLOWSBlock(k, k).assert_not_null();
       Thyra::initializeOp<Scalar>(*lowsf_.getConstObj(), fwdOp_k, invOp_k.ptr());
     }
   }
@@ -267,36 +216,29 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(
   // Set the verbosity settings
   btlows.setOStream(this->getOStream());
   btlows.setVerbLevel(this->getVerbLevel());
-
 }
 
-
-template<class Scalar>
-void
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
-  LinearOpWithSolveBase<Scalar> * /* Op */
-  ) const
-{
+template <class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
+    const RCP<const LinearOpSourceBase<Scalar> > & /* fwdOpSrc */,
+    LinearOpWithSolveBase<Scalar> * /* Op */
+) const {
   TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
-
-template<class Scalar>
-void
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::uninitializeOp(
-  LinearOpWithSolveBase<Scalar> *Op,
-  RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
-  RCP<const PreconditionerBase<Scalar> > *prec,
-  RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
-  ESupportSolveUse * /* supportSolveUse */
-  ) const
-{
+template <class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::uninitializeOp(
+    LinearOpWithSolveBase<Scalar> *Op,
+    RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
+    RCP<const PreconditionerBase<Scalar> > *prec,
+    RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
+    ESupportSolveUse * /* supportSolveUse */
+) const {
   using Teuchos::dyn_cast;
-  using Teuchos::rcp_implicit_cast;
   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
   typedef DefaultBlockedTriangularLinearOpWithSolve<Scalar> DBTLOWS;
-  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0 == Op);
   DBTLOWS &btlowsOp = dyn_cast<DBTLOWS>(*Op);
   if (fwdOpSrc) {
     const RCP<const LinearOpBase<Scalar> > fwdOp = btlowsOp.getBlocks();
@@ -309,13 +251,10 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   if (approxFwdOpSrc) *approxFwdOpSrc = Teuchos::null;
 }
 
-
-template<class Scalar>
-bool
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(
-  const EPreconditionerInputType /* precOpType */
-  ) const
-{
+template <class Scalar>
+bool DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(
+    const EPreconditionerInputType /* precOpType */
+) const {
   // We don't support any external preconditioners!
   return false;
   // 20071006: rabartl: Note: We could support external preconditioners but it
@@ -324,48 +263,36 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::supportsPreconditioner
   // am not going to do this until we have to.
 }
 
-
-template<class Scalar>
-void
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
-  const RCP<const PreconditionerBase<Scalar> > &/* prec */,
-  LinearOpWithSolveBase<Scalar> * /* Op */,
-  const ESupportSolveUse /* supportSolveUse */
-  ) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-    "Error, we don't support an external preconditioner!");
+template <class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
+    const RCP<const LinearOpSourceBase<Scalar> > & /* fwdOpSrc */,
+    const RCP<const PreconditionerBase<Scalar> > & /* prec */,
+    LinearOpWithSolveBase<Scalar> * /* Op */,
+    const ESupportSolveUse /* supportSolveUse */
+) const {
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                             "Error, we don't support an external preconditioner!");
 }
 
-
-template<class Scalar>
-void
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
-  const RCP<const LinearOpSourceBase<Scalar> > &/* approxFwdOpSrc */,
-  LinearOpWithSolveBase<Scalar> * /* Op */,
-  const ESupportSolveUse /* supportSolveUse */
-  ) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-    "Error, we don't support an external preconditioner!");
+template <class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
+    const RCP<const LinearOpSourceBase<Scalar> > & /* fwdOpSrc */,
+    const RCP<const LinearOpSourceBase<Scalar> > & /* approxFwdOpSrc */,
+    LinearOpWithSolveBase<Scalar> * /* Op */,
+    const ESupportSolveUse /* supportSolveUse */
+) const {
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                             "Error, we don't support an external preconditioner!");
 }
-
 
 // protected
 
-
-template<class Scalar>
-void
-DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::informUpdatedVerbosityState() const
-{
+template <class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::informUpdatedVerbosityState() const {
   lowsf_.getConstObj()->setVerbLevel(this->getVerbLevel());
   lowsf_.getConstObj()->setOStream(this->getOStream());
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
+#endif  // THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_FACTORY_HPP

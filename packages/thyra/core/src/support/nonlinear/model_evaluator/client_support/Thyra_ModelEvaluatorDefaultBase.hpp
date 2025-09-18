@@ -15,9 +15,7 @@
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 
-
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
-
 
 // Define the polynomial traits class specializtaion
 // Teuchos::PolynomialTraits<VectorBase > before there is any chance of an
@@ -34,12 +32,9 @@
 // subpackages in the CMake build system.
 #include "Thyra_PolynomialVectorTraits.hpp"
 
-
-#endif // HAVE_THYRA_ME_POLYNOMIAL
-
+#endif  // HAVE_THYRA_ME_POLYNOMIAL
 
 namespace Thyra {
-
 
 //
 // Undocumentated (from the user's perspective) types that are used to
@@ -47,83 +42,65 @@ namespace Thyra {
 // the templated class since they do nt depend on the scalar type.
 //
 
-
 namespace ModelEvaluatorDefaultBaseTypes {
-
 
 // Type used to determine if the ModelEvaluatorDefaultBase implementation will
 // provide a LinearOpBase wrapper for derivative object given in
 // MultiVectorBase form.
 class DefaultDerivLinearOpSupport {
-public:
+ public:
   DefaultDerivLinearOpSupport()
-    :provideDefaultLinearOp_(false),
-     mvImplOrientation_(ModelEvaluatorBase::DERIV_MV_BY_COL)
-    {}
+    : provideDefaultLinearOp_(false)
+    , mvImplOrientation_(ModelEvaluatorBase::DERIV_MV_BY_COL) {}
   DefaultDerivLinearOpSupport(
-    const ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvImplOrientation_in
-    )
-    :provideDefaultLinearOp_(true),
-     mvImplOrientation_(mvImplOrientation_in)
-    {}
-  bool provideDefaultLinearOp() const
-    { return provideDefaultLinearOp_; }
-  ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvImplOrientation() const
-    { return mvImplOrientation_; }
-private:
+      const ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvImplOrientation_in)
+    : provideDefaultLinearOp_(true)
+    , mvImplOrientation_(mvImplOrientation_in) {}
+  bool provideDefaultLinearOp() const { return provideDefaultLinearOp_; }
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvImplOrientation() const { return mvImplOrientation_; }
+
+ private:
   bool provideDefaultLinearOp_;
   ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvImplOrientation_;
 };
-
 
 // Type used to determine if the ModelEvaluatorDefaultBase implementation will
 // provide an explicit transpose copy of a derivative object given in
 // MultiVectorBase form.
 class DefaultDerivMvAdjointSupport {
-public:
+ public:
   DefaultDerivMvAdjointSupport()
-    :provideDefaultAdjoint_(false),
-     mvAdjointCopyOrientation_(ModelEvaluatorBase::DERIV_MV_BY_COL)
-    {}
+    : provideDefaultAdjoint_(false)
+    , mvAdjointCopyOrientation_(ModelEvaluatorBase::DERIV_MV_BY_COL) {}
   DefaultDerivMvAdjointSupport(
-    const ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvAdjointCopyOrientation_in
-    )
-    :provideDefaultAdjoint_(true),
-     mvAdjointCopyOrientation_(mvAdjointCopyOrientation_in)
-    {}
-  bool provideDefaultAdjoint() const
-    { return provideDefaultAdjoint_; }
-  ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvAdjointCopyOrientation() const
-    { return mvAdjointCopyOrientation_; }
-private:
+      const ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvAdjointCopyOrientation_in)
+    : provideDefaultAdjoint_(true)
+    , mvAdjointCopyOrientation_(mvAdjointCopyOrientation_in) {}
+  bool provideDefaultAdjoint() const { return provideDefaultAdjoint_; }
+  ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvAdjointCopyOrientation() const { return mvAdjointCopyOrientation_; }
+
+ private:
   bool provideDefaultAdjoint_;
   ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvAdjointCopyOrientation_;
 };
 
-
 // Type used to remember a pair of transposed multi-vectors to implement a
 // adjoint copy.
-template<class Scalar>
+template <class Scalar>
 struct MultiVectorAdjointPair {
-  MultiVectorAdjointPair()
-    {}
+  MultiVectorAdjointPair() {}
   MultiVectorAdjointPair(
-    const RCP<MultiVectorBase<Scalar> > &in_mvOuter,
-    const RCP<const MultiVectorBase<Scalar> > &in_mvImplAdjoint
-    )
-    : mvOuter(in_mvOuter),
-      mvImplAdjoint(in_mvImplAdjoint)
-    {}
+      const RCP<MultiVectorBase<Scalar> > &in_mvOuter,
+      const RCP<const MultiVectorBase<Scalar> > &in_mvImplAdjoint)
+    : mvOuter(in_mvOuter)
+    , mvImplAdjoint(in_mvImplAdjoint) {}
   RCP<MultiVectorBase<Scalar> > mvOuter;
   RCP<const MultiVectorBase<Scalar> > mvImplAdjoint;
-private:
+
+ private:
 };
 
-
-
-
-} // namespace ModelEvaluatorDefaultBaseTypes
-
+}  // namespace ModelEvaluatorDefaultBaseTypes
 
 /** \brief Default base class for concrete model evaluators.
  *
@@ -152,11 +129,9 @@ private:
  *
  * ToDo: Finish Documentation!
  */
-template<class Scalar>
-class ModelEvaluatorDefaultBase : virtual public ModelEvaluator<Scalar>
-{
-public:
-
+template <class Scalar>
+class ModelEvaluatorDefaultBase : virtual public ModelEvaluator<Scalar> {
+ public:
   /** \name Overridden from ModelEvaluator */
   //@{
 
@@ -178,9 +153,8 @@ public:
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
   /** \brief . */
   void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
+      const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
   /** \brief . */
   virtual RCP<const VectorSpaceBase<Scalar> > get_f_multiplier_space() const;
   /** \brief . */
@@ -192,19 +166,18 @@ public:
   /** \brief . */
   virtual RCP<LinearOpBase<Scalar> > create_hess_f_xp(int l) const;
   /** \brief . */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_f_pp( int l1, int l2 ) const;
+  virtual RCP<LinearOpBase<Scalar> > create_hess_f_pp(int l1, int l2) const;
   /** \brief . */
   virtual RCP<LinearOpBase<Scalar> > create_hess_g_xx(int j) const;
   /** \brief . */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xp( int j, int l ) const;
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_xp(int j, int l) const;
   /** \brief . */
-  virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const;
+  virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp(int j, int l1, int l2) const;
 #endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
   //@}
 
-protected:
-
+ protected:
   /** \name Setup functions called by subclasses */
   //@{
 
@@ -226,8 +199,7 @@ protected:
 
   //@}
 
-private:
-
+ private:
   /** \name Private functions with default implementaton to be overridden by subclasses */
   //@{
 
@@ -253,30 +225,27 @@ private:
 
   /** \brief . */
   virtual void evalModelImpl(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const = 0;
+      const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const = 0;
 
   //@}
 
-protected:
-
+ protected:
   /** \brief . */
   ModelEvaluatorDefaultBase();
 
-private:
-
+ private:
   // //////////////////////////////
   // Private tpyes
 
   typedef ModelEvaluatorDefaultBaseTypes::DefaultDerivLinearOpSupport
-  DefaultDerivLinearOpSupport;
+      DefaultDerivLinearOpSupport;
 
   typedef ModelEvaluatorDefaultBaseTypes::DefaultDerivMvAdjointSupport
-  DefaultDerivMvAdjointSupport;
+      DefaultDerivMvAdjointSupport;
 
   typedef ModelEvaluatorDefaultBaseTypes::MultiVectorAdjointPair<Scalar>
-  MultiVectorAdjointPair;
+      MultiVectorAdjointPair;
 
   // //////////////////////////////
   // Private data members
@@ -310,192 +279,156 @@ private:
 
   static DefaultDerivLinearOpSupport
   determineDefaultDerivLinearOpSupport(
-    const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl
-    );
+      const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl);
 
   static RCP<LinearOpBase<Scalar> >
   createDefaultLinearOp(
-    const DefaultDerivLinearOpSupport &defaultLinearOpSupport,
-    const RCP<const VectorSpaceBase<Scalar> > &fnc_space,
-    const RCP<const VectorSpaceBase<Scalar> > &var_space
-    );
+      const DefaultDerivLinearOpSupport &defaultLinearOpSupport,
+      const RCP<const VectorSpaceBase<Scalar> > &fnc_space,
+      const RCP<const VectorSpaceBase<Scalar> > &var_space);
 
   static ModelEvaluatorBase::DerivativeSupport
   updateDefaultLinearOpSupport(
-    const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
-    const DefaultDerivLinearOpSupport &defaultLinearOpSupport
-    );
+      const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
+      const DefaultDerivLinearOpSupport &defaultLinearOpSupport);
 
   static ModelEvaluatorBase::Derivative<Scalar>
   getOutArgImplForDefaultLinearOpSupport(
-    const ModelEvaluatorBase::Derivative<Scalar> &deriv,
-    const DefaultDerivLinearOpSupport &defaultLinearOpSupport
-    );
+      const ModelEvaluatorBase::Derivative<Scalar> &deriv,
+      const DefaultDerivLinearOpSupport &defaultLinearOpSupport);
 
   static DefaultDerivMvAdjointSupport
   determineDefaultDerivMvAdjointSupport(
-    const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
-    const VectorSpaceBase<Scalar> &fnc_space,
-    const VectorSpaceBase<Scalar> &var_space
-    );
+      const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
+      const VectorSpaceBase<Scalar> &fnc_space,
+      const VectorSpaceBase<Scalar> &var_space);
 
   static ModelEvaluatorBase::DerivativeSupport
   updateDefaultDerivMvAdjointSupport(
-    const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
-    const DefaultDerivMvAdjointSupport &defaultMvAdjointSupport
-    );
-
+      const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
+      const DefaultDerivMvAdjointSupport &defaultMvAdjointSupport);
 };
 
-
-} // namespace Thyra
-
+}  // namespace Thyra
 
 //
 // Implementations
 //
-
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Teuchos_Assert.hpp"
 
-
 namespace Thyra {
-
 
 // Overridden from ModelEvaluator
 
-
-template<class Scalar>
-int ModelEvaluatorDefaultBase<Scalar>::Np() const
-{
+template <class Scalar>
+int ModelEvaluatorDefaultBase<Scalar>::Np() const {
   lazyInitializeDefaultBase();
   return prototypeOutArgs_.Np();
 }
 
-
-template<class Scalar>
-int ModelEvaluatorDefaultBase<Scalar>::Ng() const
-{
+template <class Scalar>
+int ModelEvaluatorDefaultBase<Scalar>::Ng() const {
   lazyInitializeDefaultBase();
   return prototypeOutArgs_.Ng();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpWithSolveBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_W() const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_W() const {
   lazyInitializeDefaultBase();
   if (default_W_support_)
     return this->get_W_factory()->createOp();
   return Teuchos::null;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_DfDp_op(int l) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_DfDp_op(int l) const {
   lazyInitializeDefaultBase();
 #ifdef TEUCHOS_DEBUG
   assert_l(l);
 #endif
   const DefaultDerivLinearOpSupport
-    defaultLinearOpSupport = DfDp_default_op_support_[l];
+      defaultLinearOpSupport = DfDp_default_op_support_[l];
   if (defaultLinearOpSupport.provideDefaultLinearOp()) {
     return createDefaultLinearOp(
-      defaultLinearOpSupport,
-      this->get_f_space(),
-      this->get_p_space(l)
-      );
+        defaultLinearOpSupport,
+        this->get_f_space(),
+        this->get_p_space(l));
   }
   return this->create_DfDp_op_impl(l);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_DgDx_dot_op(int j) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_DgDx_dot_op(int j) const {
   lazyInitializeDefaultBase();
 #ifdef TEUCHOS_DEBUG
   assert_j(j);
 #endif
   const DefaultDerivLinearOpSupport
-    defaultLinearOpSupport = DgDx_dot_default_op_support_[j];
+      defaultLinearOpSupport = DgDx_dot_default_op_support_[j];
   if (defaultLinearOpSupport.provideDefaultLinearOp()) {
     return createDefaultLinearOp(
-      defaultLinearOpSupport,
-      this->get_g_space(j),
-      this->get_x_space()
-      );
+        defaultLinearOpSupport,
+        this->get_g_space(j),
+        this->get_x_space());
   }
   return this->create_DgDx_dot_op_impl(j);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_DgDx_op(int j) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_DgDx_op(int j) const {
   lazyInitializeDefaultBase();
 #ifdef TEUCHOS_DEBUG
   assert_j(j);
 #endif
   const DefaultDerivLinearOpSupport
-    defaultLinearOpSupport = DgDx_default_op_support_[j];
+      defaultLinearOpSupport = DgDx_default_op_support_[j];
   if (defaultLinearOpSupport.provideDefaultLinearOp()) {
     return createDefaultLinearOp(
-      defaultLinearOpSupport,
-      this->get_g_space(j),
-      this->get_x_space()
-      );
+        defaultLinearOpSupport,
+        this->get_g_space(j),
+        this->get_x_space());
   }
   return this->create_DgDx_op_impl(j);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op(int j, int l) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op(int j, int l) const {
   lazyInitializeDefaultBase();
 #ifdef TEUCHOS_DEBUG
   assert_j(j);
   assert_l(l);
 #endif
   const DefaultDerivLinearOpSupport
-    defaultLinearOpSupport = DgDp_default_op_support_[j][l];
+      defaultLinearOpSupport = DgDp_default_op_support_[j][l];
   if (defaultLinearOpSupport.provideDefaultLinearOp()) {
     return createDefaultLinearOp(
-      defaultLinearOpSupport,
-      this->get_g_space(j),
-      this->get_p_space(l)
-      );
+        defaultLinearOpSupport,
+        this->get_g_space(j),
+        this->get_p_space(l));
   }
-  return this->create_DgDp_op_impl(j,l);
+  return this->create_DgDp_op_impl(j, l);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
-ModelEvaluatorDefaultBase<Scalar>::createOutArgs() const
-{
+ModelEvaluatorDefaultBase<Scalar>::createOutArgs() const {
   lazyInitializeDefaultBase();
   return prototypeOutArgs_;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void ModelEvaluatorDefaultBase<Scalar>::evalModel(
-  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-  ) const
-{
-
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const {
   using Teuchos::outArg;
   typedef ModelEvaluatorBase MEB;
 
@@ -509,8 +442,8 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
   //
 
 #ifdef TEUCHOS_DEBUG
-  assertInArgsEvalObjects(*this,inArgs);
-  assertOutArgsEvalObjects(*this,outArgs,&inArgs);
+  assertInArgsEvalObjects(*this, inArgs);
+  assertOutArgsEvalObjects(*this, outArgs, &inArgs);
 #endif
 
   //
@@ -522,122 +455,94 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
   Array<MultiVectorAdjointPair> DgDp_temp_adjoint_copies;
 
   {
-
-    outArgsImpl.setArgs(outArgs,true);
+    outArgsImpl.setArgs(outArgs, true);
 
     // DfDp(l)
     if (outArgsImpl.supports(MEB::OUT_ARG_f)) {
-      for ( int l = 0; l < l_Np; ++l ) {
+      for (int l = 0; l < l_Np; ++l) {
         const DefaultDerivLinearOpSupport defaultLinearOpSupport =
-          DfDp_default_op_support_[l];
+            DfDp_default_op_support_[l];
         if (defaultLinearOpSupport.provideDefaultLinearOp()) {
-          outArgsImpl.set_DfDp( l,
-            getOutArgImplForDefaultLinearOpSupport(
-              outArgs.get_DfDp(l), defaultLinearOpSupport
-              )
-            );
-        }
-        else {
+          outArgsImpl.set_DfDp(l,
+                               getOutArgImplForDefaultLinearOpSupport(
+                                   outArgs.get_DfDp(l), defaultLinearOpSupport));
+        } else {
           // DfDp(l) already set by outArgsImpl.setArgs(...)!
         }
       }
     }
 
     // DgDx_dot(j)
-    for ( int j = 0; j < l_Ng; ++j ) {
+    for (int j = 0; j < l_Ng; ++j) {
       const DefaultDerivLinearOpSupport defaultLinearOpSupport =
-        DgDx_dot_default_op_support_[j];
+          DgDx_dot_default_op_support_[j];
       if (defaultLinearOpSupport.provideDefaultLinearOp()) {
-        outArgsImpl.set_DgDx_dot( j,
-          getOutArgImplForDefaultLinearOpSupport(
-            outArgs.get_DgDx_dot(j), defaultLinearOpSupport
-            )
-          );
-      }
-      else {
+        outArgsImpl.set_DgDx_dot(j,
+                                 getOutArgImplForDefaultLinearOpSupport(
+                                     outArgs.get_DgDx_dot(j), defaultLinearOpSupport));
+      } else {
         // DgDx_dot(j) already set by outArgsImpl.setArgs(...)!
       }
     }
 
     // DgDx(j)
-    for ( int j = 0; j < l_Ng; ++j ) {
+    for (int j = 0; j < l_Ng; ++j) {
       const DefaultDerivLinearOpSupport defaultLinearOpSupport =
-        DgDx_default_op_support_[j];
+          DgDx_default_op_support_[j];
       if (defaultLinearOpSupport.provideDefaultLinearOp()) {
-        outArgsImpl.set_DgDx( j,
-          getOutArgImplForDefaultLinearOpSupport(
-            outArgs.get_DgDx(j), defaultLinearOpSupport
-            )
-          );
-      }
-      else {
+        outArgsImpl.set_DgDx(j,
+                             getOutArgImplForDefaultLinearOpSupport(
+                                 outArgs.get_DgDx(j), defaultLinearOpSupport));
+      } else {
         // DgDx(j) already set by outArgsImpl.setArgs(...)!
       }
     }
 
     // DgDp(j,l)
-    for ( int j = 0; j < l_Ng; ++j ) {
+    for (int j = 0; j < l_Ng; ++j) {
       const Array<DefaultDerivLinearOpSupport> &DgDp_default_op_support_j =
-        DgDp_default_op_support_[j];
+          DgDp_default_op_support_[j];
       const Array<DefaultDerivMvAdjointSupport> &DgDp_default_mv_support_j =
-        DgDp_default_mv_support_[j];
-      for ( int l = 0; l < l_Np; ++l ) {
+          DgDp_default_mv_support_[j];
+      for (int l = 0; l < l_Np; ++l) {
         const DefaultDerivLinearOpSupport defaultLinearOpSupport =
-          DgDp_default_op_support_j[l];
+            DgDp_default_op_support_j[l];
         const DefaultDerivMvAdjointSupport defaultMvAdjointSupport =
-          DgDp_default_mv_support_j[l];
+            DgDp_default_mv_support_j[l];
         MEB::Derivative<Scalar> DgDp_j_l;
-        if (!outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none())
-          DgDp_j_l = outArgs.get_DgDp(j,l);
+        if (!outArgs.supports(MEB::OUT_ARG_DgDp, j, l).none())
+          DgDp_j_l = outArgs.get_DgDp(j, l);
         if (
-          defaultLinearOpSupport.provideDefaultLinearOp()
-          && !is_null(DgDp_j_l.getLinearOp())
-          )
-        {
-          outArgsImpl.set_DgDp( j, l,
-            getOutArgImplForDefaultLinearOpSupport(
-              DgDp_j_l, defaultLinearOpSupport
-              )
-            );
-        }
-        else if (
-          defaultMvAdjointSupport.provideDefaultAdjoint()
-          && !is_null(DgDp_j_l.getMultiVector())
-          )
-        {
+            defaultLinearOpSupport.provideDefaultLinearOp() && !is_null(DgDp_j_l.getLinearOp())) {
+          outArgsImpl.set_DgDp(j, l,
+                               getOutArgImplForDefaultLinearOpSupport(
+                                   DgDp_j_l, defaultLinearOpSupport));
+        } else if (
+            defaultMvAdjointSupport.provideDefaultAdjoint() && !is_null(DgDp_j_l.getMultiVector())) {
           const RCP<MultiVectorBase<Scalar> > DgDp_j_l_mv =
-            DgDp_j_l.getMultiVector();
+              DgDp_j_l.getMultiVector();
           if (
-            defaultMvAdjointSupport.mvAdjointCopyOrientation()
-            ==
-            DgDp_j_l.getMultiVectorOrientation()
-            )
-          {
+              defaultMvAdjointSupport.mvAdjointCopyOrientation() ==
+              DgDp_j_l.getMultiVectorOrientation()) {
             // The orientation of the multi-vector is different so we need to
             // create a temporary copy to pass to evalModelImpl(...) and then
             // copy it back again!
             const RCP<MultiVectorBase<Scalar> > DgDp_j_l_mv_adj =
-              createMembers(DgDp_j_l_mv->domain(), DgDp_j_l_mv->range()->dim());
-            outArgsImpl.set_DgDp( j, l,
-              MEB::Derivative<Scalar>(
-                DgDp_j_l_mv_adj,
-                getOtherDerivativeMultiVectorOrientation(
-                  defaultMvAdjointSupport.mvAdjointCopyOrientation()
-                  )
-                )
-              );
+                createMembers(DgDp_j_l_mv->domain(), DgDp_j_l_mv->range()->dim());
+            outArgsImpl.set_DgDp(j, l,
+                                 MEB::Derivative<Scalar>(
+                                     DgDp_j_l_mv_adj,
+                                     getOtherDerivativeMultiVectorOrientation(
+                                         defaultMvAdjointSupport.mvAdjointCopyOrientation())));
             // Remember these multi-vectors so that we can do the transpose copy
             // back after the evaluation!
             DgDp_temp_adjoint_copies.push_back(
-              MultiVectorAdjointPair(DgDp_j_l_mv, DgDp_j_l_mv_adj)
-              );
-          }
-          else {
+                MultiVectorAdjointPair(DgDp_j_l_mv, DgDp_j_l_mv_adj));
+          } else {
             // The form of the multi-vector is supported by evalModelImpl(..)
             // and is already set on the outArgsImpl object.
           }
-        }
-        else {
+        } else {
           // DgDp(j,l) already set by outArgsImpl.setArgs(...)!
         }
       }
@@ -646,9 +551,9 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
     // W
     {
       RCP<LinearOpWithSolveBase<Scalar> > W;
-      if ( default_W_support_ && !is_null(W=outArgs.get_W()) ) {
+      if (default_W_support_ && !is_null(W = outArgs.get_W())) {
         const RCP<const LinearOpWithSolveFactoryBase<Scalar> >
-          W_factory = this->get_W_factory();
+            W_factory = this->get_W_factory();
         // Extract the underlying W_op object (if it exists)
         RCP<const LinearOpBase<Scalar> > W_op_const;
         uninitializeOp<Scalar>(*W_factory, W.ptr(), outArg(W_op_const));
@@ -659,8 +564,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
           // expect to change that object after the fact.  That is our
           // prerogative.
           W_op = Teuchos::rcp_const_cast<LinearOpBase<Scalar> >(W_op_const);
-        }
-        else {
+        } else {
           // The W_op object has not been initialized yet so create it.  The
           // next time through, we should not have to do this!
           W_op = this->create_W_op();
@@ -674,7 +578,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
   // C) Evaluate the underlying model implementation!
   //
 
-  this->evalModelImpl( inArgs, outArgsImpl );
+  this->evalModelImpl(inArgs, outArgsImpl);
 
   //
   // D) Post-process the output arguments
@@ -682,47 +586,42 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
 
   // Do explicit transposes for DgDp(j,l) if needed
   const int numMvAdjointCopies = DgDp_temp_adjoint_copies.size();
-  for ( int adj_copy_i = 0; adj_copy_i < numMvAdjointCopies; ++adj_copy_i ) {
+  for (int adj_copy_i = 0; adj_copy_i < numMvAdjointCopies; ++adj_copy_i) {
     const MultiVectorAdjointPair adjPair =
-      DgDp_temp_adjoint_copies[adj_copy_i];
-    doExplicitMultiVectorAdjoint( *adjPair.mvImplAdjoint, &*adjPair.mvOuter );
+        DgDp_temp_adjoint_copies[adj_copy_i];
+    doExplicitMultiVectorAdjoint(*adjPair.mvImplAdjoint, &*adjPair.mvOuter);
   }
 
   // Update W given W_op and W_factory
   {
     RCP<LinearOpWithSolveBase<Scalar> > W;
-    if ( default_W_support_ && !is_null(W=outArgs.get_W()) ) {
+    if (default_W_support_ && !is_null(W = outArgs.get_W())) {
       const RCP<const LinearOpWithSolveFactoryBase<Scalar> >
-        W_factory = this->get_W_factory();
+          W_factory = this->get_W_factory();
       W_factory->setOStream(this->getOStream());
       W_factory->setVerbLevel(this->getVerbLevel());
       initializeOp<Scalar>(*W_factory, outArgsImpl.get_W_op().getConst(), W.ptr());
     }
   }
-
 }
-
 
 // protected
 
-
 // Setup functions called by subclasses
 
-template<class Scalar>
-void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
-{
-
+template <class Scalar>
+void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase() {
   typedef ModelEvaluatorBase MEB;
 
   // In case we throw half way thorugh, set to uninitialized
-  isInitialized_ = false;
+  isInitialized_     = false;
   default_W_support_ = false;
 
   //
   // A) Get the InArgs and OutArgs from the subclass
   //
 
-  const MEB::InArgs<Scalar> inArgs = this->createInArgs();
+  const MEB::InArgs<Scalar> inArgs       = this->createInArgs();
   const MEB::OutArgs<Scalar> outArgsImpl = this->createOutArgsImpl();
 
   //
@@ -730,8 +629,8 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
   //
 
 #ifdef TEUCHOS_DEBUG
-  assertInArgsOutArgsSetup( this->description(), inArgs, outArgsImpl );
-#endif // TEUCHOS_DEBUG
+  assertInArgsOutArgsSetup(this->description(), inArgs, outArgsImpl);
+#endif  // TEUCHOS_DEBUG
 
   //
   // C) Set up support for default derivative objects and prototype OutArgs
@@ -743,91 +642,80 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
   // Set support for all outputs supported in the underly implementation
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(l_Np,l_Ng);
+  outArgs.set_Np_Ng(l_Np, l_Ng);
   outArgs.setSupports(outArgsImpl);
 
   // DfDp
   DfDp_default_op_support_.clear();
   if (outArgs.supports(MEB::OUT_ARG_f)) {
-    for ( int l = 0; l < l_Np; ++l ) {
+    for (int l = 0; l < l_Np; ++l) {
       const MEB::DerivativeSupport DfDp_l_impl_support =
-        outArgsImpl.supports(MEB::OUT_ARG_DfDp,l);
+          outArgsImpl.supports(MEB::OUT_ARG_DfDp, l);
       const DefaultDerivLinearOpSupport DfDp_l_op_support =
-        determineDefaultDerivLinearOpSupport(DfDp_l_impl_support);
+          determineDefaultDerivLinearOpSupport(DfDp_l_impl_support);
       DfDp_default_op_support_.push_back(DfDp_l_op_support);
       outArgs.setSupports(
-        MEB::OUT_ARG_DfDp, l,
-        updateDefaultLinearOpSupport(
-          DfDp_l_impl_support, DfDp_l_op_support
-          )
-        );
+          MEB::OUT_ARG_DfDp, l,
+          updateDefaultLinearOpSupport(
+              DfDp_l_impl_support, DfDp_l_op_support));
     }
   }
 
   // DgDx_dot
   DgDx_dot_default_op_support_.clear();
-  for ( int j = 0; j < l_Ng; ++j ) {
+  for (int j = 0; j < l_Ng; ++j) {
     const MEB::DerivativeSupport DgDx_dot_j_impl_support =
-      outArgsImpl.supports(MEB::OUT_ARG_DgDx_dot,j);
+        outArgsImpl.supports(MEB::OUT_ARG_DgDx_dot, j);
     const DefaultDerivLinearOpSupport DgDx_dot_j_op_support =
-      determineDefaultDerivLinearOpSupport(DgDx_dot_j_impl_support);
+        determineDefaultDerivLinearOpSupport(DgDx_dot_j_impl_support);
     DgDx_dot_default_op_support_.push_back(DgDx_dot_j_op_support);
     outArgs.setSupports(
-      MEB::OUT_ARG_DgDx_dot, j,
-      updateDefaultLinearOpSupport(
-        DgDx_dot_j_impl_support, DgDx_dot_j_op_support
-        )
-      );
+        MEB::OUT_ARG_DgDx_dot, j,
+        updateDefaultLinearOpSupport(
+            DgDx_dot_j_impl_support, DgDx_dot_j_op_support));
   }
 
   // DgDx
   DgDx_default_op_support_.clear();
-  for ( int j = 0; j < l_Ng; ++j ) {
+  for (int j = 0; j < l_Ng; ++j) {
     const MEB::DerivativeSupport DgDx_j_impl_support =
-      outArgsImpl.supports(MEB::OUT_ARG_DgDx,j);
+        outArgsImpl.supports(MEB::OUT_ARG_DgDx, j);
     const DefaultDerivLinearOpSupport DgDx_j_op_support =
-      determineDefaultDerivLinearOpSupport(DgDx_j_impl_support);
+        determineDefaultDerivLinearOpSupport(DgDx_j_impl_support);
     DgDx_default_op_support_.push_back(DgDx_j_op_support);
     outArgs.setSupports(
-      MEB::OUT_ARG_DgDx, j,
-      updateDefaultLinearOpSupport(
-        DgDx_j_impl_support, DgDx_j_op_support
-        )
-      );
+        MEB::OUT_ARG_DgDx, j,
+        updateDefaultLinearOpSupport(
+            DgDx_j_impl_support, DgDx_j_op_support));
   }
 
   // DgDp
   DgDp_default_op_support_.clear();
   DgDp_default_mv_support_.clear();
-  for ( int j = 0; j < l_Ng; ++j ) {
+  for (int j = 0; j < l_Ng; ++j) {
     DgDp_default_op_support_.push_back(Array<DefaultDerivLinearOpSupport>());
     DgDp_default_mv_support_.push_back(Array<DefaultDerivMvAdjointSupport>());
-    for ( int l = 0; l < l_Np; ++l ) {
+    for (int l = 0; l < l_Np; ++l) {
       const MEB::DerivativeSupport DgDp_j_l_impl_support =
-        outArgsImpl.supports(MEB::OUT_ARG_DgDp,j,l);
+          outArgsImpl.supports(MEB::OUT_ARG_DgDp, j, l);
       // LinearOpBase support
       const DefaultDerivLinearOpSupport DgDp_j_l_op_support =
-        determineDefaultDerivLinearOpSupport(DgDp_j_l_impl_support);
+          determineDefaultDerivLinearOpSupport(DgDp_j_l_impl_support);
       DgDp_default_op_support_[j].push_back(DgDp_j_l_op_support);
       outArgs.setSupports(
-        MEB::OUT_ARG_DgDp, j, l,
-        updateDefaultLinearOpSupport(
-          DgDp_j_l_impl_support, DgDp_j_l_op_support
-          )
-        );
+          MEB::OUT_ARG_DgDp, j, l,
+          updateDefaultLinearOpSupport(
+              DgDp_j_l_impl_support, DgDp_j_l_op_support));
       // MultiVectorBase
       const DefaultDerivMvAdjointSupport DgDp_j_l_mv_support =
-        determineDefaultDerivMvAdjointSupport(
-          DgDp_j_l_impl_support, *this->get_g_space(j), *this->get_p_space(l)
-          );
+          determineDefaultDerivMvAdjointSupport(
+              DgDp_j_l_impl_support, *this->get_g_space(j), *this->get_p_space(l));
       DgDp_default_mv_support_[j].push_back(DgDp_j_l_mv_support);
       outArgs.setSupports(
-        MEB::OUT_ARG_DgDp, j, l,
-        updateDefaultDerivMvAdjointSupport(
-          outArgs.supports(MEB::OUT_ARG_DgDp, j, l),
-          DgDp_j_l_mv_support
-          )
-        );
+          MEB::OUT_ARG_DgDp, j, l,
+          updateDefaultDerivMvAdjointSupport(
+              outArgs.supports(MEB::OUT_ARG_DgDp, j, l),
+              DgDp_j_l_mv_support));
     }
   }
   // 2007/09/09: rabart: ToDo: Move the above code into a private helper
@@ -835,9 +723,7 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
 
   // W (given W_op and W_factory)
   default_W_support_ = false;
-  if ( outArgsImpl.supports(MEB::OUT_ARG_W_op) && !is_null(this->get_W_factory())
-    && !outArgsImpl.supports(MEB::OUT_ARG_W) )
-  {
+  if (outArgsImpl.supports(MEB::OUT_ARG_W_op) && !is_null(this->get_W_factory()) && !outArgsImpl.supports(MEB::OUT_ARG_W)) {
     default_W_support_ = true;
     outArgs.setSupports(MEB::OUT_ARG_W);
     outArgs.set_W_properties(outArgsImpl.get_W_properties());
@@ -848,150 +734,131 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
   //
 
   prototypeOutArgs_ = outArgs;
-  isInitialized_ = true;
-
+  isInitialized_    = true;
 }
 
-template<class Scalar>
-void ModelEvaluatorDefaultBase<Scalar>::resetDefaultBase()
-{
+template <class Scalar>
+void ModelEvaluatorDefaultBase<Scalar>::resetDefaultBase() {
   isInitialized_ = false;
 }
 
 // Private functions with default implementaton to be overridden by subclasses
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_DfDp_op_impl(int l) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_DfDp_op_impl(int l) const {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgsImpl();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    outArgs.supports(MEB::OUT_ARG_DfDp,l).supports(MEB::DERIV_LINEAR_OP),
-    std::logic_error,
-    "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
-    " supports the LinearOpBase form of DfDp("<<l<<") (as determined from its"
-    " OutArgs object created by createOutArgsImpl())"
-    " but this function create_DfDp_op_impl(...) has not been overridden"
-    " to create such an object!"
-    );
+      outArgs.supports(MEB::OUT_ARG_DfDp, l).supports(MEB::DERIV_LINEAR_OP),
+      std::logic_error,
+      "Error, The ModelEvaluator subclass " << this->description() << " says that it"
+                                                                      " supports the LinearOpBase form of DfDp("
+                                            << l << ") (as determined from its"
+                                                    " OutArgs object created by createOutArgsImpl())"
+                                                    " but this function create_DfDp_op_impl(...) has not been overridden"
+                                                    " to create such an object!");
   return Teuchos::null;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_DgDx_dot_op_impl(int j) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_DgDx_dot_op_impl(int j) const {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgsImpl();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    outArgs.supports(MEB::OUT_ARG_DgDx_dot,j).supports(MEB::DERIV_LINEAR_OP),
-    std::logic_error,
-    "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
-    " supports the LinearOpBase form of DgDx_dot("<<j<<") (as determined from"
-    " its OutArgs object created by createOutArgsImpl())"
-    " but this function create_DgDx_dot_op_impl(...) has not been overridden"
-    " to create such an object!"
-    );
+      outArgs.supports(MEB::OUT_ARG_DgDx_dot, j).supports(MEB::DERIV_LINEAR_OP),
+      std::logic_error,
+      "Error, The ModelEvaluator subclass " << this->description() << " says that it"
+                                                                      " supports the LinearOpBase form of DgDx_dot("
+                                            << j << ") (as determined from"
+                                                    " its OutArgs object created by createOutArgsImpl())"
+                                                    " but this function create_DgDx_dot_op_impl(...) has not been overridden"
+                                                    " to create such an object!");
   return Teuchos::null;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_DgDx_op_impl(int j) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_DgDx_op_impl(int j) const {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgsImpl();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    outArgs.supports(MEB::OUT_ARG_DgDx,j).supports(MEB::DERIV_LINEAR_OP),
-    std::logic_error,
-    "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
-    " supports the LinearOpBase form of DgDx("<<j<<") (as determined from"
-    " its OutArgs object created by createOutArgsImpl())"
-    " but this function create_DgDx_op_impl(...) has not been overridden"
-    " to create such an object!"
-    );
+      outArgs.supports(MEB::OUT_ARG_DgDx, j).supports(MEB::DERIV_LINEAR_OP),
+      std::logic_error,
+      "Error, The ModelEvaluator subclass " << this->description() << " says that it"
+                                                                      " supports the LinearOpBase form of DgDx("
+                                            << j << ") (as determined from"
+                                                    " its OutArgs object created by createOutArgsImpl())"
+                                                    " but this function create_DgDx_op_impl(...) has not been overridden"
+                                                    " to create such an object!");
   return Teuchos::null;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op_impl(int j, int l) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_DgDp_op_impl(int j, int l) const {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgsImpl();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    outArgs.supports(MEB::OUT_ARG_DgDp,j,l).supports(MEB::DERIV_LINEAR_OP),
-    std::logic_error,
-    "Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
-    " supports the LinearOpBase form of DgDp("<<j<<","<<l<<")"
-    " (as determined from its OutArgs object created by createOutArgsImpl())"
-    " but this function create_DgDp_op_impl(...) has not been overridden"
-    " to create such an object!"
-    );
+      outArgs.supports(MEB::OUT_ARG_DgDp, j, l).supports(MEB::DERIV_LINEAR_OP),
+      std::logic_error,
+      "Error, The ModelEvaluator subclass " << this->description() << " says that it"
+                                                                      " supports the LinearOpBase form of DgDp("
+                                            << j << "," << l << ")"
+                                                                " (as determined from its OutArgs object created by createOutArgsImpl())"
+                                                                " but this function create_DgDp_op_impl(...) has not been overridden"
+                                                                " to create such an object!");
   return Teuchos::null;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::get_f_multiplier_space() const
-{
+ModelEvaluatorDefaultBase<Scalar>::get_f_multiplier_space() const {
   return this->get_f_space();
 }
 
-template<class Scalar>
+template <class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::get_g_multiplier_space(int j) const
-{
+ModelEvaluatorDefaultBase<Scalar>::get_g_multiplier_space(int j) const {
   return this->get_g_space(j);
 }
 
 #ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xx() const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xx() const {
   return Teuchos::null;
 }
 
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xp(int l) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xp(int l) const {
   return Teuchos::null;
 }
 
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_f_pp( int l1, int l2 ) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_hess_f_pp(int l1, int l2) const {
   return Teuchos::null;
 }
 
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xx(int j) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xx(int j) const {
   return Teuchos::null;
 }
 
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xp( int j, int l ) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_hess_g_xp(int j, int l) const {
   return Teuchos::null;
 }
 
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
-ModelEvaluatorDefaultBase<Scalar>::create_hess_g_pp( int j, int l1, int l2 ) const
-{
+ModelEvaluatorDefaultBase<Scalar>::create_hess_g_pp(int j, int l1, int l2) const {
   return Teuchos::null;
 }
 
@@ -999,104 +866,79 @@ ModelEvaluatorDefaultBase<Scalar>::create_hess_g_pp( int j, int l1, int l2 ) con
 
 // protected
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorDefaultBase<Scalar>::ModelEvaluatorDefaultBase()
-  :isInitialized_(false), default_W_support_(false)
-{}
-
+  : isInitialized_(false)
+  , default_W_support_(false) {}
 
 // private
 
-
-template<class Scalar>
-void ModelEvaluatorDefaultBase<Scalar>::lazyInitializeDefaultBase() const
-{
+template <class Scalar>
+void ModelEvaluatorDefaultBase<Scalar>::lazyInitializeDefaultBase() const {
   if (!isInitialized_)
-    const_cast<ModelEvaluatorDefaultBase<Scalar>*>(this)->initializeDefaultBase();
+    const_cast<ModelEvaluatorDefaultBase<Scalar> *>(this)->initializeDefaultBase();
 }
 
-
-template<class Scalar>
-void ModelEvaluatorDefaultBase<Scalar>::assert_l(const int l) const
-{
-  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(l,0,this->Np());
+template <class Scalar>
+void ModelEvaluatorDefaultBase<Scalar>::assert_l(const int l) const {
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(l, 0, this->Np());
 }
 
-
-template<class Scalar>
-void ModelEvaluatorDefaultBase<Scalar>::assert_j(const int j) const
-{
-  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(j,0,this->Ng());
+template <class Scalar>
+void ModelEvaluatorDefaultBase<Scalar>::assert_j(const int j) const {
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(j, 0, this->Ng());
 }
-
 
 // Private static functions
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorDefaultBaseTypes::DefaultDerivLinearOpSupport
 ModelEvaluatorDefaultBase<Scalar>::determineDefaultDerivLinearOpSupport(
-  const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl
-  )
-{
+    const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl) {
   typedef ModelEvaluatorBase MEB;
   if (
-    (
-      derivSupportImpl.supports(MEB::DERIV_MV_BY_COL)
-      ||
-      derivSupportImpl.supports(MEB::DERIV_TRANS_MV_BY_ROW)
-      )
-    &&
-    !derivSupportImpl.supports(MEB::DERIV_LINEAR_OP)
-    )
-  {
+      (
+          derivSupportImpl.supports(MEB::DERIV_MV_BY_COL) ||
+          derivSupportImpl.supports(MEB::DERIV_TRANS_MV_BY_ROW)) &&
+      !derivSupportImpl.supports(MEB::DERIV_LINEAR_OP)) {
     return DefaultDerivLinearOpSupport(
-      derivSupportImpl.supports(MEB::DERIV_MV_BY_COL)
-      ? MEB::DERIV_MV_BY_COL
-      : MEB::DERIV_TRANS_MV_BY_ROW
-      );
+        derivSupportImpl.supports(MEB::DERIV_MV_BY_COL)
+            ? MEB::DERIV_MV_BY_COL
+            : MEB::DERIV_TRANS_MV_BY_ROW);
   }
   return DefaultDerivLinearOpSupport();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDefaultBase<Scalar>::createDefaultLinearOp(
-  const DefaultDerivLinearOpSupport &defaultLinearOpSupport,
-  const RCP<const VectorSpaceBase<Scalar> > &fnc_space,
-  const RCP<const VectorSpaceBase<Scalar> > &var_space
-  )
-{
+    const DefaultDerivLinearOpSupport &defaultLinearOpSupport,
+    const RCP<const VectorSpaceBase<Scalar> > &fnc_space,
+    const RCP<const VectorSpaceBase<Scalar> > &var_space) {
   using Teuchos::rcp_implicit_cast;
   typedef LinearOpBase<Scalar> LOB;
   typedef ModelEvaluatorBase MEB;
-  switch(defaultLinearOpSupport.mvImplOrientation()) {
+  switch (defaultLinearOpSupport.mvImplOrientation()) {
     case MEB::DERIV_MV_BY_COL:
       // The MultiVector will do just fine as the LinearOpBase
       return createMembers(fnc_space, var_space->dim());
     case MEB::DERIV_TRANS_MV_BY_ROW:
       // We will have to implicitly transpose the underlying MultiVector
       return nonconstAdjoint<Scalar>(
-        rcp_implicit_cast<LOB>(createMembers(var_space, fnc_space->dim()))
-        );
+          rcp_implicit_cast<LOB>(createMembers(var_space, fnc_space->dim())));
 #ifdef TEUCHOS_DEBUG
     default:
       TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
   }
-  return Teuchos::null; // Will never be called!
+  return Teuchos::null;  // Will never be called!
 }
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorBase::DerivativeSupport
 ModelEvaluatorDefaultBase<Scalar>::updateDefaultLinearOpSupport(
-  const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
-  const DefaultDerivLinearOpSupport &defaultLinearOpSupport
-  )
-{
+    const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
+    const DefaultDerivLinearOpSupport &defaultLinearOpSupport) {
   typedef ModelEvaluatorBase MEB;
   MEB::DerivativeSupport derivSupport = derivSupportImpl;
   if (defaultLinearOpSupport.provideDefaultLinearOp())
@@ -1104,15 +946,11 @@ ModelEvaluatorDefaultBase<Scalar>::updateDefaultLinearOpSupport(
   return derivSupport;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorBase::Derivative<Scalar>
 ModelEvaluatorDefaultBase<Scalar>::getOutArgImplForDefaultLinearOpSupport(
-  const ModelEvaluatorBase::Derivative<Scalar> &deriv,
-  const DefaultDerivLinearOpSupport &defaultLinearOpSupport
-  )
-{
-
+    const ModelEvaluatorBase::Derivative<Scalar> &deriv,
+    const DefaultDerivLinearOpSupport &defaultLinearOpSupport) {
   using Teuchos::rcp_dynamic_cast;
   typedef ModelEvaluatorBase MEB;
   typedef MultiVectorBase<Scalar> MVB;
@@ -1126,20 +964,17 @@ ModelEvaluatorDefaultBase<Scalar>::getOutArgImplForDefaultLinearOpSupport(
 
   // The derivative is LinearOpBase so get out the underlying MultiVectorBase
   // object and return its derivative multi-vector form.
-  switch(defaultLinearOpSupport.mvImplOrientation()) {
+  switch (defaultLinearOpSupport.mvImplOrientation()) {
     case MEB::DERIV_MV_BY_COL: {
       return MEB::Derivative<Scalar>(
-        rcp_dynamic_cast<MVB>(deriv.getLinearOp(),true),
-        MEB::DERIV_MV_BY_COL
-        );
+          rcp_dynamic_cast<MVB>(deriv.getLinearOp(), true),
+          MEB::DERIV_MV_BY_COL);
     }
     case MEB::DERIV_TRANS_MV_BY_ROW: {
       return MEB::Derivative<Scalar>(
-        rcp_dynamic_cast<MVB>(
-          rcp_dynamic_cast<SALOB>(deriv.getLinearOp(),true)->getNonconstOrigOp()
-          ),
-        MEB::DERIV_TRANS_MV_BY_ROW
-        );
+          rcp_dynamic_cast<MVB>(
+              rcp_dynamic_cast<SALOB>(deriv.getLinearOp(), true)->getNonconstOrigOp()),
+          MEB::DERIV_TRANS_MV_BY_ROW);
     }
 #ifdef TEUCHOS_DEBUG
     default:
@@ -1147,49 +982,39 @@ ModelEvaluatorDefaultBase<Scalar>::getOutArgImplForDefaultLinearOpSupport(
 #endif
   }
 
-  return ModelEvaluatorBase::Derivative<Scalar>(); // Should never get here!
-
+  return ModelEvaluatorBase::Derivative<Scalar>();  // Should never get here!
 }
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorDefaultBaseTypes::DefaultDerivMvAdjointSupport
 ModelEvaluatorDefaultBase<Scalar>::determineDefaultDerivMvAdjointSupport(
-  const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
-  const VectorSpaceBase<Scalar> &fnc_space,
-  const VectorSpaceBase<Scalar> &var_space
-  )
-{
+    const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
+    const VectorSpaceBase<Scalar> &fnc_space,
+    const VectorSpaceBase<Scalar> &var_space) {
   typedef ModelEvaluatorBase MEB;
   // Here we will support the adjoint copy for of a multi-vector if both
   // spaces give rise to in-core vectors.
   const bool implSupportsMv =
-    ( derivSupportImpl.supports(MEB::DERIV_MV_BY_COL)
-      || derivSupportImpl.supports(MEB::DERIV_TRANS_MV_BY_ROW) );
+      (derivSupportImpl.supports(MEB::DERIV_MV_BY_COL) || derivSupportImpl.supports(MEB::DERIV_TRANS_MV_BY_ROW));
   const bool implLacksMvOrientSupport =
-    ( !derivSupportImpl.supports(MEB::DERIV_MV_BY_COL)
-      || !derivSupportImpl.supports(MEB::DERIV_TRANS_MV_BY_ROW) );
+      (!derivSupportImpl.supports(MEB::DERIV_MV_BY_COL) || !derivSupportImpl.supports(MEB::DERIV_TRANS_MV_BY_ROW));
   const bool bothSpacesHaveInCoreViews =
-    ( fnc_space.hasInCoreView() && var_space.hasInCoreView() );
-  if ( implSupportsMv && implLacksMvOrientSupport && bothSpacesHaveInCoreViews ) {
+      (fnc_space.hasInCoreView() && var_space.hasInCoreView());
+  if (implSupportsMv && implLacksMvOrientSupport && bothSpacesHaveInCoreViews) {
     return DefaultDerivMvAdjointSupport(
-      derivSupportImpl.supports(MEB::DERIV_MV_BY_COL)
-      ? MEB::DERIV_TRANS_MV_BY_ROW
-      : MEB::DERIV_MV_BY_COL
-      );
+        derivSupportImpl.supports(MEB::DERIV_MV_BY_COL)
+            ? MEB::DERIV_TRANS_MV_BY_ROW
+            : MEB::DERIV_MV_BY_COL);
   }
   // We can't provide an adjoint copy or such a copy is not needed!
   return DefaultDerivMvAdjointSupport();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorBase::DerivativeSupport
 ModelEvaluatorDefaultBase<Scalar>::updateDefaultDerivMvAdjointSupport(
-  const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
-  const DefaultDerivMvAdjointSupport &defaultMvAdjointSupport
-  )
-{
+    const ModelEvaluatorBase::DerivativeSupport &derivSupportImpl,
+    const DefaultDerivMvAdjointSupport &defaultMvAdjointSupport) {
   typedef ModelEvaluatorBase MEB;
   MEB::DerivativeSupport derivSupport = derivSupportImpl;
   if (defaultMvAdjointSupport.provideDefaultAdjoint())
@@ -1197,8 +1022,6 @@ ModelEvaluatorDefaultBase<Scalar>::updateDefaultDerivMvAdjointSupport(
   return derivSupport;
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_MODEL_EVALUATOR_DEFAULT_BASE_HPP
+#endif  // THYRA_MODEL_EVALUATOR_DEFAULT_BASE_HPP

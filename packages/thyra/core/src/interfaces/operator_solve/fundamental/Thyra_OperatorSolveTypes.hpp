@@ -10,18 +10,19 @@
 #ifndef THYRA_OPERATOR_SOLVE_TYPES_HPP
 #define THYRA_OPERATOR_SOLVE_TYPES_HPP
 
-
 #include "Thyra_SolveSupportTypes.hpp"
-
 
 namespace Thyra {
 
-template<class Scalar> class LinearOpWithSolveBase;
-template<class Scalar> class LinearOpWithSolveFactoryBase;
-template<class Scalar> class PreconditionerBase;
-template<class Scalar> class PreconditionerFactoryBase;
+template <class Scalar>
+class LinearOpWithSolveBase;
+template <class Scalar>
+class LinearOpWithSolveFactoryBase;
+template <class Scalar>
+class PreconditionerBase;
+template <class Scalar>
+class PreconditionerFactoryBase;
 
-} // end namespace Thyra
+}  // end namespace Thyra
 
-
-#endif // THYRA_OPERATOR_SOLVE_TYPES_HPP
+#endif  // THYRA_OPERATOR_SOLVE_TYPES_HPP

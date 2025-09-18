@@ -12,9 +12,7 @@
 
 #include "Thyra_SerialVectorSpaceConverterBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Concrete subclass for a converter subclass for converting serial
  * multi-vectors and vectors.
@@ -26,56 +24,41 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
-template<class ScalarFrom, class ScalarTo>
-class DefaultSerialVectorSpaceConverter : virtual public SerialVectorSpaceConverterBase<ScalarFrom,ScalarTo> {
-public:
-
+template <class ScalarFrom, class ScalarTo>
+class DefaultSerialVectorSpaceConverter : virtual public SerialVectorSpaceConverterBase<ScalarFrom, ScalarTo> {
+ public:
   /** @name Overridden from VectorSpaceConverterBase */
   //@{
 
   /** \brief . */
-  virtual
-  Teuchos::RCP<const VectorSpaceBase<ScalarTo> >
+  virtual Teuchos::RCP<const VectorSpaceBase<ScalarTo> >
   createVectorSpaceTo(
-    const VectorSpaceBase<ScalarFrom> &vecSpc
-    ) const;
+      const VectorSpaceBase<ScalarFrom> &vecSpc) const;
 
   /** \brief . */
-  virtual
-  Teuchos::RCP<const VectorSpaceBase<ScalarFrom> >
+  virtual Teuchos::RCP<const VectorSpaceBase<ScalarFrom> >
   createVectorSpaceFrom(
-    const VectorSpaceBase<ScalarTo> &vecSpc
-    ) const;
+      const VectorSpaceBase<ScalarTo> &vecSpc) const;
 
   //@}
-  
 };
-
 
 // Implementation
 
-
-template<class ScalarFrom, class ScalarTo>
+template <class ScalarFrom, class ScalarTo>
 Teuchos::RCP<const VectorSpaceBase<ScalarTo> >
-DefaultSerialVectorSpaceConverter<ScalarFrom,ScalarTo>::createVectorSpaceTo(
-  const VectorSpaceBase<ScalarFrom>  &vecSpc
-  ) const
-{
+DefaultSerialVectorSpaceConverter<ScalarFrom, ScalarTo>::createVectorSpaceTo(
+    const VectorSpaceBase<ScalarFrom> &vecSpc) const {
   return defaultSpmdVectorSpace<ScalarTo>(vecSpc.dim());
 }
 
-
-template<class ScalarFrom, class ScalarTo>
+template <class ScalarFrom, class ScalarTo>
 Teuchos::RCP<const VectorSpaceBase<ScalarFrom> >
-DefaultSerialVectorSpaceConverter<ScalarFrom,ScalarTo>::createVectorSpaceFrom(
-  const VectorSpaceBase<ScalarTo>  &vecSpc
-  ) const
-{
+DefaultSerialVectorSpaceConverter<ScalarFrom, ScalarTo>::createVectorSpaceFrom(
+    const VectorSpaceBase<ScalarTo> &vecSpc) const {
   return defaultSpmdVectorSpace<ScalarFrom>(vecSpc.dim());
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_SERIAL_VECTOR_SPACE_CONVERTED_STD_DECL_HPP
+#endif  // THYRA_SERIAL_VECTOR_SPACE_CONVERTED_STD_DECL_HPP

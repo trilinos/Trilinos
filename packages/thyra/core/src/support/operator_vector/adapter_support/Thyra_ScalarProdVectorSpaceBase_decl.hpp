@@ -13,9 +13,7 @@
 #include "Thyra_OperatorVectorAdapterSupportTypes.hpp"
 #include "Thyra_VectorSpaceDefaultBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base subclass for <tt>VectorSpaceBase</tt> that allows the
  * definition of an application-specific scalar product to be swapped
@@ -49,10 +47,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ScalarProdVectorSpaceBase : virtual public VectorSpaceDefaultBase<Scalar> {
-public:
-
+ public:
   /** @name Constructors / initializers */
   //@{
 
@@ -83,7 +80,7 @@ public:
    * </ul>
    */
   ScalarProdVectorSpaceBase(
-    const RCP<const ScalarProdBase<Scalar> > &scalarProd );
+      const RCP<const ScalarProdBase<Scalar> >& scalarProd);
 
   /** \brief Set a different scalar product.
    *
@@ -106,7 +103,7 @@ public:
    * </ul>
    */
   virtual void setScalarProd(
-    const RCP<const ScalarProdBase<Scalar> > &scalarProd );
+      const RCP<const ScalarProdBase<Scalar> >& scalarProd);
 
   /** \brief Return the current scalar product.
    */
@@ -116,43 +113,36 @@ public:
 
   /** @name Overridden from VectorSpaceBase */
   //@{
-  
+
   /// Returns <tt>getScalarProd()->isEuclidean()</tt>
   bool isEuclidean() const;
   /// Returns <tt>getScalarProd()->scalarProd(x,y)</tt>
   Scalar scalarProd(
-    const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
+      const VectorBase<Scalar>& x, const VectorBase<Scalar>& y) const;
   /// Calls <tt>getScalarProd()->scalarProds(X,Y,scalar_prods)</tt>
   void scalarProdsImpl(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-    const ArrayView<Scalar> &scalarProds_out ) const;
-  
+      const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+      const ArrayView<Scalar>& scalarProds_out) const;
+
   //@}
 
-private:
-
+ private:
   RCP<const ScalarProdBase<Scalar> > scalarProd_;
-
 };
-
 
 /** \brief Create a small vector space casted to ScalarProdVectorSpaceBase.
  *
  * \relates ScalarProdVectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const ScalarProdVectorSpaceBase<Scalar> >
 createSmallScalarProdVectorSpaceBase(
-  const RCP<const VectorSpaceBase<Scalar> > &vs,
-  const Ordinal dim
-  )
-{
+    const RCP<const VectorSpaceBase<Scalar> >& vs,
+    const Ordinal dim) {
   return Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
-    vs->smallVecSpcFcty()->createVecSpc(dim), true);
+      vs->smallVecSpcFcty()->createVecSpc(dim), true);
 }
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 #endif  // THYRA_SCALAR_PROD_VECTOR_SPACE_BASE_DECL_HPP

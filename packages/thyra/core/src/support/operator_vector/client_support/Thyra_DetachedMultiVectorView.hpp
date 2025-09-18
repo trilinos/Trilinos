@@ -15,26 +15,23 @@
 
 namespace Thyra {
 
-
 /** \brief Create an explicit non-mutable (const) view of a
  * <tt>MultiVectorBase</tt> object.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ConstDetachedMultiVectorView {
-public:
+ public:
   /** \brief . */
   ConstDetachedMultiVectorView(
-    const RCP<const MultiVectorBase<Scalar> > &mv,
-    const Range1D &rowRng = Range1D(), const Range1D &colRng = Range1D()
-    )
+      const RCP<const MultiVectorBase<Scalar> >& mv,
+      const Range1D& rowRng = Range1D(), const Range1D& colRng = Range1D())
     : mv_(mv) { mv_->acquireDetachedView(rowRng, colRng, &smv_); }
   /** \brief . */
   ConstDetachedMultiVectorView(
-    const MultiVectorBase<Scalar>& mv,
-    const Range1D &rowRng = Range1D(), const Range1D &colRng = Range1D()
-    )
+      const MultiVectorBase<Scalar>& mv,
+      const Range1D& rowRng = Range1D(), const Range1D& colRng = Range1D())
     : mv_(rcpFromRef(mv)) { mv_->acquireDetachedView(rowRng, colRng, &smv_); }
   /** \brief . */
   ~ConstDetachedMultiVectorView() { mv_->releaseDetachedView(&smv_); }
@@ -55,38 +52,36 @@ public:
   /** Zero-based indexing: Preconditions: <tt>values()!=NULL &&
    * (0<=i<subDim()) && (0<=j<numSubCols())</tt>
    */
-  const Scalar& operator()(Ordinal i, Ordinal j) const { return smv_(i,j); }
-private:
+  const Scalar& operator()(Ordinal i, Ordinal j) const { return smv_(i, j); }
+
+ private:
   RCP<const MultiVectorBase<Scalar> > mv_;
   RTOpPack::ConstSubMultiVectorView<Scalar> smv_;
   // Not defined and not to be called
   ConstDetachedMultiVectorView();
   ConstDetachedMultiVectorView(const ConstDetachedMultiVectorView<Scalar>&);
   ConstDetachedMultiVectorView<Scalar>& operator==(
-    const ConstDetachedMultiVectorView<Scalar>&);
+      const ConstDetachedMultiVectorView<Scalar>&);
 };
- 
 
 /** \brief Create an explicit mutable (non-const) view of a
  * <tt>MultiVectorBase</tt> object.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DetachedMultiVectorView {
-public:
+ public:
   /** \brief . */
   DetachedMultiVectorView(
-    const RCP<MultiVectorBase<Scalar> >& mv,
-    const Range1D &rowRng = Range1D(), const Range1D &colRng = Range1D()
-    )
+      const RCP<MultiVectorBase<Scalar> >& mv,
+      const Range1D& rowRng = Range1D(), const Range1D& colRng = Range1D())
     : mv_(mv) { mv_->acquireDetachedView(rowRng, colRng, &smv_); }
   /** \brief . */
   DetachedMultiVectorView(
-    MultiVectorBase<Scalar>& mv,
-    const Range1D &rowRng = Range1D(), const Range1D &colRng = Range1D()
-    )
-    : mv_(rcpFromRef(mv)) { mv_->acquireDetachedView(rowRng,colRng,&smv_); }
+      MultiVectorBase<Scalar>& mv,
+      const Range1D& rowRng = Range1D(), const Range1D& colRng = Range1D())
+    : mv_(rcpFromRef(mv)) { mv_->acquireDetachedView(rowRng, colRng, &smv_); }
   /** \brief . */
   ~DetachedMultiVectorView() { mv_->commitDetachedView(&smv_); }
   /** \brief . */
@@ -106,50 +101,44 @@ public:
   /** Zero-based indexing: Preconditions: <tt>values()!=NULL &&
    * (0<=i<subDim()) && (0<=j<numSubCols())</tt>
    */
-  Scalar& operator()(Ordinal i, Ordinal j) { return smv_(i,j); }
-private:
+  Scalar& operator()(Ordinal i, Ordinal j) { return smv_(i, j); }
+
+ private:
   RCP<MultiVectorBase<Scalar> > mv_;
   RTOpPack::SubMultiVectorView<Scalar> smv_;
   // Not defined and not to be called
   DetachedMultiVectorView();
   DetachedMultiVectorView(const DetachedMultiVectorView<Scalar>&);
   DetachedMultiVectorView<Scalar>& operator==(
-    const DetachedMultiVectorView<Scalar>&);
+      const DetachedMultiVectorView<Scalar>&);
 };
-
 
 /** \brief Do an explicit multi-vector adjoint.
  *
  * \relates DetachedMultiVectorView
  */
-template<class Scalar>
+template <class Scalar>
 void doExplicitMultiVectorAdjoint(
-  const MultiVectorBase<Scalar>& mvIn, MultiVectorBase<Scalar>* mvTransOut
-  )
-{
+    const MultiVectorBase<Scalar>& mvIn, MultiVectorBase<Scalar>* mvTransOut) {
   typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(0==mvTransOut);
+  TEUCHOS_TEST_FOR_EXCEPT(0 == mvTransOut);
   THYRA_ASSERT_VEC_SPACES("doExplicitMultiVectorAdjoint(...)",
-    *mvIn.domain(), *mvTransOut->range()
-    );
+                          *mvIn.domain(), *mvTransOut->range());
   THYRA_ASSERT_VEC_SPACES("doExplicitMultiVectorAdjoint(...)",
-    *mvIn.range(), *mvTransOut->domain()
-    );
+                          *mvIn.range(), *mvTransOut->domain());
 #endif
   ConstDetachedMultiVectorView<Scalar> dMvIn(mvIn);
   DetachedMultiVectorView<Scalar> dMvTransOut(*mvTransOut);
   const int m = dMvIn.subDim();
   const int n = dMvIn.numSubCols();
-  for ( int j = 0; j < n; ++j ) {
-    for ( int i = 0; i < m; ++i ) {
-      dMvTransOut(j,i) = ST::conjugate(dMvIn(i,j));
+  for (int j = 0; j < n; ++j) {
+    for (int i = 0; i < m; ++i) {
+      dMvTransOut(j, i) = ST::conjugate(dMvIn(i, j));
     }
   }
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_EXPLICIT_MULTI_VECTOR_VIEW_HPP
+#endif  // THYRA_EXPLICIT_MULTI_VECTOR_VIEW_HPP

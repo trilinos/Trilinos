@@ -10,13 +10,10 @@
 #ifndef THYRA_DETACHED_SPMD_VECTOR_VIEW_HPP
 #define THYRA_DETACHED_SPMD_VECTOR_VIEW_HPP
 
-
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Teuchos_Assert.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Create an explicit detached non-mutable (const) view of all of the
  * local elements on this process of an <tt>VectorBase</tt> object.
@@ -26,30 +23,29 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_spmd_adapters_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ConstDetachedSpmdVectorView {
-public:
+ public:
   /** \brief . */
-  ConstDetachedSpmdVectorView(const Teuchos::RCP<const VectorBase<Scalar> > &v)
-    {
-      using Teuchos::rcp_dynamic_cast;
-      if (!is_null(v)) {
-        const RCP<const SpmdVectorBase<Scalar> > spmd_v =
+  ConstDetachedSpmdVectorView(const Teuchos::RCP<const VectorBase<Scalar> >& v) {
+    using Teuchos::rcp_dynamic_cast;
+    if (!is_null(v)) {
+      const RCP<const SpmdVectorBase<Scalar> > spmd_v =
           rcp_dynamic_cast<const SpmdVectorBase<Scalar> >(v, true);
-        v_ = spmd_v;
-        sv_ = spmd_v->getLocalSubVector();
-      }
-      else {
-        v_ = Teuchos::null;
-        sv_ = RTOpPack::ConstSubVectorView<Scalar>();
-      }
+      v_  = spmd_v;
+      sv_ = spmd_v->getLocalSubVector();
+    } else {
+      v_  = Teuchos::null;
+      sv_ = RTOpPack::ConstSubVectorView<Scalar>();
     }
+  }
   /** \brief . */
-  ~ConstDetachedSpmdVectorView()
-    {}
+  ~ConstDetachedSpmdVectorView() {}
   /** \brief . */
-  const RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const
-    { if (!is_null(v_)) return v_->spmdSpace(); return Teuchos::null; }
+  const RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const {
+    if (!is_null(v_)) return v_->spmdSpace();
+    return Teuchos::null;
+  }
   /** \brief . */
   const RTOpPack::ConstSubVectorView<Scalar>& sv() const { return sv_; }
   /** \brief . */
@@ -64,16 +60,16 @@ public:
   const Scalar& operator[](Teuchos_Ordinal i) const { return sv_[i]; }
   /** \brief . */
   const Scalar& operator()(Teuchos_Ordinal i) const { return sv_(i); }
-private:
+
+ private:
   Teuchos::RCP<const SpmdVectorBase<Scalar> > v_;
-  RTOpPack::ConstSubVectorView<Scalar>  sv_;
+  RTOpPack::ConstSubVectorView<Scalar> sv_;
   // Not defined and not to be called
   ConstDetachedSpmdVectorView();
   ConstDetachedSpmdVectorView(const ConstDetachedSpmdVectorView<Scalar>&);
   ConstDetachedSpmdVectorView<Scalar>& operator==(
-    const ConstDetachedSpmdVectorView<Scalar>&);
+      const ConstDetachedSpmdVectorView<Scalar>&);
 };
-
 
 /** \brief Create an explicit detached mutable (non-const) view of all of the
  * local elements on this process of an <tt>VectorBase</tt> object.
@@ -83,30 +79,29 @@ private:
  *
  * \ingroup Thyra_Op_Vec_spmd_adapters_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DetachedSpmdVectorView {
-public:
+ public:
   /** \brief . */
-  DetachedSpmdVectorView(const Teuchos::RCP<VectorBase<Scalar> > &v)
-    {
-      using Teuchos::rcp_dynamic_cast;
-      if (!is_null(v)) {
-        const RCP<SpmdVectorBase<Scalar> > spmd_v =
+  DetachedSpmdVectorView(const Teuchos::RCP<VectorBase<Scalar> >& v) {
+    using Teuchos::rcp_dynamic_cast;
+    if (!is_null(v)) {
+      const RCP<SpmdVectorBase<Scalar> > spmd_v =
           rcp_dynamic_cast<SpmdVectorBase<Scalar> >(v, true);
-        v_ = spmd_v;
-        sv_ = spmd_v->getNonconstLocalSubVector();
-      }
-      else {
-        v_ = Teuchos::null;
-        sv_ = RTOpPack::SubVectorView<Scalar>();
-      }
+      v_  = spmd_v;
+      sv_ = spmd_v->getNonconstLocalSubVector();
+    } else {
+      v_  = Teuchos::null;
+      sv_ = RTOpPack::SubVectorView<Scalar>();
     }
+  }
   /** \brief . */
-  ~DetachedSpmdVectorView()
-    {}
+  ~DetachedSpmdVectorView() {}
   /** \brief . */
-  const RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const
-    { if (!is_null(v_)) return v_->spmdSpace(); return Teuchos::null; }
+  const RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const {
+    if (!is_null(v_)) return v_->spmdSpace();
+    return Teuchos::null;
+  }
   /** \brief . */
   const RTOpPack::SubVectorView<Scalar>& sv() const { return sv_; }
   /** \brief . */
@@ -121,18 +116,17 @@ public:
   Scalar& operator[](Teuchos_Ordinal i) const { return sv_[i]; }
   /** \brief . */
   Scalar& operator()(Teuchos_Ordinal i) const { return sv_(i); }
-private:
+
+ private:
   Teuchos::RCP<SpmdVectorBase<Scalar> > v_;
-  RTOpPack::SubVectorView<Scalar>  sv_;
+  RTOpPack::SubVectorView<Scalar> sv_;
   // Not defined and not to be called
   DetachedSpmdVectorView();
   DetachedSpmdVectorView(const DetachedSpmdVectorView<Scalar>&);
   DetachedSpmdVectorView<Scalar>& operator==(
-    const DetachedSpmdVectorView<Scalar>&);
+      const DetachedSpmdVectorView<Scalar>&);
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_DETACHED_SPMD_VECTOR_VIEW_HPP
+#endif  // THYRA_DETACHED_SPMD_VECTOR_VIEW_HPP

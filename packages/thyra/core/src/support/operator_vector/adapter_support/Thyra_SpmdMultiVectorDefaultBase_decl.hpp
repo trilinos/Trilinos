@@ -14,9 +14,7 @@
 #include "Thyra_MultiVectorAdapterBase_decl.hpp"
 #include "Teuchos_BLAS.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base node implementation class for SPMD multi-vectors.
  *
@@ -62,13 +60,11 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
  */
-template<class Scalar>
+template <class Scalar>
 class SpmdMultiVectorDefaultBase
   : virtual public SpmdMultiVectorBase<Scalar>,
-    virtual public MultiVectorAdapterBase<Scalar>
-{
-public:
-
+    virtual public MultiVectorAdapterBase<Scalar> {
+ public:
   /** @name  Constructors / initializers / accessors */
   //@{
 
@@ -81,12 +77,11 @@ public:
   //@{
 
   /** \brief Returns <tt>spmdSpace</tt>. */
-  RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
+  RCP<const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
 
   //@}
 
-protected:
-
+ protected:
   /** @name Protected funtions overridden from SpmdMultiVectorBase. */
   //@{
 
@@ -102,32 +97,26 @@ protected:
   //@{
   /** \brief . */
   void mvMultiReductApplyOpImpl(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Ordinal primary_global_offset
-    ) const;
+      const RTOpPack::RTOpT<Scalar> &primary_op,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+      const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+      const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+      const Ordinal primary_global_offset) const;
   /** \brief . */
   void acquireDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng
-    ,RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
-    ) const;
+      const Range1D &rowRng,
+      const Range1D &colRng, RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv) const;
   /** \brief . */
   void releaseDetachedMultiVectorViewImpl(
-    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
-    ) const;
+      RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv) const;
   /** \brief . */
   void acquireNonconstDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
-    );
+      const Range1D &rowRng,
+      const Range1D &colRng,
+      RTOpPack::SubMultiVectorView<Scalar> *sub_mv);
   /** \brief . */
   void commitNonconstDetachedMultiVectorViewImpl(
-    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
-    );
+      RTOpPack::SubMultiVectorView<Scalar> *sub_mv);
   //@}
 
   /** @name Protected functions overridden from MultiVectorAdapterBase */
@@ -139,12 +128,11 @@ protected:
    * ToDo: Finish documentation!
    */
   void euclideanApply(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const;
 
   //@}
 
@@ -165,35 +153,32 @@ protected:
    *
    * This function throws an exception if the input range is invalid
    */
-  Range1D validateRowRange( const Range1D& rowRng ) const;
+  Range1D validateRowRange(const Range1D &rowRng) const;
 
   /** \brief Validate and resize the column range.
    *
    * This function throws an exception if the input range is invalid
    */
-  Range1D validateColRange( const Range1D& rowCol ) const;
+  Range1D validateColRange(const Range1D &rowCol) const;
 
   //@}
-  
-private:
-  
+
+ private:
   // ///////////////////////////////////////
   // Private data members
-  
+
   mutable bool in_applyOp_;
 
-  mutable Teuchos::BLAS<int,Scalar> blas_;
+  mutable Teuchos::BLAS<int, Scalar> blas_;
 
   // cached
-  Ordinal  globalDim_;
-  Ordinal  localOffset_;
-  Ordinal  localSubDim_;
-  Ordinal  numCols_;
-  
-}; // end class SpmdMultiVectorDefaultBase
+  Ordinal globalDim_;
+  Ordinal localOffset_;
+  Ordinal localSubDim_;
+  Ordinal numCols_;
 
+};  // end class SpmdMultiVectorDefaultBase
 
-} // end namespace Thyra
+}  // end namespace Thyra
 
-
-#endif // THYRA_SPMD_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP
+#endif  // THYRA_SPMD_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP

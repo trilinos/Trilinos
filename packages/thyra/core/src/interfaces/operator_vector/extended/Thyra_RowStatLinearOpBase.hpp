@@ -12,12 +12,9 @@
 
 #include "Thyra_LinearOpBase_decl.hpp"
 
-
 namespace Thyra {
 
-
 namespace RowStatLinearOpBaseUtils {
-
 
 /** \brief Rows statistic requested. */
 enum ERowStat {
@@ -31,63 +28,52 @@ enum ERowStat {
   ROW_STAT_COL_SUM
 };
 
-
-} // namespace RowStatLinearOpBaseUtils
-
+}  // namespace RowStatLinearOpBaseUtils
 
 /** \brief Interface for exxtracting row statistics as a <tt>VectorBase</tt>
  * from a supporting <tt>LinearOpBase</tt> object.
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class RowStatLinearOpBase : virtual public LinearOpBase<Scalar> {
-public:
-
+ public:
   /** @name Non-virtual public interface functions. */
   //@{
 
   /** \brief Determine if a given row stat is supported. */
   bool rowStatIsSupported(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat
-    ) const
-    { return rowStatIsSupportedImpl(rowStat); }
+      const RowStatLinearOpBaseUtils::ERowStat rowStat) const { return rowStatIsSupportedImpl(rowStat); }
 
   /** \brief Get some statistics about a supported row.
    *
    * \precondition <tt>this->rowStatIsSupported(rowStat)==true</tt>
    */
   void getRowStat(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat,
-    const Ptr<VectorBase<Scalar> > &rowStatVec
-    ) const
-    {
-      TEUCHOS_ASSERT(rowStatIsSupported(rowStat));
-      getRowStatImpl(rowStat, rowStatVec);
-    }
+      const RowStatLinearOpBaseUtils::ERowStat rowStat,
+      const Ptr<VectorBase<Scalar> > &rowStatVec) const {
+    TEUCHOS_ASSERT(rowStatIsSupported(rowStat));
+    getRowStatImpl(rowStat, rowStatVec);
+  }
 
   //@}
 
-protected:
-
+ protected:
   /** \name Protected virtual functions to be overridden by subclasses. */
   //@{
 
   /** \brief . */
   virtual bool rowStatIsSupportedImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat) const = 0;
+      const RowStatLinearOpBaseUtils::ERowStat rowStat) const = 0;
 
   /** \brief . */
   virtual void getRowStatImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat,
-    const Ptr<VectorBase<Scalar> > &rowStatVec) const = 0;
+      const RowStatLinearOpBaseUtils::ERowStat rowStat,
+      const Ptr<VectorBase<Scalar> > &rowStatVec) const = 0;
 
   //@}
-
 };
 
+}  // end namespace Thyra
 
-}	// end namespace Thyra
-
-
-#endif	// THYRA_SCALED_LINEAR_OP_BASE_HPP
+#endif  // THYRA_SCALED_LINEAR_OP_BASE_HPP

@@ -15,9 +15,7 @@
 #include "Thyra_ScaledLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Represents a zero linear operator <tt>M = 0</tt>.
  *
@@ -35,14 +33,12 @@ namespace Thyra {
 
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
-class DefaultZeroLinearOp 
-  : virtual public ZeroLinearOpBase<Scalar>
-  , virtual public RowStatLinearOpBase<Scalar>
-  , virtual public ScaledLinearOpBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class DefaultZeroLinearOp
+  : virtual public ZeroLinearOpBase<Scalar>,
+    virtual public RowStatLinearOpBase<Scalar>,
+    virtual public ScaledLinearOpBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -57,9 +53,8 @@ public:
   /** Calls <tt>initialize()</tt>.
    */
   DefaultZeroLinearOp(
-    const RCP<const VectorSpaceBase<Scalar> > &range,
-    const RCP<const VectorSpaceBase<Scalar> > &domain
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &range,
+      const RCP<const VectorSpaceBase<Scalar> > &domain);
 
   /** \brief Initialize given a list of non-const linear operators.
    *
@@ -78,9 +73,8 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<const VectorSpaceBase<Scalar> > &range,
-    const RCP<const VectorSpaceBase<Scalar> > &domain
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &range,
+      const RCP<const VectorSpaceBase<Scalar> > &domain);
 
   /** \brief Set to uninitialized.
    *
@@ -94,21 +88,21 @@ public:
 
   /** @name Overridden from LinearOpBase */
   //@{
-  
+
   /** \brief Returns <tt>Teuchos::null</tt> if uninitialized. */
-  RCP< const VectorSpaceBase<Scalar> > range() const;
-  
+  RCP<const VectorSpaceBase<Scalar> > range() const;
+
   /** \brief Returns <tt>Teuchos::null</tt> if uninitialized. */
-  RCP< const VectorSpaceBase<Scalar> > domain() const;
-  
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
+
   /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const;
-  
+
   //@}
-  
+
   /** @name Overridden from Teuchos::Describable */
   //@{
-                                                
+
   /** \brief Prints just the name <tt>DefaultZeroLinearOp</tt> along with the
    * overall dimensions.
    */
@@ -116,8 +110,7 @@ public:
 
   //@}
 
-protected:
-
+ protected:
   /** @name Overridden from LinearOpBase */
   //@{
 
@@ -126,12 +119,11 @@ protected:
 
   /** \brief . */
   void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const;
 
   //@}
 
@@ -140,12 +132,12 @@ protected:
 
   /** \brief . */
   virtual bool rowStatIsSupportedImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
- 	
+      const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
+
   /** \brief . */
   virtual void getRowStatImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat, 
-    const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const;
+      const RowStatLinearOpBaseUtils::ERowStat rowStat,
+      const Teuchos::Ptr<VectorBase<Scalar> > &rowStatVec) const;
 
   //@}
 
@@ -153,45 +145,37 @@ protected:
   //@{
 
   /** \brief . */
-  virtual bool supportsScaleLeftImpl() const
-  { return true; }
+  virtual bool supportsScaleLeftImpl() const { return true; }
 
   /** \brief . */
-  virtual bool supportsScaleRightImpl() const
-  { return true; }
- 
-  /** \brief . */ // Meaningless operation
-  virtual void scaleLeftImpl(const VectorBase< Scalar > &/* row_scaling */)
-  { }
+  virtual bool supportsScaleRightImpl() const { return true; }
 
-  /** \brief . */ // Meaningless operation
-  virtual void scaleRightImpl(const VectorBase< Scalar > &/* col_scaling */)
-  { }
+  /** \brief . */  // Meaningless operation
+  virtual void scaleLeftImpl(const VectorBase<Scalar> & /* row_scaling */) {}
+
+  /** \brief . */  // Meaningless operation
+  virtual void scaleRightImpl(const VectorBase<Scalar> & /* col_scaling */) {}
 
   //@}
 
-private:
-
+ private:
   RCP<const VectorSpaceBase<Scalar> > range_;
   RCP<const VectorSpaceBase<Scalar> > domain_;
 
   // Not defined and not to be called
-  DefaultZeroLinearOp(const DefaultZeroLinearOp&);
-  DefaultZeroLinearOp& operator=(const DefaultZeroLinearOp&);
-
+  DefaultZeroLinearOp(const DefaultZeroLinearOp &);
+  DefaultZeroLinearOp &operator=(const DefaultZeroLinearOp &);
 };
-
 
 /** \brief Create a zero linear operator with given range and domain spaces.
  *
  * \relates DefaultZeroLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const LinearOpBase<Scalar> >
 zero(
-  const RCP<const VectorSpaceBase<Scalar> > &range,
-  const RCP<const VectorSpaceBase<Scalar> > &domain
-  );
+    const RCP<const VectorSpaceBase<Scalar> > &range,
+    const RCP<const VectorSpaceBase<Scalar> > &domain);
 
 /** \brief Create a nonconst zero linear operator with given range and domain spaces.
  *
@@ -200,15 +184,12 @@ zero(
  *
  * \relates DefaultZeroLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
 nonconstZero(
-  const RCP<const VectorSpaceBase<Scalar> > &range,
-  const RCP<const VectorSpaceBase<Scalar> > &domain
-  );
+    const RCP<const VectorSpaceBase<Scalar> > &range,
+    const RCP<const VectorSpaceBase<Scalar> > &domain);
 
+}  // end namespace Thyra
 
-}	// end namespace Thyra
-
-
-#endif	// THYRA_DEFAULT_ZERO_LINEAR_OP_DECL_HPP
+#endif  // THYRA_DEFAULT_ZERO_LINEAR_OP_DECL_HPP

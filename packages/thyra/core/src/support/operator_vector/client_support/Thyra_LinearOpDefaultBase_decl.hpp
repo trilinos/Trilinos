@@ -19,10 +19,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class LinearOpDefaultBase : virtual public LinearOpBase<Scalar> {
-public:
-  
+ public:
 #ifdef THYRA_INJECT_USING_DECLARATIONS
   using LinearOpBase<Scalar>::apply;
   using LinearOpBase<Scalar>::describe;
@@ -62,14 +61,12 @@ public:
    * last <tt>m:n:amn</tt> entry.
    */
   void describe(
-    Teuchos::FancyOStream                &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
-    ) const;
+      Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
 
-};	// end class LinearOpDefaultBase
+};  // end class LinearOpDefaultBase
 
-}	// end namespace Thyra
+}  // end namespace Thyra
 
-#endif	// THYRA_LINEAR_OP_DEFAULT_DECL_HPP
+#endif  // THYRA_LINEAR_OP_DEFAULT_DECL_HPP

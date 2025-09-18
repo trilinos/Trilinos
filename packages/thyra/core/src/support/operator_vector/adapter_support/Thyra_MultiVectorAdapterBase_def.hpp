@@ -14,50 +14,38 @@
 #include "Thyra_ScalarProdVectorSpaceBase.hpp"
 #include "Thyra_ScalarProdBase.hpp"
 
-
 namespace Thyra {
-
 
 // Overridden functions from LinearOp
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-MultiVectorAdapterBase<Scalar>::range() const
-{
+MultiVectorAdapterBase<Scalar>::range() const {
   return rangeScalarProdVecSpc();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-MultiVectorAdapterBase<Scalar>::domain() const
-{
+MultiVectorAdapterBase<Scalar>::domain() const {
   return domainScalarProdVecSpc();
 }
 
-
 // Overridden protected functions from LinearOpBase
 
-
-template<class Scalar>
-bool MultiVectorAdapterBase<Scalar>::opSupportedImpl(EOpTransp M_trans) const
-{
+template <class Scalar>
+bool MultiVectorAdapterBase<Scalar>::opSupportedImpl(EOpTransp M_trans) const {
   if (ScalarTraits<Scalar>::isComplex)
     return (M_trans == NOTRANS || M_trans == CONJTRANS);
   return true;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void MultiVectorAdapterBase<Scalar>::applyImpl(
-  const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &X,
-  const Ptr<MultiVectorBase<Scalar> > &Y,
-  const Scalar alpha,
-  const Scalar beta
-  ) const
-{
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
+    const Scalar alpha,
+    const Scalar beta) const {
   //
   // Perform:
   //
@@ -68,15 +56,14 @@ void MultiVectorAdapterBase<Scalar>::applyImpl(
   // where T = Q_D * X or Q_R * X
   //
   RCP<const ScalarProdVectorSpaceBase<Scalar> > scalarProdVecSpc =
-    ( real_trans(M_trans) == NOTRANS
-      ? domainScalarProdVecSpc()
-      : rangeScalarProdVecSpc() );
+      (real_trans(M_trans) == NOTRANS
+           ? domainScalarProdVecSpc()
+           : rangeScalarProdVecSpc());
   RCP<const ScalarProdBase<Scalar> > scalarProd = scalarProdVecSpc->getScalarProd();
   if (scalarProd->isEuclidean()) {
     // Y = beta*Y + alpha * op(M) * X
     this->euclideanApply(M_trans, X, Y, alpha, beta);
-  }
-  else {
+  } else {
     // T = Q * X
     RCP<MultiVectorBase<Scalar> > T = createMembers(X.range(), X.domain());
     ::Thyra::apply(*scalarProd->getLinearOp(), NOTRANS, X, T.ptr());
@@ -85,8 +72,6 @@ void MultiVectorAdapterBase<Scalar>::applyImpl(
   }
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_MULTI_VECTOR_ADAPTER_BASE_DEF_HPP
+#endif  // THYRA_MULTI_VECTOR_ADAPTER_BASE_DEF_HPP

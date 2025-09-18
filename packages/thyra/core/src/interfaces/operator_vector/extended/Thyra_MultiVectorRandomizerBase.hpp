@@ -14,7 +14,6 @@
 
 namespace Thyra {
 
-
 /** \brief Base interface for a strategy object for randomizing a
  * multi-vector.
  *
@@ -28,17 +27,16 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class MultiVectorRandomizerBase {
-public:
-
+ public:
   /** \brief . */
   virtual ~MultiVectorRandomizerBase() {}
 
   /** \brief Determines if <tt>*this</tt> is compatible with multi-vectors
    * from the <tt>VectorSpace</tt> <tt>space</tt>.
    */
-  virtual bool isCompatible( const VectorSpaceBase<Scalar> &space ) const = 0;
+  virtual bool isCompatible(const VectorSpaceBase<Scalar> &space) const = 0;
 
   /** \brief Randomize a "compatible" multi-vector.
    *
@@ -47,18 +45,13 @@ public:
    * <li><tt>this->isCompatible(*mv->range()) == true</tt>
    * </ul>
    */
-  void randomize(const Ptr<MultiVectorBase<Scalar> > &mv)
-    { randomizeImpl(mv); }
+  void randomize(const Ptr<MultiVectorBase<Scalar> > &mv) { randomizeImpl(mv); }
 
-private:
-
+ private:
   /** \brief . */
   virtual void randomizeImpl(const Ptr<MultiVectorBase<Scalar> > &mv) = 0;
-  
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_MULTI_VECTOR_RANDOMIZER_BASE_HPP
+#endif  // THYRA_MULTI_VECTOR_RANDOMIZER_BASE_HPP

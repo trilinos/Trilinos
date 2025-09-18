@@ -13,9 +13,7 @@
 #include "Thyra_OperatorSolveTypes.hpp"
 #include "Teuchos_Describable.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Simple interface class to access a precreated preconditioner as one
  * or more linear operators objects and information on how they are meant to
@@ -53,11 +51,9 @@ namespace Thyra {
  *   </ul>
  * </ul>
  */
-template<class Scalar>
-class PreconditionerBase : virtual public Teuchos::Describable
-{
-public:
-
+template <class Scalar>
+class PreconditionerBase : virtual public Teuchos::Describable {
+ public:
   /** @name Pure virtual public functions that must be overridden in subclasses */
   //@{
 
@@ -78,7 +74,7 @@ public:
   /** \brief Return a const left preconditioner linear operator if one is
    * designed or targeted to be applied on the left.
    */
-  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getLeftPrecOp()const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getLeftPrecOp() const = 0;
 
   /** \brief Return if the underlying right preconditioner operator is
    * const-only or allows non-const access.
@@ -117,19 +113,15 @@ public:
    * </ul>
    */
   virtual Teuchos::RCP<const LinearOpBase<Scalar> > getUnspecifiedPrecOp() const = 0;
-  
+
   //@}
 
-private:
-  
+ private:
   // Not defined and not to be called
   PreconditionerBase<Scalar>&
   operator=(const PreconditionerBase<Scalar>&);
-
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_PRECONDITIONER_BASE_HPP
+#endif  // THYRA_PRECONDITIONER_BASE_HPP

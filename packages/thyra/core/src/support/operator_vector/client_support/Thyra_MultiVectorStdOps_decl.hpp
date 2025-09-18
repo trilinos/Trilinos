@@ -17,7 +17,6 @@
 
 namespace Thyra {
 
-
 /** \brief Column-wise multi-vector natural norm.
  *
  * \param V [in]
@@ -28,10 +27,9 @@ namespace Thyra {
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void norms( const MultiVectorBase<Scalar>& V,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms );
-
+template <class Scalar>
+void norms(const MultiVectorBase<Scalar> &V,
+           const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms);
 
 /** \brief Column-wise multi-vector reductions.
  *
@@ -46,10 +44,9 @@ void norms( const MultiVectorBase<Scalar>& V,
  *
  * \relates MultiVectorBase
  */
-template<class Scalar, class NormOp>
-void reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms );
-
+template <class Scalar, class NormOp>
+void reductions(const MultiVectorBase<Scalar> &V, const NormOp &op,
+                const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms);
 
 /** \brief Column-wise multi-vector one norm.
  *
@@ -61,10 +58,9 @@ void reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void norms_1( const MultiVectorBase<Scalar>& V,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms );
-
+template <class Scalar>
+void norms_1(const MultiVectorBase<Scalar> &V,
+             const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms);
 
 /** \brief Column-wise multi-vector 2 (Euclidean) norm.
  *
@@ -76,10 +72,9 @@ void norms_1( const MultiVectorBase<Scalar>& V,
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void norms_2( const MultiVectorBase<Scalar>& V,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms );
-
+template <class Scalar>
+void norms_2(const MultiVectorBase<Scalar> &V,
+             const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms);
 
 /** \brief Column-wise multi-vector infinity norm.
  *
@@ -91,19 +86,17 @@ void norms_2( const MultiVectorBase<Scalar>& V,
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void norms_inf( const MultiVectorBase<Scalar>& V,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms );
-
+template <class Scalar>
+void norms_inf(const MultiVectorBase<Scalar> &V,
+               const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms);
 
 /** \brief Column-wise multi-vector infinity norm.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
+template <class Scalar>
 Array<typename ScalarTraits<Scalar>::magnitudeType>
-norms_inf( const MultiVectorBase<Scalar>& V );
-
+norms_inf(const MultiVectorBase<Scalar> &V);
 
 /** \brief Multi-vector dot product.
  *
@@ -117,10 +110,9 @@ norms_inf( const MultiVectorBase<Scalar>& V );
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2,
-  const ArrayView<Scalar> &dots );
-
+template <class Scalar>
+void dots(const MultiVectorBase<Scalar> &V1, const MultiVectorBase<Scalar> &V2,
+          const ArrayView<Scalar> &dots);
 
 /** \brief Multi-vector column sum
  *
@@ -132,18 +124,16 @@ void dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2,
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void sums( const MultiVectorBase<Scalar>& V, const ArrayView<Scalar> &sums );
-
+template <class Scalar>
+void sums(const MultiVectorBase<Scalar> &V, const ArrayView<Scalar> &sums);
 
 /** \brief Take the induced matrix one norm of a multi-vector.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
+template <class Scalar>
 typename ScalarTraits<Scalar>::magnitudeType
-norm_1( const MultiVectorBase<Scalar>& V );
-
+norm_1(const MultiVectorBase<Scalar> &V);
 
 /** \brief V = alpha*V.
  *
@@ -152,70 +142,63 @@ norm_1( const MultiVectorBase<Scalar>& V );
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void scale( Scalar alpha, const Ptr<MultiVectorBase<Scalar> > &V );
-
+template <class Scalar>
+void scale(Scalar alpha, const Ptr<MultiVectorBase<Scalar> > &V);
 
 /** \brief A*U + V -> V (where A is a diagonal matrix with diagonal a).
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void scaleUpdate( const VectorBase<Scalar>& a, const MultiVectorBase<Scalar>& U,
-  const Ptr<MultiVectorBase<Scalar> > &V );
+template <class Scalar>
+void scaleUpdate(const VectorBase<Scalar> &a, const MultiVectorBase<Scalar> &U,
+                 const Ptr<MultiVectorBase<Scalar> > &V);
 
 /** \brief V = alpha.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void assign( const Ptr<MultiVectorBase<Scalar> > &V, Scalar alpha );
+template <class Scalar>
+void assign(const Ptr<MultiVectorBase<Scalar> > &V, Scalar alpha);
 
 /** \brief V = U.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void assign( const Ptr<MultiVectorBase<Scalar> > &V,
-  const MultiVectorBase<Scalar>& U );
-
+template <class Scalar>
+void assign(const Ptr<MultiVectorBase<Scalar> > &V,
+            const MultiVectorBase<Scalar> &U);
 
 /** \brief alpha*U + V -> V.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void update( Scalar alpha, const MultiVectorBase<Scalar>& U,
-  const Ptr<MultiVectorBase<Scalar> > &V );
-
+template <class Scalar>
+void update(Scalar alpha, const MultiVectorBase<Scalar> &U,
+            const Ptr<MultiVectorBase<Scalar> > &V);
 
 /** \brief alpha[j]*beta*U(j) + V(j) - > V(j), for j = 0 ,,,
  *
  * \relates MultiVectorBase
  * U.domain()->dim()-1.
  */
-template<class Scalar>
+template <class Scalar>
 void update(
-  const ArrayView<const Scalar> &alpha,
-  Scalar beta,
-  const MultiVectorBase<Scalar>& U,
-  const Ptr<MultiVectorBase<Scalar> > &V
-  );
-
+    const ArrayView<const Scalar> &alpha,
+    Scalar beta,
+    const MultiVectorBase<Scalar> &U,
+    const Ptr<MultiVectorBase<Scalar> > &V);
 
 /** \brief U(j) + alpha[j]*beta*V(j) - > V(j), for j = 0 ,,,
  * U.domain()->dim()-1.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
+template <class Scalar>
 void update(
-  const MultiVectorBase<Scalar>& U,
-  const ArrayView<const Scalar> &alpha,
-  Scalar beta,
-  const Ptr<MultiVectorBase<Scalar> > &V
-  );
-
+    const MultiVectorBase<Scalar> &U,
+    const ArrayView<const Scalar> &alpha,
+    Scalar beta,
+    const Ptr<MultiVectorBase<Scalar> > &V);
 
 /** \brief <tt>Y.col(j)(i) = beta*Y.col(j)(i) + sum( alpha[k]*X[k].col(j)(i),
  * k=0...m-1 )</tt>, for <tt>i = 0...Y->range()->dim()-1</tt>, <tt>j =
@@ -243,18 +226,16 @@ void update(
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
+template <class Scalar>
 void linear_combination(
-  const ArrayView<const Scalar> &alpha,
-  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &X,
-  const Scalar &beta,
-  const Ptr<MultiVectorBase<Scalar> > &Y
-  );
-
+    const ArrayView<const Scalar> &alpha,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &X,
+    const Scalar &beta,
+    const Ptr<MultiVectorBase<Scalar> > &Y);
 
 /** \brief Generate a random multi-vector with elements uniformly distributed
  * elements.
- * 
+ *
  * The elements <tt>get_ele(*V->col(j))</tt> are randomly generated between
  * <tt>[l,u]</tt>.
  *
@@ -262,136 +243,115 @@ void linear_combination(
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void randomize( Scalar l, Scalar u, const Ptr<MultiVectorBase<Scalar> > &V );
-
+template <class Scalar>
+void randomize(Scalar l, Scalar u, const Ptr<MultiVectorBase<Scalar> > &V);
 
 /** \brief <tt>Z(i,j) *= alpha, i = 0...Z->range()->dim()-1, j =
  * 0...Z->domain()->dim()-1</tt>.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void Vt_S( const Ptr<MultiVectorBase<Scalar> > &Z, const Scalar& alpha );
-
+template <class Scalar>
+void Vt_S(const Ptr<MultiVectorBase<Scalar> > &Z, const Scalar &alpha);
 
 /** \brief <tt>Z(i,j) += alpha, i = 0...Z->range()->dim()-1, j =
  * 0...Z->domain()->dim()-1</tt>.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void Vp_S( const Ptr<MultiVectorBase<Scalar> > &Z, const Scalar& alpha );
-
+template <class Scalar>
+void Vp_S(const Ptr<MultiVectorBase<Scalar> > &Z, const Scalar &alpha);
 
 /** \brief <tt>Z(i,j) += X(i,j), i = 0...Z->range()->dim()-1, j =
  * 0...Z->domain()->dim()-1</tt>.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void Vp_V( const Ptr<MultiVectorBase<Scalar> > &Z,
-  const MultiVectorBase<Scalar>& X );
-
+template <class Scalar>
+void Vp_V(const Ptr<MultiVectorBase<Scalar> > &Z,
+          const MultiVectorBase<Scalar> &X);
 
 /** \brief <tt>Z(i,j) = X(i,j) + Y(i,j), i = 0...Z->range()->dim()-1, j =
  * 0...Z->domain()->dim()-1</tt>.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void V_VpV( const Ptr<MultiVectorBase<Scalar> > &Z,
-  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y );
-
+template <class Scalar>
+void V_VpV(const Ptr<MultiVectorBase<Scalar> > &Z,
+           const MultiVectorBase<Scalar> &X, const MultiVectorBase<Scalar> &Y);
 
 /** \brief <tt>Z(i,j) = X(i,j) - Y(i,j), i = 0...Z->range()->dim()-1, j =
  * 0...Z->domain()->dim()-1</tt>.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void V_VmV( const Ptr<MultiVectorBase<Scalar> > &Z,
-  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y );
-
+template <class Scalar>
+void V_VmV(const Ptr<MultiVectorBase<Scalar> > &Z,
+           const MultiVectorBase<Scalar> &X, const MultiVectorBase<Scalar> &Y);
 
 /** \brief <tt>Z(i,j) = alpha*X(i,j) + Y(i), i = 0...z->space()->dim()-1</tt>,
  * , j = 0...Z->domain()->dim()-1</tt>.
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-void V_StVpV( const Ptr<MultiVectorBase<Scalar> > &Z, const Scalar &alpha,
-  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y );
+template <class Scalar>
+void V_StVpV(const Ptr<MultiVectorBase<Scalar> > &Z, const Scalar &alpha,
+             const MultiVectorBase<Scalar> &X, const MultiVectorBase<Scalar> &Y);
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 // /////////////////////////////////////
 // Inline functions
 
-
-template<class Scalar>
-inline
-void Thyra::norms_1( const MultiVectorBase<Scalar>& V,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
-{
+template <class Scalar>
+inline void Thyra::norms_1(const MultiVectorBase<Scalar> &V,
+                           const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) {
   V.norms_1(norms);
 }
 
-
-template<class Scalar>
-inline
-void Thyra::norms_2( const MultiVectorBase<Scalar>& V,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
-{
+template <class Scalar>
+inline void Thyra::norms_2(const MultiVectorBase<Scalar> &V,
+                           const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) {
   V.norms_2(norms);
 }
 
-
-template<class Scalar>
-inline
-void Thyra::norms_inf( const MultiVectorBase<Scalar>& V,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
-{
+template <class Scalar>
+inline void Thyra::norms_inf(const MultiVectorBase<Scalar> &V,
+                             const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) {
   V.norms_inf(norms);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
-Thyra::norms_inf( const MultiVectorBase<Scalar>& V )
-{
+Thyra::norms_inf(const MultiVectorBase<Scalar> &V) {
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   Array<ScalarMag> norms(V.domain()->dim());
   Thyra::norms_inf<Scalar>(V, norms());
   return norms;
 }
 
-
 // /////////////////////////////////////////////
 // Other implementations
 
-
-template<class Scalar, class NormOp>
-void Thyra::reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
-{
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+template <class Scalar, class NormOp>
+void Thyra::reductions(const MultiVectorBase<Scalar> &V, const NormOp &op,
+                       const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) {
+  using Teuchos::null;
+  using Teuchos::ptrInArg;
+  using Teuchos::tuple;
   const int m = V.domain()->dim();
   Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
   Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
-  for( int kc = 0; kc < m; ++kc ) {
+  for (int kc = 0; kc < m; ++kc) {
     rcp_op_targs[kc] = op.reduct_obj_create();
-    op_targs[kc] = rcp_op_targs[kc].ptr();
+    op_targs[kc]     = rcp_op_targs[kc].ptr();
   }
   applyOp<Scalar>(op, tuple(ptrInArg(V)),
-    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
-    op_targs );
-  for( int kc = 0; kc < m; ++kc ) {
+                  ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+                  op_targs);
+  for (int kc = 0; kc < m; ++kc) {
     norms[kc] = op(*op_targs[kc]);
   }
 }
 
-
-#endif // THYRA_MULTI_VECTOR_STD_OPS_DECL_HPP
+#endif  // THYRA_MULTI_VECTOR_STD_OPS_DECL_HPP

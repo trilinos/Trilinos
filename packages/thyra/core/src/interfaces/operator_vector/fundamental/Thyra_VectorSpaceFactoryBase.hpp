@@ -26,10 +26,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class VectorSpaceFactoryBase : virtual public Teuchos::Describable {
-public:
-
+ public:
   /** \brief . */
   virtual ~VectorSpaceFactoryBase() {}
 
@@ -53,20 +52,16 @@ public:
    * allocated vector space object that can be used to create vectors and
    * multi-vectors.
    */
-  virtual RCP< const VectorSpaceBase<Scalar> > createVecSpc(int dim) const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > createVecSpc(int dim) const = 0;
 
   //@}
 
-private:
-  
+ private:
   // Not defined and not to be called
   VectorSpaceFactoryBase<Scalar>&
   operator=(const VectorSpaceFactoryBase<Scalar>&);
-
 };
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 #endif  // THYRA_VECTOR_SPACE_FACTORY_DECL_HPP
