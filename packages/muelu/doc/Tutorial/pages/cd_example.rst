@@ -25,7 +25,7 @@ When using the reference settings for the multigrid preconditioner we need 85 li
 
 .. admonition:: Exercise 1
 
-    Open the *condif2d_parameters.xml* file by pressing option 3. Try to find optimized multigrid settings using your knowledge from the previous tutorials. Save the file and rerun the example (using option 0). Compare your results with the reference results. With option 6 you can plot the convergence of the relative residual of the iterative solver (for comparison).
+    Open the *Recirc2D_parameters.xml* file by pressing option 3. Try to find optimized multigrid settings using your knowledge from the previous tutorials. Save the file and rerun the example (using option 0). Compare your results with the reference results. With option 6 you can plot the convergence of the relative residual of the iterative solver (for comparison).
 
 .. _cd_example/generalhints:
 
