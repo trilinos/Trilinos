@@ -275,9 +275,9 @@ public:
     // Get Solution
     ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
     Real h = 1.0/((Real)n+1.0), pt = 0.0;
-    for( int i = 0; i < n; i++ ) {
-      pt = (Real)(i+1)*h;
-      (*xp)[i] = 4.0*pt*(1.0-pt);
+    for( int li = 0; li < n; li++ ) {
+      pt = (Real)(li+1)*h;
+      (*xp)[li] = 4.0*pt*(1.0-pt);
     }
     return ROL::makePtr<StdVector<Real>>(xp);
   }

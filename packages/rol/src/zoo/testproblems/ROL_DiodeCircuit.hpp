@@ -414,7 +414,7 @@ private:
       try { 
         return dynamic_cast<const PSV&>(x).getVector();
       }
-      catch (std::exception &e) {
+      catch (std::exception &le) {
         return dynamic_cast<const DSV&>(x).getVector();
       }
     }
@@ -429,7 +429,7 @@ private:
       try {
         return dynamic_cast<PSV&>(x).getVector(); 
       }
-      catch (std::exception &e) {
+      catch (std::exception &le) {
         return dynamic_cast<DSV&>(x).getVector(); 
       }
     }

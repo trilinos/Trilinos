@@ -196,7 +196,7 @@ public:
 
     con_->applyInverseAdjointJacobian_un( iajvp[k], vp[k], up[k-1], up[k], zp[k], ts(k) );
 
-    for( size_type k=numTimeSteps()-2; k>0; --k ) {
+    for( k=numTimeSteps()-2; k>0; --k ) {
 
       con_->applyAdjointJacobian_uo( x, iajvp[k+1], up[k], up[k+1], zp[k+1], ts(k+1) );
       x.scale(-1.0);
