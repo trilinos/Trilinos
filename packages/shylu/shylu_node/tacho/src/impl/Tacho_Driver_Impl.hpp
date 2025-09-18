@@ -471,8 +471,23 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
   }
 
   if (_verbose) {
-    printf("Summary: NumericTools (SmallDenseFactorization)\n");
-    printf("===============================================\n");
+    switch (_method) {
+    case Cholesky: {
+      printf("TachoSolver: Factorize Cholesky (SmallDenseFactorization)\n");
+      printf("=========================================================\n");
+      break;
+    }
+    case LDL: {
+      printf("TachoSolver: Factorize LDL (SmallDenseFactorization)\n");
+      printf("====================================================\n");
+      break;
+    }
+    case SymLU: {
+      printf("TachoSolver: Factorize SymLU (SmallDenseFactorization)\n");
+      printf("======================================================\n");
+      break;
+    }
+    }
     printf("  Time\n");
     printf("             time for copying A into supernodes:              %10.6f s\n", t_copy);
     printf("             time for numeric factorization:                  %10.6f s\n", t_factor);
