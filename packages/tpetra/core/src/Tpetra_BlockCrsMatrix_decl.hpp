@@ -918,28 +918,6 @@ class BlockCrsMatrix : virtual public ::Tpetra::RowMatrix<Scalar, LO, GO, Node>,
   // //! Clear the local error state and stream.
   // void clearLocalErrorStateAndStream ();
 
-  template <class Device>
-  struct is_cuda {
-#if defined(KOKKOS_ENABLE_CUDA)
-    // CudaHostPinnedSpace::execution_space ==
-    // HostSpace::execution_space.  That's OK; it's host memory, that
-    // just happens to be Cuda accessible.  But what if somebody gives
-    // us Device<Cuda, CudaHostPinnedSpace>?  It looks like they mean
-    // to run on device then, so we should sync to device.
-    static constexpr bool value =
-        std::is_same<typename Device::execution_space, Kokkos::Cuda>::value;
-    // Gonna badly fake this here for other execspaces
-#elif defined(KOKKOS_ENABLE_HIP)
-    static constexpr bool value =
-        std::is_same<typename Device::execution_space, Kokkos::HIP>::value;
-#elif defined(KOKKOS_ENABLE_SYCL)
-    static constexpr bool value =
-        std::is_same<typename Device::execution_space, Kokkos::Experimental::SYCL>::value;
-#else
-    static constexpr bool value = false;
-#endif
-  };
-
  public:
   typename impl_scalar_type_dualview::t_host::const_type
   getValuesHost() const;
