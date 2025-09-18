@@ -36,7 +36,6 @@ void kokkosp_begin_deep_copy(Kokkos::Tools::SpaceHandle dst_handle, const char *
   }
 }
 
-
 }  // namespace DeepCopyCounterDetails
 
 void DeepCopyCounter::start() {
