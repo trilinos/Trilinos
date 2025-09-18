@@ -280,7 +280,7 @@ struct ImplType {
   ///
   /// kokkos arithmetic traits of scalar_type
   ///
-  typedef typename Kokkos::Details::ArithTraits<scalar_type>::val_type impl_scalar_type;
+  typedef typename Kokkos::ArithTraits<scalar_type>::val_type impl_scalar_type;
   typedef typename Kokkos::ArithTraits<impl_scalar_type>::mag_type magnitude_type;
 
   typedef typename BlockTridiagScalarType<impl_scalar_type>::type btdm_scalar_type;
