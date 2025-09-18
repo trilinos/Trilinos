@@ -301,13 +301,19 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
     // now so I didn't complete refactoring the matrix code for the parallel
     // case. If we added that later, we should have it hooked up to the copy
     // manager and then these allocations can go away.
-    if( this->root_ ) {
-      device_nzvals_view_ = device_value_type_array(
-        Kokkos::ViewAllocateWithoutInitializing("nzvals"), this->globalNumNonZeros_);
-      host_cols_view_ = host_ordinal_type_array(
-        Kokkos::ViewAllocateWithoutInitializing("colind"), this->globalNumNonZeros_);
-      host_row_ptr_view_ = host_size_type_array(
-        Kokkos::ViewAllocateWithoutInitializing("rowptr"), this->globalNumRows_ + 1);
+    {
+      if( this->root_ ) {
+        if (device_nzvals_view_.extent(0) != this->globalNumNonZeros_)
+          Kokkos::resize(device_nzvals_view_, this->globalNumNonZeros_);
+        if (host_cols_view_.extent(0) != this->globalNumNonZeros_)
+          Kokkos::resize(host_cols_view_, this->globalNumNonZeros_);
+        if (host_row_ptr_view_.extent(0) != this->globalNumRows_ + 1)
+          Kokkos::resize(host_row_ptr_view_, this->globalNumRows_ + 1);
+      } else {
+        Kokkos::resize(device_nzvals_view_, 0);
+        Kokkos::resize(host_cols_view_, 0);
+        Kokkos::resize(host_row_ptr_view_, 1);
+      }
     }
 
     typename host_size_type_array::value_type nnz_ret = 0;
